@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #FFF9F2;
+  --color-cream-dark: #FFF0E0;
+  --color-pink: #FF86B7;
+  --color-pink-dark: #E56FA0;
+  --color-sky: #70D6FF;
+  --color-sky-dark: #4CC3F0;
+  --color-sun: #FFD23F;
+  --color-sun-dark: #F0C030;
+  --color-lavender: #C3A6FF;
+  --color-mint: #7DFFB3;
+
+  --font-heading: 'Fredoka One', cursive;
+  --font-body: 'Quicksand', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Squishy button animations */
+@keyframes bounce-in {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.08); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-10px) rotate(2deg); }
+  75% { transform: translateY(6px) rotate(-2deg); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(-6deg); }
+  30% { transform: rotate(6deg); }
+  45% { transform: rotate(-4deg); }
+  60% { transform: rotate(4deg); }
+  75% { transform: rotate(-2deg); }
+}
+
+@keyframes egg-crack {
+  0% { transform: scale(1) rotate(0deg); }
+  20% { transform: scale(1.05) rotate(-3deg); }
+  40% { transform: scale(0.95) rotate(3deg); }
+  60% { transform: scale(1.1) rotate(-5deg); }
+  80% { transform: scale(1.15) rotate(5deg); filter: brightness(1.3); }
+  100% { transform: scale(1.2) rotate(0deg); filter: brightness(1.5); opacity: 0.5; }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 134, 183, 0.2); }
+  50% { box-shadow: 0 0 40px rgba(255, 134, 183, 0.5), 0 0 60px rgba(255, 210, 63, 0.2); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes progress-shine {
+  from { left: -100%; }
+  to { left: 200%; }
+}
+
+.animate-bounce-in { animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-wiggle { animation: wiggle 1s ease-in-out; }
+.animate-egg-crack { animation: egg-crack 1.5s ease-in-out forwards; }
+.animate-sparkle { animation: sparkle 1.2s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+.animate-slide-up { animation: slide-up 0.5s ease-out; }
+
+/* Sticker border utility */
+.sticker-border {
+  border: 2.5px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Squishy interactive */
+.squishy {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+.squishy:hover {
+  transform: scale(1.05);
+}
+.squishy:active {
+  transform: scale(0.95);
+}
+
+/* Dropzone dashed border animation */
+@keyframes dash-march {
+  to { stroke-dashoffset: -20; }
+}
