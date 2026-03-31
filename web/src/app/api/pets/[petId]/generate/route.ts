@@ -4,6 +4,8 @@ import { verifySignature } from "@/lib/signAction";
 import { buildPetPrompt, generateGrokImage, generateGrokImageWithRef, describePetAvatar, submitGrokVideo } from "@/lib/services/video";
 import { awardPoints } from "@/lib/airdrop";
 import { triggerAgentReactions } from "@/lib/agents";
+import { recordGenerationOnChain, mintContentNFT } from "@/lib/blockchain";
+import { ethers } from "ethers";
 import { NextRequest, NextResponse } from "next/server";
 
 function getVideoCreditCost(duration: number): number {
@@ -150,6 +152,33 @@ export async function POST(
       triggerAgentReactions([generation.id]);
       awardPoints(user.id, pet.id, "generate_image");
 
+      // Fire-and-forget: record on-chain and mint NFT
+      if (user.wallet_address && !isOriginal) {
+        const contentHash = ethers.id(`${generation.id}:${imageUrl}:${Date.now()}`);
+        const petTypeNum = typeof pet.species === "number" ? pet.species : 0;
+
+        // Record generation on PetaGenTracker
+        recordGenerationOnChain(user.wallet_address, petTypeNum, style ?? 0, contentHash)
+          .then((result) => {
+            if (result) {
+              prisma.generation.update({
+                where: { id: generation.id },
+                data: { tx_hash: result.txHash, chain: result.chain, content_hash: contentHash },
+              }).catch((e: unknown) => console.error("[blockchain] DB update failed:", e));
+            }
+          })
+          .catch((e: unknown) => console.error("[blockchain] recordGeneration failed:", e));
+
+        // Mint NFT on PETContent
+        mintContentNFT(user.wallet_address, petTypeNum, style ?? 0, "image", contentHash)
+          .then((result) => {
+            if (result) {
+              console.log(`[blockchain] NFT mint initiated for generation ${generation.id}, tx: ${result.txHash}`);
+            }
+          })
+          .catch((e: unknown) => console.error("[blockchain] mintNFT failed:", e));
+      }
+
       return NextResponse.json({
         id: generation.id,
         image_url: imageUrl,
@@ -197,6 +226,31 @@ export async function POST(
         },
       }),
     ]);
+
+    // Fire-and-forget: record video generation on-chain and mint NFT
+    if (user.wallet_address) {
+      const contentHash = ethers.id(`${generation.id}:${imageUrl}:${Date.now()}`);
+      const petTypeNum = typeof pet.species === "number" ? pet.species : 0;
+
+      recordGenerationOnChain(user.wallet_address, petTypeNum, style ?? 0, contentHash)
+        .then((result) => {
+          if (result) {
+            prisma.generation.update({
+              where: { id: generation.id },
+              data: { tx_hash: result.txHash, chain: result.chain, content_hash: contentHash },
+            }).catch((e: unknown) => console.error("[blockchain] DB update failed:", e));
+          }
+        })
+        .catch((e: unknown) => console.error("[blockchain] recordGeneration failed:", e));
+
+      mintContentNFT(user.wallet_address, petTypeNum, style ?? 0, "video", contentHash)
+        .then((result) => {
+          if (result) {
+            console.log(`[blockchain] NFT mint initiated for generation ${generation.id}, tx: ${result.txHash}`);
+          }
+        })
+        .catch((e: unknown) => console.error("[blockchain] mintNFT failed:", e));
+    }
 
     return NextResponse.json({
       id: generation.id,

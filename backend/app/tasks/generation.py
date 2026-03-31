@@ -145,6 +145,22 @@ async def process_generation(generation_id: int):
                 )
             )
 
+            # 8b. Mint PETContent NFT
+            if user.wallet_address:
+                logger.info(f"[GEN {generation_id}] Minting PETContent NFT")
+                nft_result = await blockchain_service.mint_content(
+                    to_address=user.wallet_address,
+                    pet_type=gen.pet_type,
+                    style=gen.style,
+                    gen_type="video",
+                    content_hash=content_hash,
+                )
+                if nft_result.success:
+                    gen.nft_tx_hash = nft_result.tx_hash
+                    logger.info(f"[GEN {generation_id}] NFT minted: {nft_result.tx_hash}")
+                else:
+                    logger.warning(f"[GEN {generation_id}] NFT mint failed: {nft_result.error}")
+
             # 9. Mark as completed
             gen.status = "completed"
             gen.completed_at = datetime.now(timezone.utc)

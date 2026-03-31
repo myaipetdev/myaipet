@@ -77,6 +77,24 @@ CONTRACT_ABI = [
     },
 ]
 
+# Minimal ABI for PETContent NFT contract (mintContent only)
+PET_CONTENT_ABI = [
+    {
+        "inputs": [
+            {"name": "to", "type": "address"},
+            {"name": "uri", "type": "string"},
+            {"name": "petType", "type": "uint8"},
+            {"name": "style", "type": "uint8"},
+            {"name": "genType", "type": "string"},
+            {"name": "contentHash", "type": "bytes32"},
+        ],
+        "name": "mintContent",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
+]
+
 
 @dataclass
 class TxResult:
@@ -106,6 +124,8 @@ class BlockchainService:
     def __init__(self):
         self.chains: Dict[str, dict] = {}
         self.relayer = None
+        self.nft_w3: Optional[Web3] = None
+        self.nft_contract = None
         self.batch_queue: List[PendingRecord] = []
         self._batch_lock = asyncio.Lock()
         self._initialized = False
@@ -144,6 +164,18 @@ class BlockchainService:
                 logger.info(f"Connected to BNB: {settings.CONTRACT_BNB}")
             except Exception as e:
                 logger.warning(f"Failed to connect to BNB: {e}")
+
+        if settings.CONTRACT_PET_CONTENT:
+            try:
+                w3 = Web3(Web3.HTTPProvider(settings.RPC_BNB))
+                self.nft_w3 = w3
+                self.nft_contract = w3.eth.contract(
+                    address=Web3.to_checksum_address(settings.CONTRACT_PET_CONTENT),
+                    abi=PET_CONTENT_ABI,
+                )
+                logger.info(f"Connected to PETContent: {settings.CONTRACT_PET_CONTENT}")
+            except Exception as e:
+                logger.warning(f"Failed to connect to PETContent: {e}")
 
         if settings.BACKEND_RELAYER_KEY:
             self.relayer = Account.from_key(settings.BACKEND_RELAYER_KEY)
@@ -274,6 +306,64 @@ class BlockchainService:
             credits,
             amount_paid_wei,
         )
+
+    async def mint_content(
+        self,
+        to_address: str,
+        pet_type: int,
+        style: int,
+        gen_type: str,
+        content_hash: bytes,
+        token_uri: str = "",
+    ) -> TxResult:
+        """Mint a PETContent NFT for generated content on BSC."""
+        if not self.nft_contract or not self.nft_w3 or not self.relayer:
+            logger.info(f"[DRY RUN] mint_content for {to_address}")
+            return TxResult(success=False, error="PETContent contract not configured")
+
+        try:
+            w3 = self.nft_w3
+            nonce = w3.eth.get_transaction_count(self.relayer.address)
+
+            func = self.nft_contract.functions.mintContent(
+                Web3.to_checksum_address(to_address),
+                token_uri,
+                pet_type,
+                style,
+                gen_type,
+                content_hash,
+            )
+
+            try:
+                gas_estimate = func.estimate_gas({"from": self.relayer.address})
+                gas_limit = int(gas_estimate * 1.3)
+            except Exception:
+                gas_limit = 300000
+
+            tx = func.build_transaction({
+                "from": self.relayer.address,
+                "nonce": nonce,
+                "gas": gas_limit,
+                "gasPrice": w3.eth.gas_price,
+            })
+
+            signed = self.relayer.sign_transaction(tx)
+            tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+            receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+
+            logger.info(f"[NFT MINT] hash={tx_hash.hex()[:16]}... to={to_address}")
+
+            return TxResult(
+                success=receipt.status == 1,
+                tx_hash=tx_hash.hex(),
+                chain="bnb",
+                block_number=receipt.blockNumber,
+                gas_used=receipt.gasUsed,
+            )
+
+        except Exception as e:
+            logger.error(f"[NFT MINT ERROR] {e}")
+            return TxResult(success=False, error=str(e))
 
     async def get_on_chain_stats(self) -> Dict:
         """Get aggregated stats from both chains."""

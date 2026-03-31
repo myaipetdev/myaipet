@@ -41,6 +41,7 @@ class Generation(Base):
     video_path = Column(String(512), nullable=True)
     content_hash = Column(String(66), nullable=True)   # 0x-prefixed keccak256
     tx_hash = Column(String(66), nullable=True)
+    nft_tx_hash = Column(String(66), nullable=True)    # PETContent NFT mint tx
     chain = Column(String(10), nullable=True)          # "base" or "bnb"
     status = Column(String(20), default="pending", nullable=False)
     error_message = Column(Text, nullable=True)

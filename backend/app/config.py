@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     # Blockchain - Contracts
     CONTRACT_BASE: str = ""
     CONTRACT_BNB: str = ""
+    CONTRACT_PET_CONTENT: str = ""
 
     # Blockchain - Relayer (backend's own relayer, separate from simulator)
     BACKEND_RELAYER_KEY: str = ""
