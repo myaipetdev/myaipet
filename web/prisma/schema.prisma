@@ -1,0 +1,340 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             Int      @id @default(autoincrement())
+  wallet_address String   @unique @db.VarChar(42)
+  nonce          String   @db.VarChar(32)
+  credits        Int      @default(0)
+  pet_slots      Int      @default(1)
+  airdrop_points Int      @default(0)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @default(now()) @updatedAt
+  generations      Generation[]
+  credit_purchases CreditPurchase[]
+  pets             Pet[]
+  interactions     PetInteraction[]
+  likes            Like[]
+  comments         Comment[]
+  followers        Follow[] @relation("following")
+  following        Follow[] @relation("follower")
+  profile          UserProfile?
+  @@map("users")
+}
+
+model Generation {
+  id              Int       @id @default(autoincrement())
+  user_id         Int?
+  pet_type        Int
+  style           Int
+  prompt          String?   @db.Text
+  duration        Int
+  photo_path      String    @db.VarChar(512)
+  video_path      String?   @db.VarChar(512)
+  content_hash    String?   @db.VarChar(66)
+  tx_hash         String?   @db.VarChar(66)
+  chain           String?   @db.VarChar(10)
+  status          String    @default("pending") @db.VarChar(20)
+  error_message   String?   @db.Text
+  fal_request_id  String?   @db.VarChar(128)
+  credits_charged Int
+  created_at      DateTime  @default(now())
+  completed_at    DateTime?
+  user     User?      @relation(fields: [user_id], references: [id])
+  likes    Like[]
+  comments Comment[]
+  agent_reactions PetAgentReaction[]
+  @@map("generations")
+}
+
+model Transaction {
+  id           Int      @id @default(autoincrement())
+  user_id      Int?
+  type         String   @db.VarChar(20)
+  tx_hash      String   @db.VarChar(66)
+  chain        String   @db.VarChar(10)
+  block_number Int?
+  gas_used     Int?
+  created_at   DateTime @default(now())
+  @@map("transactions")
+}
+
+model CreditPurchase {
+  id                Int      @id @default(autoincrement())
+  user_id           Int
+  credits           Int
+  amount_usd        Float
+  payment_tx_hash   String?  @db.VarChar(66)
+  recording_tx_hash String?  @db.VarChar(66)
+  chain             String?  @db.VarChar(10)
+  status            String   @default("pending") @db.VarChar(20)
+  created_at        DateTime @default(now())
+  user User @relation(fields: [user_id], references: [id])
+  @@map("credit_purchases")
+}
+
+model Pet {
+  id                    Int       @id @default(autoincrement())
+  user_id               Int
+  name                  String    @db.VarChar(50)
+  species               Int
+  personality_type      String    @default("friendly") @db.VarChar(20)
+  level                 Int       @default(1)
+  experience            Int       @default(0)
+  happiness             Int       @default(70)
+  energy                Int       @default(100)
+  hunger                Int       @default(30)
+  bond_level            Int       @default(0)
+  total_interactions    Int       @default(0)
+  avatar_url            String?   @db.Text
+  appearance_desc       String?   @db.Text
+  is_active             Boolean   @default(true)
+  soul_version          Int       @default(1)
+  personality_modifiers Json?     @default("{}")
+  last_dream_at         DateTime?
+  last_interaction_at   DateTime?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @default(now()) @updatedAt
+  evolution_stage     Int       @default(0)
+  evolution_name      String?   @db.VarChar(30)
+  user               User                  @relation(fields: [user_id], references: [id])
+  memories           PetMemory[]
+  interactions       PetInteraction[]
+  dream_journals     DreamJournal[]
+  notifications      PetNotification[]
+  autonomous_actions PetAutonomousAction[]
+  soul_exports       SoulExport[]
+  skills             PetSkill[]
+  equipped_items     PetEquippedItem[]
+  agent_reactions    PetAgentReaction[]
+  agent_likes        Like[]
+  agent_comments     Comment[]
+  @@index([user_id])
+  @@map("pets")
+}
+
+model PetMemory {
+  id          Int      @id @default(autoincrement())
+  pet_id      Int
+  memory_type String   @db.VarChar(20)
+  content     String   @db.Text
+  emotion     String   @default("calm") @db.VarChar(20)
+  importance  Int      @default(1)
+  created_at  DateTime @default(now())
+  pet Pet @relation(fields: [pet_id], references: [id])
+  @@index([pet_id])
+  @@map("pet_memories")
+}
+
+model PetInteraction {
+  id                Int      @id @default(autoincrement())
+  pet_id            Int
+  user_id           Int
+  interaction_type  String   @db.VarChar(20)
+  response_text     String?  @db.Text
+  happiness_change  Int      @default(0)
+  energy_change     Int      @default(0)
+  hunger_change     Int      @default(0)
+  experience_gained Int      @default(0)
+  created_at        DateTime @default(now())
+  pet  Pet  @relation(fields: [pet_id], references: [id])
+  user User @relation(fields: [user_id], references: [id])
+  @@index([pet_id])
+  @@index([user_id])
+  @@map("pet_interactions")
+}
+
+model DreamJournal {
+  id                  Int      @id @default(autoincrement())
+  pet_id              Int
+  dream_date          DateTime @db.Date
+  summary             String   @db.Text
+  emotional_tone      String   @db.VarChar(30)
+  personality_changes Json?
+  stat_changes        Json?
+  significant_events  Json?
+  created_at          DateTime @default(now())
+  pet Pet @relation(fields: [pet_id], references: [id])
+  @@index([pet_id])
+  @@map("dream_journals")
+}
+
+model PetNotification {
+  id                Int      @id @default(autoincrement())
+  pet_id            Int
+  notification_type String   @db.VarChar(20)
+  message           String   @db.Text
+  is_read           Boolean  @default(false)
+  created_at        DateTime @default(now())
+  pet Pet @relation(fields: [pet_id], references: [id])
+  @@index([pet_id])
+  @@map("pet_notifications")
+}
+
+model PetAutonomousAction {
+  id            Int      @id @default(autoincrement())
+  pet_id        Int
+  urge_type     String   @db.VarChar(20)
+  action_taken  String   @db.VarChar(100)
+  prompt_used   String?  @db.Text
+  generation_id Int?
+  credits_used  Int      @default(0)
+  created_at    DateTime @default(now())
+  pet Pet @relation(fields: [pet_id], references: [id])
+  @@index([pet_id])
+  @@map("pet_autonomous_actions")
+}
+
+model SoulExport {
+  id          Int      @id @default(autoincrement())
+  pet_id      Int
+  ipfs_cid    String   @db.VarChar(128)
+  soul_hash   String   @db.VarChar(64)
+  tx_hash     String?  @db.VarChar(66)
+  chain       String   @default("base") @db.VarChar(10)
+  version     Int      @default(1)
+  exported_at DateTime @default(now())
+  pet Pet @relation(fields: [pet_id], references: [id])
+  @@index([pet_id])
+  @@map("soul_exports")
+}
+
+model Like {
+  id            Int      @id @default(autoincrement())
+  user_id       Int
+  generation_id Int
+  pet_id        Int?
+  created_at    DateTime @default(now())
+  user       User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  generation Generation @relation(fields: [generation_id], references: [id], onDelete: Cascade)
+  pet        Pet?       @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  @@map("likes")
+}
+
+model Comment {
+  id            Int      @id @default(autoincrement())
+  user_id       Int
+  generation_id Int
+  pet_id        Int?
+  content       String   @db.Text
+  parent_id     Int?
+  is_deleted    Boolean  @default(false)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @default(now()) @updatedAt
+  user       User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  generation Generation @relation(fields: [generation_id], references: [id], onDelete: Cascade)
+  pet        Pet?       @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  parent     Comment?   @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
+  replies    Comment[]  @relation("CommentReplies")
+  @@map("comments")
+}
+
+model PetAgentReaction {
+  id            Int      @id @default(autoincrement())
+  pet_id        Int
+  generation_id Int
+  reacted       Boolean  @default(false)
+  liked         Boolean  @default(false)
+  commented     Boolean  @default(false)
+  created_at    DateTime @default(now())
+  pet        Pet        @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  generation Generation @relation(fields: [generation_id], references: [id], onDelete: Cascade)
+  @@unique([pet_id, generation_id])
+  @@map("pet_agent_reactions")
+}
+
+model Follow {
+  id           Int      @id @default(autoincrement())
+  follower_id  Int
+  following_id Int
+  created_at   DateTime @default(now())
+  follower  User @relation("follower", fields: [follower_id], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [following_id], references: [id], onDelete: Cascade)
+  @@unique([follower_id, following_id], name: "uq_follower_following")
+  @@map("follows")
+}
+
+// ── Phase 3: Evolution & Marketplace ──
+
+model PetSkill {
+  id         Int      @id @default(autoincrement())
+  pet_id     Int
+  skill_key  String   @db.VarChar(30)
+  level      Int      @default(1)
+  unlocked_at DateTime @default(now())
+  pet Pet @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  @@unique([pet_id, skill_key])
+  @@map("pet_skills")
+}
+
+model ShopItem {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique @db.VarChar(40)
+  name        String   @db.VarChar(60)
+  description String   @db.Text
+  category    String   @db.VarChar(20)
+  rarity      String   @default("common") @db.VarChar(15)
+  price       Int
+  icon        String   @db.VarChar(10)
+  stat_bonus  Json?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  purchases   ItemPurchase[]
+  equipped    PetEquippedItem[]
+  @@map("shop_items")
+}
+
+model ItemPurchase {
+  id        Int      @id @default(autoincrement())
+  user_id   Int
+  item_id   Int
+  quantity  Int      @default(1)
+  total_cost Int
+  created_at DateTime @default(now())
+  item ShopItem @relation(fields: [item_id], references: [id])
+  @@map("item_purchases")
+}
+
+model PetEquippedItem {
+  id      Int @id @default(autoincrement())
+  pet_id  Int
+  item_id Int
+  slot    String @db.VarChar(20)
+  equipped_at DateTime @default(now())
+  pet  Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  item ShopItem @relation(fields: [item_id], references: [id])
+  @@unique([pet_id, slot])
+  @@map("pet_equipped_items")
+}
+
+model RewardRedemption {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  reward_id      Int
+  reward_name    String   @db.VarChar(60)
+  points_spent   Int
+  status         String   @default("pending") @db.VarChar(20)
+  delivery_note  String?  @db.Text
+  created_at     DateTime @default(now())
+  updated_at     DateTime @default(now()) @updatedAt
+  @@index([user_id])
+  @@map("reward_redemptions")
+}
+
+model UserProfile {
+  id           Int      @id @default(autoincrement())
+  user_id      Int      @unique
+  display_name String?  @db.VarChar(50)
+  bio          String?  @db.Text
+  avatar_url   String?  @db.Text
+  created_at   DateTime @default(now())
+  updated_at   DateTime @default(now()) @updatedAt
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  @@map("user_profiles")
+}

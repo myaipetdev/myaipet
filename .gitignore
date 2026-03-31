@@ -1,2 +1,21 @@
-.vercel
+# dependencies
+node_modules/
+.next/
+dist/
+
+# env files
+.env
+.env.*
 .env*.local
+
+# vercel
+.vercel
+
+# build artifacts
+contracts/artifacts/
+contracts/cache/
+
+# misc
+.DS_Store
+*.log
+__pycache__/
