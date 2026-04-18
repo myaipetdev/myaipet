@@ -12,7 +12,9 @@ if (USE_NEON) {
   const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! });
   prisma = new PrismaClient({ adapter } as any);
 } else {
-  prisma = new PrismaClient();
+  prisma = new PrismaClient({
+    datasourceUrl: process.env.DATABASE_URL,
+  } as any);
 }
 
 const GAME_ITEMS = [
