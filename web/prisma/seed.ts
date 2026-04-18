@@ -1,13 +1,19 @@
 import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import { neonConfig } from "@neondatabase/serverless";
-import ws from "ws";
 import "dotenv/config";
 
-neonConfig.webSocketConstructor = ws;
+const USE_NEON = process.env.DATABASE_URL?.includes("neon.tech") || false;
 
-const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! });
-const prisma = new PrismaClient({ adapter } as any);
+let prisma: PrismaClient;
+if (USE_NEON) {
+  const { PrismaNeon } = require("@prisma/adapter-neon");
+  const { neonConfig } = require("@neondatabase/serverless");
+  const ws = require("ws");
+  neonConfig.webSocketConstructor = ws;
+  const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! });
+  prisma = new PrismaClient({ adapter } as any);
+} else {
+  prisma = new PrismaClient();
+}
 
 const GAME_ITEMS = [
   // ── Consumables: EXP & Stats ──
