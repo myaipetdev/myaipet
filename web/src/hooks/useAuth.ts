@@ -30,14 +30,16 @@ export function useAuth() {
   const { signMessageAsync } = useSignMessage();
   const { switchChainAsync } = useSwitchChain();
 
-  const [token, setToken] = useState<string | null>(() => loadStored().token);
-  const [user, setUser] = useState<any>(() => loadStored().user);
+  const isDev = process.env.NODE_ENV === "development";
+
+  const [token, setToken] = useState<string | null>(() => isDev ? "dev-token" : loadStored().token);
+  const [user, setUser] = useState<any>(() => isDev ? { wallet_address: "0xDEV1234567890abcdef1234567890abcdef1234", credits: 9999 } : loadStored().user);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const prevAddress = useRef<string | null>(null);
   const initialized = useRef(false);
 
-  const isAuthenticated = !!token && !!user;
+  const isAuthenticated = isDev ? true : (!!token && !!user);
 
   // Restore token to api on mount
   useEffect(() => {

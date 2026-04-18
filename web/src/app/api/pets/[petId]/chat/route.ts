@@ -164,6 +164,15 @@ RULES:
       },
     });
 
+    // Record Web4 heartbeat + user activity (fire-and-forget)
+    try {
+      const { recordHeartbeat } = await import("@/lib/services/soul");
+      await recordHeartbeat(pet.id);
+    } catch {}
+    await prisma.user
+      .update({ where: { id: user.id }, data: { last_active_at: new Date() } })
+      .catch(() => {});
+
     return NextResponse.json({
       reply,
       mood,

@@ -3,33 +3,11 @@
  * Full Grok API pipeline (image + video)
  */
 
-import { put } from "@vercel/blob";
+import { saveRemoteFile as saveToStorage } from "@/lib/storage";
 
-// Save a remote image/video to Vercel Blob for permanent storage
+// Save a remote image/video to storage (S3 or Vercel Blob)
 export async function saveToBlob(remoteUrl: string, prefix = "generations"): Promise<string> {
-  const maxRetries = 2;
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      const res = await fetch(remoteUrl);
-      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
-      const blob = await res.blob();
-      const contentType = blob.type || "image/jpeg";
-      const ext = contentType.includes("mp4") ? "mp4"
-        : contentType.includes("webm") ? "webm"
-        : contentType.includes("png") ? "png"
-        : "jpg";
-      const filename = `${prefix}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const result = await put(filename, blob, { access: "public", addRandomSuffix: false });
-      return result.url;
-    } catch (e) {
-      console.error(`saveToBlob attempt ${attempt + 1} failed:`, e);
-      if (attempt === maxRetries) {
-        throw new Error(`saveToBlob failed after ${maxRetries + 1} attempts: ${e}`);
-      }
-      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
-    }
-  }
-  throw new Error("saveToBlob unreachable");
+  return saveToStorage(remoteUrl, prefix);
 }
 
 const PERSONALITY_PROMPTS: Record<string, string> = {

@@ -19,7 +19,11 @@ export default function WalletGate({ children, section }: any) {
   const { isAuthenticated, isAuthenticating, authenticate, error } = useAuth();
   const autoAuthAttempted = useRef(false);
 
+  // DEV ONLY: uncomment to bypass wallet gate for local testing
+  const isDev = process.env.NODE_ENV === "development";
+
   useEffect(() => {
+    if (isDev) return;
     if (isConnected && !isAuthenticated && !isAuthenticating && !autoAuthAttempted.current) {
       autoAuthAttempted.current = true;
       authenticate();
@@ -27,8 +31,9 @@ export default function WalletGate({ children, section }: any) {
     if (!isConnected) {
       autoAuthAttempted.current = false;
     }
-  }, [isConnected, isAuthenticated, isAuthenticating, authenticate]);
+  }, [isConnected, isAuthenticated, isAuthenticating, authenticate, isDev]);
 
+  if (isDev) return children;
   if (isConnected && isAuthenticated) return children;
 
   if (isConnected && (isAuthenticating || (!isAuthenticated && !error))) {

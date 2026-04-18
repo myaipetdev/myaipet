@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
+import { SKILL_MAP } from "@/lib/skills";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -27,9 +28,24 @@ export async function GET(req: NextRequest) {
       energy: true,
       total_interactions: true,
       evolution_stage: true,
+      element: true,
+      skills: {
+        where: { slot: { not: null } },
+        select: { skill_key: true, level: true, slot: true },
+        orderBy: { slot: "asc" },
+      },
       user: { select: { wallet_address: true } },
     },
     take: 20,
+  });
+
+  const formatOpponent = (pick: typeof opponents[0]) => ({
+    ...pick,
+    wallet: `${pick.user.wallet_address.slice(0, 6)}...${pick.user.wallet_address.slice(-4)}`,
+    skills: pick.skills.map((s) => ({
+      ...s,
+      def: SKILL_MAP[s.skill_key],
+    })),
   });
 
   if (opponents.length === 0) {
@@ -39,7 +55,12 @@ export async function GET(req: NextRequest) {
       select: {
         id: true, name: true, level: true, personality_type: true,
         avatar_url: true, happiness: true, energy: true,
-        total_interactions: true, evolution_stage: true,
+        total_interactions: true, evolution_stage: true, element: true,
+        skills: {
+          where: { slot: { not: null } },
+          select: { skill_key: true, level: true, slot: true },
+          orderBy: { slot: "asc" },
+        },
         user: { select: { wallet_address: true } },
       },
       take: 10,
@@ -50,19 +71,9 @@ export async function GET(req: NextRequest) {
     }
 
     const pick = any[Math.floor(Math.random() * any.length)];
-    return NextResponse.json({
-      opponent: {
-        ...pick,
-        wallet: `${pick.user.wallet_address.slice(0, 6)}...${pick.user.wallet_address.slice(-4)}`,
-      },
-    });
+    return NextResponse.json({ opponent: formatOpponent(pick) });
   }
 
   const pick = opponents[Math.floor(Math.random() * opponents.length)];
-  return NextResponse.json({
-    opponent: {
-      ...pick,
-      wallet: `${pick.user.wallet_address.slice(0, 6)}...${pick.user.wallet_address.slice(-4)}`,
-    },
-  });
+  return NextResponse.json({ opponent: formatOpponent(pick) });
 }

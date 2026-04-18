@@ -19,6 +19,9 @@ const PetGenerate = lazy(() => import("@/components/PetGenerate"));
 const SocialGallery = lazy(() => import("@/components/SocialGallery"));
 const Adventure = lazy(() => import("@/components/Adventure"));
 const Leaderboard = lazy(() => import("@/components/Leaderboard"));
+const PremiumShop = lazy(() => import("@/components/PremiumShop"));
+const AgentDashboard = lazy(() => import("@/components/AgentDashboard"));
+const SovereigntyDashboard = lazy(() => import("@/components/SovereigntyDashboard"));
 
 // ── Grid Background ──
 function Grid() {
@@ -285,7 +288,31 @@ export default function App() {
       {section === "adventure" && (
         <WalletGate section="adventure">
           <Suspense fallback={<Loader />}>
-            <Adventure />
+            <Adventure onNavigate={setSection} />
+          </Suspense>
+        </WalletGate>
+      )}
+
+      {section === "shop" && (
+        <WalletGate section="shop">
+          <Suspense fallback={<Loader />}>
+            <PremiumShop />
+          </Suspense>
+        </WalletGate>
+      )}
+
+      {section === "agent" && (
+        <WalletGate section="agent">
+          <Suspense fallback={<Loader />}>
+            <AgentDashboard />
+          </Suspense>
+        </WalletGate>
+      )}
+
+      {section === "sovereignty" && (
+        <WalletGate section="sovereignty">
+          <Suspense fallback={<Loader />}>
+            <SovereigntyDashboard />
           </Suspense>
         </WalletGate>
       )}

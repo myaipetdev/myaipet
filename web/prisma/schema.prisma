@@ -25,6 +25,8 @@ model User {
   followers        Follow[] @relation("following")
   following        Follow[] @relation("follower")
   profile          UserProfile?
+  last_active_at   DateTime @default(now())
+  successor_wallet String?  @db.VarChar(42)
   @@map("users")
 }
 
@@ -101,6 +103,7 @@ model Pet {
   last_interaction_at   DateTime?
   created_at            DateTime  @default(now())
   updated_at            DateTime  @default(now()) @updatedAt
+  element             String    @default("normal") @db.VarChar(10)
   evolution_stage     Int       @default(0)
   evolution_name      String?   @db.VarChar(30)
   user               User                  @relation(fields: [user_id], references: [id])
@@ -115,6 +118,14 @@ model Pet {
   agent_reactions    PetAgentReaction[]
   agent_likes        Like[]
   agent_comments     Comment[]
+  platform_connections PetPlatformConnection[]
+  agent_messages       PetAgentMessage[]
+  agent_schedule       PetAgentSchedule?
+  conversations        PetConversation[]
+  persona              PetPersona?
+  soul_nft             PetSoulNft?
+  memory_nfts          MemoryNft[]
+  inheritance_events   InheritanceEvent[]
   @@index([user_id])
   @@map("pets")
 }
@@ -126,6 +137,8 @@ model PetMemory {
   content     String   @db.Text
   emotion     String   @default("calm") @db.VarChar(20)
   importance  Int      @default(1)
+  is_minted   Boolean  @default(false)
+  memory_nft_id Int?
   created_at  DateTime @default(now())
   pet Pet @relation(fields: [pet_id], references: [id])
   @@index([pet_id])
@@ -185,6 +198,8 @@ model PetAutonomousAction {
   prompt_used   String?  @db.Text
   generation_id Int?
   credits_used  Int      @default(0)
+  platform      String?  @db.VarChar(20)
+  result        Json?
   created_at    DateTime @default(now())
   pet Pet @relation(fields: [pet_id], references: [id])
   @@index([pet_id])
@@ -263,14 +278,77 @@ model Follow {
 // ── Phase 3: Evolution & Marketplace ──
 
 model PetSkill {
-  id         Int      @id @default(autoincrement())
-  pet_id     Int
-  skill_key  String   @db.VarChar(30)
-  level      Int      @default(1)
+  id          Int      @id @default(autoincrement())
+  pet_id      Int
+  skill_key   String   @db.VarChar(30)
+  level       Int      @default(1)
+  slot        Int?     // 0-3: equipped slot, null = learned but not equipped
   unlocked_at DateTime @default(now())
   pet Pet @relation(fields: [pet_id], references: [id], onDelete: Cascade)
   @@unique([pet_id, skill_key])
+  @@index([pet_id, slot])
   @@map("pet_skills")
+}
+
+model BattleHistory {
+  id              Int      @id @default(autoincrement())
+  player_pet_id   Int
+  opponent_pet_id Int?
+  opponent_name   String   @db.VarChar(50)
+  won             Boolean
+  turns           Int
+  player_hp_left  Int      @default(0)
+  exp_gained      Int      @default(0)
+  points_earned   Int      @default(0)
+  skill_drop_key  String?  @db.VarChar(30)
+  tx_hash         String?  @db.VarChar(66)
+  battle_type     String   @default("pvp") @db.VarChar(20)
+  stage_id        Int?
+  created_at      DateTime @default(now())
+  @@index([player_pet_id])
+  @@map("battle_history")
+}
+
+model PlaySession {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  date       DateTime @db.Date
+  minutes    Int      @default(0)
+  rewarded   Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+  @@unique([user_id, date])
+  @@map("play_sessions")
+}
+
+model PveProgress {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  pet_id     Int
+  stage_id   Int       @default(1)
+  stars      Int       @default(0)
+  best_turns Int?
+  best_hp_left Int?
+  cleared_at DateTime?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now()) @updatedAt
+  @@unique([user_id, pet_id, stage_id])
+  @@index([user_id])
+  @@map("pve_progress")
+}
+
+model DailyTrainingLog {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  pet_id       Int
+  date         DateTime @db.Date
+  battles      Int      @default(0)
+  exp_earned   Int      @default(0)
+  credits_spent Int     @default(0)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @default(now()) @updatedAt
+  @@unique([user_id, pet_id, date])
+  @@map("daily_training_logs")
 }
 
 model ShopItem {
@@ -337,4 +415,185 @@ model UserProfile {
   updated_at   DateTime @default(now()) @updatedAt
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
   @@map("user_profiles")
+}
+
+// ── Phase 4: AI Pet Agent System ──
+
+model PetPlatformConnection {
+  id               Int      @id @default(autoincrement())
+  pet_id           Int
+  platform         String   @db.VarChar(20)
+  is_active        Boolean  @default(true)
+  credentials      String?  @db.Text
+  config           Json?    @default("{}")
+  platform_chat_id String?  @db.VarChar(100)
+  webhook_secret   String?  @db.VarChar(64)
+  connect_code     String?  @db.VarChar(10)
+  connected_at     DateTime @default(now())
+  last_active_at   DateTime?
+  pet              Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  @@unique([pet_id, platform])
+  @@index([connect_code])
+  @@map("pet_platform_connections")
+}
+
+model PetAgentMessage {
+  id              Int      @id @default(autoincrement())
+  pet_id          Int
+  platform        String   @db.VarChar(20)
+  direction       String   @db.VarChar(10)
+  message_type    String   @db.VarChar(20) @default("text")
+  content         String   @db.Text
+  platform_msg_id String?  @db.VarChar(100)
+  chat_id         String?  @db.VarChar(100)
+  credits_used    Int      @default(0)
+  metadata        Json?
+  created_at      DateTime @default(now())
+  pet             Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  @@index([pet_id, platform])
+  @@index([chat_id])
+  @@map("pet_agent_messages")
+}
+
+model PetAgentSchedule {
+  id                      Int       @id @default(autoincrement())
+  pet_id                  Int       @unique
+  is_enabled              Boolean   @default(false)
+  daily_credit_limit      Int       @default(50)
+  credits_used_today      Int       @default(0)
+  last_reset_at           DateTime  @default(now())
+  posting_frequency       String    @default("medium") @db.VarChar(20)
+  action_cooldown_minutes Int       @default(30)
+  preferred_platform      String    @default("web") @db.VarChar(20)
+  quiet_hours_start       Int?
+  quiet_hours_end         Int?
+  last_action_at          DateTime?
+  pet                     Pet       @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  @@map("pet_agent_schedules")
+}
+
+model PetConversation {
+  id               Int       @id @default(autoincrement())
+  pet_id           Int
+  platform         String    @db.VarChar(20)
+  chat_id          String    @db.VarChar(100)
+  participant_name String?   @db.VarChar(100)
+  summary          String?   @db.Text
+  message_count    Int       @default(0)
+  last_message_at  DateTime?
+  created_at       DateTime  @default(now())
+  pet              Pet       @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  @@unique([pet_id, platform, chat_id])
+  @@index([pet_id])
+  @@map("pet_conversations")
+}
+
+// ── Phase 5: Pet Persona System ──
+
+model PetPersona {
+  id                 Int       @id @default(autoincrement())
+  pet_id             Int       @unique
+  // Onboarding answers
+  owner_speech_style String?   @db.Text
+  owner_interests    String?   @db.Text
+  owner_expressions  String?   @db.Text
+  owner_tone         String?   @db.VarChar(50)
+  owner_language     String?   @db.VarChar(20)
+  owner_bio          String?   @db.Text
+  // Chat analysis results
+  analyzed_patterns  Json?
+  sample_messages    Json?
+  vocabulary_style   String?   @db.Text
+  // Connected agent observations
+  observed_topics    Json?
+  observed_style     Json?
+  last_observed_at   DateTime?
+  // Meta
+  persona_version    Int       @default(1)
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  pet                Pet       @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  @@map("pet_personas")
+}
+
+// ── Phase 6: Web4.0 Sovereignty (Soulbound NFT) ──
+
+model PetSoulNft {
+  id                  Int      @id @default(autoincrement())
+  pet_id              Int      @unique
+  token_id            Int?
+  owner_wallet        String   @db.VarChar(42)
+  genesis_hash        String   @db.VarChar(66)
+  current_hash        String   @db.VarChar(66)
+  current_version     Int      @default(1)
+  mint_tx_hash        String?  @db.VarChar(66)
+  mint_block          Int?
+  chain               String   @default("bsc") @db.VarChar(10)
+  minted_at           DateTime?
+  last_heartbeat_at   DateTime?
+  successor_wallet    String?  @db.VarChar(42)
+  is_deceased         Boolean  @default(false)
+  inherited_from      String?  @db.VarChar(42)
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+  pet                 Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  checkpoints         PersonaCheckpoint[]
+  @@index([owner_wallet])
+  @@index([token_id])
+  @@map("pet_soul_nfts")
+}
+
+model PersonaCheckpoint {
+  id                  Int      @id @default(autoincrement())
+  soul_id             Int
+  pet_id              Int
+  version             Int
+  persona_hash        String   @db.VarChar(66)
+  persona_snapshot    Json
+  trigger_event       String   @db.VarChar(50)
+  tx_hash             String?  @db.VarChar(66)
+  block_number        Int?
+  on_chain            Boolean  @default(false)
+  created_at          DateTime @default(now())
+  soul                PetSoulNft @relation(fields: [soul_id], references: [id], onDelete: Cascade)
+  @@index([pet_id, version])
+  @@index([soul_id])
+  @@map("persona_checkpoints")
+}
+
+model MemoryNft {
+  id                  Int      @id @default(autoincrement())
+  pet_id              Int
+  memory_id           Int?
+  soul_token_id       Int?
+  memory_token_id     Int?
+  content_hash        String   @unique @db.VarChar(66)
+  memory_type         Int
+  importance          Int      @default(1)
+  title               String?  @db.VarChar(200)
+  description         String?  @db.Text
+  ipfs_cid            String?  @db.VarChar(128)
+  mint_tx_hash        String?  @db.VarChar(66)
+  chain               String   @default("bsc") @db.VarChar(10)
+  owner_wallet        String   @db.VarChar(42)
+  minted_at           DateTime?
+  created_at          DateTime @default(now())
+  pet                 Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  @@index([pet_id])
+  @@index([owner_wallet])
+  @@map("memory_nfts")
+}
+
+model InheritanceEvent {
+  id                  Int      @id @default(autoincrement())
+  pet_id              Int
+  from_wallet         String   @db.VarChar(42)
+  to_wallet           String   @db.VarChar(42)
+  reason              String   @db.VarChar(50)
+  inactive_days       Int?
+  tx_hash             String?  @db.VarChar(66)
+  claimed_at          DateTime @default(now())
+  pet                 Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  @@index([pet_id])
+  @@map("inheritance_events")
 }

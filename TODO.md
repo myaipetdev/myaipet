@@ -3,29 +3,43 @@
 ## 🔴 Next Priority: Adventure Mode V2 (Pokemon-Style Battle System)
 
 ### Design
-- [ ] Skill system redesign — 4 skill slots per pet (like Pokemon)
-- [ ] Skill types: Attack, Defense, Special, Utility
-- [ ] Skill acquisition: purchase with $PET/USDT, learn through training, rare drops
-- [ ] Skill leveling: upgrade skills with $PET (1→5 star rarity)
-- [ ] Element system: Fire/Water/Grass/Electric type advantages
+- [x] Skill system redesign — 4 skill slots per pet (like Pokemon)
+- [x] Skill types: Attack, Defense, Special, Utility
+- [x] Skill acquisition: purchase with $PET/USDT, learn through training, rare drops
+- [x] Skill leveling: upgrade skills with $PET (1→5 star rarity)
+- [x] Element system: Fire/Water/Grass/Electric type advantages
 
 ### Battle System
-- [ ] Turn-based PvP with 4-skill combat
-- [ ] Damage calculation based on pet stats + skill level + type advantage
-- [ ] HP/MP system per battle
-- [ ] Matchmaking by pet level range
-- [ ] Battle rewards: EXP, $PET, rare skill drops
+- [x] Turn-based PvP with 4-skill combat
+- [x] Damage calculation based on pet stats + skill level + type advantage
+- [x] HP/EP system per battle
+- [x] Matchmaking by pet level range
+- [x] Battle rewards: EXP, $PET, rare skill drops (5% chance)
 
 ### Growth Mechanics
-- [ ] Play time tracking — daily active time rewards
-- [ ] $PET/USDT spent → proportional growth boost
-- [ ] Premium training: USDT purchase for accelerated leveling
-- [ ] Skill shop: buy/upgrade skills with USDT or $PET
-- [ ] Daily training cap (prevent P2W abuse)
+- [x] Play time tracking — daily active time rewards (/api/playtime)
+- [x] $PET/USDT spent → proportional growth boost (1.0x→1.5x)
+- [x] Premium training: USDT purchase for accelerated leveling
+- [x] Skill shop: buy/upgrade skills with USDT or $PET (Marketplace Skills tab)
+- [x] Daily training cap (30 battles/day, 1500 exp/day)
+
+### Adventure Modes
+- [x] Wild Encounter — meet wild pets, skill discovery, credit drops
+- [x] Explore — treasure/training/rest locations with real rewards
+- [x] Gym Challenge — timing minigame for stat training
+
+### PvE Story Mode
+- [x] 30 stages across 6 regions (Grasslands→Volcano→Ocean→Storm→Shadow→Dragon)
+- [x] Boss progression: Gym Leaders → Elite → Dragon King Bahamut (Lv.60)
+- [x] 3-star rating system (HP remaining + turn count)
+- [x] First-clear guaranteed skill drops per boss
+- [x] Stage map UI with region headers and star progress
+- [x] Boss intro dialogue + victory/defeat dialogue
+- [x] DB: pve_progress table with best_turns, best_hp_left tracking
 
 ### On-chain
 - [ ] Skill NFTs (PETContent) — rare skills as tradeable NFTs
-- [ ] Battle results on-chain (PETActivity)
+- [ ] Battle results on-chain (PETActivity) — BattleHistory table ready
 - [ ] Skill upgrade history on-chain
 
 ---
@@ -38,10 +52,10 @@
 - [ ] USDT purchase end-to-end test
 - [ ] Coinbase Onramp full approval (pending CDP review)
 
-### Adventure Modes (Currently Coming Soon)
-- [ ] Wild Encounter — redesign with balanced rewards
-- [ ] Explore — redesign with skill discovery
-- [ ] Gym Challenge — redesign as skill training ground
+### Adventure Modes (✅ Implemented in V2)
+- [x] Wild Encounter — API-backed with real rewards + skill drops
+- [x] Explore — 3-location reveal with treasure/training/rest
+- [x] Gym Challenge — timing minigame with API rewards
 
 ### Product
 - [ ] Custom domain (myaipet.com)

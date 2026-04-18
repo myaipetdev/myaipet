@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import Icon from "@/components/Icon";
 
 const LOGO_SRC = "/mascot.jpg";
 
@@ -10,8 +11,8 @@ const NAV_ITEMS = [
   { key: "my pet", label: "My Pet" },
   { key: "create", label: "My Contents" },
   { key: "community", label: "Community" },
-  { key: "adventure", label: "Adventure" },
-  { key: "leaderboard", label: "Ranking" },
+  { key: "agent", label: "Agent" },
+  { key: "sovereignty", label: "Sovereignty" },
 ];
 
 export default function Nav({ section, setSection, credits }: any) {
@@ -139,7 +140,7 @@ export default function Nav({ section, setSection, credits }: any) {
                   transition: "all 0.2s ease",
                 }}
               >
-                🪙 {credits}
+                <Icon name="coin" size={14} /> {credits}
               </span>
               {balanceOpen && (
                 <div style={{

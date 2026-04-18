@@ -1,0 +1,54 @@
+{
+  "family": "petclaw-web",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "petclaw-web",
+      "image": "ECR_IMAGE_URI",
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 10
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/petclaw-web",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "secrets": [
+        { "name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2::secret:petclaw/database-url" },
+        { "name": "GROK_API_KEY", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2::secret:petclaw/grok-api-key" },
+        { "name": "JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2::secret:petclaw/jwt-secret" },
+        { "name": "FAL_API_KEY", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2::secret:petclaw/fal-api-key" },
+        { "name": "AGENT_ENCRYPTION_KEY", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2::secret:petclaw/agent-encryption-key" }
+      ],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "PORT", "value": "3000" },
+        { "name": "STORAGE_PROVIDER", "value": "s3" },
+        { "name": "AWS_S3_BUCKET", "value": "petclaw-uploads" },
+        { "name": "AWS_S3_REGION", "value": "ap-northeast-2" },
+        { "name": "NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID", "value": "160fa3892ed87b298703795af8e6fc2a" },
+        { "name": "NEXT_PUBLIC_APP_URL", "value": "https://myaipet.com" },
+        { "name": "RPC_BASE", "value": "https://mainnet.base.org" }
+      ]
+    }
+  ]
+}

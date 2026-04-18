@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { LOGO_SRC } from "./Nav";
+import Icon from "@/components/Icon";
 
 const FLOAT_PETS = [
   { emoji: "🐱", x: 8, y: 18, delay: 0, size: 38 },
@@ -111,10 +112,10 @@ function Particles() {
 }
 
 const PILLARS = [
-  { icon: "🎬", label: "AI Video Engine", desc: "Personalized content that earns" },
-  { icon: "🧬", label: "Evolve & Equip", desc: "Skills, skins & marketplace" },
-  { icon: "💬", label: "Social Circle", desc: "Life sharing & network effects" },
-  { icon: "🏛️", label: "Memorial System", desc: "Eternal on-chain legacy" },
+  { icon: <Icon name="film-reel" size={20} />, label: "AI Video Engine", desc: "Personalized content that earns" },
+  { icon: <Icon name="sparkling" size={20} />, label: "Evolve & Equip", desc: "Skills, skins & marketplace" },
+  { icon: <Icon name="chat" size={20} />, label: "Social Circle", desc: "Life sharing & network effects" },
+  { icon: <Icon name="trophy" size={20} />, label: "Memorial System", desc: "Eternal on-chain legacy" },
 ];
 
 export default function Hero({ onAdopt, onExplore, txToday }: any) {
@@ -241,7 +242,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         color: "#b45309", marginBottom: 18, position: "relative", zIndex: 2,
         letterSpacing: "0.04em",
       }}>
-        <span>🐾 Raise</span>
+        <span><Icon name="paw" size={16} /> Raise</span>
         <span style={{ color: "rgba(26,26,46,0.15)" }}>·</span>
         <span>Bond</span>
         <span style={{ color: "rgba(26,26,46,0.15)" }}>·</span>
@@ -347,7 +348,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
       `}</style>
       <div className="hero-cta" style={{ display: "flex", gap: 14, justifyContent: "center", position: "relative", zIndex: 2 }}>
         <button onClick={onAdopt} className="hero-cta-primary">
-          🐾 Start AI-Pet
+          <Icon name="paw" size={16} /> Start AI-Pet
         </button>
         <button onClick={onExplore} className="hero-cta-secondary">
           Explore Community
@@ -426,8 +427,8 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           gap: 16,
         }}>
           {[
-            { icon: "🐾", title: "Raise", desc: "Feed, play, and train your AI pet. Watch them grow from Baby to Legendary." },
-            { icon: "✨", title: "Create", desc: "Generate stunning AI images and videos of your pet in any scene or style." },
+            { icon: <Icon name="paw" size={28} />, title: "Raise", desc: "Feed, play, and train your AI pet. Watch them grow from Baby to Legendary." },
+            { icon: <Icon name="sparkling" size={28} />, title: "Create", desc: "Generate stunning AI images and videos of your pet in any scene or style." },
             { icon: "💎", title: "Earn", desc: "Climb the leaderboard, farm Airdrop Points, and unlock exclusive rewards." },
             { icon: "🏆", title: "Collect", desc: "Redeem points for real merchandise: mugs, hoodies, figures & more." },
           ].map((card) => (
@@ -567,7 +568,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             background: "rgba(255,255,255,0.7)", border: "1px solid rgba(245,158,11,0.15)",
             marginBottom: 20,
           }}>
-            <span style={{ fontSize: 14 }}>✉️</span>
+            <Icon name="chat" size={16} />
             <span style={{ fontFamily: "mono", fontSize: 11, color: "#b45309", fontWeight: 600 }}>
               Join us now
             </span>

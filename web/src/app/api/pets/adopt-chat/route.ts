@@ -112,6 +112,23 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Update user last_active_at
+    await prisma.user
+      .update({
+        where: { id: user.id },
+        data: { last_active_at: new Date() },
+      })
+      .catch(() => {});
+
+    // Initialize Web4 Soul NFT (fire-and-forget on-chain mint)
+    try {
+      const { initializeSoul } = await import("@/lib/services/soul");
+      await initializeSoul(pet.id, user.wallet_address);
+    } catch (e) {
+      console.error("Soul initialization error:", e);
+      // Don't block adoption
+    }
+
     return NextResponse.json(pet, { status: 201 });
   }
 

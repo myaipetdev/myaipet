@@ -1,16 +1,14 @@
 import { getUser } from "@/lib/auth";
-import { put } from "@vercel/blob";
+import { uploadFile } from "@/lib/storage";
 import { NextRequest, NextResponse } from "next/server";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 export async function POST(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  console.log("Upload auth header present:", !!authHeader, authHeader?.slice(0, 20));
   const user = await getUser(req);
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized", hasAuth: !!authHeader }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const formData = await req.formData();
@@ -38,13 +36,11 @@ export async function POST(req: NextRequest) {
     const timestamp = Date.now();
     const ext = file.name.split(".").pop() || "png";
     const filename = `avatars/${user.id}/${timestamp}.${ext}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-    const blob = await put(filename, file, {
-      access: "public",
-      addRandomSuffix: true,
-    });
+    const result = await uploadFile(filename, buffer, file.type);
 
-    return NextResponse.json({ url: blob.url });
+    return NextResponse.json({ url: result.url });
   } catch (err: any) {
     console.error("Upload error:", err);
     return NextResponse.json(
