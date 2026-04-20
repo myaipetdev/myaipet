@@ -15,11 +15,8 @@ function makePrisma(): PrismaClient {
   }
 
   // Standard PostgreSQL (local / RDS)
-  return new PrismaClient({
-    datasources: {
-      db: { url: process.env.DATABASE_URL! },
-    },
-  } as any);
+  // DATABASE_URL is read automatically from env by Prisma
+  return new PrismaClient();
 }
 
 const globalForPrisma = globalThis as unknown as { prisma: ReturnType<typeof makePrisma> };
