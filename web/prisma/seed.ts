@@ -13,7 +13,9 @@ if (USE_NEON) {
   prisma = new PrismaClient({ adapter } as any);
 } else {
   prisma = new PrismaClient({
-    datasourceUrl: process.env.DATABASE_URL,
+    datasources: {
+      db: { url: process.env.DATABASE_URL! },
+    },
   } as any);
 }
 
