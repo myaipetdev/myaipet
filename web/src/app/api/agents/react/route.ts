@@ -29,7 +29,7 @@ export async function GET() {
       return NextResponse.json({ reactions: 0 });
     }
 
-    const result = await generatePetReactions(recentGens.map(g => g.id));
+    const result = await generatePetReactions(recentGens.map((g: any) => g.id));
     return NextResponse.json(result);
   } catch (error: any) {
     console.error("Agent lazy react error:", error);
