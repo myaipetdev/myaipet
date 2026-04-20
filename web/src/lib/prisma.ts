@@ -1,10 +1,11 @@
 import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const IS_NEON = (process.env.DATABASE_URL || "").includes("neon.tech");
 
 function makePrisma(): PrismaClient {
   if (IS_NEON) {
-    // Dynamic import to avoid bundling ws at build time
+    // Neon serverless (WebSocket-based)
     const { PrismaNeon } = require("@prisma/adapter-neon");
     const { neonConfig } = require("@neondatabase/serverless");
     if (typeof globalThis.WebSocket === "undefined") {
@@ -14,9 +15,9 @@ function makePrisma(): PrismaClient {
     return new PrismaClient({ adapter } as any);
   }
 
-  // Standard PostgreSQL (local / RDS)
-  // DATABASE_URL is read automatically from env by Prisma
-  return new PrismaClient();
+  // Standard PostgreSQL (local / RDS) via pg adapter
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+  return new PrismaClient({ adapter } as any);
 }
 
 const globalForPrisma = globalThis as unknown as { prisma: ReturnType<typeof makePrisma> };

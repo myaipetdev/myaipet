@@ -15,6 +15,7 @@
     "@fal-ai/client": "^1.9.4",
     "@neondatabase/serverless": "^1.0.2",
     "@prisma/adapter-neon": "^7.5.0",
+    "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.5.0",
     "@rainbow-me/rainbowkit": "^2.2.10",
     "@react-three/drei": "^10.7.7",
@@ -25,6 +26,7 @@
     "ethers": "^6.16.0",
     "jose": "^6.2.1",
     "next": "16.1.6",
+    "pg": "^8.20.0",
     "prisma": "^7.5.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -38,9 +40,9 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
     "@types/ws": "^8.5.0",
     "dotenv": "^16.4.0",
+    "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "typescript": "^5"
   }
