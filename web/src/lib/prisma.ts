@@ -3,7 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 const IS_NEON = (process.env.DATABASE_URL || "").includes("neon.tech");
 
-function makePrisma(): PrismaClient {
+function makePrisma(): any {
   if (IS_NEON) {
     // Neon serverless (WebSocket-based)
     const { PrismaNeon } = require("@prisma/adapter-neon");
