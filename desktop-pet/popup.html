@@ -5,44 +5,191 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      width: 320px;
+      width: 360px;
       font-family: 'Segoe UI', -apple-system, sans-serif;
-      background: #0f0f1a;
+      background: #0a0a14;
       color: #e0e0e0;
-      padding: 16px;
+      overflow-x: hidden;
     }
 
+    /* ── Header ── */
     .header {
-      display: flex; align-items: center; gap: 12px;
-      margin-bottom: 16px; padding-bottom: 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 16px 14px;
+      background: linear-gradient(135deg, rgba(251,191,36,0.08), rgba(139,92,246,0.06));
+      border-bottom: 1px solid rgba(255,255,255,0.04);
     }
 
     .pet-avatar {
-      width: 48px; height: 48px; border-radius: 14px;
-      border: 2px solid rgba(251,191,36,0.4);
+      width: 56px; height: 56px; border-radius: 16px;
+      border: 2px solid rgba(251,191,36,0.5);
       display: flex; align-items: center; justify-content: center;
-      font-size: 28px; background: rgba(251,191,36,0.08);
-      overflow: hidden;
+      font-size: 32px; background: rgba(251,191,36,0.08);
+      overflow: hidden; position: relative;
+      box-shadow: 0 0 20px rgba(251,191,36,0.15);
     }
 
     .pet-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-    .pet-info h2 {
-      font-size: 16px; font-weight: 700; color: #fff;
-      margin-bottom: 2px;
-    }
-
-    .pet-info .meta {
-      font-size: 11px; color: #888;
-      display: flex; gap: 8px;
-    }
-
+    .pet-info { flex: 1; }
+    .pet-info h2 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 3px; }
+    .pet-info .meta { display: flex; gap: 6px; flex-wrap: wrap; }
     .pet-info .meta span {
-      padding: 1px 6px; border-radius: 6px;
-      background: rgba(255,255,255,0.05);
+      font-size: 10px; padding: 2px 7px; border-radius: 6px;
+      background: rgba(255,255,255,0.06);
     }
 
+    .evolution-badge {
+      background: linear-gradient(135deg, #f59e0b, #ef4444) !important;
+      color: #fff !important; font-weight: 700;
+    }
+
+    .mood-badge { display: flex; align-items: center; gap: 3px; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex; padding: 0 16px; gap: 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      background: rgba(0,0,0,0.3);
+    }
+
+    .tab {
+      flex: 1; padding: 10px 0; border: none; background: none;
+      color: #666; font-size: 11px; font-weight: 600; cursor: pointer;
+      font-family: inherit; border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab.active { color: #f59e0b; border-bottom-color: #f59e0b; }
+    .tab:hover { color: #ccc; }
+
+    /* ── Tab Content ── */
+    .tab-content { display: none; padding: 14px 16px; }
+    .tab-content.active { display: block; }
+
+    /* ── Points Dashboard ── */
+    .points-hero {
+      text-align: center; padding: 16px;
+      background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(139,92,246,0.08));
+      border-radius: 14px; margin-bottom: 12px;
+      border: 1px solid rgba(251,191,36,0.12);
+    }
+
+    .points-hero .total { font-size: 32px; font-weight: 800; color: #f59e0b; }
+    .points-hero .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.1em; }
+
+    .points-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;
+    }
+
+    .point-card {
+      background: rgba(255,255,255,0.03); padding: 10px;
+      border-radius: 10px; border: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .point-card .icon { font-size: 16px; margin-bottom: 2px; }
+    .point-card .value { font-size: 16px; font-weight: 700; }
+    .point-card .name { font-size: 10px; color: #888; }
+
+    .stats-row {
+      display: flex; justify-content: space-between;
+      font-size: 10px; color: #666; padding: 8px 0;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .stats-row span strong { color: #e0e0e0; }
+
+    /* ── Evolution Panel ── */
+    .evo-stage {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(255,255,255,0.03); padding: 12px;
+      border-radius: 12px; margin-bottom: 10px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .evo-icon { font-size: 36px; }
+    .evo-info h3 { font-size: 13px; color: #fff; margin-bottom: 2px; }
+    .evo-info p { font-size: 10px; color: #888; }
+
+    .evo-progress {
+      width: 100%; height: 8px; background: rgba(255,255,255,0.06);
+      border-radius: 4px; overflow: hidden; margin-top: 6px;
+    }
+
+    .evo-progress-fill {
+      height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, #f59e0b, #ef4444);
+      transition: width 0.5s ease;
+    }
+
+    .evo-stages {
+      display: flex; justify-content: space-between; margin-top: 12px;
+      font-size: 10px; color: #666;
+    }
+
+    .evo-stages .stage { text-align: center; flex: 1; }
+    .evo-stages .stage.current { color: #f59e0b; font-weight: 700; }
+    .evo-stages .stage.locked { opacity: 0.4; }
+    .evo-stages .stage .stage-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+
+    /* ── Emotion Panel ── */
+    .emotion-display {
+      text-align: center; padding: 16px;
+      background: rgba(255,255,255,0.03); border-radius: 14px;
+      margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .emotion-display .big-emoji { font-size: 48px; margin-bottom: 6px; }
+    .emotion-display .emotion-name { font-size: 14px; font-weight: 700; color: #fff; }
+    .emotion-display .emotion-desc { font-size: 11px; color: #888; }
+
+    .emotion-bars { margin-top: 12px; }
+
+    .emotion-bar {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .emotion-bar .label { font-size: 11px; color: #999; width: 70px; }
+    .emotion-bar .bar {
+      flex: 1; height: 6px; background: rgba(255,255,255,0.06);
+      border-radius: 3px; overflow: hidden;
+    }
+
+    .emotion-bar .bar-fill {
+      height: 100%; border-radius: 3px; transition: width 0.5s ease;
+    }
+
+    .emotion-bar .val { font-size: 10px; color: #888; width: 30px; text-align: right; }
+
+    /* ── Mini-Game ── */
+    .game-area {
+      background: rgba(255,255,255,0.03); border-radius: 14px;
+      padding: 14px; text-align: center;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .game-title { font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+
+    .game-canvas {
+      width: 100%; height: 180px; background: #0f0f1a;
+      border-radius: 10px; margin-bottom: 10px; position: relative;
+      overflow: hidden; border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .game-btn {
+      padding: 8px 20px; border: none; border-radius: 10px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff; font-size: 12px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+    }
+
+    .game-btn:hover { filter: brightness(1.1); }
+    .game-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .game-score { font-size: 11px; color: #888; margin-top: 6px; }
+
+    /* ── Settings ── */
     .section { margin-bottom: 14px; }
 
     .section-title {
@@ -51,13 +198,7 @@
       margin-bottom: 6px;
     }
 
-    .input-group {
-      display: flex; gap: 6px; margin-bottom: 8px;
-    }
-
-    label {
-      font-size: 11px; color: #999; margin-bottom: 3px; display: block;
-    }
+    label { font-size: 11px; color: #999; margin-bottom: 3px; display: block; }
 
     input, select {
       width: 100%; padding: 8px 10px; border: 1px solid rgba(255,255,255,0.08);
@@ -66,9 +207,30 @@
       outline: none; transition: border-color 0.2s;
     }
 
-    input:focus, select:focus {
-      border-color: rgba(251,191,36,0.4);
+    input:focus, select:focus { border-color: rgba(251,191,36,0.4); }
+
+    .toggle-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0;
     }
+
+    .toggle-row .label { font-size: 12px; color: #ccc; }
+
+    .toggle {
+      width: 36px; height: 20px; background: rgba(255,255,255,0.1);
+      border-radius: 10px; position: relative; cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle.on { background: #f59e0b; }
+
+    .toggle::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: white; transition: transform 0.2s;
+    }
+
+    .toggle.on::after { transform: translateX(16px); }
 
     .btn {
       width: 100%; padding: 10px; border: none; border-radius: 10px;
@@ -77,8 +239,7 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      color: #fff;
+      background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff;
     }
     .btn-primary:hover { filter: brightness(1.1); }
 
@@ -89,89 +250,261 @@
     }
     .btn-secondary:hover { background: rgba(255,255,255,0.08); }
 
-    .status {
+    .btn-danger {
+      background: rgba(239,68,68,0.1);
+      color: #f87171; border: 1px solid rgba(239,68,68,0.2);
+      margin-top: 6px;
+    }
+
+    #status {
       font-size: 11px; color: #4ade80; text-align: center;
       padding: 6px; display: none;
     }
 
-    .status.error { color: #f87171; }
+    #status.error { color: #f87171; }
 
+    /* ── Notification Log ── */
+    .notif-list { max-height: 200px; overflow-y: auto; }
+
+    .notif-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+      font-size: 11px;
+    }
+
+    .notif-item .icon { font-size: 16px; flex-shrink: 0; }
+    .notif-item .text { color: #ccc; flex: 1; }
+    .notif-item .time { color: #555; font-size: 9px; flex-shrink: 0; }
+
+    /* ── Footer ── */
     .footer {
-      text-align: center; padding-top: 10px;
-      border-top: 1px solid rgba(255,255,255,0.06);
+      text-align: center; padding: 10px 16px;
+      border-top: 1px solid rgba(255,255,255,0.04);
       font-size: 10px; color: #444;
     }
 
     .footer a { color: #f59e0b; text-decoration: none; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
   </style>
 </head>
 <body>
+  <!-- Header -->
   <div class="header">
     <div class="pet-avatar" id="avatar">🐾</div>
     <div class="pet-info">
       <h2 id="petName">My Pet</h2>
       <div class="meta">
         <span id="petLevel">Lv.1</span>
+        <span class="evolution-badge" id="evoStage">Egg</span>
+        <span class="mood-badge" id="petMood">😊 Happy</span>
         <span id="petPersonality">playful</span>
-        <span id="petStatus">● online</span>
       </div>
     </div>
   </div>
 
-  <!-- Points Dashboard -->
-  <div class="section" style="background: linear-gradient(135deg, rgba(251,191,36,0.08), rgba(139,92,246,0.05)); border-radius: 12px; padding: 12px; margin-bottom: 14px; border: 1px solid rgba(251,191,36,0.15);">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
-      <div class="section-title" style="margin:0">Airdrop Points</div>
-      <div id="totalPoints" style="font-size:20px; font-weight:800; color:#f59e0b; font-family:'Space Grotesk',monospace">0</div>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="points">Points</button>
+    <button class="tab" data-tab="evolution">Evolution</button>
+    <button class="tab" data-tab="emotions">Emotions</button>
+    <button class="tab" data-tab="game">Game</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </div>
+
+  <!-- Points Tab -->
+  <div class="tab-content active" id="tab-points">
+    <div class="points-hero">
+      <div class="label">Airdrop Points</div>
+      <div class="total" id="totalPoints">0</div>
     </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:10px">
-      <div style="background:rgba(0,0,0,0.2); padding:6px 8px; border-radius:8px">
-        <div style="color:#888">💬 Chat</div>
-        <div id="chatPoints" style="color:#4ade80; font-weight:700; font-size:13px">0</div>
+    <div class="points-grid">
+      <div class="point-card">
+        <div class="icon">💬</div>
+        <div class="value" id="chatPoints" style="color:#4ade80">0</div>
+        <div class="name">Chat</div>
       </div>
-      <div style="background:rgba(0,0,0,0.2); padding:6px 8px; border-radius:8px">
-        <div style="color:#888">💓 Heartbeat</div>
-        <div id="heartbeatPoints" style="color:#60a5fa; font-weight:700; font-size:13px">0</div>
+      <div class="point-card">
+        <div class="icon">💓</div>
+        <div class="value" id="heartbeatPoints" style="color:#60a5fa">0</div>
+        <div class="name">Heartbeat</div>
       </div>
-      <div style="background:rgba(0,0,0,0.2); padding:6px 8px; border-radius:8px">
-        <div style="color:#888">⚡ Skills</div>
-        <div id="skillPoints" style="color:#a78bfa; font-weight:700; font-size:13px">0</div>
+      <div class="point-card">
+        <div class="icon">⚡</div>
+        <div class="value" id="skillPoints" style="color:#a78bfa">0</div>
+        <div class="name">Skills</div>
       </div>
-      <div style="background:rgba(0,0,0,0.2); padding:6px 8px; border-radius:8px">
-        <div style="color:#888">🌐 Browsing</div>
-        <div id="browsingPoints" style="color:#f472b6; font-weight:700; font-size:13px">0</div>
+      <div class="point-card">
+        <div class="icon">🌐</div>
+        <div class="value" id="browsingPoints" style="color:#f472b6">0</div>
+        <div class="name">Browsing</div>
       </div>
     </div>
-    <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:10px; color:#666">
-      <span>🔥 Streak: <span id="streak" style="color:#f59e0b">0</span> days</span>
-      <span>💬 Chats: <span id="chatCount" style="color:#4ade80">0</span></span>
-      <span>⏱️ <span id="uptime" style="color:#60a5fa">0</span>m online</span>
+    <div class="points-grid">
+      <div class="point-card">
+        <div class="icon">🎮</div>
+        <div class="value" id="gamePoints" style="color:#fbbf24">0</div>
+        <div class="name">Mini-Games</div>
+      </div>
+      <div class="point-card">
+        <div class="icon">🧬</div>
+        <div class="value" id="evolutionPoints" style="color:#34d399">0</div>
+        <div class="name">Evolution</div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <span>🔥 Streak: <strong id="streak">0</strong> days</span>
+      <span>💬 Chats: <strong id="chatCount">0</strong></span>
+      <span>⏱️ <strong id="uptime">0</strong>m online</span>
+    </div>
+
+    <!-- Notifications -->
+    <div class="section-title" style="margin-top:12px">Recent Activity</div>
+    <div class="notif-list" id="notifList">
+      <div class="notif-item">
+        <div class="icon">🎉</div>
+        <div class="text">Extension upgraded to v2.0!</div>
+        <div class="time">now</div>
+      </div>
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-title">Connection</div>
-    <label>API Server URL</label>
-    <input type="text" id="apiUrl" placeholder="http://localhost:3000" />
-    <div style="height:6px"></div>
-    <label>Pet ID</label>
-    <input type="number" id="petId" placeholder="1" min="1" />
+  <!-- Evolution Tab -->
+  <div class="tab-content" id="tab-evolution">
+    <div class="evo-stage" id="evoCurrentStage">
+      <div class="evo-icon" id="evoCurrentIcon">🥚</div>
+      <div class="evo-info">
+        <h3 id="evoCurrentName">Egg</h3>
+        <p id="evoCurrentDesc">Your pet is just beginning its journey...</p>
+        <div class="evo-progress">
+          <div class="evo-progress-fill" id="evoProgressBar" style="width:0%"></div>
+        </div>
+        <p id="evoProgressText" style="font-size:9px;color:#888;margin-top:4px">0 / 100 XP to next stage</p>
+      </div>
+    </div>
+
+    <div class="evo-stages" id="evoStages">
+      <div class="stage current"><span class="stage-icon">🥚</span>Egg</div>
+      <div class="stage locked"><span class="stage-icon">🐣</span>Baby</div>
+      <div class="stage locked"><span class="stage-icon">🐾</span>Junior</div>
+      <div class="stage locked"><span class="stage-icon">⚡</span>Teen</div>
+      <div class="stage locked"><span class="stage-icon">🔥</span>Adult</div>
+      <div class="stage locked"><span class="stage-icon">👑</span>Legend</div>
+    </div>
+
+    <div class="section" style="margin-top:14px">
+      <div class="section-title">Evolution Perks</div>
+      <div id="evoPerks" style="font-size:11px;color:#888">
+        Unlock perks by evolving your pet!
+      </div>
+    </div>
   </div>
 
-  <div class="section">
-    <div class="section-title">Behavior</div>
-    <label>Auto-talk interval (seconds)</label>
-    <input type="number" id="autoInterval" placeholder="90" min="15" max="600" />
+  <!-- Emotions Tab -->
+  <div class="tab-content" id="tab-emotions">
+    <div class="emotion-display">
+      <div class="big-emoji" id="emotionEmoji">😊</div>
+      <div class="emotion-name" id="emotionName">Happy</div>
+      <div class="emotion-desc" id="emotionDesc">Your pet is feeling great!</div>
+    </div>
+
+    <div class="emotion-bars">
+      <div class="emotion-bar">
+        <div class="label">😊 Happiness</div>
+        <div class="bar"><div class="bar-fill" id="barHappiness" style="width:80%;background:#4ade80"></div></div>
+        <div class="val" id="valHappiness">80</div>
+      </div>
+      <div class="emotion-bar">
+        <div class="label">⚡ Energy</div>
+        <div class="bar"><div class="bar-fill" id="barEnergy" style="width:60%;background:#fbbf24"></div></div>
+        <div class="val" id="valEnergy">60</div>
+      </div>
+      <div class="emotion-bar">
+        <div class="label">🍖 Hunger</div>
+        <div class="bar"><div class="bar-fill" id="barHunger" style="width:40%;background:#f87171"></div></div>
+        <div class="val" id="valHunger">40</div>
+      </div>
+      <div class="emotion-bar">
+        <div class="label">❤️ Affection</div>
+        <div class="bar"><div class="bar-fill" id="barAffection" style="width:70%;background:#f472b6"></div></div>
+        <div class="val" id="valAffection">70</div>
+      </div>
+      <div class="emotion-bar">
+        <div class="label">🧠 Curiosity</div>
+        <div class="bar"><div class="bar-fill" id="barCuriosity" style="width:50%;background:#a78bfa"></div></div>
+        <div class="val" id="valCuriosity">50</div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;display:flex;gap:6px">
+      <button class="btn btn-secondary" id="feedBtn" style="flex:1">🍖 Feed</button>
+      <button class="btn btn-secondary" id="playBtn" style="flex:1">🎾 Play</button>
+      <button class="btn btn-secondary" id="petBtn" style="flex:1">💕 Pet</button>
+    </div>
   </div>
 
-  <div id="status" class="status"></div>
+  <!-- Game Tab -->
+  <div class="tab-content" id="tab-game">
+    <div class="game-area">
+      <div class="game-title">🎯 Treat Catcher</div>
+      <div class="game-canvas" id="gameCanvas"></div>
+      <button class="game-btn" id="startGameBtn">▶ Start Game</button>
+      <div class="game-score">
+        High Score: <strong id="highScore">0</strong> |
+        Points earned: <strong id="gamePointsEarned">0</strong>
+      </div>
+    </div>
+  </div>
 
-  <button class="btn btn-primary" id="saveBtn">Save & Connect</button>
-  <button class="btn btn-secondary" id="exportBtn">📦 Export SOUL Data</button>
-  <button class="btn btn-secondary" id="refreshBtn">🔄 Refresh Pet Info</button>
+  <!-- Settings Tab -->
+  <div class="tab-content" id="tab-settings">
+    <div class="section">
+      <div class="section-title">Connection</div>
+      <label>API Server URL</label>
+      <input type="text" id="apiUrl" placeholder="http://localhost:3000" />
+      <div style="height:6px"></div>
+      <label>Pet ID</label>
+      <input type="number" id="petId" placeholder="1" min="1" />
+    </div>
+
+    <div class="section">
+      <div class="section-title">Behavior</div>
+      <label>Auto-talk interval (seconds)</label>
+      <input type="number" id="autoInterval" placeholder="90" min="15" max="600" />
+    </div>
+
+    <div class="section">
+      <div class="section-title">Preferences</div>
+      <div class="toggle-row">
+        <span class="label">🔔 Notifications</span>
+        <div class="toggle on" id="toggleNotifs" data-key="notifications"></div>
+      </div>
+      <div class="toggle-row">
+        <span class="label">✨ Particle Effects</span>
+        <div class="toggle on" id="toggleParticles" data-key="particles"></div>
+      </div>
+      <div class="toggle-row">
+        <span class="label">🗣️ Auto Talk</span>
+        <div class="toggle on" id="toggleAutoTalk" data-key="autoTalk"></div>
+      </div>
+      <div class="toggle-row">
+        <span class="label">🎵 Sound Effects</span>
+        <div class="toggle" id="toggleSound" data-key="sound"></div>
+      </div>
+    </div>
+
+    <div id="status"></div>
+
+    <button class="btn btn-primary" id="saveBtn">Save & Connect</button>
+    <button class="btn btn-secondary" id="exportBtn">📦 Export SOUL Data</button>
+    <button class="btn btn-secondary" id="refreshBtn">🔄 Refresh Pet Info</button>
+    <button class="btn btn-danger" id="resetBtn">🗑️ Reset Points</button>
+  </div>
 
   <div class="footer">
-    <p>MY AI PET — PetClaw v1</p>
+    <p>MY AI PET v2.0 — PetClaw</p>
     <p><a href="http://localhost:3000" target="_blank">Open Dashboard</a></p>
   </div>
 
