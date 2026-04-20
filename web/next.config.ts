@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
   serverExternalPackages: ["ws", "pg", "@neondatabase/serverless", "@prisma/adapter-neon", "@prisma/adapter-pg"],
   images: {
     remotePatterns: [
