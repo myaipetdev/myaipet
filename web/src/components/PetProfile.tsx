@@ -5,6 +5,7 @@ import { useConfig } from "wagmi";
 import { api, getAuthHeaders } from "@/lib/api";
 import { signAction } from "@/lib/signAction";
 import { useRecordAdoption, isPETActivityEnabled, useCheckBnbBalance } from "@/hooks/usePETActivity";
+import EnhancedOnboarding from "@/components/EnhancedOnboarding";
 
 const PET_SPECIES = ["Cat","Dog","Parrot","Turtle","Hamster","Rabbit","Fox","Pomeranian"];
 const PET_EMOJIS = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
@@ -825,6 +826,7 @@ export default function PetProfile() {
   const [activePet, setActivePet] = useState<any>(null);
   const [petStatus, setPetStatus] = useState<any>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState<any>(null);
   const [chainToast, setChainToast] = useState<string | null>(null);
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const showError = (msg: string) => { setErrorToast(msg); setTimeout(() => setErrorToast(null), 4000); };
@@ -1039,8 +1041,18 @@ export default function PetProfile() {
         }}>
           Adopt Your First Pet
         </button>
+        {showOnboarding && (
+          <div style={{ position:"fixed", inset:0, zIndex:200, background:"rgba(0,0,0,0.7)", backdropFilter:"blur(8px)", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+            <EnhancedOnboarding
+              pet={showOnboarding}
+              onComplete={() => setShowOnboarding(null)}
+              onSkip={() => setShowOnboarding(null)}
+            />
+          </div>
+        )}
         {showCreate && <CreatePetModal onClose={() => setShowCreate(false)} onCreated={async (pet: any) => {
           setPets([pet]); setActivePet(pet); loadPetStatus(pet.id);
+          setShowOnboarding(pet); // Show enhanced onboarding after adoption
           if (isPETActivityEnabled()) {
             try {
               setChainToast("⛓️ 온체인 기록 중...");

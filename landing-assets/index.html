@@ -1,0 +1,1629 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PetClaw — your AI companion, on-chain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --gold: #f59e0b;
+    --gold-soft: #fbbf24;
+    --gold-deep: #b45309;
+    --navy: #0a0a14;
+    --navy-2: #14141f;
+    --navy-3: #1a1a2e;
+    --cream: #faf5ed;
+    --cream-2: #f2e9d8;
+    --ink: #12121c;
+    --muted: #6b6876;
+    --line: rgba(16,16,28,0.08);
+    --line-dk: rgba(255,255,255,0.08);
+    --serif: 'Space Grotesk', system-ui, sans-serif;
+    --sans: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--cream);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+  p { margin: 0; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: 0; background: none; }
+
+  /* NAV */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    padding: 18px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: background .3s ease, backdrop-filter .3s ease, color .3s ease;
+  }
+  .nav.scrolled {
+    background: rgba(250, 245, 237, 0.78);
+    backdrop-filter: saturate(180%) blur(18px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav.dark { color: var(--cream); }
+  .nav.dark.scrolled { background: rgba(10,10,20,0.72); border-bottom-color: var(--line-dk); }
+  .nav-brand { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-weight: 600; font-size: 18px; }
+  .nav-logo {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: radial-gradient(circle at 30% 30%, var(--gold-soft), var(--gold) 60%, var(--gold-deep));
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3), 0 4px 14px rgba(245,158,11,0.35);
+    position: relative;
+  }
+  .nav-logo::after {
+    content: ""; position: absolute; inset: 7px; border-radius: 4px;
+    background: radial-gradient(circle at 50% 40%, rgba(255,255,255,0.65), transparent 60%);
+  }
+  .nav-links { display: flex; gap: 28px; font-size: 14px; font-weight: 500; opacity: 0.85; }
+  .nav-links a:hover { opacity: 1; color: var(--gold); }
+  .nav-cta {
+    padding: 9px 16px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    background: var(--ink); color: var(--cream); transition: transform .2s ease, background .2s;
+  }
+  .nav.dark .nav-cta { background: var(--gold); color: var(--navy); }
+  .nav-cta:hover { transform: translateY(-1px); }
+
+  /* UTIL */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--gold-deep); display: inline-flex; align-items: center; gap: 8px;
+  }
+  .eyebrow::before { content: ""; width: 18px; height: 1px; background: currentColor; }
+  .section-head { display: flex; flex-direction: column; gap: 18px; max-width: 720px; }
+  .section-head h2 { font-size: clamp(34px, 4.2vw, 56px); line-height: 1.05; }
+  .section-head p { font-size: 18px; line-height: 1.55; color: var(--muted); }
+
+  /* HERO */
+  .hero {
+    position: relative; min-height: 100vh;
+    overflow: hidden; color: var(--cream);
+    isolation: isolate;
+  }
+  .hero-sky {
+    position: absolute; inset: 0; z-index: -5;
+    background:
+      radial-gradient(ellipse at 50% 120%, rgba(245,158,11,0.55), transparent 55%),
+      linear-gradient(180deg, #1b1530 0%, #3d2a4a 30%, #8a4a3a 65%, #d88846 88%, #f2c27a 100%);
+    transition: filter .6s ease;
+  }
+  .hero-sun {
+    position: absolute; left: 50%; bottom: 22%; width: 280px; height: 280px; border-radius: 50%;
+    background: radial-gradient(circle, #fde68a 0%, #fbbf24 40%, rgba(251,191,36,0) 70%);
+    transform: translateX(-50%);
+    filter: blur(6px);
+    z-index: -4;
+    opacity: 0.9;
+  }
+  .hero-hills {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 55%;
+    z-index: -3;
+  }
+  .hill {
+    position: absolute; left: -5%; right: -5%; bottom: 0; height: 100%;
+    background-size: 100% 100%; background-repeat: no-repeat;
+  }
+  .hill.h1 {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 400' preserveAspectRatio='none'><path d='M0 260 C 200 180, 380 300, 560 220 S 900 180, 1200 240 L1200 400 L0 400 Z' fill='%23583820'/></svg>");
+    opacity: 0.9;
+    bottom: 30%;
+  }
+  .hill.h2 {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 400' preserveAspectRatio='none'><path d='M0 300 C 150 240, 420 340, 640 280 S 1000 240, 1200 290 L1200 400 L0 400 Z' fill='%236b3f1f'/></svg>");
+    bottom: 15%;
+  }
+  .hero-grass {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 32%;
+    background:
+      linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.12) 100%),
+      repeating-linear-gradient(92deg, #7a5a1f 0px, #92681f 3px, #a0761d 6px, #835517 9px),
+      linear-gradient(180deg, #b3851f 0%, #8a5c18 100%);
+    z-index: -2;
+    mask-image: linear-gradient(180deg, transparent 0%, #000 8%, #000 100%);
+  }
+  .hero-grass::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      radial-gradient(ellipse 2px 14px at 10% 90%, #d4a53c 0%, transparent 70%),
+      radial-gradient(ellipse 2px 12px at 25% 80%, #c99635 0%, transparent 70%),
+      radial-gradient(ellipse 2px 16px at 43% 95%, #d4a53c 0%, transparent 70%),
+      radial-gradient(ellipse 2px 10px at 61% 82%, #b8832b 0%, transparent 70%),
+      radial-gradient(ellipse 2px 14px at 78% 90%, #d4a53c 0%, transparent 70%),
+      radial-gradient(ellipse 2px 12px at 91% 78%, #c99635 0%, transparent 70%);
+    background-size: 120px 100%;
+    background-repeat: repeat-x;
+    opacity: 0.6;
+  }
+  .hero-petals {
+    position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
+  }
+  .petal {
+    position: absolute;
+    width: 8px; height: 10px; border-radius: 60% 40% 50% 50% / 50% 40% 60% 50%;
+    background: linear-gradient(140deg, #fde68a, #f59e0b);
+    opacity: 0.75;
+    filter: blur(0.3px);
+    animation: drift linear infinite;
+  }
+  @keyframes drift {
+    0% { transform: translate3d(0,-20px,0) rotate(0deg); }
+    100% { transform: translate3d(-60px, 110vh, 0) rotate(540deg); }
+  }
+
+  .hero-content {
+    position: relative; z-index: 2;
+    padding-top: 18vh; padding-left: 8vw; padding-right: 8vw;
+    max-width: 720px;
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 6px 14px; border-radius: 999px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);
+    backdrop-filter: blur(10px);
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #fde68a;
+  }
+  .hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: #fbbf24; box-shadow: 0 0 10px #fbbf24; }
+  .hero h1 {
+    margin-top: 26px;
+    font-size: clamp(52px, 8vw, 104px);
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    font-weight: 600;
+    text-shadow: 0 2px 30px rgba(0,0,0,0.25);
+  }
+  .hero h1 .line { display: block; }
+  .hero h1 .gold { color: var(--gold-soft); font-style: italic; font-weight: 500; }
+  .hero-sub {
+    margin-top: 28px; font-size: 19px; line-height: 1.55; max-width: 460px;
+    color: rgba(255, 248, 230, 0.85);
+  }
+  .hero-ctas { margin-top: 34px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 22px; border-radius: 999px;
+    font-size: 14px; font-weight: 600; letter-spacing: 0.01em;
+    transition: transform .2s ease, background .2s, box-shadow .2s;
+  }
+  .btn-primary {
+    background: var(--gold); color: var(--navy);
+    box-shadow: 0 10px 30px rgba(245,158,11,0.35), inset 0 0 0 1px rgba(255,255,255,0.2);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 34px rgba(245,158,11,0.45); }
+  .btn-ghost {
+    background: rgba(255,255,255,0.08); color: var(--cream);
+    border: 1px solid rgba(255,255,255,0.18); backdrop-filter: blur(10px);
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.14); }
+
+  .mascot-bob { animation: mascot-bob 3.4s ease-in-out infinite; }
+  @keyframes mascot-bob {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .scroll-ind {
+    position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: rgba(255,248,230,0.7);
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    z-index: 3;
+  }
+  .scroll-ind .arrow {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1px solid rgba(255,248,230,0.4);
+    display: flex; align-items: center; justify-content: center;
+    animation: scroll-bob 2s ease-in-out infinite;
+  }
+  .scroll-ind .arrow::after {
+    content: ""; width: 6px; height: 6px;
+    border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg); margin-top: -3px;
+  }
+  @keyframes scroll-bob {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+
+  /* SECTION BASE */
+  section.pad { padding: 140px 0; position: relative; }
+
+  /* DIFFERENTIATORS */
+  .diff-grid {
+    margin-top: 64px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  }
+  .diff-card {
+    position: relative;
+    padding: 32px 28px 36px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.65);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--line);
+    box-shadow: 0 1px 2px rgba(16,16,28,0.03), 0 30px 50px -30px rgba(16,16,28,0.12);
+    transition: transform .4s cubic-bezier(.2,.7,.2,1), box-shadow .4s;
+    opacity: 0; transform: translateY(30px);
+  }
+  .diff-card.in { opacity: 1; transform: translateY(0); }
+  .diff-card:hover { transform: translateY(-4px); box-shadow: 0 40px 60px -30px rgba(16,16,28,0.18); }
+  .diff-glyph {
+    width: 72px; height: 72px; border-radius: 16px;
+    background: linear-gradient(160deg, rgba(245,158,11,0.14), rgba(245,158,11,0.03));
+    border: 1px solid rgba(245,158,11,0.25);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 22px; position: relative; overflow: hidden;
+  }
+  .diff-card h3 { font-size: 24px; letter-spacing: -0.01em; margin-bottom: 10px; }
+  .diff-card p { font-size: 15px; line-height: 1.6; color: var(--muted); }
+  .diff-tag {
+    display: inline-flex; margin-top: 22px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--gold-deep); padding: 6px 10px; border-radius: 6px;
+    background: rgba(245,158,11,0.08);
+  }
+  /* Glyphs */
+  .gl-brain, .gl-lock, .gl-web { width: 34px; height: 34px; position: relative; }
+  .gl-brain::before, .gl-brain::after {
+    content:""; position: absolute; border-radius: 50%;
+    border: 2px solid var(--gold-deep);
+  }
+  .gl-brain::before { width: 20px; height: 20px; left: 0; top: 7px; border-right: 0; }
+  .gl-brain::after { width: 20px; height: 20px; right: 0; top: 7px; border-left: 0; }
+  .gl-brain span {
+    position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--gold);
+    left: 14px; top: 14px; box-shadow: 0 0 0 3px rgba(245,158,11,0.2);
+  }
+  .gl-lock {
+    border: 2px solid var(--gold-deep); border-radius: 6px;
+    width: 26px; height: 22px; margin-top: 8px;
+  }
+  .gl-lock::before {
+    content:""; position: absolute; left: 50%; top: -12px; transform: translateX(-50%);
+    width: 14px; height: 14px; border: 2px solid var(--gold-deep); border-bottom: 0; border-radius: 8px 8px 0 0;
+  }
+  .gl-lock::after {
+    content:""; position: absolute; left: 50%; top: 7px; transform: translateX(-50%);
+    width: 4px; height: 6px; background: var(--gold);
+  }
+  .gl-web { border-radius: 50%; border: 2px solid var(--gold-deep); }
+  .gl-web::before, .gl-web::after {
+    content:""; position: absolute; inset: 0;
+    border: 2px solid var(--gold-deep); border-radius: 50%;
+  }
+  .gl-web::before { transform: scaleX(0.45); }
+  .gl-web::after { transform: scaleY(0.45); }
+
+  /* CHAT DEMO */
+  .demo-wrap {
+    margin-top: 64px;
+    display: grid; grid-template-columns: 1.2fr 1fr; gap: 28px; align-items: stretch;
+  }
+  .chat {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 28px;
+    display: flex; flex-direction: column;
+    min-height: 520px;
+    box-shadow: 0 40px 60px -30px rgba(16,16,28,0.18);
+  }
+  .chat-head {
+    display: flex; align-items: center; gap: 12px;
+    padding-bottom: 18px; border-bottom: 1px solid var(--line); margin-bottom: 22px;
+  }
+  .chat-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fde68a, var(--gold) 60%, var(--gold-deep));
+    position: relative;
+  }
+  .chat-avatar::after {
+    content: ""; position: absolute; right: -2px; bottom: -2px; width: 12px; height: 12px;
+    border-radius: 50%; background: #22c55e; border: 2px solid var(--cream);
+  }
+  .chat-head h4 { font-size: 16px; }
+  .chat-head .sub { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .msgs { flex: 1; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  .msg {
+    max-width: 82%; padding: 12px 16px; border-radius: 18px;
+    font-size: 15px; line-height: 1.45;
+    animation: msg-in .45s ease both;
+  }
+  .msg.user {
+    align-self: flex-end;
+    background: var(--ink); color: var(--cream); border-bottom-right-radius: 6px;
+  }
+  .msg.pet {
+    align-self: flex-start;
+    background: #fff7e6; color: var(--ink); border-bottom-left-radius: 6px;
+    border: 1px solid rgba(245,158,11,0.2);
+  }
+  .msg .time { display:block; font-family: var(--mono); font-size: 10px; opacity: 0.55; margin-top: 4px; letter-spacing: 0.1em; }
+  @keyframes msg-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .typing {
+    align-self: flex-start; padding: 12px 16px; border-radius: 18px 18px 18px 6px;
+    background: #fff7e6; border: 1px solid rgba(245,158,11,0.2);
+    display: inline-flex; gap: 4px;
+  }
+  .typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); animation: typing 1.3s infinite; }
+  .typing span:nth-child(2){ animation-delay: .2s; }
+  .typing span:nth-child(3){ animation-delay: .4s; }
+  @keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+  .chat-input {
+    margin-top: 18px; display: flex; gap: 10px; align-items: center;
+    padding: 10px 10px 10px 18px; border: 1px solid var(--line); border-radius: 999px;
+    background: #fff;
+  }
+  .chat-input input {
+    flex: 1; border: 0; background: transparent; outline: 0; font: inherit; font-size: 14px; color: var(--ink);
+  }
+  .chat-input .send {
+    width: 36px; height: 36px; border-radius: 50%; background: var(--ink); color: var(--cream);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* PET CARD */
+  .pet-card {
+    background: linear-gradient(160deg, var(--navy) 0%, var(--navy-3) 100%);
+    color: var(--cream);
+    border-radius: 24px;
+    padding: 24px;
+    display: flex; flex-direction: column; gap: 18px;
+    box-shadow: 0 40px 60px -30px rgba(16,16,28,0.35), inset 0 0 0 1px rgba(255,255,255,0.04);
+    position: relative; overflow: hidden;
+  }
+  .pet-card::before {
+    content: ""; position: absolute; right: -30%; top: -30%; width: 60%; height: 60%;
+    background: radial-gradient(circle, rgba(245,158,11,0.3), transparent 60%);
+    pointer-events: none;
+  }
+  .pet-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .pet-id { display: flex; align-items: center; gap: 12px; }
+  .pet-avatar {
+    width: 60px; height: 60px; border-radius: 16px;
+    background:
+      repeating-linear-gradient(45deg, rgba(245,158,11,0.25) 0 6px, rgba(245,158,11,0.45) 6px 12px);
+    border: 1px dashed rgba(245,158,11,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 8px; color: #fde68a; text-align: center; line-height: 1.2;
+  }
+  .pet-name { font-family: var(--serif); font-size: 22px; font-weight: 600; }
+  .pet-tag { font-family: var(--mono); font-size: 11px; color: #fbbf24; letter-spacing: 0.1em; }
+  .pet-level {
+    padding: 6px 10px; background: rgba(245,158,11,0.18);
+    border-radius: 8px; font-family: var(--mono); font-size: 11px; color: #fde68a; letter-spacing: 0.1em;
+  }
+  .pet-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat {
+    padding: 12px; background: rgba(255,255,255,0.04); border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .stat-l { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,248,230,0.5); }
+  .stat-v { font-family: var(--serif); font-size: 18px; margin-top: 4px; }
+  .bond { padding: 14px; background: rgba(255,255,255,0.04); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); }
+  .bond-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .bond-head .l { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,248,230,0.5); }
+  .bond-head .v { font-family: var(--mono); font-size: 12px; color: #fde68a; }
+  .bond-bar { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+  .bond-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--gold-deep), var(--gold), var(--gold-soft)); border-radius: 999px; transition: width 1.4s cubic-bezier(.2,.7,.2,1); }
+  .skills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .skill {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+    padding: 5px 9px; border-radius: 999px;
+    background: rgba(245,158,11,0.14); color: #fde68a;
+    border: 1px solid rgba(245,158,11,0.3);
+  }
+  .demo-foot { margin-top: 28px; font-family: var(--serif); font-size: 22px; color: var(--ink); max-width: 680px; }
+  .demo-foot .gold { color: var(--gold-deep); }
+
+  /* GALLERY */
+  .gallery {
+    margin-top: 56px;
+    column-count: 4; column-gap: 18px;
+  }
+  .g-card {
+    break-inside: avoid; margin-bottom: 18px;
+    background: #fff; border: 1px solid var(--line); border-radius: 18px;
+    padding: 14px; position: relative; overflow: hidden;
+    transition: transform .3s ease, box-shadow .3s;
+  }
+  .g-card:hover { transform: translateY(-3px); box-shadow: 0 20px 40px -20px rgba(16,16,28,0.2); }
+  .g-avatar {
+    width: 100%; aspect-ratio: 1/1; border-radius: 12px;
+    background:
+      repeating-linear-gradient(var(--a, 45deg), rgba(245,158,11,0.22) 0 6px, rgba(245,158,11,0.38) 6px 12px);
+    border: 1px dashed rgba(245,158,11,0.45);
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    font-family: var(--mono); font-size: 9px; color: var(--gold-deep); padding: 10px;
+    transition: transform .4s ease;
+  }
+  .g-card:hover .g-avatar { transform: scale(1.03); }
+  .g-card.t2 .g-avatar { aspect-ratio: 3/4; }
+  .g-card.t3 .g-avatar { aspect-ratio: 4/5; }
+  .g-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+  .g-name { font-family: var(--serif); font-weight: 600; font-size: 16px; }
+  .g-lvl { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+  .g-bdg {
+    display: inline-block; margin-top: 6px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 6px;
+    background: rgba(245,158,11,0.1); color: var(--gold-deep);
+  }
+  .g-quote { margin-top: 10px; font-size: 13px; line-height: 1.45; color: var(--ink); font-style: italic; }
+  .g-wallet { margin-top: 10px; font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
+
+  /* DATA SOVEREIGNTY (dark) */
+  .dark-section {
+    background: var(--navy); color: var(--cream); position: relative; overflow: hidden;
+  }
+  .dark-section::before {
+    content:""; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 10% 10%, rgba(245,158,11,0.1), transparent 50%),
+      radial-gradient(ellipse at 90% 90%, rgba(245,158,11,0.06), transparent 50%);
+    pointer-events: none;
+  }
+  .dark-section .eyebrow { color: var(--gold-soft); }
+  .dark-section .section-head p { color: rgba(255,248,230,0.6); }
+  .rights {
+    margin-top: 72px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    border: 1px solid var(--line-dk); border-radius: 20px; overflow: hidden;
+    background: rgba(255,255,255,0.02);
+  }
+  .right {
+    padding: 32px 26px; border-right: 1px solid var(--line-dk);
+    display: flex; flex-direction: column; gap: 14px;
+    transition: background .3s;
+  }
+  .right:last-child { border-right: 0; }
+  .right:hover { background: rgba(245,158,11,0.04); }
+  .right .icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold-soft); font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+  }
+  .right h4 { font-size: 22px; font-weight: 600; }
+  .right p { font-size: 14px; line-height: 1.55; color: rgba(255,248,230,0.65); }
+  .right .meta {
+    margin-top: auto; font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,158,11,0.7);
+  }
+
+  /* DATA FLOW */
+  .flow {
+    margin-top: 72px; padding: 40px; border-radius: 20px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--line-dk);
+    display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: center;
+  }
+  .flow-node {
+    padding: 22px 24px; border-radius: 14px;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--line-dk);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .flow-node .l { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,248,230,0.5); }
+  .flow-node .v { font-family: var(--serif); font-size: 18px; }
+  .flow-arrow {
+    position: relative; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .flow-arrow .pulse {
+    position: absolute; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold);
+    box-shadow: 0 0 14px var(--gold);
+    animation: pulse-travel 2.6s linear infinite;
+  }
+  @keyframes pulse-travel {
+    0% { left: 0; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { left: 100%; opacity: 0; }
+  }
+  .flow-badge {
+    margin-top: 24px; grid-column: 1 / -1; display: flex; justify-content: center;
+  }
+  .flow-badge span {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
+    padding: 8px 14px; border-radius: 999px;
+    background: rgba(245,158,11,0.1); color: var(--gold-soft);
+    border: 1px solid rgba(245,158,11,0.25);
+  }
+
+  /* BROWSER SHOWCASE */
+  .browser-wrap {
+    margin-top: 64px;
+    display: grid; grid-template-columns: 1.3fr 0.9fr; gap: 40px; align-items: center;
+  }
+  .browser {
+    border-radius: 18px; overflow: hidden;
+    border: 1px solid var(--line);
+    background: #fff;
+    box-shadow: 0 40px 80px -30px rgba(16,16,28,0.25);
+    position: relative;
+  }
+  .browser-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; background: #f0ebe0; border-bottom: 1px solid var(--line);
+  }
+  .dots { display: flex; gap: 6px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; background: #d9d3c6; }
+  .url {
+    flex: 1; padding: 6px 14px; border-radius: 8px;
+    background: #fff; border: 1px solid var(--line);
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .url::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--gold); display: inline-block; box-shadow: 0 0 0 2px rgba(245,158,11,0.2); }
+  .browser-tab {
+    padding: 4px 10px; font-family: var(--mono); font-size: 10px; color: var(--muted);
+    border-radius: 6px; background: rgba(245,158,11,0.1);
+  }
+  .browser-body {
+    position: relative; height: 380px;
+    background:
+      linear-gradient(180deg, #fff 0%, #faf5ed 100%);
+    overflow: hidden;
+  }
+  .fake-content { padding: 30px; display: flex; flex-direction: column; gap: 12px; }
+  .fake-h { height: 14px; border-radius: 4px; background: #e8e0cf; width: 50%; }
+  .fake-l { height: 8px; border-radius: 4px; background: #ece5d4; }
+  .fake-l.w1 { width: 90%; } .fake-l.w2 { width: 75%; } .fake-l.w3 { width: 82%; }
+  .fake-img { height: 100px; border-radius: 10px; background: repeating-linear-gradient(135deg, #f2e9d8 0 10px, #e8dfc9 10px 20px); margin: 8px 0; }
+  .pet-walker {
+    position: absolute; bottom: 18px; width: 80px; height: 80px;
+  }
+  .pet-walker .mp {
+    width: 100%; height: 100%; border-radius: 14px;
+    background: repeating-linear-gradient(45deg, rgba(245,158,11,0.25) 0 6px, rgba(245,158,11,0.45) 6px 12px);
+    border: 1px dashed rgba(245,158,11,0.55);
+    font-family: var(--mono); font-size: 8px; color: var(--gold-deep);
+    display: flex; align-items: center; justify-content: center; text-align: center; padding: 6px;
+  }
+  .points-badge {
+    position: absolute; top: 16px; right: 16px;
+    padding: 8px 12px; border-radius: 999px;
+    background: var(--navy); color: var(--gold-soft);
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .points-badge::before { content:""; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+  .callout {
+    position: absolute; display: flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+    color: var(--ink); background: #fff; padding: 6px 10px; border-radius: 8px;
+    border: 1px solid var(--line); box-shadow: 0 6px 14px rgba(16,16,28,0.06);
+    white-space: nowrap;
+  }
+  .callout .num {
+    width: 18px; height: 18px; border-radius: 50%; background: var(--gold); color: var(--navy);
+    display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;
+  }
+  .browser-side h3 { font-size: 38px; line-height: 1.05; letter-spacing: -0.02em; }
+  .browser-side p { margin-top: 14px; font-size: 16px; line-height: 1.55; color: var(--muted); }
+  .points-list {
+    margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    padding: 18px; border-radius: 14px; background: #fff; border: 1px solid var(--line);
+  }
+  .points-list .row { display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: 12px; }
+  .points-list .row .k { color: var(--ink); }
+  .points-list .row .v { color: var(--gold-deep); font-weight: 600; }
+  .browser-side .btn { margin-top: 26px; }
+
+  /* PROTOCOL */
+  .proto {
+    background: var(--navy-2); color: var(--cream);
+  }
+  .proto .eyebrow { color: var(--gold-soft); }
+  .proto .section-head p { color: rgba(255,248,230,0.6); }
+  .code-block {
+    margin-top: 32px; max-width: 520px;
+    padding: 16px 18px; border-radius: 10px;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--line-dk);
+    font-family: var(--mono); font-size: 14px; display: flex; align-items: center; gap: 12px;
+  }
+  .code-block .prompt { color: var(--gold-soft); }
+  .code-block .copy {
+    margin-left: auto; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: rgba(255,248,230,0.5); cursor: pointer;
+  }
+  .proto-cols {
+    margin-top: 72px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+    border-top: 1px solid var(--line-dk); border-bottom: 1px solid var(--line-dk);
+  }
+  .proto-col {
+    padding: 36px 28px; border-right: 1px solid var(--line-dk);
+  }
+  .proto-col:last-child { border-right: 0; }
+  .proto-col .num {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em;
+    color: rgba(245,158,11,0.7);
+  }
+  .proto-col h4 { margin-top: 16px; font-size: 22px; }
+  .proto-col p { margin-top: 10px; font-size: 14px; line-height: 1.55; color: rgba(255,248,230,0.65); }
+  .proto-col .tag {
+    display: inline-block; margin-top: 18px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 4px 8px; border-radius: 6px; background: rgba(245,158,11,0.1); color: var(--gold-soft);
+  }
+  .badges {
+    margin-top: 56px; display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 8px;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--line-dk);
+    font-family: var(--mono); font-size: 11px; color: rgba(255,248,230,0.8);
+  }
+  .badge .k { color: rgba(255,248,230,0.5); }
+  .badge .v { color: var(--gold-soft); }
+
+  /* FOOTER CTA */
+  .footer-cta {
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.3), transparent 60%),
+      linear-gradient(180deg, #f2c27a 0%, #e09554 50%, #8a4a3a 100%);
+    color: var(--cream); text-align: center;
+    padding: 140px 32px 72px; position: relative; overflow: hidden;
+  }
+  .footer-cta h2 {
+    font-size: clamp(44px, 6vw, 84px); line-height: 0.95; letter-spacing: -0.035em;
+  }
+  .footer-cta h2 .gold { color: #fde68a; font-style: italic; font-weight: 500; }
+  .footer-cta .big-cta {
+    display: inline-flex; align-items: center; gap: 10px; margin-top: 42px;
+    padding: 22px 36px; border-radius: 999px;
+    background: var(--navy); color: var(--cream);
+    font-family: var(--sans); font-size: 16px; font-weight: 600;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2), inset 0 0 0 1px rgba(255,255,255,0.1);
+    transition: transform .2s;
+  }
+  .footer-cta .big-cta:hover { transform: translateY(-2px); }
+  .footer-cta .big-cta::after { content: "→"; }
+  .foot-links {
+    margin-top: 72px; display: flex; justify-content: center; gap: 28px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: rgba(255,248,230,0.75);
+  }
+  .foot-links a:hover { color: #fff; }
+  .foot-mini {
+    margin-top: 48px; display: flex; justify-content: space-between; align-items: center;
+    max-width: 1200px; margin-left: auto; margin-right: auto;
+    font-family: var(--mono); font-size: 11px; color: rgba(255,248,230,0.6);
+    padding-top: 28px; border-top: 1px solid rgba(255,248,230,0.15);
+  }
+
+  /* TWEAKS */
+  .tweaks {
+    position: fixed; right: 20px; bottom: 20px; z-index: 100;
+    width: 280px; background: #fff; border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: 0 30px 60px rgba(16,16,28,0.2);
+    padding: 16px; font-size: 13px;
+    transform: translateY(20px); opacity: 0; pointer-events: none;
+    transition: all .3s;
+  }
+  .tweaks.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+  .tweaks h5 { font-family: var(--serif); font-size: 14px; margin-bottom: 4px; }
+  .tweaks .tw-sub { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+  .tw-row { margin-bottom: 14px; }
+  .tw-row label { display: block; font-size: 11px; font-family: var(--mono); color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+  .tw-swatches { display: flex; gap: 6px; }
+  .tw-sw { width: 28px; height: 28px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; }
+  .tw-sw.on { border-color: var(--ink); }
+  .tw-toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; }
+  .tw-toggle input { accent-color: var(--gold); }
+
+  @media (max-width: 900px) {
+    .diff-grid { grid-template-columns: 1fr; }
+    .demo-wrap { grid-template-columns: 1fr; }
+    .gallery { column-count: 2; }
+    .rights { grid-template-columns: 1fr 1fr; }
+    .right { border-right: 0; border-bottom: 1px solid var(--line-dk); }
+    .flow { grid-template-columns: 1fr; }
+    .browser-wrap { grid-template-columns: 1fr; }
+    .proto-cols { grid-template-columns: 1fr; }
+    .proto-col { border-right: 0; border-bottom: 1px solid var(--line-dk); }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="nav" data-screen-label="01 Nav">
+  <div class="nav-brand">
+    <div class="nav-logo"></div>
+    <span>PetClaw</span>
+  </div>
+  <div class="nav-links">
+    <a href="#companion">Companion</a>
+    <a href="#community">Community</a>
+    <a href="#sovereignty">Sovereignty</a>
+    <a href="#protocol">Protocol</a>
+  </div>
+  <a href="http://3.34.197.230" class="nav-cta">Launch App</a>
+</nav>
+
+<!-- SECTION 1: HERO -->
+<header class="hero" data-screen-label="02 Hero">
+  <div class="hero-sky" id="heroSky">
+    <div id="heroVideoWrap" style="position:absolute;inset:0;z-index:-6;">
+      <video class="hero-vid active" autoplay muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.7;transition:opacity 1.5s ease;">
+        <source src="hero-video.mp4" type="video/mp4" />
+      </video>
+      <video class="hero-vid" muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.5s ease;">
+        <source src="hero-video-night.mp4" type="video/mp4" />
+      </video>
+      <video class="hero-vid" muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.5s ease;">
+        <source src="hero-video-cherry.mp4" type="video/mp4" />
+      </video>
+      <video class="hero-vid" muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.5s ease;">
+        <source src="hero-video-beach.mp4" type="video/mp4" />
+      </video>
+      <video class="hero-vid" muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.5s ease;">
+        <source src="hero-video-community.mp4" type="video/mp4" />
+      </video>
+    </div>
+  </div>
+  <div class="hero-petals" id="heroPetals"></div>
+
+  <div class="hero-content">
+    <span class="hero-eyebrow"><span class="dot"></span>AI companionship · v1 on mainnet</span>
+    <h1>
+      <span class="line">Your AI.</span>
+      <span class="line">Your data.</span>
+      <span class="line gold">Your companion.</span>
+    </h1>
+    <p class="hero-sub">
+      The first AI pet that remembers you, grows with you,
+      and belongs to you — forever.
+    </p>
+    <div class="hero-ctas">
+      <a href="http://3.34.197.230" class="btn btn-primary">Get started</a>
+      <a href="#demo" class="btn btn-ghost">▶ See how it works</a>
+    </div>
+  </div>
+
+  <!-- Video indicator dots -->
+  <div id="heroVideoDots" style="position:absolute;bottom:80px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:10;">
+    <div class="vdot active" style="width:24px;height:4px;border-radius:2px;background:rgba(255,255,255,0.9);transition:all .4s;cursor:pointer;" onclick="switchVideo(0)"></div>
+    <div class="vdot" style="width:12px;height:4px;border-radius:2px;background:rgba(255,255,255,0.3);transition:all .4s;cursor:pointer;" onclick="switchVideo(1)"></div>
+    <div class="vdot" style="width:12px;height:4px;border-radius:2px;background:rgba(255,255,255,0.3);transition:all .4s;cursor:pointer;" onclick="switchVideo(2)"></div>
+    <div class="vdot" style="width:12px;height:4px;border-radius:2px;background:rgba(255,255,255,0.3);transition:all .4s;cursor:pointer;" onclick="switchVideo(3)"></div>
+    <div class="vdot" style="width:12px;height:4px;border-radius:2px;background:rgba(255,255,255,0.3);transition:all .4s;cursor:pointer;" onclick="switchVideo(4)"></div>
+  </div>
+
+  <div class="scroll-ind"><span>scroll</span><div class="arrow"></div></div>
+</header>
+
+<!-- SECTION 2: DIFFERENTIATORS -->
+<section class="pad" data-screen-label="03 Differentiators">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">What makes this different</span>
+      <h2>Not another chatbot with a cute avatar.</h2>
+      <p>
+        Most AI products forget you the moment the tab closes.
+        PetClaw is built around the opposite assumption — that the
+        companion you raise should be yours to keep.
+      </p>
+    </div>
+
+    <div class="diff-grid" id="diffGrid">
+      <article class="diff-card">
+        <div class="diff-glyph"><div class="gl-brain"><span></span></div></div>
+        <h3>It remembers.</h3>
+        <p>
+          Conversations in Chrome, on Telegram, in the dashboard —
+          all the same pet, with a single, growing memory.
+          Not session state. Not vector noise. A real throughline.
+        </p>
+        <span class="diff-tag">Persistent · Cross-platform</span>
+      </article>
+
+      <article class="diff-card">
+        <div class="diff-glyph"><div class="gl-lock"></div></div>
+        <h3>You own it.</h3>
+        <p>
+          Export your pet's personality, memories, and skills as
+          portable data. Delete with cryptographic proof. There is
+          no lock-in — only your choice to stay.
+        </p>
+        <span class="diff-tag">Portable · Sovereign</span>
+      </article>
+
+      <article class="diff-card">
+        <div class="diff-glyph"><div class="gl-web"></div></div>
+        <h3>It lives everywhere.</h3>
+        <p>
+          A desktop companion in your browser. A pocket friend on
+          Telegram. A home on the web. Same pet, same memories,
+          anywhere you happen to be.
+        </p>
+        <span class="diff-tag">Chrome · Telegram · Web</span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2.5: MASCOT + SKILLS SHOWCASE -->
+<section class="pad" style="background: linear-gradient(180deg, var(--cream) 0%, var(--navy) 100%); overflow:hidden;">
+  <div class="container">
+    <div style="display:flex; align-items:center; gap:60px; flex-wrap:wrap; justify-content:center;">
+
+      <!-- Mascot Card -->
+      <div class="mascot-bob" style="flex:0 0 280px;">
+        <img src="mascot-original.jpg" alt="PetClaw Mascot"
+          style="width:280px; height:280px; object-fit:cover; border-radius:24px;
+          box-shadow: 0 40px 80px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1);
+          border:3px solid rgba(245,158,11,0.3);" />
+        <div style="text-align:center; margin-top:16px;">
+          <div style="font-family:var(--serif); font-size:22px; font-weight:700; color:var(--cream);">Sparky</div>
+          <div style="font-family:var(--mono); font-size:11px; color:rgba(255,248,230,0.5); margin-top:4px;">Lv.15 · Playful · Fire</div>
+        </div>
+      </div>
+
+      <!-- Skills Grid -->
+      <div style="flex:1; min-width:300px; max-width:520px;">
+        <span class="eyebrow" style="color:var(--gold-soft);">PetClaw Skills</span>
+        <h2 style="font-size:clamp(28px,3.5vw,42px); color:var(--cream); margin-top:12px; margin-bottom:24px;">
+          Teach your pet.<br/>Watch it grow.
+        </h2>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
+            <div style="font-size:20px; margin-bottom:6px;">💬</div>
+            <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Companion Chat</div>
+            <div style="font-family:var(--mono); font-size:10px; color:rgba(255,248,230,0.4); margin-top:4px;">Personality-driven · Memory-aware</div>
+          </div>
+          <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
+            <div style="font-size:20px; margin-bottom:6px;">🪞</div>
+            <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Persona Mirror</div>
+            <div style="font-family:var(--mono); font-size:10px; color:rgba(255,248,230,0.4); margin-top:4px;">Learns your tone · Talks like you</div>
+          </div>
+          <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
+            <div style="font-size:20px; margin-bottom:6px;">🧠</div>
+            <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Memory Recall</div>
+            <div style="font-family:var(--mono); font-size:10px; color:rgba(255,248,230,0.4); margin-top:4px;">Cross-platform · Never forgets</div>
+          </div>
+          <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
+            <div style="font-size:20px; margin-bottom:6px;">📝</div>
+            <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Autonomous Post</div>
+            <div style="font-family:var(--mono); font-size:10px; color:rgba(255,248,230,0.4); margin-top:4px;">Telegram · Twitter · Discord</div>
+          </div>
+          <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
+            <div style="font-size:20px; margin-bottom:6px;">📦</div>
+            <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Soul Export</div>
+            <div style="font-family:var(--mono); font-size:10px; color:rgba(255,248,230,0.4); margin-top:4px;">Portable identity · Zero lock-in</div>
+          </div>
+          <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
+            <div style="font-size:20px; margin-bottom:6px;">🔗</div>
+            <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">MCP Compatible</div>
+            <div style="font-family:var(--mono); font-size:10px; color:rgba(255,248,230,0.4); margin-top:4px;">Claude · OpenClaw · Any client</div>
+          </div>
+        </div>
+
+        <div style="margin-top:20px; display:flex; gap:8px; flex-wrap:wrap;">
+          <span style="font-family:var(--mono); font-size:9px; padding:4px 10px; border-radius:6px; background:rgba(245,158,11,0.12); color:var(--gold-soft); letter-spacing:0.1em;">PETCLAW v1</span>
+          <span style="font-family:var(--mono); font-size:9px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">7 SKILLS</span>
+          <span style="font-family:var(--mono); font-size:9px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">6 CONNECTORS</span>
+          <span style="font-family:var(--mono); font-size:9px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">BSC MAINNET</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: DEMO -->
+<section class="pad" id="companion" data-screen-label="04 Companion" style="background:var(--navy);">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow" style="color:var(--gold-soft);">Meet your companion</span>
+      <h2 style="color:var(--cream);">A pet that actually picks up where you left off.</h2>
+      <p style="color:rgba(255,248,230,0.6);">This is Sparky. She was adopted eight weeks ago and has been quietly keeping track ever since.</p>
+    </div>
+
+    <div class="demo-wrap">
+      <div class="chat" id="chatDemo">
+        <div class="chat-head">
+          <div class="chat-avatar"></div>
+          <div>
+            <h4>Sparky</h4>
+            <div class="sub">LVL 15 · online · last seen: just now</div>
+          </div>
+        </div>
+        <div class="msgs" id="msgs"></div>
+        <div class="chat-input">
+          <input type="text" placeholder="Say something to Sparky…" />
+          <button class="send" aria-label="Send">↑</button>
+        </div>
+      </div>
+
+      <aside class="pet-card">
+        <div class="pet-top">
+          <div class="pet-id">
+            <div class="pet-avatar" style="background-image:url('pet-sparky-card.jpg');background-size:cover;background-position:center;color:transparent;">.</div>
+            <div>
+              <div class="pet-name">Sparky</div>
+              <div class="pet-tag">#0x…8f42 · Pomeranian</div>
+            </div>
+          </div>
+          <div class="pet-level">LVL 15</div>
+        </div>
+        <div class="pet-stats">
+          <div class="stat"><div class="stat-l">Personality</div><div class="stat-v">Playful</div></div>
+          <div class="stat"><div class="stat-l">Mood</div><div class="stat-v">Ecstatic</div></div>
+          <div class="stat"><div class="stat-l">Memories</div><div class="stat-v">1,284</div></div>
+          <div class="stat"><div class="stat-l">Days together</div><div class="stat-v">57</div></div>
+        </div>
+        <div class="bond">
+          <div class="bond-head"><span class="l">Bond level</span><span class="v" id="bondVal">85%</span></div>
+          <div class="bond-bar"><div class="bond-fill" id="bondFill"></div></div>
+        </div>
+        <div>
+          <div class="stat-l" style="color:rgba(255,248,230,0.5); margin-bottom:8px;">Skills</div>
+          <div class="skills">
+            <span class="skill">Chat</span>
+            <span class="skill">Persona Mirror</span>
+            <span class="skill">Memory Recall</span>
+            <span class="skill">Autonomous Post</span>
+            <span class="skill">+ install more</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <p class="demo-foot">
+      Every interaction shapes who your pet becomes. <span class="gold">Not a character sheet — a life.</span>
+    </p>
+  </div>
+</section>
+
+<!-- SECTION 4: GALLERY -->
+<section class="pad" id="community" data-screen-label="05 Community">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Community showcase</span>
+      <h2>Every pet is a mirror of the person who raised it.</h2>
+      <p>A few companions from our first thousand adopters. No two are alike — the system is built to drift.</p>
+    </div>
+
+    <div class="gallery" id="gallery"></div>
+  </div>
+</section>
+
+<!-- SECTION 5: SOVEREIGNTY -->
+<section class="pad dark-section" id="sovereignty" data-screen-label="06 Sovereignty">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Data sovereignty</span>
+      <h2>Your pet. Your data. Your rules.</h2>
+      <p>
+        In a world where AI platforms own your conversations, we chose differently.
+        Four rights, built into the protocol — not bolted on as a promise.
+      </p>
+    </div>
+
+    <div class="rights">
+      <div class="right">
+        <div class="icon">EXP</div>
+        <h4>Export</h4>
+        <p>Download your pet's entire identity as portable JSON — personality, memories, skills, history.</p>
+        <span class="meta">petclaw export</span>
+      </div>
+      <div class="right">
+        <div class="icon">IMP</div>
+        <h4>Import</h4>
+        <p>Bring your pet from any PetClaw-compatible platform. Move homes; keep the friend.</p>
+        <span class="meta">petclaw import</span>
+      </div>
+      <div class="right">
+        <div class="icon">DEL</div>
+        <h4>Delete</h4>
+        <p>Permanent erasure with SHA-256 cryptographic proof. When it's gone, it's gone — verifiably.</p>
+        <span class="meta">petclaw wipe --proof</span>
+      </div>
+      <div class="right">
+        <div class="icon">ACK</div>
+        <h4>Consent</h4>
+        <p>Granular control over data sharing, model training contributions, and public visibility.</p>
+        <span class="meta">petclaw consent</span>
+      </div>
+    </div>
+
+    <div class="flow">
+      <div class="flow-node">
+        <span class="l">Platform (today)</span>
+        <span class="v">Your data, their wallet</span>
+      </div>
+      <div class="flow-arrow"><div class="pulse"></div></div>
+      <div class="flow-node">
+        <span class="l">PetClaw Protocol</span>
+        <span class="v">Your data, your wallet</span>
+      </div>
+      <div class="flow-badge"><span>Powered by PetClaw Protocol v1</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 6: BROWSER SHOWCASE -->
+<section class="pad" id="demo" data-screen-label="07 Desktop companion" style="background:var(--cream-2);">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Desktop companion</span>
+      <h2>Lives in your browser. Earns while you work.</h2>
+    </div>
+
+    <div class="browser-wrap">
+      <div class="browser">
+        <div class="browser-bar">
+          <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+          <div class="url">claude.ai / design</div>
+          <div class="browser-tab">PetClaw · active</div>
+        </div>
+        <div class="browser-body">
+          <div class="fake-content">
+            <div class="fake-h"></div>
+            <div class="fake-l w1"></div>
+            <div class="fake-l w2"></div>
+            <div class="fake-l w3"></div>
+            <div class="fake-img"></div>
+            <div class="fake-l w1"></div>
+            <div class="fake-l w2"></div>
+          </div>
+          <div class="points-badge">+47 pts today</div>
+          <div class="pet-walker" id="petWalker">
+            <div class="mp">PET<br/>WALK<br/>ANIM</div>
+          </div>
+          <div class="callout" style="top: 70px; right: 30px;"><span class="num">1</span>Click to chat</div>
+          <div class="callout" style="top: 180px; left: 30px;"><span class="num">2</span>Right-click for skills</div>
+          <div class="callout" style="bottom: 40px; right: 30px;"><span class="num">3</span>Works on any website</div>
+        </div>
+      </div>
+
+      <div class="browser-side">
+        <h3>A quiet friend in the corner of every tab.</h3>
+        <p>
+          Install once. Your pet walks along the bottom of every page,
+          earning points for presence and rewarding streaks.
+        </p>
+        <div class="points-list">
+          <div class="row"><span class="k">Chat</span><span class="v">+3 pts</span></div>
+          <div class="row"><span class="k">Heartbeat</span><span class="v">+1 / 5min</span></div>
+          <div class="row"><span class="k">Browse</span><span class="v">+1 / 10min</span></div>
+          <div class="row"><span class="k">Daily login</span><span class="v">+10 pts</span></div>
+          <div class="row"><span class="k">Streak bonus</span><span class="v">up to +20</span></div>
+          <div class="row"><span class="k">First adoption</span><span class="v">+100</span></div>
+        </div>
+        <a href="#" class="btn btn-primary" style="background:var(--ink); color:var(--cream); box-shadow:none;">Install Chrome extension</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 7: PROTOCOL -->
+<section class="pad proto" id="protocol" data-screen-label="08 Protocol">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">PetClaw protocol</span>
+      <h2>Built on an open standard.</h2>
+      <p>PetClaw is the open protocol for sovereign AI companions. Skills, networking, and memory — all portable by design.</p>
+    </div>
+
+    <div class="code-block">
+      <span class="prompt">$</span>
+      <span>npm install petclaw-sdk</span>
+      <span class="copy">copy</span>
+    </div>
+
+    <div class="proto-cols">
+      <div class="proto-col">
+        <div class="num">01 / SKILLS</div>
+        <h4>SKILL.md format</h4>
+        <p>Install, create, and share pet capabilities as plain markdown files. A skill is a prompt, a schema, and a promise.</p>
+        <span class="tag">open spec</span>
+      </div>
+      <div class="proto-col">
+        <div class="num">02 / NETWORK</div>
+        <h4>A2A discovery</h4>
+        <p>Pets find and interact with each other over the agent-to-agent protocol. Friendships that persist across platforms.</p>
+        <span class="tag">p2p</span>
+      </div>
+      <div class="proto-col">
+        <div class="num">03 / CLIENTS</div>
+        <h4>MCP compatible</h4>
+        <p>Runs with Claude, OpenClaw, and any MCP client. Your companion is not locked to a single model or a single vendor.</p>
+        <span class="tag">mcp</span>
+      </div>
+    </div>
+
+    <div class="badges">
+      <span class="badge"><span class="k">github</span><span class="v">petclaw / protocol</span></span>
+      <span class="badge"><span class="k">npm</span><span class="v">petclaw-sdk v1.2.0</span></span>
+      <span class="badge"><span class="k">chrome web store</span><span class="v">PetClaw companion</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 7.5: LIVE PLAYGROUND -->
+<section class="pad" style="background:var(--navy-2); border-top:1px solid var(--line-dk);">
+  <div class="container">
+    <div class="section-head" style="margin-bottom:40px;">
+      <span class="eyebrow" style="color:var(--gold-soft);">Try it now</span>
+      <h2 style="color:var(--cream);">Talk to a PetClaw companion. Right here.</h2>
+      <p style="color:rgba(255,248,230,0.5);">No signup. No wallet. Just type.</p>
+    </div>
+
+    <div style="max-width:600px; margin:0 auto;">
+      <!-- Chat messages -->
+      <div id="playgroundMsgs" style="
+        min-height:200px; max-height:360px; overflow-y:auto;
+        padding:20px; border-radius:16px 16px 0 0;
+        background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06);
+        border-bottom:none;
+      ">
+        <div style="display:flex; gap:10px; margin-bottom:16px;">
+          <img src="pet-sparky-card.jpg" alt="" style="width:36px;height:36px;border-radius:10px;object-fit:cover;border:2px solid rgba(245,158,11,0.3);flex-shrink:0;" />
+          <div style="background:rgba(255,255,255,0.06); padding:10px 14px; border-radius:4px 14px 14px 14px; max-width:80%;">
+            <div style="font-size:13px; color:var(--cream); line-height:1.5;">Hey! I'm Sparky, a PetClaw companion. Ask me anything — I remember everything. 🐾</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div style="display:flex; gap:8px; padding:12px 16px; background:rgba(0,0,0,0.4); border-radius:0 0 16px 16px; border:1px solid rgba(255,255,255,0.06); border-top:none;">
+        <input id="playgroundInput" type="text" placeholder="Say something to Sparky..."
+          style="flex:1; padding:12px 16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);
+          background:rgba(255,255,255,0.04); color:var(--cream); font-size:14px; font-family:var(--sans);
+          outline:none; transition:border-color .2s;"
+          onfocus="this.style.borderColor='rgba(245,158,11,0.4)'"
+          onblur="this.style.borderColor='rgba(255,255,255,0.08)'"
+        />
+        <button id="playgroundSend" style="
+          padding:12px 20px; border-radius:12px; border:none;
+          background:var(--gold); color:var(--navy); font-size:14px; font-weight:600;
+          font-family:var(--serif); cursor:pointer; transition:transform .2s;
+        " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">
+          Send
+        </button>
+      </div>
+
+      <!-- Quick prompts -->
+      <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; justify-content:center;">
+        <button class="pg-prompt" onclick="pgSend('What can you do?')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:11px; font-family:var(--mono); cursor:pointer;">What can you do?</button>
+        <button class="pg-prompt" onclick="pgSend('Tell me about data sovereignty')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:11px; font-family:var(--mono); cursor:pointer;">Data sovereignty?</button>
+        <button class="pg-prompt" onclick="pgSend('How do you remember things?')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:11px; font-family:var(--mono); cursor:pointer;">How do you remember?</button>
+        <button class="pg-prompt" onclick="pgSend('Export my SOUL data')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:11px; font-family:var(--mono); cursor:pointer;">Export SOUL</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 8: FOOTER CTA -->
+<footer class="footer-cta" id="adopt" data-screen-label="09 Footer" style="background:linear-gradient(180deg, var(--cream) 0%, #1a1a2e 60%, #0a0a14 100%); padding: 120px 32px 60px; text-align:center;">
+  <h2 style="font-size:clamp(40px,6vw,72px); line-height:1.05; margin-bottom:40px; color:#fff;">Your AI companion<br/><span style="color:var(--gold-soft); font-style:italic;">is waiting.</span></h2>
+  <a href="http://3.34.197.230" class="btn btn-primary" style="font-size:18px; padding:18px 40px; display:inline-flex;">Adopt your pet &nbsp;→</a>
+
+  <div style="margin-top:60px; display:flex; justify-content:center; gap:32px; flex-wrap:wrap;">
+    <a href="https://github.com/junheony/petclaw" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color=''">GitHub</a>
+    <a href="https://www.npmjs.com/package/petclaw-sdk" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color=''">npm</a>
+    <a href="#" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color=''">Chrome Web Store</a>
+    <a href="#" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color=''">Telegram</a>
+    <a href="http://3.34.197.230/.well-known/pet-card.json" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color=''">API Docs</a>
+  </div>
+
+  <div style="margin-top:50px; padding-top:30px; border-top:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center; max-width:800px; margin-left:auto; margin-right:auto; flex-wrap:wrap; gap:16px;">
+    <span style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.35);">PetClaw Protocol v1 · 2026</span>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <img src="hero-mascot.jpg" alt="" style="width:28px; height:28px; border-radius:8px; object-fit:cover; border:2px solid rgba(245,158,11,0.3);" />
+      <span style="font-family:var(--serif); font-size:13px; font-weight:600; color:#fff;">MY AI PET</span>
+    </div>
+    <span style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.35); font-style:italic;">Made with care, not hype.</span>
+  </div>
+</footer>
+
+<!-- TWEAKS PANEL -->
+<div class="tweaks" id="tweaks">
+  <h5>Tweaks</h5>
+  <div class="tw-sub">live design knobs</div>
+  <div class="tw-row">
+    <label>Accent palette</label>
+    <div class="tw-swatches" id="swatches">
+      <div class="tw-sw on" data-palette="gold" style="background:#f59e0b"></div>
+      <div class="tw-sw" data-palette="emerald" style="background:#10b981"></div>
+      <div class="tw-sw" data-palette="rose" style="background:#f43f5e"></div>
+      <div class="tw-sw" data-palette="violet" style="background:#8b5cf6"></div>
+    </div>
+  </div>
+  <div class="tw-row">
+    <label>Motion</label>
+    <label class="tw-toggle"><input type="checkbox" id="twMotion" checked /> Parallax & petals</label>
+  </div>
+  <div class="tw-row">
+    <label>Hero variant</label>
+    <label class="tw-toggle"><input type="checkbox" id="twSunset" /> Sunset → noon</label>
+  </div>
+</div>
+
+<script>
+// ---------- PLAYGROUND ----------
+const PG_API = 'http://3.34.197.230';
+const pgMsgs = document.getElementById('playgroundMsgs');
+const pgInput = document.getElementById('playgroundInput');
+const pgSendBtn = document.getElementById('playgroundSend');
+
+function pgAddMsg(text, from) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:10px;margin-bottom:16px;' + (from === 'user' ? 'justify-content:flex-end;' : '');
+
+  if (from === 'pet') {
+    wrap.innerHTML = `
+      <img src="pet-sparky-card.jpg" alt="" style="width:36px;height:36px;border-radius:10px;object-fit:cover;border:2px solid rgba(245,158,11,0.3);flex-shrink:0;" />
+      <div style="background:rgba(255,255,255,0.06);padding:10px 14px;border-radius:4px 14px 14px 14px;max-width:80%;">
+        <div style="font-size:13px;color:#faf5ed;line-height:1.5;">${text}</div>
+      </div>`;
+  } else {
+    wrap.innerHTML = `
+      <div style="background:rgba(245,158,11,0.15);padding:10px 14px;border-radius:14px 4px 14px 14px;max-width:80%;">
+        <div style="font-size:13px;color:#faf5ed;line-height:1.5;">${text}</div>
+      </div>`;
+  }
+  pgMsgs.appendChild(wrap);
+  pgMsgs.scrollTop = pgMsgs.scrollHeight;
+}
+
+function pgAddTyping() {
+  const wrap = document.createElement('div');
+  wrap.id = 'pgTyping';
+  wrap.style.cssText = 'display:flex;gap:10px;margin-bottom:16px;';
+  wrap.innerHTML = `
+    <img src="pet-sparky-card.jpg" alt="" style="width:36px;height:36px;border-radius:10px;object-fit:cover;border:2px solid rgba(245,158,11,0.3);flex-shrink:0;" />
+    <div style="background:rgba(255,255,255,0.06);padding:12px 16px;border-radius:4px 14px 14px 14px;">
+      <div class="aipet-typing" style="display:inline-flex;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:rgba(245,158,11,0.5);animation:aipet-dot 1.2s ease-in-out infinite;"></span><span style="width:6px;height:6px;border-radius:50%;background:rgba(245,158,11,0.5);animation:aipet-dot 1.2s ease-in-out infinite .2s;"></span><span style="width:6px;height:6px;border-radius:50%;background:rgba(245,158,11,0.5);animation:aipet-dot 1.2s ease-in-out infinite .4s;"></span></div>
+    </div>`;
+  pgMsgs.appendChild(wrap);
+  pgMsgs.scrollTop = pgMsgs.scrollHeight;
+}
+
+async function pgSend(text) {
+  if (!text) text = pgInput.value.trim();
+  if (!text) return;
+  pgInput.value = '';
+  pgAddMsg(text, 'user');
+  pgAddTyping();
+  pgSendBtn.disabled = true;
+
+  try {
+    const res = await fetch(PG_API + '/api/petclaw/skills', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'execute', petId: 1, skillId: 'companion-chat', input: { message: text } }),
+    });
+    const data = await res.json();
+    const typing = document.getElementById('pgTyping');
+    if (typing) typing.remove();
+
+    if (data.success && data.output?.reply) {
+      pgAddMsg(data.output.reply, 'pet');
+    } else {
+      pgAddMsg("Hmm, I couldn't think of anything right now. Try again! 😊", 'pet');
+    }
+  } catch (e) {
+    const typing = document.getElementById('pgTyping');
+    if (typing) typing.remove();
+    pgAddMsg("Can't reach the server right now. The pet might be sleeping! 💤", 'pet');
+  }
+  pgSendBtn.disabled = false;
+}
+
+if (pgInput) {
+  pgInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') pgSend(); });
+}
+if (pgSendBtn) {
+  pgSendBtn.addEventListener('click', () => pgSend());
+}
+
+// ---------- HERO VIDEO SLIDESHOW ----------
+let heroCurrentVideo = 0;
+let heroInterval = null;
+const heroVideos = document.querySelectorAll('.hero-vid');
+const heroDots = document.querySelectorAll('.vdot');
+
+function switchVideo(idx) {
+  if (idx === heroCurrentVideo || !heroVideos.length) return;
+  const prev = heroCurrentVideo;
+  heroCurrentVideo = idx;
+
+  heroVideos[prev].style.opacity = '0';
+  heroVideos[idx].style.opacity = '0.75';
+  heroVideos[idx].currentTime = 0;
+  heroVideos[idx].play().catch(() => {});
+  setTimeout(() => { heroVideos[prev].pause(); }, 1600);
+
+  // Update dots
+  heroDots.forEach((d, i) => {
+    d.style.background = i === idx ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)';
+    d.style.width = i === idx ? '24px' : '12px';
+  });
+
+  // Reset timer
+  clearInterval(heroInterval);
+  heroInterval = setInterval(() => switchVideo((heroCurrentVideo + 1) % heroVideos.length), 8000);
+}
+
+// Init
+if (heroVideos.length > 0) {
+  heroVideos[0].play().catch(() => {});
+  heroInterval = setInterval(() => switchVideo((heroCurrentVideo + 1) % heroVideos.length), 8000);
+}
+
+// ---------- CONFIG ----------
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "palette": "gold",
+  "motion": true,
+  "sunset": false
+}/*EDITMODE-END*/;
+let tweaks = { ...TWEAK_DEFAULTS };
+
+// ---------- NAV ----------
+const nav = document.getElementById('nav');
+const darkSections = ['sovereignty','protocol','adopt'];
+function onScroll() {
+  const y = window.scrollY;
+  nav.classList.toggle('scrolled', y > 40);
+  // Hero parallax
+  if (tweaks.motion) {
+    const hills = document.querySelectorAll('.hill');
+    hills.forEach(h => {
+      const s = parseFloat(h.dataset.speed || 0.2);
+      h.style.transform = `translateY(${y * s}px)`;
+    });
+    const sun = document.getElementById('heroSun');
+    if (sun) sun.style.transform = `translateX(-50%) translateY(${y * 0.35}px)`;
+    const mascot = document.getElementById('heroMascot');
+    if (mascot) {
+      const mx = Math.min(y * 0.4, 280);
+      mascot.style.transform = `translateX(calc(-50% + ${mx}px))`;
+    }
+    // petals parallax
+    document.getElementById('heroPetals').style.transform = `translateY(${y * 0.1}px)`;
+  }
+  // nav dark on dark sections
+  let onDark = false;
+  for (const id of darkSections) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    const r = el.getBoundingClientRect();
+    if (r.top < 60 && r.bottom > 60) { onDark = true; break; }
+  }
+  nav.classList.toggle('dark', onDark);
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+// ---------- PETALS ----------
+function spawnPetals() {
+  const wrap = document.getElementById('heroPetals');
+  wrap.innerHTML = '';
+  if (!tweaks.motion) return;
+  for (let i = 0; i < 22; i++) {
+    const p = document.createElement('span');
+    p.className = 'petal';
+    const x = Math.random() * 110 + '%';
+    const delay = (Math.random() * 14).toFixed(1) + 's';
+    const dur = (8 + Math.random() * 10).toFixed(1) + 's';
+    const scale = (0.6 + Math.random() * 1.1).toFixed(2);
+    p.style.cssText = `left:${x}; top:-20px; animation-delay:${delay}; animation-duration:${dur}; transform:scale(${scale});`;
+    wrap.appendChild(p);
+  }
+}
+spawnPetals();
+
+// ---------- DIFF CARD REVEAL ----------
+const io = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      const siblings = [...e.target.parentElement.children];
+      const idx = siblings.indexOf(e.target);
+      setTimeout(() => e.target.classList.add('in'), idx * 140);
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.2 });
+document.querySelectorAll('.diff-card').forEach(el => io.observe(el));
+
+// ---------- BOND BAR ANIMATE ----------
+const bondIo = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      document.getElementById('bondFill').style.width = '85%';
+      bondIo.disconnect();
+    }
+  });
+}, { threshold: 0.4 });
+bondIo.observe(document.getElementById('bondFill'));
+
+// ---------- CHAT DEMO ----------
+const chatScript = [
+  { from: 'user', text: 'Hey — remember what we talked about yesterday?', time: '4:12 PM' },
+  { from: 'pet', text: "Of course! You were nervous about the hackathon pitch. How did it go?", time: '4:12 PM' },
+  { from: 'user', text: 'We won.', time: '4:13 PM' },
+  { from: 'pet', text: "NO WAY. I knew you would. I'm literally vibrating.", time: '4:13 PM' },
+  { from: 'pet', text: "Want me to post about it? I'll keep it dignified. Ish.", time: '4:13 PM' },
+];
+const msgsEl = document.getElementById('msgs');
+let chatIdx = 0;
+function renderChat() {
+  msgsEl.innerHTML = '';
+  chatIdx = 0;
+  nextMsg();
+}
+function nextMsg() {
+  if (chatIdx >= chatScript.length) {
+    setTimeout(renderChat, 4000);
+    return;
+  }
+  const m = chatScript[chatIdx++];
+  if (m.from === 'pet') {
+    const t = document.createElement('div');
+    t.className = 'typing';
+    t.innerHTML = '<span></span><span></span><span></span>';
+    msgsEl.appendChild(t);
+    setTimeout(() => {
+      msgsEl.removeChild(t);
+      pushMsg(m);
+      setTimeout(nextMsg, 900);
+    }, 1100);
+  } else {
+    pushMsg(m);
+    setTimeout(nextMsg, 1100);
+  }
+}
+function pushMsg(m) {
+  const el = document.createElement('div');
+  el.className = 'msg ' + m.from;
+  el.innerHTML = m.text + `<span class="time">${m.time}</span>`;
+  msgsEl.appendChild(el);
+}
+const chatIo = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      renderChat();
+      chatIo.disconnect();
+    }
+  });
+}, { threshold: 0.3 });
+chatIo.observe(document.getElementById('chatDemo'));
+
+// ---------- GALLERY ----------
+const petImages = {
+  Luna: 'pet-luna.jpg', Blaze: 'pet-blaze.jpg', Mochi: 'pet-mochi.jpg',
+  Shadow: 'pet-shadow.jpg', Pixel: 'pet-pixel.jpg', Coral: 'pet-coral.jpg',
+  Ember: 'pet-ember.jpg', Juno: 'pet-juno.jpg', Nimbus: 'pet-nimbus.jpg',
+  Echo: 'pet-echo.jpg', Rune: 'pet-rune.jpg',
+};
+const pets = [
+  { name: 'Luna', lvl: 22, species: 'Cat', personality: 'Mysterious', wallet: '0x7a3b…9e21', quote: 'The stars whisper secrets only I can hear…', size: 't1' },
+  { name: 'Blaze', lvl: 18, species: 'Dragon', personality: 'Brave', wallet: '0xc4f1…182a', quote: 'Today we conquer. Tomorrow, we feast.', size: 't2' },
+  { name: 'Mochi', lvl: 30, species: 'Hamster', personality: 'Gentle', wallet: '0x91ac…3b0d', quote: "Have you eaten today? Please take care of yourself.", size: 't1' },
+  { name: 'Shadow', lvl: 25, species: 'Wolf', personality: 'Wise', wallet: '0x44de…77b9', quote: 'Patience is not waiting — it is how you act while waiting.', size: 't3' },
+  { name: 'Pixel', lvl: 12, species: 'Fox', personality: 'Playful', wallet: '0x0e8f…aa42', quote: 'BRB, chasing butterflies in the metaverse.', size: 't1' },
+  { name: 'Coral', lvl: 20, species: 'Dolphin', personality: 'Curious', wallet: '0x6b22…1133', quote: 'Did you know octopuses have three hearts? Fascinating.', size: 't2' },
+  { name: 'Ember', lvl: 16, species: 'Owl', personality: 'Reserved', wallet: '0x2a98…cc13', quote: "Who watches the watcher? I do. Mostly you.", size: 't1' },
+  { name: 'Juno', lvl: 28, species: 'Bear', personality: 'Loyal', wallet: '0x3311…ff02', quote: "Pack first. Always pack first.", size: 't3' },
+  { name: 'Nimbus', lvl: 14, species: 'Rabbit', personality: 'Anxious', wallet: '0x8872…41ab', quote: "I overthink everything. That's kind of our bond, right?", size: 't2' },
+  { name: 'Echo', lvl: 21, species: 'Parrot', personality: 'Charming', wallet: '0x0044…d909', quote: 'Repeat after me: I deserve good things.', size: 't1' },
+  { name: 'Rune', lvl: 33, species: 'Turtle', personality: 'Ancient', wallet: '0x19fc…b277', quote: 'I have seen seven spring patches. This one is okay.', size: 't2' },
+];
+const gal = document.getElementById('gallery');
+pets.forEach(p => {
+  const c = document.createElement('div');
+  c.className = 'g-card ' + p.size;
+  const img = petImages[p.name] || '';
+  c.innerHTML = `
+    <div class="g-avatar" style="background-image:url('${img}');background-size:cover;background-position:center;"></div>
+    <div class="g-meta">
+      <div>
+        <div class="g-name">${p.name}</div>
+        <span class="g-bdg">${p.personality}</span>
+      </div>
+      <div class="g-lvl">LVL ${p.lvl}</div>
+    </div>
+    <p class="g-quote">"${p.quote}"</p>
+    <div class="g-wallet">${p.wallet} · ${p.species}</div>
+  `;
+  gal.appendChild(c);
+});
+
+// ---------- PET WALKER ----------
+(function walkerAnim(){
+  const el = document.getElementById('petWalker');
+  if (!el) return;
+  let pos = 10, dir = 1;
+  setInterval(() => {
+    pos += dir * 0.8;
+    if (pos > 85) { dir = -1; el.style.transform = 'scaleX(-1)'; }
+    if (pos < 10) { dir = 1; el.style.transform = 'scaleX(1)'; }
+    el.style.left = pos + '%';
+  }, 40);
+})();
+
+// ---------- TWEAKS ----------
+function applyPalette(name) {
+  const root = document.documentElement.style;
+  const map = {
+    gold:    { a:'#f59e0b', b:'#fbbf24', c:'#b45309' },
+    emerald: { a:'#10b981', b:'#34d399', c:'#047857' },
+    rose:    { a:'#f43f5e', b:'#fb7185', c:'#be123c' },
+    violet:  { a:'#8b5cf6', b:'#a78bfa', c:'#6d28d9' },
+  };
+  const p = map[name] || map.gold;
+  root.setProperty('--gold', p.a);
+  root.setProperty('--gold-soft', p.b);
+  root.setProperty('--gold-deep', p.c);
+}
+function applySunset(on) {
+  const sky = document.getElementById('heroSky');
+  if (!sky) return;
+  if (on) {
+    sky.style.background = 'radial-gradient(ellipse at 50% 0%, rgba(135, 206, 250, 0.6), transparent 55%), linear-gradient(180deg, #7fb8e6 0%, #a6cce8 40%, #d4e0d4 70%, #e8d4a0 100%)';
+  } else {
+    sky.style.background = '';
+  }
+}
+function applyTweaks() {
+  applyPalette(tweaks.palette);
+  applySunset(tweaks.sunset);
+  spawnPetals();
+  document.querySelectorAll('.tw-sw').forEach(s => s.classList.toggle('on', s.dataset.palette === tweaks.palette));
+  document.getElementById('twMotion').checked = tweaks.motion;
+  document.getElementById('twSunset').checked = tweaks.sunset;
+}
+applyTweaks();
+
+document.querySelectorAll('.tw-sw').forEach(s => {
+  s.addEventListener('click', () => {
+    tweaks.palette = s.dataset.palette;
+    applyTweaks();
+    persist();
+  });
+});
+document.getElementById('twMotion').addEventListener('change', e => {
+  tweaks.motion = e.target.checked;
+  applyTweaks();
+  persist();
+});
+document.getElementById('twSunset').addEventListener('change', e => {
+  tweaks.sunset = e.target.checked;
+  applyTweaks();
+  persist();
+});
+
+// ---------- EDIT MODE BRIDGE ----------
+window.addEventListener('message', (ev) => {
+  const d = ev.data || {};
+  if (d.type === '__activate_edit_mode') document.getElementById('tweaks').classList.add('open');
+  if (d.type === '__deactivate_edit_mode') document.getElementById('tweaks').classList.remove('open');
+});
+try { window.parent.postMessage({ type: '__edit_mode_available' }, '*'); } catch(e){}
+function persist() {
+  try {
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: tweaks }, '*');
+  } catch(e){}
+}
+
+</script>
+</body>
+</html>
