@@ -38,12 +38,12 @@ export async function POST(req: NextRequest) {
     }, { status: 429 });
   }
 
-  // ── Calculate rewards with growth multiplier ──
-  const totalSpent = await prisma.itemPurchase.aggregate({
-    where: { user_id: user.id },
-    _sum: { total_cost: true },
+  // ── Calculate rewards with growth multiplier (based on USDT purchases, not shop spending) ──
+  const totalUsdSpent = await prisma.creditPurchase.aggregate({
+    where: { user_id: user.id, status: "confirmed" },
+    _sum: { amount_usd: true },
   });
-  const growthMul = getGrowthMultiplier(totalSpent._sum.total_cost || 0);
+  const growthMul = getGrowthMultiplier(totalUsdSpent._sum.amount_usd || 0);
 
   const baseExp = won ? 30 : 12;
   const expGain = Math.min(

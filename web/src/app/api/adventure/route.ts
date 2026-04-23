@@ -30,6 +30,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Not enough energy. Let your pet rest!" }, { status: 400 });
     }
 
+    // Daily adventure cap — max 15 adventures per day
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const adventuresToday = await prisma.petInteraction.count({
+      where: { pet_id, user_id: user.id, interaction_type: { startsWith: "adventure_" }, created_at: { gte: todayStart } },
+    });
+    if (adventuresToday >= 15) {
+      return NextResponse.json({ error: "Daily adventure limit reached (15/day). Come back tomorrow!" }, { status: 429 });
+    }
+
     switch (mode) {
       case "wild": return handleWildEncounter(user, pet);
       case "explore": return handleExplore(user, pet);

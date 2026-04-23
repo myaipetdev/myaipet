@@ -111,8 +111,12 @@ export async function POST(req: NextRequest) {
   const hpRatio = max_hp > 0 ? (hp_left || 0) / max_hp : 0;
   const stars = calculateStars(won, hpRatio, turns || 99);
 
-  // Calculate rewards
-  const growthMul = getGrowthMultiplier(0); // TODO: pass real spend
+  // Calculate rewards (growth multiplier based on USDT purchases)
+  const totalUsdSpent = await prisma.creditPurchase.aggregate({
+    where: { user_id: user.id, status: "confirmed" },
+    _sum: { amount_usd: true },
+  });
+  const growthMul = getGrowthMultiplier(totalUsdSpent._sum.amount_usd || 0);
   const baseExp = won ? stage.rewards.exp : Math.floor(stage.rewards.exp * 0.3);
   const expGain = Math.min(
     Math.floor(baseExp * growthMul),

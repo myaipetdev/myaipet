@@ -36,12 +36,20 @@ export async function POST(req: NextRequest) {
     }, { status: 400 });
   }
 
-  // Deduct credits + record purchase + apply consumable stat bonus atomically
+  // Deduct credits + 5% burn + record purchase atomically
+  const burnAmount = Math.floor(item.price * 0.05);
+  const totalDeduct = item.price + burnAmount;
+
   const updatedUser = await prisma.$transaction(async (tx) => {
     const userResult = await tx.user.update({
       where: { id: user.id },
-      data: { credits: { decrement: item.price } },
+      data: { credits: { decrement: totalDeduct } },
     });
+
+    // Prevent negative credits (race condition guard)
+    if (userResult.credits < 0) {
+      throw new Error("Insufficient credits");
+    }
 
     await tx.itemPurchase.create({
       data: {
