@@ -1624,76 +1624,129 @@ function persist() {
   } catch(e){}
 }
 
-// ---------- WALKING PET DEMO ----------
+// ---------- SPRITE WALKING PET ----------
 (function landingPet() {
+  // Sprite frames: walk(1-4), happy(5), sit(6), sleep(7), wave(8)
+  const WALK_FRAMES = ['walk-1.png','walk-2.png','walk-3.png','walk-4.png'];
+  const SPECIAL = { happy:'walk-5.png', sit:'walk-6.png', sleep:'walk-7.png', wave:'walk-8.png' };
+
   const pet = document.createElement('div');
   pet.id = 'landing-pet';
-  pet.innerHTML = `
-    <img src="mascot-original.jpg" alt="Pet" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid rgba(251,191,36,0.5);box-shadow:0 4px 20px rgba(251,191,36,0.3);cursor:pointer;" />
-    <div style="position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;color:rgba(0,0,0,0.5);white-space:nowrap;background:rgba(255,255,255,0.8);padding:1px 6px;border-radius:6px;">Sparky Lv.15</div>
-  `;
-  pet.style.cssText = 'position:fixed;bottom:20px;left:50%;z-index:9999;transition:none;cursor:pointer;user-select:none;';
+  pet.style.cssText = 'position:fixed;bottom:12px;z-index:9999;cursor:pointer;user-select:none;';
 
+  const sprite = document.createElement('img');
+  sprite.src = WALK_FRAMES[0];
+  sprite.alt = 'Sparky';
+  sprite.style.cssText = 'width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.15));transition:transform 0.1s;';
+  pet.appendChild(sprite);
+
+  const nameTag = document.createElement('div');
+  nameTag.textContent = 'Sparky';
+  nameTag.style.cssText = 'position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:8px;color:rgba(0,0,0,0.5);white-space:nowrap;background:rgba(255,255,255,0.85);padding:1px 6px;border-radius:6px;backdrop-filter:blur(4px);';
+  pet.appendChild(nameTag);
+
+  // Paw prints
+  const pawContainer = document.createElement('div');
+  pawContainer.style.cssText = 'position:fixed;bottom:0;left:0;right:0;height:40px;pointer-events:none;z-index:9998;overflow:hidden;';
+  document.body.appendChild(pawContainer);
+
+  // Speech bubble
   const bubble = document.createElement('div');
-  bubble.id = 'landing-bubble';
-  bubble.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.95);color:#1a1a2e;padding:10px 14px;border-radius:14px;font-size:13px;max-width:240px;box-shadow:0 8px 30px rgba(0,0,0,0.15);display:none;z-index:9999;font-family:var(--sans);line-height:1.5;text-align:center;';
-  bubble.textContent = 'Click me to chat! 🐾';
-
-  document.body.appendChild(pet);
+  bubble.style.cssText = 'position:fixed;bottom:105px;background:rgba(255,255,255,0.97);color:#1a1a2e;padding:10px 14px;border-radius:14px 14px 14px 4px;font-size:13px;max-width:220px;box-shadow:0 6px 24px rgba(0,0,0,0.12);display:none;z-index:9999;font-family:var(--sans);line-height:1.5;';
   document.body.appendChild(bubble);
+  document.body.appendChild(pet);
 
   let posX = window.innerWidth / 2;
   let dir = 1;
-  let walking = true;
-  let bubbleTimer = null;
+  let frame = 0;
+  let state = 'walk'; // walk, idle, sit, sleep
+  let stateTimer = 0;
+  let pawTimer = 0;
 
   const phrases = [
-    "Hey there! 👋", "I remember everything! 🧠", "Your data belongs to you 🛡",
-    "Install the Chrome Extension! 🔌", "Try the playground below ⬇️",
-    "I can talk on Telegram too! T", "Made with PetClaw Protocol 🐾",
+    "Hey! Click me to chat 💬", "I remember everything 🧠", "Your data = your rules 🛡",
+    "Try the playground below ⬇️", "19 platform connectors! 🔌",
+    "Made with PetClaw 🐾", "I never forget a conversation ✨",
+    "Export your SOUL data anytime 📦",
   ];
 
-  // Walk animation
-  setInterval(() => {
-    if (!walking) return;
-    posX += dir * 1.2;
-    if (posX > window.innerWidth - 50) { dir = -1; pet.style.transform = 'scaleX(-1)'; }
-    if (posX < 50) { dir = 1; pet.style.transform = 'scaleX(1)'; }
-    pet.style.left = posX + 'px';
-
-    // Update bubble position
-    bubble.style.left = posX + 'px';
-  }, 30);
-
-  // Random speech
-  setInterval(() => {
-    if (bubble.style.display === 'block') return;
-    bubble.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+  function showBubble(text, dur) {
+    bubble.textContent = text;
     bubble.style.display = 'block';
-    bubble.style.left = posX + 'px';
-    setTimeout(() => { bubble.style.display = 'none'; }, 4000);
-  }, 12000);
+    bubble.style.left = (posX - 40) + 'px';
+    setTimeout(() => { bubble.style.display = 'none'; }, dur || 4000);
+  }
 
-  // Show initial bubble
-  setTimeout(() => {
-    bubble.style.display = 'block';
-    setTimeout(() => { bubble.style.display = 'none'; }, 4000);
-  }, 3000);
+  function spawnPaw(x) {
+    const paw = document.createElement('div');
+    paw.textContent = '🐾';
+    paw.style.cssText = `position:absolute;bottom:2px;left:${x}px;font-size:10px;opacity:0.3;transition:opacity 2s;`;
+    pawContainer.appendChild(paw);
+    setTimeout(() => { paw.style.opacity = '0'; }, 100);
+    setTimeout(() => paw.remove(), 2200);
+  }
 
-  // Click → scroll to playground
+  // Main loop (30fps)
+  setInterval(() => {
+    stateTimer++;
+
+    if (state === 'walk') {
+      // Animate walk frames
+      if (stateTimer % 6 === 0) {
+        frame = (frame + 1) % WALK_FRAMES.length;
+        sprite.src = WALK_FRAMES[frame];
+      }
+      posX += dir * 1.0;
+      pet.style.left = posX + 'px';
+      pet.style.transform = dir === -1 ? 'scaleX(-1)' : 'scaleX(1)';
+
+      // Paw prints
+      pawTimer++;
+      if (pawTimer % 20 === 0) spawnPaw(posX);
+
+      // Bounce at edges
+      if (posX > window.innerWidth - 60) dir = -1;
+      if (posX < 60) dir = 1;
+
+      // Random state change
+      if (stateTimer > 200 + Math.random() * 300) {
+        const r = Math.random();
+        if (r < 0.3) { state = 'sit'; sprite.src = SPECIAL.sit; }
+        else if (r < 0.5) { state = 'idle'; sprite.src = SPECIAL.happy; }
+        else { state = 'wave'; sprite.src = SPECIAL.wave; showBubble(phrases[Math.floor(Math.random()*phrases.length)], 3500); }
+        stateTimer = 0;
+      }
+    } else {
+      // Idle/sit/wave — stay still
+      if (stateTimer > 100 + Math.random() * 100) {
+        state = 'walk';
+        dir = Math.random() > 0.5 ? 1 : -1;
+        stateTimer = 0;
+      }
+    }
+
+    bubble.style.left = (posX - 40) + 'px';
+  }, 33);
+
+  // Initial greeting
+  setTimeout(() => showBubble("Hey! I'm Sparky 🐾 Click me!", 5000), 2000);
+
+  // Click → playground
   pet.addEventListener('click', () => {
+    sprite.src = SPECIAL.happy;
+    state = 'idle'; stateTimer = 0;
     const pg = document.getElementById('playgroundInput');
     if (pg) {
-      pg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      pg.scrollIntoView({ behavior:'smooth', block:'center' });
       setTimeout(() => pg.focus(), 600);
-      bubble.textContent = "Type something! I'll answer 💬";
-      bubble.style.display = 'block';
-      setTimeout(() => { bubble.style.display = 'none'; }, 3000);
+      showBubble("Ask me anything! 💬", 3000);
     }
   });
 
-  // Bob animation
-  pet.style.animation = 'mascot-bob 3s ease-in-out infinite';
+  // Hover reaction
+  pet.addEventListener('mouseenter', () => {
+    if (state === 'walk') { sprite.src = SPECIAL.wave; state = 'wave'; stateTimer = 0; }
+  });
 })();
 
 </script>
