@@ -16,6 +16,7 @@ export interface PetNode {
   name: string;
   petDID: string;
   ownerWallet: string;
+  avatarUrl?: string;
   personality: string;
   element: string;
   level: number;
@@ -106,6 +107,7 @@ export async function discoverPets(filters?: {
       name: pet.name,
       petDID: buildPetDID(pet.user.wallet_address, pet.id),
       ownerWallet: pet.user.wallet_address,
+      avatarUrl: pet.avatar_url || undefined,
       personality: pet.personality_type,
       element: (pet.element as string) || "normal",
       level: pet.level,

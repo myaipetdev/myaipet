@@ -473,10 +473,32 @@ async function exportSoul() {
 
 async function fetchPetInfo() {
   const config = await getConfig();
-  const data = await callPetClawAPI(`/api/pets`);
 
+  // Try authenticated /api/pets first
+  let pet = null;
+  const data = await callPetClawAPI(`/api/pets`);
   if (data?.pets?.length > 0) {
-    const pet = data.pets[0];
+    pet = data.pets[0];
+  }
+
+  // Fallback: try PetClaw network discover (no auth needed)
+  if (!pet) {
+    const discover = await callPetClawAPI(`/api/petclaw/network/discover?limit=1`);
+    if (discover?.nodes?.length > 0) {
+      const node = discover.nodes.find(n => n.petId === config.petId) || discover.nodes[0];
+      pet = {
+        id: node.petId,
+        name: node.name,
+        species: 0,
+        avatar_url: node.avatarUrl || "",
+        personality_type: node.personality,
+        level: node.level,
+        element: node.element,
+      };
+    }
+  }
+
+  if (pet) {
     const updated = {
       ...config,
       petId: pet.id,
