@@ -13,6 +13,7 @@ import Stats from "@/components/Stats";
 import Feed from "@/components/Feed";
 import Pricing from "@/components/Pricing";
 import WalletGate from "@/components/WalletGate";
+import LandingPage from "@/components/LandingPage";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
 const PetGenerate = lazy(() => import("@/components/PetGenerate"));
@@ -233,31 +234,41 @@ export default function App() {
         }
       `}</style>
 
-      <Grid />
-      <Nav
-        section={section}
-        setSection={setSection}
-        credits={isAuthenticated ? credits : null}
-      />
+      {/* Non-authenticated: show landing page */}
+      {!isAuthenticated && section === "home" && (
+        <LandingPage onGetStarted={() => setSection("my pet")} />
+      )}
 
-      {section === "home" && (
+      {/* Authenticated OR non-home section: show app */}
+      {(isAuthenticated || section !== "home") && (
         <>
-          <Hero
-            onAdopt={() => setSection("my pet")}
-            onExplore={() => setSection("community")}
-            txToday={platformStats?.tx_today || 0}
+          <Grid />
+          <Nav
+            section={section}
+            setSection={setSection}
+            credits={isAuthenticated ? credits : null}
           />
-          <SeasonBanner />
-          <div style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
-            <Stats stats={stats} />
-          </div>
-          <div style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
-            <Feed activities={activities} />
-          </div>
-          <Pricing
-            isAuthenticated={isAuthenticated}
-            onCreditsChange={handleCreditsChange}
-          />
+
+          {section === "home" && (
+            <>
+              <Hero
+                onAdopt={() => setSection("my pet")}
+                onExplore={() => setSection("community")}
+                txToday={platformStats?.tx_today || 0}
+              />
+              <SeasonBanner />
+              <div style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
+                <Stats stats={stats} />
+              </div>
+              <div style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
+                <Feed activities={activities} />
+              </div>
+              <Pricing
+                isAuthenticated={isAuthenticated}
+                onCreditsChange={handleCreditsChange}
+              />
+            </>
+          )}
         </>
       )}
 
@@ -323,8 +334,8 @@ export default function App() {
         </Suspense>
       )}
 
-      {/* Footer */}
-      <footer style={{ padding: "36px", textAlign: "center", borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+      {/* Footer — only show in app mode */}
+      {(isAuthenticated || section !== "home") && <footer style={{ padding: "36px", textAlign: "center", borderTop: "1px solid rgba(0,0,0,0.06)" }}>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginBottom: 14 }}>
           <span style={{
             fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600,
@@ -364,7 +375,7 @@ export default function App() {
         <div style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.25)" }}>
           © 2026 My AI PET Protocol · Raise · Bond · Earn
         </div>
-      </footer>
+      </footer>}
     </div>
   );
 }
