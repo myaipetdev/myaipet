@@ -4,7 +4,7 @@
   "version": "2.0.0",
   "description": "Your AI pet lives in your browser — evolves, plays mini-games, shows emotions, and earns airdrop points!",
   "permissions": ["storage", "alarms", "activeTab", "notifications"],
-  "host_permissions": ["http://localhost:3000/*", "https://*.vercel.app/*", "https://*.myaipet.com/*"],
+  "host_permissions": ["http://localhost:3000/*", "http://3.34.197.230/*", "https://*.vercel.app/*", "https://*.myaipet.com/*"],
   "background": {
     "service_worker": "background.js"
   },

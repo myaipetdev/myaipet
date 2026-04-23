@@ -1624,6 +1624,78 @@ function persist() {
   } catch(e){}
 }
 
+// ---------- WALKING PET DEMO ----------
+(function landingPet() {
+  const pet = document.createElement('div');
+  pet.id = 'landing-pet';
+  pet.innerHTML = `
+    <img src="mascot-original.jpg" alt="Pet" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid rgba(251,191,36,0.5);box-shadow:0 4px 20px rgba(251,191,36,0.3);cursor:pointer;" />
+    <div style="position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;color:rgba(0,0,0,0.5);white-space:nowrap;background:rgba(255,255,255,0.8);padding:1px 6px;border-radius:6px;">Sparky Lv.15</div>
+  `;
+  pet.style.cssText = 'position:fixed;bottom:20px;left:50%;z-index:9999;transition:none;cursor:pointer;user-select:none;';
+
+  const bubble = document.createElement('div');
+  bubble.id = 'landing-bubble';
+  bubble.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.95);color:#1a1a2e;padding:10px 14px;border-radius:14px;font-size:13px;max-width:240px;box-shadow:0 8px 30px rgba(0,0,0,0.15);display:none;z-index:9999;font-family:var(--sans);line-height:1.5;text-align:center;';
+  bubble.textContent = 'Click me to chat! 🐾';
+
+  document.body.appendChild(pet);
+  document.body.appendChild(bubble);
+
+  let posX = window.innerWidth / 2;
+  let dir = 1;
+  let walking = true;
+  let bubbleTimer = null;
+
+  const phrases = [
+    "Hey there! 👋", "I remember everything! 🧠", "Your data belongs to you 🛡",
+    "Install the Chrome Extension! 🔌", "Try the playground below ⬇️",
+    "I can talk on Telegram too! T", "Made with PetClaw Protocol 🐾",
+  ];
+
+  // Walk animation
+  setInterval(() => {
+    if (!walking) return;
+    posX += dir * 1.2;
+    if (posX > window.innerWidth - 50) { dir = -1; pet.style.transform = 'scaleX(-1)'; }
+    if (posX < 50) { dir = 1; pet.style.transform = 'scaleX(1)'; }
+    pet.style.left = posX + 'px';
+
+    // Update bubble position
+    bubble.style.left = posX + 'px';
+  }, 30);
+
+  // Random speech
+  setInterval(() => {
+    if (bubble.style.display === 'block') return;
+    bubble.textContent = phrases[Math.floor(Math.random() * phrases.length)];
+    bubble.style.display = 'block';
+    bubble.style.left = posX + 'px';
+    setTimeout(() => { bubble.style.display = 'none'; }, 4000);
+  }, 12000);
+
+  // Show initial bubble
+  setTimeout(() => {
+    bubble.style.display = 'block';
+    setTimeout(() => { bubble.style.display = 'none'; }, 4000);
+  }, 3000);
+
+  // Click → scroll to playground
+  pet.addEventListener('click', () => {
+    const pg = document.getElementById('playgroundInput');
+    if (pg) {
+      pg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => pg.focus(), 600);
+      bubble.textContent = "Type something! I'll answer 💬";
+      bubble.style.display = 'block';
+      setTimeout(() => { bubble.style.display = 'none'; }, 3000);
+    }
+  });
+
+  // Bob animation
+  pet.style.animation = 'mascot-bob 3s ease-in-out infinite';
+})();
+
 </script>
 </body>
 </html>

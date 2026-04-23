@@ -8,7 +8,7 @@
 // ══════════════════════════════════════
 
 const DEFAULT_CONFIG = {
-  apiUrl: "http://localhost:3000",
+  apiUrl: "http://3.34.197.230",
   petId: 1,
   petName: "My Pet",
   petEmoji: "\uD83D\uDC3E",
