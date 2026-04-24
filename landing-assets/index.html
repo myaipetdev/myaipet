@@ -997,7 +997,7 @@
     <div class="section-head">
       <span class="eyebrow">Community showcase</span>
       <h2>Every pet is a mirror of the person who raised it.</h2>
-      <p>A few companions from our first thousand adopters. No two are alike — the system is built to drift.</p>
+      <p>Demo companions showcasing PetClaw's personality system. Each uniquely AI-generated with distinct traits and memories.</p>
     </div>
 
     <div class="gallery" id="gallery"></div>
@@ -1150,9 +1150,9 @@
     </div>
 
     <div class="badges">
-      <span class="badge"><span class="k">github</span><span class="v">petclaw / protocol</span></span>
-      <span class="badge"><span class="k">npm</span><span class="v">petclaw-sdk v1.2.0</span></span>
-      <span class="badge"><span class="k">chrome web store</span><span class="v">PetClaw companion</span></span>
+      <a href="https://github.com/junheony/petclaw" target="_blank" rel="noopener" class="badge" style="text-decoration:none;cursor:pointer;"><span class="k">github</span><span class="v">junheony / petclaw</span></a>
+      <a href="https://www.npmjs.com/package/petclaw-sdk" target="_blank" rel="noopener" class="badge" style="text-decoration:none;cursor:pointer;"><span class="k">npm</span><span class="v">petclaw-sdk v1.2.0</span></a>
+      <a href="https://github.com/junheony/petclaw/blob/main/docs/API.md" target="_blank" rel="noopener" class="badge" style="text-decoration:none;cursor:pointer;"><span class="k">docs</span><span class="v">API Reference</span></a>
     </div>
   </div>
 </section>
@@ -1224,13 +1224,27 @@
     <a href="http://3.34.197.230/.well-known/pet-card.json" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color=''">API Docs</a>
   </div>
 
-  <div style="margin-top:50px; padding-top:30px; border-top:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center; max-width:800px; margin-left:auto; margin-right:auto; flex-wrap:wrap; gap:16px;">
-    <span style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.35);">PetClaw Protocol v1 · 2026</span>
+  <!-- Legal links -->
+  <div style="margin-top:40px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap;">
+    <a href="http://3.34.197.230/docs" style="font-family:var(--mono); font-size:10px; color:rgba(255,255,255,0.3); text-decoration:none;">Terms of Service</a>
+    <a href="http://3.34.197.230/docs" style="font-family:var(--mono); font-size:10px; color:rgba(255,255,255,0.3); text-decoration:none;">Privacy Policy</a>
+    <a href="http://3.34.197.230/.well-known/pet-card.json" style="font-family:var(--mono); font-size:10px; color:rgba(255,255,255,0.3); text-decoration:none;">Protocol Spec</a>
+  </div>
+
+  <!-- On-chain info -->
+  <div style="margin-top:20px; text-align:center;">
+    <span style="font-family:var(--mono); font-size:9px; color:rgba(255,255,255,0.2);">
+      Chain: BNB Smart Chain (BSC) Mainnet · 6 Audited Contracts · 2 Security Audits
+    </span>
+  </div>
+
+  <div style="margin-top:30px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; max-width:800px; margin-left:auto; margin-right:auto; flex-wrap:wrap; gap:16px;">
+    <span style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.3);">PetClaw Protocol v1 · 2026</span>
     <div style="display:flex; align-items:center; gap:8px;">
       <img src="hero-mascot.jpg" alt="" style="width:28px; height:28px; border-radius:8px; object-fit:cover; border:2px solid rgba(245,158,11,0.3);" />
       <span style="font-family:var(--serif); font-size:13px; font-weight:600; color:#fff;">MY AI PET</span>
     </div>
-    <span style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.35); font-style:italic;">Made with care, not hype.</span>
+    <span style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.3); font-style:italic;">Made with care, not hype.</span>
   </div>
 </footer>
 
@@ -1635,9 +1649,9 @@ function persist() {
   pet.style.cssText = 'position:fixed;bottom:12px;z-index:9999;cursor:pointer;user-select:none;';
 
   const sprite = document.createElement('img');
-  sprite.src = WALK_FRAMES[0];
+  sprite.src = 'mascot-original.jpg';
   sprite.alt = 'Sparky';
-  sprite.style.cssText = 'width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.15));transition:transform 0.1s;';
+  sprite.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:50%;border:3px solid rgba(251,191,36,0.5);box-shadow:0 4px 16px rgba(251,191,36,0.25);transition:transform 0.15s;';
   pet.appendChild(sprite);
 
   const nameTag = document.createElement('div');
@@ -1647,7 +1661,7 @@ function persist() {
 
   // Paw prints
   const pawContainer = document.createElement('div');
-  pawContainer.style.cssText = 'position:fixed;bottom:0;left:0;right:0;height:40px;pointer-events:none;z-index:9998;overflow:hidden;';
+  pawContainer.style.cssText = 'position:fixed;bottom:0;left:0;right:0;height:60px;pointer-events:none;z-index:9998;';
   document.body.appendChild(pawContainer);
 
   // Speech bubble
@@ -1680,10 +1694,10 @@ function persist() {
   function spawnPaw(x) {
     const paw = document.createElement('div');
     paw.textContent = '🐾';
-    paw.style.cssText = `position:absolute;bottom:2px;left:${x}px;font-size:10px;opacity:0.3;transition:opacity 2s;`;
+    paw.style.cssText = `position:absolute;bottom:8px;left:${x - 8}px;font-size:16px;opacity:0.5;transition:opacity 3s ease;`;
     pawContainer.appendChild(paw);
-    setTimeout(() => { paw.style.opacity = '0'; }, 100);
-    setTimeout(() => paw.remove(), 2200);
+    setTimeout(() => { paw.style.opacity = '0'; }, 300);
+    setTimeout(() => paw.remove(), 3500);
   }
 
   // Main loop (30fps)
@@ -1691,36 +1705,38 @@ function persist() {
     stateTimer++;
 
     if (state === 'walk') {
-      // Animate walk frames
-      if (stateTimer % 6 === 0) {
-        frame = (frame + 1) % WALK_FRAMES.length;
-        sprite.src = WALK_FRAMES[frame];
+      // Bob animation while walking
+      if (stateTimer % 8 === 0) {
+        sprite.style.transform = stateTimer % 16 === 0 ? 'translateY(-3px)' : 'translateY(0)';
       }
-      posX += dir * 1.0;
+      posX += dir * 0.8;
       pet.style.left = posX + 'px';
       pet.style.transform = dir === -1 ? 'scaleX(-1)' : 'scaleX(1)';
 
       // Paw prints
       pawTimer++;
-      if (pawTimer % 20 === 0) spawnPaw(posX);
+      if (pawTimer % 15 === 0) spawnPaw(posX);
 
       // Bounce at edges
-      if (posX > window.innerWidth - 60) dir = -1;
-      if (posX < 60) dir = 1;
+      if (posX > window.innerWidth - 50) dir = -1;
+      if (posX < 50) dir = 1;
 
-      // Random state change
-      if (stateTimer > 200 + Math.random() * 300) {
+      // Random pause
+      if (stateTimer > 250 + Math.random() * 300) {
         const r = Math.random();
-        if (r < 0.3) { state = 'sit'; sprite.src = SPECIAL.sit; }
-        else if (r < 0.5) { state = 'idle'; sprite.src = SPECIAL.happy; }
-        else { state = 'wave'; sprite.src = SPECIAL.wave; showBubble(phrases[Math.floor(Math.random()*phrases.length)], 3500); }
+        if (r < 0.4) { state = 'idle'; sprite.style.border = '3px solid rgba(74,222,128,0.6)'; }
+        else { state = 'wave'; showBubble(phrases[Math.floor(Math.random()*phrases.length)], 3500); sprite.style.border = '3px solid rgba(245,158,11,0.8)'; }
         stateTimer = 0;
       }
     } else {
-      // Idle/sit/wave — stay still
-      if (stateTimer > 100 + Math.random() * 100) {
+      // Idle/wave — stay still, gentle pulse
+      if (stateTimer % 30 === 0) {
+        sprite.style.transform = stateTimer % 60 === 0 ? 'scale(1.05)' : 'scale(1)';
+      }
+      if (stateTimer > 80 + Math.random() * 80) {
         state = 'walk';
         dir = Math.random() > 0.5 ? 1 : -1;
+        sprite.style.border = '3px solid rgba(251,191,36,0.5)';
         stateTimer = 0;
       }
     }
@@ -1733,8 +1749,10 @@ function persist() {
 
   // Click → playground
   pet.addEventListener('click', () => {
-    sprite.src = SPECIAL.happy;
+    sprite.style.transform = 'scale(1.2)';
+    sprite.style.border = '3px solid rgba(74,222,128,0.8)';
     state = 'idle'; stateTimer = 0;
+    setTimeout(() => { sprite.style.transform = 'scale(1)'; }, 300);
     const pg = document.getElementById('playgroundInput');
     if (pg) {
       pg.scrollIntoView({ behavior:'smooth', block:'center' });
@@ -1745,7 +1763,13 @@ function persist() {
 
   // Hover reaction
   pet.addEventListener('mouseenter', () => {
-    if (state === 'walk') { sprite.src = SPECIAL.wave; state = 'wave'; stateTimer = 0; }
+    sprite.style.transform = 'scale(1.1)';
+    sprite.style.boxShadow = '0 4px 24px rgba(251,191,36,0.4)';
+    if (state === 'walk') { state = 'wave'; stateTimer = 0; showBubble("Hey! 👋", 2000); }
+  });
+  pet.addEventListener('mouseleave', () => {
+    sprite.style.transform = 'scale(1)';
+    sprite.style.boxShadow = '0 4px 16px rgba(251,191,36,0.25)';
   });
 })();
 
