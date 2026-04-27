@@ -1524,6 +1524,93 @@ export default function SovereigntyDashboard() {
               </div>
             </div>
           </div>
+
+          {/* ───── PetClaw Ecosystem (Coming Soon) ───── */}
+          <div
+            style={{
+              padding: 30,
+              borderRadius: 20,
+              background: "rgba(255,255,255,0.02)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              marginBottom: 32,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <span style={{ fontSize: 22 }}>🔌</span>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+                PetClaw Ecosystem
+              </h2>
+              <span style={{
+                fontSize: 8, padding: "2px 8px", borderRadius: 10,
+                background: "rgba(139,92,246,0.15)", color: "#a78bfa",
+                fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em",
+              }}>COMING SOON</span>
+            </div>
+            <p style={{
+              fontSize: 13, color: "rgba(228,228,244,0.45)", marginBottom: 20,
+              fontFamily: "monospace", lineHeight: 1.6,
+            }}>
+              19 platform connectors. Your pet, everywhere you are.
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
+              {[
+                { icon: "T", name: "Telegram", color: "#2AABEE", live: true },
+                { icon: "𝕏", name: "Twitter/X", color: "#000", live: true },
+                { icon: "D", name: "Discord", color: "#5865F2", live: true },
+                { icon: "S", name: "Slack", color: "#4A154B" },
+                { icon: "W", name: "WhatsApp", color: "#25D366" },
+                { icon: "L", name: "LINE", color: "#06C755" },
+                { icon: "I", name: "Instagram", color: "#E4405F" },
+                { icon: "✉", name: "Gmail", color: "#EA4335" },
+                { icon: "N", name: "Notion", color: "#000" },
+                { icon: "📅", name: "Calendar", color: "#4285F4" },
+                { icon: "G", name: "GitHub", color: "#181717" },
+                { icon: "♫", name: "Spotify", color: "#1DB954" },
+                { icon: "▶", name: "YouTube", color: "#FF0000" },
+                { icon: "🔍", name: "Web Search", color: "#4285F4", live: true },
+                { icon: "🦁", name: "Brave", color: "#FB542B" },
+                { icon: "W", name: "Wikipedia", color: "#000", live: true },
+                { icon: "🧠", name: "Memory", color: "#8B5CF6", live: true },
+                { icon: "🦎", name: "CoinGecko", color: "#8BC53F" },
+                { icon: "⛓", name: "BscScan", color: "#F0B90B" },
+              ].map((c) => (
+                <div key={c.name} style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "8px 10px", borderRadius: 10,
+                  background: c.live ? "rgba(74,222,128,0.06)" : "rgba(255,255,255,0.02)",
+                  border: `1px solid ${c.live ? "rgba(74,222,128,0.15)" : "rgba(255,255,255,0.04)"}`,
+                  opacity: c.live ? 1 : 0.5,
+                }}>
+                  <div style={{
+                    width: 24, height: 24, borderRadius: 6,
+                    background: c.color, color: "#fff",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 800, flexShrink: 0,
+                  }}>{c.icon}</div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: c.live ? "#e4e4f4" : "rgba(228,228,244,0.4)" }}>{c.name}</div>
+                    <div style={{ fontSize: 8, fontFamily: "monospace", color: c.live ? "#4ade80" : "rgba(228,228,244,0.25)" }}>
+                      {c.live ? "● live" : "○ soon"}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(255,255,255,0.04)", color: "rgba(228,228,244,0.3)" }}>
+                7 SKILLS
+              </span>
+              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(255,255,255,0.04)", color: "rgba(228,228,244,0.3)" }}>
+                5 MCP CLIENTS
+              </span>
+              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(255,255,255,0.04)", color: "rgba(228,228,244,0.3)" }}>
+                npm petclaw-sdk
+              </span>
+            </div>
+          </div>
     </div>
   );
 }
