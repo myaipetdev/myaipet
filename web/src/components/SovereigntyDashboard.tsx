@@ -1586,17 +1586,17 @@ export default function SovereigntyDashboard() {
                   padding: "8px 10px", borderRadius: 10,
                   background: c.live ? "rgba(74,222,128,0.06)" : "rgba(0,0,0,0.02)",
                   border: `1px solid ${c.live ? "rgba(74,222,128,0.15)" : "rgba(0,0,0,0.04)"}`,
-                  opacity: c.live ? 1 : 0.5,
+                  opacity: c.live ? 1 : 0.75,
                 }}>
                   <div style={{
                     width: 24, height: 24, borderRadius: 6,
-                    background: c.color, color: "#1a1a2e",
+                    background: c.color, color: "#fff",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 11, fontWeight: 800, flexShrink: 0,
                   }}>{c.icon}</div>
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: c.live ? "#e4e4f4" : "rgba(228,228,244,0.4)" }}>{c.name}</div>
-                    <div style={{ fontSize: 8, fontFamily: "monospace", color: c.live ? "#4ade80" : "rgba(228,228,244,0.25)" }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: c.live ? "#1a1a2e" : "rgba(26,26,46,0.55)" }}>{c.name}</div>
+                    <div style={{ fontSize: 8, fontFamily: "monospace", color: c.live ? "#16a34a" : "rgba(26,26,46,0.35)" }}>
                       {c.live ? "● live" : "○ soon"}
                     </div>
                   </div>
@@ -1605,13 +1605,13 @@ export default function SovereigntyDashboard() {
             </div>
 
             <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.3)" }}>
+              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.55)" }}>
                 7 SKILLS
               </span>
-              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.3)" }}>
+              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.55)" }}>
                 5 MCP CLIENTS
               </span>
-              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.3)" }}>
+              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.55)" }}>
                 npm petclaw-sdk
               </span>
             </div>

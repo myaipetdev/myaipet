@@ -11,7 +11,6 @@ const NAV_ITEMS = [
   { key: "my pet", label: "My Pet" },
   { key: "create", label: "My Contents" },
   { key: "community", label: "Community" },
-  { key: "agent", label: "Agent" },
   { key: "sovereignty", label: "Sovereignty" },
 ];
 
