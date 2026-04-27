@@ -249,9 +249,10 @@ export default function SovereigntyDashboard() {
         margin: "0 auto",
         paddingTop: 100,
         minHeight: "100vh",
-        background:
-          "linear-gradient(180deg, #0a0a1a 0%, #0f0f22 30%, #14142a 60%, #1a1a2e 100%)",
+        background: "linear-gradient(180deg, #0a0a1a 0%, #0f0f22 30%, #14142a 60%, #1a1a2e 100%)",
         color: "#e4e4f4",
+        borderRadius: 24,
+        marginBottom: 40,
         position: "relative",
         fontFamily: "'Space Grotesk', sans-serif",
       }}

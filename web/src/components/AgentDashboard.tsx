@@ -60,7 +60,7 @@ export default function AgentDashboard() {
   });
   const [messages, setMessages] = useState<AgentMessage[]>([]);
   const [stats, setStats] = useState<AgentStats>({ total_messages: 0, messages_today: 0, credits_used_today: 0 });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [msgOffset, setMsgOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -204,6 +204,8 @@ export default function AgentDashboard() {
     <div style={{
       padding: "40px", maxWidth: 1000, margin: "0 auto", paddingTop: 100,
       minHeight: "100vh",
+      background: "linear-gradient(180deg, #08081a 0%, #0c0c24 30%, #121230 60%, #1a1a38 100%)",
+      borderRadius: 24, marginBottom: 40,
     }}>
       <style>{`
         @keyframes fadeUp { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }

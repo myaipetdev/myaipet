@@ -234,14 +234,7 @@ export default function App() {
         }
       `}</style>
 
-      {/* Non-authenticated: show landing page */}
-      {!isAuthenticated && section === "home" && (
-        <LandingPage onGetStarted={() => setSection("my pet")} />
-      )}
-
-      {/* Authenticated OR non-home section: show app */}
-      {(isAuthenticated || section !== "home") && (
-        <>
+      {/* Always show app (landing is on separate domain myaipet.ai) */}
           <Grid />
           <Nav
             section={section}
@@ -269,8 +262,6 @@ export default function App() {
               />
             </>
           )}
-        </>
-      )}
 
       {section === "my pet" && (
         <WalletGate section="my pet">
@@ -335,7 +326,7 @@ export default function App() {
       )}
 
       {/* Footer — only show in app mode */}
-      {(isAuthenticated || section !== "home") && <footer style={{ padding: "36px", textAlign: "center", borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+      <footer style={{ padding: "36px", textAlign: "center", borderTop: "1px solid rgba(0,0,0,0.06)" }}>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginBottom: 14 }}>
           <span style={{
             fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600,
@@ -375,7 +366,7 @@ export default function App() {
         <div style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.25)" }}>
           © 2026 My AI PET Protocol · Raise · Bond · Earn
         </div>
-      </footer>}
+      </footer>
     </div>
   );
 }
