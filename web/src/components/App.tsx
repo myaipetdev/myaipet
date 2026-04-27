@@ -353,7 +353,6 @@ export default function App() {
         <div style={{ display: "flex", justifyContent: "center", gap: 20, marginBottom: 12 }}>
           {[
             { label: "Twitter", url: "https://x.com/myaipets" },
-            { label: "Docs", url: "/docs" },
           ].map((l) => (
             <a key={l.label} href={l.url} target="_blank" rel="noopener noreferrer" style={{
               fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.35)", cursor: "pointer",
