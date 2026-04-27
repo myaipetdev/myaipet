@@ -117,6 +117,21 @@ export default function WalletGate({ children, section }: any) {
       <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "rgba(26,26,46,0.35)", marginTop: 24 }}>
         No gas fees required. Wallet is used for identity only.
       </p>
+      <button
+        onClick={() => {
+          // Enable guest mode by faking dev auth
+          localStorage.setItem("petagen_jwt", "guest-browse");
+          localStorage.setItem("petagen_user", JSON.stringify({ wallet_address: "0xGuest", credits: 0 }));
+          window.location.reload();
+        }}
+        style={{
+          marginTop: 16, padding: "10px 24px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.08)",
+          background: "transparent", color: "rgba(26,26,46,0.4)", fontFamily: "'Space Grotesk',sans-serif",
+          fontSize: 13, cursor: "pointer",
+        }}
+      >
+        Browse as Guest →
+      </button>
       <style>{`@keyframes petFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }`}</style>
     </div>
   );

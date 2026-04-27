@@ -9,34 +9,36 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
 });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://3.34.197.230";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://aipet-demo.vercel.app"),
-  title: "MY AI PET - Your Pet, Brought to Life",
-  description: "Adopt an AI pet that grows with you. AI-generated content on-chain. The first full-cycle Web3 revenue ecosystem driven by emotional AI companionship.",
+  metadataBase: new URL(APP_URL),
+  title: "MY AI PET — Your AI Companion, On-Chain",
+  description: "The first AI companion you actually own. Persistent memory, data sovereignty, and cross-platform presence — powered by PetClaw Protocol.",
   icons: {
     icon: "/icon.png",
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
-    title: "MY AI PET - Your Pet, Brought to Life",
-    description: "Adopt an AI pet that grows with you. AI-generated content on-chain.",
-    url: "https://aipet-demo.vercel.app",
+    title: "MY AI PET — Your AI Companion, On-Chain",
+    description: "The first AI companion you actually own. Your data, your memories, your rules.",
+    url: APP_URL,
     siteName: "MY AI PET",
     images: [
       {
-        url: "https://aipet-demo.vercel.app/og-image.jpg",
+        url: `${APP_URL}/og-image.jpg`,
         width: 1024,
         height: 1024,
-        alt: "MY AI PET",
+        alt: "MY AI PET — PetClaw Protocol",
       },
     ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "MY AI PET - Your Pet, Brought to Life",
-    description: "Adopt an AI pet that grows with you. AI-generated content on-chain.",
-    images: ["https://aipet-demo.vercel.app/og-image.jpg"],
+    title: "MY AI PET — Your AI Companion, On-Chain",
+    description: "The first AI companion you actually own. Powered by PetClaw Protocol.",
+    images: [`${APP_URL}/og-image.jpg`],
   },
 };
 
