@@ -249,10 +249,10 @@ export default function SovereigntyDashboard() {
         margin: "0 auto",
         paddingTop: 100,
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #0a0a1a 0%, #0f0f22 30%, #14142a 60%, #1a1a2e 100%)",
-        color: "#e4e4f4",
-        borderRadius: 24,
-        marginBottom: 40,
+        
+        
+        
+        
         position: "relative",
         fontFamily: "'Space Grotesk', sans-serif",
       }}
@@ -332,7 +332,7 @@ export default function SovereigntyDashboard() {
           <p
             style={{
               fontSize: 15,
-              color: "rgba(228,228,244,0.55)",
+              color: "rgba(26,26,46,0.5)",
               fontFamily: "monospace",
               letterSpacing: "-0.01em",
             }}
@@ -348,7 +348,7 @@ export default function SovereigntyDashboard() {
               style={{
                 fontSize: 10,
                 fontFamily: "monospace",
-                color: "rgba(228,228,244,0.4)",
+                color: "rgba(26,26,46,0.4)",
                 marginBottom: 6,
                 letterSpacing: "0.1em",
               }}
@@ -365,10 +365,10 @@ export default function SovereigntyDashboard() {
                 width: "100%",
                 padding: "11px 14px",
                 borderRadius: 12,
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.1)",
+                background: "rgba(0,0,0,0.04)",
+                border: "1px solid rgba(0,0,0,0.08)",
                 backdropFilter: "blur(12px)",
-                color: "#e4e4f4",
+                
                 fontFamily: "'Space Grotesk',sans-serif",
                 fontSize: 14,
                 cursor: "pointer",
@@ -376,7 +376,7 @@ export default function SovereigntyDashboard() {
               }}
             >
               {pets.map((p) => (
-                <option key={p.id} value={p.id} style={{ background: "#14142a", color: "#e4e4f4" }}>
+                <option key={p.id} value={p.id} style={{ background: "#14142a", color: "#1a1a2e" }}>
                   {p.name || `Pet #${p.id}`}
                 </option>
               ))}
@@ -392,16 +392,16 @@ export default function SovereigntyDashboard() {
           style={{
             padding: 48,
             borderRadius: 20,
-            background: "rgba(255,255,255,0.03)",
+            background: "rgba(0,0,0,0.03)",
             backdropFilter: "blur(12px)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            border: "1px solid rgba(0,0,0,0.06)",
             textAlign: "center",
           }}
         >
           <div style={{ fontSize: 16, color: "rgba(228,228,244,0.6)", marginBottom: 8 }}>
             No pets yet
           </div>
-          <div style={{ fontSize: 13, color: "rgba(228,228,244,0.4)", fontFamily: "monospace" }}>
+          <div style={{ fontSize: 13, color: "rgba(26,26,46,0.4)", fontFamily: "monospace" }}>
             Adopt a pet to birth your sovereign self on-chain
           </div>
         </div>
@@ -414,10 +414,10 @@ export default function SovereigntyDashboard() {
           style={{
             padding: 48,
             borderRadius: 20,
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "rgba(0,0,0,0.03)",
+            border: "1px solid rgba(0,0,0,0.06)",
             textAlign: "center",
-            color: "rgba(228,228,244,0.4)",
+            color: "rgba(26,26,46,0.4)",
             fontFamily: "monospace",
             fontSize: 12,
           }}
@@ -493,7 +493,7 @@ export default function SovereigntyDashboard() {
                       style={{
                         fontFamily: "monospace",
                         fontSize: 11,
-                        color: "rgba(228,228,244,0.5)",
+                        color: "rgba(26,26,46,0.5)",
                         letterSpacing: "0.06em",
                       }}
                     >
@@ -539,14 +539,14 @@ export default function SovereigntyDashboard() {
                         fontWeight: 700,
                         marginBottom: 16,
                         letterSpacing: "-0.02em",
-                        color: "#fff",
+                        color: "#1a1a2e",
                       }}
                     >
                       {selectedPet?.name || `Pet #${selectedPet?.id}`}
                     </div>
 
                     <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "10px 16px", fontSize: 13 }}>
-                      <div style={{ color: "rgba(228,228,244,0.5)", fontFamily: "monospace", fontSize: 11 }}>
+                      <div style={{ color: "rgba(26,26,46,0.5)", fontFamily: "monospace", fontSize: 11 }}>
                         GENESIS
                       </div>
                       <div
@@ -569,14 +569,14 @@ export default function SovereigntyDashboard() {
                         )}
                       </div>
 
-                      <div style={{ color: "rgba(228,228,244,0.5)", fontFamily: "monospace", fontSize: 11 }}>
+                      <div style={{ color: "rgba(26,26,46,0.5)", fontFamily: "monospace", fontSize: 11 }}>
                         VERSION
                       </div>
                       <div style={{ fontFamily: "monospace", fontSize: 13, color: "#c084fc", fontWeight: 600 }}>
                         v{soul.current_version ?? 1}
                       </div>
 
-                      <div style={{ color: "rgba(228,228,244,0.5)", fontFamily: "monospace", fontSize: 11 }}>
+                      <div style={{ color: "rgba(26,26,46,0.5)", fontFamily: "monospace", fontSize: 11 }}>
                         CURRENT
                       </div>
                       <div
@@ -598,14 +598,14 @@ export default function SovereigntyDashboard() {
                         )}
                       </div>
 
-                      <div style={{ color: "rgba(228,228,244,0.5)", fontFamily: "monospace", fontSize: 11 }}>
+                      <div style={{ color: "rgba(26,26,46,0.5)", fontFamily: "monospace", fontSize: 11 }}>
                         BIRTH
                       </div>
                       <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(228,228,244,0.85)" }}>
                         {formatDate(soul.birth_at)}
                       </div>
 
-                      <div style={{ color: "rgba(228,228,244,0.5)", fontFamily: "monospace", fontSize: 11 }}>
+                      <div style={{ color: "rgba(26,26,46,0.5)", fontFamily: "monospace", fontSize: 11 }}>
                         HEARTBEAT
                       </div>
                       <div style={{ fontFamily: "monospace", fontSize: 12, color: "#10b981" }}>
@@ -681,7 +681,7 @@ export default function SovereigntyDashboard() {
               <div
                 style={{
                   fontSize: 13,
-                  color: "rgba(228,228,244,0.5)",
+                  color: "rgba(26,26,46,0.5)",
                   fontFamily: "monospace",
                 }}
               >
@@ -696,9 +696,9 @@ export default function SovereigntyDashboard() {
             style={{
               padding: 30,
               borderRadius: 20,
-              background: "rgba(255,255,255,0.03)",
+              background: "rgba(0,0,0,0.03)",
               backdropFilter: "blur(12px)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              border: "1px solid rgba(0,0,0,0.06)",
               marginBottom: 32,
             }}
           >
@@ -711,14 +711,14 @@ export default function SovereigntyDashboard() {
                   background: "linear-gradient(180deg, #f59e0b, #c084fc)",
                 }}
               />
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>
                 Persona Evolution
               </h2>
               <span
                 style={{
                   fontSize: 11,
                   fontFamily: "monospace",
-                  color: "rgba(228,228,244,0.4)",
+                  color: "rgba(26,26,46,0.4)",
                   marginLeft: "auto",
                 }}
               >
@@ -731,7 +731,7 @@ export default function SovereigntyDashboard() {
                 style={{
                   padding: 28,
                   textAlign: "center",
-                  color: "rgba(228,228,244,0.4)",
+                  color: "rgba(26,26,46,0.4)",
                   fontFamily: "monospace",
                   fontSize: 12,
                 }}
@@ -795,7 +795,7 @@ export default function SovereigntyDashboard() {
                         </span>
                         <span
                           style={{
-                            color: "#fff",
+                            color: "#1a1a2e",
                             fontWeight: 600,
                             fontSize: 13,
                           }}
@@ -806,7 +806,7 @@ export default function SovereigntyDashboard() {
                           style={{
                             fontFamily: "monospace",
                             fontSize: 11,
-                            color: "rgba(228,228,244,0.4)",
+                            color: "rgba(26,26,46,0.4)",
                           }}
                         >
                           {formatDate(ck.created_at)}
@@ -841,7 +841,7 @@ export default function SovereigntyDashboard() {
                         <div
                           style={{
                             fontSize: 12,
-                            color: "rgba(228,228,244,0.55)",
+                            color: "rgba(26,26,46,0.5)",
                             fontFamily: "monospace",
                             lineHeight: 1.55,
                           }}
@@ -871,14 +871,14 @@ export default function SovereigntyDashboard() {
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
               <span style={{ fontSize: 22 }}>🕊</span>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>
                 Legacy &amp; Inheritance
               </h2>
             </div>
             <p
               style={{
                 fontSize: 13,
-                color: "rgba(228,228,244,0.55)",
+                color: "rgba(26,26,46,0.5)",
                 marginBottom: 20,
                 fontFamily: "monospace",
                 lineHeight: 1.6,
@@ -892,7 +892,7 @@ export default function SovereigntyDashboard() {
                 style={{
                   fontSize: 10,
                   fontFamily: "monospace",
-                  color: "rgba(228,228,244,0.4)",
+                  color: "rgba(26,26,46,0.4)",
                   marginBottom: 6,
                   letterSpacing: "0.1em",
                 }}
@@ -910,8 +910,8 @@ export default function SovereigntyDashboard() {
                     minWidth: 280,
                     padding: "11px 14px",
                     borderRadius: 10,
-                    background: "rgba(0,0,0,0.3)",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(0,0,0,0.05)",
+                    border: "1px solid rgba(0,0,0,0.08)",
                     color: "#fbbf24",
                     fontFamily: "monospace",
                     fontSize: 13,
@@ -926,10 +926,10 @@ export default function SovereigntyDashboard() {
                     borderRadius: 10,
                     background:
                       successorSaving || !successorInput.trim()
-                        ? "rgba(255,255,255,0.06)"
+                        ? "rgba(0,0,0,0.05)"
                         : "linear-gradient(135deg, #f59e0b, #d97706)",
                     border: "none",
-                    color: "#fff",
+                    color: "#1a1a2e",
                     fontFamily: "'Space Grotesk',sans-serif",
                     fontSize: 13,
                     fontWeight: 600,
@@ -978,19 +978,19 @@ export default function SovereigntyDashboard() {
                 gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
                 gap: 14,
                 paddingTop: 16,
-                borderTop: "1px solid rgba(255,255,255,0.06)",
+                borderTop: "1px solid rgba(0,0,0,0.05)",
               }}
             >
               <div>
-                <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(228,228,244,0.4)", marginBottom: 4, letterSpacing: "0.1em" }}>
+                <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", marginBottom: 4, letterSpacing: "0.1em" }}>
                   INHERITANCE TRIGGER
                 </div>
-                <div style={{ fontSize: 13, color: "#e4e4f4", fontFamily: "monospace" }}>
+                <div style={{ fontSize: 13,  fontFamily: "monospace" }}>
                   {soul?.inactivity_days ?? 180} days of inactivity
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(228,228,244,0.4)", marginBottom: 4, letterSpacing: "0.1em" }}>
+                <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", marginBottom: 4, letterSpacing: "0.1em" }}>
                   LAST ACTIVE
                 </div>
                 <div style={{ fontSize: 13, color: "#10b981", fontFamily: "monospace" }}>
@@ -1006,9 +1006,9 @@ export default function SovereigntyDashboard() {
             style={{
               padding: 30,
               borderRadius: 20,
-              background: "rgba(255,255,255,0.03)",
+              background: "rgba(0,0,0,0.03)",
               backdropFilter: "blur(12px)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              border: "1px solid rgba(0,0,0,0.06)",
               marginBottom: 32,
             }}
           >
@@ -1021,14 +1021,14 @@ export default function SovereigntyDashboard() {
                   background: "linear-gradient(180deg, #c084fc, #f59e0b)",
                 }}
               />
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>
                 Memory NFTs
               </h2>
               <span
                 style={{
                   fontSize: 11,
                   fontFamily: "monospace",
-                  color: "rgba(228,228,244,0.4)",
+                  color: "rgba(26,26,46,0.4)",
                 }}
               >
                 {memoryNfts.length} minted
@@ -1041,7 +1041,7 @@ export default function SovereigntyDashboard() {
                   borderRadius: 10,
                   background: "linear-gradient(135deg, #8b5cf6, #6d28d9)",
                   border: "none",
-                  color: "#fff",
+                  color: "#1a1a2e",
                   fontFamily: "'Space Grotesk',sans-serif",
                   fontSize: 12,
                   fontWeight: 600,
@@ -1057,14 +1057,14 @@ export default function SovereigntyDashboard() {
                 style={{
                   padding: 40,
                   borderRadius: 14,
-                  border: "1px dashed rgba(255,255,255,0.1)",
+                  border: "1px dashed rgba(0,0,0,0.08)",
                   textAlign: "center",
                 }}
               >
                 <div style={{ fontSize: 14, color: "rgba(228,228,244,0.6)", marginBottom: 6 }}>
                   No memories minted yet
                 </div>
-                <div style={{ fontSize: 12, color: "rgba(228,228,244,0.4)", fontFamily: "monospace", marginBottom: 18 }}>
+                <div style={{ fontSize: 12, color: "rgba(26,26,46,0.4)", fontFamily: "monospace", marginBottom: 18 }}>
                   Your first milestone awaits
                 </div>
                 <button
@@ -1074,7 +1074,7 @@ export default function SovereigntyDashboard() {
                     borderRadius: 10,
                     background: "linear-gradient(135deg, #f59e0b, #c084fc)",
                     border: "none",
-                    color: "#fff",
+                    color: "#1a1a2e",
                     fontFamily: "'Space Grotesk',sans-serif",
                     fontSize: 13,
                     fontWeight: 600,
@@ -1100,7 +1100,7 @@ export default function SovereigntyDashboard() {
                       borderRadius: 14,
                       background:
                         "linear-gradient(135deg, rgba(245,158,11,0.06), rgba(139,92,246,0.06))",
-                      border: "1px solid rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(0,0,0,0.06)",
                       transition: "all 0.2s",
                     }}
                   >
@@ -1127,7 +1127,7 @@ export default function SovereigntyDashboard() {
                       style={{
                         fontSize: 14,
                         fontWeight: 600,
-                        color: "#fff",
+                        color: "#1a1a2e",
                         marginBottom: 5,
                         lineHeight: 1.3,
                       }}
@@ -1137,7 +1137,7 @@ export default function SovereigntyDashboard() {
                     <div
                       style={{
                         fontSize: 12,
-                        color: "rgba(228,228,244,0.5)",
+                        color: "rgba(26,26,46,0.5)",
                         fontFamily: "monospace",
                         lineHeight: 1.5,
                         marginBottom: 12,
@@ -1203,16 +1203,16 @@ export default function SovereigntyDashboard() {
               padding: 32,
               background: "linear-gradient(180deg, #14142a 0%, #0f0f22 100%)",
               border: "1px solid rgba(245,158,11,0.25)",
-              boxShadow: "0 20px 80px rgba(0,0,0,0.6)",
+              boxShadow: "0 20px 80px rgba(0,0,0,0.08)",
             }}
           >
-            <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", marginBottom: 6 }}>
               Mint Memory NFT
             </div>
             <div
               style={{
                 fontSize: 12,
-                color: "rgba(228,228,244,0.5)",
+                color: "rgba(26,26,46,0.5)",
                 fontFamily: "monospace",
                 marginBottom: 20,
               }}
@@ -1319,9 +1319,9 @@ export default function SovereigntyDashboard() {
                   flex: 1,
                   padding: "12px",
                   borderRadius: 10,
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  color: "#e4e4f4",
+                  background: "rgba(0,0,0,0.04)",
+                  border: "1px solid rgba(0,0,0,0.08)",
+                  
                   fontFamily: "'Space Grotesk',sans-serif",
                   fontSize: 13,
                   fontWeight: 600,
@@ -1339,10 +1339,10 @@ export default function SovereigntyDashboard() {
                   borderRadius: 10,
                   background:
                     minting || !mintTitle.trim() || !mintDesc.trim()
-                      ? "rgba(255,255,255,0.06)"
+                      ? "rgba(0,0,0,0.05)"
                       : "linear-gradient(135deg, #f59e0b, #c084fc)",
                   border: "none",
-                  color: "#fff",
+                  color: "#1a1a2e",
                   fontFamily: "'Space Grotesk',sans-serif",
                   fontSize: 13,
                   fontWeight: 700,
@@ -1370,7 +1370,7 @@ export default function SovereigntyDashboard() {
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
               <span style={{ fontSize: 22 }}>🛡</span>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>
                 Data Sovereignty
               </h2>
               <span style={{
@@ -1380,7 +1380,7 @@ export default function SovereigntyDashboard() {
               }}>PetClaw v1</span>
             </div>
             <p style={{
-              fontSize: 13, color: "rgba(228,228,244,0.55)", marginBottom: 20,
+              fontSize: 13, color: "rgba(26,26,46,0.5)", marginBottom: 20,
               fontFamily: "monospace", lineHeight: 1.6,
             }}>
               Your pet, your data, your rules. Export, import, or delete all data — with cryptographic proof.
@@ -1413,7 +1413,7 @@ export default function SovereigntyDashboard() {
                 style={{
                   padding: "12px 24px", borderRadius: 12, border: "none",
                   background: "linear-gradient(135deg, #f59e0b, #d97706)",
-                  color: "#fff", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
+                  color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
                   cursor: exporting ? "not-allowed" : "pointer", opacity: exporting ? 0.5 : 1,
                 }}
               >
@@ -1451,7 +1451,7 @@ export default function SovereigntyDashboard() {
                     disabled={deleting}
                     style={{
                       padding: "12px 20px", borderRadius: 12, border: "none",
-                      background: "#dc2626", color: "#fff",
+                      background: "#dc2626", color: "#1a1a2e",
                       fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
                       cursor: "pointer",
                     }}
@@ -1462,7 +1462,7 @@ export default function SovereigntyDashboard() {
                     onClick={() => setDeleteConfirm(false)}
                     style={{
                       padding: "12px 16px", borderRadius: 12,
-                      background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                      background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.08)",
                       color: "#999", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13,
                       cursor: "pointer",
                     }}
@@ -1486,8 +1486,8 @@ export default function SovereigntyDashboard() {
             )}
 
             {/* Consent Management */}
-            <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
-              <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(228,228,244,0.4)", marginBottom: 12, letterSpacing: "0.1em" }}>
+            <div style={{ borderTop: "1px solid rgba(0,0,0,0.05)", paddingTop: 16 }}>
+              <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", marginBottom: 12, letterSpacing: "0.1em" }}>
                 DATA CONSENT
               </div>
               <div style={{ display: "grid", gap: 10 }}>
@@ -1500,19 +1500,19 @@ export default function SovereigntyDashboard() {
                   <div key={key} style={{
                     display: "flex", justifyContent: "space-between", alignItems: "center",
                     padding: "10px 14px", borderRadius: 10,
-                    background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.04)",
+                    background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.04)",
                   }}>
                     <div>
-                      <div style={{ fontSize: 13, color: "#e4e4f4", fontWeight: 600 }}>{label}</div>
-                      <div style={{ fontSize: 10, color: "rgba(228,228,244,0.4)", fontFamily: "monospace" }}>{desc}</div>
+                      <div style={{ fontSize: 13,  fontWeight: 600 }}>{label}</div>
+                      <div style={{ fontSize: 10, color: "rgba(26,26,46,0.4)", fontFamily: "monospace" }}>{desc}</div>
                     </div>
                     <div
                       onClick={() => setConsent(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }))}
                       style={{
                         width: 44, height: 24, borderRadius: 12,
-                        background: (consent as any)[key] ? "linear-gradient(135deg, #f59e0b, #d97706)" : "rgba(255,255,255,0.1)",
+                        background: (consent as any)[key] ? "linear-gradient(135deg, #f59e0b, #d97706)" : "rgba(0,0,0,0.08)",
                         cursor: "pointer", position: "relative", transition: "all 0.2s",
-                        border: `1px solid ${(consent as any)[key] ? "rgba(245,158,11,0.3)" : "rgba(255,255,255,0.1)"}`,
+                        border: `1px solid ${(consent as any)[key] ? "rgba(245,158,11,0.3)" : "rgba(0,0,0,0.08)"}`,
                       }}
                     >
                       <div style={{
@@ -1521,7 +1521,7 @@ export default function SovereigntyDashboard() {
                         position: "absolute", top: 2,
                         left: (consent as any)[key] ? 22 : 2,
                         transition: "left 0.2s",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
                       }} />
                     </div>
                   </div>
@@ -1535,15 +1535,15 @@ export default function SovereigntyDashboard() {
             style={{
               padding: 30,
               borderRadius: 20,
-              background: "rgba(255,255,255,0.02)",
+              background: "rgba(0,0,0,0.02)",
               backdropFilter: "blur(12px)",
-              border: "1px solid rgba(255,255,255,0.06)",
+              border: "1px solid rgba(0,0,0,0.05)",
               marginBottom: 32,
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
               <span style={{ fontSize: 22 }}>🔌</span>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>
                 PetClaw Ecosystem
               </h2>
               <span style={{
@@ -1553,7 +1553,7 @@ export default function SovereigntyDashboard() {
               }}>COMING SOON</span>
             </div>
             <p style={{
-              fontSize: 13, color: "rgba(228,228,244,0.45)", marginBottom: 20,
+              fontSize: 13, color: "rgba(26,26,46,0.45)", marginBottom: 20,
               fontFamily: "monospace", lineHeight: 1.6,
             }}>
               19 platform connectors. Your pet, everywhere you are.
@@ -1584,13 +1584,13 @@ export default function SovereigntyDashboard() {
                 <div key={c.name} style={{
                   display: "flex", alignItems: "center", gap: 8,
                   padding: "8px 10px", borderRadius: 10,
-                  background: c.live ? "rgba(74,222,128,0.06)" : "rgba(255,255,255,0.02)",
-                  border: `1px solid ${c.live ? "rgba(74,222,128,0.15)" : "rgba(255,255,255,0.04)"}`,
+                  background: c.live ? "rgba(74,222,128,0.06)" : "rgba(0,0,0,0.02)",
+                  border: `1px solid ${c.live ? "rgba(74,222,128,0.15)" : "rgba(0,0,0,0.04)"}`,
                   opacity: c.live ? 1 : 0.5,
                 }}>
                   <div style={{
                     width: 24, height: 24, borderRadius: 6,
-                    background: c.color, color: "#fff",
+                    background: c.color, color: "#1a1a2e",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 11, fontWeight: 800, flexShrink: 0,
                   }}>{c.icon}</div>
@@ -1605,13 +1605,13 @@ export default function SovereigntyDashboard() {
             </div>
 
             <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(255,255,255,0.04)", color: "rgba(228,228,244,0.3)" }}>
+              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.3)" }}>
                 7 SKILLS
               </span>
-              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(255,255,255,0.04)", color: "rgba(228,228,244,0.3)" }}>
+              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.3)" }}>
                 5 MCP CLIENTS
               </span>
-              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(255,255,255,0.04)", color: "rgba(228,228,244,0.3)" }}>
+              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.3)" }}>
                 npm petclaw-sdk
               </span>
             </div>
@@ -1625,7 +1625,7 @@ const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: 10,
   fontFamily: "monospace",
-  color: "rgba(228,228,244,0.4)",
+  color: "rgba(26,26,46,0.4)",
   marginBottom: 6,
   letterSpacing: "0.1em",
 };
@@ -1634,9 +1634,9 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "11px 14px",
   borderRadius: 10,
-  background: "rgba(0,0,0,0.3)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  color: "#e4e4f4",
+  background: "rgba(0,0,0,0.05)",
+  border: "1px solid rgba(0,0,0,0.08)",
+  
   fontFamily: "'Space Grotesk',sans-serif",
   fontSize: 13,
   outline: "none",

@@ -204,8 +204,8 @@ export default function AgentDashboard() {
     <div style={{
       padding: "40px", maxWidth: 1000, margin: "0 auto", paddingTop: 100,
       minHeight: "100vh",
-      background: "linear-gradient(180deg, #08081a 0%, #0c0c24 30%, #121230 60%, #1a1a38 100%)",
-      borderRadius: 24, marginBottom: 40,
+      
+      
     }}>
       <style>{`
         @keyframes fadeUp { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
@@ -227,11 +227,11 @@ export default function AgentDashboard() {
         <div>
           <div style={{
             fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 800,
-            color: "#fff", letterSpacing: "-0.03em",
+            color: "#1a1a2e", letterSpacing: "-0.03em",
           }}>
             <span style={{ color: "#f59e0b" }}>AI</span> Agent
           </div>
-          <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>
+          <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(26,26,46,0.45)", marginTop: 4 }}>
             Deploy your pet as an autonomous AI agent across platforms
           </div>
         </div>
@@ -245,10 +245,10 @@ export default function AgentDashboard() {
               if (pet) setSelectedPet(pet);
             }}
             style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(0,0,0,0.04)",
+              border: "1px solid rgba(0,0,0,0.08)",
               borderRadius: 12, padding: "10px 16px",
-              color: "#fff", fontFamily: "'Space Grotesk',sans-serif", fontSize: 14,
+              color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif", fontSize: 14,
               fontWeight: 600, cursor: "pointer",
               outline: "none", appearance: "none",
               backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E")`,
@@ -258,7 +258,7 @@ export default function AgentDashboard() {
             }}
           >
             {pets.map((p: any) => (
-              <option key={p.id} value={p.id} style={{ background: "#1a1a2e", color: "#fff" }}>
+              <option key={p.id} value={p.id} style={{ background: "#1a1a2e", color: "#1a1a2e" }}>
                 {p.name} (Lv.{p.level || 1})
               </option>
             ))}
@@ -267,7 +267,7 @@ export default function AgentDashboard() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: 60, color: "rgba(255,255,255,0.3)", fontFamily: "monospace", fontSize: 13 }}>
+        <div style={{ textAlign: "center", padding: 60, color: "rgba(26,26,46,0.3)", fontFamily: "monospace", fontSize: 13 }}>
           <div style={{ animation: "spin 1s linear infinite", display: "inline-block", marginBottom: 12 }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(245,158,11,0.5)" strokeWidth="2">
               <path d="M12 2v4m0 12v4m-10-10h4m12 0h4m-3.5-6.5l-2.8 2.8m-5.4 5.4l-2.8 2.8m0-11l2.8 2.8m5.4 5.4l2.8 2.8" />
@@ -288,15 +288,15 @@ export default function AgentDashboard() {
               { label: "Credits Used", value: `${stats.credits_used_today}/${config.daily_credit_limit}`, icon: "C" },
             ].map((s, i) => (
               <div key={i} style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.06)",
+                background: "rgba(0,0,0,0.02)",
+                border: "1px solid rgba(0,0,0,0.04)",
                 borderRadius: 14, padding: "16px 20px",
                 textAlign: "center",
               }}>
-                <div style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                <div style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(26,26,46,0.3)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>
                   {s.label}
                 </div>
-                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, fontWeight: 800, color: "#fff" }}>
+                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, fontWeight: 800, color: "#1a1a2e" }}>
                   {s.value}
                 </div>
               </div>
@@ -307,7 +307,7 @@ export default function AgentDashboard() {
           <div style={{ marginBottom: 32, animation: "fadeUp 0.4s ease-out 0.15s both" }}>
             <div style={{
               fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700,
-              color: "#fff", marginBottom: 14,
+              color: "#1a1a2e", marginBottom: 14,
             }}>
               Platform Connections
             </div>
@@ -321,7 +321,7 @@ export default function AgentDashboard() {
                     className="agent-card"
                     style={{
                       background: "linear-gradient(145deg, rgba(20,20,50,0.6), rgba(15,15,40,0.4))",
-                      border: `1px solid ${isConnected ? `${platform.color}30` : "rgba(255,255,255,0.06)"}`,
+                      border: `1px solid ${isConnected ? `${platform.color}30` : "rgba(0,0,0,0.04)"}`,
                       borderRadius: 16, padding: "24px 20px",
                       backdropFilter: "blur(12px)",
                       transition: "all 0.3s ease",
@@ -341,13 +341,13 @@ export default function AgentDashboard() {
                         {platform.icon}
                       </div>
                       <div>
-                        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700, color: "#fff" }}>
+                        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700, color: "#1a1a2e" }}>
                           {platform.label}
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
                           <div style={{
                             width: 7, height: 7, borderRadius: "50%",
-                            background: isConnected ? "#4ade80" : "rgba(255,255,255,0.15)",
+                            background: isConnected ? "#4ade80" : "rgba(0,0,0,0.08)",
                             boxShadow: isConnected ? "0 0 8px rgba(74,222,128,0.4)" : "none",
                           }} />
                           <span style={{ fontFamily: "monospace", fontSize: 11, color: isConnected ? "#4ade80" : "rgba(255,255,255,0.3)" }}>
@@ -362,7 +362,7 @@ export default function AgentDashboard() {
                       <div style={{
                         fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.45)",
                         marginBottom: 14, padding: "6px 10px",
-                        background: "rgba(255,255,255,0.03)", borderRadius: 8,
+                        background: "rgba(0,0,0,0.02)", borderRadius: 8,
                       }}>
                         @{conn.bot_username}
                       </div>
@@ -391,7 +391,7 @@ export default function AgentDashboard() {
                           width: "100%", padding: "10px",
                           borderRadius: 10, border: "none",
                           background: `linear-gradient(135deg, ${platform.color}, ${platform.color}cc)`,
-                          color: "#fff", fontFamily: "'Space Grotesk',sans-serif", fontSize: 12,
+                          color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif", fontSize: 12,
                           fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
                           boxShadow: `0 4px 16px ${platform.color}25`,
                         }}
@@ -420,7 +420,7 @@ export default function AgentDashboard() {
                     : "linear-gradient(145deg, rgba(20,20,50,0.6), rgba(15,15,40,0.4))",
                   border: personaExpanded
                     ? "1px solid rgba(139,92,246,0.2)"
-                    : "1px solid rgba(255,255,255,0.06)",
+                    : "1px solid rgba(0,0,0,0.04)",
                   borderRadius: 18, padding: "20px 28px",
                   backdropFilter: "blur(12px)",
                   cursor: "pointer",
@@ -443,13 +443,13 @@ export default function AgentDashboard() {
                   <div>
                     <div style={{
                       fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700,
-                      color: "#fff",
+                      color: "#1a1a2e",
                     }}>
                       Persona Setup
                     </div>
                     <div style={{
                       fontFamily: "monospace", fontSize: 11,
-                      color: "rgba(255,255,255,0.3)", marginTop: 2,
+                      color: "rgba(26,26,46,0.3)", marginTop: 2,
                     }}>
                       Configure {selectedPet.name}&apos;s personality to reflect you
                     </div>
@@ -457,7 +457,7 @@ export default function AgentDashboard() {
                 </div>
                 <div style={{
                   fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, fontWeight: 300,
-                  color: "rgba(255,255,255,0.3)",
+                  color: "rgba(26,26,46,0.3)",
                   transform: personaExpanded ? "rotate(180deg)" : "rotate(0deg)",
                   transition: "transform 0.3s ease",
                 }}>
@@ -490,7 +490,7 @@ export default function AgentDashboard() {
           <div style={{
             marginBottom: 32, animation: "fadeUp 0.4s ease-out 0.2s both",
             background: "linear-gradient(145deg, rgba(20,20,50,0.6), rgba(15,15,40,0.4))",
-            border: "1px solid rgba(255,255,255,0.06)",
+            border: "1px solid rgba(0,0,0,0.04)",
             borderRadius: 18, padding: "28px",
             backdropFilter: "blur(12px)",
           }}>
@@ -499,10 +499,10 @@ export default function AgentDashboard() {
               marginBottom: 24,
             }}>
               <div>
-                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700, color: "#fff" }}>
+                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700, color: "#1a1a2e" }}>
                   Autonomous Mode
                 </div>
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 3 }}>
+                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(26,26,46,0.3)", marginTop: 3 }}>
                   Let your pet post and interact on its own
                 </div>
               </div>
@@ -514,7 +514,7 @@ export default function AgentDashboard() {
                   width: 52, height: 28, borderRadius: 14,
                   background: config.is_enabled
                     ? "linear-gradient(135deg, #f59e0b, #d97706)"
-                    : "rgba(255,255,255,0.08)",
+                    : "rgba(0,0,0,0.06)",
                   border: "none", cursor: "pointer",
                   position: "relative", transition: "all 0.3s ease",
                   boxShadow: config.is_enabled ? "0 0 16px rgba(245,158,11,0.3)" : "none",
@@ -539,7 +539,7 @@ export default function AgentDashboard() {
             }}>
               {/* Credit Limit Slider */}
               <div>
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>
+                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(26,26,46,0.4)", marginBottom: 8 }}>
                   Daily Credit Limit
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -550,7 +550,7 @@ export default function AgentDashboard() {
                     onChange={e => handleSaveConfig({ daily_credit_limit: Number(e.target.value) })}
                     style={{
                       flex: 1, height: 4, appearance: "none",
-                      background: `linear-gradient(to right, #f59e0b ${((config.daily_credit_limit - 10) / 190) * 100}%, rgba(255,255,255,0.08) ${((config.daily_credit_limit - 10) / 190) * 100}%)`,
+                      background: `linear-gradient(to right, #f59e0b ${((config.daily_credit_limit - 10) / 190) * 100}%, rgba(0,0,0,0.06) ${((config.daily_credit_limit - 10) / 190) * 100}%)`,
                       borderRadius: 2, outline: "none", cursor: "pointer",
                       accentColor: "#f59e0b",
                     }}
@@ -566,7 +566,7 @@ export default function AgentDashboard() {
 
               {/* Posting Frequency */}
               <div>
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>
+                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(26,26,46,0.4)", marginBottom: 8 }}>
                   Posting Frequency
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
@@ -578,10 +578,10 @@ export default function AgentDashboard() {
                         flex: 1, padding: "8px 6px", borderRadius: 10,
                         background: config.posting_frequency === opt.value
                           ? "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.08))"
-                          : "rgba(255,255,255,0.03)",
+                          : "rgba(0,0,0,0.02)",
                         border: config.posting_frequency === opt.value
                           ? "1.5px solid rgba(245,158,11,0.3)"
-                          : "1.5px solid rgba(255,255,255,0.06)",
+                          : "1.5px solid rgba(0,0,0,0.04)",
                         color: config.posting_frequency === opt.value ? "#f59e0b" : "rgba(255,255,255,0.3)",
                         fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 700,
                         cursor: "pointer", transition: "all 0.25s", textAlign: "center",
@@ -598,7 +598,7 @@ export default function AgentDashboard() {
 
               {/* Quiet Hours */}
               <div style={{ gridColumn: "1 / -1" }}>
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>
+                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(26,26,46,0.4)", marginBottom: 8 }}>
                   Quiet Hours (no autonomous posts)
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -606,10 +606,10 @@ export default function AgentDashboard() {
                     value={config.quiet_hours_start}
                     onChange={e => handleSaveConfig({ quiet_hours_start: Number(e.target.value) })}
                     style={{
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: "rgba(0,0,0,0.04)",
+                      border: "1px solid rgba(0,0,0,0.08)",
                       borderRadius: 10, padding: "8px 12px",
-                      color: "#fff", fontFamily: "monospace", fontSize: 13,
+                      color: "#1a1a2e", fontFamily: "monospace", fontSize: 13,
                       outline: "none", cursor: "pointer",
                     }}
                   >
@@ -619,15 +619,15 @@ export default function AgentDashboard() {
                       </option>
                     ))}
                   </select>
-                  <span style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.3)" }}>to</span>
+                  <span style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(26,26,46,0.3)" }}>to</span>
                   <select
                     value={config.quiet_hours_end}
                     onChange={e => handleSaveConfig({ quiet_hours_end: Number(e.target.value) })}
                     style={{
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: "rgba(0,0,0,0.04)",
+                      border: "1px solid rgba(0,0,0,0.08)",
                       borderRadius: 10, padding: "8px 12px",
-                      color: "#fff", fontFamily: "monospace", fontSize: 13,
+                      color: "#1a1a2e", fontFamily: "monospace", fontSize: 13,
                       outline: "none", cursor: "pointer",
                     }}
                   >
@@ -651,13 +651,13 @@ export default function AgentDashboard() {
           <div style={{
             animation: "fadeUp 0.4s ease-out 0.25s both",
             background: "linear-gradient(145deg, rgba(20,20,50,0.6), rgba(15,15,40,0.4))",
-            border: "1px solid rgba(255,255,255,0.06)",
+            border: "1px solid rgba(0,0,0,0.04)",
             borderRadius: 18, padding: "28px",
             backdropFilter: "blur(12px)",
           }}>
             <div style={{
               fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700,
-              color: "#fff", marginBottom: 18,
+              color: "#1a1a2e", marginBottom: 18,
             }}>
               Activity Feed
             </div>
@@ -665,7 +665,7 @@ export default function AgentDashboard() {
             {messages.length === 0 ? (
               <div style={{
                 textAlign: "center", padding: "40px 20px",
-                color: "rgba(255,255,255,0.2)", fontFamily: "monospace", fontSize: 12,
+                color: "rgba(26,26,46,0.2)", fontFamily: "monospace", fontSize: 12,
               }}>
                 No activity yet. Connect a platform and enable autonomous mode to get started.
               </div>
@@ -681,12 +681,12 @@ export default function AgentDashboard() {
                           display: "flex", alignItems: "center", gap: 12,
                           padding: "12px 14px", borderRadius: 12,
                           background: "rgba(255,255,255,0.02)",
-                          border: "1px solid rgba(255,255,255,0.03)",
+                          border: "1px solid rgba(0,0,0,0.02)",
                           transition: "background 0.2s",
                         }}
                       >
                         {/* Timestamp */}
-                        <span style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(255,255,255,0.2)", minWidth: 55, flexShrink: 0 }}>
+                        <span style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(26,26,46,0.2)", minWidth: 55, flexShrink: 0 }}>
                           {formatTime(msg.created_at)}
                         </span>
 
@@ -712,7 +712,7 @@ export default function AgentDashboard() {
 
                         {/* Message preview */}
                         <span style={{
-                          fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.5)",
+                          fontFamily: "monospace", fontSize: 12, color: "rgba(26,26,46,0.5)",
                           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                           flex: 1,
                         }}>
@@ -730,9 +730,9 @@ export default function AgentDashboard() {
                     disabled={loadingMore}
                     style={{
                       display: "block", margin: "16px auto 0", padding: "10px 28px",
-                      borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)",
-                      background: "rgba(255,255,255,0.03)",
-                      color: "rgba(255,255,255,0.4)", fontFamily: "monospace", fontSize: 11,
+                      borderRadius: 10, border: "1px solid rgba(0,0,0,0.06)",
+                      background: "rgba(0,0,0,0.02)",
+                      color: "rgba(26,26,46,0.4)", fontFamily: "monospace", fontSize: 11,
                       fontWeight: 600, cursor: loadingMore ? "wait" : "pointer",
                       transition: "all 0.2s", opacity: loadingMore ? 0.5 : 1,
                     }}
@@ -781,10 +781,10 @@ export default function AgentDashboard() {
                 {platformOf(connectModal)?.icon}
               </div>
               <div>
-                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, fontWeight: 800, color: "#fff" }}>
+                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, fontWeight: 800, color: "#1a1a2e" }}>
                   Connect {platformOf(connectModal)?.label}
                 </div>
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(26,26,46,0.45)" }}>
                   Link your bot to {selectedPet?.name || "your pet"}
                 </div>
               </div>
@@ -803,7 +803,7 @@ export default function AgentDashboard() {
                 <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, fontWeight: 700, color: "#4ade80", marginBottom: 6 }}>
                   Connected!
                 </div>
-                <div style={{ fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.5)" }}>
+                <div style={{ fontFamily: "monospace", fontSize: 13, color: "rgba(26,26,46,0.5)" }}>
                   @{connectedUsername}
                 </div>
                 <button
@@ -811,7 +811,7 @@ export default function AgentDashboard() {
                   style={{
                     marginTop: 24, padding: "12px 32px", borderRadius: 12,
                     border: "none", background: "linear-gradient(135deg, #f59e0b, #d97706)",
-                    color: "#fff", fontFamily: "'Space Grotesk',sans-serif", fontSize: 14,
+                    color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif", fontSize: 14,
                     fontWeight: 700, cursor: "pointer",
                   }}
                 >
@@ -822,7 +822,7 @@ export default function AgentDashboard() {
               <>
                 {/* Token Input */}
                 <div style={{ marginBottom: 16 }}>
-                  <label style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.4)", display: "block", marginBottom: 8 }}>
+                  <label style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(26,26,46,0.4)", display: "block", marginBottom: 8 }}>
                     {platformOf(connectModal)?.tokenLabel}
                   </label>
                   <input
@@ -832,17 +832,17 @@ export default function AgentDashboard() {
                     placeholder="Paste your bot token here..."
                     style={{
                       width: "100%", padding: "14px 16px",
-                      background: "rgba(255,255,255,0.04)",
+                      background: "rgba(0,0,0,0.04)",
                       border: connectStatus === "error"
                         ? "1.5px solid rgba(239,68,68,0.4)"
-                        : "1.5px solid rgba(255,255,255,0.08)",
-                      borderRadius: 12, color: "#fff",
+                        : "1.5px solid rgba(0,0,0,0.06)",
+                      borderRadius: 12, color: "#1a1a2e",
                       fontFamily: "monospace", fontSize: 13,
                       outline: "none", transition: "border-color 0.2s",
                       boxSizing: "border-box",
                     }}
                     onFocus={e => { if (connectStatus !== "error") e.target.style.borderColor = `${platformOf(connectModal)?.color || "#f59e0b"}50`; }}
-                    onBlur={e => { if (connectStatus !== "error") e.target.style.borderColor = "rgba(255,255,255,0.08)"; }}
+                    onBlur={e => { if (connectStatus !== "error") e.target.style.borderColor = "rgba(0,0,0,0.06)"; }}
                   />
                   {connectStatus === "error" && (
                     <div style={{ fontFamily: "monospace", fontSize: 11, color: "#f87171", marginTop: 6 }}>
@@ -871,9 +871,9 @@ export default function AgentDashboard() {
                     onClick={closeModal}
                     style={{
                       flex: 1, padding: "12px", borderRadius: 12,
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      color: "rgba(255,255,255,0.4)",
+                      background: "rgba(0,0,0,0.04)",
+                      border: "1px solid rgba(0,0,0,0.06)",
+                      color: "rgba(26,26,46,0.4)",
                       fontFamily: "monospace", fontSize: 12, fontWeight: 600,
                       cursor: "pointer", transition: "all 0.2s",
                     }}
@@ -887,7 +887,7 @@ export default function AgentDashboard() {
                       flex: 1, padding: "12px", borderRadius: 12,
                       border: "none",
                       background: !tokenInput.trim()
-                        ? "rgba(255,255,255,0.06)"
+                        ? "rgba(0,0,0,0.04)"
                         : `linear-gradient(135deg, ${platformOf(connectModal)?.color}, ${platformOf(connectModal)?.color}cc)`,
                       color: !tokenInput.trim() ? "rgba(255,255,255,0.2)" : "#fff",
                       fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
@@ -929,11 +929,11 @@ export default function AgentDashboard() {
           >
             <div style={{
               fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, fontWeight: 800,
-              color: "#fff", marginBottom: 8,
+              color: "#1a1a2e", marginBottom: 8,
             }}>
               Disconnect {platformOf(disconnectConfirm)?.label}?
             </div>
-            <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 24 }}>
+            <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(26,26,46,0.45)", marginBottom: 24 }}>
               Your bot will stop responding on this platform.
             </div>
             <div style={{ display: "flex", gap: 10 }}>
@@ -941,9 +941,9 @@ export default function AgentDashboard() {
                 onClick={() => setDisconnectConfirm(null)}
                 style={{
                   flex: 1, padding: "12px", borderRadius: 12,
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  color: "rgba(255,255,255,0.4)",
+                  background: "rgba(0,0,0,0.04)",
+                  border: "1px solid rgba(0,0,0,0.06)",
+                  color: "rgba(26,26,46,0.4)",
                   fontFamily: "monospace", fontSize: 12, fontWeight: 600,
                   cursor: "pointer",
                 }}
@@ -956,7 +956,7 @@ export default function AgentDashboard() {
                   flex: 1, padding: "12px", borderRadius: 12,
                   border: "none",
                   background: "linear-gradient(135deg, #ef4444, #dc2626)",
-                  color: "#fff", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13,
+                  color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13,
                   fontWeight: 700, cursor: "pointer",
                 }}
               >
