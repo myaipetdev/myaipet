@@ -75,13 +75,18 @@ export default function AgentDashboard() {
   const [saving, setSaving] = useState(false);
   const [personaExpanded, setPersonaExpanded] = useState(false);
 
-  // Load pets
+  // Load pets (fallback to demo data if auth fails)
   useEffect(() => {
     api.pets.list().then((d: any) => {
       const list = d.pets || d || [];
       setPets(list);
       if (list.length > 0) setSelectedPet(list[0]);
-    }).catch(() => {});
+    }).catch(() => {
+      // Fallback: show demo pet for preview
+      const demo = { id: 1, name: "Sparky", species: 7, personality_type: "playful", level: 15, element: "fire" };
+      setPets([demo]);
+      setSelectedPet(demo);
+    });
   }, []);
 
   // Load agent data when pet changes
@@ -199,7 +204,6 @@ export default function AgentDashboard() {
     <div style={{
       padding: "40px", maxWidth: 1000, margin: "0 auto", paddingTop: 100,
       minHeight: "100vh",
-      background: "linear-gradient(180deg, #08081a 0%, #0c0c24 30%, #121230 60%, #1a1a38 100%)",
     }}>
       <style>{`
         @keyframes fadeUp { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }

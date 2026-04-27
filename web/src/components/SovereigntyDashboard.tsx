@@ -131,13 +131,17 @@ export default function SovereigntyDashboard() {
     allowInteraction: true,
   });
 
-  // ── Load pets ──
+  // ── Load pets (fallback to demo) ──
   useEffect(() => {
     api.pets.list().then((d: any) => {
       const list = d.pets || d || [];
       setPets(list);
       if (list.length > 0) setSelectedPet(list[0]);
-    }).catch(() => {});
+    }).catch(() => {
+      const demo = { id: 1, name: "Sparky", species: 7, personality_type: "playful", level: 15, element: "fire" };
+      setPets([demo]);
+      setSelectedPet(demo);
+    });
   }, []);
 
   // ── Load sovereignty data when pet changes ──

@@ -55,8 +55,8 @@ export default function Nav({ section, setSection, credits }: any) {
         style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
           display: "flex", alignItems: "center", gap: 10,
-          padding: "10px 24px", background: "rgba(250,247,242,0.92)",
-          backdropFilter: "blur(24px)", borderBottom: "1px solid rgba(0,0,0,0.06)",
+          padding: "10px 24px", background: "rgba(10,10,24,0.88)",
+          backdropFilter: "blur(24px)", borderBottom: "1px solid rgba(255,255,255,0.06)",
         }}
       >
         {/* Logo */}
@@ -74,7 +74,7 @@ export default function Nav({ section, setSection, credits }: any) {
           />
           <span className="nav-desktop-logo-text" style={{
             fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 15,
-            color: "#1a1a2e", letterSpacing: "-0.02em",
+            color: "#e4e4f4", letterSpacing: "-0.02em",
           }}>
             MY AI PET
           </span>
@@ -109,7 +109,7 @@ export default function Nav({ section, setSection, credits }: any) {
                   border: "none", cursor: "pointer",
                   borderRadius: 9, padding: "7px 14px",
                   fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 500,
-                  color: isActive ? "#b45309" : "rgba(26,26,46,0.4)",
+                  color: isActive ? "#f59e0b" : "rgba(228,228,244,0.4)",
                   transition: "all 0.2s ease",
                   position: "relative", whiteSpace: "nowrap", flexShrink: 0,
                 }}
@@ -159,7 +159,7 @@ export default function Nav({ section, setSection, credits }: any) {
                   </div>
                   <div style={{
                     fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700,
-                    color: "#1a1a2e", marginBottom: 4,
+                    color: "#e4e4f4", marginBottom: 4,
                   }}>
                     {credits.toLocaleString()} <span style={{ fontSize: 14, color: "#b45309" }}>$PET</span>
                   </div>
