@@ -217,7 +217,7 @@ export default function App() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0a18", color: "#e4e4f4", position: "relative", overflow: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "#faf7f2", color: "#1a1a2e", position: "relative", overflow: "hidden" }}>
       <style>{`
         * { margin: 0; padding: 0; box-sizing: border-box }
         ::selection { background: rgba(251,191,36,0.2) }
@@ -335,7 +335,7 @@ export default function App() {
       )}
 
       {/* Footer — only show in app mode */}
-      {(isAuthenticated || section !== "home") && <footer style={{ padding: "36px", textAlign: "center", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+      {(isAuthenticated || section !== "home") && <footer style={{ padding: "36px", textAlign: "center", borderTop: "1px solid rgba(0,0,0,0.06)" }}>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginBottom: 14 }}>
           <span style={{
             fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600,
