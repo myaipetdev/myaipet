@@ -341,16 +341,16 @@ export default function AgentDashboard() {
                         {platform.icon}
                       </div>
                       <div>
-                        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700, color: "#1a1a2e" }}>
+                        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700, color: "#f8f8f8" }}>
                           {platform.label}
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
                           <div style={{
                             width: 7, height: 7, borderRadius: "50%",
-                            background: isConnected ? "#4ade80" : "rgba(0,0,0,0.08)",
+                            background: isConnected ? "#4ade80" : "rgba(255,255,255,0.2)",
                             boxShadow: isConnected ? "0 0 8px rgba(74,222,128,0.4)" : "none",
                           }} />
-                          <span style={{ fontFamily: "monospace", fontSize: 11, color: isConnected ? "#4ade80" : "rgba(255,255,255,0.3)" }}>
+                          <span style={{ fontFamily: "monospace", fontSize: 11, color: isConnected ? "#4ade80" : "rgba(255,255,255,0.45)" }}>
                             {isConnected ? "Connected" : "Not connected"}
                           </span>
                         </div>
@@ -443,13 +443,13 @@ export default function AgentDashboard() {
                   <div>
                     <div style={{
                       fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700,
-                      color: "#1a1a2e",
+                      color: "#f8f8f8",
                     }}>
                       Persona Setup
                     </div>
                     <div style={{
                       fontFamily: "monospace", fontSize: 11,
-                      color: "rgba(26,26,46,0.3)", marginTop: 2,
+                      color: "rgba(255,255,255,0.5)", marginTop: 2,
                     }}>
                       Configure {selectedPet.name}&apos;s personality to reflect you
                     </div>
@@ -499,10 +499,10 @@ export default function AgentDashboard() {
               marginBottom: 24,
             }}>
               <div>
-                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700, color: "#1a1a2e" }}>
+                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700, color: "#f8f8f8" }}>
                   Autonomous Mode
                 </div>
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(26,26,46,0.3)", marginTop: 3 }}>
+                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 3 }}>
                   Let your pet post and interact on its own
                 </div>
               </div>
@@ -539,7 +539,7 @@ export default function AgentDashboard() {
             }}>
               {/* Credit Limit Slider */}
               <div>
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(26,26,46,0.4)", marginBottom: 8 }}>
+                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.6)", marginBottom: 8 }}>
                   Daily Credit Limit
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -566,7 +566,7 @@ export default function AgentDashboard() {
 
               {/* Posting Frequency */}
               <div>
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(26,26,46,0.4)", marginBottom: 8 }}>
+                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.6)", marginBottom: 8 }}>
                   Posting Frequency
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
@@ -582,7 +582,7 @@ export default function AgentDashboard() {
                         border: config.posting_frequency === opt.value
                           ? "1.5px solid rgba(245,158,11,0.3)"
                           : "1.5px solid rgba(0,0,0,0.04)",
-                        color: config.posting_frequency === opt.value ? "#f59e0b" : "rgba(255,255,255,0.3)",
+                        color: config.posting_frequency === opt.value ? "#f59e0b" : "rgba(255,255,255,0.55)",
                         fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 700,
                         cursor: "pointer", transition: "all 0.25s", textAlign: "center",
                       }}
@@ -598,7 +598,7 @@ export default function AgentDashboard() {
 
               {/* Quiet Hours */}
               <div style={{ gridColumn: "1 / -1" }}>
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(26,26,46,0.4)", marginBottom: 8 }}>
+                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.6)", marginBottom: 8 }}>
                   Quiet Hours (no autonomous posts)
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -606,10 +606,10 @@ export default function AgentDashboard() {
                     value={config.quiet_hours_start}
                     onChange={e => handleSaveConfig({ quiet_hours_start: Number(e.target.value) })}
                     style={{
-                      background: "rgba(0,0,0,0.04)",
-                      border: "1px solid rgba(0,0,0,0.08)",
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.15)",
                       borderRadius: 10, padding: "8px 12px",
-                      color: "#1a1a2e", fontFamily: "monospace", fontSize: 13,
+                      color: "#f8f8f8", fontFamily: "monospace", fontSize: 13,
                       outline: "none", cursor: "pointer",
                     }}
                   >
@@ -619,15 +619,15 @@ export default function AgentDashboard() {
                       </option>
                     ))}
                   </select>
-                  <span style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(26,26,46,0.3)" }}>to</span>
+                  <span style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.5)" }}>to</span>
                   <select
                     value={config.quiet_hours_end}
                     onChange={e => handleSaveConfig({ quiet_hours_end: Number(e.target.value) })}
                     style={{
-                      background: "rgba(0,0,0,0.04)",
-                      border: "1px solid rgba(0,0,0,0.08)",
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.15)",
                       borderRadius: 10, padding: "8px 12px",
-                      color: "#1a1a2e", fontFamily: "monospace", fontSize: 13,
+                      color: "#f8f8f8", fontFamily: "monospace", fontSize: 13,
                       outline: "none", cursor: "pointer",
                     }}
                   >
@@ -657,7 +657,7 @@ export default function AgentDashboard() {
           }}>
             <div style={{
               fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700,
-              color: "#1a1a2e", marginBottom: 18,
+              color: "#f8f8f8", marginBottom: 18,
             }}>
               Activity Feed
             </div>
@@ -665,7 +665,7 @@ export default function AgentDashboard() {
             {messages.length === 0 ? (
               <div style={{
                 textAlign: "center", padding: "40px 20px",
-                color: "rgba(26,26,46,0.2)", fontFamily: "monospace", fontSize: 12,
+                color: "rgba(255,255,255,0.4)", fontFamily: "monospace", fontSize: 12,
               }}>
                 No activity yet. Connect a platform and enable autonomous mode to get started.
               </div>
@@ -686,7 +686,7 @@ export default function AgentDashboard() {
                         }}
                       >
                         {/* Timestamp */}
-                        <span style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(26,26,46,0.2)", minWidth: 55, flexShrink: 0 }}>
+                        <span style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(255,255,255,0.4)", minWidth: 55, flexShrink: 0 }}>
                           {formatTime(msg.created_at)}
                         </span>
 
@@ -712,7 +712,7 @@ export default function AgentDashboard() {
 
                         {/* Message preview */}
                         <span style={{
-                          fontFamily: "monospace", fontSize: 12, color: "rgba(26,26,46,0.5)",
+                          fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.7)",
                           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                           flex: 1,
                         }}>
@@ -730,9 +730,9 @@ export default function AgentDashboard() {
                     disabled={loadingMore}
                     style={{
                       display: "block", margin: "16px auto 0", padding: "10px 28px",
-                      borderRadius: 10, border: "1px solid rgba(0,0,0,0.06)",
-                      background: "rgba(0,0,0,0.02)",
-                      color: "rgba(26,26,46,0.4)", fontFamily: "monospace", fontSize: 11,
+                      borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)",
+                      background: "rgba(255,255,255,0.05)",
+                      color: "rgba(255,255,255,0.55)", fontFamily: "monospace", fontSize: 11,
                       fontWeight: 600, cursor: loadingMore ? "wait" : "pointer",
                       transition: "all 0.2s", opacity: loadingMore ? 0.5 : 1,
                     }}
