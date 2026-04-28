@@ -513,6 +513,27 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
                 💬 {item.comments_count || 0}
               </span>
             )}
+
+            {hovered && (
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  const text = encodeURIComponent(`${item.prompt || "My AI Pet creation"} — generated on MY AI PET 🐾`);
+                  const url = encodeURIComponent("https://app.myaipet.ai");
+                  const tags = encodeURIComponent("MYAIPET,AIArt,PetClaw");
+                  window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=${tags}`, "_blank", "width=600,height=400");
+                }}
+                style={{
+                  background: "rgba(0,0,0,0.45)", border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 22, height: 22, borderRadius: 6, padding: 0,
+                  animation: "fadeUp 0.15s ease-out", flexShrink: 0,
+                }}
+                title="Share on X"
+              >
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", fontWeight: 700, lineHeight: 1 }}>𝕏</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

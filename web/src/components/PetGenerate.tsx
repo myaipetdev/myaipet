@@ -459,30 +459,45 @@ export default function PetGenerate() {
                           Generate Another
                         </button>
                         {(result.video_path || result.image_url || result.photo_path) && !result.demo && (
-                          <button onClick={async () => {
-                            try {
-                              const isVideo = !!result.video_path;
-                              const url = isVideo ? result.video_path : (result.image_url || result.photo_path);
-                              const ext = isVideo ? "mp4" : "jpg";
-                              const res = await fetch(url);
-                              const blob = await res.blob();
-                              const a = document.createElement("a");
-                              a.href = URL.createObjectURL(blob);
-                              a.download = `${selectedPet?.name || "pet"}-${Date.now()}.${ext}`;
-                              a.click();
-                              URL.revokeObjectURL(a.href);
-                            } catch { window.open(result.video_path || result.image_url || result.photo_path, "_blank"); }
-                          }} style={{
-                            padding: "11px 16px", borderRadius: 10,
-                            background: "linear-gradient(135deg,#f59e0b,#d97706)",
-                            border: "none",
-                            fontFamily: "mono", fontSize: 12, color: "white", fontWeight: 600,
-                            cursor: "pointer",
-                            boxShadow: "0 0 16px rgba(245,158,11,0.2)",
-                            transition: "all 0.2s",
-                          }}>
-                            ↓ Save
-                          </button>
+                          <>
+                            <button onClick={async () => {
+                              try {
+                                const isVideo = !!result.video_path;
+                                const url = isVideo ? result.video_path : (result.image_url || result.photo_path);
+                                const ext = isVideo ? "mp4" : "jpg";
+                                const res = await fetch(url);
+                                const blob = await res.blob();
+                                const a = document.createElement("a");
+                                a.href = URL.createObjectURL(blob);
+                                a.download = `${selectedPet?.name || "pet"}-${Date.now()}.${ext}`;
+                                a.click();
+                                URL.revokeObjectURL(a.href);
+                              } catch { window.open(result.video_path || result.image_url || result.photo_path, "_blank"); }
+                            }} style={{
+                              padding: "11px 16px", borderRadius: 10,
+                              background: "linear-gradient(135deg,#f59e0b,#d97706)",
+                              border: "none",
+                              fontFamily: "mono", fontSize: 12, color: "white", fontWeight: 600,
+                              cursor: "pointer",
+                              boxShadow: "0 0 16px rgba(245,158,11,0.2)",
+                              transition: "all 0.2s",
+                            }}>
+                              ↓ Save
+                            </button>
+                            <button onClick={() => {
+                              const text = encodeURIComponent(`Just generated ${result.style_name || "AI art"} for ${selectedPet?.name || "my pet"} on MY AI PET 🐾`);
+                              const url = encodeURIComponent("https://app.myaipet.ai");
+                              const tags = encodeURIComponent("MYAIPET,AIArt,PetClaw");
+                              window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=${tags}`, "_blank", "width=600,height=400");
+                            }} style={{
+                              padding: "11px 14px", borderRadius: 10,
+                              background: "#000", border: "none",
+                              fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, color: "white", fontWeight: 700,
+                              cursor: "pointer", transition: "all 0.2s",
+                            }}>
+                              𝕏 Share
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>

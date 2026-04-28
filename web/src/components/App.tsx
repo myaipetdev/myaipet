@@ -13,7 +13,6 @@ import Stats from "@/components/Stats";
 import Feed from "@/components/Feed";
 import Pricing from "@/components/Pricing";
 import WalletGate from "@/components/WalletGate";
-import LandingPage from "@/components/LandingPage";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
 const PetGenerate = lazy(() => import("@/components/PetGenerate"));
@@ -48,8 +47,103 @@ function Loader() {
   );
 }
 
+// ── Daily Check-in Card ──
+function CheckinCard({ isAuthenticated }: { isAuthenticated: boolean }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetch("/api/checkin").then(r => r.json()).then(d => setData(d)).catch(() => {});
+  }, [isAuthenticated]);
+
+  const doCheckin = async () => {
+    if (!isAuthenticated || loading || data?.checkedInToday) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/checkin", { method: "POST" });
+      const d = await res.json();
+      if (d.streak) { setData(d); setMsg(`+${d.awarded} pts! Day ${d.streak} streak 🔥`); }
+      else setMsg(d.error || "Already checked in");
+    } catch { setMsg("Failed"); }
+    setLoading(false);
+    setTimeout(() => setMsg(null), 3000);
+  };
+
+  const rewards = [5, 10, 15, 20, 25, 30, 50];
+  const streak = data?.streak ?? 0;
+  const checkedIn = data?.checkedInToday ?? false;
+
+  return (
+    <div style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
+      <div style={{
+        borderRadius: 14, padding: "14px 20px", marginBottom: 8,
+        background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.06)",
+        display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <span style={{ fontSize: 18 }}>📅</span>
+          <div>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: "#1a1a2e" }}>
+              Daily Check-in
+            </div>
+            <div style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(26,26,46,0.4)" }}>
+              {checkedIn ? `Day ${streak} streak active 🔥` : "Check in to earn airdrop points"}
+            </div>
+          </div>
+        </div>
+
+        {/* Day pills */}
+        <div style={{ display: "flex", gap: 5, flex: 1, flexWrap: "wrap" }}>
+          {rewards.map((r, i) => {
+            const day = i + 1;
+            const done = checkedIn ? streak >= day : streak > day;
+            const isToday = checkedIn ? streak === day : streak + 1 === day;
+            return (
+              <div key={day} style={{
+                padding: "4px 8px", borderRadius: 8, textAlign: "center",
+                background: done ? "rgba(245,158,11,0.12)" : isToday ? "rgba(245,158,11,0.06)" : "rgba(0,0,0,0.03)",
+                border: `1px solid ${done ? "rgba(245,158,11,0.3)" : isToday ? "rgba(245,158,11,0.2)" : "rgba(0,0,0,0.05)"}`,
+                minWidth: 36,
+              }}>
+                <div style={{ fontFamily: "monospace", fontSize: 9, color: done ? "#b45309" : isToday ? "#d97706" : "rgba(26,26,46,0.3)", fontWeight: 700 }}>
+                  {done ? "✓" : `D${day}`}
+                </div>
+                <div style={{ fontFamily: "monospace", fontSize: 8, color: done ? "#d97706" : "rgba(26,26,46,0.25)" }}>
+                  +{r}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {msg && <span style={{ fontFamily: "monospace", fontSize: 11, color: "#16a34a" }}>{msg}</span>}
+
+        {isAuthenticated ? (
+          <button
+            onClick={doCheckin}
+            disabled={checkedIn || loading}
+            style={{
+              padding: "8px 18px", borderRadius: 10, border: "none", flexShrink: 0,
+              background: checkedIn ? "rgba(0,0,0,0.05)" : "linear-gradient(135deg,#f59e0b,#d97706)",
+              color: checkedIn ? "rgba(26,26,46,0.35)" : "#fff",
+              fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 700,
+              cursor: checkedIn ? "default" : "pointer",
+            }}
+          >
+            {loading ? "..." : checkedIn ? "Done ✓" : "Check In"}
+          </button>
+        ) : (
+          <span style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(26,26,46,0.3)" }}>Connect wallet to earn</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Season 1 Airdrop Banner ──
-function SeasonBanner() {
+function SeasonBanner({ airdropPoints }: { airdropPoints: number }) {
   const SEASON_START = new Date("2026-03-01T00:00:00Z").getTime();
   const SEASON_END = new Date("2026-06-15T00:00:00Z").getTime();
   const SEASON_TOTAL = SEASON_END - SEASON_START;
@@ -137,13 +231,16 @@ function SeasonBanner() {
           ))}
         </div>
 
-        {/* Right: rank + progress */}
+        {/* Right: points + progress */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, zIndex: 1, minWidth: 120 }}>
           <div style={{
             fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.8)",
             whiteSpace: "nowrap",
           }}>
-            Your Rank: <span style={{ fontWeight: 700, color: "#fff" }}>--</span>
+            {airdropPoints > 0
+              ? <><span style={{ fontWeight: 700, color: "#fff" }}>{airdropPoints.toLocaleString()}</span> pts</>
+              : <>Your Points: <span style={{ fontWeight: 700, color: "#fff" }}>0</span></>
+            }
           </div>
           <div style={{ width: "100%", height: 5, background: "rgba(0,0,0,0.18)", borderRadius: 3, overflow: "hidden" }}>
             <div style={{
@@ -170,9 +267,13 @@ export default function App() {
   const [activities, setActivities] = useState<any[]>([]);
   const [platformStats, setPlatformStats] = useState<any>(null);
   const [credits, setCredits] = useState(0);
+  const [airdropPoints, setAirdropPoints] = useState(0);
 
   useEffect(() => {
-    if (user) setCredits(user.credits);
+    if (user) {
+      setCredits(user.credits);
+      if (user.airdrop_points) setAirdropPoints(user.airdrop_points);
+    }
   }, [user]);
 
   const fetchStats = useCallback(async () => {
@@ -232,6 +333,13 @@ export default function App() {
           .desktop-grid { grid-template-columns: 1fr !important; }
           .desktop-two-col { grid-template-columns: 1fr !important; }
         }
+        @media (max-width: 640px) {
+          .home-section-pad { padding-left: 16px !important; padding-right: 16px !important; }
+          .season-banner { padding: 10px 16px !important; }
+          .season-banner-title { font-size: 12px !important; }
+          .season-banner-countdown { gap: 4px !important; }
+          .season-banner-countdown > div > div:first-child { font-size: 14px !important; }
+        }
       `}</style>
 
       {/* Always show app (landing is on separate domain myaipet.ai) */}
@@ -249,11 +357,12 @@ export default function App() {
                 onExplore={() => setSection("community")}
                 txToday={platformStats?.tx_today || 0}
               />
-              <SeasonBanner />
-              <div style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
+              <SeasonBanner airdropPoints={airdropPoints} />
+              <CheckinCard isAuthenticated={isAuthenticated} />
+              <div className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
                 <Stats stats={stats} />
               </div>
-              <div style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
+              <div className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
                 <Feed activities={activities} />
               </div>
               <Pricing
