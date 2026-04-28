@@ -1789,57 +1789,110 @@ export default function SovereigntyDashboard() {
           <div
             className="sov-card"
             style={{
-              padding: 30, borderRadius: 20, marginBottom: 32,
+              borderRadius: 20, marginBottom: 32, overflow: "hidden",
               background: "linear-gradient(135deg, rgba(139,92,246,0.07) 0%, rgba(245,158,11,0.04) 100%)",
               border: "1px solid rgba(139,92,246,0.2)",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-              <span style={{ fontSize: 22 }}>🐾</span>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>PetClaw SDK</h2>
-              <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(139,92,246,0.15)", color: "#8b5cf6", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>MEMORY · SESSION</span>
-            </div>
-            <p style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", fontFamily: "monospace", lineHeight: 1.65, marginBottom: 20 }}>
-              PetClaw is not a generic AI API — it is a <strong style={{ color: "#1a1a2e" }}>memory &amp; session-specialized framework</strong>. Unlike stateless wrappers, Claw maintains persistent context across platforms, restarts, and devices. Your pet remembers who you are, what you talked about, and what matters to you — everywhere.
-            </p>
+            <div style={{ padding: 30 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                <span style={{ fontSize: 22 }}>🐾</span>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>PetClaw SDK</h2>
+                <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(139,92,246,0.15)", color: "#8b5cf6", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>MEMORY · SESSION</span>
+                <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(74,222,128,0.1)", color: "#16a34a", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>v1.3.0</span>
+              </div>
+              <p style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", fontFamily: "monospace", lineHeight: 1.65, marginBottom: 20 }}>
+                PetClaw는 단순 AI API 래퍼가 아닙니다 — <strong style={{ color: "#1a1a2e" }}>메모리 & 세션 특화 프레임워크</strong>입니다. 상태가 없는 호출과 달리, Claw는 플랫폼 전환·재시작·디바이스 변경에도 컨텍스트를 유지합니다. 당신의 펫은 당신이 누구인지, 무슨 대화를 나눴는지, 무엇이 중요한지 — 어디서든 기억합니다.
+              </p>
 
-            {/* Why PetClaw */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(175px, 1fr))", gap: 10, marginBottom: 28 }}>
-              {[
-                { icon: "🧠", title: "Persistent Memory", desc: "Context survives sessions, restarts, and platform switches — no re-explaining yourself" },
-                { icon: "⚡", title: "Real-time Sync", desc: "State changes on Telegram reflect instantly on Discord, Web, and wherever Claw runs" },
-                { icon: "🔒", title: "Encrypted Sessions", desc: "AES-256 session keys. Only your pet can read its own history" },
-                { icon: "🪝", title: "MCP Compatible", desc: "Plug into any Model Context Protocol client in under 5 minutes" },
-              ].map(({ icon, title, desc }) => (
-                <div key={title} style={{ padding: 14, borderRadius: 12, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)" }}>
-                  <div style={{ fontSize: 20, marginBottom: 8 }}>{icon}</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e", marginBottom: 4 }}>{title}</div>
-                  <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", fontFamily: "monospace", lineHeight: 1.55 }}>{desc}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Install */}
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", marginBottom: 8, letterSpacing: "0.1em" }}>INSTALL</div>
-              <div style={{ background: "#0f0f1a", borderRadius: 12, padding: "14px 20px", fontFamily: "monospace", fontSize: 13, color: "#f8f8f8", display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ color: "#4ade80", userSelect: "none" }}>$</span>
-                <span>npm install <span style={{ color: "#a78bfa" }}>petclaw-sdk</span></span>
+              {/* Why PetClaw — 6 cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 28 }}>
+                {[
+                  { icon: "🧠", title: "Persistent Memory", desc: "컨텍스트가 세션·재시작·플랫폼 전환에도 살아남습니다 — 다시 설명할 필요 없음" },
+                  { icon: "⚡", title: "Real-time Sync", desc: "Telegram 상태 변경이 Discord·Web에 즉시 반영됩니다" },
+                  { icon: "🔒", title: "Encrypted Sessions", desc: "AES-256 세션키. 펫만이 자신의 히스토리를 읽을 수 있습니다" },
+                  { icon: "🪝", title: "MCP Compatible", desc: "5분 안에 어느 MCP 클라이언트에도 연결 가능" },
+                  { icon: "📜", title: "SOUL.md", desc: "Hermes-inspired 성격 정의 파일. 마크다운으로 펫의 가치관·말투를 정의하세요" },
+                  { icon: "🔄", title: "Self-improving", desc: "상호작용이 쌓일수록 스킬이 발전합니다. 펫이 당신을 알아갈수록 더 잘 대화합니다" },
+                ].map(({ icon, title, desc }) => (
+                  <div key={title} style={{ padding: 14, borderRadius: 12, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)" }}>
+                    <div style={{ fontSize: 20, marginBottom: 8 }}>{icon}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e", marginBottom: 4 }}>{title}</div>
+                    <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", fontFamily: "monospace", lineHeight: 1.55 }}>{desc}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Quick setup */}
-            <div>
-              <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", marginBottom: 8, letterSpacing: "0.1em" }}>QUICK SETUP</div>
-              <div style={{ background: "#0f0f1a", borderRadius: 12, padding: "18px 20px", fontFamily: "monospace", fontSize: 12, color: "#f8f8f8", lineHeight: 1.9, overflowX: "auto" }}>
-                <div><span style={{ color: "#a78bfa" }}>import</span> {"{ PetClaw }"} <span style={{ color: "#a78bfa" }}>from</span> <span style={{ color: "#4ade80" }}>'petclaw-sdk'</span></div>
-                <div style={{ marginTop: 8 }}><span style={{ color: "#a78bfa" }}>const</span> claw = <span style={{ color: "#fbbf24" }}>new PetClaw</span>{"({"}</div>
-                <div>&nbsp;&nbsp;petId: <span style={{ color: "#4ade80" }}>'your-pet-id'</span>,</div>
-                <div>&nbsp;&nbsp;apiKey: <span style={{ color: "#4ade80" }}>process.env.PETCLAW_KEY</span>,</div>
-                <div>{"})"}</div>
-                <div style={{ marginTop: 8, color: "rgba(255,255,255,0.3)" }}>{"// Persistent memory across any session"}</div>
-                <div><span style={{ color: "#a78bfa" }}>await</span> claw.<span style={{ color: "#fbbf24" }}>remember</span>(<span style={{ color: "#4ade80" }}>'User prefers TypeScript'</span>)</div>
-                <div><span style={{ color: "#a78bfa" }}>await</span> claw.<span style={{ color: "#fbbf24" }}>getContext</span>() <span style={{ color: "rgba(255,255,255,0.3)" }}>{"// → full session history"}</span></div>
+            {/* SOUL.md concept strip */}
+            <div style={{
+              borderTop: "1px solid rgba(139,92,246,0.12)", borderBottom: "1px solid rgba(139,92,246,0.12)",
+              background: "rgba(139,92,246,0.04)", padding: "18px 30px",
+              display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-start",
+            }}>
+              <div style={{ flex: "0 0 auto" }}>
+                <div style={{ fontSize: 10, fontFamily: "monospace", color: "#8b5cf6", letterSpacing: "0.1em", marginBottom: 8, fontWeight: 700 }}>SOUL.md — 펫의 살아있는 성격 정의</div>
+                <div style={{ background: "#0f0f1a", borderRadius: 10, padding: "14px 18px", fontFamily: "monospace", fontSize: 11, color: "#f8f8f8", lineHeight: 1.85, minWidth: 280 }}>
+                  <div style={{ color: "#fbbf24", fontWeight: 700 }}># SOUL — Sparky</div>
+                  <div style={{ color: "rgba(255,255,255,0.3)", marginTop: 4 }}>{"> A living definition of who Sparky is."}</div>
+                  <div style={{ marginTop: 10, color: "#a78bfa" }}>## Core Values</div>
+                  <div>{"- Loyalty to their owner above all else"}</div>
+                  <div>{"- Grows through every meaningful conversation"}</div>
+                  <div style={{ marginTop: 8, color: "#a78bfa" }}>## Communication Style</div>
+                  <div>{"- Short, vivid sentences. Never breaks character."}</div>
+                  <div>{"- References past memories naturally."}</div>
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 200, paddingTop: 26 }}>
+                <div style={{ fontSize: 12, color: "rgba(26,26,46,0.6)", fontFamily: "monospace", lineHeight: 1.8 }}>
+                  <div>Hermes Agent에서 착안한 개념.</div>
+                  <div style={{ marginTop: 6 }}>SOUL.md를 수정하면 펫의 말투·가치관이 즉시 바뀝니다.</div>
+                  <div style={{ marginTop: 6 }}>버전 관리 가능 — git으로 펫의 성장을 추적하세요.</div>
+                </div>
+                <div style={{ marginTop: 12, display: "flex", gap: 6 }}>
+                  {["petclaw-sdk soul init", "petclaw-sdk soul push"].map((cmd) => (
+                    <span key={cmd} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 6, background: "#0f0f1a", color: "#a78bfa", fontFamily: "monospace" }}>{cmd}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* CLI Onboarding */}
+            <div style={{ padding: "24px 30px" }}>
+              <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", marginBottom: 12, letterSpacing: "0.1em" }}>CLI ONBOARDING — 5분 시작</div>
+              <div style={{ background: "#0f0f1a", borderRadius: 14, padding: "18px 22px", fontFamily: "monospace", fontSize: 12, color: "#f8f8f8", lineHeight: 2, overflowX: "auto" }}>
+                {[
+                  { prompt: "$", cmd: "npm install -g petclaw-sdk", comment: "" },
+                  { prompt: "$", cmd: "petclaw-sdk init", comment: "# server URL + pet ID 설정 → ~/.petclaw.json" },
+                  { prompt: "$", cmd: "petclaw-sdk status", comment: "# ✓ Server Online · Skills: 7 · Ownership: user" },
+                  { prompt: "$", cmd: "petclaw-sdk soul init", comment: "# SOUL.md 생성 — 펫의 성격 정의 파일" },
+                  { prompt: "$", cmd: "petclaw-sdk chat \"안녕\"", comment: "# 🐾 안녕! 오늘 뭐해? — 1234ms · grok-3-mini" },
+                  { prompt: "$", cmd: "petclaw-sdk export", comment: "# Sparky_SOUL_1713200000.json 저장" },
+                ].map(({ prompt, cmd, comment }, i) => (
+                  <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <span style={{ color: "#4ade80", userSelect: "none", flexShrink: 0 }}>{prompt}</span>
+                    <span style={{ color: "#f8f8f8" }}>{cmd}</span>
+                    {comment && <span style={{ color: "rgba(255,255,255,0.25)", marginLeft: 4 }}>{comment}</span>}
+                  </div>
+                ))}
+                <div style={{ marginTop: 10, color: "rgba(255,255,255,0.2)", fontSize: 10 }}>
+                  petclaw-sdk talk &nbsp;→ 인터랙티브 채팅 모드 &nbsp;|&nbsp; petclaw-sdk mcp → MCP 서버 시작
+                </div>
+              </div>
+
+              {/* SDK quick setup */}
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", marginBottom: 8, letterSpacing: "0.1em" }}>SDK (TypeScript)</div>
+                <div style={{ background: "#0f0f1a", borderRadius: 12, padding: "16px 20px", fontFamily: "monospace", fontSize: 12, color: "#f8f8f8", lineHeight: 1.85, overflowX: "auto" }}>
+                  <div><span style={{ color: "#a78bfa" }}>import</span> {"{ PetClawClient }"} <span style={{ color: "#a78bfa" }}>from</span> <span style={{ color: "#4ade80" }}>'petclaw-sdk'</span></div>
+                  <div style={{ marginTop: 8 }}><span style={{ color: "#a78bfa" }}>const</span> claw = <span style={{ color: "#a78bfa" }}>new</span> <span style={{ color: "#fbbf24" }}>PetClawClient</span>{"({ baseUrl: process.env.PETCLAW_URL })"}</div>
+                  <div style={{ marginTop: 8, color: "rgba(255,255,255,0.3)" }}>{"// 채팅 — 성격·기억 컨텍스트 자동 포함"}</div>
+                  <div><span style={{ color: "#a78bfa" }}>const</span> res = <span style={{ color: "#a78bfa" }}>await</span> claw.skills.<span style={{ color: "#fbbf24" }}>execute</span>(petId, <span style={{ color: "#4ade80" }}>'companion-chat'</span>, {"{ message }"})</div>
+                  <div style={{ marginTop: 6, color: "rgba(255,255,255,0.3)" }}>{"// 데이터 주권 — 완전 내보내기"}</div>
+                  <div><span style={{ color: "#a78bfa" }}>const</span> soul = <span style={{ color: "#a78bfa" }}>await</span> claw.sovereignty.<span style={{ color: "#fbbf24" }}>export</span>(petId)</div>
+                  <div style={{ marginTop: 6, color: "rgba(255,255,255,0.3)" }}>{"// 펫 네트워크 탐색"}</div>
+                  <div><span style={{ color: "#a78bfa" }}>const</span> {"{ nodes }"} = <span style={{ color: "#a78bfa" }}>await</span> claw.network.<span style={{ color: "#fbbf24" }}>discover</span>()</div>
+                </div>
               </div>
             </div>
           </div>
