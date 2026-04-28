@@ -92,7 +92,7 @@ function randomInt(min: number, max: number) {
 
 const MOCK_STYLES = ["Cinematic", "Anime", "Watercolor", "3D Render", "Sketch", "Oil Paint", "Pixel Art"];
 
-const MOCK_IMAGES = [
+export const MOCK_IMAGES = [
   { url: "/gallery/cat_astro.jpg", ratio: "1:1", prompt: "Cat astronaut floating in zero gravity with tiny fish companions", style: "Cinematic" },
   { url: "/gallery/cat_cloud.jpg", ratio: "1:1", prompt: "Fluffy cat sleeping on a bed of clouds at golden hour", style: "Watercolor" },
   { url: "/gallery/cat_dj.jpg", ratio: "1:1", prompt: "Cool cat DJ spinning records at a neon-lit underground club", style: "3D Render" },
