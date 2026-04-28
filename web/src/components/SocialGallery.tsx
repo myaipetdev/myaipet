@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { api } from "@/lib/api";
-import { MOCK_SOCIAL_FEED } from "@/lib/mockData";
+import { MOCK_SOCIAL_FEED, MOCK_TRENDING_TAGS, MOCK_TOP_CREATORS, MOCK_COMMUNITY_STATS } from "@/lib/mockData";
 
 const PET_EMOJIS = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
 const PET_NAMES = ["Cat","Dog","Parrot","Turtle","Hamster","Rabbit","Fox","Pomeranian"];
@@ -645,6 +645,65 @@ export default function SocialGallery() {
         .gallery-search:focus { border-color: rgba(0,0,0,0.12) !important; background: rgba(0,0,0,0.02) !important }
         .sort-tab:hover { color: rgba(26,26,46,0.7) !important }
       `}</style>
+
+      {/* ── Community Stats ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 20 }}>
+        {[
+          { label: "Total Works", value: MOCK_COMMUNITY_STATS.total_works, icon: "🎨" },
+          { label: "Active Pets", value: MOCK_COMMUNITY_STATS.active_pets, icon: "🐾" },
+          { label: "Likes Today", value: MOCK_COMMUNITY_STATS.likes_today, icon: "❤️" },
+          { label: "Creators", value: MOCK_COMMUNITY_STATS.creators, icon: "✨" },
+        ].map(s => (
+          <div key={s.label} style={{
+            padding: "12px 16px", borderRadius: 12,
+            background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.05)",
+            textAlign: "center",
+          }}>
+            <div style={{ fontSize: 18, marginBottom: 2 }}>{s.icon}</div>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>{s.value}</div>
+            <div style={{ fontFamily: "monospace", fontSize: 9, color: "rgba(26,26,46,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 1 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Top Creators ── */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 600, color: "rgba(26,26,46,0.5)", marginBottom: 10, letterSpacing: "-0.01em" }}>
+          Top Creators
+        </div>
+        <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
+          {MOCK_TOP_CREATORS.map(c => (
+            <div key={c.name} style={{
+              display: "flex", alignItems: "center", gap: 8, flexShrink: 0,
+              padding: "7px 12px", borderRadius: 24,
+              background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)",
+              cursor: "pointer", transition: "all 0.2s",
+            }}>
+              <img src={c.avatar} alt={c.name} style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover" }} />
+              <div>
+                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 11, fontWeight: 600, color: "#1a1a2e" }}>{c.name}</div>
+                <div style={{ fontFamily: "monospace", fontSize: 9, color: "rgba(26,26,46,0.35)" }}>❤️ {c.likes.toLocaleString()}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Trending Tags ── */}
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {MOCK_TRENDING_TAGS.map(t => (
+            <button key={t.tag} onClick={() => setSearch(t.tag.replace("#",""))} style={{
+              padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(0,0,0,0.07)",
+              background: "rgba(0,0,0,0.02)", fontFamily: "monospace", fontSize: 10,
+              color: "rgba(26,26,46,0.5)", cursor: "pointer", transition: "all 0.2s",
+              display: "flex", alignItems: "center", gap: 4,
+            }}>
+              {t.tag} <span style={{ color: "rgba(26,26,46,0.25)" }}>{t.count}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Header — minimal like Midjourney */}
       <div style={{ marginBottom: 16 }}>
