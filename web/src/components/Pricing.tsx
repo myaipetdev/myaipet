@@ -26,6 +26,7 @@ const EARN_METHODS = [
 ];
 
 const BSC_CHAIN_ID = 56;
+const PURCHASE_DISABLED = true;
 
 export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
   const { address, isConnected, chainId } = useAccount();
@@ -159,6 +160,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
   };
 
   const getButtonLabel = (planKey: string) => {
+    if (PURCHASE_DISABLED) return "Coming Soon";
     if (purchasing !== planKey) {
       return contractsDeployed ? "Purchase on BSC →" : "Purchase with USDT →";
     }
@@ -249,11 +251,22 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         }}>
           Get $PET
         </h3>
-        <p style={{ fontFamily: "mono", fontSize: 14, color: "rgba(26,26,46,0.4)", marginBottom: 10 }}>
-          {contractsDeployed
-            ? "Pay with USDT on BNB Chain · On-chain settlement · Instant delivery"
-            : "Pay with USDT · Recorded on-chain · Instant delivery"}
-        </p>
+        {PURCHASE_DISABLED ? (
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "10px 20px", borderRadius: 12,
+            background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)",
+            fontFamily: "monospace", fontSize: 12, color: "#b45309", marginBottom: 10,
+          }}>
+            <span>🔧</span> USDT purchase is temporarily unavailable — launching soon
+          </div>
+        ) : (
+          <p style={{ fontFamily: "mono", fontSize: 14, color: "rgba(26,26,46,0.4)", marginBottom: 10 }}>
+            {contractsDeployed
+              ? "Pay with USDT on BNB Chain · On-chain settlement · Instant delivery"
+              : "Pay with USDT · Recorded on-chain · Instant delivery"}
+          </p>
+        )}
         {contractsDeployed && (
           <div style={{
             display: "inline-flex", gap: 12, alignItems: "center",
@@ -388,24 +401,23 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
               {p.desc}
             </div>
             <button
-              onClick={() => handlePurchase(p)}
-              disabled={purchasing === p.key}
-              className={p.pop ? "" : "pricing-btn-default"}
+              onClick={() => !PURCHASE_DISABLED && handlePurchase(p)}
+              disabled={PURCHASE_DISABLED || purchasing === p.key}
+              className={p.pop && !PURCHASE_DISABLED ? "" : "pricing-btn-default"}
               style={{
                 width: "100%",
-                background: p.pop ? "linear-gradient(135deg,#f59e0b,#d97706)" : "rgba(0,0,0,0.04)",
-                border: p.pop ? "none" : "1px solid rgba(0,0,0,0.08)",
+                background: PURCHASE_DISABLED ? "rgba(0,0,0,0.04)" : p.pop ? "linear-gradient(135deg,#f59e0b,#d97706)" : "rgba(0,0,0,0.04)",
+                border: "1px solid rgba(0,0,0,0.08)",
                 borderRadius: 10, padding: "12px",
                 fontFamily: "'Space Grotesk',sans-serif", fontSize: 13,
-                color: p.pop ? "white" : "rgba(26,26,46,0.5)",
-                cursor: purchasing === p.key ? "wait" : "pointer", fontWeight: 600,
-                boxShadow: p.pop ? "0 0 20px rgba(245,158,11,0.2)" : "none",
+                color: "rgba(26,26,46,0.35)",
+                cursor: "not-allowed", fontWeight: 600,
                 transition: "all 0.3s ease",
               }}
             >
               {getButtonLabel(p.key)}
             </button>
-            {onrampAvailable && isConnected && (
+            {!PURCHASE_DISABLED && onrampAvailable && isConnected && (
               <button
                 onClick={() => openOnramp(p.price)}
                 style={{
