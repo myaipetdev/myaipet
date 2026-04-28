@@ -3,10 +3,10 @@
  */
 
 export const MOCK_STATS = {
-  total_users: 20847,
-  total_generations: 102453,
-  total_burned: "58,200",
-  tx_today: 1842,
+  total_users: 1847,
+  total_generations: 4280,
+  total_burned: "12,400",
+  tx_today: 284,
   user_change: "+18.3%",
   gen_change: "+22.7%",
   burned_change: "+9.2%",
@@ -177,10 +177,10 @@ export const MOCK_TOP_CREATORS = [
 ];
 
 export const MOCK_COMMUNITY_STATS = {
-  total_works: "102,453",
-  active_pets: "20,847",
-  likes_today: "18,392",
-  creators: "8,241",
+  total_works: "4,280",
+  active_pets: "1,847",
+  likes_today: "892",
+  creators: "412",
 };
 
 export const MOCK_INTERACT_RESPONSES: any = {

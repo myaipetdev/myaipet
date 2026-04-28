@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { LOGO_SRC } from "./Nav";
 import Icon from "@/components/Icon";
+import { MOCK_IMAGES } from "@/lib/mockData";
 
 const FLOAT_PETS = [
   { emoji: "🐱", x: 8, y: 18, delay: 0, size: 38 },
@@ -353,6 +354,49 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         <button onClick={onExplore} className="hero-cta-secondary">
           Explore Community
         </button>
+      </div>
+
+      {/* ─── Gallery Preview Strip ─── */}
+      <div style={{ marginTop: 44, position: "relative", zIndex: 2 }}>
+        <style>{`
+          @keyframes scrollLeft {
+            0% { transform: translateX(0) }
+            100% { transform: translateX(-50%) }
+          }
+          @keyframes scrollRight {
+            0% { transform: translateX(-50%) }
+            100% { transform: translateX(0) }
+          }
+          .gallery-strip-row { display: flex; gap: 8px; overflow: hidden; mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); }
+          .gallery-strip-track-l { display: flex; gap: 8px; animation: scrollLeft 40s linear infinite; width: max-content; }
+          .gallery-strip-track-r { display: flex; gap: 8px; animation: scrollRight 50s linear infinite; width: max-content; }
+          .gallery-strip-row:hover .gallery-strip-track-l,
+          .gallery-strip-row:hover .gallery-strip-track-r { animation-play-state: paused; }
+          .gallery-thumb { width: 110px; height: 110px; border-radius: 12px; object-fit: cover; flex-shrink: 0; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+          .gallery-thumb:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+        `}</style>
+
+        <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.3)", letterSpacing: "0.12em", textAlign: "center", marginBottom: 14, textTransform: "uppercase" }}>
+          Community Creations
+        </div>
+
+        {/* Row 1 — scrolls left */}
+        <div className="gallery-strip-row" style={{ marginBottom: 8 }}>
+          <div className="gallery-strip-track-l">
+            {[...MOCK_IMAGES, ...MOCK_IMAGES].map((img, i) => (
+              <img key={i} src={img.url} alt={img.prompt} className="gallery-thumb" />
+            ))}
+          </div>
+        </div>
+
+        {/* Row 2 — scrolls right, offset start */}
+        <div className="gallery-strip-row">
+          <div className="gallery-strip-track-r">
+            {[...MOCK_IMAGES.slice(8), ...MOCK_IMAGES.slice(8)].map((img, i) => (
+              <img key={i} src={img.url} alt={img.prompt} className="gallery-thumb" />
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* spacer */}
