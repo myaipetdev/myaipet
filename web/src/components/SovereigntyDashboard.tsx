@@ -385,6 +385,39 @@ export default function SovereigntyDashboard() {
         )}
       </div>
 
+      {/* ───── Sovereignty Overview Cards ───── */}
+      <div
+        className="sov-card"
+        style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 28 }}
+      >
+        {[
+          {
+            icon: "🔐",
+            title: "Own Your AI Identity",
+            desc: "Your pet's soul is minted as a Soulbound NFT on BNB Chain. Immutable, non-transferable, permanently yours — even if we shut down.",
+            color: "rgba(245,158,11,0.07)", border: "rgba(245,158,11,0.2)",
+          },
+          {
+            icon: "📊",
+            title: "Sovereign Data Control",
+            desc: "Export everything, delete anytime. Full GDPR-grade control over every memory, conversation, and interaction your pet generates.",
+            color: "rgba(16,185,129,0.06)", border: "rgba(16,185,129,0.18)",
+          },
+          {
+            icon: "🐾",
+            title: "PetClaw Framework",
+            desc: "Memory & session-specialized SDK. Your pet maintains full context across 19+ platforms — Telegram, Discord, Web — with zero data loss.",
+            color: "rgba(139,92,246,0.06)", border: "rgba(139,92,246,0.18)",
+          },
+        ].map(({ icon, title, desc, color, border }) => (
+          <div key={title} style={{ padding: "20px", borderRadius: 16, background: color, border: `1px solid ${border}` }}>
+            <div style={{ fontSize: 26, marginBottom: 10 }}>{icon}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginBottom: 6 }}>{title}</div>
+            <div style={{ fontSize: 11, color: "rgba(26,26,46,0.55)", fontFamily: "monospace", lineHeight: 1.65 }}>{desc}</div>
+          </div>
+        ))}
+      </div>
+
       {/* ───── No pet fallback ───── */}
       {!selectedPet && !loading && (
         <div
@@ -1527,6 +1560,113 @@ export default function SovereigntyDashboard() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* ───── PetClaw SDK ───── */}
+          <div
+            className="sov-card"
+            style={{
+              padding: 30, borderRadius: 20, marginBottom: 32,
+              background: "linear-gradient(135deg, rgba(139,92,246,0.07) 0%, rgba(245,158,11,0.04) 100%)",
+              border: "1px solid rgba(139,92,246,0.2)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <span style={{ fontSize: 22 }}>🐾</span>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>PetClaw SDK</h2>
+              <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(139,92,246,0.15)", color: "#8b5cf6", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>MEMORY · SESSION</span>
+            </div>
+            <p style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", fontFamily: "monospace", lineHeight: 1.65, marginBottom: 20 }}>
+              PetClaw is not a generic AI API — it is a <strong style={{ color: "#1a1a2e" }}>memory &amp; session-specialized framework</strong>. Unlike stateless wrappers, Claw maintains persistent context across platforms, restarts, and devices. Your pet remembers who you are, what you talked about, and what matters to you — everywhere.
+            </p>
+
+            {/* Why PetClaw */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(175px, 1fr))", gap: 10, marginBottom: 28 }}>
+              {[
+                { icon: "🧠", title: "Persistent Memory", desc: "Context survives sessions, restarts, and platform switches — no re-explaining yourself" },
+                { icon: "⚡", title: "Real-time Sync", desc: "State changes on Telegram reflect instantly on Discord, Web, and wherever Claw runs" },
+                { icon: "🔒", title: "Encrypted Sessions", desc: "AES-256 session keys. Only your pet can read its own history" },
+                { icon: "🪝", title: "MCP Compatible", desc: "Plug into any Model Context Protocol client in under 5 minutes" },
+              ].map(({ icon, title, desc }) => (
+                <div key={title} style={{ padding: 14, borderRadius: 12, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)" }}>
+                  <div style={{ fontSize: 20, marginBottom: 8 }}>{icon}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e", marginBottom: 4 }}>{title}</div>
+                  <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", fontFamily: "monospace", lineHeight: 1.55 }}>{desc}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Install */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", marginBottom: 8, letterSpacing: "0.1em" }}>INSTALL</div>
+              <div style={{ background: "#0f0f1a", borderRadius: 12, padding: "14px 20px", fontFamily: "monospace", fontSize: 13, color: "#f8f8f8", display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ color: "#4ade80", userSelect: "none" }}>$</span>
+                <span>npm install <span style={{ color: "#a78bfa" }}>petclaw-sdk</span></span>
+              </div>
+            </div>
+
+            {/* Quick setup */}
+            <div>
+              <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", marginBottom: 8, letterSpacing: "0.1em" }}>QUICK SETUP</div>
+              <div style={{ background: "#0f0f1a", borderRadius: 12, padding: "18px 20px", fontFamily: "monospace", fontSize: 12, color: "#f8f8f8", lineHeight: 1.9, overflowX: "auto" }}>
+                <div><span style={{ color: "#a78bfa" }}>import</span> {"{ PetClaw }"} <span style={{ color: "#a78bfa" }}>from</span> <span style={{ color: "#4ade80" }}>'petclaw-sdk'</span></div>
+                <div style={{ marginTop: 8 }}><span style={{ color: "#a78bfa" }}>const</span> claw = <span style={{ color: "#fbbf24" }}>new PetClaw</span>{"({"}</div>
+                <div>&nbsp;&nbsp;petId: <span style={{ color: "#4ade80" }}>'your-pet-id'</span>,</div>
+                <div>&nbsp;&nbsp;apiKey: <span style={{ color: "#4ade80" }}>process.env.PETCLAW_KEY</span>,</div>
+                <div>{"})"}</div>
+                <div style={{ marginTop: 8, color: "rgba(255,255,255,0.3)" }}>{"// Persistent memory across any session"}</div>
+                <div><span style={{ color: "#a78bfa" }}>await</span> claw.<span style={{ color: "#fbbf24" }}>remember</span>(<span style={{ color: "#4ade80" }}>'User prefers TypeScript'</span>)</div>
+                <div><span style={{ color: "#a78bfa" }}>await</span> claw.<span style={{ color: "#fbbf24" }}>getContext</span>() <span style={{ color: "rgba(255,255,255,0.3)" }}>{"// → full session history"}</span></div>
+              </div>
+            </div>
+          </div>
+
+          {/* ───── Chrome Extension ───── */}
+          <div
+            className="sov-card"
+            style={{
+              padding: 30, borderRadius: 20, marginBottom: 32,
+              background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <span style={{ fontSize: 22 }}>🌐</span>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>Chrome Extension</h2>
+              <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(66,133,244,0.12)", color: "#4285F4", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>COMING SOON</span>
+            </div>
+            <p style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", fontFamily: "monospace", lineHeight: 1.65, marginBottom: 20 }}>
+              Your pet, always by your side. Browse with your AI companion active — it reads context, remembers what you care about, and acts on your behalf without ever leaving the page.
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(185px, 1fr))", gap: 10, marginBottom: 24 }}>
+              {[
+                { icon: "👁", title: "Page Awareness", desc: "Pet reads and summarizes pages as you browse. Paste a link, get instant context." },
+                { icon: "💬", title: "Sidebar Chat", desc: "Talk to your pet in a floating sidebar — no tab switching, no breaking your flow." },
+                { icon: "🔖", title: "Smart Bookmarks", desc: "Pet auto-tags and organizes what you save based on your interests and past context." },
+                { icon: "🧩", title: "MCP Bridge", desc: "Connects local MCP tools (memory, calendar, GitHub) directly from your browser." },
+              ].map(({ icon, title, desc }) => (
+                <div key={title} style={{ padding: 14, borderRadius: 12, background: "rgba(66,133,244,0.04)", border: "1px solid rgba(66,133,244,0.1)" }}>
+                  <div style={{ fontSize: 20, marginBottom: 8 }}>{icon}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e", marginBottom: 4 }}>{title}</div>
+                  <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", fontFamily: "monospace", lineHeight: 1.55 }}>{desc}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <button
+                disabled
+                style={{
+                  padding: "12px 24px", borderRadius: 12,
+                  border: "1px solid rgba(66,133,244,0.3)", background: "rgba(66,133,244,0.07)",
+                  color: "#4285F4", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
+                  cursor: "not-allowed", display: "flex", alignItems: "center", gap: 8, opacity: 0.7,
+                }}
+              >
+                <span>🌐</span> Add to Chrome
+              </button>
+              <span style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(26,26,46,0.4)" }}>Available Q2 2026 — join waitlist via Discord</span>
             </div>
           </div>
 
