@@ -359,41 +359,53 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
       {/* ─── Gallery Preview Strip ─── */}
       <div style={{ marginTop: 44, position: "relative", zIndex: 2 }}>
         <style>{`
-          @keyframes scrollLeft {
-            0% { transform: translateX(0) }
-            100% { transform: translateX(-50%) }
-          }
-          @keyframes scrollRight {
-            0% { transform: translateX(-50%) }
-            100% { transform: translateX(0) }
-          }
-          .gallery-strip-row { display: flex; gap: 8px; overflow: hidden; mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); }
-          .gallery-strip-track-l { display: flex; gap: 8px; animation: scrollLeft 40s linear infinite; width: max-content; }
-          .gallery-strip-track-r { display: flex; gap: 8px; animation: scrollRight 50s linear infinite; width: max-content; }
-          .gallery-strip-row:hover .gallery-strip-track-l,
-          .gallery-strip-row:hover .gallery-strip-track-r { animation-play-state: paused; }
-          .gallery-thumb { width: 110px; height: 110px; border-radius: 12px; object-fit: cover; flex-shrink: 0; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
-          .gallery-thumb:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+          @keyframes scrollL { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
+          @keyframes scrollR { 0% { transform: translateX(-50%) } 100% { transform: translateX(0) } }
+          .gs-row { display: flex; gap: 10px; overflow: hidden; mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); }
+          .gs-row:hover .gs-track { animation-play-state: paused !important; }
+          .gs-track { display: flex; gap: 10px; width: max-content; }
+          .gs-card { position: relative; border-radius: 14px; overflow: hidden; flex-shrink: 0; cursor: pointer; transition: transform 0.25s, box-shadow 0.25s; }
+          .gs-card:hover { transform: scale(1.04) translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.18); }
+          .gs-card:hover .gs-badge { opacity: 1; }
+          .gs-badge { position: absolute; bottom: 6px; left: 6px; padding: 2px 7px; border-radius: 6px; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); font-family: monospace; font-size: 9px; color: #fbbf24; font-weight: 700; letter-spacing: 0.06em; opacity: 0; transition: opacity 0.2s; white-space: nowrap; }
         `}</style>
 
-        <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.3)", letterSpacing: "0.12em", textAlign: "center", marginBottom: 14, textTransform: "uppercase" }}>
+        <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.3)", letterSpacing: "0.12em", textAlign: "center", marginBottom: 16, textTransform: "uppercase" }}>
           Community Creations
         </div>
 
-        {/* Row 1 — scrolls left */}
-        <div className="gallery-strip-row" style={{ marginBottom: 8 }}>
-          <div className="gallery-strip-track-l">
-            {[...MOCK_IMAGES, ...MOCK_IMAGES].map((img, i) => (
-              <img key={i} src={img.url} alt={img.prompt} className="gallery-thumb" />
+        {/* Row 1 — tall cards, fast left */}
+        <div className="gs-row" style={{ marginBottom: 10 }}>
+          <div className="gs-track" style={{ animation: "scrollL 35s linear infinite" }}>
+            {[...MOCK_IMAGES.slice(0, 16), ...MOCK_IMAGES.slice(0, 16)].map((img, i) => (
+              <div key={i} className="gs-card" style={{ width: 100, height: 130 }}>
+                <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <span className="gs-badge">{img.style}</span>
+              </div>
             ))}
           </div>
         </div>
 
-        {/* Row 2 — scrolls right, offset start */}
-        <div className="gallery-strip-row">
-          <div className="gallery-strip-track-r">
+        {/* Row 2 — square cards, slow right */}
+        <div className="gs-row" style={{ marginBottom: 10 }}>
+          <div className="gs-track" style={{ animation: "scrollR 55s linear infinite" }}>
+            {[...MOCK_IMAGES.slice(4, 20), ...MOCK_IMAGES.slice(4, 20)].map((img, i) => (
+              <div key={i} className="gs-card" style={{ width: 120, height: 120 }}>
+                <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <span className="gs-badge">{img.style}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Row 3 — wide-ish, medium left */}
+        <div className="gs-row">
+          <div className="gs-track" style={{ animation: "scrollL 45s linear infinite" }}>
             {[...MOCK_IMAGES.slice(8), ...MOCK_IMAGES.slice(8)].map((img, i) => (
-              <img key={i} src={img.url} alt={img.prompt} className="gallery-thumb" />
+              <div key={i} className="gs-card" style={{ width: 110, height: 100 }}>
+                <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <span className="gs-badge">{img.style}</span>
+              </div>
             ))}
           </div>
         </div>
