@@ -96,6 +96,228 @@ const memoryNftApi = {
   mint: (petId: any, data: any) => api.memoryNfts.mint(petId, data),
 };
 
+// ── Chrome Extension in-app showcase ──
+function ChromeExtensionSection() {
+  const [installStep, setInstallStep] = useState<number | null>(null);
+
+  const steps = [
+    { n: 1, title: "Download", desc: 'Click "Download Extension" below to get the ZIP file.' },
+    { n: 2, title: "Unzip", desc: "Extract the ZIP to any folder on your computer." },
+    { n: 3, title: "Open Extensions", desc: "Go to chrome://extensions in Chrome and enable Developer Mode (top-right toggle)." },
+    { n: 4, title: "Load Unpacked", desc: 'Click "Load unpacked" and select the extracted folder.' },
+    { n: 5, title: "Done!", desc: "The MY AI PET companion icon appears in your toolbar — click it to meet your pet!" },
+  ];
+
+  return (
+    <div
+      className="sov-card"
+      style={{
+        borderRadius: 20, marginBottom: 32, overflow: "hidden",
+        border: "1px solid rgba(66,133,244,0.18)",
+        background: "linear-gradient(135deg, rgba(66,133,244,0.04) 0%, rgba(139,92,246,0.04) 100%)",
+      }}
+    >
+      <div style={{ padding: 30 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+          <span style={{ fontSize: 22 }}>🌐</span>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>Desktop Companion Extension</h2>
+          <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(74,222,128,0.15)", color: "#16a34a", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>v2.0 READY</span>
+        </div>
+        <p style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", fontFamily: "monospace", lineHeight: 1.65, marginBottom: 20 }}>
+          Your pet lives in your browser. Browse any site with your AI companion active — it watches context, earns points passively, evolves through interaction, and runs mini-games right from your toolbar. Chrome Web Store submission is underway; install early via developer mode below.
+        </p>
+      </div>
+
+      {/* Two-column: features left, popup mockup right */}
+      <div style={{ display: "flex", gap: 0, flexWrap: "wrap", borderTop: "1px solid rgba(0,0,0,0.05)" }}>
+        {/* Left: features + steps */}
+        <div style={{ flex: "1 1 280px", padding: "24px 30px", borderRight: "1px solid rgba(0,0,0,0.05)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
+            {[
+              { icon: "🐾", title: "Always Alive", desc: "Your pet runs in the background and sends push notifications." },
+              { icon: "🎯", title: "Airdrop Points", desc: "Earn $PET points for browsing, chats, streaks, and evolution." },
+              { icon: "🎮", title: "Mini Games", desc: "Tap-to-feed, click-the-bug, and memory games built into the popup." },
+              { icon: "🧠", title: "Context Aware", desc: "Pet reads the current page and reacts to what you're looking at." },
+              { icon: "⚡", title: "Evolution", desc: "6 stages from Egg → Legend. Each stage unlocks new behaviors." },
+              { icon: "🔔", title: "Mood System", desc: "Pet gets hungry, tired, or excited based on your activity." },
+            ].map(({ icon, title, desc }) => (
+              <div key={title} style={{ padding: 12, borderRadius: 10, background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.05)" }}>
+                <div style={{ fontSize: 18, marginBottom: 6 }}>{icon}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#1a1a2e", marginBottom: 3 }}>{title}</div>
+                <div style={{ fontSize: 10, color: "rgba(26,26,46,0.45)", fontFamily: "monospace", lineHeight: 1.55 }}>{desc}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Install steps */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", letterSpacing: "0.1em", marginBottom: 12 }}>DEVELOPER MODE INSTALL</div>
+            {steps.map((s) => (
+              <div
+                key={s.n}
+                onClick={() => setInstallStep(installStep === s.n ? null : s.n)}
+                style={{
+                  display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px",
+                  borderRadius: 10, marginBottom: 6, cursor: "pointer",
+                  background: installStep === s.n ? "rgba(66,133,244,0.07)" : "rgba(0,0,0,0.025)",
+                  border: `1px solid ${installStep === s.n ? "rgba(66,133,244,0.2)" : "rgba(0,0,0,0.05)"}`,
+                  transition: "all 0.2s",
+                }}
+              >
+                <div style={{
+                  width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+                  background: installStep === s.n ? "#4285F4" : "rgba(0,0,0,0.08)",
+                  color: installStep === s.n ? "#fff" : "rgba(26,26,46,0.5)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 10, fontWeight: 800, fontFamily: "monospace",
+                }}>
+                  {s.n}
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e" }}>{s.title}</div>
+                  {installStep === s.n && (
+                    <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", fontFamily: "monospace", lineHeight: 1.55, marginTop: 3 }}>{s.desc}</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <a
+            href="/petclaw-extension.zip"
+            download="myaipet-extension.zip"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "12px 24px", borderRadius: 12,
+              background: "linear-gradient(135deg, #4285F4, #3b5de7)",
+              color: "#fff", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
+              textDecoration: "none", transition: "opacity 0.2s",
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.opacity = "0.88")}
+            onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
+          >
+            ⬇ Download Extension
+          </a>
+          <div style={{ marginTop: 8, fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.35)" }}>
+            Chrome Web Store submission pending review
+          </div>
+        </div>
+
+        {/* Right: popup mockup */}
+        <div style={{ flex: "0 0 360px", padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "center", background: "rgba(10,10,20,0.03)" }}>
+          <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.35)", letterSpacing: "0.1em", marginBottom: 12 }}>POPUP PREVIEW</div>
+          {/* Extension popup mockup */}
+          <div style={{
+            width: 320, borderRadius: 14, overflow: "hidden",
+            background: "#0a0a14", fontFamily: "'Segoe UI', -apple-system, sans-serif",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.08)",
+            fontSize: 12,
+          }}>
+            {/* Header */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 12, padding: "14px 16px 12px",
+              background: "linear-gradient(135deg, rgba(251,191,36,0.08), rgba(139,92,246,0.06))",
+              borderBottom: "1px solid rgba(255,255,255,0.04)",
+            }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 14,
+                border: "2px solid rgba(251,191,36,0.5)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 28, background: "rgba(251,191,36,0.08)",
+                boxShadow: "0 0 18px rgba(251,191,36,0.15)",
+                overflow: "hidden",
+              }}>
+                <img src="/mascot.jpg" alt="pet" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 3 }}>Sparky</div>
+                <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                  {["⚡ Teen", "😄 Happy", "🔥 Fire"].map((tag) => (
+                    <span key={tag} style={{ fontSize: 9, padding: "2px 6px", borderRadius: 5, background: "rgba(255,255,255,0.06)", color: "#aaa" }}>{tag}</span>
+                  ))}
+                </div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#fbbf24" }}>2,841</div>
+                <div style={{ fontSize: 9, color: "#888", fontFamily: "monospace" }}>$PET pts</div>
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div style={{ display: "flex", padding: "0 16px", gap: 2, background: "rgba(0,0,0,0.3)", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+              {["Status", "Points", "Game", "Settings"].map((t, i) => (
+                <div key={t} style={{
+                  flex: 1, padding: "8px 0", textAlign: "center", fontSize: 10, fontWeight: 600,
+                  color: i === 0 ? "#fbbf24" : "#555", cursor: "pointer",
+                  borderBottom: i === 0 ? "2px solid #fbbf24" : "2px solid transparent",
+                }}>{t}</div>
+              ))}
+            </div>
+
+            {/* Status tab body */}
+            <div style={{ padding: "14px 16px" }}>
+              {/* Mood bar */}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                  <span style={{ fontSize: 10, color: "#888" }}>😄 Happy</span>
+                  <span style={{ fontSize: 10, color: "#fbbf24", fontFamily: "monospace" }}>78%</span>
+                </div>
+                <div style={{ height: 5, borderRadius: 3, background: "rgba(255,255,255,0.06)" }}>
+                  <div style={{ height: "100%", width: "78%", borderRadius: 3, background: "linear-gradient(90deg, #fbbf24, #f59e0b)" }} />
+                </div>
+              </div>
+              {[
+                { label: "Energy", val: 65, color: "#60a5fa" },
+                { label: "Hunger", val: 42, color: "#f87171" },
+                { label: "Bond", val: 88, color: "#c084fc" },
+              ].map(({ label, val, color }) => (
+                <div key={label} style={{ marginBottom: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                    <span style={{ fontSize: 9, color: "#666" }}>{label}</span>
+                    <span style={{ fontSize: 9, color, fontFamily: "monospace" }}>{val}%</span>
+                  </div>
+                  <div style={{ height: 3, borderRadius: 2, background: "rgba(255,255,255,0.05)" }}>
+                    <div style={{ height: "100%", width: `${val}%`, borderRadius: 2, background: color }} />
+                  </div>
+                </div>
+              ))}
+
+              {/* Action buttons */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 14 }}>
+                {["🍖 Feed", "🎮 Play", "💬 Chat", "🧠 Train"].map((a) => (
+                  <div key={a} style={{
+                    padding: "8px 0", borderRadius: 8, textAlign: "center",
+                    background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)",
+                    color: "#aaa", fontSize: 11, cursor: "pointer",
+                  }}>{a}</div>
+                ))}
+              </div>
+
+              {/* Recent notif */}
+              <div style={{ marginTop: 12, padding: "8px 10px", borderRadius: 8, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.12)", display: "flex", gap: 8, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 14 }}>⚡</span>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#fbbf24" }}>Level up! Teen stage unlocked</div>
+                  <div style={{ fontSize: 9, color: "#666", fontFamily: "monospace" }}>+200 evolution points earned</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: "8px 16px 12px", borderTop: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 9, fontFamily: "monospace", color: "#444" }}>v2.0.0 · PetClaw enabled</span>
+              <span style={{ fontSize: 9, color: "#16a34a", fontFamily: "monospace" }}>● connected</span>
+            </div>
+          </div>
+          <div style={{ marginTop: 10, fontSize: 9, fontFamily: "monospace", color: "rgba(26,26,46,0.3)", textAlign: "center" }}>
+            Actual extension popup (360×580px)
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SovereigntyDashboard() {
   const [pets, setPets] = useState<any[]>([]);
   const [selectedPet, setSelectedPet] = useState<any>(null);
@@ -1623,52 +1845,7 @@ export default function SovereigntyDashboard() {
           </div>
 
           {/* ───── Chrome Extension ───── */}
-          <div
-            className="sov-card"
-            style={{
-              padding: 30, borderRadius: 20, marginBottom: 32,
-              background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-              <span style={{ fontSize: 22 }}>🌐</span>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>Chrome Extension</h2>
-              <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(66,133,244,0.12)", color: "#4285F4", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>COMING SOON</span>
-            </div>
-            <p style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", fontFamily: "monospace", lineHeight: 1.65, marginBottom: 20 }}>
-              Your pet, always by your side. Browse with your AI companion active — it reads context, remembers what you care about, and acts on your behalf without ever leaving the page.
-            </p>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(185px, 1fr))", gap: 10, marginBottom: 24 }}>
-              {[
-                { icon: "👁", title: "Page Awareness", desc: "Pet reads and summarizes pages as you browse. Paste a link, get instant context." },
-                { icon: "💬", title: "Sidebar Chat", desc: "Talk to your pet in a floating sidebar — no tab switching, no breaking your flow." },
-                { icon: "🔖", title: "Smart Bookmarks", desc: "Pet auto-tags and organizes what you save based on your interests and past context." },
-                { icon: "🧩", title: "MCP Bridge", desc: "Connects local MCP tools (memory, calendar, GitHub) directly from your browser." },
-              ].map(({ icon, title, desc }) => (
-                <div key={title} style={{ padding: 14, borderRadius: 12, background: "rgba(66,133,244,0.04)", border: "1px solid rgba(66,133,244,0.1)" }}>
-                  <div style={{ fontSize: 20, marginBottom: 8 }}>{icon}</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e", marginBottom: 4 }}>{title}</div>
-                  <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", fontFamily: "monospace", lineHeight: 1.55 }}>{desc}</div>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <button
-                disabled
-                style={{
-                  padding: "12px 24px", borderRadius: 12,
-                  border: "1px solid rgba(66,133,244,0.3)", background: "rgba(66,133,244,0.07)",
-                  color: "#4285F4", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
-                  cursor: "not-allowed", display: "flex", alignItems: "center", gap: 8, opacity: 0.7,
-                }}
-              >
-                <span>🌐</span> Add to Chrome
-              </button>
-              <span style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(26,26,46,0.4)" }}>Available Q2 2026 — join waitlist via Discord</span>
-            </div>
-          </div>
+          <ChromeExtensionSection />
 
           {/* ───── PetClaw Ecosystem (Coming Soon) ───── */}
           <div
