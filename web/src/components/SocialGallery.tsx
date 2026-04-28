@@ -603,15 +603,15 @@ export default function SocialGallery() {
     setLoading(true);
     try {
       const data = await api.social.feed({ sort, page: 1, page_size: 40 });
-      setItems((data.items || []).filter((i: any) => i.photo_url || i.photo_path || i.video_url || i.video_path));
-    } catch {
-      try {
-        const data = await api.gallery.list({ sort: sort === "most_liked" ? "recent" : sort, page: 1, page_size: 40 });
-        setItems((data.items || []).map((i: any) => ({ ...i, generation_id: i.id, likes_count: 0, comments_count: 0, is_liked: false })));
-      } catch {
-        setItems(MOCK_SOCIAL_FEED.items);
-      }
-    }
+      const filtered = (data.items || []).filter((i: any) => i.photo_url || i.photo_path || i.video_url || i.video_path);
+      if (filtered.length > 0) { setItems(filtered); setLoading(false); return; }
+    } catch {}
+    try {
+      const data = await api.gallery.list({ sort: sort === "most_liked" ? "recent" : sort, page: 1, page_size: 40 });
+      const mapped = (data.items || []).map((i: any) => ({ ...i, generation_id: i.id, likes_count: 0, comments_count: 0, is_liked: false }));
+      if (mapped.length > 0) { setItems(mapped); setLoading(false); return; }
+    } catch {}
+    setItems(MOCK_SOCIAL_FEED.items);
     setLoading(false);
   };
 
