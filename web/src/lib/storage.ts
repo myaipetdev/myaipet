@@ -6,7 +6,9 @@
  * Falls back to Vercel Blob if S3 not configured
  */
 
-const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || "vercel"; // "s3" | "vercel"
+const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || "local"; // "s3" | "vercel" | "local"
+const LOCAL_UPLOAD_DIR = process.env.LOCAL_UPLOAD_DIR || "/opt/petclaw/uploads";
+const LOCAL_UPLOAD_URL = process.env.LOCAL_UPLOAD_URL || "/uploads";
 const S3_BUCKET = process.env.AWS_S3_BUCKET || "";
 const S3_REGION = process.env.AWS_S3_REGION || "ap-northeast-2";
 const S3_ACCESS_KEY = process.env.AWS_ACCESS_KEY_ID || "";
@@ -50,7 +52,19 @@ async function uploadToS3(filename: string, data: Blob | Buffer, contentType: st
   }
 }
 
-// ── Vercel Blob Upload (existing) ──
+// ── Local Disk Upload ──
+async function uploadToLocal(filename: string, data: Blob | Buffer, _contentType: string): Promise<UploadResult> {
+  const { writeFile, mkdir } = await import("fs/promises");
+  const path = await import("path");
+  const fullPath = path.join(LOCAL_UPLOAD_DIR, filename);
+  await mkdir(path.dirname(fullPath), { recursive: true });
+  const buffer = data instanceof Blob ? Buffer.from(await data.arrayBuffer()) : data;
+  await writeFile(fullPath, buffer);
+  const url = `${LOCAL_UPLOAD_URL}/${filename}`;
+  return { url, key: filename };
+}
+
+// ── Vercel Blob Upload ──
 async function uploadToVercel(filename: string, data: Blob | Buffer, _contentType: string): Promise<UploadResult> {
   const { put } = await import("@vercel/blob");
   const result = await put(filename, data, { access: "public", addRandomSuffix: false });
@@ -62,6 +76,9 @@ async function uploadToVercel(filename: string, data: Blob | Buffer, _contentTyp
 export async function uploadFile(filename: string, data: Blob | Buffer, contentType: string = "image/jpeg"): Promise<UploadResult> {
   if (STORAGE_PROVIDER === "s3" && S3_BUCKET && S3_ACCESS_KEY) {
     return uploadToS3(filename, data, contentType);
+  }
+  if (STORAGE_PROVIDER === "local") {
+    return uploadToLocal(filename, data, contentType);
   }
   return uploadToVercel(filename, data, contentType);
 }
