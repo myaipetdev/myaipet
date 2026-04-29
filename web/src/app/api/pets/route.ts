@@ -87,5 +87,22 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // Create a community generation record so the pet shows up in the social feed
+  if (avatar_url) {
+    await prisma.generation.create({
+      data: {
+        user_id: user.id,
+        pet_type: species ?? 0,
+        style: 0,
+        prompt: `${name} — newly adopted ${species_name || "pet"} companion`,
+        duration: 0,
+        photo_path: avatar_url,
+        status: "completed",
+        credits_charged: 0,
+        completed_at: new Date(),
+      },
+    }).catch(() => {}); // non-fatal
+  }
+
   return NextResponse.json(pet, { status: 201 });
 }
