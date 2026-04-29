@@ -377,10 +377,11 @@ export default function SovereigntyDashboard() {
         memoryNftApi.list(selectedPet.id).catch(() => null),
         memoryNftApi.mintable(selectedPet.id).catch(() => null),
       ]);
+      const toArr = (v: any) => Array.isArray(v) ? v : [];
       setSoul(soulRes?.soul || soulRes || null);
-      setCheckpoints(ckptRes?.checkpoints || ckptRes || []);
-      setMemoryNfts(memsRes?.memories || memsRes?.memory_nfts || memsRes || []);
-      setMintableMemories(mintableRes?.memories || mintableRes || []);
+      setCheckpoints(toArr(ckptRes?.checkpoints ?? ckptRes));
+      setMemoryNfts(toArr(memsRes?.memories ?? memsRes?.memory_nfts ?? memsRes));
+      setMintableMemories(toArr(mintableRes?.memories ?? mintableRes));
       setSuccessorInput((soulRes?.soul?.successor_wallet || soulRes?.successor_wallet) || "");
     } catch {}
     setLoading(false);
