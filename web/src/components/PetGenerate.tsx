@@ -181,74 +181,18 @@ export default function PetGenerate() {
     setError(null);
     setResult(null);
 
-    // Step 0: Switch to BSC and do on-chain recording FIRST (wallet popup happens here)
-    if (isPETActivityEnabled()) {
-      try {
-        await switchToBsc();
-      } catch {
-        setError("BSC 네트워크로 전환해주세요.");
-        return;
-      }
-      try {
-        setChainToast("⛓️ 지갑 승인을 기다리는 중...");
-        if (genType === "video") {
-          await recordVideoGeneration(selectedPet.id, style, duration);
-        } else {
-          await recordImageGeneration(selectedPet.id, style);
-        }
-        setChainToast("✅ 온체인 기록 완료!");
-        setTimeout(() => setChainToast(null), 2000);
-      } catch (e: any) {
-        console.error("[PETActivity] Full error:", e);
-        const raw = (e?.shortMessage || e?.message || "").toLowerCase();
-        const msg = raw.includes("insufficient") || raw.includes("fund")
-          ? "BNB 잔액이 부족합니다. BSC 지갑에 BNB를 충전해주세요."
-          : raw.includes("reject") || raw.includes("denied")
-          ? "트랜잭션이 거부되었습니다"
-          : `온체인 기록 실패: ${e?.shortMessage || e?.message || "알 수 없는 오류"}`;
-        setChainToast(`❌ ${msg}`);
-        setTimeout(() => setChainToast(null), 6000);
-        return; // Block generation if on-chain fails
-      }
-    }
-
-    // Step 1: Request wallet signature BEFORE showing "Creating..." UI
-    let signedMessage: string;
-    let signature: string;
-    try {
-      setChainToast("✍️ 서명 승인을 기다리는 중...");
-      const sig = await signAction(
-        wagmiConfig,
-        `Generate ${genType} for pet: ${selectedPet.name}`,
-      );
-      signedMessage = sig.message;
-      signature = sig.signature;
-      setChainToast(null);
-    } catch (e: any) {
-      setChainToast(null);
-      const raw = (e?.message || "").toLowerCase();
-      if (raw.includes("reject") || raw.includes("denied") || raw.includes("user rejected")) {
-        setError("서명이 취소되었습니다");
-      } else {
-        setError(e.message || "지갑 서명 실패");
-      }
-      return;
-    }
-
-    // Step 2: Now flip to generating UI (wallet already approved)
+    // On-chain recording + NFT minting paused — generate flow is now wallet-free during this hold period.
     setGenerating(true);
     setStatusText("Connecting to AI engine...");
 
     try {
-      // Step 3: Submit generation request
+      // Submit generation request (signature optional during hold)
       setStatusText("Analyzing pet personality...");
       const res = await api.pets.generate(selectedPet.id, {
         style,
         duration,
         prompt: prompt || undefined,
         type: genType,
-        signedMessage,
-        signature,
       });
 
       // Step 2: If completed immediately (image), show result

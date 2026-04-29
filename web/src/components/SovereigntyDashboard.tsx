@@ -1040,23 +1040,29 @@ export default function SovereigntyDashboard() {
               >
                 {memoryNfts.length} minted
               </span>
-              <button
-                onClick={openMintModal}
+              <div
+                title="NFT minting launches after BSC contract deployment"
                 style={{
                   marginLeft: "auto",
                   padding: "9px 20px",
                   borderRadius: 10,
-                  background: "linear-gradient(135deg, #8b5cf6, #6d28d9)",
-                  border: "none",
-                  color: "white",
+                  background: "rgba(0,0,0,0.05)",
+                  border: "1px solid rgba(0,0,0,0.08)",
+                  color: "rgba(26,26,46,0.5)",
                   fontFamily: "'Space Grotesk',sans-serif",
                   fontSize: 13,
                   fontWeight: 700,
-                  cursor: "pointer",
+                  cursor: "not-allowed",
+                  display: "inline-flex", alignItems: "center", gap: 8,
                 }}
               >
                 + Mint Memory
-              </button>
+                <span style={{
+                  fontSize: 9, padding: "2px 7px", borderRadius: 999,
+                  background: "rgba(139,92,246,0.15)", color: "#8b5cf6",
+                  fontWeight: 700, letterSpacing: "0.08em",
+                }}>SOON</span>
+              </div>
             </div>
 
             {memoryNfts.length === 0 ? (
@@ -1072,24 +1078,29 @@ export default function SovereigntyDashboard() {
                   No memories minted yet
                 </div>
                 <div style={{ fontSize: 14, color: "rgba(26,26,46,0.35)", fontFamily: "'Space Grotesk',sans-serif", marginBottom: 20 }}>
-                  Your first milestone awaits
+                  Memory NFTs launch after on-chain go-live
                 </div>
-                <button
-                  onClick={openMintModal}
+                <div
                   style={{
+                    display: "inline-flex", alignItems: "center", gap: 8,
                     padding: "10px 22px",
                     borderRadius: 10,
-                    background: "linear-gradient(135deg, #f59e0b, #c084fc)",
-                    border: "none",
-                    color: "#1a1a2e",
+                    background: "rgba(139,92,246,0.08)",
+                    border: "1px solid rgba(139,92,246,0.2)",
+                    color: "#8b5cf6",
                     fontFamily: "'Space Grotesk',sans-serif",
                     fontSize: 13,
-                    fontWeight: 600,
-                    cursor: "pointer",
+                    fontWeight: 700,
+                    cursor: "not-allowed",
                   }}
                 >
                   Mint Your First Memory
-                </button>
+                  <span style={{
+                    fontSize: 9, padding: "2px 7px", borderRadius: 999,
+                    background: "rgba(139,92,246,0.18)", color: "#7c3aed",
+                    fontWeight: 700, letterSpacing: "0.08em",
+                  }}>SOON</span>
+                </div>
               </div>
             ) : (
               <div

@@ -27,19 +27,16 @@ export async function POST(
   const body = await req.json();
   const { style, duration, prompt, type, signedMessage, signature } = body;
 
-  // Verify wallet signature
-  if (!signedMessage || !signature) {
-    return NextResponse.json(
-      { error: "Wallet signature is required to generate content" },
-      { status: 400 }
-    );
-  }
-  const isValidSig = await verifySignature(signedMessage, signature, user.wallet_address);
-  if (!isValidSig) {
-    return NextResponse.json(
-      { error: "Invalid wallet signature" },
-      { status: 403 }
-    );
+  // Wallet signature optional during on-chain hold period.
+  // If provided, still verify; if not, allow auth-only.
+  if (signedMessage && signature) {
+    const isValidSig = await verifySignature(signedMessage, signature, user.wallet_address);
+    if (!isValidSig) {
+      return NextResponse.json(
+        { error: "Invalid wallet signature" },
+        { status: 403 }
+      );
+    }
   }
 
   if (!type || !["image", "video"].includes(type)) {

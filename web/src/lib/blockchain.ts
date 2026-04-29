@@ -12,6 +12,12 @@ const PET_CONTENT_ADDRESS = "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c";
 const PET_TRACKER_ADDRESS = "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a";
 
 function getRelayerWallet() {
+  // ON-CHAIN HOLD: server-side recording + NFT minting paused.
+  // Re-enable by setting BLOCKCHAIN_ENABLED=true once relayer wallet is funded
+  // and PETActivity is deployed.
+  if (process.env.BLOCKCHAIN_ENABLED !== "true") {
+    return null;
+  }
   const key = process.env.BACKEND_RELAYER_KEY;
   if (!key) {
     console.warn("[blockchain] BACKEND_RELAYER_KEY not set, on-chain calls disabled");
