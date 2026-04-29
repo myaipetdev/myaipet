@@ -601,17 +601,26 @@ export default function SocialGallery() {
 
   const loadFeed = async () => {
     setLoading(true);
+    const MIN_REAL = 8;
+    let realItems: any[] = [];
     try {
       const data = await api.social.feed({ sort, page: 1, page_size: 40 });
-      const filtered = (data.items || []).filter((i: any) => i.photo_url || i.photo_path || i.video_url || i.video_path);
-      if (filtered.length > 0) { setItems(filtered); setLoading(false); return; }
+      realItems = (data.items || []).filter((i: any) => i.photo_url || i.photo_path || i.video_url || i.video_path);
     } catch {}
-    try {
-      const data = await api.gallery.list({ sort: sort === "most_liked" ? "recent" : sort, page: 1, page_size: 40 });
-      const mapped = (data.items || []).map((i: any) => ({ ...i, generation_id: i.id, likes_count: 0, comments_count: 0, is_liked: false }));
-      if (mapped.length > 0) { setItems(mapped); setLoading(false); return; }
-    } catch {}
-    setItems(MOCK_SOCIAL_FEED.items);
+    if (realItems.length === 0) {
+      try {
+        const data = await api.gallery.list({ sort: sort === "most_liked" ? "recent" : sort, page: 1, page_size: 40 });
+        realItems = (data.items || []).map((i: any) => ({ ...i, generation_id: i.id, likes_count: 0, comments_count: 0, is_liked: false }));
+      } catch {}
+    }
+    // Pad with mock data when real items are sparse so community doesn't look empty
+    if (realItems.length < MIN_REAL) {
+      const usedIds = new Set(realItems.map((i: any) => i.id));
+      const mockPad = MOCK_SOCIAL_FEED.items.filter((m: any) => !usedIds.has(m.id));
+      setItems([...realItems, ...mockPad]);
+    } else {
+      setItems(realItems);
+    }
     setLoading(false);
   };
 
