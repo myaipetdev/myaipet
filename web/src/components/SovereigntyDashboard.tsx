@@ -720,8 +720,8 @@ export default function SovereigntyDashboard() {
               </h2>
               <span
                 style={{
-                  fontSize: 11,
-                  fontFamily: "monospace",
+                  fontSize: 13,
+                  fontFamily: "'Space Grotesk',sans-serif",
                   color: "rgba(26,26,46,0.4)",
                   marginLeft: "auto",
                 }}
@@ -736,8 +736,8 @@ export default function SovereigntyDashboard() {
                   padding: 28,
                   textAlign: "center",
                   color: "rgba(26,26,46,0.4)",
-                  fontFamily: "monospace",
-                  fontSize: 12,
+                  fontFamily: "'Space Grotesk',sans-serif",
+                  fontSize: 14,
                 }}
               >
                 No persona checkpoints yet — interact with your pet to create the first one
@@ -784,13 +784,13 @@ export default function SovereigntyDashboard() {
                       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
                         <span
                           style={{
-                            padding: "2px 8px",
+                            padding: "3px 10px",
                             borderRadius: 6,
                             background: "rgba(192,132,252,0.12)",
                             border: "1px solid rgba(192,132,252,0.3)",
                             color: "#c084fc",
-                            fontFamily: "monospace",
-                            fontSize: 10,
+                            fontFamily: "'Space Grotesk',sans-serif",
+                            fontSize: 12,
                             fontWeight: 700,
                             letterSpacing: "0.04em",
                           }}
@@ -800,16 +800,16 @@ export default function SovereigntyDashboard() {
                         <span
                           style={{
                             color: "#1a1a2e",
-                            fontWeight: 600,
-                            fontSize: 13,
+                            fontWeight: 700,
+                            fontSize: 15,
                           }}
                         >
                           {ck.trigger_event}
                         </span>
                         <span
                           style={{
-                            fontFamily: "monospace",
-                            fontSize: 11,
+                            fontFamily: "'Space Grotesk',sans-serif",
+                            fontSize: 13,
                             color: "rgba(26,26,46,0.4)",
                           }}
                         >
@@ -844,10 +844,11 @@ export default function SovereigntyDashboard() {
                       {ck.summary && (
                         <div
                           style={{
-                            fontSize: 12,
+                            fontSize: 13,
                             color: "rgba(26,26,46,0.5)",
-                            fontFamily: "monospace",
-                            lineHeight: 1.55,
+                            fontFamily: "'Space Grotesk',sans-serif",
+                            lineHeight: 1.6,
+                            fontStyle: "italic",
                           }}
                         >
                           &quot;{ck.summary}&quot;
@@ -881,11 +882,11 @@ export default function SovereigntyDashboard() {
             </div>
             <p
               style={{
-                fontSize: 13,
-                color: "rgba(26,26,46,0.5)",
+                fontSize: 15,
+                color: "rgba(26,26,46,0.55)",
                 marginBottom: 20,
-                fontFamily: "monospace",
-                lineHeight: 1.6,
+                fontFamily: "'Space Grotesk',sans-serif",
+                lineHeight: 1.65,
               }}
             >
               Your AI self outlives you. Designate a successor wallet to inherit your sovereign identity.
@@ -894,14 +895,16 @@ export default function SovereigntyDashboard() {
             <div style={{ marginBottom: 14 }}>
               <div
                 style={{
-                  fontSize: 10,
-                  fontFamily: "monospace",
+                  fontSize: 11,
+                  fontFamily: "'Space Grotesk',sans-serif",
+                  fontWeight: 700,
                   color: "rgba(26,26,46,0.4)",
-                  marginBottom: 6,
-                  letterSpacing: "0.1em",
+                  marginBottom: 8,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
                 }}
               >
-                SUCCESSOR WALLET
+                Successor Wallet
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <input
@@ -986,18 +989,18 @@ export default function SovereigntyDashboard() {
               }}
             >
               <div>
-                <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", marginBottom: 4, letterSpacing: "0.1em" }}>
-                  INHERITANCE TRIGGER
+                <div style={{ fontSize: 11, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(26,26,46,0.4)", marginBottom: 6, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  Inheritance Trigger
                 </div>
-                <div style={{ fontSize: 13,  fontFamily: "monospace" }}>
+                <div style={{ fontSize: 15, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, color: "#1a1a2e" }}>
                   {soul?.inactivity_days ?? 180} days of inactivity
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", marginBottom: 4, letterSpacing: "0.1em" }}>
-                  LAST ACTIVE
+                <div style={{ fontSize: 11, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(26,26,46,0.4)", marginBottom: 6, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  Last Active
                 </div>
-                <div style={{ fontSize: 13, color: "#10b981", fontFamily: "monospace" }}>
+                <div style={{ fontSize: 15, color: "#10b981", fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600 }}>
                   {timeAgo(soul?.last_heartbeat)}
                 </div>
               </div>
@@ -1030,8 +1033,8 @@ export default function SovereigntyDashboard() {
               </h2>
               <span
                 style={{
-                  fontSize: 11,
-                  fontFamily: "monospace",
+                  fontSize: 13,
+                  fontFamily: "'Space Grotesk',sans-serif",
                   color: "rgba(26,26,46,0.4)",
                 }}
               >
@@ -1041,14 +1044,14 @@ export default function SovereigntyDashboard() {
                 onClick={openMintModal}
                 style={{
                   marginLeft: "auto",
-                  padding: "9px 18px",
+                  padding: "9px 20px",
                   borderRadius: 10,
                   background: "linear-gradient(135deg, #8b5cf6, #6d28d9)",
                   border: "none",
-                  color: "#1a1a2e",
+                  color: "white",
                   fontFamily: "'Space Grotesk',sans-serif",
-                  fontSize: 12,
-                  fontWeight: 600,
+                  fontSize: 13,
+                  fontWeight: 700,
                   cursor: "pointer",
                 }}
               >
@@ -1065,10 +1068,10 @@ export default function SovereigntyDashboard() {
                   textAlign: "center",
                 }}
               >
-                <div style={{ fontSize: 14, color: "rgba(228,228,244,0.6)", marginBottom: 6 }}>
+                <div style={{ fontSize: 18, color: "rgba(26,26,46,0.55)", marginBottom: 8, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600 }}>
                   No memories minted yet
                 </div>
-                <div style={{ fontSize: 12, color: "rgba(26,26,46,0.4)", fontFamily: "monospace", marginBottom: 18 }}>
+                <div style={{ fontSize: 14, color: "rgba(26,26,46,0.35)", fontFamily: "'Space Grotesk',sans-serif", marginBottom: 20 }}>
                   Your first milestone awaits
                 </div>
                 <button
@@ -1140,10 +1143,10 @@ export default function SovereigntyDashboard() {
                     </div>
                     <div
                       style={{
-                        fontSize: 12,
+                        fontSize: 13,
                         color: "rgba(26,26,46,0.5)",
-                        fontFamily: "monospace",
-                        lineHeight: 1.5,
+                        fontFamily: "'Space Grotesk',sans-serif",
+                        lineHeight: 1.55,
                         marginBottom: 12,
                         display: "-webkit-box",
                         WebkitLineClamp: 2,
@@ -1154,7 +1157,7 @@ export default function SovereigntyDashboard() {
                       {m.description}
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(228,228,244,0.35)" }}>
+                      <span style={{ fontSize: 11, fontFamily: "'Space Grotesk',sans-serif", color: "rgba(26,26,46,0.35)" }}>
                         {formatDate(m.minted_at)}
                       </span>
                       {m.tx_hash && (
@@ -1187,174 +1190,164 @@ export default function SovereigntyDashboard() {
         <div
           onClick={() => !minting && setMintModalOpen(false)}
           style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(5,5,15,0.75)",
-            backdropFilter: "blur(8px)",
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 20,
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(0,0,0,0.45)", backdropFilter: "blur(12px)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
           }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: "100%",
-              maxWidth: 480,
-              borderRadius: 20,
-              padding: 32,
-              background: "linear-gradient(180deg, #14142a 0%, #0f0f22 100%)",
-              border: "1px solid rgba(245,158,11,0.25)",
-              boxShadow: "0 20px 80px rgba(0,0,0,0.08)",
+              width: "100%", maxWidth: 500,
+              borderRadius: 24, overflow: "hidden",
+              background: "white",
+              boxShadow: "0 32px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)",
+              animation: "sovSlideIn 0.25s ease-out",
             }}
           >
-            <div style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", marginBottom: 6 }}>
-              Mint Memory NFT
-            </div>
-            <div
-              style={{
-                fontSize: 12,
-                color: "rgba(26,26,46,0.5)",
-                fontFamily: "monospace",
-                marginBottom: 20,
-              }}
-            >
-              Preserve this moment forever on-chain
+            {/* Header */}
+            <div style={{
+              padding: "22px 28px 18px",
+              borderBottom: "1px solid rgba(0,0,0,0.06)",
+              background: "linear-gradient(135deg, rgba(245,158,11,0.06), rgba(192,132,252,0.04))",
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 20, fontWeight: 800, color: "#1a1a2e", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
+                    Mint Memory NFT
+                  </h3>
+                  <p style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(26,26,46,0.4)", margin: 0 }}>
+                    Preserve this moment forever on-chain
+                  </p>
+                </div>
+                <button onClick={() => !minting && setMintModalOpen(false)} style={{
+                  background: "rgba(0,0,0,0.04)", border: "none", borderRadius: 8,
+                  width: 30, height: 30, cursor: "pointer", fontSize: 14, color: "rgba(26,26,46,0.4)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>✕</button>
+              </div>
             </div>
 
-            {mintableMemories.length > 0 && (
-              <div style={{ marginBottom: 14 }}>
-                <label style={labelStyle}>SOURCE MEMORY (optional)</label>
-                <select
-                  value={mintSelectedMemoryId}
-                  onChange={(e) => {
-                    setMintSelectedMemoryId(e.target.value);
-                    const m = mintableMemories.find((x) => String(x.id) === e.target.value);
-                    if (m) {
-                      setMintTitle(m.content?.slice(0, 60) || "");
-                      setMintDesc(m.content || "");
-                      if (m.memory_type) setMintType(m.memory_type);
-                      if (m.importance) setMintImportance(m.importance);
-                    }
-                  }}
-                  style={inputStyle}
-                >
-                  <option value="" style={{ background: "#14142a" }}>— None —</option>
-                  {mintableMemories.map((m) => (
-                    <option key={m.id} value={m.id} style={{ background: "#14142a" }}>
-                      {(m.content || "").slice(0, 50)}
-                    </option>
+            {/* Form */}
+            <div style={{ padding: "22px 28px", display: "flex", flexDirection: "column", gap: 16 }}>
+              {mintableMemories.length > 0 && (
+                <div>
+                  <label style={{ display: "block", fontFamily: "monospace", fontSize: 10, color: "rgba(26,26,46,0.45)", letterSpacing: "0.1em", marginBottom: 6 }}>SOURCE MEMORY (optional)</label>
+                  <select
+                    value={mintSelectedMemoryId}
+                    onChange={(e) => {
+                      setMintSelectedMemoryId(e.target.value);
+                      const m = mintableMemories.find((x) => String(x.id) === e.target.value);
+                      if (m) {
+                        setMintTitle(m.content?.slice(0, 60) || "");
+                        setMintDesc(m.content || "");
+                        if (m.memory_type) setMintType(m.memory_type);
+                        if (m.importance) setMintImportance(m.importance);
+                      }
+                    }}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid rgba(0,0,0,0.1)", background: "white", color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, outline: "none" }}
+                  >
+                    <option value="">— None —</option>
+                    {mintableMemories.map((m) => (
+                      <option key={m.id} value={m.id}>{(m.content || "").slice(0, 50)}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label style={{ display: "block", fontFamily: "monospace", fontSize: 10, color: "rgba(26,26,46,0.45)", letterSpacing: "0.1em", marginBottom: 6 }}>TITLE *</label>
+                <input
+                  value={mintTitle}
+                  onChange={(e) => setMintTitle(e.target.value)}
+                  placeholder="A memory worth preserving"
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid rgba(0,0,0,0.1)", background: "white", color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600, outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontFamily: "monospace", fontSize: 10, color: "rgba(26,26,46,0.45)", letterSpacing: "0.1em", marginBottom: 6 }}>DESCRIPTION *</label>
+                <textarea
+                  value={mintDesc}
+                  onChange={(e) => setMintDesc(e.target.value)}
+                  placeholder="Describe this memory..."
+                  rows={3}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid rgba(0,0,0,0.1)", background: "white", color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box" }}
+                />
+              </div>
+
+              {/* Type selector */}
+              <div>
+                <label style={{ display: "block", fontFamily: "monospace", fontSize: 10, color: "rgba(26,26,46,0.45)", letterSpacing: "0.1em", marginBottom: 8 }}>TYPE</label>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {[
+                    { v: "conversation", l: "💬 Chat" },
+                    { v: "milestone", l: "🏆 Milestone" },
+                    { v: "dream", l: "✨ Dream" },
+                    { v: "achievement", l: "🎖 Achievement" },
+                  ].map(({ v, l }) => (
+                    <button key={v} onClick={() => setMintType(v)} style={{
+                      padding: "6px 14px", borderRadius: 999, fontSize: 12, fontFamily: "'Space Grotesk',sans-serif",
+                      border: mintType === v ? "2px solid #f59e0b" : "1.5px solid rgba(0,0,0,0.09)",
+                      background: mintType === v ? "rgba(245,158,11,0.1)" : "rgba(0,0,0,0.02)",
+                      color: mintType === v ? "#b45309" : "rgba(26,26,46,0.55)",
+                      fontWeight: mintType === v ? 700 : 400,
+                      cursor: "pointer", transition: "all 0.15s",
+                    }}>{l}</button>
                   ))}
-                </select>
+                </div>
               </div>
-            )}
 
-            <div style={{ marginBottom: 14 }}>
-              <label style={labelStyle}>TITLE</label>
-              <input
-                value={mintTitle}
-                onChange={(e) => setMintTitle(e.target.value)}
-                placeholder="A memory worth preserving"
-                style={inputStyle}
-              />
-            </div>
-
-            <div style={{ marginBottom: 14 }}>
-              <label style={labelStyle}>DESCRIPTION</label>
-              <textarea
-                value={mintDesc}
-                onChange={(e) => setMintDesc(e.target.value)}
-                placeholder="Describe this memory..."
-                rows={3}
-                style={{ ...inputStyle, resize: "vertical", fontFamily: "monospace" }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 14 }}>
-              <label style={labelStyle}>TYPE</label>
-              <select value={mintType} onChange={(e) => setMintType(e.target.value)} style={inputStyle}>
-                <option value="conversation" style={{ background: "#14142a" }}>Conversation</option>
-                <option value="milestone" style={{ background: "#14142a" }}>Milestone</option>
-                <option value="dream" style={{ background: "#14142a" }}>Dream</option>
-                <option value="achievement" style={{ background: "#14142a" }}>Achievement</option>
-              </select>
-            </div>
-
-            <div style={{ marginBottom: 20 }}>
-              <label style={labelStyle}>IMPORTANCE ({mintImportance}/5)</label>
-              <input
-                type="range"
-                min={1}
-                max={5}
-                value={mintImportance}
-                onChange={(e) => setMintImportance(Number(e.target.value))}
-                style={{ width: "100%", accentColor: "#f59e0b" }}
-              />
-              <div style={{ fontSize: 14, color: "#f59e0b", marginTop: 4 }}>
-                {"★".repeat(mintImportance)}
-                <span style={{ color: "rgba(228,228,244,0.2)" }}>{"★".repeat(5 - mintImportance)}</span>
+              {/* Importance */}
+              <div>
+                <label style={{ display: "block", fontFamily: "monospace", fontSize: 10, color: "rgba(26,26,46,0.45)", letterSpacing: "0.1em", marginBottom: 8 }}>
+                  IMPORTANCE
+                </label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {[1,2,3,4,5].map(n => (
+                    <button key={n} onClick={() => setMintImportance(n)} style={{
+                      fontSize: 22, background: "none", border: "none", cursor: "pointer", padding: 0,
+                      color: n <= mintImportance ? "#f59e0b" : "rgba(0,0,0,0.12)",
+                      transition: "color 0.15s, transform 0.15s",
+                      transform: n <= mintImportance ? "scale(1.15)" : "scale(1)",
+                    }}>★</button>
+                  ))}
+                </div>
               </div>
+
+              {mintError && (
+                <div style={{
+                  padding: "10px 14px", borderRadius: 10,
+                  background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)",
+                  color: "#dc2626", fontSize: 12, fontFamily: "monospace",
+                }}>{mintError}</div>
+              )}
             </div>
 
-            {mintError && (
-              <div
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  background: "rgba(248,113,113,0.1)",
-                  border: "1px solid rgba(248,113,113,0.3)",
-                  color: "#f87171",
-                  fontSize: 12,
-                  fontFamily: "monospace",
-                  marginBottom: 14,
-                }}
-              >
-                {mintError}
-              </div>
-            )}
-
-            <div style={{ display: "flex", gap: 10 }}>
+            {/* Footer */}
+            <div style={{ padding: "0 28px 24px", display: "flex", gap: 10 }}>
               <button
                 onClick={() => setMintModalOpen(false)}
                 disabled={minting}
                 style={{
-                  flex: 1,
-                  padding: "12px",
-                  borderRadius: 10,
-                  background: "rgba(0,0,0,0.04)",
-                  border: "1px solid rgba(0,0,0,0.08)",
-                  
-                  fontFamily: "'Space Grotesk',sans-serif",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: "pointer",
+                  flex: 1, padding: "12px", borderRadius: 12,
+                  background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.08)",
+                  color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer",
                 }}
-              >
-                Cancel
-              </button>
+              >Cancel</button>
               <button
                 onClick={handleMint}
                 disabled={minting || !mintTitle.trim() || !mintDesc.trim()}
                 style={{
-                  flex: 2,
-                  padding: "12px",
-                  borderRadius: 10,
-                  background:
-                    minting || !mintTitle.trim() || !mintDesc.trim()
-                      ? "rgba(0,0,0,0.05)"
-                      : "linear-gradient(135deg, #f59e0b, #c084fc)",
-                  border: "none",
-                  color: "#1a1a2e",
-                  fontFamily: "'Space Grotesk',sans-serif",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: minting ? "not-allowed" : "pointer",
+                  flex: 2, padding: "12px", borderRadius: 12, border: "none",
+                  background: minting || !mintTitle.trim() || !mintDesc.trim()
+                    ? "rgba(0,0,0,0.05)"
+                    : "linear-gradient(135deg, #f59e0b, #d97706)",
+                  color: minting || !mintTitle.trim() || !mintDesc.trim() ? "rgba(26,26,46,0.3)" : "white",
+                  fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 700,
+                  cursor: minting ? "not-allowed" : "pointer", transition: "all 0.2s",
                 }}
-              >
-                {minting ? "Minting..." : "Mint as NFT"}
-              </button>
+              >{minting ? "Minting..." : "✦ Mint as NFT"}</button>
             </div>
           </div>
         </div>
@@ -1384,8 +1377,8 @@ export default function SovereigntyDashboard() {
               }}>PetClaw v1</span>
             </div>
             <p style={{
-              fontSize: 13, color: "rgba(26,26,46,0.5)", marginBottom: 20,
-              fontFamily: "monospace", lineHeight: 1.6,
+              fontSize: 15, color: "rgba(26,26,46,0.55)", marginBottom: 20,
+              fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1.65,
             }}>
               Your pet, your data, your rules. Export, import, or delete all data — with cryptographic proof.
             </p>
@@ -1491,8 +1484,8 @@ export default function SovereigntyDashboard() {
 
             {/* Consent Management */}
             <div style={{ borderTop: "1px solid rgba(0,0,0,0.05)", paddingTop: 16 }}>
-              <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", marginBottom: 12, letterSpacing: "0.1em" }}>
-                DATA CONSENT
+              <div style={{ fontSize: 11, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(26,26,46,0.4)", marginBottom: 14, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                Data Consent
               </div>
               <div style={{ display: "grid", gap: 10 }}>
                 {[
@@ -1503,12 +1496,12 @@ export default function SovereigntyDashboard() {
                 ].map(({ key, label, desc }) => (
                   <div key={key} style={{
                     display: "flex", justifyContent: "space-between", alignItems: "center",
-                    padding: "10px 14px", borderRadius: 10,
+                    padding: "12px 16px", borderRadius: 12,
                     background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.04)",
                   }}>
                     <div>
-                      <div style={{ fontSize: 13,  fontWeight: 600 }}>{label}</div>
-                      <div style={{ fontSize: 10, color: "rgba(26,26,46,0.4)", fontFamily: "monospace" }}>{desc}</div>
+                      <div style={{ fontSize: 14, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, color: "#1a1a2e" }}>{label}</div>
+                      <div style={{ fontSize: 12, color: "rgba(26,26,46,0.45)", fontFamily: "'Space Grotesk',sans-serif", marginTop: 2 }}>{desc}</div>
                     </div>
                     <div
                       onClick={() => setConsent(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }))}
@@ -1550,12 +1543,12 @@ export default function SovereigntyDashboard() {
                 <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(139,92,246,0.15)", color: "#8b5cf6", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>MEMORY · SESSION</span>
                 <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(74,222,128,0.1)", color: "#16a34a", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>v1.3.0</span>
               </div>
-              <p style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", fontFamily: "monospace", lineHeight: 1.65, marginBottom: 20 }}>
+              <p style={{ fontSize: 15, color: "rgba(26,26,46,0.55)", fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1.7, marginBottom: 24 }}>
                 PetClaw is not a generic AI API wrapper — it is a <strong style={{ color: "#1a1a2e" }}>memory &amp; session-specialized framework</strong>. Unlike stateless wrappers, Claw preserves full context across platform switches, restarts, and devices. Your pet remembers who you are, what you talked about, and what matters to you — everywhere.
               </p>
 
               {/* Why PetClaw — 6 cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 28 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 28 }}>
                 {[
                   { icon: "🧠", title: "Persistent Memory", desc: "Context survives sessions, restarts, and platform switches — no re-explaining yourself" },
                   { icon: "⚡", title: "Real-time Sync", desc: "State changes on Telegram reflect instantly on Discord, Web, and wherever Claw runs" },
@@ -1564,10 +1557,10 @@ export default function SovereigntyDashboard() {
                   { icon: "📜", title: "SOUL.md", desc: "Hermes-inspired personality definition file. Define your pet's values and voice in plain markdown" },
                   { icon: "🔄", title: "Self-improving", desc: "Skills evolve as interactions accumulate. The more your pet knows you, the better it converses" },
                 ].map(({ icon, title, desc }) => (
-                  <div key={title} style={{ padding: 14, borderRadius: 12, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)" }}>
-                    <div style={{ fontSize: 20, marginBottom: 8 }}>{icon}</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e", marginBottom: 4 }}>{title}</div>
-                    <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", fontFamily: "monospace", lineHeight: 1.55 }}>{desc}</div>
+                  <div key={title} style={{ padding: 18, borderRadius: 14, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.07)" }}>
+                    <div style={{ fontSize: 26, marginBottom: 10 }}>{icon}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 6, fontFamily: "'Space Grotesk',sans-serif" }}>{title}</div>
+                    <div style={{ fontSize: 13, color: "rgba(26,26,46,0.5)", fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1.6 }}>{desc}</div>
                   </div>
                 ))}
               </div>
@@ -1593,7 +1586,7 @@ export default function SovereigntyDashboard() {
                 </div>
               </div>
               <div style={{ flex: 1, minWidth: 200, paddingTop: 26 }}>
-                <div style={{ fontSize: 12, color: "rgba(26,26,46,0.6)", fontFamily: "monospace", lineHeight: 1.8 }}>
+                <div style={{ fontSize: 14, color: "rgba(26,26,46,0.6)", fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1.9 }}>
                   <div>Inspired by Hermes Agent's personality architecture.</div>
                   <div style={{ marginTop: 6 }}>Edit SOUL.md and your pet's voice and values update immediately.</div>
                   <div style={{ marginTop: 6 }}>Version-controlled — track your pet's growth with git.</div>
@@ -1608,8 +1601,8 @@ export default function SovereigntyDashboard() {
 
             {/* CLI Onboarding */}
             <div style={{ padding: "24px 30px" }}>
-              <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", marginBottom: 12, letterSpacing: "0.1em" }}>CLI ONBOARDING — UP IN 5 MINUTES</div>
-              <div style={{ background: "#0f0f1a", borderRadius: 14, padding: "18px 22px", fontFamily: "monospace", fontSize: 12, color: "#f8f8f8", lineHeight: 2, overflowX: "auto" }}>
+              <div style={{ fontSize: 11, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(26,26,46,0.4)", marginBottom: 12, letterSpacing: "0.08em", textTransform: "uppercase" }}>CLI Onboarding — Up in 5 Minutes</div>
+              <div style={{ background: "#0f0f1a", borderRadius: 14, padding: "18px 22px", fontFamily: "monospace", fontSize: 13, color: "#f8f8f8", lineHeight: 2.1, overflowX: "auto" }}>
                 {[
                   { prompt: "$", cmd: "npm install -g petclaw-sdk", comment: "" },
                   { prompt: "$", cmd: "petclaw-sdk init", comment: "# set server URL + pet ID → saved to ~/.petclaw.json" },
@@ -1631,8 +1624,8 @@ export default function SovereigntyDashboard() {
 
               {/* SDK quick setup */}
               <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", marginBottom: 8, letterSpacing: "0.1em" }}>SDK (TypeScript)</div>
-                <div style={{ background: "#0f0f1a", borderRadius: 12, padding: "16px 20px", fontFamily: "monospace", fontSize: 12, color: "#f8f8f8", lineHeight: 1.85, overflowX: "auto" }}>
+                <div style={{ fontSize: 11, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(26,26,46,0.4)", marginBottom: 8, letterSpacing: "0.06em", textTransform: "uppercase" }}>SDK (TypeScript)</div>
+                <div style={{ background: "#0f0f1a", borderRadius: 12, padding: "16px 20px", fontFamily: "monospace", fontSize: 13, color: "#f8f8f8", lineHeight: 2, overflowX: "auto" }}>
                   <div><span style={{ color: "#a78bfa" }}>import</span> {"{ PetClawClient }"} <span style={{ color: "#a78bfa" }}>from</span> <span style={{ color: "#4ade80" }}>'petclaw-sdk'</span></div>
                   <div style={{ marginTop: 8 }}><span style={{ color: "#a78bfa" }}>const</span> claw = <span style={{ color: "#a78bfa" }}>new</span> <span style={{ color: "#fbbf24" }}>PetClawClient</span>{"({ baseUrl: process.env.PETCLAW_URL })"}</div>
                   <div style={{ marginTop: 8, color: "rgba(255,255,255,0.3)" }}>{"// chat — personality & memory context auto-included"}</div>
@@ -1672,13 +1665,13 @@ export default function SovereigntyDashboard() {
               }}>COMING SOON</span>
             </div>
             <p style={{
-              fontSize: 13, color: "rgba(26,26,46,0.45)", marginBottom: 20,
-              fontFamily: "monospace", lineHeight: 1.6,
+              fontSize: 15, color: "rgba(26,26,46,0.5)", marginBottom: 20,
+              fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1.65,
             }}>
               19 platform connectors. Your pet, everywhere you are.
             </p>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 8 }}>
               {[
                 { icon: "T", name: "Telegram", color: "#2AABEE", live: true },
                 { icon: "𝕏", name: "Twitter/X", color: "#000", live: true },
@@ -1714,8 +1707,8 @@ export default function SovereigntyDashboard() {
                     fontSize: 11, fontWeight: 800, flexShrink: 0,
                   }}>{c.icon}</div>
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: c.live ? "#1a1a2e" : "rgba(26,26,46,0.55)" }}>{c.name}</div>
-                    <div style={{ fontSize: 8, fontFamily: "monospace", color: c.live ? "#16a34a" : "rgba(26,26,46,0.35)" }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, fontFamily: "'Space Grotesk',sans-serif", color: c.live ? "#1a1a2e" : "rgba(26,26,46,0.55)" }}>{c.name}</div>
+                    <div style={{ fontSize: 10, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, color: c.live ? "#16a34a" : "rgba(26,26,46,0.3)" }}>
                       {c.live ? "● live" : "○ soon"}
                     </div>
                   </div>
@@ -1724,13 +1717,13 @@ export default function SovereigntyDashboard() {
             </div>
 
             <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.55)" }}>
-                7 SKILLS
+              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 8, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.55)" }}>
+                7 Skills
               </span>
-              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.55)" }}>
-                5 MCP CLIENTS
+              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 8, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.55)" }}>
+                5 MCP Clients
               </span>
-              <span style={{ fontFamily: "monospace", fontSize: 9, padding: "3px 8px", borderRadius: 6, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.55)" }}>
+              <span style={{ fontFamily: "monospace", fontSize: 12, padding: "5px 12px", borderRadius: 8, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.55)" }}>
                 npm petclaw-sdk
               </span>
             </div>
