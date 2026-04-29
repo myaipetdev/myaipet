@@ -435,44 +435,82 @@ export default function App() {
       )}
 
       {/* Footer — only show in app mode */}
-      <footer style={{ padding: "36px", textAlign: "center", borderTop: "1px solid rgba(0,0,0,0.06)" }}>
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginBottom: 14 }}>
+      <footer style={{ padding: "48px 24px 36px", textAlign: "center", borderTop: "1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.015)" }}>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, marginBottom: 20 }}>
           <span style={{
-            fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600,
-            color: "rgba(26,26,46,0.4)",
+            fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, fontWeight: 800,
+            color: "#1a1a2e", letterSpacing: "-0.02em",
           }}>
             MY AI PET
           </span>
           <span style={{
-            fontSize: 8, padding: "2px 8px", borderRadius: 10,
-            background: "linear-gradient(135deg, rgba(251,191,36,0.1), rgba(139,92,246,0.08))",
-            color: "#d97706", fontFamily: "mono", fontWeight: 600,
-            border: "1px solid rgba(251,191,36,0.15)",
+            fontSize: 11, padding: "4px 12px", borderRadius: 999,
+            background: "linear-gradient(135deg, rgba(251,191,36,0.18), rgba(139,92,246,0.12))",
+            color: "#b45309", fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
+            border: "1px solid rgba(251,191,36,0.3)",
+            letterSpacing: "0.04em",
           }}>
             CompanionFi
           </span>
         </div>
         <p style={{
-          fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.35)",
-          maxWidth: 480, margin: "0 auto 14px", lineHeight: 1.7,
+          fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, color: "rgba(26,26,46,0.7)",
+          maxWidth: 560, margin: "0 auto 26px", lineHeight: 1.6, fontWeight: 500,
         }}>
-          Where Emotional Bonds Generate Real Value. The first full-cycle Web3 revenue ecosystem
-          driven by emotional AI companionship.
+          Where emotional bonds generate real value. The first full-cycle Web3 revenue ecosystem driven by emotional AI companionship.
         </p>
-        <div style={{ display: "flex", justifyContent: "center", gap: 20, marginBottom: 12 }}>
-          {[
-            { label: "Twitter", url: "https://x.com/myaipets" },
-          ].map((l) => (
-            <a key={l.label} href={l.url} target="_blank" rel="noopener noreferrer" style={{
-              fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.35)", cursor: "pointer",
-              textDecoration: "none",
-            }}>
-              {l.label}
-            </a>
-          ))}
+
+        {/* Social buttons */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 28, flexWrap: "wrap" }}>
+          <a href="https://x.com/myaipets" target="_blank" rel="noopener noreferrer" style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "12px 22px", borderRadius: 12,
+            background: "#1a1a2e", color: "#fff",
+            fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700,
+            textDecoration: "none", transition: "all 0.2s",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+          }}
+            onMouseOver={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,0.18)"; }}
+            onMouseOut={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.12)"; }}
+          >
+            <span style={{ fontSize: 18, fontWeight: 900 }}>𝕏</span>
+            Twitter
+          </a>
+          <a href="https://github.com/myaipetdev/petclaw" target="_blank" rel="noopener noreferrer" style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "12px 22px", borderRadius: 12,
+            background: "white", color: "#1a1a2e",
+            border: "2px solid rgba(26,26,46,0.12)",
+            fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700,
+            textDecoration: "none", transition: "all 0.2s",
+          }}
+            onMouseOver={(e) => { e.currentTarget.style.borderColor = "rgba(26,26,46,0.4)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+            onMouseOut={(e) => { e.currentTarget.style.borderColor = "rgba(26,26,46,0.12)"; e.currentTarget.style.transform = ""; }}
+          >
+            <span style={{ fontSize: 16 }}>⌥</span>
+            GitHub
+          </a>
+          <a href="/petclaw-extension.zip" download="myaipet-extension.zip" style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "12px 22px", borderRadius: 12,
+            background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "white",
+            fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700,
+            textDecoration: "none", transition: "all 0.2s",
+            boxShadow: "0 2px 8px rgba(245,158,11,0.3)",
+          }}
+            onMouseOver={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(245,158,11,0.4)"; }}
+            onMouseOut={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 2px 8px rgba(245,158,11,0.3)"; }}
+          >
+            <span>⬇</span>
+            Chrome Extension
+          </a>
         </div>
-        <div style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.25)" }}>
-          © 2026 My AI PET Protocol · Raise · Bond · Earn
+
+        <div style={{
+          fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, color: "rgba(26,26,46,0.4)",
+          fontWeight: 500, letterSpacing: "0.02em",
+        }}>
+          © 2026 My AI Pet Protocol · Raise · Bond · Earn
         </div>
       </footer>
     </div>

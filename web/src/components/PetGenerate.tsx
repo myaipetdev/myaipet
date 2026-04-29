@@ -178,8 +178,10 @@ export default function PetGenerate() {
       setError(`Insufficient credits. Need ${creditCost} $PET but you have ${balance} $PET.`);
       return;
     }
+    setError(null);
+    setResult(null);
 
-    // Step 0: Switch to BSC and do on-chain recording FIRST
+    // Step 0: Switch to BSC and do on-chain recording FIRST (wallet popup happens here)
     if (isPETActivityEnabled()) {
       try {
         await switchToBsc();
@@ -188,7 +190,7 @@ export default function PetGenerate() {
         return;
       }
       try {
-        setChainToast("⛓️ 온체인 기록 중...");
+        setChainToast("⛓️ 지갑 승인을 기다리는 중...");
         if (genType === "video") {
           await recordVideoGeneration(selectedPet.id, style, duration);
         } else {
@@ -210,20 +212,35 @@ export default function PetGenerate() {
       }
     }
 
-    setGenerating(true);
-    setResult(null);
-    setError(null);
-    setStatusText("Connecting to AI engine...");
-
+    // Step 1: Request wallet signature BEFORE showing "Creating..." UI
+    let signedMessage: string;
+    let signature: string;
     try {
-      // Step 1: Request wallet signature
-      setStatusText("Requesting wallet signature...");
-      const { message: signedMessage, signature } = await signAction(
+      setChainToast("✍️ 서명 승인을 기다리는 중...");
+      const sig = await signAction(
         wagmiConfig,
         `Generate ${genType} for pet: ${selectedPet.name}`,
       );
+      signedMessage = sig.message;
+      signature = sig.signature;
+      setChainToast(null);
+    } catch (e: any) {
+      setChainToast(null);
+      const raw = (e?.message || "").toLowerCase();
+      if (raw.includes("reject") || raw.includes("denied") || raw.includes("user rejected")) {
+        setError("서명이 취소되었습니다");
+      } else {
+        setError(e.message || "지갑 서명 실패");
+      }
+      return;
+    }
 
-      // Step 1: Submit generation request
+    // Step 2: Now flip to generating UI (wallet already approved)
+    setGenerating(true);
+    setStatusText("Connecting to AI engine...");
+
+    try {
+      // Step 3: Submit generation request
       setStatusText("Analyzing pet personality...");
       const res = await api.pets.generate(selectedPet.id, {
         style,

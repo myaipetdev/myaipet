@@ -39,6 +39,49 @@ const SPECIES_NAMES: Record<number, string> = {
   4: "hamster", 5: "rabbit", 6: "fox", 7: "pomeranian",
 };
 
+// Translate non-ASCII prompts (Korean, Japanese, Chinese, etc.) to English via Grok
+// so image gen models actually understand the scene description.
+export async function translatePromptIfNeeded(prompt: string): Promise<string> {
+  if (!prompt) return prompt;
+  // Pure ASCII — pass through unchanged
+  // eslint-disable-next-line no-control-regex
+  if (/^[\x00-\x7F]*$/.test(prompt)) return prompt;
+
+  const key = process.env.GROK_API_KEY;
+  if (!key) {
+    // No translator available — fall back to stripped version (better than nothing)
+    return prompt.replace(/[^\x00-\x7F]/g, " ").replace(/\s+/g, " ").trim();
+  }
+
+  try {
+    const res = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({
+        model: "grok-3-mini-fast",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Translate the user's scene description into vivid, concrete English suitable for an image/video generation prompt. Preserve the visual specifics (camera angle, action, environment, mood). Output ONLY the translation, no explanation, no quotes.",
+          },
+          { role: "user", content: prompt },
+        ],
+        max_tokens: 240,
+        temperature: 0.2,
+      }),
+    });
+    if (!res.ok) throw new Error(`translate ${res.status}`);
+    const data = await res.json();
+    const out = data.choices?.[0]?.message?.content?.trim();
+    if (out) return out;
+  } catch (e) {
+    console.error("translatePromptIfNeeded failed:", e);
+  }
+  // Fallback: strip non-ASCII
+  return prompt.replace(/[^\x00-\x7F]/g, " ").replace(/\s+/g, " ").trim();
+}
+
 export function buildPetPrompt(
   petName: string,
   species: number,
@@ -51,10 +94,8 @@ export function buildPetPrompt(
   const personalityDesc = PERSONALITY_PROMPTS[personality] || PERSONALITY_PROMPTS.friendly;
   const styleDesc = STYLE_DESCRIPTORS[style] || STYLE_DESCRIPTORS[0];
 
-  // Strip non-ASCII characters (Korean, Japanese, Chinese, etc.) to prevent text rendering in images
-  const cleanPrompt = userPrompt
-    ? userPrompt.replace(/[^\x00-\x7F]/g, " ").replace(/\s+/g, " ").trim()
-    : undefined;
+  // userPrompt is expected to be already translated to English (callers should run translatePromptIfNeeded)
+  const cleanPrompt = userPrompt ? userPrompt.replace(/\s+/g, " ").trim() : undefined;
   const scenePrompt = cleanPrompt ? `scene: ${cleanPrompt}` : undefined;
 
   const parts: string[] = [];

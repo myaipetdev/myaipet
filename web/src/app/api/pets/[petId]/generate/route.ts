@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { verifySignature } from "@/lib/signAction";
-import { buildPetPrompt, generateGrokImage, generateGrokImageWithRef, describePetAvatar, submitGrokVideo } from "@/lib/services/video";
+import { buildPetPrompt, generateGrokImage, generateGrokImageWithRef, describePetAvatar, submitGrokVideo, translatePromptIfNeeded } from "@/lib/services/video";
 import { awardPoints } from "@/lib/airdrop";
 import { triggerAgentReactions } from "@/lib/agents";
 import { recordGenerationOnChain, mintContentNFT } from "@/lib/blockchain";
@@ -82,12 +82,15 @@ export async function POST(
     }
   }
 
+  // Translate non-English prompts so image/video models can actually render the scene
+  const translatedPrompt = prompt ? await translatePromptIfNeeded(prompt) : undefined;
+
   const personalizedPrompt = buildPetPrompt(
     pet.name,
     pet.species,
     pet.personality_type,
     style ?? 0,
-    prompt,
+    translatedPrompt,
     pet.avatar_url || undefined,
     appearanceDesc || undefined
   );
