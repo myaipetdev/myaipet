@@ -591,7 +591,7 @@ export default function SovereigntyDashboard() {
                 background: "rgba(0,0,0,0.04)",
                 border: "1px solid rgba(0,0,0,0.08)",
                 backdropFilter: "blur(12px)",
-                
+                color: "#1a1a2e",
                 fontFamily: "'Space Grotesk',sans-serif",
                 fontSize: 14,
                 cursor: "pointer",
@@ -749,7 +749,7 @@ export default function SovereigntyDashboard() {
                       style={{
                         fontFamily: "monospace",
                         fontSize: 11,
-                        color: "rgba(26,26,46,0.5)",
+                        color: "rgba(255,255,255,0.45)",
                         letterSpacing: "0.06em",
                       }}
                     >
@@ -795,14 +795,14 @@ export default function SovereigntyDashboard() {
                         fontWeight: 700,
                         marginBottom: 16,
                         letterSpacing: "-0.02em",
-                        color: "#1a1a2e",
+                        color: "rgba(255,255,255,0.95)",
                       }}
                     >
                       {selectedPet?.name || `Pet #${selectedPet?.id}`}
                     </div>
 
                     <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "10px 16px", fontSize: 13 }}>
-                      <div style={{ color: "rgba(26,26,46,0.5)", fontFamily: "monospace", fontSize: 11 }}>
+                      <div style={{ color: "rgba(255,255,255,0.4)", fontFamily: "monospace", fontSize: 11 }}>
                         GENESIS
                       </div>
                       <div
@@ -825,14 +825,14 @@ export default function SovereigntyDashboard() {
                         )}
                       </div>
 
-                      <div style={{ color: "rgba(26,26,46,0.5)", fontFamily: "monospace", fontSize: 11 }}>
+                      <div style={{ color: "rgba(255,255,255,0.4)", fontFamily: "monospace", fontSize: 11 }}>
                         VERSION
                       </div>
                       <div style={{ fontFamily: "monospace", fontSize: 13, color: "#c084fc", fontWeight: 600 }}>
                         v{soul.current_version ?? 1}
                       </div>
 
-                      <div style={{ color: "rgba(26,26,46,0.5)", fontFamily: "monospace", fontSize: 11 }}>
+                      <div style={{ color: "rgba(255,255,255,0.4)", fontFamily: "monospace", fontSize: 11 }}>
                         CURRENT
                       </div>
                       <div
@@ -854,14 +854,14 @@ export default function SovereigntyDashboard() {
                         )}
                       </div>
 
-                      <div style={{ color: "rgba(26,26,46,0.5)", fontFamily: "monospace", fontSize: 11 }}>
+                      <div style={{ color: "rgba(255,255,255,0.4)", fontFamily: "monospace", fontSize: 11 }}>
                         BIRTH
                       </div>
                       <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(228,228,244,0.85)" }}>
                         {formatDate(soul.birth_at)}
                       </div>
 
-                      <div style={{ color: "rgba(26,26,46,0.5)", fontFamily: "monospace", fontSize: 11 }}>
+                      <div style={{ color: "rgba(255,255,255,0.4)", fontFamily: "monospace", fontSize: 11 }}>
                         HEARTBEAT
                       </div>
                       <div style={{ fontFamily: "monospace", fontSize: 12, color: "#10b981" }}>
@@ -869,7 +869,7 @@ export default function SovereigntyDashboard() {
                       </div>
                     </div>
 
-                    {soul.genesis_hash && (
+                    {soul.on_chain && soul.genesis_hash && (
                       <a
                         href={`${BSCSCAN}/tx/${soul.genesis_hash}`}
                         target="_blank"
