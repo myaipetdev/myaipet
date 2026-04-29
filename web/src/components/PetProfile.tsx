@@ -432,6 +432,18 @@ function CreatePetModal({ onClose, onCreated }: any) {
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} style={{ display: "none" }} />
             </div>
 
+            {/* Upload / pet validation error — shown right below the photo */}
+            {adoptError && (
+              <div style={{
+                background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
+                borderRadius: 12, padding: "10px 14px",
+                color: "#dc2626", fontSize: 13, fontWeight: 600,
+                fontFamily: "'Space Grotesk',sans-serif", textAlign: "center",
+              }}>
+                {adoptError}
+              </div>
+            )}
+
             {/* Name */}
             <div>
               <label style={{ fontFamily: "mono", fontSize: 10, fontWeight: 600, color: "rgba(26,26,46,0.5)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
@@ -499,7 +511,6 @@ function CreatePetModal({ onClose, onCreated }: any) {
             >
               {creating ? "Creating..." : "🐣 Adopt!"}
             </button>
-            {adoptError && <div style={{ color: "#ef4444", fontSize: 14, marginTop: 8, textAlign: "center", fontWeight: 600 }}>{adoptError}</div>}
           </div>
         </div>
       </div>

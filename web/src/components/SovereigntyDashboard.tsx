@@ -120,7 +120,7 @@ function ChromeExtensionSection() {
       <div style={{ padding: 30 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
           <span style={{ fontSize: 22 }}>🌐</span>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>Desktop Companion Extension</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>Desktop Companion Extension</h2>
           <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(74,222,128,0.15)", color: "#16a34a", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>v2.0 READY</span>
         </div>
         <p style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", fontFamily: "monospace", lineHeight: 1.65, marginBottom: 20 }}>
@@ -481,164 +481,120 @@ export default function SovereigntyDashboard() {
       }}
     >
       <style>{`
-        @keyframes sovSlideIn { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: translateY(0) } }
-        @keyframes soulPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.45) } 50% { box-shadow: 0 0 0 6px rgba(16,185,129,0) } }
-        @keyframes soulGlow { 0% { background-position: 0% 50% } 50% { background-position: 100% 50% } 100% { background-position: 0% 50% } }
+        @keyframes sovSlideIn { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes soulPulse { 0%,100% { opacity: 1 } 50% { opacity: 0.4 } }
         @keyframes copiedFade { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: translateY(0) } }
         @keyframes spin { to { transform: rotate(360deg) } }
-        .sov-card { animation: sovSlideIn 0.5s ease both; }
-        .sov-hash:hover { color: #fbbf24; }
+        @keyframes sovFadeUp { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:translateY(0) } }
+        .sov-card { animation: sovSlideIn 0.45s ease both; }
+        .sov-hash:hover { opacity: 0.7; }
         .sov-copied { animation: copiedFade 0.2s ease both; }
+        .sov-tag { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; font-family:monospace; font-size:10px; font-weight:600; letter-spacing:0.1em; }
+        .sov-section-title { font-size:22px; font-weight:800; color:#1a1a2e; letter-spacing:-0.03em; margin:0 0 4px; }
+        .sov-section-sub { font-size:13px; color:rgba(26,26,46,0.45); font-family:monospace; margin:0 0 24px; }
+        .sov-divider { width:100%; height:1px; background:rgba(0,0,0,0.06); margin:32px 0; }
       `}</style>
 
-      {/* ───── Header Hero ───── */}
-      <div
-        className="sov-card"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          gap: 16,
-          marginBottom: 32,
-        }}
-      >
-        <div>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "5px 12px",
-              borderRadius: 999,
-              background: "rgba(16,185,129,0.08)",
-              border: "1px solid rgba(16,185,129,0.25)",
-              marginBottom: 14,
-            }}
-          >
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                background: "#10b981",
-                animation: "soulPulse 2s ease-in-out infinite",
-              }}
-            />
-            <span
-              style={{
-                fontFamily: "monospace",
-                fontSize: 10,
-                letterSpacing: "0.14em",
-                color: "#10b981",
-                fontWeight: 600,
-              }}
-            >
-              ON-CHAIN IDENTITY
-            </span>
-          </div>
-          <h1
-            style={{
-              fontSize: 40,
-              fontWeight: 700,
-              letterSpacing: "-0.03em",
-              background: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 40%, #c084fc 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-              lineHeight: 1.1,
-              marginBottom: 8,
-            }}
-          >
-            Your Sovereign Self
-          </h1>
-          <p
-            style={{
-              fontSize: 15,
-              color: "rgba(26,26,46,0.5)",
-              fontFamily: "monospace",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            The first AI you actually own
-          </p>
-        </div>
-
-        {/* Pet selector */}
+      {/* ───── Hero ───── */}
+      <div className="sov-card" style={{ marginBottom: 48 }}>
+        {/* Pet selector pill — top right */}
         {pets.length > 0 && (
-          <div style={{ minWidth: 220 }}>
-            <div
-              style={{
-                fontSize: 10,
-                fontFamily: "monospace",
-                color: "rgba(26,26,46,0.4)",
-                marginBottom: 6,
-                letterSpacing: "0.1em",
-              }}
-            >
-              SELECTED PET
-            </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 32 }}>
             <select
               value={selectedPet?.id || ""}
-              onChange={(e) => {
-                const p = pets.find((x) => String(x.id) === e.target.value);
-                if (p) setSelectedPet(p);
-              }}
+              onChange={(e) => { const p = pets.find((x) => String(x.id) === e.target.value); if (p) setSelectedPet(p); }}
               style={{
-                width: "100%",
-                padding: "11px 14px",
-                borderRadius: 12,
-                background: "rgba(0,0,0,0.04)",
-                border: "1px solid rgba(0,0,0,0.08)",
-                backdropFilter: "blur(12px)",
-                color: "#1a1a2e",
-                fontFamily: "'Space Grotesk',sans-serif",
-                fontSize: 14,
-                cursor: "pointer",
-                outline: "none",
+                padding: "8px 16px", borderRadius: 999, border: "1.5px solid rgba(0,0,0,0.1)",
+                background: "white", color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif",
+                fontSize: 13, fontWeight: 600, cursor: "pointer", outline: "none",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
               }}
             >
               {pets.map((p) => (
-                <option key={p.id} value={p.id} style={{ background: "#14142a", color: "#1a1a2e" }}>
-                  {p.name || `Pet #${p.id}`}
-                </option>
+                <option key={p.id} value={p.id}>{p.name || `Pet #${p.id}`}</option>
               ))}
             </select>
           </div>
         )}
-      </div>
 
-      {/* ───── Sovereignty Overview Cards ───── */}
-      <div
-        className="sov-card"
-        style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 28 }}
-      >
-        {[
-          {
-            icon: "🔐",
-            title: "Own Your AI Identity",
-            desc: "Your pet's soul is minted as a Soulbound NFT on BNB Chain. Immutable, non-transferable, permanently yours — even if we shut down.",
-            color: "rgba(245,158,11,0.07)", border: "rgba(245,158,11,0.2)",
-          },
-          {
-            icon: "📊",
-            title: "Sovereign Data Control",
-            desc: "Export everything, delete anytime. Full GDPR-grade control over every memory, conversation, and interaction your pet generates.",
-            color: "rgba(16,185,129,0.06)", border: "rgba(16,185,129,0.18)",
-          },
-          {
-            icon: "🐾",
-            title: "PetClaw Framework",
-            desc: "Memory & session-specialized SDK. Your pet maintains full context across 19+ platforms — Telegram, Discord, Web — with zero data loss.",
-            color: "rgba(139,92,246,0.06)", border: "rgba(139,92,246,0.18)",
-          },
-        ].map(({ icon, title, desc, color, border }) => (
-          <div key={title} style={{ padding: "20px", borderRadius: 16, background: color, border: `1px solid ${border}` }}>
-            <div style={{ fontSize: 26, marginBottom: 10 }}>{icon}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginBottom: 6 }}>{title}</div>
-            <div style={{ fontSize: 11, color: "rgba(26,26,46,0.55)", fontFamily: "monospace", lineHeight: 1.65 }}>{desc}</div>
+        {/* Big two-column hero */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "center" }}>
+          {/* Left: text */}
+          <div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+              <span className="sov-tag" style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", color: "#059669" }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", animation: "soulPulse 1.8s ease infinite" }} />
+                SOUL-BOUND
+              </span>
+              <span className="sov-tag" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)", color: "#b45309" }}>
+                🔐 YOUR DATA
+              </span>
+              <span className="sov-tag" style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)", color: "#7c3aed" }}>
+                ⛓ ON-CHAIN
+              </span>
+            </div>
+            <h1 style={{ fontSize: 52, fontWeight: 900, letterSpacing: "-0.04em", color: "#1a1a2e", lineHeight: 1.0, margin: "0 0 16px" }}>
+              Your Pet.<br />
+              <span style={{ color: "#f59e0b" }}>Truly Yours.</span>
+            </h1>
+            <p style={{ fontSize: 16, color: "rgba(26,26,46,0.55)", lineHeight: 1.7, margin: "0 0 28px", maxWidth: 380 }}>
+              Every memory, every conversation, every bond — owned by you. Not us. Your pet's soul lives on BNB Chain, immutable and non-transferable.
+            </p>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              {[
+                { n: "19+", l: "Platforms" },
+                { n: "100%", l: "Data Ownership" },
+                { n: "∞", l: "Memory" },
+              ].map(({ n, l }) => (
+                <div key={l} style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: "#1a1a2e", letterSpacing: "-0.03em" }}>{n}</div>
+                  <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{l}</div>
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
+
+          {/* Right: pet avatar card */}
+          {selectedPet && (
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <div style={{
+                position: "relative", width: 260, height: 300,
+                borderRadius: 28, overflow: "hidden",
+                background: "linear-gradient(160deg, #1a1a2e 0%, #2d1b69 50%, #1a1a2e 100%)",
+                boxShadow: "0 32px 64px rgba(0,0,0,0.18), 0 0 0 1px rgba(245,158,11,0.15)",
+              }}>
+                {selectedPet.avatar_url ? (
+                  <img src={selectedPet.avatar_url} alt={selectedPet.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.95 }} />
+                ) : (
+                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon name="paw" size={80} />
+                  </div>
+                )}
+                {/* Overlay info strip */}
+                <div style={{
+                  position: "absolute", bottom: 0, left: 0, right: 0,
+                  background: "linear-gradient(0deg, rgba(0,0,0,0.75) 0%, transparent 100%)",
+                  padding: "24px 18px 18px",
+                }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "white", letterSpacing: "-0.02em" }}>
+                    {selectedPet.name}
+                  </div>
+                  <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+                    {soul && (
+                      <span style={{ fontSize: 10, fontFamily: "monospace", color: "#fbbf24", background: "rgba(245,158,11,0.2)", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>
+                        v{soul.current_version ?? 1}
+                      </span>
+                    )}
+                    <span style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(255,255,255,0.6)", padding: "2px 8px", background: "rgba(255,255,255,0.08)", borderRadius: 999 }}>
+                      Lv.{selectedPet.level ?? 1} · {selectedPet.personality_type}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ───── No pet fallback ───── */}
@@ -686,262 +642,54 @@ export default function SovereigntyDashboard() {
       {!loading && selectedPet && (
         <>
           {soul ? (
-            <div
-              className="sov-card"
-              style={{
-                position: "relative",
-                borderRadius: 22,
-                padding: 2,
-                marginBottom: 32,
-                background:
-                  "linear-gradient(135deg, #f59e0b 0%, #c084fc 35%, #8b5cf6 65%, #f59e0b 100%)",
-                backgroundSize: "300% 300%",
-                animation: "soulGlow 8s ease infinite",
-              }}
-            >
-              <div
-                style={{
-                  borderRadius: 20,
-                  padding: "32px 34px",
-                  background:
-                    "linear-gradient(180deg, rgba(20,20,42,0.92) 0%, rgba(14,14,30,0.96) 100%)",
-                  backdropFilter: "blur(18px)",
-                }}
-              >
-                {/* SOULBOUND badge */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "6px 14px",
-                      borderRadius: 999,
-                      background: "rgba(16,185,129,0.12)",
-                      border: "1px solid rgba(16,185,129,0.4)",
-                      boxShadow: "0 0 20px rgba(16,185,129,0.15)",
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        background: "#10b981",
-                        animation: "soulPulse 1.8s ease-in-out infinite",
-                      }}
-                    />
-                    <span
-                      style={{
-                        fontFamily: "monospace",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: "0.16em",
-                        color: "#10b981",
-                      }}
-                    >
-                      SOUL-BOUND
-                    </span>
-                  </div>
-
-                  {soul.token_id !== undefined && (
-                    <div
-                      style={{
-                        fontFamily: "monospace",
-                        fontSize: 11,
-                        color: "rgba(255,255,255,0.45)",
-                        letterSpacing: "0.06em",
-                      }}
-                    >
-                      TOKEN #{soul.token_id}
+            /* ── Soul Identity Card — clean white design ── */
+            <div className="sov-card" style={{ marginBottom: 28 }}>
+              <p className="sov-section-sub" style={{ marginBottom: 16 }}>Soul Identity</p>
+              <div style={{
+                display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12,
+              }}>
+                {[
+                  { label: "VERSION", value: `v${soul.current_version ?? 1}`, accent: "#7c3aed" },
+                  { label: "BORN", value: formatDate(soul.birth_at), accent: "#1a1a2e" },
+                  { label: "LAST ACTIVE", value: timeAgo(soul.last_heartbeat), accent: "#059669" },
+                  { label: "GENESIS", value: truncate(soul.genesis_hash, 5), accent: "#b45309", click: () => soul.genesis_hash && copyHash(soul.genesis_hash, "genesis"), copied: copied === "genesis" },
+                  { label: "SOUL HASH", value: truncate(soul.current_hash, 5), accent: "#b45309", click: () => soul.current_hash && copyHash(soul.current_hash, "current"), copied: copied === "current" },
+                  ...(soul.token_id !== undefined ? [{ label: "TOKEN ID", value: `#${soul.token_id}`, accent: "#1a1a2e" }] : []),
+                ].map(({ label, value, accent, click, copied: isCopied }: any) => (
+                  <div key={label} onClick={click} style={{
+                    padding: "16px 18px", borderRadius: 14, background: "white",
+                    border: "1.5px solid rgba(0,0,0,0.07)", cursor: click ? "pointer" : "default",
+                    transition: "border-color 0.2s",
+                  }}>
+                    <div style={{ fontFamily: "monospace", fontSize: 9, color: "rgba(26,26,46,0.35)", letterSpacing: "0.12em", marginBottom: 6, textTransform: "uppercase" }}>{label}</div>
+                    <div style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 700, color: accent }}>
+                      {value}
+                      {isCopied && <span style={{ marginLeft: 6, fontSize: 10, color: "#10b981" }}>Copied!</span>}
                     </div>
-                  )}
-                </div>
-
-                <div style={{ display: "flex", gap: 32, flexWrap: "wrap", alignItems: "center" }}>
-                  {/* Pet avatar */}
-                  <div
-                    style={{
-                      width: 140,
-                      height: 140,
-                      borderRadius: 20,
-                      background:
-                        "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(139,92,246,0.2))",
-                      border: "2px solid rgba(245,158,11,0.35)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      overflow: "hidden",
-                      flexShrink: 0,
-                      boxShadow: "0 0 40px rgba(245,158,11,0.2)",
-                    }}
-                  >
-                    {selectedPet?.image_url ? (
-                      <img
-                        src={selectedPet.image_url}
-                        alt={selectedPet.name}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      />
-                    ) : (
-                      <Icon name="paw" size={64} />
-                    )}
                   </div>
-
-                  {/* Details */}
-                  <div style={{ flex: 1, minWidth: 280 }}>
-                    <div
-                      style={{
-                        fontSize: 26,
-                        fontWeight: 700,
-                        marginBottom: 16,
-                        letterSpacing: "-0.02em",
-                        color: "rgba(255,255,255,0.95)",
-                      }}
-                    >
-                      {selectedPet?.name || `Pet #${selectedPet?.id}`}
-                    </div>
-
-                    <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "10px 16px", fontSize: 13 }}>
-                      <div style={{ color: "rgba(255,255,255,0.4)", fontFamily: "monospace", fontSize: 11 }}>
-                        GENESIS
-                      </div>
-                      <div
-                        className="sov-hash"
-                        onClick={() => soul.genesis_hash && copyHash(soul.genesis_hash, "genesis")}
-                        style={{
-                          fontFamily: "monospace",
-                          fontSize: 12,
-                          color: "#fbbf24",
-                          cursor: soul.genesis_hash ? "pointer" : "default",
-                          transition: "color 0.2s",
-                          position: "relative",
-                        }}
-                      >
-                        {truncate(soul.genesis_hash, 6)}
-                        {copied === "genesis" && (
-                          <span className="sov-copied" style={{ marginLeft: 8, fontSize: 10, color: "#10b981" }}>
-                            Copied!
-                          </span>
-                        )}
-                      </div>
-
-                      <div style={{ color: "rgba(255,255,255,0.4)", fontFamily: "monospace", fontSize: 11 }}>
-                        VERSION
-                      </div>
-                      <div style={{ fontFamily: "monospace", fontSize: 13, color: "#c084fc", fontWeight: 600 }}>
-                        v{soul.current_version ?? 1}
-                      </div>
-
-                      <div style={{ color: "rgba(255,255,255,0.4)", fontFamily: "monospace", fontSize: 11 }}>
-                        CURRENT
-                      </div>
-                      <div
-                        className="sov-hash"
-                        onClick={() => soul.current_hash && copyHash(soul.current_hash, "current")}
-                        style={{
-                          fontFamily: "monospace",
-                          fontSize: 12,
-                          color: "#fbbf24",
-                          cursor: soul.current_hash ? "pointer" : "default",
-                          transition: "color 0.2s",
-                        }}
-                      >
-                        {truncate(soul.current_hash, 6)}
-                        {copied === "current" && (
-                          <span className="sov-copied" style={{ marginLeft: 8, fontSize: 10, color: "#10b981" }}>
-                            Copied!
-                          </span>
-                        )}
-                      </div>
-
-                      <div style={{ color: "rgba(255,255,255,0.4)", fontFamily: "monospace", fontSize: 11 }}>
-                        BIRTH
-                      </div>
-                      <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(228,228,244,0.85)" }}>
-                        {formatDate(soul.birth_at)}
-                      </div>
-
-                      <div style={{ color: "rgba(255,255,255,0.4)", fontFamily: "monospace", fontSize: 11 }}>
-                        HEARTBEAT
-                      </div>
-                      <div style={{ fontFamily: "monospace", fontSize: 12, color: "#10b981" }}>
-                        {timeAgo(soul.last_heartbeat)}
-                      </div>
-                    </div>
-
-                    {soul.on_chain && soul.genesis_hash && (
-                      <a
-                        href={`${BSCSCAN}/tx/${soul.genesis_hash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                          marginTop: 20,
-                          padding: "8px 14px",
-                          borderRadius: 10,
-                          background: "rgba(245,158,11,0.1)",
-                          border: "1px solid rgba(245,158,11,0.3)",
-                          color: "#fbbf24",
-                          fontSize: 12,
-                          fontFamily: "monospace",
-                          textDecoration: "none",
-                          fontWeight: 600,
-                          transition: "all 0.2s",
-                        }}
-                      >
-                        View on BscScan ↗
-                      </a>
-                    )}
-                  </div>
-                </div>
+                ))}
               </div>
+
+              {soul.on_chain && soul.genesis_hash && (
+                <a href={`${BSCSCAN}/tx/${soul.genesis_hash}`} target="_blank" rel="noopener noreferrer" style={{
+                  display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14,
+                  padding: "7px 14px", borderRadius: 999, background: "rgba(245,158,11,0.08)",
+                  border: "1px solid rgba(245,158,11,0.25)", color: "#b45309",
+                  fontSize: 11, fontFamily: "monospace", textDecoration: "none", fontWeight: 700,
+                }}>
+                  View on BscScan ↗
+                </a>
+              )}
             </div>
           ) : (
-            // Soul not yet initialized
-            <div
-              className="sov-card"
-              style={{
-                padding: 48,
-                borderRadius: 20,
-                background:
-                  "linear-gradient(135deg, rgba(245,158,11,0.06), rgba(139,92,246,0.06))",
-                backdropFilter: "blur(12px)",
-                border: "1px solid rgba(245,158,11,0.2)",
-                textAlign: "center",
-                marginBottom: 32,
-              }}
-            >
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  border: "3px solid rgba(245,158,11,0.3)",
-                  borderTopColor: "#f59e0b",
-                  margin: "0 auto 20px",
-                  animation: "spin 1.2s linear infinite",
-                }}
-              />
-              <div
-                style={{
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: "#fbbf24",
-                  marginBottom: 8,
-                }}
-              >
-                Your pet is adopting...
-              </div>
-              <div
-                style={{
-                  fontSize: 13,
-                  color: "rgba(26,26,46,0.5)",
-                  fontFamily: "monospace",
-                }}
-              >
-                Your sovereign self is being born on-chain
+            /* Soul loading */
+            <div className="sov-card" style={{
+              padding: "32px 24px", borderRadius: 16, marginBottom: 28,
+              background: "rgba(245,158,11,0.04)", border: "1.5px dashed rgba(245,158,11,0.25)",
+              textAlign: "center",
+            }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(26,26,46,0.4)", fontFamily: "monospace" }}>
+                Soul initializing...
               </div>
             </div>
           )}
@@ -967,7 +715,7 @@ export default function SovereigntyDashboard() {
                   background: "linear-gradient(180deg, #f59e0b, #c084fc)",
                 }}
               />
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
                 Persona Evolution
               </h2>
               <span
@@ -1127,7 +875,7 @@ export default function SovereigntyDashboard() {
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
               <span style={{ fontSize: 22 }}>🕊</span>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
                 Legacy &amp; Inheritance
               </h2>
             </div>
@@ -1277,7 +1025,7 @@ export default function SovereigntyDashboard() {
                   background: "linear-gradient(180deg, #c084fc, #f59e0b)",
                 }}
               />
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
                 Memory NFTs
               </h2>
               <span
@@ -1626,7 +1374,7 @@ export default function SovereigntyDashboard() {
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
               <span style={{ fontSize: 22 }}>🛡</span>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
                 Data Sovereignty
               </h2>
               <span style={{
@@ -1798,7 +1546,7 @@ export default function SovereigntyDashboard() {
             <div style={{ padding: 30 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
                 <span style={{ fontSize: 22 }}>🐾</span>
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>PetClaw SDK</h2>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>PetClaw SDK</h2>
                 <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(139,92,246,0.15)", color: "#8b5cf6", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>MEMORY · SESSION</span>
                 <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(74,222,128,0.1)", color: "#16a34a", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>v1.3.0</span>
               </div>
@@ -1914,7 +1662,7 @@ export default function SovereigntyDashboard() {
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
               <span style={{ fontSize: 22 }}>🔌</span>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
                 PetClaw Ecosystem
               </h2>
               <span style={{
