@@ -47,6 +47,7 @@ export default function Nav({ section, setSection, credits }: any) {
           .nav-logo-img { width: 30px !important; height: 30px !important; }
           .nav-btn { padding: 5px 8px !important; font-size: 10px !important; }
           .nav-wallet { transform: scale(0.8); transform-origin: right center; }
+          .nav-landing-btn { display: none !important; }
         }
       `}</style>
       <nav
@@ -182,6 +183,34 @@ export default function Nav({ section, setSection, credits }: any) {
             </div>
           )}
         </div>
+
+        <a
+          href="/landing/"
+          className="nav-landing-btn"
+          style={{
+            flexShrink: 0,
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "7px 14px", borderRadius: 999,
+            background: "rgba(0,0,0,0.04)",
+            border: "1px solid rgba(0,0,0,0.08)",
+            color: "rgba(26,26,46,0.65)",
+            fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 600,
+            textDecoration: "none", transition: "all 0.2s",
+            whiteSpace: "nowrap",
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = "rgba(251,191,36,0.1)";
+            e.currentTarget.style.borderColor = "rgba(251,191,36,0.3)";
+            e.currentTarget.style.color = "#b45309";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = "rgba(0,0,0,0.04)";
+            e.currentTarget.style.borderColor = "rgba(0,0,0,0.08)";
+            e.currentTarget.style.color = "rgba(26,26,46,0.65)";
+          }}
+        >
+          ← Landing
+        </a>
 
         <div className="nav-wallet" style={{ flexShrink: 0 }}>
           <ConnectButton

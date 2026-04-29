@@ -7,6 +7,7 @@ import { signAction } from "@/lib/signAction";
 import { useRecordAdoption, isPETActivityEnabled, useCheckBnbBalance } from "@/hooks/usePETActivity";
 import EnhancedOnboarding from "@/components/EnhancedOnboarding";
 import PetStatRadar, { StatSlotBar } from "@/components/PetStatRadar";
+import EvolutionAnimation from "@/components/EvolutionAnimation";
 
 const PET_SPECIES = ["Cat","Dog","Parrot","Turtle","Hamster","Rabbit","Fox","Pomeranian"];
 const PET_EMOJIS = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
@@ -867,6 +868,12 @@ export default function PetProfile() {
   const [comboToast, setComboToast] = useState<{ name: string; description: string; emoji: string } | null>(null);
   const [statsView, setStatsView] = useState<"radar" | "slots">("radar");
   const [combosUnlocked, setCombosUnlocked] = useState<string[]>([]);
+  const [evolutionAnim, setEvolutionAnim] = useState<{
+    fromStage: { icon: string; name: string };
+    toStage: { icon: string; name: string };
+    skillsUnlocked: string[];
+    creditsEarned: number;
+  } | null>(null);
 
   useEffect(() => {
     loadPets();
@@ -959,8 +966,18 @@ export default function PetProfile() {
     setEvolving(true);
     setEvoResult(null);
     try {
+      const prevStage = evoStatus?.current_stage;
       const result = await api.evolution.evolve(activePet.id);
       setEvoResult(result);
+      // Trigger gacha-style animation
+      if (result.new_stage && prevStage) {
+        setEvolutionAnim({
+          fromStage: { icon: prevStage.icon || "🥚", name: prevStage.name || "Previous" },
+          toStage: { icon: result.new_stage.icon || "✨", name: result.new_stage.name || "Evolved" },
+          skillsUnlocked: result.skills_unlocked || [],
+          creditsEarned: result.credits_earned || 0,
+        });
+      }
       await loadPetStatus(activePet.id);
       await loadEvoStatus(activePet.id);
       await loadPets();
@@ -1164,6 +1181,16 @@ export default function PetProfile() {
           {errorToast}
         </div>
       )}
+      <EvolutionAnimation
+        open={!!evolutionAnim}
+        onClose={() => setEvolutionAnim(null)}
+        petName={activePet?.name || "Your pet"}
+        petAvatarUrl={activePet?.avatar_url}
+        fromStage={evolutionAnim?.fromStage || { icon: "🥚", name: "" }}
+        toStage={evolutionAnim?.toStage || { icon: "✨", name: "" }}
+        skillsUnlocked={evolutionAnim?.skillsUnlocked || []}
+        creditsEarned={evolutionAnim?.creditsEarned || 0}
+      />
       {comboToast && (
         <div style={{
           position: "fixed", top: 80, left: "50%", transform: "translateX(-50%)",
