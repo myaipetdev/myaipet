@@ -6,6 +6,7 @@ import { api, getAuthHeaders } from "@/lib/api";
 import { signAction } from "@/lib/signAction";
 import { useRecordAdoption, isPETActivityEnabled, useCheckBnbBalance } from "@/hooks/usePETActivity";
 import EnhancedOnboarding from "@/components/EnhancedOnboarding";
+import PetStatRadar, { StatSlotBar } from "@/components/PetStatRadar";
 
 const PET_SPECIES = ["Cat","Dog","Parrot","Turtle","Hamster","Rabbit","Fox","Pomeranian"];
 const PET_EMOJIS = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
@@ -862,6 +863,10 @@ export default function PetProfile() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const [petRequest, setPetRequest] = useState<any>(null);
+  const [comboToast, setComboToast] = useState<{ name: string; description: string; emoji: string } | null>(null);
+  const [statsView, setStatsView] = useState<"radar" | "slots">("radar");
+  const [combosUnlocked, setCombosUnlocked] = useState<string[]>([]);
 
   useEffect(() => {
     loadPets();
@@ -927,6 +932,17 @@ export default function PetProfile() {
     } catch (e) {
       // status fetch failed, use activePet data as fallback
     }
+    // Load active event request + combo history
+    try {
+      const res = await fetch(`/api/pets/${petId}/interact`, {
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPetRequest(data.request || null);
+        setCombosUnlocked(data.combos_unlocked || []);
+      }
+    } catch {}
   };
 
   const loadEvoStatus = async (petId: number) => {
@@ -966,13 +982,28 @@ export default function PetProfile() {
         response_text: result.interaction?.response || result.response_text || "...",
         stat_changes: result.interaction?.effects || result.stat_changes || {},
         memory_created: result.interaction?.leveled_up ? `${activePet.name} leveled up!` : null,
+        combo: result.interaction?.combo,
+        request_fulfilled: result.interaction?.request_fulfilled,
       });
       setResponseAnim(true);
+      // Show combo toast if triggered
+      if (result.interaction?.combo) {
+        setComboToast(result.interaction.combo);
+        setTimeout(() => setComboToast(null), 4500);
+      }
+      // Update pending request from server response
+      setPetRequest(result.interaction?.next_request || null);
       await loadPetStatus(activePet.id);
       await loadEvoStatus(activePet.id);
       await loadPets();
     } catch (e: any) {
-      setLastResponse({ response_text: e.message || "Interaction failed", stat_changes: {} });
+      // Detect gating errors
+      const blocked = e.message && (e.message.includes("Too hungry") || e.message.includes("Too tired") || e.message.includes("stuffed"));
+      setLastResponse({
+        response_text: e.message || "Interaction failed",
+        stat_changes: {},
+        blocked,
+      });
       setResponseAnim(true);
     }
     setTimeout(() => setInteracting(null), 300);
@@ -1133,6 +1164,31 @@ export default function PetProfile() {
           {errorToast}
         </div>
       )}
+      {comboToast && (
+        <div style={{
+          position: "fixed", top: 80, left: "50%", transform: "translateX(-50%)",
+          zIndex: 9999,
+          background: "linear-gradient(135deg, #f59e0b, #d97706)",
+          color: "white",
+          padding: "18px 32px", borderRadius: 18,
+          fontFamily: "'Space Grotesk',sans-serif",
+          boxShadow: "0 12px 40px rgba(245,158,11,0.4)",
+          animation: "comboBurst 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          textAlign: "center",
+          minWidth: 280,
+        }}>
+          <div style={{ fontSize: 36, marginBottom: 4 }}>{comboToast.emoji}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.85, marginBottom: 4 }}>
+            ✦ Combo Activated ✦
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 6 }}>
+            {comboToast.name}
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 500, opacity: 0.92 }}>
+            {comboToast.description}
+          </div>
+        </div>
+      )}
       <style>{`
         @keyframes slideDown { from { opacity:0; transform:translateX(-50%) translateY(-20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
         @keyframes petFloat {
@@ -1148,6 +1204,11 @@ export default function PetProfile() {
           0% { transform: scale(1); }
           50% { transform: scale(1.15); }
           100% { transform: scale(1); }
+        }
+        @keyframes comboBurst {
+          0% { opacity: 0; transform: translateX(-50%) scale(0.6) translateY(-30px); }
+          60% { opacity: 1; transform: translateX(-50%) scale(1.05) translateY(0); }
+          100% { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
         }
       `}</style>
 
@@ -1308,11 +1369,73 @@ export default function PetProfile() {
             </div>
           )}
 
-          <AnimatedStatBar label="Happiness" value={pet.happiness} color="#f472b6" icon="💖" />
-          <AnimatedStatBar label="Energy" value={pet.energy} color="#60a5fa" icon="⚡" />
-          <AnimatedStatBar label="Hunger" value={pet.hunger} color="#fbbf24" icon="🍖" />
-          <AnimatedStatBar label="Bond" value={pet.bond_level} color="#c084fc" icon="🤝" />
-          <AnimatedStatBar label="EXP" value={pet.experience} color="#4ade80" max={expNeeded} icon="✨" />
+          {/* View toggle */}
+          <div style={{ display: "flex", gap: 4, marginBottom: 14, padding: 3, borderRadius: 10, background: "rgba(0,0,0,0.04)" }}>
+            {(["radar", "slots"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setStatsView(v)}
+                style={{
+                  flex: 1, padding: "6px 10px", borderRadius: 8,
+                  background: statsView === v ? "white" : "transparent",
+                  border: "none", cursor: "pointer",
+                  fontFamily: "'Space Grotesk',sans-serif", fontSize: 11, fontWeight: 700,
+                  color: statsView === v ? "#1a1a2e" : "rgba(26,26,46,0.5)",
+                  letterSpacing: "0.06em", textTransform: "uppercase",
+                  boxShadow: statsView === v ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                  transition: "all 0.15s",
+                }}
+              >
+                {v === "radar" ? "◇ Hexagon" : "▦ Slots"}
+              </button>
+            ))}
+          </div>
+
+          {statsView === "radar" ? (
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+              <PetStatRadar
+                size={260}
+                stats={[
+                  { label: "Happy", value: pet.happiness, color: "#f472b6", icon: "💖" },
+                  { label: "Energy", value: pet.energy, color: "#60a5fa", icon: "⚡" },
+                  { label: "Hunger", value: 100 - pet.hunger, color: "#fbbf24", icon: "🍖" },
+                  { label: "Bond", value: pet.bond_level, color: "#c084fc", icon: "🤝" },
+                  { label: "EXP", value: Math.min(100, (pet.experience % 100)), color: "#4ade80", icon: "✨" },
+                  { label: "Level", value: Math.min(100, pet.level * 5), color: "#f59e0b", icon: "🌟" },
+                ]}
+              />
+            </div>
+          ) : (
+            <div>
+              <StatSlotBar label="Happy" value={pet.happiness} color="#f472b6" icon="💖" warning={pet.happiness < 30} />
+              <StatSlotBar label="Energy" value={pet.energy} color="#60a5fa" icon="⚡" warning={pet.energy < 15} />
+              <StatSlotBar label="Hunger" value={pet.hunger} color="#fbbf24" icon="🍖" warning={pet.hunger >= 80} />
+              <StatSlotBar label="Bond" value={pet.bond_level} color="#c084fc" icon="🤝" />
+              <StatSlotBar label="EXP" value={pet.experience} max={expNeeded} color="#4ade80" icon="✨" />
+            </div>
+          )}
+
+          {/* Combo collection */}
+          {combosUnlocked.length > 0 && (
+            <div style={{
+              marginTop: 12, padding: "10px 12px", borderRadius: 10,
+              background: "linear-gradient(135deg, rgba(245,158,11,0.05), rgba(192,132,252,0.05))",
+              border: "1px solid rgba(245,158,11,0.15)",
+            }}>
+              <div style={{ fontSize: 10, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(26,26,46,0.5)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
+                ✨ Combos Discovered
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                {combosUnlocked.map((c) => (
+                  <span key={c} style={{
+                    fontSize: 10, padding: "3px 9px", borderRadius: 6,
+                    background: "rgba(245,158,11,0.12)", color: "#b45309",
+                    fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
+                  }}>{c}</span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div style={{
             marginTop: 14, padding: "10px 14px", borderRadius: 10,
@@ -1366,6 +1489,63 @@ export default function PetProfile() {
 
         {/* Right column */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Pet event request popup */}
+          {petRequest && petRequest.type && (
+            <div style={{
+              background: "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(192,132,252,0.10))",
+              borderRadius: 16, border: "1px solid rgba(245,158,11,0.3)",
+              padding: 16, position: "relative", overflow: "hidden",
+              animation: "responseSlide 0.4s ease-out",
+            }}>
+              <div style={{
+                position: "absolute", top: 8, right: 12,
+                fontSize: 9, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
+                color: "#b45309", letterSpacing: "0.08em", textTransform: "uppercase",
+                background: "rgba(245,158,11,0.15)", padding: "2px 8px", borderRadius: 6,
+              }}>
+                💭 Pet Wants
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: INTERACTIONS.find((i) => i.type === petRequest.type)?.color || "#f59e0b",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 22, flexShrink: 0,
+                  boxShadow: "0 4px 12px rgba(245,158,11,0.3)",
+                }}>
+                  {INTERACTIONS.find((i) => i.type === petRequest.type)?.icon}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    fontSize: 14, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
+                    color: "#1a1a2e", marginBottom: 2,
+                  }}>
+                    "{petRequest.message}"
+                  </div>
+                  <div style={{
+                    fontSize: 11, fontFamily: "'Space Grotesk',sans-serif",
+                    color: "rgba(26,26,46,0.55)",
+                  }}>
+                    Fulfill within 30min for bonus +happy +bond +exp
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleInteract(petRequest.type)}
+                  disabled={!!interacting}
+                  style={{
+                    padding: "8px 16px", borderRadius: 10, border: "none",
+                    background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                    color: "white", fontFamily: "'Space Grotesk',sans-serif",
+                    fontSize: 12, fontWeight: 700, cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  Do it!
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Interactions */}
           <div style={{
             background: "rgba(255,255,255,0.8)", borderRadius: 18,
@@ -1379,34 +1559,69 @@ export default function PetProfile() {
               Interact with <span style={{ fontWeight: 700, color: "#1a1a2e" }}>{pet.name}</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-              {INTERACTIONS.map(i => (
-                <button key={i.type} onClick={() => i.type === "talk" ? setShowChat(true) : handleInteract(i.type)}
-                  disabled={!!interacting}
-                  style={{
-                    background: interacting === i.type ? `${i.color}15` : "rgba(0,0,0,0.02)",
-                    border: interacting === i.type ? `1px solid ${i.color}40` : "1px solid rgba(0,0,0,0.06)",
-                    borderRadius: 12, padding: "14px 8px", cursor: interacting ? "wait" : "pointer",
-                    transition: "all 0.2s",
-                    opacity: interacting && interacting !== i.type ? 0.4 : 1,
-                    transform: interacting === i.type ? "scale(0.95)" : "scale(1)",
-                    boxShadow: interacting === i.type ? `0 0 16px ${i.color}25` : "none",
-                  }}>
-                  <div style={{
-                    fontSize: 26, marginBottom: 4,
-                    animation: interacting === i.type ? "statPop 0.3s ease" : "none",
-                  }}>{i.icon}</div>
-                  <div style={{ fontFamily: "mono", fontSize: 11, color: i.color, fontWeight: 600 }}>{i.label}</div>
-                  <div style={{ fontFamily: "mono", fontSize: 8, color: "rgba(26,26,46,0.4)", marginTop: 2 }}>{i.desc}</div>
-                </button>
-              ))}
+              {INTERACTIONS.map(i => {
+                // Gating logic — match server-side rules
+                const tooHungry = pet.hunger >= 80 && (i.type === "play" || i.type === "walk" || i.type === "train");
+                const tooTired = pet.energy < 15 && (i.type === "play" || i.type === "walk" || i.type === "train");
+                const tooFull = pet.hunger <= 5 && i.type === "feed";
+                const blocked = tooHungry || tooTired || tooFull;
+                const blockReason = tooHungry ? "Too hungry" : tooTired ? "Too tired" : tooFull ? "Stuffed!" : "";
+                const isRequested = petRequest?.type === i.type;
+                return (
+                  <button key={i.type} onClick={() => i.type === "talk" ? setShowChat(true) : handleInteract(i.type)}
+                    disabled={!!interacting || blocked}
+                    title={blocked ? blockReason : i.desc}
+                    style={{
+                      position: "relative",
+                      background: blocked ? "rgba(220,38,38,0.04)" : interacting === i.type ? `${i.color}15` : isRequested ? `${i.color}10` : "rgba(0,0,0,0.02)",
+                      border: blocked ? "1px solid rgba(220,38,38,0.18)" : interacting === i.type ? `1px solid ${i.color}40` : isRequested ? `2px solid ${i.color}80` : "1px solid rgba(0,0,0,0.06)",
+                      borderRadius: 12, padding: "14px 8px",
+                      cursor: blocked ? "not-allowed" : interacting ? "wait" : "pointer",
+                      transition: "all 0.2s",
+                      opacity: blocked ? 0.55 : interacting && interacting !== i.type ? 0.4 : 1,
+                      transform: interacting === i.type ? "scale(0.95)" : "scale(1)",
+                      boxShadow: interacting === i.type ? `0 0 16px ${i.color}25` : isRequested ? `0 0 14px ${i.color}30` : "none",
+                      animation: isRequested && !interacting ? "statPop 1.5s ease infinite" : "none",
+                    }}>
+                    {isRequested && !blocked && (
+                      <div style={{
+                        position: "absolute", top: -6, right: -6,
+                        background: "#f59e0b", color: "white",
+                        fontSize: 10, padding: "2px 6px", borderRadius: 6,
+                        fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
+                        boxShadow: "0 2px 6px rgba(245,158,11,0.4)",
+                      }}>!</div>
+                    )}
+                    <div style={{
+                      fontSize: 26, marginBottom: 4,
+                      animation: interacting === i.type ? "statPop 0.3s ease" : "none",
+                      filter: blocked ? "grayscale(0.7)" : "none",
+                    }}>{i.icon}</div>
+                    <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, color: blocked ? "#dc2626" : i.color, fontWeight: 700 }}>{i.label}</div>
+                    <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 9, color: blocked ? "#dc2626" : "rgba(26,26,46,0.45)", marginTop: 2, fontWeight: blocked ? 600 : 400 }}>
+                      {blocked ? blockReason : i.desc}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Response */}
           {lastResponse && (
             <div style={{
-              background: "linear-gradient(135deg, rgba(74,222,128,0.06), rgba(74,222,128,0.03))",
-              borderRadius: 16, border: "1px solid rgba(74,222,128,0.15)", padding: 18,
+              background: lastResponse.blocked
+                ? "linear-gradient(135deg, rgba(220,38,38,0.06), rgba(220,38,38,0.03))"
+                : lastResponse.combo
+                  ? "linear-gradient(135deg, rgba(245,158,11,0.10), rgba(192,132,252,0.08))"
+                  : "linear-gradient(135deg, rgba(74,222,128,0.06), rgba(74,222,128,0.03))",
+              borderRadius: 16,
+              border: lastResponse.blocked
+                ? "1px solid rgba(220,38,38,0.2)"
+                : lastResponse.combo
+                  ? "1px solid rgba(245,158,11,0.3)"
+                  : "1px solid rgba(74,222,128,0.15)",
+              padding: 18,
               animation: responseAnim ? "responseSlide 0.4s ease-out" : "none",
               boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
             }}>
@@ -1450,6 +1665,29 @@ export default function PetProfile() {
                     }}>
                       <span style={{ fontSize: 10 }}>💭</span>
                       {lastResponse.memory_created}
+                    </div>
+                  )}
+                  {lastResponse.combo && (
+                    <div style={{
+                      marginTop: 10, padding: "8px 12px", borderRadius: 10,
+                      background: "rgba(245,158,11,0.15)",
+                      border: "1px solid rgba(245,158,11,0.3)",
+                      fontFamily: "'Space Grotesk',sans-serif", fontSize: 12,
+                      color: "#b45309", fontWeight: 700,
+                      display: "flex", alignItems: "center", gap: 6,
+                    }}>
+                      <span style={{ fontSize: 16 }}>{lastResponse.combo.emoji}</span>
+                      <span>{lastResponse.combo.name} — {lastResponse.combo.description}</span>
+                    </div>
+                  )}
+                  {lastResponse.request_fulfilled && (
+                    <div style={{
+                      marginTop: 10, padding: "6px 10px", borderRadius: 8,
+                      background: "rgba(74,222,128,0.12)",
+                      fontFamily: "'Space Grotesk',sans-serif", fontSize: 11,
+                      color: "#16a34a", fontWeight: 700,
+                    }}>
+                      ✓ Pet's request fulfilled — bonus stats applied!
                     </div>
                   )}
                 </div>
