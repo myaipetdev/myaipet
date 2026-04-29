@@ -143,6 +143,9 @@ export class PetMemoryManager {
 
     const sections: Record<string, string[]> = {};
     for (const entry of userProfile) {
+      // Skip identity entries (name, etc) — different users share the same pet,
+      // so we must not assume the current speaker is the stored owner.
+      if (entry.category === "identity") continue;
       if (!sections[entry.category]) sections[entry.category] = [];
       sections[entry.category].push(entry.content);
     }
@@ -384,6 +387,7 @@ Rules:
     let prompt = `You are ${petName}, a ${personality} companion AI pet.
 You remember past conversations and grow from every interaction.
 Keep responses SHORT (1-2 sentences, under 80 words). No markdown. Be natural and casual.
+IMPORTANT: Never address the user by a specific name unless they tell you their name in THIS conversation. Just say "you" or "friend" instead.
 
 Platform: ${platform}
 `;
