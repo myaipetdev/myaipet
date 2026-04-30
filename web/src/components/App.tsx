@@ -506,11 +506,41 @@ export default function App() {
           </a>
         </div>
 
+        {/* Legal & info links */}
+        <div style={{
+          display: "flex", justifyContent: "center", gap: 18,
+          marginBottom: 14, flexWrap: "wrap",
+        }}>
+          {[
+            { href: "/terms", label: "Terms" },
+            { href: "/privacy", label: "Privacy" },
+            { href: "/contracts", label: "Contracts" },
+            { href: "/tokenomics", label: "Tokenomics" },
+            { href: "/architecture", label: "Architecture" },
+          ].map(l => (
+            <a key={l.href} href={l.href} style={{
+              fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 500,
+              color: "rgba(26,26,46,0.5)", textDecoration: "none",
+            }}>{l.label}</a>
+          ))}
+        </div>
+
         <div style={{
           fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, color: "rgba(26,26,46,0.4)",
-          fontWeight: 500, letterSpacing: "0.02em",
+          fontWeight: 500, letterSpacing: "0.02em", marginBottom: 12,
         }}>
           © 2026 My AI Pet Protocol · Raise · Bond · Earn
+        </div>
+
+        {/* Disclaimer */}
+        <div style={{
+          maxWidth: 680, margin: "0 auto",
+          fontFamily: "'Space Grotesk',sans-serif", fontSize: 11,
+          color: "rgba(26,26,46,0.35)", lineHeight: 1.6, fontWeight: 400,
+        }}>
+          Engagement points are non-financial loyalty credits, not securities. $PET is a proposed
+          utility token; final tokenomics will be published with a standalone whitepaper and
+          legal opinion before TGE. Nothing here is financial advice.
         </div>
       </footer>
     </div>
