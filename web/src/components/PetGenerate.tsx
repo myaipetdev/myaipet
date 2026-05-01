@@ -175,7 +175,12 @@ export default function PetGenerate() {
   const handleGenerate = async () => {
     if (!selectedPet || generating) return;
     if (balance !== null && balance < creditCost) {
-      setError(`Insufficient credits. Need ${creditCost} $PET but you have ${balance} $PET.`);
+      setError(`Insufficient credits — need ${creditCost} but have ${balance}. Buy credits on the home page.`);
+      // Auto-scroll to pricing if rendered on the same page
+      setTimeout(() => {
+        const el = document.querySelector(".pricing-root");
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      }, 100);
       return;
     }
     setError(null);

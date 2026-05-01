@@ -322,10 +322,10 @@ export const api = {
         method: "POST",
         body: { item_key: itemKey, pet_id: petId },
       }),
-    purchasePremium: (itemKey: string, petId?: number, paymentMethod?: string, skillKey?: string, element?: string) =>
+    purchasePremium: (itemKey: string, petId?: number, paymentMethod?: string, skillKey?: string, element?: string, txHash?: string) =>
       request("/api/shop/premium", {
         method: "POST",
-        body: { item_key: itemKey, pet_id: petId, payment_method: paymentMethod || "credits", skill_key: skillKey, element },
+        body: { item_key: itemKey, pet_id: petId, payment_method: paymentMethod || "credits", skill_key: skillKey, element, tx_hash: txHash },
       }),
   },
 

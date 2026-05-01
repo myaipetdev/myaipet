@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useAccount, useSwitchChain } from "wagmi";
-import { api } from "@/lib/api";
 import { CONTRACTS } from "@/lib/contracts";
 import {
   usePETBalance,
@@ -15,6 +14,8 @@ import {
   formatEther,
 } from "@/hooks/useContracts";
 import { useCoinbaseOnramp } from "@/hooks/useCoinbaseOnramp";
+import { useDirectUsdtPay } from "@/hooks/useDirectUsdtPay";
+import { getAuthHeaders } from "@/lib/api";
 
 const EARN_METHODS = [
   { icon: "🐾", label: "Daily Check-in", desc: "Care for your pet daily", reward: "+10 $PET/day" },
@@ -26,7 +27,6 @@ const EARN_METHODS = [
 ];
 
 const BSC_CHAIN_ID = 56;
-const PURCHASE_DISABLED = true;
 
 export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
   const { address, isConnected, chainId } = useAccount();
@@ -99,6 +99,9 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
     { name: "Breeder", key: "pro", cookies: 10000, price: 50, usdtPrice: "50 USDT", pop: false, desc: "Power user tier", emoji: "👑" },
   ];
 
+  // Direct USDT pay (BSC-USD → treasury → server verifies → grants credits)
+  const directPay = useDirectUsdtPay();
+
   const handlePurchase = async (plan: any) => {
     setError(null);
     setSuccess(null);
@@ -107,65 +110,77 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
       setError("Connect wallet first");
       return;
     }
-
-    // On-chain purchase via BSC
-    if (contractsDeployed) {
-      if (chainId !== BSC_CHAIN_ID) {
-        try {
-          switchChain({ chainId: BSC_CHAIN_ID });
-        } catch {
-          setError("Please switch to BNB Chain (BSC)");
-          return;
-        }
-      }
-
-      const requiredAmount = TIER_USDT[plan.key];
-      if (!requiredAmount) return;
-
-      // Check USDT balance
-      if (usdtBalance !== undefined && (usdtBalance as bigint) < requiredAmount) {
-        setError(`Insufficient USDT. Need ${plan.price} USDT.`);
+    if (!isAuthenticated) {
+      setError("Sign in with wallet first");
+      return;
+    }
+    if (chainId !== BSC_CHAIN_ID) {
+      try {
+        switchChain({ chainId: BSC_CHAIN_ID });
+      } catch {
+        setError("Please switch to BNB Chain (BSC)");
         return;
       }
-
-      setPurchasing(plan.key);
-
-      // Check allowance
-      const currentAllowance = (usdtAllowance as bigint) || BigInt(0);
-      if (currentAllowance < requiredAmount) {
-        setStep("approve");
-        approve(requiredAmount);
-      } else {
-        setStep("purchase");
-        purchaseOnChain(plan.key, TIER_USDT[plan.key] || BigInt(0), TIER_PET[plan.key] || BigInt(0));
-      }
+    }
+    if (!directPay.treasuryConfigured) {
+      setError("Payments are temporarily paused. Contact support.");
       return;
     }
 
-    // Fallback: off-chain purchase (when contracts not deployed yet)
-    if (!isAuthenticated) {
-      setError("Connect wallet and sign in first");
-      return;
-    }
     setPurchasing(plan.key);
+    setStep("purchase");
+
+    // 1) Send USDT to treasury
+    const result = await directPay.pay(plan.price);
+    if ("error" in result) {
+      const msg = result.error.toLowerCase().includes("user rejected")
+        ? "Transaction cancelled"
+        : result.error;
+      setError(msg);
+      setPurchasing(null);
+      setStep("idle");
+      return;
+    }
+
+    // 2) Wait for confirmation, then post hash to server for verification
+    setStep("confirm");
     try {
-      const res = await api.credits.purchase(plan.key);
-      setSuccess(`Purchased ${res.credits} $PET!`);
-      onCreditsChange?.();
+      // Poll receipt until confirmed (server-side will also verify via RPC)
+      // We send the tx hash immediately; server retries reading the receipt.
+      const res = await fetch("/api/credits/purchase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ plan: plan.key, payment_tx_hash: result.hash }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        // Receipt may not be available yet — retry once after 5s
+        await new Promise(r => setTimeout(r, 5000));
+        const res2 = await fetch("/api/credits/purchase", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+          body: JSON.stringify({ plan: plan.key, payment_tx_hash: result.hash }),
+        });
+        const data2 = await res2.json();
+        if (!res2.ok) throw new Error(data2.error || data.error || "Verification failed");
+        setSuccess(`Got ${data2.purchased} credits! ✨`);
+        onCreditsChange?.();
+      } else {
+        setSuccess(`Got ${data.purchased} credits! ✨`);
+        onCreditsChange?.();
+      }
     } catch (err: any) {
-      setError(err.message || "Purchase failed");
+      setError(`Payment sent but credit grant failed: ${err.message}. TX: ${result.hash.slice(0, 10)}... — contact support with this hash.`);
     } finally {
       setPurchasing(null);
+      setStep("idle");
     }
   };
 
   const getButtonLabel = (planKey: string) => {
-    if (PURCHASE_DISABLED) return "Coming Soon";
-    if (purchasing !== planKey) {
-      return contractsDeployed ? "Purchase on BSC →" : "Purchase with USDT →";
-    }
-    if (step === "approve") return "Approving USDT...";
-    if (step === "purchase") return "Confirming purchase...";
+    if (purchasing !== planKey) return "Pay with USDT →";
+    if (step === "purchase") return "Confirm in wallet...";
+    if (step === "confirm") return "Verifying tx...";
     return "Processing...";
   };
 
@@ -251,22 +266,9 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         }}>
           Get $PET
         </h3>
-        {PURCHASE_DISABLED ? (
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "10px 20px", borderRadius: 12,
-            background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)",
-            fontFamily: "monospace", fontSize: 12, color: "#b45309", marginBottom: 10,
-          }}>
-            <span>🔧</span> USDT purchase is temporarily unavailable — launching soon
-          </div>
-        ) : (
-          <p style={{ fontFamily: "mono", fontSize: 14, color: "rgba(26,26,46,0.4)", marginBottom: 10 }}>
-            {contractsDeployed
-              ? "Pay with USDT on BNB Chain · On-chain settlement · Instant delivery"
-              : "Pay with USDT · Recorded on-chain · Instant delivery"}
-          </p>
-        )}
+        <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "rgba(26,26,46,0.5)", marginBottom: 10 }}>
+          Pay with USDT on BNB Chain · Verified on-chain · Credits delivered instantly
+        </p>
         {contractsDeployed && (
           <div style={{
             display: "inline-flex", gap: 12, alignItems: "center",
@@ -401,23 +403,27 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
               {p.desc}
             </div>
             <button
-              onClick={() => !PURCHASE_DISABLED && handlePurchase(p)}
-              disabled={PURCHASE_DISABLED || purchasing === p.key}
-              className={p.pop && !PURCHASE_DISABLED ? "" : "pricing-btn-default"}
+              onClick={() => handlePurchase(p)}
+              disabled={!!purchasing}
+              className={p.pop ? "" : "pricing-btn-default"}
               style={{
                 width: "100%",
-                background: PURCHASE_DISABLED ? "rgba(0,0,0,0.04)" : p.pop ? "linear-gradient(135deg,#f59e0b,#d97706)" : "rgba(0,0,0,0.04)",
-                border: "1px solid rgba(0,0,0,0.08)",
-                borderRadius: 10, padding: "12px",
-                fontFamily: "'Space Grotesk',sans-serif", fontSize: 13,
-                color: "rgba(26,26,46,0.35)",
-                cursor: "not-allowed", fontWeight: 600,
+                background: purchasing === p.key
+                  ? "rgba(245,158,11,0.5)"
+                  : p.pop ? "linear-gradient(135deg,#f59e0b,#d97706)" : "#1a1a2e",
+                border: "none",
+                borderRadius: 10, padding: "13px",
+                fontFamily: "'Space Grotesk',sans-serif", fontSize: 14,
+                color: "white",
+                cursor: purchasing ? "wait" : "pointer", fontWeight: 700,
                 transition: "all 0.3s ease",
+                boxShadow: p.pop ? "0 4px 12px rgba(245,158,11,0.3)" : "none",
+                opacity: purchasing && purchasing !== p.key ? 0.5 : 1,
               }}
             >
               {getButtonLabel(p.key)}
             </button>
-            {!PURCHASE_DISABLED && onrampAvailable && isConnected && (
+            {onrampAvailable && isConnected && (
               <button
                 onClick={() => openOnramp(p.price)}
                 style={{

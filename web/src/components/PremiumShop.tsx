@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { PREMIUM_ITEMS, RARITY_COLORS, CATEGORY_LABELS, type PremiumItem } from "@/lib/premium";
 import Icon, { SHOP_ICONS, CATEGORY_ICONS } from "@/components/Icon";
+import { useDirectUsdtPay } from "@/hooks/useDirectUsdtPay";
 
 export default function PremiumShop() {
+  const directPay = useDirectUsdtPay();
   const [category, setCategory] = useState("all");
   const [pets, setPets] = useState<any[]>([]);
   const [selectedPet, setSelectedPet] = useState<any>(null);
@@ -41,8 +43,14 @@ export default function PremiumShop() {
     if (item.category === "gacha") setGachaAnimation(true);
 
     try {
+      let txHash: string | undefined;
+      if (payMethod === "usdt") {
+        const r = await directPay.pay(item.priceUSD);
+        if ("error" in r) throw new Error(r.error);
+        txHash = r.hash;
+      }
       const res = await api.shop.purchasePremium(
-        item.key, selectedPet?.id, "credits", extra?.skill_key, extra?.element
+        item.key, selectedPet?.id, payMethod, extra?.skill_key, extra?.element, txHash
       );
 
       let text = `${item.emoji} ${item.name} purchased!`;
@@ -178,14 +186,7 @@ export default function PremiumShop() {
               }}>
                 Cancel
               </button>
-              <button onClick={() => {
-                if (payMethod === "usdt") {
-                  setConfirmItem(null);
-                  setResult({ type: "error", text: "USDT payments coming soon! Use credits for now." });
-                } else {
-                  handlePurchase(confirmItem);
-                }
-              }} style={{
+              <button onClick={() => handlePurchase(confirmItem)} style={{
                 flex: 2, padding: "12px", borderRadius: 12,
                 background: "linear-gradient(135deg, #f59e0b, #d97706)",
                 border: "none",

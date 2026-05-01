@@ -85,8 +85,47 @@ export default function TokenomicsPage() {
           <Bullet>A jurisdiction-specific legal opinion (US Howey Test, EU MiCA, KR 가상자산이용자보호법) is being prepared with external counsel.</Bullet>
         </Section>
 
+        <Section title="Revenue Model (Live Today)">
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(26,26,46,0.75)", margin: "0 0 14px" }}>
+            The protocol generates real cash revenue <em>before</em> token launch via four streams.
+            All flows settle in BSC-USDT to the treasury wallet and are individually verified
+            on-chain (no off-chain payment processor in the critical path).
+          </p>
+          <Row label="① Credit packs" value="$5 → 500 / $20 → 2,500 / $50 → 10,000 credits" subtext="Used for AI image/video generation. Margin = USDT inflow − Grok+FAL API cost." />
+          <Row label="② Premium items" value="$0.50 – $10 per item" subtext="Skill scrolls, evolution catalysts, gacha boxes. Pure margin (no API cost)." />
+          <Row label="③ Pet slot unlocks" value="50 / 100 / 200 / 500 $PET (or USDT eq.)" subtext="Per-account pet limit expansion. Recurring revenue per ARPU growth." />
+          <Row label="④ Skill marketplace fee" value="10% protocol fee (planned)" subtext="On every user-to-user skill sale once marketplace launches." />
+        </Section>
+
+        <Section title="Treasury Use of Funds">
+          <Bullet><strong>40%</strong> — AI inference cost (Grok / FAL / Anthropic)</Bullet>
+          <Bullet><strong>20%</strong> — Engineering & ops</Bullet>
+          <Bullet><strong>15%</strong> — Liquidity provisioning &amp; market making (post-TGE)</Bullet>
+          <Bullet><strong>15%</strong> — $PET buyback &amp; burn from on-chain revenue (post-TGE)</Bullet>
+          <Bullet><strong>10%</strong> — Audits, legal, security</Bullet>
+        </Section>
+
+        <Section title="Token Value Capture">
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(26,26,46,0.75)", margin: 0 }}>
+            Once $PET is live, the buyback-and-burn mechanism converts a fixed share of monthly
+            USDT revenue into $PET on a public DEX, then burns it. Generation costs and premium
+            items become payable in $PET at a discounted ratio — incentivizing token demand.
+            Skill marketplace fees collected in $PET also burn. <strong>This is not a points-only
+            economy: real cash inflows directly drive token value.</strong>
+          </p>
+        </Section>
+
+        <Section title="Live Metrics">
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: "rgba(26,26,46,0.75)", margin: 0 }}>
+            All revenue and on-chain activity is published in real time at{" "}
+            <a href="/stats" style={{ color: "#b45309", fontWeight: 700, textDecoration: "underline" }}>/stats</a>{" "}
+            — pulled live from production Postgres + BSC. No marketing inflation, no hidden numbers.
+            DD verifiers can hit <code style={{ fontSize: 12 }}>GET /api/analytics/protocol</code> directly.
+          </p>
+        </Section>
+
         <Section title="Roadmap">
-          <Row label="Q2 2026" value="Whitepaper v1 + first audit complete" />
+          <Row label="Q2 2026" value="Whitepaper v1 + first audit + revenue ramp" />
           <Row label="Q3 2026" value="Second audit + multisig migration + private sale" />
           <Row label="Q4 2026" value="TGE + public listing + points conversion live" />
           <Row label="2027+"   value="DAO formation, skill marketplace launch" />

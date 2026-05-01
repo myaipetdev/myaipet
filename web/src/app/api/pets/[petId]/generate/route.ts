@@ -54,7 +54,12 @@ export async function POST(
     return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   }
 
-  const creditCost = 1; // Test mode: all generations cost 1 $PET
+  // Pricing tiers (credits cost):
+  //   Image: style 0 (Original/no-gen) = 0; otherwise = 5
+  //   Video: 3s = 15, 5s = 30, 10s = 60
+  const creditCost = type === "video"
+    ? getVideoCreditCost(duration || 5)
+    : (style === 0 ? 0 : 5);
 
   if (user.credits < creditCost) {
     return NextResponse.json(

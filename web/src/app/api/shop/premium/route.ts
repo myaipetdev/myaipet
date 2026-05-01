@@ -4,6 +4,38 @@ import { PREMIUM_MAP } from "@/lib/premium";
 import { SKILL_DB, SKILL_MAP } from "@/lib/skills";
 import { NextRequest, NextResponse } from "next/server";
 
+const BSC_RPC_URL = "https://bsc-dataseed1.binance.org";
+const USDT_CONTRACT = "0x55d398326f99059fF775485246999027B3197955";
+const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+
+async function verifyShopUsdt(txHash: string, expectedFrom: string, expectedAmount: number) {
+  const treasury = (process.env.TREASURY_WALLET || "").trim();
+  try {
+    const r = await fetch(BSC_RPC_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getTransactionReceipt", params: [txHash] }),
+    });
+    const j = await r.json();
+    const rec = j.result;
+    if (!rec) return { error: "Receipt not found yet — try again in a few seconds" };
+    if (rec.status !== "0x1") return { error: "Transaction reverted on-chain" };
+    const log = (rec.logs || []).find((l: any) =>
+      l.address.toLowerCase() === USDT_CONTRACT.toLowerCase() && l.topics?.[0] === TRANSFER_TOPIC
+    );
+    if (!log) return { error: "No USDT transfer event in transaction" };
+    const from = "0x" + log.topics[1].slice(26);
+    const to = "0x" + log.topics[2].slice(26);
+    const amount = Number(BigInt(log.data)) / 1e18;
+    if (from.toLowerCase() !== expectedFrom.toLowerCase()) return { error: "Sender mismatch" };
+    if (treasury && to.toLowerCase() !== treasury.toLowerCase()) return { error: "Recipient is not treasury" };
+    if (amount < expectedAmount * 0.99) return { error: `Insufficient amount: ${amount} < ${expectedAmount}` };
+    return { ok: true as const };
+  } catch (e: any) {
+    return { error: `Verification failed: ${e?.message || "RPC error"}` };
+  }
+}
+
 // POST /api/shop/premium — Purchase a premium item
 export async function POST(req: NextRequest) {
   const user = await getUser(req);
@@ -19,17 +51,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid payment_method. Must be 'credits' or 'usdt'." }, { status: 400 });
   }
 
+  let usdtPaid = false;
   if (payment_method === "usdt") {
-    if (!tx_hash || typeof tx_hash !== "string") {
-      return NextResponse.json({ error: "tx_hash required for USDT payment" }, { status: 400 });
+    if (!tx_hash || typeof tx_hash !== "string" || !/^0x[0-9a-fA-F]{64}$/.test(tx_hash)) {
+      return NextResponse.json({ error: "Valid tx_hash required for USDT payment" }, { status: 400 });
     }
-    // TODO: Verify USDT tx_hash on-chain before proceeding
-    // For now, reject USDT until verification is implemented
-    return NextResponse.json({ error: "USDT payment verification not yet implemented. Use credits." }, { status: 501 });
+    // Replay protection — check both credit + premium tx records
+    const seenAsCredit = await prisma.creditPurchase.findFirst({ where: { payment_tx_hash: tx_hash } });
+    const seenAsPremium = await prisma.transaction.findFirst({ where: { tx_hash, type: "premium_buy" } });
+    if (seenAsCredit || seenAsPremium) {
+      return NextResponse.json({ error: "Transaction already used" }, { status: 409 });
+    }
+    const v = await verifyShopUsdt(tx_hash, user.wallet_address, item.priceUSD);
+    if ("error" in v) return NextResponse.json({ error: v.error }, { status: 400 });
+    await prisma.transaction.create({
+      data: {
+        user_id: user.id,
+        type: "premium_buy",
+        tx_hash,
+        chain: "BSC",
+      },
+    });
+    usdtPaid = true;
   }
 
-  const creditPrice = item.priceCredits || 0;
-  if (user.credits < creditPrice) {
+  const creditPrice = usdtPaid ? 0 : (item.priceCredits || 0);
+  if (!usdtPaid && user.credits < creditPrice) {
     return NextResponse.json({
       error: "Insufficient credits",
       required: creditPrice,

@@ -512,6 +512,7 @@ export default function App() {
           marginBottom: 14, flexWrap: "wrap",
         }}>
           {[
+            { href: "/stats", label: "Stats" },
             { href: "/terms", label: "Terms" },
             { href: "/privacy", label: "Privacy" },
             { href: "/contracts", label: "Contracts" },
