@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseUnits } from "viem";
 
@@ -20,8 +20,22 @@ export function useDirectUsdtPay() {
   const { writeContractAsync, data: hash, isPending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
   const [error, setError] = useState<string | null>(null);
+  const [treasury, setTreasury] = useState<`0x${string}` | "">(
+    ((process.env.NEXT_PUBLIC_TREASURY_WALLET || "").trim() as `0x${string}`) || ""
+  );
 
-  const treasury = (process.env.NEXT_PUBLIC_TREASURY_WALLET || "").trim() as `0x${string}`;
+  // Runtime fetch — covers builds where NEXT_PUBLIC_TREASURY_WALLET wasn't set at build time
+  useEffect(() => {
+    if (treasury) return;
+    fetch("/api/config")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.treasury && /^0x[a-fA-F0-9]{40}$/.test(d.treasury)) {
+          setTreasury(d.treasury as `0x${string}`);
+        }
+      })
+      .catch(() => {});
+  }, [treasury]);
 
   const pay = async (amountUsd: number): Promise<{ hash: `0x${string}` } | { error: string }> => {
     setError(null);

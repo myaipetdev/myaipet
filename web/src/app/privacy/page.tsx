@@ -63,7 +63,7 @@ export default function PrivacyPage() {
           You can: (a) export all your pet data via Sovereignty → Export SOUL Data; (b) delete all
           off-chain data via Sovereignty → Delete All Data, which produces a SHA-256 deletion
           proof; (c) toggle data-sharing consent toggles at any time. For requests we cannot fulfill
-          via the UI, contact dev@boredbrain.app.
+          via the UI, contact support@myaipet.ai.
         </Section>
 
         <Section title="7. Data Retention">
@@ -91,7 +91,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="12. Contact">
-          dev@boredbrain.app
+          support@myaipet.ai
         </Section>
       </div>
     </div>

@@ -1029,19 +1029,25 @@ export default function PetProfile() {
   const handleChat = async () => {
     if (!activePet || !chatInput.trim() || chatLoading) return;
     const msg = chatInput.trim();
+    const petName = activePet.name; // snapshot to avoid null-deref later
+    const petId = activePet.id;
     setChatInput("");
     setChatMessages(prev => [...prev, { role: "user", text: msg }]);
     setChatLoading(true);
     try {
-      const res = await api.pets.chat(activePet.id, msg);
+      const res = await api.pets.chat(petId, msg);
       setChatMessages(prev => [...prev, { role: "pet", text: res.reply }]);
-      await loadPetStatus(activePet.id);
-      await loadPets();
-    } catch {
-      setChatMessages(prev => [...prev, { role: "pet", text: `*${activePet.name} tilts head confused*` }]);
+      try { await loadPetStatus(petId); } catch {}
+      try { await loadPets(); } catch {}
+    } catch (e: any) {
+      const errMsg = e?.message?.includes("429") || e?.message?.includes("exhausted")
+        ? `*${petName} looks tired — model credits are out, please try later*`
+        : `*${petName} tilts head confused*`;
+      setChatMessages(prev => [...prev, { role: "pet", text: errMsg }]);
+    } finally {
+      setChatLoading(false);
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
-    setChatLoading(false);
-    setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
   };
 
   const selectPet = (pet: any) => {
@@ -1139,6 +1145,14 @@ export default function PetProfile() {
   }
 
   const pet = petStatus || activePet;
+  // Guard: pet may briefly be null right after release before loadPets resolves the empty list
+  if (!pet) {
+    return (
+      <div style={{ padding: "140px 40px", textAlign: "center", color: "rgba(26,26,46,0.5)" }}>
+        Loading...
+      </div>
+    );
+  }
   const mood = pet.current_mood || "neutral";
   const moodCfg = MOOD_CONFIG[mood] || MOOD_CONFIG.neutral;
   const expNeeded = pet.level * 100;
@@ -2123,10 +2137,14 @@ export default function PetProfile() {
                 onKeyDown={e => e.key === "Enter" && handleChat()}
                 placeholder={`Message ${pet.name}...`}
                 spellCheck={false}
+                disabled={chatLoading}
+                autoFocus
                 style={{
                   flex: 1, padding: "10px 14px", borderRadius: 12,
                   border: "1px solid rgba(0,0,0,0.08)", outline: "none",
-                  fontFamily: "mono", fontSize: 12, background: "rgba(0,0,0,0.02)",
+                  fontFamily: "'Space Grotesk',sans-serif", fontSize: 13,
+                  background: chatLoading ? "rgba(0,0,0,0.04)" : "white",
+                  color: "#1a1a2e",
                 }}
               />
               <button

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { api } from "@/lib/api";
+import { api, getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 
 // ── Types ──
@@ -371,11 +371,14 @@ export default function SovereigntyDashboard() {
     if (!selectedPet) return;
     setLoading(true);
     try {
-      const [soulRes, ckptRes, memsRes, mintableRes] = await Promise.all([
+      const [soulRes, ckptRes, memsRes, mintableRes, consentRes] = await Promise.all([
         soulApi.get(selectedPet.id).catch(() => null),
         soulApi.checkpoints(selectedPet.id, 50, 0).catch(() => null),
         memoryNftApi.list(selectedPet.id).catch(() => null),
         memoryNftApi.mintable(selectedPet.id).catch(() => null),
+        fetch(`/api/petclaw/consent?petId=${selectedPet.id}`, {
+          headers: getAuthHeaders(),
+        }).then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
       const toArr = (v: any) => Array.isArray(v) ? v : [];
       setSoul(soulRes?.soul || soulRes || null);
@@ -383,9 +386,27 @@ export default function SovereigntyDashboard() {
       setMemoryNfts(toArr(memsRes?.memories ?? memsRes?.memory_nfts ?? memsRes));
       setMintableMemories(toArr(mintableRes?.memories ?? mintableRes));
       setSuccessorInput((soulRes?.soul?.successor_wallet || soulRes?.successor_wallet) || "");
+      if (consentRes?.consent) setConsent(consentRes.consent);
     } catch {}
     setLoading(false);
   }, [selectedPet]);
+
+  // Persist consent toggle (debounced via flag)
+  const saveConsent = async (next: typeof consent) => {
+    if (!selectedPet) return;
+    try {
+      await fetch("/api/petclaw/consent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ petId: selectedPet.id, consent: next }),
+      });
+      setSovMsg("Consent saved");
+      setTimeout(() => setSovMsg(null), 2000);
+    } catch {
+      setSovMsg("Failed to save consent");
+      setTimeout(() => setSovMsg(null), 3000);
+    }
+  };
 
   useEffect(() => { fetchSovereigntyData(); }, [fetchSovereigntyData]);
 
@@ -504,10 +525,12 @@ export default function SovereigntyDashboard() {
               value={selectedPet?.id || ""}
               onChange={(e) => { const p = pets.find((x) => String(x.id) === e.target.value); if (p) setSelectedPet(p); }}
               style={{
-                padding: "8px 16px", borderRadius: 999, border: "1.5px solid rgba(0,0,0,0.1)",
-                background: "white", color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif",
+                padding: "8px 36px 8px 16px", borderRadius: 999, border: "1.5px solid rgba(0,0,0,0.1)",
+                background: `white url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%231a1a2e' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>") no-repeat right 14px center`,
+                color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif",
                 fontSize: 13, fontWeight: 600, cursor: "pointer", outline: "none",
                 boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                appearance: "none", WebkitAppearance: "none", MozAppearance: "none",
               }}
             >
               {pets.map((p) => (
@@ -1515,7 +1538,13 @@ export default function SovereigntyDashboard() {
                       <div style={{ fontSize: 12, color: "rgba(26,26,46,0.45)", fontFamily: "'Space Grotesk',sans-serif", marginTop: 2 }}>{desc}</div>
                     </div>
                     <div
-                      onClick={() => setConsent(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }))}
+                      onClick={() => {
+                        setConsent(prev => {
+                          const next = { ...prev, [key]: !prev[key as keyof typeof prev] };
+                          saveConsent(next);
+                          return next;
+                        });
+                      }}
                       style={{
                         width: 44, height: 24, borderRadius: 12,
                         background: (consent as any)[key] ? "linear-gradient(135deg, #f59e0b, #d97706)" : "rgba(0,0,0,0.08)",

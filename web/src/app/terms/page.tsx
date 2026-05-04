@@ -98,7 +98,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="12. Contact">
-          dev@boredbrain.app
+          support@myaipet.ai
         </Section>
       </div>
     </div>
