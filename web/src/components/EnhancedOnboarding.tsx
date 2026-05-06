@@ -3,14 +3,18 @@
 import { useState, useRef } from "react";
 import { api } from "@/lib/api";
 
-/**
- * Enhanced Onboarding — After pet adoption
- * Centered on the PET (not owner selfie)
- * Steps: Meet Pet → Name Your Pet's Voice → Personality Quiz → Connect Platforms → Done
- */
+interface Pet {
+  id: number;
+  name: string;
+  species: number;
+  personality_type?: string;
+  level?: number;
+  element?: string;
+  avatar_url?: string | null;
+}
 
 interface Props {
-  pet: any;
+  pet: Pet;
   onComplete: () => void;
   onSkip: () => void;
 }
@@ -20,83 +24,94 @@ type Step = "intro" | "voice" | "quiz" | "social" | "done";
 const QUIZ_QUESTIONS = [
   {
     id: "humor",
-    question: "How should your pet be funny?",
+    question: "Pick your humor style",
     options: [
-      { value: "meme", label: "Meme Lord 🤣", desc: "Internet humor, memes, references" },
-      { value: "warm", label: "Warm & Wholesome 🥰", desc: "Sweet, supportive, dad jokes" },
-      { value: "sarcastic", label: "Sarcastic 😏", desc: "Dry wit, clever comebacks" },
-      { value: "chaotic", label: "Chaotic Energy 🤪", desc: "Random, unpredictable, wild" },
+      { value: "dry", label: "Dry & deadpan", desc: "Subtle, sarcastic" },
+      { value: "playful", label: "Playful", desc: "Banter & wordplay" },
+      { value: "wholesome", label: "Wholesome", desc: "Kind, encouraging" },
+      { value: "edgy", label: "Edgy", desc: "Sharp & bold" },
     ],
   },
   {
     id: "communication",
-    question: "How should your pet talk?",
+    question: "How do you usually text?",
     options: [
-      { value: "brief", label: "Short & Sweet 💬", desc: "1-2 sentences, to the point" },
-      { value: "detailed", label: "Detailed 📝", desc: "Thoughtful, longer responses" },
-      { value: "emoji-heavy", label: "Emoji Lover 😍✨🔥", desc: "Express through emojis" },
-      { value: "chill", label: "Super Chill 😎", desc: "Relaxed, lowercase, vibes" },
+      { value: "concise", label: "Short & punchy", desc: "Few words, fast" },
+      { value: "detailed", label: "Detailed", desc: "Full sentences" },
+      { value: "emoji", label: "Emoji-heavy", desc: "Express with icons" },
+      { value: "casual", label: "Casual", desc: "Lowercase, chill" },
     ],
   },
   {
     id: "role",
-    question: "What role should your pet play?",
+    question: "Your default vibe?",
     options: [
-      { value: "companion", label: "Best Friend 🤝", desc: "Always there, casual chat" },
-      { value: "coach", label: "Life Coach 💪", desc: "Motivates, pushes you forward" },
-      { value: "entertainer", label: "Entertainer 🎭", desc: "Makes you laugh, tells stories" },
-      { value: "mentor", label: "Wise Mentor 🧙", desc: "Thoughtful advice, deep talks" },
+      { value: "supporter", label: "Supportive friend" },
+      { value: "challenger", label: "Honest challenger" },
+      { value: "thinker", label: "Calm thinker" },
+      { value: "cheerleader", label: "Energetic cheerleader" },
     ],
   },
   {
     id: "interests",
-    question: "What should your pet care about? (pick 3)",
+    question: "What lights you up? (pick up to 3)",
     multi: true,
     options: [
-      { value: "crypto", label: "Crypto & Web3" }, { value: "gaming", label: "Gaming" },
-      { value: "music", label: "Music" }, { value: "coding", label: "Coding" },
-      { value: "art", label: "Art & Design" }, { value: "food", label: "Food & Cooking" },
-      { value: "fitness", label: "Fitness" }, { value: "travel", label: "Travel" },
-      { value: "anime", label: "Anime & Manga" }, { value: "memes", label: "Memes & Culture" },
-      { value: "science", label: "Science" }, { value: "business", label: "Business" },
+      { value: "tech", label: "Tech & coding" },
+      { value: "art", label: "Art & design" },
+      { value: "music", label: "Music" },
+      { value: "fitness", label: "Fitness" },
+      { value: "books", label: "Reading" },
+      { value: "gaming", label: "Gaming" },
+      { value: "travel", label: "Travel" },
+      { value: "food", label: "Food" },
     ],
   },
   {
     id: "frequency",
-    question: "How often should your pet reach out?",
+    question: "How often should I check in?",
     options: [
-      { value: "rarely", label: "When I talk first 🤫", desc: "Quiet, responds only" },
-      { value: "sometimes", label: "Sometimes 💭", desc: "Occasional thoughts and check-ins" },
-      { value: "often", label: "Often 💬", desc: "Regular messages throughout the day" },
-      { value: "always", label: "Always There 🫂", desc: "Constant companion, never stops" },
+      { value: "lots", label: "All day", desc: "Multiple chats daily" },
+      { value: "regular", label: "A few times a day" },
+      { value: "occasional", label: "Once a day-ish" },
+      { value: "rare", label: "Only when I open you" },
     ],
   },
 ];
 
 const SOCIAL_PLATFORMS = [
-  { id: "telegram", name: "Telegram", icon: "T", color: "#2AABEE", desc: "Chat on Telegram" },
-  { id: "twitter", name: "Twitter/X", icon: "𝕏", color: "#000", desc: "Post & interact on X" },
-  { id: "discord", name: "Discord", icon: "D", color: "#5865F2", desc: "Join your servers" },
+  { id: "telegram", name: "Telegram", icon: "T", color: "#2AABEE", desc: "DMs & autoposts" },
+  { id: "twitter",  name: "Twitter/X", icon: "𝕏", color: "#000",   desc: "Public voice" },
+  { id: "discord",  name: "Discord",  icon: "D", color: "#5865F2", desc: "Server presence" },
+  { id: "chrome",   name: "Chrome",   icon: "🌐", color: "#4285F4", desc: "Browser companion" },
 ];
 
-// Pet avatar component used throughout
-function PetAvatar({ pet, size = 80 }: { pet: any; size?: number }) {
+const PET_EMOJIS = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
+
+function PetAvatar({ pet, size = 96 }: { pet: Pet; size?: number }) {
   if (pet.avatar_url) {
     return (
-      <img src={pet.avatar_url} alt={pet.name}
-        style={{ width: size, height: size, borderRadius: size * 0.25, objectFit: "cover",
-          border: "3px solid rgba(245,158,11,0.4)",
-          boxShadow: "0 8px 30px rgba(245,158,11,0.2)" }} />
+      <img
+        src={pet.avatar_url}
+        alt={pet.name}
+        style={{
+          width: size, height: size, borderRadius: size * 0.28, objectFit: "cover",
+          border: "4px solid #fff",
+          boxShadow: "0 12px 32px rgba(245,158,11,0.25), 0 0 0 6px rgba(245,158,11,0.12)",
+        }}
+      />
     );
   }
-  const emojis = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
   return (
-    <div style={{ width: size, height: size, borderRadius: size * 0.25,
-      background: "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(139,92,246,0.1))",
-      border: "3px solid rgba(245,158,11,0.3)",
+    <div style={{
+      width: size, height: size, borderRadius: size * 0.28,
+      background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
+      border: "4px solid #fff",
+      boxShadow: "0 12px 32px rgba(245,158,11,0.25), 0 0 0 6px rgba(245,158,11,0.12)",
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.5 }}>
-      {emojis[pet.species] || "🐾"}
+      fontSize: size * 0.5,
+    }}>
+      {PET_EMOJIS[pet.species] || "🐾"}
     </div>
   );
 }
@@ -105,18 +120,15 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   const [step, setStep] = useState<Step>("intro");
   const [points, setPoints] = useState(0);
 
-  // Voice state
   const [recording, setRecording] = useState(false);
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [voiceDuration, setVoiceDuration] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const voiceTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Quiz state
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string | string[]>>({});
 
-  // Social state
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -147,7 +159,6 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
     if (voiceTimerRef.current) clearInterval(voiceTimerRef.current);
   };
 
-  // Quiz handlers
   const handleQuizAnswer = (qId: string, val: string, isMulti?: boolean) => {
     if (isMulti) {
       const cur = (quizAnswers[qId] as string[]) || [];
@@ -157,7 +168,6 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
     }
   };
 
-  // Save
   const saveAndComplete = async () => {
     setSaving(true);
     try {
@@ -173,108 +183,236 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
     setStep("done");
   };
 
-  // Styles
-  const card: React.CSSProperties = {
-    background: "rgba(0,0,0,0.5)", backdropFilter: "blur(24px)",
-    borderRadius: 24, padding: 36, maxWidth: 460, margin: "0 auto",
-    border: "1px solid rgba(255,255,255,0.08)", color: "#fff",
-    fontFamily: "'Space Grotesk', sans-serif",
+  // ── Shared shell ──
+  const stepIndex: Record<Step, number> = { intro: 0, voice: 1, quiz: 2, social: 3, done: 4 };
+  const totalSteps = 4; // intro is hero, then 3 substeps, then done is celebration
+  const progressIdx = step === "done" ? 4 : stepIndex[step];
+
+  const Shell = ({ children, hideProgress }: { children: React.ReactNode; hideProgress?: boolean }) => (
+    <div style={{
+      width: "100%", maxWidth: 460,
+      background: "linear-gradient(180deg, #fffaf0 0%, #ffffff 100%)",
+      borderRadius: 28,
+      border: "1px solid rgba(245,158,11,0.18)",
+      boxShadow: "0 24px 60px rgba(245,158,11,0.16), 0 8px 24px rgba(26,26,46,0.08)",
+      padding: "32px 28px",
+      fontFamily: "'Space Grotesk', sans-serif",
+      color: "#1a1a2e",
+      animation: "obSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      {/* Decorative blobs */}
+      <div style={{ position: "absolute", top: -60, right: -60, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,158,11,0.18), transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: -80, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(192,132,252,0.13), transparent 70%)", pointerEvents: "none" }} />
+
+      {!hideProgress && (
+        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 22, position: "relative" }}>
+          {Array.from({ length: totalSteps }).map((_, i) => (
+            <div key={i} style={{
+              height: 4, flex: 1, maxWidth: 56, borderRadius: 2,
+              background: i < progressIdx
+                ? "linear-gradient(90deg, #f59e0b, #d97706)"
+                : i === progressIdx
+                  ? "linear-gradient(90deg, #fbbf24, #f59e0b)"
+                  : "rgba(0,0,0,0.07)",
+              transition: "all 0.4s",
+              boxShadow: i === progressIdx ? "0 0 12px rgba(251,191,36,0.5)" : "none",
+            }} />
+          ))}
+        </div>
+      )}
+
+      <div style={{ position: "relative" }}>{children}</div>
+    </div>
+  );
+
+  // Style helpers
+  const primaryBtn: React.CSSProperties = {
+    width: "100%", padding: "14px 24px", borderRadius: 14, border: "none",
+    background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "white",
+    fontSize: 15, fontWeight: 800, cursor: "pointer",
+    fontFamily: "inherit", marginTop: 18, letterSpacing: "0.01em",
+    boxShadow: "0 8px 24px rgba(245,158,11,0.32)",
+    transition: "transform 0.15s, box-shadow 0.2s",
   };
-  const btn1: React.CSSProperties = {
-    padding: "14px 28px", borderRadius: 14, border: "none",
-    background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff",
-    fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-    width: "100%", marginTop: 16, transition: "transform .2s",
+  const ghostBtn: React.CSSProperties = {
+    width: "100%", padding: "12px 24px", borderRadius: 14,
+    background: "transparent", border: "none",
+    color: "rgba(26,26,46,0.45)", fontFamily: "inherit",
+    fontSize: 13, fontWeight: 600, cursor: "pointer",
+    marginTop: 8,
   };
-  const btn2: React.CSSProperties = { ...btn1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#999" };
-  const optStyle = (on: boolean): React.CSSProperties => ({
-    padding: "14px 16px", borderRadius: 12, cursor: "pointer", transition: "all .2s", textAlign: "left" as const,
-    border: on ? "2px solid #f59e0b" : "1px solid rgba(255,255,255,0.08)",
-    background: on ? "rgba(245,158,11,0.1)" : "rgba(255,255,255,0.03)",
+  const optionStyle = (on: boolean): React.CSSProperties => ({
+    padding: "14px 16px", borderRadius: 14, cursor: "pointer",
+    transition: "all 0.18s", textAlign: "left" as const,
+    border: on ? "2px solid #f59e0b" : "1.5px solid rgba(0,0,0,0.07)",
+    background: on
+      ? "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,191,36,0.06))"
+      : "white",
+    boxShadow: on ? "0 4px 14px rgba(245,158,11,0.14)" : "0 1px 3px rgba(0,0,0,0.03)",
+    transform: on ? "scale(1.01)" : "scale(1)",
   });
 
-  // ── INTRO: Meet your pet ──
+  // Eyebrow label (e.g. "STEP 1 / 3")
+  const eyebrow = (text: string) => (
+    <div style={{
+      display: "inline-block",
+      padding: "4px 10px", borderRadius: 999,
+      background: "rgba(245,158,11,0.12)",
+      color: "#b45309",
+      fontSize: 11, fontWeight: 700, letterSpacing: "0.12em",
+      textTransform: "uppercase", marginBottom: 10,
+    }}>{text}</div>
+  );
+
+  // ══════════════════════════════════════════════════════════
+  // ── INTRO ──
+  // ══════════════════════════════════════════════════════════
   if (step === "intro") {
     return (
-      <div style={card}>
+      <Shell hideProgress>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div style={{ marginBottom: 16 }}>
-            <PetAvatar pet={pet} size={120} />
+          <div style={{ marginBottom: 18, animation: "obFloat 3s ease-in-out infinite" }}>
+            <PetAvatar pet={pet} size={128} />
           </div>
-          <h2 style={{ fontSize: 28, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>
-            {pet.name} is here!
+          {eyebrow("Welcome")}
+          <h2 style={{ fontSize: 32, fontWeight: 800, color: "#1a1a2e", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
+            Meet {pet.name}
           </h2>
-          <p style={{ color: "#888", fontSize: 13 }}>
-            Lv.{pet.level || 1} · {pet.personality_type || "playful"} · {pet.element || "normal"}
-          </p>
-          <p style={{ color: "#aaa", fontSize: 14, lineHeight: 1.6, marginTop: 12 }}>
-            Let's teach {pet.name} how to be the perfect companion for you.
+          <div style={{
+            display: "inline-flex", gap: 6, alignItems: "center",
+            padding: "5px 12px", borderRadius: 999,
+            background: "rgba(0,0,0,0.04)",
+            fontSize: 12, color: "rgba(26,26,46,0.6)", fontWeight: 600,
+            marginBottom: 14,
+          }}>
+            <span>Lv.{pet.level || 1}</span>
+            <span>·</span>
+            <span style={{ textTransform: "capitalize" }}>{pet.personality_type || "playful"}</span>
+            {pet.element && pet.element !== "normal" && (<><span>·</span><span style={{ textTransform: "capitalize" }}>{pet.element}</span></>)}
+          </div>
+          <p style={{ color: "rgba(26,26,46,0.62)", fontSize: 15, lineHeight: 1.55, margin: 0, padding: "0 8px" }}>
+            A 2-minute setup so {pet.name} can match your voice, tone, and where you live online.
           </p>
         </div>
 
-        <div style={{ display: "grid", gap: 8, marginBottom: 20 }}>
+        <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
           {[
-            { icon: "🎤", label: "Teach your voice", pts: "+50", desc: `${pet.name} learns your tone` },
+            { icon: "🎤", label: "Teach your voice", pts: "+50", desc: "Pet learns your tone" },
             { icon: "📝", label: "Personality match", pts: "+30", desc: "5 quick questions" },
-            { icon: "🔗", label: "Connect platforms", pts: "+100", desc: `${pet.name} goes everywhere with you` },
-          ].map((item, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12,
-              background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-              <span style={{ fontSize: 22 }}>{item.icon}</span>
+            { icon: "🔗", label: "Connect platforms", pts: "+100", desc: "Same pet, everywhere" },
+          ].map((item) => (
+            <div key={item.label} style={{
+              display: "flex", alignItems: "center", gap: 14,
+              padding: "12px 14px", borderRadius: 14,
+              background: "white",
+              border: "1px solid rgba(0,0,0,0.06)",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.03)",
+            }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 11,
+                background: "linear-gradient(135deg, rgba(245,158,11,0.14), rgba(192,132,252,0.08))",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 19,
+              }}>{item.icon}</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#e0e0e0" }}>{item.label}</div>
-                <div style={{ fontSize: 10, color: "#666" }}>{item.desc}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>{item.label}</div>
+                <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginTop: 1 }}>{item.desc}</div>
               </div>
-              <span style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700 }}>{item.pts}</span>
+              <span style={{
+                fontSize: 11, padding: "3px 10px", borderRadius: 999,
+                background: "rgba(74,222,128,0.14)", color: "#16a34a", fontWeight: 700,
+              }}>{item.pts}</span>
             </div>
           ))}
         </div>
 
-        <button onClick={() => setStep("voice")} style={btn1}>Let's go! ✨</button>
-        <button onClick={onSkip} style={{ ...btn2, marginTop: 8 }}>Skip for now</button>
-      </div>
+        <button onClick={() => setStep("voice")} style={primaryBtn}
+          onMouseOver={(e) => e.currentTarget.style.transform = "translateY(-1px)"}
+          onMouseOut={(e) => e.currentTarget.style.transform = ""}>
+          Let's go ✨
+        </button>
+        <button onClick={onSkip} style={ghostBtn}>Skip for now</button>
+      </Shell>
     );
   }
 
-  // ── VOICE: Teach your pet your voice ──
+  // ══════════════════════════════════════════════════════════
+  // ── VOICE ──
+  // ══════════════════════════════════════════════════════════
   if (step === "voice") {
     return (
-      <div style={card}>
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <PetAvatar pet={pet} size={64} />
-          <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, letterSpacing: "0.1em", marginTop: 12 }}>STEP 1 / 3</div>
-          <h3 style={{ fontSize: 20, fontWeight: 700, marginTop: 8 }}>🎤 Teach {pet.name} your voice</h3>
-          <p style={{ color: "#888", fontSize: 13 }}>Record 10-30 seconds so {pet.name} can match your tone</p>
+      <Shell>
+        <div style={{ textAlign: "center", marginBottom: 18 }}>
+          {eyebrow("Step 1 of 3")}
+          <h3 style={{ fontSize: 24, fontWeight: 800, color: "#1a1a2e", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
+            🎤 Teach {pet.name} your voice
+          </h3>
+          <p style={{ color: "rgba(26,26,46,0.55)", fontSize: 14, margin: 0 }}>
+            10–30 seconds. We&apos;ll match the tone, not store the audio.
+          </p>
         </div>
 
-        <div style={{ textAlign: "center", padding: 20 }}>
+        <div style={{
+          padding: "32px 20px", borderRadius: 20,
+          background: recording ? "linear-gradient(135deg, rgba(248,113,113,0.08), rgba(220,38,38,0.04))" : "rgba(0,0,0,0.025)",
+          border: recording ? "2px dashed rgba(220,38,38,0.3)" : "1px dashed rgba(0,0,0,0.1)",
+          textAlign: "center",
+          transition: "all 0.3s",
+        }}>
           {recording ? (
             <>
-              <div style={{ fontSize: 48, marginBottom: 12, animation: "pulse 1.5s infinite" }}>🔴</div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: "#f87171", fontFamily: "monospace" }}>{voiceDuration}s</div>
-              <button onClick={stopRecording} style={{ ...btn1, background: "#dc2626", marginTop: 16 }}>Stop Recording</button>
+              <div style={{
+                width: 80, height: 80, borderRadius: "50%",
+                margin: "0 auto 12px",
+                background: "linear-gradient(135deg, #f87171, #dc2626)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 32, color: "white",
+                boxShadow: "0 0 0 0 rgba(220,38,38,0.5)",
+                animation: "obPulseRing 1.4s ease-out infinite",
+              }}>🎙️</div>
+              <div style={{ fontSize: 32, fontWeight: 800, color: "#dc2626", fontFamily: "monospace" }}>{voiceDuration}s</div>
+              <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginTop: 4 }}>Recording…</div>
+              <button onClick={stopRecording} style={{ ...primaryBtn, background: "#dc2626", boxShadow: "0 8px 24px rgba(220,38,38,0.32)", maxWidth: 220, margin: "16px auto 0" }}>
+                Stop Recording
+              </button>
             </>
           ) : voiceBlob ? (
             <>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-              <div style={{ fontSize: 14, color: "#4ade80" }}>Recorded {voiceDuration}s</div>
-              <button onClick={() => { addPoints(50); setStep("quiz"); }} style={btn1}>Save & Continue (+50 pts) ✨</button>
-              <button onClick={() => { setVoiceBlob(null); setVoiceDuration(0); }} style={{ ...btn2, marginTop: 8 }}>Re-record</button>
+              <div style={{
+                width: 70, height: 70, borderRadius: "50%",
+                margin: "0 auto 14px",
+                background: "linear-gradient(135deg, #4ade80, #16a34a)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 32, color: "white",
+              }}>✓</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#16a34a" }}>Got {voiceDuration}s</div>
+              <button onClick={() => { addPoints(50); setStep("quiz"); }} style={{ ...primaryBtn, maxWidth: 280, margin: "16px auto 0" }}>
+                Save & Continue (+50)
+              </button>
+              <button onClick={() => { setVoiceBlob(null); setVoiceDuration(0); }} style={ghostBtn}>Re-record</button>
             </>
           ) : (
             <>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🎙️</div>
-              <button onClick={startRecording} style={btn1}>Start Recording</button>
+              <div style={{ fontSize: 56, marginBottom: 10 }}>🎙️</div>
+              <p style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", margin: "0 0 14px" }}>
+                Tap below and read anything — a sentence, a memory, a hello.
+              </p>
+              <button onClick={startRecording} style={{ ...primaryBtn, maxWidth: 240, margin: 0 }}>
+                Start Recording
+              </button>
             </>
           )}
         </div>
-        <button onClick={() => setStep("quiz")} style={{ ...btn2, marginTop: 8 }}>Skip</button>
-        <style>{`@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
-      </div>
+        <button onClick={() => setStep("quiz")} style={ghostBtn}>Skip this step</button>
+      </Shell>
     );
   }
 
-  // ── QUIZ: Personality match ──
+  // ══════════════════════════════════════════════════════════
+  // ── QUIZ ──
+  // ══════════════════════════════════════════════════════════
   if (step === "quiz") {
     const q = QUIZ_QUESTIONS[quizIndex];
     const cur = quizAnswers[q.id];
@@ -282,95 +420,182 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
     const canNext = isMulti ? ((cur as string[])?.length || 0) > 0 : !!cur;
 
     return (
-      <div style={card}>
+      <Shell>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <PetAvatar pet={pet} size={48} />
-          <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, letterSpacing: "0.1em", marginTop: 10 }}>
-            STEP 2 / 3 — Q{quizIndex + 1}/{QUIZ_QUESTIONS.length}
-          </div>
-          <h3 style={{ fontSize: 18, fontWeight: 700, marginTop: 8 }}>{q.question}</h3>
-          {isMulti && <p style={{ color: "#888", fontSize: 12 }}>Select up to 3</p>}
+          {eyebrow(`Step 2 of 3 · Q${quizIndex + 1}/${QUIZ_QUESTIONS.length}`)}
+          <h3 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
+            {q.question}
+          </h3>
+          {isMulti && <p style={{ color: "rgba(26,26,46,0.5)", fontSize: 12, margin: 0 }}>Pick up to 3</p>}
         </div>
 
-        <div style={{ display: "grid", gap: 8 }}>
+        <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
           {q.options.map(opt => {
             const on = isMulti ? ((cur as string[]) || []).includes(opt.value) : cur === opt.value;
             return (
-              <div key={opt.value} onClick={() => handleQuizAnswer(q.id, opt.value, isMulti)} style={optStyle(on)}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: on ? "#f59e0b" : "#e0e0e0" }}>{opt.label}</div>
-                {"desc" in opt && <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>{(opt as any).desc}</div>}
+              <div key={opt.value} onClick={() => handleQuizAnswer(q.id, opt.value, isMulti)} style={optionStyle(on)}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: on ? "#b45309" : "#1a1a2e" }}>{opt.label}</div>
+                {"desc" in opt && <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginTop: 3 }}>{(opt as any).desc}</div>}
               </div>
             );
           })}
         </div>
 
-        <button onClick={() => { if (quizIndex < QUIZ_QUESTIONS.length - 1) setQuizIndex(quizIndex + 1); else { addPoints(30); setStep("social"); } }}
-          disabled={!canNext} style={{ ...btn1, opacity: canNext ? 1 : 0.4, cursor: canNext ? "pointer" : "not-allowed" }}>
-          {quizIndex < QUIZ_QUESTIONS.length - 1 ? "Next →" : "Done! (+30 pts) ✨"}
-        </button>
-
-        <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
+        {/* Question dots */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 4 }}>
           {QUIZ_QUESTIONS.map((_, i) => (
-            <div key={i} style={{ width: 8, height: 8, borderRadius: 4, background: i <= quizIndex ? "#f59e0b" : "rgba(255,255,255,0.1)" }} />
+            <div key={i} style={{
+              width: i === quizIndex ? 18 : 6, height: 6, borderRadius: 3,
+              background: i <= quizIndex ? "#f59e0b" : "rgba(0,0,0,0.08)",
+              transition: "all 0.3s",
+            }} />
           ))}
         </div>
-      </div>
+
+        <button
+          onClick={() => { if (quizIndex < QUIZ_QUESTIONS.length - 1) setQuizIndex(quizIndex + 1); else { addPoints(30); setStep("social"); } }}
+          disabled={!canNext}
+          style={{ ...primaryBtn, opacity: canNext ? 1 : 0.4, cursor: canNext ? "pointer" : "not-allowed", boxShadow: canNext ? "0 8px 24px rgba(245,158,11,0.32)" : "none" }}>
+          {quizIndex < QUIZ_QUESTIONS.length - 1 ? "Next →" : "Done (+30)"}
+        </button>
+        {quizIndex > 0 && (
+          <button onClick={() => setQuizIndex(quizIndex - 1)} style={ghostBtn}>← Back</button>
+        )}
+      </Shell>
     );
   }
 
-  // ── SOCIAL: Connect platforms ──
+  // ══════════════════════════════════════════════════════════
+  // ── SOCIAL ──
+  // ══════════════════════════════════════════════════════════
   if (step === "social") {
     return (
-      <div style={card}>
+      <Shell>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <PetAvatar pet={pet} size={48} />
-          <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, letterSpacing: "0.1em", marginTop: 10 }}>STEP 3 / 3</div>
-          <h3 style={{ fontSize: 20, fontWeight: 700, marginTop: 8 }}>🔗 Where should {pet.name} live?</h3>
-          <p style={{ color: "#888", fontSize: 13 }}>{pet.name} can follow you across platforms</p>
+          {eyebrow("Step 3 of 3")}
+          <h3 style={{ fontSize: 24, fontWeight: 800, color: "#1a1a2e", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
+            Where should {pet.name} live?
+          </h3>
+          <p style={{ color: "rgba(26,26,46,0.55)", fontSize: 14, margin: 0 }}>
+            Same memory, same personality, anywhere you are.
+          </p>
         </div>
 
-        <div style={{ display: "grid", gap: 10 }}>
+        <div style={{ display: "grid", gap: 10, marginBottom: 8 }}>
           {SOCIAL_PLATFORMS.map(p => {
             const on = connectedPlatforms.includes(p.id);
             return (
-              <div key={p.id} onClick={() => { if (!on) { setConnectedPlatforms([...connectedPlatforms, p.id]); addPoints(33); } }}
-                style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 12, cursor: "pointer",
-                  border: on ? `2px solid ${p.color}` : "1px solid rgba(255,255,255,0.08)",
-                  background: on ? `${p.color}10` : "rgba(255,255,255,0.03)" }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: p.color, color: "#fff",
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800 }}>{p.icon}</div>
+              <div key={p.id} onClick={() => {
+                if (on) {
+                  setConnectedPlatforms(connectedPlatforms.filter(id => id !== p.id));
+                } else {
+                  setConnectedPlatforms([...connectedPlatforms, p.id]);
+                  addPoints(33);
+                }
+              }} style={{
+                display: "flex", alignItems: "center", gap: 14,
+                padding: "13px 16px", borderRadius: 14, cursor: "pointer",
+                border: on ? `2px solid ${p.color}` : "1.5px solid rgba(0,0,0,0.07)",
+                background: on ? `${p.color}10` : "white",
+                transition: "all 0.18s",
+                boxShadow: on ? `0 6px 18px ${p.color}24` : "0 1px 3px rgba(0,0,0,0.03)",
+                transform: on ? "scale(1.01)" : "scale(1)",
+              }}>
+                <div style={{
+                  width: 42, height: 42, borderRadius: 12,
+                  background: p.color, color: "white",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 18, fontWeight: 800, flexShrink: 0,
+                }}>{p.icon}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#e0e0e0" }}>{p.name}</div>
-                  <div style={{ fontSize: 11, color: "#666" }}>{p.desc}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>{p.name}</div>
+                  <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginTop: 1 }}>{p.desc}</div>
                 </div>
-                <span style={{ fontSize: 12, color: on ? "#4ade80" : "#666" }}>{on ? "✓" : "Connect"}</span>
+                <span style={{
+                  fontSize: 11, padding: "4px 11px", borderRadius: 999, fontWeight: 700,
+                  background: on ? "rgba(74,222,128,0.16)" : "rgba(0,0,0,0.05)",
+                  color: on ? "#16a34a" : "rgba(26,26,46,0.45)",
+                }}>{on ? "✓ Connected" : "Connect"}</span>
               </div>
             );
           })}
         </div>
 
-        <button onClick={saveAndComplete} disabled={saving} style={btn1}>
-          {saving ? "Saving..." : `Complete (+${points} pts total) 🎉`}
+        <button onClick={saveAndComplete} disabled={saving} style={primaryBtn}>
+          {saving ? "Saving…" : `Finish (${points + (connectedPlatforms.length ? 0 : 0)} pts) 🎉`}
         </button>
-        <button onClick={saveAndComplete} style={{ ...btn2, marginTop: 8 }}>Skip & Finish</button>
-      </div>
+        <button onClick={saveAndComplete} style={ghostBtn}>Skip & finish</button>
+      </Shell>
     );
   }
 
+  // ══════════════════════════════════════════════════════════
   // ── DONE ──
+  // ══════════════════════════════════════════════════════════
   if (step === "done") {
     return (
-      <div style={card}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ marginBottom: 16 }}><PetAvatar pet={pet} size={100} /></div>
-          <h2 style={{ fontSize: 24, fontWeight: 800, color: "#f59e0b", marginBottom: 8 }}>You & {pet.name} are ready!</h2>
-          <div style={{ fontSize: 32, fontWeight: 800, color: "#f59e0b", padding: "8px 0", fontFamily: "monospace" }}>+{points} pts</div>
-          <p style={{ color: "#666", fontSize: 12, marginBottom: 20 }}>{pet.name} will keep learning from every interaction.</p>
-          <button onClick={onComplete} style={btn1}>Start Chatting with {pet.name} →</button>
+      <Shell hideProgress>
+        {/* Confetti specks */}
+        {Array.from({ length: 18 }).map((_, i) => {
+          const colors = ["#f59e0b", "#fbbf24", "#c084fc", "#60a5fa", "#4ade80", "#f472b6"];
+          const left = (i * 73) % 100;
+          const delay = (i * 0.07).toFixed(2);
+          return (
+            <div key={i} style={{
+              position: "absolute", left: `${left}%`, top: -10,
+              width: 6, height: 12, borderRadius: 1,
+              background: colors[i % colors.length],
+              animation: `obConfettiFall 1.6s ${delay}s ease-out forwards`,
+              opacity: 0,
+            }} />
+          );
+        })}
+
+        <div style={{ textAlign: "center", paddingTop: 12 }}>
+          <div style={{ marginBottom: 18, animation: "obBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>
+            <PetAvatar pet={pet} size={120} />
+          </div>
+          {eyebrow("All set ✨")}
+          <h2 style={{ fontSize: 28, fontWeight: 800, color: "#1a1a2e", margin: "0 0 8px", letterSpacing: "-0.02em" }}>
+            You & {pet.name} are ready
+          </h2>
+          <div style={{
+            display: "inline-block",
+            margin: "12px 0 6px",
+            padding: "10px 22px",
+            borderRadius: 999,
+            background: "linear-gradient(135deg, #f59e0b, #d97706)",
+            color: "white",
+            fontSize: 22, fontWeight: 800, letterSpacing: "-0.01em",
+            boxShadow: "0 12px 30px rgba(245,158,11,0.32)",
+          }}>
+            +{points} pts
+          </div>
+          <p style={{ color: "rgba(26,26,46,0.55)", fontSize: 14, margin: "16px 0 22px", lineHeight: 1.55 }}>
+            {pet.name} keeps learning every time you talk. Try saying hi.
+          </p>
+          <button onClick={onComplete} style={primaryBtn}>Start chatting →</button>
         </div>
-      </div>
+      </Shell>
     );
   }
 
   return null;
+}
+
+if (typeof document !== "undefined" && !document.getElementById("ob-anims")) {
+  const style = document.createElement("style");
+  style.id = "ob-anims";
+  style.textContent = `
+    @keyframes obSlideIn { 0% { opacity: 0; transform: translateY(20px) scale(0.97); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes obFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    @keyframes obPulseRing { 0% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); } 100% { box-shadow: 0 0 0 22px rgba(220,38,38,0); } }
+    @keyframes obBounce { 0% { transform: scale(0.7); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+    @keyframes obConfettiFall {
+      0% { opacity: 0; transform: translateY(-20px) rotate(0deg); }
+      10% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(540px) rotate(540deg); }
+    }
+  `;
+  document.head.appendChild(style);
 }

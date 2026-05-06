@@ -1679,6 +1679,91 @@ export default function SovereigntyDashboard() {
             </div>
           </div>
 
+          {/* ───── Codex Avatar Export ───── */}
+          {selectedPet && (
+            <div className="sov-card" style={{
+              borderRadius: 20, marginBottom: 32, overflow: "hidden",
+              background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%)",
+              border: "1px solid rgba(245,158,11,0.25)",
+              color: "white", position: "relative",
+            }}>
+              <div style={{
+                position: "absolute", top: -100, right: -50, width: 280, height: 280, borderRadius: "50%",
+                background: "radial-gradient(circle, rgba(245,158,11,0.15), transparent 70%)",
+                pointerEvents: "none",
+              }} />
+              <div style={{ padding: 30, position: "relative" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <span style={{
+                    fontSize: 9, padding: "3px 10px", borderRadius: 999,
+                    background: "rgba(245,158,11,0.2)", color: "#fbbf24",
+                    fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase",
+                    border: "1px solid rgba(245,158,11,0.3)",
+                  }}>For Codex Desktop</span>
+                </div>
+                <h2 style={{ fontSize: 24, fontWeight: 800, color: "white", letterSpacing: "-0.02em", margin: "0 0 6px" }}>
+                  Take {selectedPet.name} into your editor
+                </h2>
+                <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: 1.6, margin: "0 0 22px", maxWidth: 580 }}>
+                  Export {selectedPet.name} as a Codex Desktop avatar — a floating overlay
+                  with 9 animation states that maps to whatever your 24/7 agent is doing.
+                </p>
+
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <a
+                    href={`/api/petclaw/codex-avatar?petId=${selectedPet.id}&format=json`}
+                    download="avatar.json"
+                    style={{
+                      padding: "11px 22px", borderRadius: 12,
+                      background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                      color: "white", fontFamily: "'Space Grotesk',sans-serif",
+                      fontSize: 13, fontWeight: 800, textDecoration: "none",
+                      boxShadow: "0 8px 22px rgba(245,158,11,0.32)",
+                    }}
+                  >
+                    ⬇ avatar.json
+                  </a>
+                  <a
+                    href={`/api/petclaw/codex-avatar?petId=${selectedPet.id}&format=md`}
+                    download={`${selectedPet.name}-INSTALL.md`}
+                    style={{
+                      padding: "11px 22px", borderRadius: 12,
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      color: "white", fontFamily: "'Space Grotesk',sans-serif",
+                      fontSize: 13, fontWeight: 700, textDecoration: "none",
+                    }}
+                  >
+                    📋 Install guide
+                  </a>
+                  <a
+                    href="/codex"
+                    style={{
+                      padding: "11px 22px", borderRadius: 12,
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      color: "rgba(255,255,255,0.7)", fontFamily: "'Space Grotesk',sans-serif",
+                      fontSize: 13, fontWeight: 600, textDecoration: "none",
+                    }}
+                  >
+                    Spec & how it works →
+                  </a>
+                </div>
+
+                <div style={{
+                  marginTop: 20, padding: "10px 14px", borderRadius: 10,
+                  background: "rgba(245,158,11,0.06)",
+                  border: "1px solid rgba(245,158,11,0.18)",
+                  fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.55)",
+                  lineHeight: 1.7, overflowX: "auto",
+                }}>
+                  mkdir -p ~/.codex/avatars/{(selectedPet.name || "claw").toLowerCase().replace(/[^a-z0-9_-]+/g, "-")}<br/>
+                  curl -o ~/.codex/avatars/.../avatar.json "https://app.myaipet.ai/api/petclaw/codex-avatar?petId={selectedPet.id}&format=json"
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ───── Chrome Extension ───── */}
           <ChromeExtensionSection />
 
