@@ -513,6 +513,7 @@ export default function App() {
         }}>
           {[
             { href: "/stats", label: "Stats" },
+            { href: "/api-docs", label: "API Docs" },
             { href: "/terms", label: "Terms" },
             { href: "/privacy", label: "Privacy" },
             { href: "/contracts", label: "Contracts" },

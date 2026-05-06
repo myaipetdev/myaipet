@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { importSoulData } from "@/lib/petclaw/data-sovereignty";
+import { validateSoulExport } from "@/lib/petclaw/soul-schema";
 import type { SoulExport } from "@/lib/petclaw/petclaw";
+
+// Hard request size cap — anything beyond this is rejected before parsing
+const MAX_BODY_BYTES = 1_500_000; // 1.5 MB
 
 export async function POST(req: NextRequest) {
   const user = await getUser(req);
@@ -9,11 +13,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json() as SoulExport;
-
-  if (!body.protocol || !body.pet || !body.integrityHash) {
-    return NextResponse.json({ error: "Invalid SOUL export format" }, { status: 400 });
+  // Reject oversized requests by Content-Length header before reading body
+  const lenHeader = req.headers.get("content-length");
+  if (lenHeader && Number(lenHeader) > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: "Payload too large" }, { status: 413 });
   }
+
+  let raw: unknown;
+  try {
+    raw = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Body is not valid JSON" }, { status: 400 });
+  }
+
+  // Schema validation (zod) — covers types, lengths, ranges, allowed enums, regex,
+  // forbidden control chars, and rejects unknown keys via .strict()
+  const validation = validateSoulExport(raw);
+  if (!validation.ok) {
+    return NextResponse.json({ error: validation.error }, { status: 400 });
+  }
+  const body = validation.data as unknown as SoulExport;
 
   try {
     const result = await importSoulData(user.id, body);
