@@ -49,7 +49,6 @@ Any MCP-compatible client can invoke PetClaw skills:
 | Claude Code | ✅ Tested |
 | OpenClaw | ✅ Compatible |
 | Cursor | ✅ Compatible |
-| Codex | ✅ Compatible |
 | Gemini CLI | ✅ Compatible |
 | Any MCP stdio client | ✅ Standard protocol |
 

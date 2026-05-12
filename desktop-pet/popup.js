@@ -359,9 +359,16 @@ chrome.runtime.sendMessage({ type: "getConfig" }, (res) => {
   if (!res?.config) return;
   const c = res.config;
 
-  $("apiUrl").value = c.apiUrl || "http://localhost:3000";
+  $("apiUrl").value = c.apiUrl || "https://app.myaipet.ai";
   $("petId").value = c.petId || 1;
   $("autoInterval").value = c.autoTalkInterval || 90;
+  if ($("authToken")) $("authToken").value = c.authToken || "";
+  if ($("syncStatus")) {
+    $("syncStatus").textContent = c.authToken
+      ? "✓ Server sync on — pulls live pet stats every 3 min"
+      : "Local-only mode. Paste a JWT to mirror your app pet.";
+    $("syncStatus").style.color = c.authToken ? "#4ade80" : "#888";
+  }
   $("petName").textContent = c.petName || "My Pet";
   $("petLevel").textContent = `Lv.${c.level || 1}`;
   $("petPersonality").textContent = c.personality || "playful";
@@ -385,10 +392,11 @@ $("saveBtn").addEventListener("click", () => {
   const apiUrl = $("apiUrl").value.trim().replace(/\/$/, "");
   const petId = parseInt($("petId").value) || 1;
   const autoTalkInterval = parseInt($("autoInterval").value) || 90;
+  const authToken = $("authToken") ? $("authToken").value.trim() : "";
 
   chrome.runtime.sendMessage({
     type: "saveConfig",
-    config: { apiUrl, petId, autoTalkInterval, enabled: true },
+    config: { apiUrl, petId, autoTalkInterval, authToken, enabled: true },
   }, () => {
     chrome.runtime.sendMessage({ type: "fetchPetInfo" }, (res) => {
       if (res?.config) {

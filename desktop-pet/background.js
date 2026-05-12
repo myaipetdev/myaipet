@@ -8,7 +8,9 @@
 // ══════════════════════════════════════
 
 const DEFAULT_CONFIG = {
-  apiUrl: "http://3.34.197.230",
+  apiUrl: "https://app.myaipet.ai",
+  authToken: "",        // optional JWT \u2014 paste from app to enable server sync
+  syncEnabled: true,    // pull live pet stats from server when authToken is set
   petId: 1,
   petName: "My Pet",
   petEmoji: "\uD83D\uDC3E",
@@ -44,16 +46,43 @@ async function callPetClawAPI(endpoint, options = {}) {
   const config = await getConfig();
   const url = `${config.apiUrl}${endpoint}`;
   try {
-    const res = await fetch(url, {
-      ...options,
-      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-    });
+    const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+    if (config.authToken) headers["Authorization"] = `Bearer ${config.authToken}`;
+    const res = await fetch(url, { ...options, headers });
     if (!res.ok) throw new Error(`API ${res.status}`);
     return await res.json();
   } catch (e) {
     console.error("[AI Pet] API error:", e.message);
     return null;
   }
+}
+
+// ══════════════════════════════════════
+// ── SERVER SYNC ──
+// Map web app pet stats → extension emotion schema, when authenticated.
+// Web pet:   happiness, energy, hunger, bond_level
+// Extension: happiness, energy, hunger, affection, curiosity
+// ══════════════════════════════════════
+async function syncFromServer() {
+  const config = await getConfig();
+  if (!config.syncEnabled || !config.authToken || !config.petId) return null;
+  const pet = await callPetClawAPI(`/api/pets/${config.petId}`);
+  if (!pet || pet.error) return null;
+
+  const current = await getEmotions();
+  const synced = {
+    ...current,
+    happiness: typeof pet.happiness === "number" ? pet.happiness : current.happiness,
+    energy:    typeof pet.energy === "number"    ? pet.energy    : current.energy,
+    hunger:    typeof pet.hunger === "number"    ? pet.hunger    : current.hunger,
+    affection: typeof pet.bond_level === "number" ? pet.bond_level : current.affection,
+    // curiosity stays local-derived (no server field) but decays via decayEmotions()
+    serverSyncedAt: Date.now(),
+    serverPetName: pet.name,
+    serverPetLevel: pet.level,
+  };
+  await saveEmotions(synced);
+  return synced;
 }
 
 // ══════════════════════════════════════
@@ -582,6 +611,7 @@ chrome.alarms.create("petHeartbeat", { periodInMinutes: 5 });
 chrome.alarms.create("petAutoTalk", { periodInMinutes: 2 });
 chrome.alarms.create("petBrowsing", { periodInMinutes: 1 });
 chrome.alarms.create("petEmotionDecay", { periodInMinutes: 10 });
+chrome.alarms.create("petServerSync", { periodInMinutes: 3 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   const config = await getConfig();
@@ -621,6 +651,21 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
             dominant,
           });
         } catch {}
+      }
+    }
+  }
+
+  if (alarm.name === "petServerSync") {
+    // Pull live pet stats from app — only when user has pasted an authToken.
+    // No-op (network-cost zero) when authToken is empty.
+    const synced = await syncFromServer();
+    if (synced) {
+      const dominant = getDominantEmotion(synced);
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      for (const tab of tabs) {
+        if (tab.id) {
+          try { chrome.tabs.sendMessage(tab.id, { type: "emotionUpdate", emotions: synced, dominant }); } catch {}
+        }
       }
     }
   }
