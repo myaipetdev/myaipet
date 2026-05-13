@@ -168,7 +168,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
             <a key={t.slug} href={`/api-docs?tab=${t.slug}`} style={{
               padding: "10px 18px",
               fontSize: 14, fontWeight: 600,
-              color: t.slug === activeSlug ? "#1a1a2e" : "rgba(26,26,46,0.5)",
+              color: t.slug === activeSlug ? "#1a1a2e" : "rgba(26,26,46,0.65)",
               borderBottom: t.slug === activeSlug ? "2px solid #f59e0b" : "2px solid transparent",
               textDecoration: "none",
               marginBottom: -1,
@@ -180,7 +180,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
 
         <div style={{
           marginTop: 60, paddingTop: 24, borderTop: "1px solid rgba(0,0,0,0.06)",
-          fontSize: 12, color: "rgba(26,26,46,0.5)", lineHeight: 1.6,
+          fontSize: 12, color: "rgba(26,26,46,0.65)", lineHeight: 1.6,
         }}>
           Source files: <a href="/api-docs/QUICKSTART.md" style={{ color: "#b45309" }}>QUICKSTART.md</a> ·{" "}
           <a href="/api-docs/API.md" style={{ color: "#b45309" }}>API.md</a> ·{" "}

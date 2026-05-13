@@ -71,7 +71,7 @@ export default function StatsPage() {
           )}
         </p>
 
-        {loading && <div style={{ padding: 40, textAlign: "center", color: "rgba(26,26,46,0.5)" }}>Loading…</div>}
+        {loading && <div style={{ padding: 40, textAlign: "center", color: "rgba(26,26,46,0.65)" }}>Loading…</div>}
         {err && <div style={{ padding: 40, color: "#dc2626" }}>Error: {err}</div>}
 
         {data && (
@@ -158,7 +158,7 @@ export default function StatsPage() {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,46,0.5)", marginTop: 36, marginBottom: 14 }}>
+    <h2 style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(26,26,46,0.65)", marginTop: 36, marginBottom: 14 }}>
       {children}
     </h2>
   );
@@ -180,12 +180,12 @@ function Stat({ label, value, accent, muted, big }: { label: string; value: any;
       background: "white", border: "1px solid rgba(0,0,0,0.06)",
       gridColumn: big ? "span 2" : undefined,
     }}>
-      <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", marginBottom: 6, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+      <div style={{ fontSize: 11, color: "rgba(26,26,46,0.65)", marginBottom: 6, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>
         {label}
       </div>
       <div style={{
         fontSize: big ? 36 : 28, fontWeight: 800, letterSpacing: "-0.02em",
-        color: muted ? "rgba(26,26,46,0.5)" : (accent || "#1a1a2e"),
+        color: muted ? "rgba(26,26,46,0.65)" : (accent || "#1a1a2e"),
       }}>
         {value}
       </div>

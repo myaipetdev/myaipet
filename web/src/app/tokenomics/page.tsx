@@ -23,7 +23,7 @@ export default function TokenomicsPage() {
         <h1 style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 6 }}>
           Tokenomics
         </h1>
-        <div style={{ fontSize: 13, color: "rgba(26,26,46,0.5)", marginBottom: 28, fontWeight: 600 }}>
+        <div style={{ fontSize: 13, color: "rgba(26,26,46,0.65)", marginBottom: 28, fontWeight: 600 }}>
           Status: <span style={{ color: "#92400e" }}>Pre-TGE</span>
         </div>
 
@@ -157,7 +157,7 @@ function Row({ label, value, subtext }: { label: string; value: string; subtext?
       </div>
       <div>
         <div style={{ fontSize: 14, color: "#1a1a2e", fontWeight: 600 }}>{value}</div>
-        {subtext && <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginTop: 3 }}>{subtext}</div>}
+        {subtext && <div style={{ fontSize: 12, color: "rgba(26,26,46,0.65)", marginTop: 3 }}>{subtext}</div>}
       </div>
     </div>
   );

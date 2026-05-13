@@ -205,7 +205,7 @@ function TableOfContents() {
         <a key={s.id} href={`#${s.id}`} style={{
           display: "block", padding: "6px 0",
           fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 500,
-          color: "rgba(26,26,46,0.5)", textDecoration: "none",
+          color: "rgba(26,26,46,0.65)", textDecoration: "none",
           borderLeft: "2px solid rgba(0,0,0,0.06)", paddingLeft: 14,
           transition: "all 0.2s",
         }}>
@@ -344,7 +344,7 @@ export default function DocsPage() {
           Documentation
         </h1>
         <p style={{
-          fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.5)",
+          fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.65)",
           maxWidth: 560, margin: "0 auto", lineHeight: 1.8,
         }}>
           Everything you need to know about MY AI PET — the first CompanionFi protocol

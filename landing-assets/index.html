@@ -51,6 +51,8 @@
     --mono: 'JetBrains Mono', ui-monospace, monospace;
   }
   * { box-sizing: border-box; }
+  /* SCRUM-73 DD §4.4: visually-hidden helper for screen-reader-only labels */
+  .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   html, body { margin: 0; padding: 0; }
   body {
     font-family: var(--sans);
@@ -783,7 +785,7 @@
 
 <!-- SECTION 1: HERO -->
 <header class="hero" data-screen-label="02 Hero">
-  <div class="hero-sky" id="heroSky">
+  <div class="hero-sky" id="heroSky" aria-hidden="true">
     <div id="heroVideoWrap" style="position:absolute;inset:0;z-index:-6;">
       <video class="hero-vid active" autoplay muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.7;transition:opacity 1.5s ease;">
         <source src="hero-video.mp4" type="video/mp4" />
@@ -802,7 +804,7 @@
       </video>
     </div>
   </div>
-  <div class="hero-petals" id="heroPetals"></div>
+  <div class="hero-petals" id="heroPetals" aria-hidden="true"></div>
 
   <div class="hero-content">
     <span class="hero-eyebrow"><span class="dot"></span>AI companionship · PetClaw Protocol live</span>
@@ -974,8 +976,9 @@
         </div>
         <div class="msgs" id="msgs"></div>
         <div class="chat-input">
-          <input type="text" placeholder="Say something to Sparky…" />
-          <button class="send" aria-label="Send">↑</button>
+          <label for="hero-chat-input" class="visually-hidden">Message to Sparky</label>
+          <input id="hero-chat-input" type="text" placeholder="Say something to Sparky…" aria-label="Message to Sparky" />
+          <button class="send" aria-label="Send message">↑</button>
         </div>
       </div>
 
@@ -1305,7 +1308,9 @@
 
       <!-- Input -->
       <div style="display:flex; gap:8px; padding:12px 16px; background:rgba(0,0,0,0.4); border-radius:0 0 16px 16px; border:1px solid rgba(255,255,255,0.06); border-top:none;">
+        <label for="playgroundInput" class="visually-hidden">Message to Sparky</label>
         <input id="playgroundInput" type="text" placeholder="Say something to Sparky..."
+          aria-label="Message to Sparky"
           style="flex:1; padding:12px 16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);
           background:rgba(255,255,255,0.04); color:var(--cream); font-size:14px; font-family:var(--sans);
           outline:none; transition:border-color .2s;"
@@ -1381,8 +1386,16 @@
   </div>
 </footer>
 
-<!-- TWEAKS PANEL -->
-<div class="tweaks" id="tweaks">
+<!-- TWEAKS PANEL — DD §4.1/4.5: hide from production by default,
+     show only when ?tweaks=1 query param is present (still useful for design QA) -->
+<script>
+(function(){
+  if (!new URLSearchParams(location.search).has("tweaks")) {
+    document.documentElement.style.setProperty("--tweaks-display", "none");
+  }
+})();
+</script>
+<div class="tweaks" id="tweaks" style="display: var(--tweaks-display, block)">
   <h5>Tweaks</h5>
   <div class="tw-sub">live design knobs</div>
   <div class="tw-row">

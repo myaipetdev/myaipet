@@ -66,13 +66,13 @@ export default function ContractsPage() {
                 }}>
                   {c.addr === "TBD" ? "— address pending —" : c.addr}
                 </div>
-                <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)" }}>{c.note}</div>
+                <div style={{ fontSize: 12, color: "rgba(26,26,46,0.65)" }}>{c.note}</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
                 <span style={{
                   fontSize: 10, padding: "3px 10px", borderRadius: 999,
                   background: c.status === "Deployed" ? "rgba(74,222,128,0.15)" : "rgba(0,0,0,0.06)",
-                  color: c.status === "Deployed" ? "#16a34a" : "rgba(26,26,46,0.5)",
+                  color: c.status === "Deployed" ? "#16a34a" : "rgba(26,26,46,0.65)",
                   fontWeight: 700, letterSpacing: "0.06em",
                 }}>{c.status.toUpperCase()}</span>
                 {c.addr !== "TBD" && (

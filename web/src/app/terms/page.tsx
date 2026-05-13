@@ -25,7 +25,7 @@ export default function TermsPage() {
         <h1 style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 6 }}>
           Terms of Service
         </h1>
-        <div style={{ fontSize: 13, color: "rgba(26,26,46,0.5)", marginBottom: 36 }}>
+        <div style={{ fontSize: 13, color: "rgba(26,26,46,0.65)", marginBottom: 36 }}>
           Last updated: {LAST_UPDATED}
         </div>
 
