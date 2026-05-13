@@ -33,30 +33,15 @@ export async function GET() {
       prisma.user.count(),
       prisma.pet.count({ where: { is_active: true } }),
       prisma.generation.count({ where: { status: "completed" } }),
-      // SCRUM-73 DD §2.1: image-only rows had video_path = NULL (not "") so the
-      // previous "video_path: ''" filter excluded them. Use AND-chained nots.
-      prisma.generation.count({
-        where: {
-          status: "completed",
-          AND: [
-            { video_path: { not: null } },
-            { video_path: { not: "" } },
-          ],
-        },
-      }),
-      prisma.generation.count({
-        where: {
-          status: "completed",
-          AND: [
-            { photo_path: { not: null } },
-            { photo_path: { not: "" } },
-          ],
-          OR: [
-            { video_path: null },
-            { video_path: "" },
-          ],
-        },
-      }),
+      // SCRUM-73 DD §2.1: image-only rows had video_path = NULL (not "") so
+      // a naive video_path: '' filter excluded them. Raw SQL handles three-valued
+      // logic explicitly.
+      prisma.$queryRaw<{ c: bigint }[]>`SELECT COUNT(*)::bigint AS c FROM generations
+        WHERE status = 'completed' AND video_path IS NOT NULL AND video_path <> ''`.then(r => Number(r[0]?.c || 0)),
+      prisma.$queryRaw<{ c: bigint }[]>`SELECT COUNT(*)::bigint AS c FROM generations
+        WHERE status = 'completed'
+          AND photo_path IS NOT NULL AND photo_path <> ''
+          AND (video_path IS NULL OR video_path = '')`.then(r => Number(r[0]?.c || 0)),
       prisma.generation.count({ where: { status: "completed", created_at: { gte: oneDayAgo } } }),
       prisma.generation.count({ where: { status: "completed", created_at: { gte: sevenDaysAgo } } }),
       prisma.creditPurchase.count({ where: { status: "confirmed" } }),
