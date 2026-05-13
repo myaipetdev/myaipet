@@ -96,7 +96,7 @@ Starts a Model Context Protocol server for Claude, OpenClaw, or any MCP client.
 import { PetClawClient } from "petclaw-sdk";
 
 const client = new PetClawClient({
-  baseUrl: "https://your-server.com",
+  baseUrl: "https://app.myaipet.ai",
 });
 
 // Chat

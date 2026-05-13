@@ -101,9 +101,18 @@ export function useAuth() {
     }
   }, [address, isAuthenticating, signMessageAsync]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    // SCRUM-58: notify server to rotate the session nonce, invalidating this
+    // and any other JWT for this account. Fire-and-forget — even if it fails,
+    // we still wipe client-side state.
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+    } catch {}
     clearAuth();
-  }, []);
+  }, [token]);
 
   const refreshUser = useCallback(async () => {
     if (!token) return;

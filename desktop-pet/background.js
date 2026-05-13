@@ -500,6 +500,25 @@ async function exportSoul() {
   return callPetClawAPI(`/api/petclaw/export?petId=${config.petId}`);
 }
 
+// SCRUM-20: import a SOUL JSON exported from the app
+async function importSoul(soul) {
+  if (!soul || typeof soul !== "object") {
+    return { success: false, error: "Empty soul payload" };
+  }
+  // Server-side schema validation (zod) will catch malformed payloads
+  const result = await callPetClawAPI("/api/petclaw/import", {
+    method: "POST",
+    body: JSON.stringify(soul),
+  });
+  if (!result) return { success: false, error: "Network or auth failure — set your auth token in Settings" };
+  if (result.error) return { success: false, error: result.error };
+  return {
+    success: !!result.success,
+    petName: result.message?.match(/"([^"]+)"/)?.[1] || soul.pet?.name,
+    petId: result.petId,
+  };
+}
+
 async function fetchPetInfo() {
   const config = await getConfig();
 
@@ -694,6 +713,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     fetchSkills: () => fetchSkillsList().then((data) => sendResponse({ data })),
 
     exportSoul: () => exportSoul().then((data) => sendResponse({ data })),
+    importSoul: () => importSoul(msg.soul).then((res) => sendResponse(res)),
 
     getPoints: () => getPoints().then((points) => sendResponse({ points })),
 

@@ -441,7 +441,7 @@ ${JSON.stringify(skill.outputSchema, null, 2)}
 
 \`\`\`bash
 # via curl
-curl -X POST http://localhost:3000/api/petclaw/skills \\
+curl -X POST https://app.myaipet.ai/api/petclaw/skills \\
   -H "Content-Type: application/json" \\
   -d '{"action":"install","petId":1,"skillId":"${skill.id}"}'
 
@@ -452,7 +452,7 @@ curl -X POST http://localhost:3000/api/petclaw/skills \\
 ## Usage
 
 \`\`\`bash
-curl -X POST http://localhost:3000/api/petclaw/skills \\
+curl -X POST https://app.myaipet.ai/api/petclaw/skills \\
   -H "Content-Type: application/json" \\
   -d '{"action":"execute","petId":1,"skillId":"${skill.id}","input":{}}'
 \`\`\`

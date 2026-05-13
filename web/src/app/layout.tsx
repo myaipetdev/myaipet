@@ -9,7 +9,7 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
 });
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://3.34.197.230";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://app.myaipet.ai";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),

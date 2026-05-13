@@ -454,6 +454,41 @@ $("exportBtn").addEventListener("click", () => {
   });
 });
 
+// SCRUM-20: Import SOUL JSON
+$("importBtn")?.addEventListener("click", () => {
+  $("importFile").click();
+});
+
+$("importFile")?.addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (file.size > 1500000) {
+    showStatus("❌ File too large (>1.5MB)", true);
+    return;
+  }
+  showStatus("Importing SOUL data...");
+  try {
+    const text = await file.text();
+    let soul;
+    try { soul = JSON.parse(text); } catch {
+      showStatus("❌ Not a valid JSON file", true);
+      return;
+    }
+    chrome.runtime.sendMessage({ type: "importSoul", soul }, (res) => {
+      if (res?.success) {
+        showStatus(`✅ Imported "${res.petName || "pet"}"`);
+        // Refresh pet info so the new pet shows up
+        setTimeout(() => chrome.runtime.sendMessage({ type: "fetchPetInfo" }), 500);
+      } else {
+        showStatus("❌ " + (res?.error || "Import failed — server rejected payload"), true);
+      }
+    });
+  } catch (err) {
+    showStatus("❌ Import error: " + (err.message || "unknown"), true);
+  }
+  e.target.value = ""; // reset for next pick
+});
+
 // Refresh
 $("refreshBtn").addEventListener("click", () => {
   chrome.runtime.sendMessage({ type: "fetchPetInfo" }, (res) => {

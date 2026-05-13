@@ -57,7 +57,7 @@ Any MCP-compatible client can invoke PetClaw skills:
 petclaw-sdk mcp
 
 # Or via npx
-npx petclaw-sdk mcp --url https://your-server.com --pet-id 1
+npx petclaw-sdk mcp --url https://app.myaipet.ai --pet-id 1
 ```
 
 ## On-Chain (BSC Mainnet)
@@ -112,7 +112,7 @@ petclaw-sdk mcp               # Start MCP server
 ```typescript
 import { PetClawClient } from "petclaw-sdk";
 
-const pet = new PetClawClient({ baseUrl: "https://your-server.com" });
+const pet = new PetClawClient({ baseUrl: "https://app.myaipet.ai" });
 
 await pet.skills.execute(1, "companion-chat", { message: "hi" });
 await pet.sovereignty.export(1);

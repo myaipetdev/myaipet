@@ -1,6 +1,6 @@
 # PetClaw API Reference
 
-Base URL: `https://your-server.com`
+Base URL: `https://app.myaipet.ai`
 
 ## Discovery
 

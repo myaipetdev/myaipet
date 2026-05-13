@@ -106,8 +106,11 @@ export default function ArchitecturePage() {
           background: "rgba(26,26,46,0.04)", border: "1px solid rgba(26,26,46,0.08)",
           fontSize: 13, color: "rgba(26,26,46,0.6)", lineHeight: 1.65,
         }}>
-          Source: <code style={{ fontSize: 12 }}>web/src/lib/petclaw/memory/persistent-memory.ts</code>
-          {" · "}<code style={{ fontSize: 12 }}>web/src/app/api/petclaw/sovereignty/*</code>
+          Public API: <code style={{ fontSize: 12 }}>/api/petclaw/export</code>{" · "}
+          <code style={{ fontSize: 12 }}>/api/petclaw/import</code>{" · "}
+          <code style={{ fontSize: 12 }}>/api/petclaw/delete</code>{" · "}
+          <code style={{ fontSize: 12 }}>/api/petclaw/consent</code>{" · "}
+          full reference at <a href="/api-docs" style={{ color: "#b45309" }}>/api-docs</a>.
         </div>
       </div>
     </div>
