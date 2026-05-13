@@ -65,6 +65,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Initial personality_modifiers: bootstrap empty memory containers so
+  // PetMemoryManager has stable shape from turn 1 and onboarding can mirror into them.
+  const initialMods: Record<string, any> = {
+    persistent_memories: [],
+    user_profile: [],
+    interaction_history: [],
+    combos_unlocked: [],
+  };
+  if (species_name) initialMods.species_name = species_name;
+  if (custom_traits) initialMods.custom_traits = custom_traits;
+
   const pet = await prisma.pet.create({
     data: {
       user_id: user.id,
@@ -73,18 +84,28 @@ export async function POST(req: NextRequest) {
       personality_type: finalPersonality,
       ...(avatar_url ? { avatar_url } : {}),
       ...(appearanceDesc ? { appearance_desc: appearanceDesc } : {}),
-      ...((species_name || custom_traits) ? { personality_modifiers: { ...(species_name ? { species_name } : {}), ...(custom_traits ? { custom_traits } : {}) } } : {}),
+      personality_modifiers: initialMods as any,
     },
   });
 
-  await prisma.petMemory.create({
-    data: {
-      pet_id: pet.id,
-      memory_type: "birth",
-      content: `${name} was born! A new adventure begins.`,
-      emotion: "happy",
-      importance: 5,
-    },
+  // Birth memory + first impression of the pet's own personality
+  await prisma.petMemory.createMany({
+    data: [
+      {
+        pet_id: pet.id,
+        memory_type: "birth",
+        content: `${name} was born! A new adventure begins.`,
+        emotion: "happy",
+        importance: 5,
+      },
+      {
+        pet_id: pet.id,
+        memory_type: "self",
+        content: `I am ${name}, a ${finalPersonality} ${species_name || "companion"}. I just met my owner for the first time.`,
+        emotion: "curious",
+        importance: 4,
+      },
+    ],
   });
 
   // Create a community generation record so the pet shows up in the social feed

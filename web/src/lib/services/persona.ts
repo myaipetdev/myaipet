@@ -266,7 +266,7 @@ export async function getPersona(petId: number): Promise<PersonaData | null> {
 // ── Save onboarding answers ──
 
 export async function saveOnboarding(petId: number, data: OnboardingData): Promise<PersonaData> {
-  return prisma.petPersona.upsert({
+  const result = await prisma.petPersona.upsert({
     where: { pet_id: petId },
     create: {
       pet_id: petId,
@@ -286,7 +286,48 @@ export async function saveOnboarding(petId: number, data: OnboardingData): Promi
       ...(data.bio !== undefined && { owner_bio: data.bio }),
       persona_version: { increment: 1 },
     },
-  }) as any;
+  });
+
+  // ── Mirror into PetMemoryManager USER.md ──
+  // PetMemoryManager reads pet.personality_modifiers.user_profile. By seeding it
+  // at onboarding completion, the chat / skills layer sees owner context on the
+  // very first turn — no "I don't know you yet" cold start.
+  try {
+    const pet = await prisma.pet.findUnique({ where: { id: petId } });
+    if (pet) {
+      const mods = (pet.personality_modifiers as any) || {};
+      const existing: any[] = Array.isArray(mods.user_profile) ? mods.user_profile : [];
+      // Build entry list from non-null answers (key namespaced "onboarding_*" so
+      // future retain runs don't overwrite — entries with same key get updated).
+      const now = new Date().toISOString();
+      const seed: any[] = [];
+      const add = (key: string, content: string | null | undefined, category: string) => {
+        if (!content) return;
+        seed.push({ key, content, category, source: "onboarding", updatedAt: now });
+      };
+      add("onboarding_tone",       data.tone        && `Prefers ${data.tone} tone`,                    "preference");
+      add("onboarding_speech",     data.speech_style && `Communication style: ${data.speech_style}`,   "communication");
+      add("onboarding_expressions", data.expressions && `Self-described role: ${data.expressions}`,    "preference");
+      add("onboarding_interests",  data.interests   && `Interests: ${data.interests}`,                 "interest");
+      add("onboarding_language",   data.language    && `Preferred language: ${data.language}`,         "communication");
+      add("onboarding_bio",        data.bio         && data.bio.slice(0, 400),                         "context");
+
+      // Merge — replace entries with same key, keep others
+      const byKey = new Map<string, any>(existing.map((e: any) => [e.key, e]));
+      for (const s of seed) byKey.set(s.key, s);
+      const merged = Array.from(byKey.values());
+
+      await prisma.pet.update({
+        where: { id: petId },
+        data: { personality_modifiers: { ...mods, user_profile: merged } as any },
+      });
+    }
+  } catch (e) {
+    console.error("saveOnboarding: USER.md mirror failed:", e);
+    // Non-fatal — persona table is still saved
+  }
+
+  return result as any;
 }
 
 // ── Save chat analysis results ──

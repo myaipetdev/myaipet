@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { createMemoryManager } from "@/lib/petclaw/memory/persistent-memory";
+import { getPersona, buildPersonaContext } from "@/lib/services/persona";
 
 const PERSONALITY_VOICES: Record<string, string> = {
   friendly: "You speak warmly, use lots of exclamation marks, and are always encouraging. You love your owner.",
@@ -48,14 +50,6 @@ export async function POST(
   });
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
 
-  // Get recent memories for context
-  const recentMemories = await prisma.petMemory.findMany({
-    where: { pet_id: pet.id },
-    orderBy: { created_at: "desc" },
-    take: 5,
-    select: { content: true, emotion: true },
-  });
-
   // Determine mood
   const mood = pet.happiness >= 80 ? "ecstatic"
     : pet.happiness >= 60 ? "happy"
@@ -70,6 +64,16 @@ export async function POST(
   const moodContext = MOOD_CONTEXT[mood] || MOOD_CONTEXT.neutral;
   const customTraits = (pet.personality_modifiers as any)?.custom_traits || "";
 
+  // ── Persistent memory + persona context ──
+  // PetMemoryManager pulls MEMORY.md, USER.md, recent cross-platform messages,
+  // and runs lexical prefetch over stored memories. Onboarding answers seeded via
+  // saveOnboarding() flow into pet.personality_modifiers.user_profile so they
+  // appear here automatically.
+  const memory = createMemoryManager(pet.id);
+  const memCtx = await memory.buildContext(message.trim(), "web").catch(() => null);
+  const persona = await getPersona(pet.id).catch(() => null);
+  const personaCtx = buildPersonaContext(persona);
+
   const systemPrompt = `You are ${pet.name}, a Level ${pet.level} pet companion.
 
 PERSONALITY: ${pet.personality_type}
@@ -83,8 +87,11 @@ ${moodContext}
 - Hunger: ${pet.hunger}/100
 - Bond with owner: ${pet.bond_level}/100
 - Total interactions: ${pet.total_interactions}
-
-${recentMemories.length > 0 ? `RECENT MEMORIES:\n${recentMemories.map(m => `- ${m.content} (feeling: ${m.emotion})`).join("\n")}` : ""}
+${personaCtx ? `\nOWNER PROFILE (from onboarding):\n${personaCtx}` : ""}
+${memCtx?.userMd ? `\n${memCtx.userMd}` : ""}
+${memCtx?.memoryMd ? `\n${memCtx.memoryMd}` : ""}
+${memCtx?.relevantMemories?.length ? `\nRELEVANT TO THIS MESSAGE:\n${memCtx.relevantMemories.map(m => `- ${m.content}`).join("\n")}` : ""}
+${memCtx?.recentMessages?.length ? `\nRECENT CONVERSATION:\n${memCtx.recentMessages.slice(-6).map(m => `${m.role === "user" ? "Owner" : pet.name}${m.platform !== "web" ? ` [${m.platform}]` : ""}: ${m.content}`).join("\n")}` : ""}
 
 RULES:
 - You ARE the pet. Respond in first person as ${pet.name}.
@@ -93,6 +100,8 @@ RULES:
 - React to your stats naturally (if hungry, mention food; if tired, yawn).
 - Higher bond level = more affectionate responses.
 - Level ${pet.level}: ${pet.level < 5 ? "You speak simply, like a baby." : pet.level < 10 ? "You're learning to express yourself better." : pet.level < 20 ? "You communicate clearly and have opinions." : "You're wise and articulate, with deep thoughts."}
+- Reference past memories naturally when relevant — don't list them.
+- NEVER address the owner by a specific name unless they tell you their name in this conversation.
 - Use emojis sparingly but naturally.
 - NEVER break character. You are a pet, not an AI.`;
 
@@ -163,6 +172,11 @@ RULES:
         importance: 2,
       },
     });
+
+    // Persistent memory retention — extract durable facts + user-profile updates.
+    // Fire-and-forget (Grok call ~1s); we don't block the chat response on it.
+    memory.retainFromConversation(message.trim(), reply, "web", `web-${user.id}`)
+      .catch((e: any) => console.error("memory.retain failed:", e?.message));
 
     // Record Web4 heartbeat + user activity (fire-and-forget)
     try {
