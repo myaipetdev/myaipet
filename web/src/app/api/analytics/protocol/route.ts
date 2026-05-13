@@ -33,17 +33,28 @@ export async function GET() {
       prisma.user.count(),
       prisma.pet.count({ where: { is_active: true } }),
       prisma.generation.count({ where: { status: "completed" } }),
-      // SCRUM-73 DD §2.1: image-only rows had video_path = NULL (not "") so they
-      // were excluded by the previous "video_path: ''" filter, making
-      // image+video sum not equal to total. Fix: treat NULL as no-video.
+      // SCRUM-73 DD §2.1: image-only rows had video_path = NULL (not "") so the
+      // previous "video_path: ''" filter excluded them. Use AND-chained nots.
       prisma.generation.count({
-        where: { status: "completed", NOT: [{ video_path: null }, { video_path: "" }] },
+        where: {
+          status: "completed",
+          AND: [
+            { video_path: { not: null } },
+            { video_path: { not: "" } },
+          ],
+        },
       }),
       prisma.generation.count({
         where: {
           status: "completed",
-          NOT: [{ photo_path: null }, { photo_path: "" }],
-          OR: [{ video_path: null }, { video_path: "" }],
+          AND: [
+            { photo_path: { not: null } },
+            { photo_path: { not: "" } },
+          ],
+          OR: [
+            { video_path: null },
+            { video_path: "" },
+          ],
         },
       }),
       prisma.generation.count({ where: { status: "completed", created_at: { gte: oneDayAgo } } }),
