@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { describePetAvatar } from "@/lib/services/video";
+import { sanitizeName, sanitizeText, safeUrlOrEmpty } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
 
 const PERSONALITIES = ["friendly", "playful", "shy", "brave", "lazy", "curious", "mischievous", "gentle", "adventurous", "dramatic", "wise", "sassy"] as const;
@@ -31,7 +32,19 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { name, species, personality, avatar_url, species_name, appearance_desc: userAppearanceDesc, custom_traits } = body;
+  const rawName = body.name;
+  const rawSpeciesName = body.species_name;
+  const rawAppearance = body.appearance_desc;
+  const rawCustomTraits = body.custom_traits;
+  const rawAvatar = body.avatar_url;
+  const { species, personality } = body;
+
+  // SCRUM-53/55: sanitize all user-supplied strings + validate URL scheme
+  const name = sanitizeName(rawName, 50);
+  const species_name = sanitizeName(rawSpeciesName, 50);
+  const custom_traits = sanitizeText(rawCustomTraits, 500);
+  const userAppearanceDesc = sanitizeText(rawAppearance, 2000);
+  const avatar_url = safeUrlOrEmpty(rawAvatar);
 
   if (!name) {
     return NextResponse.json(

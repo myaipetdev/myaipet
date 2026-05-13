@@ -266,10 +266,13 @@ export async function POST(
       credits_charged: creditCost,
     });
   } catch (err: any) {
-    console.error("Generation error:", err);
+    // SCRUM-61/63: log full error server-side, never echo to client.
+    // Previous behavior leaked xAI team UUID and Grok internals.
+    console.error("Generation error:", err?.message);
+    const isQuotaError = /credit|quota|exhaust|429/i.test(err?.message || "");
     return NextResponse.json(
-      { error: "Generation failed", details: err.message },
-      { status: 502 }
+      { error: isQuotaError ? "Generation service is at capacity — try again later" : "Generation failed" },
+      { status: isQuotaError ? 503 : 500 }
     );
   }
 }

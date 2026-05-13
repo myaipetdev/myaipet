@@ -359,6 +359,27 @@ chrome.runtime.sendMessage({ type: "getConfig" }, (res) => {
   if (!res?.config) return;
   const c = res.config;
 
+  // SCRUM-49/53/55: render petName / avatar safely — never innerHTML user data
+  function safeRenderAvatar(parent, url, name) {
+    parent.replaceChildren();
+    if (!url) {
+      parent.textContent = c.petEmoji || "🐾";
+      return;
+    }
+    // Reject non-http(s) URLs (blocks javascript:, data:, file: etc.)
+    let ok = false;
+    try {
+      const u = new URL(url);
+      ok = u.protocol === "https:" || u.protocol === "http:";
+    } catch {}
+    if (!ok) { parent.textContent = "🐾"; return; }
+    const img = document.createElement("img");
+    img.src = url;                // assignment via property auto-escapes
+    img.alt = name || "pet";       // alt via property — no HTML interpretation
+    parent.appendChild(img);
+  }
+  window.__safeRenderAvatar = safeRenderAvatar;
+
   $("apiUrl").value = c.apiUrl || "https://app.myaipet.ai";
   $("petId").value = c.petId || 1;
   $("autoInterval").value = c.autoTalkInterval || 90;
@@ -373,11 +394,7 @@ chrome.runtime.sendMessage({ type: "getConfig" }, (res) => {
   $("petLevel").textContent = `Lv.${c.level || 1}`;
   $("petPersonality").textContent = c.personality || "playful";
 
-  if (c.avatarUrl) {
-    $("avatar").innerHTML = `<img src="${c.avatarUrl}" alt="${c.petName}" />`;
-  } else {
-    $("avatar").textContent = c.petEmoji || "🐾";
-  }
+  safeRenderAvatar($("avatar"), c.avatarUrl, c.petName);
 
   // Load preferences
   const prefs = c.preferences || {};
@@ -404,7 +421,7 @@ $("saveBtn").addEventListener("click", () => {
         $("petLevel").textContent = `Lv.${res.config.level}`;
         $("petPersonality").textContent = res.config.personality;
         if (res.config.avatarUrl) {
-          $("avatar").innerHTML = `<img src="${res.config.avatarUrl}" alt="${res.config.petName}" />`;
+          window.__safeRenderAvatar?.($("avatar"), res.config.avatarUrl, res.config.petName);
         } else {
           $("avatar").textContent = res.config.petEmoji || "🐾";
         }
@@ -445,7 +462,7 @@ $("refreshBtn").addEventListener("click", () => {
       $("petLevel").textContent = `Lv.${res.config.level}`;
       $("petPersonality").textContent = res.config.personality;
       if (res.config.avatarUrl) {
-        $("avatar").innerHTML = `<img src="${res.config.avatarUrl}" alt="${res.config.petName}" />`;
+        window.__safeRenderAvatar?.($("avatar"), res.config.avatarUrl, res.config.petName);
       }
       showStatus("✅ Refreshed!");
       loadEvolution();

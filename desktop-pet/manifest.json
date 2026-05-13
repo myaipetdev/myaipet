@@ -1,16 +1,22 @@
 {
   "manifest_version": 3,
   "name": "MY AI PET — Desktop Companion",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Your AI pet lives in your browser — evolves, plays mini-games, shows emotions, and earns airdrop points!",
-  "permissions": ["storage", "alarms", "activeTab", "notifications"],
-  "host_permissions": ["http://localhost:3000/*", "http://3.34.197.230/*", "https://*.vercel.app/*", "https://*.myaipet.com/*"],
+  "permissions": ["storage", "alarms", "notifications"],
+  "host_permissions": [
+    "https://app.myaipet.ai/*",
+    "https://myaipet.ai/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "https://app.myaipet.ai/*",
+        "https://myaipet.ai/*"
+      ],
       "js": ["content.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"

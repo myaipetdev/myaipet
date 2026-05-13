@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createToken } from "@/lib/auth";
 import { verifyMessage } from "viem";
+import { rateLimit } from "@/lib/rateLimit";
 
 /**
  * Normalize an ECDSA signature so viem accepts it.
@@ -56,6 +57,10 @@ function parseSiweMessage(message: string) {
 }
 
 export async function POST(req: NextRequest) {
+  // SCRUM-67/72: brute-force protection
+  const rl = rateLimit(req, { key: "auth-verify", limit: 10, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
   const body = await req.json();
   const { message, signature } = body;
 
@@ -135,9 +140,10 @@ export async function POST(req: NextRequest) {
       credits: user.credits,
     });
   } catch (error: any) {
-    console.error("Verify error:", error);
+    // SCRUM-62: log internally, return generic message — never expose error.message
+    console.error("Verify error:", error?.message);
     return NextResponse.json(
-      { error: "Signature verification failed", details: error.message },
+      { error: "Signature verification failed" },
       { status: 401 }
     );
   }

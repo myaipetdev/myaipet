@@ -3,6 +3,8 @@ import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createMemoryManager } from "@/lib/petclaw/memory/persistent-memory";
 import { getPersona, buildPersonaContext } from "@/lib/services/persona";
+import { rateLimit } from "@/lib/rateLimit";
+import { sanitizeText } from "@/lib/sanitize";
 
 const PERSONALITY_VOICES: Record<string, string> = {
   friendly: "You speak warmly, use lots of exclamation marks, and are always encouraging. You love your owner.",
@@ -38,10 +40,15 @@ export async function POST(
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { petId } = await params;
-  const { message } = await req.json();
+  // SCRUM-67: limit chat to 30 turns/minute per user
+  const rl = rateLimit(req, { key: "pet-chat", limit: 30, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
 
-  if (!message || typeof message !== "string" || message.trim().length === 0) {
+  const { petId } = await params;
+  const body = await req.json();
+  const message = sanitizeText(body.message, 500);
+
+  if (!message || message.trim().length === 0) {
     return NextResponse.json({ error: "Message required" }, { status: 400 });
   }
 

@@ -1,19 +1,14 @@
 import { prisma } from "@/lib/prisma";
-import { getUser } from "@/lib/auth";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
+// SCRUM-57/71: health endpoint must NOT leak operational data (user count,
+// DB driver details). Return a minimal liveness check that load balancers
+// and uptime monitors can use without exposing anything sensitive.
+export async function GET() {
   try {
-    const userCount = await prisma.user.count();
-    return NextResponse.json({
-      status: "ok",
-      db: "connected",
-      users: userCount,
-    });
-  } catch (e: any) {
-    return NextResponse.json({
-      status: "error",
-      db: "failed",
-    }, { status: 500 });
+    await prisma.$queryRaw`SELECT 1`;
+    return NextResponse.json({ status: "ok" });
+  } catch {
+    return NextResponse.json({ status: "degraded" }, { status: 503 });
   }
 }

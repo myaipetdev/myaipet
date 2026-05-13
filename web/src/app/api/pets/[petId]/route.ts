@@ -102,12 +102,25 @@ export async function PATCH(
     return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   }
 
+  // SCRUM-53/55: lazy-import sanitizers (keeps cold-start small for read paths)
+  const { sanitizeName, sanitizeText, safeUrlOrEmpty } = await import("@/lib/sanitize");
+
   const updateData: any = {};
+  // SCRUM-60: name was previously silently ignored. Now accepted + sanitized.
+  if (body.name !== undefined) {
+    const cleanName = sanitizeName(body.name, 50);
+    if (cleanName) updateData.name = cleanName;
+  }
   if (body.appearance_desc !== undefined) {
-    updateData.appearance_desc = body.appearance_desc;
+    updateData.appearance_desc = sanitizeText(body.appearance_desc, 2000);
   }
   if (body.avatar_url !== undefined) {
-    updateData.avatar_url = body.avatar_url;
+    const safeAvatar = safeUrlOrEmpty(body.avatar_url);
+    if (safeAvatar) updateData.avatar_url = safeAvatar;
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }
 
   const updated = await prisma.pet.update({

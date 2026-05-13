@@ -3,6 +3,17 @@ import {
   getAllSkills, getSkill, searchSkills, generateSkillMd,
   installSkill, uninstallSkill, getInstalledSkills, executeSkill,
 } from "@/lib/petclaw/pethub";
+import { getUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+const PUBLIC_DEMO_PET_ID = 1; // Sparky — the landing-page playground pet
+
+async function ownsPet(req: NextRequest, petId: number): Promise<boolean> {
+  const user = await getUser(req).catch(() => null);
+  if (!user) return false;
+  const pet = await prisma.pet.findFirst({ where: { id: petId, user_id: user.id } });
+  return !!pet;
+}
 
 // GET /api/petclaw/skills — List or search skills
 export async function GET(req: NextRequest) {
@@ -51,28 +62,45 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "action and petId required" }, { status: 400 });
   }
 
+  const pid = Number(petId);
+  if (!Number.isInteger(pid) || pid <= 0) {
+    return NextResponse.json({ error: "Invalid petId" }, { status: 400 });
+  }
+
+  // Mutating actions require ownership. Execute on the demo pet is public so
+  // the landing-page chat keeps working; execute on any other pet requires auth.
+  const needsOwnership =
+    action === "install" || action === "uninstall" ||
+    (action === "execute" && pid !== PUBLIC_DEMO_PET_ID) ||
+    action === "list";
+
+  if (needsOwnership) {
+    const ok = await ownsPet(req, pid);
+    if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     switch (action) {
       case "install": {
         if (!skillId) return NextResponse.json({ error: "skillId required" }, { status: 400 });
-        const result = await installSkill(Number(petId), skillId, config);
+        const result = await installSkill(pid, skillId, config);
         return NextResponse.json({ success: true, installed: result });
       }
 
       case "uninstall": {
         if (!skillId) return NextResponse.json({ error: "skillId required" }, { status: 400 });
-        await uninstallSkill(Number(petId), skillId);
+        await uninstallSkill(pid, skillId);
         return NextResponse.json({ success: true, message: `Skill ${skillId} uninstalled` });
       }
 
       case "execute": {
         if (!skillId) return NextResponse.json({ error: "skillId required" }, { status: 400 });
-        const result = await executeSkill(Number(petId), skillId, input || {});
+        const result = await executeSkill(pid, skillId, input || {});
         return NextResponse.json(result);
       }
 
       case "list": {
-        const installed = await getInstalledSkills(Number(petId));
+        const installed = await getInstalledSkills(pid);
         return NextResponse.json({ installed });
       }
 
@@ -80,6 +108,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
+    // Don't leak internal errors
+    console.error("skills POST error:", e?.message);
+    return NextResponse.json({ error: "Action failed" }, { status: 400 });
   }
 }

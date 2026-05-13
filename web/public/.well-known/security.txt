@@ -1,0 +1,5 @@
+Contact: mailto:support@myaipet.ai
+Expires: 2027-01-01T00:00:00.000Z
+Preferred-Languages: en, ko
+Canonical: https://app.myaipet.ai/.well-known/security.txt
+Policy: https://app.myaipet.ai/privacy

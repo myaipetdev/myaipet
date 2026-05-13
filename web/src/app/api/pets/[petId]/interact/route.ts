@@ -10,7 +10,11 @@ import {
   intimacyMultiplier,
   type InteractionType,
 } from "@/lib/petMechanics";
+import { rateLimit } from "@/lib/rateLimit";
 import { NextRequest, NextResponse } from "next/server";
+
+// SCRUM-59: minimum gap between interactions to prevent point/exp farming
+const INTERACT_COOLDOWN_MS = 1500;
 
 const VALID_TYPES = Object.keys(BASE_EFFECTS) as InteractionType[];
 
@@ -50,6 +54,10 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // SCRUM-67: rate limit
+  const rl = rateLimit(req, { key: "pet-interact", limit: 60, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
   const { petId } = await params;
   const body = await req.json();
   const interaction_type = body.interaction_type as InteractionType;
@@ -67,6 +75,17 @@ export async function POST(
 
   if (!pet) {
     return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  }
+
+  // SCRUM-59: enforce per-pet cooldown — prevents repeated calls farming points/exp
+  if (pet.last_interaction_at) {
+    const sinceMs = Date.now() - new Date(pet.last_interaction_at).getTime();
+    if (sinceMs < INTERACT_COOLDOWN_MS) {
+      return NextResponse.json(
+        { error: "Slow down — pet is still processing the last action", retryInMs: INTERACT_COOLDOWN_MS - sinceMs },
+        { status: 429 }
+      );
+    }
   }
 
   // ── Gate check (energy/hunger) ──

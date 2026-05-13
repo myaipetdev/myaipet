@@ -91,8 +91,21 @@
   });
 
   function updateAppearance() {
+    // SCRUM-49/53/55: never innerHTML untrusted strings; use DOM API + scheme check
+    emojiEl.replaceChildren();
+    let safeUrl = "";
     if (config.avatarUrl) {
-      emojiEl.innerHTML = `<img id="aipet-avatar" src="${config.avatarUrl}" alt="${config.petName}" />`;
+      try {
+        const u = new URL(config.avatarUrl);
+        if (u.protocol === "https:" || u.protocol === "http:") safeUrl = config.avatarUrl;
+      } catch {}
+    }
+    if (safeUrl) {
+      const img = document.createElement("img");
+      img.id = "aipet-avatar";
+      img.src = safeUrl;
+      img.alt = String(config.petName || "pet");
+      emojiEl.appendChild(img);
     } else {
       emojiEl.textContent = config.petEmoji;
     }

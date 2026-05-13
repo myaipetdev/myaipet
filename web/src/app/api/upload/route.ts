@@ -1,5 +1,6 @@
 import { getUser } from "@/lib/auth";
 import { uploadFile } from "@/lib/storage";
+import { detectImageMime } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -41,6 +42,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // SCRUM-67: limit uploads to 10/min per user
+  const { rateLimit } = await import("@/lib/rateLimit");
+  const rl = rateLimit(req, { key: "upload", limit: 10, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
   const skipPetCheck = formData.get("skipPetCheck") === "true"; // for non-pet uploads
@@ -65,10 +71,27 @@ export async function POST(req: NextRequest) {
 
   const buffer = Buffer.from(await file.arrayBuffer());
 
+  // SCRUM-54: verify actual file bytes — client-supplied MIME / extension is
+  // untrusted (attacker can label a .exe as image/png). Use magic bytes.
+  const realMime = detectImageMime(buffer);
+  if (!realMime) {
+    return NextResponse.json(
+      { error: "File is not a valid image. Allowed: JPEG, PNG, WebP, GIF" },
+      { status: 400 }
+    );
+  }
+  // Also reject if claimed MIME disagrees with sniffed MIME (defense in depth)
+  if (file.type && file.type !== realMime) {
+    return NextResponse.json(
+      { error: "File contents do not match declared type" },
+      { status: 400 }
+    );
+  }
+
   // Pet photo validation (only for avatar uploads)
   if (!skipPetCheck) {
     const base64 = buffer.toString("base64");
-    const check = await isPetPhoto(base64, file.type);
+    const check = await isPetPhoto(base64, realMime);
     if (!check.ok) {
       return NextResponse.json({ error: check.reason }, { status: 400 });
     }
@@ -76,16 +99,21 @@ export async function POST(req: NextRequest) {
 
   try {
     const timestamp = Date.now();
-    const ext = file.name.split(".").pop() || "png";
+    // Force extension to match the sniffed MIME, never trust client filename
+    const extByMime: Record<string, string> = {
+      "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif",
+    };
+    const ext = extByMime[realMime] || "png";
     const filename = `avatars/${user.id}/${timestamp}.${ext}`;
 
-    const result = await uploadFile(filename, buffer, file.type);
+    const result = await uploadFile(filename, buffer, realMime);
 
     return NextResponse.json({ url: result.url });
   } catch (err: any) {
-    console.error("Upload error:", err);
+    console.error("Upload error:", err?.message);
+    // SCRUM-39/61: do NOT echo err.message — strip details to client
     return NextResponse.json(
-      { error: "Upload failed", details: err.message },
+      { error: "Upload failed" },
       { status: 500 }
     );
   }
