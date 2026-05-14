@@ -216,47 +216,47 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         }} />
       </div>
 
-      {/* Main headline */}
+      {/* Main headline — aligned with landing voice (sovereign AI companion) */}
       <h1 style={{
         fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(36px,5vw,64px)",
         fontWeight: 700, color: "#1a1a2e", lineHeight: 1.1,
-        margin: "0 auto 6px", maxWidth: 720, letterSpacing: "-0.03em",
+        margin: "0 auto 6px", maxWidth: 760, letterSpacing: "-0.03em",
         position: "relative", zIndex: 2,
       }}>
-        The Future of Companionship
-        <br />
-        <span style={{ color: "rgba(26,26,46,0.35)", fontSize: "0.75em" }}>is</span>{" "}
+        Your AI.{" "}
+        <span style={{ color: "rgba(26,26,46,0.35)" }}>Your data.</span>{" "}
         <span style={{
           background: "linear-gradient(135deg,#fbbf24,#f59e0b,#d97706,#fbbf24)",
           backgroundSize: "300% 300%",
           animation: "gradientShift 4s ease infinite",
           WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
         }}>
-          On-Chain
+          Your companion.
         </span>
       </h1>
 
-      {/* Tagline */}
+      {/* Tagline — pillars that match the landing's "sovereignty" frame */}
       <div style={{
-        display: "inline-flex", gap: 16, alignItems: "center",
-        fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, fontWeight: 600,
+        display: "inline-flex", gap: 14, alignItems: "center",
+        fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 600,
         color: "#b45309", marginBottom: 18, position: "relative", zIndex: 2,
         letterSpacing: "0.04em",
       }}>
-        <span><Icon name="paw" size={16} /> Raise</span>
+        <span><Icon name="paw" size={16} /> Adopt</span>
         <span style={{ color: "rgba(26,26,46,0.15)" }}>·</span>
-        <span>Bond</span>
+        <span>Remember</span>
         <span style={{ color: "rgba(26,26,46,0.15)" }}>·</span>
-        <span>Earn</span>
+        <span>Own</span>
       </div>
 
       <p style={{
-        fontFamily: "mono", fontSize: 20, color: "rgba(26,26,46,0.5)",
-        maxWidth: 560, margin: "0 auto 34px", lineHeight: 1.8,
+        fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, color: "rgba(26,26,46,0.65)",
+        maxWidth: 580, margin: "0 auto 34px", lineHeight: 1.7, fontWeight: 500,
         position: "relative", zIndex: 2,
       }}>
-        Raise a one-of-a-kind AI pet that grows, evolves, and generates real economic value.
-        Every interaction shapes their personality — every creation lives on-chain.
+        Not another chatbot with a cute avatar. An AI pet that remembers you,
+        grows with you, and lives across every surface you do — fully exportable,
+        deletable, yours.
       </p>
 
       {/* Ecosystem pillars */}

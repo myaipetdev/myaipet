@@ -18,12 +18,12 @@ import { useDirectUsdtPay } from "@/hooks/useDirectUsdtPay";
 import { getAuthHeaders } from "@/lib/api";
 
 const EARN_METHODS = [
-  { icon: "🐾", label: "Daily Check-in", desc: "Care for your pet daily", reward: "+10 $PET/day" },
-  { icon: "🎬", label: "Create Content", desc: "Generate AI videos & images", reward: "+5 $PET/post" },
-  { icon: "💬", label: "Social Engagement", desc: "Like, comment, share", reward: "+2 $PET/action" },
-  { icon: "🏆", label: "Arena Wins", desc: "Win prediction rounds", reward: "1.85x payout" },
-  { icon: "🧬", label: "Pet Evolution", desc: "Evolve your companion to unlock new traits", reward: "+50 $PET/level" },
-  { icon: "📢", label: "Referrals", desc: "Invite friends to join", reward: "+100 $PET/ref" },
+  { icon: "🐾", label: "Daily check-in", desc: "Show up. Your pet remembers.", reward: "+10 pts" },
+  { icon: "🎬", label: "Create together", desc: "AI image & video starring your pet", reward: "+5 pts" },
+  { icon: "💬", label: "Share moments", desc: "Like, comment, signal-boost", reward: "+2 pts" },
+  { icon: "🤝", label: "Build the bond", desc: "Talk, feed, walk, train", reward: "+1–3 pts" },
+  { icon: "🧬", label: "Evolution", desc: "Each stage unlocks new behavior", reward: "+50 pts/level" },
+  { icon: "📢", label: "Invite a friend", desc: "Bring someone into the ecosystem", reward: "+100 pts" },
 ];
 
 const BSC_CHAIN_ID = 56;
@@ -201,30 +201,30 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           .pricing-earn-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
-      {/* Section: Raise to Earn */}
+      {/* Section: companionship-first economy (tone-aligned with landing) */}
       <div style={{ textAlign: "center", marginBottom: 48 }}>
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 14px",
           borderRadius: 20, background: "rgba(251,191,36,0.06)",
           border: "1px solid rgba(251,191,36,0.12)", marginBottom: 16,
         }}>
-          <span style={{ fontSize: 12 }}>💡</span>
-          <span style={{ fontFamily: "mono", fontSize: 10, color: "#b45309", fontWeight: 600 }}>
-            CARE TO EARN
+          <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 10, color: "#b45309", fontWeight: 700, letterSpacing: "0.16em" }}>
+            COMPANIONSHIP · OWNED
           </span>
         </div>
         <h2 style={{
           fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700,
-          color: "#1a1a2e", marginBottom: 8,
+          color: "#1a1a2e", marginBottom: 8, letterSpacing: "-0.02em",
         }}>
-          The $PET Economy
+          Made with care, not hype.
         </h2>
         <p style={{
-          fontFamily: "mono", fontSize: 16, color: "rgba(26,26,46,0.45)",
-          maxWidth: 560, margin: "0 auto", lineHeight: 1.7,
+          fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, color: "rgba(26,26,46,0.65)",
+          maxWidth: 580, margin: "0 auto", lineHeight: 1.65, fontWeight: 500,
         }}>
-          Earn $PET through companionship, then spend them on evolution, content creation,
-          and marketplace items. The bond you build becomes a source of income.
+          Credits power AI image &amp; video creation with your pet — the same
+          companion you raise, the same memory that travels with you. Spend on
+          what serves the bond. $PET conversion lives at <a href="/tokenomics" style={{ color: "#b45309", fontWeight: 600 }}>tokenomics</a>.
         </p>
       </div>
 

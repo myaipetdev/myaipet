@@ -457,7 +457,7 @@ export default function App() {
           fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, color: "rgba(26,26,46,0.7)",
           maxWidth: 560, margin: "0 auto 26px", lineHeight: 1.6, fontWeight: 500,
         }}>
-          Where emotional bonds generate real value. The first full-cycle Web3 revenue ecosystem driven by emotional AI companionship.
+          Your AI. Your data. Your companion. An open protocol for AI pets you actually own — across every surface you use.
         </p>
 
         {/* Social buttons */}

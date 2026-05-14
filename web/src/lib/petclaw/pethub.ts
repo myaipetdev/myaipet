@@ -318,13 +318,31 @@ export async function executeSkill(
   }
 }
 
+/**
+ * Public demo pet resolver — used when an unauthenticated caller (e.g. landing
+ * playground, Chrome extension with no auth token) requests a specific petId
+ * that no longer exists. Falls back to the oldest active pet so the demo never
+ * breaks from data churn (releases, account deletes).
+ */
+async function resolveDemoPet(requestedPetId: number) {
+  const direct = await prisma.pet.findFirst({
+    where: { id: requestedPetId, is_active: true },
+  });
+  if (direct) return direct;
+  // Demo fallback — oldest still-active pet
+  return prisma.pet.findFirst({
+    where: { is_active: true },
+    orderBy: { id: "asc" },
+  });
+}
+
 async function executeLLMSkill(
   petId: number,
   skill: PetSkillManifest,
   input: Record<string, unknown>
 ): Promise<unknown> {
-  const pet = await prisma.pet.findUnique({ where: { id: petId } });
-  if (!pet) throw new Error("Pet not found");
+  const pet = await resolveDemoPet(petId);
+  if (!pet) throw new Error("No active pet available");
 
   const grokKey = process.env.GROK_API_KEY;
   if (!grokKey) throw new Error("GROK_API_KEY not configured");
@@ -333,8 +351,9 @@ async function executeLLMSkill(
   const platform = (input.platform as string) || "web";
 
   // ── Persistent Memory: Build context-aware system prompt ──
+  // Use resolved pet.id (may differ from requested petId when demo fallback kicked in)
   const { createMemoryManager } = await import("./memory/persistent-memory");
-  const memory = createMemoryManager(petId);
+  const memory = createMemoryManager(pet.id);
   let systemPrompt: string;
 
   if (skill.id === "companion-chat" || skill.id === "persona-mirror") {
@@ -374,11 +393,9 @@ async function executeLLMSkill(
   // ── Post-turn: Retain memory + self-learning (fire-and-forget) ──
   if (skill.id === "companion-chat" || skill.id === "persona-mirror") {
     const sessionId = `${platform}_${Date.now()}`;
-    // Memory retention (async, non-blocking)
     memory.retainFromConversation(userMessage, reply, platform, sessionId).catch(() => {});
-    // Self-learning (async, non-blocking)
     import("./memory/self-learning").then(({ createSelfLearner }) => {
-      createSelfLearner(petId).observeConversation(userMessage, reply).catch(() => {});
+      createSelfLearner(pet.id).observeConversation(userMessage, reply).catch(() => {});
     }).catch(() => {});
   }
 
