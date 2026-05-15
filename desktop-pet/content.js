@@ -6,6 +6,13 @@
 (function () {
   if (document.getElementById("aipet-container")) return;
 
+  // Skip on myaipet domains — landing already has its own Sparky companion.
+  // "왜 2마리야" report: extension overlapped with landing's native pet.
+  const host = location.hostname;
+  if (host === "myaipet.ai" || host === "www.myaipet.ai" || host === "app.myaipet.ai") {
+    return;
+  }
+
   // ── State ──
   let config = { petName: "Pet", petEmoji: "\uD83D\uDC3E", avatarUrl: "", level: 1, personality: "playful" };
   let emotions = { happiness: 70, energy: 60, hunger: 30, affection: 60, curiosity: 50 };
@@ -13,17 +20,24 @@
   let evolution = { stage: 0, xp: 0 };
   let preferences = { particles: true, autoTalk: true, sound: false };
 
+  // 2-D autonomous roaming: pick a target on screen, walk to it, pause, pick another.
+  // "주변만 맴도는" report — previous walk used fixed-duration random shuffles that
+  // never covered much ground before flipping direction.
   let posX = window.innerWidth / 2;
+  let posY = 0;                     // hop height above bottom (px)
+  let targetX = posX;
+  let targetY = 0;
   let direction = 1;
   let state = "idle";
-  let walkSpeed = 1.2;
+  let walkSpeed = 2.4;               // base px/frame; modulated by energy
   let walkTimer = 0;
   let idleTimer = 0;
-  let nextWalkDelay = randomBetween(2, 6);
+  let nextWalkDelay = randomBetween(1.0, 2.5); // shorter idle pauses
   let isDragging = false;
   let dragOffsetX = 0;
   let bubbleTimeout = null;
   let particles = [];
+  let hopPhase = 0;                  // animates a small bob while walking
 
   const EVO_AURAS = [
     "", // egg - no aura
@@ -139,27 +153,57 @@
   updateEmotionBar();
 
   // ── Position ──
+  // posY > 0 = hop above the bottom edge.
   function updatePosition() {
     container.style.left = posX + "px";
+    container.style.bottom = posY + "px";
     container.style.transform = "translateX(-50%)";
   }
   updatePosition();
 
-  // ── Walking ──
+  // ── Walking (target-based, autonomous) ──
+  function pickTarget() {
+    const margin = 60;
+    const w = Math.max(200, window.innerWidth - margin * 2);
+    // Bias toward distant targets so the pet covers ground, not just shuffles.
+    // 70% pick a destination ≥ 25% of screen width away from current spot.
+    let dest;
+    if (Math.random() < 0.7) {
+      const minDist = w * 0.25;
+      let tries = 0;
+      do {
+        dest = margin + Math.random() * w;
+        tries++;
+      } while (Math.abs(dest - posX) < minDist && tries < 6);
+    } else {
+      dest = margin + Math.random() * w;
+    }
+    return Math.round(dest);
+  }
+
   function startWalking() {
-    if (emotions.energy < 10) return; // too tired to walk
+    if (emotions.energy < 10) return; // too tired
     state = "walking";
-    direction = Math.random() > 0.5 ? 1 : -1;
-    walkSpeed = 0.6 + (emotions.energy / 100) * 1.5;
+    targetX = pickTarget();
+    direction = targetX > posX ? 1 : -1;
+    // Faster, more responsive to energy
+    walkSpeed = 1.5 + (emotions.energy / 100) * 2.5;
     body.classList.add("walking");
     body.classList.toggle("walking-left", direction === -1);
-    walkTimer = randomBetween(2, 5);
+    // Long enough to plausibly reach the target — fail-safe stop if we overshoot
+    walkTimer = randomBetween(4, 9);
+    // 30% chance to "explore" with a few hops along the way
+    if (Math.random() < 0.3) hopPhase = 0.001; else hopPhase = 0;
   }
 
   function stopWalking() {
     state = "idle";
     body.classList.remove("walking", "walking-left");
-    nextWalkDelay = randomBetween(3, 8);
+    posY = 0;
+    hopPhase = 0;
+    container.style.bottom = "0px";
+    // Short pauses so the pet keeps moving and exploring
+    nextWalkDelay = randomBetween(1.0, 2.5);
   }
 
   // ── Markdown cleaner ──
@@ -527,8 +571,33 @@
 
     if (state === "walking") {
       posX += direction * walkSpeed;
-      if (posX <= 50) { direction = 1; body.classList.remove("walking-left"); }
-      if (posX >= window.innerWidth - 50) { direction = -1; body.classList.add("walking-left"); }
+
+      // Edge bounce — keeps pet on screen if window resized mid-walk
+      if (posX <= 50) { posX = 50; direction = 1; body.classList.remove("walking-left"); targetX = pickTarget(); }
+      if (posX >= window.innerWidth - 50) { posX = window.innerWidth - 50; direction = -1; body.classList.add("walking-left"); targetX = pickTarget(); }
+
+      // Arrived at target → pick a new one and keep going (rather than stop)
+      const arrived = (direction === 1 && posX >= targetX) || (direction === -1 && posX <= targetX);
+      if (arrived) {
+        // 60% pick a new target and keep walking, 40% stop and rest
+        if (Math.random() < 0.6) {
+          targetX = pickTarget();
+          direction = targetX > posX ? 1 : -1;
+          body.classList.toggle("walking-left", direction === -1);
+        } else {
+          stopWalking();
+          return requestAnimationFrame(gameLoop);
+        }
+      }
+
+      // Optional hop — small vertical bob during the walk
+      if (hopPhase > 0) {
+        hopPhase += dt * 4;
+        posY = Math.max(0, Math.sin(hopPhase) * 18);
+        // Trigger a fresh hop every ~2 seconds while exploring
+        if (hopPhase > Math.PI * 2 * 4) hopPhase = 0.001;
+      }
+
       updatePosition();
       walkTimer -= dt;
       if (walkTimer <= 0) stopWalking();
