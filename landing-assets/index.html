@@ -1832,12 +1832,47 @@ function persist() {
   let stateTimer = 0;
   let pawTimer = 0;
 
+  // Default phrases (context-agnostic)
   const phrases = [
     "Hey! Click me to chat 💬", "I remember everything 🧠", "Your data = your rules 🛡",
     "Try the playground below ⬇️", "19 platform connectors! 🔌",
     "Made with PetClaw 🐾", "I never forget a conversation ✨",
     "Export your SOUL data anytime 📦",
   ];
+
+  // SCRUM-74 §3-3: context-aware phrases — pick based on which section
+  // is in view, so the same Sparky line doesn't repeat through the whole scroll.
+  const sectionPhrases = {
+    hero:        ["Hi! I'm Sparky 🐾", "Scroll down to meet me", "Adopt me in 30 seconds!"],
+    companion:   ["This is how I remember 🧠", "Try the chat below!", "I learn from every turn"],
+    community:   ["12 friends already here ✨", "Each one has their own memories", "Hover to see who we are 🎈"],
+    sovereignty: ["Your data, your rules 🛡", "You can export me anytime 📦", "Delete = proof, not promise"],
+    extension:   ["I live in every tab 🌐", "Walking with you everywhere", "No gas to install!"],
+    protocol:    ["MCP-compatible, by the way 🔌", "petclaw-sdk on npm 📦", "Open standard, not a SaaS"],
+    pricing:     ["Boring numbers ahead 💸", "Skip this if you want 🐾", "Or check /tokenomics for the spec"],
+    roadmap:     ["Lots more coming 🚀", "Q3 is exciting...", "2027 = AI inheritance protocol"],
+  };
+
+  function getContextSection() {
+    const sections = ["hero","companion","community","sovereignty","extension","protocol","pricing","roadmap"];
+    const y = window.scrollY + window.innerHeight / 2;
+    for (const id of sections) {
+      const el = document.getElementById(id) || document.querySelector(`[data-section="${id}"]`);
+      if (el) {
+        const r = el.getBoundingClientRect();
+        const top = r.top + window.scrollY;
+        const bot = top + r.height;
+        if (y >= top && y < bot) return id;
+      }
+    }
+    return null;
+  }
+
+  function pickPhrase() {
+    const ctx = getContextSection();
+    const pool = (ctx && sectionPhrases[ctx]) || phrases;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
 
   function showBubble(text, dur) {
     bubble.textContent = text;
@@ -1880,7 +1915,7 @@ function persist() {
       if (stateTimer > 250 + Math.random() * 300) {
         const r = Math.random();
         if (r < 0.4) { state = 'idle'; sprite.style.border = '3px solid rgba(74,222,128,0.6)'; }
-        else { state = 'wave'; showBubble(phrases[Math.floor(Math.random()*phrases.length)], 3500); sprite.style.border = '3px solid rgba(245,158,11,0.8)'; }
+        else { state = 'wave'; showBubble(pickPhrase(), 3500); sprite.style.border = '3px solid rgba(245,158,11,0.8)'; }
         stateTimer = 0;
       }
     } else {

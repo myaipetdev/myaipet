@@ -32,16 +32,16 @@ export default function ArchitecturePage() {
         <Layer
           n={1}
           title="MEMORY.md — Curated Facts"
-          tag="~2.2 KB ceiling · agent-managed"
+          tag="~4 KB ceiling · 40 entries · agent-managed"
           desc="A markdown ledger of facts the pet has decided are worth keeping: skills learned,
-                relationships, preferences, important events. Capped at 20 entries; the agent
+                relationships, preferences, important events. Capped at 40 entries; the agent
                 consolidates and trims based on importance × recency. Always injected into the
                 system prompt."
         />
         <Layer
           n={2}
           title="USER.md — Owner Profile"
-          tag="~1.4 KB ceiling · agent-managed"
+          tag="~2.4 KB ceiling · 25 entries · agent-managed"
           desc="What the pet has learned about you across sessions: preferences, communication
                 style, recurring topics, relevant context. Identity-class entries (e.g. names) are
                 deliberately excluded from the prompt to prevent identity bleed across users on

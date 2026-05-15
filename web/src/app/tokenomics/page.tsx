@@ -64,7 +64,7 @@ export default function TokenomicsPage() {
           <Bullet>Skill marketplace currency — buy/sell pet skills (planned)</Bullet>
           <Bullet>Premium features — slot unlocks, evolution boosts, custom traits</Bullet>
           <Bullet>Governance — protocol parameter votes (post-DAO formation)</Bullet>
-          <Bullet>Staking — fee discounts, priority queue access, revenue share (under review)</Bullet>
+          <Bullet>Staking — fee discounts and priority access to AI inference queue (no profit/dividend/revenue-share component)</Bullet>
         </Section>
 
         <Section title="Points → Token Conversion">
@@ -98,7 +98,7 @@ export default function TokenomicsPage() {
         </Section>
 
         <Section title="Treasury Use of Funds">
-          <Bullet><strong>40%</strong> — AI inference cost (Grok / FAL / Anthropic)</Bullet>
+          <Bullet><strong>40%</strong> — AI inference cost. Multi-provider strategy: Grok (default), FAL (image/video), Anthropic Claude (fallback for memory extraction), with auto-failover. No single-provider dependency in the critical path.</Bullet>
           <Bullet><strong>20%</strong> — Engineering & ops</Bullet>
           <Bullet><strong>15%</strong> — Liquidity provisioning &amp; market making (post-TGE)</Bullet>
           <Bullet><strong>15%</strong> — $PET buyback &amp; burn from on-chain revenue (post-TGE)</Bullet>

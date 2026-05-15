@@ -17,11 +17,15 @@ import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 
 // ── Constants ──
-const MEMORY_MD_MAX_CHARS = 2200;
-const USER_MD_MAX_CHARS = 1400;
-const MAX_MEMORY_ENTRIES = 20;
-const MAX_USER_ENTRIES = 15;
-const PREFETCH_LIMIT = 5;
+// SCRUM-74 §2-2: caps raised. 20-entry ledger risked "forgetting" for 6mo+
+// users; bumped to 40 entries / 4KB. Beyond ~50 entries the Anthropic Hermes
+// markdown-ledger pattern starts losing precision — at that point we fall
+// back to an embedding layer (planned layer 6, see /architecture page).
+const MEMORY_MD_MAX_CHARS = 4000;
+const USER_MD_MAX_CHARS = 2400;
+const MAX_MEMORY_ENTRIES = 40;
+const MAX_USER_ENTRIES = 25;
+const PREFETCH_LIMIT = 6;
 
 // ── Types ──
 
