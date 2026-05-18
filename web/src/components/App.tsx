@@ -512,6 +512,7 @@ export default function App() {
           marginBottom: 14, flexWrap: "wrap",
         }}>
           {[
+            { href: "/skills", label: "Skills" },
             { href: "/stats", label: "Stats" },
             { href: "/api-docs", label: "API Docs" },
             { href: "/terms", label: "Terms" },

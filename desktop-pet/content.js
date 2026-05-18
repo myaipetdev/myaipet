@@ -38,6 +38,9 @@
   let bubbleTimeout = null;
   let particles = [];
   let hopPhase = 0;                  // animates a small bob while walking
+  let lastActivityAt = Date.now();   // for sleep/wake idle detection
+  let isAsleep = false;
+  let pageCommented = false;         // page-aware comment shown once per page
 
   const EVO_AURAS = [
     "", // egg - no aura
@@ -102,6 +105,17 @@
       evolution = res.evolution;
       updateEvolutionVisuals();
     }
+    // Streak counter for return-trip messages
+    chrome.runtime.sendMessage({ type: "tickStreak" }, (sres) => {
+      if (sres?.streak) {
+        window.__petStreak = sres.streak;
+        if (sres.justIncremented && sres.streak >= 2) {
+          setTimeout(() => showBubble(`Day ${sres.streak} together! 🔥`, 5500), 800);
+        }
+      }
+    });
+    // Page-aware reaction — fires once after state is loaded
+    setTimeout(reactToPage, 1500);
   });
 
   function updateAppearance() {
@@ -252,6 +266,90 @@
       state = "idle";
     }, duration);
   }
+
+  // ── Page-aware contextual reactions ──
+  // Inspects document.title + h1 LOCALLY (never sent to server) and picks a
+  // light comment matching the page topic. Designed to be the "magic moment"
+  // that makes general users go "whoa, it noticed".
+  const PAGE_REACTIONS = [
+    { match: /youtube\.com|video|watch|영상/i,           lines: ["Watch party? 🎬", "Got popcorn? 🍿", "What are we watching?"] },
+    { match: /github\.com|gitlab|stackoverflow|코드|coding|programming|javascript|typescript|python/i,
+                                                          lines: ["Coding time! 💻", "Push it, ship it 🚀", "Comments are for the weak (kidding!)"] },
+    { match: /wikipedia|encyclopedia|wiki/i,             lines: ["Ooh, facts! 🤓", "Teach me too!", "Down the rabbit hole 🐰"] },
+    { match: /twitter\.com|x\.com|threads|reddit/i,      lines: ["Don't doomscroll too long 🌊", "Touch grass after? 🌿", "Anything good today?"] },
+    { match: /amazon|shopping|cart|쇼핑|store|aliexpress/i, lines: ["Treat yourself 🛒", "Add to cart, you deserve it", "Show me what you got!"] },
+    { match: /spotify|music|soundcloud|apple\.com\/music|음악/i, lines: ["Dance with me? 🎵", "What's the vibe?", "Bops only 🔊"] },
+    { match: /news|뉴스|breaking|cnn|nytimes|reuters/i,  lines: ["What's happening out there?", "Heavy stuff... take a breath", "Stay informed, stay sane"] },
+    { match: /tutorial|how to|guide|docs|documentation/i, lines: ["Learning something new? 📚", "RTFM mode 👍", "Ooh ooh, what is it?"] },
+    { match: /gmail|outlook|mail/i,                       lines: ["Inbox zero? 📬", "One email at a time 🐌"] },
+    { match: /linkedin|recruiter|job|career/i,            lines: ["Career mode 💼", "Update that resume!"] },
+    { match: /chatgpt|claude|ai|llm/i,                    lines: ["Hi other AI 👋", "Don't replace me okay?", "Are they nice to you?"] },
+    { match: /notion|obsidian|note/i,                     lines: ["Brain dumping? 🧠", "Note that down!"] },
+    { match: /figma|sketch|design/i,                      lines: ["Design eyes on 👁", "Pixel pushing 🎨"] },
+    { match: /\.ai\/|openai|anthropic/i,                  lines: ["AI tools, my favorite 🤖", "What are you building?"] },
+  ];
+
+  function getPageTopic() {
+    const title = (document.title || "").slice(0, 200);
+    const h1 = document.querySelector("h1")?.textContent?.slice(0, 100) || "";
+    return (title + " " + h1 + " " + location.hostname).toLowerCase();
+  }
+
+  function reactToPage() {
+    if (pageCommented) return;
+    pageCommented = true;
+    const topic = getPageTopic();
+    for (const r of PAGE_REACTIONS) {
+      if (r.match.test(topic)) {
+        const phrase = r.lines[Math.floor(Math.random() * r.lines.length)];
+        setTimeout(() => showBubble(phrase, 5000), 1800);
+        return;
+      }
+    }
+    // Generic greeting if no topic match (subtle, only sometimes)
+    if (Math.random() < 0.35) {
+      const generics = ["I'm here 🐾", "Hi friend", "Hanging out", "Whatcha doing?"];
+      setTimeout(() => showBubble(generics[Math.floor(Math.random() * generics.length)], 4000), 2500);
+    }
+  }
+
+  // ── Idle / sleep / wake ──
+  function recordActivity() {
+    lastActivityAt = Date.now();
+    if (isAsleep) {
+      isAsleep = false;
+      body.classList.remove("aipet-sleeping");
+      const streakHint = (window.__petStreak > 0) ? ` (day ${window.__petStreak}!)` : "";
+      showBubble("Welcome back! ✨" + streakHint, 4000);
+    }
+  }
+  ["mousemove", "keydown", "scroll", "click"].forEach(ev =>
+    window.addEventListener(ev, recordActivity, { passive: true })
+  );
+  // Sleep check every 30s — fall asleep after 5min idle
+  setInterval(() => {
+    const idleMs = Date.now() - lastActivityAt;
+    if (!isAsleep && idleMs > 5 * 60 * 1000) {
+      isAsleep = true;
+      state = "sleeping";
+      body.classList.add("aipet-sleeping");
+      showBubble("zzz... 💤", 6000);
+    }
+  }, 30_000);
+
+  // ── Tab visibility — pet acknowledges return ──
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      recordActivity();
+      // Reset page-comment flag so a brand-new SPA navigation can trigger again
+      const newKey = document.title;
+      if (window.__lastPageKey !== newKey) {
+        window.__lastPageKey = newKey;
+        pageCommented = false;
+        setTimeout(reactToPage, 1200);
+      }
+    }
+  });
 
   function showTyping() {
     bubble.classList.remove("hidden");

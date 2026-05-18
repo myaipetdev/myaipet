@@ -500,6 +500,27 @@ async function exportSoul() {
   return callPetClawAPI(`/api/petclaw/export?petId=${config.petId}`);
 }
 
+// Tick daily streak — called by content script on page load. Returns current
+// streak and whether it just incremented today. Lets the pet say "Day N together!"
+// at the right moment instead of waiting for a 5-min heartbeat.
+async function tickStreak() {
+  const points = await getPoints();
+  const today = new Date().toISOString().split("T")[0];
+  let justIncremented = false;
+  if (points.lastDaily !== today) {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    if (points.lastDaily === yesterday) {
+      points.dailyStreak = (points.dailyStreak || 0) + 1;
+    } else {
+      points.dailyStreak = 1;
+    }
+    points.lastDaily = today;
+    justIncremented = true;
+    await chrome.storage.local.set({ [POINTS_KEY]: points });
+  }
+  return { streak: points.dailyStreak || 1, justIncremented };
+}
+
 // SCRUM-20: import a SOUL JSON exported from the app
 async function importSoul(soul) {
   if (!soul || typeof soul !== "object") {
@@ -714,6 +735,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
     exportSoul: () => exportSoul().then((data) => sendResponse({ data })),
     importSoul: () => importSoul(msg.soul).then((res) => sendResponse(res)),
+    tickStreak: () => tickStreak().then((res) => sendResponse(res)),
 
     getPoints: () => getPoints().then((points) => sendResponse({ points })),
 

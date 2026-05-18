@@ -31,6 +31,17 @@
 #aipet-body:active { cursor: grabbing; }
 #aipet-body:hover { transform: scale(1.1); }
 
+/* Sleeping state — gentle pulse + slight tilt + reduced saturation */
+#aipet-body.aipet-sleeping {
+  filter: saturate(0.55) brightness(0.92);
+  animation: aipet-snore 3.4s ease-in-out infinite;
+  transform: rotate(-8deg);
+}
+@keyframes aipet-snore {
+  0%, 100% { transform: rotate(-8deg) translateY(0); }
+  50%      { transform: rotate(-8deg) translateY(-3px); }
+}
+
 /* ── Avatar Image ── */
 #aipet-avatar {
   width: 80px;

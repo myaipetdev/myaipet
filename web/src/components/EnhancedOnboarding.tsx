@@ -19,7 +19,7 @@ interface Props {
   onSkip: () => void;
 }
 
-type Step = "intro" | "voice" | "quiz" | "social" | "done";
+type Step = "intro" | "voice" | "quiz" | "social" | "testdrive" | "done";
 
 const QUIZ_QUESTIONS = [
   {
@@ -168,6 +168,28 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
     }
   };
 
+  // Test-drive state: live first chat with the pet inside the onboarding modal.
+  // Strongest activation moment — "your pet recognizes the onboarding answers
+  // you just gave" — proves the memory wiring without leaving the modal.
+  const [tdMessages, setTdMessages] = useState<{ role: "user" | "pet"; text: string }[]>([]);
+  const [tdInput, setTdInput] = useState("");
+  const [tdLoading, setTdLoading] = useState(false);
+
+  const sendTestDrive = async (msg?: string) => {
+    const text = (msg ?? tdInput).trim();
+    if (!text || tdLoading) return;
+    setTdMessages(m => [...m, { role: "user", text }]);
+    setTdInput("");
+    setTdLoading(true);
+    try {
+      const res = await api.pets.chat(pet.id, text);
+      setTdMessages(m => [...m, { role: "pet", text: res.reply || `*${pet.name} tilts head*` }]);
+    } catch {
+      setTdMessages(m => [...m, { role: "pet", text: `*${pet.name} blinks slowly*` }]);
+    }
+    setTdLoading(false);
+  };
+
   const saveAndComplete = async () => {
     setSaving(true);
     try {
@@ -180,13 +202,19 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
       if (Object.keys(data).length > 0) await api.persona.save(pet.id, data).catch(() => {});
     } catch {}
     setSaving(false);
-    setStep("done");
+    // Persona is saved — jump to the test-drive activation moment instead of
+    // immediately confetti'ing. User chats first, THEN celebrates.
+    setStep("testdrive");
+    // Seed an inviting opener so the chat box isn't empty
+    setTdMessages([
+      { role: "pet", text: `Hi! I'm ${pet.name}. I just learned a bit about you — try saying hi or asking me anything?` },
+    ]);
   };
 
   // ── Shared shell ──
-  const stepIndex: Record<Step, number> = { intro: 0, voice: 1, quiz: 2, social: 3, done: 4 };
-  const totalSteps = 4; // intro is hero, then 3 substeps, then done is celebration
-  const progressIdx = step === "done" ? 4 : stepIndex[step];
+  const stepIndex: Record<Step, number> = { intro: 0, voice: 1, quiz: 2, social: 3, testdrive: 4, done: 5 };
+  const totalSteps = 5; // intro + 3 substeps + testdrive
+  const progressIdx = step === "done" ? 5 : stepIndex[step];
 
   const Shell = ({ children, hideProgress }: { children: React.ReactNode; hideProgress?: boolean }) => (
     <div style={{
@@ -525,6 +553,106 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           {saving ? "Saving…" : `Finish (${points + (connectedPlatforms.length ? 0 : 0)} pts) 🎉`}
         </button>
         <button onClick={saveAndComplete} style={ghostBtn}>Skip & finish</button>
+      </Shell>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // ── TEST DRIVE — live first chat (activation moment) ──
+  // ══════════════════════════════════════════════════════════
+  if (step === "testdrive") {
+    return (
+      <Shell hideProgress>
+        <div style={{ textAlign: "center", marginBottom: 14 }}>
+          <div style={{ marginBottom: 12 }}>
+            <PetAvatar pet={pet} size={72} />
+          </div>
+          {eyebrow("Say hi 👋")}
+          <h3 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
+            {pet.name} just learned about you
+          </h3>
+          <p style={{ color: "rgba(26,26,46,0.6)", fontSize: 13, margin: 0 }}>
+            Say something. They&apos;ll remember it.
+          </p>
+        </div>
+
+        {/* Chat window */}
+        <div style={{
+          height: 220, padding: 12, marginBottom: 10,
+          background: "rgba(0,0,0,0.025)", borderRadius: 14,
+          border: "1px solid rgba(0,0,0,0.05)",
+          overflowY: "auto", display: "flex", flexDirection: "column", gap: 8,
+        }}>
+          {tdMessages.map((m, i) => (
+            <div key={i} style={{
+              alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+              maxWidth: "82%",
+              padding: "8px 12px", borderRadius: 14,
+              background: m.role === "user"
+                ? "linear-gradient(135deg, #f59e0b, #d97706)"
+                : "white",
+              color: m.role === "user" ? "white" : "#1a1a2e",
+              fontSize: 13.5, lineHeight: 1.5,
+              border: m.role === "pet" ? "1px solid rgba(0,0,0,0.05)" : "none",
+              boxShadow: m.role === "pet" ? "0 1px 3px rgba(0,0,0,0.04)" : "0 4px 12px rgba(245,158,11,0.2)",
+              animation: "obSlideIn 0.25s ease-out",
+            }}>
+              {m.text}
+            </div>
+          ))}
+          {tdLoading && (
+            <div style={{
+              alignSelf: "flex-start", padding: "8px 12px", borderRadius: 14,
+              background: "white", border: "1px solid rgba(0,0,0,0.05)",
+              fontSize: 14, color: "rgba(26,26,46,0.5)",
+            }}>···</div>
+          )}
+        </div>
+
+        {/* Quick suggestions */}
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+          {[
+            "Tell me about yourself",
+            "What do you remember about me?",
+            "Make me laugh",
+          ].map(s => (
+            <button key={s} onClick={() => sendTestDrive(s)} disabled={tdLoading} style={{
+              padding: "6px 12px", borderRadius: 999,
+              background: "white", border: "1px solid rgba(0,0,0,0.08)",
+              color: "rgba(26,26,46,0.7)", cursor: tdLoading ? "wait" : "pointer",
+              fontFamily: "inherit", fontSize: 12, fontWeight: 500,
+            }}>{s}</button>
+          ))}
+        </div>
+
+        {/* Input */}
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            value={tdInput}
+            onChange={e => setTdInput(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") sendTestDrive(); }}
+            placeholder={`Message ${pet.name}…`}
+            disabled={tdLoading}
+            autoFocus
+            style={{
+              flex: 1, padding: "11px 14px", borderRadius: 12,
+              border: "1.5px solid rgba(0,0,0,0.08)", outline: "none",
+              fontFamily: "inherit", fontSize: 14, color: "#1a1a2e",
+              background: "white",
+            }}
+          />
+          <button onClick={() => sendTestDrive()} disabled={tdLoading || !tdInput.trim()} style={{
+            padding: "11px 18px", borderRadius: 12, border: "none",
+            background: tdInput.trim() ? "linear-gradient(135deg, #f59e0b, #d97706)" : "rgba(0,0,0,0.05)",
+            color: tdInput.trim() ? "white" : "rgba(26,26,46,0.4)",
+            fontFamily: "inherit", fontSize: 14, fontWeight: 700,
+            cursor: tdLoading || !tdInput.trim() ? "default" : "pointer",
+          }}>Send</button>
+        </div>
+
+        <button onClick={() => setStep("done")} style={{ ...primaryBtn, marginTop: 16 }}>
+          That&apos;s enough — let&apos;s go! →
+        </button>
       </Shell>
     );
   }
