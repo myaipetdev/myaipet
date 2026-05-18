@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { verifySignature } from "@/lib/signAction";
 import { buildPetPrompt, generateGrokImage, generateGrokImageWithRef, describePetAvatar, submitGrokVideo, translatePromptIfNeeded } from "@/lib/services/video";
+import { moderateGeneration } from "@/lib/moderation";
 import { awardPoints } from "@/lib/airdrop";
 import { triggerAgentReactions } from "@/lib/agents";
 import { recordGenerationOnChain, mintContentNFT } from "@/lib/blockchain";
@@ -84,8 +85,34 @@ export async function POST(
     }
   }
 
+  // Content moderation — reject NSFW / violent / minor / public-figure prompts
+  // BEFORE translation (so translated text doesn't bypass) and BEFORE building
+  // the personalized prompt (since the pet's stored fields could also carry
+  // adversarial content).
+  const mods = (pet.personality_modifiers as any) || {};
+  const modCheck = moderateGeneration({
+    prompt: typeof prompt === "string" ? prompt : "",
+    petName: pet.name,
+    customTraits: mods.custom_traits,
+    appearanceDesc: appearanceDesc || undefined,
+  });
+  if (!modCheck.ok) {
+    console.warn("[generate] moderation reject:", modCheck.matched);
+    return NextResponse.json({ error: modCheck.reason }, { status: 400 });
+  }
+
   // Translate non-English prompts so image/video models can actually render the scene
   const translatedPrompt = prompt ? await translatePromptIfNeeded(prompt) : undefined;
+
+  // Second moderation pass on the translated form — a Korean/Chinese/Japanese
+  // prompt could have hidden harmful content that only surfaces post-translation.
+  if (translatedPrompt && translatedPrompt !== prompt) {
+    const m2 = moderateGeneration({ prompt: translatedPrompt });
+    if (!m2.ok) {
+      console.warn("[generate] moderation reject (translated):", m2.matched);
+      return NextResponse.json({ error: m2.reason }, { status: 400 });
+    }
+  }
 
   const personalizedPrompt = buildPetPrompt(
     pet.name,

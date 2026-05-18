@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { describePetAvatar } from "@/lib/services/video";
 import { sanitizeName, sanitizeText, safeUrlOrEmpty } from "@/lib/sanitize";
+import { moderateText } from "@/lib/moderation";
 import { NextRequest, NextResponse } from "next/server";
 
 const PERSONALITIES = ["friendly", "playful", "shy", "brave", "lazy", "curious", "mischievous", "gentle", "adventurous", "dramatic", "wise", "sassy"] as const;
@@ -51,6 +52,19 @@ export async function POST(req: NextRequest) {
       { error: "name is required" },
       { status: 400 }
     );
+  }
+
+  // Moderation gate — pet name + species + traits all leak into prompts and
+  // social feed. Reject NSFW/violence/minor/public-figure adversarial content here.
+  for (const [field, value] of [
+    ["name", name], ["species_name", species_name],
+    ["custom_traits", custom_traits], ["appearance_desc", userAppearanceDesc],
+  ] as const) {
+    const r = moderateText(value, field);
+    if (!r.ok) {
+      console.warn(`[pets/POST] moderation reject ${field}:`, r.matched);
+      return NextResponse.json({ error: r.reason }, { status: 400 });
+    }
   }
 
   const activePetCount = await prisma.pet.count({
