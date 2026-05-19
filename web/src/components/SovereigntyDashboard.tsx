@@ -96,6 +96,400 @@ const memoryNftApi = {
   mint: (petId: any, data: any) => api.memoryNfts.mint(petId, data),
 };
 
+// ── Channel Connections (OAuth subscriptions) ──
+function ChannelConnectionsCard({ petId }: { petId: number }) {
+  const [providers, setProviders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actioning, setActioning] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/petclaw/connections?petId=${petId}`, {
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json();
+      setProviders(data.providers || []);
+    } catch {}
+    setLoading(false);
+  }, [petId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Auto-reload when returning from a successful OAuth callback
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get("connected") || sp.get("oauth_error")) {
+      load();
+      // Strip the query so it doesn't keep firing
+      const url = new URL(window.location.href);
+      url.searchParams.delete("connected");
+      url.searchParams.delete("oauth_error");
+      url.searchParams.delete("from");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [load]);
+
+  const connect = (id: string) => {
+    setActioning(id);
+    window.location.href = `/api/auth/oauth/${id}?petId=${petId}&returnTo=${encodeURIComponent("/sovereignty")}`;
+  };
+
+  const disconnect = async (id: string) => {
+    if (!confirm(`Disconnect ${id}?`)) return;
+    setActioning(id);
+    try {
+      await fetch(`/api/petclaw/connections?petId=${petId}&platform=${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+      await load();
+    } catch {}
+    setActioning(null);
+  };
+
+  const COLORS: Record<string, string> = {
+    discord: "#5865F2", telegram: "#2AABEE", twitter: "#000", github: "#181717",
+  };
+
+  return (
+    <div className="sov-card" style={{
+      padding: 30, borderRadius: 20, marginBottom: 32,
+      background: "linear-gradient(135deg, rgba(88,101,242,0.04), rgba(42,171,238,0.04))",
+      border: "1px solid rgba(88,101,242,0.18)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+        <span style={{ fontSize: 22 }}>🔗</span>
+        <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
+          Channel Subscriptions
+        </h2>
+        <span style={{
+          fontSize: 9, padding: "3px 10px", borderRadius: 999,
+          background: "rgba(88,101,242,0.12)", color: "#5865F2",
+          fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.08em",
+        }}>OAUTH</span>
+      </div>
+      <p style={{ fontSize: 14, color: "rgba(26,26,46,0.62)", lineHeight: 1.6, margin: "0 0 22px" }}>
+        Subscribe your pet to platforms via OAuth. Tokens stored per-pet, revocable anytime,
+        never returned to the browser. Same memory follows across every channel.
+      </p>
+
+      {loading ? (
+        <div style={{ padding: 20, textAlign: "center", color: "rgba(26,26,46,0.5)", fontSize: 13 }}>Loading…</div>
+      ) : (
+        <div style={{ display: "grid", gap: 10 }}>
+          {providers.map((p) => {
+            const color = COLORS[p.id] || "#999";
+            const isActing = actioning === p.id;
+            const profile = p.connection?.profile;
+            return (
+              <div key={p.id} style={{
+                display: "flex", alignItems: "center", gap: 14,
+                padding: "12px 16px", borderRadius: 14,
+                background: p.connected ? `${color}10` : "white",
+                border: p.connected ? `2px solid ${color}` : "1.5px solid rgba(0,0,0,0.07)",
+                opacity: !p.configured ? 0.6 : 1,
+              }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: 10,
+                  background: color, color: "white",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 16, fontWeight: 800, flexShrink: 0,
+                }}>
+                  {p.id === "twitter" ? "𝕏" : p.id === "github" ? "⌥" : p.displayName.charAt(0)}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>
+                    {p.displayName}
+                  </div>
+                  <div style={{ fontSize: 12, color: "rgba(26,26,46,0.55)", marginTop: 2 }}>
+                    {p.connected
+                      ? (profile?.username ? `Connected as @${profile.username}` : "Connected")
+                      : !p.configured
+                      ? "Coming soon — admin not configured"
+                      : "Not connected"}
+                  </div>
+                </div>
+                {p.connected ? (
+                  <button
+                    onClick={() => disconnect(p.id)}
+                    disabled={isActing}
+                    style={{
+                      padding: "7px 14px", borderRadius: 999, border: "1px solid rgba(220,38,38,0.25)",
+                      background: "rgba(220,38,38,0.06)", color: "#dc2626",
+                      fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 700,
+                      cursor: isActing ? "wait" : "pointer",
+                    }}
+                  >{isActing ? "..." : "Disconnect"}</button>
+                ) : (
+                  <button
+                    onClick={() => p.configured && connect(p.id)}
+                    disabled={!p.configured || isActing}
+                    style={{
+                      padding: "7px 14px", borderRadius: 999, border: "none",
+                      background: p.configured ? color : "rgba(0,0,0,0.06)",
+                      color: p.configured ? "white" : "rgba(26,26,46,0.4)",
+                      fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 700,
+                      cursor: p.configured && !isActing ? "pointer" : "not-allowed",
+                    }}
+                  >{isActing ? "..." : "Connect"}</button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div style={{
+        marginTop: 16, padding: "10px 14px", borderRadius: 10,
+        background: "rgba(0,0,0,0.03)", fontSize: 11, color: "rgba(26,26,46,0.55)", lineHeight: 1.6,
+      }}>
+        💡 Tokens never leave the server. Disconnect any time — pet stops posting/reading on that channel within seconds.
+      </div>
+    </div>
+  );
+}
+
+// ── Memory Inspector (Hermes-style sovereignty) ──
+// Shows the pet's MEMORY.md, USER.md, learned skills, session log, with per-entry
+// delete/edit. The pet's "self-improvement" surface is finally inspectable.
+function MemoryInspectorCard({ petId }: { petId: number }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [consolidating, setConsolidating] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/petclaw/memory?petId=${petId}`, { headers: getAuthHeaders() });
+      setData(await res.json());
+    } catch {}
+    setLoading(false);
+  }, [petId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const del = async (entryType: string, keyOrId: string | number) => {
+    if (!confirm(`Delete this ${entryType} entry?`)) return;
+    const k = entryType === "session" ? "id" : "key";
+    setBusy(`${entryType}_${keyOrId}`);
+    try {
+      await fetch(`/api/petclaw/memory?petId=${petId}&entryType=${entryType}&${k}=${encodeURIComponent(String(keyOrId))}`, {
+        method: "DELETE", headers: getAuthHeaders(),
+      });
+      await load();
+    } catch {}
+    setBusy(null);
+  };
+
+  const clearAll = async (entryType: string) => {
+    if (!confirm(`Wipe ALL ${entryType} entries? This is irreversible.`)) return;
+    setBusy(`${entryType}_all`);
+    try {
+      await fetch(`/api/petclaw/memory?petId=${petId}&entryType=${entryType}&all=1`, {
+        method: "DELETE", headers: getAuthHeaders(),
+      });
+      await load();
+    } catch {}
+    setBusy(null);
+  };
+
+  const editContent = async (entryType: string, key: string, current: string) => {
+    const next = prompt("Edit content:", current);
+    if (next === null || next === current) return;
+    setBusy(`${entryType}_${key}`);
+    try {
+      await fetch(`/api/petclaw/memory?petId=${petId}&entryType=${entryType}`, {
+        method: "PATCH",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ key, content: next }),
+      });
+      await load();
+    } catch {}
+    setBusy(null);
+  };
+
+  const triggerConsolidate = async () => {
+    if (!confirm("Run memory consolidation now? (uses one LLM call to compress/dedupe)")) return;
+    setConsolidating(true);
+    try {
+      const res = await fetch(`/api/petclaw/memory/consolidate?petId=${petId}&force=1`, {
+        method: "POST", headers: getAuthHeaders(),
+      });
+      const r = await res.json();
+      alert(r.result
+        ? `Done. ${r.result.before.memories}→${r.result.after.memories} memories, ${r.result.before.userProfile}→${r.result.after.userProfile} profile entries.`
+        : "Skipped (gated or nothing to do)");
+      await load();
+    } catch (e: any) {
+      alert("Failed: " + e?.message);
+    }
+    setConsolidating(false);
+  };
+
+  if (loading) return (
+    <div className="sov-card" style={{ padding: 24, borderRadius: 20, marginBottom: 32, background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
+      <div style={{ fontSize: 13, color: "rgba(26,26,46,0.5)" }}>Loading memory ledger…</div>
+    </div>
+  );
+  if (!data) return null;
+
+  const memories: any[] = data.memories || [];
+  const userProfile: any[] = data.userProfile || [];
+  const learned: any[] = data.learnedPatterns || [];
+  const sessions: any[] = data.sessions || [];
+
+  return (
+    <div className="sov-card" style={{
+      padding: 30, borderRadius: 20, marginBottom: 32,
+      background: "linear-gradient(135deg, rgba(168,85,247,0.04), rgba(236,72,153,0.04))",
+      border: "1px solid rgba(168,85,247,0.18)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 22 }}>🧠</span>
+        <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
+          Memory Ledger
+        </h2>
+        <span style={{
+          fontSize: 9, padding: "3px 10px", borderRadius: 999,
+          background: "rgba(168,85,247,0.12)", color: "#a855f7",
+          fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.08em",
+        }}>HERMES-STYLE</span>
+        <div style={{ flex: 1 }} />
+        <button onClick={triggerConsolidate} disabled={consolidating} style={{
+          padding: "6px 14px", borderRadius: 999, border: "1.5px solid rgba(168,85,247,0.3)",
+          background: "white", color: "#a855f7", fontSize: 12, fontWeight: 700, cursor: "pointer",
+        }}>{consolidating ? "Consolidating…" : "⚙️ Consolidate Now"}</button>
+      </div>
+      <p style={{ fontSize: 14, color: "rgba(26,26,46,0.62)", lineHeight: 1.6, margin: "0 0 18px" }}>
+        Everything your pet has learned about you — inspectable, editable, deletable.
+        {data.stats.lastConsolidatedAt && (
+          <span style={{ marginLeft: 8, color: "rgba(26,26,46,0.45)", fontSize: 12 }}>
+            · last consolidated {new Date(data.stats.lastConsolidatedAt).toLocaleString()}
+          </span>
+        )}
+      </p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 10, marginBottom: 22 }}>
+        <Stat label="Memories" value={memories.length} />
+        <Stat label="About Owner" value={userProfile.length} />
+        <Stat label="Learned Skills" value={data.stats.learnedSkillCount} />
+        <Stat label="Session Log" value={sessions.length} />
+      </div>
+
+      <Section title="MEMORY.md — Facts the pet remembers" onClear={memories.length ? () => clearAll("memory") : undefined}>
+        {memories.length === 0 ? <Empty msg="Nothing remembered yet. Chat a few times to seed this." /> :
+          memories.map((m) => (
+            <EntryRow key={m.key} primary={m.content} secondary={`[${m.category}] importance ${m.importance}`}
+              onEdit={() => editContent("memory", m.key, m.content)}
+              onDelete={() => del("memory", m.key)}
+              busy={busy === `memory_${m.key}`}
+            />
+          ))
+        }
+      </Section>
+
+      <Section title="USER.md — What the pet knows about you" onClear={userProfile.length ? () => clearAll("profile") : undefined}>
+        {userProfile.length === 0 ? <Empty msg="No owner profile yet — onboarding seeds this." /> :
+          userProfile.map((u) => (
+            <EntryRow key={u.key} primary={u.content} secondary={`[${u.category}] ${u.source}`}
+              onEdit={() => editContent("profile", u.key, u.content)}
+              onDelete={() => del("profile", u.key)}
+              busy={busy === `profile_${u.key}`}
+            />
+          ))
+        }
+      </Section>
+
+      <Section title="Learned skills (auto-promoted)" onClear={learned.length ? () => clearAll("learned") : undefined}>
+        {learned.length === 0 ? <Empty msg="No learned skills yet. Patterns promote after 3 successful conversations on the same topic." /> :
+          learned.map((p) => (
+            <EntryRow key={p.id || p.topic} primary={p.topic} secondary={`freq ${p.frequency} · success ${Math.round((p.successRate || 0) * 100)}%${p.promotedToSkill ? " · ⭐ promoted" : ""}`}
+              onDelete={() => del("learned", p.id || p.topic)}
+              busy={busy === `learned_${p.id || p.topic}`}
+            />
+          ))
+        }
+      </Section>
+
+      <Section title={`Session log (recent ${sessions.length})`} onClear={sessions.length ? () => clearAll("session") : undefined}>
+        {sessions.length === 0 ? <Empty msg="No session log." /> :
+          sessions.slice(0, 25).map((s) => (
+            <EntryRow key={s.id} primary={s.content} secondary={`${s.platform} · ${new Date(s.createdAt).toLocaleString()}`}
+              onDelete={() => del("session", s.id)}
+              busy={busy === `session_${s.id}`}
+            />
+          ))
+        }
+      </Section>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div style={{
+      padding: "10px 14px", borderRadius: 12, background: "white",
+      border: "1px solid rgba(0,0,0,0.06)", textAlign: "center",
+    }}>
+      <div style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e" }}>{value}</div>
+      <div style={{ fontSize: 10, color: "rgba(26,26,46,0.55)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
+    </div>
+  );
+}
+
+function Section({ title, children, onClear }: { title: string; children: React.ReactNode; onClear?: () => void }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <h3 style={{ fontSize: 13, fontWeight: 800, color: "rgba(26,26,46,0.7)", margin: 0, letterSpacing: "0.02em" }}>{title}</h3>
+        {onClear && (
+          <button onClick={onClear} style={{
+            fontSize: 10, padding: "3px 8px", borderRadius: 6,
+            border: "1px solid rgba(220,38,38,0.25)", background: "white",
+            color: "#dc2626", fontWeight: 700, cursor: "pointer",
+          }}>Clear all</button>
+        )}
+      </div>
+      <div style={{ display: "grid", gap: 6 }}>{children}</div>
+    </div>
+  );
+}
+
+function EntryRow({ primary, secondary, onEdit, onDelete, busy }: { primary: string; secondary: string; onEdit?: () => void; onDelete: () => void; busy: boolean }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10,
+      padding: "8px 12px", borderRadius: 10,
+      background: "white", border: "1px solid rgba(0,0,0,0.05)",
+      opacity: busy ? 0.5 : 1,
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, color: "#1a1a2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{primary}</div>
+        <div style={{ fontSize: 10, color: "rgba(26,26,46,0.45)", marginTop: 2 }}>{secondary}</div>
+      </div>
+      {onEdit && (
+        <button onClick={onEdit} disabled={busy} style={{
+          padding: "4px 10px", borderRadius: 6,
+          border: "1px solid rgba(0,0,0,0.08)", background: "white",
+          fontSize: 11, color: "rgba(26,26,46,0.7)", cursor: "pointer",
+        }}>Edit</button>
+      )}
+      <button onClick={onDelete} disabled={busy} style={{
+        padding: "4px 10px", borderRadius: 6,
+        border: "1px solid rgba(220,38,38,0.2)", background: "white",
+        fontSize: 11, color: "#dc2626", cursor: "pointer",
+      }}>Delete</button>
+    </div>
+  );
+}
+
+function Empty({ msg }: { msg: string }) {
+  return <div style={{ fontSize: 12, color: "rgba(26,26,46,0.45)", padding: "8px 0", fontStyle: "italic" }}>{msg}</div>;
+}
+
 // ── Chrome Extension in-app showcase ──
 function ChromeExtensionSection() {
   const [installStep, setInstallStep] = useState<number | null>(null);
@@ -1678,6 +2072,10 @@ export default function SovereigntyDashboard() {
               </div>
             </div>
           </div>
+
+          {/* ───── Channel Connections (OAuth) ───── */}
+          {selectedPet && <MemoryInspectorCard petId={selectedPet.id} />}
+          {selectedPet && <ChannelConnectionsCard petId={selectedPet.id} />}
 
           {/* ───── Chrome Extension ───── */}
           <ChromeExtensionSection />

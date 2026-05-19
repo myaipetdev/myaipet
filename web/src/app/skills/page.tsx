@@ -74,6 +74,34 @@ export default function SkillsPage() {
           </div>
         </div>
 
+        {/* Learned-skills explainer — Hermes-style self-improvement */}
+        <div style={{
+          padding: 22, borderRadius: 16, marginBottom: 36,
+          background: "linear-gradient(135deg, rgba(168,85,247,0.06), rgba(236,72,153,0.06))",
+          border: "1px solid rgba(168,85,247,0.18)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            <span style={{ fontSize: 20 }}>🌱</span>
+            <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, letterSpacing: "-0.01em" }}>
+              Pets grow new skills on their own
+            </h2>
+            <span style={{
+              fontSize: 9, padding: "3px 10px", borderRadius: 999,
+              background: "rgba(168,85,247,0.12)", color: "#a855f7",
+              fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.08em",
+            }}>HERMES-STYLE</span>
+          </div>
+          <p style={{ fontSize: 14, color: "rgba(26,26,46,0.7)", lineHeight: 1.65, margin: "0 0 10px" }}>
+            Every conversation feeds a topic detector. After three similar exchanges with positive
+            outcomes, your pet auto-promotes the pattern into a private skill — saved with example
+            responses that worked. These travel with your pet via SOUL export, so when your pet
+            migrates to another app, its hard-won expertise comes with it.
+          </p>
+          <p style={{ fontSize: 12, color: "rgba(26,26,46,0.55)", lineHeight: 1.55, margin: 0 }}>
+            See your pet's learned skills in <a href="/?section=sovereignty" style={{ color: "#a855f7", fontWeight: 700 }}>Sovereignty → Memory Ledger</a>.
+          </p>
+        </div>
+
         {/* Skill cards by category */}
         {order.filter(c => grouped[c]).map((cat) => {
           const meta = CATEGORY_META[cat];

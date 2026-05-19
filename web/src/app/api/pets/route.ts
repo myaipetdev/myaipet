@@ -94,9 +94,39 @@ export async function POST(req: NextRequest) {
 
   // Initial personality_modifiers: bootstrap empty memory containers so
   // PetMemoryManager has stable shape from turn 1 and onboarding can mirror into them.
+  // Cross-pet inheritance: if the user already has pets with a user_profile,
+  // we seed the new pet's USER.md with that. The owner is the same person, so
+  // the new pet shouldn't cold-start with "I don't know you". Memories
+  // (persistent_memories) and learned_patterns stay empty — those belong to
+  // the *pet's* experience, not the owner's identity.
+  const inheritedProfile: any[] = [];
+  try {
+    const existingPets = await prisma.pet.findMany({
+      where: { user_id: user.id, is_active: true },
+      select: { personality_modifiers: true },
+      orderBy: { created_at: "desc" },
+      take: 5,
+    });
+    const byKey = new Map<string, any>();
+    for (const ep of existingPets) {
+      const profile = (ep.personality_modifiers as any)?.user_profile;
+      if (!Array.isArray(profile)) continue;
+      for (const entry of profile) {
+        // Prefer most-recently-updated version of each key
+        const cur = byKey.get(entry.key);
+        if (!cur || new Date(entry.updatedAt) > new Date(cur.updatedAt)) {
+          byKey.set(entry.key, entry);
+        }
+      }
+    }
+    inheritedProfile.push(...byKey.values());
+  } catch (e) {
+    console.error("USER.md inheritance lookup failed:", e);
+  }
+
   const initialMods: Record<string, any> = {
     persistent_memories: [],
-    user_profile: [],
+    user_profile: inheritedProfile,
     interaction_history: [],
     combos_unlocked: [],
   };

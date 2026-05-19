@@ -2,9 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createMemoryManager } from "@/lib/petclaw/memory/persistent-memory";
+import { createSelfLearner } from "@/lib/petclaw/memory/self-learning";
 import { getPersona, buildPersonaContext } from "@/lib/services/persona";
 import { rateLimit } from "@/lib/rateLimit";
 import { sanitizeText } from "@/lib/sanitize";
+import { estimateHelpfulness } from "@/lib/petclaw/memory/feedback";
+import { BEST_OF_N_ENABLED, pickBest } from "@/lib/petclaw/memory/best-of-n";
 
 const PERSONALITY_VOICES: Record<string, string> = {
   friendly: "You speak warmly, use lots of exclamation marks, and are always encouraging. You love your owner.",
@@ -81,6 +84,10 @@ export async function POST(
   const persona = await getPersona(pet.id).catch(() => null);
   const personaCtx = buildPersonaContext(persona);
 
+  // Estimate how the LAST pet reply landed — feeds back into self-learning
+  // successRate so good patterns rise and bad ones fade.
+  const helpfulnessSignal = await estimateHelpfulness(pet.id, message.trim(), "web").catch(() => null);
+
   const systemPrompt = `You are ${pet.name}, a Level ${pet.level} pet companion.
 
 PERSONALITY: ${pet.personality_type}
@@ -116,7 +123,7 @@ RULES:
     const grokKey = process.env.GROK_API_KEY;
     if (!grokKey) throw new Error("GROK_API_KEY not configured");
 
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
+    const callGrok = (temperature: number) => fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -129,18 +136,38 @@ RULES:
           { role: "user", content: message.trim().slice(0, 500) },
         ],
         max_tokens: 150,
-        temperature: 0.9,
+        temperature,
       }),
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("Grok chat error:", text);
-      throw new Error("Chat failed");
+    let reply: string;
+    if (BEST_OF_N_ENABLED) {
+      // 2 candidates with different temperatures, picked by heuristic scorer
+      const [r1, r2] = await Promise.all([callGrok(0.75), callGrok(1.0)]);
+      const j1 = r1.ok ? await r1.json() : null;
+      const j2 = r2.ok ? await r2.json() : null;
+      const candidates = [j1, j2]
+        .map((d, i) => ({ text: d?.choices?.[0]?.message?.content || "", temperature: i === 0 ? 0.75 : 1.0 }))
+        .filter(c => c.text);
+      if (candidates.length === 0) throw new Error("Chat failed");
+      const learnedPatterns: any[] = ((pet.personality_modifiers as any)?.learned_patterns) || [];
+      const best = pickBest(candidates, {
+        userMessage: message.trim(),
+        personalityType: pet.personality_type,
+        targetMaxChars: 200,
+        learnedPatterns,
+      });
+      reply = best.text;
+    } else {
+      const res = await callGrok(0.9);
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Grok chat error:", text);
+        throw new Error("Chat failed");
+      }
+      const data = await res.json();
+      reply = data.choices?.[0]?.message?.content || `*${pet.name} tilts head curiously*`;
     }
-
-    const data = await res.json();
-    const reply = data.choices?.[0]?.message?.content || `*${pet.name} tilts head curiously*`;
 
     // Save as interaction + memory
     await prisma.petInteraction.create({
@@ -182,8 +209,15 @@ RULES:
 
     // Persistent memory retention — extract durable facts + user-profile updates.
     // Fire-and-forget (Grok call ~1s); we don't block the chat response on it.
-    memory.retainFromConversation(message.trim(), reply, "web", `web-${user.id}`)
+    memory.retainFromConversation(message.trim(), reply, "web", `web-${user.id}`, user.id)
       .catch((e: any) => console.error("memory.retain failed:", e?.message));
+
+    // Self-learning observer — topic detection + skill auto-promotion at 3 hits.
+    // Uses the prev-turn helpfulness signal so successRate reflects real reactions.
+    const helpfulness = helpfulnessSignal?.score ?? 0.5;
+    createSelfLearner(pet.id)
+      .observeConversation(message.trim(), reply, helpfulness)
+      .catch((e: any) => console.error("self-learning failed:", e?.message));
 
     // Record Web4 heartbeat + user activity (fire-and-forget)
     try {
@@ -211,6 +245,10 @@ RULES:
     };
     const opts = fallbacks[pet.personality_type] || fallbacks.default;
     const reply = opts[Math.floor(Math.random() * opts.length)];
+
+    // Even on LLM failure, log the user's turn so cross-platform timeline doesn't
+    // get holes. We skip extraction (no real reply to extract from).
+    memory.logTurnOnly(message.trim(), "web", `web-${user.id}`, user.id).catch(() => {});
 
     return NextResponse.json({ reply, mood, effects: {} });
   }

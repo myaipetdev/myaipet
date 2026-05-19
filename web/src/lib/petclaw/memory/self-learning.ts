@@ -51,12 +51,22 @@ export class SelfLearner {
     });
   }
 
-  // ── Observe a conversation and detect patterns ──
+  /**
+   * Observe a conversation and detect patterns.
+   * @param helpfulness  -1..+1 continuous score from feedback.ts (boolean
+   *                     legacy callers still work: true→0.8, false→-0.5)
+   */
   async observeConversation(
     userMessage: string,
     petResponse: string,
-    wasHelpful: boolean = true
+    helpfulness: boolean | number = 0.5
   ): Promise<{ patternDetected: boolean; skillCreated: boolean; pattern?: LearnedPattern }> {
+    const score = typeof helpfulness === "boolean"
+      ? (helpfulness ? 0.8 : -0.5)
+      : Math.max(-1, Math.min(1, helpfulness));
+    // Normalize -1..+1 → 0..1 for successRate math
+    const success01 = (score + 1) / 2;
+
     const topic = await this.detectTopic(userMessage);
     if (!topic) return { patternDetected: false, skillCreated: false };
 
@@ -64,25 +74,25 @@ export class SelfLearner {
     let existing = patterns.find(p => p.topic === topic);
 
     if (existing) {
-      // Update existing pattern
       existing.frequency++;
       existing.lastUsedAt = new Date().toISOString();
-      if (wasHelpful && petResponse.length > 10) {
+      // Only collect as exemplar when score is clearly positive (>= 0.4 of the
+      // 0..1 normalized scale, i.e. score >= -0.2). Negative reactions don't
+      // pollute the example pool.
+      if (success01 >= 0.4 && petResponse.length > 10) {
         existing.examples.push(petResponse.slice(0, 200));
         if (existing.examples.length > 5) existing.examples = existing.examples.slice(-5);
-        existing.successRate = (existing.successRate * (existing.frequency - 1) + 1) / existing.frequency;
-      } else {
-        existing.successRate = (existing.successRate * (existing.frequency - 1)) / existing.frequency;
       }
+      // Running average — every turn contributes its actual score
+      existing.successRate = (existing.successRate * (existing.frequency - 1) + success01) / existing.frequency;
     } else {
-      // New pattern
       existing = {
         id: `pattern_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         topic,
         description: `Learned from conversations about: ${topic}`,
         frequency: 1,
-        successRate: wasHelpful ? 1 : 0,
-        examples: wasHelpful ? [petResponse.slice(0, 200)] : [],
+        successRate: success01,
+        examples: success01 >= 0.4 ? [petResponse.slice(0, 200)] : [],
         createdAt: new Date().toISOString(),
         lastUsedAt: new Date().toISOString(),
         promotedToSkill: false,

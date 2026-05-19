@@ -171,14 +171,24 @@ export class PetMemoryManager {
   // ── POST-TURN: Extract & Retain ──
   // ══════════════════════════════════
 
+  /**
+   * Session-only logging — used when the LLM call failed and we have no reply
+   * to extract from, but still want a record of what the user said. Cheaper
+   * than retainFromConversation (no Grok call).
+   */
+  async logTurnOnly(userMessage: string, platform: string, sessionId: string, speakerId?: string | number): Promise<void> {
+    await this.logMessage(userMessage, "user", platform, sessionId, speakerId);
+  }
+
   async retainFromConversation(
     userMessage: string,
     petResponse: string,
     platform: string,
-    sessionId: string
+    sessionId: string,
+    speakerId?: string | number
   ): Promise<{ memoriesAdded: number; profileUpdated: boolean }> {
     // Log session message
-    await this.logMessage(userMessage, "user", platform, sessionId);
+    await this.logMessage(userMessage, "user", platform, sessionId, speakerId);
     await this.logMessage(petResponse, "pet", platform, sessionId);
 
     // Extract facts and user info using LLM
@@ -188,27 +198,36 @@ export class PetMemoryManager {
     let profileUpdated = false;
 
     const { memories, userProfile } = await this.getMemoryData();
+    const now = new Date().toISOString();
 
-    // Add new memories
+    // Add new memories — with contradiction supersede support
     for (const fact of extracted.facts) {
+      // Same-key entries are updates (already supported)
+      // The new `replacesKey` field lets the LLM mark "this contradicts X" so the
+      // outdated entry gets archived (not silently kept alongside the new one).
+      const replacesKey = (fact as any).replacesKey as string | undefined;
+      if (replacesKey && replacesKey !== fact.key) {
+        const stale = memories.findIndex(m => m.key === replacesKey);
+        if (stale !== -1) memories.splice(stale, 1);
+      }
+
       const existing = memories.find(m => m.key === fact.key);
       if (existing) {
-        // Update existing
         existing.content = fact.content;
-        existing.updatedAt = new Date().toISOString();
+        existing.updatedAt = now;
       } else {
-        memories.push({
-          ...fact,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
+        memories.push({ ...fact, createdAt: now, updatedAt: now });
         memoriesAdded++;
       }
     }
 
-    // Add user profile entries
+    // Add user profile entries — speaker_id keyed so concurrent speakers don't
+    // overwrite each other. Identity claims are namespaced per speaker.
     for (const entry of extracted.userInfo) {
-      const existing = userProfile.find(u => u.key === entry.key);
+      // Namespace key by speaker so Alice's "I love sushi" doesn't overwrite Bob's preference
+      const speakerKey = speakerId != null ? `s${speakerId}_${entry.key}` : entry.key;
+      const namespacedEntry = { ...entry, key: speakerKey };
+      const existing = userProfile.find(u => u.key === namespacedEntry.key);
       if (existing) {
         existing.content = entry.content;
         existing.updatedAt = new Date().toISOString();
@@ -222,11 +241,17 @@ export class PetMemoryManager {
       }
     }
 
-    // Consolidate if over limit
+    // Consolidate if over limit (decay-weighted)
     const consolidatedMemories = this.consolidateMemories(memories);
     const consolidatedProfile = this.consolidateUserProfile(userProfile);
 
     await this.saveMemoryData(consolidatedMemories, consolidatedProfile);
+
+    // Reflection cycle — let the consolidator's gate decide whether to actually
+    // run (cheap no-op if not enough new turns). Fire-and-forget; we never wait.
+    import("./consolidate").then(({ consolidateMemory }) => {
+      consolidateMemory(this.petId, false).catch(() => {});
+    }).catch(() => {});
 
     return { memoriesAdded, profileUpdated };
   }
@@ -256,7 +281,7 @@ export class PetMemoryManager {
 Output format:
 {
   "facts": [
-    {"key": "unique_id", "content": "what to remember", "category": "fact|preference|event|relationship|skill_learned", "importance": 1-5, "source": "chat"}
+    {"key": "unique_id", "content": "what to remember", "category": "fact|preference|event|relationship|skill_learned", "importance": 1-5, "source": "chat", "replacesKey": "optional_old_key_this_contradicts"}
   ],
   "userInfo": [
     {"key": "unique_id", "content": "about the owner", "category": "identity|preference|communication|interest|context", "source": "chat"}
@@ -268,6 +293,7 @@ Rules:
 - Skip greetings, small talk, generic responses
 - Importance 5 = critical personal info, 1 = minor detail
 - Use descriptive keys like "user_name", "favorite_food", "works_at"
+- If this fact contradicts/replaces an older one (e.g. user changed mind: "I love sushi" → "I hate sushi now"), set "replacesKey" to the old key so we drop the outdated entry
 - If nothing useful, return empty arrays`,
             },
             {
@@ -301,16 +327,27 @@ Rules:
     }
   }
 
-  // ── Memory Consolidation (keep under limit) ──
-  private consolidateMemories(memories: MemoryEntry[]): MemoryEntry[] {
-    if (memories.length <= MAX_MEMORY_ENTRIES) return memories;
+  // ── Memory Consolidation with decay ──
+  // Score = importance * exp(-age_days / HALFLIFE). Old low-importance entries
+  // fall off naturally even if we're below cap, giving us self-trimming noise.
+  private decayScore(m: MemoryEntry): number {
+    const HALFLIFE_DAYS = 30;
+    const ageMs = Date.now() - new Date(m.updatedAt).getTime();
+    const ageDays = Math.max(0, ageMs / 86_400_000);
+    return m.importance * Math.exp(-ageDays / HALFLIFE_DAYS);
+  }
 
-    // Sort by importance desc, then by recency
-    return memories
-      .sort((a, b) => {
-        if (b.importance !== a.importance) return b.importance - a.importance;
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-      })
+  private consolidateMemories(memories: MemoryEntry[]): MemoryEntry[] {
+    // Stage 1: prune entries with decayed score below floor (only kicks in for
+    // importance:1 entries older than ~30 days)
+    const PRUNE_FLOOR = 0.3;
+    const live = memories.filter(m => this.decayScore(m) >= PRUNE_FLOOR);
+
+    if (live.length <= MAX_MEMORY_ENTRIES) return live;
+
+    // Stage 2: still over cap → keep top-N by decay score
+    return live
+      .sort((a, b) => this.decayScore(b) - this.decayScore(a))
       .slice(0, MAX_MEMORY_ENTRIES);
   }
 
@@ -323,21 +360,35 @@ Rules:
   }
 
   // ── Search memories by relevance ──
+  // Lexical retrieval with token overlap + bigram boost + importance + decay.
+  // Beats pure substring matching: "had pasta" now retrieves "loves Italian food"
+  // when the entry contains "pasta" as one of its tokens (e.g. via consolidation
+  // it became "loves Italian food (pasta, pizza)").
   private searchMemories(memories: MemoryEntry[], query: string): MemoryEntry[] {
-    const queryLower = query.toLowerCase();
-    const words = queryLower.split(/\s+/).filter(w => w.length > 2);
+    const normalize = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+    const tokenize = (s: string) => normalize(s).split(" ").filter(w => w.length > 1);
+    const bigrams = (toks: string[]) => toks.slice(0, -1).map((t, i) => `${t} ${toks[i + 1]}`);
+
+    const qTokens = new Set(tokenize(query));
+    const qBigrams = new Set(bigrams([...qTokens]));
+    if (qTokens.size === 0) return [];
 
     return memories
       .map(m => {
-        const contentLower = m.content.toLowerCase();
+        const mTokens = tokenize(m.content);
+        const mBigrams = new Set(bigrams(mTokens));
         let score = 0;
-        for (const word of words) {
-          if (contentLower.includes(word)) score += 2;
-        }
-        score += m.importance;
+        // Token overlap (1 point each)
+        for (const t of mTokens) if (qTokens.has(t)) score += 1;
+        // Bigram boost (2 points each — phrase matches are stronger signals)
+        for (const b of mBigrams) if (qBigrams.has(b)) score += 2;
+        // Importance bonus
+        score += m.importance * 0.5;
+        // Recency / decay bonus
+        score *= 0.5 + 0.5 * Math.min(1, this.decayScore(m) / 3);
         return { ...m, _score: score };
       })
-      .filter(m => (m as any)._score > 0)
+      .filter(m => (m as any)._score >= 1)
       .sort((a, b) => (b as any)._score - (a as any)._score)
       .slice(0, PREFETCH_LIMIT);
   }
@@ -346,12 +397,22 @@ Rules:
   // ── SESSION LOG (Cross-platform) ──
   // ══════════════════════════════════
 
-  async logMessage(content: string, role: "user" | "pet", platform: string, sessionId: string): Promise<void> {
+  async logMessage(
+    content: string,
+    role: "user" | "pet",
+    platform: string,
+    sessionId: string,
+    speakerId?: string | number
+  ): Promise<void> {
+    // Speaker tagging — `[user:42]` instead of plain `[user]` when we know who
+    // is talking. Lets multi-speaker pets (shared Telegram/Discord) keep their
+    // identity claims separate without a schema migration.
+    const tag = role === "user" && speakerId != null ? `[user:${speakerId}]` : `[${role}]`;
     await prisma.petMemory.create({
       data: {
         pet_id: this.petId,
         memory_type: `session_${platform}`,
-        content: `[${role}] ${content}`,
+        content: `${tag} ${content}`,
         emotion: role === "pet" ? "neutral" : undefined,
         importance: 1,
       },
@@ -359,7 +420,6 @@ Rules:
   }
 
   async getRecentMessages(platform: string, limit: number = 10): Promise<SessionMessage[]> {
-    // Get recent across ALL platforms (cross-platform context)
     const messages = await prisma.petMemory.findMany({
       where: {
         pet_id: this.petId,
@@ -369,16 +429,21 @@ Rules:
       take: limit,
     });
 
-    return messages.reverse().map(m => ({
-      id: String(m.id),
-      petId: this.petId,
-      platform: m.memory_type.replace("session_", ""),
-      role: m.content.startsWith("[user]") ? "user" as const : "pet" as const,
-      content: m.content.replace(/^\[(user|pet)\]\s*/, ""),
-      emotion: m.emotion || undefined,
-      timestamp: m.created_at.toISOString(),
-      sessionId: "",
-    }));
+    return messages.reverse().map(m => {
+      const userMatch = m.content.match(/^\[user(?::([^\]]+))?\]\s*/);
+      const role = userMatch ? "user" as const : "pet" as const;
+      const content = m.content.replace(/^\[(user(?::[^\]]+)?|pet)\]\s*/, "");
+      return {
+        id: String(m.id),
+        petId: this.petId,
+        platform: m.memory_type.replace("session_", ""),
+        role,
+        content,
+        emotion: m.emotion || undefined,
+        timestamp: m.created_at.toISOString(),
+        sessionId: "",
+      };
+    });
   }
 
   // ══════════════════════════════════

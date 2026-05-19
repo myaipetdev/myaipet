@@ -239,18 +239,38 @@ export async function generateAutonomousPost(
   // Load persona for owner-like content generation
   const persona = await getPersona(pet.id);
   const personaCtx = buildPersonaContext(persona);
-  const systemPrompt = buildPetSystemPrompt(pet, [], {
+  let systemPrompt = buildPetSystemPrompt(pet, [], {
     platform,
     context: "post",
     maxResponseLength: platform === "twitter" ? "280 chars" : "1-2 sentences",
     personaContext: personaCtx,
   });
 
+  // Inject memory context — without this, autonomous posts were generic. With
+  // it, the pet can call back to recent events ("yesterday's meeting", "the
+  // pizza from Thursday"). The "topic" we search for is the mood itself so
+  // we surface emotionally-relevant memories.
+  try {
+    const { createMemoryManager } = await import("@/lib/petclaw/memory/persistent-memory");
+    const memory = createMemoryManager(pet.id);
+    const memCtx = await memory.buildContext(mood, platform);
+    if (memCtx.memoryMd) systemPrompt += `\n\n${memCtx.memoryMd}`;
+    if (memCtx.userMd) systemPrompt += `\n\n${memCtx.userMd}`;
+    if (memCtx.recentMessages.length > 0) {
+      const last = memCtx.recentMessages.slice(-3);
+      systemPrompt += "\n\n## Recent conversation context\n";
+      systemPrompt += last.map(m => `${m.role === "user" ? "Owner" : pet.name}: ${m.content}`).join("\n");
+    }
+  } catch (e: any) {
+    console.warn("[pet-agent] memory injection failed (autonomous post):", e?.message);
+  }
+
   const promptHints = [
     `Your current mood is: ${mood}.`,
     "Share something about your day, a random thought, a feeling, or something you noticed.",
     "Be authentic and casual, like a real social media post.",
     "Do NOT start with 'I'm feeling' every time. Vary your openings.",
+    "If you have relevant memories, you may naturally reference one — don't list them.",
   ].join(" ");
 
   try {

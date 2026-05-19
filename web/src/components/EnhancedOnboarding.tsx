@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { api } from "@/lib/api";
+import { useState, useRef, useEffect } from "react";
+import { api, getAuthHeaders } from "@/lib/api";
 
 interface Pet {
   id: number;
@@ -79,11 +79,16 @@ const QUIZ_QUESTIONS = [
   },
 ];
 
+// SOCIAL_PLATFORMS: id matches the OAuth provider key in lib/oauth/providers.ts.
+// Clicking starts /api/auth/oauth/{id}?petId=... — server redirects through
+// the provider's authorize URL, callback persists token in
+// pet_platform_connections.credentials. UI checks /api/petclaw/connections
+// on mount to render existing connections.
 const SOCIAL_PLATFORMS = [
-  { id: "telegram", name: "Telegram", icon: "T", color: "#2AABEE", desc: "DMs & autoposts" },
-  { id: "twitter",  name: "Twitter/X", icon: "𝕏", color: "#000",   desc: "Public voice" },
-  { id: "discord",  name: "Discord",  icon: "D", color: "#5865F2", desc: "Server presence" },
-  { id: "chrome",   name: "Chrome",   icon: "🌐", color: "#4285F4", desc: "Browser companion" },
+  { id: "discord",  name: "Discord",   icon: "D", color: "#5865F2", desc: "Server presence + DMs" },
+  { id: "telegram", name: "Telegram",  icon: "T", color: "#2AABEE", desc: "Pet chats with you here" },
+  { id: "twitter",  name: "Twitter/X", icon: "𝕏", color: "#000",   desc: "Autonomous posting" },
+  { id: "github",   name: "GitHub",    icon: "⌥", color: "#181717", desc: "Reads your dev vibe" },
 ];
 
 const PET_EMOJIS = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
@@ -131,6 +136,21 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
 
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+
+  // Fetch existing OAuth connections on mount — if user returns from a provider
+  // mid-onboarding, the just-connected platform shows ✓ immediately.
+  useEffect(() => {
+    let mounted = true;
+    fetch(`/api/petclaw/connections?petId=${pet.id}`, { headers: getAuthHeaders() })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!mounted || !d?.providers) return;
+        const connected = d.providers.filter((p: any) => p.connected).map((p: any) => p.id);
+        if (connected.length) setConnectedPlatforms(connected);
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, [pet.id]);
 
   const addPoints = (pts: number) => setPoints(p => p + pts);
 
@@ -515,11 +535,15 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             return (
               <div key={p.id} onClick={() => {
                 if (on) {
+                  // Optimistic UI — actual disconnect via Sovereignty connections card
                   setConnectedPlatforms(connectedPlatforms.filter(id => id !== p.id));
-                } else {
-                  setConnectedPlatforms([...connectedPlatforms, p.id]);
-                  addPoints(33);
+                  return;
                 }
+                // OAuth redirect — server starts the flow, callback persists token,
+                // user is sent back to /sovereignty?connected={id}.
+                addPoints(33);
+                const url = `/api/auth/oauth/${p.id}?petId=${pet.id}&returnTo=${encodeURIComponent("/sovereignty?from=onboarding")}`;
+                window.location.href = url;
               }} style={{
                 display: "flex", alignItems: "center", gap: 14,
                 padding: "13px 16px", borderRadius: 14, cursor: "pointer",
