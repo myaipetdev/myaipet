@@ -1,12 +1,12 @@
 /**
  * Storage Abstraction Layer
- * Supports: S3 (AWS) | Vercel Blob (fallback)
+ * Supports: S3 (AWS) | local disk
  *
- * Set STORAGE_PROVIDER=s3 + AWS credentials for S3
- * Falls back to Vercel Blob if S3 not configured
+ * Set STORAGE_PROVIDER=s3 + AWS credentials for S3 (production)
+ * Defaults to local disk (dev / single-box EC2 deploys with nginx).
  */
 
-const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || "local"; // "s3" | "vercel" | "local"
+const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || "local"; // "s3" | "local"
 const LOCAL_UPLOAD_DIR = process.env.LOCAL_UPLOAD_DIR || "/opt/petclaw/uploads";
 const LOCAL_UPLOAD_URL = process.env.LOCAL_UPLOAD_URL || "/uploads";
 const S3_BUCKET = process.env.AWS_S3_BUCKET || "";
@@ -64,23 +64,13 @@ async function uploadToLocal(filename: string, data: Blob | Buffer, _contentType
   return { url, key: filename };
 }
 
-// ── Vercel Blob Upload ──
-async function uploadToVercel(filename: string, data: Blob | Buffer, _contentType: string): Promise<UploadResult> {
-  const { put } = await import("@vercel/blob");
-  const result = await put(filename, data, { access: "public", addRandomSuffix: false });
-  return { url: result.url, key: filename };
-}
-
 // ── Public API ──
 
 export async function uploadFile(filename: string, data: Blob | Buffer, contentType: string = "image/jpeg"): Promise<UploadResult> {
   if (STORAGE_PROVIDER === "s3" && S3_BUCKET && S3_ACCESS_KEY) {
     return uploadToS3(filename, data, contentType);
   }
-  if (STORAGE_PROVIDER === "local") {
-    return uploadToLocal(filename, data, contentType);
-  }
-  return uploadToVercel(filename, data, contentType);
+  return uploadToLocal(filename, data, contentType);
 }
 
 export async function saveRemoteFile(remoteUrl: string, prefix = "generations"): Promise<string> {
