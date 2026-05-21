@@ -220,6 +220,10 @@ function CreatePetModal({ onClose, onCreated }: any) {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Clear any prior rejection so the warning doesn't stick after the user
+    // picks a new image — without this, a rejected non-pet upload keeps its
+    // error banner visible even on the next valid attempt.
+    setAdoptError(null);
     setUploadFile(file);
     const reader = new FileReader();
     reader.onload = (ev) => setUploadPreview(ev.target?.result as string);
@@ -927,7 +931,11 @@ export default function PetProfile() {
       setShowRelease(false);
       await loadPets();
     } catch (e: any) {
-      showError(e.message);
+      // Surface the actual API error so users can see what went wrong instead
+      // of a silent failure that just looks like the confirm button hung.
+      const msg = e?.message || e?.error || "Release failed — try refreshing the page.";
+      showError(`Release failed: ${msg}`);
+      setShowRelease(false);
     }
     setReleasing(false);
   };
@@ -1518,8 +1526,9 @@ export default function PetProfile() {
                 </button>
                 <button onClick={() => setShowRelease(false)} style={{
                   flex: 1, padding: "8px", borderRadius: 8,
-                  border: "1px solid rgba(0,0,0,0.1)", background: "white",
-                  fontFamily: "mono", fontSize: 11, cursor: "pointer",
+                  border: "1px solid rgba(0,0,0,0.15)", background: "white",
+                  color: "#1a1a2e", fontFamily: "mono", fontSize: 11,
+                  fontWeight: 600, cursor: "pointer",
                 }}>
                   Cancel
                 </button>
