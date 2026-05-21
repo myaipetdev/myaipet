@@ -11,7 +11,16 @@ import {
   type InteractionType,
 } from "@/lib/petMechanics";
 import { rateLimit } from "@/lib/rateLimit";
+import { enforcePaywall } from "@/lib/paywall";
 import { NextRequest, NextResponse } from "next/server";
+
+// Which interaction types are gated by daily free cap + USDT paywall
+// (feed/play are unlimited-cost gameplay, so they get free tier + paid overflow.
+// Other interactions (talk/pet/walk/train) stay free — they're chat/emotional UX.)
+const PAID_INTERACTION_MAP: Record<string, string> = {
+  feed: "feed_extra",
+  play: "play_extra",
+};
 
 // SCRUM-59: minimum gap between interactions to prevent point/exp farming
 const INTERACT_COOLDOWN_MS = 1500;
@@ -75,6 +84,18 @@ export async function POST(
 
   if (!pet) {
     return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  }
+
+  // ── Paywall: feed/play have a daily free cap, paid overflow via USDT ──
+  // Other interaction types (talk/pet/walk/train) stay free — they're the
+  // emotional/companionship surface, charging for those would kill the product.
+  const paidActionKey = PAID_INTERACTION_MAP[interaction_type];
+  if (paidActionKey) {
+    const txHash = req.nextUrl.searchParams.get("tx_hash") || undefined;
+    const gate = await enforcePaywall(user.id, paidActionKey, txHash, pet.id);
+    if (gate.ok !== true) {
+      return NextResponse.json({ error: "Payment required", paywall: gate.paywall }, { status: 402 });
+    }
   }
 
   // SCRUM-59: enforce per-pet cooldown — prevents repeated calls farming points/exp
@@ -219,6 +240,18 @@ export async function POST(
   if (leveledUp) await awardPoints(user.id, pet.id, "level_up");
   if (combo) await awardPoints(user.id, pet.id, "interact"); // bonus
 
+  // Care Streak: only feed counts. Mints a NFT every 7-day consecutive streak.
+  // Fire-and-forget — chain calls don't block the interaction response.
+  let streakResult: any = null;
+  if (interaction_type === "feed") {
+    try {
+      const { checkCareStreak } = await import("@/lib/petclaw/nft-mint");
+      streakResult = await checkCareStreak(pet.id);
+    } catch (e: any) {
+      console.error("[interact] streak check failed:", e?.message);
+    }
+  }
+
   return NextResponse.json({
     pet: updatedPet,
     interaction: {
@@ -238,6 +271,7 @@ export async function POST(
         : null,
       request_fulfilled: requestFulfilled,
       next_request: nextRequest,
+      care_streak: streakResult ? { days: streakResult.streak, mintedNft: streakResult.minted } : null,
     },
   });
 }

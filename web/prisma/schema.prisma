@@ -106,6 +106,13 @@ model Pet {
   element             String    @default("normal") @db.VarChar(10)
   evolution_stage     Int       @default(0)
   evolution_name      String?   @db.VarChar(30)
+  // Combat stats — upgradeable via paid /api/pets/[petId]/stats/upgrade.
+  // Used by Pet Battle League ranking + matchmaking. Combined power = atk+def+spd.
+  atk                 Int       @default(10)
+  def                 Int       @default(10)
+  spd                 Int       @default(10)
+  care_streak         Int       @default(0)     // consecutive days of care
+  last_care_at        DateTime?
   user               User                  @relation(fields: [user_id], references: [id])
   memories           PetMemory[]
   interactions       PetInteraction[]
@@ -596,4 +603,41 @@ model InheritanceEvent {
   pet                 Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
   @@index([pet_id])
   @@map("inheritance_events")
+}
+
+// ── Unified payment receipts for every paid action ──
+// Pattern: client signs USDT transfer to Treasury → posts tx_hash here.
+// Server verifies on-chain (already done in /api/credits/purchase) and records.
+// `action_key` keys: feed_extra, play_extra, stat_upgrade_atk, stat_upgrade_def,
+// stat_upgrade_spd, battle_entry, skill_install, generation_extra, etc.
+// `replay_key` is unique so two requests can't claim the same tx_hash.
+model PaidAction {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  pet_id       Int?
+  action_key   String   @db.VarChar(40)
+  amount_usd   Float
+  tx_hash      String   @unique @db.VarChar(66)
+  burn_amount  Float    @default(0)     // 50% of amount_usd; settled async by burn cron
+  burned_tx    String?  @db.VarChar(66)
+  metadata     Json?    @default("{}")
+  created_at   DateTime @default(now())
+  @@index([user_id])
+  @@index([action_key])
+  @@index([created_at])
+  @@map("paid_actions")
+}
+
+// ── Daily free-tier counters (replaces in-memory rate-limit for paid features) ──
+// Resets at UTC midnight. Lookup is O(1) via composite unique.
+model DailyActionCount {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  action_key   String   @db.VarChar(40)
+  day          String   @db.VarChar(10)    // "2026-05-22"
+  count        Int      @default(0)
+  updated_at   DateTime @default(now()) @updatedAt
+  @@unique([user_id, action_key, day], name: "user_action_day")
+  @@index([day])
+  @@map("daily_action_counts")
 }

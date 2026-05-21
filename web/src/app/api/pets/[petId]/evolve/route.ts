@@ -81,11 +81,21 @@ export async function POST(
     });
   }
 
+  // Auto-mint Evolution NFT (off-chain row always; on-chain if BLOCKCHAIN_ENABLED).
+  let evolutionMint: any = null;
+  try {
+    const { recordEvolution } = await import("@/lib/petclaw/nft-mint");
+    evolutionMint = await recordEvolution(pet.id, nextStage.stage, nextStage.name);
+  } catch (e: any) {
+    console.error("[evolve] NFT mint failed:", e?.message);
+  }
+
   return NextResponse.json({
     pet: evolved,
     new_stage: nextStage,
     skills_unlocked: newSkills,
     credits_earned: 50,
+    evolution_nft: evolutionMint,
   });
 }
 

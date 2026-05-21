@@ -48,6 +48,15 @@ export async function POST(
       where: { generation_id: Number(generationId) },
     });
 
+    // When likes cross the threshold for the first time, auto-mint a Content NFT.
+    // Idempotent inside autoMintTopContent (bucketed by likes/10 in the hash).
+    // Fire-and-forget so a slow chain call doesn't delay the like toggle response.
+    if (liked && likes_count >= 50 && likes_count % 10 === 0) {
+      import("@/lib/petclaw/nft-mint").then(({ autoMintTopContent }) =>
+        autoMintTopContent(Number(generationId))
+      ).catch((e) => console.error("[like] content NFT mint failed:", e?.message));
+    }
+
     return NextResponse.json({ liked, likes_count });
   } catch (error) {
     console.error("Like toggle error:", error);
