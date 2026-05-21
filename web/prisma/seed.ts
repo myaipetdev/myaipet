@@ -1,23 +1,11 @@
 import { PrismaClient } from "../src/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import "dotenv/config";
 
-const USE_NEON = process.env.DATABASE_URL?.includes("neon.tech") || false;
-
-let prisma: PrismaClient;
-if (USE_NEON) {
-  const { PrismaNeon } = require("@prisma/adapter-neon");
-  const { neonConfig } = require("@neondatabase/serverless");
-  const ws = require("ws");
-  neonConfig.webSocketConstructor = ws;
-  const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! });
-  prisma = new PrismaClient({ adapter } as any);
-} else {
-  prisma = new PrismaClient({
-    datasources: {
-      db: { url: process.env.DATABASE_URL! },
-    },
-  } as any);
-}
+// Standard pg adapter — works against local Postgres, AWS RDS, or any
+// vanilla Postgres. Matches src/lib/prisma.ts (AWS-only consolidation).
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter } as any);
 
 const GAME_ITEMS = [
   // ── Consumables: EXP & Stats ──
