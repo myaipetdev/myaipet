@@ -36,11 +36,16 @@ interface BattleResult {
   won: boolean;
   turns: number;
   player_hp_left: number;
+  player_hp_max: number;
+  opponent_hp_left: number;
+  opponent_hp_max: number;
   opponent_name: string;
   opponent_petId: number | null;
   exp_gained: number;
   points_earned: number;
-  log: Array<{ turn: number; actor: "you" | "them"; dmg: number; their_hp: number; your_hp: number }>;
+  log: BattleLogEntry[];
+  seed: string;
+  txHash?: string;
 }
 
 /** Deterministic 0..1 PRNG from a seed string (used for combat randomness). */
@@ -54,33 +59,59 @@ function seededRng(seed: string): () => number {
   };
 }
 
+// Surface crit/miss in the log so the UI can highlight them. Crit = top 5% of
+// damage range (the 0.7..1.3 multiplier ≥ 1.28). Miss = bottom 5% (< 0.72).
+interface BattleLogEntry {
+  turn: number;
+  actor: "you" | "them";
+  dmg: number;
+  their_hp: number;
+  your_hp: number;
+  crit?: boolean;
+  miss?: boolean;
+}
+
+interface SimulationResult {
+  won: boolean;
+  turns: number;
+  player_hp_left: number;
+  opponent_hp_left: number;
+  player_hp_max: number;
+  opponent_hp_max: number;
+  log: BattleLogEntry[];
+}
+
 function simulateBattle(
   player: { atk: number; def: number; spd: number; level: number },
   opponent: { atk: number; def: number; spd: number; level: number; name: string },
   seed: string,
-): Omit<BattleResult, "battleId" | "opponent_name" | "opponent_petId" | "exp_gained" | "points_earned"> {
+): SimulationResult {
   const rng = seededRng(seed);
   const playerHpMax = 50 + player.def * 2 + player.level * 5;
   const opponentHpMax = 50 + opponent.def * 2 + opponent.level * 5;
   let playerHp = playerHpMax;
   let opponentHp = opponentHpMax;
-  const log: BattleResult["log"] = [];
+  const log: BattleLogEntry[] = [];
   let turn = 0;
   const playerFirst = player.spd >= opponent.spd;
 
   while (playerHp > 0 && opponentHp > 0 && turn < 50) {
     turn++;
     const actor: "you" | "them" = (playerFirst ? turn % 2 === 1 : turn % 2 === 0) ? "you" : "them";
+    const rngRoll = rng();
+    const multiplier = 0.7 + rngRoll * 0.6;   // 0.7..1.3
+    const crit = rngRoll > 0.95;
+    const miss = rngRoll < 0.05;
     if (actor === "you") {
       const raw = player.atk - opponent.def * 0.5;
-      const dmg = Math.max(1, Math.round(raw * (0.7 + rng() * 0.6)));
+      const dmg = miss ? 0 : Math.max(1, Math.round(raw * (crit ? 1.6 : multiplier)));
       opponentHp = Math.max(0, opponentHp - dmg);
-      log.push({ turn, actor, dmg, their_hp: opponentHp, your_hp: playerHp });
+      log.push({ turn, actor, dmg, their_hp: opponentHp, your_hp: playerHp, ...(crit && { crit: true }), ...(miss && { miss: true }) });
     } else {
       const raw = opponent.atk - player.def * 0.5;
-      const dmg = Math.max(1, Math.round(raw * (0.7 + rng() * 0.6)));
+      const dmg = miss ? 0 : Math.max(1, Math.round(raw * (crit ? 1.6 : multiplier)));
       playerHp = Math.max(0, playerHp - dmg);
-      log.push({ turn, actor, dmg, their_hp: opponentHp, your_hp: playerHp });
+      log.push({ turn, actor, dmg, their_hp: opponentHp, your_hp: playerHp, ...(crit && { crit: true }), ...(miss && { miss: true }) });
     }
   }
 
@@ -88,6 +119,9 @@ function simulateBattle(
     won: opponentHp <= 0 && playerHp > 0,
     turns: turn,
     player_hp_left: playerHp,
+    opponent_hp_left: opponentHp,
+    player_hp_max: playerHpMax,
+    opponent_hp_max: opponentHpMax,
     log,
   };
 }
@@ -160,7 +194,8 @@ export async function POST(req: NextRequest) {
   const expGained = result.won ? 30 + opponent.level * 2 : 5;
   const pointsEarned = result.won ? WINNER_POINTS_BASE : 5;
 
-  // Persist battle history
+  // Persist battle history — including full log + snapshots so /battle/[id]
+  // can replay even after pets get upgraded or deleted.
   const isNpc = (opponent as any)._isNpc || opponent.id === -1;
   const battle = await prisma.battleHistory.create({
     data: {
@@ -174,6 +209,12 @@ export async function POST(req: NextRequest) {
       points_earned: pointsEarned,
       tx_hash: txHash,
       battle_type: isNpc ? "pve" : "pvp",
+      battle_log: result.log as any,
+      seed,
+      player_hp_max: result.player_hp_max,
+      opponent_hp_max: result.opponent_hp_max,
+      player_avatar: pet.avatar_url || null,
+      opponent_avatar: isNpc ? null : (opponent as any).avatar_url || null,
     },
   });
 
@@ -191,11 +232,16 @@ export async function POST(req: NextRequest) {
       won: result.won,
       turns: result.turns,
       player_hp_left: result.player_hp_left,
+      player_hp_max: result.player_hp_max,
+      opponent_hp_left: result.opponent_hp_left,
+      opponent_hp_max: result.opponent_hp_max,
       opponent_name: opponent.name,
       opponent_petId: isNpc ? null : opponent.id,
       exp_gained: expGained,
       points_earned: pointsEarned,
       log: result.log,
-    } as BattleResult,
+      seed,
+      txHash,
+    } satisfies BattleResult,
   });
 }

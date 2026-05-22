@@ -8,6 +8,7 @@ import { useRecordAdoption, isPETActivityEnabled, useCheckBnbBalance } from "@/h
 import EnhancedOnboarding from "@/components/EnhancedOnboarding";
 import PetStatRadar, { StatSlotBar } from "@/components/PetStatRadar";
 import EvolutionAnimation from "@/components/EvolutionAnimation";
+import PaywallModal from "@/components/PaywallModal";
 
 const PET_SPECIES = ["Cat","Dog","Parrot","Turtle","Hamster","Rabbit","Fox","Pomeranian"];
 const PET_EMOJIS = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
@@ -860,6 +861,8 @@ export default function PetProfile() {
   const [unlockingSlot, setUnlockingSlot] = useState(false);
   const [showRelease, setShowRelease] = useState(false);
   const [releasing, setReleasing] = useState(false);
+  const [battling, setBattling] = useState(false);
+  const [paywall, setPaywall] = useState<any>(null);   // PaywallInfo | null
   const [editingDesc, setEditingDesc] = useState(false);
   const [descInput, setDescInput] = useState("");
   const [balance, setBalance] = useState<number | null>(null);
@@ -919,6 +922,50 @@ export default function PetProfile() {
       showError(e.message);
     }
     setUnlockingSlot(false);
+  };
+
+  // Trigger a battle. On 402, opens PaywallModal which signs USDT + re-runs
+  // this with ?tx_hash=… so paywall.ts can match the receipt.
+  const handleBattle = async (txHash?: string) => {
+    if (!activePet || battling) return;
+    setBattling(true);
+    try {
+      const url = txHash
+        ? `/api/battle/create?tx_hash=${txHash}`
+        : "/api/battle/create";
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ petId: activePet.id }),
+      });
+
+      if (res.status === 402) {
+        const { paywall: pw } = await res.json();
+        setPaywall({
+          ...pw,
+          onPaid: async (newTx: string) => {
+            setPaywall(null);
+            await handleBattle(newTx);
+          },
+        });
+        return;
+      }
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showError(err.error || "Battle failed");
+        return;
+      }
+
+      const { result } = await res.json();
+      // Send the user to the share-able replay page (the same screen everyone sees).
+      // The deterministic log is already persisted server-side.
+      window.location.href = `/battle/${result.battleId}`;
+    } catch (e: any) {
+      showError(e?.message || "Battle failed");
+    } finally {
+      setBattling(false);
+    }
   };
 
   const handleRelease = async () => {
@@ -1498,6 +1545,24 @@ export default function PetProfile() {
               {pet.total_interactions}
             </span>
           </div>
+
+          {/* Battle entry — 1 free / day, paid extras open PaywallModal */}
+          <button
+            onClick={() => handleBattle()}
+            disabled={battling}
+            style={{
+              marginTop: 12, width: "100%", padding: "12px",
+              borderRadius: 10, border: "none",
+              background: battling
+                ? "rgba(245,158,11,0.5)"
+                : "linear-gradient(135deg,#fbbf24,#f59e0b)",
+              color: "white", fontFamily: "'Space Grotesk',sans-serif",
+              fontSize: 13, fontWeight: 700, cursor: battling ? "wait" : "pointer",
+              letterSpacing: "0.02em", boxShadow: battling ? "none" : "0 4px 14px rgba(245,158,11,0.3)",
+            }}
+          >
+            {battling ? "Matching…" : "⚔️ Battle"}
+          </button>
 
           {!showRelease ? (
             <button onClick={() => setShowRelease(true)} style={{
@@ -2173,6 +2238,9 @@ export default function PetProfile() {
           </div>
         </div>
       )}
+
+      {/* Paywall modal — opens whenever any paid action returns 402 */}
+      <PaywallModal info={paywall} onClose={() => setPaywall(null)} />
     </div>
   );
 }

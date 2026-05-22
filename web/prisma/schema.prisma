@@ -312,6 +312,15 @@ model BattleHistory {
   battle_type     String   @default("pvp") @db.VarChar(20)
   stage_id        Int?
   created_at      DateTime @default(now())
+  // Replay fields — set at battle creation time, immutable thereafter.
+  // battle_log: [{ turn, actor, dmg, their_hp, your_hp, crit?, miss? }, ...]
+  // snapshot stats so a later stat upgrade doesn't make the replay misleading.
+  battle_log      Json?
+  seed            String?  @db.VarChar(66)
+  player_hp_max   Int      @default(0)
+  opponent_hp_max Int      @default(0)
+  player_avatar   String?  @db.Text
+  opponent_avatar String?  @db.Text
   @@index([player_pet_id])
   @@map("battle_history")
 }
