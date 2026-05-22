@@ -23,6 +23,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rateLimit";
 
 function isoWeekKey(d: Date): string {
   // ISO week (Monday start). Returns "YYYY-Www"
@@ -43,6 +44,10 @@ function payoutTier(rank: number, pool: number): number {
 }
 
 export async function POST(req: NextRequest) {
+  // Brute-force resistance on the cron secret
+  const rl = rateLimit(req, { key: "cron-distribute-pool", limit: 5, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
   const secret = req.headers.get("x-cron-secret") || req.nextUrl.searchParams.get("secret");
   if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -138,7 +138,7 @@ export default function BattleArena({ data, autoPlay = true }: { data: BattleDat
       </div>
 
       {/* ── 2. Versus cards ── */}
-      <div style={{
+      <div className="versus-row" style={{
         display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, alignItems: "stretch",
         marginBottom: 22,
       }}>

@@ -169,7 +169,7 @@ export default async function DashboardPage() {
 
         {/* Top-3 podium */}
         {leaderboard.length >= 3 && (
-          <div style={{
+          <div className="podium-row" style={{
             display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 26,
           }}>
             {[leaderboard[1], leaderboard[0], leaderboard[2]].map((p, idx) => {

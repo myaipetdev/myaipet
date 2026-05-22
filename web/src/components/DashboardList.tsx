@@ -84,7 +84,7 @@ export default function DashboardList({ rows }: { rows: LeaderRow[] }) {
         border: "1px solid rgba(0,0,0,0.06)",
       }}>
         {rows.map((p) => (
-          <div key={p.petId} style={{
+          <div key={p.petId} className="leader-row" style={{
             display: "grid", gridTemplateColumns: "44px 44px 1fr auto auto auto", alignItems: "center", gap: 12,
             padding: "10px 14px", borderRadius: 10,
             color: "#1a1a2e",
@@ -114,7 +114,7 @@ export default function DashboardList({ rows }: { rows: LeaderRow[] }) {
                 Lv.{p.level} · {p.ownerWallet}
               </div>
             </div>
-            <div style={{
+            <div className="leader-stats" style={{
               fontSize: 10, fontFamily: "mono", color: "rgba(26,26,46,0.55)",
               textAlign: "right", whiteSpace: "nowrap",
             }}>
