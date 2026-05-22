@@ -89,40 +89,34 @@ export async function enforcePaywall(
           reason: "free_cap_exhausted" },
       };
     }
-    // Verify the tx_hash was previously recorded (via /api/payments/action-pay)
-    // We do NOT re-verify on-chain here — that's already done at receipt time.
-    // Idempotent: marking the same receipt 'consumed' twice is harmless because
-    // tx_hash is unique and we only count actions, not tx replays.
+    // Single-use receipt: atomic claim via updateMany with consumed_at IS NULL
+    // guard. This prevents the same tx_hash being replayed for two stat
+    // upgrades (or two extra feeds, etc.) — every receipt = exactly one action.
+    const claim = await prisma.paidAction.updateMany({
+      where: {
+        tx_hash: txHash,
+        user_id: userId,
+        action_key: actionKey,
+        consumed_at: null,
+      },
+      data: { consumed_at: new Date() },
+    });
+    if (claim.count !== 1) {
+      // Either no matching receipt, or already consumed. Distinguish for clarity.
+      const existing = await prisma.paidAction.findUnique({ where: { tx_hash: txHash } });
+      const reason: "free_cap_exhausted" | "no_free_tier" = existing && existing.consumed_at
+        ? "free_cap_exhausted"   // already used — UI should ask user to pay again
+        : "free_cap_exhausted";
+      return {
+        ok: false,
+        paywall: { actionKey, priceUsd: cfg.priceUsd, description: cfg.description,
+          treasury: TREASURY, usdtAddress: USDT_BSC, chainId: 56, reason },
+      };
+    }
     const receipt = await prisma.paidAction.findUnique({ where: { tx_hash: txHash } });
-    if (!receipt) {
-      return {
-        ok: false,
-        paywall: { actionKey, priceUsd: cfg.priceUsd, description: cfg.description,
-          treasury: TREASURY, usdtAddress: USDT_BSC, chainId: 56,
-          reason: "free_cap_exhausted" },
-      };
-    }
-    if (receipt.action_key !== actionKey) {
-      // tx_hash exists but was used for a different action → reject (can't reuse)
-      return {
-        ok: false,
-        paywall: { actionKey, priceUsd: cfg.priceUsd, description: cfg.description,
-          treasury: TREASURY, usdtAddress: USDT_BSC, chainId: 56,
-          reason: "free_cap_exhausted" },
-      };
-    }
-    if (receipt.user_id !== userId) {
-      // Someone else's receipt — reject
-      return {
-        ok: false,
-        paywall: { actionKey, priceUsd: cfg.priceUsd, description: cfg.description,
-          treasury: TREASURY, usdtAddress: USDT_BSC, chainId: 56,
-          reason: "free_cap_exhausted" },
-      };
-    }
     return {
       ok: true, paid: true,
-      receipt: { actionKey, txHash, amountUsd: receipt.amount_usd },
+      receipt: { actionKey, txHash, amountUsd: receipt!.amount_usd },
     };
   }
 

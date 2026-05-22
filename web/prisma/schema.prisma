@@ -629,6 +629,7 @@ model PaidAction {
   tx_hash      String   @unique @db.VarChar(66)
   burn_amount  Float    @default(0)     // 50% of amount_usd; settled async by burn cron
   burned_tx    String?  @db.VarChar(66)
+  consumed_at  DateTime?                  // set when the gated action actually executes; null = available
   metadata     Json?    @default("{}")
   created_at   DateTime @default(now())
   @@index([user_id])
