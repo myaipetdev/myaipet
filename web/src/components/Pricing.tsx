@@ -1,18 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAccount, useSwitchChain } from "wagmi";
-import { CONTRACTS } from "@/lib/contracts";
-import {
-  usePETBalance,
-  useUSDTBalance,
-  useUSDTAllowance,
-  useApproveUSDT,
-  usePurchasePET,
-  TIER_USDT,
-  TIER_PET,
-  formatEther,
-} from "@/hooks/useContracts";
 import { useCoinbaseOnramp } from "@/hooks/useCoinbaseOnramp";
 import { useDirectUsdtPay } from "@/hooks/useDirectUsdtPay";
 import { getAuthHeaders } from "@/lib/api";
@@ -37,61 +26,8 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
   const [step, setStep] = useState<"idle" | "approve" | "purchase" | "confirm">("idle");
   const { openOnramp, isAvailable: onrampAvailable } = useCoinbaseOnramp();
 
-  const contractsDeployed = !!CONTRACTS.petShop && !!CONTRACTS.petToken;
-
-  const { data: petBalance, refetch: refetchPET } = usePETBalance(address);
-  const { data: usdtBalance } = useUSDTBalance(address);
-  const { data: usdtAllowance, refetch: refetchAllowance } = useUSDTAllowance(address);
-  const {
-    approve,
-    isPending: approveLoading,
-    isSuccess: approveSuccess,
-    error: approveError,
-  } = useApproveUSDT();
-  const {
-    purchase: purchaseOnChain,
-    isPending: purchaseLoading,
-    isSuccess: purchaseSuccess,
-    hash: purchaseHash,
-    error: purchaseError,
-  } = usePurchasePET();
-
-  // After approve success, do the purchase
-  useEffect(() => {
-    if (approveSuccess && step === "approve" && purchasing) {
-      setStep("purchase");
-      refetchAllowance();
-      purchaseOnChain(purchasing, TIER_USDT[purchasing] || BigInt(0), TIER_PET[purchasing] || BigInt(0));
-    }
-  }, [approveSuccess]);
-
-  // After purchase success
-  useEffect(() => {
-    if (purchaseSuccess && step === "purchase") {
-      setStep("idle");
-      setPurchasing(null);
-      setSuccess(`$PET purchased on-chain! TX: ${purchaseHash?.slice(0, 10)}...`);
-      refetchPET();
-      onCreditsChange?.();
-    }
-  }, [purchaseSuccess]);
-
-  // Handle errors
-  useEffect(() => {
-    if (approveError) {
-      setError(`Approve failed: ${approveError.message?.slice(0, 100)}`);
-      setStep("idle");
-      setPurchasing(null);
-    }
-  }, [approveError]);
-
-  useEffect(() => {
-    if (purchaseError) {
-      setError(`Purchase failed: ${purchaseError.message?.slice(0, 100)}`);
-      setStep("idle");
-      setPurchasing(null);
-    }
-  }, [purchaseError]);
+  // Note: legacy on-chain $PET purchase flow has been retired. The flow is now
+  // strictly USDT → /api/credits/purchase → in-game credits (points-based).
 
   const plans = [
     { name: "Explorer", key: "starter", cookies: 500, price: 5, usdtPrice: "5 USDT", pop: false, desc: "Try the ecosystem", emoji: "🌱" },
@@ -224,7 +160,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         }}>
           Credits power AI image &amp; video creation with your pet — the same
           companion you raise, the same memory that travels with you. Spend on
-          what serves the bond. $PET conversion lives at <a href="/tokenomics" style={{ color: "#b45309", fontWeight: 600 }}>tokenomics</a>.
+          what serves the bond. Points details at <a href="/tokenomics" style={{ color: "#b45309", fontWeight: 600 }}>economy</a>.
         </p>
       </div>
 
@@ -264,40 +200,11 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, fontWeight: 700,
           color: "#1a1a2e", marginBottom: 6,
         }}>
-          Get $PET
+          Get Credits
         </h3>
         <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "rgba(26,26,46,0.5)", marginBottom: 10 }}>
           Pay with USDT on BNB Chain · Verified on-chain · Credits delivered instantly
         </p>
-        {contractsDeployed && (
-          <div style={{
-            display: "inline-flex", gap: 12, alignItems: "center",
-            padding: "6px 16px", borderRadius: 10,
-            background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.12)",
-            fontFamily: "mono", fontSize: 13,
-          }}>
-            {address && usdtBalance !== undefined && (
-              <span style={{ color: "rgba(26,26,46,0.5)" }}>
-                USDT: <span style={{ color: "#1a1a2e", fontWeight: 600 }}>
-                  {Number(formatEther(usdtBalance as bigint)).toFixed(2)}
-                </span>
-              </span>
-            )}
-            {address && petBalance !== undefined && (
-              <span style={{ color: "rgba(26,26,46,0.5)" }}>
-                $PET: <span style={{ color: "#b45309", fontWeight: 600 }}>
-                  {Number(formatEther(petBalance as bigint)).toLocaleString()}
-                </span>
-              </span>
-            )}
-            <span style={{
-              fontSize: 9, padding: "2px 8px", borderRadius: 8,
-              background: "rgba(22,163,74,0.1)", color: "#16a34a", fontWeight: 600,
-            }}>
-              BSC
-            </span>
-          </div>
-        )}
       </div>
 
       {error && (
@@ -316,16 +223,6 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           fontFamily: "mono", fontSize: 11, color: "#16a34a", textAlign: "center",
         }}>
           {success}
-          {purchaseHash && contractsDeployed && (
-            <a
-              href={`https://bscscan.com/tx/${purchaseHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "#16a34a", marginLeft: 8, textDecoration: "underline" }}
-            >
-              View on BscScan
-            </a>
-          )}
         </div>
       )}
 
@@ -397,7 +294,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
               {p.usdtPrice}
             </div>
             <div style={{ fontFamily: "mono", fontSize: 14, color: "#b45309", marginBottom: 4, fontWeight: 600 }}>
-              🪙 {p.cookies.toLocaleString()} $PET
+              🪙 {p.cookies.toLocaleString()} credits
             </div>
             <div style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.4)", marginBottom: 18 }}>
               {p.desc}

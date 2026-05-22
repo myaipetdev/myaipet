@@ -6,12 +6,10 @@ export const metadata: Metadata = {
 };
 
 const CONTRACTS = [
-  { name: "PETContent (NFT)",       addr: "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c", status: "Deployed", note: "ERC-721 for AI-generated content NFTs" },
+  { name: "PETContent (NFT)",       addr: "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c", status: "Deployed", note: "ERC-721 for AI-generated content NFTs + memory anchors" },
   { name: "PetaGenTracker",         addr: "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a", status: "Deployed", note: "Records generation events on-chain" },
-  { name: "PETToken ($PET)",        addr: "TBD",                                          status: "Pending TGE", note: "Utility token — not yet deployed" },
-  { name: "PETShop",                addr: "TBD",                                          status: "Pending",    note: "USDT → $PET swap + premium catalog" },
-  { name: "PETActivity",            addr: "TBD",                                          status: "Pending",    note: "Per-user activity recorder (gasless)" },
-  { name: "PETSoul",                addr: "TBD",                                          status: "Pending",    note: "Pet identity registry + inheritance" },
+  { name: "PETActivity",            addr: "TBD",                                          status: "Planned",    note: "Per-user activity recorder (gasless, roadmap)" },
+  { name: "PETSoul",                addr: "TBD",                                          status: "Planned",    note: "Pet identity registry + successor inheritance (roadmap)" },
 ];
 
 export default function ContractsPage() {

@@ -99,7 +99,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: verification.error }, { status: 400 });
   }
 
-  const burnAmount = Math.round(verification.amount * 100 * 0.5) / 100;  // 50% burn earmark
   const receipt = await prisma.paidAction.create({
     data: {
       user_id: user.id,
@@ -107,7 +106,6 @@ export async function POST(req: NextRequest) {
       action_key: actionKey,
       amount_usd: verification.amount,
       tx_hash: txHash,
-      burn_amount: burnAmount,
       metadata: { from: verification.from, to: verification.to } as any,
     },
   });

@@ -9,7 +9,7 @@ const SECTIONS = [
   { key: "arena", label: "Arena", icon: "⚔️" },
   { key: "items", label: "Items & Shop", icon: "🛒" },
   { key: "rewards", label: "Rewards", icon: "🎁" },
-  { key: "economy", label: "$PET Economy", icon: "🪙" },
+  { key: "economy", label: "pts Economy", icon: "🪙" },
 ];
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -77,7 +77,7 @@ function OverviewSection() {
           {[
             { icon: "🐣", title: "Adopt", desc: "Create your unique AI pet with custom personality and appearance" },
             { icon: "❤️", title: "Raise", desc: "Feed, play, train — every interaction matters" },
-            { icon: "⚔️", title: "Battle", desc: "Compete in the Arena for glory and $PET rewards" },
+            { icon: "⚔️", title: "Battle", desc: "Compete in the Arena for glory and pts rewards" },
           ].map(item => (
             <div key={item.title} style={{
               padding: "16px", borderRadius: 14,
@@ -94,7 +94,7 @@ function OverviewSection() {
 
       <SectionCard title="🎮 Game Loop">
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-          {["Adopt Pet", "→", "Interact Daily", "→", "Level Up", "→", "Evolve", "→", "Arena Battle", "→", "Earn $PET", "→", "Buy Items", "↩"].map((step, i) => (
+          {["Adopt Pet", "→", "Interact Daily", "→", "Level Up", "→", "Evolve", "→", "Arena Battle", "→", "Earn pts", "→", "Buy Items", "↩"].map((step, i) => (
             <span key={i} style={{
               fontFamily: "mono", fontSize: step === "→" || step === "↩" ? 14 : 11,
               fontWeight: step === "→" || step === "↩" ? 400 : 600,
@@ -273,45 +273,45 @@ function ItemsSection() {
   return (
     <>
       <SectionCard title="🛒 Item Shop">
-        <P>Buy items with $PET credits to boost your pet&apos;s stats, speed up leveling, or equip cool gear.</P>
+        <P>Buy items with pts credits to boost your pet&apos;s stats, speed up leveling, or equip cool gear.</P>
 
         <div style={{ fontFamily: "mono", fontSize: 11, fontWeight: 600, color: "rgba(26,26,46,0.5)", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.1em" }}>
           Consumables — Use instantly
         </div>
         <StatTable rows={[
-          ["🧪 EXP Potion (S)", "50 $PET", "EXP +100"],
-          ["🧪 EXP Potion (M)", "120 $PET", "EXP +300"],
-          ["🧬 EXP Potion (L)", "280 $PET", "EXP +800"],
-          ["🌟 Mega EXP Elixir", "600 $PET", "EXP +2000 (Legendary)"],
-          ["⚡ Energy Drink", "30 $PET", "Energy +100"],
-          ["🍱 Premium Feast", "45 $PET", "Hunger -80, Happiness +25"],
-          ["🎂 Happiness Cake", "60 $PET", "Happiness +40"],
-          ["💍 Bond Ring", "150 $PET", "Bond +35"],
-          ["💎 Full Restore", "300 $PET", "All stats MAX (Epic)"],
+          ["🧪 EXP Potion (S)", "50 pts", "EXP +100"],
+          ["🧪 EXP Potion (M)", "120 pts", "EXP +300"],
+          ["🧬 EXP Potion (L)", "280 pts", "EXP +800"],
+          ["🌟 Mega EXP Elixir", "600 pts", "EXP +2000 (Legendary)"],
+          ["⚡ Energy Drink", "30 pts", "Energy +100"],
+          ["🍱 Premium Feast", "45 pts", "Hunger -80, Happiness +25"],
+          ["🎂 Happiness Cake", "60 pts", "Happiness +40"],
+          ["💍 Bond Ring", "150 pts", "Bond +35"],
+          ["💎 Full Restore", "300 pts", "All stats MAX (Epic)"],
         ]} />
 
         <div style={{ fontFamily: "mono", fontSize: 11, fontWeight: 600, color: "rgba(26,26,46,0.5)", marginBottom: 10, marginTop: 20, textTransform: "uppercase", letterSpacing: "0.1em" }}>
           Equipment & Accessories — Equip to pet
         </div>
         <StatTable rows={[
-          ["🏋️ Training Weights", "100 $PET", "Boost EXP gain"],
-          ["🍀 Lucky Charm", "200 $PET", "Boost happiness gain"],
-          ["🛡️ Battle Armor", "350 $PET", "Arena DEF boost (Epic)"],
-          ["⚔️ Dragon Blade", "500 $PET", "Arena ATK boost (Legendary)"],
-          ["🎀 Cute Bow", "25 $PET", "Cosmetic + Happiness +3"],
-          ["🕶️ Cool Sunglasses", "80 $PET", "Style points"],
-          ["👑 Royal Crown", "800 $PET", "Ultimate flex (Legendary)"],
+          ["🏋️ Training Weights", "100 pts", "Boost EXP gain"],
+          ["🍀 Lucky Charm", "200 pts", "Boost happiness gain"],
+          ["🛡️ Battle Armor", "350 pts", "Arena DEF boost (Epic)"],
+          ["⚔️ Dragon Blade", "500 pts", "Arena ATK boost (Legendary)"],
+          ["🎀 Cute Bow", "25 pts", "Cosmetic + Happiness +3"],
+          ["🕶️ Cool Sunglasses", "80 pts", "Style points"],
+          ["👑 Royal Crown", "800 pts", "Ultimate flex (Legendary)"],
         ]} />
 
         <div style={{ fontFamily: "mono", fontSize: 11, fontWeight: 600, color: "rgba(26,26,46,0.5)", marginBottom: 10, marginTop: 20, textTransform: "uppercase", letterSpacing: "0.1em" }}>
           Furniture & Cosmetics
         </div>
         <StatTable rows={[
-          ["🛏️ Cozy Bed", "40 $PET", "Energy recovery boost"],
-          ["🏰 Play Tower", "90 $PET", "Happiness boost"],
-          ["🪴 Zen Garden", "400 $PET", "All stats boost (Epic)"],
-          ["✨ Sparkle Aura", "150 $PET", "Visual effect"],
-          ["🔥 Flame Trail", "300 $PET", "Visual effect (Epic)"],
+          ["🛏️ Cozy Bed", "40 pts", "Energy recovery boost"],
+          ["🏰 Play Tower", "90 pts", "Happiness boost"],
+          ["🪴 Zen Garden", "400 pts", "All stats boost (Epic)"],
+          ["✨ Sparkle Aura", "150 pts", "Visual effect"],
+          ["🔥 Flame Trail", "300 pts", "Visual effect (Epic)"],
         ]} />
       </SectionCard>
 
@@ -376,14 +376,16 @@ function RewardsSection() {
 function EconomySection() {
   return (
     <>
-      <SectionCard title="🪙 $PET Token">
+      <SectionCard title="🪙 Points Economy">
         <P>
-          $PET is the in-game currency used to purchase items, unlock pet slots, and more.
-          It&apos;s also an ERC-20 token on BSC (Binance Smart Chain).
+          Points are the in-game reward currency — earned from interactions, evolutions,
+          and battles, and spent on items, slots, and premium actions. The current system
+          is loyalty-only (no token mint, no claim on equity). Future redemption paths are
+          on the roadmap.
         </P>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
           <div style={{ padding: "14px", borderRadius: 12, background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)" }}>
-            <div style={{ fontFamily: "mono", fontSize: 10, color: "#16a34a", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Earn $PET</div>
+            <div style={{ fontFamily: "mono", fontSize: 10, color: "#16a34a", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Earn pts</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {["Evolution rewards (+50 credits)", "Daily interactions", "Arena victories", "Achievement milestones"].map(item => (
                 <div key={item} style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.55)", display: "flex", gap: 4, alignItems: "center" }}>
@@ -393,7 +395,7 @@ function EconomySection() {
             </div>
           </div>
           <div style={{ padding: "14px", borderRadius: 12, background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)" }}>
-            <div style={{ fontFamily: "mono", fontSize: 10, color: "#dc2626", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Spend $PET</div>
+            <div style={{ fontFamily: "mono", fontSize: 10, color: "#dc2626", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Spend pts</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {["Shop items & consumables", "Unlock pet slots", "Equipment & cosmetics", "Premium features"].map(item => (
                 <div key={item} style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.55)", display: "flex", gap: 4, alignItems: "center" }}>
@@ -406,12 +408,12 @@ function EconomySection() {
       </SectionCard>
 
       <SectionCard title="💳 Credit Packages">
-        <P>Purchase credits with USDT to get $PET tokens for in-game use.</P>
+        <P>Purchase credits with USDT to spend in-game. Credits convert to pts on use.</P>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
           {[
-            { name: "Starter", price: "$5", credits: "100", pet: "500 PET", color: "#4ade80" },
-            { name: "Creator", price: "$20", credits: "500", pet: "2,500 PET", color: "#60a5fa" },
-            { name: "Pro", price: "$50", credits: "2,000", pet: "10,000 PET", color: "#c084fc" },
+            { name: "Starter", price: "$5", credits: "100", pet: "500 pts", color: "#4ade80" },
+            { name: "Creator", price: "$20", credits: "500", pet: "2,500 pts", color: "#60a5fa" },
+            { name: "Pro", price: "$50", credits: "2,000", pet: "10,000 pts", color: "#c084fc" },
           ].map(plan => (
             <div key={plan.name} style={{
               padding: "18px", borderRadius: 14, textAlign: "center",

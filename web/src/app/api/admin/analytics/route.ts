@@ -8,7 +8,7 @@
  *   - paywall hit rate per action (free vs paid)
  *   - daily user activity (DAU)
  *   - top spenders
- *   - PET burn earmark total
+ *   - Weekly battle pool size (in points)
  *   - leaderboard snapshot (top-10)
  *
  * Access: gated by ADMIN_WALLETS env (comma-separated wallet addresses).
@@ -52,11 +52,9 @@ export async function GET(req: NextRequest) {
     actionKey: g.action_key,
     txCount: g._count._all,
     revenueUsd: g._sum.amount_usd || 0,
-    burnEarmarkUsd: g._sum.burn_amount || 0,
   }));
 
   const totalRevenue = revenueByAction.reduce((s, x) => s + x.revenueUsd, 0);
-  const totalBurnEarmark = revenueByAction.reduce((s, x) => s + x.burnEarmarkUsd, 0);
 
   // ── 2. Paywall conversion: how many users hit free cap and converted to paid ──
   // For each action with freeCap > 0: count distinct users in daily_action_counts
@@ -144,7 +142,6 @@ export async function GET(req: NextRequest) {
       memoriesInWindow: totalMemories,
       battlesInWindow: totalBattles,
       revenueUsd: Number(totalRevenue.toFixed(4)),
-      burnEarmarkUsd: Number(totalBurnEarmark.toFixed(4)),
     },
     revenueByAction,
     paywallConversion,
@@ -153,7 +150,7 @@ export async function GET(req: NextRequest) {
     battlePool: {
       entriesInWindow: battlePoolAgg._count._all,
       grossUsd: battlePoolAgg._sum.amount_usd || 0,
-      projectedPayoutUsd: (battlePoolAgg._sum.amount_usd || 0) * 0.7,
+      projectedPoolPoints: Math.round((battlePoolAgg._sum.amount_usd || 0) * 1000),
     },
   });
 }

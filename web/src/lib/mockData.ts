@@ -22,7 +22,7 @@ export const MOCK_ACTIVITIES = [
   { icon: "⬆️", wallet: "0xab12...cd34", chain: "Base", text: "Biscuit leveled up to Lv.5!", time: "4m ago" },
   { icon: "🎬", wallet: "0xef56...ab78", chain: "BNB", text: "Generated anime video of Ziggy the Parrot", time: "5m ago" },
   { icon: "🐱", wallet: "0xbc90...de12", chain: "Base", text: "Adopted a new pet: Tofu the Cat", time: "7m ago" },
-  { icon: "🔥", wallet: "0xfa34...ce56", chain: "BNB", text: "Burned 50 $PET tokens", time: "8m ago" },
+  { icon: "🔥", wallet: "0xfa34...ce56", chain: "BNB", text: "Climbed to #12 on Power Leaderboard", time: "8m ago" },
   { icon: "❤️", wallet: "0xad78...bf90", chain: "Base", text: "Liked 'Mango's Tea Party'", time: "10m ago" },
 ];
 

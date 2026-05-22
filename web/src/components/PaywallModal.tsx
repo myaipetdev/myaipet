@@ -113,7 +113,7 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
             {info.priceUsd.toFixed(2)} USDT
           </div>
           <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", marginTop: 4, fontFamily: "mono" }}>
-            BSC (BEP-20) · 50% burns to deflate PET supply
+            BSC (BEP-20) USDT · payment goes to project treasury
           </div>
         </div>
 

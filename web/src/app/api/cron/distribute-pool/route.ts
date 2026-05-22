@@ -4,21 +4,20 @@
  *   POST /api/cron/distribute-pool?week=2026-W21   (optional week override)
  *   header: x-cron-secret: $CRON_SECRET
  *
- * Closes the current ISO week, calculates the prize pool from battle_entry
- * paid_actions, snapshots the top-100 by combined power, and records payouts.
+ * Closes the current ISO week, calculates the Airdrop Points prize pool from
+ * battle_entry paid_actions, snapshots the top-100 by combined power, credits
+ * winners' airdrop_points balances.
  *
- * Distribution rules:
- *   - Pool = 70% of sum(battle_entry.amount_usd) since previous close
+ * Pool sizing:
+ *   - Each $1 USDT of battle entries = 1000 airdrop points to the pool
  *   - 50% of pool → #1
  *   - 25% of pool → #2..#3 split evenly
  *   - 15% of pool → #4..#10 split evenly
  *   - 10% of pool → #11..#100 split evenly
  *
- * Actual USDT transfer is not done here — the row records who gets what.
- * A separate step (manual or funded relayer) consumes paid_out=false rows
- * and sends USDT, then flips paid_out=true with the tx hash.
- *
- * Idempotent: closing the same week twice is a no-op (week_key is UNIQUE).
+ * Points are credited atomically inside the close — no separate transfer step
+ * needed (unlike a token mint). Idempotent: re-running on a closed week_key
+ * is a no-op (UNIQUE constraint).
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -35,11 +34,13 @@ function isoWeekKey(d: Date): string {
   return `${date.getUTCFullYear()}-W${String(weekNum).padStart(2, "0")}`;
 }
 
-function payoutTier(rank: number, pool: number): number {
-  if (rank === 1) return pool * 0.50;
-  if (rank <= 3) return (pool * 0.25) / 2;
-  if (rank <= 10) return (pool * 0.15) / 7;
-  if (rank <= 100) return (pool * 0.10) / 90;
+const POINTS_PER_USD = 1000;
+
+function payoutTier(rank: number, poolPoints: number): number {
+  if (rank === 1) return Math.round(poolPoints * 0.50);
+  if (rank <= 3) return Math.round((poolPoints * 0.25) / 2);
+  if (rank <= 10) return Math.round((poolPoints * 0.15) / 7);
+  if (rank <= 100) return Math.round((poolPoints * 0.10) / 90);
   return 0;
 }
 
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
   });
   const totalEntries = agg._count._all;
   const totalUsd = agg._sum.amount_usd || 0;
-  const poolUsd = totalUsd * 0.7;
+  const poolPoints = Math.round(totalUsd * POINTS_PER_USD);
 
   // Snapshot top-100 by combined power
   const top = await prisma.$queryRaw<Array<any>>`
@@ -99,24 +100,35 @@ export async function POST(req: NextRequest) {
     petName: r.name,
     userId: r.user_id,
     walletAddress: r.wallet_address,
-    payoutUsd: Number(payoutTier(i + 1, poolUsd).toFixed(4)),
-  })).filter(p => p.payoutUsd > 0);
+    pointsPayout: payoutTier(i + 1, poolPoints),
+  })).filter(p => p.pointsPayout > 0);
 
-  const row = await prisma.weeklyBattlePool.create({
-    data: {
-      week_key: weekKey,
-      pool_usd: Number(poolUsd.toFixed(4)),
-      total_entries: totalEntries,
-      payouts: payouts as any,
-    },
+  // Credit winners' airdrop_points balances atomically + record the pool
+  const result = await prisma.$transaction(async (tx) => {
+    const row = await tx.weeklyBattlePool.create({
+      data: {
+        week_key: weekKey,
+        pool_usd: Number(totalUsd.toFixed(4)),   // keep for analytics
+        total_entries: totalEntries,
+        payouts: payouts as any,
+        paid_out: true,
+        paid_at: new Date(),
+      },
+    });
+    for (const p of payouts) {
+      await tx.user.update({
+        where: { id: p.userId },
+        data: { airdrop_points: { increment: p.pointsPayout } },
+      });
+    }
+    return row;
   });
 
   return NextResponse.json({
     ok: true, weekKey,
-    poolUsd: row.pool_usd,
-    totalEntries,
+    poolPoints, totalEntries,
     winnersCount: payouts.length,
-    poolRecordId: row.id,
+    poolRecordId: result.id,
   });
 }
 

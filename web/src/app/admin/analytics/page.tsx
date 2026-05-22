@@ -16,13 +16,13 @@ interface AnalyticsData {
   headline: {
     totalUsers: number; totalActivePets: number;
     interactionsInWindow: number; memoriesInWindow: number;
-    battlesInWindow: number; revenueUsd: number; burnEarmarkUsd: number;
+    battlesInWindow: number; revenueUsd: number;
   };
-  revenueByAction: Array<{ actionKey: string; txCount: number; revenueUsd: number; burnEarmarkUsd: number }>;
+  revenueByAction: Array<{ actionKey: string; txCount: number; revenueUsd: number }>;
   paywallConversion: Array<{ actionKey: string; capExhausted: number; converted: number; conversionRate: number }>;
   dailyActiveUsers: Array<{ day: string; dau: number }>;
   topSpenders: Array<{ userId: number; wallet: string; totalSpentUsd: number; txCount: number }>;
-  battlePool: { entriesInWindow: number; grossUsd: number; projectedPayoutUsd: number };
+  battlePool: { entriesInWindow: number; grossUsd: number; projectedPoolPoints: number };
 }
 
 export default function AdminAnalyticsPage() {
@@ -89,13 +89,12 @@ export default function AdminAnalyticsPage() {
         {/* Headline tiles */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 26 }}>
           <Tile label="Revenue (USDT)" value={data.headline.revenueUsd.toFixed(2)} accent="#fbbf24" />
-          <Tile label="Burn earmark" value={data.headline.burnEarmarkUsd.toFixed(2)} accent="#dc2626" />
           <Tile label="Total users" value={data.headline.totalUsers} />
           <Tile label="Active pets" value={data.headline.totalActivePets} />
           <Tile label="Interactions" value={data.headline.interactionsInWindow} />
           <Tile label="Battles" value={data.headline.battlesInWindow} />
           <Tile label="Memories created" value={data.headline.memoriesInWindow} />
-          <Tile label="Battle pool" value={`${data.battlePool.projectedPayoutUsd.toFixed(2)} USDT`} accent="#16a34a" />
+          <Tile label="Airdrop pool (pts)" value={data.battlePool.projectedPoolPoints.toLocaleString()} accent="#16a34a" />
         </div>
 
         {/* DAU bar chart (text-based, PetClaw tone) */}
@@ -127,13 +126,12 @@ export default function AdminAnalyticsPage() {
             <Empty text="No paid actions yet. Free-tier caps generate the conversion funnel — kick the tires." />
           ) : (
             <div style={{ display: "grid", gap: 6 }}>
-              <Row cells={["ACTION", "TX", "REV (USDT)", "BURN EARMARK"]} header />
+              <Row cells={["ACTION", "TX", "REV (USDT)"]} header />
               {data.revenueByAction.map(r => (
                 <Row key={r.actionKey} cells={[
                   r.actionKey,
                   String(r.txCount),
                   r.revenueUsd.toFixed(4),
-                  r.burnEarmarkUsd.toFixed(4),
                 ]} />
               ))}
             </div>

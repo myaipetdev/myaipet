@@ -68,8 +68,11 @@ async function loadLeaderboard(): Promise<LeaderEntry[]> {
   }));
 }
 
-// Computed approximation — sum of battle_entry USDT in past 7 days × 0.7 = winner pool
-async function loadWeeklyPool(): Promise<{ poolUsd: number; entries: number; closesAt: string }> {
+// Weekly Airdrop Points pool. Each $1 USDT of battle entries contributes
+// 1000 points to the prize pool — points are the reward currency (no token mint).
+const POINTS_PER_USD = 1000;
+
+async function loadWeeklyPool(): Promise<{ poolPoints: number; entries: number; closesAt: string }> {
   const since = new Date();
   since.setUTCDate(since.getUTCDate() - 7);
   const rows = await prisma.paidAction.aggregate({
@@ -82,7 +85,11 @@ async function loadWeeklyPool(): Promise<{ poolUsd: number; entries: number; clo
   const closes = new Date();
   closes.setUTCDate(closes.getUTCDate() + ((7 - closes.getUTCDay()) % 7));
   closes.setUTCHours(0, 0, 0, 0);
-  return { poolUsd: total * 0.7, entries: rows._count._all, closesAt: closes.toISOString() };
+  return {
+    poolPoints: Math.round(total * POINTS_PER_USD),
+    entries: rows._count._all,
+    closesAt: closes.toISOString(),
+  };
 }
 
 const PODIUM_COLOR: Record<number, string> = {
@@ -137,12 +144,12 @@ export default async function DashboardPage() {
             <div style={{
               fontSize: 10, color: "rgba(255,255,255,0.5)", letterSpacing: "0.12em",
               fontFamily: "'JetBrains Mono', monospace", marginBottom: 4,
-            }}>WEEKLY POOL</div>
+            }}>WEEKLY AIRDROP POOL</div>
             <div style={{
               fontSize: 32, fontWeight: 800, color: "#fbbf24",
               fontFamily: "'JetBrains Mono', monospace",
             }}>
-              {pool.poolUsd.toFixed(2)} <span style={{ fontSize: 16, color: "rgba(255,255,255,0.6)" }}>USDT</span>
+              {pool.poolPoints.toLocaleString()} <span style={{ fontSize: 16, color: "rgba(255,255,255,0.6)" }}>pts</span>
             </div>
           </div>
           <div style={{ width: 1, height: 40, background: "rgba(255,255,255,0.15)" }} />
@@ -220,9 +227,9 @@ export default async function DashboardPage() {
           fontSize: 12, color: "rgba(26,26,46,0.7)", lineHeight: 1.65,
         }}>
           <strong style={{ fontFamily: "'JetBrains Mono', monospace", color: "#b45309" }}>HOW TO CLIMB ↑</strong><br />
-          Each Power Training (+5 stat) costs <strong>1 USDT</strong>. 50% burns to deflate PET supply.
-          Top-100 pets share <strong>70%</strong> of the weekly battle entry pool. Position #1 wins the most.
-          Train consistently — a 7-day care streak auto-mints a memory NFT.
+          Each Power Training (+5 stat) costs <strong>1 USDT</strong>. Top-100 pets share the weekly
+          Airdrop Points pool every Sunday — Position #1 takes the largest share. Train consistently:
+          a 7-day care streak auto-mints a memory NFT.
         </div>
       </div>
     </main>
