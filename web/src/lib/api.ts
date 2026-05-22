@@ -269,8 +269,8 @@ export const api = {
         body: { species, personality, species_name, custom_traits },
       }),
     get: (petId: number) => request(`/api/pets/${petId}`),
-    interact: (petId: number, interactionType: string) =>
-      request(`/api/pets/${petId}/interact`, {
+    interact: (petId: number, interactionType: string, txHash?: string) =>
+      request(`/api/pets/${petId}/interact${txHash ? `?tx_hash=${txHash}` : ""}`, {
         method: "POST",
         body: { interaction_type: interactionType },
       }),

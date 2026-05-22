@@ -637,6 +637,23 @@ model PaidAction {
   @@map("paid_actions")
 }
 
+// ── Weekly Battle Pool snapshots ──
+// Every Sunday 00:00 UTC the cron at /api/cron/distribute-pool closes the
+// current week, captures top-100 by power, and records payouts. Actual USDT
+// transfer happens manually (or via funded relayer) using the rows here.
+model WeeklyBattlePool {
+  id            Int      @id @default(autoincrement())
+  week_key      String   @unique @db.VarChar(10)   // "2026-W21"
+  closed_at     DateTime @default(now())
+  pool_usd      Float                              // 70% of entry fees this week
+  total_entries Int      @default(0)
+  // payouts: [{ rank, petId, walletAddress, payoutUsd, paidTx? }, ...]
+  payouts       Json     @default("[]")
+  paid_out      Boolean  @default(false)
+  paid_at       DateTime?
+  @@map("weekly_battle_pools")
+}
+
 // ── Daily free-tier counters (replaces in-memory rate-limit for paid features) ──
 // Resets at UTC midnight. Lookup is O(1) via composite unique.
 model DailyActionCount {

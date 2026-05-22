@@ -10,6 +10,10 @@ import { notFound } from "next/navigation";
 import BattleArena, { type BattleData } from "@/components/BattleArena";
 import { prisma } from "@/lib/prisma";
 
+// DB-backed dynamic page
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 async function getBattle(id: number): Promise<BattleData | null> {
   const battle = await prisma.battleHistory.findUnique({
     where: { id },

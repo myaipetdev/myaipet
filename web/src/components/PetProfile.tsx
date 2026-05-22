@@ -9,6 +9,7 @@ import EnhancedOnboarding from "@/components/EnhancedOnboarding";
 import PetStatRadar, { StatSlotBar } from "@/components/PetStatRadar";
 import EvolutionAnimation from "@/components/EvolutionAnimation";
 import PaywallModal from "@/components/PaywallModal";
+import StatUpgradePanel from "@/components/StatUpgradePanel";
 
 const PET_SPECIES = ["Cat","Dog","Parrot","Turtle","Hamster","Rabbit","Fox","Pomeranian"];
 const PET_EMOJIS = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
@@ -34,13 +35,21 @@ const PERSONALITIES = [
   { id: "sassy", label: "Sassy", emoji: "💅", desc: "Diva attitude" },
 ];
 
+// Every interaction has an explicit purpose tag = "what this click earns or unlocks".
+// minLevel gates a few interactions behind progression so leveling up matters.
 const INTERACTIONS = [
-  { type: "feed", label: "Feed", icon: "🍖", color: "#4ade80", desc: "Reduce hunger" },
-  { type: "play", label: "Play", icon: "⚽", color: "#60a5fa", desc: "Boost happiness" },
-  { type: "talk", label: "Talk", icon: "💬", color: "#c084fc", desc: "Build bond" },
-  { type: "pet", label: "Pet", icon: "🤚", color: "#f472b6", desc: "Show affection" },
-  { type: "walk", label: "Walk", icon: "🚶", color: "#fbbf24", desc: "Gain energy" },
-  { type: "train", label: "Train", icon: "🎓", color: "#f97316", desc: "Gain experience" },
+  { type: "feed",  label: "Feed",  icon: "🍖", color: "#4ade80",
+    desc: "5/day free · then 0.10 USDT · 7-day streak = NFT", minLevel: 1, purpose: "EARN" },
+  { type: "play",  label: "Play",  icon: "⚽", color: "#60a5fa",
+    desc: "5/day free · then 0.10 USDT · happiness ↑",        minLevel: 1, purpose: "EARN" },
+  { type: "talk",  label: "Talk",  icon: "💬", color: "#c084fc",
+    desc: "Memory grows. Bond unlocks chat depth.",            minLevel: 1, purpose: "GROW" },
+  { type: "pet",   label: "Pet",   icon: "🤚", color: "#f472b6",
+    desc: "Show affection · bond +",                           minLevel: 1, purpose: "BOND" },
+  { type: "walk",  label: "Walk",  icon: "🚶", color: "#fbbf24",
+    desc: "Recover energy. Unlock at Lv.3.",                   minLevel: 3, purpose: "RESTORE" },
+  { type: "train", label: "Train", icon: "🎓", color: "#f97316",
+    desc: "Earn XP fast. Unlock at Lv.5.",                     minLevel: 5, purpose: "GROW" },
 ];
 
 const MOOD_CONFIG: any = {
@@ -1047,29 +1056,60 @@ export default function PetProfile() {
     if (!activePet || interacting) return;
     setInteracting(type);
     setResponseAnim(false);
-    try {
-      const result = await api.pets.interact(activePet.id, type);
-      // Map API response format to UI format
+
+    // Direct fetch so we can read 402 paywall payload (api.pets.interact wraps
+    // errors and would lose the paywall info).
+    const callInteract = async (txHash?: string): Promise<any> => {
+      const qs = txHash ? `?tx_hash=${txHash}` : "";
+      const res = await fetch(`/api/pets/${activePet.id}/interact${qs}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ interaction_type: type }),
+      });
+      if (res.status === 402) {
+        const { paywall: pw } = await res.json();
+        // Open paywall modal — feed_extra/play_extra/etc come back here on success
+        setPaywall({
+          ...pw,
+          onPaid: async (newTx: string) => {
+            setPaywall(null);
+            const retry = await callInteract(newTx);
+            if (retry) finishInteract(retry);
+          },
+        });
+        return null;
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.details || "Interaction failed");
+      }
+      return res.json();
+    };
+
+    const finishInteract = (result: any) => {
       setLastResponse({
         response_text: result.interaction?.response || result.response_text || "...",
         stat_changes: result.interaction?.effects || result.stat_changes || {},
         memory_created: result.interaction?.leveled_up ? `${activePet.name} leveled up!` : null,
         combo: result.interaction?.combo,
         request_fulfilled: result.interaction?.request_fulfilled,
+        care_streak: result.interaction?.care_streak,
       });
       setResponseAnim(true);
-      // Show combo toast if triggered
       if (result.interaction?.combo) {
         setComboToast(result.interaction.combo);
         setTimeout(() => setComboToast(null), 4500);
       }
-      // Update pending request from server response
       setPetRequest(result.interaction?.next_request || null);
-      await loadPetStatus(activePet.id);
-      await loadEvoStatus(activePet.id);
-      await loadPets();
+      loadPetStatus(activePet.id);
+      loadEvoStatus(activePet.id);
+      loadPets();
+    };
+
+    try {
+      const result = await callInteract();
+      if (result) finishInteract(result);
     } catch (e: any) {
-      // Detect gating errors
       const blocked = e.message && (e.message.includes("Too hungry") || e.message.includes("Too tired") || e.message.includes("stuffed"));
       setLastResponse({
         response_text: e.message || "Interaction failed",
@@ -1546,6 +1586,39 @@ export default function PetProfile() {
             </span>
           </div>
 
+          {/* Care Streak badge — surfaces multi-day consistent care.
+              Hits a NFT auto-mint every 7 days (see lib/petclaw/nft-mint.ts). */}
+          {(pet as any).care_streak > 0 && (
+            <div style={{
+              marginTop: 10, padding: "10px 14px", borderRadius: 10,
+              background: `linear-gradient(135deg, rgba(245,158,11,${Math.min(0.18, (pet as any).care_streak * 0.025)}), rgba(220,38,38,${Math.min(0.10, (pet as any).care_streak * 0.015)}))`,
+              border: `1px solid rgba(245,158,11,${Math.min(0.45, 0.15 + (pet as any).care_streak * 0.03)})`,
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 18 }}>🔥</span>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#b45309", letterSpacing: "-0.01em" }}>
+                    {(pet as any).care_streak}-day care streak
+                  </div>
+                  <div style={{ fontSize: 10, fontFamily: "mono", color: "rgba(180,83,9,0.7)", marginTop: 1 }}>
+                    {(pet as any).care_streak % 7 === 0
+                      ? "NFT minted! ✨"
+                      : `Next NFT at day ${Math.ceil((pet as any).care_streak / 7) * 7}`}
+                  </div>
+                </div>
+              </div>
+              <div style={{
+                fontSize: 9, padding: "3px 8px", borderRadius: 999,
+                background: "rgba(180,83,9,0.12)", color: "#b45309",
+                fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, letterSpacing: "0.08em",
+              }}>EARN</div>
+            </div>
+          )}
+
+          {/* Power training — pay-to-power ATK/DEF/SPD upgrades */}
+          <StatUpgradePanel petId={pet.id} />
+
           {/* Battle entry — 1 free / day, paid extras open PaywallModal */}
           <button
             onClick={() => handleBattle()}
@@ -1675,12 +1748,16 @@ export default function PetProfile() {
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
               {INTERACTIONS.map(i => {
-                // Gating logic — match server-side rules
+                // Gating logic — match server-side rules + level-gate
                 const tooHungry = pet.hunger >= 80 && (i.type === "play" || i.type === "walk" || i.type === "train");
                 const tooTired = pet.energy < 15 && (i.type === "play" || i.type === "walk" || i.type === "train");
                 const tooFull = pet.hunger <= 5 && i.type === "feed";
-                const blocked = tooHungry || tooTired || tooFull;
-                const blockReason = tooHungry ? "Too hungry" : tooTired ? "Too tired" : tooFull ? "Stuffed!" : "";
+                const levelLocked = pet.level < (i.minLevel || 1);
+                const blocked = tooHungry || tooTired || tooFull || levelLocked;
+                const blockReason = levelLocked ? `Unlocks at Lv.${i.minLevel}`
+                  : tooHungry ? "Too hungry"
+                  : tooTired ? "Too tired"
+                  : tooFull ? "Stuffed!" : "";
                 const isRequested = petRequest?.type === i.type;
                 return (
                   <button key={i.type} onClick={() => i.type === "talk" ? setShowChat(true) : handleInteract(i.type)}
@@ -1706,6 +1783,22 @@ export default function PetProfile() {
                         fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
                         boxShadow: "0 2px 6px rgba(245,158,11,0.4)",
                       }}>!</div>
+                    )}
+                    {/* Purpose tag (top-left) — "what does this click DO" */}
+                    {!blocked && (i as any).purpose && (
+                      <div style={{
+                        position: "absolute", top: 4, left: 4,
+                        fontSize: 7, padding: "2px 5px", borderRadius: 4,
+                        background: "rgba(0,0,0,0.05)", color: "rgba(26,26,46,0.55)",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontWeight: 700, letterSpacing: "0.06em",
+                      }}>{(i as any).purpose}</div>
+                    )}
+                    {/* Lock icon if level-gated */}
+                    {levelLocked && (
+                      <div style={{
+                        position: "absolute", top: 6, right: 6, fontSize: 12,
+                      }}>🔒</div>
                     )}
                     <div style={{
                       fontSize: 26, marginBottom: 4,
