@@ -43,11 +43,11 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
     setSuccess(null);
 
     if (!isConnected || !address) {
-      setError("Connect wallet first");
+      setError("Connect your wallet at the top-right before purchasing.");
       return;
     }
     if (!isAuthenticated) {
-      setError("Sign in with wallet first");
+      setError("You're connected but not signed in yet — open the wallet menu and complete the sign-in prompt.");
       return;
     }
     if (chainId !== BSC_CHAIN_ID) {
@@ -209,18 +209,22 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
 
       {error && (
         <div style={{
-          marginBottom: 16, padding: "8px 16px", borderRadius: 8,
-          background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)",
-          fontFamily: "mono", fontSize: 11, color: "#dc2626", textAlign: "center",
+          marginBottom: 16, padding: "14px 20px", borderRadius: 12,
+          background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
+          fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 600,
+          color: "#dc2626", textAlign: "center", lineHeight: 1.5,
+          maxWidth: 560, marginLeft: "auto", marginRight: "auto",
         }}>
           {error}
         </div>
       )}
       {success && (
         <div style={{
-          marginBottom: 16, padding: "8px 16px", borderRadius: 8,
-          background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.15)",
-          fontFamily: "mono", fontSize: 11, color: "#16a34a", textAlign: "center",
+          marginBottom: 16, padding: "14px 20px", borderRadius: 12,
+          background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.25)",
+          fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 600,
+          color: "#16a34a", textAlign: "center", lineHeight: 1.5,
+          maxWidth: 560, marginLeft: "auto", marginRight: "auto",
         }}>
           {success}
         </div>
