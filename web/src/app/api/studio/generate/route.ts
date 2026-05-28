@@ -1,0 +1,176 @@
+/**
+ * Unified Studio generate endpoint.
+ *
+ *   POST /api/studio/generate
+ *   { modelId: "kling-image-to-video", petId?: number,
+ *     templateId?: string, prompt?: string, customDirection?: string }
+ *
+ * One of `templateId` or `prompt` is required.
+ *
+ * Flow:
+ *   1. Authenticate + verify pet ownership (if petId given)
+ *   2. Build the prompt — template + petCtx OR raw prompt
+ *   3. Resolve reference image — pet.avatar_url if model.supportsImageRef
+ *   4. Charge credits (atomic decrement; reject if insufficient)
+ *   5. Submit to backend (FAL / Grok via abstraction)
+ *   6. Create `generations` row with status = pending/completed
+ *   7. Return { jobId, status, ... }
+ *
+ * Polling status: GET /api/studio/generate/[jobId]
+ *
+ * Editor / sharing / NFT mint hooks fire off the resulting URL — same as the
+ * existing Generation pipeline so memory + likes + auto-mint continue to work.
+ */
+
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rateLimit";
+import { getModel } from "@/lib/studio/providers";
+import { getTemplate } from "@/lib/studio/templates";
+import { submitToBackend } from "@/lib/studio/backend";
+
+export async function POST(req: NextRequest) {
+  const rl = rateLimit(req, { key: "studio-generate", limit: 30, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
+  const user = await getUser(req);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = await req.json().catch(() => ({}));
+  const { modelId, petId, templateId, prompt: rawPrompt, customDirection } = body;
+
+  const model = getModel(String(modelId || ""));
+  if (!model) return NextResponse.json({ error: "Unknown modelId" }, { status: 400 });
+
+  // ── Resolve pet (optional but required for image_ref + template personalization) ──
+  let pet: any = null;
+  if (petId) {
+    pet = await prisma.pet.findFirst({
+      where: { id: Number(petId), user_id: user.id, is_active: true },
+      select: { id: true, name: true, species: true, personality_type: true, appearance_desc: true, avatar_url: true },
+    });
+    if (!pet) return NextResponse.json({ error: "Pet not found or not yours" }, { status: 404 });
+  }
+
+  // ── Build prompt ──
+  let finalPrompt = "";
+  if (templateId) {
+    const tpl = getTemplate(String(templateId));
+    if (!tpl) return NextResponse.json({ error: "Unknown templateId" }, { status: 400 });
+    const ctx = pet ? {
+      name: pet.name,
+      species: ["cat", "dog", "parrot", "turtle", "hamster", "rabbit", "fox", "pomeranian"][pet.species] || undefined,
+      personalityType: pet.personality_type,
+      appearanceDesc: pet.appearance_desc || undefined,
+      avatarUrl: pet.avatar_url || undefined,
+    } : { name: "the pet" };
+    finalPrompt = tpl.buildPrompt(ctx, String(customDirection || ""));
+  } else if (rawPrompt) {
+    finalPrompt = String(rawPrompt).slice(0, 2000);
+  } else {
+    return NextResponse.json({ error: "Provide templateId or prompt" }, { status: 400 });
+  }
+
+  // ── Credits gate ──
+  const cost = model.creditsPerRun;
+  if ((user.credits ?? 0) < cost) {
+    return NextResponse.json(
+      { error: "Insufficient credits", credits: user.credits ?? 0, required: cost },
+      { status: 402 },
+    );
+  }
+
+  // ── Pet reference image (if model supports it and we have one) ──
+  const refUrl = model.supportsImageRef && pet?.avatar_url ? pet.avatar_url : undefined;
+
+  // ── Atomic credit deduction + generation row ──
+  const created = await prisma.$transaction(async (tx) => {
+    const u = await tx.user.update({
+      where: { id: user.id },
+      data: { credits: { decrement: cost } },
+      select: { credits: true },
+    });
+    const g = await tx.generation.create({
+      data: {
+        user_id: user.id,
+        pet_type: pet?.species ?? 0,
+        style: 0,
+        prompt: finalPrompt,
+        duration: model.maxDurationSec,
+        photo_path: pet?.avatar_url || "",
+        credits_charged: cost,
+        status: "pending",
+      },
+    });
+    return { user: u, gen: g };
+  });
+
+  // ── Submit to backend (outside transaction — may take seconds) ──
+  const result = await submitToBackend(model, finalPrompt, refUrl);
+  if (!result.ok) {
+    // Refund + mark failed
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: user.id }, data: { credits: { increment: cost } } }),
+      prisma.generation.update({
+        where: { id: created.gen.id },
+        data: { status: "failed", error_message: result.error || "submit failed" },
+      }),
+    ]);
+    return NextResponse.json({ error: result.error || "Generation failed" }, { status: 502 });
+  }
+
+  // Some backends return synchronously (Grok image). Mark completed immediately.
+  if (result.immediateUrl) {
+    await prisma.generation.update({
+      where: { id: created.gen.id },
+      data: {
+        status: "completed",
+        video_path: model.kind === "video" ? result.immediateUrl : null,
+        photo_path: model.kind === "image" ? result.immediateUrl : created.gen.photo_path,
+        completed_at: new Date(),
+      },
+    });
+    return NextResponse.json({
+      ok: true,
+      generationId: created.gen.id,
+      status: "completed",
+      url: result.immediateUrl,
+      creditsRemaining: created.user.credits,
+      model: { id: model.id, displayName: model.displayName, provider: model.provider },
+    });
+  }
+
+  // Queued — store jobId for polling
+  await prisma.generation.update({
+    where: { id: created.gen.id },
+    data: { status: "running", fal_request_id: result.jobId || null },
+  });
+
+  return NextResponse.json({
+    ok: true,
+    generationId: created.gen.id,
+    status: "running",
+    jobId: result.jobId,
+    creditsRemaining: created.user.credits,
+    model: { id: model.id, displayName: model.displayName, provider: model.provider },
+  });
+}
+
+// ── GET: history (latest generations for caller) ──
+export async function GET(req: NextRequest) {
+  const user = await getUser(req);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const limit = Math.min(50, Number(req.nextUrl.searchParams.get("limit")) || 20);
+  const rows = await prisma.generation.findMany({
+    where: { user_id: user.id },
+    orderBy: { created_at: "desc" },
+    take: limit,
+    select: {
+      id: true, status: true, prompt: true, duration: true,
+      photo_path: true, video_path: true, error_message: true,
+      created_at: true, completed_at: true, credits_charged: true,
+    },
+  });
+  return NextResponse.json({ generations: rows, credits: user.credits ?? 0 });
+}
