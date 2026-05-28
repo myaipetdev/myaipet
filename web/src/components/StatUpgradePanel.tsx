@@ -36,6 +36,7 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
   const [data, setData] = useState<PanelData | null>(null);
   const [busy, setBusy] = useState<keyof Stats | null>(null);
   const [paywall, setPaywall] = useState<any>(null);
+  const [celebrate, setCelebrate] = useState<{ stat: keyof Stats; from: number; to: number; combinedPower: number } | null>(null);
 
   const load = async () => {
     try {
@@ -73,6 +74,9 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
         return;
       }
       const j = await res.json();
+      // Celebrate the bump so the user *feels* the spend land
+      setCelebrate({ stat, from: j.from, to: j.to, combinedPower: j.combinedPower });
+      setTimeout(() => setCelebrate(null), 2800);
       await load();
       onStatsChanged?.(j.pet);
     } finally {
@@ -165,6 +169,40 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
       </div>
 
       <PaywallModal info={paywall} onClose={() => setPaywall(null)} />
+
+      {/* Celebration overlay — appears for ~2.8s after a successful upgrade */}
+      {celebrate && (
+        <div style={{
+          position: "fixed", inset: 0, pointerEvents: "none", zIndex: 8888,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div style={{
+            background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
+            color: "white", padding: "22px 32px", borderRadius: 20,
+            boxShadow: "0 24px 60px rgba(245,158,11,0.45)",
+            fontFamily: "'Space Grotesk',sans-serif", textAlign: "center",
+            animation: "celebPop 0.4s ease, celebFade 2.8s ease forwards",
+          }}>
+            <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em" }}>
+              {(STAT_META[celebrate.stat] as any).emoji} {celebrate.stat.toUpperCase()} {celebrate.from} → {celebrate.to}
+            </div>
+            <div style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", marginTop: 6, opacity: 0.9, letterSpacing: "0.08em" }}>
+              POWER {celebrate.combinedPower} · CLIMBING
+            </div>
+          </div>
+          <style>{`
+            @keyframes celebPop {
+              0% { transform: scale(0.6); opacity: 0; }
+              60% { transform: scale(1.05); }
+              100% { transform: scale(1); opacity: 1; }
+            }
+            @keyframes celebFade {
+              0%, 70% { opacity: 1; }
+              100% { opacity: 0; transform: translateY(-30px); }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }
