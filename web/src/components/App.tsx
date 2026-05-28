@@ -12,6 +12,7 @@ import Hero from "@/components/Hero";
 import Stats from "@/components/Stats";
 import Feed from "@/components/Feed";
 import Pricing from "@/components/Pricing";
+import RaisePitch from "@/components/RaisePitch";
 import WalletGate from "@/components/WalletGate";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
@@ -19,7 +20,6 @@ const PetGenerate = lazy(() => import("@/components/PetGenerate"));
 const SocialGallery = lazy(() => import("@/components/SocialGallery"));
 const Adventure = lazy(() => import("@/components/Adventure"));
 const Leaderboard = lazy(() => import("@/components/Leaderboard"));
-const PremiumShop = lazy(() => import("@/components/PremiumShop"));
 const AgentDashboard = lazy(() => import("@/components/AgentDashboard"));
 const SovereigntyDashboard = lazy(() => import("@/components/SovereigntyDashboard"));
 
@@ -203,7 +203,7 @@ function SeasonBanner({ airdropPoints }: { airdropPoints: number }) {
               fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.75)",
               marginTop: 1, whiteSpace: "nowrap",
             }}>
-              100,000 $PET Prize Pool
+              100,000 pts Prize Pool
             </div>
           </div>
         </div>
@@ -365,6 +365,8 @@ export default function App() {
               <div className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
                 <Feed activities={activities} />
               </div>
+              {/* Pitch: why raise + how to earn (closes the gap between Hero and Pricing) */}
+              <RaisePitch onNavigate={setSection} />
               <Pricing
                 isAuthenticated={isAuthenticated}
                 onCreditsChange={handleCreditsChange}
@@ -400,14 +402,6 @@ export default function App() {
         <WalletGate section="adventure">
           <Suspense fallback={<Loader />}>
             <Adventure onNavigate={setSection} />
-          </Suspense>
-        </WalletGate>
-      )}
-
-      {section === "shop" && (
-        <WalletGate section="shop">
-          <Suspense fallback={<Loader />}>
-            <PremiumShop />
           </Suspense>
         </WalletGate>
       )}

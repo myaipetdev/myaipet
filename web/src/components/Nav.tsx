@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { key: "home", label: "Home" },
   { key: "my pet", label: "My Pet" },
   { key: "create", label: "Create" },
-  { key: "shop", label: "Shop" },
+  { key: "leaderboard", label: "Leaderboard" },
   { key: "community", label: "Community" },
   { key: "sovereignty", label: "Sovereignty" },
 ];
