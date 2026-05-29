@@ -470,20 +470,8 @@ export default function App() {
             <span style={{ fontSize: 18, fontWeight: 900 }}>𝕏</span>
             Twitter
           </a>
-          <a href="https://github.com/myaipetdev/petclaw" target="_blank" rel="noopener noreferrer" style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "12px 22px", borderRadius: 12,
-            background: "white", color: "#1a1a2e",
-            border: "2px solid rgba(26,26,46,0.12)",
-            fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700,
-            textDecoration: "none", transition: "all 0.2s",
-          }}
-            onMouseOver={(e) => { e.currentTarget.style.borderColor = "rgba(26,26,46,0.4)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-            onMouseOut={(e) => { e.currentTarget.style.borderColor = "rgba(26,26,46,0.12)"; e.currentTarget.style.transform = ""; }}
-          >
-            <span style={{ fontSize: 16 }}>⌥</span>
-            GitHub
-          </a>
+          {/* GitHub button removed — the public repo at myaipetdev/petclaw returns 404 (DD #4 flagged this).
+              Re-add only when a real public repo exists OR a stable API/docs URL replaces it. */}
           <a href="/petclaw-extension.zip" download="myaipet-extension.zip" style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "12px 22px", borderRadius: 12,

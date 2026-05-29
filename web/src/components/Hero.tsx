@@ -634,7 +634,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             fontWeight: 700, color: "#1a1a2e", lineHeight: 1.4,
             margin: "0 auto 24px", maxWidth: 480,
           }}>
-            Seeking launch capital as we are ready to push My AI PET to the next frontier.
+            Building the first AI companion you actually own.
           </h3>
           <a
             href="https://x.com/MYAIPETS"

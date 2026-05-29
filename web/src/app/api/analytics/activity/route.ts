@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/adminGate";
 
 function timeAgo(date: Date): string {
   const s = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -16,6 +17,8 @@ function truncateWallet(w: string): string {
 }
 
 export async function GET(req: NextRequest) {
+  const gate = await requireAdmin(req);
+  if (gate) return gate;
   try {
     const limit = Math.min(30, parseInt(req.nextUrl.searchParams.get("limit") || "15"));
 

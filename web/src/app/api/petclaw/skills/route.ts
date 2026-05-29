@@ -77,6 +77,18 @@ export async function POST(req: NextRequest) {
   if (needsOwnership) {
     const ok = await ownsPet(req, pid);
     if (!ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  } else if (action === "execute" && pid === PUBLIC_DEMO_PET_ID) {
+    // Tight per-IP rate limit on the unauthed demo execute path so a single
+    // attacker can't drain Grok/FAL budget via the public demo.
+    // (DD report #4 flagged unauthed demo as a cost-abuse surface.)
+    const { rateLimit } = await import("@/lib/rateLimit");
+    const rl = rateLimit(req, { key: "demo-skill-exec", limit: 6, windowMs: 60_000 });
+    if (!rl.ok) return rl.response;
+    // Also block expensive non-chat skills from anon demo callers.
+    const FREE_DEMO_SKILLS = new Set(["companion-chat", "persona-mirror"]);
+    if (skillId && !FREE_DEMO_SKILLS.has(String(skillId))) {
+      return NextResponse.json({ error: "Sign in to run this skill" }, { status: 401 });
+    }
   }
 
   try {

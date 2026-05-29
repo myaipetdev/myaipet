@@ -1,14 +1,28 @@
 /**
- * Public protocol metrics — no auth required.
- * Used by the /stats public dashboard and by any external party doing DD.
+ * Protocol metrics — admin-gated (was public; DD report flagged exposure).
  *
- * Numbers are real DB counts. No marketing inflation.
+ *   GET /api/analytics/protocol
+ *     - 401 if not authenticated
+ *     - 403 if wallet not in ADMIN_WALLETS
+ *     - 200 with metrics otherwise
+ *
+ * For external diligence, send the report directly to verified parties under
+ * NDA instead of leaving the endpoint open.
  */
 
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getUser } from "@/lib/auth";
 
-export async function GET() {
+function isAdmin(walletAddress: string): boolean {
+  const admins = (process.env.ADMIN_WALLETS || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+  return admins.includes(walletAddress.toLowerCase());
+}
+
+export async function GET(req: NextRequest) {
+  const user = await getUser(req);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isAdmin(user.wallet_address)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   try {
     const now = new Date();
     const oneDayAgo  = new Date(now.getTime() - 24 * 60 * 60 * 1000);

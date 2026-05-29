@@ -71,9 +71,10 @@ export default function TokenomicsPage() {
           border: "1px solid rgba(0,0,0,0.06)", marginBottom: 18,
           fontSize: 14, lineHeight: 1.8, color: "rgba(26,26,46,0.8)",
         }}>
-          All revenue and on-chain activity is published at{" "}
-          <a href="/stats" style={{ color: "#b45309", fontWeight: 700, textDecoration: "underline" }}>/stats</a>.
-          Real-time. Pulled from production Postgres + BSC. No inflation, no hidden numbers.
+          Operational metrics are available to verified team members and backers
+          under NDA in the admin dashboard. Public surfaces during the private
+          phase: contracts at <a href="/contracts" style={{ color: "#b45309", fontWeight: 700 }}>/contracts</a>{" "}
+          and the protocol manifest.
         </div>
 
         <div style={{

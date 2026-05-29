@@ -93,29 +93,20 @@ export default function ContractsPage() {
         <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, marginTop: 32 }}>
           Audits
         </h2>
-        <div style={{ padding: 16, borderRadius: 14, background: "white", border: "1px solid rgba(0,0,0,0.06)", marginBottom: 12 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Audit #1 — In Progress</div>
-          <div style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", lineHeight: 1.55 }}>
-            First-party review by the core team and an independent reviewer. Report and findings
-            tracker will be published here once contracts are finalized for TGE.
-          </div>
-        </div>
         <div style={{ padding: 16, borderRadius: 14, background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Audit #2 — Pending</div>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Internal review — In progress</div>
           <div style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", lineHeight: 1.55 }}>
-            Engagement with a recognized firm (e.g. CertiK, PeckShield, SlowMist) to be announced
-            ahead of TGE. The full report will be linked here including any remediated findings.
+            Core team review of the two deployed contracts. External audit firm announcements
+            will be published here once finalized — not before.
           </div>
         </div>
 
         <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, marginTop: 32 }}>
-          Ownership & Upgradeability
+          Ownership
         </h2>
         <ul style={{ fontSize: 14, lineHeight: 1.8, color: "rgba(26,26,46,0.75)", paddingLeft: 18 }}>
           <li>Deployer wallet: <code style={{ fontSize: 12 }}>0x872d5f7F03894EE5c8b84D22868009B58b927357</code></li>
-          <li>Multisig migration: planned before token launch (3-of-5 Gnosis Safe)</li>
-          <li>Upgradeability: deployed contracts are non-upgradeable. Future contracts may use
-            Transparent Proxy with a 48h timelock — disclosed per-contract.</li>
+          <li>Upgradeability: deployed contracts are <strong>non-upgradeable</strong>.</li>
           <li>Owner privileges: minimal — limited to administrative emergency pause (where applicable).</li>
         </ul>
       </div>

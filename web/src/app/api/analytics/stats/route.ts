@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/adminGate";
 
 export async function GET(req: NextRequest) {
+  const gate = await requireAdmin(req);
+  if (gate) return gate;
   try {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);

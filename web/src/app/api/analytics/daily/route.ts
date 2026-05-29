@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/adminGate";
 
 export async function GET(req: NextRequest) {
+  const gate = await requireAdmin(req);
+  if (gate) return gate;
   try {
     const { searchParams } = req.nextUrl;
     const days = Math.min(365, Math.max(1, parseInt(searchParams.get("days") || "20")));

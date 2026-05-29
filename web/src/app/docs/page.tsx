@@ -53,14 +53,14 @@ Pets form memories of significant interactions, milestones, and generated conten
     content: `**Image Generation**
 Create unique AI-generated images of your pet in various styles. Each image is personalized based on your pet's name, species, personality, and a custom prompt you provide.
 
-- Cost: 1 $PET per image
+- Cost: 1 credits per image
 - Powered by AI engine
 - 5 style presets: Cinematic, Anime, Watercolor, 3D Render, Sketch
 
 **Video Generation**
 Generate animated videos of your pet with full motion and personality expression.
 
-- Cost: 15 $PET (3s), 30 $PET (5s), 60 $PET (10s+)
+- Cost: 15 credits (3s), 30 credits (5s), 60 credits (10s+)
 - Powered by AI engine
 - Async processing — videos are generated in the background and delivered when ready
 - Each video starts from an AI-generated reference image for visual consistency
@@ -74,32 +74,32 @@ Generate animated videos of your pet with full motion and personality expression
   },
   {
     id: "pet-economy",
-    title: "$PET Point Economy",
-    content: `**$PET Points**
-$PET is the platform's internal point system used for all AI generation and premium features. On-chain token conversion is planned for a future phase.
+    title: "Points Economy",
+    content: `**Credits / Points**
+Credits are the platform's internal points system used for AI generation and premium features. The current system is loyalty-only — no token mint, no buyback-and-burn.
 
-**Earning $PET**
-- Daily Check-in: +10 $PET/day for caring for your pet
-- Content Creation: +5 $PET per shared post
-- Social Engagement: +2 $PET per like, comment, or share
+**Earning credits**
+- Daily Check-in: +10 credits/day for caring for your pet
+- Content Creation: +5 credits per shared post
+- Social Engagement: +2 credits per like, comment, or share
 - Arena Wins: 1.85x payout on successful predictions
-- Pet Evolution: +50 $PET per level up
-- Referrals: +100 $PET per referred user
+- Pet Evolution: +50 credits per level up
+- Referrals: +100 credits per referred user
 
-**Spending $PET**
-- Image generation: 1 $PET
-- Video generation: 15–60 $PET (based on duration)
+**Spending credits**
+- Image generation: 1 credits
+- Video generation: 15–60 credits (based on duration)
 - Marketplace items
 - Premium features
 
-**Purchasing $PET**
+**Purchasing credits**
 Three tiers available:
-- Explorer: 500 $PET for 5 USDT
-- Companion: 2,500 $PET for 20 USDT (best value)
-- Breeder: 10,000 $PET for 50 USDT
+- Explorer: 500 credits for 5 USDT
+- Companion: 2,500 credits for 20 USDT (best value)
+- Breeder: 10,000 credits for 50 USDT
 
-**Deflationary Model**
-$PET credits are burned on content creation, marketplace purchases, and premium features — creating deflationary pressure and long-term value appreciation.`,
+**Note**
+Credits are a non-financial loyalty mechanism. They are not a token, security, or transferable claim.`,
   },
   {
     id: "community",
@@ -108,10 +108,10 @@ $PET credits are burned on content creation, marketplace purchases, and premium 
 Browse and discover AI-generated content from all users. Like, comment, and share your favorite creations.
 
 **Arena**
-Predict which pet content will be most popular. Stake $PET credits on outcomes for a chance at 1.85x returns.
+Predict which pet content will be most popular. Stake credits credits on outcomes for a chance at 1.85x returns.
 
 **Analytics**
-View platform-wide statistics: total users, content created, $PET burned, and daily transaction counts. Track growth and community engagement in real time.`,
+Operational metrics (DAU, generations, revenue) are available to verified team members and backers in the admin dashboard.`,
   },
   {
     id: "technical",
@@ -152,13 +152,13 @@ View platform-wide statistics: total users, content created, $PET burned, and da
 - Pet adoption and raising system (12 personalities)
 - AI image and video generation
 - Social gallery and community features
-- $PET point economy with credit tiers
+- credits point economy with credit tiers
 - Wallet authentication (SIWE)
 - AI avatar generation for pets
 
 **Phase 2 — On-Chain Activity (In Progress)**
 - On-chain activity recording on BNB Chain (BSC)
-- USDT / BNB payment integration for $PET purchases
+- USDT / BNB payment integration for credits purchases
 - Smart contract deployment (PetaGenTracker, PETShop)
 - BscScan verified contracts
 

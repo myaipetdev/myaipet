@@ -33,9 +33,17 @@ export default function Nav({ section, setSection, credits }: any) {
   return (
     <>
       <style>{`
+        /* DD report flagged header overlap at ~774px — earlier breakpoint
+           wasn't dropping the ← Landing button or shrinking wallet, so
+           the items+credits+landing+wallet collided. Cascaded breakpoints. */
+        @media (max-width: 1024px) {
+          .nav-landing-btn { display: none !important; }
+        }
+        @media (max-width: 900px) {
+          .nav-desktop-badge { display: none !important; }
+        }
         @media (max-width: 768px) {
           .nav-desktop-logo-text { display: none !important; }
-          .nav-desktop-badge { display: none !important; }
           .nav-container { padding: 8px 12px !important; }
           .nav-items-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; mask-image: linear-gradient(to right, black 85%, transparent); -webkit-mask-image: linear-gradient(to right, black 85%, transparent); }
           .nav-items-wrap::-webkit-scrollbar { display: none; }
@@ -47,7 +55,6 @@ export default function Nav({ section, setSection, credits }: any) {
           .nav-logo-img { width: 30px !important; height: 30px !important; }
           .nav-btn { padding: 5px 8px !important; font-size: 10px !important; }
           .nav-wallet { transform: scale(0.8); transform-origin: right center; }
-          .nav-landing-btn { display: none !important; }
         }
       `}</style>
       <nav
@@ -161,7 +168,7 @@ export default function Nav({ section, setSection, credits }: any) {
                     fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700,
                     color: "#1a1a2e", marginBottom: 4,
                   }}>
-                    {credits.toLocaleString()} <span style={{ fontSize: 14, color: "#b45309" }}>$PET</span>
+                    {credits.toLocaleString()} <span style={{ fontSize: 14, color: "#b45309" }}>credits</span>
                   </div>
                   <div style={{
                     height: 1, background: "rgba(0,0,0,0.06)", margin: "14px 0",
@@ -176,7 +183,7 @@ export default function Nav({ section, setSection, credits }: any) {
                       transition: "all 0.2s ease",
                     }}
                   >
-                    Get More $PET
+                    Get More Credits
                   </button>
                 </div>
               )}
@@ -184,33 +191,7 @@ export default function Nav({ section, setSection, credits }: any) {
           )}
         </div>
 
-        <a
-          href="/landing/"
-          className="nav-landing-btn"
-          style={{
-            flexShrink: 0,
-            display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "7px 14px", borderRadius: 999,
-            background: "rgba(0,0,0,0.04)",
-            border: "1px solid rgba(0,0,0,0.08)",
-            color: "rgba(26,26,46,0.65)",
-            fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 600,
-            textDecoration: "none", transition: "all 0.2s",
-            whiteSpace: "nowrap",
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.background = "rgba(251,191,36,0.1)";
-            e.currentTarget.style.borderColor = "rgba(251,191,36,0.3)";
-            e.currentTarget.style.color = "#b45309";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.background = "rgba(0,0,0,0.04)";
-            e.currentTarget.style.borderColor = "rgba(0,0,0,0.08)";
-            e.currentTarget.style.color = "rgba(26,26,46,0.65)";
-          }}
-        >
-          ← Landing
-        </a>
+        {/* "← Landing" button removed — /landing/ doesn't exist, the home itself is the landing. */}
 
         <div className="nav-wallet" style={{ flexShrink: 0 }}>
           <ConnectButton
