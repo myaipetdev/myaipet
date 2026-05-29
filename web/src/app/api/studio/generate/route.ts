@@ -29,6 +29,7 @@ import { rateLimit } from "@/lib/rateLimit";
 import { getModel } from "@/lib/studio/providers";
 import { getTemplate } from "@/lib/studio/templates";
 import { submitToBackend } from "@/lib/studio/backend";
+import { getCurrentSubscription, gateModel, incrementUsage } from "@/lib/studio/subscription";
 
 export async function POST(req: NextRequest) {
   const rl = rateLimit(req, { key: "studio-generate", limit: 30, windowMs: 60_000 });
@@ -70,6 +71,26 @@ export async function POST(req: NextRequest) {
     finalPrompt = String(rawPrompt).slice(0, 2000);
   } else {
     return NextResponse.json({ error: "Provide templateId or prompt" }, { status: 400 });
+  }
+
+  // ── Subscription tier + monthly quota gate ──
+  const sub = await getCurrentSubscription(user.id);
+  const gate = gateModel(sub, model.tier, model.kind);
+  if (!gate.ok) {
+    if (gate.reason === "tier_required") {
+      return NextResponse.json({
+        error: `${model.displayName} requires ${gate.requiredTier?.toUpperCase()} subscription. You're on ${gate.currentTier?.toUpperCase()}.`,
+        upsell: { requiredTier: gate.requiredTier, currentTier: gate.currentTier },
+      }, { status: 403 });
+    }
+    if (gate.reason === "video_quota" || gate.reason === "image_quota") {
+      const kind = gate.reason === "video_quota" ? "videos" : "images";
+      const limit = gate.reason === "video_quota" ? sub.limits.monthlyVideoLimit : sub.limits.monthlyImageLimit;
+      return NextResponse.json({
+        error: `Monthly ${kind} limit reached (${limit}). Upgrade your tier to keep generating.`,
+        upsell: { currentTier: gate.currentTier },
+      }, { status: 403 });
+    }
   }
 
   // ── Credits gate ──
@@ -131,6 +152,7 @@ export async function POST(req: NextRequest) {
         completed_at: new Date(),
       },
     });
+    await incrementUsage(user.id, model.kind);
     return NextResponse.json({
       ok: true,
       generationId: created.gen.id,
@@ -141,11 +163,13 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Queued — store jobId for polling
+  // Queued — store jobId for polling + count toward monthly quota now (we
+  // already charged credits and submitted to upstream).
   await prisma.generation.update({
     where: { id: created.gen.id },
     data: { status: "running", fal_request_id: result.jobId || null },
   });
+  await incrementUsage(user.id, model.kind);
 
   return NextResponse.json({
     ok: true,

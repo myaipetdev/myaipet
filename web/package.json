@@ -13,6 +13,8 @@
     "@coinbase/cbpay-js": "^2.4.0",
     "@coinbase/coinbase-sdk": "^0.25.0",
     "@fal-ai/client": "^1.9.4",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.5.0",
     "@rainbow-me/rainbowkit": "^2.2.10",

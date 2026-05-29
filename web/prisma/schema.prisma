@@ -655,6 +655,36 @@ model WeeklyBattlePool {
   @@map("weekly_battle_pools")
 }
 
+// ── Studio subscription (Phase 2) ──
+// One row per user. Created on first signup at "free" tier. Upgraded via
+// /api/studio/subscription with a USDT tx_hash (BSC). expires_at advances
+// by 30 days per payment. Downgrade to free if expires_at < now.
+model UserSubscription {
+  id              Int      @id @default(autoincrement())
+  user_id         Int      @unique
+  tier            String   @default("free") @db.VarChar(10)   // "free" | "pro" | "studio"
+  started_at      DateTime @default(now())
+  expires_at      DateTime?
+  last_payment_tx String?  @unique @db.VarChar(66)
+  total_paid_usd  Float    @default(0)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @default(now()) @updatedAt
+  @@map("user_subscriptions")
+}
+
+// Monthly Studio usage counters — videos + images generated this month.
+// Enforced by /api/studio/generate. month_key = "YYYY-MM" UTC.
+model StudioMonthlyUsage {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  month_key   String   @db.VarChar(7)
+  videos_used Int      @default(0)
+  images_used Int      @default(0)
+  updated_at  DateTime @default(now()) @updatedAt
+  @@unique([user_id, month_key], name: "user_month")
+  @@map("studio_monthly_usage")
+}
+
 // ── Daily free-tier counters (replaces in-memory rate-limit for paid features) ──
 // Resets at UTC midnight. Lookup is O(1) via composite unique.
 model DailyActionCount {
