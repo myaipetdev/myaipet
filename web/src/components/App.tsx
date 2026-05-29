@@ -17,7 +17,6 @@ import WalletGate from "@/components/WalletGate";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
 const PetGenerate = lazy(() => import("@/components/PetGenerate"));
-const PetStudio = lazy(() => import("@/components/PetStudio"));
 const SocialGallery = lazy(() => import("@/components/SocialGallery"));
 const Adventure = lazy(() => import("@/components/Adventure"));
 const Leaderboard = lazy(() => import("@/components/Leaderboard"));
@@ -387,14 +386,6 @@ export default function App() {
         <WalletGate section="create">
           <Suspense fallback={<Loader />}>
             <PetGenerate />
-          </Suspense>
-        </WalletGate>
-      )}
-
-      {section === "studio" && (
-        <WalletGate section="studio">
-          <Suspense fallback={<Loader />}>
-            <PetStudio />
           </Suspense>
         </WalletGate>
       )}
