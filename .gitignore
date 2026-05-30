@@ -19,3 +19,7 @@ contracts/cache/
 .DS_Store
 *.log
 __pycache__/
+
+# Public-repo staging area — has its own git history; pushed to a separate
+# org, not this private dev repo. Do NOT track from here.
+/public-repo/

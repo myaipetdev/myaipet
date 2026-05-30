@@ -470,8 +470,22 @@ export default function App() {
             <span style={{ fontSize: 18, fontWeight: 900 }}>𝕏</span>
             Twitter
           </a>
-          {/* GitHub button removed — the public repo at myaipetdev/petclaw returns 404 (DD #4 flagged this).
-              Re-add only when a real public repo exists OR a stable API/docs URL replaces it. */}
+          {/* GitHub button — re-enable AFTER pushing /public-repo/ to a NEW GitHub org
+              (NOT the personal myaipetdev or junheony account). Replace PETCLAW-ORG/petclaw-sdk
+              with the real org/repo, then uncomment.
+
+          <a href="https://github.com/PETCLAW-ORG/petclaw-sdk" target="_blank" rel="noopener noreferrer" style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            padding: "12px 22px", borderRadius: 12,
+            background: "white", color: "#1a1a2e",
+            border: "2px solid rgba(26,26,46,0.12)",
+            fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700,
+            textDecoration: "none", transition: "all 0.2s",
+          }}>
+            <span style={{ fontSize: 16 }}>⌥</span>
+            GitHub
+          </a>
+          */}
           <a href="/petclaw-extension.zip" download="myaipet-extension.zip" style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "12px 22px", borderRadius: 12,
