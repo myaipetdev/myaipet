@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { verifySignature } from "@/lib/signAction";
+import { sanitizeName, sanitizeText } from "@/lib/sanitize";
+import { moderateText } from "@/lib/moderation";
+import { rateLimit } from "@/lib/rateLimit";
 import { NextRequest, NextResponse } from "next/server";
 
 const PERSONALITIES = [
@@ -51,6 +54,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // audit M8: this route spends paid Grok credits per request — rate limit it.
+  const rl = rateLimit(req, { key: "adopt-chat", limit: 20, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
   const body = await req.json();
   const { messages, action, petData, signedMessage, signature } = body;
 
@@ -80,6 +87,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // audit M7: sanitize + moderate the LLM-supplied pet fields with the SAME
+    // gate /api/pets enforces — they flow into the DB, prompts, and social feed.
+    const name = sanitizeName(petData.name, 50);
+    const species_name = sanitizeName(petData.species_name, 50);
+    const custom_traits = sanitizeText(petData.custom_traits, 500);
+    if (!name) {
+      return NextResponse.json({ error: "A valid pet name is required" }, { status: 400 });
+    }
+    for (const [field, value] of [
+      ["name", name], ["species_name", species_name], ["custom_traits", custom_traits],
+    ] as const) {
+      const r = moderateText(value, field);
+      if (!r.ok) {
+        return NextResponse.json({ error: r.reason }, { status: 400 });
+      }
+    }
+
     const finalPersonality =
       petData.personality && PERSONALITIES.includes(petData.personality as any)
         ? petData.personality
@@ -88,14 +112,14 @@ export async function POST(req: NextRequest) {
     const pet = await prisma.pet.create({
       data: {
         user_id: user.id,
-        name: petData.name,
+        name,
         species: 0,
         personality_type: finalPersonality,
-        ...(petData.species_name || petData.custom_traits
+        ...(species_name || custom_traits
           ? {
               personality_modifiers: {
-                ...(petData.species_name ? { species_name: petData.species_name } : {}),
-                ...(petData.custom_traits ? { custom_traits: petData.custom_traits } : {}),
+                ...(species_name ? { species_name } : {}),
+                ...(custom_traits ? { custom_traits } : {}),
               },
             }
           : {}),
@@ -106,7 +130,7 @@ export async function POST(req: NextRequest) {
       data: {
         pet_id: pet.id,
         memory_type: "birth",
-        content: `${petData.name} was born! A new adventure begins.`,
+        content: `${name} was born! A new adventure begins.`,
         emotion: "happy",
         importance: 5,
       },

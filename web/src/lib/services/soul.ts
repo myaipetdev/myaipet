@@ -17,12 +17,14 @@ import {
   zeroPadValue,
 } from "ethers";
 import { getPersona, type PersonaData } from "@/lib/services/persona";
+import { ONCHAIN } from "@/lib/onchain";
 
 // ═══════════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════════
 
-const BSC_RPC = "https://bsc-dataseed1.binance.org";
+// Central, swappable RPC endpoint (chain migration = env change).
+const BSC_RPC = ONCHAIN.rpcUrl;
 const INACTIVITY_THRESHOLD_DAYS = 180;
 
 // Minimal ABI for PetSoul contract

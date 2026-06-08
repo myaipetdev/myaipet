@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rateLimit";
 import { NextRequest, NextResponse } from "next/server";
+
+const MOCKUP_CREDIT_COST = 5; // paid Grok image generation
 
 const PRODUCT_PROMPTS: Record<string, string> = {
   sticker: "Product photography of 5 die-cut glossy vinyl sticker sheets laid out on a clean white surface. Each sticker has a printed illustration of a CHARACTER_DESC character in different poses. The logo and character art is clearly visible on each sticker. Studio lighting, high-end e-commerce catalog style, 4K quality",
@@ -18,6 +21,10 @@ export async function POST(req: NextRequest) {
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // audit L7: bound abuse of this paid Grok image endpoint.
+  const rl = rateLimit(req, { key: "rewards-mockup", limit: 10, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
   const { product_type, pet_id } = await req.json();
 
   if (!product_type || !PRODUCT_PROMPTS[product_type]) {
@@ -34,6 +41,15 @@ export async function POST(req: NextRequest) {
 
   const charDesc = pet.appearance_desc || `cute pet named ${pet.name}`;
   const prompt = PRODUCT_PROMPTS[product_type].replace("CHARACTER_DESC", charDesc) + ". DO NOT include any text, words, letters, or watermarks.";
+
+  // audit L7: charge credits atomically before the paid generation; refund on failure.
+  const dec = await prisma.user.updateMany({
+    where: { id: user.id, credits: { gte: MOCKUP_CREDIT_COST } },
+    data: { credits: { decrement: MOCKUP_CREDIT_COST } },
+  });
+  if (dec.count === 0) {
+    return NextResponse.json({ error: "Insufficient credits", required: MOCKUP_CREDIT_COST }, { status: 402 });
+  }
 
   try {
     const grokKey = process.env.GROK_API_KEY;
@@ -64,7 +80,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ image_url: imageUrl, product_type });
   } catch (error: any) {
+    // Refund the credits charged up-front if generation failed.
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { credits: { increment: MOCKUP_CREDIT_COST } },
+    }).catch(() => {});
     console.error("Mockup generation error:", error);
-    return NextResponse.json({ error: error.message || "Generation failed" }, { status: 500 });
+    return NextResponse.json({ error: "Generation failed" }, { status: 500 });
   }
 }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { invokePet } from "@/lib/petclaw/pet-network";
+import { requirePetOwner } from "@/lib/authz";
+import { rateLimit } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -11,6 +13,15 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+
+  // SECURITY (audit C2): invokePet() debits callerPetId's wallet and burns LLM
+  // budget. The caller MUST be authenticated and own callerPetId — otherwise
+  // anyone could drain any pet's wallet by passing it as callerPetId.
+  const auth = await requirePetOwner(req, Number(callerPetId));
+  if (auth.error) return auth.error;
+
+  const rl = rateLimit(req, { key: "petclaw-invoke", limit: 20, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
 
   if (callerPetId === providerPetId) {
     return NextResponse.json(

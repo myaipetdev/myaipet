@@ -4,6 +4,7 @@
  */
 
 import { saveRemoteFile as saveToStorage } from "@/lib/storage";
+import { isFetchableImageUrl } from "@/lib/sanitize";
 
 // Save a remote image/video to storage (S3 or Vercel Blob)
 export async function saveToBlob(remoteUrl: string, prefix = "generations"): Promise<string> {
@@ -167,6 +168,11 @@ export async function describePetAvatar(avatarUrl: string): Promise<string> {
 
 // Generate image with reference pet photo — sends image directly to Grok
 export async function generateGrokImageWithRef(prompt: string, referenceUrl: string): Promise<string> {
+  // audit H8: SSRF guard — the reference URL is user-controlled (pet.avatar_url).
+  // Resolve + reject private/loopback/metadata targets before fetching it.
+  if (!(await isFetchableImageUrl(referenceUrl))) {
+    throw new Error("Reference image URL is not allowed");
+  }
   // Download reference image and convert to base64
   const imgRes = await fetch(referenceUrl);
   if (!imgRes.ok) throw new Error("Failed to fetch reference image");

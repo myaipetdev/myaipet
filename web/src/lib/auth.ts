@@ -29,7 +29,9 @@ export async function createToken(userId: number, wallet: string) {
 
 export async function verifyToken(token: string) {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    // audit L2: pin the algorithm so a token can't be presented under a
+    // different alg than we sign with.
+    const { payload } = await jwtVerify(token, JWT_SECRET, { algorithms: ["HS256"] });
     return payload as { sub: string; wallet: string; sid?: string };
   } catch {
     return null;
@@ -47,11 +49,12 @@ export async function getUser(req: NextRequest) {
   });
   if (!user) return null;
 
-  // SCRUM-58: session binding. A token issued with one nonce stops working
-  // the moment we rotate that nonce (logout / re-verify).
-  // Tokens that pre-date this change (no payload.sid) still validate until
-  // their 8h TTL — naturally migrates everyone.
-  if (payload.sid && payload.sid !== user.nonce) {
+  // SCRUM-58 + audit L3: session binding. A token only validates while its sid
+  // equals the user's current nonce; rotating the nonce (logout / re-verify)
+  // invalidates every prior token immediately. Now STRICT — a token with a
+  // missing/empty sid no longer bypasses the check (the pre-SCRUM-58 migration
+  // window is long past; all live tokens carry a sid).
+  if (payload.sid !== user.nonce) {
     return null;
   }
 

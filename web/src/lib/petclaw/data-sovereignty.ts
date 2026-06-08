@@ -255,7 +255,12 @@ export async function deletePetData(petId: number, userId: number): Promise<{ de
   const deletionHash = createHash("sha256").update(deletionPayload).digest("hex");
   const deletedAt = new Date().toISOString();
 
-  // Delete all related data in correct order (respecting foreign keys)
+  // Delete all related data in correct order (respecting foreign keys).
+  // audit M11: also delete the child tables whose FK defaults to onDelete:
+  // Restrict (DreamJournal, PetNotification, PetAutonomousAction, SoulExport) —
+  // otherwise pet.delete() throws and the whole "right to be forgotten" deletion
+  // fails for any pet that has those rows. (Cascade-FK children delete with the
+  // pet automatically.)
   await prisma.$transaction([
     prisma.memoryNft.deleteMany({ where: { pet_id: petId } }),
     prisma.personaCheckpoint.deleteMany({ where: { pet_id: petId } }),
@@ -266,6 +271,10 @@ export async function deletePetData(petId: number, userId: number): Promise<{ de
     prisma.petInteraction.deleteMany({ where: { pet_id: petId } }),
     prisma.battleHistory.deleteMany({ where: { player_pet_id: petId } }),
     prisma.pveProgress.deleteMany({ where: { pet_id: petId } }),
+    prisma.dreamJournal.deleteMany({ where: { pet_id: petId } }),
+    prisma.petNotification.deleteMany({ where: { pet_id: petId } }),
+    prisma.petAutonomousAction.deleteMany({ where: { pet_id: petId } }),
+    prisma.soulExport.deleteMany({ where: { pet_id: petId } }),
     prisma.pet.delete({ where: { id: petId } }),
   ]);
 

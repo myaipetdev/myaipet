@@ -12,6 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 
 type Bucket = { tokens: number; refilledAt: number };
 const buckets = new Map<string, Bucket>();
@@ -19,12 +20,25 @@ const GC_INTERVAL_MS = 5 * 60_000;
 let lastGc = 0;
 
 function clientId(req: NextRequest): string {
-  // Auth header → use the (truncated) token so distinct logged-in users get
-  // separate quotas. Fall back to forwarded IP.
+  // audit H10: key on a hash of the FULL bearer token so distinct logged-in
+  // users get distinct buckets. The previous `auth.slice(7, 32)` was the same
+  // constant ("eyJhbGciOiJIUzI1NiJ9.eyJz") for every HS256 JWT, collapsing all
+  // authenticated users into one shared bucket.
   const auth = req.headers.get("authorization");
-  if (auth) return "u:" + auth.slice(7, 32);
+  if (auth && auth.startsWith("Bearer ")) {
+    const token = auth.slice(7);
+    return "u:" + crypto.createHash("sha256").update(token).digest("hex").slice(0, 24);
+  }
+  // audit H11: do NOT trust the client-supplied leftmost X-Forwarded-For hop.
+  // Prefer X-Real-IP (set by our nginx/edge proxy) and otherwise take the
+  // RIGHTMOST XFF entry (appended by our own proxy), which an external attacker
+  // cannot forge. NOTE: assumes a single trusted proxy in front of the app;
+  // adjust the hop index if the proxy depth changes.
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) return "ip:" + realIp.trim();
   const fwd = req.headers.get("x-forwarded-for") || "";
-  const ip = fwd.split(",")[0].trim() || req.headers.get("x-real-ip") || "ip:unknown";
+  const parts = fwd.split(",").map((s) => s.trim()).filter(Boolean);
+  const ip = parts.length ? parts[parts.length - 1] : "unknown";
   return "ip:" + ip;
 }
 

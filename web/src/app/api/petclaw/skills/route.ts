@@ -38,9 +38,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ skill });
   }
 
-  // List installed skills for a pet
+  // List installed skills for a pet — ownership required (audit L5), except the
+  // public demo pet whose skills are shown on the landing page.
   if (petId) {
-    const installed = await getInstalledSkills(Number(petId));
+    const pid = Number(petId);
+    if (pid !== PUBLIC_DEMO_PET_ID && !(await ownsPet(req, pid))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const installed = await getInstalledSkills(pid);
     const skills = installed.map(i => ({
       ...i,
       manifest: getSkill(i.skillId),

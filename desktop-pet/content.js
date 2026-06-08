@@ -358,11 +358,17 @@
 
   function showChatInput(prefill = "") {
     bubble.classList.remove("hidden");
-    bubble.innerHTML = `
-      <div style="font-size:11px;color:#999;margin-bottom:4px">${dominant.emoji} ${config.petName} is listening...</div>
-      <input id="aipet-chat-input" type="text" placeholder="Say something..." value="${prefill}" />
-    `;
-    const input = document.getElementById("aipet-chat-input");
+    bubble.replaceChildren();
+    const label = document.createElement("div");
+    label.style.cssText = "font-size:11px;color:#999;margin-bottom:4px";
+    label.textContent = `${dominant.emoji} ${config.petName} is listening...`;
+    const input = document.createElement("input");
+    input.id = "aipet-chat-input";
+    input.type = "text";
+    input.placeholder = "Say something...";
+    input.value = prefill;
+    bubble.appendChild(label);
+    bubble.appendChild(input);
     input.focus();
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && input.value.trim()) {
@@ -728,5 +734,28 @@
       if (evolution.stage !== oldStage) updateEvolutionVisuals();
     });
   }, 60000);
+
+  // ── Quest completion handler ──
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === "questComplete") {
+      showBubble("✅ Quest complete! Check the popup!", 5000);
+      burstParticles(["✅", "🎉", "⭐"], 6);
+      body.classList.add("jumping");
+      setTimeout(() => body.classList.remove("jumping"), 500);
+    }
+  });
+
+  // ── Keyboard shortcut: Ctrl+Shift+P = toggle pet visibility ──
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key === "P") {
+      e.preventDefault();
+      if (container.style.display === "none") {
+        container.style.display = "";
+        showBubble("I'm back! 🐾", 2000);
+      } else {
+        container.style.display = "none";
+      }
+    }
+  });
 
 })();

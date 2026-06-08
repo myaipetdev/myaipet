@@ -30,6 +30,7 @@ import { getModel } from "@/lib/studio/providers";
 import { getTemplate } from "@/lib/studio/templates";
 import { submitToBackend } from "@/lib/studio/backend";
 import { getCurrentSubscription, gateModel, incrementUsage } from "@/lib/studio/subscription";
+import { moderateText } from "@/lib/moderation";
 
 export async function POST(req: NextRequest) {
   const rl = rateLimit(req, { key: "studio-generate", limit: 30, windowMs: 60_000 });
@@ -73,6 +74,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Provide templateId or prompt" }, { status: 400 });
   }
 
+  // audit M14: moderate the final prompt before sending it to fal.ai/Grok —
+  // rejects NSFW / violent / minor / public-figure content.
+  const mod = moderateText(finalPrompt, "prompt");
+  if (!mod.ok) {
+    return NextResponse.json({ error: mod.reason }, { status: 400 });
+  }
+
   // ── Subscription tier + monthly quota gate ──
   const sub = await getCurrentSubscription(user.id);
   const gate = gateModel(sub, model.tier, model.kind);
@@ -106,12 +114,15 @@ export async function POST(req: NextRequest) {
   const refUrl = model.supportsImageRef && pet?.avatar_url ? pet.avatar_url : undefined;
 
   // ── Atomic credit deduction + generation row ──
+  // audit H17: guarded conditional decrement — concurrent requests that read the
+  // same pre-deduction balance can't both pass and drive credits negative.
   const created = await prisma.$transaction(async (tx) => {
-    const u = await tx.user.update({
-      where: { id: user.id },
+    const dec = await tx.user.updateMany({
+      where: { id: user.id, credits: { gte: cost } },
       data: { credits: { decrement: cost } },
-      select: { credits: true },
     });
+    if (dec.count === 0) return null; // insufficient credits (lost the race)
+    const u = await tx.user.findUnique({ where: { id: user.id }, select: { credits: true } });
     const g = await tx.generation.create({
       data: {
         user_id: user.id,
@@ -126,6 +137,13 @@ export async function POST(req: NextRequest) {
     });
     return { user: u, gen: g };
   });
+
+  if (!created) {
+    return NextResponse.json(
+      { error: "Insufficient credits", required: cost },
+      { status: 402 },
+    );
+  }
 
   // ── Submit to backend (outside transaction — may take seconds) ──
   const result = await submitToBackend(model, finalPrompt, refUrl);
@@ -158,7 +176,7 @@ export async function POST(req: NextRequest) {
       generationId: created.gen.id,
       status: "completed",
       url: result.immediateUrl,
-      creditsRemaining: created.user.credits,
+      creditsRemaining: created.user?.credits ?? 0,
       model: { id: model.id, displayName: model.displayName, provider: model.provider },
     });
   }

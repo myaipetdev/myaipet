@@ -6,12 +6,14 @@
 import { ethers } from "ethers";
 import PETContentABI from "@/lib/contracts/PETContent.abi.json";
 import PetaGenTrackerABI from "@/lib/contracts/PetaGenTracker.abi.json";
+import { ONCHAIN } from "@/lib/onchain";
 
-const BSC_RPC = "https://bsc-dataseed1.binance.org";
-const PET_CONTENT_ADDRESS = "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c";
-const PET_TRACKER_ADDRESS = "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a";
+// Addresses / RPC / chain come from the central on-chain config so they can be
+// swapped (re-deploy, chain migration) via env without editing this file.
+const PET_CONTENT_ADDRESS = ONCHAIN.contracts.petContent;
+const PET_TRACKER_ADDRESS = ONCHAIN.contracts.petaGenTracker;
 
-function getRelayerWallet() {
+async function getRelayerWallet() {
   // ON-CHAIN HOLD: server-side recording + NFT minting paused.
   // Re-enable by setting BLOCKCHAIN_ENABLED=true once relayer wallet is funded
   // and PETActivity is deployed.
@@ -23,7 +25,19 @@ function getRelayerWallet() {
     console.warn("[blockchain] BACKEND_RELAYER_KEY not set, on-chain calls disabled");
     return null;
   }
-  const provider = new ethers.JsonRpcProvider(BSC_RPC);
+  const provider = new ethers.JsonRpcProvider(ONCHAIN.rpcUrl);
+  // audit L12: verify we're on the expected chain before the relayer signs/mints,
+  // so a misconfigured RPC can't push relayer txs onto the wrong network.
+  try {
+    const net = await provider.getNetwork();
+    if (Number(net.chainId) !== ONCHAIN.chainId) {
+      console.error(`[blockchain] chainId mismatch: RPC=${net.chainId}, expected=${ONCHAIN.chainId} — aborting`);
+      return null;
+    }
+  } catch (e) {
+    console.error("[blockchain] failed to read network chainId:", e);
+    return null;
+  }
   return new ethers.Wallet(key, provider);
 }
 
@@ -38,7 +52,7 @@ export async function recordGenerationOnChain(
   contentHash: string
 ): Promise<{ txHash: string; chain: string } | null> {
   try {
-    const wallet = getRelayerWallet();
+    const wallet = await getRelayerWallet();
     if (!wallet) return null;
 
     const tracker = new ethers.Contract(PET_TRACKER_ADDRESS, PetaGenTrackerABI, wallet);
@@ -84,7 +98,7 @@ export async function mintContentNFT(
   contentHash: string
 ): Promise<{ txHash: string; tokenId: number } | null> {
   try {
-    const wallet = getRelayerWallet();
+    const wallet = await getRelayerWallet();
     if (!wallet) return null;
 
     const petContent = new ethers.Contract(PET_CONTENT_ADDRESS, PETContentABI, wallet);

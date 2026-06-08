@@ -30,9 +30,37 @@ export function sanitizeText(input: unknown, maxLen = 2000): string {
     .slice(0, maxLen);
 }
 
+/** True if an IP literal (v4 or v6) is private/loopback/link-local/metadata. */
+export function isPrivateIp(ip: string): boolean {
+  const a = ip.toLowerCase().replace(/^\[|\]$/g, "");
+  if (a.includes(":")) {
+    // IPv6
+    if (a === "::1" || a === "::") return true;
+    if (a.startsWith("fc") || a.startsWith("fd")) return true; // ULA fc00::/7
+    if (a.startsWith("fe80")) return true;                      // link-local
+    if (a.startsWith("::ffff:")) return isPrivateIp(a.slice(7)); // IPv4-mapped
+    return false;
+  }
+  const parts = a.split(".").map((n) => parseInt(n, 10));
+  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n) || n < 0 || n > 255)) return true; // malformed → unsafe
+  const [p0, p1] = parts;
+  if (p0 === 0 || p0 === 127 || p0 === 10) return true;
+  if (p0 === 192 && p1 === 168) return true;
+  if (p0 === 172 && p1 >= 16 && p1 <= 31) return true;
+  if (p0 === 169 && p1 === 254) return true; // link-local / cloud metadata
+  if (p0 === 100 && p1 >= 64 && p1 <= 127) return true; // CGNAT
+  return false;
+}
+
 /**
  * Validate that a URL is safe to render as an image or download target.
- * Rejects javascript:, data: (except images), file:, vbscript:, and intranet IPs.
+ * Rejects javascript:, data: (except images), file:, vbscript:, intranet IPs,
+ * IPv6 (incl. bracketed/IPv4-mapped) loopback/metadata, and internal hostnames.
+ *
+ * NOTE: this is the synchronous, input-time check. Before the server actually
+ * FETCHES a user-supplied URL, also call isFetchableImageUrl() (async) which
+ * resolves DNS and rejects hosts pointing at private space — defeating
+ * hostname-based and DNS-rebinding SSRF (audit H8).
  */
 export function isSafeImageUrl(input: unknown): boolean {
   if (typeof input !== "string") return false;
@@ -49,28 +77,56 @@ export function isSafeImageUrl(input: unknown): boolean {
 
   if (!["http:", "https:"].includes(parsed.protocol)) return false;
 
-  // Block private / loopback / link-local IP literals — defense against SSRF
-  const host = parsed.hostname.toLowerCase();
+  // Normalise host: lowercase + strip IPv6 brackets so [::1] / [::ffff:a9fe:a9fe]
+  // are matched too.
+  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+
+  // Block internal hostnames + cloud metadata endpoints.
   if (
     host === "localhost" ||
-    host === "0.0.0.0" ||
     host.endsWith(".local") ||
-    /^127\./.test(host) ||
-    /^10\./.test(host) ||
-    /^192\.168\./.test(host) ||
-    /^172\.(1[6-9]|2[0-9]|3[01])\./.test(host) ||
-    /^169\.254\./.test(host) ||      // AWS metadata / link-local
-    /^::1$/.test(host) ||
-    /^fc00:/i.test(host) ||
-    /^fe80:/i.test(host)
+    host.endsWith(".internal") ||
+    host === "metadata.google.internal" ||
+    host === "metadata.goog"
   ) {
     return false;
   }
+
+  // Block IP literals in private/loopback/link-local/metadata ranges (v4 + v6).
+  // A bare IP host (digits/colons/dots) is validated directly; if it's a
+  // hostname, isPrivateIp returns false here and the async DNS check covers it.
+  const looksLikeIp = /^[0-9.]+$/.test(host) || host.includes(":");
+  if (looksLikeIp && isPrivateIp(host)) return false;
+
   return true;
 }
 
 export function safeUrlOrEmpty(input: unknown): string {
   return isSafeImageUrl(input) ? (input as string) : "";
+}
+
+/**
+ * Async, fetch-time SSRF guard (audit H8). Runs the sync checks, then resolves
+ * the hostname and rejects if ANY resolved address is private/loopback/link-
+ * local/metadata. Call this immediately before the server fetches a user-
+ * supplied image URL. (Residual DNS-rebinding between this lookup and the actual
+ * connect is best closed with a pinned-IP fetch agent.)
+ */
+export async function isFetchableImageUrl(input: unknown): Promise<boolean> {
+  if (!isSafeImageUrl(input)) return false;
+  const url = (input as string).trim();
+  if (url.startsWith("data:")) return true;
+  let parsed: URL;
+  try { parsed = new URL(url); } catch { return false; }
+  const host = parsed.hostname.replace(/^\[|\]$/g, "");
+  try {
+    const { lookup } = await import("node:dns/promises");
+    const results = await lookup(host, { all: true });
+    if (!results.length) return false;
+    return results.every((r) => !isPrivateIp(r.address));
+  } catch {
+    return false; // unresolvable / lookup error → reject
+  }
 }
 
 /**

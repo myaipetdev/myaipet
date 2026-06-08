@@ -20,6 +20,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
+import { ownsPet, PUBLIC_DEMO_PET_ID } from "@/lib/authz";
 
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 
@@ -103,8 +104,16 @@ export async function GET(
   if (!rl.ok) return rl.response;
 
   const { petId } = await params;
+  const pid = Number(petId);
+
+  // SECURITY (audit M2): generating a thought triggers a paid LLM call and
+  // writes to the pet. Restrict to the pet's owner — except the public demo pet.
+  if (pid !== PUBLIC_DEMO_PET_ID && !(await ownsPet(req, pid))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const pet = await prisma.pet.findFirst({
-    where: { id: Number(petId), is_active: true },
+    where: { id: pid, is_active: true },
   });
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
 

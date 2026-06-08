@@ -3,6 +3,8 @@ import { getUser } from "@/lib/auth";
 import { awardPoints } from "@/lib/airdrop";
 import { SKILL_DB, SKILL_MAP, DAILY_BATTLE_CAP, DAILY_EXP_CAP, getGrowthMultiplier } from "@/lib/skills";
 import { PVE_STAGES, REGIONS, getStage, getRegionForStage, generateMinion, calculateStars, getStageMinLevel } from "@/lib/pve";
+import { simulateBattle } from "@/lib/battleSim";
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/arena/pve?pet_id=X — Get PvE progress map + current stage info
@@ -65,7 +67,9 @@ export async function POST(req: NextRequest) {
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { pet_id, stage_id, won, turns, hp_left, max_hp } = await req.json();
+  // audit C5: the PvE outcome is decided server-side from the pet's real stats
+  // vs the stage boss — the client no longer reports won/turns/hp_left/max_hp.
+  const { pet_id, stage_id } = await req.json();
 
   if (!pet_id || !stage_id) {
     return NextResponse.json({ error: "pet_id and stage_id required" }, { status: 400 });
@@ -106,6 +110,25 @@ export async function POST(req: NextRequest) {
   if (dailyLog.battles >= DAILY_BATTLE_CAP) {
     return NextResponse.json({ error: "Daily battle cap reached", cap: DAILY_BATTLE_CAP }, { status: 429 });
   }
+
+  // ── Resolve the stage SERVER-SIDE (audit C5) ──
+  // Boss combat stats come from the stage definition (incl. its tuned baseHp).
+  const sim = simulateBattle(
+    { atk: pet.atk, def: pet.def, spd: pet.spd, level: pet.level },
+    {
+      atk: stage.baseAtk,
+      def: stage.baseDef,
+      spd: stage.baseSpd,
+      level: stage.level,
+      name: stage.name,
+      hpMax: stage.baseHp,
+    },
+    crypto.randomBytes(16).toString("hex"),
+  );
+  const won = sim.won;
+  const turns = sim.turns;
+  const hp_left = sim.player_hp_left;
+  const max_hp = sim.player_hp_max;
 
   // Calculate stars
   const hpRatio = max_hp > 0 ? (hp_left || 0) / max_hp : 0;
@@ -222,6 +245,16 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({
+    // Server-decided outcome (audit C5) — client renders this, not its own.
+    battle: {
+      won,
+      turns,
+      player_hp_left: sim.player_hp_left,
+      player_hp_max: sim.player_hp_max,
+      opponent_hp_left: sim.opponent_hp_left,
+      opponent_hp_max: sim.opponent_hp_max,
+      log: sim.log,
+    },
     won,
     stars,
     exp_gained: expGain,

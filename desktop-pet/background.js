@@ -189,6 +189,8 @@ async function applyEmotionAction(action) {
   }
   await saveEmotions(e);
   await addPoints("skill", 1, `${action} interaction`);
+  await progressQuest(action);
+  await checkAchievements();
   return e;
 }
 
@@ -340,21 +342,185 @@ const GAME_KEY = "petGameStats";
 
 async function getGameStats() {
   const result = await chrome.storage.local.get(GAME_KEY);
-  return { highScore: 0, gamesPlayed: 0, ...(result[GAME_KEY] || {}) };
+  return { highScore: 0, highScoreMemory: 0, gamesPlayed: 0, ...(result[GAME_KEY] || {}) };
 }
 
-async function saveGameResult(score, points) {
+async function saveGameResult(score, points, game = "catcher") {
   const stats = await getGameStats();
   stats.gamesPlayed++;
-  if (score > stats.highScore) stats.highScore = score;
+  const key = game === "memory" ? "highScoreMemory" : "highScore";
+  if (score > (stats[key] || 0)) stats[key] = score;
   await chrome.storage.local.set({ [GAME_KEY]: stats });
 
   if (points > 0) {
-    await addPoints("game", points, `mini-game score ${score}`);
-    await addNotification("🎮", `Game finished! Score: ${score}, +${points} pts`);
+    await addPoints("game", points, `${game} score ${score}`);
+    await addNotification("🎮", `${game === "memory" ? "Memory" : "Catcher"}: ${score} pts, +${points} airdrop`);
   }
 
+  await checkAchievements();
   return stats;
+}
+
+// ══════════════════════════════════════
+// ── ACHIEVEMENTS ──
+// ══════════════════════════════════════
+
+const ACHIEVE_KEY = "petAchievements";
+
+const ACHIEVEMENT_DEFS = [
+  { id: "first_chat",     icon: "💬", name: "First Words",       desc: "Send your first chat",           check: (p) => p.chatCount >= 1 },
+  { id: "chat_10",        icon: "🗣️", name: "Chatterbox",        desc: "Chat 10 times",                  check: (p) => p.chatCount >= 10 },
+  { id: "chat_100",       icon: "📢", name: "Motor Mouth",       desc: "Chat 100 times",                 check: (p) => p.chatCount >= 100 },
+  { id: "streak_3",       icon: "🔥", name: "On Fire",           desc: "3-day login streak",             check: (p) => p.dailyStreak >= 3 },
+  { id: "streak_7",       icon: "🌟", name: "Dedicated",         desc: "7-day login streak",             check: (p) => p.dailyStreak >= 7 },
+  { id: "streak_30",      icon: "👑", name: "Royalty",            desc: "30-day login streak",            check: (p) => p.dailyStreak >= 30 },
+  { id: "points_100",     icon: "💰", name: "Pocket Change",     desc: "Earn 100 total points",          check: (p) => p.totalPoints >= 100 },
+  { id: "points_1000",    icon: "💎", name: "Diamond Hands",     desc: "Earn 1,000 total points",        check: (p) => p.totalPoints >= 1000 },
+  { id: "points_10000",   icon: "🏆", name: "Whale",             desc: "Earn 10,000 total points",       check: (p) => p.totalPoints >= 10000 },
+  { id: "game_first",     icon: "🎮", name: "Gamer",             desc: "Play your first mini-game",      check: (_, g) => g.gamesPlayed >= 1 },
+  { id: "game_10",        icon: "🕹️", name: "Arcade Rat",        desc: "Play 10 mini-games",             check: (_, g) => g.gamesPlayed >= 10 },
+  { id: "game_highscore", icon: "⭐", name: "High Scorer",       desc: "Score 100+ in Treat Catcher",    check: (_, g) => g.highScore >= 100 },
+  { id: "evo_baby",       icon: "🐣", name: "Hatched!",          desc: "Evolve to Baby",                 check: (_, __, e) => e.stage >= 1 },
+  { id: "evo_teen",       icon: "⚡", name: "Growing Up",        desc: "Evolve to Teen",                 check: (_, __, e) => e.stage >= 3 },
+  { id: "evo_legend",     icon: "👑", name: "Legendary",         desc: "Reach Legend stage",             check: (_, __, e) => e.stage >= 5 },
+  { id: "browse_60",      icon: "🌐", name: "Web Surfer",        desc: "Browse 60+ minutes",             check: (p) => (p.heartbeatCount || 0) >= 12 },
+  { id: "feed_pet",       icon: "🍖", name: "Good Owner",        desc: "Feed your pet 5 times",          check: (p) => (p.skillCount || 0) >= 5 },
+  { id: "all_emotions",   icon: "🎭", name: "Mood Ring",         desc: "See 5+ different emotions",      check: (p) => (p._emotionsSeen || 0) >= 5 },
+];
+
+async function getAchievements() {
+  const result = await chrome.storage.local.get(ACHIEVE_KEY);
+  return result[ACHIEVE_KEY] || {};
+}
+
+async function checkAchievements() {
+  const [points, gameStats, evo, current] = await Promise.all([
+    getPoints(), getGameStats(), getEvolution(), getAchievements(),
+  ]);
+
+  let newUnlocks = [];
+  for (const def of ACHIEVEMENT_DEFS) {
+    if (current[def.id]) continue;
+    if (def.check(points, gameStats, evo)) {
+      current[def.id] = { unlockedAt: Date.now() };
+      newUnlocks.push(def);
+    }
+  }
+
+  if (newUnlocks.length > 0) {
+    await chrome.storage.local.set({ [ACHIEVE_KEY]: current });
+    for (const a of newUnlocks) {
+      await addNotification(a.icon, `Achievement: ${a.name}!`);
+      await addPoints("skill", 10, `achievement: ${a.name}`);
+
+      const config = await getConfig();
+      if (config.preferences?.notifications !== false) {
+        chrome.notifications.create(`achieve-${a.id}`, {
+          type: "basic",
+          iconUrl: "icons/icon128.png",
+          title: `${a.icon} Achievement Unlocked!`,
+          message: `${a.name} — ${a.desc}`,
+        });
+      }
+    }
+  }
+
+  return { achievements: current, defs: ACHIEVEMENT_DEFS };
+}
+
+// ══════════════════════════════════════
+// ── DAILY QUESTS ──
+// ══════════════════════════════════════
+
+const QUEST_KEY = "petDailyQuests";
+
+const QUEST_POOL = [
+  { id: "chat_3",    icon: "💬", name: "Social Butterfly",   desc: "Chat 3 times",          target: 3,  category: "chat",    reward: 15 },
+  { id: "chat_5",    icon: "🗣️", name: "Chatty",             desc: "Chat 5 times",          target: 5,  category: "chat",    reward: 25 },
+  { id: "feed_2",    icon: "🍖", name: "Pet Chef",           desc: "Feed your pet twice",   target: 2,  category: "feed",    reward: 10 },
+  { id: "play_2",    icon: "🎾", name: "Play Date",          desc: "Play with pet twice",   target: 2,  category: "play",    reward: 10 },
+  { id: "pet_3",     icon: "💕", name: "Love Bomb",          desc: "Pet 3 times",           target: 3,  category: "pet",     reward: 10 },
+  { id: "game_1",    icon: "🎮", name: "Arcade Visit",       desc: "Play a mini-game",      target: 1,  category: "game",    reward: 10 },
+  { id: "game_2",    icon: "🕹️", name: "Arcade Pro",         desc: "Play 2 mini-games",     target: 2,  category: "game",    reward: 20 },
+  { id: "browse_30", icon: "🌐", name: "Web Walker",         desc: "Browse 30 minutes",     target: 30, category: "browse",  reward: 15 },
+  { id: "score_50",  icon: "⭐", name: "Score Hunter",       desc: "Score 50+ in a game",   target: 50, category: "score",   reward: 20 },
+  { id: "all_3",     icon: "🌈", name: "Triple Threat",      desc: "Chat, feed, and play",  target: 3,  category: "combo",   reward: 30 },
+];
+
+function pickDailyQuests(seed) {
+  const shuffled = [...QUEST_POOL];
+  let s = seed;
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    const j = s % (i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, 3);
+}
+
+async function getDailyQuests() {
+  const result = await chrome.storage.local.get(QUEST_KEY);
+  const data = result[QUEST_KEY] || {};
+  const today = new Date().toISOString().split("T")[0];
+
+  if (data.date !== today) {
+    const seed = parseInt(today.replace(/-/g, ""), 10);
+    const quests = pickDailyQuests(seed).map((q) => ({
+      ...q,
+      progress: 0,
+      completed: false,
+      claimed: false,
+    }));
+    const fresh = { date: today, quests };
+    await chrome.storage.local.set({ [QUEST_KEY]: fresh });
+    return fresh;
+  }
+
+  return data;
+}
+
+async function progressQuest(category, amount = 1) {
+  const data = await getDailyQuests();
+  let updated = false;
+
+  for (const q of data.quests) {
+    if (q.claimed) continue;
+    if (q.category === category || (q.category === "combo" && ["chat", "feed", "play"].includes(category))) {
+      q.progress = Math.min(q.target, (q.progress || 0) + amount);
+      if (q.progress >= q.target && !q.completed) {
+        q.completed = true;
+        updated = true;
+      }
+    }
+  }
+
+  await chrome.storage.local.set({ [QUEST_KEY]: data });
+
+  if (updated) {
+    // Notify content script of quest completion
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    for (const tab of tabs) {
+      if (tab.id) {
+        try { chrome.tabs.sendMessage(tab.id, { type: "questComplete" }); } catch {}
+      }
+    }
+  }
+
+  return data;
+}
+
+async function claimQuestReward(questId) {
+  const data = await getDailyQuests();
+  const quest = data.quests.find((q) => q.id === questId);
+  if (!quest || !quest.completed || quest.claimed) return { success: false };
+
+  quest.claimed = true;
+  await chrome.storage.local.set({ [QUEST_KEY]: data });
+  await addPoints("skill", quest.reward, `quest: ${quest.name}`);
+  await addNotification("✅", `Quest complete: ${quest.name}! +${quest.reward} pts`);
+  await checkAchievements();
+
+  return { success: true, reward: quest.reward };
 }
 
 // ══════════════════════════════════════
@@ -393,6 +559,8 @@ async function chatWithPet(message) {
     await saveEmotions(e);
 
     await addPoints("chat", 3, "chat interaction");
+    await progressQuest("chat");
+    await checkAchievements();
     return result.output.reply;
   }
 
@@ -406,6 +574,7 @@ async function chatWithPet(message) {
   };
 
   await addPoints("chat", 1, "chat attempt (offline)");
+  await progressQuest("chat");
   const pFallbacks = fallbacks[config.personality] || fallbacks.playful;
   return pFallbacks[Math.floor(Math.random() * pFallbacks.length)];
 }
@@ -641,6 +810,7 @@ async function trackBrowsing() {
   if (browsingMinutes % 10 === 0) {
     await addPoints("browsing", 1, "10min active browsing");
   }
+  await progressQuest("browse");
 }
 
 // ══════════════════════════════════════
@@ -803,9 +973,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         }
       }),
 
+    getAchievements: () =>
+      checkAchievements().then((data) => sendResponse(data)),
+
+    getDailyQuests: () =>
+      getDailyQuests().then((data) => sendResponse(data)),
+
+    claimQuest: () =>
+      claimQuestReward(msg.questId).then((res) => sendResponse(res)),
+
+    progressQuest: () =>
+      progressQuest(msg.category, msg.amount).then((data) => sendResponse(data)),
+
     getFullState: () =>
-      Promise.all([getConfig(), getPoints(), getEmotions(), getEvolution(), getGameStats()]).then(
-        ([config, points, emotions, evolution, gameStats]) => {
+      Promise.all([getConfig(), getPoints(), getEmotions(), getEvolution(), getGameStats(), getAchievements(), getDailyQuests()]).then(
+        ([config, points, emotions, evolution, gameStats, achievements, quests]) => {
           sendResponse({
             config,
             points,
@@ -813,6 +995,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             dominant: getDominantEmotion(emotions),
             evolution,
             gameStats,
+            achievements,
+            quests,
           });
         }
       ),

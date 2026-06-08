@@ -1,0 +1,45 @@
+name: Deploy to EC2
+
+# Triggers:
+#   - push to main → auto-deploy
+#   - manual dispatch (workflow_run from PR merge or ad-hoc)
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Single concurrent deploy; queue extras and cancel duplicates.
+concurrency:
+  group: ec2-deploy-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: SSH + bash deploy/ec2-pull.sh
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: SSH into EC2 and run pull script
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT || 22 }}
+          # PETCLAW_ROOT defaults to /opt/petclaw — override with env var on EC2
+          # if your checkout lives elsewhere.
+          script: |
+            set -euo pipefail
+            cd "${PETCLAW_ROOT:-/opt/petclaw}"
+            bash deploy/ec2-pull.sh
+
+      - name: Smoke check (homepage 200)
+        run: |
+          for i in 1 2 3; do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://app.myaipet.ai/ || echo "000")
+            echo "Attempt $i: HTTP $CODE"
+            if [ "$CODE" = "200" ]; then exit 0; fi
+            sleep 5
+          done
+          echo "::error::Homepage did not return 200 after deploy"
+          exit 1

@@ -42,6 +42,11 @@ function parseSiweMessage(message: string) {
   const lines = message.split("\n");
   let address = "";
   let nonce = "";
+  let issuedAt = "";
+
+  // Line 0: "<domain> wants you to sign in with your Ethereum account:"
+  const domainMatch = lines[0]?.match(/^(\S+) wants you to sign in/);
+  const domain = domainMatch ? domainMatch[1].trim() : "";
 
   for (const line of lines) {
     // Address is on the second line (after "domain wants you to sign in...")
@@ -51,9 +56,12 @@ function parseSiweMessage(message: string) {
     if (line.startsWith("Nonce: ")) {
       nonce = line.replace("Nonce: ", "").trim();
     }
+    if (line.startsWith("Issued At: ")) {
+      issuedAt = line.replace("Issued At: ", "").trim();
+    }
   }
 
-  return { address, nonce };
+  return { address, nonce, domain, issuedAt };
 }
 
 export async function POST(req: NextRequest) {
@@ -72,13 +80,33 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { address, nonce } = parseSiweMessage(message);
+    const { address, nonce, domain, issuedAt } = parseSiweMessage(message);
 
     if (!address || !nonce) {
       return NextResponse.json(
         { error: "Invalid SIWE message format" },
         { status: 400 }
       );
+    }
+
+    // audit M1: bind the signed message to our domain + a fresh timestamp, so a
+    // SIWE message a victim was tricked into signing for another site can't be
+    // replayed here. Allowed domains: SIWE_ALLOWED_DOMAINS (csv) ∪ request Host.
+    const hostHeader = (req.headers.get("host") || "").toLowerCase();
+    const allowedDomains = new Set(
+      [
+        ...(process.env.SIWE_ALLOWED_DOMAINS || "").split(",").map((s) => s.trim().toLowerCase()),
+        hostHeader,
+      ].filter(Boolean),
+    );
+    if (domain && allowedDomains.size > 0 && !allowedDomains.has(domain.toLowerCase())) {
+      return NextResponse.json({ error: "SIWE domain mismatch" }, { status: 401 });
+    }
+    if (issuedAt) {
+      const t = Date.parse(issuedAt);
+      if (!Number.isNaN(t) && Math.abs(Date.now() - t) > 10 * 60 * 1000) {
+        return NextResponse.json({ error: "SIWE message expired — please retry" }, { status: 401 });
+      }
     }
 
     // Verify the signature — try viem first with normalized v byte,

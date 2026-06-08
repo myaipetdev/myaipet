@@ -34,6 +34,54 @@ export async function awardPoints(
   }
 }
 
+// Per-user/day ceilings on "soft" (free, repeatable) airdrop earnings. Without
+// these, actions like `interact` can be scripted to mint the airdrop allocation
+// currency at near-zero cost (audit H5) and there is no bound on total emission
+// (audit M5). Hard-gated actions (purchases, evolutions) are not capped here.
+export const DAILY_POINT_CAPS: Record<string, number> = {
+  interact: 150, // ≈30 interactions/day count toward the airdrop
+};
+
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Award airdrop points for a repeatable action, enforcing a per-user/day cap
+ * tracked in DailyActionCount (action_key = "ap:<reason>"). Grants only the
+ * remaining headroom (possibly 0). Soft cap — a tiny overage is possible under
+ * heavy concurrency, which is acceptable for an anti-farm ceiling.
+ */
+export async function awardPointsCapped(
+  userId: number,
+  reason: string,
+  perActionPoints: number,
+  dailyCap: number,
+) {
+  if (perActionPoints <= 0 || dailyCap <= 0) return { points: 0 };
+  const day = todayKey();
+  const action_key = `ap:${reason}`;
+  try {
+    const granted = await prisma.$transaction(async (tx) => {
+      const row = await tx.dailyActionCount.upsert({
+        where: { user_action_day: { user_id: userId, action_key, day } },
+        create: { user_id: userId, action_key, day, count: 0 },
+        update: {},
+      });
+      const remaining = Math.max(0, dailyCap - row.count);
+      const give = Math.min(perActionPoints, remaining);
+      if (give <= 0) return 0;
+      await tx.dailyActionCount.update({ where: { id: row.id }, data: { count: { increment: give } } });
+      await tx.user.update({ where: { id: userId }, data: { airdrop_points: { increment: give } } });
+      return give;
+    });
+    return { points: granted, reason, capped: granted < perActionPoints };
+  } catch (e) {
+    console.error("Award capped points error:", e);
+    return { points: 0 };
+  }
+}
+
 // Evolution stages with requirements
 export const EVOLUTION_STAGES = [
   { stage: 0, name: "Baby", minLevel: 1, icon: "🥚" },

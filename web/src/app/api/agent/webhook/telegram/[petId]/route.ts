@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { TelegramAdapter } from "@/lib/services/platforms/telegram";
-import { respondToMessage } from "@/lib/services/pet-agent";
+import { respondToMessage, consumeAgentCredits } from "@/lib/services/pet-agent";
 import { decrypt } from "@/lib/crypto";
 
 /**
@@ -93,6 +93,18 @@ export async function POST(
         },
       },
     });
+
+    // 7b. audit H19: charge the owner's agent credits BEFORE the paid Grok call.
+    // Any Telegram user can DM a public bot; without this, a script could run up
+    // unbounded LLM cost (denial-of-wallet). consumeAgentCredits enforces the
+    // per-pet daily_credit_limit and the owner's credit balance.
+    const charged = await consumeAgentCredits(petIdNum, 1);
+    if (!charged) {
+      await adapter
+        .sendText(message.chatId, "💤 I'm out of energy for now — check back later!")
+        .catch(() => {});
+      return NextResponse.json({ ok: true });
+    }
 
     // 8. Generate the pet's response
     const result = await respondToMessage(
