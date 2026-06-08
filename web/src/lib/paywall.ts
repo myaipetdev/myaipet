@@ -16,6 +16,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { ONCHAIN } from "@/lib/onchain";
 
 export interface ActionConfig {
   freeCap: number;        // free actions per UTC day
@@ -59,8 +60,9 @@ export type PaywallResult =
       };
     };
 
-const TREASURY = process.env.TREASURY_WALLET || process.env.NEXT_PUBLIC_TREASURY_WALLET || "";
-const USDT_BSC = "0x55d398326f99059fF775485246999027B3197955";
+// Central, swappable on-chain config (treasury / token / chain via env).
+const TREASURY = ONCHAIN.treasuryWallet || process.env.NEXT_PUBLIC_TREASURY_WALLET || "";
+const USDT_BSC = ONCHAIN.usdt.address;
 
 /**
  * Check or grant access to a paid action.
@@ -85,7 +87,7 @@ export async function enforcePaywall(
       return {
         ok: false,
         paywall: { actionKey, priceUsd: cfg.priceUsd, description: cfg.description,
-          treasury: TREASURY, usdtAddress: USDT_BSC, chainId: 56,
+          treasury: TREASURY, usdtAddress: USDT_BSC, chainId: ONCHAIN.chainId,
           reason: "free_cap_exhausted" },
       };
     }
@@ -110,7 +112,7 @@ export async function enforcePaywall(
       return {
         ok: false,
         paywall: { actionKey, priceUsd: cfg.priceUsd, description: cfg.description,
-          treasury: TREASURY, usdtAddress: USDT_BSC, chainId: 56, reason },
+          treasury: TREASURY, usdtAddress: USDT_BSC, chainId: ONCHAIN.chainId, reason },
       };
     }
     const receipt = await prisma.paidAction.findUnique({ where: { tx_hash: txHash } });
@@ -125,7 +127,7 @@ export async function enforcePaywall(
     return {
       ok: false,
       paywall: { actionKey, priceUsd: cfg.priceUsd, description: cfg.description,
-        treasury: TREASURY, usdtAddress: USDT_BSC, chainId: 56,
+        treasury: TREASURY, usdtAddress: USDT_BSC, chainId: ONCHAIN.chainId,
         reason: "no_free_tier" },
     };
   }
@@ -146,7 +148,7 @@ export async function enforcePaywall(
     return {
       ok: false,
       paywall: { actionKey, priceUsd: cfg.priceUsd, description: cfg.description,
-        treasury: TREASURY, usdtAddress: USDT_BSC, chainId: 56,
+        treasury: TREASURY, usdtAddress: USDT_BSC, chainId: ONCHAIN.chainId,
         reason: "free_cap_exhausted" },
     };
   }

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { SignJWT, importPKCS8 } from "jose";
+import { getUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rateLimit";
 
 const COINBASE_API_KEY_NAME = process.env.COINBASE_API_KEY_NAME || "";
 const COINBASE_API_KEY_SECRET = process.env.COINBASE_API_KEY_SECRET || "";
@@ -39,10 +41,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Coinbase not configured" }, { status: 500 });
   }
 
+  // audit B3: require auth + rate limit so anonymous callers can't mint Coinbase
+  // onramp sessions (provider quota abuse).
+  const user = await getUser(req);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const rl = rateLimit(req, { key: "coinbase-session", limit: 10, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
   try {
     const { walletAddress } = await req.json();
     if (!walletAddress || !/^0x[0-9a-fA-F]{40}$/i.test(walletAddress)) {
       return NextResponse.json({ error: "Valid wallet address required" }, { status: 400 });
+    }
+    // Only allow funding the caller's own wallet.
+    if (walletAddress.toLowerCase() !== user.wallet_address.toLowerCase()) {
+      return NextResponse.json({ error: "Wallet address must match your account" }, { status: 403 });
     }
 
     const jwt = await createCDPJWT();

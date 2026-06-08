@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { awardPoints } from "@/lib/airdrop";
+import { awardPoints, awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/airdrop";
 import {
   BASE_EFFECTS,
   applyPersonality,
@@ -151,6 +151,9 @@ export async function POST(
   // ── Combo detection ──
   const newHistory = [...history, interaction_type].slice(-8); // keep last 8
   const combo = detectCombo(newHistory);
+  // audit H6: once a combo fires, consume the matched history so spamming the
+  // same action can't re-trigger the same combo (overlapping tail) every turn.
+  const persistedHistory = combo ? [] : newHistory;
   let comboBonus = { happiness: 0, energy: 0, hunger: 0, exp: 0, bond: 0 };
   if (combo) {
     comboBonus = { happiness: 0, energy: 0, hunger: 0, exp: 0, bond: 0, ...combo.bonusEffects };
@@ -203,7 +206,7 @@ export async function POST(
       last_interaction_at: new Date(),
       personality_modifiers: {
         ...mods,
-        interaction_history: newHistory,
+        interaction_history: persistedHistory,
         pending_request: nextRequest,
         combos_unlocked: updatedCombos,
       } as any,
@@ -235,10 +238,12 @@ export async function POST(
     },
   });
 
-  // Award airdrop points
-  const pointsResult = await awardPoints(user.id, pet.id, "interact");
+  // Award airdrop points — interact is daily-capped (audit H5/M5) so it can't be
+  // scripted to mint unlimited airdrop allocation. level_up stays uncapped.
+  const interactCap = DAILY_POINT_CAPS.interact;
+  const pointsResult = await awardPointsCapped(user.id, "interact", 5, interactCap);
   if (leveledUp) await awardPoints(user.id, pet.id, "level_up");
-  if (combo) await awardPoints(user.id, pet.id, "interact"); // bonus
+  if (combo) await awardPointsCapped(user.id, "interact", 5, interactCap); // bonus (same daily pool)
 
   // Care Streak: only feed counts. Mints a NFT every 7-day consecutive streak.
   // Fire-and-forget — chain calls don't block the interaction response.

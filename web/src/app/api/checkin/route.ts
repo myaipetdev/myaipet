@@ -122,25 +122,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "You need a pet to check in" }, { status: 400 });
     }
 
-    // Create checkin interaction and award points in a transaction
-    await prisma.$transaction([
-      prisma.petInteraction.create({
-        data: {
-          pet_id: pet.id,
-          user_id: user.id,
-          interaction_type: "checkin",
-          response_text: `Day ${newStreak} check-in! Earned ${rewardPoints} airdrop points.`,
-          happiness_change: 5,
-          energy_change: 0,
-          hunger_change: 0,
-          experience_gained: rewardPoints,
-        },
-      }),
-      prisma.user.update({
-        where: { id: user.id },
-        data: { airdrop_points: { increment: rewardPoints } },
-      }),
-    ]);
+    // Create checkin interaction and award points in a transaction.
+    // audit H7/M10: the DailyActionCount unique (user_id, action_key, day) is the
+    // atomic guard — a concurrent second request hits P2002 and is rejected, so
+    // the streak reward can't be double-claimed.
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.dailyActionCount.create({
+          data: { user_id: user.id, action_key: "checkin", day: todayDateString(), count: 1 },
+        });
+        await tx.petInteraction.create({
+          data: {
+            pet_id: pet.id,
+            user_id: user.id,
+            interaction_type: "checkin",
+            response_text: `Day ${newStreak} check-in! Earned ${rewardPoints} airdrop points.`,
+            happiness_change: 5,
+            energy_change: 0,
+            hunger_change: 0,
+            experience_gained: rewardPoints,
+          },
+        });
+        await tx.user.update({
+          where: { id: user.id },
+          data: { airdrop_points: { increment: rewardPoints } },
+        });
+      });
+    } catch (e: unknown) {
+      if (e && typeof e === "object" && (e as { code?: string }).code === "P2002") {
+        return NextResponse.json({ error: "Already checked in today", ...data }, { status: 400 });
+      }
+      throw e;
+    }
 
     return NextResponse.json({
       streak: newStreak,

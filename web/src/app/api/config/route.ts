@@ -9,17 +9,19 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rateLimit";
+import { ONCHAIN } from "@/lib/onchain";
 
 export async function GET(req: NextRequest) {
   const rl = rateLimit(req, { key: "config", limit: 30, windowMs: 60_000 });
   if (!rl.ok) return rl.response;
 
   return NextResponse.json({
-    treasury: (process.env.TREASURY_WALLET || "").trim(),
-    chain_id: Number(process.env.SIWE_CHAIN_ID || 56),
+    treasury: ONCHAIN.treasuryWallet,
+    chain_id: ONCHAIN.chainId,
+    usdt: ONCHAIN.usdt.address,
     contracts: {
-      pet_content: "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c",
-      pet_tracker: "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a",
+      pet_content: ONCHAIN.contracts.petContent,
+      pet_tracker: ONCHAIN.contracts.petaGenTracker,
     },
     blockchain_enabled: process.env.BLOCKCHAIN_ENABLED === "true",
     // Why this is public: see https://app.myaipet.ai/contracts and /stats — same values.

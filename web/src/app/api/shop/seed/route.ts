@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/adminGate";
 
 const GAME_ITEMS = [
   // ── Consumables: EXP & Stats ──
@@ -34,7 +35,11 @@ const GAME_ITEMS = [
   { key: "zen_garden", name: "Zen Garden", description: "A tranquil garden that calms your pet. Boosts all stat gains slightly.", category: "furniture", rarity: "epic", price: 400, icon: "🪴", stat_bonus: { happiness: 5, energy: 5, bond_level: 5 } },
 ];
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  // audit H3: catalog mutation must be admin-only — was a public unauthenticated POST.
+  const gate = await requireAdmin(req);
+  if (gate) return gate;
+
   const results = [];
 
   for (const item of GAME_ITEMS) {

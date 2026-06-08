@@ -23,6 +23,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
+import { verifyCron } from "@/lib/cronAuth";
 
 function isoWeekKey(d: Date): string {
   // ISO week (Monday start). Returns "YYYY-Www"
@@ -49,10 +50,10 @@ export async function POST(req: NextRequest) {
   const rl = rateLimit(req, { key: "cron-distribute-pool", limit: 5, windowMs: 60_000 });
   if (!rl.ok) return rl.response;
 
-  const secret = req.headers.get("x-cron-secret") || req.nextUrl.searchParams.get("secret");
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // audit L13: accept the secret via header only (never a query string, which
+  // leaks into access logs / referrers); audit H12: fail closed if unset.
+  const gate = verifyCron(req);
+  if (gate) return gate;
 
   const overrideWeek = req.nextUrl.searchParams.get("week");
   const weekKey = overrideWeek || isoWeekKey(new Date());
@@ -81,7 +82,9 @@ export async function POST(req: NextRequest) {
   const totalUsd = agg._sum.amount_usd || 0;
   const poolPoints = Math.round(totalUsd * POINTS_PER_USD);
 
-  // Snapshot top-100 by combined power
+  // Snapshot top-100 by combined power — audit M4: only pets that actually
+  // battled during this period are eligible, so the pool (funded by entrants)
+  // isn't paid out to high-power pets that never participated.
   const top = await prisma.$queryRaw<Array<any>>`
     SELECT
       p.id AS pet_id, p.name, p.user_id,
@@ -90,6 +93,10 @@ export async function POST(req: NextRequest) {
     FROM pets p
     JOIN users u ON u.id = p.user_id
     WHERE p.is_active = true
+      AND EXISTS (
+        SELECT 1 FROM battle_history bh
+        WHERE bh.player_pet_id = p.id AND bh.created_at >= ${sinceDate}
+      )
     ORDER BY combined_power DESC, p.level DESC, p.total_interactions DESC
     LIMIT 100
   `;
@@ -132,16 +139,29 @@ export async function POST(req: NextRequest) {
   });
 }
 
+// audit L14: the public leaderboard must not expose winners' wallet addresses
+// or internal user IDs. Strip them, keeping rank / pet name / payout only.
+function publicPool(row: any) {
+  const payouts = Array.isArray(row?.payouts)
+    ? row.payouts.map((p: any) => ({
+        rank: p.rank,
+        petName: p.petName,
+        pointsPayout: p.pointsPayout,
+      }))
+    : row?.payouts;
+  return { ...row, payouts };
+}
+
 // Read-only week summary (no auth — for the leaderboard UI)
 export async function GET(req: NextRequest) {
   const weekKey = req.nextUrl.searchParams.get("week");
   if (weekKey) {
     const row = await prisma.weeklyBattlePool.findUnique({ where: { week_key: weekKey } });
     if (!row) return NextResponse.json({ error: "Week not found" }, { status: 404 });
-    return NextResponse.json(row);
+    return NextResponse.json(publicPool(row));
   }
   const recent = await prisma.weeklyBattlePool.findMany({
     orderBy: { closed_at: "desc" }, take: 8,
   });
-  return NextResponse.json({ weeks: recent });
+  return NextResponse.json({ weeks: recent.map(publicPool) });
 }

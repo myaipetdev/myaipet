@@ -62,13 +62,6 @@ export async function POST(
     ? getVideoCreditCost(duration || 5)
     : (style === 0 ? 0 : 5);
 
-  if (user.credits < creditCost) {
-    return NextResponse.json(
-      { error: "Insufficient credits", required: creditCost, available: user.credits },
-      { status: 400 }
-    );
-  }
-
   // Auto-analyze appearance if not yet described
   let appearanceDesc = pet.appearance_desc;
   if (pet.avatar_url && !appearanceDesc) {
@@ -124,6 +117,25 @@ export async function POST(
     appearanceDesc || undefined
   );
 
+  // audit H13/H18: reserve credits with an atomic guarded decrement AFTER all
+  // validation/moderation (so rejects don't charge) but BEFORE the expensive
+  // image/video provider calls. `credits: { gte }` can't go negative under
+  // concurrency; the catch block refunds `reserved` if generation fails.
+  let reserved = 0;
+  if (creditCost > 0) {
+    const dec = await prisma.user.updateMany({
+      where: { id: user.id, credits: { gte: creditCost } },
+      data: { credits: { decrement: creditCost } },
+    });
+    if (dec.count === 0) {
+      return NextResponse.json(
+        { error: "Insufficient credits", required: creditCost, available: user.credits },
+        { status: 402 }
+      );
+    }
+    reserved = creditCost;
+  }
+
   try {
     if (type === "image") {
       // Style 0 = Original: use pet's avatar directly (no generation, no credit cost)
@@ -140,15 +152,9 @@ export async function POST(
 
       const actualCost = isOriginal ? 0 : creditCost;
 
+      // Credits were already reserved atomically above (audit H13) — only
+      // persist the generation + memory here.
       const txOps = [];
-      if (actualCost > 0) {
-        txOps.push(
-          prisma.user.update({
-            where: { id: user.id },
-            data: { credits: { decrement: actualCost } },
-          })
-        );
-      }
       txOps.push(
         prisma.generation.create({
           data: {
@@ -177,8 +183,7 @@ export async function POST(
       );
 
       const txResults = await prisma.$transaction(txOps);
-      // generation is the last-but-one result (or first if no credit deduction)
-      const generation = actualCost > 0 ? txResults[1] : txResults[0];
+      const generation = txResults[0];
 
       // Fire-and-forget: trigger pet agent reactions + award points
       triggerAgentReactions([generation.id]);
@@ -230,11 +235,8 @@ export async function POST(
       imageUrl,
     );
 
-    const [, generation] = await prisma.$transaction([
-      prisma.user.update({
-        where: { id: user.id },
-        data: { credits: { decrement: creditCost } },
-      }),
+    // Credits already reserved before the paid Grok image+video calls (audit H18).
+    const [generation] = await prisma.$transaction([
       prisma.generation.create({
         data: {
           user_id: user.id,
@@ -293,6 +295,13 @@ export async function POST(
       credits_charged: creditCost,
     });
   } catch (err: any) {
+    // audit H18: refund the reserved credits if generation failed after reserving.
+    if (reserved > 0) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { credits: { increment: reserved } },
+      }).catch((e: unknown) => console.error("[generate] credit refund failed:", e));
+    }
     // SCRUM-61/63: log full error server-side, never echo to client.
     // Previous behavior leaked xAI team UUID and Grok internals.
     console.error("Generation error:", err?.message);

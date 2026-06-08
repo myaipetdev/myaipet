@@ -6,6 +6,9 @@ import { TwitterConnector } from "@/lib/petclaw/connectors/twitter";
 import { WebSearchConnector } from "@/lib/petclaw/connectors/web-search";
 import { MemoryConnector } from "@/lib/petclaw/connectors/memory-enhanced";
 import { AVAILABLE_CONNECTORS } from "@/lib/petclaw/connectors";
+import { getUser } from "@/lib/auth";
+import { ownsPet } from "@/lib/authz";
+import { rateLimit } from "@/lib/rateLimit";
 
 // GET — List available connectors
 export async function GET() {
@@ -17,11 +20,28 @@ export async function GET() {
 
 // POST — Execute a connector action
 export async function POST(req: NextRequest) {
+  // SECURITY (audit C1): this route proxies arbitrary outbound calls (with a
+  // client-supplied token) and exposes petId-scoped memory export/clear. It
+  // MUST be authenticated, and memory actions MUST verify pet ownership.
+  const user = await getUser(req).catch(() => null);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const rl = rateLimit(req, { key: "petclaw-connectors", limit: 30, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
   const body = await req.json();
   const { connector, action, petId, token, params } = body;
 
   if (!connector || !action) {
     return NextResponse.json({ error: "connector and action required" }, { status: 400 });
+  }
+
+  // Memory connector reads/writes a specific pet's private store — require ownership.
+  if (connector === "memory") {
+    if (!petId) return NextResponse.json({ error: "petId required" }, { status: 400 });
+    if (!(await ownsPet(req, Number(petId)))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   try {

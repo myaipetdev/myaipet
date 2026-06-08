@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { verifyCron } from "@/lib/cronAuth";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -9,12 +10,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    // Verify CRON_SECRET
-    const authHeader = req.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // audit H12: fail closed — reject if CRON_SECRET is unset/incorrect.
+    const gate = verifyCron(req);
+    if (gate) return gate;
 
     // Reset all credits_used_today to 0
     const result = await prisma.petAgentSchedule.updateMany({

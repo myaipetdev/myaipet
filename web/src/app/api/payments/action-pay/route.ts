@@ -22,51 +22,8 @@ import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import { ACTIONS } from "@/lib/paywall";
-
-const BSC_RPC_URL = "https://bsc-dataseed1.binance.org";
-const USDT_CONTRACT = "0x55d398326f99059fF775485246999027B3197955";
-const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
-const TREASURY_WALLET = process.env.TREASURY_WALLET || "";
-
-async function verifyUSDTTransfer(txHash: string, expectedFrom: string, minAmount: number):
-  Promise<{ ok: true; from: string; to: string; amount: number } | { ok: false; error: string }>
-{
-  try {
-    const res = await fetch(BSC_RPC_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getTransactionReceipt", params: [txHash] }),
-    });
-    const json = await res.json();
-    const receipt = json.result;
-    if (!receipt) return { ok: false, error: "Transaction receipt not found — TX may be pending" };
-    if (receipt.status !== "0x1") return { ok: false, error: "Transaction reverted on-chain" };
-
-    const transferLog = (receipt.logs || []).find((log: any) =>
-      log.address.toLowerCase() === USDT_CONTRACT.toLowerCase() &&
-      log.topics?.[0] === TRANSFER_TOPIC
-    );
-    if (!transferLog) return { ok: false, error: "No USDT transfer found in transaction" };
-
-    const from = "0x" + transferLog.topics[1].slice(26);
-    const to = "0x" + transferLog.topics[2].slice(26);
-    const amount = Number(BigInt(transferLog.data)) / 1e18;
-
-    if (from.toLowerCase() !== expectedFrom.toLowerCase()) {
-      return { ok: false, error: "Transaction sender does not match your wallet" };
-    }
-    if (TREASURY_WALLET && to.toLowerCase() !== TREASURY_WALLET.toLowerCase()) {
-      return { ok: false, error: "Payment was not sent to the configured treasury" };
-    }
-    if (amount < minAmount * 0.99) {
-      return { ok: false, error: `Insufficient amount: sent ${amount.toFixed(4)} USDT, required ${minAmount}` };
-    }
-    return { ok: true, from, to, amount };
-  } catch (e: any) {
-    console.error("[action-pay] verification failed:", e?.message);
-    return { ok: false, error: "Failed to verify transaction on-chain" };
-  }
-}
+import { consumePaymentTx, PaymentAlreadyConsumed } from "@/lib/payments";
+import { verifyUsdtTransfer, treasuryConfigured, ONCHAIN } from "@/lib/onchain";
 
 export async function POST(req: NextRequest) {
   const rl = rateLimit(req, { key: "action-pay", limit: 20, windowMs: 60_000 });
@@ -84,31 +41,52 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid tx hash" }, { status: 400 });
   }
 
-  // Replay prevention
-  const existing = await prisma.paidAction.findUnique({ where: { tx_hash: txHash } });
-  if (existing) {
-    if (existing.user_id !== user.id) {
-      return NextResponse.json({ error: "Transaction already claimed by another account" }, { status: 409 });
-    }
-    // Idempotent: return existing receipt
-    return NextResponse.json({ ok: true, receipt: existing, reused: true });
+  // audit H4: fail closed if treasury isn't configured.
+  if (!treasuryConfigured()) {
+    return NextResponse.json({ error: "Payments are temporarily unavailable" }, { status: 503 });
   }
 
-  const verification = await verifyUSDTTransfer(txHash, user.wallet_address, cfg.priceUsd);
+  // Replay prevention via the global ledger (audit C3) with same-user idempotency.
+  const seen = await prisma.consumedPayment.findUnique({ where: { tx_hash: txHash } });
+  if (seen) {
+    if (seen.purpose === "action" && seen.user_id === user.id) {
+      const existing = await prisma.paidAction.findUnique({ where: { tx_hash: txHash } });
+      if (existing) return NextResponse.json({ ok: true, receipt: existing, reused: true });
+    }
+    return NextResponse.json({ error: "Transaction already used" }, { status: 409 });
+  }
+
+  const verification = await verifyUsdtTransfer(txHash, user.wallet_address, cfg.priceUsd);
   if (verification.ok !== true) {
     return NextResponse.json({ error: verification.error }, { status: 400 });
   }
 
-  const receipt = await prisma.paidAction.create({
-    data: {
-      user_id: user.id,
-      pet_id: petId ? Number(petId) : null,
-      action_key: actionKey,
-      amount_usd: verification.amount,
-      tx_hash: txHash,
-      metadata: { from: verification.from, to: verification.to } as any,
-    },
-  });
+  let receipt;
+  try {
+    receipt = await prisma.$transaction(async (tx) => {
+      await consumePaymentTx(tx, {
+        txHash,
+        userId: user.id,
+        purpose: "action",
+        amountUsd: verification.amount,
+      });
+      return tx.paidAction.create({
+        data: {
+          user_id: user.id,
+          pet_id: petId ? Number(petId) : null,
+          action_key: actionKey,
+          amount_usd: verification.amount,
+          tx_hash: txHash,
+          metadata: { from: verification.from, to: verification.to } as any,
+        },
+      });
+    });
+  } catch (e) {
+    if (e instanceof PaymentAlreadyConsumed) {
+      return NextResponse.json({ error: "Transaction already used" }, { status: 409 });
+    }
+    throw e;
+  }
 
   return NextResponse.json({ ok: true, receipt });
 }
@@ -124,15 +102,15 @@ export async function GET(req: NextRequest) {
     if (!cfg) return NextResponse.json({ error: "Unknown actionKey" }, { status: 404 });
     return NextResponse.json({
       actionKey, ...cfg,
-      treasury: TREASURY_WALLET || null,
-      usdtAddress: USDT_CONTRACT,
-      chainId: 56,
+      treasury: ONCHAIN.treasuryWallet || null,
+      usdtAddress: ONCHAIN.usdt.address,
+      chainId: ONCHAIN.chainId,
     });
   }
   return NextResponse.json({
     actions: Object.entries(ACTIONS).map(([k, v]) => ({ key: k, ...v })),
-    treasury: TREASURY_WALLET || null,
-    usdtAddress: USDT_CONTRACT,
-    chainId: 56,
+    treasury: ONCHAIN.treasuryWallet || null,
+    usdtAddress: ONCHAIN.usdt.address,
+    chainId: ONCHAIN.chainId,
   });
 }
