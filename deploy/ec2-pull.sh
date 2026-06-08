@@ -29,11 +29,16 @@ git fetch origin "${BRANCH}"
 git checkout "${BRANCH}"
 git reset --hard "origin/${BRANCH}"
 
-# 2. Install deps (only when lockfile changed — npm ci is fast on no-op)
+# 2. Install deps. `npm ci` is preferred (faster, deterministic) but it's
+# strict about transitive lockfile sync — falls back to `npm install` if a
+# transitive bump in package.json hasn't been mirrored into the lock yet, so
+# deploys aren't blocked by lock drift. The fallback will update the lock on
+# the EC2 disk — commit that diff back later to keep CI in sync.
 cd "${WEB}"
 echo "→ Installing deps…"
 if [ -f "package-lock.json" ]; then
-  npm ci --omit=dev=false --no-audit --no-fund
+  npm ci --no-audit --no-fund 2>&1 \
+    || (echo "  npm ci failed — falling back to npm install"; npm install --no-audit --no-fund)
 else
   npm install --no-audit --no-fund
 fi
@@ -45,7 +50,13 @@ npx prisma generate
 # 3b. Apply pending migrations BEFORE rebuilding so the new code never starts
 # against an old schema (would 500 on missing columns/tables). `migrate deploy`
 # is idempotent — safe to re-run when nothing's pending.
+# We source .env.production explicitly because prisma.config.ts uses
+# `import "dotenv/config"` which only loads `.env` by default — not the
+# environment-suffixed file our PM2 process actually runs against.
 echo "→ Prisma migrate deploy…"
+if [ -f .env.production ]; then
+  set -a; source .env.production; set +a
+fi
 npx prisma migrate deploy
 
 # 4. Build
