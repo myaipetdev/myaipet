@@ -42,6 +42,12 @@ fi
 echo "→ Prisma generate…"
 npx prisma generate
 
+# 3b. Apply pending migrations BEFORE rebuilding so the new code never starts
+# against an old schema (would 500 on missing columns/tables). `migrate deploy`
+# is idempotent — safe to re-run when nothing's pending.
+echo "→ Prisma migrate deploy…"
+npx prisma migrate deploy
+
 # 4. Build
 echo "→ Next build…"
 npm run build
