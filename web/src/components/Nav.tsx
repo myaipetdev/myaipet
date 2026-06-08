@@ -6,9 +6,10 @@ import Icon from "@/components/Icon";
 
 const LOGO_SRC = "/mascot.jpg";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
   { key: "home", label: "Home" },
   { key: "my pet", label: "My Pet" },
+  { key: "studio", label: "Studio", url: "/studio" },
   { key: "leaderboard", label: "Leaderboard" },
   { key: "community", label: "Community" },
   { key: "sovereignty", label: "Sovereignty" },
@@ -105,22 +106,23 @@ export default function Nav({ section, setSection, credits }: any) {
           flex: 1, minWidth: 0,
         }}>
           {NAV_ITEMS.map((item) => {
-            const isActive = section === item.key;
-            return (
-              <button
-                className="nav-btn"
-                key={item.key}
-                onClick={() => setSection(item.key)}
-                style={{
-                  background: isActive ? "rgba(251,191,36,0.12)" : "transparent",
-                  border: "none", cursor: "pointer",
-                  borderRadius: 9, padding: "7px 14px",
-                  fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 500,
-                  color: isActive ? "#b45309" : "rgba(26,26,46,0.4)",
-                  transition: "all 0.2s ease",
-                  position: "relative", whiteSpace: "nowrap", flexShrink: 0,
-                }}
-              >
+            // URL items (e.g. /studio) navigate; otherwise set in-page section.
+            const isActive = item.url
+              ? typeof window !== "undefined" && window.location.pathname === item.url
+              : section === item.key;
+            const sharedStyle: React.CSSProperties = {
+              background: isActive ? "rgba(251,191,36,0.12)" : "transparent",
+              border: "none", cursor: "pointer",
+              borderRadius: 9, padding: "7px 14px",
+              fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 500,
+              color: isActive ? "#b45309" : "rgba(26,26,46,0.4)",
+              transition: "all 0.2s ease",
+              position: "relative", whiteSpace: "nowrap", flexShrink: 0,
+              textDecoration: "none",
+              display: "inline-block",
+            };
+            const inner = (
+              <>
                 {item.label}
                 {isActive && (
                   <div style={{
@@ -129,6 +131,15 @@ export default function Nav({ section, setSection, credits }: any) {
                     background: "#fbbf24", opacity: 0.6,
                   }} />
                 )}
+              </>
+            );
+            return item.url ? (
+              <a key={item.key} className="nav-btn" href={item.url} style={sharedStyle}>
+                {inner}
+              </a>
+            ) : (
+              <button key={item.key} className="nav-btn" onClick={() => setSection(item.key)} style={sharedStyle}>
+                {inner}
               </button>
             );
           })}
