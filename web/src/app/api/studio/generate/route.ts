@@ -44,6 +44,12 @@ export async function POST(req: NextRequest) {
 
   const model = getModel(String(modelId || ""));
   if (!model) return NextResponse.json({ error: "Unknown modelId" }, { status: 400 });
+  if (model.comingSoon) {
+    return NextResponse.json({
+      error: `${model.displayName} is coming soon (${model.comingSoonEta || "TBA"}). Pick a different engine.`,
+      comingSoon: true,
+    }, { status: 400 });
+  }
 
   // ── Resolve pet (optional but required for image_ref + template personalization) ──
   let pet: any = null;

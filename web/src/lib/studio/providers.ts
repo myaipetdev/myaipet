@@ -33,6 +33,12 @@ export interface StudioModel {
   creditsPerRun: number;        // user-facing cost (1 credit ≈ $0.01)
   usdPerRun: number;            // our wholesale cost
   description: string;
+  // comingSoon = teaser only. Don't submit to backend; UI shows a lock + ETA.
+  // Used for models where our per-run cost approaches or exceeds the price we
+  // can credibly charge (Veo 3, Kling Pro, MiniMax) — listing them advertises
+  // the roadmap without bleeding money in production.
+  comingSoon?: boolean;
+  comingSoonEta?: string;       // e.g. "Q3 2026"
 }
 
 // ── Catalog ──
@@ -131,6 +137,8 @@ export const MODELS: StudioModel[] = [
     creditsPerRun: 120,
     usdPerRun: 1.20,
     description: "Pro tier of Kling — 10s clips, 1080p.",
+    comingSoon: true,
+    comingSoonEta: "Q3 2026",
   },
   {
     id: "kling-image-to-video",
@@ -176,6 +184,8 @@ export const MODELS: StudioModel[] = [
     creditsPerRun: 90,
     usdPerRun: 0.85,
     description: "1080p i2v. Strong physics + camera moves.",
+    comingSoon: true,
+    comingSoonEta: "Q3 2026",
   },
   {
     id: "veo-3",
@@ -191,6 +201,8 @@ export const MODELS: StudioModel[] = [
     creditsPerRun: 250,
     usdPerRun: 2.40,
     description: "Premium model. Native audio. Studio tier.",
+    comingSoon: true,
+    comingSoonEta: "Q4 2026",
   },
   {
     id: "grok-imagine-video",

@@ -38,6 +38,7 @@ interface StudioModel {
   id: string; displayName: string; provider: string; kind: "image" | "video";
   supportsImageRef: boolean; maxDurationSec: number; maxResolution: string;
   tier: "free" | "pro" | "studio"; creditsPerRun: number; description: string;
+  comingSoon?: boolean; comingSoonEta?: string;
 }
 interface Generation {
   id: number; status: string; prompt: string | null;
@@ -81,7 +82,13 @@ export default function PetStudioPro() {
 
   const [styleId, setStyleId] = useState<string>("cinematic");
   const [prompt, setPrompt] = useState("");
-  const [chosenModelId, setChosenModelId] = useState<string>("kling-image-to-video");
+  // Output type drives the default model + which models we surface.
+  // Image-first by default: best margin (~10×) and instant feedback.
+  const [outputKind, setOutputKind] = useState<"image" | "video">("image");
+  // Defaults are the cheapest profitable model in each kind:
+  //   image  → flux-schnell  ($0.003 cost / 3 cr)
+  //   video  → grok-imagine-video ($0.15 cost / 25 cr)
+  const [chosenModelId, setChosenModelId] = useState<string>("flux-schnell");
   const [modelOpen, setModelOpen] = useState(false);
 
   const [view, setView] = useState<View>("idle");
@@ -92,6 +99,28 @@ export default function PetStudioPro() {
   const modelMenuRef = useRef<HTMLDivElement>(null);
   const pet = pets?.find(p => p.id === petId) || null;
   const chosenModel = models.find(m => m.id === chosenModelId);
+  // Models filtered by the current output type (image vs video)
+  const visibleModels = useMemo(
+    () => models.filter(m => m.kind === outputKind),
+    [models, outputKind]
+  );
+
+  // If user flips output kind and the current model is wrong-kind, snap to a
+  // good default for the new kind.
+  useEffect(() => {
+    const current = models.find(m => m.id === chosenModelId);
+    if (!current) return;
+    if (current.kind !== outputKind) {
+      const defaultId = outputKind === "image" ? "flux-schnell" : "grok-imagine-video";
+      const exists = models.find(m => m.id === defaultId && !m.comingSoon);
+      if (exists) setChosenModelId(defaultId);
+      else {
+        // Fall back to the first non-comingSoon model in the new kind
+        const first = models.find(m => m.kind === outputKind && !m.comingSoon);
+        if (first) setChosenModelId(first.id);
+      }
+    }
+  }, [outputKind, models, chosenModelId]);
 
   // ── Load pets + models + credits + history ──
   useEffect(() => {
@@ -116,7 +145,7 @@ export default function PetStudioPro() {
 
     fetch("/api/studio/providers")
       .then(r => r.ok ? r.json() : null)
-      .then(d => setModels((d?.models || []).filter((m: StudioModel) => m.kind === "video")))
+      .then(d => setModels(d?.models || []))
       .catch(() => {});
 
     fetch("/api/studio/generate", { headers: getAuthHeaders() })
@@ -347,6 +376,31 @@ export default function PetStudioPro() {
               </div>
             </Panel>
 
+            {/* Output type toggle */}
+            <Panel label="OUTPUT">
+              <div style={{
+                display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6,
+                padding: 4, borderRadius: 12, background: "rgba(0,0,0,0.04)",
+              }}>
+                {(["image", "video"] as const).map(k => {
+                  const sel = outputKind === k;
+                  return (
+                    <button key={k} onClick={() => setOutputKind(k)} style={{
+                      padding: "9px 0", borderRadius: 9, border: "none",
+                      background: sel ? "white" : "transparent",
+                      color: sel ? "#1a1a2e" : "rgba(26,26,46,0.5)",
+                      fontWeight: 700, fontSize: 13, cursor: "pointer",
+                      fontFamily: "'Space Grotesk',sans-serif",
+                      boxShadow: sel ? "0 1px 0 rgba(0,0,0,0.04)" : "none",
+                      letterSpacing: "0.02em",
+                    }}>
+                      {k === "image" ? "📷 Image" : "🎬 Video"}
+                    </button>
+                  );
+                })}
+              </div>
+            </Panel>
+
             {/* Engine (model picker) */}
             <Panel label="ENGINE">
               <div style={{ position: "relative" }} ref={modelMenuRef}>
@@ -368,26 +422,42 @@ export default function PetStudioPro() {
                     background: "white", borderRadius: 12, padding: 6,
                     border: "1px solid rgba(0,0,0,0.10)",
                     boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
-                    zIndex: 20, maxHeight: 380, overflowY: "auto",
+                    zIndex: 20, maxHeight: 400, overflowY: "auto",
                   }}>
-                    {models.map(m => {
+                    {visibleModels.map(m => {
                       const sel = m.id === chosenModelId;
+                      const locked = !!m.comingSoon;
                       return (
-                        <button key={m.id} onClick={() => { setChosenModelId(m.id); setModelOpen(false); }} style={{
-                          width: "100%", textAlign: "left", padding: 10, borderRadius: 10,
-                          background: sel ? "rgba(245,158,11,0.10)" : "transparent",
-                          border: "none", cursor: "pointer", color: "#1a1a2e",
-                          fontFamily: "'Space Grotesk',sans-serif",
-                        }}>
+                        <button key={m.id}
+                          onClick={() => { if (locked) return; setChosenModelId(m.id); setModelOpen(false); }}
+                          disabled={locked}
+                          style={{
+                            position: "relative",
+                            width: "100%", textAlign: "left", padding: 10, borderRadius: 10,
+                            background: sel ? "rgba(245,158,11,0.10)" : "transparent",
+                            border: "none",
+                            cursor: locked ? "not-allowed" : "pointer",
+                            opacity: locked ? 0.6 : 1,
+                            color: "#1a1a2e",
+                            fontFamily: "'Space Grotesk',sans-serif",
+                          }}
+                          title={locked ? `Coming ${m.comingSoonEta || "soon"}` : ""}
+                        >
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                             <strong style={{ fontSize: 13 }}>{m.displayName}</strong>
-                            <ModelBadges model={m} compact />
+                            {locked && <span style={{
+                              padding: "2px 7px", borderRadius: 999,
+                              fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
+                              fontFamily: "'JetBrains Mono', monospace",
+                              background: "rgba(0,0,0,0.06)", color: "rgba(26,26,46,0.55)",
+                            }}>🔒 {m.comingSoonEta || "SOON"}</span>}
+                            {!locked && <ModelBadges model={m} compact />}
                           </div>
                           <div style={{
                             fontSize: 11, color: "rgba(26,26,46,0.55)", marginTop: 4,
                             fontFamily: "'JetBrains Mono', monospace",
                           }}>
-                            {m.maxDurationSec}s · {m.maxResolution} · {m.creditsPerRun} cr
+                            {m.kind === "video" ? `${m.maxDurationSec}s · ` : ""}{m.maxResolution} · {m.creditsPerRun} cr
                           </div>
                         </button>
                       );
@@ -452,6 +522,60 @@ export default function PetStudioPro() {
             ? "Generating… 30 – 90s"
             : `▶  Generate · ${chosenModel?.creditsPerRun ?? 0} credits · ~30s`}
         </button>
+
+        {/* ── Roadmap: what's next for Studio ── */}
+        <div style={{
+          marginTop: 12, background: "linear-gradient(135deg,#0f172a,#1e293b)",
+          color: "white", borderRadius: 18, padding: "22px 24px",
+          border: "1px solid rgba(255,255,255,0.06)",
+        }}>
+          <div style={{
+            fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
+            letterSpacing: "0.18em", color: "#fbbf24", marginBottom: 10,
+          }}>COMING TO STUDIO</div>
+          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 6 }}>
+            Beyond prompts — features only we can build
+          </div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", marginBottom: 18, maxWidth: 560 }}>
+            Stuff other AI tools can't do because they don't have your pet's
+            memory ledger, persona, or the rest of the PetClaw graph.
+          </div>
+          <div style={{
+            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: 10,
+          }}>
+            <RoadmapItem
+              emoji="🎞"
+              eta="Q3 2026"
+              title="Auto Memory Recap"
+              body="Your pet's week → 30s video. Built from the memory ledger. No prompt needed."
+            />
+            <RoadmapItem
+              emoji="🤖"
+              eta="Q3 2026"
+              title="Daily Content Bot"
+              body="Wake up to a fresh pet photo every day. Auto-posted to your gallery."
+            />
+            <RoadmapItem
+              emoji="🛠"
+              eta="Q4 2026"
+              title="Pet Anchor API"
+              body="PuLID-based pet identity API for other pet-tech builders. B2B."
+            />
+            <RoadmapItem
+              emoji="🪙"
+              eta="Q4 2026"
+              title="Token-Gated Premium"
+              body="Hold $PET or a PETContent NFT → free access to premium engines."
+            />
+            <RoadmapItem
+              emoji="🛍"
+              eta="2027"
+              title="Pet LoRA Marketplace"
+              body="Train a LoRA on your pet, list it as an NFT. Others use 'your' Sparky."
+            />
+          </div>
+        </div>
 
         {/* ── Recent history strip ── */}
         {history.length > 0 && (
@@ -554,6 +678,28 @@ function PreviewDemo({ pet, prompt }: { pet: Pet | null; prompt: string }) {
         textDecoration: "none",
         fontFamily: "'Space Grotesk',sans-serif",
       }}>⚡ Sign in to generate for real →</a>
+    </div>
+  );
+}
+
+function RoadmapItem({ emoji, eta, title, body }: { emoji: string; eta: string; title: string; body: string }) {
+  return (
+    <div style={{
+      background: "rgba(255,255,255,0.04)",
+      border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: 12, padding: 14,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+        <span style={{ fontSize: 18 }}>{emoji}</span>
+        <span style={{
+          padding: "2px 7px", borderRadius: 999,
+          fontSize: 9, fontWeight: 800, letterSpacing: "0.1em",
+          fontFamily: "'JetBrains Mono', monospace",
+          background: "rgba(251,191,36,0.14)", color: "#fbbf24",
+        }}>{eta}</span>
+      </div>
+      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>{title}</div>
+      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", lineHeight: 1.5 }}>{body}</div>
     </div>
   );
 }
