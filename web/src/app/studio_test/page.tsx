@@ -5,7 +5,7 @@
  * Live home is unaffected by anything here until user signs off.
  */
 
-import PetStudio from "@/components/PetStudio";
+import PetStudioChat from "@/components/PetStudioChat";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -30,7 +30,7 @@ export default function StudioStagingPage() {
       }}>
         ⚠ STAGING · NOT LIVE · feedback iteration only
       </div>
-      <PetStudio />
+      <PetStudioChat />
     </div>
   );
 }
