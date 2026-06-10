@@ -140,7 +140,7 @@ export default function MissionsCard() {
     return <Skeleton />;
   }
   if (authed === false) {
-    return null;  // signed-out users see the rest of the page
+    return <UnauthTeaser />;
   }
   if (!today) return null;
 
@@ -409,6 +409,38 @@ export default function MissionsCard() {
 }
 
 // ── Sub-components ──
+
+function UnauthTeaser() {
+  return (
+    <div style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
+      <div style={{
+        background: "white", borderRadius: 18,
+        border: "1px solid rgba(0,0,0,0.06)", padding: "26px 28px",
+        display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap",
+      }}>
+        <div style={{ fontSize: 36 }}>🎯</div>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)", marginBottom: 4 }}>
+            DAILY MISSIONS · STREAK · LEADERBOARD
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", marginBottom: 4 }}>
+            Sign in to start your streak
+          </div>
+          <div style={{ fontSize: 13, color: "rgba(26,26,46,0.6)" }}>
+            5 missions a day · streak shields · pet that remembers when you miss
+          </div>
+        </div>
+        <a href="/?section=home" style={{
+          padding: "12px 22px", borderRadius: 12,
+          background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
+          color: "white", fontWeight: 800, fontSize: 14, textDecoration: "none",
+          boxShadow: "0 4px 14px rgba(245,158,11,0.30)",
+          fontFamily: "'Space Grotesk', sans-serif",
+        }}>Connect wallet →</a>
+      </div>
+    </div>
+  );
+}
 
 function Skeleton() {
   return (

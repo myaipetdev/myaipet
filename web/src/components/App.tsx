@@ -15,6 +15,12 @@ import Pricing from "@/components/Pricing";
 import RaisePitch from "@/components/RaisePitch";
 import WalletGate from "@/components/WalletGate";
 import MissionsCard from "@/components/MissionsCard";
+import HourlyDropBanner from "@/components/HourlyDropBanner";
+import WeeklyMonthlyCard from "@/components/WeeklyMonthlyCard";
+import SosFeedAndBuddy from "@/components/SosFeedAndBuddy";
+import MultiLeaderboard from "@/components/MultiLeaderboard";
+import PetDateWidget from "@/components/PetDateWidget";
+import PremiumTeaser from "@/components/PremiumTeaser";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
 const PetGenerate = lazy(() => import("@/components/PetGenerate"));
@@ -359,7 +365,12 @@ export default function App() {
                 txToday={platformStats?.tx_today || 0}
               />
               <SeasonBanner airdropPoints={airdropPoints} />
-              {isAuthenticated && <MissionsCard />}
+              <HourlyDropBanner />
+              <MissionsCard />
+              <WeeklyMonthlyCard />
+              <SosFeedAndBuddy />
+              <PetDateWidget />
+              <PremiumTeaser />
               <CheckinCard isAuthenticated={isAuthenticated} />
               <div className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
                 <Stats stats={stats} />
@@ -424,11 +435,7 @@ export default function App() {
         </WalletGate>
       )}
 
-      {section === "leaderboard" && (
-        <Suspense fallback={<Loader />}>
-          <Leaderboard />
-        </Suspense>
-      )}
+      {section === "leaderboard" && <MultiLeaderboard />}
 
       {/* Footer — only show in app mode */}
       <footer style={{ padding: "48px 24px 36px", textAlign: "center", borderTop: "1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.015)" }}>

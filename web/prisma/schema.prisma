@@ -31,6 +31,14 @@ model User {
   daily_missions    DailyMission[]
   user_streak       UserStreak?
   streak_purchases  StreakPurchase[]
+  // Mission system (Phase 2 + 3)
+  periodic_missions PeriodicMission[]
+  buddy_as_a        StreakBuddy[]     @relation("StreakBuddyA")
+  buddy_as_b        StreakBuddy[]     @relation("StreakBuddyB")
+  sos_sent          StreakSos[]       @relation("SosSender")
+  sos_helped        StreakSos[]       @relation("SosHelper")
+  pet_dates         PetDate[]
+  subscription      UserSubscription?
 
   @@map("users")
 }
@@ -736,6 +744,8 @@ model UserSubscription {
   created_at      DateTime  @default(now())
   updated_at      DateTime  @default(now()) @updatedAt
 
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
   @@map("user_subscriptions")
 }
 
@@ -839,4 +849,108 @@ model StreakPurchase {
 
   @@index([user_id, created_at])
   @@map("streak_purchases")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// MISSION SYSTEM — Phase 2 + 3
+// ───────────────────────────────────────────────────────────────────────────
+// hourly_drops:        a single global drop per hour (everyone sees the same).
+// periodic_missions:   weekly + monthly missions (period: "week" | "month").
+// streak_buddies:      one row per pair. Shared streak = min(both streaks).
+// streak_sos:          requests for help when a streak is about to break.
+// pet_dates:           AI-generated chat log between two pets.
+// user_subscriptions:  premium tier (free / pro / studio).
+
+model HourlyDrop {
+  id           Int      @id @default(autoincrement())
+  kind         String   @db.VarChar(30)  // snack | memory | studio | compliment | chat | care
+  label        String   @db.VarChar(80)
+  emoji        String   @db.VarChar(8)
+  multiplier_x Float    @default(2.0)
+  applies_to   String   @db.VarChar(20)  // mission category boosted (or "*" for all)
+  starts_at    DateTime
+  ends_at      DateTime
+  created_at   DateTime @default(now())
+  @@index([starts_at, ends_at])
+  @@map("hourly_drops")
+}
+
+model PeriodicMission {
+  id           Int       @id @default(autoincrement())
+  user_id      Int
+  period       String    @db.VarChar(8)   // "week" | "month"
+  period_key   String    @db.VarChar(10)  // "2026-W24" or "2026-06"
+  mission_id   String    @db.VarChar(60)
+  category     String    @db.VarChar(20)
+  title        String    @db.VarChar(160)
+  target       Int                          // e.g. "5 generations"
+  progress     Int       @default(0)
+  points       Int
+  status       String    @default("pending") @db.VarChar(20)
+  completed_at DateTime?
+  created_at   DateTime  @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, period, period_key, mission_id], name: "user_period_mission")
+  @@index([user_id, period_key])
+  @@map("periodic_missions")
+}
+
+model StreakBuddy {
+  id            Int      @id @default(autoincrement())
+  user_a_id     Int      // initiator
+  user_b_id     Int      // accepter
+  status        String   @default("pending") @db.VarChar(12) // pending | active | ended
+  shared_streak Int      @default(0)
+  last_active_a String?  @db.VarChar(10)
+  last_active_b String?  @db.VarChar(10)
+  created_at    DateTime @default(now())
+  accepted_at   DateTime?
+  ended_at      DateTime?
+
+  user_a User @relation("StreakBuddyA", fields: [user_a_id], references: [id], onDelete: Cascade)
+  user_b User @relation("StreakBuddyB", fields: [user_b_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_a_id, user_b_id], name: "buddy_pair")
+  @@index([user_a_id])
+  @@index([user_b_id])
+  @@map("streak_buddies")
+}
+
+model StreakSos {
+  id            Int       @id @default(autoincrement())
+  sender_id     Int
+  sender_streak Int                       // streak we're trying to save
+  expires_at    DateTime                  // when the gap will become permanent
+  helped_by_id  Int?                      // null until someone helps
+  helped_at     DateTime?
+  credits_paid  Int       @default(0)
+  message       String?   @db.VarChar(280)
+  created_at    DateTime  @default(now())
+
+  sender User @relation("SosSender", fields: [sender_id], references: [id], onDelete: Cascade)
+  helper User? @relation("SosHelper", fields: [helped_by_id], references: [id])
+
+  @@index([expires_at])
+  @@index([sender_id, created_at])
+  @@map("streak_sos")
+}
+
+model PetDate {
+  id           Int      @id @default(autoincrement())
+  pet_a_id     Int
+  pet_b_id     Int
+  initiator_id Int                          // user who started it
+  log          String   @db.Text             // JSON: [{speaker: "A"|"B", text: "..."}]
+  vibe         String   @db.VarChar(40)      // "playful" | "deep" | "rivalry" | "shy"
+  friendship   Int      @default(0)          // -100..100
+  created_at   DateTime @default(now())
+
+  initiator User @relation(fields: [initiator_id], references: [id], onDelete: Cascade)
+
+  @@index([pet_a_id])
+  @@index([pet_b_id])
+  @@index([initiator_id, created_at])
+  @@map("pet_dates")
 }
