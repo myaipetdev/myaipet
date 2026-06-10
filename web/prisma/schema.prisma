@@ -27,6 +27,10 @@ model User {
   profile          UserProfile?
   last_active_at   DateTime         @default(now())
   successor_wallet String?          @db.VarChar(42)
+  // Mission system (Phase 1)
+  daily_missions    DailyMission[]
+  user_streak       UserStreak?
+  streak_purchases  StreakPurchase[]
 
   @@map("users")
 }
@@ -762,4 +766,77 @@ model DailyActionCount {
   @@unique([user_id, action_key, day], name: "user_action_day")
   @@index([day])
   @@map("daily_action_counts")
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// MISSION SYSTEM (Phase 1 — daily missions + mission-streak)
+// ───────────────────────────────────────────────────────────────────────────
+// daily_missions:    one row per (user, date, mission). Status flips to
+//                    "completed" when verified. Points are stamped at assign
+//                    time so we never retroactively rebalance.
+// user_streaks:      single source of truth for mission-streak state. The
+//                    legacy `petInteraction.checkin` streak still exists for
+//                    the old card — mission-streak supersedes it for the new
+//                    leaderboard.
+// streak_purchases:  audit trail for shield + repair purchases (cash or
+//                    credits or $PET in future).
+
+model DailyMission {
+  id           Int       @id @default(autoincrement())
+  user_id      Int
+  date         String    @db.VarChar(10)   // "YYYY-MM-DD" UTC
+  mission_id   String    @db.VarChar(60)   // matches mission catalog key
+  category     String    @db.VarChar(20)
+  title        String    @db.VarChar(120)
+  points       Int
+  status       String    @default("pending") @db.VarChar(20) // pending | completed
+  completed_at DateTime?
+  bonus_x     Float     @default(1.0)    // hourly-drop multiplier captured at completion
+  created_at   DateTime  @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, date, mission_id], name: "user_date_mission")
+  @@index([user_id, date])
+  @@index([date])
+  @@map("daily_missions")
+}
+
+model UserStreak {
+  user_id              Int       @id
+  current_streak       Int       @default(0)
+  longest_streak       Int       @default(0)
+  last_completed_date  String?   @db.VarChar(10)    // last YYYY-MM-DD with >=1 completion
+  shields_owned        Int       @default(0)
+  shields_used         Int       @default(0)
+  last_shield_used_at  DateTime?
+  total_missions_done  Int       @default(0)
+  total_points_earned  Int       @default(0)
+  // For pet emotional memory — set when a miss is detected so the pet can
+  // open the next conversation with "Where were you yesterday?"
+  pending_apology      Boolean   @default(false)
+  pending_apology_days Int       @default(0)
+  updated_at           DateTime  @default(now()) @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("user_streaks")
+}
+
+model StreakPurchase {
+  id               Int      @id @default(autoincrement())
+  user_id          Int
+  kind             String   @db.VarChar(30)  // shield | repair-1d | repair-7d | ... | doubler | week_1_5x | bundle
+  price_usd        Float                     // sticker price at purchase
+  paid_via         String   @db.VarChar(20)  // credits | usdt | pet_token
+  paid_credits     Int?                      // amount of in-app credits debited
+  tx_hash          String?  @db.VarChar(66)
+  streak_before    Int
+  streak_after     Int
+  created_at       DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, created_at])
+  @@map("streak_purchases")
 }

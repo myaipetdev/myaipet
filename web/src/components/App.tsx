@@ -14,6 +14,7 @@ import Feed from "@/components/Feed";
 import Pricing from "@/components/Pricing";
 import RaisePitch from "@/components/RaisePitch";
 import WalletGate from "@/components/WalletGate";
+import MissionsCard from "@/components/MissionsCard";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
 const PetGenerate = lazy(() => import("@/components/PetGenerate"));
@@ -358,6 +359,7 @@ export default function App() {
                 txToday={platformStats?.tx_today || 0}
               />
               <SeasonBanner airdropPoints={airdropPoints} />
+              {isAuthenticated && <MissionsCard />}
               <CheckinCard isAuthenticated={isAuthenticated} />
               <div className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
                 <Stats stats={stats} />

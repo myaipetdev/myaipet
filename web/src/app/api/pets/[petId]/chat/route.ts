@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createMemoryManager } from "@/lib/petclaw/memory/persistent-memory";
+import { checkPendingApology } from "@/lib/missions/petEmotion";
 import { createSelfLearner } from "@/lib/petclaw/memory/self-learning";
 import { getPersona, buildPersonaContext } from "@/lib/services/persona";
 import { rateLimit } from "@/lib/rateLimit";
@@ -116,6 +117,7 @@ RULES:
 - Level ${pet.level}: ${pet.level < 5 ? "You speak simply, like a baby." : pet.level < 10 ? "You're learning to express yourself better." : pet.level < 20 ? "You communicate clearly and have opinions." : "You're wise and articulate, with deep thoughts."}
 - Reference past memories naturally when relevant — don't list them.
 - NEVER address the owner by a specific name unless they tell you their name in this conversation.
+${(await checkPendingApology(pet.user_id)).note}
 - Use emojis sparingly but naturally.
 - NEVER break character. You are a pet, not an AI.`;
 
