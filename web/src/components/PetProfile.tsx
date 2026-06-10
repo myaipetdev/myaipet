@@ -895,7 +895,9 @@ export default function PetProfile() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [petRequest, setPetRequest] = useState<any>(null);
   const [comboToast, setComboToast] = useState<{ name: string; description: string; emoji: string } | null>(null);
-  const [statsView, setStatsView] = useState<"radar" | "slots">("radar");
+  // Default to clean stat bars rather than the hexagon radar — the radar
+  // looks like a debug screen at first glance, bars communicate immediately.
+  const [statsView, setStatsView] = useState<"radar" | "slots">("slots");
   const [combosUnlocked, setCombosUnlocked] = useState<string[]>([]);
   const [evolutionAnim, setEvolutionAnim] = useState<{
     fromStage: { icon: string; name: string };
@@ -1520,7 +1522,7 @@ export default function PetProfile() {
 
           {/* View toggle */}
           <div style={{ display: "flex", gap: 4, marginBottom: 14, padding: 3, borderRadius: 10, background: "rgba(0,0,0,0.04)" }}>
-            {(["radar", "slots"] as const).map((v) => (
+            {(["slots", "radar"] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setStatsView(v)}
@@ -1535,7 +1537,7 @@ export default function PetProfile() {
                   transition: "all 0.15s",
                 }}
               >
-                {v === "radar" ? "◇ Hexagon" : "▦ Slots"}
+                {v === "slots" ? "Stats" : "Hexagon"}
               </button>
             ))}
           </div>
@@ -2080,7 +2082,37 @@ export default function PetProfile() {
             </div>
           )}
 
-          {/* Memories Timeline */}
+          {/* Memories Timeline — show a beautiful empty state when none exist
+              yet so the user knows what's coming. Previously the section just
+              vanished, leaving the page feeling incomplete. */}
+          {(!petStatus?.recent_memories || petStatus.recent_memories.length === 0) && pet && (
+            <div style={{
+              background: "rgba(255,255,255,0.8)", borderRadius: 16,
+              border: "1px solid rgba(0,0,0,0.06)", padding: "32px 24px",
+              flex: 1, textAlign: "center",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+            }}>
+              <div style={{
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
+                color: "rgba(26,26,46,0.55)", letterSpacing: "0.14em",
+                textTransform: "uppercase", fontWeight: 700, marginBottom: 18,
+              }}>
+                Memory Timeline
+              </div>
+              <div style={{ fontSize: 48, marginBottom: 10, opacity: 0.7 }}>📔</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1a2e", marginBottom: 6 }}>
+                {pet.name}'s memories will live here
+              </div>
+              <div style={{
+                fontSize: 13, color: "rgba(26,26,46,0.55)", lineHeight: 1.55,
+                maxWidth: 360, margin: "0 auto",
+              }}>
+                Every conversation, every moment you spend together is woven into
+                a private ledger only the two of you can see. Start chatting to
+                make the first one.
+              </div>
+            </div>
+          )}
           {petStatus?.recent_memories?.length > 0 && (
             <div style={{
               background: "rgba(255,255,255,0.8)", borderRadius: 16,

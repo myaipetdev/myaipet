@@ -154,64 +154,53 @@ interface SlotBarProps {
 }
 
 export function StatSlotBar({ label, value, color, icon, max = 100, warning }: SlotBarProps) {
-  const slots = 10;
-  const filled = Math.round((Math.max(0, Math.min(max, value)) / max) * slots);
+  const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-      <div
-        style={{
-          width: 24,
-          fontSize: 14,
-          textAlign: "center",
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-      </div>
-      <div style={{ width: 64, flexShrink: 0 }}>
-        <div
-          style={{
-            fontSize: 10,
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontWeight: 700,
-            color: warning ? "#dc2626" : "rgba(26,26,46,0.65)",
-            letterSpacing: "0.04em",
-            textTransform: "uppercase",
-          }}
-        >
-          {label}
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: 3, flex: 1 }}>
-        {Array.from({ length: slots }).map((_, i) => {
-          const isFilled = i < filled;
-          return (
-            <div
-              key={i}
-              style={{
-                flex: 1,
-                height: 10,
-                borderRadius: 2,
-                background: isFilled ? color : "rgba(26,26,46,0.06)",
-                border: isFilled ? `1px solid ${color}` : "1px solid rgba(26,26,46,0.04)",
-                transition: "background 0.25s, border 0.25s",
-                boxShadow: isFilled ? `0 0 4px ${color}55` : "none",
-              }}
-            />
-          );
-        })}
-      </div>
-      <div
-        style={{
-          width: 36,
-          textAlign: "right",
-          fontSize: 11,
+    <div style={{ marginBottom: 12 }}>
+      {/* Top row: icon · label · current/max */}
+      <div style={{
+        display: "flex", alignItems: "baseline", gap: 8,
+        marginBottom: 6,
+      }}>
+        <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
+        <span style={{
+          fontSize: 13,
           fontFamily: "'Space Grotesk', sans-serif",
           fontWeight: 700,
           color: warning ? "#dc2626" : "#1a1a2e",
-        }}
-      >
-        {Math.round(value)}
+          letterSpacing: "0.02em",
+          flex: 1,
+        }}>
+          {label}
+        </span>
+        <span style={{
+          fontSize: 13,
+          fontFamily: "'JetBrains Mono', monospace",
+          fontWeight: 800,
+          color: warning ? "#dc2626" : "#1a1a2e",
+          letterSpacing: "-0.01em",
+        }}>
+          {Math.round(value)}
+          <span style={{ color: "rgba(26,26,46,0.35)", fontWeight: 500 }}>
+            {" "}/{" "}{max}
+          </span>
+        </span>
+      </div>
+
+      {/* Single smooth bar — easier to read than 10 little blocks */}
+      <div style={{
+        height: 8, borderRadius: 6,
+        background: "rgba(26,26,46,0.06)",
+        overflow: "hidden",
+        boxShadow: "inset 0 1px 2px rgba(0,0,0,0.04)",
+      }}>
+        <div style={{
+          height: "100%", width: `${pct}%`,
+          borderRadius: 6,
+          background: `linear-gradient(90deg, ${color} 0%, ${color}DD 100%)`,
+          boxShadow: `0 0 8px ${color}55`,
+          transition: "width 320ms cubic-bezier(.2,.8,.2,1)",
+        }} />
       </div>
     </div>
   );

@@ -92,7 +92,21 @@ export default function SosFeedAndBuddy() {
           </div>
           <div style={{ padding: "10px 0", maxHeight: 340, overflowY: "auto" }}>
             {feed.length === 0 && (
-              <div style={empty}>No active SOS right now — everyone's good.</div>
+              <div style={{
+                padding: "32px 22px", textAlign: "center",
+              }}>
+                <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.7 }}>☕</div>
+                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6, color: "#1a1a2e" }}>
+                  Everyone's streak is safe
+                </div>
+                <div style={{
+                  fontSize: 13, color: "rgba(26,26,46,0.55)",
+                  maxWidth: 280, margin: "0 auto", lineHeight: 1.5,
+                }}>
+                  When someone's about to break a streak, their call for help shows up here.
+                  Help and earn <strong style={{ color: "#b45309" }}>+20 pts</strong>.
+                </div>
+              </div>
             )}
             {feed.map(item => (
               <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 18px" }}>

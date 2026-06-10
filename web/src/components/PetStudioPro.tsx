@@ -258,20 +258,28 @@ export default function PetStudioPro() {
 
         {/* ── Header ── */}
         <div style={{
-          display: "flex", alignItems: "center", gap: 12, paddingBottom: 4,
+          display: "flex", alignItems: "center", gap: 14, paddingBottom: 4,
+          flexWrap: "wrap",
         }}>
-          <span style={{ fontSize: 26 }}>🎬</span>
-          <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.015em", margin: 0 }}>
-            Studio
-          </h1>
-          <span style={tag}>PRO VIDEO</span>
-          <div style={{ flex: 1 }} />
+          <span style={{ fontSize: 36 }}>🎬</span>
+          <div style={{ flex: "1 1 240px", minWidth: 0 }}>
+            <div style={{
+              fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: "0.18em", color: "#b45309", marginBottom: 4,
+            }}>PRO VIDEO STUDIO</div>
+            <h1 style={{
+              fontSize: 36, fontWeight: 800, letterSpacing: "-0.025em",
+              margin: 0, lineHeight: 1.1,
+            }}>
+              Make {pet?.name || "your pet"} a star
+            </h1>
+          </div>
           {isDemo && (
             <a href="/" style={{
-              padding: "8px 14px", borderRadius: 10, fontSize: 12,
+              padding: "10px 16px", borderRadius: 12, fontSize: 13,
               background: "rgba(59,130,246,0.10)", color: "#1e3a8a",
               border: "1px solid rgba(59,130,246,0.25)",
-              fontWeight: 700, textDecoration: "none",
+              fontWeight: 800, textDecoration: "none",
               fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.05em",
             }}>💡 DEMO · Sign in →</a>
           )}
@@ -625,18 +633,42 @@ export default function PetStudioPro() {
 
 function PreviewIdle({ pet }: { pet: Pet | null }) {
   return (
-    <div style={{ color: "rgba(255,255,255,0.85)", textAlign: "center", padding: 30 }}>
-      {pet?.avatar_url ? (
+    <div style={{
+      position: "relative", width: "100%", height: "100%",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      overflow: "hidden",
+    }}>
+      {/* Soft pet portrait filling the canvas — gives the empty state a hero
+          instead of a tiny film-strip icon. Stays under text via opacity. */}
+      {pet?.avatar_url && (
         <img src={pet.avatar_url} alt={pet.name} style={{
-          width: 80, height: 80, borderRadius: 16, objectFit: "cover",
-          marginBottom: 14, opacity: 0.78,
+          position: "absolute", inset: 0,
+          width: "100%", height: "100%", objectFit: "cover",
+          opacity: 0.35, filter: "blur(2px) saturate(1.1)",
         }} />
-      ) : (
-        <div style={{ fontSize: 48, marginBottom: 10, opacity: 0.6 }}>🎞</div>
       )}
-      <div style={{ fontSize: 17, fontWeight: 700 }}>{pet ? `${pet.name} is ready` : "Pick a pet"}</div>
-      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 6 }}>
-        Pick a style + write a prompt → Generate
+      {/* Gradient floor so text stays readable over any photo */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: "linear-gradient(180deg, rgba(15,23,42,0.0) 0%, rgba(15,23,42,0.70) 100%)",
+      }} />
+      <div style={{ position: "relative", textAlign: "center", padding: 30 }}>
+        {!pet?.avatar_url && (
+          <div style={{ fontSize: 56, marginBottom: 12, opacity: 0.6 }}>🎞</div>
+        )}
+        <div style={{
+          fontSize: 28, fontWeight: 800, color: "white",
+          letterSpacing: "-0.02em", marginBottom: 8,
+        }}>
+          {pet ? `${pet.name} is ready` : "Pick a pet"}
+        </div>
+        <div style={{
+          fontSize: 15, color: "rgba(255,255,255,0.78)",
+          maxWidth: 320, margin: "0 auto", lineHeight: 1.55,
+        }}>
+          Pick a style, write a prompt, hit <strong>Generate</strong>.
+          A 5-second video of {pet?.name || "your pet"} starring in your scene.
+        </div>
       </div>
     </div>
   );
@@ -812,11 +844,12 @@ const btnGhost: React.CSSProperties = {
 };
 
 const generateBtn: React.CSSProperties = {
-  width: "100%", padding: "16px",
-  borderRadius: 14, border: "none",
-  background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
-  color: "white", fontWeight: 800, fontSize: 16,
+  width: "100%", padding: "20px 24px",
+  borderRadius: 16, border: "none",
+  background: "linear-gradient(135deg,#fbbf24,#f59e0b 70%,#ea580c)",
+  color: "white", fontWeight: 800, fontSize: 19,
   fontFamily: "'Space Grotesk',sans-serif",
-  boxShadow: "0 6px 20px rgba(245,158,11,0.35)",
-  letterSpacing: "0.02em",
+  boxShadow: "0 10px 32px rgba(245,158,11,0.40), inset 0 1px 0 rgba(255,255,255,0.25)",
+  letterSpacing: "0.01em",
+  transition: "transform 140ms ease, box-shadow 140ms ease",
 };

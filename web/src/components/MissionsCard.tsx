@@ -296,26 +296,30 @@ export default function MissionsCard() {
         }}>
           <div>
             <div style={{
-              fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
-              letterSpacing: "0.12em", color: "rgba(26,26,46,0.55)",
+              fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)",
             }}>EARNED TODAY</div>
-            <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>
-              {today.earnedToday}
+            <div style={{
+              fontSize: 32, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: "-0.02em", lineHeight: 1, marginTop: 4,
+            }}>
+              {today.earnedToday}<span style={{ fontSize: 16, color: "rgba(26,26,46,0.45)", fontWeight: 600 }}>{" "}pts</span>
             </div>
           </div>
           <div style={{ width: 1, alignSelf: "stretch", background: "rgba(0,0,0,0.08)" }} />
           <div>
             <div style={{
-              fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
-              letterSpacing: "0.12em", color: "rgba(26,26,46,0.55)",
-            }}>REMAINING</div>
+              fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)",
+            }}>STILL ON THE TABLE</div>
             <div style={{
-              fontSize: 32, fontWeight: 800,
+              fontSize: 48, fontWeight: 800,
               fontFamily: "'JetBrains Mono', monospace",
               color: today.remainingToday > 0 ? "#b45309" : "#16a34a",
-              lineHeight: 1,
+              lineHeight: 1, letterSpacing: "-0.03em", marginTop: 4,
+              textShadow: today.remainingToday > 0 ? "0 2px 24px rgba(245,158,11,0.20)" : "none",
             }}>
-              {today.remainingToday}
+              {today.remainingToday}<span style={{ fontSize: 20, color: "rgba(26,26,46,0.45)", fontWeight: 600 }}>{" "}pts</span>
             </div>
           </div>
           <div style={{ flex: 1 }} />
