@@ -50,16 +50,27 @@ export default function HourlyDropBanner() {
   const live = remaining > 0;
 
   return (
-    <div style={{ maxWidth: 1060, margin: "12px auto 0", padding: "0 24px" }}>
+    <div className="mp-enter" style={{ maxWidth: 1060, margin: "12px auto 0", padding: "0 24px" }}>
       <div style={{
         background: live
-          ? "linear-gradient(135deg, rgba(168,85,247,0.10), rgba(139,92,246,0.05))"
+          ? "linear-gradient(135deg, rgba(168,85,247,0.12), rgba(139,92,246,0.06))"
           : "rgba(0,0,0,0.03)",
-        border: `1px solid ${live ? "rgba(168,85,247,0.25)" : "rgba(0,0,0,0.06)"}`,
-        borderRadius: 14, padding: "12px 18px",
-        display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
+        border: `1px solid ${live ? "rgba(168,85,247,0.30)" : "rgba(0,0,0,0.06)"}`,
+        borderRadius: 14, padding: "14px 20px",
+        display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
+        boxShadow: live ? "0 6px 24px rgba(168,85,247,0.10)" : "none",
+        transition: "all 240ms cubic-bezier(0.2,0.8,0.2,1)",
       }}>
-        <div style={{ fontSize: 28 }}>{live ? drop.emoji : "⏳"}</div>
+        <div
+          className={live ? "mp-live-pulse" : ""}
+          style={{
+            fontSize: 32,
+            width: 44, height: 44,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: live ? "rgba(168,85,247,0.16)" : "rgba(0,0,0,0.03)",
+            borderRadius: 999,
+          }}
+        >{live ? drop.emoji : "⏳"}</div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{
             fontSize: 10, fontFamily: "'JetBrains Mono', monospace",

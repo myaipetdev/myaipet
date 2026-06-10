@@ -1438,10 +1438,52 @@ export default function PetProfile() {
           }} />
 
           <div style={{ textAlign: "center", marginBottom: 24, position: "relative" }}>
-            <PetAvatar pet={pet} mood={mood} size={100} />
+            <PetAvatar pet={pet} mood={mood} size={140} />
+            {/* If the pet still has the default species name ("Cat"/"Dog"…),
+                surface a clear rename CTA. Generic names kill the emotional
+                lock-in we're trying to build. */}
+            {PET_SPECIES.includes(pet.name) && (
+              <div style={{
+                margin: "14px auto 0", maxWidth: 280,
+                padding: "10px 14px",
+                background: "linear-gradient(135deg, rgba(168,85,247,0.10), rgba(139,92,246,0.06))",
+                border: "1px solid rgba(168,85,247,0.30)",
+                borderRadius: 12, textAlign: "center",
+              }}>
+                <div style={{ fontSize: 12, color: "#7c3aed", fontWeight: 700, marginBottom: 6 }}>
+                  ✨ Give them a real name
+                </div>
+                <button
+                  className="mp-btn-primary mp-lift"
+                  onClick={async () => {
+                    const newName = window.prompt(
+                      `What should we call this ${pet.name.toLowerCase()}?\n(2-20 letters)`,
+                      ""
+                    );
+                    if (!newName) return;
+                    const trimmed = newName.trim().slice(0, 20);
+                    if (trimmed.length < 2) { alert("Pick a name with at least 2 letters."); return; }
+                    try {
+                      const r = await fetch(`/api/pets/${pet.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+                        body: JSON.stringify({ name: trimmed }),
+                      });
+                      if (!r.ok) { alert("Couldn't save — try again?"); return; }
+                      window.location.reload();
+                    } catch { alert("Network error"); }
+                  }}
+                  style={{
+                    width: "100%", padding: "10px 16px", fontSize: 14,
+                    background: "linear-gradient(135deg,#a855f7,#7c3aed)",
+                    boxShadow: "0 6px 16px rgba(124,58,237,0.30), inset 0 1px 0 rgba(255,255,255,0.25)",
+                  }}
+                >Name them →</button>
+              </div>
+            )}
             <h2 style={{
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, color: "#1a1a2e",
-              margin: "16px 0 8px", fontWeight: 800, letterSpacing: "-0.02em",
+              fontFamily: "'Space Grotesk',sans-serif", fontSize: 32, color: "#1a1a2e",
+              margin: "18px 0 10px", fontWeight: 800, letterSpacing: "-0.025em",
             }}>
               {pet.name}
             </h2>

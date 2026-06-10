@@ -151,7 +151,7 @@ export default function MissionsCard() {
   const totalPossible = today.earnedToday + today.remainingToday + (allComplete ? 0 : today.bonusAllComplete);
 
   return (
-    <div style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
+    <div className="mp-enter mp-enter-1" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
         background: "white", borderRadius: 18,
         border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden",
@@ -275,10 +275,10 @@ export default function MissionsCard() {
                   +{m.points} pts
                 </div>
                 {!completed && m.cta && (
-                  <a href={m.cta.href} style={ctaBtnPrimary}>{m.cta.label} →</a>
+                  <a href={m.cta.href} className="mp-lift" style={ctaBtnPrimary}>{m.cta.label} →</a>
                 )}
                 {!completed && m.verifier === "manual" && (
-                  <button onClick={() => markDone(m.id)} disabled={busy} style={{
+                  <button onClick={() => markDone(m.id)} disabled={busy} className="mp-lift" style={{
                     ...ctaBtnGhost, opacity: busy ? 0.5 : 1,
                   }}>{busy ? "…" : "Done"}</button>
                 )}

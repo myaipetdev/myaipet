@@ -368,17 +368,34 @@ export default function PetStudioPro() {
 
             {/* Style */}
             <Panel label="STYLE">
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 {STYLES.map(s => {
                   const sel = s.id === styleId;
                   return (
-                    <button key={s.id} onClick={() => setStyleId(s.id)} style={{
-                      ...styleCard,
-                      background: sel ? "rgba(245,158,11,0.10)" : "white",
-                      border: sel ? "2px solid #f59e0b" : "1px solid rgba(0,0,0,0.08)",
-                    }}>
-                      <div style={{ fontSize: 22, lineHeight: 1, marginBottom: 4 }}>{s.emoji}</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, lineHeight: 1.2 }}>{s.label}</div>
+                    <button
+                      key={s.id}
+                      onClick={() => setStyleId(s.id)}
+                      className="mp-lift"
+                      style={{
+                        ...styleCard,
+                        padding: "14px 6px",
+                        background: sel
+                          ? "linear-gradient(135deg, rgba(245,158,11,0.14), rgba(245,158,11,0.06))"
+                          : "white",
+                        border: sel ? "2px solid #f59e0b" : "1px solid rgba(0,0,0,0.08)",
+                        boxShadow: sel
+                          ? "0 6px 18px rgba(245,158,11,0.22), inset 0 1px 0 rgba(255,255,255,0.5)"
+                          : "0 1px 2px rgba(0,0,0,0.02)",
+                      }}>
+                      <div style={{
+                        fontSize: 26, lineHeight: 1, marginBottom: 6,
+                        transition: "transform 220ms cubic-bezier(0.2,0.8,0.2,1)",
+                        transform: sel ? "scale(1.08)" : "scale(1)",
+                      }}>{s.emoji}</div>
+                      <div style={{
+                        fontSize: 13, fontWeight: 800, lineHeight: 1.2,
+                        color: sel ? "#b45309" : "#1a1a2e",
+                      }}>{s.label}</div>
                     </button>
                   );
                 })}

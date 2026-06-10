@@ -49,7 +49,7 @@ export default function WeeklyMonthlyCard() {
   if (!weekly && !monthly) return null;
 
   return (
-    <div style={{ maxWidth: 1060, margin: "16px auto", padding: "0 24px" }}>
+    <div className="mp-enter mp-enter-2" style={{ maxWidth: 1060, margin: "16px auto", padding: "0 24px" }}>
       <div style={{
         display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14,
       }} className="weekly-monthly-grid">

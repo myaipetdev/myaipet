@@ -25,7 +25,7 @@ export default function PremiumTeaser() {
   }, []);
 
   return (
-    <div style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
+    <div className="mp-enter mp-enter-5" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
         background: "linear-gradient(135deg,#0f172a 0%,#1e293b 100%)",
         color: "white", borderRadius: 18, padding: "24px 26px",

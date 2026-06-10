@@ -72,7 +72,7 @@ export default function PetDateWidget() {
   if (authed === false || authed === null) return null;
 
   return (
-    <div style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
+    <div className="mp-enter mp-enter-4" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
         background: "white", borderRadius: 16,
         border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden",

@@ -78,7 +78,7 @@ export default function SosFeedAndBuddy() {
   };
 
   return (
-    <div style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
+    <div className="mp-enter mp-enter-3" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
         display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14,
       }} className="sos-buddy-grid">
