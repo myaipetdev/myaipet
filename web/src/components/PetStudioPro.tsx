@@ -251,7 +251,8 @@ export default function PetStudioPro() {
       minHeight: "calc(100vh - 60px)",
       background: "#faf7f2", color: "#1a1a2e",
       fontFamily: "'Space Grotesk', sans-serif",
-      padding: "28px 24px 60px",
+      // Top: clear the fixed nav (60px) + breathing room.
+      padding: "100px 24px 60px",
     }}>
       <div style={{ maxWidth: 1180, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
 

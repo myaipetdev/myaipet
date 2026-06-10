@@ -270,7 +270,23 @@ export default function App() {
   const { isConnected } = useAccount();
   const { user, isAuthenticated, refreshUser } = useAuth();
 
-  const [section, setSection] = useState("home");
+  // Section is URL-aware via ?section= so cross-page links land correctly.
+  // (Studio is a separate route and routes back here with ?section=...)
+  const [section, setSection] = useState(() => {
+    if (typeof window === "undefined") return "home";
+    const fromUrl = new URLSearchParams(window.location.search).get("section");
+    return fromUrl || "home";
+  });
+  // Keep the URL in sync when the user clicks nav inside the SPA.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (section === "home") params.delete("section");
+    else params.set("section", section);
+    const next = params.toString();
+    const url = next ? `/?${next}` : "/";
+    window.history.replaceState({}, "", url);
+  }, [section]);
   const [activities, setActivities] = useState<any[]>([]);
   const [platformStats, setPlatformStats] = useState<any>(null);
   const [credits, setCredits] = useState(0);
@@ -382,7 +398,7 @@ export default function App() {
           )}
 
       {section === "airdrop" && (
-        <div style={{ paddingTop: 24 }}>
+        <div style={{ paddingTop: 100 }}>
           <SeasonBanner airdropPoints={airdropPoints} />
           <HourlyDropBanner />
           <MissionsCard />

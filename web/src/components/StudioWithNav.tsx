@@ -21,13 +21,13 @@ export default function StudioWithNav() {
       .catch(() => {});
   }, []);
 
-  // Non-studio nav items live on the home SPA. setSection here just routes
-  // back to "/" — the home will land on its default section. Studio itself is
-  // url-based, handled inside Nav.tsx as an <a>.
+  // Non-studio nav items live on the home SPA. Route via ?section= so the
+  // user actually lands on the section they tapped (Airdrop → /?section=airdrop,
+  // not back to Home).
   const handleSection = (key: string) => {
     if (key === "studio") return;
     if (typeof window !== "undefined") {
-      window.location.href = "/";
+      window.location.href = `/?section=${encodeURIComponent(key)}`;
     }
   };
 

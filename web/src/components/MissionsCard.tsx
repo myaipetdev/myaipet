@@ -443,10 +443,18 @@ function UnauthTeaser() {
           </div>
         </div>
         {isConnected ? (
-          <button onClick={authenticate} disabled={isAuthenticating} style={{
-            padding: "12px 22px", borderRadius: 12, border: "none",
+          <button onClick={async () => {
+            try {
+              await authenticate();
+              // All sibling cards (Weekly, Buddy, SOS, etc.) fetched their data
+              // with no auth header on first paint. Reload so they pick up the
+              // fresh JWT instead of staying stuck on the unauth teaser.
+              window.location.reload();
+            } catch { /* state already shows error */ }
+          }} disabled={isAuthenticating} style={{
+            padding: "14px 24px", borderRadius: 12, border: "none",
             background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
-            color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer",
+            color: "white", fontWeight: 800, fontSize: 16, cursor: "pointer",
             boxShadow: "0 4px 14px rgba(245,158,11,0.30)",
             fontFamily: "'Space Grotesk', sans-serif",
             opacity: isAuthenticating ? 0.6 : 1,

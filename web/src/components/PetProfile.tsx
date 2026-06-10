@@ -601,13 +601,26 @@ function CreatePetModal({ onClose, onCreated }: any) {
           ))}
 
           {chatLoading && (
-            <div style={{ display: "flex", justifyContent: "flex-start" }}>
+            <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", gap: 10 }}>
               <div style={{
-                padding: "10px 18px", borderRadius: "16px 16px 16px 4px",
-                background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.06)",
+                padding: "12px 18px", borderRadius: "18px 18px 18px 6px",
+                background: "linear-gradient(135deg, rgba(139,92,246,0.06), rgba(139,92,246,0.02))",
+                border: "1px solid rgba(139,92,246,0.18)",
+                display: "flex", alignItems: "center", gap: 10,
               }}>
-                <span style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.4)" }}>
-                  <span style={{ display: "inline-block", animation: "pulse 1s infinite" }}>...</span>
+                <span style={{
+                  display: "inline-flex", gap: 5, alignItems: "center",
+                }}>
+                  <span className="ai-typing-dot" style={{ animationDelay: "0s" }} />
+                  <span className="ai-typing-dot" style={{ animationDelay: "0.18s" }} />
+                  <span className="ai-typing-dot" style={{ animationDelay: "0.36s" }} />
+                </span>
+                <span style={{
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontSize: 14, fontWeight: 600,
+                  color: "#7c3aed", letterSpacing: "0.01em",
+                }}>
+                  thinking
                 </span>
               </div>
             </div>
@@ -1616,26 +1629,9 @@ export default function PetProfile() {
             </div>
           )}
 
-          {/* Power training — pay-to-power ATK/DEF/SPD upgrades */}
-          <StatUpgradePanel petId={pet.id} />
-
-          {/* Battle entry — 1 free / day, paid extras open PaywallModal */}
-          <button
-            onClick={() => handleBattle()}
-            disabled={battling}
-            style={{
-              marginTop: 12, width: "100%", padding: "12px",
-              borderRadius: 10, border: "none",
-              background: battling
-                ? "rgba(245,158,11,0.5)"
-                : "linear-gradient(135deg,#fbbf24,#f59e0b)",
-              color: "white", fontFamily: "'Space Grotesk',sans-serif",
-              fontSize: 13, fontWeight: 700, cursor: battling ? "wait" : "pointer",
-              letterSpacing: "0.02em", boxShadow: battling ? "none" : "0 4px 14px rgba(245,158,11,0.3)",
-            }}
-          >
-            {battling ? "Matching…" : "⚔️ Battle"}
-          </button>
+          {/* Power Training + Battle are paused. The pet identity / memory /
+              streak loop is the product; on-chain stat fighting was the wrong
+              direction. Code is preserved for reference but hidden. */}
 
           {!showRelease ? (
             <button onClick={() => setShowRelease(true)} style={{
@@ -2276,17 +2272,23 @@ export default function PetProfile() {
                     {pet.avatar_url ? <img src={pet.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span>🐾</span>}
                   </div>
                   <div style={{
-                    padding: "10px 14px", borderRadius: 16, borderBottomLeftRadius: 4,
-                    background: "rgba(255,255,255,0.9)", border: "1px solid rgba(0,0,0,0.06)",
+                    padding: "12px 16px", borderRadius: 16, borderBottomLeftRadius: 4,
+                    background: "linear-gradient(135deg, rgba(245,158,11,0.06), rgba(245,158,11,0.02))",
+                    border: "1px solid rgba(245,158,11,0.20)",
+                    display: "flex", alignItems: "center", gap: 10,
                   }}>
-                    <div style={{ display: "flex", gap: 4 }}>
+                    <div style={{ display: "flex", gap: 5 }}>
                       {[0, 1, 2].map(d => (
-                        <div key={d} style={{
-                          width: 6, height: 6, borderRadius: "50%", background: "#d97706",
-                          animation: `pulse 1.2s ease-in-out ${d * 0.2}s infinite`,
+                        <span key={d} className="ai-typing-dot" style={{
+                          background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
+                          animationDelay: `${d * 0.18}s`,
                         }} />
                       ))}
                     </div>
+                    <span style={{
+                      fontFamily: "'Space Grotesk',sans-serif", fontSize: 14,
+                      fontWeight: 600, color: "#b45309",
+                    }}>{pet.name} is thinking</span>
                   </div>
                 </div>
               )}
