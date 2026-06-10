@@ -365,12 +365,6 @@ export default function App() {
                 txToday={platformStats?.tx_today || 0}
               />
               <SeasonBanner airdropPoints={airdropPoints} />
-              <HourlyDropBanner />
-              <MissionsCard />
-              <WeeklyMonthlyCard />
-              <SosFeedAndBuddy />
-              <PetDateWidget />
-              <PremiumTeaser />
               <CheckinCard isAuthenticated={isAuthenticated} />
               <div className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
                 <Stats stats={stats} />
@@ -386,6 +380,18 @@ export default function App() {
               />
             </>
           )}
+
+      {section === "airdrop" && (
+        <div style={{ paddingTop: 24 }}>
+          <SeasonBanner airdropPoints={airdropPoints} />
+          <HourlyDropBanner />
+          <MissionsCard />
+          <WeeklyMonthlyCard />
+          <SosFeedAndBuddy />
+          <PetDateWidget />
+          <PremiumTeaser />
+        </div>
+      )}
 
       {section === "my pet" && (
         <WalletGate section="my pet">

@@ -24,7 +24,10 @@
  */
 
 import { useEffect, useState, useCallback } from "react";
+import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { getAuthHeaders } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MissionView {
   id: string;
@@ -411,6 +414,15 @@ export default function MissionsCard() {
 // ── Sub-components ──
 
 function UnauthTeaser() {
+  const { isConnected } = useAccount();
+  const { isAuthenticating, authenticate, error } = useAuth();
+
+  const subtitle = isConnected
+    ? (isAuthenticating ? "Verifying wallet…" : (error || "Wallet connected — sign in to start"))
+    : "5 missions a day · streak shields · pet that remembers when you miss";
+
+  const headline = isConnected ? "One more step — sign in" : "Sign in to start your streak";
+
   return (
     <div style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
@@ -424,19 +436,24 @@ function UnauthTeaser() {
             DAILY MISSIONS · STREAK · LEADERBOARD
           </div>
           <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", marginBottom: 4 }}>
-            Sign in to start your streak
+            {headline}
           </div>
-          <div style={{ fontSize: 13, color: "rgba(26,26,46,0.6)" }}>
-            5 missions a day · streak shields · pet that remembers when you miss
+          <div style={{ fontSize: 13, color: error ? "#b91c1c" : "rgba(26,26,46,0.6)" }}>
+            {subtitle}
           </div>
         </div>
-        <a href="/?section=home" style={{
-          padding: "12px 22px", borderRadius: 12,
-          background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
-          color: "white", fontWeight: 800, fontSize: 14, textDecoration: "none",
-          boxShadow: "0 4px 14px rgba(245,158,11,0.30)",
-          fontFamily: "'Space Grotesk', sans-serif",
-        }}>Connect wallet →</a>
+        {isConnected ? (
+          <button onClick={authenticate} disabled={isAuthenticating} style={{
+            padding: "12px 22px", borderRadius: 12, border: "none",
+            background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
+            color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer",
+            boxShadow: "0 4px 14px rgba(245,158,11,0.30)",
+            fontFamily: "'Space Grotesk', sans-serif",
+            opacity: isAuthenticating ? 0.6 : 1,
+          }}>{isAuthenticating ? "Signing…" : "Sign in →"}</button>
+        ) : (
+          <ConnectButton chainStatus="none" accountStatus="address" showBalance={false} />
+        )}
       </div>
     </div>
   );
