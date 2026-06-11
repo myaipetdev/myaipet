@@ -82,10 +82,12 @@ function Tier({
   current?: boolean; disabled?: boolean; highlight?: boolean;
 }) {
   return (
-    <div style={{
-      padding: 16, borderRadius: 14,
-      background: highlight ? "rgba(245,158,11,0.10)" : "rgba(255,255,255,0.04)",
-      border: highlight ? "1px solid rgba(245,158,11,0.35)" : "1px solid rgba(255,255,255,0.06)",
+    <div className="mp-lift" style={{
+      padding: 18, borderRadius: 14,
+      background: highlight ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.04)",
+      border: highlight ? "1px solid rgba(245,158,11,0.40)" : "1px solid rgba(255,255,255,0.06)",
+      boxShadow: highlight ? "0 6px 24px rgba(245,158,11,0.10)" : "none",
+      cursor: disabled ? "default" : "pointer",
     }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
         <span style={{ fontSize: 16, fontWeight: 800 }}>{name}</span>

@@ -24,11 +24,12 @@ export default function TrustStrip() {
     <div className="mp-enter" style={{
       maxWidth: 1180, margin: "60px auto 0", padding: "0 24px",
     }}>
-      <div style={{
+      <div className="mp-lift" style={{
         background: "white", borderRadius: 18,
         border: "1px solid rgba(0,0,0,0.06)",
         padding: "28px 28px",
         boxShadow: "0 2px 14px rgba(15,23,42,0.04)",
+        cursor: "default",
       }}>
         <div style={{
           fontSize: 11, fontFamily: "'JetBrains Mono', monospace",

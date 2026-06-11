@@ -249,11 +249,14 @@ export default function MissionsCard() {
             const busy = busyId === m.id;
             return (
               <div key={m.id} style={{
-                padding: "12px 24px",
+                padding: "14px 24px",
                 display: "flex", alignItems: "center", gap: 14,
-                opacity: completed ? 0.6 : 1,
+                opacity: completed ? 0.62 : 1,
                 background: completed ? "rgba(22,163,74,0.04)" : "transparent",
-              }}>
+                transition: "background 160ms ease",
+              }}
+              onMouseEnter={e => { if (!completed) e.currentTarget.style.background = "rgba(245,158,11,0.04)"; }}
+              onMouseLeave={e => { if (!completed) e.currentTarget.style.background = "transparent"; }}>
                 <div style={{
                   width: 28, height: 28, borderRadius: 8,
                   background: completed ? "#16a34a" : "rgba(0,0,0,0.05)",

@@ -138,29 +138,29 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         }
       `}</style>
       {/* Section: companionship-first economy (tone-aligned with landing) */}
-      <div style={{ textAlign: "center", marginBottom: 48 }}>
+      <div className="mp-enter" style={{ textAlign: "center", marginBottom: 48 }}>
         <div style={{
-          display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 14px",
-          borderRadius: 20, background: "rgba(251,191,36,0.06)",
-          border: "1px solid rgba(251,191,36,0.12)", marginBottom: 16,
+          display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 16px",
+          borderRadius: 999, background: "linear-gradient(135deg, rgba(251,191,36,0.12), rgba(245,158,11,0.06))",
+          border: "1px solid rgba(251,191,36,0.25)", marginBottom: 16,
         }}>
-          <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 10, color: "#b45309", fontWeight: 700, letterSpacing: "0.16em" }}>
+          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#b45309", fontWeight: 800, letterSpacing: "0.18em" }}>
             COMPANIONSHIP · OWNED
           </span>
         </div>
         <h2 style={{
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700,
-          color: "#1a1a2e", marginBottom: 8, letterSpacing: "-0.02em",
+          fontFamily: "'Space Grotesk',sans-serif", fontSize: 36, fontWeight: 800,
+          color: "#1a1a2e", marginBottom: 12, letterSpacing: "-0.025em", lineHeight: 1.1,
         }}>
           Made with care, not hype.
         </h2>
         <p style={{
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, color: "rgba(26,26,46,0.65)",
-          maxWidth: 580, margin: "0 auto", lineHeight: 1.65, fontWeight: 500,
+          fontFamily: "'Space Grotesk',sans-serif", fontSize: 17, color: "rgba(26,26,46,0.65)",
+          maxWidth: 600, margin: "0 auto", lineHeight: 1.65, fontWeight: 500,
         }}>
           Credits power AI image &amp; video creation with your pet — the same
           companion you raise, the same memory that travels with you. Spend on
-          what serves the bond. Points details at <a href="/tokenomics" style={{ color: "#b45309", fontWeight: 600 }}>economy</a>.
+          what serves the bond. Points details at <a href="/tokenomics" style={{ color: "#b45309", fontWeight: 700 }}>economy</a>.
         </p>
       </div>
 

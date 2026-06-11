@@ -19,26 +19,32 @@ function Counter({ end, duration = 2000, prefix = "", suffix = "" }: any) {
 
 export default function Stats({ stats }: any) {
   return (
-    <div style={{
+    <div className="mp-enter" style={{
       display: "flex", gap: 1, background: "rgba(255,255,255,0.7)",
-      borderRadius: 14, overflow: "hidden", border: "1px solid rgba(0,0,0,0.06)",
-      boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+      borderRadius: 18, overflow: "hidden", border: "1px solid rgba(0,0,0,0.06)",
+      boxShadow: "0 2px 12px rgba(15,23,42,0.04)",
     }}>
       {stats.map((s: any, i: number) => (
         <div key={i} style={{
-          flex: 1, padding: "18px 22px", background: "rgba(255,255,255,0.5)",
+          flex: 1, padding: "22px 26px", background: "rgba(255,255,255,0.5)",
           borderRight: i < stats.length - 1 ? "1px solid rgba(0,0,0,0.06)" : "none",
-        }}>
+          transition: "background 200ms ease",
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = "rgba(245,158,11,0.04)")}
+        onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.5)")}
+        >
           <div style={{
-            fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.45)",
-            textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6,
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
+            color: "rgba(26,26,46,0.55)",
+            textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 8,
+            fontWeight: 700,
           }}>
             {s.label}
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
             <span style={{
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 24, fontWeight: 700,
-              color: "#1a1a2e", letterSpacing: "-0.02em",
+              fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 800,
+              color: "#1a1a2e", letterSpacing: "-0.025em",
             }}>
               {s.animated
                 ? <Counter end={s.raw} prefix={s.prefix || ""} suffix={s.suffix || ""} />
