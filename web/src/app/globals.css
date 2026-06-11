@@ -198,6 +198,41 @@ body {
   letter-spacing: -0.005em;
 }
 
+/* Shimmer skeleton — applied while data is loading. Replaces "loading…"
+   text everywhere with the same animated placeholder pattern. */
+@keyframes mpShimmer {
+  0%   { background-position: -240px 0; }
+  100% { background-position: 240px 0; }
+}
+.mp-skel {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.05) 0%,
+    rgba(0, 0, 0, 0.10) 50%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
+  background-size: 480px 100%;
+  animation: mpShimmer 1.4s linear infinite;
+  border-radius: 6px;
+}
+
+/* ───────────── Mobile breakpoints — recently-added surfaces ──────────────
+   The mission system + trust strip + studio layouts all sit on top of
+   the older grid breakpoints. Make sure they collapse cleanly on phones. */
+@media (max-width: 760px) {
+  /* Studio: two-column layout flips to stacked. The PetStudioPro
+     component already declares this internally; just here as backup. */
+  .studio-pro-grid { grid-template-columns: 1fr !important; }
+  .weekly-monthly-grid { grid-template-columns: 1fr !important; }
+  .sos-buddy-grid { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 640px) {
+  /* Hero shrinks on phones — already clamped, just tighten margins */
+  body { font-size: 15px; }
+  /* Trust strip stacks */
+  /* (TrustStrip uses auto-fit minmax so it adapts; nothing needed.) */
+}
+
 /* ── Mobile responsiveness for BM grid pages ──
    Targets: dashboard / battle replay / pet profile / stat upgrade panel.
    Breakpoint: 640px (typical phone in portrait). */

@@ -22,6 +22,7 @@ import MultiLeaderboard from "@/components/MultiLeaderboard";
 import PetDateWidget from "@/components/PetDateWidget";
 import PremiumTeaser from "@/components/PremiumTeaser";
 import TrustStrip from "@/components/TrustStrip";
+import ToastHost from "@/components/Toast";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
 const PetGenerate = lazy(() => import("@/components/PetGenerate"));
@@ -368,6 +369,7 @@ export default function App() {
 
       {/* Always show app (landing is on separate domain myaipet.ai) */}
           <Grid />
+          <ToastHost />
           <Nav
             section={section}
             setSection={setSection}

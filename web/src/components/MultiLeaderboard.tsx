@@ -50,8 +50,11 @@ export default function MultiLeaderboard() {
     return () => { cancelled = true; };
   }, [metric]);
 
+  const top3 = data?.entries.slice(0, 3) || [];
+  const rest = data?.entries.slice(3) || [];
+
   return (
-    <div style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
+    <div className="mp-enter" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
         background: "white", borderRadius: 18,
         border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden",
@@ -114,26 +117,117 @@ export default function MultiLeaderboard() {
           </div>
         )}
 
-        {/* Rows */}
-        <div style={{ padding: "8px 0" }}>
-          {loading && <div style={{ padding: 30, textAlign: "center", color: "rgba(26,26,46,0.45)" }}>Loading…</div>}
-          {!loading && data?.entries.length === 0 && (
-            <div style={{ padding: 30, textAlign: "center", color: "rgba(26,26,46,0.45)" }}>
-              No entries yet. Be the first.
+        {/* Loading skeleton */}
+        {loading && (
+          <div style={{ padding: "20px 22px" }}>
+            {[0, 1, 2, 3, 4].map(i => (
+              <div key={i} style={{
+                display: "flex", alignItems: "center", gap: 14, padding: "10px 0",
+                opacity: 1 - i * 0.12,
+              }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(0,0,0,0.06)" }} />
+                <div style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(0,0,0,0.06)" }} />
+                <div style={{ flex: 1, height: 14, borderRadius: 4, background: "rgba(0,0,0,0.06)" }} />
+                <div style={{ width: 60, height: 14, borderRadius: 4, background: "rgba(0,0,0,0.06)" }} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty */}
+        {!loading && data?.entries.length === 0 && (
+          <div style={{ padding: "40px 22px", textAlign: "center" }}>
+            <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.7 }}>🏆</div>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>No entries yet</div>
+            <div style={{ fontSize: 13, color: "rgba(26,26,46,0.55)" }}>
+              Be the first — your name appears at the top of an empty board.
             </div>
-          )}
-          {!loading && data?.entries.map(e => (
-            <div key={e.rank + e.wallet} style={{
+          </div>
+        )}
+
+        {/* Top-3 Podium */}
+        {!loading && top3.length > 0 && (
+          <div style={{
+            padding: "20px 22px 16px",
+            background: "linear-gradient(180deg, rgba(245,158,11,0.04), transparent)",
+            borderBottom: "1px solid rgba(0,0,0,0.05)",
+            display: "grid",
+            gridTemplateColumns: "1fr 1.15fr 1fr",
+            gap: 10, alignItems: "end",
+          }}>
+            {[top3[1], top3[0], top3[2]].filter(Boolean).map((e, i) => {
+              const place = e.rank;
+              const medal = place === 1 ? "🥇" : place === 2 ? "🥈" : "🥉";
+              const podiumH = place === 1 ? 130 : place === 2 ? 110 : 100;
+              return (
+                <div key={place} className="mp-lift" style={{
+                  background: place === 1
+                    ? "linear-gradient(180deg, rgba(245,158,11,0.10), rgba(245,158,11,0.04))"
+                    : "rgba(0,0,0,0.025)",
+                  border: place === 1
+                    ? "1px solid rgba(245,158,11,0.30)"
+                    : "1px solid rgba(0,0,0,0.05)",
+                  borderRadius: 14,
+                  padding: "14px 12px",
+                  textAlign: "center",
+                  minHeight: podiumH,
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start",
+                  gap: 8,
+                  boxShadow: place === 1 ? "0 8px 24px rgba(245,158,11,0.18)" : "none",
+                  cursor: "default",
+                }}>
+                  <div style={{ fontSize: place === 1 ? 32 : 24, lineHeight: 1 }}>{medal}</div>
+                  {e.pet?.avatar_url
+                    ? <img src={e.pet.avatar_url} alt={e.pet.name} style={{
+                        width: place === 1 ? 56 : 44,
+                        height: place === 1 ? 56 : 44,
+                        borderRadius: 12, objectFit: "cover",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+                      }} />
+                    : <div style={{
+                        width: place === 1 ? 56 : 44,
+                        height: place === 1 ? 56 : 44,
+                        borderRadius: 12, background: "rgba(0,0,0,0.05)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: place === 1 ? 26 : 20,
+                      }}>🐾</div>}
+                  <div style={{
+                    fontSize: place === 1 ? 15 : 13, fontWeight: 800,
+                    color: "#1a1a2e", maxWidth: "100%",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>{e.pet?.name || "—"}</div>
+                  <div style={{
+                    fontSize: place === 1 ? 17 : 14, fontWeight: 800,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    color: place === 1 ? "#b45309" : "#1a1a2e",
+                    lineHeight: 1,
+                  }}>
+                    {e.value}
+                    <span style={{ fontSize: 10, color: "rgba(26,26,46,0.5)", marginLeft: 4 }}>
+                      {data?.meta.unit}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Remaining rows */}
+        <div style={{ padding: "6px 0" }}>
+          {!loading && rest.map(e => (
+            <div key={e.rank + e.wallet} className="mp-lift" style={{
               display: "flex", alignItems: "center", gap: 14,
-              padding: "10px 22px",
-              background: e.isMe ? "rgba(245,158,11,0.06)" : "transparent",
+              padding: "12px 22px",
+              background: e.isMe ? "rgba(245,158,11,0.08)" : "transparent",
+              borderLeft: e.isMe ? "3px solid #f59e0b" : "3px solid transparent",
             }}>
               <div style={{
                 width: 36, textAlign: "center",
                 fontSize: 14, fontFamily: "'JetBrains Mono', monospace",
-                fontWeight: 800, color: e.rank <= 3 ? "#b45309" : "rgba(26,26,46,0.55)",
+                fontWeight: 800, color: "rgba(26,26,46,0.55)",
               }}>
-                {e.rank === 1 ? "🥇" : e.rank === 2 ? "🥈" : e.rank === 3 ? "🥉" : `#${e.rank}`}
+                #{e.rank}
               </div>
               {e.pet?.avatar_url
                 ? <img src={e.pet.avatar_url} alt={e.pet.name} style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover" }} />

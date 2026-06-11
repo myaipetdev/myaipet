@@ -8,6 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import { toast } from "@/components/Toast";
 
 interface SosItem {
   id: number; sender_streak: number; message: string | null;
@@ -45,8 +46,8 @@ export default function SosFeedAndBuddy() {
       method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     });
     const d = await r.json();
-    if (!r.ok) alert(d?.error || "Failed");
-    else alert(`✨ You saved their streak! +${d.reward_pts} pts.`);
+    if (!r.ok) toast(d?.error || "Couldn't help — try again", "error");
+    else toast(`You saved their streak  ·  +${d.reward_pts} pts`, "success");
     setBusy(null);
     await load();
   };
@@ -59,8 +60,8 @@ export default function SosFeedAndBuddy() {
       body: JSON.stringify({ partnerWallet: inviteWallet.trim() }),
     });
     const d = await r.json();
-    if (!r.ok) alert(d?.error || "Failed");
-    else { setInviteWallet(""); alert("Invite sent."); }
+    if (!r.ok) toast(d?.error || "Couldn't send invite", "error");
+    else { setInviteWallet(""); toast("Invite sent", "success"); }
     setBusy(null);
     await load();
   };
@@ -72,7 +73,8 @@ export default function SosFeedAndBuddy() {
       body: JSON.stringify({ buddyId: id }),
     });
     const d = await r.json();
-    if (!r.ok) alert(d?.error || "Failed");
+    if (!r.ok) toast(d?.error || "Couldn't accept", "error");
+    else toast("Buddy connected — shared streak starts now", "success");
     setBusy(null);
     await load();
   };

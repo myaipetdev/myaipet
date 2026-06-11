@@ -28,6 +28,7 @@ import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { getAuthHeaders } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/components/Toast";
 
 interface MissionView {
   id: string;
@@ -105,7 +106,8 @@ export default function MissionsCard() {
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       });
       const data = await r.json();
-      if (!r.ok && data?.hint) alert(`Not yet:\n${data.hint}`);
+      if (!r.ok && data?.hint) toast(`Not yet — ${data.hint}`, "warning");
+      else if (r.ok && data?.pointsEarned) toast(`+${data.pointsEarned} pts`, "success");
       await load();
     } catch { /* ignore */ }
     setBusyId(null);
@@ -119,7 +121,8 @@ export default function MissionsCard() {
       body: JSON.stringify({ paymentMethod: "credits" }),
     });
     const data = await r.json();
-    if (!r.ok) alert(data?.error || "Failed");
+    if (!r.ok) toast(data?.error || "Something went wrong", "error");
+    else toast("Done — streak protected", "success");
     setShieldModal(false);
     setBusyId(null);
     await load();
@@ -133,7 +136,8 @@ export default function MissionsCard() {
       body: JSON.stringify({ paymentMethod: "credits" }),
     });
     const data = await r.json();
-    if (!r.ok) alert(data?.error || "Failed");
+    if (!r.ok) toast(data?.error || "Something went wrong", "error");
+    else toast("Done — streak protected", "success");
     setRepairModal(false);
     setBusyId(null);
     await load();
@@ -473,12 +477,32 @@ function UnauthTeaser() {
 
 function Skeleton() {
   return (
-    <div style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
+    <div className="mp-enter" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
-        background: "white", borderRadius: 18, padding: 24,
+        background: "white", borderRadius: 18, padding: "22px 24px",
         border: "1px solid rgba(0,0,0,0.06)",
-        height: 200, opacity: 0.6,
-      }} />
+        display: "flex", flexDirection: "column", gap: 14,
+      }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div className="mp-skel" style={{ width: 28, height: 28, borderRadius: 8 }} />
+          <div className="mp-skel" style={{ width: 220, height: 18, borderRadius: 4 }} />
+          <div style={{ flex: 1 }} />
+          <div className="mp-skel" style={{ width: 72, height: 32, borderRadius: 12 }} />
+          <div className="mp-skel" style={{ width: 48, height: 32, borderRadius: 10 }} />
+        </div>
+        {/* Five mission rows */}
+        {[0, 1, 2, 3, 4].map(i => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div className="mp-skel" style={{ width: 28, height: 28, borderRadius: 8 }} />
+            <div style={{ flex: 1 }}>
+              <div className="mp-skel" style={{ width: "60%", height: 14, borderRadius: 4, marginBottom: 6 }} />
+              <div className="mp-skel" style={{ width: "85%", height: 11, borderRadius: 4 }} />
+            </div>
+            <div className="mp-skel" style={{ width: 64, height: 32, borderRadius: 10 }} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

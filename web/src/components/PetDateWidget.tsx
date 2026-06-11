@@ -12,6 +12,7 @@
  */
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import { toast } from "@/components/Toast";
 
 interface Pet { id: number; name: string; avatar_url: string | null; }
 interface DateResult {
@@ -63,9 +64,9 @@ export default function PetDateWidget() {
         body: JSON.stringify({ myPetId, theirPetId: Number(targetPetId) }),
       });
       const d = await r.json();
-      if (!r.ok) alert(d?.error || "Failed");
-      else setResult(d);
-    } catch { alert("Network error"); }
+      if (!r.ok) toast(d?.error || "Date didn't go well — try again?", "error");
+      else { setResult(d); toast("Date complete — read the chat", "success"); }
+    } catch { toast("Network hiccup — try again?", "error"); }
     setBusy(false);
   };
 
