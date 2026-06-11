@@ -174,21 +174,23 @@ function SeasonBanner({ airdropPoints }: { airdropPoints: number }) {
   const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
-    <div style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
+    <div className="mp-enter" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
       <div
+        className="mp-lift"
         style={{
           background: "linear-gradient(135deg, #f59e0b 0%, #d97706 40%, #b45309 100%)",
-          borderRadius: 14,
-          padding: "14px 24px",
+          borderRadius: 16,
+          padding: "16px 26px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "wrap",
           gap: 12,
           marginBottom: 8,
-          boxShadow: "0 2px 16px rgba(245,158,11,0.18)",
+          boxShadow: "0 4px 24px rgba(245,158,11,0.22), inset 0 1px 0 rgba(255,255,255,0.20)",
           position: "relative",
           overflow: "hidden",
+          cursor: "default",
         }}
       >
         {/* Decorative shimmer */}
@@ -200,10 +202,10 @@ function SeasonBanner({ airdropPoints }: { airdropPoints: number }) {
 
         {/* Left: title + prize */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, zIndex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 20, lineHeight: 1 }}>🏆</span>
+          <span style={{ fontSize: 28, lineHeight: 1 }}>🏆</span>
           <div style={{ minWidth: 0 }}>
             <div style={{
-              fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14,
+              fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 17,
               color: "#fff", letterSpacing: "-0.02em", whiteSpace: "nowrap",
             }}>
               Season 1 Airdrop

@@ -112,24 +112,28 @@ export default function Nav({ section, setSection, credits }: any) {
               ? typeof window !== "undefined" && window.location.pathname === item.url
               : section === item.key;
             const sharedStyle: React.CSSProperties = {
-              background: isActive ? "rgba(251,191,36,0.12)" : "transparent",
+              background: isActive
+                ? "linear-gradient(135deg, rgba(251,191,36,0.18), rgba(245,158,11,0.10))"
+                : "transparent",
               border: "none", cursor: "pointer",
-              borderRadius: 9, padding: "7px 14px",
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 500,
-              color: isActive ? "#b45309" : "rgba(26,26,46,0.4)",
-              transition: "all 0.2s ease",
+              borderRadius: 10, padding: "8px 16px",
+              fontFamily: "'Space Grotesk',sans-serif",
+              fontSize: 13, fontWeight: isActive ? 800 : 600,
+              color: isActive ? "#b45309" : "rgba(26,26,46,0.55)",
+              transition: "color 180ms ease, background 180ms ease",
               position: "relative", whiteSpace: "nowrap", flexShrink: 0,
               textDecoration: "none",
               display: "inline-block",
+              boxShadow: isActive ? "inset 0 0 0 1px rgba(245,158,11,0.20)" : "none",
             };
             const inner = (
               <>
                 {item.label}
                 {isActive && (
                   <div style={{
-                    position: "absolute", bottom: 1, left: "50%", transform: "translateX(-50%)",
-                    width: 12, height: 2, borderRadius: 1,
-                    background: "#fbbf24", opacity: 0.6,
+                    position: "absolute", bottom: -1, left: "50%", transform: "translateX(-50%)",
+                    width: 18, height: 2, borderRadius: 2,
+                    background: "linear-gradient(90deg,#fbbf24,#f59e0b)", opacity: 0.85,
                   }} />
                 )}
               </>

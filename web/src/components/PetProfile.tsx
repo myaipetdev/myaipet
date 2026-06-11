@@ -1822,16 +1822,16 @@ export default function PetProfile() {
                   <button key={i.type} onClick={() => i.type === "talk" ? setShowChat(true) : handleInteract(i.type)}
                     disabled={!!interacting || blocked}
                     title={blocked ? blockReason : i.desc}
+                    className={blocked ? "" : "mp-lift"}
                     style={{
                       position: "relative",
-                      background: blocked ? "rgba(220,38,38,0.04)" : interacting === i.type ? `${i.color}15` : isRequested ? `${i.color}10` : "rgba(0,0,0,0.02)",
-                      border: blocked ? "1px solid rgba(220,38,38,0.18)" : interacting === i.type ? `1px solid ${i.color}40` : isRequested ? `2px solid ${i.color}80` : "1px solid rgba(0,0,0,0.06)",
-                      borderRadius: 12, padding: "14px 8px",
+                      background: blocked ? "rgba(220,38,38,0.04)" : interacting === i.type ? `${i.color}15` : isRequested ? `${i.color}10` : "white",
+                      border: blocked ? "1px solid rgba(220,38,38,0.18)" : interacting === i.type ? `1px solid ${i.color}40` : isRequested ? `2px solid ${i.color}80` : "1px solid rgba(0,0,0,0.07)",
+                      borderRadius: 14, padding: "16px 8px",
                       cursor: blocked ? "not-allowed" : interacting ? "wait" : "pointer",
-                      transition: "all 0.2s",
                       opacity: blocked ? 0.55 : interacting && interacting !== i.type ? 0.4 : 1,
                       transform: interacting === i.type ? "scale(0.95)" : "scale(1)",
-                      boxShadow: interacting === i.type ? `0 0 16px ${i.color}25` : isRequested ? `0 0 14px ${i.color}30` : "none",
+                      boxShadow: interacting === i.type ? `0 0 16px ${i.color}25` : isRequested ? `0 0 14px ${i.color}30` : "0 1px 2px rgba(0,0,0,0.02)",
                       animation: isRequested && !interacting ? "statPop 1.5s ease infinite" : "none",
                     }}>
                     {isRequested && !blocked && (
