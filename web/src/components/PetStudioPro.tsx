@@ -604,19 +604,20 @@ export default function PetStudioPro() {
         </div>
 
         {/* ── Recent history strip ── */}
-        {history.length > 0 && (
+        {history.length > 0 ? (
           <div style={{ marginTop: 6 }}>
-            <div style={{ ...panelLabel, marginBottom: 8 }}>RECENT</div>
+            <div style={{ ...panelLabel, marginBottom: 10 }}>RECENT</div>
             <div style={{
-              display: "flex", gap: 8, overflowX: "auto",
-              paddingBottom: 6,
+              display: "flex", gap: 10, overflowX: "auto",
+              paddingBottom: 8,
             }}>
               {history.map(g => (
-                <button key={g.id} onClick={() => reusePrompt(g)} style={{
+                <button key={g.id} onClick={() => reusePrompt(g)} className="mp-lift" style={{
                   flexShrink: 0,
-                  width: 120, height: 68, borderRadius: 10, overflow: "hidden",
+                  width: 140, height: 80, borderRadius: 12, overflow: "hidden",
                   border: "1px solid rgba(0,0,0,0.08)", background: "white",
                   cursor: "pointer", padding: 0,
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
                 }} title={g.prompt || "(no prompt)"}>
                   {g.video_path || g.photo_path
                     ? <img src={g.video_path || g.photo_path || ""} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -628,6 +629,22 @@ export default function PetStudioPro() {
                       }}>{g.status === "pending" ? "⏳" : "?"}</div>}
                 </button>
               ))}
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            marginTop: 6, padding: "22px 24px",
+            background: "rgba(0,0,0,0.02)",
+            border: "1px dashed rgba(0,0,0,0.12)",
+            borderRadius: 14,
+            display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
+          }}>
+            <div style={{ fontSize: 28 }}>🎞</div>
+            <div style={{ flex: "1 1 200px" }}>
+              <div style={{ ...panelLabel, marginBottom: 4 }}>RECENT</div>
+              <div style={{ fontSize: 14, color: "rgba(26,26,46,0.65)", fontWeight: 500 }}>
+                Your generations will appear here. Click any to reuse the prompt.
+              </div>
             </div>
           </div>
         )}

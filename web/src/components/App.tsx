@@ -21,6 +21,7 @@ import SosFeedAndBuddy from "@/components/SosFeedAndBuddy";
 import MultiLeaderboard from "@/components/MultiLeaderboard";
 import PetDateWidget from "@/components/PetDateWidget";
 import PremiumTeaser from "@/components/PremiumTeaser";
+import TrustStrip from "@/components/TrustStrip";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
 const PetGenerate = lazy(() => import("@/components/PetGenerate"));
@@ -458,6 +459,9 @@ export default function App() {
       )}
 
       {section === "leaderboard" && <MultiLeaderboard />}
+
+      {/* Trust signals — sits on every page so the proof is one scroll away. */}
+      <TrustStrip />
 
       {/* Footer — only show in app mode */}
       <footer style={{ padding: "48px 24px 36px", textAlign: "center", borderTop: "1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.015)" }}>

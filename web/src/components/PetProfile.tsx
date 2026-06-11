@@ -566,12 +566,17 @@ function CreatePetModal({ onClose, onCreated }: any) {
             width: 32, height: 32, cursor: "pointer", fontSize: 14, color: "rgba(26,26,46,0.5)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>←</button>
-          <div>
-            <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>
-              🤖 Create with AI
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: "0.14em", color: "#7c3aed", marginBottom: 2,
+              fontWeight: 800,
+            }}>ADOPTION · CHAT WITH AI</div>
+            <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, fontWeight: 800, color: "#1a1a2e", margin: 0, letterSpacing: "-0.015em" }}>
+              Tell us about your dream pet
             </h3>
-            <p style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.4)", margin: "2px 0 0" }}>
-              Describe your dream pet — AI will bring it to life
+            <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, color: "rgba(26,26,46,0.55)", margin: "4px 0 0", fontWeight: 500 }}>
+              We'll generate a one-of-one avatar from your description.
             </p>
           </div>
         </div>
@@ -582,18 +587,32 @@ function CreatePetModal({ onClose, onCreated }: any) {
           display: "flex", flexDirection: "column", gap: 10, minHeight: 0,
         }}>
           {chatMessages.map((msg, i) => (
-            <div key={i} style={{
+            <div key={i} className="mp-enter" style={{
               display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
+              alignItems: "flex-end", gap: 8,
             }}>
+              {msg.role !== "user" && (
+                <div style={{
+                  width: 28, height: 28, borderRadius: "50%",
+                  background: "linear-gradient(135deg, #a855f7, #7c3aed)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, flexShrink: 0,
+                  boxShadow: "0 2px 8px rgba(124,58,237,0.25)",
+                }}>🤖</div>
+              )}
               <div style={{
-                maxWidth: "80%", padding: "10px 14px",
-                borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                maxWidth: "78%", padding: "12px 16px",
+                borderRadius: msg.role === "user" ? "18px 18px 6px 18px" : "18px 18px 18px 6px",
                 background: msg.role === "user"
                   ? "linear-gradient(135deg, #7c3aed, #6d28d9)"
-                  : "rgba(0,0,0,0.04)",
+                  : "linear-gradient(135deg, rgba(139,92,246,0.06), rgba(245,158,11,0.04))",
                 color: msg.role === "user" ? "white" : "#1a1a2e",
-                fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, lineHeight: 1.5,
-                border: msg.role === "user" ? "none" : "1px solid rgba(0,0,0,0.06)",
+                fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, lineHeight: 1.55,
+                border: msg.role === "user" ? "none" : "1px solid rgba(139,92,246,0.16)",
+                boxShadow: msg.role === "user"
+                  ? "0 4px 14px rgba(124,58,237,0.25), inset 0 1px 0 rgba(255,255,255,0.15)"
+                  : "0 1px 3px rgba(0,0,0,0.03)",
+                fontWeight: 500,
               }}>
                 {msg.text}
               </div>

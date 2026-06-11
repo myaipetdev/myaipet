@@ -141,12 +141,29 @@ export default function SosFeedAndBuddy() {
 
           <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
             {authed === false && (
-              <div style={empty}>Sign in to find a buddy.</div>
+              <div style={{ padding: "32px 22px", textAlign: "center" }}>
+                <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.7 }}>🤝</div>
+                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6, color: "#1a1a2e" }}>
+                  Pair up with one friend
+                </div>
+                <div style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", lineHeight: 1.55 }}>
+                  Both of you have to keep the streak alive — strongest accountability mechanism we know.
+                </div>
+              </div>
             )}
             {authed && buddy?.active.length === 0 && buddy?.inboundInvites.length === 0 && buddy?.outboundInvites.length === 0 && (
-              <div style={{ fontSize: 13, color: "rgba(26,26,46,0.65)", lineHeight: 1.55 }}>
-                Pair with one friend. Both have to complete a mission each day for the shared streak to tick.
-                Hardest accountability mechanism ever — that's the point.
+              <div style={{
+                padding: "16px 18px", borderRadius: 12,
+                background: "rgba(245,158,11,0.05)",
+                border: "1px solid rgba(245,158,11,0.18)",
+              }}>
+                <div style={{ fontSize: 14, color: "#1a1a2e", lineHeight: 1.55, marginBottom: 6, fontWeight: 600 }}>
+                  Pair with one friend
+                </div>
+                <div style={{ fontSize: 12, color: "rgba(26,26,46,0.65)", lineHeight: 1.55 }}>
+                  Both of you have to complete a mission each day for the shared streak to tick.
+                  Hardest accountability mechanism ever — that's the point.
+                </div>
               </div>
             )}
 

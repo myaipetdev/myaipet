@@ -217,10 +217,10 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
       </div>
 
       {/* Main headline — aligned with landing voice (sovereign AI companion) */}
-      <h1 style={{
-        fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(36px,5vw,64px)",
-        fontWeight: 700, color: "#1a1a2e", lineHeight: 1.1,
-        margin: "0 auto 6px", maxWidth: 760, letterSpacing: "-0.03em",
+      <h1 className="mp-enter" style={{
+        fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(40px,5.5vw,72px)",
+        fontWeight: 800, color: "#1a1a2e", lineHeight: 1.05,
+        margin: "0 auto 6px", maxWidth: 820, letterSpacing: "-0.035em",
         position: "relative", zIndex: 2,
       }}>
         Your AI.{" "}
@@ -249,9 +249,9 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         <span>Own</span>
       </div>
 
-      <p style={{
-        fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, color: "rgba(26,26,46,0.65)",
-        maxWidth: 580, margin: "0 auto 34px", lineHeight: 1.7, fontWeight: 500,
+      <p className="mp-enter mp-enter-2" style={{
+        fontFamily: "'Space Grotesk',sans-serif", fontSize: 19, color: "rgba(26,26,46,0.65)",
+        maxWidth: 620, margin: "0 auto 34px", lineHeight: 1.65, fontWeight: 500,
         position: "relative", zIndex: 2,
       }}>
         Not another chatbot with a cute avatar. An AI pet that remembers you,
