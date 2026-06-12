@@ -1,5 +1,5 @@
 /**
- * PvE Boss System — Pokemon-style Stage Progression
+ * PvE Boss System — Staged Boss Progression
  *
  * 30 stages across 6 regions, each with:
  * - 4 wild encounters (minions) + 1 boss

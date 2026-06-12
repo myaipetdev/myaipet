@@ -4,8 +4,15 @@
     {
       "name": "web",
       "runtimeExecutable": "/bin/bash",
-      "runtimeArgs": ["-c", "export PATH=/Users/max/.nvm/versions/node/v24.14.1/bin:$PATH && cd web && npx next dev"],
-      "port": 3000
+      "runtimeArgs": ["-c", "export PATH=/Users/max/.nvm/versions/node/v24.14.1/bin:$PATH && cd web && npx next dev -p ${PORT:-3000}"],
+      "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "landing",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8787", "--directory", "landing-assets"],
+      "port": 8787
     }
   ]
 }

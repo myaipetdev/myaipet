@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // ════════════════════════════════════════════════════════════════════
-// ── Pokemon-style 2D Overworld — GBA-Quality Pixel Art Engine ──
+// ── Retro 2D Overworld — GBA-Quality Pixel Art Engine ──
 // ════════════════════════════════════════════════════════════════════
 
 const TILE = 16;

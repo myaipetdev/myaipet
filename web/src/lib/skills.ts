@@ -1,5 +1,5 @@
 /**
- * Adventure V2 — Pokemon-style Skill System
+ * Adventure V2 — Type-Advantage Skill System
  * 4 skill slots per pet, element advantages, skill leveling
  */
 
