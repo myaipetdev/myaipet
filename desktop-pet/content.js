@@ -393,6 +393,36 @@
     });
   }
 
+  // ── Agentic page action: "Sparky, what's this page?" ──
+  // Reads the page locally (user-initiated) and routes it through the existing
+  // chat pipeline so the pet answers in its own voice. No new permission — the
+  // content script already has DOM access on the host page.
+  function extractPageText() {
+    const title = (document.title || "").slice(0, 200);
+    const main = document.querySelector("main, article, [role='main']") || document.body;
+    const text = ((main && main.innerText) || "").replace(/\s+/g, " ").trim().slice(0, 3000);
+    return { title, text };
+  }
+
+  function askAboutPage() {
+    const { title, text } = extractPageText();
+    if (!text) { showBubble("I can't quite read this page 😅", 3000); return; }
+    showTyping();
+    state = "chatting";
+    const msg =
+      "I'm browsing a web page with you. In your own voice, tell me what it's " +
+      "about in 1-2 short sentences, then one thing you find interesting. " +
+      `Page title: "${title}". Page content: ${text}`;
+    chrome.runtime.sendMessage({ type: "chat", message: msg }, (res) => {
+      if (res?.reply) {
+        showBubble(res.reply, 8000);
+        burstParticles(["🔍", "💬", "✨"], 3);
+      } else {
+        showBubble("Hmm, I couldn't make sense of it 😅", 3000);
+      }
+    });
+  }
+
   // ── Context Menu ──
   function showMenu() {
     menu.classList.remove("hidden");
@@ -402,6 +432,7 @@
 
     menu.innerHTML = `
       <button class="aipet-menu-item" data-action="chat"><span class="icon">\uD83D\uDCAC</span> Chat</button>
+      <button class="aipet-menu-item" data-action="page"><span class="icon">\uD83D\uDD0D</span> What's this page?</button>
       <button class="aipet-menu-item" data-action="mood"><span class="icon">${dominant.emoji}</span> How are you?</button>
       <button class="aipet-menu-item" data-action="feed"><span class="icon">\uD83C\uDF56</span> Feed</button>
       <button class="aipet-menu-item" data-action="play"><span class="icon">\uD83C\uDFBE</span> Play</button>
@@ -428,6 +459,10 @@
     switch (action) {
       case "chat":
         showChatInput();
+        break;
+
+      case "page":
+        askAboutPage();
         break;
 
       case "mood":
