@@ -12,8 +12,11 @@ const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
   { key: "studio", label: "Studio", url: "/studio" },
   { key: "community", label: "Community" },
   { key: "sovereignty", label: "Sovereignty" },
-  // Airdrop is the merged hub: my-card + season + missions + leaderboards.
-  { key: "airdrop", label: "Airdrop" },
+  // Season hub: my-card + season + missions + leaderboards. Labelled
+  // "Season Rewards" (not "Airdrop") — points are off-chain loyalty credits,
+  // and an "Airdrop" tab reads as a token-distribution commitment in
+  // exchange/regulatory review (DD Q29).
+  { key: "airdrop", label: "Season Rewards" },
 ];
 
 export default function Nav({ section, setSection, credits }: any) {

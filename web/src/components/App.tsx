@@ -24,6 +24,7 @@ import PremiumTeaser from "@/components/PremiumTeaser";
 import TrustStrip from "@/components/TrustStrip";
 import ToastHost from "@/components/Toast";
 import MyCard from "@/components/MyCard";
+import CommunityHighlights from "@/components/CommunityHighlights";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
 const PetGenerate = lazy(() => import("@/components/PetGenerate"));
@@ -438,11 +439,16 @@ export default function App() {
       )}
 
       {section === "community" && (
-        <WalletGate section="community">
-          <Suspense fallback={<Loader />}>
-            <SocialGallery />
-          </Suspense>
-        </WalletGate>
+        <div style={{ paddingTop: 90 }}>
+          {/* Public highlights header — frames the tab as "a place full of
+              pets" and proves it's alive before the (gated) gallery. */}
+          <CommunityHighlights />
+          <WalletGate section="community">
+            <Suspense fallback={<Loader />}>
+              <SocialGallery />
+            </Suspense>
+          </WalletGate>
+        </div>
       )}
 
       {section === "adventure" && (

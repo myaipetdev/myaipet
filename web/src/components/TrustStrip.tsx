@@ -3,7 +3,8 @@
 /**
  * Trust strip — sits above the footer on every page. Three columns:
  *   • On-chain (verifiable contract addresses linking to BscScan)
- *   • Audited (2 audits + 1 code review, links to the audit report)
+ *   • Security (internal review + code review — external audit lands pre-TGE;
+ *     must stay consistent with /contracts and the DD questionnaire)
  *   • Your data (links to sovereignty / SOUL export)
  *
  * The point is to plant proof in front of every user who scrolls past
@@ -56,11 +57,11 @@ export default function TrustStrip() {
           />
           <TrustColumn
             emoji="🛡"
-            title="2 audits + code review"
+            title="Security review + hardening"
             sub="40+ issues found and fixed before mainnet."
             rows={[
-              { label: "Security audit report", value: "View →", href: "/contracts" },
-              { label: "Disclosed bugs", value: "26+ items",  href: "/contracts" },
+              { label: "Security review status", value: "View →", href: "/contracts" },
+              { label: "Issues found & fixed", value: "40+",  href: "/contracts" },
             ]}
             accent="#16a34a"
           />

@@ -4,7 +4,7 @@
  * One drop is "live" at most. We don't pre-schedule a whole day; the
  * current drop is computed lazily based on the current UTC hour seed.
  * That keeps drops deterministic (every user sees the same drop at the
- * same time, like Pokemon GO community events) without a cron writer.
+ * same time, like live community events) without a cron writer.
  *
  * Drop ends 30 min into the hour. The remaining 30 min there's no drop.
  * Window is shown in UI as a countdown.

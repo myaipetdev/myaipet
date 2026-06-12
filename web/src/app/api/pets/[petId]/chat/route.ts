@@ -3,6 +3,7 @@ import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createMemoryManager } from "@/lib/petclaw/memory/persistent-memory";
 import { checkPendingApology } from "@/lib/missions/petEmotion";
+import { getBondNotesBlock, maybeReflectOnBond } from "@/lib/petclaw/memory/bond-loop";
 import { createSelfLearner } from "@/lib/petclaw/memory/self-learning";
 import { getPersona, buildPersonaContext } from "@/lib/services/persona";
 import { rateLimit } from "@/lib/rateLimit";
@@ -118,6 +119,7 @@ RULES:
 - Reference past memories naturally when relevant — don't list them.
 - NEVER address the owner by a specific name unless they tell you their name in this conversation.
 ${(await checkPendingApology(pet.user_id)).note}
+${await getBondNotesBlock(pet.id)}
 - Use emojis sparingly but naturally.
 - NEVER break character. You are a pet, not an AI.`;
 
@@ -220,6 +222,12 @@ ${(await checkPendingApology(pet.user_id)).note}
     createSelfLearner(pet.id)
       .observeConversation(message.trim(), reply, helpfulness)
       .catch((e: any) => console.error("self-learning failed:", e?.message));
+
+    // Bond Feedback Loop — every ~8 turns, the pet writes a one-line note on
+    // HOW to be a better companion to this owner, which flows into future
+    // system prompts. Fire-and-forget.
+    maybeReflectOnBond(pet.id, message.trim(), reply)
+      .catch((e: any) => console.error("bond-loop failed:", e?.message));
 
     // Record Web4 heartbeat + user activity (fire-and-forget)
     try {
