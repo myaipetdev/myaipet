@@ -26,7 +26,7 @@ function loadStored(): { token: string | null; user: any } {
 }
 
 export function useAuth() {
-  const { address, isConnected, chainId } = useAccount();
+  const { address, isConnected, chainId, status } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { switchChainAsync } = useSwitchChain();
 
@@ -38,6 +38,7 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
   const prevAddress = useRef<string | null>(null);
   const initialized = useRef(false);
+  const wasConnected = useRef(false);
 
   const isAuthenticated = isDev ? true : (!!token && !!user);
 
@@ -146,10 +147,12 @@ export function useAuth() {
     }
   }, []);
 
-  // Restore auth from storage when wallet connects, or clear on disconnect
+  // Restore auth from storage when wallet connects, or clear on a genuine
+  // disconnect.
   useEffect(() => {
-    if (isConnected && address && !isAuthenticated && !isAuthenticating) {
-      if (prevAddress.current !== address) {
+    if (isConnected && address) {
+      wasConnected.current = true;
+      if (!isAuthenticated && !isAuthenticating && prevAddress.current !== address) {
         prevAddress.current = address;
         // Try restoring from storage only (no auto sign-in)
         const stored = loadStored();
@@ -160,11 +163,19 @@ export function useAuth() {
         }
       }
     }
-    if (!isConnected) {
-      logout();
+    // Only clear on a SETTLED disconnect we actually transitioned into — never
+    // during wagmi's initial "connecting"/"reconnecting" phase on a fresh page
+    // load. The old code called logout() here, which rotates the server-side
+    // session nonce; because every full navigation (e.g. to/from /studio) boots
+    // with status !== "connected" for a tick, it invalidated the stored JWT and
+    // forced a brand-new wallet signature on every page change. We now do a
+    // LOCAL-only clear and reserve nonce rotation for explicit user logout.
+    if (status === "disconnected" && wasConnected.current) {
+      wasConnected.current = false;
       prevAddress.current = null;
+      clearAuth();
     }
-  }, [isConnected, address, isAuthenticated, isAuthenticating, logout]);
+  }, [isConnected, address, isAuthenticated, isAuthenticating, status]);
 
   return {
     token,

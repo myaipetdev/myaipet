@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAuth } from "@/hooks/useAuth";
+
+// Session-global guard: the address we've already auto-prompted for a signature.
+// Module scope (not a per-component ref) so it survives WalletGate remounts —
+// each gated section mounts its own WalletGate, so a per-instance ref re-fired
+// the signature prompt on every navigation.
+let autoAuthTriedFor: string | null = null;
 
 function friendlyError(raw: string): string {
   const lower = raw.toLowerCase();
@@ -15,23 +21,24 @@ function friendlyError(raw: string): string {
 }
 
 export default function WalletGate({ children, section }: any) {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const { isAuthenticated, isAuthenticating, authenticate, error } = useAuth();
-  const autoAuthAttempted = useRef(false);
 
   // DEV ONLY: uncomment to bypass wallet gate for local testing
   const isDev = process.env.NODE_ENV === "development";
 
+  // Auto-prompt for a signature at most ONCE per connected address per page
+  // session — never again on remount/navigation.
   useEffect(() => {
     if (isDev) return;
-    if (isConnected && !isAuthenticated && !isAuthenticating && !autoAuthAttempted.current) {
-      autoAuthAttempted.current = true;
+    if (isConnected && address && !isAuthenticated && !isAuthenticating && autoAuthTriedFor !== address) {
+      autoAuthTriedFor = address;
       authenticate();
     }
     if (!isConnected) {
-      autoAuthAttempted.current = false;
+      autoAuthTriedFor = null;
     }
-  }, [isConnected, isAuthenticated, isAuthenticating, authenticate, isDev]);
+  }, [isConnected, address, isAuthenticated, isAuthenticating, authenticate, isDev]);
 
   if (isDev) return children;
   if (isConnected && isAuthenticated) return children;
@@ -72,7 +79,7 @@ export default function WalletGate({ children, section }: any) {
         </p>
         <div style={{ display: "inline-block" }}>
           <button
-            onClick={() => { autoAuthAttempted.current = false; authenticate(); }}
+            onClick={() => { autoAuthTriedFor = null; authenticate(); }}
             disabled={isAuthenticating}
             style={{
               padding: "14px 40px", borderRadius: 14, border: "none",
