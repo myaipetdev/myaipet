@@ -109,8 +109,9 @@ async function grokSubmit(model: StudioModel, prompt: string, refUrl?: string): 
           ...(refUrl ? { reference_image_url: refUrl } : {}),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) return { ok: false, error: data?.error?.message || `Grok ${res.status}` };
+      const data = await safeJson(res);
+      if (data.__nonJson) return { ok: false, error: data.text };
+      if (!res.ok) return { ok: false, error: data?.error?.message || data?.error || `Grok ${res.status}` };
       const url = data?.data?.[0]?.url;
       if (!url) return { ok: false, error: "No URL in Grok image response" };
       return { ok: true, immediateUrl: url };
@@ -119,7 +120,9 @@ async function grokSubmit(model: StudioModel, prompt: string, refUrl?: string): 
     }
   }
 
-  // Video: queued
+  // Video: queued. xAI wants `duration` as an INTEGER (seconds) — sending
+  // "6s" makes it return a plain-text deserialize error that breaks
+  // res.json(). The submit response is { request_id }, not { id }.
   try {
     const res = await fetch("https://api.x.ai/v1/videos/generations", {
       method: "POST",
@@ -127,13 +130,16 @@ async function grokSubmit(model: StudioModel, prompt: string, refUrl?: string): 
       body: JSON.stringify({
         model: model.backendModel,
         prompt,
-        duration: `${model.maxDurationSec}s`,
+        duration: model.maxDurationSec,
         ...(refUrl ? { reference_image_url: refUrl } : {}),
       }),
     });
-    const data = await res.json();
-    if (!res.ok) return { ok: false, error: data?.error?.message || `Grok ${res.status}` };
-    return { ok: true, jobId: data?.id };
+    const data = await safeJson(res);
+    if (data.__nonJson) return { ok: false, error: data.text };
+    if (!res.ok) return { ok: false, error: data?.error?.message || data?.error || `Grok ${res.status}` };
+    const jobId = data?.request_id || data?.id;
+    if (!jobId) return { ok: false, error: "No request_id in Grok video response" };
+    return { ok: true, jobId };
   } catch (e: any) {
     return { ok: false, error: e?.message || "Grok video submit threw" };
   }
@@ -143,16 +149,36 @@ async function grokPoll(_model: StudioModel, jobId: string): Promise<PollResult>
   const key = process.env.GROK_API_KEY;
   if (!key) return { status: "failed", error: "GROK_API_KEY not configured" };
   try {
-    const res = await fetch(`https://api.x.ai/v1/videos/generations/${jobId}`, {
+    // Poll path is /v1/videos/{id}, NOT /v1/videos/generations/{id}. Response:
+    // { status: "done", video: { url }, progress: 0-100 }.
+    const res = await fetch(`https://api.x.ai/v1/videos/${jobId}`, {
       headers: { Authorization: `Bearer ${key}` },
     });
-    const data = await res.json();
-    if (!res.ok) return { status: "failed", error: data?.error?.message || `Grok poll ${res.status}` };
-    if (data.status === "completed" && data.url) return { status: "completed", url: data.url };
+    const data = await safeJson(res);
+    if (data.__nonJson) return { status: "failed", error: data.text };
+    if (!res.ok) return { status: "failed", error: data?.error?.message || data?.error || `Grok poll ${res.status}` };
+    const url = data?.video?.url || data?.url;
+    if ((data.status === "done" || data.status === "completed") && url) {
+      return { status: "completed", url };
+    }
     if (data.status === "failed") return { status: "failed", error: data?.error || "Grok job failed" };
-    return { status: "running", progress: 0.5 };
+    return { status: "running", progress: typeof data.progress === "number" ? data.progress / 100 : 0.5 };
   } catch (e: any) {
     return { status: "failed", error: e?.message || "Grok poll threw" };
+  }
+}
+
+/**
+ * Reads a fetch Response defensively. xAI returns plain-text errors for
+ * malformed requests (e.g. "Failed to deserialize..."), which blow up
+ * res.json() with "Unexpected token 'F'". Parse text first, then JSON.
+ */
+async function safeJson(res: Response): Promise<any> {
+  const text = await res.text().catch(() => "");
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { __nonJson: true, text: (text || `HTTP ${res.status}`).slice(0, 200) };
   }
 }
 
