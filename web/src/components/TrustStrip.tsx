@@ -1,10 +1,8 @@
 "use client";
 
 /**
- * Trust strip — sits above the footer on every page. Three columns:
+ * Trust strip — sits above the footer on every page. Two columns:
  *   • On-chain (verifiable contract addresses linking to BscScan)
- *   • Security (internal review + code review — external audit lands pre-TGE;
- *     must stay consistent with /contracts and the DD questionnaire)
  *   • Your data (links to sovereignty / SOUL export)
  *
  * The point is to plant proof in front of every user who scrolls past
@@ -37,7 +35,7 @@ export default function TrustStrip() {
           letterSpacing: "0.18em", color: "rgba(26,26,46,0.55)",
           textAlign: "center", marginBottom: 22,
         }}>
-          ON-CHAIN · AUDITED · YOUR DATA
+          ON-CHAIN · YOUR DATA
         </div>
 
         <div style={{
@@ -56,22 +54,11 @@ export default function TrustStrip() {
             ]}
           />
           <TrustColumn
-            emoji="🛡"
-            title="Security review + hardening"
-            sub="40+ issues found and fixed before mainnet."
-            rows={[
-              { label: "Security review status", value: "View →", href: "/contracts" },
-              { label: "Issues found & fixed", value: "40+",  href: "/contracts" },
-            ]}
-            accent="#16a34a"
-          />
-          <TrustColumn
             emoji="🔐"
             title="Your pet, your data"
             sub="SOUL export ships your full memory ledger off-platform."
             rows={[
               { label: "Sovereignty controls", value: "Open →", href: "/sovereignty" },
-              { label: "Security disclosures", value: "security.txt", href: "/.well-known/security.txt" },
             ]}
             accent="#7c3aed"
           />
