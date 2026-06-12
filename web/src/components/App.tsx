@@ -23,6 +23,7 @@ import PetDateWidget from "@/components/PetDateWidget";
 import PremiumTeaser from "@/components/PremiumTeaser";
 import TrustStrip from "@/components/TrustStrip";
 import ToastHost from "@/components/Toast";
+import MyCard from "@/components/MyCard";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
 const PetGenerate = lazy(() => import("@/components/PetGenerate"));
@@ -279,6 +280,8 @@ export default function App() {
   const [section, setSection] = useState(() => {
     if (typeof window === "undefined") return "home";
     const fromUrl = new URLSearchParams(window.location.search).get("section");
+    // Leaderboard folded into the Airdrop hub — normalize old links/tabs.
+    if (fromUrl === "leaderboard") return "airdrop";
     return fromUrl || "home";
   });
   // Keep the URL in sync when the user clicks nav inside the SPA.
@@ -402,12 +405,16 @@ export default function App() {
             </>
           )}
 
-      {section === "airdrop" && (
-        <div style={{ paddingTop: 100 }}>
+      {/* Airdrop is now the merged "earn + compete + my status" hub. The old
+          standalone Leaderboard tab folds in here under MyCard. */}
+      {(section === "airdrop" || section === "leaderboard") && (
+        <div style={{ paddingTop: 100, display: "flex", flexDirection: "column", gap: 4 }}>
+          <MyCard />
           <SeasonBanner airdropPoints={airdropPoints} />
           <HourlyDropBanner />
           <MissionsCard />
           <WeeklyMonthlyCard />
+          <MultiLeaderboard />
           <SosFeedAndBuddy />
           <PetDateWidget />
           <PremiumTeaser />
@@ -462,7 +469,6 @@ export default function App() {
         </WalletGate>
       )}
 
-      {section === "leaderboard" && <MultiLeaderboard />}
 
       {/* Trust signals — sits on every page so the proof is one scroll away. */}
       <TrustStrip />

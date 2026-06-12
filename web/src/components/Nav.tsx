@@ -10,10 +10,10 @@ const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
   { key: "home", label: "Home" },
   { key: "my pet", label: "My Pet" },
   { key: "studio", label: "Studio", url: "/studio" },
-  { key: "airdrop", label: "Airdrop" },
-  { key: "leaderboard", label: "Leaderboard" },
   { key: "community", label: "Community" },
   { key: "sovereignty", label: "Sovereignty" },
+  // Airdrop is the merged hub: my-card + season + missions + leaderboards.
+  { key: "airdrop", label: "Airdrop" },
 ];
 
 export default function Nav({ section, setSection, credits }: any) {

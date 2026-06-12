@@ -86,3 +86,44 @@ export function activeMultiplierFor(category: string, now: Date = new Date()): n
   if (drop.applies_to === "*") return drop.multiplier_x;
   return drop.applies_to === category ? drop.multiplier_x : 1.0;
 }
+
+export interface UpcomingDrop {
+  kind: DropKind;
+  emoji: string;
+  label: string;
+  applies_to: string;
+  multiplier_x: number;
+  starts_at: string;        // ISO — top of that hour
+  starts_in_seconds: number;
+  is_live: boolean;         // true only for the current half-hour window
+}
+
+/**
+ * The next `count` drops on the schedule, starting with the current hour.
+ * Drops are deterministic per-hour, so we can show users the whole runway —
+ * "come back at 3pm for Snack Hour" — which is the entire point of making
+ * a habit out of checking in.
+ */
+export function upcomingDrops(count = 6, now: Date = new Date()): UpcomingDrop[] {
+  const hourMs = 3600_000;
+  const epochMs = now.getTime();
+  const thisHourStart = Math.floor(epochMs / hourMs) * hourMs;
+  const out: UpcomingDrop[] = [];
+  for (let i = 0; i < count; i++) {
+    const hourStart = thisHourStart + i * hourMs;
+    const def = dropForHour(hourStart / hourMs);
+    const dropEnd = hourStart + 30 * 60_000;
+    const isLive = i === 0 && epochMs < dropEnd;
+    out.push({
+      kind: def.kind,
+      emoji: def.emoji,
+      label: def.label,
+      applies_to: def.applies_to,
+      multiplier_x: def.multiplier_x,
+      starts_at: new Date(hourStart).toISOString(),
+      starts_in_seconds: Math.max(0, Math.round((hourStart - epochMs) / 1000)),
+      is_live: isLive,
+    });
+  }
+  return out;
+}

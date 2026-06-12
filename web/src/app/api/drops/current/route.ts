@@ -4,10 +4,13 @@
  * lull). Public — no auth required, drops are global.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { currentDrop } from "@/lib/missions/hourly";
+import { currentDrop, upcomingDrops } from "@/lib/missions/hourly";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(_req: NextRequest) {
-  return NextResponse.json(currentDrop());
+  return NextResponse.json({
+    ...currentDrop(),
+    upcoming: upcomingDrops(6),
+  });
 }

@@ -2,6 +2,17 @@
 
 import { useEffect, useState } from "react";
 
+interface UpcomingDrop {
+  kind: string;
+  emoji: string;
+  label: string;
+  applies_to: string;
+  multiplier_x: number;
+  starts_at: string;
+  starts_in_seconds: number;
+  is_live: boolean;
+}
+
 interface ActiveDrop {
   kind: string;
   emoji: string;
@@ -13,6 +24,7 @@ interface ActiveDrop {
   next_emoji: string;
   next_label: string;
   next_starts_at: string;
+  upcoming?: UpcomingDrop[];
 }
 
 function fmt(sec: number) {
@@ -20,6 +32,14 @@ function fmt(sec: number) {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+function clockLabel(iso: string) {
+  const d = new Date(iso);
+  let h = d.getHours();
+  const ampm = h >= 12 ? "pm" : "am";
+  h = h % 12 || 12;
+  return `${h}${ampm}`;
 }
 
 export default function HourlyDropBanner() {
@@ -97,6 +117,56 @@ export default function HourlyDropBanner() {
           {live ? fmt(remaining) : "soon"}
         </div>
       </div>
+
+      {/* Upcoming drops runway — tells the user there's a fresh 2-3× window
+          every hour, so checking in more often = catching more of them. */}
+      {drop.upcoming && drop.upcoming.length > 1 && (
+        <div style={{
+          marginTop: 8, padding: "12px 16px",
+          background: "white", borderRadius: 14,
+          border: "1px solid rgba(0,0,0,0.06)",
+          display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+        }}>
+          <div style={{
+            fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
+            letterSpacing: "0.12em", color: "#7e22ce", fontWeight: 800,
+            whiteSpace: "nowrap",
+          }}>
+            ⚡ TODAY'S DROPS
+          </div>
+          <div style={{
+            display: "flex", gap: 8, overflowX: "auto", flex: 1, minWidth: 0,
+            paddingBottom: 2,
+          }}>
+            {drop.upcoming.slice(0, 6).map((u, i) => (
+              <div key={i} style={{
+                flexShrink: 0,
+                display: "flex", alignItems: "center", gap: 7,
+                padding: "6px 11px", borderRadius: 999,
+                background: u.is_live ? "rgba(168,85,247,0.12)" : "rgba(0,0,0,0.03)",
+                border: u.is_live ? "1px solid rgba(168,85,247,0.30)" : "1px solid rgba(0,0,0,0.05)",
+              }}>
+                <span style={{ fontSize: 15 }}>{u.emoji}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: u.is_live ? "#7e22ce" : "#1a1a2e" }}>
+                  {u.label}
+                </span>
+                <span style={{
+                  fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
+                  color: u.is_live ? "#7e22ce" : "rgba(26,26,46,0.45)", fontWeight: 700,
+                }}>
+                  {u.is_live ? "LIVE" : (i === 1 ? "next" : clockLabel(u.starts_at))} · {u.multiplier_x}×
+                </span>
+              </div>
+            ))}
+          </div>
+          <div style={{
+            fontSize: 12, color: "rgba(26,26,46,0.6)", fontWeight: 600,
+            whiteSpace: "nowrap",
+          }}>
+            New drop every hour — check back to catch more 2-3× windows.
+          </div>
+        </div>
+      )}
     </div>
   );
 }
