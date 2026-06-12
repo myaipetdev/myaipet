@@ -103,6 +103,11 @@ export default function PetStudioPro() {
 
   const modelMenuRef = useRef<HTMLDivElement>(null);
   const pet = pets?.find(p => p.id === petId) || null;
+  // An un-renamed pet still carries its species default name ("Cat", "Dog"…),
+  // which reads as a hardcoded placeholder in the header — fall back to a
+  // neutral phrase until the owner gives it a real name.
+  const SPECIES_DEFAULT_NAMES = ["Cat", "Dog", "Parrot", "Turtle", "Hamster", "Rabbit", "Fox", "Pomeranian"];
+  const petDisplayName = pet?.name && !SPECIES_DEFAULT_NAMES.includes(pet.name) ? pet.name : "your pet";
   const chosenModel = models.find(m => m.id === chosenModelId);
   // Models filtered by the current output type (image vs video)
   const visibleModels = useMemo(
@@ -290,7 +295,7 @@ export default function PetStudioPro() {
               fontSize: 36, fontWeight: 800, letterSpacing: "-0.025em",
               margin: 0, lineHeight: 1.1,
             }}>
-              Make {pet?.name || "your pet"} a star
+              Make {petDisplayName} a star
             </h1>
           </div>
           {isDemo && (
