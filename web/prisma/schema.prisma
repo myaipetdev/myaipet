@@ -155,6 +155,7 @@ model Pet {
   memories              PetMemory[]
   interactions          PetInteraction[]
   dream_journals        DreamJournal[]
+  insights              PetInsight[]
   notifications         PetNotification[]
   autonomous_actions    PetAutonomousAction[]
   soul_exports          SoulExport[]
@@ -225,6 +226,26 @@ model DreamJournal {
 
   @@index([pet_id])
   @@map("dream_journals")
+}
+
+// Pet Daydream insights — caring observations the pet synthesizes by
+// connecting two memories about the owner (see lib/petclaw/memory/daydream.ts).
+// Surfaced proactively on My Pet so the pet feels like it thinks about you.
+model PetInsight {
+  id           Int      @id @default(autoincrement())
+  pet_id       Int
+  insight      String   @db.Text          // the caring observation, 1st person
+  rationale    String?  @db.Text          // why the pet connected these memories
+  mood         String   @db.VarChar(20)   // tender | playful | concerned | hopeful
+  score        Int      @default(5)       // critic score 0-10
+  source_keys  Json?                       // memory keys that fed it
+  seen         Boolean  @default(false)   // has the owner viewed it
+  reacted      Boolean  @default(false)   // did the owner react (kept for feedback)
+  created_at   DateTime @default(now())
+  pet          Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+
+  @@index([pet_id, created_at])
+  @@map("pet_insights")
 }
 
 model PetNotification {

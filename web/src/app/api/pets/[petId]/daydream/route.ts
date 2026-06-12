@@ -1,0 +1,89 @@
+/**
+ * GET  /api/pets/[petId]/daydream
+ *   → recent surfaced insights (marks them seen). Public for owned pet + demo.
+ *
+ * POST /api/pets/[petId]/daydream
+ *   → runs one daydream cycle (owner-gated, or cron via x-cron-secret).
+ *     Persists any insights the critic kept. Rate-limited / cooldown so we
+ *     don't burn Grok budget on every page view.
+ */
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { ownsPet } from "@/lib/authz";
+import { daydream } from "@/lib/petclaw/memory/daydream";
+
+const COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6h between cycles per pet
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ petId: string }> },
+) {
+  const { petId } = await params;
+  const id = Number(petId);
+  if (!id) return NextResponse.json({ error: "Bad petId" }, { status: 400 });
+
+  const rows = await prisma.petInsight.findMany({
+    where: { pet_id: id },
+    orderBy: { created_at: "desc" },
+    take: 5,
+  });
+
+  // Mark the freshest as seen so the "new" badge clears.
+  const unseen = rows.filter(r => !r.seen).map(r => r.id);
+  if (unseen.length) {
+    await prisma.petInsight.updateMany({ where: { id: { in: unseen } }, data: { seen: true } }).catch(() => {});
+  }
+
+  return NextResponse.json({
+    insights: rows.map(r => ({
+      id: r.id, insight: r.insight, mood: r.mood, score: r.score,
+      created_at: r.created_at.toISOString(), wasNew: !r.seen,
+    })),
+  });
+}
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ petId: string }> },
+) {
+  const { petId } = await params;
+  const id = Number(petId);
+  if (!id) return NextResponse.json({ error: "Bad petId" }, { status: 400 });
+
+  // Auth: either the owner, or a cron call with the shared secret.
+  const cronSecret = req.headers.get("x-cron-secret");
+  const isCron = !!cronSecret && cronSecret === process.env.CRON_SECRET;
+  if (!isCron) {
+    if (!(await ownsPet(req, id))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
+  // Cooldown — skip if we daydreamed recently (unless forced by cron).
+  const last = await prisma.petInsight.findFirst({
+    where: { pet_id: id },
+    orderBy: { created_at: "desc" },
+    select: { created_at: true },
+  });
+  if (last && Date.now() - last.created_at.getTime() < COOLDOWN_MS && !isCron) {
+    return NextResponse.json({ ok: true, skipped: "cooldown" });
+  }
+
+  const insights = await daydream(id);
+  if (insights.length === 0) {
+    return NextResponse.json({ ok: true, created: 0, note: "Not enough memories yet — keep chatting." });
+  }
+
+  await prisma.petInsight.createMany({
+    data: insights.map(ins => ({
+      pet_id: id,
+      insight: ins.insight,
+      rationale: ins.rationale,
+      mood: ins.mood,
+      score: Math.round(ins.score),
+      source_keys: ins.sourceKeys as any,
+    })),
+  });
+
+  return NextResponse.json({ ok: true, created: insights.length });
+}

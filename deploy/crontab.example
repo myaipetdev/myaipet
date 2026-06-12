@@ -6,6 +6,11 @@
 # Skips pets that haven't had 20+ new turns since last run (cheap no-ops).
 0 * * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/petclaw/memory/consolidate?cron=1" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-consolidate.log 2>&1
 
+# Pet Daydream: every 6 hours, pets active in the last 14 days "daydream" —
+# connecting two memories about their owner into a caring insight. Pets with
+# too few memories are cheap no-ops. Batched to 25 pets per tick.
+0 */6 * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/daydream?cron=1" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-daydream.log 2>&1
+
 # Optional: nightly memory anchor checkpoint for pets with souls. Only meaningful
 # after BLOCKCHAIN_ENABLED=true + relayer is funded.
 # 30 3 * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/petclaw/memory/anchor-batch?cron=1" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-anchor.log 2>&1

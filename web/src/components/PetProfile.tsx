@@ -7,6 +7,7 @@ import { signAction } from "@/lib/signAction";
 import { useRecordAdoption, isPETActivityEnabled, useCheckBnbBalance } from "@/hooks/usePETActivity";
 import EnhancedOnboarding from "@/components/EnhancedOnboarding";
 import PetStatRadar, { StatSlotBar } from "@/components/PetStatRadar";
+import PetInsightCard from "@/components/PetInsightCard";
 import EvolutionAnimation from "@/components/EvolutionAnimation";
 import PaywallModal from "@/components/PaywallModal";
 import StatUpgradePanel from "@/components/StatUpgradePanel";
@@ -2142,6 +2143,11 @@ export default function PetProfile() {
               )}
             </div>
           )}
+
+          {/* Pet Daydream — the pet's proactive caring insights, synthesized by
+              connecting two memories about the owner. The payoff of the whole
+              memory ledger. */}
+          {pet && <PetInsightCard petId={pet.id} petName={pet.name} />}
 
           {/* Memories Timeline — show a beautiful empty state when none exist
               yet so the user knows what's coming. Previously the section just
