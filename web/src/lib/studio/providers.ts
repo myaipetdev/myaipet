@@ -225,10 +225,16 @@ export function getModel(id: string): StudioModel | undefined {
   return MODELS.find(m => m.id === id);
 }
 
+// TEMPORARY: the fal.ai account is unfunded, so Studio runs Grok-only for now.
+// Flip to false (or delete this + the filter line below) to restore the full
+// multi-provider catalog once fal/other providers are funded.
+const GROK_ONLY = true;
+
 export function listModels(opts?: { kind?: ModelKind; maxTier?: ModelTier }): StudioModel[] {
   const tierRank: Record<ModelTier, number> = { free: 0, pro: 1, studio: 2 };
   const maxRank = opts?.maxTier ? tierRank[opts.maxTier] : 2;
   return MODELS.filter(m => {
+    if (GROK_ONLY && m.backend !== "grok") return false;
     if (opts?.kind && m.kind !== opts.kind) return false;
     if (tierRank[m.tier] > maxRank) return false;
     return true;

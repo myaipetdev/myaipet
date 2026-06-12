@@ -86,10 +86,9 @@ export default function PetStudioPro() {
   // Output type drives the default model + which models we surface.
   // Image-first by default: best margin (~10×) and instant feedback.
   const [outputKind, setOutputKind] = useState<"image" | "video">("image");
-  // Defaults are the cheapest profitable model in each kind:
-  //   image  → flux-schnell  ($0.003 cost / 3 cr)
-  //   video  → grok-imagine-video ($0.15 cost / 25 cr)
-  const [chosenModelId, setChosenModelId] = useState<string>("flux-schnell");
+  // Studio is Grok-only for now (fal account unfunded — see GROK_ONLY in
+  // lib/studio/providers.ts): image → grok-imagine, video → grok-imagine-video.
+  const [chosenModelId, setChosenModelId] = useState<string>("grok-imagine");
   const [modelOpen, setModelOpen] = useState(false);
   // Memory seeds — the pet's daydream insights, offered as prompt starters so
   // a generation can be grounded in something the pet actually "remembers"
@@ -135,7 +134,7 @@ export default function PetStudioPro() {
     const current = models.find(m => m.id === chosenModelId);
     if (!current) return;
     if (current.kind !== outputKind) {
-      const defaultId = outputKind === "image" ? "flux-schnell" : "grok-imagine-video";
+      const defaultId = outputKind === "image" ? "grok-imagine" : "grok-imagine-video";
       const exists = models.find(m => m.id === defaultId && !m.comingSoon);
       if (exists) setChosenModelId(defaultId);
       else {
