@@ -31,7 +31,7 @@ export async function GET(_req: NextRequest) {
     take: 20,
     select: {
       id: true, name: true, avatar_url: true, level: true, bond_level: true,
-      personality_type: true, current_mood: true, user_id: true,
+      personality_type: true, user_id: true,
     },
   });
 
@@ -81,7 +81,6 @@ export async function GET(_req: NextRequest) {
       level: p.level,
       bondLevel: p.bond_level,
       personality: p.personality_type,
-      mood: p.current_mood,
       ownerWallet: maskWallet(owner?.wallet_address),
       heroImage: heroGen?.video_path || heroGen?.photo_path || null,
       heroIsVideo: !!heroGen?.video_path,

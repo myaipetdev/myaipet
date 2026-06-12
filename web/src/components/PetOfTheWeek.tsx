@@ -14,7 +14,6 @@ interface PotW {
   level: number;
   bondLevel: number;
   personality: string;
-  mood: string | null;
   ownerWallet: string;
   heroImage: string | null;
   heroIsVideo: boolean;
