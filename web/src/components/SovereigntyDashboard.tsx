@@ -15,6 +15,7 @@ interface SoulState {
   successor_wallet?: string | null;
   inactivity_days?: number;
   wallet_address?: string;
+  on_chain?: boolean;
 }
 
 interface Checkpoint {

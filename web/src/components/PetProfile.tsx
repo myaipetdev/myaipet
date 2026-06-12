@@ -8,6 +8,7 @@ import { useRecordAdoption, isPETActivityEnabled, useCheckBnbBalance } from "@/h
 import EnhancedOnboarding from "@/components/EnhancedOnboarding";
 import PetStatRadar, { StatSlotBar } from "@/components/PetStatRadar";
 import PetInsightCard from "@/components/PetInsightCard";
+import PetGreeting from "@/components/PetGreeting";
 import EvolutionAnimation from "@/components/EvolutionAnimation";
 import PaywallModal from "@/components/PaywallModal";
 import StatUpgradePanel from "@/components/StatUpgradePanel";
@@ -1441,6 +1442,15 @@ export default function PetProfile() {
           </div>
         </>)}
       </div>
+
+      {/* Daily-rhythm greeting — time + mood aware, surfaces "while you were away". */}
+      <PetGreeting
+        petId={pet.id}
+        petName={pet.name}
+        mood={mood}
+        accent={moodCfg.color}
+        lastInteractionAt={pet.last_interaction_at}
+      />
 
       <div className="desktop-grid" style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 20 }}>
         {/* Left: Pet card */}

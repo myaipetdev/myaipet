@@ -14,17 +14,11 @@ import Feed from "@/components/Feed";
 import Pricing from "@/components/Pricing";
 import RaisePitch from "@/components/RaisePitch";
 import WalletGate from "@/components/WalletGate";
-import MissionsCard from "@/components/MissionsCard";
-import HourlyDropBanner from "@/components/HourlyDropBanner";
-import WeeklyMonthlyCard from "@/components/WeeklyMonthlyCard";
-import SosFeedAndBuddy from "@/components/SosFeedAndBuddy";
-import MultiLeaderboard from "@/components/MultiLeaderboard";
-import PetDateWidget from "@/components/PetDateWidget";
-import PremiumTeaser from "@/components/PremiumTeaser";
 import TrustStrip from "@/components/TrustStrip";
 import ToastHost from "@/components/Toast";
-import MyCard from "@/components/MyCard";
+import SeasonRewardsHub from "@/components/SeasonRewardsHub";
 import CommunityHighlights from "@/components/CommunityHighlights";
+import PetOfTheWeek from "@/components/PetOfTheWeek";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
 const PetGenerate = lazy(() => import("@/components/PetGenerate"));
@@ -210,13 +204,13 @@ function SeasonBanner({ airdropPoints }: { airdropPoints: number }) {
               fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 17,
               color: "#fff", letterSpacing: "-0.02em", whiteSpace: "nowrap",
             }}>
-              Season 1 Airdrop
+              Season 1 Rewards
             </div>
             <div style={{
               fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.75)",
               marginTop: 1, whiteSpace: "nowrap",
             }}>
-              100,000 pts Prize Pool
+              100,000 pt Reward Pool
             </div>
           </div>
         </div>
@@ -406,20 +400,10 @@ export default function App() {
             </>
           )}
 
-      {/* Airdrop is now the merged "earn + compete + my status" hub. The old
-          standalone Leaderboard tab folds in here under MyCard. */}
+      {/* Season Rewards — the merged "my status + earn + compete + connect" hub.
+          The old standalone Leaderboard tab folds in here under the tabs. */}
       {(section === "airdrop" || section === "leaderboard") && (
-        <div style={{ paddingTop: 100, display: "flex", flexDirection: "column", gap: 4 }}>
-          <MyCard />
-          <SeasonBanner airdropPoints={airdropPoints} />
-          <HourlyDropBanner />
-          <MissionsCard />
-          <WeeklyMonthlyCard />
-          <MultiLeaderboard />
-          <SosFeedAndBuddy />
-          <PetDateWidget />
-          <PremiumTeaser />
-        </div>
+        <SeasonRewardsHub banner={<SeasonBanner airdropPoints={airdropPoints} />} />
       )}
 
       {section === "my pet" && (
@@ -442,6 +426,7 @@ export default function App() {
         <div style={{ paddingTop: 90 }}>
           {/* Public highlights header — frames the tab as "a place full of
               pets" and proves it's alive before the (gated) gallery. */}
+          <PetOfTheWeek />
           <CommunityHighlights />
           <WalletGate section="community">
             <Suspense fallback={<Loader />}>
