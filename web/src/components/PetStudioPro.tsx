@@ -90,6 +90,10 @@ export default function PetStudioPro() {
   //   video  → grok-imagine-video ($0.15 cost / 25 cr)
   const [chosenModelId, setChosenModelId] = useState<string>("flux-schnell");
   const [modelOpen, setModelOpen] = useState(false);
+  // Memory seeds — the pet's daydream insights, offered as prompt starters so
+  // a generation can be grounded in something the pet actually "remembers"
+  // about the owner. The Memory→Video bridge.
+  const [memorySeeds, setMemorySeeds] = useState<string[]>([]);
 
   const [view, setView] = useState<View>("idle");
   const [resultUrl, setResultUrl] = useState<string | null>(null);
@@ -104,6 +108,20 @@ export default function PetStudioPro() {
     () => models.filter(m => m.kind === outputKind),
     [models, outputKind]
   );
+
+  // Fetch the selected pet's daydream insights as Memory→Video seeds.
+  useEffect(() => {
+    if (!petId || petId < 0) { setMemorySeeds([]); return; }
+    let cancelled = false;
+    fetch(`/api/pets/${petId}/daydream`, { headers: getAuthHeaders() })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (cancelled || !d?.insights) return;
+        setMemorySeeds(d.insights.map((i: any) => i.insight).filter(Boolean).slice(0, 3));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [petId]);
 
   // If user flips output kind and the current model is wrong-kind, snap to a
   // good default for the new kind.
@@ -524,6 +542,31 @@ export default function PetStudioPro() {
               color: "#1a1a2e",
             }}
           />
+          {/* Memory → Video: scenes grounded in what the pet remembers about
+              you. Only shows when the pet has daydreamed something. */}
+          {memorySeeds.length > 0 && (
+            <div style={{
+              marginTop: 12, padding: "12px 14px", borderRadius: 12,
+              background: "linear-gradient(135deg, rgba(139,92,246,0.06), rgba(245,158,11,0.04))",
+              border: "1px solid rgba(139,92,246,0.18)",
+            }}>
+              <div style={{
+                fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
+                color: "#6d28d9", letterSpacing: "0.1em", fontWeight: 800, marginBottom: 8,
+              }}>💭 FROM {(pet?.name || "YOUR PET").toUpperCase()}'S MEMORY</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {memorySeeds.map((seed, i) => (
+                  <button key={i} onClick={() => setPrompt(seed)} className="mp-lift" style={{
+                    textAlign: "left", padding: "9px 12px", borderRadius: 10,
+                    background: "white", border: "1px solid rgba(139,92,246,0.16)",
+                    fontSize: 13, color: "#1a1a2e", cursor: "pointer", lineHeight: 1.45,
+                    fontFamily: "'Space Grotesk', sans-serif",
+                  }}>{seed}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
             <span style={{
               fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
