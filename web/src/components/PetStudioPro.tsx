@@ -32,6 +32,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import PetLoraPanel from "@/components/PetLoraPanel";
 
 interface Pet { id: number; name: string; avatar_url: string | null; species: number; level: number; }
 interface StudioModel {
@@ -566,6 +567,10 @@ export default function PetStudioPro() {
               </div>
             </div>
           )}
+
+          {/* Pet-LoRA: train this pet's exact face (renders only when the
+              feature is enabled server-side and a real pet is selected). */}
+          {pet && !isDemo && <PetLoraPanel petId={pet.id} petName={pet.name} />}
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
             <span style={{

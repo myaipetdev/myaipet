@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { verifySignature } from "@/lib/signAction";
 import { buildPetPrompt, generateGrokImage, generateGrokImageWithRef, describePetAvatar, submitGrokVideo, translatePromptIfNeeded } from "@/lib/services/video";
+import { loraEnabled, getReadyPetLora, falLoraImage } from "@/lib/services/lora";
 import { moderateGeneration } from "@/lib/moderation";
 import { awardPoints } from "@/lib/airdrop";
 import { triggerAgentReactions } from "@/lib/agents";
@@ -145,9 +146,23 @@ export async function POST(
       if (isOriginal && pet.avatar_url) {
         imageUrl = pet.avatar_url;
       } else {
-        imageUrl = pet.avatar_url
+        // Pet-LoRA: when this pet has a trained identity checkpoint, render
+        // with fal flux-lora (far stronger identity than prompt/ref anchoring).
+        // Any failure falls through to the existing Grok path.
+        let loraImage: string | null = null;
+        if (loraEnabled()) {
+          try {
+            const lora = await getReadyPetLora(pet.id);
+            if (lora?.lora_url) {
+              loraImage = await falLoraImage(personalizedPrompt, lora.lora_url, lora.trigger_word);
+            }
+          } catch (e) {
+            console.error("Pet-LoRA generation failed, falling back to Grok:", e);
+          }
+        }
+        imageUrl = loraImage ?? (pet.avatar_url
           ? await generateGrokImageWithRef(personalizedPrompt, pet.avatar_url)
-          : await generateGrokImage(personalizedPrompt);
+          : await generateGrokImage(personalizedPrompt));
       }
 
       const actualCost = isOriginal ? 0 : creditCost;

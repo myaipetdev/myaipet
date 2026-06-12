@@ -11,6 +11,12 @@
 # too few memories are cheap no-ops. Batched to 25 pets per tick.
 0 */6 * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/daydream?cron=1" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-daydream.log 2>&1
 
+# Daydream → video: every 4 hours, settles previous tick's video jobs, then
+# converts up to 3 top-scoring fresh insights into 5s auto-videos
+# (platform-funded, per-pet 3-day cooldown). Offset 15min from the daydream
+# cron so fresh insights from the same hour are eligible.
+15 */4 * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/daydream-to-video?cron=1" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-daydream-video.log 2>&1
+
 # Optional: nightly memory anchor checkpoint for pets with souls. Only meaningful
 # after BLOCKCHAIN_ENABLED=true + relayer is funded.
 # 30 3 * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/petclaw/memory/anchor-batch?cron=1" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-anchor.log 2>&1

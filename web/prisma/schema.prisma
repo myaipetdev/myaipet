@@ -156,6 +156,7 @@ model Pet {
   interactions          PetInteraction[]
   dream_journals        DreamJournal[]
   insights              PetInsight[]
+  loras                 PetLora[]
   notifications         PetNotification[]
   autonomous_actions    PetAutonomousAction[]
   soul_exports          SoulExport[]
@@ -241,11 +242,33 @@ model PetInsight {
   source_keys  Json?                       // memory keys that fed it
   seen         Boolean  @default(false)   // has the owner viewed it
   reacted      Boolean  @default(false)   // did the owner react (kept for feedback)
+  // Set when the daydream-to-video cron turns this insight into an auto-generated
+  // video (generations.id) — doubles as the "already converted" marker.
+  video_generation_id Int?
   created_at   DateTime @default(now())
   pet          Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
 
   @@index([pet_id, created_at])
   @@map("pet_insights")
+}
+
+// Per-pet LoRA fine-tune checkpoint (fal.ai flux-lora-fast-training). One
+// "ready" row per pet is the active identity model used for image generation.
+model PetLora {
+  id             Int       @id @default(autoincrement())
+  pet_id         Int
+  status         String    @default("training") @db.VarChar(20) // training | ready | failed
+  fal_request_id String?   @db.VarChar(128)
+  lora_url       String?   @db.VarChar(512)   // diffusers safetensors URL once ready
+  trigger_word   String    @db.VarChar(40)    // rare token bound to this pet's identity
+  images_used    Json?                        // training image URLs (provenance)
+  error_message  String?   @db.Text
+  created_at     DateTime  @default(now())
+  completed_at   DateTime?
+  pet            Pet       @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+
+  @@index([pet_id, created_at])
+  @@map("pet_loras")
 }
 
 model PetNotification {
