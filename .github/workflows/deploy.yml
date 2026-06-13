@@ -1,11 +1,15 @@
 name: Deploy to EC2
 
 # Triggers:
-#   - push to main → auto-deploy
-#   - manual dispatch (workflow_run from PR merge or ad-hoc)
+#   - manual dispatch only (run from the Actions tab or `gh workflow run`).
+#
+# Auto-deploy on push is DISABLED until the EC2 secrets are configured — the
+# job was failing on every push ("missing server host") because EC2_HOST /
+# EC2_USER / EC2_SSH_KEY were never set, which spammed failure emails. To
+# re-enable auto-deploy: set those three repo secrets (EC2_HOST=app.myaipet.ai,
+# EC2_USER=ubuntu, EC2_SSH_KEY=<cs_aipet.pem contents>, EC2_PORT=22) and add the
+# `push:` trigger back. Deploys currently run manually via deploy/ec2-pull.sh.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 # Single concurrent deploy; queue extras and cancel duplicates.
@@ -30,7 +34,7 @@ jobs:
           # if your checkout lives elsewhere.
           script: |
             set -euo pipefail
-            cd "${PETCLAW_ROOT:-/opt/petclaw}"
+            cd "${PETCLAW_ROOT:-/opt/petclaw/aipet-project}"
             bash deploy/ec2-pull.sh
 
       - name: Smoke check (homepage 200)
