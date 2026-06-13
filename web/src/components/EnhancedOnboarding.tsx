@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
+import PetClawConsole from "@/components/PetClawConsole";
 
 interface Pet {
   id: number;
@@ -320,10 +321,13 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   if (step === "intro") {
     return (
       <Shell hideProgress>
+        <div style={{ marginBottom: 22 }}>
+          <PetClawConsole variant="compact" pet={{
+            name: pet.name, level: pet.level,
+            personality_type: pet.personality_type, element: pet.element,
+          }} />
+        </div>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div style={{ marginBottom: 18, animation: "obFloat 3s ease-in-out infinite" }}>
-            <PetAvatar pet={pet} size={128} />
-          </div>
           {eyebrow("Welcome")}
           <h2 style={{ fontSize: 32, fontWeight: 800, color: "#1a1a2e", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
             Meet {pet.name}

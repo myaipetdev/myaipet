@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
+import PetClawConsole from "@/components/PetClawConsole";
 
 // ── Types ──
 interface SoulState {
@@ -938,6 +939,16 @@ export default function SovereigntyDashboard() {
             </select>
           </div>
         )}
+
+        {/* PetClaw agentic-harness console — the headline of this tab */}
+        <div style={{ marginBottom: 40 }}>
+          <PetClawConsole pet={selectedPet ? {
+            name: selectedPet.name,
+            level: selectedPet.level,
+            personality_type: selectedPet.personality_type,
+            element: selectedPet.element,
+          } : null} />
+        </div>
 
         {/* Big two-column hero */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "center" }}>
