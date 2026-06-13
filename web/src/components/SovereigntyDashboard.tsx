@@ -1100,7 +1100,9 @@ export default function SovereigntyDashboard() {
                   { label: "LAST ACTIVE", value: timeAgo(soul.last_heartbeat), accent: "#059669" },
                   { label: "GENESIS", value: truncate(soul.genesis_hash, 5), accent: "#b45309", click: () => soul.genesis_hash && copyHash(soul.genesis_hash, "genesis"), copied: copied === "genesis" },
                   { label: "SOUL HASH", value: truncate(soul.current_hash, 5), accent: "#b45309", click: () => soul.current_hash && copyHash(soul.current_hash, "current"), copied: copied === "current" },
-                  ...(soul.token_id !== undefined ? [{ label: "TOKEN ID", value: `#${soul.token_id}`, accent: "#1a1a2e" }] : []),
+                  // Only show TOKEN ID once a real Soul NFT is minted — null/undefined
+                  // during the on-chain holding period must NOT render as "#null".
+                  ...(soul.token_id != null ? [{ label: "TOKEN ID", value: `#${soul.token_id}`, accent: "#1a1a2e" }] : []),
                 ].map(({ label, value, accent, click, copied: isCopied }: any) => (
                   <div key={label} onClick={click} style={{
                     padding: "16px 18px", borderRadius: 14, background: "white",
@@ -1256,7 +1258,9 @@ export default function SovereigntyDashboard() {
                             fontSize: 15,
                           }}
                         >
-                          {ck.trigger_event}
+                          {ck.trigger_event === "adoption" ? "Adopted"
+                            : ck.trigger_event === "post_consolidation" ? "Memory consolidated"
+                            : (ck.trigger_event || "checkpoint").replace(/_/g, " ")}
                         </span>
                         <span
                           style={{
