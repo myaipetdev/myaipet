@@ -374,6 +374,29 @@ export default function PetStudioPro() {
                 <button onClick={() => { setView("idle"); setResultUrl(null); }} style={btnGhost}>⟳ New</button>
               </div>
             )}
+
+            {/* Inspiration — fills the idle space with real example art; tap to load it. */}
+            {view === "idle" && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{
+                  fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
+                  letterSpacing: "0.14em", color: "rgba(26,26,46,0.5)", fontWeight: 700, marginBottom: 8,
+                }}>✨ WHAT YOU CAN MAKE</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                  {TEMPLATES.slice(0, 4).map(t => {
+                    const ex = TEMPLATE_EXAMPLES[t.id];
+                    if (!ex) return null;
+                    return (
+                      <button key={t.id} onClick={() => applyTemplate(t)} className="mp-lift" title={t.title} style={{
+                        padding: 0, border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, overflow: "hidden",
+                        cursor: "pointer", aspectRatio: "1 / 1",
+                        background: `url(${ex}) center/cover no-repeat`,
+                      }} />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* CONTROLS */}
@@ -824,6 +847,8 @@ export default function PetStudioPro() {
 // ── Sub-components ──
 
 function PreviewIdle({ pet }: { pet: Pet | null }) {
+  const named = !!pet?.name && !["Cat", "Dog", "Parrot", "Turtle", "Hamster", "Rabbit", "Fox", "Pomeranian"].includes(pet.name);
+  const who = named ? pet!.name : "your pet";
   return (
     <div style={{
       position: "relative", width: "100%", height: "100%",
@@ -852,14 +877,14 @@ function PreviewIdle({ pet }: { pet: Pet | null }) {
           fontSize: 28, fontWeight: 800, color: "white",
           letterSpacing: "-0.02em", marginBottom: 8,
         }}>
-          {pet ? `${pet.name} is ready` : "Pick a pet"}
+          {pet ? (named ? `${who} is ready` : "Ready to create") : "Pick a pet"}
         </div>
         <div style={{
           fontSize: 15, color: "rgba(255,255,255,0.78)",
           maxWidth: 320, margin: "0 auto", lineHeight: 1.55,
         }}>
           Pick a style, write a prompt, hit <strong>Generate</strong>.
-          A 5-second video of {pet?.name || "your pet"} starring in your scene.
+          A 5-second video of {who} starring in your scene.
         </div>
       </div>
     </div>
