@@ -25,6 +25,8 @@ interface PetLite {
 interface Props {
   pet?: PetLite | null;
   petId?: number;
+  /** true = no real owned pet (logged-out / no pet); terminal runs in simulated mode. */
+  demo?: boolean;
   variant?: "full" | "compact";
 }
 
@@ -80,9 +82,16 @@ const BOOT: Line[] = [
   { role: "sys", text: "soul ▸ portable · consent ▸ enforced · on-chain ▸ holding (TGE)" },
 ];
 
-export default function PetClawConsole({ pet, petId, variant = "full" }: Props) {
+const DEMO_REPLIES = [
+  "hehe hi! i'm a *demo* of how your pet sounds — adopt one and i'll remember everything about you.",
+  "*wags* connect your wallet and give me a name — then this chat becomes really yours, across every channel.",
+  "ooh you typed something! once you adopt, i reply from real memory (the petclaw_chat tool). want to try?",
+];
+
+export default function PetClawConsole({ pet, petId, demo = false, variant = "full" }: Props) {
   const compact = variant === "compact";
-  const interactive = !compact && !!petId;
+  const interactive = !compact && (!!petId || demo);
+  const isSim = demo || !petId;
   const petName = pet?.name || "Your pet";
 
   const [lines, setLines] = useState<Line[]>([]);
@@ -90,6 +99,8 @@ export default function PetClawConsole({ pet, petId, variant = "full" }: Props) 
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const simIdx = useRef(0);
+  const simHinted = useRef(false);
 
   const pushLine = useCallback((l: Line) => setLines((prev) => [...prev, l]), []);
   const appendToLast = useCallback((ch: string) => {
@@ -123,7 +134,10 @@ export default function PetClawConsole({ pet, petId, variant = "full" }: Props) 
       const t = setTimeout(() => {
         pushLine(l);
         if (idx === BOOT.length - 1) {
-          const t2 = setTimeout(() => pushLine({ role: "sys", text: `petclaw_chat ready — say hi to ${petName} (or /help)` }), 280);
+          const ready = isSim
+            ? `petclaw_chat ready — demo of ${petName}; connect to chat live (or /help)`
+            : `petclaw_chat ready — say hi to ${petName} (or /help)`;
+          const t2 = setTimeout(() => pushLine({ role: "sys", text: ready }), 280);
           timers.current.push(t2);
         }
       }, 260 * (idx + 1));
@@ -160,13 +174,22 @@ export default function PetClawConsole({ pet, petId, variant = "full" }: Props) 
       return;
     }
     pushLine({ role: "you", text });
-    if (!petId) { typeReply(`*${petName} tilts head* — connect a pet to chat.`); return; }
+    if (isSim) {
+      if (!simHinted.current) {
+        simHinted.current = true;
+        pushLine({ role: "sys", text: "demo mode — connect your wallet & adopt a pet to chat live" });
+      }
+      const reply = DEMO_REPLIES[simIdx.current % DEMO_REPLIES.length];
+      simIdx.current += 1;
+      typeReply(reply);
+      return;
+    }
     setBusy(true);
     try {
-      const res = await api.pets.chat(petId, text);
+      const res = await api.pets.chat(petId as number, text);
       typeReply(res?.reply || `*${petName} blinks softly*`);
-    } catch {
-      pushLine({ role: "sys", text: "chat unavailable right now — try again in a moment." });
+    } catch (e: any) {
+      pushLine({ role: "sys", text: `chat error — ${e?.message || "try again in a moment"}` });
     } finally {
       setBusy(false);
     }
@@ -236,7 +259,7 @@ export default function PetClawConsole({ pet, petId, variant = "full" }: Props) 
           {interactive && (
             <div style={{ marginTop: 16, border: `1px solid ${LINE}`, borderRadius: 12, overflow: "hidden", background: "#0b0b11" }}>
               <div style={{ padding: "8px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: MUTED, fontSize: 11.5, letterSpacing: "0.08em" }}>
-                LIVE · petclaw_chat — talk to {petName} right here
+                LIVE · petclaw_chat — {isSim ? `demo of ${petName} (connect to chat live)` : `talk to ${petName} right here`}
               </div>
               <div ref={scrollRef} style={{ maxHeight: 240, overflowY: "auto", padding: "12px 14px", fontSize: 12.5, lineHeight: 1.7 }}>
                 {lines.map((l, i) => (

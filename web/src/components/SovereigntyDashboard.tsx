@@ -754,15 +754,24 @@ export default function SovereigntyDashboard() {
   });
 
   // ── Load pets (fallback to demo) ──
+  const [isDemo, setIsDemo] = useState(false);
   useEffect(() => {
     api.pets.list().then((d: any) => {
       const list = d.pets || d || [];
-      setPets(list);
-      if (list.length > 0) setSelectedPet(list[0]);
+      if (list.length > 0) {
+        setPets(list);
+        setSelectedPet(list[0]);
+        setIsDemo(false);
+      } else {
+        // Authed but no pet yet — still demo the console (no real pet to chat).
+        const demo = { id: 1, name: "Sparky", species: 7, personality_type: "playful", level: 15, element: "fire" };
+        setPets([demo]); setSelectedPet(demo); setIsDemo(true);
+      }
     }).catch(() => {
       const demo = { id: 1, name: "Sparky", species: 7, personality_type: "playful", level: 15, element: "fire" };
       setPets([demo]);
       setSelectedPet(demo);
+      setIsDemo(true);
     });
   }, []);
 
@@ -944,6 +953,7 @@ export default function SovereigntyDashboard() {
         <div style={{ marginBottom: 40 }}>
           <PetClawConsole
             petId={selectedPet?.id}
+            demo={isDemo}
             pet={selectedPet ? {
               name: selectedPet.name,
               level: selectedPet.level,
