@@ -108,27 +108,26 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", gap: 24, alignItems: "center" }} className="pitch-projection-grid">
-              {/* Projected share */}
+              {/* Current Season Rewards standing */}
               <div>
-                <div style={miniLabel}>YOU'D EARN NOW</div>
+                <div style={miniLabel}>SEASON REWARDS</div>
                 <div style={{ ...bigNumber, color: "#fbbf24" }}>
                   {myPet.projectedShare.toLocaleString()}
                   <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
                 </div>
                 <div style={mini}>
-                  if the pool closed at this second
+                  your current weekly standing
                 </div>
               </div>
 
-              {/* +1 USDT effect */}
+              {/* How to earn — free, no purchase */}
               <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24 }}>
-                <div style={miniLabel}>+1 USDT TRAINING</div>
+                <div style={miniLabel}>EARN THIS WEEK</div>
                 <div style={{ ...bigNumber, color: "#34d399", fontSize: 22 }}>
-                  {myPet.afterOneUpgrade.shareDelta > 0 ? `+${myPet.afterOneUpgrade.shareDelta.toLocaleString()}` : "+0"}
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
+                  Free
                 </div>
                 <div style={mini}>
-                  jumps {myPet.afterOneUpgrade.ranksGained} rank{myPet.afterOneUpgrade.ranksGained === 1 ? "" : "s"} → #{myPet.afterOneUpgrade.newRank}
+                  care +5 · create +10 · evolve +200
                 </div>
               </div>
 
@@ -151,13 +150,13 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
               }}>
                 <span style={{ fontSize: 18 }}>🎯</span>
                 <div style={{ flex: 1, fontSize: 13, color: "rgba(255,255,255,0.85)", fontFamily: "'Space Grotesk',sans-serif" }}>
-                  <strong style={{ color: "#fbbf24" }}>{myPet.rival.name}</strong> is just {myPet.rival.powerGap} power ahead. Train {Math.ceil(myPet.rival.powerGap / 5)} time{myPet.rival.powerGap > 5 ? "s" : ""} to overtake.
+                  <strong style={{ color: "#fbbf24" }}>{myPet.rival.name}</strong> is just {myPet.rival.powerGap} power ahead. Keep raising to overtake.
                 </div>
                 <button onClick={() => onNavigate?.("my pet")} style={{
                   padding: "6px 14px", borderRadius: 8, border: "none",
                   background: "#fbbf24", color: "#1a1a2e", fontWeight: 700, fontSize: 12, cursor: "pointer",
                   fontFamily: "'Space Grotesk',sans-serif",
-                }}>Train →</button>
+                }}>Raise →</button>
               </div>
             )}
           </div>
@@ -270,9 +269,9 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
           body="Feed, play, talk. 5 free / day. 7-day streak auto-mints a Memory NFT."
           earn="+1–3 pts per click" cta="Start raising"
           onClick={() => onNavigate?.("my pet")} accent="#16a34a" />
-        <PathCard step="02" emoji="💪" title="Train stats"
-          body="Power Training: +5 ATK / DEF / SPD per 1 USDT. Combined power decides rank."
-          earn="+0 pts (cost = climb)" cta="Train"
+        <PathCard step="02" emoji="🔥" title="Keep your streak"
+          body="Show up daily. A 7-day streak pays a bonus, 30 days pays more — and auto-mints a Memory NFT."
+          earn="+100 (7d) · +500 (30d)" cta="Check in"
           onClick={() => onNavigate?.("my pet")} accent="#dc2626" />
         <PathCard step="03" emoji="🎬" title="Create together"
           body="Generate AI images & videos starring your pet. Every creation stacks Season Rewards points."

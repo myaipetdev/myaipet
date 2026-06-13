@@ -960,7 +960,7 @@ export default function SovereigntyDashboard() {
               <span style={{ color: "#f59e0b" }}>Truly Yours.</span>
             </h1>
             <p style={{ fontSize: 16, color: "rgba(26,26,46,0.55)", lineHeight: 1.7, margin: "0 0 28px", maxWidth: 380 }}>
-              Every memory, every conversation, every bond — owned by you. Not us. Your pet's soul lives on BNB Chain, immutable and non-transferable.
+              Every memory, every conversation, every bond — owned by you. Not us. Export your pet&apos;s full soul anytime; its on-chain anchor and inheritance activate at TGE.
             </p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               {[

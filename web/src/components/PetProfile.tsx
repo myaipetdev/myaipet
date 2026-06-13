@@ -904,7 +904,6 @@ export default function PetProfile() {
   const [unlockingSlot, setUnlockingSlot] = useState(false);
   const [showRelease, setShowRelease] = useState(false);
   const [releasing, setReleasing] = useState(false);
-  const [battling, setBattling] = useState(false);
   const [paywall, setPaywall] = useState<any>(null);   // PaywallInfo | null
   const [editingDesc, setEditingDesc] = useState(false);
   const [descInput, setDescInput] = useState("");
@@ -967,50 +966,6 @@ export default function PetProfile() {
       showError(e.message);
     }
     setUnlockingSlot(false);
-  };
-
-  // Trigger a battle. On 402, opens PaywallModal which signs USDT + re-runs
-  // this with ?tx_hash=… so paywall.ts can match the receipt.
-  const handleBattle = async (txHash?: string) => {
-    if (!activePet || battling) return;
-    setBattling(true);
-    try {
-      const url = txHash
-        ? `/api/battle/create?tx_hash=${txHash}`
-        : "/api/battle/create";
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ petId: activePet.id }),
-      });
-
-      if (res.status === 402) {
-        const { paywall: pw } = await res.json();
-        setPaywall({
-          ...pw,
-          onPaid: async (newTx: string) => {
-            setPaywall(null);
-            await handleBattle(newTx);
-          },
-        });
-        return;
-      }
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        showError(err.error || "Battle failed");
-        return;
-      }
-
-      const { result } = await res.json();
-      // Send the user to the share-able replay page (the same screen everyone sees).
-      // The deterministic log is already persisted server-side.
-      window.location.href = `/battle/${result.battleId}`;
-    } catch (e: any) {
-      showError(e?.message || "Battle failed");
-    } finally {
-      setBattling(false);
-    }
   };
 
   const handleRelease = async () => {

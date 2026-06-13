@@ -4,7 +4,16 @@ const PETCLAW_PROTOCOL = "petclaw-v1";
 const PETCLAW_VERSION = "1.0.0";
 
 export async function GET(req: NextRequest) {
-  const baseUrl = req.nextUrl.origin;
+  // req.nextUrl.origin resolves to the internal listen host (http://0.0.0.0:3000)
+  // behind the standalone server / proxy, which breaks external auto-discovery.
+  // Prefer an explicit public origin, then the forwarded host, then origin.
+  const fwdHost = req.headers.get("x-forwarded-host") || req.headers.get("host");
+  const fwdProto = req.headers.get("x-forwarded-proto") || "https";
+  const baseUrl = (
+    process.env.APP_ORIGIN ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (fwdHost ? `${fwdProto}://${fwdHost}` : req.nextUrl.origin)
+  ).replace(/\/$/, "");
 
   const card = {
     protocol: PETCLAW_PROTOCOL,

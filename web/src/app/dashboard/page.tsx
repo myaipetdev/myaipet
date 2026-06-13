@@ -1,9 +1,9 @@
 /**
  * Power Leaderboard — public, server-rendered.
  *
- * Drives the Compete column of the BM grid. Top-100 receive weekly PET
- * airdrop (see /api/cron/distribute-pool). Owners come here to see where
- * they rank and what they need to spend to climb.
+ * Ranks pets by combined power. Top-100 earn weekly Season Rewards points
+ * (off-chain loyalty — no token, no USDT payout). Owners come here to see
+ * where they rank.
  *
  * Tone: PetClaw protocol — cream background, amber accents, monospace
  * for rank + power numbers. Matches /architecture, /skills.
@@ -19,7 +19,7 @@ export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "Power Leaderboard — MY AI PET",
-  description: "Top pets ranked by combined ATK+DEF+SPD. Train your pet to climb the ranks and win weekly USDT pool.",
+  description: "Top pets ranked by combined ATK+DEF+SPD. Raise your pet to climb the ranks and earn weekly Season Rewards points.",
 };
 
 interface LeaderEntry {
@@ -68,26 +68,20 @@ async function loadLeaderboard(): Promise<LeaderEntry[]> {
   }));
 }
 
-// Weekly Airdrop Points pool. Each $1 USDT of battle entries contributes
-// 1000 points to the prize pool — points are the reward currency (no token mint).
-const POINTS_PER_USD = 1000;
+// Weekly Season Rewards pool — a FIXED off-chain points allocation split among
+// the Top-100 by rank. Not proportional to anyone's USDT spend (avoids any
+// pay-to-share-the-pool framing) and not a token/USDT payout.
+const SEASON_POOL_POINTS = 100_000;
 
 async function loadWeeklyPool(): Promise<{ poolPoints: number; entries: number; closesAt: string }> {
-  const since = new Date();
-  since.setUTCDate(since.getUTCDate() - 7);
-  const rows = await prisma.paidAction.aggregate({
-    _sum: { amount_usd: true },
-    _count: { _all: true },
-    where: { action_key: "battle_entry", created_at: { gte: since } },
-  });
-  const total = rows._sum.amount_usd || 0;
+  const entries = await prisma.pet.count({ where: { is_active: true } });
   // Pool closes at next Sunday 00:00 UTC
   const closes = new Date();
   closes.setUTCDate(closes.getUTCDate() + ((7 - closes.getUTCDay()) % 7));
   closes.setUTCHours(0, 0, 0, 0);
   return {
-    poolPoints: Math.round(total * POINTS_PER_USD),
-    entries: rows._count._all,
+    poolPoints: SEASON_POOL_POINTS,
+    entries,
     closesAt: closes.toISOString(),
   };
 }
@@ -124,13 +118,13 @@ export default async function DashboardPage() {
             fontSize: 11, fontWeight: 700, letterSpacing: "0.16em",
             textTransform: "uppercase", marginBottom: 12,
             fontFamily: "'JetBrains Mono', monospace",
-          }}>POWER LEADERBOARD · WEEKLY POOL</span>
+          }}>POWER LEADERBOARD · SEASON REWARDS</span>
           <h1 style={{ fontSize: 40, fontWeight: 800, letterSpacing: "-0.03em", margin: "0 0 8px", lineHeight: 1.1 }}>
             Climb the ranks.
           </h1>
           <p style={{ fontSize: 16, color: "rgba(26,26,46,0.65)", lineHeight: 1.6, maxWidth: 580 }}>
-            Train ATK · DEF · SPD with USDT — combined power decides ranking.
-            Top-100 share the weekly USDT pool every Sunday.
+            Raise your pet — combined power decides ranking.
+            Top-100 earn Season Rewards points every Sunday.
           </p>
         </div>
 
@@ -144,7 +138,7 @@ export default async function DashboardPage() {
             <div style={{
               fontSize: 10, color: "rgba(255,255,255,0.5)", letterSpacing: "0.12em",
               fontFamily: "'JetBrains Mono', monospace", marginBottom: 4,
-            }}>WEEKLY AIRDROP POOL</div>
+            }}>WEEKLY SEASON REWARDS POOL</div>
             <div style={{
               fontSize: 32, fontWeight: 800, color: "#fbbf24",
               fontFamily: "'JetBrains Mono', monospace",

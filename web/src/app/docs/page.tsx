@@ -177,12 +177,21 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
   {
     id: "partners",
     title: "Strategic Partners",
-    content: `MY AI PET is backed by strategic partners who share our vision for the future of AI companionship and Web3 economics:
+    content: `MY AI PET is backed by strategic partners who share our vision for the future of AI companionship and Web3 economics.
 
-- **Animoca Brands** — Leading Web3 gaming and digital entertainment company
-- **Web3 Labs** — Infrastructure and development support for decentralized applications
-- **Arkstream** — Web3-focused venture capital
-- **ICC Ventures** — Strategic investment and ecosystem development`,
+**Lead investors**
+- **Amber** — Leading Asian digital-asset firm (incubation + lead)
+- **WAGMI Ventures** — Web3 gaming & consumer crypto fund
+
+**Strategic backers**
+- **Animoca Brands** — Web3 gaming & NFT leader
+- **Web3 Labs** — Blockchain infrastructure & tooling
+- **KuCoin Ventures** — Exchange-backed fund
+- **ViaBTC** — Mining pool & exchange group
+- **Arkstream Capital** — Asia-focused crypto fund
+- **ICC Ventures** — Crypto-focused venture fund
+- **WaterDrip** — BNB Chain-focused fund
+- **CryptoSen** — Ecosystem & community partner`,
   },
 ];
 

@@ -146,8 +146,8 @@ function CheckinCard({ isAuthenticated }: { isAuthenticated: boolean }) {
   );
 }
 
-// ── Season 1 Airdrop Banner ──
-function SeasonBanner({ airdropPoints }: { airdropPoints: number }) {
+// ── Season 1 Rewards Banner ──
+function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
   const SEASON_START = new Date("2026-03-01T00:00:00Z").getTime();
   const SEASON_END = new Date("2026-06-15T00:00:00Z").getTime();
   const SEASON_TOTAL = SEASON_END - SEASON_START;
@@ -243,8 +243,8 @@ function SeasonBanner({ airdropPoints }: { airdropPoints: number }) {
             fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.8)",
             whiteSpace: "nowrap",
           }}>
-            {airdropPoints > 0
-              ? <><span style={{ fontWeight: 700, color: "#fff" }}>{airdropPoints.toLocaleString()}</span> pts</>
+            {seasonPoints > 0
+              ? <><span style={{ fontWeight: 700, color: "#fff" }}>{seasonPoints.toLocaleString()}</span> pts</>
               : <>Your Points: <span style={{ fontWeight: 700, color: "#fff" }}>0</span></>
             }
           </div>
@@ -274,7 +274,8 @@ export default function App() {
   const [section, setSection] = useState(() => {
     if (typeof window === "undefined") return "home";
     const fromUrl = new URLSearchParams(window.location.search).get("section");
-    // Leaderboard folded into the Airdrop hub — normalize old links/tabs.
+    // Leaderboard folded into the Season Rewards hub — normalize old links/tabs.
+    // ("airdrop" stays the internal section/route key; the UI label is "Season Rewards".)
     if (fromUrl === "leaderboard") return "airdrop";
     return fromUrl || "home";
   });
@@ -291,12 +292,13 @@ export default function App() {
   const [activities, setActivities] = useState<any[]>([]);
   const [platformStats, setPlatformStats] = useState<any>(null);
   const [credits, setCredits] = useState(0);
-  const [airdropPoints, setAirdropPoints] = useState(0);
+  const [seasonPoints, setSeasonPoints] = useState(0);
 
   useEffect(() => {
     if (user) {
       setCredits(user.credits);
-      if (user.airdrop_points) setAirdropPoints(user.airdrop_points);
+      // `airdrop_points` is the persisted API/DB field; surfaced as Season Rewards points.
+      if (user.airdrop_points) setSeasonPoints(user.airdrop_points);
     }
   }, [user]);
 
@@ -382,7 +384,7 @@ export default function App() {
                 onExplore={() => setSection("community")}
                 txToday={platformStats?.tx_today || 0}
               />
-              <SeasonBanner airdropPoints={airdropPoints} />
+              <SeasonBanner seasonPoints={seasonPoints} />
               <CheckinCard isAuthenticated={isAuthenticated} />
               <div className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
                 <Stats stats={stats} />
@@ -402,7 +404,7 @@ export default function App() {
       {/* Season Rewards — the merged "my status + earn + compete + connect" hub.
           The old standalone Leaderboard tab folds in here under the tabs. */}
       {(section === "airdrop" || section === "leaderboard") && (
-        <SeasonRewardsHub banner={<SeasonBanner airdropPoints={airdropPoints} />} />
+        <SeasonRewardsHub banner={<SeasonBanner seasonPoints={seasonPoints} />} />
       )}
 
       {section === "my pet" && (

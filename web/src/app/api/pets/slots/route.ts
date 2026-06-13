@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
   if (user.credits < price) {
     return NextResponse.json(
-      { error: "Insufficient $PET", required: price, available: user.credits },
+      { error: "Insufficient credits", required: price, available: user.credits },
       { status: 400 }
     );
   }
