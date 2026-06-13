@@ -120,7 +120,7 @@ export default function Marketplace() {
     setPurchaseAnim(item.key);
     try {
       const res = await api.shop.purchase(item.key, selectedPet?.id);
-      setMessage({ type: "success", text: `Purchased ${item.name}! ${res.credits_remaining} $PET remaining.` });
+      setMessage({ type: "success", text: `Purchased ${item.name}! ${res.credits_remaining} credits remaining.` });
       setBalance(res.credits_remaining);
     } catch (err: any) {
       setMessage({ type: "error", text: err.message || "Purchase failed" });
@@ -216,7 +216,7 @@ export default function Marketplace() {
               animation: "coinPulse 3s ease infinite",
             }}>
               <span style={{ animation: purchaseAnim ? "coinFlip 0.6s ease" : "none", display: "inline-flex" }}><Icon name="coin" size={14} /></span>
-              {balance} $PET
+              {balance} credits
             </span>
           )}
         </div>
@@ -649,7 +649,7 @@ export default function Marketplace() {
                     : "none",
                 }}
               >
-                {purchasing === item.key ? "Purchasing..." : balance !== null && balance < item.price ? "Not enough $PET" : "Buy"}
+                {purchasing === item.key ? "Purchasing..." : balance !== null && balance < item.price ? "Not enough credits" : "Buy"}
               </button>
             </div>
           );

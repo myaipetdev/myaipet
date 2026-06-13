@@ -22,7 +22,7 @@ export default function ContractsPage() {
       padding: "80px 24px",
     }}>
       <div style={{ maxWidth: 880, margin: "0 auto" }}>
-        <a href="/landing/" style={{
+        <a href="/" style={{
           display: "inline-block", marginBottom: 24,
           fontSize: 13, color: "rgba(26,26,46,0.55)", textDecoration: "none",
         }}>← Back to landing</a>
@@ -31,9 +31,10 @@ export default function ContractsPage() {
           Smart Contracts
         </h1>
         <p style={{ fontSize: 15, color: "rgba(26,26,46,0.65)", marginBottom: 32, lineHeight: 1.6 }}>
-          All contracts deployed on <strong>BNB Smart Chain (chain id 56)</strong>. Verification on
-          BSCScan and third-party audits roll out as each contract goes live. On-chain features are
-          currently in <strong>holding period</strong> — see the disclosure below.
+          Two production contracts are live on <strong>BNB Smart Chain (chain id 56)</strong> and
+          BSCScan-verified; further contracts are prepared for TGE. An external audit is planned
+          pre-TGE — announcements published here once finalized. On-chain features are currently in
+          <strong>holding period</strong> — see the disclosure below.
         </p>
 
         <div style={{
@@ -44,7 +45,7 @@ export default function ContractsPage() {
         }}>
           <strong>Holding period notice (2026-Q2)</strong><br/>
           Server-side on-chain recording and NFT minting are temporarily paused while we
-          (a) finalize relayer wallet operations, (b) complete the second security audit,
+          (a) finalize relayer wallet operations, (b) complete the external security audit,
           and (c) deploy the remaining contracts above. The application remains fully usable;
           on-chain features will resume publicly as each milestone clears.
         </div>

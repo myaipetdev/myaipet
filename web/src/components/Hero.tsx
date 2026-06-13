@@ -485,7 +485,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           {[
             { icon: <Icon name="paw" size={28} />, title: "Raise", desc: "Feed, play, and train your AI pet. Watch them grow from Baby to Legendary." },
             { icon: <Icon name="sparkling" size={28} />, title: "Create", desc: "Generate stunning AI images and videos of your pet in any scene or style." },
-            { icon: "💎", title: "Earn", desc: "Climb the leaderboard, farm Airdrop Points, and unlock exclusive rewards." },
+            { icon: "💎", title: "Earn", desc: "Climb the leaderboard, earn Season Rewards points, and unlock exclusive rewards." },
             { icon: "🏆", title: "Collect", desc: "Redeem points for real merchandise: mugs, hoodies, figures & more." },
           ].map((card) => (
             <div key={card.title} className="eco-card">

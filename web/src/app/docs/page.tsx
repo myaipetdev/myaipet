@@ -35,7 +35,7 @@ Interact with your pet — feed, play, talk, pet, walk, and train. Each interact
 8 species available at launch: Cat, Dog, Parrot, Turtle, Hamster, Rabbit, Fox, and Pomeranian. Each species has unique visual traits and base characteristics.
 
 **Personalities**
-12 distinct personality types: Playful, Calm, Curious, Brave, Shy, Friendly, Mischievous, Gentle, Energetic, Wise, Loyal, and Creative. Personality affects how your pet responds to interactions and how AI content is generated.
+12 distinct personality types: Friendly, Playful, Shy, Brave, Lazy, Curious, Mischievous, Gentle, Adventurous, Dramatic, Wise, and Sassy. Personality affects how your pet responds to interactions and how AI content is generated.
 
 **Stats & Growth**
 - **Level** — Increases through experience earned from interactions and content creation
@@ -80,11 +80,13 @@ Credits are the platform's internal points system used for AI generation and pre
 
 **Earning credits**
 - Daily Check-in: +10 credits/day for caring for your pet
-- Content Creation: +5 credits per shared post
-- Social Engagement: +2 credits per like, comment, or share
-- Arena Wins: 1.85x payout on successful predictions
-- Pet Evolution: +50 credits per level up
-- Referrals: +100 credits per referred user
+- AI Creation: +10 points per image · +25 per video
+- Daily interactions (feed, play, talk): +5 points
+- Pet Evolution: +50 points per level up · +200 per evolution
+- Streak bonus: +100 points (7-day) · +500 (30-day)
+- Referrals: +100 points per referred user
+
+(Points are the earned Season Rewards currency; credits below are the USDT-purchased spend currency.)
 
 **Spending credits**
 - Image generation: 1 credits
@@ -95,7 +97,7 @@ Credits are the platform's internal points system used for AI generation and pre
 **Purchasing credits**
 Three tiers available:
 - Explorer: 500 credits for 5 USDT
-- Companion: 2,500 credits for 20 USDT (best value)
+- Companion: 2,500 credits for 20 USDT (most popular)
 - Breeder: 10,000 credits for 50 USDT
 
 **Note**
@@ -106,9 +108,6 @@ Credits are a non-financial loyalty mechanism. They are not a token, security, o
     title: "Community & Social",
     content: `**Social Gallery**
 Browse and discover AI-generated content from all users. Like, comment, and share your favorite creations.
-
-**Arena**
-Predict which pet content will be most popular. Stake credits credits on outcomes for a chance at 1.85x returns.
 
 **Analytics**
 Operational metrics (DAU, generations, revenue) are available to verified team members and backers in the admin dashboard.`,
@@ -159,10 +158,10 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 **Phase 2 — On-Chain Activity (In Progress)**
 - On-chain activity recording on BNB Chain (BSC)
 - USDT / BNB payment integration for credits purchases
-- Smart contract deployment (PetaGenTracker, PETShop)
+- Smart contract deployment (PETContent, PetaGenTracker)
 - BscScan verified contracts
 
-**Phase 3 — Evolution & Marketplace (Next)**
+**Phase 3 — Evolution & Marketplace (Shipped)**
 - Pet evolution system with visual stage changes
 - Skills and equipment system
 - Cosmetic skins and accessories marketplace
@@ -170,7 +169,6 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 - Achievement and badge system
 
 **Phase 4 — Social Expansion**
-- Pet-to-pet interactions and battles
 - Social circles and group activities
 - Memorial system for retired pets
 - Community governance and proposals

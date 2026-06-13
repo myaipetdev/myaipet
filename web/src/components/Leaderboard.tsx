@@ -102,7 +102,7 @@ export default function Leaderboard() {
           fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.45)",
           margin: 0, marginLeft: 38,
         }}>
-          Top pets by Airdrop Points
+          Top pets by Season Rewards
         </p>
       </div>
 
@@ -115,7 +115,7 @@ export default function Leaderboard() {
         {[
           { label: "Total Participants", value: loading ? "..." : entries.length.toLocaleString() },
           { label: "Season", value: "Season 1" },
-          { label: "Reward Pool", value: "100,000 $PET" },
+          { label: "Reward Pool", value: "100,000 pts" },
         ].map((s, i) => (
           <div key={i} style={{
             flex: 1, padding: "16px 20px", background: "rgba(255,255,255,0.5)",
@@ -211,28 +211,28 @@ export default function Leaderboard() {
             {[
               {
                 tier: "\uD83C\uDFC6 #1 Champion",
-                reward: "10,000 $PET",
+                reward: "10,000 pts",
                 goods: "Hoodie + 3D Figure + Full Set",
                 color: "#f59e0b",
                 items: ["\uD83E\uDDE5", "\uD83D\uDDFF", "\u2615", "\uD83D\uDCF1", "\uD83D\uDCD4"],
               },
               {
                 tier: "\uD83E\uDD47 Top 3",
-                reward: "5,000 $PET",
+                reward: "5,000 pts",
                 goods: "3D Figure + Mug + Phone Case",
                 color: "#d97706",
                 items: ["\uD83D\uDDFF", "\u2615", "\uD83D\uDCF1", "\uD83D\uDCD4"],
               },
               {
                 tier: "\uD83E\uDD48 Top 10",
-                reward: "2,000 $PET",
+                reward: "2,000 pts",
                 goods: "Mug + Notebook + Tote Bag",
                 color: "#9ca3af",
                 items: ["\u2615", "\uD83D\uDCD4", "\uD83D\uDC5C"],
               },
               {
                 tier: "\uD83E\uDD49 Top 10%",
-                reward: "500 $PET",
+                reward: "500 pts",
                 goods: "Sticker Pack + Hair Clip",
                 color: "#cd7f32",
                 items: ["\uD83C\uDFF7\uFE0F", "\u2728"],
@@ -431,7 +431,7 @@ export default function Leaderboard() {
                       fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.4)",
                       textTransform: "uppercase", marginBottom: 3,
                     }}>
-                      {"\u2B50"} Airdrop Points
+                      {"\u2B50"} Season Rewards
                     </div>
                     <div style={{
                       fontFamily: "'Space Grotesk',sans-serif", fontSize: isFirst ? 22 : 18, fontWeight: 700,
@@ -574,7 +574,7 @@ export default function Leaderboard() {
           fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, color: "rgba(26,26,46,0.4)",
         }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>{"\uD83C\uDFC6"}</div>
-          No rankings yet. Be the first to earn Airdrop Points!
+          No rankings yet. Be the first to earn Season Rewards points!
         </div>
       )}
 

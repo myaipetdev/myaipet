@@ -335,7 +335,7 @@ export default function PetGenerate() {
               onClick={() => { const el = document.querySelector(".pricing-root"); if (el) el.scrollIntoView({ behavior: "smooth" }); else window.location.hash = "pricing"; }}
               title="Click to top up"
             >
-              🪙 {balance !== null ? balance : "—"} $PET
+              🪙 {balance !== null ? balance : "—"} credits
             </span>
           </div>
         </div>
@@ -743,7 +743,7 @@ export default function PetGenerate() {
                   ? `Generating ${genType}...`
                   : isOriginal && genType === "image"
                   ? "📷 Post Original Photo (Free)"
-                  : `✨ Generate ${genType === "video" ? "Video" : "Image"} (${creditCost} $PET)`}
+                  : `✨ Generate ${genType === "video" ? "Video" : "Image"} (${creditCost} credits)`}
               </button>
             </div>
           </div>

@@ -4,8 +4,8 @@
  *   GET /api/dashboard/ticker?limit=20
  *     → [{ at, kind, text, accent }]
  *
- * Pulled from: paid_actions (upgrades, battle entries), battle_history (wins),
- * memory_nfts (care-streak/evolution NFT mints), weekly_battle_pools (closes).
+ * Pulled from: paid_actions (stat upgrades), memory_nfts (care-streak/evolution
+ * NFT mints), weekly_battle_pools (leaderboard pool closes).
  *
  * Public, no auth — drives the "people are paying / climbing" feeling.
  */
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 
   // Pull in parallel
   const since = new Date(Date.now() - 7 * 86_400_000);
-  const [upgrades, battles, nfts, poolCloses] = await Promise.all([
+  const [upgrades, nfts, poolCloses] = await Promise.all([
     prisma.paidAction.findMany({
       where: {
         action_key: { in: ["stat_upgrade_atk", "stat_upgrade_def", "stat_upgrade_spd"] },
@@ -44,11 +44,6 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { created_at: "desc" }, take: limit,
       select: { action_key: true, created_at: true, user_id: true },
-    }),
-    prisma.battleHistory.findMany({
-      where: { won: true, created_at: { gte: since } },
-      orderBy: { created_at: "desc" }, take: limit,
-      select: { player_pet_id: true, opponent_name: true, turns: true, created_at: true },
     }),
     prisma.memoryNft.findMany({
       where: { created_at: { gte: since } },
@@ -63,10 +58,7 @@ export async function GET(req: NextRequest) {
 
   // Resolve user wallets + pet names where needed (one round of joins)
   const userIds = [...new Set(upgrades.map(u => u.user_id))];
-  const petIds = [...new Set([
-    ...battles.map(b => b.player_pet_id),
-    ...nfts.map(n => n.pet_id),
-  ])];
+  const petIds = [...new Set(nfts.map(n => n.pet_id))];
   const [users, pets] = await Promise.all([
     userIds.length
       ? prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, wallet_address: true } })
@@ -87,15 +79,6 @@ export async function GET(req: NextRequest) {
       kind: "upgrade",
       accent: ACCENTS.upgrade,
       text: `${shortenWallet(userById.get(u.user_id))} trained ${statName} +5`,
-    });
-  }
-  for (const b of battles) {
-    const petName = petById.get(b.player_pet_id) || "Someone";
-    events.push({
-      at: b.created_at.toISOString(),
-      kind: "battle",
-      accent: ACCENTS.battle,
-      text: `${petName} defeated ${b.opponent_name} in ${b.turns} turns`,
     });
   }
   for (const n of nfts) {

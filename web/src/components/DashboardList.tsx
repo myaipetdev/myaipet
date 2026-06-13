@@ -127,20 +127,6 @@ export default function DashboardList({ rows }: { rows: LeaderRow[] }) {
             }}>
               {p.combinedPower}
             </div>
-            <button
-              onClick={() => setPicker({ opponent: p })}
-              disabled={myPets.length === 0}
-              style={{
-                padding: "6px 10px", borderRadius: 8, border: "none",
-                background: myPets.length === 0 ? "rgba(0,0,0,0.05)" : "linear-gradient(135deg,#fbbf24,#f59e0b)",
-                color: myPets.length === 0 ? "rgba(26,26,46,0.4)" : "white",
-                fontWeight: 700, fontSize: 11, cursor: myPets.length === 0 ? "default" : "pointer",
-                whiteSpace: "nowrap",
-              }}
-              title={myPets.length === 0 ? "Adopt a pet first" : "Challenge this pet"}
-            >
-              ⚔️
-            </button>
           </div>
         ))}
         {rows.length === 0 && (

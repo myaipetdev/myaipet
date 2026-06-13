@@ -11,7 +11,7 @@ const EARN_METHODS = [
   { icon: "🎬", label: "Create together", desc: "AI image & video starring your pet", reward: "+5 pts" },
   { icon: "💬", label: "Share moments", desc: "Like, comment, signal-boost", reward: "+2 pts" },
   { icon: "🤝", label: "Build the bond", desc: "Talk, feed, walk, train", reward: "+1–3 pts" },
-  { icon: "🧬", label: "Evolution", desc: "Each stage unlocks new behavior", reward: "+50 pts/level" },
+  { icon: "🧬", label: "Evolution", desc: "Each stage unlocks new behavior", reward: "+200 pts/evolution" },
   { icon: "📢", label: "Invite a friend", desc: "Bring someone into the ecosystem", reward: "+100 pts" },
 ];
 

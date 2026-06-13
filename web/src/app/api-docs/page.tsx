@@ -149,7 +149,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
       padding: "60px 24px",
     }}>
       <div style={{ maxWidth: 920, margin: "0 auto" }}>
-        <a href="/landing/" style={{
+        <a href="/" style={{
           display: "inline-block", marginBottom: 20,
           fontSize: 13, color: "rgba(26,26,46,0.55)", textDecoration: "none",
         }}>← Back to landing</a>

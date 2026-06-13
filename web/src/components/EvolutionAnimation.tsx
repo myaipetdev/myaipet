@@ -265,7 +265,7 @@ export default function EvolutionAnimation({
                         color: "#4ade80",
                         fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
                       }}>
-                        +{creditsEarned} $PET earned
+                        +{creditsEarned} credits earned
                       </div>
                     )}
                   </div>

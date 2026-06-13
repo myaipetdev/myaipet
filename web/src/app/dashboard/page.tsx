@@ -228,7 +228,7 @@ export default async function DashboardPage() {
         }}>
           <strong style={{ fontFamily: "'JetBrains Mono', monospace", color: "#b45309" }}>HOW TO CLIMB ↑</strong><br />
           Each Power Training (+5 stat) costs <strong>1 USDT</strong>. Top-100 pets share the weekly
-          Airdrop Points pool every Sunday — Position #1 takes the largest share. Train consistently:
+          Season Rewards points pool every Sunday — Position #1 takes the largest share. Train consistently:
           a 7-day care streak auto-mints a memory NFT.
         </div>
       </div>

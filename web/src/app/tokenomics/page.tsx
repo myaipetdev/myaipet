@@ -15,7 +15,7 @@ export default function TokenomicsPage() {
       padding: "80px 24px",
     }}>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
-        <a href="/landing/" style={{
+        <a href="/" style={{
           display: "inline-block", marginBottom: 24,
           fontSize: 13, color: "rgba(26,26,46,0.55)", textDecoration: "none",
         }}>← Back to landing</a>
@@ -35,8 +35,8 @@ export default function TokenomicsPage() {
         }}>
           <strong style={{ display: "block", marginBottom: 6 }}>What runs today</strong>
           MY AI PET uses a non-financial Points system as the reward currency. Points are
-          earned through gameplay (interactions, evolutions, battle wins, weekly leaderboard
-          payouts) and spent on in-game items, slot unlocks, and premium actions.
+          earned through gameplay (interactions, AI creations, evolutions, daily streaks, weekly
+          leaderboard standing) and spent on in-game items, slot unlocks, and premium actions.
           Points are <strong>not</strong> a token, security, equity, or transferable claim.
         </div>
 
@@ -46,8 +46,8 @@ export default function TokenomicsPage() {
           border: "1px solid rgba(0,0,0,0.06)", marginBottom: 18,
           fontSize: 14, lineHeight: 1.8, color: "rgba(26,26,46,0.8)",
         }}>
-          <strong>Earn:</strong> daily care · combos · level-ups · battle victories ·
-          weekly Top-100 leaderboard airdrop · 7-day care streak NFT mint.<br /><br />
+          <strong>Earn:</strong> daily care · AI creations · level-ups · evolutions ·
+          weekly Top-100 Season Rewards points · 7-day care streak NFT mint.<br /><br />
           <strong>Spend:</strong> shop items · pet slot unlocks · equipment · premium actions
           (overflow Feed/Play after the daily free cap).
         </div>
@@ -58,7 +58,7 @@ export default function TokenomicsPage() {
           border: "1px solid rgba(0,0,0,0.06)", marginBottom: 18,
           fontSize: 14, lineHeight: 1.8, color: "rgba(26,26,46,0.8)",
         }}>
-          The product accepts USDT for power upgrades, battle entries, extra feeds/plays,
+          The product accepts USDT for credit purchases, power upgrades, extra feeds/plays,
           skill installs, and premium items. All revenue flows to the project treasury and
           funds AI inference, engineering, and ops. No token is created from this revenue.
           A future token + redemption path may be introduced — see <a href="/architecture"

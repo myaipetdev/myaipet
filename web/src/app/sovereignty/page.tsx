@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata = {
-  title: "Sovereignty — MY AI PET",
+  title: "PetClaw — MY AI PET",
   description: "Own your pet's data. Memory ledger, SOUL export, connected platforms — all yours.",
 };
 

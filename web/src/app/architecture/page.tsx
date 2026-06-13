@@ -15,7 +15,7 @@ export default function ArchitecturePage() {
       padding: "80px 24px",
     }}>
       <div style={{ maxWidth: 880, margin: "0 auto" }}>
-        <a href="/landing/" style={{
+        <a href="/" style={{
           display: "inline-block", marginBottom: 24,
           fontSize: 13, color: "rgba(26,26,46,0.55)", textDecoration: "none",
         }}>← Back to landing</a>

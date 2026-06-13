@@ -30,7 +30,7 @@ export default function SkillsPage() {
       padding: "60px 24px 100px",
     }}>
       <div style={{ maxWidth: 980, margin: "0 auto" }}>
-        <a href="/landing/" style={{
+        <a href="/" style={{
           display: "inline-block", marginBottom: 24, fontSize: 13,
           color: "rgba(26,26,46,0.65)", textDecoration: "none",
         }}>← Back to landing</a>

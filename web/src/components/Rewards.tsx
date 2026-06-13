@@ -469,7 +469,7 @@ export default function Rewards() {
         setStreakData(data);
         if (data.awarded) {
           setUserPoints(prev => prev + data.awarded);
-          setMessage({ type: "success", text: `Day ${data.streak} check-in! +${data.awarded} airdrop points` });
+          setMessage({ type: "success", text: `Day ${data.streak} check-in! +${data.awarded} Season Rewards points` });
         }
       } else {
         setMessage({ type: "error", text: data.error || "Check-in failed" });
@@ -887,7 +887,7 @@ export default function Rewards() {
                 {userRank ? `Rank #${userRank} — Not in top tier yet` : "Unranked"}
               </div>
               <div style={{ fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.5)", marginTop: 2 }}>
-                Rewards are exclusive to top-ranked players. Keep earning Airdrop Points!
+                Rewards are exclusive to top-ranked players. Keep earning Season Rewards points!
               </div>
             </>
           )}

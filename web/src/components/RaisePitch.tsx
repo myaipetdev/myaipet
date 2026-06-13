@@ -78,9 +78,9 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
       {/* Headline */}
       <div style={{ textAlign: "center", marginBottom: 30 }}>
         <span style={pill}>RAISE TO EARN</span>
-        <h2 style={headline}>Your pet earns the airdrop.</h2>
+        <h2 style={headline}>Your pet earns Season Rewards.</h2>
         <p style={sub}>
-          Every interaction stacks Airdrop Points. Train stats to climb the
+          Every interaction stacks loyalty points. Raise &amp; create to climb the
           weekly leaderboard. Top-100 split the pool every Sunday.
         </p>
       </div>
@@ -165,12 +165,12 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
           // ── ANON: pool + top-3 sneak peek ──
           <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", gap: 24, alignItems: "center" }} className="pitch-projection-grid">
             <div>
-              <div style={miniLabel}>WEEKLY AIRDROP POOL</div>
+              <div style={miniLabel}>WEEKLY REWARD POOL</div>
               <div style={{ ...bigNumber, color: "#fbbf24" }}>
                 {(data?.pool.points ?? 100_000).toLocaleString()}
                 <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
               </div>
-              <div style={mini}>{data?.pool.entries ?? 0} entries · grows with every battle</div>
+              <div style={mini}>{data?.pool.entries ?? 0} entries · grows as players raise &amp; create</div>
             </div>
             <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24 }}>
               <div style={miniLabel}>CLOSES IN</div>
@@ -202,7 +202,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
           <div style={{ ...miniLabel, color: "rgba(26,26,46,0.5)", marginBottom: 8 }}>LIVE · LAST 7 DAYS</div>
           {ticker.length === 0 ? (
             <div style={{ fontSize: 13, color: "rgba(26,26,46,0.45)", fontStyle: "italic", padding: 8 }}>
-              No activity yet — be the first to train, battle, or mint a streak.
+              No activity yet — be the first to train, create, or mint a streak.
             </div>
           ) : (
             <div style={{ display: "grid", gap: 6 }}>
@@ -274,10 +274,10 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
           body="Power Training: +5 ATK / DEF / SPD per 1 USDT. Combined power decides rank."
           earn="+0 pts (cost = climb)" cta="Train"
           onClick={() => onNavigate?.("my pet")} accent="#dc2626" />
-        <PathCard step="03" emoji="⚔️" title="Battle wins"
-          body="Deterministic, seeded combat. 1 free battle / day. Winner takes XP + points."
-          earn="+100 pts per win" cta="Enter battle"
-          onClick={() => onNavigate?.("my pet")} accent="#f59e0b" />
+        <PathCard step="03" emoji="🎬" title="Create together"
+          body="Generate AI images & videos starring your pet. Every creation stacks Season Rewards points."
+          earn="+10 image · +25 video" cta="Create"
+          onClick={() => onNavigate?.("create")} accent="#f59e0b" />
         <PathCard step="04" emoji="🏆" title="Climb leaderboard"
           body="Top-100 by combined power share the pool every Sunday. #1 takes the largest slice."
           earn="Top share = #1 pool" cta="See ranks"
@@ -288,7 +288,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
         marginTop: 26, fontSize: 12, color: "rgba(26,26,46,0.5)",
         textAlign: "center", lineHeight: 1.65, fontFamily: "'JetBrains Mono', monospace",
       }}>
-        Points are a non-financial loyalty currency. Pool sized as 1,000 pts per 1 USDT of battle entries / week.
+        Points are a non-financial loyalty currency. Pool sized relative to weekly USDT credit spend.
       </div>
 
       <style>{`

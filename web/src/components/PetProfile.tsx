@@ -1424,7 +1424,7 @@ export default function PetProfile() {
             borderRadius: 10, padding: "10px 18px", cursor: unlockingSlot ? "wait" : "pointer",
             fontFamily: "mono", fontSize: 11, color: "#b45309", transition: "all 0.2s",
           }}>
-            🔓 Unlock Slot ({slotPrices[petSlots] || 500} $PET)
+            🔓 Unlock Slot ({slotPrices[petSlots] || 500} credits)
           </button>
         ) : null}
         <span style={{ fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.3)" }}>
@@ -1438,7 +1438,7 @@ export default function PetProfile() {
             color: "#b45309", fontWeight: 600,
             display: "flex", alignItems: "center", gap: 4, cursor: "pointer",
           }} onClick={() => { const el = document.querySelector(".pricing-root"); if (el) el.scrollIntoView({ behavior: "smooth" }); }}>
-            <span style={{ fontSize: 13 }}>🪙</span> {balance.toLocaleString()} $PET
+            <span style={{ fontSize: 13 }}>🪙</span> {balance.toLocaleString()} credits
           </div>
         </>)}
       </div>

@@ -772,8 +772,8 @@ export default function PetStudioPro() {
             <RoadmapItem
               emoji="🪙"
               eta="Q4 2026"
-              title="Token-Gated Premium"
-              body="Hold $PET or a PETContent NFT → free access to premium engines."
+              title="NFT-Gated Premium"
+              body="Own a PETContent NFT → free access to premium engines. Exploring."
             />
             <RoadmapItem
               emoji="🛍"

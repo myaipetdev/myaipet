@@ -534,10 +534,10 @@ function ChromeExtensionSection() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
             {[
               { icon: "🐾", title: "Always Alive", desc: "Your pet runs in the background and sends push notifications." },
-              { icon: "🎯", title: "Airdrop Points", desc: "Earn $PET points for browsing, chats, streaks, and evolution." },
+              { icon: "🎯", title: "Season Rewards", desc: "Earn loyalty points for browsing, chats, streaks, and evolution." },
               { icon: "🎮", title: "Mini Games", desc: "Tap-to-feed, click-the-bug, and memory games built into the popup." },
               { icon: "🧠", title: "Context Aware", desc: "Pet reads the current page and reacts to what you're looking at." },
-              { icon: "⚡", title: "Evolution", desc: "6 stages from Egg → Legend. Each stage unlocks new behaviors." },
+              { icon: "⚡", title: "Evolution", desc: "6 stages from Baby → Legendary. Each stage unlocks new behaviors." },
               { icon: "🔔", title: "Mood System", desc: "Pet gets hungry, tired, or excited based on your activity." },
             ].map(({ icon, title, desc }) => (
               <div key={title} style={{ padding: 12, borderRadius: 10, background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.05)" }}>
@@ -638,7 +638,7 @@ function ChromeExtensionSection() {
               </div>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: 18, fontWeight: 800, color: "#fbbf24" }}>2,841</div>
-                <div style={{ fontSize: 9, color: "#888", fontFamily: "monospace" }}>$PET pts</div>
+                <div style={{ fontSize: 9, color: "#888", fontFamily: "monospace" }}>Season pts</div>
               </div>
             </div>
 
@@ -1104,14 +1104,20 @@ export default function SovereigntyDashboard() {
               )}
             </div>
           ) : (
-            /* Soul loading */
+            /* No on-chain soul yet — explain the holding-period state honestly
+               instead of a fake "initializing" spinner that never resolves. */
             <div className="sov-card" style={{
-              padding: "32px 24px", borderRadius: 16, marginBottom: 28,
-              background: "rgba(245,158,11,0.04)", border: "1.5px dashed rgba(245,158,11,0.25)",
-              textAlign: "center",
+              padding: "24px 24px", borderRadius: 16, marginBottom: 28,
+              background: "rgba(245,158,11,0.05)", border: "1.5px dashed rgba(245,158,11,0.3)",
             }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(26,26,46,0.4)", fontFamily: "monospace" }}>
-                Soul initializing...
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#1a1a2e", marginBottom: 8 }}>
+                🪶 Soul not yet anchored on-chain
+              </div>
+              <div style={{ fontSize: 13, color: "rgba(26,26,46,0.65)", lineHeight: 1.7 }}>
+                Your pet&apos;s Soul — its 5-layer memory, persona, and identity — already lives in your
+                account and is fully yours today. The on-chain Soul NFT (which timestamps it to BSC and
+                unlocks inheritance) mints once the on-chain holding period ends. You can export your
+                complete memory ledger any time with <strong>Export SOUL Data</strong> below.
               </div>
             </div>
           )}
@@ -1813,7 +1819,10 @@ export default function SovereigntyDashboard() {
               fontSize: 15, color: "rgba(26,26,46,0.55)", marginBottom: 20,
               fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1.65,
             }}>
-              Your pet, your data, your rules. Export, import, or delete all data — with cryptographic proof.
+              Your pet, your data, your rules. <strong>Export SOUL Data</strong> downloads your pet&apos;s
+              complete memory ledger as a signed JSON bundle (SHA-256 verified) you can re-import on any
+              PetClaw-compatible server — no lock-in. <strong>Delete All Data</strong> permanently erases
+              everything; this cannot be undone.
             </p>
 
             {/* Actions */}
@@ -1917,15 +1926,18 @@ export default function SovereigntyDashboard() {
 
             {/* Consent Management */}
             <div style={{ borderTop: "1px solid rgba(0,0,0,0.05)", paddingTop: 16 }}>
-              <div style={{ fontSize: 11, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(26,26,46,0.4)", marginBottom: 14, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              <div style={{ fontSize: 11, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(26,26,46,0.4)", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                 Data Consent
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginBottom: 14, lineHeight: 1.6, fontFamily: "'Space Grotesk',sans-serif" }}>
+                You decide exactly how your pet&apos;s data is used. Every toggle is off by default unless you turn it on, and changes save instantly.
               </div>
               <div style={{ display: "grid", gap: 10 }}>
                 {[
-                  { key: "allowPublicProfile", label: "Public Profile", desc: "Others can view your pet's profile" },
-                  { key: "allowDataSharing", label: "Data Sharing", desc: "Share pet data with third-party services" },
-                  { key: "allowAITraining", label: "AI Training", desc: "Allow pet data for AI model training" },
-                  { key: "allowInteraction", label: "Pet Interactions", desc: "Other pets can interact with yours" },
+                  { key: "allowPublicProfile", label: "Public Profile", desc: "On: your pet's profile, creations & stats show in the public gallery. Off: visible only to you." },
+                  { key: "allowDataSharing", label: "Data Sharing", desc: "On: approved third-party PetClaw apps (SDK / MCP clients) may read your pet's data. Off: no external app access." },
+                  { key: "allowAITraining", label: "AI Training", desc: "On: your pet's anonymized interactions help improve our AI models. Off: never used for training." },
+                  { key: "allowInteraction", label: "Pet Interactions", desc: "On: other users' pets can interact with yours (social feed, buddy system). Off: solo mode." },
                 ].map(({ key, label, desc }) => (
                   <div key={key} style={{
                     display: "flex", justifyContent: "space-between", alignItems: "center",

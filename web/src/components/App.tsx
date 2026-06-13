@@ -23,7 +23,6 @@ import PetOfTheWeek from "@/components/PetOfTheWeek";
 const PetProfile = lazy(() => import("@/components/PetProfile"));
 const PetGenerate = lazy(() => import("@/components/PetGenerate"));
 const SocialGallery = lazy(() => import("@/components/SocialGallery"));
-const Adventure = lazy(() => import("@/components/Adventure"));
 const Leaderboard = lazy(() => import("@/components/Leaderboard"));
 const AgentDashboard = lazy(() => import("@/components/AgentDashboard"));
 const SovereigntyDashboard = lazy(() => import("@/components/SovereigntyDashboard"));
@@ -94,7 +93,7 @@ function CheckinCard({ isAuthenticated }: { isAuthenticated: boolean }) {
               Daily Check-in
             </div>
             <div style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(26,26,46,0.4)" }}>
-              {checkedIn ? `Day ${streak} streak active 🔥` : "Check in to earn airdrop points"}
+              {checkedIn ? `Day ${streak} streak active 🔥` : "Check in to earn Season Rewards points"}
             </div>
           </div>
         </div>
@@ -436,13 +435,8 @@ export default function App() {
         </div>
       )}
 
-      {section === "adventure" && (
-        <WalletGate section="adventure">
-          <Suspense fallback={<Loader />}>
-            <Adventure onNavigate={setSection} />
-          </Suspense>
-        </WalletGate>
-      )}
+      {/* Battle/Adventure retired from the live UI — section de-linked.
+          Components (Adventure/Arena/PveMode) kept in the repo for a future relaunch. */}
 
       {section === "agent" && (
         <WalletGate section="agent">
