@@ -265,8 +265,12 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
     setLoading(true);
     try {
       const res = await fetch(`/api/petclaw/memory?petId=${petId}`, { headers: getAuthHeaders() });
-      setData(await res.json());
-    } catch {}
+      const json = await res.json().catch(() => null);
+      // On any error response (auth/404/500) the body has no `stats` — don't
+      // store it raw or the render crashes reading data.stats.*; fall back to
+      // an empty shape so the card renders an empty state instead.
+      setData(res.ok && json ? json : {});
+    } catch { setData({}); }
     setLoading(false);
   }, [petId]);
 
@@ -366,7 +370,7 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
       </div>
       <p style={{ fontSize: 14, color: "rgba(26,26,46,0.62)", lineHeight: 1.6, margin: "0 0 18px" }}>
         Everything your pet has learned about you — inspectable, editable, deletable.
-        {data.stats.lastConsolidatedAt && (
+        {data.stats?.lastConsolidatedAt && (
           <span style={{ marginLeft: 8, color: "rgba(26,26,46,0.45)", fontSize: 12 }}>
             · last consolidated {new Date(data.stats.lastConsolidatedAt).toLocaleString()}
           </span>
@@ -376,7 +380,7 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 10, marginBottom: 22 }}>
         <Stat label="Memories" value={memories.length} />
         <Stat label="About Owner" value={userProfile.length} />
-        <Stat label="Learned Skills" value={data.stats.learnedSkillCount} />
+        <Stat label="Learned Skills" value={data.stats?.learnedSkillCount ?? 0} />
         <Stat label="Session Log" value={sessions.length} />
       </div>
 
