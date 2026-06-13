@@ -27,18 +27,19 @@ export default function PremiumTeaser() {
   return (
     <div className="mp-enter mp-enter-5" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
-        background: "linear-gradient(135deg,#0f172a 0%,#1e293b 100%)",
-        color: "white", borderRadius: 18, padding: "24px 26px",
-        border: "1px solid rgba(255,255,255,0.06)",
+        background: "white",
+        color: "#1a1a2e", borderRadius: 18, padding: "24px 26px",
+        border: "1px solid rgba(0,0,0,0.06)",
+        boxShadow: "0 2px 14px rgba(15,23,42,0.04)",
       }}>
         <div style={{
           fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-          letterSpacing: "0.18em", color: "#fbbf24", marginBottom: 8,
+          letterSpacing: "0.18em", color: "#b45309", marginBottom: 8, fontWeight: 700,
         }}>UNLIMITED · COMING SOON</div>
         <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 4 }}>
           Pet Companion Premium
         </div>
-        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 18, maxWidth: 540 }}>
+        <div style={{ fontSize: 13, color: "rgba(26,26,46,0.6)", marginBottom: 18, maxWidth: 540 }}>
           Free covers daily missions and 1 shield/month. Pro & Studio remove the limits —
           unlimited shields, free repairs, priority Studio queue, monthly credit drops.
         </div>
@@ -84,37 +85,38 @@ function Tier({
   return (
     <div className="mp-lift" style={{
       padding: 18, borderRadius: 14,
-      background: highlight ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.04)",
-      border: highlight ? "1px solid rgba(245,158,11,0.40)" : "1px solid rgba(255,255,255,0.06)",
+      background: highlight ? "rgba(245,158,11,0.08)" : "rgba(0,0,0,0.025)",
+      border: highlight ? "1px solid rgba(245,158,11,0.35)" : "1px solid rgba(0,0,0,0.06)",
       boxShadow: highlight ? "0 6px 24px rgba(245,158,11,0.10)" : "none",
       cursor: disabled ? "default" : "pointer",
     }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 16, fontWeight: 800 }}>{name}</span>
+        <span style={{ fontSize: 16, fontWeight: 800, color: "#1a1a2e" }}>{name}</span>
         {current && (
           <span style={{
             padding: "2px 7px", borderRadius: 999,
-            background: "rgba(34,197,94,0.20)", color: "#86efac",
+            background: "rgba(22,163,74,0.12)", color: "#16a34a",
             fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em",
           }}>CURRENT</span>
         )}
       </div>
       <div style={{
-        fontSize: 24, fontWeight: 800, marginBottom: 12,
+        fontSize: 24, fontWeight: 800, marginBottom: 12, color: "#1a1a2e",
         fontFamily: "'JetBrains Mono', monospace",
       }}>{price}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
         {features.map((f, i) => (
-          <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.78)" }}>
+          <div key={i} style={{ fontSize: 12, color: "rgba(26,26,46,0.7)" }}>
             ✓ {f}
           </div>
         ))}
       </div>
       <button disabled={disabled} style={{
-        width: "100%", padding: "10px", borderRadius: 10, border: "none",
-        background: highlight ? "linear-gradient(135deg,#fbbf24,#f59e0b)" : "rgba(255,255,255,0.10)",
-        color: "white", fontWeight: 800, fontSize: 12,
-        cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.7 : 1,
+        width: "100%", padding: "10px", borderRadius: 10,
+        border: highlight ? "none" : "1px solid rgba(0,0,0,0.08)",
+        background: highlight ? "linear-gradient(135deg,#fbbf24,#f59e0b)" : "white",
+        color: highlight ? "white" : "rgba(26,26,46,0.6)", fontWeight: 800, fontSize: 12,
+        cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.75 : 1,
         fontFamily: "'Space Grotesk', sans-serif",
       }}>{cta}</button>
     </div>

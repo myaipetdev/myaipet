@@ -125,22 +125,29 @@ export default function HourlyDropBanner() {
           marginTop: 8, padding: "12px 16px",
           background: "white", borderRadius: 14,
           border: "1px solid rgba(0,0,0,0.06)",
-          display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+          display: "flex", flexDirection: "column", gap: 10,
         }}>
+          {/* Header line — title + the "why check back" nudge, on their own
+              row so neither steals width from the chips. */}
           <div style={{
-            fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: "0.12em", color: "#7e22ce", fontWeight: 800,
-            whiteSpace: "nowrap",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            gap: 12, flexWrap: "wrap",
           }}>
-            ⚡ TODAY'S DROPS
+            <div style={{
+              fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
+              letterSpacing: "0.12em", color: "#7e22ce", fontWeight: 800,
+              whiteSpace: "nowrap",
+            }}>
+              ⚡ TODAY'S DROPS
+            </div>
+            <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", fontWeight: 600 }}>
+              New drop every hour — check back to catch more 2-3× windows.
+            </div>
           </div>
-          <div style={{
-            display: "flex", gap: 8, overflowX: "auto", flex: 1, minWidth: 0,
-            paddingBottom: 2,
-          }}>
+          {/* Chips wrap so every drop stays fully visible (no edge clipping). */}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {drop.upcoming.slice(0, 6).map((u, i) => (
               <div key={i} style={{
-                flexShrink: 0,
                 display: "flex", alignItems: "center", gap: 7,
                 padding: "6px 11px", borderRadius: 999,
                 background: u.is_live ? "rgba(168,85,247,0.12)" : "rgba(0,0,0,0.03)",
@@ -158,12 +165,6 @@ export default function HourlyDropBanner() {
                 </span>
               </div>
             ))}
-          </div>
-          <div style={{
-            fontSize: 12, color: "rgba(26,26,46,0.6)", fontWeight: 600,
-            whiteSpace: "nowrap",
-          }}>
-            New drop every hour — check back to catch more 2-3× windows.
           </div>
         </div>
       )}
