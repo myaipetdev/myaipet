@@ -51,12 +51,12 @@ interface Generation {
 const PET_EMOJIS = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
 
 const STYLES = [
-  { id: "cinematic",     emoji: "🎬", label: "Cinematic",   hint: "Hollywood" },
-  { id: "anime",         emoji: "✨", label: "Anime",       hint: "Japan" },
-  { id: "photorealistic", emoji: "📷", label: "Photoreal",  hint: "Real" },
-  { id: "watercolor",    emoji: "🎨", label: "Watercolor",  hint: "Soft" },
-  { id: "pixar",         emoji: "🧸", label: "3D Pixar",    hint: "Toon" },
-  { id: "pixel",         emoji: "👾", label: "Pixel",       hint: "Retro" },
+  { id: "cinematic",      emoji: "🎬", label: "Cinematic",  hint: "Hollywood", swatch: "linear-gradient(135deg,#0f172a 0%,#334155 55%,#b45309 100%)" },
+  { id: "anime",          emoji: "✨", label: "Anime",      hint: "Japan",     swatch: "linear-gradient(135deg,#f472b6 0%,#a855f7 60%,#6366f1 100%)" },
+  { id: "photorealistic", emoji: "📷", label: "Photoreal",  hint: "Real",      swatch: "linear-gradient(135deg,#475569 0%,#94a3b8 60%,#cbd5e1 100%)" },
+  { id: "watercolor",     emoji: "🎨", label: "Watercolor", hint: "Soft",      swatch: "linear-gradient(135deg,#fde68a 0%,#fda4af 50%,#a5b4fc 100%)" },
+  { id: "pixar",          emoji: "🧸", label: "3D Pixar",   hint: "Toon",      swatch: "linear-gradient(135deg,#38bdf8 0%,#818cf8 50%,#fbbf24 100%)" },
+  { id: "pixel",          emoji: "👾", label: "Pixel",      hint: "Retro",     swatch: "linear-gradient(135deg,#22c55e 0%,#0ea5e9 50%,#7c3aed 100%)" },
 ];
 
 const PROMPT_IDEAS = [
@@ -418,23 +418,29 @@ export default function PetStudioPro() {
                       onClick={() => setStyleId(s.id)}
                       className="mp-lift"
                       style={{
-                        ...styleCard,
-                        padding: "14px 6px",
-                        background: sel
-                          ? "linear-gradient(135deg, rgba(245,158,11,0.14), rgba(245,158,11,0.06))"
-                          : "white",
+                        padding: 0, borderRadius: 12, overflow: "hidden", cursor: "pointer",
+                        background: "white",
                         border: sel ? "2px solid #f59e0b" : "1px solid rgba(0,0,0,0.08)",
                         boxShadow: sel
-                          ? "0 6px 18px rgba(245,158,11,0.22), inset 0 1px 0 rgba(255,255,255,0.5)"
+                          ? "0 6px 18px rgba(245,158,11,0.22)"
                           : "0 1px 2px rgba(0,0,0,0.02)",
+                        transition: "all 200ms cubic-bezier(0.2,0.8,0.2,1)",
                       }}>
+                      {/* Swatch preview — the gradient hints at the look so the
+                          styles read visually, not just as labels. */}
                       <div style={{
-                        fontSize: 26, lineHeight: 1, marginBottom: 6,
-                        transition: "transform 220ms cubic-bezier(0.2,0.8,0.2,1)",
-                        transform: sel ? "scale(1.08)" : "scale(1)",
-                      }}>{s.emoji}</div>
+                        height: 46, background: s.swatch,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <span style={{
+                          fontSize: 22, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.35))",
+                          transform: sel ? "scale(1.14)" : "scale(1)",
+                          transition: "transform 220ms cubic-bezier(0.2,0.8,0.2,1)",
+                        }}>{s.emoji}</span>
+                      </div>
                       <div style={{
-                        fontSize: 13, fontWeight: 800, lineHeight: 1.2,
+                        padding: "7px 4px", textAlign: "center",
+                        fontSize: 12, fontWeight: 800, lineHeight: 1.2,
                         color: sel ? "#b45309" : "#1a1a2e",
                       }}>{s.label}</div>
                     </button>
@@ -680,18 +686,20 @@ export default function PetStudioPro() {
 
         {/* ── Roadmap: what's next for Studio ── */}
         <div style={{
-          marginTop: 12, background: "linear-gradient(135deg,#0f172a,#1e293b)",
-          color: "white", borderRadius: 18, padding: "22px 24px",
-          border: "1px solid rgba(255,255,255,0.06)",
+          marginTop: 12,
+          background: "linear-gradient(135deg, rgba(245,158,11,0.05), rgba(139,92,246,0.04) 60%, white)",
+          color: "#1a1a2e", borderRadius: 18, padding: "22px 24px",
+          border: "1px solid rgba(0,0,0,0.06)",
+          boxShadow: "0 2px 14px rgba(15,23,42,0.04)",
         }}>
           <div style={{
             fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: "0.18em", color: "#fbbf24", marginBottom: 10,
+            letterSpacing: "0.18em", color: "#b45309", marginBottom: 10, fontWeight: 700,
           }}>COMING TO STUDIO</div>
           <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 6 }}>
             Beyond prompts — features only we can build
           </div>
-          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", marginBottom: 18, maxWidth: 560 }}>
+          <div style={{ fontSize: 14, color: "rgba(26,26,46,0.6)", marginBottom: 18, maxWidth: 560 }}>
             Stuff other AI tools can't do because they don't have your pet's
             memory ledger, persona, or the rest of the PetClaw graph.
           </div>
@@ -881,8 +889,8 @@ function PreviewDemo({ pet, prompt }: { pet: Pet | null; prompt: string }) {
 function RoadmapItem({ emoji, eta, title, body }: { emoji: string; eta: string; title: string; body: string }) {
   return (
     <div style={{
-      background: "rgba(255,255,255,0.04)",
-      border: "1px solid rgba(255,255,255,0.08)",
+      background: "white",
+      border: "1px solid rgba(0,0,0,0.06)",
       borderRadius: 12, padding: 14,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -891,11 +899,11 @@ function RoadmapItem({ emoji, eta, title, body }: { emoji: string; eta: string; 
           padding: "2px 7px", borderRadius: 999,
           fontSize: 9, fontWeight: 800, letterSpacing: "0.1em",
           fontFamily: "'JetBrains Mono', monospace",
-          background: "rgba(251,191,36,0.14)", color: "#fbbf24",
+          background: "rgba(245,158,11,0.14)", color: "#b45309",
         }}>{eta}</span>
       </div>
-      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>{title}</div>
-      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", lineHeight: 1.5 }}>{body}</div>
+      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4, color: "#1a1a2e" }}>{title}</div>
+      <div style={{ fontSize: 12, color: "rgba(26,26,46,0.6)", lineHeight: 1.5 }}>{body}</div>
     </div>
   );
 }
@@ -969,14 +977,6 @@ const panelLabel: React.CSSProperties = {
 const petChip: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 8,
   padding: "6px 10px 6px 6px", borderRadius: 12,
-  cursor: "pointer", color: "#1a1a2e",
-  fontFamily: "'Space Grotesk',sans-serif",
-  transition: "all 140ms ease",
-};
-
-const styleCard: React.CSSProperties = {
-  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-  padding: "12px 6px", borderRadius: 10,
   cursor: "pointer", color: "#1a1a2e",
   fontFamily: "'Space Grotesk',sans-serif",
   transition: "all 140ms ease",
