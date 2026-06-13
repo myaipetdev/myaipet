@@ -34,6 +34,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import PetLoraPanel from "@/components/PetLoraPanel";
 import { TEMPLATES, type StudioTemplate } from "@/lib/studio/templates";
+import { STYLE_EXAMPLES, TEMPLATE_EXAMPLES } from "@/lib/studio/example-assets";
 
 interface Pet { id: number; name: string; avatar_url: string | null; species: number; level: number; }
 interface StudioModel {
@@ -412,6 +413,7 @@ export default function PetStudioPro() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 {STYLES.map(s => {
                   const sel = s.id === styleId;
+                  const ex = STYLE_EXAMPLES[s.id];
                   return (
                     <button
                       key={s.id}
@@ -426,14 +428,17 @@ export default function PetStudioPro() {
                           : "0 1px 2px rgba(0,0,0,0.02)",
                         transition: "all 200ms cubic-bezier(0.2,0.8,0.2,1)",
                       }}>
-                      {/* Swatch preview — the gradient hints at the look so the
-                          styles read visually, not just as labels. */}
+                      {/* Real Grok example art (gradient fallback) so each style
+                          reads at a glance, not just as a label. */}
                       <div style={{
-                        height: 46, background: s.swatch,
-                        display: "flex", alignItems: "center", justifyContent: "center",
+                        height: 60,
+                        background: ex ? `url(${ex}) center/cover no-repeat` : s.swatch,
+                        display: "flex", alignItems: "flex-end", justifyContent: "flex-end",
+                        padding: 6,
                       }}>
                         <span style={{
-                          fontSize: 22, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.35))",
+                          fontSize: ex ? 14 : 22,
+                          filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))",
                           transform: sel ? "scale(1.14)" : "scale(1)",
                           transition: "transform 220ms cubic-bezier(0.2,0.8,0.2,1)",
                         }}>{s.emoji}</span>
@@ -620,6 +625,7 @@ export default function PetStudioPro() {
                   celebration: "#f59e0b", everyday: "#3b82f6", cinematic: "#8b5cf6",
                   social: "#ec4899", fantasy: "#6366f1",
                 } as Record<string, string>)[t.category] || "#8b5cf6";
+                const ex = TEMPLATE_EXAMPLES[t.id];
                 return (
                   <button
                     key={t.id}
@@ -631,20 +637,35 @@ export default function PetStudioPro() {
                       display: "flex", flexDirection: "column",
                     }}
                   >
-                    <div style={{
-                      height: 62,
-                      background: `linear-gradient(135deg, ${color}26, ${color}0d)`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 30, position: "relative",
-                    }}>
-                      <span>{t.emoji}</span>
-                      <span style={{
-                        position: "absolute", top: 7, right: 8,
-                        fontSize: 8, fontFamily: "'JetBrains Mono', monospace",
-                        letterSpacing: "0.1em", fontWeight: 800, textTransform: "uppercase",
-                        color, opacity: 0.85,
-                      }}>{t.category}</span>
-                    </div>
+                    {ex ? (
+                      <div style={{
+                        height: 92, background: `url(${ex}) center/cover no-repeat`,
+                        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
+                        padding: "8px 9px",
+                      }}>
+                        <span style={{ fontSize: 18, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.6))" }}>{t.emoji}</span>
+                        <span style={{
+                          fontSize: 8, fontFamily: "'JetBrains Mono', monospace",
+                          letterSpacing: "0.1em", fontWeight: 800, textTransform: "uppercase",
+                          color: "white", filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.7))",
+                        }}>{t.category}</span>
+                      </div>
+                    ) : (
+                      <div style={{
+                        height: 62,
+                        background: `linear-gradient(135deg, ${color}26, ${color}0d)`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 30, position: "relative",
+                      }}>
+                        <span>{t.emoji}</span>
+                        <span style={{
+                          position: "absolute", top: 7, right: 8,
+                          fontSize: 8, fontFamily: "'JetBrains Mono', monospace",
+                          letterSpacing: "0.1em", fontWeight: 800, textTransform: "uppercase",
+                          color, opacity: 0.85,
+                        }}>{t.category}</span>
+                      </div>
+                    )}
                     <div style={{ padding: "9px 11px 11px" }}>
                       <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.01em" }}>
                         {t.title}
