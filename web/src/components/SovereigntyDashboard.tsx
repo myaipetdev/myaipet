@@ -952,7 +952,7 @@ export default function SovereigntyDashboard() {
                 🔐 YOUR DATA
               </span>
               <span className="sov-tag" style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)", color: "#7c3aed" }}>
-                ⛓ ON-CHAIN
+                ⛓ BSC-NATIVE
               </span>
             </div>
             <h1 style={{ fontSize: 52, fontWeight: 900, letterSpacing: "-0.04em", color: "#1a1a2e", lineHeight: 1.0, margin: "0 0 16px" }}>
@@ -964,7 +964,7 @@ export default function SovereigntyDashboard() {
             </p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               {[
-                { n: "19+", l: "Platforms" },
+                { n: "6+", l: "Platforms" },
                 { n: "100%", l: "Data Ownership" },
                 { n: "∞", l: "Memory" },
               ].map(({ n, l }) => (

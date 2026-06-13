@@ -4,10 +4,11 @@
  *   GET /api/dashboard/ticker?limit=20
  *     → [{ at, kind, text, accent }]
  *
- * Pulled from: paid_actions (stat upgrades), memory_nfts (care-streak/evolution
- * NFT mints), weekly_battle_pools (leaderboard pool closes).
+ * Points-aligned + on-brand: AI creations, Memory-NFT mints (care-streak /
+ * evolution), and weekly Season Rewards pool closes. No battle/training events
+ * (those mechanics are paused).
  *
- * Public, no auth — drives the "people are paying / climbing" feeling.
+ * Public, no auth — drives the "people are creating / earning" feeling.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -16,12 +17,12 @@ import { rateLimit } from "@/lib/rateLimit";
 
 interface TickerEvent {
   at: string;        // ISO
-  kind: "upgrade" | "battle" | "nft" | "pool_close";
+  kind: "create" | "nft" | "pool_close";
   text: string;
   accent: string;
 }
 
-const ACCENTS = { upgrade: "#dc2626", battle: "#f59e0b", nft: "#a855f7", pool_close: "#16a34a" };
+const ACCENTS = { create: "#f59e0b", nft: "#a855f7", pool_close: "#16a34a" };
 
 function shortenWallet(w?: string | null | unknown): string {
   if (typeof w !== "string" || !w) return "anon";
@@ -34,16 +35,12 @@ export async function GET(req: NextRequest) {
 
   const limit = Math.min(50, Math.max(5, Number(req.nextUrl.searchParams.get("limit")) || 20));
 
-  // Pull in parallel
   const since = new Date(Date.now() - 7 * 86_400_000);
-  const [upgrades, nfts, poolCloses] = await Promise.all([
-    prisma.paidAction.findMany({
-      where: {
-        action_key: { in: ["stat_upgrade_atk", "stat_upgrade_def", "stat_upgrade_spd"] },
-        created_at: { gte: since },
-      },
+  const [creations, nfts, poolCloses] = await Promise.all([
+    prisma.generation.findMany({
+      where: { status: "completed", created_at: { gte: since } },
       orderBy: { created_at: "desc" }, take: limit,
-      select: { action_key: true, created_at: true, user_id: true },
+      select: { user_id: true, video_path: true, created_at: true },
     }),
     prisma.memoryNft.findMany({
       where: { created_at: { gte: since } },
@@ -52,12 +49,12 @@ export async function GET(req: NextRequest) {
     }),
     prisma.weeklyBattlePool.findMany({
       orderBy: { closed_at: "desc" }, take: 3,
-      select: { week_key: true, pool_usd: true, closed_at: true, payouts: true },
+      select: { week_key: true, closed_at: true, payouts: true },
     }),
   ]);
 
-  // Resolve user wallets + pet names where needed (one round of joins)
-  const userIds = [...new Set(upgrades.map(u => u.user_id))];
+  // Resolve user wallets + pet names (one round of joins)
+  const userIds = [...new Set(creations.map(c => c.user_id).filter((x): x is number => x != null))];
   const petIds = [...new Set(nfts.map(n => n.pet_id))];
   const [users, pets] = await Promise.all([
     userIds.length
@@ -72,13 +69,12 @@ export async function GET(req: NextRequest) {
 
   const events: TickerEvent[] = [];
 
-  for (const u of upgrades) {
-    const statName = u.action_key.replace("stat_upgrade_", "").toUpperCase();
+  for (const c of creations) {
     events.push({
-      at: u.created_at.toISOString(),
-      kind: "upgrade",
-      accent: ACCENTS.upgrade,
-      text: `${shortenWallet(userById.get(u.user_id))} trained ${statName} +5`,
+      at: c.created_at.toISOString(),
+      kind: "create",
+      accent: ACCENTS.create,
+      text: `${shortenWallet(c.user_id != null ? userById.get(c.user_id) : null)} created an AI ${c.video_path ? "video" : "image"}`,
     });
   }
   for (const n of nfts) {
@@ -100,7 +96,7 @@ export async function GET(req: NextRequest) {
         at: p.closed_at.toISOString(),
         kind: "pool_close",
         accent: ACCENTS.pool_close,
-        text: `${p.week_key}: ${top.petName || "A pet"} won ${(top.pointsPayout || 0).toLocaleString()} pts`,
+        text: `${p.week_key}: ${top.petName || "A pet"} earned ${(top.pointsPayout || 0).toLocaleString()} Season Rewards pts`,
       });
     }
   }

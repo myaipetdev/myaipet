@@ -328,14 +328,16 @@ export default function App() {
     return () => { clearInterval(s); clearInterval(a); };
   }, [fetchStats, fetchActivity]);
 
-  const stats = platformStats
+  // Never show "0" in a social-proof slot — fall back to qualitative,
+  // always-true facts when stats are unavailable or still zero.
+  const stats = (platformStats && ((platformStats.total_users ?? 0) > 0 || (platformStats.total_generations ?? 0) > 0))
     ? [
         { label: "Verified Users", value: (platformStats.total_users ?? 0).toLocaleString(), raw: platformStats.total_users ?? 0, animated: true, sub: "Unique wallets" },
         { label: "AI Content Created", value: (platformStats.total_generations ?? 0).toLocaleString(), raw: platformStats.total_generations ?? 0, animated: true, sub: "Videos & Images" },
       ]
     : [
-        { label: "Verified Users", value: "0", sub: "Unique wallets" },
-        { label: "AI Content Created", value: "0", sub: "Videos & Images" },
+        { label: "Protocol", value: "PetClaw v1", sub: "Live on BSC Mainnet" },
+        { label: "Network", value: "BSC", sub: "Chain ID 56 · verified" },
       ];
 
   const handleCreditsChange = (newCredits: any) => {

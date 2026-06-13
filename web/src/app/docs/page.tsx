@@ -17,7 +17,7 @@ Every pet has a distinct personality shaped by user interactions. The platform u
     id: "getting-started",
     title: "Getting Started",
     content: `**1. Connect Your Wallet**
-Connect using MetaMask, Rainbow, Coinbase Wallet, or any WalletConnect-compatible wallet. We support Ethereum Mainnet, Base, and BNB Chain.
+Connect using MetaMask, Rainbow, Coinbase Wallet, or any WalletConnect-compatible wallet. Sign-in (SIWE) works with any EVM wallet; all on-chain contracts and settlement run on BNB Smart Chain (BSC).
 
 **2. Sign In**
 Sign a message to verify wallet ownership (SIWE — Sign-In with Ethereum). No gas fees for signing.
@@ -43,6 +43,7 @@ Interact with your pet — feed, play, talk, pet, walk, and train. Each interact
 - **Energy** — Depleted by activities, restored over time
 - **Bond Level** — Deepens through consistent companionship
 - **Mood** — Dynamic state reflecting recent interactions
+- **Evolution** — 6 stages (Baby → Youth → Teen → Adult → Elder → Legendary); each stage unlocks new behaviors and visuals
 
 **Memories**
 Pets form memories of significant interactions, milestones, and generated content. These memories influence future behavior and create a rich narrative history.`,
@@ -53,15 +54,15 @@ Pets form memories of significant interactions, milestones, and generated conten
     content: `**Image Generation**
 Create unique AI-generated images of your pet in various styles. Each image is personalized based on your pet's name, species, personality, and a custom prompt you provide.
 
-- Cost: 1 credits per image
-- Powered by AI engine
+- Cost: 5 credits per styled image (Original is free)
+- Powered by Grok (x.ai) image generation
 - 5 style presets: Cinematic, Anime, Watercolor, 3D Render, Sketch
 
 **Video Generation**
 Generate animated videos of your pet with full motion and personality expression.
 
 - Cost: 15 credits (3s), 30 credits (5s), 60 credits (10s+)
-- Powered by AI engine
+- Powered by Kling 1.6 (via fal.ai) + Grok
 - Async processing — videos are generated in the background and delivered when ready
 - Each video starts from an AI-generated reference image for visual consistency
 
@@ -75,20 +76,21 @@ Generate animated videos of your pet with full motion and personality expression
   {
     id: "pet-economy",
     title: "Points Economy",
-    content: `**Credits / Points**
-Credits are the platform's internal points system used for AI generation and premium features. The current system is loyalty-only — no token mint, no buyback-and-burn.
+    content: `**Two currencies — keep them straight**
+- **Season Rewards points** — what you EARN through gameplay (free, non-financial loyalty points). Drives the weekly leaderboard. Not a token, security, or transferable claim.
+- **Credits** — what you BUY with USDT and SPEND on AI generation and premium features.
 
-**Earning credits**
-- Daily Check-in: +10 credits/day for caring for your pet
-- AI Creation: +10 points per image · +25 per video
+The current system is loyalty-only — no token mint, no buyback-and-burn.
+
+**Earning points (free)**
+- Daily check-in: +10 points/day
+- AI creation: +10 points per image · +25 per video
 - Daily interactions (feed, play, talk): +5 points
-- Pet Evolution: +50 points per level up · +200 per evolution
+- Pet evolution: +50 points per level up · +200 per evolution
 - Streak bonus: +100 points (7-day) · +500 (30-day)
 - Referrals: +100 points per referred user
 
-(Points are the earned Season Rewards currency; credits below are the USDT-purchased spend currency.)
-
-**Spending credits**
+**Spending credits (bought with USDT)**
 - Image generation: 1 credits
 - Video generation: 15–60 credits (based on duration)
 - Marketplace items
@@ -151,15 +153,16 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 - Pet adoption and raising system (12 personalities)
 - AI image and video generation
 - Social gallery and community features
-- credits point economy with credit tiers
+- Points + credits economy with credit tiers
 - Wallet authentication (SIWE)
 - AI avatar generation for pets
 
-**Phase 2 — On-Chain Activity (In Progress)**
+**Phase 2 — On-Chain Activity (In Progress · holding period)**
 - On-chain activity recording on BNB Chain (BSC)
-- USDT / BNB payment integration for credits purchases
+- USDT payment integration for credit purchases
 - Smart contract deployment (PETContent, PetaGenTracker)
 - BscScan verified contracts
+- Note: server-side on-chain recording + SOUL NFT minting are temporarily paused during the holding period — see /contracts for status.
 
 **Phase 3 — Evolution & Marketplace (Shipped)**
 - Pet evolution system with visual stage changes

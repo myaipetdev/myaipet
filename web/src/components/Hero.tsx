@@ -113,10 +113,10 @@ function Particles() {
 }
 
 const PILLARS = [
-  { icon: <Icon name="film-reel" size={20} />, label: "AI Video Engine", desc: "Personalized content that earns" },
+  { icon: <Icon name="film-reel" size={20} />, label: "AI Video Engine", desc: "Personalized content for every moment" },
   { icon: <Icon name="sparkling" size={20} />, label: "Evolve & Equip", desc: "Skills, skins & marketplace" },
   { icon: <Icon name="chat" size={20} />, label: "Social Circle", desc: "Life sharing & network effects" },
-  { icon: <Icon name="trophy" size={20} />, label: "Memorial System", desc: "Eternal on-chain legacy" },
+  { icon: <Icon name="trophy" size={20} />, label: "Portable Legacy", desc: "Export your pet's soul; on-chain anchor at TGE" },
 ];
 
 export default function Hero({ onAdopt, onExplore, txToday }: any) {
@@ -202,7 +202,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           animation: "pulse 2s ease-in-out infinite",
         }} />
         <span style={{ fontFamily: "mono", fontSize: 11, color: "#b45309", fontWeight: 500 }}>
-          {txToday} interactions today
+          {txToday > 0 ? `${txToday} interactions today` : "Live on BSC Mainnet"}
         </span>
       </div>
 
@@ -349,7 +349,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
       `}</style>
       <div className="hero-cta" style={{ display: "flex", gap: 14, justifyContent: "center", position: "relative", zIndex: 2 }}>
         <button onClick={onAdopt} className="hero-cta-primary">
-          <Icon name="paw" size={16} /> Start AI-Pet
+          <Icon name="paw" size={16} /> Adopt your pet
         </button>
         <button onClick={onExplore} className="hero-cta-secondary">
           Explore Community
@@ -486,7 +486,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             { icon: <Icon name="paw" size={28} />, title: "Raise", desc: "Feed, play, and train your AI pet. Watch them grow from Baby to Legendary." },
             { icon: <Icon name="sparkling" size={28} />, title: "Create", desc: "Generate stunning AI images and videos of your pet in any scene or style." },
             { icon: "💎", title: "Earn", desc: "Climb the leaderboard, earn Season Rewards points, and unlock exclusive rewards." },
-            { icon: "🏆", title: "Collect", desc: "Redeem points for real merchandise: mugs, hoodies, figures & more." },
+            { icon: "🏆", title: "Collect", desc: "Real merchandise redemption — mugs, hoodies, figures & more — coming with the creator marketplace." },
           ].map((card) => (
             <div key={card.title} className="eco-card">
               <div className="eco-icon" style={{

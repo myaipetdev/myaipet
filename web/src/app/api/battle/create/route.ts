@@ -126,7 +126,19 @@ function simulateBattle(
   };
 }
 
+// Battle mode is retired/paused — flip to true (and re-test) to relaunch.
+const BATTLE_ENABLED = false;
+
 export async function POST(req: NextRequest) {
+  // Disabled server-side so a paid 'battle_entry' can never be created while the
+  // feature is off (UI entry points are already removed).
+  if (!BATTLE_ENABLED) {
+    return NextResponse.json(
+      { error: "Battle mode is currently unavailable.", code: "BATTLE_DISABLED" },
+      { status: 410 },
+    );
+  }
+
   const rl = rateLimit(req, { key: "battle-create", limit: 10, windowMs: 60_000 });
   if (!rl.ok) return rl.response;
 

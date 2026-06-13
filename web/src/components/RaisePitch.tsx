@@ -1,16 +1,16 @@
 "use client";
 
 /**
- * Home pitch — "why spend, why raise, why care about the airdrop".
+ * Home pitch — "why raise, why create, why climb the Season Rewards board".
  *
  * Three live elements stacked:
- *   1. PERSONAL projection bar — "YOU'd earn X pts now · +1 USDT = N ranks"
- *      For signed-in users this is the punch in the face that turns abstract
- *      pool into a concrete payout for THEIR pet. Anonymous: show pool + top-3
- *      preview to bait the sign-in.
+ *   1. PERSONAL standing bar — current Season Rewards points + free ways to earn
+ *      this week. For signed-in users it shows their weekly standing; anonymous:
+ *      show pool + top-3 preview to bait the sign-in. (Points are non-financial
+ *      loyalty — no payout tied to spend.)
  *
- *   2. LIVE TICKER — last few events (upgrades / battle wins / NFT mints).
- *      "0xabc…def trained ATK +5" rolls past. Social proof + FOMO.
+ *   2. LIVE TICKER — last few events (AI creations / NFT mints / pool closes).
+ *      Social proof of an active community.
  *
  *   3. PET THOUGHT — a 1-sentence current inner monologue from the user's
  *      pet (or top-rank pet for anons). Refreshes every 4h server-side.
@@ -201,7 +201,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
           <div style={{ ...miniLabel, color: "rgba(26,26,46,0.5)", marginBottom: 8 }}>LIVE · LAST 7 DAYS</div>
           {ticker.length === 0 ? (
             <div style={{ fontSize: 13, color: "rgba(26,26,46,0.45)", fontStyle: "italic", padding: 8 }}>
-              No activity yet — be the first to train, create, or mint a streak.
+              Be the first to create with your pet and climb this week&apos;s board.
             </div>
           ) : (
             <div style={{ display: "grid", gap: 6 }}>
