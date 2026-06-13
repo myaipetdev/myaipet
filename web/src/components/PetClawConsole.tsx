@@ -6,7 +6,7 @@
  * petclaw_chat tool, live). Dark terminal panel on the app's light pages.
  *
  * Inventory is the REAL thing (kept honest):
- *   • 7 channels  • 6 MCP tools  • 5 SDK skills  • sovereignty controls
+ *   • 21 connectors  • 14 SDK skills  • 6 MCP tools  • sovereignty controls
  *
  * variant="full"    → manifest + LIVE terminal (boot effect + chat). Needs petId.
  * variant="compact" → banner + channels only, static (onboarding intro).
@@ -39,11 +39,14 @@ const GREEN = "#34d399";
 const LINE = "rgba(245,158,11,0.22)";
 const MONO = "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace";
 
-const CHANNELS = [
-  { k: "web", v: "app.myaipet.ai" }, { k: "extension", v: "Chrome — PetClaw" },
-  { k: "telegram", v: "chats & presence" }, { k: "discord", v: "server + DMs" },
-  { k: "twitter / x", v: "autonomous posts" }, { k: "github", v: "reads your dev vibe" },
-  { k: "mcp clients", v: "Claude · Cursor · any" },
+// Always-on surfaces + the 21-connector registry (lib/petclaw/connectors).
+const RUNS_ON = "web · chrome-extension · mcp clients (Claude · Cursor · any)";
+const CONNECTORS = [
+  { k: "messaging (8)", v: "telegram · discord · x · whatsapp · slack · line · instagram · gmail" },
+  { k: "productivity (3)", v: "notion · google-calendar · github" },
+  { k: "media (2)", v: "spotify · youtube" },
+  { k: "knowledge (4)", v: "web-search · brave · wikipedia · memory" },
+  { k: "crypto (2)", v: "coingecko · bscscan" },
 ];
 const MCP_TOOLS = [
   { k: "petclaw_chat", v: "memory-aware chat" }, { k: "persona_mirror", v: "mirror your tone" },
@@ -51,8 +54,11 @@ const MCP_TOOLS = [
   { k: "soul_export", v: "portable SOUL (SHA-256)" }, { k: "discover_pets", v: "find pets on the net" },
 ];
 const SKILLS = [
-  { k: "emotional", v: "companion-chat" }, { k: "social", v: "persona-mirror, autonomous-post" },
-  { k: "knowledge", v: "memory-recall" }, { k: "utility", v: "soul-export" },
+  { k: "emotional", v: "companion-chat · daily-mood · daydream" },
+  { k: "social", v: "persona-mirror · autonomous-post" },
+  { k: "creative", v: "image-gen · video-gen" },
+  { k: "knowledge", v: "memory-recall · web-search" },
+  { k: "utility", v: "soul-export · soul-import · consent · evolve · memory-anchor" },
 ];
 const SOVEREIGNTY: { k: string; v: React.ReactNode }[] = [
   { k: "export", v: "full memory ledger, signed JSON" },
@@ -77,8 +83,8 @@ const liveTag = <span style={{ color: GREEN }}>● live</span>;
 interface Line { role: "sys" | "you" | "pet"; text: string }
 
 const BOOT: Line[] = [
-  { role: "sys", text: "initializing petclaw-mcp · protocol v1 · SDK 1.3.0" },
-  { role: "sys", text: "channels  ▸ 7 online   tools ▸ 6 ready   skills ▸ 5 loaded" },
+  { role: "sys", text: "initializing petclaw-mcp · protocol v1 · SDK 1.4.0" },
+  { role: "sys", text: "connectors ▸ 21   tools ▸ 6 ready   skills ▸ 14 loaded" },
   { role: "sys", text: "soul ▸ portable · consent ▸ enforced · on-chain ▸ holding (TGE)" },
 ];
 
@@ -157,7 +163,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
       pushLine({ role: "sys", text: "commands: /channels  /tools  /skills  /clear  — or just type to chat" });
       return true;
     }
-    if (c === "/channels") { pushLine({ role: "sys", text: "channels: " + CHANNELS.map((x) => x.k).join(" · ") }); return true; }
+    if (c === "/channels" || c === "/connectors") { pushLine({ role: "sys", text: "connectors: " + CONNECTORS.map((x) => x.k).join(" · ") }); return true; }
     if (c === "/tools") { pushLine({ role: "sys", text: "mcp tools: " + MCP_TOOLS.map((x) => x.k).join(" · ") }); return true; }
     if (c === "/skills") { pushLine({ role: "sys", text: "skills: " + SKILLS.map((x) => x.v).join(", ") }); return true; }
     if (c === "/clear") { setLines([]); return true; }
@@ -235,13 +241,17 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
           {/* manifest */}
           <div style={{ border: `1px solid ${LINE}`, borderRadius: 12, padding: compact ? "18px 20px" : "20px 24px" }}>
             <div style={{ color: GOLD, fontWeight: 700, fontSize: 13, marginBottom: 12 }}>
-              PetClaw Protocol v1 · SDK v1.3.0 <span style={{ color: MUTED, fontWeight: 400 }}>· npx petclaw-mcp · MIT</span>
+              PetClaw Protocol v1 · SDK v1.4.0 <span style={{ color: MUTED, fontWeight: 400 }}>· npx petclaw-mcp · MIT</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: "0 40px" }}>
               <div>
-                <SectionHead>Channels — where your pet lives</SectionHead>
-                {CHANNELS.map((c) => <Row key={c.k} k={c.k} v={<>{c.v} {liveTag}</>} />)}
-                {!compact && (<><SectionHead>Skills</SectionHead>{SKILLS.map((s) => <Row key={s.k} k={s.k} v={s.v} />)}</>)}
+                <SectionHead>Connectors — 21 integrations</SectionHead>
+                {CONNECTORS.map((c) => <Row key={c.k} k={c.k} v={c.v} kw={112} />)}
+                <div style={{ display: "flex", gap: 10, fontSize: 12, lineHeight: 1.8, marginTop: 4 }}>
+                  <span style={{ color: AMBER_DIM, minWidth: 112, flexShrink: 0 }}>runs on</span>
+                  <span style={{ color: MUTED }}>{RUNS_ON}</span>
+                </div>
+                {!compact && (<><SectionHead>Skills (14)</SectionHead>{SKILLS.map((s) => <Row key={s.k} k={s.k} v={s.v} kw={100} />)}</>)}
               </div>
               {!compact && (
                 <div>
@@ -252,7 +262,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                 </div>
               )}
             </div>
-            <div style={{ marginTop: 14, color: MUTED, fontSize: 12.5 }}>7 channels · 6 MCP tools · 5 skills · 100% your data</div>
+            <div style={{ marginTop: 14, color: MUTED, fontSize: 12.5 }}>21 connectors · 14 skills · 6 MCP tools · 100% your data</div>
           </div>
 
           {/* LIVE terminal */}
