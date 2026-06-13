@@ -33,6 +33,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import PetLoraPanel from "@/components/PetLoraPanel";
+import { TEMPLATES, type StudioTemplate } from "@/lib/studio/templates";
 
 interface Pet { id: number; name: string; avatar_url: string | null; species: number; level: number; }
 interface StudioModel {
@@ -107,6 +108,23 @@ export default function PetStudioPro() {
   // neutral phrase until the owner gives it a real name.
   const SPECIES_DEFAULT_NAMES = ["Cat", "Dog", "Parrot", "Turtle", "Hamster", "Rabbit", "Fox", "Pomeranian"];
   const petDisplayName = pet?.name && !SPECIES_DEFAULT_NAMES.includes(pet.name) ? pet.name : "your pet";
+
+  // One-tap starting points: build a full scene prompt from the pet's context
+  // and flip to video (where templates shine). User can still edit after.
+  const applyTemplate = (t: StudioTemplate) => {
+    const p = pet as any;
+    const ctx = {
+      name: pet?.name || "your pet",
+      species: p?.personality_modifiers?.species_name || undefined,
+      personalityType: p?.personality_type || undefined,
+      appearanceDesc: p?.appearance_desc || undefined,
+      avatarUrl: pet?.avatar_url || undefined,
+    };
+    setPrompt(t.buildPrompt(ctx));
+    setOutputKind("video");
+    setStyleId("cinematic");
+  };
+
   const chosenModel = models.find(m => m.id === chosenModelId);
   // Models filtered by the current output type (image vs video)
   const visibleModels = useMemo(
@@ -576,7 +594,66 @@ export default function PetStudioPro() {
               feature is enabled server-side and a real pet is selected). */}
           {pet && !isDemo && <PetLoraPanel petId={pet.id} petName={pet.name} />}
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+          {/* Templates — one tap loads a full, pet-anchored scene + flips to
+              video. The card art previews the vibe; tap, then hit Generate. */}
+          <div style={{ marginTop: 16 }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
+              <span style={{
+                fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+                letterSpacing: "0.14em", color: "#7e22ce", fontWeight: 800,
+              }}>✨ TEMPLATES</span>
+              <span style={{ fontSize: 11, color: "rgba(26,26,46,0.5)" }}>
+                one tap → a full scene
+              </span>
+            </div>
+            <div style={{
+              display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10,
+            }}>
+              {TEMPLATES.slice(0, 8).map(t => {
+                const color = ({
+                  celebration: "#f59e0b", everyday: "#3b82f6", cinematic: "#8b5cf6",
+                  social: "#ec4899", fantasy: "#6366f1",
+                } as Record<string, string>)[t.category] || "#8b5cf6";
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => applyTemplate(t)}
+                    className="mp-lift"
+                    style={{
+                      textAlign: "left", padding: 0, borderRadius: 14, overflow: "hidden",
+                      border: `1px solid ${color}33`, background: "white", cursor: "pointer",
+                      display: "flex", flexDirection: "column",
+                    }}
+                  >
+                    <div style={{
+                      height: 62,
+                      background: `linear-gradient(135deg, ${color}26, ${color}0d)`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 30, position: "relative",
+                    }}>
+                      <span>{t.emoji}</span>
+                      <span style={{
+                        position: "absolute", top: 7, right: 8,
+                        fontSize: 8, fontFamily: "'JetBrains Mono', monospace",
+                        letterSpacing: "0.1em", fontWeight: 800, textTransform: "uppercase",
+                        color, opacity: 0.85,
+                      }}>{t.category}</span>
+                    </div>
+                    <div style={{ padding: "9px 11px 11px" }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.01em" }}>
+                        {t.title}
+                      </div>
+                      <div style={{ fontSize: 11, color: "rgba(26,26,46,0.55)", marginTop: 3, lineHeight: 1.4 }}>
+                        {t.description}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 14 }}>
             <span style={{
               fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
               color: "rgba(26,26,46,0.55)", letterSpacing: "0.06em",
