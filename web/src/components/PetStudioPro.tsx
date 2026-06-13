@@ -35,6 +35,7 @@ import { getAuthHeaders } from "@/lib/api";
 import PetLoraPanel from "@/components/PetLoraPanel";
 import { TEMPLATES, type StudioTemplate } from "@/lib/studio/templates";
 import { STYLE_EXAMPLES, TEMPLATE_EXAMPLES } from "@/lib/studio/example-assets";
+import { TEMPLATE_EXAMPLE_VIDEOS } from "@/lib/studio/example-videos";
 
 interface Pet { id: number; name: string; avatar_url: string | null; species: number; level: number; }
 interface StudioModel {
@@ -649,6 +650,7 @@ export default function PetStudioPro() {
                   social: "#ec4899", fantasy: "#6366f1",
                 } as Record<string, string>)[t.category] || "#8b5cf6";
                 const ex = TEMPLATE_EXAMPLES[t.id];
+                const vid = TEMPLATE_EXAMPLE_VIDEOS[t.id];
                 return (
                   <button
                     key={t.id}
@@ -660,7 +662,21 @@ export default function PetStudioPro() {
                       display: "flex", flexDirection: "column",
                     }}
                   >
-                    {ex ? (
+                    {vid ? (
+                      <div style={{ position: "relative", height: 92, overflow: "hidden" }}>
+                        <video
+                          src={vid} poster={ex} autoPlay loop muted playsInline preload="metadata"
+                          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                        />
+                        <span style={{ position: "absolute", left: 9, bottom: 7, fontSize: 18, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.6))" }}>{t.emoji}</span>
+                        <span style={{
+                          position: "absolute", right: 9, bottom: 8,
+                          fontSize: 8, fontFamily: "'JetBrains Mono', monospace",
+                          letterSpacing: "0.1em", fontWeight: 800, textTransform: "uppercase",
+                          color: "white", filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.7))",
+                        }}>{t.category}</span>
+                      </div>
+                    ) : ex ? (
                       <div style={{
                         height: 92, background: `url(${ex}) center/cover no-repeat`,
                         display: "flex", alignItems: "flex-end", justifyContent: "space-between",
