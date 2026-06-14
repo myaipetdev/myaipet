@@ -114,7 +114,7 @@ export default function SosFeedAndBuddy() {
               <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 18px" }}>
                 {item.sender.pet?.avatar_url
                   ? <img src={item.sender.pet.avatar_url} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />
-                  : <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🐾</div>}
+                  : <img src="/mascot.jpg" alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700 }}>
                     {item.sender.pet?.name || "—"} <span style={{ color: "#b45309", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>· 🔥 {item.sender_streak}d</span>
@@ -178,7 +178,7 @@ export default function SosFeedAndBuddy() {
               }}>
                 {b.partner.pet?.avatar_url
                   ? <img src={b.partner.pet.avatar_url} alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover" }} />
-                  : <div style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>🐾</div>}
+                  : <img src="/mascot.jpg" alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover" }} />}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 800 }}>{b.partner.pet?.name || b.partner.wallet}</div>
                   <div style={{ fontSize: 11, color: "rgba(26,26,46,0.55)", fontFamily: "'JetBrains Mono', monospace" }}>

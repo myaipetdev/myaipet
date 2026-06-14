@@ -172,7 +172,7 @@ function DateLog({ result }: { result: DateResult }) {
             }}>
               {speaker.avatar_url
                 ? <img src={speaker.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, objectFit: "cover" }} />
-                : <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 14 }}>🐾</div>}
+                : <img src="/mascot.jpg" alt="" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, objectFit: "cover" }} />}
               <div style={{
                 padding: "8px 12px", borderRadius: 12,
                 background: isA ? "rgba(245,158,11,0.10)" : "rgba(59,130,246,0.06)",

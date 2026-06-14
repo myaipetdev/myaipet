@@ -184,13 +184,12 @@ export default function MultiLeaderboard() {
                         borderRadius: 12, objectFit: "cover",
                         boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
                       }} />
-                    : <div style={{
+                    : <img src="/mascot.jpg" alt={e.pet?.name || ""} style={{
                         width: place === 1 ? 56 : 44,
                         height: place === 1 ? 56 : 44,
-                        borderRadius: 12, background: "rgba(0,0,0,0.05)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: place === 1 ? 26 : 20,
-                      }}>🐾</div>}
+                        borderRadius: 12, objectFit: "cover",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+                      }} />}
                   <div style={{
                     fontSize: place === 1 ? 15 : 13, fontWeight: 800,
                     color: "#1a1a2e", maxWidth: "100%",
@@ -231,7 +230,7 @@ export default function MultiLeaderboard() {
               </div>
               {e.pet?.avatar_url
                 ? <img src={e.pet.avatar_url} alt={e.pet.name} style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover" }} />
-                : <div style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🐾</div>}
+                : <img src="/mascot.jpg" alt={e.pet?.name || ""} style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover" }} />}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 700 }}>{e.pet?.name || "—"}</div>
                 <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.45)" }}>
