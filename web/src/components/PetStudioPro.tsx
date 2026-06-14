@@ -209,8 +209,13 @@ export default function PetStudioPro() {
         setModelOpen(false);
       }
     };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setModelOpen(false); };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [modelOpen]);
 
   const buildFullPrompt = (): string => {
@@ -416,7 +421,7 @@ export default function PetStudioPro() {
                     const ex = TEMPLATE_EXAMPLES[t.id];
                     if (!ex) return null;
                     return (
-                      <button key={t.id} onClick={() => applyTemplate(t)} className="mp-lift" title={t.title} style={{
+                      <button key={t.id} onClick={() => applyTemplate(t)} className="mp-lift" title={t.title} aria-label={`Use template: ${t.title}`} style={{
                         padding: 0, border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, overflow: "hidden",
                         cursor: "pointer", aspectRatio: "1 / 1",
                         background: `url(${ex}) center/cover no-repeat`,
@@ -614,6 +619,7 @@ export default function PetStudioPro() {
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
+            aria-label="Prompt — what your pet should be doing"
             placeholder={`What should ${pet?.name || "your pet"} be doing? e.g. "running through cherry blossoms"`}
             style={{
               marginTop: 10, width: "100%", minHeight: 78, padding: "14px 16px",
