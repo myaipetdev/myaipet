@@ -860,24 +860,40 @@ export default function PetStudioPro() {
               paddingBottom: 8,
             }}>
               {history.map(g => (
-                <button key={g.id} onClick={() => reusePrompt(g)} className="mp-lift" style={{
-                  flexShrink: 0,
-                  width: 140, height: 80, borderRadius: 12, overflow: "hidden",
-                  border: "1px solid rgba(0,0,0,0.08)", background: "white",
-                  cursor: "pointer", padding: 0,
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                }} title={g.prompt || "(no prompt)"}>
-                  {g.video_path && /\.(mp4|webm)$/i.test(g.video_path)
-                    ? <video src={g.video_path} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    : (g.photo_path || g.video_path)
-                    ? <img src={g.photo_path || g.video_path || ""} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    : <div style={{
-                        width: "100%", height: "100%",
-                        background: "rgba(0,0,0,0.05)",
+                <div key={g.id} style={{ position: "relative", flexShrink: 0 }}>
+                  <button onClick={() => reusePrompt(g)} className="mp-lift" style={{
+                    width: 140, height: 80, borderRadius: 12, overflow: "hidden",
+                    border: "1px solid rgba(0,0,0,0.08)", background: "white",
+                    cursor: "pointer", padding: 0, display: "block",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                  }} title={g.prompt || "(no prompt)"} aria-label={g.prompt ? `View: ${g.prompt}` : "View creation"}>
+                    {g.video_path && /\.(mp4|webm)$/i.test(g.video_path)
+                      ? <video src={g.video_path} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : (g.photo_path || g.video_path)
+                      ? <img src={g.photo_path || g.video_path || ""} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : <div style={{
+                          width: "100%", height: "100%",
+                          background: "rgba(0,0,0,0.05)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 18, color: "rgba(26,26,46,0.35)",
+                        }}>{g.status === "pending" ? "⏳" : "?"}</div>}
+                  </button>
+                  {g.prompt && (
+                    <button
+                      onClick={() => remix(g.prompt)}
+                      aria-label="Remix in a new style"
+                      title="Remix — same prompt, new style"
+                      style={{
+                        position: "absolute", top: 4, right: 4,
+                        width: 24, height: 24, borderRadius: 8, border: "none",
+                        background: "rgba(245,158,11,0.92)", color: "white",
+                        fontSize: 12, cursor: "pointer", padding: 0, lineHeight: 1,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 18, color: "rgba(26,26,46,0.35)",
-                      }}>{g.status === "pending" ? "⏳" : "?"}</div>}
-                </button>
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+                      }}
+                    >🎨</button>
+                  )}
+                </div>
               ))}
             </div>
           </div>
