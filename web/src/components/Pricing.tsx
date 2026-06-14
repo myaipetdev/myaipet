@@ -30,9 +30,13 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
   // strictly USDT → /api/credits/purchase → in-game credits (points-based).
 
   const plans = [
-    { name: "Explorer", key: "starter", cookies: 500, price: 5, usdtPrice: "5 USDT", pop: false, desc: "Try the ecosystem", emoji: "🌱" },
-    { name: "Companion", key: "creator", cookies: 2500, price: 20, usdtPrice: "20 USDT", pop: true, desc: "Full Raise-to-Earn", emoji: "🐾" },
-    { name: "Breeder", key: "pro", cookies: 10000, price: 50, usdtPrice: "50 USDT", pop: false, desc: "Power user tier", emoji: "👑" },
+    // Credits MUST match what /api/credits/purchase actually grants (PLANS there:
+    // 100/500/2000) — the cards previously advertised 5× and under-delivered.
+    // Kept at the server's lower grants on purpose to stay margin-positive over
+    // Grok generation costs.
+    { name: "Explorer", key: "starter", cookies: 100, price: 5, usdtPrice: "5 USDT", pop: false, desc: "Try the ecosystem", emoji: "🌱" },
+    { name: "Companion", key: "creator", cookies: 500, price: 20, usdtPrice: "20 USDT", pop: true, desc: "Full Raise-to-Earn", emoji: "🐾" },
+    { name: "Breeder", key: "pro", cookies: 2000, price: 50, usdtPrice: "50 USDT", pop: false, desc: "Power user tier", emoji: "👑" },
   ];
 
   // Direct USDT pay (BSC-USD → treasury → server verifies → grants credits)
