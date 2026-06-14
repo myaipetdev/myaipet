@@ -1,9 +1,15 @@
 /**
- * MY AI PET v2.0 — Popup Controller
+ * MY AI PET — Popup Controller
  * Tabs, Points, Evolution, Emotions, Mini-Game, Settings
  */
 
 const $ = (id) => document.getElementById(id);
+
+// Stamp the footer with the live manifest version so it never drifts stale.
+try {
+  const vEl = $("version-line");
+  if (vEl) vEl.textContent = `MY AI PET v${chrome.runtime.getManifest().version} — PetClaw`;
+} catch {}
 
 // ══════════════════════════════════════
 // ── TABS ──

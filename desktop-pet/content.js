@@ -1,5 +1,5 @@
 /**
- * MY AI PET v2.0 — Content Script
+ * MY AI PET v2.2.0 — Content Script
  * Pet on every webpage: walking, chatting, emotions, particles, evolution effects
  */
 
@@ -512,15 +512,19 @@
           showBubble("\uD83D\uDD12 Unlock selfies at Teen stage!", 3000);
           return;
         }
-        showBubble("\uD83D\uDCF8 Say cheese! *click* Selfie coming soon!", 3000);
+        showBubble("\uD83D\uDCF8 Say cheese! *click*", 2500);
         burstParticles(["\uD83D\uDCF8", "\u2728", "\uD83C\uDF1F"], 5);
-        // Could integrate with image generation API here
         chrome.runtime.sendMessage({
           type: "executeSkill",
           skillId: "selfie",
           input: { mood: dominant.name },
         }, (res) => {
-          if (res?.result?.output?.imageUrl) {
+          // Always close the loop \u2014 selfie image-gen isn't live yet, so without
+          // a fallback the "*click*" left the user hanging with no reply.
+          const url = res?.result?.output?.imageUrl;
+          if (chrome.runtime.lastError || !url) {
+            setTimeout(() => showBubble("\uD83D\uDCF8 Selfie cam isn't ready yet \u2014 coming soon!", 4000), 2600);
+          } else {
             showBubble("\uD83D\uDCF8 Check out my selfie!", 5000);
           }
         });

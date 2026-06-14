@@ -1,5 +1,5 @@
 /**
- * MY AI PET v2.0 — Background Service Worker
+ * MY AI PET — Background Service Worker
  * Handles API, emotions, evolution, points, notifications, mini-game
  */
 
@@ -1009,5 +1009,5 @@ chrome.runtime.onInstalled.addListener(async () => {
   await fetchPetInfo();
   await sendHeartbeat();
   await addNotification("🎉", `MY AI PET v${chrome.runtime.getManifest().version} installed! Welcome!`);
-  console.log("[AI Pet] v2.0 installed! Emotions, evolution, and mini-games active.");
+  console.log(`[AI Pet] v${chrome.runtime.getManifest().version} installed! Emotions, evolution, and mini-games active.`);
 });
