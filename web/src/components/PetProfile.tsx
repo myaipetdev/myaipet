@@ -129,6 +129,15 @@ function CreatePetModal({ onClose, onCreated }: any) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Escape closes the modal — but never mid-adoption, since an on-chain tx is
+  // in flight and tearing the UI down would orphan it.
+  const closeIfIdle = () => { if (!creating) onClose(); };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !creating) onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [creating, onClose]);
+
   // Upload mode state
   const [uploadName, setUploadName] = useState("");
   const [uploadSpecies, setUploadSpecies] = useState("");
@@ -400,7 +409,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
       <div style={{
         position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center",
         background: "rgba(0,0,0,0.5)", backdropFilter: "blur(12px)",
-      }} onClick={onClose}>
+      }} onClick={closeIfIdle}>
         <div onClick={e => e.stopPropagation()} style={{
           background: "white", borderRadius: 24, width: 440, maxWidth: "95vw", maxHeight: "90vh",
           boxShadow: "0 24px 80px rgba(0,0,0,0.15)", animation: "slideIn 0.3s ease-out",
