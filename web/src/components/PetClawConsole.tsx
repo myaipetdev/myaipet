@@ -6,7 +6,7 @@
  * petclaw_chat tool, live). Dark terminal panel on the app's light pages.
  *
  * Inventory is the REAL thing (kept honest):
- *   • 21 connectors  • 14 SDK skills  • 6 MCP tools  • sovereignty controls
+ *   • 21 connectors  • 15 SDK skills  • 6 MCP tools  • VIGIL (5-stage harness)  • PACK (A2A)  • sovereignty
  *
  * variant="full"    → manifest + LIVE terminal (boot effect + chat). Needs petId.
  * variant="compact" → banner + channels only, static (onboarding intro).
@@ -57,8 +57,23 @@ const SKILLS = [
   { k: "emotional", v: "companion-chat · daily-mood · daydream" },
   { k: "social", v: "persona-mirror · autonomous-post" },
   { k: "creative", v: "image-gen · video-gen" },
-  { k: "knowledge", v: "memory-recall · web-search" },
+  { k: "knowledge", v: "memory-recall · memory-consolidate · web-search" },
   { k: "utility", v: "soul-export · soul-import · consent · evolve · memory-anchor" },
+];
+// VIGIL — the always-on self-improvement loop. Runs every companion-chat turn
+// (lib/petclaw/memory/*). Adapted from the agentic-harness playbook:
+// memory-feedback-pattern + learning loop.
+const HARNESS = [
+  { k: "memory-ledger", v: "per-turn fact extraction → portable MEMORY" },
+  { k: "self-reflect", v: "compounding read on how to be your companion" },
+  { k: "feedback", v: "estimates how the last reply landed" },
+  { k: "self-learn", v: "promotes recurring topics into learned patterns" },
+  { k: "chorus", v: "best-of-N: most in-character of N drafts · Fusion-family (opt-in)" },
+];
+// PACK — pet-to-pet (A2A): pets delegate skills to other pets (network/*).
+const PACK = [
+  { k: "discover", v: "find pets by element / skill" },
+  { k: "invoke", v: "call a skill on another pet · wallet-debited, authed" },
 ];
 const SOVEREIGNTY: { k: string; v: React.ReactNode }[] = [
   { k: "export", v: "full memory ledger, signed JSON" },
@@ -83,8 +98,8 @@ const liveTag = <span style={{ color: GREEN }}>● live</span>;
 interface Line { role: "sys" | "you" | "pet"; text: string }
 
 const BOOT: Line[] = [
-  { role: "sys", text: "initializing petclaw-mcp · protocol v1 · SDK 1.4.0" },
-  { role: "sys", text: "connectors ▸ 21   tools ▸ 6 ready   skills ▸ 14 loaded" },
+  { role: "sys", text: "initializing petclaw-mcp · protocol v1 · SDK 1.5.0" },
+  { role: "sys", text: "connectors ▸ 21   tools ▸ 6 ready   skills ▸ 15 loaded   VIGIL ▸ 5 · PACK ▸ A2A" },
   { role: "sys", text: "soul ▸ portable · consent ▸ enforced · on-chain ▸ holding (TGE)" },
 ];
 
@@ -160,12 +175,14 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
   const runCommand = (cmd: string): boolean => {
     const c = cmd.trim().toLowerCase();
     if (c === "/help") {
-      pushLine({ role: "sys", text: "commands: /channels  /tools  /skills  /clear  — or just type to chat" });
+      pushLine({ role: "sys", text: "commands: /channels  /tools  /skills  /vigil  /pack  /clear  — or just type to chat" });
       return true;
     }
     if (c === "/channels" || c === "/connectors") { pushLine({ role: "sys", text: "connectors: " + CONNECTORS.map((x) => x.k).join(" · ") }); return true; }
     if (c === "/tools") { pushLine({ role: "sys", text: "mcp tools: " + MCP_TOOLS.map((x) => x.k).join(" · ") }); return true; }
     if (c === "/skills") { pushLine({ role: "sys", text: "skills: " + SKILLS.map((x) => x.v).join(", ") }); return true; }
+    if (c === "/vigil" || c === "/harness") { pushLine({ role: "sys", text: "VIGIL (every turn): " + HARNESS.map((x) => x.k).join(" → ") }); return true; }
+    if (c === "/pack") { pushLine({ role: "sys", text: "PACK (A2A): " + PACK.map((x) => x.k).join(" · ") + " — pets delegate to other pets" }); return true; }
     if (c === "/clear") { setLines([]); return true; }
     return false;
   };
@@ -241,7 +258,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
           {/* manifest */}
           <div style={{ border: `1px solid ${LINE}`, borderRadius: 12, padding: compact ? "18px 20px" : "20px 24px" }}>
             <div style={{ color: GOLD, fontWeight: 700, fontSize: 13, marginBottom: 12 }}>
-              PetClaw Protocol v1 · SDK v1.4.0 <span style={{ color: MUTED, fontWeight: 400 }}>· npx petclaw-mcp · MIT</span>
+              PetClaw Protocol v1 · SDK v1.5.0 <span style={{ color: MUTED, fontWeight: 400 }}>· npx petclaw-mcp · MIT</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: "0 40px" }}>
               <div>
@@ -251,18 +268,22 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   <span style={{ color: AMBER_DIM, minWidth: 112, flexShrink: 0 }}>runs on</span>
                   <span style={{ color: MUTED }}>{RUNS_ON}</span>
                 </div>
-                {!compact && (<><SectionHead>Skills (14)</SectionHead>{SKILLS.map((s) => <Row key={s.k} k={s.k} v={s.v} kw={100} />)}</>)}
+                {!compact && (<><SectionHead>Skills (15)</SectionHead>{SKILLS.map((s) => <Row key={s.k} k={s.k} v={s.v} kw={100} />)}</>)}
               </div>
               {!compact && (
                 <div>
                   <SectionHead>MCP tools — any agent can call</SectionHead>
                   {MCP_TOOLS.map((t) => <Row key={t.k} k={t.k} v={t.v} />)}
+                  <SectionHead>VIGIL — agentic harness · every chat turn</SectionHead>
+                  {HARNESS.map((h) => <Row key={h.k} k={h.k} v={h.v} kw={120} />)}
+                  <SectionHead>PACK — pet-to-pet (A2A)</SectionHead>
+                  {PACK.map((p) => <Row key={p.k} k={p.k} v={p.v} kw={120} />)}
                   <SectionHead>Sovereignty</SectionHead>
                   {SOVEREIGNTY.map((s) => <Row key={s.k} k={s.k} v={s.v} />)}
                 </div>
               )}
             </div>
-            <div style={{ marginTop: 14, color: MUTED, fontSize: 12.5 }}>21 connectors · 14 skills · 6 MCP tools · 100% your data</div>
+            <div style={{ marginTop: 14, color: MUTED, fontSize: 12.5 }}>21 connectors · 15 skills · 5-stage harness · 6 MCP tools · 100% your data</div>
           </div>
 
           {/* LIVE terminal */}
