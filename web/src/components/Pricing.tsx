@@ -51,12 +51,15 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
       return;
     }
     if (chainId !== BSC_CHAIN_ID) {
+      // Trigger the switch and stop — switchChain is async, so falling through
+      // here would fire pay() on the OLD chain. Make the user re-tap once on BSC.
       try {
         switchChain({ chainId: BSC_CHAIN_ID });
+        setError("Switch to BNB Chain in your wallet, then tap your plan again.");
       } catch {
         setError("Please switch to BNB Chain (BSC)");
-        return;
       }
+      return;
     }
     if (!directPay.treasuryConfigured) {
       setError("Payments are temporarily paused. Contact support.");

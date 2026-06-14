@@ -66,7 +66,13 @@ export default function PremiumShop() {
       }
 
       setResult({ type: "success", text, detail: res });
-      if (res.credits_spent) setBalance(prev => prev !== null ? prev - res.credits_spent : prev);
+      // Reconcile the balance from the server rather than `prev - credits_spent`:
+      // gacha pulls can award credits back / refund duplicates, which local
+      // subtraction ignored, leaving the shown balance understated until reload.
+      try {
+        const b: any = await api.credits.balance();
+        setBalance(b.balance ?? b.credits ?? null);
+      } catch {}
     } catch (err: any) {
       setResult({ type: "error", text: err.message || "Purchase failed" });
     }
