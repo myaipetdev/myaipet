@@ -602,23 +602,35 @@ export default function SocialGallery() {
 
   useEffect(() => { loadFeed(); }, [sort]);
 
+  // Monotonic token so a slow response for an old `sort` can't overwrite the
+  // grid after the user has switched sort and a newer load already landed.
+  const feedReqRef = useRef(0);
+  const [feedFailed, setFeedFailed] = useState(false);
+
   const loadFeed = async () => {
+    const reqId = ++feedReqRef.current;
     setLoading(true);
+    setFeedFailed(false);
     let realItems: any[] = [];
+    let ok = false;
     try {
       const data = await api.social.feed({ sort, page: 1, page_size: 40 });
       realItems = (data.items || []).filter((i: any) => i.photo_url || i.photo_path || i.video_url || i.video_path);
+      ok = true;
     } catch {}
     if (realItems.length === 0) {
       try {
         const data = await api.gallery.list({ sort: sort === "most_liked" ? "recent" : sort, page: 1, page_size: 40 });
         realItems = (data.items || []).map((i: any) => ({ ...i, generation_id: i.id, likes_count: 0, comments_count: 0, is_liked: false }));
+        ok = true;
       } catch {}
     }
+    if (reqId !== feedReqRef.current) return; // a newer sort/load superseded this one
     // Show only real creations. Sparse feeds fall through to the real
     // "No Creations Yet" empty-state below — never pad with fabricated
     // usernames/like-counts, which misrepresented activity to every user.
     setItems(realItems);
+    setFeedFailed(!ok); // distinguish a real outage from a genuinely empty feed
     setLoading(false);
   };
 
@@ -626,7 +638,13 @@ export default function SocialGallery() {
   const itemsRef = useRef<any[]>([]);
   itemsRef.current = items;
 
+  // Per-id in-flight set: a rapid second click while one like POST is pending
+  // would fire a second toggle and settle the UI on the server's intermediate
+  // (wrong) state — ignore re-clicks until the first resolves.
+  const likeInFlight = useRef<Set<number>>(new Set());
+
   const handleLike = useCallback(async (generationId: number, _index: number) => {
+    if (likeInFlight.current.has(generationId)) return;
     // Optimistic toggle, then reconcile with the server's truth. (The API
     // returns { liked, likes_count } — there is no `action` field, so the old
     // `result.action === "liked"` was always false and silently reverted likes.)
@@ -645,6 +663,7 @@ export default function SocialGallery() {
     setSelectedItem((prev: any) => (matches(prev) ? flip(prev) : prev));
     if (isMock) return;
 
+    likeInFlight.current.add(generationId);
     try {
       const result: any = await api.social.like(generationId);
       const apply = (item: any) => ({
@@ -658,6 +677,8 @@ export default function SocialGallery() {
       // revert the optimistic flip
       setItems(prev => prev.map(item => (matches(item) ? flip(item) : item)));
       setSelectedItem((prev: any) => (matches(prev) ? flip(prev) : prev));
+    } finally {
+      likeInFlight.current.delete(generationId);
     }
   }, []);
 
@@ -793,6 +814,8 @@ export default function SocialGallery() {
         <div style={{ textAlign: "center", padding: "100px 40px" }}>
           {search ? (
             <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.2 }}>🔍</div>
+          ) : feedFailed ? (
+            <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.3 }}>⚠️</div>
           ) : (
             <img src="/mascot.jpg" alt="" style={{
               width: 72, height: 72, borderRadius: "50%", objectFit: "cover",
@@ -803,11 +826,18 @@ export default function SocialGallery() {
             fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, color: "rgba(26,26,46,0.45)",
             marginBottom: 6, fontWeight: 500,
           }}>
-            {search ? "No results found" : "No Creations Yet"}
+            {search ? "No results found" : feedFailed ? "Couldn't load the feed" : "No Creations Yet"}
           </h3>
           <p style={{ fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.3)" }}>
-            {search ? "Try different keywords" : "Be the first to create something"}
+            {search ? "Try different keywords" : feedFailed ? "Check your connection and try again" : "Be the first to create something"}
           </p>
+          {feedFailed && !search && (
+            <button onClick={() => loadFeed()} style={{
+              marginTop: 16, padding: "8px 20px", borderRadius: 999,
+              border: "1px solid rgba(0,0,0,0.1)", background: "white", cursor: "pointer",
+              fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 600, color: "#1a1a2e",
+            }}>Retry</button>
+          )}
         </div>
       ) : (
         <MasonryGrid
