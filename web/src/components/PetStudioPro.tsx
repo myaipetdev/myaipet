@@ -81,7 +81,7 @@ export default function PetStudioPro() {
   const [pets, setPets] = useState<Pet[] | null>(null);
   const [petId, setPetId] = useState<number | null>(null);
   const [models, setModels] = useState<StudioModel[]>([]);
-  const [credits, setCredits] = useState(0);
+  const [credits, setCredits] = useState<number | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   const [history, setHistory] = useState<Generation[]>([]);
 
@@ -257,7 +257,11 @@ export default function PetStudioPro() {
       }
 
       const jobId = data.generationId;
-      for (let i = 0; i < 60; i++) {
+      // Grok video can run past the stated "~30–90s"; poll longer for video so a
+      // slow-but-valid job isn't surfaced as a timeout failure while it actually
+      // finishes (and lands in History). Image stays at 180s — plenty.
+      const maxPolls = chosenModel?.kind === "video" ? 120 : 60; // ×3s = 360s / 180s
+      for (let i = 0; i < maxPolls; i++) {
         await new Promise(r => setTimeout(r, 3000));
         const r2 = await fetch(`/api/studio/generate/${jobId}`, { headers: getAuthHeaders() }).catch(() => null);
         if (!r2?.ok) continue;
@@ -327,7 +331,7 @@ export default function PetStudioPro() {
               fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.05em",
             }}>💡 DEMO · Sign in →</a>
           )}
-          <Pill label="CREDITS" value={String(credits)} />
+          <Pill label="CREDITS" value={credits == null ? "—" : String(credits)} />
         </div>
 
         {/* ── Two-column workspace ── */}
