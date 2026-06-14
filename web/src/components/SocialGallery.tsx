@@ -283,7 +283,9 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
           </div>
 
           {/* Comments */}
-          <CommentSection generationId={item.generation_id || item.id} onAdded={onCommentAdded} />
+          {item.__mock
+            ? <div style={{ fontSize: 12, color: "rgba(26,26,46,0.4)", padding: "12px 2px" }}>Sample post — comments open up on real creations.</div>
+            : <CommentSection generationId={item.generation_id || item.id} onAdded={onCommentAdded} />}
         </div>
       </div>
     </div>
@@ -618,7 +620,9 @@ export default function SocialGallery() {
     // Pad with mock data when real items are sparse so community doesn't look empty
     if (realItems.length < MIN_REAL) {
       const usedIds = new Set(realItems.map((i: any) => i.id));
-      const mockPad = MOCK_SOCIAL_FEED.items.filter((m: any) => !usedIds.has(m.id));
+      const mockPad = MOCK_SOCIAL_FEED.items
+        .filter((m: any) => !usedIds.has(m.id))
+        .map((m: any) => ({ ...m, __mock: true }));
       setItems([...realItems, ...mockPad]);
     } else {
       setItems(realItems);
@@ -626,7 +630,11 @@ export default function SocialGallery() {
     setLoading(false);
   };
 
-  const handleLike = useCallback(async (generationId: number, index: number) => {
+  // Latest items, readable from the []-dep callback below.
+  const itemsRef = useRef<any[]>([]);
+  itemsRef.current = items;
+
+  const handleLike = useCallback(async (generationId: number, _index: number) => {
     // Optimistic toggle, then reconcile with the server's truth. (The API
     // returns { liked, likes_count } — there is no `action` field, so the old
     // `result.action === "liked"` was always false and silently reverted likes.)
@@ -634,9 +642,17 @@ export default function SocialGallery() {
       const liked = !item.is_liked;
       return { ...item, is_liked: liked, likes_count: liked ? (item.likes_count||0)+1 : Math.max(0,(item.likes_count||0)-1) };
     };
+    // Match by id, not list index — the grid renders the FILTERED list, so an
+    // index would update the wrong row while searching/filtering.
     const matches = (it: any) => it && (it.generation_id || it.id) === generationId;
-    setItems(prev => prev.map((item, i) => (i === index ? flip(item) : item)));
+    // Demo/mock padding carries real-looking DB ids; never call the like API for
+    // it — that would toggle a like on an unrelated real generation. Local only.
+    const isMock = itemsRef.current.find(matches)?.__mock;
+
+    setItems(prev => prev.map(item => (matches(item) ? flip(item) : item)));
     setSelectedItem((prev: any) => (matches(prev) ? flip(prev) : prev));
+    if (isMock) return;
+
     try {
       const result: any = await api.social.like(generationId);
       const apply = (item: any) => ({
@@ -644,11 +660,11 @@ export default function SocialGallery() {
         is_liked: !!result.liked,
         likes_count: typeof result.likes_count === "number" ? result.likes_count : item.likes_count,
       });
-      setItems(prev => prev.map((item, i) => (i === index ? apply(item) : item)));
+      setItems(prev => prev.map(item => (matches(item) ? apply(item) : item)));
       setSelectedItem((prev: any) => (matches(prev) ? apply(prev) : prev));
     } catch {
       // revert the optimistic flip
-      setItems(prev => prev.map((item, i) => (i === index ? flip(item) : item)));
+      setItems(prev => prev.map(item => (matches(item) ? flip(item) : item)));
       setSelectedItem((prev: any) => (matches(prev) ? flip(prev) : prev));
     }
   }, []);
