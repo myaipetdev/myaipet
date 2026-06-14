@@ -810,8 +810,10 @@ export default function SovereigntyDashboard() {
       const toArr = (v: any) => Array.isArray(v) ? v : [];
       setSoul(soulRes?.soul || soulRes || null);
       setCheckpoints(toArr(ckptRes?.checkpoints ?? ckptRes));
-      setMemoryNfts(toArr(memsRes?.memories ?? memsRes?.memory_nfts ?? memsRes));
-      setMintableMemories(toArr(mintableRes?.memories ?? mintableRes));
+      // Both routes return { items } — reading .memories coerced the object to []
+      // via toArr, so minted/mintable NFTs would never render once they exist.
+      setMemoryNfts(toArr(memsRes?.items ?? memsRes?.memories ?? memsRes?.memory_nfts ?? memsRes));
+      setMintableMemories(toArr(mintableRes?.items ?? mintableRes?.memories ?? mintableRes));
       setSuccessorInput((soulRes?.soul?.successor_wallet || soulRes?.successor_wallet) || "");
       if (consentRes?.consent) setConsent(consentRes.consent);
     } catch {}
