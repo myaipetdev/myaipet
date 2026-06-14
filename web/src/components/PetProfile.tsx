@@ -922,6 +922,12 @@ export default function PetProfile() {
     creditsEarned: number;
   } | null>(null);
 
+  // Tracks the currently-selected pet so async status/evo loaders can bail if
+  // the user switched pets mid-fetch — a slow response for the old pet must not
+  // clobber the new pet's stats/evolution/request.
+  const activePetIdRef = useRef<number | null>(null);
+  useEffect(() => { activePetIdRef.current = activePet?.id ?? null; }, [activePet]);
+
   useEffect(() => {
     loadPets();
     loadBalance();
@@ -999,6 +1005,7 @@ export default function PetProfile() {
   const loadPetStatus = async (petId: number) => {
     try {
       const status = await api.pets.get(petId);
+      if (activePetIdRef.current !== petId) return; // pet switched mid-fetch
       setPetStatus(status);
     } catch (e) {
       // status fetch failed, use activePet data as fallback
@@ -1010,6 +1017,7 @@ export default function PetProfile() {
       });
       if (res.ok) {
         const data = await res.json();
+        if (activePetIdRef.current !== petId) return; // pet switched mid-fetch
         setPetRequest(data.request || null);
         setCombosUnlocked(data.combos_unlocked || []);
       }
@@ -1019,8 +1027,10 @@ export default function PetProfile() {
   const loadEvoStatus = async (petId: number) => {
     try {
       const evo = await api.evolution.status(petId);
+      if (activePetIdRef.current !== petId) return; // pet switched mid-fetch
       setEvoStatus(evo);
     } catch (e) {
+      if (activePetIdRef.current !== petId) return;
       setEvoStatus(null);
     }
   };
@@ -1110,15 +1120,26 @@ export default function PetProfile() {
       const result = await callInteract();
       if (result) finishInteract(result);
     } catch (e: any) {
-      const blocked = e.message && (e.message.includes("Too hungry") || e.message.includes("Too tired") || e.message.includes("stuffed"));
+      // Rate-limit (429 "Slow down…") and care-gates are blocked states, not a
+      // pet "response" — otherwise a rapid second click rendered the raw 429
+      // body as if the pet said it.
+      const blocked = !!e.message && (
+        e.message.includes("Too hungry") || e.message.includes("Too tired") ||
+        e.message.includes("stuffed") || e.message.includes("Slow down") ||
+        e.message.includes("Too fast") || e.message.includes("429")
+      );
       setLastResponse({
-        response_text: e.message || "Interaction failed",
+        response_text: blocked && /slow down|too fast|429/i.test(e.message)
+          ? `${activePet.name} needs a moment — slow down 🐾`
+          : (e.message || "Interaction failed"),
         stat_changes: {},
         blocked,
       });
       setResponseAnim(true);
     }
-    setTimeout(() => setInteracting(null), 300);
+    // Clear immediately so the button state is honest; the server's own 1500ms
+    // cooldown (429) is now surfaced gracefully above instead of as a fake reply.
+    setInteracting(null);
   };
 
   const handleChat = async () => {
@@ -1146,9 +1167,13 @@ export default function PetProfile() {
   };
 
   const selectPet = (pet: any) => {
+    activePetIdRef.current = pet.id; // set eagerly so in-flight loaders for the old pet bail
     setActivePet(pet);
     setLastResponse(null);
     setEvoResult(null);
+    setPetRequest(null);      // clear the previous pet's "wants" popup + combos until the new fetch lands
+    setCombosUnlocked([]);
+    setPetStatus(null);
     loadPetStatus(pet.id);
     loadEvoStatus(pet.id);
   };
@@ -1250,7 +1275,7 @@ export default function PetProfile() {
   }
   const mood = pet.current_mood || "neutral";
   const moodCfg = MOOD_CONFIG[mood] || MOOD_CONFIG.neutral;
-  const expNeeded = pet.level * 100;
+  const expNeeded = Math.max(1, (pet.level || 1) * 100); // avoid /0 → NaN width in the EXP bar
 
   return (
     <div style={{ padding: "16px", maxWidth: 960, margin: "0 auto", paddingTop: 80 }}>
@@ -2039,7 +2064,7 @@ export default function PetProfile() {
                         background: evoStatus.can_evolve
                           ? "linear-gradient(90deg, #4ade80, #22c55e)"
                           : "linear-gradient(90deg, #fbbf24, #f59e0b)",
-                        width: `${Math.min(100, (evoStatus.level / evoStatus.next_stage.minLevel) * 100)}%`,
+                        width: `${Math.max(0, Math.min(100, ((evoStatus.level || 0) / (evoStatus.next_stage.minLevel || 1)) * 100))}%`,
                         transition: "width 0.8s ease",
                       }} />
                     </div>
