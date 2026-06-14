@@ -340,8 +340,13 @@ export default function App() {
 
   const fetchActivity = useCallback(async () => {
     try {
-      const res = await api.analytics.activity(10);
-      if (res.items.length > 0) setActivities(res.items);
+      // Public, REAL activity (no admin gate, no mock). The old
+      // api.analytics.activity is admin-only, so every visitor 401'd and the
+      // "Live On-Chain Activity" strip stayed empty for all real users.
+      const r = await fetch("/api/activity/recent?limit=12");
+      if (!r.ok) return;
+      const d = await r.json();
+      if (Array.isArray(d?.items) && d.items.length > 0) setActivities(d.items);
     } catch { /* no mock fallback — an empty feed is honest */ }
   }, []);
 

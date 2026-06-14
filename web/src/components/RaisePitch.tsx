@@ -108,15 +108,15 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", gap: 24, alignItems: "center" }} className="pitch-projection-grid">
-              {/* Current Season Rewards standing */}
+              {/* Projected payout from current rank (pool-share, not earned pts) */}
               <div>
-                <div style={miniLabel}>SEASON REWARDS</div>
+                <div style={miniLabel}>PROJECTED PAYOUT</div>
                 <div style={{ ...bigNumber, color: "#fbbf24" }}>
                   {myPet.projectedShare.toLocaleString()}
                   <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
                 </div>
                 <div style={mini}>
-                  your current weekly standing
+                  projected from your rank #{myPet.rank}
                 </div>
               </div>
 
