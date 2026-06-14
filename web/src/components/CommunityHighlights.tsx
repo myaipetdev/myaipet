@@ -70,7 +70,7 @@ export default function CommunityHighlights() {
               }}>
                 {p.avatar_url
                   ? <img src={p.avatar_url} alt={p.name} style={{ width: 56, height: 56, borderRadius: 14, objectFit: "cover", marginBottom: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }} />
-                  : <div style={{ width: 56, height: 56, borderRadius: 14, background: "rgba(0,0,0,0.05)", margin: "0 auto 8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>🐾</div>}
+                  : <img src="/mascot.jpg" alt={p.name} style={{ width: 56, height: 56, borderRadius: 14, objectFit: "cover", marginBottom: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }} />}
                 <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1a2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
                 <div style={{ fontSize: 10, color: "rgba(26,26,46,0.5)", fontFamily: "'JetBrains Mono', monospace", marginTop: 1 }}>Lv.{p.level}</div>
               </div>

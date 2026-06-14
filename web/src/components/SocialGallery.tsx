@@ -2,10 +2,6 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { api } from "@/lib/api";
-import { MOCK_SOCIAL_FEED } from "@/lib/mockData";
-
-const PET_EMOJIS = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
-const PET_NAMES = ["Cat","Dog","Parrot","Turtle","Hamster","Rabbit","Fox","Pomeranian"];
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -99,8 +95,10 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
               }}>
                 {c.pet?.avatar_url ? (
                   <img src={c.pet.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : c.is_agent ? (
+                  <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
-                  <span style={{ fontSize: 12 }}>{c.is_agent ? "🐾" : "👤"}</span>
+                  <span style={{ fontSize: 12 }}>👤</span>
                 )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -202,7 +200,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
             <img src={item.photo_url || item.photo_path} alt=""
               style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
-            <span style={{ fontSize: 80, opacity: 0.3 }}>{PET_EMOJIS[item.pet_type] || "🐾"}</span>
+            <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.45 }} />
           )}
           {item.gen_type === "video" && (
             <div style={{
@@ -224,8 +222,9 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
                 width: 34, height: 34, borderRadius: "50%",
                 background: "linear-gradient(135deg, #f59e0b, #d97706)",
                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15,
+                overflow: "hidden",
               }}>
-                {PET_EMOJIS[item.pet_type] || "🐾"}
+                <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
               </div>
               <div>
                 <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "#1a1a2e", fontWeight: 600 }}>
@@ -417,7 +416,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
           background: "linear-gradient(135deg, #faf7f2, #f0ede8)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <span style={{ fontSize: 48, opacity: 0.3 }}>{PET_EMOJIS[item.pet_type] || "🐾"}</span>
+          <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.45 }} />
         </div>
       )}
 
@@ -467,9 +466,9 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
                 background: "linear-gradient(135deg, #f59e0b, #d97706)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 9, animation: "fadeUp 0.15s ease-out",
-                border: "1.5px solid rgba(255,255,255,0.3)",
+                border: "1.5px solid rgba(255,255,255,0.3)", overflow: "hidden",
               }}>
-                {PET_EMOJIS[item.pet_type]}
+                <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
               </div>
             )}
             <span style={{
@@ -605,7 +604,6 @@ export default function SocialGallery() {
 
   const loadFeed = async () => {
     setLoading(true);
-    const MIN_REAL = 8;
     let realItems: any[] = [];
     try {
       const data = await api.social.feed({ sort, page: 1, page_size: 40 });
@@ -617,16 +615,10 @@ export default function SocialGallery() {
         realItems = (data.items || []).map((i: any) => ({ ...i, generation_id: i.id, likes_count: 0, comments_count: 0, is_liked: false }));
       } catch {}
     }
-    // Pad with mock data when real items are sparse so community doesn't look empty
-    if (realItems.length < MIN_REAL) {
-      const usedIds = new Set(realItems.map((i: any) => i.id));
-      const mockPad = MOCK_SOCIAL_FEED.items
-        .filter((m: any) => !usedIds.has(m.id))
-        .map((m: any) => ({ ...m, __mock: true }));
-      setItems([...realItems, ...mockPad]);
-    } else {
-      setItems(realItems);
-    }
+    // Show only real creations. Sparse feeds fall through to the real
+    // "No Creations Yet" empty-state below — never pad with fabricated
+    // usernames/like-counts, which misrepresented activity to every user.
+    setItems(realItems);
     setLoading(false);
   };
 

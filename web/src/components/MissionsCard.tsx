@@ -119,32 +119,44 @@ export default function MissionsCard() {
 
   const buyShield = async () => {
     setBusyId("shield");
-    const r = await fetch("/api/streak/shield/buy", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify({ paymentMethod: "credits" }),
-    });
-    const data = await r.json();
-    if (!r.ok) toast(data?.error || "Something went wrong", "error");
-    else toast("Done — streak protected", "success");
-    setShieldModal(false);
-    setBusyId(null);
-    await load();
+    try {
+      const r = await fetch("/api/streak/shield/buy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ paymentMethod: "credits" }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) toast(data?.error || "Something went wrong", "error");
+      else toast("Done — streak protected", "success");
+      setShieldModal(false);
+      await load();
+    } catch {
+      // Network error or a non-JSON error page (e.g. 502) — without this the
+      // throw escaped and left the button stuck spinning in busyId forever.
+      toast("Something went wrong — try again.", "error");
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const buyRepair = async () => {
     setBusyId("repair");
-    const r = await fetch("/api/streak/repair", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify({ paymentMethod: "credits" }),
-    });
-    const data = await r.json();
-    if (!r.ok) toast(data?.error || "Something went wrong", "error");
-    else toast("Done — streak protected", "success");
-    setRepairModal(false);
-    setBusyId(null);
-    await load();
+    try {
+      const r = await fetch("/api/streak/repair", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ paymentMethod: "credits" }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) toast(data?.error || "Something went wrong", "error");
+      else toast("Done — streak protected", "success");
+      setRepairModal(false);
+      await load();
+    } catch {
+      toast("Something went wrong — try again.", "error");
+    } finally {
+      setBusyId(null);
+    }
   };
 
   if (loading) {

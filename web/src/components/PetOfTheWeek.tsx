@@ -72,10 +72,11 @@ export default function PetOfTheWeek() {
                   border: "2px solid rgba(251,191,36,0.4)",
                   boxShadow: "0 6px 18px rgba(0,0,0,0.3)",
                 }} />
-              : <div style={{
-                  width: 76, height: 76, borderRadius: 18, background: "rgba(255,255,255,0.08)",
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34,
-                }}>🐾</div>}
+              : <img src="/mascot.jpg" alt={pet.name} style={{
+                  width: 76, height: 76, borderRadius: 18, objectFit: "cover",
+                  border: "2px solid rgba(251,191,36,0.4)",
+                  boxShadow: "0 6px 18px rgba(0,0,0,0.3)",
+                }} />}
             <div style={{ minWidth: 0 }}>
               <div style={{
                 fontFamily: "'Space Grotesk', sans-serif", fontWeight: 800, fontSize: 26,
