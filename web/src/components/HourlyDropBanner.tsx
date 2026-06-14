@@ -149,7 +149,7 @@ export default function HourlyDropBanner() {
           </div>
           {/* Chips wrap so every drop stays fully visible (no edge clipping). */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {drop.upcoming.slice(0, 6).map((u, i) => (
+            {drop.upcoming.slice(0, 6).map((u, i, arr) => (
               <div key={i} style={{
                 display: "flex", alignItems: "center", gap: 7,
                 padding: "6px 11px", borderRadius: 999,
@@ -164,7 +164,7 @@ export default function HourlyDropBanner() {
                   fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
                   color: u.is_live ? "#7e22ce" : "rgba(26,26,46,0.45)", fontWeight: 700,
                 }}>
-                  {u.is_live ? "LIVE" : (i === 1 ? "next" : clockLabel(u.starts_at))} · {u.multiplier_x}×
+                  {u.is_live ? "LIVE" : (i === arr.findIndex((x: any) => !x.is_live) ? "next" : clockLabel(u.starts_at))} · {u.multiplier_x}×
                 </span>
               </div>
             ))}

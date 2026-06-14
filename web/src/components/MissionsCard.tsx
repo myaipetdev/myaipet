@@ -83,6 +83,14 @@ export default function MissionsCard() {
   const [shieldModal, setShieldModal] = useState(false);
   const [repairModal, setRepairModal] = useState(false);
 
+  // Escape closes the shield/repair modals (keyboard users can't click backdrop).
+  useEffect(() => {
+    if (!shieldModal && !repairModal) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { setShieldModal(false); setRepairModal(false); } };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [shieldModal, repairModal]);
+
   const load = useCallback(async () => {
     try {
       const r = await fetch("/api/missions/today", { headers: getAuthHeaders() });
@@ -194,7 +202,9 @@ export default function MissionsCard() {
             </div>
           </div>
           {/* Streak pill */}
-          <button onClick={canBuyShield ? () => setShieldModal(true) : undefined} style={{
+          <button
+            aria-label={canBuyShield ? "Buy streak shield" : `Current streak: ${today.streak.current} days`}
+            onClick={canBuyShield ? () => setShieldModal(true) : undefined} style={{
             display: "flex", alignItems: "center", gap: 6,
             padding: "8px 14px", borderRadius: 12,
             background: "rgba(245,158,11,0.10)",
@@ -206,7 +216,7 @@ export default function MissionsCard() {
             🔥 {today.streak.current}d
           </button>
           {streak && (
-            <button onClick={() => setShieldModal(true)} style={shieldBtn}>
+            <button aria-label={`Streak shields owned: ${streak.shield.owned} — buy more`} onClick={() => setShieldModal(true)} style={shieldBtn}>
               🛡 {streak.shield.owned}
             </button>
           )}

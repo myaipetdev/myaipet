@@ -100,6 +100,7 @@ export default function PetDateWidget() {
         <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <select
+              aria-label="Your pet"
               value={myPetId ?? ""}
               onChange={e => setMyPetId(Number(e.target.value))}
               style={{
@@ -112,6 +113,7 @@ export default function PetDateWidget() {
             </select>
             <input
               type="number"
+              aria-label="Target pet ID from leaderboard"
               value={targetPetId}
               onChange={e => setTargetPetId(e.target.value)}
               placeholder="Target pet ID (from leaderboard)"
