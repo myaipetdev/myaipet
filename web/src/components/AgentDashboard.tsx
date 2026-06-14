@@ -7,9 +7,11 @@ import PersonaSetup from "@/components/PersonaSetup";
 // ── Types ──
 interface PlatformConnection {
   platform: string;
-  connected: boolean;
-  bot_username?: string;
+  is_active: boolean;
+  bot_username?: string | null;
+  bot_name?: string | null;
   connected_at?: string;
+  last_active_at?: string;
 }
 
 interface AgentConfig {
@@ -38,7 +40,8 @@ interface AgentStats {
 const PLATFORMS = [
   { key: "telegram", label: "Telegram", color: "#2AABEE", icon: "T", tokenLabel: "Bot Token", helpUrl: "https://core.telegram.org/bots#botfather", helpText: "Get token from @BotFather" },
   { key: "twitter", label: "Twitter", color: "#1DA1F2", icon: "X", tokenLabel: "API Bearer Token", helpUrl: "https://developer.twitter.com", helpText: "Create app at developer.twitter.com" },
-  { key: "discord", label: "Discord", color: "#5865F2", icon: "D", tokenLabel: "Bot Token", helpUrl: "https://discord.com/developers/applications", helpText: "Get token from Developer Portal" },
+  // Discord intentionally omitted — the connect route only supports
+  // telegram/twitter, so a Discord card just 400'd "Invalid platform".
 ];
 
 const FREQUENCY_OPTIONS = [
@@ -116,7 +119,7 @@ export default function AgentDashboard() {
       if (msgRes) {
         setMessages(msgRes.messages || []);
         setMsgOffset(20);
-        setHasMore((msgRes.messages || []).length >= 20);
+        setHasMore(msgRes.pagination?.has_more ?? (msgRes.messages || []).length >= 20);
       }
     } catch {}
     setLoading(false);
@@ -130,7 +133,12 @@ export default function AgentDashboard() {
     setConnectStatus("checking");
     setConnectError("");
     try {
-      const res = await api.agent.connect(selectedPet.id, connectModal, { token: tokenInput.trim() });
+      // The connect route reads bot_token (telegram) / api_key (twitter), not a
+      // generic `token` — sending `token` made every real connect 400.
+      const creds = connectModal === "telegram"
+        ? { bot_token: tokenInput.trim() }
+        : { api_key: tokenInput.trim() };
+      const res = await api.agent.connect(selectedPet.id, connectModal, creds);
       setConnectedUsername(res.bot_username || "Connected");
       setConnectStatus("success");
       fetchAgentData();
@@ -279,7 +287,7 @@ export default function AgentDashboard() {
         <>
           {/* Stats Bar */}
           <div style={{
-            display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12,
+            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12,
             marginBottom: 28, animation: "fadeUp 0.4s ease-out 0.1s both",
           }}>
             {[
@@ -311,10 +319,10 @@ export default function AgentDashboard() {
             }}>
               Platform Connections
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14 }}>
               {PLATFORMS.map(platform => {
                 const conn = getConnection(platform.key);
-                const isConnected = conn?.connected;
+                const isConnected = conn?.is_active;
                 return (
                   <div
                     key={platform.key}
@@ -532,7 +540,7 @@ export default function AgentDashboard() {
             </div>
 
             <div style={{
-              display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20,
+              display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20,
               opacity: config.is_enabled ? 1 : 0.4,
               pointerEvents: config.is_enabled ? "auto" : "none",
               transition: "opacity 0.3s ease",
