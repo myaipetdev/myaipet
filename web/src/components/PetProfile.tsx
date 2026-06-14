@@ -2121,7 +2121,7 @@ export default function PetProfile() {
           {/* Memories Timeline — show a beautiful empty state when none exist
               yet so the user knows what's coming. Previously the section just
               vanished, leaving the page feeling incomplete. */}
-          {(!petStatus?.recent_memories || petStatus.recent_memories.length === 0) && pet && (
+          {petStatus && (!petStatus.recent_memories || petStatus.recent_memories.length === 0) && pet && (
             <div style={{
               background: "rgba(255,255,255,0.8)", borderRadius: 16,
               border: "1px solid rgba(0,0,0,0.06)", padding: "32px 24px",

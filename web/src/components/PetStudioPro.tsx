@@ -50,7 +50,6 @@ interface Generation {
   created_at: string;
 }
 
-const PET_EMOJIS = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
 
 const STYLES = [
   { id: "cinematic",      emoji: "🎬", label: "Cinematic",  hint: "Hollywood", swatch: "linear-gradient(135deg,#0f172a 0%,#334155 55%,#b45309 100%)" },
@@ -417,12 +416,7 @@ export default function PetStudioPro() {
                     }}>
                       {p.avatar_url
                         ? <img src={p.avatar_url} alt={p.name} style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover" }} />
-                        : <span style={{
-                            width: 26, height: 26, borderRadius: 7,
-                            background: "rgba(245,158,11,0.10)",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 15,
-                          }}>{PET_EMOJIS[p.species] || "🐾"}</span>}
+                        : <img src="/mascot.jpg" alt="" style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover", opacity: 0.9 }} />}
                       <span style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</span>
                       <span style={{
                         fontSize: 10, color: "rgba(26,26,46,0.5)",
