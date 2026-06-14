@@ -5,7 +5,6 @@ import { useAccount } from "wagmi";
 
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
-import { MOCK_STATS, MOCK_ACTIVITIES } from "@/lib/mockData";
 
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
@@ -312,20 +311,28 @@ export default function App() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const stats = await api.analytics.stats();
-      setPlatformStats(stats);
-    } catch {
-      if (!platformStats) setPlatformStats(MOCK_STATS);
-    }
+      // Public, REAL aggregates (no admin gate, no mock). api.analytics.stats()
+      // is admin-only, so visitors 401'd and we used to silently show
+      // fabricated MOCK numbers on the landing page — a transparency risk.
+      // Real data here, or the always-true qualitative fallback below.
+      const r = await fetch("/api/community/highlights");
+      if (!r.ok) return;
+      const d = await r.json();
+      if (d?.stats) {
+        setPlatformStats({
+          total_users: d.stats.pets ?? 0,
+          total_generations: d.stats.generations ?? 0,
+          tx_today: d.stats.generationsThisWeek ?? 0,
+        });
+      }
+    } catch { /* leave null → honest qualitative fallback */ }
   }, []);
 
   const fetchActivity = useCallback(async () => {
     try {
       const res = await api.analytics.activity(10);
       if (res.items.length > 0) setActivities(res.items);
-    } catch {
-      if (activities.length === 0) setActivities(MOCK_ACTIVITIES);
-    }
+    } catch { /* no mock fallback — an empty feed is honest */ }
   }, []);
 
   useEffect(() => {
@@ -340,7 +347,7 @@ export default function App() {
   // always-true facts when stats are unavailable or still zero.
   const stats = (platformStats && ((platformStats.total_users ?? 0) > 0 || (platformStats.total_generations ?? 0) > 0))
     ? [
-        { label: "Verified Users", value: (platformStats.total_users ?? 0).toLocaleString(), raw: platformStats.total_users ?? 0, animated: true, sub: "Unique wallets" },
+        { label: "Pets Adopted", value: (platformStats.total_users ?? 0).toLocaleString(), raw: platformStats.total_users ?? 0, animated: true, sub: "On-chain companions" },
         { label: "AI Content Created", value: (platformStats.total_generations ?? 0).toLocaleString(), raw: platformStats.total_generations ?? 0, animated: true, sub: "Videos & Images" },
       ]
     : [
@@ -399,9 +406,11 @@ export default function App() {
               <div className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
                 <Stats stats={stats} />
               </div>
-              <div className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
-                <Feed activities={activities} />
-              </div>
+              {activities.length > 0 && (
+                <div className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
+                  <Feed activities={activities} />
+                </div>
+              )}
               {/* Pitch: why raise + how to earn (closes the gap between Hero and Pricing) */}
               <RaisePitch onNavigate={setSection} />
               <Pricing

@@ -371,7 +371,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         `}</style>
 
         <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.3)", letterSpacing: "0.12em", textAlign: "center", marginBottom: 16, textTransform: "uppercase" }}>
-          Community Creations
+          Style Showcase
         </div>
 
         {/* Row 1 — tall cards, fast left */}
