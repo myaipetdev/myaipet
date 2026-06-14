@@ -54,8 +54,10 @@ export default function PetDateWidget() {
       .catch(() => {});
   }, []);
 
+  const validTarget = Number.isInteger(Number(targetPetId)) && Number(targetPetId) > 0;
+
   const go = async () => {
-    if (!myPetId || !targetPetId.trim()) return;
+    if (!myPetId || !validTarget) return;
     setBusy(true); setResult(null);
     try {
       const r = await fetch("/api/pet-date", {
@@ -119,12 +121,12 @@ export default function PetDateWidget() {
                 fontFamily: "'JetBrains Mono', monospace",
               }}
             />
-            <button onClick={go} disabled={busy || !myPetId || !targetPetId.trim()} style={{
+            <button onClick={go} disabled={busy || !myPetId || !validTarget} style={{
               padding: "10px 16px", borderRadius: 10, border: "none",
               background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
               color: "white", fontWeight: 800, fontSize: 13,
               cursor: "pointer", boxShadow: "0 2px 8px rgba(245,158,11,0.25)",
-              opacity: busy || !myPetId || !targetPetId.trim() ? 0.5 : 1,
+              opacity: busy || !myPetId || !validTarget ? 0.5 : 1,
               fontFamily: "'Space Grotesk', sans-serif",
             }}>{busy ? "Setting up date…" : "Start date"}</button>
           </div>

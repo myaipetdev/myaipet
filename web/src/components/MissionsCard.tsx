@@ -156,6 +156,7 @@ export default function MissionsCard() {
   if (!today) return null;
 
   const allComplete = today.missions.length > 0 && today.missions.every(m => m.status === "completed");
+  const canBuyShield = !!streak && streak.shield.owned < streak.shield.max_owned;
   const totalPossible = today.earnedToday + today.remainingToday + (allComplete ? 0 : today.bonusAllComplete);
 
   return (
@@ -181,14 +182,14 @@ export default function MissionsCard() {
             </div>
           </div>
           {/* Streak pill */}
-          <button onClick={() => streak && streak.shield.owned < streak.shield.max_owned && setShieldModal(true)} style={{
+          <button onClick={canBuyShield ? () => setShieldModal(true) : undefined} style={{
             display: "flex", alignItems: "center", gap: 6,
             padding: "8px 14px", borderRadius: 12,
             background: "rgba(245,158,11,0.10)",
             border: "1px solid rgba(245,158,11,0.25)",
             color: "#b45309", fontWeight: 800, fontSize: 14,
             fontFamily: "'JetBrains Mono', monospace",
-            cursor: "pointer",
+            cursor: canBuyShield ? "pointer" : "default",
           }}>
             🔥 {today.streak.current}d
           </button>
@@ -342,7 +343,7 @@ export default function MissionsCard() {
               color: "#7e22ce",
               fontSize: 12, fontWeight: 700,
             }}>
-              💎 Complete all 5 → <strong>+{today.bonusAllComplete}</strong> bonus
+              💎 Complete all {today.missions.length} → <strong>+{today.bonusAllComplete}</strong> bonus
             </div>
           )}
           {allComplete && (
