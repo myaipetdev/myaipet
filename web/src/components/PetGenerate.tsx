@@ -341,9 +341,9 @@ export default function PetGenerate() {
         </div>
 
         <div style={{ padding: 28 }}>
-          <div style={{ display: "flex", gap: 24 }}>
+          <div className="pg-row" style={{ display: "flex", gap: 24 }}>
             {/* Left: Pet selection + preview */}
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               {/* Pet selector */}
               <div style={{ marginBottom: 18 }}>
                 <label style={{
@@ -583,7 +583,7 @@ export default function PetGenerate() {
             </div>
 
             {/* Right: Controls */}
-            <div style={{ width: 320, display: "flex", flexDirection: "column", gap: 16 }}>
+            <div className="pg-side" style={{ width: 320, display: "flex", flexDirection: "column", gap: 16 }}>
               {/* Type toggle */}
               <div>
                 <label style={{

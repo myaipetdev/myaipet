@@ -227,6 +227,9 @@ body {
   .sos-buddy-grid { grid-template-columns: 1fr !important; }
   /* My Pet: 340px sidebar + content flips to stacked instead of overflowing. */
   .desktop-grid { grid-template-columns: 1fr !important; }
+  /* Create tab: 320px settings sidebar stacks under the preview on phones. */
+  .pg-row { flex-direction: column; }
+  .pg-side { width: 100% !important; }
 }
 @media (max-width: 640px) {
   /* Hero shrinks on phones — already clamped, just tighten margins */
