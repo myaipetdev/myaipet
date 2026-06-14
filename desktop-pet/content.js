@@ -508,7 +508,7 @@
         break;
 
       case "selfie":
-        if (evolution.stage < 3) {
+        if ((evolution.stage || 0) < 3) {
           showBubble("\uD83D\uDD12 Unlock selfies at Teen stage!", 3000);
           return;
         }
