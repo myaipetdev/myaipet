@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface UpcomingDrop {
   kind: string;
@@ -45,6 +45,9 @@ function clockLabel(iso: string) {
 export default function HourlyDropBanner() {
   const [drop, setDrop] = useState<ActiveDrop | null>(null);
   const [now, setNow] = useState(Date.now());
+  // When the current drop's ends_in_seconds was fetched — the countdown is
+  // measured against this, not against the per-second `now` tick.
+  const fetchedAt = useRef(Date.now());
 
   useEffect(() => {
     let cancelled = false;
@@ -53,7 +56,7 @@ export default function HourlyDropBanner() {
         const r = await fetch("/api/drops/current");
         if (!r.ok) return;
         const d = await r.json();
-        if (!cancelled) setDrop(d);
+        if (!cancelled) { fetchedAt.current = Date.now(); setDrop(d); }
       } catch { /* ignore */ }
     };
     fetchDrop();
@@ -66,7 +69,7 @@ export default function HourlyDropBanner() {
 
   // Recompute remaining on the client tick so the countdown is smooth
   const fetched = drop;
-  const remaining = Math.max(0, fetched.ends_in_seconds - Math.floor((Date.now() - now + (Date.now() - now)) / 1000));
+  const remaining = Math.max(0, fetched.ends_in_seconds - Math.floor((now - fetchedAt.current) / 1000));
   const live = remaining > 0;
 
   return (

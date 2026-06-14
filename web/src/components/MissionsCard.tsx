@@ -88,7 +88,11 @@ export default function MissionsCard() {
       const r = await fetch("/api/missions/today", { headers: getAuthHeaders() });
       if (r.status === 401) { setAuthed(false); setLoading(false); return; }
       setAuthed(true);
+      // A 5xx returns { error } with no missions/streak — storing it then reading
+      // today.streak.current / today.missions.map white-screens the Earn tab.
+      if (!r.ok) { setLoading(false); return; }
       const data: TodayResponse = await r.json();
+      if (!data?.missions || !data?.streak) { setLoading(false); return; }
       setToday(data);
       const r2 = await fetch("/api/streak", { headers: getAuthHeaders() });
       if (r2.ok) setStreak(await r2.json());
