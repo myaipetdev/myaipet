@@ -226,31 +226,49 @@ export default function PetStudioPro() {
 
   const canGenerate = !!pet && prompt.trim().length > 0 && view !== "generating";
 
+  // Per-generation sentinel + mount guard. Every async write in generate()
+  // checks it's still the active job AND still mounted before applying, so
+  // switching pet/model/output mid-flight (or navigating away) can't let a
+  // stale poll stomp the preview/credits or setState after unmount.
+  const jobSeqRef = useRef(0);
+  const mountedRef = useRef(true);
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
+
   const generate = async () => {
     if (!canGenerate || !pet) return;
+    const myJob = ++jobSeqRef.current;
+    const isActive = () => jobSeqRef.current === myJob && mountedRef.current;
+    // Snapshot the submitted model so the loop never reads later-changed state.
+    const submittedModel = chosenModel;
+    const submittedModelId = chosenModelId;
     const finalPrompt = buildFullPrompt();
+
     setView("generating");
     setError(null);
     setResultUrl(null);
     setResultIsDemo(false);
 
-    if (isDemo) {
-      await new Promise(r => setTimeout(r, 1800));
-      setResultUrl("__demo__");
-      setResultIsDemo(true);
-      setView("done");
-      return;
-    }
-
     try {
+      if (isDemo) {
+        await new Promise(r => setTimeout(r, 1800));
+        if (!isActive()) return;
+        setResultUrl("__demo__");
+        setResultIsDemo(true);
+        setView("done");
+        return;
+      }
+
       const res = await fetch("/api/studio/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ modelId: chosenModelId, petId: pet.id, prompt: finalPrompt }),
+        body: JSON.stringify({ modelId: submittedModelId, petId: pet.id, prompt: finalPrompt }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!isActive()) return;
       if (!res.ok) { setError(data?.error || "Generation failed"); setView("error"); return; }
-      setCredits(data.creditsRemaining ?? credits);
+      // Functional + only when a number, so an out-of-order response can't stomp
+      // a newer (lower) balance with a stale (higher) one.
+      setCredits(c => (typeof data.creditsRemaining === "number" ? data.creditsRemaining : c));
 
       if (data.status === "completed" && data.url) {
         setResultUrl(data.url); setView("done"); refreshHistory(); return;
@@ -260,18 +278,23 @@ export default function PetStudioPro() {
       // Grok video can run past the stated "~30–90s"; poll longer for video so a
       // slow-but-valid job isn't surfaced as a timeout failure while it actually
       // finishes (and lands in History). Image stays at 180s — plenty.
-      const maxPolls = chosenModel?.kind === "video" ? 120 : 60; // ×3s = 360s / 180s
+      const maxPolls = submittedModel?.kind === "video" ? 120 : 60; // ×3s = 360s / 180s
       for (let i = 0; i < maxPolls; i++) {
         await new Promise(r => setTimeout(r, 3000));
+        if (!isActive()) return; // pet/model switched or unmounted — stop polling
         const r2 = await fetch(`/api/studio/generate/${jobId}`, { headers: getAuthHeaders() }).catch(() => null);
         if (!r2?.ok) continue;
-        const d2 = await r2.json();
+        let d2: any;
+        try { d2 = await r2.json(); } catch { continue; } // tolerate one bad body, keep polling
+        if (!isActive()) return;
         if (d2.status === "completed") { setResultUrl(d2.url); setView("done"); refreshHistory(); return; }
         if (d2.status === "failed")    { setError(d2.error || "Generation failed"); setView("error"); return; }
       }
+      if (!isActive()) return;
       setError("Timed out waiting for result. Check History.");
       setView("error");
     } catch (e: any) {
+      if (!isActive()) return;
       setError(e?.message || "Generation failed"); setView("error");
     }
   };
