@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { useAccount } from "wagmi";
 
 import { api } from "@/lib/api";
@@ -316,10 +316,20 @@ export default function App() {
       setCredits(user.credits);
       // `airdrop_points` is the persisted API/DB field; surfaced as Season Rewards points.
       if (user.airdrop_points) setSeasonPoints(user.airdrop_points);
+    } else {
+      // Logout / token expiry — clear so SeasonBanner doesn't keep showing the
+      // previous user's point total.
+      setCredits(0);
+      setSeasonPoints(0);
     }
   }, [user]);
 
+  // Request tokens so a slow poll response can't overwrite a newer one out of order.
+  const statsReqRef = useRef(0);
+  const activityReqRef = useRef(0);
+
   const fetchStats = useCallback(async () => {
+    const reqId = ++statsReqRef.current;
     try {
       // Public, REAL aggregates (no admin gate, no mock). api.analytics.stats()
       // is admin-only, so visitors 401'd and we used to silently show
@@ -328,6 +338,7 @@ export default function App() {
       const r = await fetch("/api/community/highlights");
       if (!r.ok) return;
       const d = await r.json();
+      if (reqId !== statsReqRef.current) return; // superseded by a newer poll
       if (d?.stats) {
         setPlatformStats({
           total_users: d.stats.pets ?? 0,
@@ -339,6 +350,7 @@ export default function App() {
   }, []);
 
   const fetchActivity = useCallback(async () => {
+    const reqId = ++activityReqRef.current;
     try {
       // Public, REAL activity (no admin gate, no mock). The old
       // api.analytics.activity is admin-only, so every visitor 401'd and the
@@ -346,17 +358,20 @@ export default function App() {
       const r = await fetch("/api/activity/recent?limit=12");
       if (!r.ok) return;
       const d = await r.json();
+      if (reqId !== activityReqRef.current) return; // superseded by a newer poll
       if (Array.isArray(d?.items) && d.items.length > 0) setActivities(d.items);
     } catch { /* no mock fallback — an empty feed is honest */ }
   }, []);
 
   useEffect(() => {
+    // Stats/Feed only render on Home — don't poll (and write state) on other tabs.
+    if (section !== "home") return;
     fetchStats();
     fetchActivity();
     const s = setInterval(fetchStats, 15000);
     const a = setInterval(fetchActivity, 6000);
     return () => { clearInterval(s); clearInterval(a); };
-  }, [fetchStats, fetchActivity]);
+  }, [section, fetchStats, fetchActivity]);
 
   // Never show "0" in a social-proof slot — fall back to qualitative,
   // always-true facts when stats are unavailable or still zero.

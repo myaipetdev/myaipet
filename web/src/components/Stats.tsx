@@ -1,16 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 function Counter({ end, duration = 2000, prefix = "", suffix = "" }: any) {
   const [val, setVal] = useState(0);
+  const valRef = useRef(0);
+  valRef.current = val;
   useEffect(() => {
-    let start = 0;
-    const step = end / (duration / 16);
+    // Animate from the value currently on screen to the new one (up OR down) so
+    // a 15s stats refresh doesn't flash back to 0, and a shrink isn't left stale.
+    let current = valRef.current;
+    const diff = end - current;
+    if (diff === 0) return;
+    const step = diff / Math.max(1, Math.floor(duration / 16));
     const t = setInterval(() => {
-      start += step;
-      if (start >= end) { setVal(end); clearInterval(t); }
-      else setVal(Math.floor(start));
+      current += step;
+      if ((step >= 0 && current >= end) || (step < 0 && current <= end)) { setVal(end); clearInterval(t); }
+      else setVal(Math.floor(current));
     }, 16);
     return () => clearInterval(t);
   }, [end, duration]);

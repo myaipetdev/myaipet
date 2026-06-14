@@ -71,6 +71,14 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
   const cdHours = Math.floor((remaining % 86_400_000) / 3_600_000);
   const cdMins = Math.floor((remaining % 3_600_000) / 60_000);
 
+  // Show a placeholder until the pool data loads — otherwise the countdown
+  // renders a zeroed "00d 00h 00m" for a frame and then jumps to real values.
+  const countdownEl = data ? (
+    <>{String(cdDays).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>d</span> {String(cdHours).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>h</span> {String(cdMins).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>m</span></>
+  ) : (
+    <span style={{ color: "rgba(255,255,255,0.5)" }}>—</span>
+  );
+
   const myPet = data?.pets?.[0];
 
   return (
@@ -111,13 +119,24 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
               {/* Projected payout from current rank (pool-share, not earned pts) */}
               <div>
                 <div style={miniLabel}>PROJECTED PAYOUT</div>
-                <div style={{ ...bigNumber, color: "#fbbf24" }}>
-                  {myPet.projectedShare.toLocaleString()}
-                  <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
-                </div>
-                <div style={mini}>
-                  projected from your rank #{myPet.rank}
-                </div>
+                {myPet.projectedShare > 0 ? (
+                  <>
+                    <div style={{ ...bigNumber, color: "#fbbf24" }}>
+                      {myPet.projectedShare.toLocaleString()}
+                      <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
+                    </div>
+                    <div style={mini}>
+                      projected from your rank #{myPet.rank}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ ...bigNumber, color: "#fbbf24", fontSize: 22 }}>Top 100</div>
+                    <div style={mini}>
+                      reach the top 100 (you&apos;re #{myPet.rank}) to earn a pool share
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* How to earn — free, no purchase */}
@@ -135,7 +154,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
               <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24 }}>
                 <div style={miniLabel}>POOL CLOSES IN</div>
                 <div style={{ ...bigNumber, fontSize: 22, color: "white" }}>
-                  {String(cdDays).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>d</span> {String(cdHours).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>h</span> {String(cdMins).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>m</span>
+                  {countdownEl}
                 </div>
                 <div style={mini}>Sunday 00:00 UTC</div>
               </div>
