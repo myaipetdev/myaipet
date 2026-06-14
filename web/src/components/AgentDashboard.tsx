@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
 import PersonaSetup from "@/components/PersonaSetup";
 
@@ -92,17 +92,24 @@ export default function AgentDashboard() {
     });
   }, []);
 
+  // Tracks the selected pet so async loaders bail if the user switched pets
+  // mid-fetch — a slow response must not paint the old pet's data on the new one.
+  const selectedPetIdRef = useRef<number | null>(null);
+  useEffect(() => { selectedPetIdRef.current = selectedPet?.id ?? null; }, [selectedPet]);
+
   // Load agent data when pet changes
   const fetchAgentData = useCallback(async () => {
     if (!selectedPet) return;
+    const pid = selectedPet.id;
     setLoading(true);
     try {
       const [statusRes, configRes, msgRes] = await Promise.all([
-        api.agent.status(selectedPet.id).catch(() => null),
-        api.agent.config(selectedPet.id).catch(() => null),
-        api.agent.messages(selectedPet.id, undefined, 20, 0).catch(() => null),
+        api.agent.status(pid).catch(() => null),
+        api.agent.config(pid).catch(() => null),
+        api.agent.messages(pid, undefined, 20, 0).catch(() => null),
       ]);
 
+      if (selectedPetIdRef.current !== pid) return; // pet switched mid-fetch
       if (statusRes) {
         setConnections(statusRes.connections || []);
         setStats(statusRes.stats || { total_messages: 0, messages_today: 0, credits_used_today: 0 });
@@ -122,7 +129,7 @@ export default function AgentDashboard() {
         setHasMore(msgRes.pagination?.has_more ?? (msgRes.messages || []).length >= 20);
       }
     } catch {}
-    setLoading(false);
+    if (selectedPetIdRef.current === pid) setLoading(false);
   }, [selectedPet]);
 
   useEffect(() => { fetchAgentData(); }, [fetchAgentData]);
@@ -130,6 +137,7 @@ export default function AgentDashboard() {
   // Connect platform
   const handleConnect = async () => {
     if (!selectedPet || !connectModal || !tokenInput.trim()) return;
+    if (connectStatus === "checking") return; // don't fire a second connect while one is pending
     setConnectStatus("checking");
     setConnectError("");
     try {
@@ -161,21 +169,26 @@ export default function AgentDashboard() {
   // Save config
   const handleSaveConfig = async (updates: Partial<AgentConfig>) => {
     if (!selectedPet) return;
+    const prev = config;
     const newConfig = { ...config, ...updates };
     setConfig(newConfig);
     setSaving(true);
     try {
       await api.agent.updateConfig(selectedPet.id, newConfig);
-    } catch {}
+    } catch {
+      setConfig(prev); // revert the optimistic change so UI matches the server
+    }
     setSaving(false);
   };
 
   // Load more messages
   const loadMore = async () => {
     if (!selectedPet || loadingMore) return;
+    const pid = selectedPet.id;
     setLoadingMore(true);
     try {
-      const res = await api.agent.messages(selectedPet.id, undefined, 20, msgOffset);
+      const res = await api.agent.messages(pid, undefined, 20, msgOffset);
+      if (selectedPetIdRef.current !== pid) return; // pet switched — don't cross-append
       const newMsgs = res.messages || [];
       setMessages(prev => [...prev, ...newMsgs]);
       setMsgOffset(prev => prev + 20);
@@ -555,7 +568,11 @@ export default function AgentDashboard() {
                     type="range"
                     min={10} max={200} step={10}
                     value={config.daily_credit_limit}
-                    onChange={e => handleSaveConfig({ daily_credit_limit: Number(e.target.value) })}
+                    // Move locally while dragging; PUT once on release — onChange
+                    // per-step fired a burst of full-config PUTs (write storm).
+                    onChange={e => { const v = Number(e.target.value); setConfig(c => ({ ...c, daily_credit_limit: v })); }}
+                    onMouseUp={e => handleSaveConfig({ daily_credit_limit: Number((e.target as HTMLInputElement).value) })}
+                    onTouchEnd={e => handleSaveConfig({ daily_credit_limit: Number((e.target as HTMLInputElement).value) })}
                     style={{
                       flex: 1, height: 4, appearance: "none",
                       background: `linear-gradient(to right, #f59e0b ${((config.daily_credit_limit - 10) / 190) * 100}%, rgba(0,0,0,0.06) ${((config.daily_credit_limit - 10) / 190) * 100}%)`,
