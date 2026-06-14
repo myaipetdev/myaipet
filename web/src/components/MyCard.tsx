@@ -45,7 +45,7 @@ export default function MyCard() {
         <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
           {me.pet?.avatar_url
             ? <img src={me.pet.avatar_url} alt={me.pet.name} style={{ width: 52, height: 52, borderRadius: 14, objectFit: "cover", boxShadow: "0 2px 10px rgba(0,0,0,0.25)" }} />
-            : <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>🐾</div>}
+            : <img src="/mascot.jpg" alt="" style={{ width: 52, height: 52, borderRadius: 14, objectFit: "cover", opacity: 0.9, boxShadow: "0 2px 10px rgba(0,0,0,0.25)" }} />}
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(255,255,255,0.55)" }}>
               YOUR SEASON
@@ -56,10 +56,11 @@ export default function MyCard() {
           </div>
         </div>
 
-        <div style={{ flex: 1 }} />
+        <style>{`@media (max-width:640px){.mycard-spacer{display:none !important}.mycard-tiles{display:grid !important;grid-template-columns:repeat(auto-fit,minmax(96px,1fr)) !important;width:100% !important}}`}</style>
+        <div className="mycard-spacer" style={{ flex: 1 }} />
 
         {/* Stat tiles */}
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div className="mycard-tiles" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <Tile label="POINTS" value={me.points.toLocaleString()} accent="#fbbf24" />
           <Tile label="STREAK" value={`${me.streak}d`} accent="#f97316" sub={`best ${me.longest}d`} />
           {me.streakRank != null && (
