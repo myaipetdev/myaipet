@@ -15,7 +15,6 @@ import PaywallModal from "@/components/PaywallModal";
 import StatUpgradePanel from "@/components/StatUpgradePanel";
 
 const PET_SPECIES = ["Cat","Dog","Parrot","Turtle","Hamster","Rabbit","Fox","Pomeranian"];
-const PET_EMOJIS = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
 
 function getSpeciesName(pet: any): string {
   const mods = pet.personality_modifiers;
@@ -850,7 +849,7 @@ function PetAvatar({ pet, mood, size = 80 }: any) {
             width: "100%", height: "100%", objectFit: "cover",
           }} />
         ) : (
-          <span style={{ fontSize: size * 0.5 }}>{PET_EMOJIS[pet.species] || "🐾"}</span>
+          <img src="/mascot.jpg" alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         )}
       </div>
       <div style={{
@@ -869,18 +868,8 @@ function PetAvatar({ pet, mood, size = 80 }: any) {
 }
 
 function PetThumb({ pet, size = 28 }: { pet: any; size?: number }) {
-  if (pet.avatar_url) {
-    return <img src={pet.avatar_url} alt={pet.name} style={{ width: size, height: size, borderRadius: size * 0.3, objectFit: "cover" }} />;
-  }
-  return (
-    <span style={{
-      width: size, height: size, borderRadius: size * 0.3,
-      background: "rgba(251,191,36,0.1)", display: "inline-flex",
-      alignItems: "center", justifyContent: "center", fontSize: size * 0.6,
-    }}>
-      {PET_EMOJIS[pet.species] || "🐾"}
-    </span>
-  );
+  const src = pet.avatar_url || "/mascot.jpg";
+  return <img src={src} alt={pet.name} style={{ width: size, height: size, borderRadius: size * 0.3, objectFit: "cover" }} />;
 }
 
 export default function PetProfile() {
@@ -1866,11 +1855,7 @@ export default function PetProfile() {
                   background: "rgba(251,191,36,0.1)", fontSize: 20,
                   animation: "petFloat 3s ease-in-out infinite",
                 }}>
-                  {pet.avatar_url ? (
-                    <img src={pet.avatar_url} alt={pet.name} style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover" }} />
-                  ) : (
-                    PET_EMOJIS[pet.species] || "🐾"
-                  )}
+                  <img src={pet.avatar_url || "/mascot.jpg"} alt={pet.name} style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover" }} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{
@@ -2248,13 +2233,7 @@ export default function PetProfile() {
                 width: 40, height: 40, borderRadius: 12, overflow: "hidden",
                 border: "2px solid rgba(251,191,36,0.2)", flexShrink: 0,
               }}>
-                {pet.avatar_url ? (
-                  <img src={pet.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                ) : (
-                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(251,191,36,0.1)", fontSize: 20 }}>
-                    {PET_EMOJIS[pet.species] || "🐾"}
-                  </div>
-                )}
+                <img src={pet.avatar_url || "/mascot.jpg"} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 600, color: "#1a1a2e" }}>

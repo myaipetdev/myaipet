@@ -65,7 +65,9 @@ interface Props {
 
 export default function PetGreeting({ petId, petName, mood, accent, lastInteractionAt }: Props) {
   const [thought, setThought] = useState<string | null>(null);
-  const [now] = useState(() => new Date());
+  // Computed each render (not frozen in state) so the time-of-day greeting
+  // re-anchors to the wall clock instead of sticking at the mount-time hour.
+  const now = new Date();
 
   useEffect(() => {
     let cancelled = false;

@@ -225,6 +225,8 @@ body {
   .studio-pro-grid { grid-template-columns: 1fr !important; }
   .weekly-monthly-grid { grid-template-columns: 1fr !important; }
   .sos-buddy-grid { grid-template-columns: 1fr !important; }
+  /* My Pet: 340px sidebar + content flips to stacked instead of overflowing. */
+  .desktop-grid { grid-template-columns: 1fr !important; }
 }
 @media (max-width: 640px) {
   /* Hero shrinks on phones — already clamped, just tighten margins */
