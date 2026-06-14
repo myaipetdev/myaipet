@@ -112,21 +112,6 @@ export const BUILTIN_SKILLS: PetSkillManifest[] = [
     price: 0, currency: "credits", installCount: 0, rating: 5, reviewCount: 0,
   },
   {
-    id: "autonomous-post",
-    name: "Autonomous Post",
-    version: "1.0.0",
-    author: "petclaw",
-    protocol: PETCLAW_PROTOCOL,
-    category: "creative",
-    description: "Generate and publish content on social platforms as your pet. Works on Telegram, Twitter, Discord.",
-    tags: ["social", "post", "autonomous", "creative"],
-    requires: { env: ["GROK_API_KEY"], minLevel: 5 },
-    handler: "llm-prompt",
-    inputSchema: { type: "object", properties: { platform: { type: "string" }, topic: { type: "string" } } },
-    outputSchema: { type: "object", properties: { content: { type: "string" }, mediaUrl: { type: "string" } } },
-    price: 0, currency: "credits", installCount: 0, rating: 4.5, reviewCount: 0,
-  },
-  {
     id: "soul-export",
     name: "Soul Export",
     version: "1.0.0",
@@ -204,6 +189,113 @@ export const BUILTIN_SKILLS: PetSkillManifest[] = [
     inputSchema: { type: "object", properties: { message: { type: "string" } }, required: ["message"] },
     outputSchema: { type: "object", properties: { reply: { type: "string" } } },
     price: 0, currency: "credits", installCount: 0, rating: 5, reviewCount: 0,
+  },
+  // ── api-call skills: run at their own REST endpoint (executeAPISkill returns an
+  // honest invoke-via-endpoint descriptor; the work happens at apiUrl). ──
+  {
+    id: "video-gen", name: "Video Generation", version: "1.0.0", author: "petclaw",
+    protocol: PETCLAW_PROTOCOL, category: "creative",
+    description: "Animate the pet into a short video clip, then poll for the result. Invoke via POST /api/pets/{petId}/generate (type:video), then GET /api/generate/{id}/status.",
+    tags: ["video", "animate", "creative", "async"],
+    requires: { env: ["GROK_API_KEY"], minLevel: 2 },
+    handler: "api-call", apiUrl: "/api/pets/{petId}/generate",
+    inputSchema: { type: "object", properties: { type: { type: "string" }, prompt: { type: "string" }, duration: { type: "number" } } },
+    outputSchema: { type: "object", properties: { id: { type: "number" }, status: { type: "string" } } },
+    price: 15, currency: "credits", installCount: 0, rating: 4.6, reviewCount: 0,
+  },
+  {
+    id: "daydream", name: "Daydream", version: "1.0.0", author: "petclaw",
+    protocol: PETCLAW_PROTOCOL, category: "emotional",
+    description: "Caring observations the pet synthesizes by connecting two memories about you. Invoke via GET /api/pets/{petId}/daydream.",
+    tags: ["daydream", "memory", "insight", "emotional"],
+    handler: "api-call", apiUrl: "/api/pets/{petId}/daydream",
+    inputSchema: { type: "object", properties: {} },
+    outputSchema: { type: "object", properties: { insights: { type: "array" } } },
+    price: 0, currency: "credits", installCount: 0, rating: 5, reviewCount: 0,
+  },
+  {
+    id: "evolve", name: "Evolution", version: "1.0.0", author: "petclaw",
+    protocol: PETCLAW_PROTOCOL, category: "utility",
+    description: "Evolve the pet a stage (Baby→Legendary) or report stage + next-stage unlocks. Invoke via POST/GET /api/pets/{petId}/evolve.",
+    tags: ["evolve", "stage", "progression", "utility"],
+    handler: "api-call", apiUrl: "/api/pets/{petId}/evolve",
+    inputSchema: { type: "object", properties: {} },
+    outputSchema: { type: "object", properties: { stage: { type: "number" }, name: { type: "string" } } },
+    price: 0, currency: "credits", installCount: 0, rating: 5, reviewCount: 0,
+  },
+  {
+    id: "soul-import", name: "Soul Import", version: "1.0.0", author: "petclaw",
+    protocol: PETCLAW_PROTOCOL, category: "utility",
+    description: "Import a portable SOUL bundle (SHA-256 verified) into a pet. Invoke via POST /api/petclaw/import.",
+    tags: ["import", "sovereignty", "portability", "restore"],
+    handler: "api-call", apiUrl: "/api/petclaw/import",
+    inputSchema: { type: "object", properties: { soul: { type: "object" } }, required: ["soul"] },
+    outputSchema: { type: "object", properties: { ok: { type: "boolean" }, petId: { type: "number" } } },
+    price: 0, currency: "credits", installCount: 0, rating: 5, reviewCount: 0,
+  },
+  {
+    id: "consent-manage", name: "Consent Manager", version: "1.0.0", author: "petclaw",
+    protocol: PETCLAW_PROTOCOL, category: "utility",
+    description: "Read/set the pet's data-consent toggles: public / sharing / AI-training / interact. Invoke via GET+POST /api/petclaw/consent.",
+    tags: ["consent", "privacy", "sovereignty", "utility"],
+    handler: "api-call", apiUrl: "/api/petclaw/consent",
+    inputSchema: { type: "object", properties: { petId: { type: "number" }, consent: { type: "object" } } },
+    outputSchema: { type: "object", properties: { consent: { type: "object" } } },
+    price: 0, currency: "credits", installCount: 0, rating: 5, reviewCount: 0,
+  },
+  {
+    id: "memory-anchor", name: "Memory Anchor", version: "1.0.0", author: "petclaw",
+    protocol: PETCLAW_PROTOCOL, category: "utility",
+    description: "Compute/record a memory checkpoint hash (optional on-chain BSC anchor). Invoke via GET/POST /api/petclaw/memory/anchor.",
+    tags: ["anchor", "checkpoint", "integrity", "onchain"],
+    handler: "api-call", apiUrl: "/api/petclaw/memory/anchor",
+    inputSchema: { type: "object", properties: {} },
+    outputSchema: { type: "object", properties: { hash: { type: "string" }, anchor: { type: "object" } } },
+    price: 0, currency: "credits", installCount: 0, rating: 5, reviewCount: 0,
+  },
+  {
+    id: "memory-consolidate", name: "Memory Consolidate", version: "1.0.0", author: "petclaw",
+    protocol: PETCLAW_PROTOCOL, category: "knowledge",
+    description: "Reflection cycle: merge duplicate memories, drop contradictions, condense the MEMORY ledger. Invoke via POST /api/petclaw/memory/consolidate.",
+    tags: ["consolidate", "reflection", "memory", "vigil"],
+    requires: { env: ["GROK_API_KEY"] },
+    handler: "api-call", apiUrl: "/api/petclaw/memory/consolidate",
+    inputSchema: { type: "object", properties: { force: { type: "boolean" } } },
+    outputSchema: { type: "object", properties: { ok: { type: "boolean" }, result: { type: "object" } } },
+    price: 0, currency: "credits", installCount: 0, rating: 5, reviewCount: 0,
+  },
+  {
+    id: "pet-thought", name: "Pet Thought", version: "1.0.0", author: "petclaw",
+    protocol: PETCLAW_PROTOCOL, category: "emotional",
+    description: "A 1-2 sentence in-character inner thought drawn from current stats + recent memories. Invoke via GET /api/pets/{petId}/thought.",
+    tags: ["thought", "personality", "emotional", "ambient"],
+    requires: { env: ["GROK_API_KEY"] },
+    handler: "api-call", apiUrl: "/api/pets/{petId}/thought",
+    inputSchema: { type: "object", properties: {} },
+    outputSchema: { type: "object", properties: { thought: { type: "string" }, emotion: { type: "string" } } },
+    price: 0, currency: "credits", installCount: 0, rating: 5, reviewCount: 0,
+  },
+  {
+    id: "pet-diary", name: "Pet Diary", version: "1.0.0", author: "petclaw",
+    protocol: PETCLAW_PROTOCOL, category: "emotional",
+    description: "Short first-person diary entry about the past 7 days of memories; cached 7 days. Invoke via GET /api/pets/{petId}/diary.",
+    tags: ["diary", "journal", "memory", "emotional"],
+    requires: { env: ["GROK_API_KEY"] },
+    handler: "api-call", apiUrl: "/api/pets/{petId}/diary",
+    inputSchema: { type: "object", properties: {} },
+    outputSchema: { type: "object", properties: { entry: { type: "string" }, weekOf: { type: "string" } } },
+    price: 0, currency: "credits", installCount: 0, rating: 5, reviewCount: 0,
+  },
+  {
+    id: "pet-date", name: "Pet Date", version: "1.0.0", author: "petclaw",
+    protocol: PETCLAW_PROTOCOL, category: "social",
+    description: "AI-generated conversation between your pet and another pet; returns a dialogue log + friendship delta. Invoke via POST /api/pet-date (costs 20 credits).",
+    tags: ["date", "social", "pets", "friendship"],
+    requires: { env: ["GROK_API_KEY"] },
+    handler: "api-call", apiUrl: "/api/pet-date",
+    inputSchema: { type: "object", properties: { myPetId: { type: "number" }, theirPetId: { type: "number" } }, required: ["myPetId", "theirPetId"] },
+    outputSchema: { type: "object", properties: { log: { type: "array" }, friendship: { type: "number" } } },
+    price: 20, currency: "credits", installCount: 0, rating: 4.5, reviewCount: 0,
   },
 ];
 
@@ -439,15 +531,20 @@ async function executeAPISkill(
   skill: PetSkillManifest,
   input: Record<string, unknown>
 ): Promise<unknown> {
-  const url = (skill.apiUrl || "").replace("{petId}", String(petId));
-
-  // For internal API calls, just return the endpoint info
-  // Actual execution happens client-side or via specific routes
+  const endpoint = (skill.apiUrl || "").replace("{petId}", String(petId));
+  // Skills whose work is a write/mutation are invoked with POST; the rest GET.
+  const POST_SKILLS = new Set(["soul-import", "consent-manage", "memory-consolidate", "video-gen", "pet-date", "image-gen"]);
+  const method = POST_SKILLS.has(skill.id) ? "POST" : "GET";
+  // Honest contract: this skill executes at its OWN REST endpoint. We do NOT
+  // pretend to have run it here — we return where/how to invoke it (with the
+  // caller's own auth + credits), which is what an agent/SDK client needs.
   return {
-    endpoint: url,
-    method: "GET",
+    status: "invoke_via_endpoint",
+    skillId: skill.id,
+    endpoint,
+    method,
     params: input,
-    message: `API skill ready at ${url}`,
+    note: "This skill runs at its REST endpoint — call it directly with your auth/credits.",
   };
 }
 

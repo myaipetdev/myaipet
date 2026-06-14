@@ -50,14 +50,14 @@ const CONNECTORS = [
 ];
 const MCP_TOOLS = [
   { k: "petclaw_chat", v: "memory-aware chat" }, { k: "persona_mirror", v: "mirror your tone" },
-  { k: "memory_recall", v: "retrieve past context" }, { k: "autonomous_post", v: "post in pet's voice" },
+  { k: "memory_recall", v: "retrieve past context" }, { k: "summarize_page", v: "summarize a page in pet's voice" },
   { k: "soul_export", v: "portable SOUL (SHA-256)" }, { k: "discover_pets", v: "find pets on the net" },
 ];
 const SKILLS = [
-  { k: "emotional", v: "companion-chat · daily-mood · daydream · pet-thought · pet-diary" },
-  { k: "social", v: "persona-mirror · autonomous-post · pet-date" },
+  { k: "emotional", v: "companion-chat · daily-mood · daydream · pet-thought · pet-diary · vibe-check" },
+  { k: "social", v: "persona-mirror · pet-date" },
   { k: "creative", v: "image-gen · video-gen" },
-  { k: "knowledge", v: "memory-recall · memory-consolidate · web-search" },
+  { k: "knowledge", v: "memory-recall · memory-consolidate · summarize-page" },
   { k: "utility", v: "soul-export · soul-import · consent · evolve · memory-anchor" },
 ];
 // VIGIL — the always-on self-improvement loop. Runs every companion-chat turn
