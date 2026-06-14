@@ -51,16 +51,11 @@ export async function PUT(
 
   const body = await req.json();
 
-  // Validate fields
-  const validTones = ["casual", "formal", "meme", "chill", "energetic", "sarcastic"];
+  // Validate fields. `tone` is a free-text descriptor (the picker is multi-select
+  // and sends a comma-joined string) used as persona context, so it's stored
+  // as-is rather than enum-validated — only `language` is a strict enum.
   const validLanguages = ["ko", "en", "mixed", "ja", "zh"];
 
-  if (body.tone && !validTones.includes(body.tone)) {
-    return NextResponse.json(
-      { error: `Invalid tone. Must be one of: ${validTones.join(", ")}` },
-      { status: 400 },
-    );
-  }
   if (body.language && !validLanguages.includes(body.language)) {
     return NextResponse.json(
       { error: `Invalid language. Must be one of: ${validLanguages.join(", ")}` },
@@ -68,14 +63,16 @@ export async function PUT(
     );
   }
 
-  // Truncate text fields for safety
+  const asStr = (v: any) => (typeof v === "string" ? v : Array.isArray(v) ? v.join(",") : undefined);
+
+  // Truncate text fields for safety (tolerate array payloads → CSV).
   const data = {
-    speech_style: body.speech_style?.slice(0, 500),
-    interests: body.interests?.slice(0, 500),
-    expressions: body.expressions?.slice(0, 500),
-    tone: body.tone,
+    speech_style: asStr(body.speech_style)?.slice(0, 500),
+    interests: asStr(body.interests)?.slice(0, 500),
+    expressions: asStr(body.expressions)?.slice(0, 500),
+    tone: asStr(body.tone)?.slice(0, 50), // owner_tone is VarChar(50)
     language: body.language,
-    bio: body.bio?.slice(0, 1000),
+    bio: asStr(body.bio)?.slice(0, 1000),
   };
 
   const persona = await saveOnboarding(pid, data);

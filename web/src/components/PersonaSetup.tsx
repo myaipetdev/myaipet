@@ -98,7 +98,9 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
 
   // Load existing persona
   useEffect(() => {
+    let cancelled = false; // drop responses if the pet switched mid-fetch
     api.persona.get(petId).then((data: any) => {
+      if (cancelled) return;
       // The route returns { persona, has_persona }; the persona row stores
       // owner_* columns (and tone/interests as strings). Reading data.X off the
       // top level with form field names left the form blank on every reopen.
@@ -123,6 +125,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
 
     // Load connected platforms for live tab
     api.agent.status(petId).then((data: any) => {
+      if (cancelled) return;
       const conns = (data.connections || []).map((c: any) => ({
         platform: c.platform,
         connected: c.is_active,
@@ -130,6 +133,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
       }));
       setPlatforms(conns);
     }).catch(() => {});
+    return () => { cancelled = true; };
   }, [petId]);
 
   // ── Handlers ──
@@ -171,7 +175,15 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
     setSaving(true);
     setSaveResult(null);
     try {
-      await api.persona.save(petId, persona);
+      // tone/interests are multi-select arrays in the form but the persona row
+      // stores them as scalar strings — send CSV so the route doesn't 400 on an
+      // array tone or slice()-mangle an array of interests. (Load splits back.)
+      const payload = {
+        ...persona,
+        tone: (persona.tone || []).join(","),
+        interests: (persona.interests || []).join(","),
+      };
+      await api.persona.save(petId, payload);
       setSaveResult({ type: "success", text: "Persona saved successfully!" });
       setTimeout(() => setSaveResult(null), 3000);
     } catch (err: any) {
@@ -232,14 +244,11 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
     setApplyingAnalysis(false);
   };
 
-  const handleToggleLiveLearning = async () => {
-    const next = !liveLearning;
-    setLiveLearning(next); // optimistic — reflect the toggle immediately
-    setLoadingLive(true);
-    try {
-      await api.persona.updateLiveLearning(petId, next);
-    } catch {}
-    setLoadingLive(false);
+  const handleToggleLiveLearning = () => {
+    // Live-learning has no persistence layer yet (no live_learning column or
+    // route), so keep this a local session preference rather than firing the
+    // /persona/live-learning PUT that 404'd and was silently swallowed.
+    setLiveLearning(v => !v);
   };
 
   // ── Shared styles ──
