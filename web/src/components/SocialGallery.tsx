@@ -29,7 +29,7 @@ function getCardHeight(index: number, aspectRatio: string) {
 }
 
 // ── Comment Section ──
-function CommentSection({ generationId }: { generationId: number }) {
+function CommentSection({ generationId, onAdded }: { generationId: number; onAdded?: () => void }) {
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
@@ -56,6 +56,7 @@ function CommentSection({ generationId }: { generationId: number }) {
       await api.social.addComment(generationId, newComment.trim());
       setNewComment("");
       await loadComments();
+      onAdded?.();
     } catch {
       // ignore
     }
@@ -161,7 +162,7 @@ function CommentSection({ generationId }: { generationId: number }) {
 }
 
 // ── Detail Modal ──
-function DetailModal({ item, onClose, onLike, index }: any) {
+function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
   if (!item) return null;
 
   return (
@@ -184,7 +185,8 @@ function DetailModal({ item, onClose, onLike, index }: any) {
         }}>
           {item.video_url || item.video_path ? (
             <>
-              <video id="detail-video" src={item.video_url || item.video_path} autoPlay loop playsInline
+              <video id="detail-video" src={item.video_url || item.video_path} autoPlay loop muted playsInline
+                poster={item.photo_url || item.photo_path || undefined}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               <button onClick={() => {
                 const v = document.getElementById("detail-video") as HTMLVideoElement;
@@ -281,7 +283,7 @@ function DetailModal({ item, onClose, onLike, index }: any) {
           </div>
 
           {/* Comments */}
-          <CommentSection generationId={item.generation_id || item.id} />
+          <CommentSection generationId={item.generation_id || item.id} onAdded={onCommentAdded} />
         </div>
       </div>
     </div>
@@ -813,6 +815,11 @@ export default function SocialGallery() {
           item={selectedItem} index={selectedIndex}
           onClose={() => setSelectedItem(null)}
           onLike={handleLike}
+          onCommentAdded={() => {
+            const gid = selectedItem.generation_id || selectedItem.id;
+            setSelectedItem((prev: any) => prev ? { ...prev, comments_count: (prev.comments_count || 0) + 1 } : prev);
+            setItems(prev => prev.map(it => ((it.generation_id || it.id) === gid ? { ...it, comments_count: (it.comments_count || 0) + 1 } : it)));
+          }}
         />
       )}
     </div>
