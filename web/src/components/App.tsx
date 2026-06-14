@@ -45,8 +45,16 @@ function Grid() {
 
 function Loader() {
   return (
-    <div style={{ paddingTop: 120, textAlign: "center", color: "rgba(26,26,46,0.3)", fontFamily: "mono", fontSize: 12 }}>
-      Loading...
+    <div style={{ paddingTop: 120, textAlign: "center" }}>
+      <img src="/mascot.jpg" alt="" style={{
+        width: 64, height: 64, borderRadius: "50%", objectFit: "cover",
+        boxShadow: "0 6px 20px rgba(0,0,0,0.10)",
+        animation: "loaderFloat 2.4s ease-in-out infinite",
+      }} />
+      <div style={{ marginTop: 14, color: "rgba(26,26,46,0.4)", fontFamily: "mono", fontSize: 12 }}>
+        Loading…
+      </div>
+      <style>{`@keyframes loaderFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}`}</style>
     </div>
   );
 }

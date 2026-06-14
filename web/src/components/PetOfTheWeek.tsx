@@ -38,7 +38,8 @@ export default function PetOfTheWeek() {
 
   return (
     <div className="mp-enter" style={{ maxWidth: 1060, margin: "0 auto 18px", padding: "0 24px" }}>
-      <div style={{
+      <style>{`@media (max-width:640px){.potw-grid{grid-template-columns:1fr !important}.potw-hero{min-height:170px !important}}`}</style>
+      <div className="potw-grid" style={{
         position: "relative", overflow: "hidden", borderRadius: 22,
         background: "linear-gradient(135deg, #1a1430 0%, #2a1c4a 55%, #3a2150 100%)",
         border: "1px solid rgba(251,191,36,0.25)",
@@ -105,8 +106,9 @@ export default function PetOfTheWeek() {
           </div>
         </div>
 
-        {/* Right: their best recent creation */}
-        <div style={{ position: "relative", minHeight: 200 }}>
+        {/* Right: their best recent creation (falls back to the pet's portrait,
+            then a glyph — never a bare empty pane). */}
+        <div className="potw-hero" style={{ position: "relative", minHeight: 200 }}>
           {pet.heroImage ? (
             pet.heroIsVideo ? (
               <video
@@ -119,6 +121,14 @@ export default function PetOfTheWeek() {
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
               />
             )
+          ) : pet.avatarUrl ? (
+            <img
+              src={pet.avatarUrl} alt={pet.name}
+              style={{
+                position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
+                filter: "blur(7px) saturate(1.15)", transform: "scale(1.12)",
+              }}
+            />
           ) : (
             <div style={{
               position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",

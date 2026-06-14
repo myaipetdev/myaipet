@@ -625,26 +625,30 @@ export default function SocialGallery() {
   };
 
   const handleLike = useCallback(async (generationId: number, index: number) => {
-    const toggle = (prev: any[]) => prev.map((item, i) => {
-      if (i !== index) return item;
+    // Optimistic toggle, then reconcile with the server's truth. (The API
+    // returns { liked, likes_count } — there is no `action` field, so the old
+    // `result.action === "liked"` was always false and silently reverted likes.)
+    const flip = (item: any) => {
       const liked = !item.is_liked;
       return { ...item, is_liked: liked, likes_count: liked ? (item.likes_count||0)+1 : Math.max(0,(item.likes_count||0)-1) };
-    });
+    };
+    const matches = (it: any) => it && (it.generation_id || it.id) === generationId;
+    setItems(prev => prev.map((item, i) => (i === index ? flip(item) : item)));
+    setSelectedItem((prev: any) => (matches(prev) ? flip(prev) : prev));
     try {
-      const result = await api.social.like(generationId);
-      setItems(prev => prev.map((item, i) => {
-        if (i !== index) return item;
-        const liked = result.action === "liked";
-        return { ...item, is_liked: liked, likes_count: liked ? (item.likes_count||0)+1 : Math.max(0,(item.likes_count||0)-1) };
-      }));
+      const result: any = await api.social.like(generationId);
+      const apply = (item: any) => ({
+        ...item,
+        is_liked: !!result.liked,
+        likes_count: typeof result.likes_count === "number" ? result.likes_count : item.likes_count,
+      });
+      setItems(prev => prev.map((item, i) => (i === index ? apply(item) : item)));
+      setSelectedItem((prev: any) => (matches(prev) ? apply(prev) : prev));
     } catch {
-      setItems(toggle);
+      // revert the optimistic flip
+      setItems(prev => prev.map((item, i) => (i === index ? flip(item) : item)));
+      setSelectedItem((prev: any) => (matches(prev) ? flip(prev) : prev));
     }
-    setSelectedItem((prev: any) => {
-      if (!prev || (prev.generation_id || prev.id) !== generationId) return prev;
-      const liked = !prev.is_liked;
-      return { ...prev, is_liked: liked, likes_count: liked ? (prev.likes_count||0)+1 : Math.max(0,(prev.likes_count||0)-1) };
-    });
   }, []);
 
   const filteredItems = useMemo(() => {
