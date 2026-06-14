@@ -72,7 +72,9 @@ const PROMPT_IDEAS = [
   "flying through a rainbow",
 ];
 
-const DEMO_PET: Pet = { id: -1, name: "Sparky", avatar_url: null, species: 0, level: 5 };
+// Unauthenticated demo subject = the MY AI PET mascot, so the try-before-signup
+// experience is on-brand (a real pet portrait, not a placeholder).
+const DEMO_PET: Pet = { id: -1, name: "Mochi", avatar_url: "/mascot.jpg", species: 0, level: 5 };
 
 type View = "idle" | "generating" | "done" | "error";
 

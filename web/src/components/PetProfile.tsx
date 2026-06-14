@@ -9,6 +9,7 @@ import EnhancedOnboarding from "@/components/EnhancedOnboarding";
 import PetStatRadar, { StatSlotBar } from "@/components/PetStatRadar";
 import PetInsightCard from "@/components/PetInsightCard";
 import PetGreeting from "@/components/PetGreeting";
+import PetDiary from "@/components/PetDiary";
 import EvolutionAnimation from "@/components/EvolutionAnimation";
 import PaywallModal from "@/components/PaywallModal";
 import StatUpgradePanel from "@/components/StatUpgradePanel";
@@ -2108,6 +2109,9 @@ export default function PetProfile() {
               )}
             </div>
           )}
+
+          {/* Weekly diary — the pet's own journal of the week with the owner. */}
+          {pet && <PetDiary petId={pet.id} petName={pet.name} accent={moodCfg.color} />}
 
           {/* Pet Daydream — the pet's proactive caring insights, synthesized by
               connecting two memories about the owner. The payoff of the whole
