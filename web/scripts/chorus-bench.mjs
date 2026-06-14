@@ -8,8 +8,9 @@
  *   • CHORUS on:             TWO grok-3-mini calls (temp 0.75 & 1.0), the best
  *                            picked by the heuristic scorer (pickBest)
  * An INDEPENDENT judge (grok-3 — a different, larger model than the grok-3-mini
- * generator) blind-compares the two replies in randomized order and says which
- * is more in-character. We report CHORUS win / tie / loss and the win-rate.
+ * generator) blind-compares the two replies in BOTH orders (position-controlled,
+ * since LLM judges have a strong primacy bias) and we require a NET preference.
+ * We report CHORUS win / tie / loss and the win-rate.
  *
  * HONESTY / LIMITATIONS (read before quoting any number):
  *   1. Single vendor. Generator and judge are both xAI Grok (grok-3-mini vs
@@ -149,15 +150,34 @@ async function judge(personality, message, replyA, replyB) {
   return "tie";
 }
 
-// deterministic-ish blind order from index (no Math.random — keep reproducible per run)
-function chorusIsReply1(idx) { return idx % 2 === 0; }
+// Position-controlled verdict: judge the SAME pair in BOTH orders and net them.
+// LLM judges have a strong primacy bias (favoring "Reply 1"); judging both ways
+// and requiring a net preference cancels it. Returns {outcome, r1wins} where
+// r1wins counts how many of the 2 judgments picked whichever reply was shown 1st
+// (a position-bias diagnostic).
+async function judgeControlled(personality, message, baseline, chorus) {
+  const [vA, vB] = await Promise.all([
+    judge(personality, message, chorus, baseline),   // chorus = Reply 1
+    judge(personality, message, baseline, chorus),   // chorus = Reply 2
+  ]);
+  // map each judgment to who won
+  const aWinner = vA === "1" ? "chorus" : vA === "2" ? "baseline" : "tie";
+  const bWinner = vB === "2" ? "chorus" : vB === "1" ? "baseline" : "tie";
+  let score = 0;
+  if (aWinner === "chorus") score++; else if (aWinner === "baseline") score--;
+  if (bWinner === "chorus") score++; else if (bWinner === "baseline") score--;
+  const outcome = score > 0 ? "chorus" : score < 0 ? "baseline" : "tie";
+  // position diagnostic: did the FIRST-shown reply win each judgment?
+  const r1wins = (vA === "1" ? 1 : 0) + (vB === "1" ? 1 : 0);
+  return { outcome, r1wins };
+}
 
 async function main() {
   const N = Number.isInteger(argN) && argN > 0 ? argN : 24;
   const testSet = buildTestSet(N);
   console.log(`CHORUS benchmark — ${N} prompts · gen=${GEN_MODEL} · judge=${JUDGE_MODEL}\n`);
 
-  let win = 0, loss = 0, tie = 0, identical = 0, errors = 0;
+  let win = 0, loss = 0, tie = 0, identical = 0, errors = 0, r1total = 0;
   const rows = [];
   for (let i = 0; i < testSet.length; i++) {
     const { personality, message } = testSet[i];
@@ -165,12 +185,9 @@ async function main() {
       const { baseline, chorus } = await genReplies(personality, message);
       if (!baseline || !chorus) { errors++; continue; }
       if (baseline.trim() === chorus.trim()) identical++;
-      const chorusFirst = chorusIsReply1(i);
-      const verdict = await judge(personality, message, chorusFirst ? chorus : baseline, chorusFirst ? baseline : chorus);
-      let outcome;
-      if (verdict === "tie") { tie++; outcome = "tie"; }
-      else if ((verdict === "1") === chorusFirst) { win++; outcome = "chorus"; }
-      else { loss++; outcome = "baseline"; }
+      const { outcome, r1wins } = await judgeControlled(personality, message, baseline, chorus);
+      r1total += r1wins;
+      if (outcome === "chorus") win++; else if (outcome === "baseline") loss++; else tie++;
       rows.push({ i, personality, message, baseline, chorus, outcome });
       process.stdout.write(`  [${i + 1}/${N}] ${personality.padEnd(12)} → ${outcome}\n`);
     } catch (e) {
@@ -183,22 +200,24 @@ async function main() {
   const winRate = scored ? (100 * win / scored) : 0;
   const decisive = win + loss;
   const decisiveWinRate = decisive ? (100 * win / decisive) : 0;
-  console.log("\n── RESULT ─────────────────────────────────");
+  const r1rate = scored ? (100 * r1total / (2 * scored)) : 0; // 50% = no primacy bias
+  console.log("\n── RESULT (position-controlled: each pair judged both orders) ──");
   console.log(`  scored:        ${scored}  (errors: ${errors})`);
   console.log(`  CHORUS wins:   ${win}`);
   console.log(`  baseline wins: ${loss}`);
-  console.log(`  ties:          ${tie}`);
+  console.log(`  ties (split):  ${tie}`);
   console.log(`  CHORUS win-rate (incl. ties): ${winRate.toFixed(1)}%`);
   console.log(`  CHORUS win-rate (decisive):   ${decisiveWinRate.toFixed(1)}%`);
-  console.log(`  identical replies (no effect possible): ${identical}/${scored}`);
+  console.log(`  identical replies: ${identical}/${scored}`);
+  console.log(`  primacy bias (Reply-1 win-rate across all judgments): ${r1rate.toFixed(1)}%  [50% = none; now cancelled by both-orders design]`);
   console.log("───────────────────────────────────────────");
   console.log("  ⚠ single-vendor judge (xAI); simplified persona; non-deterministic.");
-  console.log("    Treat as directional. Quote WITH sample size + these caveats.\n");
+  console.log("    Position bias is now controlled. Still quote WITH sample size + caveats.\n");
 
   if (argJson) {
     const fs = await import("node:fs");
     fs.writeFileSync(argJson, JSON.stringify({
-      meta: { n: N, gen: GEN_MODEL, judge: JUDGE_MODEL, scored, errors, identical },
+      meta: { n: N, gen: GEN_MODEL, judge: JUDGE_MODEL, scored, errors, identical, positionControlled: true, primacyReply1Rate: r1rate },
       result: { win, loss, tie, winRate, decisiveWinRate },
       rows,
     }, null, 2));
