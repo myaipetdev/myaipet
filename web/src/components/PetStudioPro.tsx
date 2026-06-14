@@ -934,7 +934,7 @@ function PreviewDemo({ pet, prompt }: { pet: Pet | null; prompt: string }) {
         letterSpacing: "0.14em", color: "#fbbf24", marginBottom: 12,
       }}>DEMO · WOULD GENERATE</div>
       <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 8, lineHeight: 1.3 }}>
-        A 5-second video starring {pet?.name || "your pet"}
+        A scene starring {pet?.name || "your pet"}
       </div>
       <div style={{
         fontSize: 14, color: "rgba(255,255,255,0.78)", fontFamily: "'JetBrains Mono', monospace",

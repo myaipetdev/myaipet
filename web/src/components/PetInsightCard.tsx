@@ -28,6 +28,7 @@ export default function PetInsightCard({ petId, petName }: { petId: number; petN
   const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(true);
   const [thinking, setThinking] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
 
   const load = async () => {
     try {
@@ -40,12 +41,19 @@ export default function PetInsightCard({ petId, petName }: { petId: number; petN
 
   const triggerDaydream = async () => {
     setThinking(true);
+    setNote(null);
     try {
-      await fetch(`/api/pets/${petId}/daydream`, {
+      const r = await fetch(`/api/pets/${petId}/daydream`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       });
+      const d = await r.json().catch(() => null);
       await load();
+      // The POST is a cheap no-op on a recent cooldown or with too few memories;
+      // tell the user instead of leaving the button feeling broken.
+      if (d?.skipped === "cooldown") setNote(`${petName} just daydreamed — give it a little while.`);
+      else if (d?.created === 0) setNote(d.note || `${petName} needs a few more memories first — chat a bit, then try again.`);
+      if (d?.skipped || d?.created === 0) setTimeout(() => setNote(null), 6000);
     } catch { /* ignore */ }
     setThinking(false);
   };
@@ -84,6 +92,16 @@ export default function PetInsightCard({ petId, petName }: { petId: number; petN
           }}
         >{thinking ? "Thinking…" : "Daydream"}</button>
       </div>
+
+      {note && (
+        <div style={{
+          fontSize: 13, color: "#6d28d9", fontWeight: 600,
+          background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.18)",
+          borderRadius: 10, padding: "8px 12px", marginBottom: 10,
+        }}>
+          {note}
+        </div>
+      )}
 
       {insights.length === 0 ? (
         <div style={{
