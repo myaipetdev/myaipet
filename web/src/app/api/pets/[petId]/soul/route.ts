@@ -54,6 +54,16 @@ export async function GET(
       is_deceased: soul.is_deceased,
       inherited_from: soul.inherited_from,
       last_heartbeat_at: soul.last_heartbeat_at,
+      // Aliases the dashboard's SoulState actually reads — these names were
+      // missing from the real payload (present only on the dev mock), so BORN /
+      // LAST ACTIVE / on-chain rendered "—" for every real user.
+      birth_at: soul.created_at,
+      last_heartbeat: soul.last_heartbeat_at,
+      wallet_address: soul.owner_wallet,
+      on_chain: !!soul.mint_tx_hash,
+      inactivity_days: soul.last_heartbeat_at
+        ? Math.floor((Date.now() - new Date(soul.last_heartbeat_at).getTime()) / 86_400_000)
+        : null,
     },
     checkpoint_count,
     memory_nft_count,

@@ -324,11 +324,15 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
       const res = await fetch(`/api/petclaw/memory/consolidate?petId=${petId}&force=1`, {
         method: "POST", headers: getAuthHeaders(),
       });
-      const r = await res.json();
-      alert(r.result
-        ? `Done. ${r.result.before.memories}→${r.result.after.memories} memories, ${r.result.before.userProfile}→${r.result.after.userProfile} profile entries.`
-        : "Skipped (gated or nothing to do)");
-      await load();
+      const r = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(r.error || `Consolidation failed (${res.status})`);
+      } else {
+        alert(r.result
+          ? `Done. ${r.result.before.memories}→${r.result.after.memories} memories, ${r.result.before.userProfile}→${r.result.after.userProfile} profile entries.`
+          : "Skipped (gated or nothing to do)");
+        await load();
+      }
     } catch (e: any) {
       alert("Failed: " + e?.message);
     }
