@@ -19,7 +19,7 @@
  * Below: same 4-card How grid as before but with explicit cost/reward.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { getAuthHeaders } from "@/lib/api";
 
 interface PetProjection {
@@ -44,14 +44,24 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
   const [thought, setThought] = useState<{ text: string; emotion: string; petName: string } | null>(null);
   const [now, setNow] = useState(Date.now());
 
+  const fetchReqRef = useRef(0);
   useEffect(() => {
-    fetch("/api/dashboard/projection", { headers: getAuthHeaders(), credentials: "include" })
-      .then(r => r.ok ? r.json() : null).then(setData).catch(() => {});
-    fetch("/api/dashboard/ticker?limit=15")
-      .then(r => r.ok ? r.json() : { events: [] }).then(d => setTicker(d.events || [])).catch(() => {});
-
+    // Re-fetch projection + ticker every 60s so the "LIVE · LAST 7 DAYS" strip
+    // and pool actually update on a long-open tab instead of being frozen at
+    // mount. Request token drops out-of-order/superseded responses.
+    const load = () => {
+      const reqId = ++fetchReqRef.current;
+      fetch("/api/dashboard/projection", { headers: getAuthHeaders(), credentials: "include" })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (reqId === fetchReqRef.current) setData(d); }).catch(() => {});
+      fetch("/api/dashboard/ticker?limit=15")
+        .then(r => r.ok ? r.json() : { events: [] })
+        .then(d => { if (reqId === fetchReqRef.current) setTicker(d.events || []); }).catch(() => {});
+    };
+    load();
+    const refresh = setInterval(load, 60000);
     const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
+    return () => { clearInterval(refresh); clearInterval(id); };
   }, []);
 
   // Once we know the user's primary pet, fetch its thought

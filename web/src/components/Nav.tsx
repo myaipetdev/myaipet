@@ -29,9 +29,14 @@ export default function Nav({ section, setSection, credits }: any) {
         setBalanceOpen(false);
       }
     }
+    function handleKey(e: KeyboardEvent) { if (e.key === "Escape") setBalanceOpen(false); }
     if (balanceOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKey);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("keydown", handleKey);
+      };
     }
   }, [balanceOpen]);
 
@@ -142,11 +147,11 @@ export default function Nav({ section, setSection, credits }: any) {
               </>
             );
             return item.url ? (
-              <a key={item.key} className="nav-btn" href={item.url} style={sharedStyle}>
+              <a key={item.key} className="nav-btn" href={item.url} aria-current={isActive ? "page" : undefined} style={sharedStyle}>
                 {inner}
               </a>
             ) : (
-              <button key={item.key} className="nav-btn" onClick={() => setSection(item.key)} style={sharedStyle}>
+              <button key={item.key} className="nav-btn" onClick={() => setSection(item.key)} aria-current={isActive ? "page" : undefined} style={sharedStyle}>
                 {inner}
               </button>
             );
@@ -154,8 +159,11 @@ export default function Nav({ section, setSection, credits }: any) {
 
           {credits !== null && credits !== undefined && (
             <div ref={balanceRef} style={{ position: "relative", flexShrink: 0, marginLeft: 4 }}>
-              <span
+              <button
                 className="nav-credits"
+                aria-label={`Credit balance: ${credits}`}
+                aria-expanded={balanceOpen}
+                aria-haspopup="true"
                 onClick={() => setBalanceOpen((v: boolean) => !v)}
                 style={{
                   fontFamily: "mono", fontSize: 11, color: "#b45309", fontWeight: 600,
@@ -167,7 +175,7 @@ export default function Nav({ section, setSection, credits }: any) {
                 }}
               >
                 <Icon name="coin" size={14} /> {credits}
-              </span>
+              </button>
               {balanceOpen && (
                 <div style={{
                   position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 200,
