@@ -282,10 +282,11 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
     const k = entryType === "session" ? "id" : "key";
     setBusy(`${entryType}_${keyOrId}`);
     try {
-      await fetch(`/api/petclaw/memory?petId=${petId}&entryType=${entryType}&${k}=${encodeURIComponent(String(keyOrId))}`, {
+      const res = await fetch(`/api/petclaw/memory?petId=${petId}&entryType=${entryType}&${k}=${encodeURIComponent(String(keyOrId))}`, {
         method: "DELETE", headers: getAuthHeaders(),
       });
-      await load();
+      if (!res.ok) alert("Couldn't delete that entry — try again.");
+      else await load();
     } catch {}
     setBusy(null);
   };
@@ -294,10 +295,11 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
     if (!confirm(`Wipe ALL ${entryType} entries? This is irreversible.`)) return;
     setBusy(`${entryType}_all`);
     try {
-      await fetch(`/api/petclaw/memory?petId=${petId}&entryType=${entryType}&all=1`, {
+      const res = await fetch(`/api/petclaw/memory?petId=${petId}&entryType=${entryType}&all=1`, {
         method: "DELETE", headers: getAuthHeaders(),
       });
-      await load();
+      if (!res.ok) alert("Couldn't clear those entries — try again.");
+      else await load();
     } catch {}
     setBusy(null);
   };
@@ -307,12 +309,13 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
     if (next === null || next === current) return;
     setBusy(`${entryType}_${key}`);
     try {
-      await fetch(`/api/petclaw/memory?petId=${petId}&entryType=${entryType}`, {
+      const res = await fetch(`/api/petclaw/memory?petId=${petId}&entryType=${entryType}`, {
         method: "PATCH",
         headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ key, content: next }),
       });
-      await load();
+      if (!res.ok) alert("Couldn't save that edit — try again.");
+      else await load();
     } catch {}
     setBusy(null);
   };
@@ -528,7 +531,7 @@ function ChromeExtensionSection() {
           <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(74,222,128,0.15)", color: "#16a34a", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>v2.0 READY</span>
         </div>
         <p style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", fontFamily: "monospace", lineHeight: 1.65, marginBottom: 20 }}>
-          Your pet lives in your browser. Browse any site with your AI companion active — it watches context, earns points passively, evolves through interaction, and runs mini-games right from your toolbar. Chrome Web Store submission is underway; install early via developer mode below.
+          Your pet lives in your browser. Browse any site with your AI companion active — it watches context, earns points passively, evolves through interaction, and runs mini-games right from your toolbar. Install it in developer mode below.
         </p>
       </div>
 
@@ -603,7 +606,7 @@ function ChromeExtensionSection() {
             ⬇ Download Extension
           </a>
           <div style={{ marginTop: 8, fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.35)" }}>
-            Chrome Web Store submission pending review
+            Developer-mode install
           </div>
         </div>
 
