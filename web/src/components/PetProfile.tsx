@@ -928,6 +928,14 @@ export default function PetProfile() {
   const activePetIdRef = useRef<number | null>(null);
   useEffect(() => { activePetIdRef.current = activePet?.id ?? null; }, [activePet]);
 
+  // Escape closes the chat modal — keyboard users can't reach the backdrop or ✕.
+  useEffect(() => {
+    if (!showChat) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setShowChat(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showChat]);
+
   useEffect(() => {
     loadPets();
     loadBalance();
@@ -2287,7 +2295,7 @@ export default function PetProfile() {
                   {pet.personality_type} · {MOOD_CONFIG[pet.current_mood || "neutral"]?.emoji} {MOOD_CONFIG[pet.current_mood || "neutral"]?.label}
                 </div>
               </div>
-              <button onClick={() => setShowChat(false)} style={{
+              <button onClick={() => setShowChat(false)} aria-label="Close chat" style={{
                 background: "none", border: "none", cursor: "pointer",
                 fontSize: 18, color: "rgba(26,26,46,0.3)", padding: 4,
               }}>✕</button>
