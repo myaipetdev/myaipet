@@ -110,8 +110,13 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
       const res = await fetch(`/api/petclaw/connections?petId=${petId}`, {
         headers: getAuthHeaders(),
       });
-      const data = await res.json();
-      setProviders(data.providers || []);
+      // Only trust the payload on a 2xx — a 401/500 error body has no
+      // `providers`, and falling back to [] would render "all disconnected"
+      // and silently mask an auth/server failure as an empty state.
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setProviders(data.providers || []);
+      }
     } catch {}
     setLoading(false);
   }, [petId]);
@@ -142,12 +147,18 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
     if (!confirm(`Disconnect ${id}?`)) return;
     setActioning(id);
     try {
-      await fetch(`/api/petclaw/connections?petId=${petId}&platform=${id}`, {
+      const res = await fetch(`/api/petclaw/connections?petId=${petId}&platform=${id}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
-      await load();
-    } catch {}
+      if (!res.ok) {
+        alert("Couldn't disconnect that channel — please try again.");
+      } else {
+        await load();
+      }
+    } catch {
+      alert("Couldn't disconnect that channel — please try again.");
+    }
     setActioning(null);
   };
 
@@ -539,7 +550,7 @@ function ChromeExtensionSection() {
       <div style={{ display: "flex", gap: 0, flexWrap: "wrap", borderTop: "1px solid rgba(0,0,0,0.05)" }}>
         {/* Left: features + steps */}
         <div style={{ flex: "1 1 280px", padding: "24px 30px", borderRight: "1px solid rgba(0,0,0,0.05)" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
+          <div className="sov-2col" style={{ gap: 10, marginBottom: 24 }}>
             {[
               { icon: "🐾", title: "Always Alive", desc: "Your pet runs in the background and sends push notifications." },
               { icon: "🎯", title: "Season Rewards", desc: "Earn loyalty points for browsing, chats, streaks, and evolution." },
@@ -611,7 +622,7 @@ function ChromeExtensionSection() {
         </div>
 
         {/* Right: popup mockup */}
-        <div style={{ flex: "0 0 360px", padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "center", background: "rgba(10,10,20,0.03)" }}>
+        <div className="sov-split-aside" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "center", background: "rgba(10,10,20,0.03)" }}>
           <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.35)", letterSpacing: "0.1em", marginBottom: 12 }}>POPUP PREVIEW</div>
           {/* Extension popup mockup */}
           <div style={{
@@ -930,6 +941,15 @@ export default function SovereigntyDashboard() {
         .sov-section-title { font-size:22px; font-weight:800; color:#1a1a2e; letter-spacing:-0.03em; margin:0 0 4px; }
         .sov-section-sub { font-size:13px; color:rgba(26,26,46,0.45); font-family:monospace; margin:0 0 24px; }
         .sov-divider { width:100%; height:1px; background:rgba(0,0,0,0.06); margin:32px 0; }
+        .sov-2col { display:grid; grid-template-columns:1fr 1fr; }
+        .sov-split { display:flex; }
+        .sov-split-aside { flex:0 0 360px; }
+        @media (max-width: 760px) {
+          .sov-2col { grid-template-columns:1fr; }
+          .sov-hero-grid { gap:28px !important; }
+          .sov-split { flex-direction:column; }
+          .sov-split-aside { flex:1 1 auto !important; }
+        }
       `}</style>
 
       {/* ───── Hero ───── */}
@@ -971,7 +991,7 @@ export default function SovereigntyDashboard() {
         </div>
 
         {/* Big two-column hero */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "center" }}>
+        <div className="sov-2col sov-hero-grid" style={{ gap: 48, alignItems: "center" }}>
           {/* Left: text */}
           <div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
