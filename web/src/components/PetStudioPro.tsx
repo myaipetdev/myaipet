@@ -322,6 +322,18 @@ export default function PetStudioPro() {
     }
   };
 
+  // Remix: keep the subject/prompt, jump to a fresh style, and return to compose
+  // so one tap turns a finished result into a new variation (drives another gen).
+  const remix = (promptOverride?: string) => {
+    if (promptOverride) setPrompt(promptOverride);
+    setStyleId(prev => {
+      const i = STYLES.findIndex(s => s.id === prev);
+      return STYLES[(i + 1) % STYLES.length].id;
+    });
+    setResultUrl(null);
+    setView("idle");
+  };
+
   return (
     <div style={{
       minHeight: "calc(100vh - 60px)",
@@ -405,6 +417,16 @@ export default function PetStudioPro() {
                 <a href={resultUrl} download style={btnGhost}>↓ Download</a>
                 <a href={resultUrl} target="_blank" rel="noreferrer" style={btnGhost}>↗ Open</a>
                 <div style={{ flex: 1 }} />
+                <button
+                  onClick={() => remix()}
+                  aria-label="Remix this in a new style"
+                  title="Same pet, new style — tweak & generate again"
+                  style={{
+                    padding: "9px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+                    background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "white",
+                    fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
+                  }}
+                >🎨 Remix</button>
                 <button onClick={() => { setView("idle"); setResultUrl(null); }} style={btnGhost}>⟳ New</button>
               </div>
             )}
