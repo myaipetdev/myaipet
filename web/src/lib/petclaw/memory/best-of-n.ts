@@ -111,3 +111,52 @@ export function pickBest(candidates: ReplyCandidate[], ctx: {
 }
 
 export const BEST_OF_N_ENABLED = process.env.PETCLAW_BEST_OF_N === "true";
+
+/**
+ * CHORUS v2 — LLM-judge selection.
+ *
+ * The keyword heuristic (scoreReply/pickBest above) can't reliably tell a better
+ * reply from a worse one, so best-of-N spends N× tokens for no defensible gain.
+ * An independent judge over the full candidate set is the actual mechanism by
+ * which best-of-N beats single-shot — this is what OpenRouter Fusion does, at
+ * the model level; here we do it at the sampling level.
+ *
+ * Same GROK_API_KEY / x.ai endpoint / temperature-0 / json_object contract as
+ * consolidate.ts and self-learning.ts — no new dependency, key, or capability.
+ * Returns null on any failure so the caller falls back to the heuristic pickBest.
+ */
+export async function pickBestLLM(
+  candidates: ReplyCandidate[],
+  ctx: { userMessage: string; systemPrompt: string },
+): Promise<{ chosen: ReplyCandidate; reason: string } | null> {
+  const grokKey = process.env.GROK_API_KEY;
+  if (!grokKey || candidates.length === 0) return null;
+  if (candidates.length === 1) return { chosen: candidates[0], reason: "only candidate" };
+  const labeled = candidates.map((c, i) => `[${i}]: ${c.text}`).join("\n\n");
+  try {
+    const res = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${grokKey}` },
+      body: JSON.stringify({
+        model: "grok-3-mini-fast",
+        messages: [
+          { role: "system", content: 'You are a strict reply judge. Given a pet companion\'s character brief, the owner\'s message, and N candidate replies, pick the ONE candidate that best stays in character, fits the owner\'s message, and reads naturally. Reply with ONLY a JSON object: {"index": <number>, "reason": "<short>"}. No prose.' },
+          { role: "user", content: `CHARACTER BRIEF:\n${ctx.systemPrompt.slice(0, 1200)}\n\nOWNER MESSAGE:\n${ctx.userMessage.slice(0, 500)}\n\nCANDIDATES:\n${labeled}` },
+        ],
+        max_tokens: 60,
+        temperature: 0,
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const raw = data.choices?.[0]?.message?.content?.trim();
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const idx = Number(parsed.index);
+    if (!Number.isInteger(idx) || idx < 0 || idx >= candidates.length) return null;
+    return { chosen: candidates[idx], reason: String(parsed.reason || "llm-judge") };
+  } catch {
+    return null;
+  }
+}

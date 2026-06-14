@@ -9,7 +9,7 @@ import { getPersona, buildPersonaContext } from "@/lib/services/persona";
 import { rateLimit } from "@/lib/rateLimit";
 import { sanitizeText } from "@/lib/sanitize";
 import { estimateHelpfulness } from "@/lib/petclaw/memory/feedback";
-import { BEST_OF_N_ENABLED, pickBest } from "@/lib/petclaw/memory/best-of-n";
+import { BEST_OF_N_ENABLED, pickBest, pickBestLLM } from "@/lib/petclaw/memory/best-of-n";
 
 const PERSONALITY_VOICES: Record<string, string> = {
   friendly: "You speak warmly, use lots of exclamation marks, and are always encouraging. You love your owner.",
@@ -155,13 +155,18 @@ ${await getBondNotesBlock(pet.id)}
         .filter(c => c.text);
       if (candidates.length === 0) throw new Error("Chat failed");
       const learnedPatterns: any[] = ((pet.personality_modifiers as any)?.learned_patterns) || [];
-      const best = pickBest(candidates, {
-        userMessage: message.trim(),
-        personalityType: pet.personality_type,
-        targetMaxChars: 200,
-        learnedPatterns,
-      });
-      reply = best.text;
+      // CHORUS v2: an independent LLM judge picks the best candidate; on any
+      // failure (no key / error / bad output) it returns null and we fall back
+      // to the cheap keyword heuristic — no behavior regression.
+      const judged = await pickBestLLM(candidates, { userMessage: message.trim(), systemPrompt });
+      reply = judged
+        ? judged.chosen.text
+        : pickBest(candidates, {
+            userMessage: message.trim(),
+            personalityType: pet.personality_type,
+            targetMaxChars: 200,
+            learnedPatterns,
+          }).text;
     } else {
       const res = await callGrok(0.9);
       if (!res.ok) {
