@@ -403,7 +403,7 @@ export const api = {
   persona: {
     get: (petId: number) => request(`/api/pets/${petId}/persona`),
     save: (petId: number, data: any) =>
-      request(`/api/pets/${petId}/persona`, { method: "POST", body: data }),
+      request(`/api/pets/${petId}/persona`, { method: "PUT", body: data }),
     analyze: (petId: number, chatText: string) =>
       request(`/api/pets/${petId}/persona/analyze`, {
         method: "POST",

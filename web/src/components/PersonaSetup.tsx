@@ -99,20 +99,25 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
   // Load existing persona
   useEffect(() => {
     api.persona.get(petId).then((data: any) => {
-      if (data) {
+      // The route returns { persona, has_persona }; the persona row stores
+      // owner_* columns (and tone/interests as strings). Reading data.X off the
+      // top level with form field names left the form blank on every reopen.
+      const p = data?.persona;
+      if (p) {
+        const toArr = (v: any): string[] =>
+          Array.isArray(v) ? v
+          : (typeof v === "string" && v.trim() ? v.split(",").map((s: string) => s.trim()).filter(Boolean) : []);
         setPersona(prev => ({
           ...prev,
-          speech_style: data.speech_style || prev.speech_style,
-          speech_detail: data.speech_detail || "",
-          tone: data.tone || [],
-          interests: data.interests || [],
-          expressions: data.expressions || "",
-          language: data.language || "ko",
-          bio: data.bio || "",
+          speech_style: p.owner_speech_style || prev.speech_style,
+          tone: toArr(p.owner_tone),
+          interests: toArr(p.owner_interests),
+          expressions: p.owner_expressions || "",
+          language: p.owner_language || "ko",
+          bio: p.owner_bio || "",
         }));
-        setObservedTopics(data.observed_topics || []);
-        setLastUpdated(data.updated_at || null);
-        setLiveLearning(data.live_learning ?? true);
+        setLastUpdated(p.updated_at || null);
+        setLiveLearning(p.live_learning ?? true);
       }
     }).catch(() => {});
 
@@ -120,8 +125,8 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
     api.agent.status(petId).then((data: any) => {
       const conns = (data.connections || []).map((c: any) => ({
         platform: c.platform,
-        connected: c.connected,
-        learning: c.connected,
+        connected: c.is_active,
+        learning: c.is_active,
       }));
       setPlatforms(conns);
     }).catch(() => {});
@@ -191,8 +196,20 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
     setAnalyzing(true);
     setAnalysisResult(null);
     try {
-      const res = await api.persona.analyze(petId, chatText);
-      setAnalysisResult(res);
+      // Route returns { analysis: { patterns, sample_messages, vocabulary_style,
+      // detected_tone, detected_language, interests } }. Normalize into the
+      // AnalysisResult shape the UI renders — reading res.* directly left
+      // key_expressions/topics undefined and crashed the tab on .map().
+      const res: any = await api.persona.analyze(petId, chatText);
+      const a = res?.analysis || res || {};
+      setAnalysisResult({
+        detected_style: a.detected_tone || a.vocabulary_style || "—",
+        key_expressions: a.patterns && typeof a.patterns === "object"
+          ? Object.entries(a.patterns).map(([k, v]) => `${k.replace(/_/g, " ")}: ${v}`)
+          : [],
+        topics: Array.isArray(a.interests) ? a.interests : [],
+        sample_messages: Array.isArray(a.sample_messages) ? a.sample_messages : [],
+      });
     } catch (err: any) {
       setSaveResult({ type: "error", text: err.message || "Analysis failed" });
     }
@@ -202,27 +219,25 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
   const handleApplyAnalysis = async () => {
     if (!analysisResult) return;
     setApplyingAnalysis(true);
-    try {
-      await api.persona.applyAnalysis(petId, analysisResult);
-      // Update local state with analysis results
-      setPersona(prev => ({
-        ...prev,
-        interests: [...new Set([...prev.interests, ...analysisResult.topics])],
-        expressions: analysisResult.key_expressions.join(", "),
-      }));
-      setSaveResult({ type: "success", text: "Analysis results applied!" });
-      setTimeout(() => setSaveResult(null), 3000);
-    } catch (err: any) {
-      setSaveResult({ type: "error", text: err.message || "Failed to apply" });
-    }
+    // The analyze step already persisted results server-side (saveChatAnalysis),
+    // and there is no /persona/apply route — "Apply" just merges the detected
+    // topics/expressions into the editable form so the user can save them.
+    setPersona(prev => ({
+      ...prev,
+      interests: [...new Set([...prev.interests, ...analysisResult.topics])],
+      expressions: analysisResult.key_expressions.join(", "),
+    }));
+    setSaveResult({ type: "success", text: "Analysis results applied!" });
+    setTimeout(() => setSaveResult(null), 3000);
     setApplyingAnalysis(false);
   };
 
   const handleToggleLiveLearning = async () => {
+    const next = !liveLearning;
+    setLiveLearning(next); // optimistic — reflect the toggle immediately
     setLoadingLive(true);
     try {
-      await api.persona.updateLiveLearning(petId, !liveLearning);
-      setLiveLearning(!liveLearning);
+      await api.persona.updateLiveLearning(petId, next);
     } catch {}
     setLoadingLive(false);
   };
