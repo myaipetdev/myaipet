@@ -167,6 +167,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
   }, []);
 
   const remaining = Math.max(0, SEASON_END - now);
+  const seasonOver = remaining <= 0;
   const days = Math.floor(remaining / 86_400_000);
   const hours = Math.floor((remaining % 86_400_000) / 3_600_000);
   const minutes = Math.floor((remaining % 3_600_000) / 60_000);
@@ -221,7 +222,15 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
           </div>
         </div>
 
-        {/* Center: countdown */}
+        {/* Center: countdown (or a season-over badge once it ends) */}
+        {seasonOver ? (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8, zIndex: 1,
+            fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 14, color: "#fff",
+          }}>
+            🏁 Season 1 wrapped · <span style={{ opacity: 0.85, fontWeight: 700 }}>Season 2 soon</span>
+          </div>
+        ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 6, zIndex: 1 }}>
           {[
             { val: pad(days), label: "D" },
@@ -243,6 +252,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
             </div>
           ))}
         </div>
+        )}
 
         {/* Right: points + progress */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, zIndex: 1, minWidth: 120 }}>
