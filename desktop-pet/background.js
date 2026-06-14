@@ -686,6 +686,15 @@ async function tickStreak() {
     points.lastDaily = today;
     justIncremented = true;
     await chrome.storage.local.set({ [POINTS_KEY]: points });
+    // Award the daily-login + streak bonus HERE (was only in sendHeartbeat),
+    // so it fires once per day regardless of whether a page load or the 5-min
+    // heartbeat was the first trigger — previously a page load set lastDaily
+    // first and the heartbeat skipped, losing the bonus.
+    await addPoints("heartbeat", 10, "daily login bonus");
+    await addNotification("📅", "Daily login bonus! +10 pts");
+    const streakBonus = Math.min(points.dailyStreak * 2, 20);
+    await addPoints("heartbeat", streakBonus, `${points.dailyStreak}-day streak bonus`);
+    await addNotification("🔥", `${points.dailyStreak}-day streak! +${streakBonus} bonus`);
   }
   return { streak: points.dailyStreak || 1, justIncremented };
 }
@@ -770,26 +779,10 @@ async function sendHeartbeat() {
   await addPoints("heartbeat", 1, "5min heartbeat");
   await decayEmotions();
 
-  // Daily streak check
-  const points = await getPoints();
-  const today = new Date().toISOString().split("T")[0];
-  if (points.lastDaily !== today) {
-    await addPoints("heartbeat", 10, "daily login bonus");
-    await addNotification("📅", "Daily login bonus! +10 pts");
-
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-    if (points.lastDaily === yesterday) {
-      points.dailyStreak = (points.dailyStreak || 0) + 1;
-      const streakBonus = Math.min(points.dailyStreak * 2, 20);
-      await addPoints("heartbeat", streakBonus, `${points.dailyStreak}-day streak bonus`);
-      await addNotification("🔥", `${points.dailyStreak}-day streak! +${streakBonus} bonus`);
-    } else {
-      points.dailyStreak = 1;
-    }
-
-    points.lastDaily = today;
-    await chrome.storage.local.set({ [POINTS_KEY]: points });
-  }
+  // Daily streak + login/streak bonus is handled in tickStreak() (also fired on
+  // page load), awarded exactly once per day by whichever trigger is first — no
+  // duplicate increment/bonus here.
+  await tickStreak();
 
   // Emotion warnings
   const emotions = await getEmotions();
@@ -1015,6 +1008,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 chrome.runtime.onInstalled.addListener(async () => {
   await fetchPetInfo();
   await sendHeartbeat();
-  await addNotification("🎉", "MY AI PET v2.0 installed! Welcome!");
+  await addNotification("🎉", `MY AI PET v${chrome.runtime.getManifest().version} installed! Welcome!`);
   console.log("[AI Pet] v2.0 installed! Emotions, evolution, and mini-games active.");
 });
