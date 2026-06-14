@@ -66,7 +66,7 @@ function CheckinCard({ isAuthenticated }: { isAuthenticated: boolean }) {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    fetch("/api/checkin").then(r => r.json()).then(d => setData(d)).catch(() => {});
+    fetch("/api/checkin").then(r => (r.ok ? r.json() : null)).then(d => d && setData(d)).catch(() => {});
   }, [isAuthenticated]);
 
   const doCheckin = async () => {
