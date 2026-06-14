@@ -2012,7 +2012,10 @@ export default function SovereigntyDashboard() {
                       <div style={{ fontSize: 14, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, color: "#1a1a2e" }}>{label}</div>
                       <div style={{ fontSize: 12, color: "rgba(26,26,46,0.45)", fontFamily: "'Space Grotesk',sans-serif", marginTop: 2 }}>{desc}</div>
                     </div>
-                    <div
+                    <button
+                      role="switch"
+                      aria-checked={!!(consent as any)[key]}
+                      aria-label={label}
                       onClick={() => {
                         setConsent(prev => {
                           const next = { ...prev, [key]: !prev[key as keyof typeof prev] };
@@ -2021,7 +2024,7 @@ export default function SovereigntyDashboard() {
                         });
                       }}
                       style={{
-                        width: 44, height: 24, borderRadius: 12,
+                        width: 44, height: 24, borderRadius: 12, padding: 0,
                         background: (consent as any)[key] ? "linear-gradient(135deg, #f59e0b, #d97706)" : "rgba(0,0,0,0.08)",
                         cursor: "pointer", position: "relative", transition: "all 0.2s",
                         border: `1px solid ${(consent as any)[key] ? "rgba(245,158,11,0.3)" : "rgba(0,0,0,0.08)"}`,
@@ -2035,7 +2038,7 @@ export default function SovereigntyDashboard() {
                         transition: "left 0.2s",
                         boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
                       }} />
-                    </div>
+                    </button>
                   </div>
                 ))}
               </div>
