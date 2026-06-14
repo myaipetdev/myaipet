@@ -350,7 +350,7 @@ export default function PetStudioPro() {
               {view === "idle" && (
                 <PreviewIdle pet={pet} />
               )}
-              {view === "generating" && <PreviewGenerating />}
+              {view === "generating" && <PreviewGenerating kind={outputKind} />}
               {view === "done" && resultUrl && resultUrl !== "__demo__" && (
                 /\.(mp4|webm)$/i.test(resultUrl)
                   ? <video src={resultUrl} controls autoPlay loop playsInline style={{ width: "100%", height: "100%", objectFit: "contain" }} />
@@ -742,8 +742,8 @@ export default function PetStudioPro() {
           cursor: canGenerate ? "pointer" : "not-allowed",
         }}>
           {view === "generating"
-            ? "Generating… 30 – 90s"
-            : `▶  Generate · ${chosenModel?.creditsPerRun ?? 0} credits · ~30s`}
+            ? (outputKind === "image" ? "Generating…" : "Generating… 30 – 90s")
+            : `▶  Generate · ${chosenModel?.creditsPerRun ?? 0} credits · ${outputKind === "image" ? "~5s" : "~30s"}`}
         </button>
 
         {/* ── Roadmap: what's next for Studio ── */}
@@ -818,8 +818,10 @@ export default function PetStudioPro() {
                   cursor: "pointer", padding: 0,
                   boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
                 }} title={g.prompt || "(no prompt)"}>
-                  {g.video_path || g.photo_path
-                    ? <img src={g.video_path || g.photo_path || ""} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  {g.video_path && /\.(mp4|webm)$/i.test(g.video_path)
+                    ? <video src={g.video_path} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : (g.photo_path || g.video_path)
+                    ? <img src={g.photo_path || g.video_path || ""} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     : <div style={{
                         width: "100%", height: "100%",
                         background: "rgba(0,0,0,0.05)",
@@ -901,21 +903,21 @@ function PreviewIdle({ pet }: { pet: Pet | null }) {
           fontSize: 15, color: "rgba(255,255,255,0.78)",
           maxWidth: 320, margin: "0 auto", lineHeight: 1.55,
         }}>
-          Pick a style, write a prompt, hit <strong>Generate</strong>.
-          A 5-second video of {who} starring in your scene.
+          Pick a style, write a prompt, hit <strong>Generate</strong>{" "}
+          — and put {who} in any scene you can imagine.
         </div>
       </div>
     </div>
   );
 }
 
-function PreviewGenerating() {
+function PreviewGenerating({ kind }: { kind: "image" | "video" }) {
   return (
     <div style={{ color: "white", textAlign: "center", padding: 30 }}>
       <div className="studio-spin" style={{ fontSize: 44, marginBottom: 14 }}>🎞</div>
       <div style={{ fontSize: 17, fontWeight: 700 }}>Generating</div>
       <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 4 }}>
-        30 – 90 seconds. Don't close the page.
+        {kind === "image" ? "Just a few seconds…" : "30 – 90 seconds. Don't close the page."}
       </div>
     </div>
   );
