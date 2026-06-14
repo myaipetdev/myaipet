@@ -354,7 +354,7 @@ async function saveGameResult(score, points, game = "catcher") {
 
   if (points > 0) {
     await addPoints("game", points, `${game} score ${score}`);
-    await addNotification("🎮", `${game === "memory" ? "Memory" : "Catcher"}: ${score} pts, +${points} airdrop`);
+    await addNotification("🎮", `${game === "memory" ? "Memory" : "Catcher"}: ${score} pts, +${points} Season Rewards`);
   }
 
   await checkAchievements();
