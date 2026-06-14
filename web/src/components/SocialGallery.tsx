@@ -606,6 +606,11 @@ export default function SocialGallery() {
   // grid after the user has switched sort and a newer load already landed.
   const feedReqRef = useRef(0);
   const [feedFailed, setFeedFailed] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 40;
+  const hasMedia = (i: any) => i.photo_url || i.photo_path || i.video_url || i.video_path;
 
   const loadFeed = async () => {
     const reqId = ++feedReqRef.current;
@@ -613,16 +618,20 @@ export default function SocialGallery() {
     setFeedFailed(false);
     let realItems: any[] = [];
     let ok = false;
+    let more = false;
     try {
-      const data = await api.social.feed({ sort, page: 1, page_size: 40 });
-      realItems = (data.items || []).filter((i: any) => i.photo_url || i.photo_path || i.video_url || i.video_path);
+      const data = await api.social.feed({ sort, page: 1, page_size: PAGE_SIZE });
+      const raw = data.items || [];
+      realItems = raw.filter(hasMedia);
+      more = raw.length >= PAGE_SIZE; // a full page back ⇒ likely more to fetch
       ok = true;
     } catch {}
     if (realItems.length === 0) {
       try {
-        const data = await api.gallery.list({ sort: sort === "most_liked" ? "recent" : sort, page: 1, page_size: 40 });
+        const data = await api.gallery.list({ sort: sort === "most_liked" ? "recent" : sort, page: 1, page_size: PAGE_SIZE });
         realItems = (data.items || []).map((i: any) => ({ ...i, generation_id: i.id, likes_count: 0, comments_count: 0, is_liked: false }));
         ok = true;
+        more = false; // the gallery fallback path isn't wired for load-more
       } catch {}
     }
     if (reqId !== feedReqRef.current) return; // a newer sort/load superseded this one
@@ -630,8 +639,31 @@ export default function SocialGallery() {
     // "No Creations Yet" empty-state below — never pad with fabricated
     // usernames/like-counts, which misrepresented activity to every user.
     setItems(realItems);
+    setPage(1);
+    setHasMore(more);
     setFeedFailed(!ok); // distinguish a real outage from a genuinely empty feed
     setLoading(false);
+  };
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    const reqId = feedReqRef.current; // tie to the current feed generation
+    const next = page + 1;
+    setLoadingMore(true);
+    try {
+      const data = await api.social.feed({ sort, page: next, page_size: PAGE_SIZE });
+      if (reqId !== feedReqRef.current) return; // sort changed mid-load — drop these
+      const raw = data.items || [];
+      const newItems = raw.filter(hasMedia);
+      setItems(prev => {
+        const seen = new Set(prev.map((i: any) => i.generation_id || i.id));
+        return [...prev, ...newItems.filter((i: any) => !seen.has(i.generation_id || i.id))];
+      });
+      setPage(next);
+      setHasMore(raw.length >= PAGE_SIZE);
+    } catch {} finally {
+      if (reqId === feedReqRef.current) setLoadingMore(false);
+    }
   };
 
   // Latest items, readable from the []-dep callback below.
@@ -846,6 +878,23 @@ export default function SocialGallery() {
           onLike={handleLike}
           onCardClick={(item: any, index: number) => { setSelectedItem(item); setSelectedIndex(index); }}
         />
+      )}
+
+      {!loading && hasMore && !search && filteredItems.length > 0 && (
+        <div style={{ display: "flex", justifyContent: "center", padding: "32px 0 48px" }}>
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            style={{
+              padding: "12px 32px", borderRadius: 999,
+              border: "1px solid rgba(0,0,0,0.1)", background: "white",
+              cursor: loadingMore ? "wait" : "pointer",
+              fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600,
+              color: "#1a1a2e", boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              opacity: loadingMore ? 0.6 : 1,
+            }}
+          >{loadingMore ? "Loading…" : "Load more"}</button>
+        </div>
       )}
 
       {selectedItem && (
