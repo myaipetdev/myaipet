@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 import PetClawConsole from "@/components/PetClawConsole";
@@ -403,7 +403,7 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
         <Stat label="Session Log" value={sessions.length} />
       </div>
 
-      <Section title="MEMORY.md — Facts the pet remembers" onClear={memories.length ? () => clearAll("memory") : undefined}>
+      <Section title="MEMORY.md — Facts the pet remembers" onClear={memories.length ? () => clearAll("memory") : undefined} disabled={!!busy}>
         {memories.length === 0 ? <Empty msg="Nothing remembered yet. Chat a few times to seed this." /> :
           memories.map((m) => (
             <EntryRow key={m.key} primary={m.content} secondary={`[${m.category}] importance ${m.importance}`}
@@ -415,7 +415,7 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
         }
       </Section>
 
-      <Section title="USER.md — What the pet knows about you" onClear={userProfile.length ? () => clearAll("profile") : undefined}>
+      <Section title="USER.md — What the pet knows about you" onClear={userProfile.length ? () => clearAll("profile") : undefined} disabled={!!busy}>
         {userProfile.length === 0 ? <Empty msg="No owner profile yet — onboarding seeds this." /> :
           userProfile.map((u) => (
             <EntryRow key={u.key} primary={u.content} secondary={`[${u.category}] ${u.source}`}
@@ -427,7 +427,7 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
         }
       </Section>
 
-      <Section title="Learned skills (auto-promoted)" onClear={learned.length ? () => clearAll("learned") : undefined}>
+      <Section title="Learned skills (auto-promoted)" onClear={learned.length ? () => clearAll("learned") : undefined} disabled={!!busy}>
         {learned.length === 0 ? <Empty msg="No learned skills yet. Patterns promote after 3 successful conversations on the same topic." /> :
           learned.map((p) => (
             <EntryRow key={p.id || p.topic} primary={p.topic} secondary={`freq ${p.frequency} · success ${Math.round((p.successRate || 0) * 100)}%${p.promotedToSkill ? " · ⭐ promoted" : ""}`}
@@ -438,7 +438,7 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
         }
       </Section>
 
-      <Section title={`Session log (recent ${sessions.length})`} onClear={sessions.length ? () => clearAll("session") : undefined}>
+      <Section title={`Session log (recent ${sessions.length})`} onClear={sessions.length ? () => clearAll("session") : undefined} disabled={!!busy}>
         {sessions.length === 0 ? <Empty msg="No session log." /> :
           sessions.slice(0, 25).map((s) => (
             <EntryRow key={s.id} primary={s.content} secondary={`${s.platform} · ${new Date(s.createdAt).toLocaleString()}`}
@@ -464,16 +464,17 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function Section({ title, children, onClear }: { title: string; children: React.ReactNode; onClear?: () => void }) {
+function Section({ title, children, onClear, disabled }: { title: string; children: React.ReactNode; onClear?: () => void; disabled?: boolean }) {
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <h3 style={{ fontSize: 13, fontWeight: 800, color: "rgba(26,26,46,0.7)", margin: 0, letterSpacing: "0.02em" }}>{title}</h3>
         {onClear && (
-          <button onClick={onClear} style={{
+          <button onClick={onClear} disabled={disabled} style={{
             fontSize: 10, padding: "3px 8px", borderRadius: 6,
             border: "1px solid rgba(220,38,38,0.25)", background: "white",
-            color: "#dc2626", fontWeight: 700, cursor: "pointer",
+            color: "#dc2626", fontWeight: 700, cursor: disabled ? "wait" : "pointer",
+            opacity: disabled ? 0.5 : 1,
           }}>Clear all</button>
         )}
       </div>
@@ -794,19 +795,24 @@ export default function SovereigntyDashboard() {
   }, []);
 
   // ── Load sovereignty data when pet changes ──
+  const selectedPetIdRef = useRef<number | null>(null);
+  useEffect(() => { selectedPetIdRef.current = selectedPet?.id ?? null; }, [selectedPet]);
+
   const fetchSovereigntyData = useCallback(async () => {
     if (!selectedPet) return;
+    const pid = selectedPet.id;
     setLoading(true);
     try {
       const [soulRes, ckptRes, memsRes, mintableRes, consentRes] = await Promise.all([
-        soulApi.get(selectedPet.id).catch(() => null),
-        soulApi.checkpoints(selectedPet.id, 50, 0).catch(() => null),
-        memoryNftApi.list(selectedPet.id).catch(() => null),
-        memoryNftApi.mintable(selectedPet.id).catch(() => null),
-        fetch(`/api/petclaw/consent?petId=${selectedPet.id}`, {
+        soulApi.get(pid).catch(() => null),
+        soulApi.checkpoints(pid, 50, 0).catch(() => null),
+        memoryNftApi.list(pid).catch(() => null),
+        memoryNftApi.mintable(pid).catch(() => null),
+        fetch(`/api/petclaw/consent?petId=${pid}`, {
           headers: getAuthHeaders(),
         }).then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
+      if (selectedPetIdRef.current !== pid) return; // pet switched mid-fetch
       const toArr = (v: any) => Array.isArray(v) ? v : [];
       setSoul(soulRes?.soul || soulRes || null);
       setCheckpoints(toArr(ckptRes?.checkpoints ?? ckptRes));
@@ -981,6 +987,7 @@ export default function SovereigntyDashboard() {
         {/* PetClaw agentic-harness console — the headline of this tab */}
         <div style={{ marginBottom: 40 }}>
           <PetClawConsole
+            key={selectedPet?.id ?? "none"}
             petId={selectedPet?.id}
             demo={isDemo}
             pet={selectedPet ? {
@@ -2148,8 +2155,8 @@ export default function SovereigntyDashboard() {
           </div>
 
           {/* ───── Channel Connections (OAuth) ───── */}
-          {selectedPet && <MemoryInspectorCard petId={selectedPet.id} />}
-          {selectedPet && <ChannelConnectionsCard petId={selectedPet.id} />}
+          {selectedPet && <MemoryInspectorCard key={selectedPet.id} petId={selectedPet.id} />}
+          {selectedPet && <ChannelConnectionsCard key={selectedPet.id} petId={selectedPet.id} />}
 
           {/* ───── Chrome Extension ───── */}
           <ChromeExtensionSection />
