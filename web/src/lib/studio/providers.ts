@@ -269,13 +269,14 @@ export const TIER_LIMITS: Record<ModelTier, TierLimits> = {
     monthlyImageLimit: 300,
     maxResolution: "1080p",
     editorAccess: true,
-    pricePerMonthUsd: 19,
+    // Unified with the /api/subscription/me price quote (conversion-first).
+    pricePerMonthUsd: 4.99,
   },
   studio: {
     monthlyVideoLimit: 120,
     monthlyImageLimit: 2000,
     maxResolution: "4K",
     editorAccess: true,
-    pricePerMonthUsd: 49,
+    pricePerMonthUsd: 9.99,
   },
 };
