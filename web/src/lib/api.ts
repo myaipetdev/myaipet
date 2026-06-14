@@ -152,7 +152,9 @@ async function request(path: string, options: any = {}) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || err.error || err.details || `HTTP ${res.status}`);
+    const e: any = new Error(err.detail || err.error || err.details || `HTTP ${res.status}`);
+    e.status = res.status; // let callers distinguish 401 (re-auth) from other failures
+    throw e;
   }
 
   return res.json();

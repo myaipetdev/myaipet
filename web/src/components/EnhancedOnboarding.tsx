@@ -92,33 +92,20 @@ const SOCIAL_PLATFORMS = [
   { id: "github",   name: "GitHub",    icon: "⌥", color: "#181717", desc: "Reads your dev vibe" },
 ];
 
-const PET_EMOJIS = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
-
 function PetAvatar({ pet, size = 96 }: { pet: Pet; size?: number }) {
-  if (pet.avatar_url) {
-    return (
-      <img
-        src={pet.avatar_url}
-        alt={pet.name}
-        style={{
-          width: size, height: size, borderRadius: size * 0.28, objectFit: "cover",
-          border: "4px solid #fff",
-          boxShadow: "0 12px 32px rgba(245,158,11,0.25), 0 0 0 6px rgba(245,158,11,0.12)",
-        }}
-      />
-    );
-  }
+  // Avatar-less new pets fall back to the brand mascot (white Pomeranian),
+  // matching PetProfile — not a species emoji (adopt-chat creates species 0,
+  // which rendered a 🐱 cat here, off-brand on the onboarding screens).
   return (
-    <div style={{
-      width: size, height: size, borderRadius: size * 0.28,
-      background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
-      border: "4px solid #fff",
-      boxShadow: "0 12px 32px rgba(245,158,11,0.25), 0 0 0 6px rgba(245,158,11,0.12)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: size * 0.5,
-    }}>
-      {PET_EMOJIS[pet.species] || "🐾"}
-    </div>
+    <img
+      src={pet.avatar_url || "/mascot.jpg"}
+      alt={pet.name}
+      style={{
+        width: size, height: size, borderRadius: size * 0.28, objectFit: "cover",
+        border: "4px solid #fff",
+        boxShadow: "0 12px 32px rgba(245,158,11,0.25), 0 0 0 6px rgba(245,158,11,0.12)",
+      }}
+    />
   );
 }
 

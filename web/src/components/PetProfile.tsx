@@ -200,7 +200,10 @@ function CreatePetModal({ onClose, onCreated }: any) {
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ messages: chatMessages, action: "create", petData, signedMessage, signature }),
       });
-      if (!res.ok) throw new Error("Failed to create pet");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to create pet");
+      }
       const pet = await res.json();
 
       // Step 5: Generate avatar
@@ -289,7 +292,10 @@ function CreatePetModal({ onClose, onCreated }: any) {
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ messages: [], action: "create", petData: adoptPetData, signedMessage, signature }),
       });
-      if (!res.ok) throw new Error("Failed to create pet");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to create pet");
+      }
       const pet = await res.json();
 
       // Set uploaded photo as avatar
@@ -940,7 +946,20 @@ export default function PetProfile() {
         loadPetStatus(list[0].id);
         loadEvoStatus(list[0].id);
       }
-    } catch (e) {
+    } catch (e: any) {
+      // A 401 means the session lapsed (token present but server-rejected) —
+      // NOT that the user has zero pets. Clear the stale token and reload so the
+      // app re-gates to "Connect Wallet" instead of showing the misleading
+      // "Adopt Your First Pet" empty state, which would dead-end at create.
+      // Scoped to 401 only, so a transient 500/network blip won't sign anyone out.
+      if (e?.status === 401 && typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("petagen_jwt");
+          localStorage.removeItem("petagen_user");
+        } catch {}
+        window.location.reload();
+        return;
+      }
       setPets([]);
     }
     setLoading(false);
