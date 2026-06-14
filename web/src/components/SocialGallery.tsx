@@ -31,6 +31,11 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Closing the detail modal unmounts this card mid-fetch; guard every async
+  // setState so a late comments/post response doesn't warn on an unmounted node.
+  const mountedRef = useRef(true);
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
+
   useEffect(() => {
     loadComments();
   }, [generationId]);
@@ -38,11 +43,11 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
   const loadComments = async () => {
     try {
       const data = await api.social.comments(generationId);
-      setComments(data.comments || data.items || []);
+      if (mountedRef.current) setComments(data.comments || data.items || []);
     } catch {
-      setComments([]);
+      if (mountedRef.current) setComments([]);
     }
-    setLoading(false);
+    if (mountedRef.current) setLoading(false);
   };
 
   const handleSubmit = async () => {
@@ -50,13 +55,13 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
     setSubmitting(true);
     try {
       await api.social.addComment(generationId, newComment.trim());
-      setNewComment("");
+      if (mountedRef.current) setNewComment("");
       await loadComments();
       onAdded?.();
     } catch {
       // ignore
     }
-    setSubmitting(false);
+    if (mountedRef.current) setSubmitting(false);
   };
 
   return (
@@ -161,6 +166,13 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
 
 // ── Detail Modal ──
 function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
+  // Escape closes the modal (keyboard users can't reach the backdrop/✕).
+  // Declared before the early return so the hook order stays unconditional.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
   if (!item) return null;
 
   return (
@@ -186,7 +198,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
               <video id="detail-video" src={item.video_url || item.video_path} autoPlay loop muted playsInline
                 poster={item.photo_url || item.photo_path || undefined}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              <button onClick={() => {
+              <button aria-label="Toggle sound" onClick={() => {
                 const v = document.getElementById("detail-video") as HTMLVideoElement;
                 if (v) v.muted = !v.muted;
               }} style={{
@@ -235,7 +247,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
                 </div>
               </div>
             </div>
-            <button onClick={onClose} style={{
+            <button aria-label="Close" onClick={onClose} style={{
               background: "rgba(0,0,0,0.04)", border: "none", color: "rgba(26,26,46,0.4)",
               cursor: "pointer", width: 30, height: 30, borderRadius: 8,
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15,
@@ -346,9 +358,13 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Open creation${item.prompt ? `: ${String(item.prompt).slice(0, 60)}` : ""}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={() => onClick(item, index)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(item, index); } }}
       style={{
         borderRadius: 10, overflow: "hidden", cursor: "pointer",
         height: cardHeight, position: "relative",
@@ -795,6 +811,7 @@ export default function SocialGallery() {
               }}>⌕</span>
               <input
                 className="gallery-search"
+                aria-label="Search creations"
                 value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search..."
                 style={{
