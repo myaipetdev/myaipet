@@ -14,6 +14,7 @@
  */
 
 import type { LearnedPattern } from "./self-learning";
+import { callLLM } from "@/lib/llm/router";
 
 export interface ReplyCandidate {
   text: string;
@@ -128,29 +129,26 @@ export const BEST_OF_N_ENABLED = process.env.PETCLAW_BEST_OF_N === "true";
 export async function pickBestLLM(
   candidates: ReplyCandidate[],
   ctx: { userMessage: string; systemPrompt: string },
+  petId?: number,
 ): Promise<{ chosen: ReplyCandidate; reason: string } | null> {
-  const grokKey = process.env.GROK_API_KEY;
-  if (!grokKey || candidates.length === 0) return null;
+  if (candidates.length === 0) return null;
   if (candidates.length === 1) return { chosen: candidates[0], reason: "only candidate" };
   const labeled = candidates.map((c, i) => `[${i}]: ${c.text}`).join("\n\n");
   try {
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${grokKey}` },
-      body: JSON.stringify({
-        model: "grok-3-mini-fast",
-        messages: [
-          { role: "system", content: 'You are a strict reply judge. Given a pet companion\'s character brief, the owner\'s message, and N candidate replies, pick the ONE candidate that best stays in character, fits the owner\'s message, and reads naturally. Reply with ONLY a JSON object: {"index": <number>, "reason": "<short>"}. No prose.' },
-          { role: "user", content: `CHARACTER BRIEF:\n${ctx.systemPrompt.slice(0, 1200)}\n\nOWNER MESSAGE:\n${ctx.userMessage.slice(0, 500)}\n\nCANDIDATES:\n${labeled}` },
-        ],
-        max_tokens: 60,
-        temperature: 0,
-        response_format: { type: "json_object" },
-      }),
+    // Routed via the model router (task:"judge") so a pet-owner's connected model
+    // can serve the judge step; falls back to the platform Grok default.
+    const out = await callLLM({
+      task: "judge",
+      petId,
+      messages: [
+        { role: "system", content: 'You are a strict reply judge. Given a pet companion\'s character brief, the owner\'s message, and N candidate replies, pick the ONE candidate that best stays in character, fits the owner\'s message, and reads naturally. Reply with ONLY a JSON object: {"index": <number>, "reason": "<short>"}. No prose.' },
+        { role: "user", content: `CHARACTER BRIEF:\n${ctx.systemPrompt.slice(0, 1200)}\n\nOWNER MESSAGE:\n${ctx.userMessage.slice(0, 500)}\n\nCANDIDATES:\n${labeled}` },
+      ],
+      max_tokens: 60,
+      temperature: 0,
+      response_format: { type: "json_object" },
     });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const raw = data.choices?.[0]?.message?.content?.trim();
+    const raw = out.text?.trim();
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     const idx = Number(parsed.index);

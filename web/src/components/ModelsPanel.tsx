@@ -128,7 +128,7 @@ export default function ModelsPanel() {
         <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase" }}>PetClaw · your models</div>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: INK, margin: "6px 0 0" }}>Bring your own model</h1>
         <p style={{ fontSize: 14.5, color: MUTED, margin: "8px 0 0", lineHeight: 1.55 }}>
-          Connect your own provider key and the harness routes the matching tasks to it (reasoning, chat, judge…). Your key is encrypted at rest and never shown again. No connection = the platform default (Grok).
+          Connect your own provider key — it powers your pet&apos;s chat replies, the agent-loop reasoning, and best-of-N judging. Other background tasks (memory, persona) still use the platform default (Grok). Your key is encrypted at rest and never shown again.
         </p>
       </div>
 
@@ -154,7 +154,7 @@ export default function ModelsPanel() {
           <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={supported.find((s) => s.id === provider)?.keyFormat || "sk-..."} style={inputStyle} autoComplete="off" />
         </div>
         <div style={{ marginTop: 14 }}>
-          <label style={{ fontSize: 12.5, color: MUTED }}>Use for tasks <span style={{ color: "#b0b0b8" }}>(none = all tasks)</span></label>
+          <label style={{ fontSize: 12.5, color: MUTED }}>Use for <span style={{ color: "#b0b0b8" }}>(none = all supported tasks below)</span></label>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
             {tasks.map((t) => {
               const on = scopes.includes(t);
@@ -188,14 +188,19 @@ export default function ModelsPanel() {
       </Card>
 
       <Card title="Agent loop" sub="Give your pet a goal — it plans, calls its real skills, observes, iterates, and answers. Costs 5 credits per run.">
+        {pets.length === 0 ? (
+          <div style={{ padding: "10px 0", fontSize: 13.5, color: MUTED }}>
+            Adopt a pet first to run the agent loop. <a href="/?section=my%20pet" style={{ color: GOLD, fontWeight: 600, textDecoration: "none" }}>Adopt a pet ▸</a>
+          </div>
+        ) : (
         <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
           <select value={agentPet ?? ""} onChange={(e) => setAgentPet(Number(e.target.value))} style={{ ...inputStyle, width: 180 }}>
             {pets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            {pets.length === 0 && <option value="">no pets</option>}
           </select>
           <input value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="e.g. summarize my week and tell me how you feel" style={inputStyle} onKeyDown={(e) => e.key === "Enter" && runAgent()} />
           <button onClick={runAgent} disabled={running || !agentPet} style={{ ...btn, whiteSpace: "nowrap", opacity: running || !agentPet ? 0.6 : 1 }}>{running ? "Running…" : "Run"}</button>
         </div>
+        )}
         {run && (
           <div style={{ marginTop: 8, background: "#0e0e14", borderRadius: 12, padding: "16px 18px", fontFamily: "monospace", fontSize: 12.5, color: "#e8e4da" }}>
             {run.error ? (

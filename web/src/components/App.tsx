@@ -23,7 +23,6 @@ const PetProfile = lazy(() => import("@/components/PetProfile"));
 const PetGenerate = lazy(() => import("@/components/PetGenerate"));
 const SocialGallery = lazy(() => import("@/components/SocialGallery"));
 const Leaderboard = lazy(() => import("@/components/Leaderboard"));
-const AgentDashboard = lazy(() => import("@/components/AgentDashboard"));
 const SovereigntyDashboard = lazy(() => import("@/components/SovereigntyDashboard"));
 
 // ── Grid Background ──
@@ -488,14 +487,6 @@ export default function App() {
 
       {/* Battle/Adventure retired from the live UI — section de-linked.
           Components (Adventure/Arena/PveMode) kept in the repo for a future relaunch. */}
-
-      {section === "agent" && (
-        <WalletGate section="agent">
-          <Suspense fallback={<Loader />}>
-            <AgentDashboard />
-          </Suspense>
-        </WalletGate>
-      )}
 
       {section === "sovereignty" && (
         <WalletGate section="sovereignty">

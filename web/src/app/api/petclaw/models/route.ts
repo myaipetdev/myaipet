@@ -20,7 +20,7 @@ import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { encrypt } from "@/lib/crypto";
 import { rateLimit } from "@/lib/rateLimit";
-import { supportedProviders, LLM_TASKS, type ProviderId, type LLMTask } from "@/lib/llm/router";
+import { supportedProviders, CONNECTABLE_TASKS, type ProviderId, type LLMTask } from "@/lib/llm/router";
 
 function maskKey(len: number): string {
   return len > 8 ? `••••••••${"•".repeat(Math.min(8, len - 8))}` : "••••••";
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
   const label = String(body?.label || provider).slice(0, 60);
   const requestedScopes: string[] = Array.isArray(body?.taskScopes) ? body.taskScopes.map(String) : [];
-  const taskScopes = requestedScopes.filter((s): s is LLMTask => (LLM_TASKS as string[]).includes(s));
+  const taskScopes = requestedScopes.filter((s): s is LLMTask => (CONNECTABLE_TASKS as string[]).includes(s));
 
   let encrypted_key: string;
   try { encrypted_key = encrypt(apiKey); }
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     orderBy: { updated_at: "desc" },
     select: { id: true, provider: true, label: true, model: true, task_scopes: true, is_active: true, created_at: true },
   });
-  return NextResponse.json({ connections: conns, supported: supportedProviders(), tasks: LLM_TASKS });
+  return NextResponse.json({ connections: conns, supported: supportedProviders(), tasks: CONNECTABLE_TASKS });
 }
 
 export async function DELETE(req: NextRequest) {

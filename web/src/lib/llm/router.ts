@@ -256,3 +256,12 @@ export function supportedProviders(): { id: ProviderId; label: string; keyFormat
 }
 
 export const LLM_TASKS: LLMTask[] = ["chat", "reason", "judge", "summarize", "extract", "persona"];
+
+// Tasks where a CONNECTED owner model is actually honored end-to-end today (the
+// call sites route through callLLM). The UI only offers these so the scope picker
+// can't promise routing the backend doesn't perform — the rest still run on the
+// platform Grok default. Keep this in sync as more call sites migrate to callLLM:
+//   chat   → chat route + executeLLMSkill (all LLM-backed skills)
+//   reason → plan-execute agent loop
+//   judge  → best-of-N selection
+export const CONNECTABLE_TASKS: LLMTask[] = ["chat", "reason", "judge"];

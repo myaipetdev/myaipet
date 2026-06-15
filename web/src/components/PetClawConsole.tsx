@@ -172,10 +172,31 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [lines]);
 
+  // /goal — run the plan-execute agent loop on a real (owned) pet, stream steps.
+  const runGoal = async (goalText: string) => {
+    const g = goalText.trim();
+    if (!g) { pushLine({ role: "sys", text: "usage: /goal <what you want your pet to do>" }); return; }
+    if (isSim || !petId) { pushLine({ role: "sys", text: "agent loop needs your own pet — connect your wallet & adopt one (manage at /settings)" }); return; }
+    pushLine({ role: "sys", text: `agent ▸ planning · "${g}"` });
+    setBusy(true);
+    try {
+      const r = await api.pets.runAgent(petId as number, g);
+      (r?.steps || []).forEach((s: any) =>
+        pushLine({ role: "sys", text: `  ${s.skill === "finish" ? "✓ done" : "→ " + s.skill}${s.thought ? " · " + s.thought : ""}` })
+      );
+      typeReply(r?.answer || `*${petName} blinks*`);
+    } catch (e: any) {
+      pushLine({ role: "sys", text: `agent error — ${e?.message || "try again in a moment"}` });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const runCommand = (cmd: string): boolean => {
     const c = cmd.trim().toLowerCase();
+    if (c.startsWith("/goal")) { runGoal(cmd.trim().replace(/^\/goal\s*/i, "")); return true; }
     if (c === "/help") {
-      pushLine({ role: "sys", text: "commands: /channels  /tools  /skills  /vigil  /pack  /clear  — or just type to chat" });
+      pushLine({ role: "sys", text: "commands: /goal <task>  /channels  /tools  /skills  /vigil  /pack  /clear  — or type to chat" });
       return true;
     }
     if (c === "/channels" || c === "/connectors") { pushLine({ role: "sys", text: "connectors: " + CONNECTORS.map((x) => x.k).join(" · ") }); return true; }
@@ -279,7 +300,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   <SectionHead>PACK — pet-to-pet (A2A)</SectionHead>
                   {PACK.map((p) => <Row key={p.k} k={p.k} v={p.v} kw={120} />)}
                   <SectionHead>MODELS — bring your own (BYOK)</SectionHead>
-                  <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter — routed by task" kw={120} />
+                  <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter — powers chat + agent reasoning + judging" kw={120} />
                   <Row k="agent-loop" v="give a goal → plans, calls skills, iterates → answers" kw={120} />
                   <div style={{ fontSize: 12, marginTop: 4 }}>
                     <a href="/settings" style={{ color: GREEN, textDecoration: "none" }}>connect a model ▸ /settings</a>

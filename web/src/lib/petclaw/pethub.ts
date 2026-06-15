@@ -7,6 +7,7 @@
 import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { PETCLAW_PROTOCOL } from "./petclaw";
+import { callLLM } from "@/lib/llm/router";
 
 // ── Skill Manifest (SKILL.md frontmatter) ──
 
@@ -493,26 +494,20 @@ async function executeLLMSkill(
 
   systemPrompt += "\n\nIMPORTANT: Keep responses SHORT (1-2 sentences max, under 80 words). No markdown formatting. Be casual and natural.";
 
-  const res = await fetch("https://api.x.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${grokKey}`,
-    },
-    body: JSON.stringify({
-      model: "grok-3-mini-fast",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
-      ],
-      max_tokens: 100,
-      temperature: 0.85,
-    }),
+  // Routed through the model router (task:"chat") so a pet-owner's connected
+  // model serves LLM-backed skills too — not just the chat route. Falls back to
+  // the platform Grok default when no key is connected.
+  const out = await callLLM({
+    task: "chat",
+    petId: pet.id,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userMessage },
+    ],
+    max_tokens: 100,
+    temperature: 0.85,
   });
-
-  if (!res.ok) throw new Error(`LLM API failed: ${res.status}`);
-  const data = await res.json();
-  const reply = data.choices?.[0]?.message?.content || "";
+  const reply = out.text || "";
 
   // ── Post-turn: Retain memory + self-learning (fire-and-forget) ──
   if (skill.id === "companion-chat" || skill.id === "persona-mirror") {
@@ -523,7 +518,7 @@ async function executeLLMSkill(
     }).catch(() => {});
   }
 
-  return { reply, model: data.model, tokensUsed: data.usage?.total_tokens };
+  return { reply, model: out.model, tokensUsed: out.raw?.usage?.total_tokens };
 }
 
 async function executeAPISkill(

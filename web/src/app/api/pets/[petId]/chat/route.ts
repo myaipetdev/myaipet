@@ -180,7 +180,7 @@ ${learnedPatternsBlock(pet)}
       // CHORUS v2: an independent LLM judge picks the best candidate; on any
       // failure (no key / error / bad output) it returns null and we fall back
       // to the cheap keyword heuristic — no behavior regression.
-      const judged = await pickBestLLM(candidates, { userMessage: message.trim(), systemPrompt });
+      const judged = await pickBestLLM(candidates, { userMessage: message.trim(), systemPrompt }, pet.id);
       reply = judged
         ? judged.chosen.text
         : pickBest(candidates, {
