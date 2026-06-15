@@ -260,6 +260,7 @@ let gameScore = 0;
 let gameInterval = null;
 let catcher = null;
 let treats = [];
+let gameMouseHandler = null;
 
 function startGame() {
   if (gameRunning) return;
@@ -298,15 +299,17 @@ function startGame() {
   let timeLeft = 30;
   timerEl.textContent = "⏱ " + timeLeft + "s";
 
-  // Mouse/touch control
-  const canvasRect = canvas.getBoundingClientRect;
-  canvas.addEventListener("mousemove", (e) => {
+  // Mouse/touch control — remove any handler from a previous round so listeners
+  // don't stack on the persistent canvas node across "Play Again".
+  if (gameMouseHandler) canvas.removeEventListener("mousemove", gameMouseHandler);
+  gameMouseHandler = (e) => {
     if (!gameRunning) return;
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     catcher.style.left = Math.max(20, Math.min(rect.width - 20, x)) + "px";
     catcher.style.transform = "translateX(-50%)";
-  });
+  };
+  canvas.addEventListener("mousemove", gameMouseHandler);
 
   // Spawn treats
   gameInterval = setInterval(() => {
@@ -384,6 +387,10 @@ function startGame() {
 function endGame() {
   gameRunning = false;
   clearInterval(gameInterval);
+  if (gameMouseHandler) {
+    $("gameCanvas").removeEventListener("mousemove", gameMouseHandler);
+    gameMouseHandler = null;
+  }
   treats.forEach((t) => t.remove());
   treats = [];
 

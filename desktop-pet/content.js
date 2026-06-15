@@ -579,6 +579,8 @@
           container.classList.remove("aipet-hiding");
         }, 500);
         setTimeout(() => {
+          // Skip if the user already un-hid it (e.g. via Ctrl+Shift+P) \u2014 avoids a duplicate "I'm back" greeting.
+          if (container.style.display !== "none") return;
           container.style.display = "";
           showBubble("I'm back! Did you miss me? \uD83D\uDE0A", 3000);
           burstParticles(["\uD83D\uDC4B", "\u2728"], 3);
