@@ -40,6 +40,7 @@ import { TEMPLATE_EXAMPLE_VIDEOS } from "@/lib/studio/example-videos";
 interface Pet { id: number; name: string; avatar_url: string | null; species: number; level: number; }
 interface StudioModel {
   id: string; displayName: string; provider: string; kind: "image" | "video";
+  backend?: "fal" | "grok" | string;  // returned by /api/studio/providers (only backendModel is stripped)
   supportsImageRef: boolean; maxDurationSec: number; maxResolution: string;
   tier: "free" | "pro" | "studio"; creditsPerRun: number; description: string;
   comingSoon?: boolean; comingSoonEta?: string;

@@ -2446,7 +2446,7 @@ export default function PetProfile() {
                 }}
               />
               <button
-                onClick={handleChat}
+                onClick={() => handleChat()}
                 disabled={chatLoading || !chatInput.trim()}
                 style={{
                   padding: "10px 18px", borderRadius: 12, border: "none",
