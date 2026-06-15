@@ -787,20 +787,24 @@ export default function SocialGallery() {
             {/* Type filters — inline with search */}
             <div style={{ display: "flex", gap: 2 }}>
               {[
-                { key: "all", label: "All" },
-                { key: "image", label: "Images" },
-                { key: "video", label: "Videos" },
-              ].map(f => (
-                <button key={f.key} onClick={() => setTypeFilter(f.key)} style={{
-                  background: typeFilter === f.key ? "rgba(0,0,0,0.06)" : "transparent",
-                  border: "none", borderRadius: 6, padding: "5px 10px",
-                  fontFamily: "mono", fontSize: 10, cursor: "pointer",
-                  color: typeFilter === f.key ? "rgba(26,26,46,0.7)" : "rgba(26,26,46,0.3)",
-                  transition: "all 0.2s", fontWeight: typeFilter === f.key ? 600 : 400,
-                }}>
-                  {f.label}
-                </button>
-              ))}
+                { key: "all", label: "All", color: "#f59e0b" },
+                { key: "image", label: "Images", color: "#3b82f6" },
+                { key: "video", label: "Videos", color: "#a855f7" },
+              ].map(f => {
+                const on = typeFilter === f.key;
+                return (
+                  <button key={f.key} onClick={() => setTypeFilter(f.key)} style={{
+                    background: on ? f.color : "transparent",
+                    border: `1px solid ${on ? f.color : "rgba(0,0,0,0.08)"}`,
+                    borderRadius: 999, padding: "5px 13px",
+                    fontFamily: "mono", fontSize: 10, cursor: "pointer",
+                    color: on ? "#fff" : "rgba(26,26,46,0.45)",
+                    transition: "all 0.2s", fontWeight: on ? 700 : 500,
+                  }}>
+                    {f.label}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Search */}

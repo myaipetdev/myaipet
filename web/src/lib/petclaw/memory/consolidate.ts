@@ -94,6 +94,7 @@ export async function consolidateMemory(petId: number, force = false): Promise<C
 - Compressed (shorter content with same meaning)
 - Importance-recalibrated (rare/critical info → 5, trivia → 1)
 - Free of noise (drop entries that look like one-off small talk)
+- Written in English (translate any non-English memory content to English)
 
 Return ONLY JSON with exact shape:
 {

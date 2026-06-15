@@ -124,6 +124,21 @@ export const MODELS: StudioModel[] = [
     description: "ByteDance/Kuaishou model. Reliable cinematic motion.",
   },
   {
+    id: "seedance-1-lite",
+    displayName: "Seedance 1.0 Lite",
+    provider: "Seedance",
+    backend: "fal",
+    backendModel: "fal-ai/bytedance/seedance/v1/lite/text-to-video",
+    kind: "video",
+    supportsImageRef: true,
+    maxDurationSec: 5,
+    maxResolution: "720p",
+    tier: "pro",
+    creditsPerRun: 40,
+    usdPerRun: 0.30,
+    description: "ByteDance Seedance — fast, expressive character motion.",
+  },
+  {
     id: "kling-1.6-pro",
     displayName: "Kling 1.6 Pro",
     provider: "Kling",
@@ -227,9 +242,11 @@ export function getModel(id: string): StudioModel | undefined {
 
 // TEMPORARY: the fal.ai account is unfunded. Rather than hide the other models
 // (Kling/FLUX/Wan/…) we keep them in the catalog but mark them locked, so the
-// Studio still shows a rich roster — only Grok is actually generatable for now.
-// Flip to false once fal/other providers are funded to unlock everything.
-const GROK_ONLY = true;
+// fal is wired (falSubmit/falPoll in backend.ts) and FAL_API_KEY is configured
+// (the Pet-LoRA pipeline uses it), so unlock the fal roster — FLUX, Kling,
+// Seedance, Wan are now generatable. The explicitly comingSoon entries
+// (Kling Pro, MiniMax, Veo 3, Grok video) stay locked until funded.
+const GROK_ONLY = false;
 
 export function listModels(opts?: { kind?: ModelKind; maxTier?: ModelTier }): StudioModel[] {
   const tierRank: Record<ModelTier, number> = { free: 0, pro: 1, studio: 2 };

@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Build a compact system prompt for the LLM
-  const system = `You are simulating a short, natural conversation between two pets meeting.
+  const system = `You are simulating a short, natural conversation between two pets meeting. Always write the dialogue in English.
 
 PET A: ${mine.name}
   - personality: ${mine.personality_type}

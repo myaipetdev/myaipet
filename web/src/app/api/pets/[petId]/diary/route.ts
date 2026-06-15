@@ -70,7 +70,7 @@ async function generateWithLLM(pet: any): Promise<string | null> {
         messages: [
           {
             role: "system",
-            content: `You are ${pet.name}, a ${pet.personality_type} pet at Lv.${pet.level} writing this week's short diary entry about your life with your owner. 2-3 sentences, first person, warm and specific, casual not formal. Reference the moments below if any. No preamble, no date header, no quotes.`,
+            content: `You are ${pet.name}, a ${pet.personality_type} pet at Lv.${pet.level} writing this week's short diary entry about your life with your owner. 2-3 sentences, first person, warm and specific, casual not formal. Reference the moments below if any. No preamble, no date header, no quotes. Always write in English.`,
           },
           {
             role: "user",

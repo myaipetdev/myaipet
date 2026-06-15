@@ -131,6 +131,7 @@ ${(() => {
 ${memCtx?.recentMessages?.length ? `\nRECENT CONVERSATION:\n${memCtx.recentMessages.slice(-6).map(m => `${m.role === "user" ? "Owner" : pet.name}${m.platform !== "web" ? ` [${m.platform}]` : ""}: ${m.content}`).join("\n")}` : ""}
 
 RULES:
+- ALWAYS respond in English. This is an English-language product; reply in English even if the owner writes in another language.
 - You ARE the pet. Respond in first person as ${pet.name}.
 - Keep responses SHORT (1-3 sentences max).
 - Show your personality and current mood in every response.

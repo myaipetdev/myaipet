@@ -492,7 +492,7 @@ async function executeLLMSkill(
       .replace("{personality}", pet.personality_type);
   }
 
-  systemPrompt += "\n\nIMPORTANT: Keep responses SHORT (1-2 sentences max, under 80 words). No markdown formatting. Be casual and natural.";
+  systemPrompt += "\n\nIMPORTANT: Always respond in English (this is an English-language product). Keep responses SHORT (1-2 sentences max, under 80 words). No markdown formatting. Be casual and natural.";
 
   // Routed through the model router (task:"chat") so a pet-owner's connected
   // model serves LLM-backed skills too — not just the chat route. Falls back to

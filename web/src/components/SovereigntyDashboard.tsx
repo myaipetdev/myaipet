@@ -1225,6 +1225,11 @@ export default function SovereigntyDashboard() {
               </span>
             </div>
 
+            {/* What this actually is — it's NOT the level/XP bar. */}
+            <p style={{ fontSize: 13.5, lineHeight: 1.6, color: "rgba(26,26,46,0.6)", margin: "0 0 22px", fontFamily: "'Space Grotesk',sans-serif" }}>
+              <strong style={{ color: "#1a1a2e" }}>Not your level.</strong> This is the versioned history of <em>who your pet is becoming</em> — each checkpoint is an immutable snapshot of its personality, voice, and memory at a turning point (adoption, a memory consolidation, a milestone). A SHA-256 hash fingerprints each version; you can anchor any of them on-chain, so your pet&apos;s identity is portable and provable — not locked to this app.
+            </p>
+
             {checkpoints.length === 0 ? (
               <div
                 style={{
@@ -1338,19 +1343,25 @@ export default function SovereigntyDashboard() {
                         )}
                       </div>
 
-                      {ck.summary && (
-                        <div
-                          style={{
-                            fontSize: 13,
-                            color: "rgba(26,26,46,0.5)",
-                            fontFamily: "'Space Grotesk',sans-serif",
-                            lineHeight: 1.6,
-                            fontStyle: "italic",
-                          }}
-                        >
-                          &quot;{ck.summary}&quot;
-                        </div>
-                      )}
+                      {/* Always say what this checkpoint meant — fall back to a
+                          trigger-derived blurb so a row is never just "v2 · date". */}
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: "rgba(26,26,46,0.5)",
+                          fontFamily: "'Space Grotesk',sans-serif",
+                          lineHeight: 1.6,
+                          fontStyle: "italic",
+                        }}
+                      >
+                        {ck.summary
+                          ? `“${ck.summary}”`
+                          : ck.trigger_event === "adoption"
+                            ? "Origin identity sealed — who your pet first was."
+                            : ck.trigger_event === "post_consolidation"
+                              ? "Memories distilled; the persona sharpened into a clearer read on you."
+                              : "A turning point in your pet's identity, snapshotted and fingerprinted."}
+                      </div>
                     </div>
                   );
                 })}

@@ -77,7 +77,7 @@ async function generateWithLLM(pet: any): Promise<string | null> {
         messages: [
           {
             role: "system",
-            content: `You are ${pet.name}, a ${pet.personality_type} ${mood} pet at Lv.${pet.level}. Output ONE sentence (max 18 words) of an inner thought you're having right now. First person. Casual, not formal. No quotes, no preamble. No emoji unless 1 fits.`,
+            content: `You are ${pet.name}, a ${pet.personality_type} ${mood} pet at Lv.${pet.level}. Output ONE sentence (max 18 words) of an inner thought you're having right now. First person. Casual, not formal. No quotes, no preamble. No emoji unless 1 fits. Always write in English.`,
           },
           {
             role: "user",
