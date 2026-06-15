@@ -271,6 +271,26 @@ model PetLora {
   @@map("pet_loras")
 }
 
+// BYO model connections (FEATURE 1). Owner-scoped; the API key is encrypted at
+// rest via src/lib/crypto.ts. The LLM router (src/lib/llm/router.ts) prefers a
+// connection whose task_scopes include the call's task, else falls back to the
+// platform Grok default. Additive table — safe migration.
+model ModelConnection {
+  id            Int      @id @default(autoincrement())
+  owner_user_id Int
+  provider      String   @db.VarChar(20)
+  label         String   @db.VarChar(60)
+  model         String   @db.VarChar(80)
+  encrypted_key String   @db.Text
+  task_scopes   String[]
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @default(now()) @updatedAt
+
+  @@index([owner_user_id])
+  @@map("model_connections")
+}
+
 model PetNotification {
   id                Int      @id @default(autoincrement())
   pet_id            Int

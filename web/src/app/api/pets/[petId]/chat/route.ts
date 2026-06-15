@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createMemoryManager } from "@/lib/petclaw/memory/persistent-memory";
+import { getRelevantMemories } from "@/lib/petclaw/memory/retrieval";
 import { checkPendingApology } from "@/lib/missions/petEmotion";
 import { getBondNotesBlock, maybeReflectOnBond } from "@/lib/petclaw/memory/bond-loop";
 import { createSelfLearner } from "@/lib/petclaw/memory/self-learning";
@@ -83,6 +84,10 @@ export async function POST(
   // appear here automatically.
   const memory = createMemoryManager(pet.id);
   const memCtx = await memory.buildContext(message.trim(), "web").catch(() => null);
+  // GBrain-style full-corpus recall: rank the top-K relevant rows over the
+  // ENTIRE pet_memories table (not just the 40-entry capped ledger memCtx uses).
+  // Lets the pet recall an old conversation/milestone that fell out of the ledger.
+  const recalled = await getRelevantMemories(pet.id, message.trim(), 5).catch(() => []);
   const persona = await getPersona(pet.id).catch(() => null);
   const personaCtx = buildPersonaContext(persona);
 
@@ -106,7 +111,22 @@ ${moodContext}
 ${personaCtx ? `\nOWNER PROFILE (from onboarding):\n${personaCtx}` : ""}
 ${memCtx?.userMd ? `\n${memCtx.userMd}` : ""}
 ${memCtx?.memoryMd ? `\n${memCtx.memoryMd}` : ""}
-${memCtx?.relevantMemories?.length ? `\nRELEVANT TO THIS MESSAGE:\n${memCtx.relevantMemories.map(m => `- ${m.content}`).join("\n")}` : ""}
+${(() => {
+  // Merge ledger-relevant (curated, capped) + full-corpus recall (GBrain-style),
+  // dedup by content, cap at 8 lines so the prompt stays bounded.
+  const ledger = (memCtx?.relevantMemories || []).map(m => m.content);
+  const corpus = recalled.map(m => m.content);
+  const seen = new Set<string>();
+  const merged: string[] = [];
+  for (const c of [...ledger, ...corpus]) {
+    const key = c.trim().toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push(c);
+    if (merged.length >= 8) break;
+  }
+  return merged.length ? `\nRELEVANT TO THIS MESSAGE:\n${merged.map(c => `- ${c}`).join("\n")}` : "";
+})()}
 ${memCtx?.recentMessages?.length ? `\nRECENT CONVERSATION:\n${memCtx.recentMessages.slice(-6).map(m => `${m.role === "user" ? "Owner" : pet.name}${m.platform !== "web" ? ` [${m.platform}]` : ""}: ${m.content}`).join("\n")}` : ""}
 
 RULES:
