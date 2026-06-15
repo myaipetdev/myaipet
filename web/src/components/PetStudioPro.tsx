@@ -393,7 +393,7 @@ export default function PetStudioPro() {
             <div style={{
               fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
               letterSpacing: "0.18em", color: "#b45309", marginBottom: 4,
-            }}>PRO VIDEO STUDIO</div>
+            }}>PRO PET STUDIO</div>
             <h1 style={{
               fontSize: 36, fontWeight: 800, letterSpacing: "-0.025em",
               margin: 0, lineHeight: 1.1,
@@ -465,9 +465,6 @@ export default function PetStudioPro() {
             {/* Result actions */}
             {view === "done" && resultUrl && resultUrl !== "__demo__" && (
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                <a href={resultUrl} download style={btnGhost}>↓ Download</a>
-                <a href={resultUrl} target="_blank" rel="noreferrer" style={btnGhost}>↗ Open</a>
-                <div style={{ flex: 1 }} />
                 <button
                   onClick={() => remix()}
                   aria-label="Remix this in a new style"
@@ -477,8 +474,11 @@ export default function PetStudioPro() {
                     background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "white",
                     fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
                   }}
-                >🎨 Remix</button>
-                <button onClick={() => { setView("idle"); setResultUrl(null); }} style={btnGhost}>⟳ New</button>
+                >🎨 Remix (new style)</button>
+                <button onClick={() => { setView("idle"); setResultUrl(null); }} style={btnGhost}>⟳ Start over</button>
+                <div style={{ flex: 1 }} />
+                <a href={resultUrl} download style={btnGhost}>↓ Download</a>
+                <a href={resultUrl} target="_blank" rel="noreferrer" style={btnGhost}>↗ Open</a>
               </div>
             )}
 
@@ -715,7 +715,7 @@ export default function PetStudioPro() {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             aria-label="Prompt — what your pet should be doing"
-            placeholder={`What should ${pet?.name || "your pet"} be doing? e.g. "running through cherry blossoms"`}
+            placeholder={`What should ${petDisplayName} be doing? e.g. "running through cherry blossoms"`}
             style={{
               marginTop: 10, width: "100%", minHeight: 78, padding: "14px 16px",
               borderRadius: 12, border: "1px solid rgba(0,0,0,0.10)",
@@ -864,8 +864,12 @@ export default function PetStudioPro() {
           cursor: canGenerate ? "pointer" : "not-allowed",
         }}>
           {view === "generating"
-            ? (outputKind === "image" ? "Generating…" : "Generating… 30 – 90s")
-            : `▶  Generate · ${chosenModel?.creditsPerRun ?? 0} credits · ${outputKind === "image" ? "~5s" : "~30s"}`}
+            ? (outputKind === "image" ? "Generating…" : "Generating… ~1–2 min")
+            : !prompt.trim()
+            ? "Write a prompt or tap a template to start →"
+            : `▶  Generate · ${chosenModel?.creditsPerRun ?? 0} credits${
+                credits != null && credits >= (chosenModel?.creditsPerRun ?? 0) ? ` · you have ${credits}` : ""
+              }`}
         </button>
 
         {/* ── Roadmap: what's next for Studio ── */}
