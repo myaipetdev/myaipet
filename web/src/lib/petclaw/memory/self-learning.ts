@@ -25,6 +25,23 @@ export interface LearnedPattern {
 
 const PATTERN_THRESHOLD = 3;  // promote to skill after 3 occurrences
 
+/**
+ * Surface the pet's strongest learned patterns as a chat-prompt block, so what
+ * VIGIL learns actually shapes the conversation (self-evolution), not just the
+ * opt-in best-of-N selection. Picks the top patterns by successRate × frequency.
+ * Returns "" when there's nothing learned yet.
+ */
+export function learnedPatternsBlock(pet: any): string {
+  const patterns: LearnedPattern[] = (pet?.personality_modifiers?.learned_patterns) || [];
+  const strong = patterns
+    .filter((p) => p && p.successRate > 0.5 && p.frequency >= 2)
+    .sort((a, b) => b.successRate * b.frequency - a.successRate * a.frequency)
+    .slice(0, 3);
+  if (!strong.length) return "";
+  return `\nLEARNED ABOUT THIS OWNER (from past chats — lean into what works):\n` +
+    strong.map((p) => `- On "${p.topic}": ${p.description}`).join("\n");
+}
+
 export class SelfLearner {
   private petId: number;
 

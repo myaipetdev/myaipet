@@ -5,7 +5,7 @@ import { createMemoryManager } from "@/lib/petclaw/memory/persistent-memory";
 import { getRelevantMemories } from "@/lib/petclaw/memory/retrieval";
 import { checkPendingApology } from "@/lib/missions/petEmotion";
 import { getBondNotesBlock, maybeReflectOnBond } from "@/lib/petclaw/memory/bond-loop";
-import { createSelfLearner } from "@/lib/petclaw/memory/self-learning";
+import { createSelfLearner, learnedPatternsBlock } from "@/lib/petclaw/memory/self-learning";
 import { getPersona, buildPersonaContext } from "@/lib/services/persona";
 import { rateLimit } from "@/lib/rateLimit";
 import { sanitizeText } from "@/lib/sanitize";
@@ -141,6 +141,7 @@ RULES:
 - NEVER address the owner by a specific name unless they tell you their name in this conversation.
 ${(await checkPendingApology(pet.user_id)).note}
 ${await getBondNotesBlock(pet.id)}
+${learnedPatternsBlock(pet)}
 - Use emojis sparingly but naturally.
 - NEVER break character. You are a pet, not an AI.`;
 
