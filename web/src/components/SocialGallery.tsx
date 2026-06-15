@@ -293,6 +293,28 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
             </div>
           </div>
 
+          {/* Browse → Create: the highest-intent moment. Stash this creation's
+              prompt and jump to the Create tab so a viewer becomes a generator. */}
+          {!item.__mock && (
+            <button
+              onClick={() => {
+                try {
+                  sessionStorage.setItem("studio_prefill", JSON.stringify({
+                    prompt: item.prompt || "",
+                    genType: item.gen_type === "video" ? "video" : "image",
+                  }));
+                } catch {}
+                window.location.href = "/?section=create";
+              }}
+              style={{
+                width: "100%", padding: "11px", borderRadius: 10, border: "none", cursor: "pointer",
+                background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "white",
+                fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 700,
+                marginBottom: 12,
+              }}
+            >✨ Make one like this →</button>
+          )}
+
           {/* Comments */}
           {item.__mock
             ? <div style={{ fontSize: 12, color: "rgba(26,26,46,0.4)", padding: "12px 2px" }}>Sample post — comments open up on real creations.</div>
@@ -891,6 +913,13 @@ export default function SocialGallery() {
               fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 600, color: "#1a1a2e",
             }}>Retry</button>
           )}
+          {!search && !feedFailed && (
+            <button onClick={() => { window.location.href = "/?section=create"; }} style={{
+              marginTop: 16, padding: "10px 24px", borderRadius: 999, border: "none", cursor: "pointer",
+              background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "white",
+              fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 700,
+            }}>✨ Create the first one</button>
+          )}
         </div>
       ) : (
         <MasonryGrid
@@ -930,6 +959,21 @@ export default function SocialGallery() {
           }}
         />
       )}
+
+      {/* Persistent create entry — a viewer inspired mid-scroll can jump straight
+          to Create without hunting the nav. The whole feed gates behind auth, so
+          everyone here can generate. */}
+      <button
+        onClick={() => { window.location.href = "/?section=create"; }}
+        aria-label="Create your own"
+        style={{
+          position: "fixed", bottom: 24, right: 24, zIndex: 100,
+          padding: "12px 20px", borderRadius: 999, border: "none", cursor: "pointer",
+          background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "white",
+          fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 700,
+          boxShadow: "0 6px 20px rgba(245,158,11,0.4)",
+        }}
+      >✨ Create yours</button>
     </div>
   );
 }

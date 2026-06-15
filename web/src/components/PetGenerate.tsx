@@ -65,6 +65,20 @@ export default function PetGenerate() {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
 
+  // "Make one like this" handoff (Community → Create): read the stashed prompt
+  // once on mount, then clear it so a refresh doesn't re-apply it.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("studio_prefill");
+      if (raw) {
+        const seed = JSON.parse(raw);
+        if (seed?.prompt) setPrompt(String(seed.prompt));
+        if (seed?.genType === "image" || seed?.genType === "video") setGenType(seed.genType);
+        sessionStorage.removeItem("studio_prefill");
+      }
+    } catch {}
+  }, []);
+
   const loadBalance = async () => {
     try {
       const data = await api.credits.balance();
