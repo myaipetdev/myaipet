@@ -161,86 +161,110 @@ async function fetchCandidates(
   return rows as unknown as CandidateRow[];
 }
 
+// Reciprocal Rank Fusion constant. 60 is the standard default (Cormack et al.;
+// also GBrain's). Larger k flattens the contribution of top ranks.
+const RRF_K = 60;
+
+// Source-tier boost (GBrain "source-tier"): durable memory types outrank chatty
+// session turns when their other ranks are close.
+function tierWeight(memoryType: string | null | undefined): number {
+  switch (memoryType) {
+    case "milestone":
+    case "insight":
+    case "core":
+      return 1.5;
+    case "fact":
+    case "preference":
+      return 1.2;
+    default:
+      return 1.0; // conversation / misc
+  }
+}
+
 /**
- * TF-IDF cosine ranking over the candidate set. IDF is computed across the
- * candidates so within-window discriminative terms win. This is the REAL ranker
- * shipping today — pure CPU, no provider.
+ * Rank candidates with RECIPROCAL RANK FUSION (RRF) — GBrain's hybrid-search
+ * approach (github.com/garrytan/gbrain: "vector + BM25 + reciprocal-rank fusion
+ * + source-tier boost"). We fuse three independent rankers, each contributing
+ * w/(k + rank):
+ *   1. lexical relevance (TF-IDF cosine) — primary signal, weighted highest
+ *   2. recency (created_at)
+ *   3. source-tier × importance
+ * RRF fuses RANKS not raw scores, so it's robust without hand-tuned score
+ * blending. When an embedding provider lands, vector-ANN becomes a 4th RRF input
+ * (see EMBEDDING_UPGRADE) — a drop-in addition, not a rewrite.
+ *
+ * Still the REAL ranker shipping today — pure CPU, no provider needed.
  */
 function scoreCandidates(
   candidates: CandidateRow[],
   query: string,
   k: number
 ): RetrievedMemory[] {
+  if (candidates.length === 0) return [];
   const qTokens = tokenize(query);
-  if (qTokens.length === 0 || candidates.length === 0) {
-    // No query signal: degrade to importance × recency (still useful — surfaces
-    // the pet's most salient memories rather than nothing).
-    return candidates
-      .map((c) => ({
-        id: c.id,
-        content: c.content,
-        memoryType: c.memory_type,
-        emotion: c.emotion,
-        importance: c.importance,
-        createdAt: c.created_at,
-        score: c.importance * recencyBonus(c.created_at),
-      }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, k);
+
+  // ── Ranker 1: lexical TF-IDF cosine over the candidate set ──
+  const lex = new Map<number, number>(); // candidate id -> cosine in [0,1]
+  if (qTokens.length > 0) {
+    const docTokens = candidates.map((c) => tokenize(c.content));
+    const df = new Map<string, number>();
+    for (const toks of docTokens) for (const t of new Set(toks)) df.set(t, (df.get(t) || 0) + 1);
+    const N = candidates.length;
+    const idf = (t: string) => Math.log(1 + N / (1 + (df.get(t) || 0)));
+    const qVec = new Map<string, number>();
+    for (const t of new Set(qTokens)) qVec.set(t, idf(t));
+    const qNorm = Math.sqrt([...qVec.values()].reduce((s, w) => s + w * w, 0)) || 1;
+    candidates.forEach((c, i) => {
+      const toks = docTokens[i];
+      const tf = new Map<string, number>();
+      for (const t of toks) tf.set(t, (tf.get(t) || 0) + 1);
+      let dot = 0;
+      let dNormSq = 0;
+      for (const [t, freq] of tf) {
+        const w = (freq / toks.length) * idf(t);
+        dNormSq += w * w;
+        if (qVec.has(t)) dot += w * qVec.get(t)!;
+      }
+      const dNorm = Math.sqrt(dNormSq) || 1;
+      lex.set(c.id, dot / (qNorm * dNorm));
+    });
   }
 
-  // Document frequency over candidates → IDF
-  const docTokens = candidates.map((c) => tokenize(c.content));
-  const df = new Map<string, number>();
-  for (const toks of docTokens) {
-    for (const t of new Set(toks)) df.set(t, (df.get(t) || 0) + 1);
-  }
-  const N = candidates.length;
-  const idf = (t: string) => Math.log(1 + N / (1 + (df.get(t) || 0)));
+  // With a query, keep only candidates with real lexical overlap (precision);
+  // pure recency/importance shouldn't surface unrelated memories. With no query,
+  // RRF of recency + source-tier still returns the pet's most salient memories.
+  const pool = qTokens.length > 0 ? candidates.filter((c) => (lex.get(c.id) || 0) > 0) : candidates;
+  if (pool.length === 0) return [];
 
-  // Query vector (TF-IDF). Repeated query terms count once — queries are short.
-  const qVec = new Map<string, number>();
-  for (const t of new Set(qTokens)) qVec.set(t, idf(t));
-  const qNorm = Math.sqrt([...qVec.values()].reduce((s, w) => s + w * w, 0)) || 1;
+  // 1-based rank of each candidate under a given signal (descending).
+  const rankBy = (scoreFn: (c: CandidateRow) => number) => {
+    const order = [...pool].sort((a, b) => scoreFn(b) - scoreFn(a));
+    const m = new Map<number, number>();
+    order.forEach((c, i) => m.set(c.id, i + 1));
+    return m;
+  };
+  const rLex = rankBy((c) => lex.get(c.id) || 0);
+  const rRec = rankBy((c) => c.created_at.getTime());
+  const rImp = rankBy((c) => c.importance * tierWeight(c.memory_type));
 
-  const scored = candidates.map((c, i) => {
-    const toks = docTokens[i];
-    const tf = new Map<string, number>();
-    for (const t of toks) tf.set(t, (tf.get(t) || 0) + 1);
+  // RRF + source-tier/recency boost. Lexical weighted highest.
+  const W_LEX = 1.0;
+  const W_REC = 0.5;
+  const W_IMP = 0.5;
+  const fused = pool.map((c) => ({
+    id: c.id,
+    content: c.content,
+    memoryType: c.memory_type,
+    emotion: c.emotion,
+    importance: c.importance,
+    createdAt: c.created_at,
+    score:
+      W_LEX / (RRF_K + (rLex.get(c.id) || pool.length)) +
+      W_REC / (RRF_K + (rRec.get(c.id) || pool.length)) +
+      W_IMP / (RRF_K + (rImp.get(c.id) || pool.length)),
+  }));
 
-    // Cosine over the intersection (only query terms can contribute to dot product)
-    let dot = 0;
-    let dNormSq = 0;
-    for (const [t, freq] of tf) {
-      const w = (freq / toks.length) * idf(t);
-      dNormSq += w * w;
-      if (qVec.has(t)) dot += w * qVec.get(t)!;
-    }
-    const dNorm = Math.sqrt(dNormSq) || 1;
-    const cosine = dot / (qNorm * dNorm);
-
-    // Blend: lexical relevance is primary; importance + recency are tie-breakers
-    // that also let a slightly-less-matchy but critical/fresh memory edge ahead.
-    const score =
-      cosine * 1.0 +
-      (c.importance / 5) * 0.25 +
-      recencyBonus(c.created_at) * 0.2;
-
-    return {
-      id: c.id,
-      content: c.content,
-      memoryType: c.memory_type,
-      emotion: c.emotion,
-      importance: c.importance,
-      createdAt: c.created_at,
-      score,
-    };
-  });
-
-  return scored
-    .filter((s) => s.score > 0.02) // drop near-zero (no real lexical overlap)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, k);
+  return fused.sort((a, b) => b.score - a.score).slice(0, k);
 }
 
 /**
