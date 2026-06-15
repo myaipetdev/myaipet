@@ -872,62 +872,6 @@ export default function PetStudioPro() {
               }`}
         </button>
 
-        {/* ── Roadmap: what's next for Studio ── */}
-        <div style={{
-          marginTop: 12,
-          background: "linear-gradient(135deg, rgba(245,158,11,0.05), rgba(139,92,246,0.04) 60%, white)",
-          color: "#1a1a2e", borderRadius: 18, padding: "22px 24px",
-          border: "1px solid rgba(0,0,0,0.06)",
-          boxShadow: "0 2px 14px rgba(15,23,42,0.04)",
-        }}>
-          <div style={{
-            fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: "0.18em", color: "#b45309", marginBottom: 10, fontWeight: 700,
-          }}>COMING TO STUDIO</div>
-          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 6 }}>
-            Beyond prompts — features only we can build
-          </div>
-          <div style={{ fontSize: 14, color: "rgba(26,26,46,0.6)", marginBottom: 18, maxWidth: 560 }}>
-            Stuff other AI tools can't do because they don't have your pet's
-            memory ledger, persona, or the rest of the PetClaw graph.
-          </div>
-          <div style={{
-            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: 10,
-          }}>
-            <RoadmapItem
-              emoji="🎞"
-              eta="Q3 2026"
-              title="Auto Memory Recap"
-              body="Your pet's week → 30s video. Built from the memory ledger. No prompt needed."
-            />
-            <RoadmapItem
-              emoji="🤖"
-              eta="Q3 2026"
-              title="Daily Content Bot"
-              body="Wake up to a fresh pet photo every day. Auto-posted to your gallery."
-            />
-            <RoadmapItem
-              emoji="🛠"
-              eta="Q4 2026"
-              title="Pet Anchor API"
-              body="PuLID-based pet identity API for other pet-tech builders. B2B."
-            />
-            <RoadmapItem
-              emoji="🪙"
-              eta="Q4 2026"
-              title="NFT-Gated Premium"
-              body="Own a PETContent NFT → free access to premium engines. Exploring."
-            />
-            <RoadmapItem
-              emoji="🛍"
-              eta="2027"
-              title="Pet LoRA Marketplace"
-              body="Train a LoRA on your pet, list it as an NFT. Others use 'your' Sparky."
-            />
-          </div>
-        </div>
-
         {/* ── Recent history strip ── */}
         {history.length > 0 ? (
           <div style={{ marginTop: 6 }}>
@@ -991,6 +935,63 @@ export default function PetStudioPro() {
             </div>
           </div>
         )}
+
+        {/* ── Roadmap: what's next for Studio (below the actionable flow so it
+            doesn't push the Generate CTA + recent work down on first load) ── */}
+        <div style={{
+          marginTop: 12,
+          background: "linear-gradient(135deg, rgba(245,158,11,0.05), rgba(139,92,246,0.04) 60%, white)",
+          color: "#1a1a2e", borderRadius: 18, padding: "22px 24px",
+          border: "1px solid rgba(0,0,0,0.06)",
+          boxShadow: "0 2px 14px rgba(15,23,42,0.04)",
+        }}>
+          <div style={{
+            fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
+            letterSpacing: "0.18em", color: "#b45309", marginBottom: 10, fontWeight: 700,
+          }}>COMING TO STUDIO</div>
+          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 6 }}>
+            Beyond prompts — features only we can build
+          </div>
+          <div style={{ fontSize: 14, color: "rgba(26,26,46,0.6)", marginBottom: 18, maxWidth: 560 }}>
+            Stuff other AI tools can't do because they don't have your pet's
+            memory ledger, persona, or the rest of the PetClaw graph.
+          </div>
+          <div style={{
+            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: 10,
+          }}>
+            <RoadmapItem
+              emoji="🎞"
+              eta="Q3 2026"
+              title="Auto Memory Recap"
+              body="Your pet's week → 30s video. Built from the memory ledger. No prompt needed."
+            />
+            <RoadmapItem
+              emoji="🤖"
+              eta="Q3 2026"
+              title="Daily Content Bot"
+              body="Wake up to a fresh pet photo every day. Auto-posted to your gallery."
+            />
+            <RoadmapItem
+              emoji="🛠"
+              eta="Q4 2026"
+              title="Pet Anchor API"
+              body="PuLID-based pet identity API for other pet-tech builders. B2B."
+            />
+            <RoadmapItem
+              emoji="🪙"
+              eta="Q4 2026"
+              title="NFT-Gated Premium"
+              body="Own a PETContent NFT → free access to premium engines. Exploring."
+            />
+            <RoadmapItem
+              emoji="🛍"
+              eta="2027"
+              title="Pet LoRA Marketplace"
+              body="Train a LoRA on your pet, list it as an NFT. Others use 'your' Sparky."
+            />
+          </div>
+        </div>
       </div>
 
       <style>{`
