@@ -38,6 +38,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { callEmbedding } from "@/lib/llm/router";
 
 // ── Tunables ──
 const CANDIDATE_LIMIT = 400; // max rows pulled into memory for in-process ranking
@@ -70,6 +71,22 @@ interface CandidateRow {
   emotion: string;
   importance: number;
   created_at: Date;
+  embedding?: unknown; // JSON float array when an embedding has been stored, else null
+}
+
+/** Coerce a stored embedding (JSONB → array, or a JSON string) to number[] | null. */
+function asVec(v: unknown): number[] | null {
+  let a = v;
+  if (typeof a === "string") { try { a = JSON.parse(a); } catch { return null; } }
+  return Array.isArray(a) && a.length > 0 && typeof a[0] === "number" ? (a as number[]) : null;
+}
+
+function cosine(a: number[], b: number[]): number {
+  const n = Math.min(a.length, b.length);
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < n; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+  const d = Math.sqrt(na) * Math.sqrt(nb);
+  return d > 0 ? dot / d : 0;
 }
 
 // ── Text helpers ──
@@ -122,7 +139,7 @@ async function fetchCandidates(
         ? "AND memory_type NOT LIKE 'session_%'"
         : "";
       const rows = (await prisma.$queryRawUnsafe(
-        `SELECT id, content, memory_type, emotion, importance, created_at
+        `SELECT id, content, memory_type, emotion, importance, created_at, embedding
          FROM pet_memories
          WHERE pet_id = $1
            ${sessionClause}
@@ -156,6 +173,7 @@ async function fetchCandidates(
       emotion: true,
       importance: true,
       created_at: true,
+      embedding: true,
     },
   });
   return rows as unknown as CandidateRow[];
@@ -198,7 +216,8 @@ function tierWeight(memoryType: string | null | undefined): number {
 function scoreCandidates(
   candidates: CandidateRow[],
   query: string,
-  k: number
+  k: number,
+  queryEmbedding?: number[] | null
 ): RetrievedMemory[] {
   if (candidates.length === 0) return [];
   const qTokens = tokenize(query);
@@ -230,10 +249,25 @@ function scoreCandidates(
     });
   }
 
-  // With a query, keep only candidates with real lexical overlap (precision);
-  // pure recency/importance shouldn't surface unrelated memories. With no query,
-  // RRF of recency + source-tier still returns the pet's most salient memories.
-  const pool = qTokens.length > 0 ? candidates.filter((c) => (lex.get(c.id) || 0) > 0) : candidates;
+  // ── Ranker 4 (optional): semantic cosine vs the query embedding (GBrain's
+  // vector signal). Populated only when memories carry stored embeddings AND a
+  // query embedding was provided; otherwise this ranker is simply absent and
+  // retrieval stays lexical — zero behavior change for non-embedding pets. ──
+  const vec = new Map<number, number>();
+  if (queryEmbedding && queryEmbedding.length) {
+    for (const c of candidates) {
+      const e = asVec(c.embedding);
+      if (e) vec.set(c.id, Math.max(0, cosine(queryEmbedding, e)));
+    }
+  }
+  const hasVec = vec.size > 0;
+
+  // With a query, keep candidates with real lexical overlap OR a strong semantic
+  // match (embeddings surface paraphrases that lexical scoring misses). No query
+  // → RRF of recency + source-tier returns the pet's most salient memories.
+  const pool = qTokens.length > 0
+    ? candidates.filter((c) => (lex.get(c.id) || 0) > 0 || (vec.get(c.id) || 0) >= 0.75)
+    : candidates;
   if (pool.length === 0) return [];
 
   // 1-based rank of each candidate under a given signal (descending).
@@ -246,11 +280,13 @@ function scoreCandidates(
   const rLex = rankBy((c) => lex.get(c.id) || 0);
   const rRec = rankBy((c) => c.created_at.getTime());
   const rImp = rankBy((c) => c.importance * tierWeight(c.memory_type));
+  const rVec = hasVec ? rankBy((c) => vec.get(c.id) || 0) : null;
 
-  // RRF + source-tier/recency boost. Lexical weighted highest.
+  // RRF + source-tier/recency boost. Lexical + semantic weighted highest.
   const W_LEX = 1.0;
   const W_REC = 0.5;
   const W_IMP = 0.5;
+  const W_VEC = 1.0;
   const fused = pool.map((c) => ({
     id: c.id,
     content: c.content,
@@ -261,7 +297,8 @@ function scoreCandidates(
     score:
       W_LEX / (RRF_K + (rLex.get(c.id) || pool.length)) +
       W_REC / (RRF_K + (rRec.get(c.id) || pool.length)) +
-      W_IMP / (RRF_K + (rImp.get(c.id) || pool.length)),
+      W_IMP / (RRF_K + (rImp.get(c.id) || pool.length)) +
+      (rVec ? W_VEC / (RRF_K + (rVec.get(c.id) || pool.length)) : 0),
   }));
 
   return fused.sort((a, b) => b.score - a.score).slice(0, k);
@@ -284,7 +321,16 @@ export async function getRelevantMemories(
 ): Promise<RetrievedMemory[]> {
   const excludeSessionLog = !opts.includeSessionLog;
   const candidates = await fetchCandidates(petId, query, excludeSessionLog);
-  return scoreCandidates(candidates, query, k);
+  // Semantic ranking only if some candidates already carry stored embeddings
+  // (i.e. the backfill has run for this pet) — this keeps the common, non-
+  // embedding case free of any embedding-API call. callEmbedding itself returns
+  // null unless the owner connected an OpenAI/Google key.
+  let queryEmbedding: number[] | null = null;
+  if (query.trim() && candidates.some((c) => asVec(c.embedding))) {
+    const out = await callEmbedding([query.trim()], petId).catch(() => null);
+    queryEmbedding = out && out[0] ? out[0] : null;
+  }
+  return scoreCandidates(candidates, query, k, queryEmbedding);
 }
 
 /**
@@ -296,23 +342,19 @@ export function formatRetrievedMemories(mems: RetrievedMemory[]): string {
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
- * EMBEDDING_UPGRADE (NOT IMPLEMENTED — the marked next step, do not claim done)
+ * SEMANTIC RECALL — IMPLEMENTED (no pgvector needed at this scale)
  * ────────────────────────────────────────────────────────────────────────────
- * To go from lexical TF-IDF to semantic recall:
+ * Embeddings are stored as a plain JSONB float array on pet_memories.embedding
+ * (migration 20260615000200) and fused into the RRF above as a 4th ranker via
+ * app-side cosine. Because per-pet retrieval is candidate-limited (~400 rows),
+ * exact app-side cosine is fast and pgvector is unnecessary here.
  *
- * 1. DB: add pgvector + a column on pet_memories:
- *      CREATE EXTENSION IF NOT EXISTS vector;
- *      ALTER TABLE pet_memories ADD COLUMN embedding vector(1536);
- *      CREATE INDEX ON pet_memories USING ivfflat (embedding vector_cosine_ops);
- *    (pgvector is NOT installed in this database today.)
+ * Activation requires only an embedding key (Grok has none): the owner connects
+ * an OpenAI/Google model at /settings, then scripts/embed-memories.mjs backfills
+ * pet_memories.embedding. The query is embedded lazily on read (only when stored
+ * embeddings exist). Until then, retrieval is the lexical RRF — no behavior change.
  *
- * 2. Provider: embed content on write + embed the query on read. There is NO
- *    embedding provider wired in this repo — every LLM call goes to xAI Grok,
- *    which has no embeddings endpoint. This would introduce the first non-Grok
- *    dependency (e.g. OpenAI text-embedding-3-small or a local model).
- *
- * 3. Swap fetchCandidates → vector ANN query:
- *      ORDER BY embedding <=> $queryEmbedding LIMIT CANDIDATE_LIMIT
- *    and replace cosine in scoreCandidates with the returned vector distance.
- *    The importance + recency blend below stays identical.
+ * SCALE UPGRADE (only if a pet ever exceeds tens of thousands of memories): swap
+ * the JSONB column for pgvector `vector(1536)` + HNSW and push the ANN into the
+ * candidate query. The RRF fusion above stays identical.
  * ──────────────────────────────────────────────────────────────────────────── */

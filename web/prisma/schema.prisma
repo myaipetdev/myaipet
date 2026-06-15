@@ -187,6 +187,11 @@ model PetMemory {
   importance    Int      @default(1)
   is_minted     Boolean  @default(false)
   memory_nft_id Int?
+  // Optional embedding vector stored as a plain JSON float array (no pgvector —
+  // per-pet retrieval is candidate-limited to ~400 rows, so app-side cosine is
+  // exact + fast at this scale). Null until an owner connects an embedding key
+  // and the backfill (scripts/embed-memories.mjs) or write path populates it.
+  embedding     Json?
   created_at    DateTime @default(now())
   pet           Pet      @relation(fields: [pet_id], references: [id])
 
