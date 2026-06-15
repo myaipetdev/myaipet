@@ -274,7 +274,12 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
               display: "flex", alignItems: "center", gap: 5, background: "none",
               border: "none", cursor: "pointer", padding: 0,
             }}>
-              <span style={{ fontSize: 15, color: item.is_liked ? "#f472b6" : "rgba(26,26,46,0.35)" }}>
+              <span style={{
+                fontSize: 15, color: item.is_liked ? "#f472b6" : "rgba(26,26,46,0.35)",
+                display: "inline-block",
+                transform: item.is_liked ? "scale(1.3)" : "scale(1)",
+                transition: "transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s",
+              }}>
                 {item.is_liked ? "♥" : "♡"}
               </span>
               <span style={{
@@ -529,8 +534,10 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
             >
               <span style={{
                 color: item.is_liked ? "#f472b6" : "rgba(255,255,255,0.65)",
-                fontSize: 13, transition: "all 0.15s",
-                transform: item.is_liked ? "scale(1.2)" : "scale(1)",
+                fontSize: 13,
+                // Overshoot easing → a tactile "pop" on like instead of a flat ease.
+                transition: "transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s, filter 0.15s",
+                transform: item.is_liked ? "scale(1.3)" : "scale(1)",
                 display: "inline-block",
                 filter: item.is_liked ? "drop-shadow(0 0 4px rgba(244,114,182,0.5))" : "none",
               }}>
@@ -545,10 +552,9 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
               </span>
             </button>
 
-            {hovered && (
+            {(hovered || (item.comments_count || 0) > 0) && (
               <span style={{
                 fontFamily: "mono", fontSize: 9, color: "rgba(255,255,255,0.45)",
-                animation: "fadeUp 0.15s ease-out",
                 textShadow: "0 1px 2px rgba(0,0,0,0.5)",
               }}>
                 💬 {item.comments_count || 0}
