@@ -724,6 +724,22 @@ export default function PetStudioPro() {
               color: "#1a1a2e",
             }}
           />
+
+          {/* Lowest-friction starting points (personality/element-aware), placed
+              right under the prompt so a new user's fastest path to a valid
+              prompt is the first thing they see — not buried under templates. */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
+            <span style={{
+              fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
+              color: "rgba(26,26,46,0.55)", letterSpacing: "0.06em",
+              alignSelf: "center", marginRight: 4,
+            }}>TRY:</span>
+            {promptIdeasFor(pet).map((idea, i) => (
+              <button key={i} onClick={() => setPrompt(idea)} style={suggestionChip}>
+                {idea}
+              </button>
+            ))}
+          </div>
           {/* Memory → Video: scenes grounded in what the pet remembers about
               you. Only shows when the pet has daydreamed something. */}
           {memorySeeds.length > 0 && (
@@ -841,19 +857,6 @@ export default function PetStudioPro() {
                 );
               })}
             </div>
-          </div>
-
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 14 }}>
-            <span style={{
-              fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-              color: "rgba(26,26,46,0.55)", letterSpacing: "0.06em",
-              alignSelf: "center", marginRight: 4,
-            }}>TRY:</span>
-            {promptIdeasFor(pet).map((idea, i) => (
-              <button key={i} onClick={() => setPrompt(idea)} style={suggestionChip}>
-                {idea}
-              </button>
-            ))}
           </div>
         </div>
 
