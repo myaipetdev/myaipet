@@ -93,6 +93,7 @@ function defaultModelFor(provider: ProviderId): string {
   switch (provider) {
     case "openai": return "gpt-4.1-mini";
     case "anthropic": return "claude-sonnet-4-6";
+    case "google": return "gemini-2.5-flash";
     case "openrouter": return "openrouter/auto";
     default: return "grok-3-mini";
   }

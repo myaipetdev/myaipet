@@ -30,13 +30,13 @@ import { prisma } from "@/lib/prisma";
 import { decrypt } from "@/lib/crypto";
 
 export type LLMTask = "chat" | "reason" | "judge" | "summarize" | "extract" | "persona";
-export type ProviderId = "xai" | "openai" | "anthropic" | "openrouter";
+export type ProviderId = "xai" | "openai" | "anthropic" | "openrouter" | "google";
 
 interface ProviderConfig {
   id: ProviderId;
   baseUrl: string;
-  /** "openai" → /chat/completions shape; "anthropic" → /messages shape. */
-  flavor: "openai" | "anthropic";
+  /** "openai" → /chat/completions; "anthropic" → /messages; "google" → :generateContent. */
+  flavor: "openai" | "anthropic" | "google";
 }
 
 const PROVIDERS: Record<ProviderId, ProviderConfig> = {
@@ -44,6 +44,7 @@ const PROVIDERS: Record<ProviderId, ProviderConfig> = {
   openai: { id: "openai", baseUrl: "https://api.openai.com/v1", flavor: "openai" },
   anthropic: { id: "anthropic", baseUrl: "https://api.anthropic.com/v1", flavor: "anthropic" },
   openrouter: { id: "openrouter", baseUrl: "https://openrouter.ai/api/v1", flavor: "openai" },
+  google: { id: "google", baseUrl: "https://generativelanguage.googleapis.com/v1beta", flavor: "google" },
 };
 
 /**
@@ -150,6 +151,28 @@ export async function callLLM(args: CallLLMArgs): Promise<LLMResult> {
     return { text, model: raw?.model || target.model, provider: target.provider.id, source: target.source, raw };
   }
 
+  if (target.provider.flavor === "google") {
+    // Gemini: :generateContent, key in x-goog-api-key header (never in the URL).
+    // Roles map system→systemInstruction, assistant→model, user→user.
+    const systemText = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
+    const contents = messages
+      .filter((m) => m.role !== "system")
+      .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+    const res = await fetch(`${target.provider.baseUrl}/models/${target.model}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": target.apiKey },
+      body: JSON.stringify({
+        ...(systemText ? { systemInstruction: { parts: [{ text: systemText }] } } : {}),
+        contents,
+        generationConfig: { temperature, maxOutputTokens: max_tokens },
+      }),
+    });
+    if (!res.ok) throw new Error(`google ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+    const raw = await res.json();
+    const text = (raw?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("") || "").trim();
+    return { text, model: target.model, provider: target.provider.id, source: target.source, raw };
+  }
+
   // OpenAI-shaped (xai / openai / openrouter) — identical body to today's Grok fetch.
   const res = await fetch(`${target.provider.baseUrl}/chat/completions`, {
     method: "POST",
@@ -168,6 +191,7 @@ export function supportedProviders(): { id: ProviderId; label: string; keyFormat
     { id: "xai", label: "xAI (Grok)", keyFormat: "xai-..." },
     { id: "openai", label: "OpenAI", keyFormat: "sk-..." },
     { id: "anthropic", label: "Anthropic (Claude)", keyFormat: "sk-ant-..." },
+    { id: "google", label: "Google (Gemini)", keyFormat: "AIza..." },
     { id: "openrouter", label: "OpenRouter (any model)", keyFormat: "sk-or-..." },
   ];
 }

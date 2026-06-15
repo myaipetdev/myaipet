@@ -281,6 +281,11 @@ export const api = {
         method: "POST",
         body: { message },
       }),
+    runAgent: (petId: number, goal: string, maxSteps?: number) =>
+      request(`/api/pets/${petId}/agent`, {
+        method: "POST",
+        body: { goal, ...(maxSteps ? { maxSteps } : {}) },
+      }),
     memories: (petId: number, params: any = {}) => {
       const qs = new URLSearchParams();
       if (params.memory_type) qs.set("memory_type", params.memory_type);
@@ -458,6 +463,13 @@ export const api = {
       get: (petId: number) => request(`/api/pets/${petId}?fields=consent`),
       update: (petId: number, consent: any) =>
         request(`/api/pets/${petId}`, { method: "PATCH", body: { personality_modifiers: consent } }),
+    },
+    // BYO model connections (FEATURE 1)
+    models: {
+      list: () => request("/api/petclaw/models"),
+      connect: (provider: string, apiKey: string, opts: { label?: string; model?: string; taskScopes?: string[] } = {}) =>
+        request("/api/petclaw/models", { method: "POST", body: { provider, apiKey, ...opts } }),
+      remove: (id: number) => request(`/api/petclaw/models?id=${id}`, { method: "DELETE" }),
     },
   },
 

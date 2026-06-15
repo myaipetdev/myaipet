@@ -12,6 +12,7 @@ const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
   { key: "studio", label: "Studio", url: "/studio" },
   { key: "community", label: "Community" },
   { key: "sovereignty", label: "PetClaw" },
+  { key: "settings", label: "Models", url: "/settings" },
   // Season hub: my-card + season + missions + leaderboards. Labelled
   // "Season Rewards" (not "Airdrop") — points are off-chain loyalty credits,
   // and an "Airdrop" tab reads as a token-distribution commitment in
