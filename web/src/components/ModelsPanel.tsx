@@ -123,20 +123,27 @@ export default function ModelsPanel() {
   const btn: React.CSSProperties = { padding: "10px 18px", borderRadius: 10, border: "none", background: INK, color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer" };
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "28px 20px 80px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
-      <div style={{ marginBottom: 8 }}>
-        <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase" }}>PetClaw · your models</div>
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: INK, margin: "6px 0 0" }}>Bring your own model</h1>
-        <p style={{ fontSize: 14.5, color: MUTED, margin: "8px 0 0", lineHeight: 1.55 }}>
-          Connect your own provider key — it powers your pet&apos;s chat replies, the agent-loop reasoning, and best-of-N judging. Other background tasks (memory, persona) still use the platform default (Grok). Your key is encrypted at rest and never shown again.
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "8px 0 20px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase" }}>PetClaw protocol · bring your own model</div>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: INK, margin: "6px 0 0" }}>Your model, your pet</h1>
+        <p style={{ fontSize: 14, color: MUTED, margin: "8px 0 0", lineHeight: 1.55 }}>
+          A PetClaw-protocol (developer) feature — the intended path is the <strong>CLI / at install</strong>. Your pet then routes its chat replies, agent-loop reasoning, and best-of-N judging to your model; other background tasks use the platform default (Grok). Keys are encrypted at rest, never shown again.
         </p>
+        {/* Primary path: connect via the CLI / on install. */}
+        <div style={{ marginTop: 14, background: "#0e0e14", borderRadius: 12, padding: "14px 16px", fontFamily: "monospace", fontSize: 12.5, lineHeight: 1.7, color: "#e8e4da", overflowX: "auto" }}>
+          <div style={{ color: "#8a8577", marginBottom: 6 }}># connect when you install / use the SDK</div>
+          <div><span style={{ color: "#9bd1c4" }}>npx petclaw-sdk init</span><span style={{ color: "#5f5e5a" }}>            # guided: server · pet · model</span></div>
+          <div><span style={{ color: "#9bd1c4" }}>npx petclaw-sdk models connect</span> <span style={{ color: "#fde68a" }}>openai sk-…</span></div>
+          <div><span style={{ color: "#9bd1c4" }}>npx petclaw-sdk models list</span></div>
+        </div>
       </div>
 
       {err && <div style={{ background: "#fde8e8", color: "#9b1c1c", borderRadius: 10, padding: "10px 14px", fontSize: 13.5, margin: "16px 0" }}>{err}</div>}
 
       <div style={{ height: 20 }} />
 
-      <Card title="Connect a model" sub="API-key providers (BYOK). OpenRouter reaches almost any model, including Gemini.">
+      <Card title="Or connect here (manual)" sub="Prefer the CLI above. This web form does the same thing — API-key providers (BYOK); OpenRouter reaches almost any model, including Gemini.">
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div>
             <label style={{ fontSize: 12.5, color: MUTED }}>Provider</label>

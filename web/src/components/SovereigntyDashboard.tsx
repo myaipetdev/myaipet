@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 import PetClawConsole from "@/components/PetClawConsole";
+import ModelsPanel from "@/components/ModelsPanel";
 
 // ── Types ──
 interface SoulState {
@@ -1002,6 +1003,12 @@ export default function SovereigntyDashboard() {
               element: selectedPet.element,
             } : null}
           />
+        </div>
+
+        {/* Bring your own model — merged into the PetClaw (developer) screen.
+            Connection is a CLI/SDK action; the web form is a manual fallback. */}
+        <div style={{ marginBottom: 40 }}>
+          <ModelsPanel />
         </div>
 
         {/* Big two-column hero */}

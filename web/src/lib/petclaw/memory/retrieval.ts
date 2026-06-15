@@ -350,7 +350,7 @@ export function formatRetrievedMemories(mems: RetrievedMemory[]): string {
  * exact app-side cosine is fast and pgvector is unnecessary here.
  *
  * Activation requires only an embedding key (Grok has none): the owner connects
- * an OpenAI/Google model at /settings, then scripts/embed-memories.mjs backfills
+ * an OpenAI/Google model on the PetClaw screen (or via the CLI), then scripts/embed-memories.mjs backfills
  * pet_memories.embedding. The query is embedded lazily on read (only when stored
  * embeddings exist). Until then, retrieval is the lexical RRF — no behavior change.
  *

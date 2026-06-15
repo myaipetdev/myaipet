@@ -176,7 +176,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
   const runGoal = async (goalText: string) => {
     const g = goalText.trim();
     if (!g) { pushLine({ role: "sys", text: "usage: /goal <what you want your pet to do>" }); return; }
-    if (isSim || !petId) { pushLine({ role: "sys", text: "agent loop needs your own pet — connect your wallet & adopt one (manage at /settings)" }); return; }
+    if (isSim || !petId) { pushLine({ role: "sys", text: "agent loop needs your own pet — connect your wallet & adopt one" }); return; }
     pushLine({ role: "sys", text: `agent ▸ planning · "${g}"` });
     setBusy(true);
     try {
@@ -303,7 +303,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter — powers chat + agent reasoning + judging" kw={120} />
                   <Row k="agent-loop" v="give a goal → plans, calls skills, iterates → answers" kw={120} />
                   <div style={{ fontSize: 12, marginTop: 4 }}>
-                    <a href="/settings" style={{ color: GREEN, textDecoration: "none" }}>connect a model ▸ /settings</a>
+                    <span style={{ color: GREEN }}>connect your model ↓ below (or via the CLI)</span>
                   </div>
                   <SectionHead>Sovereignty</SectionHead>
                   {SOVEREIGNTY.map((s) => <Row key={s.k} k={s.k} v={s.v} />)}

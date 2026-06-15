@@ -733,8 +733,8 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           </div>
           <button onClick={onComplete} style={primaryBtn}>Start chatting →</button>
           <div style={{ marginTop: 12 }}>
-            <a href="/settings" style={{ fontSize: 12.5, color: "#b45309", textDecoration: "none", fontWeight: 600 }}>
-              Bring your own AI model (Claude · GPT · Gemini) ▸ Settings
+            <a href="/sovereignty" style={{ fontSize: 12.5, color: "#b45309", textDecoration: "none", fontWeight: 600 }}>
+              Bring your own AI model (Claude · GPT · Gemini) ▸ PetClaw
             </a>
           </div>
         </div>
