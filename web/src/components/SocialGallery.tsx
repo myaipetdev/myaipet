@@ -296,6 +296,22 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
                 {item.comments_count || 0}
               </span>
             </div>
+            <div style={{ flex: 1 }} />
+            <button
+              onClick={() => {
+                const text = encodeURIComponent(`${item.prompt || "My AI Pet creation"} — generated on MY AI PET 🐾`);
+                const url = encodeURIComponent("https://app.myaipet.ai");
+                const tags = encodeURIComponent("MYAIPET,AIArt,PetClaw");
+                window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=${tags}`, "_blank", "width=600,height=400");
+              }}
+              aria-label="Share on X"
+              title="Share on X"
+              style={{
+                display: "flex", alignItems: "center", gap: 5, background: "none",
+                border: "none", cursor: "pointer", padding: 0,
+                fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#1a1a2e",
+              }}
+            ><span style={{ fontSize: 13 }}>𝕏</span> Share</button>
           </div>
 
           {/* Browse → Create: the highest-intent moment. Stash this creation's
