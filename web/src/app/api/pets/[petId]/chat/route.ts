@@ -11,6 +11,7 @@ import { rateLimit } from "@/lib/rateLimit";
 import { sanitizeText } from "@/lib/sanitize";
 import { estimateHelpfulness } from "@/lib/petclaw/memory/feedback";
 import { BEST_OF_N_ENABLED, pickBest, pickBestLLM } from "@/lib/petclaw/memory/best-of-n";
+import { callLLM } from "@/lib/llm/router";
 
 const PERSONALITY_VOICES: Record<string, string> = {
   friendly: "You speak warmly, use lots of exclamation marks, and are always encouraging. You love your owner.",
@@ -188,14 +189,21 @@ ${await getBondNotesBlock(pet.id)}
             learnedPatterns,
           }).text;
     } else {
-      const res = await callGrok(0.9);
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("Grok chat error:", text);
-        throw new Error("Chat failed");
-      }
-      const data = await res.json();
-      reply = data.choices?.[0]?.message?.content || `*${pet.name} tilts head curiously*`;
+      // Main reply path — routed through the model router (task:'chat'), so the
+      // pet-owner's connected model (BYOK) answers if they've connected one for
+      // chat, else the platform Grok default. The Grok default is byte-identical
+      // to the previous direct call (same model grok-3-mini, max_tokens, temp).
+      const out = await callLLM({
+        task: "chat",
+        petId: pet.id,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message.trim().slice(0, 500) },
+        ],
+        max_tokens: 150,
+        temperature: 0.9,
+      });
+      reply = out.text || `*${pet.name} tilts head curiously*`;
     }
 
     // Save as interaction + memory
