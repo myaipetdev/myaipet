@@ -381,6 +381,11 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
           background: "rgba(168,85,247,0.12)", color: "#a855f7",
           fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.08em",
         }}>HERMES-STYLE</span>
+        <span title="Each reply pulls the most relevant memories via reciprocal-rank fusion (lexical + recency + importance; plus semantic cosine when you connect an embedding key)." style={{
+          fontSize: 9, padding: "3px 10px", borderRadius: 999,
+          background: "rgba(245,158,11,0.12)", color: "#b45309",
+          fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.08em", cursor: "help",
+        }}>RRF RECALL</span>
         <div style={{ flex: 1 }} />
         <button onClick={triggerConsolidate} disabled={consolidating} style={{
           padding: "6px 14px", borderRadius: 999, border: "1.5px solid rgba(168,85,247,0.3)",
