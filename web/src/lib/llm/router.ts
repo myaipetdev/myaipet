@@ -185,6 +185,65 @@ export async function callLLM(args: CallLLMArgs): Promise<LLMResult> {
   return { text, model: raw?.model || target.model, provider: target.provider.id, source: target.source, raw };
 }
 
+const EMBEDDING_MODELS: Partial<Record<ProviderId, string>> = {
+  openai: "text-embedding-3-small",
+  google: "text-embedding-004",
+};
+
+/**
+ * Embed texts using the pet-owner's connected OpenAI/Google model, if any.
+ * Returns null when no embedding-capable provider is connected — Grok has NO
+ * embeddings endpoint, so there is no platform default; callers fall back to
+ * lexical retrieval. This is the wire-point for GBrain-style vector recall:
+ * once an owner connects an OpenAI/Google key AND pgvector is enabled on the DB,
+ * the memory ranker (retrieval.ts) can add a 4th vector RRF input. Until both
+ * exist, retrieval stays lexical (RRF over TF-IDF + recency + source-tier).
+ */
+export async function callEmbedding(texts: string[], petId?: number): Promise<number[][] | null> {
+  if (!petId || texts.length === 0) return null;
+  try {
+    const pet = await prisma.pet.findUnique({ where: { id: petId }, select: { user_id: true } });
+    if (!pet?.user_id) return null;
+    const conns = await prisma.modelConnection.findMany({
+      where: { owner_user_id: pet.user_id, is_active: true, provider: { in: ["openai", "google"] } },
+      orderBy: { updated_at: "desc" },
+    });
+    const conn = conns[0];
+    if (!conn) return null;
+    const apiKey = decrypt(conn.encrypted_key);
+    if (!apiKey) return null;
+    const provider = conn.provider as ProviderId;
+    const model = EMBEDDING_MODELS[provider];
+    if (!model) return null;
+
+    if (provider === "openai") {
+      const res = await fetch(`${PROVIDERS.openai.baseUrl}/embeddings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({ model, input: texts }),
+      });
+      if (!res.ok) return null;
+      const raw = await res.json();
+      return (raw?.data || []).map((d: any) => d.embedding as number[]);
+    }
+    // google — one call per text (embedContent is single-input)
+    const out: number[][] = [];
+    for (const text of texts) {
+      const res = await fetch(`${PROVIDERS.google.baseUrl}/models/${model}:embedContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify({ content: { parts: [{ text }] } }),
+      });
+      if (!res.ok) return null;
+      const raw = await res.json();
+      out.push((raw?.embedding?.values || []) as number[]);
+    }
+    return out;
+  } catch {
+    return null;
+  }
+}
+
 /** Providers a user may connect (for the /api/petclaw/models UI + validation). */
 export function supportedProviders(): { id: ProviderId; label: string; keyFormat: string }[] {
   return [
