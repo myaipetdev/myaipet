@@ -714,10 +714,29 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           }}>
             +{points} pts
           </div>
-          <p style={{ color: "rgba(26,26,46,0.55)", fontSize: 14, margin: "16px 0 22px", lineHeight: 1.55 }}>
-            {pet.name} keeps learning every time you talk. Try saying hi.
+          <p style={{ color: "rgba(26,26,46,0.55)", fontSize: 14, margin: "16px 0 18px", lineHeight: 1.55 }}>
+            {pet.name} keeps learning every time you talk. Here's what's ahead:
           </p>
+          {/* Capability welcome (Hermes-style "what your companion can do") */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, maxWidth: 430, margin: "0 auto 22px", textAlign: "left" }}>
+            {([
+              ["🧠", "Remembers you", "grows every chat"],
+              ["🎯", "Give it a goal", "it plans & acts"],
+              ["🔑", "Yours to own", "your data & model"],
+            ] as const).map(([icon, t, s]) => (
+              <div key={t} style={{ padding: "12px 12px", borderRadius: 12, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.14)" }}>
+                <div style={{ fontSize: 18 }}>{icon}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginTop: 4 }}>{t}</div>
+                <div style={{ fontSize: 11.5, color: "rgba(26,26,46,0.5)", marginTop: 2 }}>{s}</div>
+              </div>
+            ))}
+          </div>
           <button onClick={onComplete} style={primaryBtn}>Start chatting →</button>
+          <div style={{ marginTop: 12 }}>
+            <a href="/settings" style={{ fontSize: 12.5, color: "#b45309", textDecoration: "none", fontWeight: 600 }}>
+              Bring your own AI model (Claude · GPT · Gemini) ▸ Settings
+            </a>
+          </div>
         </div>
       </Shell>
     );
