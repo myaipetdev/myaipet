@@ -233,8 +233,9 @@ async function addEvolutionXP(amount, reason) {
     );
     await addPoints("evolution", 50, `evolved to ${stageNames[evo.stage]}`);
 
-    // Notify content scripts
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    // Notify content scripts — broadcast to ALL tabs so every open pet shows the
+    // new stage/aura, not just the focused one (others would lag until their 60s sync).
+    const tabs = await chrome.tabs.query({});
     for (const tab of tabs) {
       if (tab.id) {
         try {
@@ -842,7 +843,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     // Broadcast emotion update to content scripts
     const emotions = await getEmotions();
     const dominant = getDominantEmotion(emotions);
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    // Mood is shared pet state — update every tab, not just the focused one.
+    const tabs = await chrome.tabs.query({});
     for (const tab of tabs) {
       if (tab.id) {
         try {
@@ -862,7 +864,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     const synced = await syncFromServer();
     if (synced) {
       const dominant = getDominantEmotion(synced);
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      // Server-synced mood is shared pet state — update every tab.
+      const tabs = await chrome.tabs.query({});
       for (const tab of tabs) {
         if (tab.id) {
           try { chrome.tabs.sendMessage(tab.id, { type: "emotionUpdate", emotions: synced, dominant }); } catch {}
@@ -922,8 +925,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       applyEmotionAction(msg.action).then((emotions) => {
         const dominant = getDominantEmotion(emotions);
         sendResponse({ emotions, dominant });
-        // Broadcast to content scripts
-        chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+        // Broadcast to content scripts — mood change is shared pet state, update every tab.
+        chrome.tabs.query({}).then((tabs) => {
           for (const tab of tabs) {
             if (tab.id) {
               try { chrome.tabs.sendMessage(tab.id, { type: "emotionUpdate", emotions, dominant }); } catch {}
