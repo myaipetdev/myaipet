@@ -13,7 +13,7 @@
 <meta property="og:title" content="MY AI PET — Your AI Companion, On-Chain" />
 <meta property="og:description" content="Raise an AI pet companion that grows, evolves, and earns. CompanionFi on BNB Smart Chain." />
 <meta property="og:url" content="https://myaipet.ai" />
-<meta property="og:image" content="https://myaipet.ai/og-image.jpg" />
+<meta property="og:image" content="https://myaipet.ai/hero-mascot.jpg" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 
@@ -22,7 +22,7 @@
 <meta name="twitter:site" content="@myaipets" />
 <meta name="twitter:title" content="MY AI PET — Your AI Companion, On-Chain" />
 <meta name="twitter:description" content="Raise an AI pet companion that grows, evolves, and earns. CompanionFi on BNB Smart Chain." />
-<meta name="twitter:image" content="https://myaipet.ai/og-image.jpg" />
+<meta name="twitter:image" content="https://myaipet.ai/hero-mascot.jpg" />
 
 <!-- Icons -->
 <link rel="icon" type="image/jpeg" href="/hero-mascot.jpg" />
@@ -1862,18 +1862,15 @@ function persist() {
   // SCRUM-74 §3-3: context-aware phrases — pick based on which section
   // is in view, so the same Sparky line doesn't repeat through the whole scroll.
   const sectionPhrases = {
-    hero:        ["Hi! I'm Sparky 🐾", "Scroll down to meet me", "Adopt me in 30 seconds!"],
     companion:   ["This is how I remember 🧠", "Try the chat below!", "I learn from every turn"],
-    community:   ["12 friends already here ✨", "Each one has their own memories", "Hover to see who we are 🎈"],
+    community:   ["Friends already here ✨", "Each one has their own memories", "Hover to see who we are 🎈"],
     sovereignty: ["Your data, your rules 🛡", "You can export me anytime 📦", "Delete = proof, not promise"],
-    extension:   ["I live in every tab 🌐", "Walking with you everywhere", "No gas to install!"],
+    demo:        ["I live in every tab 🌐", "Walking with you everywhere", "No gas to install!"],
     protocol:    ["MCP-compatible, by the way 🔌", "petclaw-sdk on npm 📦", "Open standard, not a SaaS"],
-    pricing:     ["Boring numbers ahead 💸", "Skip this if you want 🐾", "Or check /tokenomics for the spec"],
-    roadmap:     ["Lots more coming 🚀", "Q3 is exciting...", "2027 = AI inheritance protocol"],
   };
 
   function getContextSection() {
-    const sections = ["hero","companion","community","sovereignty","extension","protocol","pricing","roadmap"];
+    const sections = ["companion","community","sovereignty","demo","protocol"];
     const y = window.scrollY + window.innerHeight / 2;
     for (const id of sections) {
       const el = document.getElementById(id) || document.querySelector(`[data-section="${id}"]`);
