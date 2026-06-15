@@ -57,7 +57,7 @@ export async function GET(
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   const memory = createMemoryManager(pet.id);
   const recent = await memory.getRecentMessages("all", 20).catch(() => []);
-  const messages = recent.map((m) => ({ role: m.role === "user" ? "user" : "ai", text: m.content }));
+  const messages = recent.map((m) => ({ role: m.role === "user" ? "user" : "pet", text: m.content }));
   return NextResponse.json({ messages });
 }
 

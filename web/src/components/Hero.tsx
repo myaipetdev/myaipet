@@ -201,8 +201,8 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           boxShadow: "0 0 8px rgba(74,222,128,0.6)",
           animation: "pulse 2s ease-in-out infinite",
         }} />
-        <span style={{ fontFamily: "mono", fontSize: 11, color: "#b45309", fontWeight: 500 }}>
-          {txToday > 0 ? `${txToday} interactions today` : "Live on BSC Mainnet"}
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "#b45309", fontWeight: 500 }}>
+          {txToday > 0 ? `${txToday} creations this week` : "Live on BSC Mainnet"}
         </span>
       </div>
 

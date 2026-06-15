@@ -565,7 +565,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
         </div>
 
         <button onClick={saveAndComplete} disabled={saving} style={primaryBtn}>
-          {saving ? "Saving…" : `Finish (${points + (connectedPlatforms.length ? 0 : 0)} pts) 🎉`}
+          {saving ? "Saving…" : `Finish (${points} pts) 🎉`}
         </button>
         <button onClick={saveAndComplete} style={ghostBtn}>Skip & finish</button>
       </Shell>

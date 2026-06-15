@@ -1170,9 +1170,9 @@ export default function PetProfile() {
     setInteracting(null);
   };
 
-  const handleChat = async () => {
-    if (!activePet || !chatInput.trim() || chatLoading) return;
-    const msg = chatInput.trim();
+  const handleChat = async (override?: string) => {
+    const msg = (override ?? chatInput).trim();
+    if (!activePet || !msg || chatLoading) return;
     const petName = activePet.name; // snapshot to avoid null-deref later
     const petId = activePet.id;
     setChatInput("");
@@ -1937,17 +1937,25 @@ export default function PetProfile() {
                     &quot;{lastResponse.response_text}&quot;
                   </p>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {Object.entries(lastResponse.stat_changes || {}).filter(([, v]: any) => v !== 0).map(([k, v]: any) => (
-                      <span key={k} style={{
-                        fontFamily: "'JetBrains Mono', monospace", fontSize: 10, padding: "3px 8px", borderRadius: 8,
-                        background: v > 0 ? "rgba(74,222,128,0.1)" : "rgba(248,113,113,0.1)",
-                        color: v > 0 ? "#16a34a" : "#dc2626",
-                        border: v > 0 ? "1px solid rgba(74,222,128,0.2)" : "1px solid rgba(248,113,113,0.2)",
-                        animation: "statPop 0.4s ease",
-                      }}>
-                        {k} {v > 0 ? "+" : ""}{v}
-                      </span>
-                    ))}
+                    {Object.entries(lastResponse.stat_changes || {}).filter(([, v]: any) => v !== 0).map(([k, v]: any) => {
+                      // Hunger is inverted (lower = better): feeding lowers it. Color by
+                      // semantic good/bad, and show hunger as "fullness" gained so the
+                      // best action (feed) never reads as a red penalty.
+                      const good = k === "hunger" ? v < 0 : v > 0;
+                      const label = k === "hunger" ? "fullness" : k;
+                      const display = k === "hunger" ? -v : v;
+                      return (
+                        <span key={k} style={{
+                          fontFamily: "'JetBrains Mono', monospace", fontSize: 10, padding: "3px 8px", borderRadius: 8,
+                          background: good ? "rgba(74,222,128,0.1)" : "rgba(248,113,113,0.1)",
+                          color: good ? "#16a34a" : "#dc2626",
+                          border: good ? "1px solid rgba(74,222,128,0.2)" : "1px solid rgba(248,113,113,0.2)",
+                          animation: "statPop 0.4s ease",
+                        }}>
+                          {label} {display > 0 ? "+" : ""}{display}
+                        </span>
+                      );
+                    })}
                   </div>
                   {lastResponse.memory_created && (
                     <div style={{
@@ -2249,7 +2257,7 @@ export default function PetProfile() {
                       display: "flex", gap: 8,
                     }}>
                       <span>{m.emotion}</span>
-                      <span>importance: {m.importance}</span>
+                      {m.importance >= 4 && <span title="key memory">★ key</span>}
                     </div>
                   </div>
                 ))}
@@ -2342,7 +2350,7 @@ export default function PetProfile() {
                   </div>
                   <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 12, flexWrap: "wrap" }}>
                     {["Hey there! 👋", "How are you?", "I love you!", "Are you hungry?"].map(q => (
-                      <button key={q} onClick={() => { setChatInput(q); }} style={{
+                      <button key={q} onClick={() => handleChat(q)} style={{
                         background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.15)",
                         borderRadius: 20, padding: "5px 12px", cursor: "pointer",
                         fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "#b45309",

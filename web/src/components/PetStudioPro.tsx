@@ -566,7 +566,9 @@ export default function PetStudioPro() {
               </div>
             </Panel>
 
-            {/* Aspect ratio — vertical (9:16) for Reels/Shorts, etc. */}
+            {/* Aspect ratio — only the fal engines (Kling/Seedance/Wan/FLUX) honor
+                aspect_ratio; Grok renders a fixed ratio, so don't show a dead control. */}
+            {chosenModel?.backend === "fal" && (
             <Panel label="ASPECT">
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: 4, borderRadius: 12, background: "rgba(0,0,0,0.04)" }}>
                 {(["16:9", "9:16", "1:1"] as const).map(a => {
@@ -584,6 +586,7 @@ export default function PetStudioPro() {
                 })}
               </div>
             </Panel>
+            )}
 
             {/* Engine (model picker) */}
             <Panel label="ENGINE">
