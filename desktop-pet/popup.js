@@ -71,6 +71,12 @@ function loadPoints() {
   });
 }
 
+function escapeHtml(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+  );
+}
+
 function renderNotifications(notifs) {
   const list = $("notifList");
   list.innerHTML = notifs
@@ -78,9 +84,9 @@ function renderNotifications(notifs) {
     .reverse()
     .map((n) => `
       <div class="notif-item">
-        <div class="icon">${n.icon || "📌"}</div>
-        <div class="text">${n.text}</div>
-        <div class="time">${n.time || ""}</div>
+        <div class="icon">${escapeHtml(n.icon || "📌")}</div>
+        <div class="text">${escapeHtml(n.text)}</div>
+        <div class="time">${escapeHtml(n.time || "")}</div>
       </div>
     `)
     .join("");
@@ -328,7 +334,9 @@ function startGame() {
 
     const catcherRect = catcher.getBoundingClientRect();
 
-    treats.forEach((t, i) => {
+    // Iterate backwards so splice() doesn't skip the next treat mid-loop.
+    for (let i = treats.length - 1; i >= 0; i--) {
+      const t = treats[i];
       let y = parseFloat(t.dataset.y) + parseFloat(t.dataset.speed);
       t.dataset.y = y;
       t.style.top = y + "px";
@@ -351,7 +359,7 @@ function startGame() {
         t.style.opacity = "0";
         setTimeout(() => t.remove(), 200);
         treats.splice(i, 1);
-        return;
+        continue;
       }
 
       // Miss
@@ -359,7 +367,7 @@ function startGame() {
         t.remove();
         treats.splice(i, 1);
       }
-    });
+    }
   }, 16);
 
   // Timer countdown
@@ -544,7 +552,7 @@ function endMemoryGame() {
   const earned = Math.floor(score / 5);
 
   chrome.runtime.sendMessage({ type: "gameComplete", score, points: earned, game: "memory" }, (res) => {
-    if (res?.highScore) $("memoryHighScore").textContent = res.highScore;
+    if (res?.highScoreMemory != null) $("memoryHighScore").textContent = res.highScoreMemory;
     $("memoryPointsEarned").textContent = earned;
   });
 

@@ -794,8 +794,6 @@ async function sendHeartbeat() {
       message: "Your pet needs food! Open the extension to feed them.",
     });
   }
-
-  return points;
 }
 
 async function trackBrowsing() {
@@ -937,8 +935,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     getEvolution: () => getEvolution().then((evolution) => sendResponse({ evolution })),
 
     gameComplete: () =>
-      saveGameResult(msg.score, msg.points).then((stats) =>
-        sendResponse({ highScore: stats.highScore })
+      saveGameResult(msg.score, msg.points, msg.game).then((stats) =>
+        sendResponse({ highScore: stats.highScore, highScoreMemory: stats.highScoreMemory })
       ),
 
     getGameStats: () => getGameStats().then((stats) => sendResponse(stats)),
