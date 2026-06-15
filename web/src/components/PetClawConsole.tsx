@@ -278,12 +278,18 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   {HARNESS.map((h) => <Row key={h.k} k={h.k} v={h.v} kw={120} />)}
                   <SectionHead>PACK — pet-to-pet (A2A)</SectionHead>
                   {PACK.map((p) => <Row key={p.k} k={p.k} v={p.v} kw={120} />)}
+                  <SectionHead>MODELS — bring your own (BYOK)</SectionHead>
+                  <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter — routed by task" kw={120} />
+                  <Row k="agent-loop" v="give a goal → plans, calls skills, iterates → answers" kw={120} />
+                  <div style={{ fontSize: 12, marginTop: 4 }}>
+                    <a href="/settings" style={{ color: GREEN, textDecoration: "none" }}>connect a model ▸ /settings</a>
+                  </div>
                   <SectionHead>Sovereignty</SectionHead>
                   {SOVEREIGNTY.map((s) => <Row key={s.k} k={s.k} v={s.v} />)}
                 </div>
               )}
             </div>
-            <div style={{ marginTop: 14, color: MUTED, fontSize: 12.5 }}>21 connectors · 18 skills · 5-stage harness · 6 MCP tools · 100% your data</div>
+            <div style={{ marginTop: 14, color: MUTED, fontSize: 12.5 }}>21 connectors · 18 skills · 5-stage harness · 6 MCP tools · BYO models · 100% your data</div>
           </div>
 
           {/* LIVE terminal */}
