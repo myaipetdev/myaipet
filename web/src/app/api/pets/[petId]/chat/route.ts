@@ -40,6 +40,27 @@ const MOOD_CONTEXT: Record<string, string> = {
   hungry: "You're getting hungry and it's starting to affect your mood.",
 };
 
+// GET — hydrate the chat thread from the pet's own memory ledger so a returning
+// owner sees continuity, not a blank thread (the whole point of a pet that
+// "remembers"). Returns the last ~20 turns as {role:"user"|"ai", text}.
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ petId: string }> }
+) {
+  const user = await getUser(req);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { petId } = await params;
+  const pet = await prisma.pet.findFirst({
+    where: { id: Number(petId), user_id: user.id, is_active: true },
+    select: { id: true },
+  });
+  if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  const memory = createMemoryManager(pet.id);
+  const recent = await memory.getRecentMessages("all", 20).catch(() => []);
+  const messages = recent.map((m) => ({ role: m.role === "user" ? "user" : "ai", text: m.content }));
+  return NextResponse.json({ messages });
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ petId: string }> }

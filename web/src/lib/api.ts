@@ -281,6 +281,7 @@ export const api = {
         method: "POST",
         body: { message },
       }),
+    chatHistory: (petId: number) => request(`/api/pets/${petId}/chat`),
     runAgent: (petId: number, goal: string, maxSteps?: number) =>
       request(`/api/pets/${petId}/agent`, {
         method: "POST",

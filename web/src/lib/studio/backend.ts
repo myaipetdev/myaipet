@@ -28,7 +28,7 @@ export interface PollResult {
 }
 
 // ── FAL backend ──
-async function falSubmit(model: StudioModel, prompt: string, refUrl?: string): Promise<SubmitResult> {
+async function falSubmit(model: StudioModel, prompt: string, refUrl?: string, aspect?: string): Promise<SubmitResult> {
   const key = process.env.FAL_API_KEY;
   if (!key) return { ok: false, error: "FAL_API_KEY not configured" };
 
@@ -39,6 +39,8 @@ async function falSubmit(model: StudioModel, prompt: string, refUrl?: string): P
   if (model.supportsImageRef && refUrl) {
     body.image_url = refUrl;
   }
+  // Kling/Seedance/Wan/FLUX accept aspect_ratio ("16:9" | "9:16" | "1:1").
+  if (aspect) body.aspect_ratio = aspect;
 
   try {
     const res = await fetch(url, {
@@ -183,8 +185,8 @@ async function safeJson(res: Response): Promise<any> {
 }
 
 // ── Public dispatch ──
-export async function submitToBackend(model: StudioModel, prompt: string, refUrl?: string): Promise<SubmitResult> {
-  if (model.backend === "fal") return falSubmit(model, prompt, refUrl);
+export async function submitToBackend(model: StudioModel, prompt: string, refUrl?: string, aspect?: string): Promise<SubmitResult> {
+  if (model.backend === "fal") return falSubmit(model, prompt, refUrl, aspect);
   if (model.backend === "grok") return grokSubmit(model, prompt, refUrl);
   return { ok: false, error: `Unknown backend: ${model.backend}` };
 }

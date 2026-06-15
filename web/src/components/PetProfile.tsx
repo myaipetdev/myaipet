@@ -937,6 +937,17 @@ export default function PetProfile() {
   const activePetIdRef = useRef<number | null>(null);
   useEffect(() => { activePetIdRef.current = activePet?.id ?? null; }, [activePet]);
 
+  // Hydrate the chat thread from the pet's own memory ledger on pet switch, so a
+  // returning owner sees continuity instead of a blank thread (the pet "remembers").
+  useEffect(() => {
+    if (!activePet?.id) { setChatMessages([]); return; }
+    let alive = true;
+    api.pets.chatHistory(activePet.id)
+      .then((d: any) => { if (alive && Array.isArray(d?.messages) && d.messages.length) setChatMessages(d.messages); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [activePet?.id]);
+
   // Escape closes the chat modal — keyboard users can't reach the backdrop or ✕.
   useEffect(() => {
     if (!showChat) return;

@@ -40,7 +40,8 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
-  const { modelId, petId, templateId, prompt: rawPrompt, customDirection } = body;
+  const { modelId, petId, templateId, prompt: rawPrompt, customDirection, aspect } = body;
+  const safeAspect = ["16:9", "9:16", "1:1"].includes(aspect) ? aspect : undefined;
 
   const model = getModel(String(modelId || ""));
   if (!model) return NextResponse.json({ error: "Unknown modelId" }, { status: 400 });
@@ -152,7 +153,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Submit to backend (outside transaction — may take seconds) ──
-  const result = await submitToBackend(model, finalPrompt, refUrl);
+  const result = await submitToBackend(model, finalPrompt, refUrl, safeAspect);
   if (!result.ok) {
     // Refund + mark failed
     await prisma.$transaction([

@@ -90,6 +90,7 @@ export default function PetStudioPro() {
   // Output type drives the default model + which models we surface.
   // Image-first by default: best margin (~10×) and instant feedback.
   const [outputKind, setOutputKind] = useState<"image" | "video">("image");
+  const [aspect, setAspect] = useState<"16:9" | "9:16" | "1:1">("16:9");
   // Studio is Grok-only for now (fal account unfunded — see GROK_ONLY in
   // lib/studio/providers.ts): image → grok-imagine, video → grok-imagine-video.
   const [chosenModelId, setChosenModelId] = useState<string>("grok-imagine");
@@ -266,7 +267,7 @@ export default function PetStudioPro() {
       const res = await fetch("/api/studio/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ modelId: submittedModelId, petId: pet.id, prompt: finalPrompt }),
+        body: JSON.stringify({ modelId: submittedModelId, petId: pet.id, prompt: finalPrompt, aspect }),
       });
       const data = await res.json().catch(() => ({}));
       if (!isActive()) return;
@@ -390,7 +391,7 @@ export default function PetStudioPro() {
           }}>
             <div style={{
               position: "relative",
-              aspectRatio: "16 / 9", borderRadius: 12, overflow: "hidden",
+              aspectRatio: aspect.replace(":", " / "), borderRadius: 12, overflow: "hidden",
               background: "linear-gradient(135deg,#0f172a,#1e293b)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
@@ -560,6 +561,25 @@ export default function PetStudioPro() {
                     }}>
                       {k === "image" ? "📷 Image" : "🎬 Video"}
                     </button>
+                  );
+                })}
+              </div>
+            </Panel>
+
+            {/* Aspect ratio — vertical (9:16) for Reels/Shorts, etc. */}
+            <Panel label="ASPECT">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: 4, borderRadius: 12, background: "rgba(0,0,0,0.04)" }}>
+                {(["16:9", "9:16", "1:1"] as const).map(a => {
+                  const sel = aspect === a;
+                  return (
+                    <button key={a} onClick={() => setAspect(a)} style={{
+                      padding: "9px 0", borderRadius: 9, border: "none",
+                      background: sel ? "white" : "transparent",
+                      color: sel ? "#1a1a2e" : "rgba(26,26,46,0.5)",
+                      fontWeight: 700, fontSize: 12.5, cursor: "pointer",
+                      fontFamily: "'Space Grotesk',sans-serif",
+                      boxShadow: sel ? "0 1px 0 rgba(0,0,0,0.04)" : "none",
+                    }}>{a === "16:9" ? "▭ 16:9" : a === "9:16" ? "▯ 9:16" : "◻ 1:1"}</button>
                   );
                 })}
               </div>
