@@ -362,15 +362,19 @@ export default function PetStudioPro() {
               Make {petDisplayName} a star
             </h1>
           </div>
-          {isDemo && (
-            <a href="/" style={{
-              padding: "10px 16px", borderRadius: 12, fontSize: 13,
-              background: "rgba(59,130,246,0.10)", color: "#1e3a8a",
-              border: "1px solid rgba(59,130,246,0.25)",
-              fontWeight: 800, textDecoration: "none",
-              fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.05em",
-            }}>💡 DEMO · Sign in →</a>
-          )}
+          {isDemo && (() => {
+            // authed-but-petless gets an Adopt CTA, not a sign-in wall they've passed.
+            const authed = typeof window !== "undefined" && !!localStorage.getItem("petagen_jwt");
+            return (
+              <a href={authed ? "/?section=my%20pet" : "/"} style={{
+                padding: "10px 16px", borderRadius: 12, fontSize: 13,
+                background: "rgba(59,130,246,0.10)", color: "#1e3a8a",
+                border: "1px solid rgba(59,130,246,0.25)",
+                fontWeight: 800, textDecoration: "none",
+                fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.05em",
+              }}>{authed ? "🐾 Adopt a pet to star →" : "💡 DEMO · Sign in →"}</a>
+            );
+          })()}
           <Pill label="CREDITS" value={credits == null ? "—" : String(credits)} />
         </div>
 
@@ -406,7 +410,15 @@ export default function PetStudioPro() {
                 <div style={{ color: "white", textAlign: "center", padding: 30 }}>
                   <div style={{ fontSize: 40, marginBottom: 10 }}>⚠</div>
                   <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Generation failed</div>
-                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", maxWidth: 380, margin: "0 auto" }}>{error}</div>
+                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", maxWidth: 380, margin: "0 auto 16px" }}>{error}</div>
+                  <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                    <button onClick={() => generate()} style={{
+                      padding: "9px 18px", borderRadius: 10, border: "none", cursor: "pointer",
+                      background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "white",
+                      fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
+                    }}>⟳ Try again</button>
+                    <button onClick={() => setView("idle")} style={btnGhost}>✎ Edit prompt</button>
+                  </div>
                 </div>
               )}
             </div>

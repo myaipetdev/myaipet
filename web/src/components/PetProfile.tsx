@@ -80,12 +80,12 @@ function AnimatedStatBar({ label, value, color, max = 100, icon }: any) {
   return (
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, alignItems: "center" }}>
-        <span style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.5)", display: "flex", alignItems: "center", gap: 4 }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,46,0.5)", display: "flex", alignItems: "center", gap: 4 }}>
           {icon && <span style={{ fontSize: 11 }}>{icon}</span>}
           {label}
         </span>
         <span style={{
-          fontFamily: "mono", fontSize: 10, color,
+          fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color,
           animation: isLow ? "pulse 1.5s ease-in-out infinite" : "none",
         }}>
           {displayValue}/{max}
@@ -185,7 +185,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
       // Step 1: Switch to BSC
       if (isPETActivityEnabled()) {
         try { await switchToBsc(); } catch {
-          setAdoptError("❌ BSC 네트워크로 전환해주세요");
+          setAdoptError("❌ Switch to the BSC network");
           setCreating(false);
           return;
         }
@@ -232,10 +232,10 @@ function CreatePetModal({ onClose, onCreated }: any) {
       console.error("[Adopt] Error:", e);
       const raw = (e?.shortMessage || e?.message || "").toLowerCase();
       const msg = raw.includes("insufficient") || raw.includes("fund")
-        ? "BNB 잔액이 부족합니다. BSC 지갑에 BNB를 충전해주세요."
+        ? "Not enough BNB — top up your BSC wallet."
         : raw.includes("reject") || raw.includes("denied") || raw.includes("user refused")
-        ? "트랜잭션이 거부되었습니다"
-        : e.message || "입양에 실패했습니다";
+        ? "Transaction rejected"
+        : e.message || "Adoption failed";
       setAdoptError(`❌ ${msg}`);
     }
     setCreating(false);
@@ -314,7 +314,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
       onCreated(pet);
       onClose();
     } catch (e: any) {
-      setAdoptError("❌ " + (e.message || "입양에 실패했습니다"));
+      setAdoptError("❌ " + (e.message || "Adoption failed"));
     }
     setCreating(false);
   };
@@ -396,7 +396,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
 
           <button onClick={onClose} style={{
             marginTop: 20, background: "none", border: "none", cursor: "pointer",
-            fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.35)",
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "rgba(26,26,46,0.35)",
           }}>Cancel</button>
         </div>
       </div>
@@ -457,7 +457,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
                   <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600, color: "#1a1a2e" }}>
                     Tap to upload your pet's photo
                   </div>
-                  <div style={{ fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.4)", marginTop: 4 }}>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(26,26,46,0.4)", marginTop: 4 }}>
                     JPG, PNG up to 10MB
                   </div>
                 </>
@@ -479,7 +479,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
 
             {/* Name */}
             <div>
-              <label style={{ fontFamily: "mono", fontSize: 10, fontWeight: 600, color: "rgba(26,26,46,0.5)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600, color: "rgba(26,26,46,0.5)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
                 Pet Name *
               </label>
               <input value={uploadName} onChange={e => setUploadName(e.target.value)} placeholder="What's your pet's name?"
@@ -493,7 +493,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
 
             {/* Species */}
             <div>
-              <label style={{ fontFamily: "mono", fontSize: 10, fontWeight: 600, color: "rgba(26,26,46,0.5)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600, color: "rgba(26,26,46,0.5)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
                 Species
               </label>
               <input value={uploadSpecies} onChange={e => setUploadSpecies(e.target.value)} placeholder="e.g. Golden Retriever, Persian Cat, Dragon..."
@@ -507,7 +507,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
 
             {/* Personality */}
             <div>
-              <label style={{ fontFamily: "mono", fontSize: 10, fontWeight: 600, color: "rgba(26,26,46,0.5)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600, color: "rgba(26,26,46,0.5)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
                 Personality
               </label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
@@ -671,7 +671,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
               boxShadow: "0 0 40px rgba(139,92,246,0.1)",
               animation: "slideIn 0.3s ease-out",
             }}>
-              <div style={{ fontFamily: "mono", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.15em", color: "#7c3aed", marginBottom: 10 }}>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.15em", color: "#7c3aed", marginBottom: 10 }}>
                 ✨ YOUR NEW COMPANION
               </div>
               <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 24, fontWeight: 800, color: "#1a1a2e", marginBottom: 4, letterSpacing: "-0.02em" }}>
@@ -681,7 +681,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
                 {petData.species_name}
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
-                <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: "mono", background: "rgba(139,92,246,0.12)", color: "#7c3aed", fontWeight: 600 }}>
+                <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: "'JetBrains Mono', monospace", background: "rgba(139,92,246,0.12)", color: "#7c3aed", fontWeight: 600 }}>
                   {petData.personality}
                 </span>
               </div>
@@ -711,7 +711,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
               <button key={i} onClick={() => sendMessage(s)} style={{
                 padding: "6px 12px", borderRadius: 20, border: "1px solid rgba(139,92,246,0.2)",
                 background: "rgba(139,92,246,0.05)", cursor: "pointer",
-                fontFamily: "mono", fontSize: 11, color: "#7c3aed",
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "#7c3aed",
                 transition: "all 0.2s", whiteSpace: "nowrap",
               }}>{s}</button>
             ))}
@@ -1204,7 +1204,7 @@ export default function PetProfile() {
           animation: "spin 0.8s linear infinite", margin: "0 auto 16px",
         }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-        <div style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.35)" }}>Loading your pets...</div>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "rgba(26,26,46,0.35)" }}>Loading your pets...</div>
       </div>
     );
   }
@@ -1229,15 +1229,15 @@ export default function PetProfile() {
         <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 30, color: "#1a1a2e", marginBottom: 10 }}>
           No Pets Yet
         </h2>
-        <p style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.5)", marginBottom: 8, lineHeight: 1.8 }}>
+        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "rgba(26,26,46,0.5)", marginBottom: 8, lineHeight: 1.8 }}>
           Adopt your first AI pet! They&apos;ll grow, learn your patterns, and develop a unique personality over time.
         </p>
-        <div style={{ fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.35)", marginBottom: 32, lineHeight: 1.7 }}>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(26,26,46,0.35)", marginBottom: 32, lineHeight: 1.7 }}>
           Feed them, play with them, talk to them — every interaction matters.
         </div>
         <button onClick={() => setShowCreate(true)} style={{
           background: "linear-gradient(135deg,#f59e0b,#d97706)", border: "none", borderRadius: 14,
-          padding: "15px 40px", fontFamily: "mono", fontSize: 14, fontWeight: 600, color: "white", cursor: "pointer",
+          padding: "15px 40px", fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 600, color: "white", cursor: "pointer",
           boxShadow: "0 0 40px rgba(245,158,11,0.3), 0 8px 24px rgba(0,0,0,0.1)",
           transition: "transform 0.2s",
         }}>
@@ -1257,21 +1257,21 @@ export default function PetProfile() {
           setShowOnboarding(pet); // Show enhanced onboarding after adoption
           if (isPETActivityEnabled()) {
             try {
-              setChainToast("⛓️ 온체인 기록 중...");
+              setChainToast("⛓️ Recording on-chain…");
               const speciesName = pet.personality_modifiers?.species_name || PET_SPECIES[pet.species] || "Pet";
               await parentRecordAdoption(pet.name, speciesName);
-              setChainToast("✅ 온체인 기록 완료!");
+              setChainToast("✅ Saved on-chain");
               setTimeout(() => setChainToast(null), 3000);
             } catch (e: any) {
               console.error("[PETActivity] Full error:", JSON.stringify(e, Object.getOwnPropertyNames(e)));
               const raw = (e?.shortMessage || e?.message || "").toLowerCase();
               const msg = raw.includes("insufficient") || raw.includes("bnb") || raw.includes("fund")
-                ? "BNB 잔액이 부족합니다"
+                ? "Not enough BNB"
                 : raw.includes("reject") || raw.includes("denied") || raw.includes("user refused")
-                ? "트랜잭션이 거부되었습니다"
+                ? "Transaction rejected"
                 : raw.includes("chain") || raw.includes("network")
-                ? "BSC 네트워크로 전환해주세요"
-                : `온체인 기록 실패: ${e?.shortMessage || e?.message || "알 수 없는 오류"}`;
+                ? "Switch to the BSC network"
+                : `On-chain save failed: ${e?.shortMessage || e?.message || "unknown error"}`;
               setChainToast(`❌ ${msg}`);
               setTimeout(() => setChainToast(null), 6000);
             }
@@ -1316,7 +1316,7 @@ export default function PetProfile() {
           }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>&#x26d3;&#xfe0f;</div>
             <div style={{ fontSize: 24, fontWeight: 700, color: "#1a1a1a" }}>{chainToast}</div>
-            <div style={{ fontSize: 14, color: "#888", marginTop: 8 }}>{chainToast?.startsWith("❌") ? "지갑을 닫으면 자동으로 사라집니다" : "지갑에서 확인해주세요"}</div>
+            <div style={{ fontSize: 14, color: "#888", marginTop: 8 }}>{chainToast?.startsWith("❌") ? "Dismiss the wallet to clear this" : "Confirm in your wallet"}</div>
           </div>
         </div>
       )}
@@ -1411,7 +1411,7 @@ export default function PetProfile() {
               }}>
                 {p.name}
               </div>
-              <div style={{ fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.35)" }}>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "rgba(26,26,46,0.35)" }}>
                 Lv.{p.level} {getSpeciesName(p)}
               </div>
             </div>
@@ -1421,24 +1421,24 @@ export default function PetProfile() {
         {pets.length < petSlots ? (
           <button onClick={() => setShowCreate(true)} style={{
             background: "rgba(0,0,0,0.02)", border: "1px dashed rgba(0,0,0,0.12)",
-            borderRadius: 10, padding: "10px 18px", cursor: "pointer", fontFamily: "mono", fontSize: 11,
+            borderRadius: 10, padding: "10px 18px", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
             color: "rgba(26,26,46,0.35)", transition: "all 0.2s",
           }}>+ Adopt New</button>
         ) : petSlots < 5 ? (
           <button onClick={handleUnlockSlot} disabled={unlockingSlot} style={{
             background: "rgba(251,191,36,0.08)", border: "1px dashed rgba(251,191,36,0.3)",
             borderRadius: 10, padding: "10px 18px", cursor: unlockingSlot ? "wait" : "pointer",
-            fontFamily: "mono", fontSize: 11, color: "#b45309", transition: "all 0.2s",
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "#b45309", transition: "all 0.2s",
           }}>
             🔓 Unlock Slot ({slotPrices[petSlots] || 500} credits)
           </button>
         ) : null}
-        <span style={{ fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.3)" }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "rgba(26,26,46,0.3)" }}>
           {pets.length}/{petSlots} slots
         </span>
         {balance !== null && (<>
           <div style={{
-            fontFamily: "mono", fontSize: 11, padding: "6px 14px", borderRadius: 10,
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 11, padding: "6px 14px", borderRadius: 10,
             background: "linear-gradient(135deg, rgba(251,191,36,0.08), rgba(245,158,11,0.04))",
             border: "1px solid rgba(251,191,36,0.2)",
             color: "#b45309", fontWeight: 600,
@@ -1525,21 +1525,21 @@ export default function PetProfile() {
             </h2>
             <div style={{ display: "flex", gap: 6, justifyContent: "center", alignItems: "center", flexWrap: "wrap" }}>
               <span style={{
-                fontFamily: "mono", fontSize: 10, padding: "3px 10px", borderRadius: 10,
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 10, padding: "3px 10px", borderRadius: 10,
                 background: "rgba(251,191,36,0.1)", color: "#b45309",
                 border: "1px solid rgba(251,191,36,0.2)",
               }}>
                 Lv.{pet.level}
               </span>
               <span style={{
-                fontFamily: "mono", fontSize: 10, padding: "3px 10px", borderRadius: 10,
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 10, padding: "3px 10px", borderRadius: 10,
                 background: "rgba(139,92,246,0.08)", color: "#7c3aed",
                 border: "1px solid rgba(139,92,246,0.15)",
               }}>
                 {pet.personality_type}
               </span>
               <span style={{
-                fontFamily: "mono", fontSize: 10, padding: "3px 10px", borderRadius: 10,
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 10, padding: "3px 10px", borderRadius: 10,
                 background: `${moodCfg.color}12`, color: moodCfg.color,
                 border: `1px solid ${moodCfg.color}25`,
               }}>
@@ -1563,7 +1563,7 @@ export default function PetProfile() {
                     placeholder="e.g. small black chihuahua with big ears"
                     style={{
                       width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid rgba(0,0,0,0.1)",
-                      fontFamily: "mono", fontSize: 10, outline: "none", boxSizing: "border-box", marginBottom: 6,
+                      fontFamily: "'JetBrains Mono', monospace", fontSize: 10, outline: "none", boxSizing: "border-box", marginBottom: 6,
                     }}
                   />
                   <div style={{ display: "flex", gap: 4 }}>
@@ -1576,21 +1576,21 @@ export default function PetProfile() {
                       } catch (e: any) { alert(e.message); }
                     }} style={{
                       padding: "4px 12px", borderRadius: 6, border: "none",
-                      background: "#f59e0b", color: "white", fontFamily: "mono", fontSize: 10, cursor: "pointer",
+                      background: "#f59e0b", color: "white", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, cursor: "pointer",
                     }}>Save</button>
                     <button onClick={() => setEditingDesc(false)} style={{
                       padding: "4px 12px", borderRadius: 6, border: "1px solid rgba(0,0,0,0.1)",
-                      background: "white", fontFamily: "mono", fontSize: 10, cursor: "pointer",
+                      background: "white", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, cursor: "pointer",
                     }}>Cancel</button>
                   </div>
                 </div>
               ) : (
                 <div onClick={() => { setDescInput(pet.appearance_desc || ""); setEditingDesc(true); }}
                   style={{ cursor: "pointer" }}>
-                  <div style={{ fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.4)", marginBottom: 2 }}>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "rgba(26,26,46,0.4)", marginBottom: 2 }}>
                     {pet.appearance_desc ? "APPEARANCE" : "⚠️ ADD APPEARANCE (required for AI generation)"}
                   </div>
-                  <div style={{ fontFamily: "mono", fontSize: 10, color: pet.appearance_desc ? "rgba(26,26,46,0.6)" : "#b45309" }}>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: pet.appearance_desc ? "rgba(26,26,46,0.6)" : "#b45309" }}>
                     {pet.appearance_desc || "Tap to describe your pet's look"}
                   </div>
                 </div>
@@ -1671,10 +1671,10 @@ export default function PetProfile() {
             background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)",
             display: "flex", justifyContent: "space-between",
           }}>
-            <span style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.35)" }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,46,0.35)" }}>
               Total Interactions
             </span>
-            <span style={{ fontFamily: "mono", fontSize: 10, color: "#b45309", fontWeight: 600 }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "#b45309", fontWeight: 600 }}>
               {pet.total_interactions}
             </span>
           </div>
@@ -1694,7 +1694,7 @@ export default function PetProfile() {
                   <div style={{ fontSize: 12, fontWeight: 800, color: "#b45309", letterSpacing: "-0.01em" }}>
                     {(pet as any).care_streak}-day care streak
                   </div>
-                  <div style={{ fontSize: 10, fontFamily: "mono", color: "rgba(180,83,9,0.7)", marginTop: 1 }}>
+                  <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: "rgba(180,83,9,0.7)", marginTop: 1 }}>
                     {(pet as any).care_streak % 7 === 0
                       ? "NFT minted! ✨"
                       : `Next NFT at day ${Math.ceil((pet as any).care_streak / 7) * 7}`}
@@ -1717,7 +1717,7 @@ export default function PetProfile() {
             <button onClick={() => setShowRelease(true)} style={{
               marginTop: 10, width: "100%", padding: "8px", borderRadius: 8,
               background: "transparent", border: "1px solid rgba(220,38,38,0.1)",
-              fontFamily: "mono", fontSize: 10, color: "rgba(220,38,38,0.4)",
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(220,38,38,0.4)",
               cursor: "pointer", transition: "all 0.2s",
             }}>
               Release {pet.name}
@@ -1727,13 +1727,13 @@ export default function PetProfile() {
               marginTop: 10, padding: 12, borderRadius: 10,
               background: "rgba(220,38,38,0.04)", border: "1px solid rgba(220,38,38,0.15)",
             }}>
-              <div style={{ fontFamily: "mono", fontSize: 11, color: "#dc2626", marginBottom: 8 }}>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "#dc2626", marginBottom: 8 }}>
                 Release {pet.name}? This cannot be undone.
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={handleRelease} disabled={releasing} style={{
                   flex: 1, padding: "8px", borderRadius: 8, border: "none",
-                  background: "#dc2626", color: "white", fontFamily: "mono",
+                  background: "#dc2626", color: "white", fontFamily: "'JetBrains Mono', monospace",
                   fontSize: 11, fontWeight: 600, cursor: releasing ? "wait" : "pointer",
                 }}>
                   {releasing ? "..." : "Confirm"}
@@ -1741,7 +1741,7 @@ export default function PetProfile() {
                 <button onClick={() => setShowRelease(false)} style={{
                   flex: 1, padding: "8px", borderRadius: 8,
                   border: "1px solid rgba(0,0,0,0.15)", background: "white",
-                  color: "#1a1a2e", fontFamily: "mono", fontSize: 11,
+                  color: "#1a1a2e", fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
                   fontWeight: 600, cursor: "pointer",
                 }}>
                   Cancel
@@ -1817,7 +1817,7 @@ export default function PetProfile() {
             boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
           }}>
             <div style={{
-              fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.5)", marginBottom: 14,
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(26,26,46,0.5)", marginBottom: 14,
               textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600,
             }}>
               Interact with <span style={{ fontWeight: 700, color: "#1a1a2e" }}>{pet.name}</span>
@@ -1928,7 +1928,7 @@ export default function PetProfile() {
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {Object.entries(lastResponse.stat_changes || {}).filter(([, v]: any) => v !== 0).map(([k, v]: any) => (
                       <span key={k} style={{
-                        fontFamily: "mono", fontSize: 10, padding: "3px 8px", borderRadius: 8,
+                        fontFamily: "'JetBrains Mono', monospace", fontSize: 10, padding: "3px 8px", borderRadius: 8,
                         background: v > 0 ? "rgba(74,222,128,0.1)" : "rgba(248,113,113,0.1)",
                         color: v > 0 ? "#16a34a" : "#dc2626",
                         border: v > 0 ? "1px solid rgba(74,222,128,0.2)" : "1px solid rgba(248,113,113,0.2)",
@@ -1940,7 +1940,7 @@ export default function PetProfile() {
                   </div>
                   {lastResponse.memory_created && (
                     <div style={{
-                      marginTop: 8, fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.35)",
+                      marginTop: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,46,0.35)",
                       display: "flex", alignItems: "center", gap: 4,
                     }}>
                       <span style={{ fontSize: 10 }}>💭</span>
@@ -1983,7 +1983,7 @@ export default function PetProfile() {
               boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
             }}>
               <div style={{
-                fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.5)", marginBottom: 14,
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(26,26,46,0.5)", marginBottom: 14,
                 textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600,
               }}>
                 Evolution
@@ -2018,14 +2018,14 @@ export default function PetProfile() {
                           {isPast ? "✓" : s.icon}
                         </div>
                         <div style={{
-                          fontFamily: "mono", fontSize: 8, marginTop: 4,
+                          fontFamily: "'JetBrains Mono', monospace", fontSize: 8, marginTop: 4,
                           color: isCurrent ? "#b45309" : isPast ? "#16a34a" : "rgba(26,26,46,0.3)",
                           fontWeight: isCurrent ? 700 : 400,
                         }}>
                           {s.name}
                         </div>
                         <div style={{
-                          fontFamily: "mono", fontSize: 7,
+                          fontFamily: "'JetBrains Mono', monospace", fontSize: 7,
                           color: "rgba(26,26,46,0.25)",
                         }}>
                           Lv.{s.minLevel}
@@ -2054,7 +2054,7 @@ export default function PetProfile() {
                     <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600, color: "#1a1a2e" }}>
                       {evoStatus.current_stage?.icon} {evoStatus.current_stage?.name} Stage
                     </div>
-                    <div style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.4)", marginTop: 2 }}>
+                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,46,0.4)", marginTop: 2 }}>
                       Level {evoStatus.level}
                       {evoStatus.next_stage && ` · Need Lv.${evoStatus.next_stage.minLevel} for ${evoStatus.next_stage.name}`}
                       {!evoStatus.next_stage && " · Max Evolution Reached!"}
@@ -2062,7 +2062,7 @@ export default function PetProfile() {
                   </div>
                   {evoStatus.next_stage && (
                     <div style={{
-                      fontFamily: "mono", fontSize: 10, padding: "4px 10px", borderRadius: 8,
+                      fontFamily: "'JetBrains Mono', monospace", fontSize: 10, padding: "4px 10px", borderRadius: 8,
                       background: evoStatus.can_evolve ? "rgba(74,222,128,0.1)" : "rgba(0,0,0,0.04)",
                       color: evoStatus.can_evolve ? "#16a34a" : "rgba(26,26,46,0.35)",
                       border: evoStatus.can_evolve ? "1px solid rgba(74,222,128,0.2)" : "1px solid rgba(0,0,0,0.06)",
@@ -2097,7 +2097,7 @@ export default function PetProfile() {
                     ? "linear-gradient(135deg, #f59e0b, #d97706)"
                     : "rgba(0,0,0,0.04)",
                   color: evoStatus.can_evolve ? "white" : "rgba(26,26,46,0.25)",
-                  fontFamily: "mono", fontSize: 13, fontWeight: 600,
+                  fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600,
                   boxShadow: evoStatus.can_evolve ? "0 0 24px rgba(245,158,11,0.25)" : "none",
                   transition: "all 0.2s",
                   opacity: evolving ? 0.7 : 1,
@@ -2120,11 +2120,11 @@ export default function PetProfile() {
                     {evoResult.new_stage?.icon} Evolved to {evoResult.new_stage?.name}!
                   </div>
                   {evoResult.skills_unlocked?.length > 0 && (
-                    <div style={{ fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.5)", marginBottom: 4 }}>
+                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(26,26,46,0.5)", marginBottom: 4 }}>
                       New skills: {evoResult.skills_unlocked.join(", ")}
                     </div>
                   )}
-                  <div style={{ fontFamily: "mono", fontSize: 10, color: "#16a34a" }}>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "#16a34a" }}>
                     +{evoResult.credits_earned} credits earned!
                   </div>
                 </div>
@@ -2134,7 +2134,7 @@ export default function PetProfile() {
               {evoStatus.skills?.length > 0 && (
                 <div style={{ marginTop: 14 }}>
                   <div style={{
-                    fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.4)", marginBottom: 8,
+                    fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "rgba(26,26,46,0.4)", marginBottom: 8,
                     textTransform: "uppercase", letterSpacing: "0.1em",
                   }}>
                     Unlocked Skills
@@ -2142,7 +2142,7 @@ export default function PetProfile() {
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {evoStatus.skills.map((s: any) => (
                       <span key={s.skill_key} style={{
-                        fontFamily: "mono", fontSize: 11, padding: "5px 12px", borderRadius: 10,
+                        fontFamily: "'JetBrains Mono', monospace", fontSize: 11, padding: "5px 12px", borderRadius: 10,
                         background: "rgba(139,92,246,0.08)", color: "#7c3aed",
                         border: "1px solid rgba(139,92,246,0.15)",
                         fontWeight: 500,
@@ -2156,13 +2156,15 @@ export default function PetProfile() {
             </div>
           )}
 
+          {/* Pet Daydream FIRST — the payoff of the memory ledger ("your pet has
+              been thinking about you") should land before the diary/feed loop. */}
+          {pet && <PetInsightCard petId={pet.id} petName={pet.name} />}
+
+          {/* Power up — pay-to-boost stats (402 → PaywallModal loop, mounted below). */}
+          {pet && <StatUpgradePanel petId={pet.id} onStatsChanged={() => loadPetStatus(pet.id)} />}
+
           {/* Weekly diary — the pet's own journal of the week with the owner. */}
           {pet && <PetDiary petId={pet.id} petName={pet.name} accent={moodCfg.color} />}
-
-          {/* Pet Daydream — the pet's proactive caring insights, synthesized by
-              connecting two memories about the owner. The payoff of the whole
-              memory ledger. */}
-          {pet && <PetInsightCard petId={pet.id} petName={pet.name} />}
 
           {/* Memories Timeline — show a beautiful empty state when none exist
               yet so the user knows what's coming. Previously the section just
@@ -2203,7 +2205,7 @@ export default function PetProfile() {
               boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
             }}>
               <div style={{
-                fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.5)", marginBottom: 14,
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(26,26,46,0.5)", marginBottom: 14,
                 textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600,
               }}>
                 Memory Timeline
@@ -2232,7 +2234,7 @@ export default function PetProfile() {
                       {m.content}
                     </div>
                     <div style={{
-                      fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.3)", marginTop: 3,
+                      fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "rgba(26,26,46,0.3)", marginTop: 3,
                       display: "flex", gap: 8,
                     }}>
                       <span>{m.emotion}</span>
@@ -2250,21 +2252,21 @@ export default function PetProfile() {
           loadPets();
           if (isPETActivityEnabled() && pet?.name) {
             try {
-              setChainToast("⛓️ 온체인 기록 중...");
+              setChainToast("⛓️ Recording on-chain…");
               const speciesName = pet.personality_modifiers?.species_name || PET_SPECIES[pet.species] || "Pet";
               await parentRecordAdoption(pet.name, speciesName);
-              setChainToast("✅ 온체인 기록 완료!");
+              setChainToast("✅ Saved on-chain");
               setTimeout(() => setChainToast(null), 3000);
             } catch (e: any) {
               console.error("[PETActivity] Full error:", JSON.stringify(e, Object.getOwnPropertyNames(e)));
               const raw = (e?.shortMessage || e?.message || "").toLowerCase();
               const msg = raw.includes("insufficient") || raw.includes("bnb") || raw.includes("fund")
-                ? "BNB 잔액이 부족합니다"
+                ? "Not enough BNB"
                 : raw.includes("reject") || raw.includes("denied") || raw.includes("user refused")
-                ? "트랜잭션이 거부되었습니다"
+                ? "Transaction rejected"
                 : raw.includes("chain") || raw.includes("network")
-                ? "BSC 네트워크로 전환해주세요"
-                : `온체인 기록 실패: ${e?.shortMessage || e?.message || "알 수 없는 오류"}`;
+                ? "Switch to the BSC network"
+                : `On-chain save failed: ${e?.shortMessage || e?.message || "unknown error"}`;
               setChainToast(`❌ ${msg}`);
               setTimeout(() => setChainToast(null), 6000);
             }
@@ -2300,7 +2302,7 @@ export default function PetProfile() {
                 <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 600, color: "#1a1a2e" }}>
                   Chat with {pet.name}
                 </div>
-                <div style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.4)" }}>
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,46,0.4)" }}>
                   {pet.personality_type} · {MOOD_CONFIG[pet.current_mood || "neutral"]?.emoji} {MOOD_CONFIG[pet.current_mood || "neutral"]?.label}
                 </div>
               </div>
@@ -2323,7 +2325,7 @@ export default function PetProfile() {
                       <img src={pet.avatar_url} alt="" style={{ width: 60, height: 60, borderRadius: 16, objectFit: "cover" }} />
                     ) : "🐾"}
                   </div>
-                  <div style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.35)", lineHeight: 1.8 }}>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "rgba(26,26,46,0.35)", lineHeight: 1.8 }}>
                     Say hi to {pet.name}!<br/>
                     Your pet responds based on their personality and mood.
                   </div>
@@ -2332,7 +2334,7 @@ export default function PetProfile() {
                       <button key={q} onClick={() => { setChatInput(q); }} style={{
                         background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.15)",
                         borderRadius: 20, padding: "5px 12px", cursor: "pointer",
-                        fontFamily: "mono", fontSize: 10, color: "#b45309",
+                        fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "#b45309",
                       }}>{q}</button>
                     ))}
                   </div>
@@ -2363,7 +2365,7 @@ export default function PetProfile() {
                       ? "linear-gradient(135deg, #f59e0b, #d97706)"
                       : "rgba(255,255,255,0.9)",
                     color: msg.role === "user" ? "white" : "#1a1a2e",
-                    fontFamily: "mono", fontSize: 12, lineHeight: 1.6,
+                    fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: 1.6,
                     border: msg.role === "pet" ? "1px solid rgba(0,0,0,0.06)" : "none",
                     boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
                     borderBottomRightRadius: msg.role === "user" ? 4 : 16,
@@ -2431,7 +2433,7 @@ export default function PetProfile() {
                   padding: "10px 18px", borderRadius: 12, border: "none",
                   background: chatInput.trim() ? "linear-gradient(135deg, #f59e0b, #d97706)" : "rgba(0,0,0,0.04)",
                   color: chatInput.trim() ? "white" : "rgba(26,26,46,0.25)",
-                  fontFamily: "mono", fontSize: 12, fontWeight: 600,
+                  fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 600,
                   cursor: chatInput.trim() ? "pointer" : "default",
                 }}
               >
