@@ -72,6 +72,43 @@ const PROMPT_IDEAS = [
   "flying through a rainbow",
 ];
 
+// Personality/element-aware prompt starters, so the suggestion chips feel like
+// they're "about" the selected pet rather than generic. Falls back to the
+// generic ideas above for unknown traits.
+const PERSONALITY_PROMPTS: Record<string, string[]> = {
+  playful:     ["chasing soap bubbles in a sunlit park", "bouncing through a colorful ball pit"],
+  brave:       ["standing heroically on a windswept cliff at dawn", "leading a daring mountain expedition"],
+  gentle:      ["napping in a meadow of wildflowers", "wrapped in a cozy blanket by a crackling fire"],
+  friendly:    ["sharing a picnic with woodland friends", "waving hello from a flower cart"],
+  shy:         ["peeking out from behind autumn leaves", "curled up in a quiet library nook"],
+  lazy:        ["lounging in a hammock under palm trees", "sprawled across a warm sunbeam"],
+  curious:     ["exploring a glowing crystal cave", "studying a vintage map with a magnifying glass"],
+  mischievous: ["sneaking a cookie from the jar", "plotting something with a sly little grin"],
+  adventurous: ["sailing a tiny ship across stormy seas", "trekking through an overgrown jungle temple"],
+  dramatic:    ["posing under a single spotlight on stage", "cape swirling on a stormy rooftop"],
+  wise:        ["meditating atop a misty mountain shrine", "reading ancient scrolls by candlelight"],
+  sassy:       ["strutting down a neon fashion runway", "throwing shade in tiny sunglasses"],
+};
+const ELEMENT_PROMPTS: Record<string, string> = {
+  fire:     "wreathed in glowing embers at dusk",
+  water:    "splashing through a crystal-clear lagoon",
+  grass:    "frolicking in a field of fresh clover",
+  electric: "crackling with neon lightning energy",
+  ice:      "gliding across a shimmering frozen lake",
+  psychic:  "surrounded by softly floating glowing orbs",
+  dark:     "cloaked in moonlit shadow and starlight",
+  light:    "radiating a warm golden halo",
+};
+function promptIdeasFor(pet: any): string[] {
+  const ideas: string[] = [];
+  const pt = pet?.personality_type;
+  const el = pet?.element;
+  if (pt && PERSONALITY_PROMPTS[pt]) ideas.push(...PERSONALITY_PROMPTS[pt]);
+  if (el && ELEMENT_PROMPTS[el]) ideas.push(ELEMENT_PROMPTS[el]);
+  for (const g of PROMPT_IDEAS) { if (ideas.length >= 6) break; if (!ideas.includes(g)) ideas.push(g); }
+  return ideas.slice(0, 6);
+}
+
 // Unauthenticated demo subject = the MY AI PET mascot, so the try-before-signup
 // experience is on-brand (a real pet portrait, not a placeholder).
 const DEMO_PET: Pet = { id: -1, name: "Mochi", avatar_url: "/mascot.jpg", species: 0, level: 5 };
@@ -812,7 +849,7 @@ export default function PetStudioPro() {
               color: "rgba(26,26,46,0.55)", letterSpacing: "0.06em",
               alignSelf: "center", marginRight: 4,
             }}>TRY:</span>
-            {PROMPT_IDEAS.slice(0, 6).map((idea, i) => (
+            {promptIdeasFor(pet).map((idea, i) => (
               <button key={i} onClick={() => setPrompt(idea)} style={suggestionChip}>
                 {idea}
               </button>
