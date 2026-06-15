@@ -1009,13 +1009,26 @@ function PreviewIdle({ pet }: { pet: Pet | null }) {
 }
 
 function PreviewGenerating({ kind }: { kind: "image" | "video" }) {
+  const [secs, setSecs] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setSecs((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const lines = kind === "image"
+    ? ["Painting your pet…", "Adding detail…", "Almost there…"]
+    : ["Setting the scene…", "Rendering frames…", "Adding motion…", "Almost there…"];
+  const line = lines[Math.min(Math.floor(secs / 6), lines.length - 1)];
+  const total = kind === "image" ? 12 : 90;
+  const pct = Math.min(95, Math.round((secs / total) * 100));
   return (
-    <div style={{ color: "white", textAlign: "center", padding: 30 }}>
+    <div style={{ color: "white", textAlign: "center", padding: 30, width: "100%" }}>
       <div className="studio-spin" style={{ fontSize: 44, marginBottom: 14 }}>🎞</div>
-      <div style={{ fontSize: 17, fontWeight: 700 }}>Generating</div>
-      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 4 }}>
-        {kind === "image" ? "Just a few seconds…" : "30 – 90 seconds. Don't close the page."}
+      <div style={{ fontSize: 17, fontWeight: 700 }}>Generating · {secs}s</div>
+      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 4 }}>{line}</div>
+      <div style={{ height: 4, borderRadius: 999, background: "rgba(255,255,255,0.15)", marginTop: 16, maxWidth: 240, marginInline: "auto", overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#f59e0b,#fbbf24)", transition: "width 1s linear" }} />
       </div>
+      {kind === "video" && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 8 }}>Don&apos;t close the page</div>}
     </div>
   );
 }

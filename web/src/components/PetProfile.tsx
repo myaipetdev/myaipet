@@ -1085,7 +1085,7 @@ export default function PetProfile() {
       await loadPets();
       await loadBalance();
     } catch (e: any) {
-      alert(e.message || "Evolution failed");
+      showError(e.message || "Evolution failed");
     }
     setEvolving(false);
   };
@@ -1509,16 +1509,16 @@ export default function PetProfile() {
                     );
                     if (!newName) return;
                     const trimmed = newName.trim().slice(0, 20);
-                    if (trimmed.length < 2) { alert("Pick a name with at least 2 letters."); return; }
+                    if (trimmed.length < 2) { showError("Pick a name with at least 2 letters."); return; }
                     try {
                       const r = await fetch(`/api/pets/${pet.id}`, {
                         method: "PATCH",
                         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
                         body: JSON.stringify({ name: trimmed }),
                       });
-                      if (!r.ok) { alert("Couldn't save — try again?"); return; }
+                      if (!r.ok) { showError("Couldn't save — try again?"); return; }
                       window.location.reload();
-                    } catch { alert("Network error"); }
+                    } catch { showError("Network error"); }
                   }}
                   style={{
                     width: "100%", padding: "10px 16px", fontSize: 14,
@@ -1584,7 +1584,7 @@ export default function PetProfile() {
                         await loadPetStatus(pet.id);
                         await loadPets();
                         setEditingDesc(false);
-                      } catch (e: any) { alert(e.message); }
+                      } catch (e: any) { showError(e.message); }
                     }} style={{
                       padding: "4px 12px", borderRadius: 6, border: "none",
                       background: "#f59e0b", color: "white", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, cursor: "pointer",
