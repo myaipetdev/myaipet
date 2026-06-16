@@ -367,6 +367,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
 // ── Gallery Card (Midjourney/Leonardo style) ──
 function GalleryCard({ item, index, onLike, onClick }: any) {
   const [hovered, setHovered] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [mediaFailed, setMediaFailed] = useState(false);
   const [cardVisible, setCardVisible] = useState(true);
@@ -595,6 +596,28 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
               </span>
             )}
 
+            {hovered && (
+              <button
+                onClick={async e => {
+                  e.stopPropagation();
+                  try {
+                    await navigator.clipboard.writeText(`https://app.myaipet.ai/c/${item.generation_id || item.id}`);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1600);
+                  } catch {}
+                }}
+                style={{
+                  background: copied ? "rgba(22,163,74,0.85)" : "rgba(0,0,0,0.45)", border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 22, height: 22, borderRadius: 6, padding: 0,
+                  animation: "fadeUp 0.15s ease-out", flexShrink: 0,
+                }}
+                title={copied ? "Copied!" : "Copy link"}
+                aria-label="Copy link"
+              >
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.85)", fontWeight: 700, lineHeight: 1 }}>{copied ? "✓" : "🔗"}</span>
+              </button>
+            )}
             {hovered && (
               <button
                 onClick={e => {
