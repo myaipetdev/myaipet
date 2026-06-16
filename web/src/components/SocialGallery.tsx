@@ -300,7 +300,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
             <button
               onClick={() => {
                 const text = encodeURIComponent(`${item.prompt || "My AI Pet creation"} — generated on MY AI PET 🐾`);
-                const url = encodeURIComponent("https://app.myaipet.ai");
+                const url = encodeURIComponent(`https://app.myaipet.ai/c/${item.generation_id || item.id}`);
                 const tags = encodeURIComponent("MYAIPET,AIArt,PetClaw");
                 window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=${tags}`, "_blank", "width=600,height=400");
               }}
@@ -582,7 +582,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
                 onClick={e => {
                   e.stopPropagation();
                   const text = encodeURIComponent(`${item.prompt || "My AI Pet creation"} — generated on MY AI PET 🐾`);
-                  const url = encodeURIComponent("https://app.myaipet.ai");
+                  const url = encodeURIComponent(`https://app.myaipet.ai/c/${item.generation_id || item.id}`);
                   const tags = encodeURIComponent("MYAIPET,AIArt,PetClaw");
                   window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=${tags}`, "_blank", "width=600,height=400");
                 }}
