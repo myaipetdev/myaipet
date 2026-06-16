@@ -173,6 +173,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+  const [copied, setCopied] = useState(false);
   if (!item) return null;
 
   return (
@@ -297,6 +298,23 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
               </span>
             </div>
             <div style={{ flex: 1 }} />
+            <button
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(`https://app.myaipet.ai/c/${item.generation_id || item.id}`);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1600);
+                } catch {}
+              }}
+              aria-label="Copy link"
+              title="Copy link to this creation"
+              style={{
+                display: "flex", alignItems: "center", gap: 5, background: "none",
+                border: "none", cursor: "pointer", padding: 0, marginRight: 14,
+                fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
+                color: copied ? "#16a34a" : "#1a1a2e",
+              }}
+            ><span style={{ fontSize: 13 }}>{copied ? "✓" : "🔗"}</span> {copied ? "Copied" : "Copy link"}</button>
             <button
               onClick={() => {
                 const text = encodeURIComponent(`${item.prompt || "My AI Pet creation"} — generated on MY AI PET 🐾`);

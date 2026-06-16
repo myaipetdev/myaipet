@@ -28,13 +28,33 @@ async function getCreation(idRaw: string) {
   try {
     const g = await prisma.generation.findUnique({
       where: { id },
-      include: { user: { select: { profile: { select: { display_name: true } } } } },
+      include: {
+        user: { select: { profile: { select: { display_name: true } } } },
+        _count: { select: { likes: true } },
+      },
     });
     if (!g || g.status !== "completed") return null;
     if (!g.photo_path && !g.video_path) return null;
     return g;
   } catch {
     return null;
+  }
+}
+
+async function getMoreCreations(excludeId: number) {
+  try {
+    return await prisma.generation.findMany({
+      where: {
+        status: "completed",
+        id: { not: excludeId },
+        OR: [{ photo_path: { not: "" } }, { video_path: { not: "" } }],
+      },
+      orderBy: { created_at: "desc" },
+      take: 6,
+      select: { id: true, photo_path: true, prompt: true },
+    });
+  } catch {
+    return [];
   }
 }
 
@@ -115,6 +135,8 @@ export default async function CreationPage(
   const mediaSrc = abs(g.video_path) || abs(g.photo_path) || undefined;
   const poster = abs(g.photo_path) || undefined;
   const creator = g.user?.profile?.display_name || null;
+  const likes = g._count?.likes || 0;
+  const more = await getMoreCreations(g.id);
 
   return (
     <main style={wrap}>
@@ -158,7 +180,7 @@ export default async function CreationPage(
             </p>
           ) : null}
           <p style={{ fontSize: 13, color: "rgba(26,26,46,0.5)", margin: 0 }}>
-            {creator ? `Created by ${creator} · ` : ""}Made on MY AI PET {isVideo ? "🎬" : "🎨"}
+            {likes > 0 ? `❤️ ${likes} · ` : ""}{creator ? `Created by ${creator} · ` : ""}Made on MY AI PET {isVideo ? "🎬" : "🎨"}
           </p>
         </div>
       </div>
@@ -169,6 +191,22 @@ export default async function CreationPage(
           Raise an AI pet that grows, evolves, and earns.
         </p>
       </div>
+
+      {more.length > 0 && (
+        <div style={{ width: "100%", maxWidth: 460, marginTop: 42 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: "rgba(26,26,46,0.55)", textAlign: "center", margin: "0 0 14px", letterSpacing: 0.3 }}>
+            More from MY AI PET
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            {more.map((m) => (
+              <a key={m.id} href={`/c/${m.id}`} title={m.prompt || "AI pet creation"} style={{ display: "block", aspectRatio: "1 / 1", borderRadius: 12, overflow: "hidden", background: "#f0ece4" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={abs(m.photo_path) || undefined} alt={m.prompt || "AI pet creation"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
