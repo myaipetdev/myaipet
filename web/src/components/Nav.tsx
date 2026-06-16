@@ -12,10 +12,8 @@ const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
   { key: "studio", label: "Studio", url: "/studio" },
   { key: "community", label: "Community" },
   { key: "sovereignty", label: "PetClaw" },
-  // Multi-platform agent: connect the pet to Telegram/Twitter for autonomous
-  // presence. Was deep-link-only (/?section=agent); surfaced now that connect
-  // + persona flows are fixed.
-  { key: "agent", label: "Agent" },
+  // (Agent — multi-platform autonomous presence — intentionally NOT a top-level
+  // tab per owner. The AgentDashboard still renders via /?section=agent.)
   // Season hub: my-card + season + missions + leaderboards. Labelled
   // "Season Rewards" (not "Airdrop") — points are off-chain loyalty credits,
   // and an "Airdrop" tab reads as a token-distribution commitment in
