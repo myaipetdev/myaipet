@@ -116,7 +116,9 @@ async function handleWildEncounter(user: any, pet: any) {
     outcomes.push(`${wild.name} fled before you could react!`);
   }
 
-  // Apply rewards
+  // Apply rewards. Record an "adventure_wild" interaction so the daily cap (which
+  // counts adventure_* rows) actually enforces — without a row to count, the
+  // 15/day limit never fired and the credit reward could be minted unbounded.
   await prisma.$transaction([
     prisma.pet.update({
       where: { id: pet.id },
@@ -125,6 +127,9 @@ async function handleWildEncounter(user: any, pet: any) {
         energy: { decrement: 15 },
         happiness: { increment: 3 },
       },
+    }),
+    prisma.petInteraction.create({
+      data: { pet_id: pet.id, user_id: user.id, interaction_type: "adventure_wild", experience_gained: expGain },
     }),
     ...(creditsGain > 0
       ? [prisma.user.update({ where: { id: user.id }, data: { credits: { increment: creditsGain } } })]
@@ -208,6 +213,9 @@ async function handleExplore(user: any, pet: any) {
         happiness: { increment: happinessChange },
       },
     }),
+    prisma.petInteraction.create({
+      data: { pet_id: pet.id, user_id: user.id, interaction_type: "adventure_explore", experience_gained: expGain },
+    }),
     ...(creditsGain > 0
       ? [prisma.user.update({ where: { id: user.id }, data: { credits: { increment: creditsGain } } })]
       : []),
@@ -249,21 +257,26 @@ async function handleGym(user: any, pet: any) {
   const expNeeded = pet.level * 100;
   const leveledUp = newExp >= expNeeded;
 
-  await prisma.pet.update({
-    where: { id: pet.id },
-    data: leveledUp
-      ? {
-          experience: { set: newExp - expNeeded },
-          level: { increment: 1 },
-          energy: { decrement: Math.min(20, pet.energy) },
-          happiness: { increment: success ? 5 : 2 },
-        }
-      : {
-          experience: { increment: expGain },
-          energy: { decrement: Math.min(20, pet.energy) },
-          happiness: { increment: success ? 5 : 2 },
-        },
-  });
+  await prisma.$transaction([
+    prisma.pet.update({
+      where: { id: pet.id },
+      data: leveledUp
+        ? {
+            experience: { set: newExp - expNeeded },
+            level: { increment: 1 },
+            energy: { decrement: Math.min(20, pet.energy) },
+            happiness: { increment: success ? 5 : 2 },
+          }
+        : {
+            experience: { increment: expGain },
+            energy: { decrement: Math.min(20, pet.energy) },
+            happiness: { increment: success ? 5 : 2 },
+          },
+    }),
+    prisma.petInteraction.create({
+      data: { pet_id: pet.id, user_id: user.id, interaction_type: "adventure_gym", experience_gained: expGain },
+    }),
+  ]);
 
   if (leveledUp) {
     outcomes.push(`🎉 Level Up! Now Lv.${pet.level + 1}!`);

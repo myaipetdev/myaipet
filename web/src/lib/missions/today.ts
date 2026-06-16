@@ -84,20 +84,27 @@ export async function getOrAssignToday(userId: number): Promise<TodayResponse> {
     try {
       const passed = await tpl.check(userId, date);
       if (passed) {
-        await prisma.dailyMission.update({
-          where: { user_date_mission: { user_id: userId, date, mission_id: row.mission_id } },
-          data: { status: "completed", completed_at: new Date() },
+        // Atomic claim: the flip only matches while not yet completed, so two
+        // concurrent today-fetches can't both grant the points (was a racy
+        // read-then-write across three un-transacted writes).
+        const flipped = await prisma.$transaction(async (tx: any) => {
+          const f = await tx.dailyMission.updateMany({
+            where: { user_id: userId, date, mission_id: row.mission_id, status: { not: "completed" } },
+            data: { status: "completed", completed_at: new Date() },
+          });
+          if (f.count !== 1) return false;
+          await tx.user.update({
+            where: { id: userId },
+            data: { airdrop_points: { increment: row.points } },
+          });
+          await tx.userStreak.upsert({
+            where: { user_id: userId },
+            update: { total_points_earned: { increment: row.points } },
+            create: { user_id: userId, total_points_earned: row.points },
+          });
+          return true;
         });
-        await prisma.user.update({
-          where: { id: userId },
-          data: { airdrop_points: { increment: row.points } },
-        });
-        await prisma.userStreak.upsert({
-          where: { user_id: userId },
-          update: { total_points_earned: { increment: row.points } },
-          create: { user_id: userId, total_points_earned: row.points },
-        });
-        anyFlipped = true;
+        if (flipped) anyFlipped = true;
       }
     } catch { /* skip — never fail the GET on a bad mission */ }
   }

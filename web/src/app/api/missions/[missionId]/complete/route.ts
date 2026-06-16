@@ -42,22 +42,31 @@ export async function POST(
     }
   }
 
-  // Flip + reward in a transaction so we never double-credit
-  await prisma.$transaction([
-    prisma.dailyMission.update({
-      where: { user_date_mission: { user_id: user.id, date, mission_id: missionId } },
+  // Flip is the atomic claim: updateMany only matches while status is not yet
+  // "completed", so exactly one of two concurrent requests wins and grants the
+  // points (the status-read guard above is outside the tx and was racy → the
+  // points could be double-credited).
+  const granted = await prisma.$transaction(async (tx: any) => {
+    const flip = await tx.dailyMission.updateMany({
+      where: { user_id: user.id, date, mission_id: missionId, status: { not: "completed" } },
       data: { status: "completed", completed_at: new Date() },
-    }),
-    prisma.user.update({
+    });
+    if (flip.count !== 1) return false; // already completed by a concurrent request
+    await tx.user.update({
       where: { id: user.id },
       data: { airdrop_points: { increment: row.points } },
-    }),
-    prisma.userStreak.upsert({
+    });
+    await tx.userStreak.upsert({
       where: { user_id: user.id },
       update: { total_points_earned: { increment: row.points } },
       create: { user_id: user.id, total_points_earned: row.points },
-    }),
-  ]);
+    });
+    return true;
+  });
+
+  if (!granted) {
+    return NextResponse.json({ ok: true, alreadyCompleted: true });
+  }
 
   const streakUpdate = await recordCompletionForStreakBookkeeping(user.id);
 

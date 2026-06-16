@@ -45,18 +45,22 @@ export async function POST(
     }, { status: 400 });
   }
 
-  // Evolve the pet, record memory, and grant credits atomically
-  const [evolved] = await prisma.$transaction([
-    prisma.pet.update({
-      where: { id: pet.id },
+  // Evolve + grant credits in one transaction, with the stage flip as the atomic
+  // claim guard: the updateMany only matches while evolution_stage is still the
+  // value we read, so concurrent requests can't each grant the 50-credit reward
+  // for a single stage transition (was a read-then-write race → N× credits).
+  const evolved = await prisma.$transaction(async (tx: any) => {
+    const claim = await tx.pet.updateMany({
+      where: { id: pet.id, user_id: user.id, evolution_stage: currentStage },
       data: {
         evolution_stage: nextStage.stage,
         evolution_name: nextStage.name,
         happiness: Math.min(100, pet.happiness + 20),
         experience: { increment: 50 },
       },
-    }),
-    prisma.petMemory.create({
+    });
+    if (claim.count !== 1) return null; // another request already evolved this stage
+    await tx.petMemory.create({
       data: {
         pet_id: pet.id,
         memory_type: "milestone",
@@ -64,12 +68,17 @@ export async function POST(
         emotion: "excited",
         importance: 5,
       },
-    }),
-    prisma.user.update({
+    });
+    await tx.user.update({
       where: { id: user.id },
       data: { credits: { increment: 50 } },
-    }),
-  ]);
+    });
+    return tx.pet.findUnique({ where: { id: pet.id } });
+  });
+
+  if (!evolved) {
+    return NextResponse.json({ error: "Already evolving" }, { status: 409 });
+  }
 
   // Unlock skills for this stage (non-critical, outside transaction)
   const newSkills = SKILLS_BY_STAGE[nextStage.stage] || [];
