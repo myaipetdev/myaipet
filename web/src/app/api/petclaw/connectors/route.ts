@@ -9,6 +9,7 @@ import { AVAILABLE_CONNECTORS } from "@/lib/petclaw/connectors";
 import { getUser } from "@/lib/auth";
 import { ownsPet } from "@/lib/authz";
 import { rateLimit } from "@/lib/rateLimit";
+import { isFetchableImageUrl } from "@/lib/sanitize";
 
 // GET — List available connectors
 export async function GET() {
@@ -92,7 +93,17 @@ export async function POST(req: NextRequest) {
       case "web-search": {
         const ws = new WebSearchConnector();
         if (action === "search") return NextResponse.json(await ws.search(params.query, params.maxResults));
-        if (action === "summarize") return NextResponse.json(await ws.summarize(params.url));
+        if (action === "summarize") {
+          // SSRF guard: summarize() fetches this URL server-side and returns the
+          // body, so reject any URL whose host resolves to private/loopback/
+          // link-local/cloud-metadata space (e.g. 169.254.169.254 IMDS) before
+          // fetching. isFetchableImageUrl is the codebase's general fetch-time
+          // SSRF check (sync scheme/host checks + DNS resolution).
+          if (!(await isFetchableImageUrl(params?.url))) {
+            return NextResponse.json({ error: "URL not allowed" }, { status: 400 });
+          }
+          return NextResponse.json(await ws.summarize(params.url));
+        }
         break;
       }
 
