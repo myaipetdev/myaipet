@@ -65,12 +65,14 @@ export async function POST(req: NextRequest) {
   const rl = rateLimit(req, { key: "telegram-webhook", limit: 120, windowMs: 60_000 });
   if (!rl.ok) return rl.response;
 
-  // Verify Telegram's secret token (set via setWebhook). Without it any
-  // attacker who knows our URL could poison the bot.
+  // Verify Telegram's secret token (set via setWebhook). Fail CLOSED: if the
+  // secret isn't configured, reject — otherwise activating the bot (setting
+  // TELEGRAM_BOT_TOKEN) without also setting TELEGRAM_WEBHOOK_SECRET would leave
+  // the webhook forgeable by anyone who knows the URL. (Mirrors verifyCron H12.)
   const expected = process.env.TELEGRAM_WEBHOOK_SECRET;
   const got = req.headers.get("x-telegram-bot-api-secret-token");
-  if (expected && got !== expected) {
-    console.warn("[telegram] webhook bad secret");
+  if (!expected || got !== expected) {
+    console.warn("[telegram] webhook rejected — missing/bad secret");
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
