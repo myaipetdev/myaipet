@@ -211,23 +211,29 @@ export async function invokePet(req: InvokeRequest): Promise<InvokeResult> {
     providerEarned = cost - platformFee;
     callerCharged = cost;
 
-    // Settle payment
-    const deductResult = await deductPetWallet(req.callerPetId, callerCharged, `Invoked ${providerPet.name}/${req.skillId}`);
-    if (deductResult.success) {
-      await creditPetWallet(req.providerPetId, providerEarned, `Service to pet#${req.callerPetId}/${req.skillId}`);
-    } else {
-      // Insufficient balance — still execute but log unpaid
+    // Settle debit + credit atomically: if the caller is short OR the credit
+    // can't land (e.g. provider deleted mid-call), the whole transaction rolls
+    // back, so the caller is never charged without the provider being paid.
+    try {
+      await prisma.$transaction(async (tx: any) => {
+        const deductResult = await deductPetWallet(req.callerPetId, callerCharged, `Invoked ${providerPet.name}/${req.skillId}`, tx);
+        if (!deductResult.success) throw new Error("INSUFFICIENT_FUNDS");
+        await creditPetWallet(req.providerPetId, providerEarned, `Service to pet#${req.callerPetId}/${req.skillId}`, tx);
+      });
+    } catch {
+      // Insufficient balance or settlement failure — execute unpaid, charge nothing.
       callerCharged = 0;
       providerEarned = 0;
       platformFee = 0;
     }
   }
 
-  // Record interaction on provider pet
+  // Record interaction on provider pet (best-effort — must not 500 a request
+  // whose billing already settled above).
   await prisma.pet.update({
     where: { id: req.providerPetId },
     data: { total_interactions: { increment: 1 } },
-  });
+  }).catch(() => {});
 
   return {
     success: result.success,

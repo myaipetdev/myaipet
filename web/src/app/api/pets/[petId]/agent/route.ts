@@ -90,10 +90,13 @@ export async function POST(
     return NextResponse.json({ error: "Agent loop failed", detail: e?.message }, { status: 502 });
   }
 
-  // Refund if the planner died before any real skill/LLM step executed.
+  // Refund whenever the run did no real work — i.e. no step other than the
+  // terminal `finish` ran. A garbage planner reply is degraded to `finish`
+  // (stoppedReason "finished", not "planner_error"), so gating the refund on
+  // "planner_error" over-charged those degenerate runs the full credit cost.
   const didRealWork = result.steps.some((s) => s.skill !== "finish");
   let creditsRemaining = u.credits - COST_CREDITS;
-  if (!didRealWork && result.stoppedReason === "planner_error") {
+  if (!didRealWork) {
     await prisma.user.update({
       where: { id: user.id },
       data: { credits: { increment: COST_CREDITS } },

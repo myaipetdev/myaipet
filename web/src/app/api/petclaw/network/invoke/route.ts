@@ -4,7 +4,12 @@ import { requirePetOwner } from "@/lib/authz";
 import { rateLimit } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const { callerPetId, providerPetId, skillId, input } = body;
 
   if (!callerPetId || !providerPetId || !skillId) {

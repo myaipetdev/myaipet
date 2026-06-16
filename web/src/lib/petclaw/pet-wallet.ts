@@ -55,64 +55,75 @@ export async function getPetWallet(petId: number): Promise<PetWallet | null> {
   };
 }
 
-// Credit pet wallet (e.g., someone interacted with this pet)
+// Adjust a pet's wallet balance under a row lock. The balance lives inside the
+// `personality_modifiers` JSON, so a naive read→modify→write-whole-blob lets two
+// concurrent invokes both read the old balance and lose one debit/credit
+// (double-spend / lost earnings), and clobbers any other concurrent writer of
+// that JSON. We SELECT … FOR UPDATE the row and write the recomputed blob in the
+// SAME transaction, which serializes concurrent settlements on a pet. Pass a
+// transaction `client` to settle a matching debit + credit atomically.
+async function adjustPetWallet(
+  client: any,
+  petId: number,
+  delta: number, // +credit, −debit
+  requireFunds = false,
+): Promise<{ success: boolean; balance: number }> {
+  const rows: Array<{ personality_modifiers: unknown }> = await client.$queryRaw`
+    SELECT personality_modifiers FROM pets WHERE id = ${petId} FOR UPDATE
+  `;
+  if (!rows.length) throw new Error(`Pet ${petId} not found`);
+
+  let mods: Record<string, unknown> = {};
+  const raw = rows[0].personality_modifiers;
+  if (raw && typeof raw === "object") mods = raw as Record<string, unknown>;
+  else if (typeof raw === "string") { try { mods = JSON.parse(raw); } catch { /* keep {} */ } }
+
+  const currentBalance = (mods.wallet_balance as number) || 0;
+  if (requireFunds && currentBalance + delta < 0) {
+    return { success: false, balance: currentBalance };
+  }
+  const newBalance = currentBalance + delta;
+  const totalEarned = (mods.wallet_total_earned as number) || 0;
+  const totalSpent = (mods.wallet_total_spent as number) || 0;
+
+  await client.pet.update({
+    where: { id: petId },
+    data: {
+      personality_modifiers: {
+        ...mods,
+        wallet_balance: newBalance,
+        ...(delta >= 0
+          ? { wallet_total_earned: totalEarned + delta }
+          : { wallet_total_spent: totalSpent - delta }),
+      },
+    },
+  });
+  return { success: true, balance: newBalance };
+}
+
+// Credit pet wallet (e.g., someone interacted with this pet). Pass `tx` to run
+// inside a caller's transaction so it's atomic with the matching debit.
 export async function creditPetWallet(
   petId: number,
   amount: number,
-  reason: string
+  reason: string,
+  tx?: any,
 ): Promise<{ balance: number }> {
-  const pet = await prisma.pet.findUnique({ where: { id: petId } });
-  if (!pet) throw new Error("Pet not found");
-
-  const mods = (pet.personality_modifiers as Record<string, unknown>) || {};
-  const currentBalance = (mods.wallet_balance as number) || 0;
-  const totalEarned = (mods.wallet_total_earned as number) || 0;
-
-  const newBalance = currentBalance + amount;
-
-  await prisma.pet.update({
-    where: { id: petId },
-    data: {
-      personality_modifiers: {
-        ...mods,
-        wallet_balance: newBalance,
-        wallet_total_earned: totalEarned + amount,
-      },
-    },
-  });
-
-  return { balance: newBalance };
+  const r = tx
+    ? await adjustPetWallet(tx, petId, amount)
+    : await prisma.$transaction((c: any) => adjustPetWallet(c, petId, amount));
+  return { balance: r.balance };
 }
 
-// Deduct from pet wallet
+// Deduct from pet wallet. Returns success:false (without throwing) when the pet
+// is short, so the caller can fall back to an unpaid execution.
 export async function deductPetWallet(
   petId: number,
   amount: number,
-  reason: string
+  reason: string,
+  tx?: any,
 ): Promise<{ success: boolean; balance: number }> {
-  const pet = await prisma.pet.findUnique({ where: { id: petId } });
-  if (!pet) throw new Error("Pet not found");
-
-  const mods = (pet.personality_modifiers as Record<string, unknown>) || {};
-  const currentBalance = (mods.wallet_balance as number) || 0;
-  const totalSpent = (mods.wallet_total_spent as number) || 0;
-
-  if (currentBalance < amount) {
-    return { success: false, balance: currentBalance };
-  }
-
-  const newBalance = currentBalance - amount;
-
-  await prisma.pet.update({
-    where: { id: petId },
-    data: {
-      personality_modifiers: {
-        ...mods,
-        wallet_balance: newBalance,
-        wallet_total_spent: totalSpent + amount,
-      },
-    },
-  });
-
-  return { success: true, balance: newBalance };
+  return tx
+    ? await adjustPetWallet(tx, petId, -amount, true)
+    : await prisma.$transaction((c: any) => adjustPetWallet(c, petId, -amount, true));
 }
