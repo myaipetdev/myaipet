@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { consumePaymentTx, PaymentAlreadyConsumed } from "@/lib/payments";
 import { verifyUsdtTransfer, treasuryConfigured } from "@/lib/onchain";
+import { rateLimit } from "@/lib/rateLimit";
 import { NextRequest, NextResponse } from "next/server";
 
 const PLANS: Record<string, { credits: number; price: number }> = {
@@ -14,6 +15,11 @@ export async function POST(req: NextRequest) {
   try {
     const user = await getUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // Throttle per-user: the on-chain verify (eth_getTransactionReceipt) is the
+    // only paid route that lacked a limiter, so spamming hashes burned RPC.
+    const rl = rateLimit(req, { key: "credits-purchase", limit: 10, windowMs: 60_000 });
+    if (!rl.ok) return rl.response;
 
     const body = await req.json();
     const { plan, payment_tx_hash } = body;

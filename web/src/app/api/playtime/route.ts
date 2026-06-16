@@ -5,6 +5,7 @@ import {
   PLAY_TIME_REWARD_EXP,
   PLAY_TIME_REWARD_CREDITS,
 } from "@/lib/skills";
+import { rateLimit } from "@/lib/rateLimit";
 import { NextRequest, NextResponse } from "next/server";
 
 // POST /api/playtime — Heartbeat: track play minutes + claim daily reward
@@ -12,6 +13,11 @@ export async function POST(req: NextRequest) {
   try {
     const user = await getUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // Heartbeats are ~5 min apart; throttle so the daily play threshold can't be
+    // reached by firing many heartbeats in seconds.
+    const rl = rateLimit(req, { key: "playtime", limit: 30, windowMs: 60_000 });
+    if (!rl.ok) return rl.response;
 
     const { minutes, pet_id } = await req.json();
     const addMinutes = Math.min(Math.max(0, Math.floor(minutes || 1)), 10); // max 10 min per heartbeat

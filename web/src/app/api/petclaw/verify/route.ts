@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyPetOwnership } from "@/lib/petclaw/data-sovereignty";
+import { rateLimit } from "@/lib/rateLimit";
 
+// Public protocol endpoint (advertised in .well-known/pet-card.json + the SDK):
+// anyone can ask "does wallet X own pet N". Intentionally unauthenticated, so
+// throttle per-IP to stop it being used as a free ownership-scanning oracle.
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const rl = rateLimit(req, { key: "petclaw-verify", limit: 30, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
+  let body: any;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const { petId, walletAddress } = body;
 
   if (!petId || !walletAddress) {
