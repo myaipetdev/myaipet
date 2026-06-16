@@ -45,7 +45,17 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
     } catch {}
   };
 
-  useEffect(() => { load(); }, [petId]);
+  useEffect(() => {
+    let alive = true;
+    setData(null); // clear immediately so a pet switch never shows the previous pet's stats
+    (async () => {
+      try {
+        const res = await fetch(`/api/pets/${petId}/stats/upgrade`, { headers: getAuthHeaders() });
+        if (alive && res.ok) setData(await res.json());
+      } catch {}
+    })();
+    return () => { alive = false; };
+  }, [petId]);
 
   const upgrade = async (stat: keyof Stats, txHash?: string) => {
     if (busy) return;

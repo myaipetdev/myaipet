@@ -563,7 +563,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
     <div style={{
       position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center",
       background: "rgba(0,0,0,0.5)", backdropFilter: "blur(12px)",
-    }} onClick={onClose}>
+    }} onClick={closeIfIdle}>
       <div onClick={e => e.stopPropagation()} style={{
         background: "white",
         borderRadius: 24, border: "1px solid rgba(0,0,0,0.06)",
@@ -1092,6 +1092,7 @@ export default function PetProfile() {
 
   const handleInteract = async (type: string) => {
     if (!activePet || interacting) return;
+    const petId = activePet.id; // snapshot: guard async UI writes against a mid-flight pet switch
     setInteracting(type);
     setResponseAnim(false);
 
@@ -1125,20 +1126,24 @@ export default function PetProfile() {
     };
 
     const finishInteract = (result: any) => {
-      setLastResponse({
-        response_text: result.interaction?.response || result.response_text || "...",
-        stat_changes: result.interaction?.effects || result.stat_changes || {},
-        memory_created: result.interaction?.leveled_up ? `${activePet.name} leveled up!` : null,
-        combo: result.interaction?.combo,
-        request_fulfilled: result.interaction?.request_fulfilled,
-        care_streak: result.interaction?.care_streak,
-      });
-      setResponseAnim(true);
-      if (result.interaction?.combo) {
-        setComboToast(result.interaction.combo);
-        setTimeout(() => setComboToast(null), 4500);
+      // If the user switched pets while this interaction was in flight, don't
+      // paint pet A's reply/combo/request into pet B's view.
+      if (activePetIdRef.current === petId) {
+        setLastResponse({
+          response_text: result.interaction?.response || result.response_text || "...",
+          stat_changes: result.interaction?.effects || result.stat_changes || {},
+          memory_created: result.interaction?.leveled_up ? `${activePet.name} leveled up!` : null,
+          combo: result.interaction?.combo,
+          request_fulfilled: result.interaction?.request_fulfilled,
+          care_streak: result.interaction?.care_streak,
+        });
+        setResponseAnim(true);
+        if (result.interaction?.combo) {
+          setComboToast(result.interaction.combo);
+          setTimeout(() => setComboToast(null), 4500);
+        }
+        setPetRequest(result.interaction?.next_request || null);
       }
-      setPetRequest(result.interaction?.next_request || null);
       loadPetStatus(activePet.id);
       loadEvoStatus(activePet.id);
       loadPets();
@@ -1156,14 +1161,16 @@ export default function PetProfile() {
         e.message.includes("stuffed") || e.message.includes("Slow down") ||
         e.message.includes("Too fast") || e.message.includes("429")
       );
-      setLastResponse({
-        response_text: blocked && /slow down|too fast|429/i.test(e.message)
-          ? `${activePet.name} needs a moment — slow down 🐾`
-          : (e.message || "Interaction failed"),
-        stat_changes: {},
-        blocked,
-      });
-      setResponseAnim(true);
+      if (activePetIdRef.current === petId) {
+        setLastResponse({
+          response_text: blocked && /slow down|too fast|429/i.test(e.message)
+            ? `${activePet.name} needs a moment — slow down 🐾`
+            : (e.message || "Interaction failed"),
+          stat_changes: {},
+          blocked,
+        });
+        setResponseAnim(true);
+      }
     }
     // Clear immediately so the button state is honest; the server's own 1500ms
     // cooldown (429) is now surfaced gracefully above instead of as a fake reply.
@@ -1303,7 +1310,6 @@ export default function PetProfile() {
   }
   const mood = pet.current_mood || "neutral";
   const moodCfg = MOOD_CONFIG[mood] || MOOD_CONFIG.neutral;
-  const expNeeded = Math.max(1, (pet.level || 1) * 100); // avoid /0 → NaN width in the EXP bar
 
   return (
     <div style={{ padding: "16px", maxWidth: 960, margin: "0 auto", paddingTop: 80 }}>
@@ -1651,7 +1657,7 @@ export default function PetProfile() {
               <StatSlotBar label="Energy" value={pet.energy} color="#60a5fa" icon="⚡" warning={pet.energy < 15} />
               <StatSlotBar label="Hunger" value={pet.hunger} color="#fbbf24" icon="🍖" warning={pet.hunger >= 80} />
               <StatSlotBar label="Bond" value={pet.bond_level} color="#c084fc" icon="🤝" />
-              <StatSlotBar label="EXP" value={pet.experience} max={expNeeded} color="#4ade80" icon="✨" />
+              <StatSlotBar label="EXP" value={pet.experience % 100} max={100} color="#4ade80" icon="✨" />
             </div>
           )}
 
