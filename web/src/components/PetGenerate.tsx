@@ -350,8 +350,8 @@ export default function PetGenerate() {
             background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.15)",
           }}>
             <span style={{ fontFamily: "mono", fontSize: 11, color: "#b45309", fontWeight: 600, cursor: "pointer" }}
-              onClick={() => { const el = document.querySelector(".pricing-root"); if (el) el.scrollIntoView({ behavior: "smooth" }); else window.location.hash = "pricing"; }}
-              title="Click to top up"
+              onClick={() => { window.location.href = "/"; }}
+              title="Buy more credits on the Home tab"
             >
               🪙 {balance !== null ? balance : "—"} credits
             </span>

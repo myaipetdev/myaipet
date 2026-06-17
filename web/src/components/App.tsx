@@ -155,8 +155,8 @@ function CheckinCard({ isAuthenticated }: { isAuthenticated: boolean }) {
 
 // ── Season 1 Rewards Banner ──
 function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
-  const SEASON_START = new Date("2026-03-01T00:00:00Z").getTime();
-  const SEASON_END = new Date("2026-06-15T00:00:00Z").getTime();
+  const SEASON_START = new Date("2026-07-01T00:00:00Z").getTime();
+  const SEASON_END = new Date("2026-08-01T00:00:00Z").getTime();
   const SEASON_TOTAL = SEASON_END - SEASON_START;
 
   const [now, setNow] = useState(Date.now());
@@ -166,8 +166,10 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
     return () => clearInterval(id);
   }, []);
 
-  const remaining = Math.max(0, SEASON_END - now);
-  const seasonOver = remaining <= 0;
+  const notStarted = now < SEASON_START;
+  const seasonOver = now >= SEASON_END;
+  // Before the season opens, count down to the START; once running, to the END.
+  const remaining = Math.max(0, (notStarted ? SEASON_START : SEASON_END) - now);
   const days = Math.floor(remaining / 86_400_000);
   const hours = Math.floor((remaining % 86_400_000) / 3_600_000);
   const minutes = Math.floor((remaining % 3_600_000) / 60_000);
@@ -231,7 +233,13 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
             🏁 Season 1 wrapped · <span style={{ opacity: 0.85, fontWeight: 700 }}>Season 2 soon</span>
           </div>
         ) : (
-        <div style={{ display: "flex", alignItems: "center", gap: 6, zIndex: 1 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, zIndex: 1 }}>
+          {notStarted && (
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 11, color: "#fff", whiteSpace: "nowrap" }}>
+              🚀 Starts Jul 1 — get ready
+            </div>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           {[
             { val: pad(days), label: "D" },
             { val: pad(hours), label: "H" },
@@ -251,6 +259,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
               </div>
             </div>
           ))}
+          </div>
         </div>
         )}
 
