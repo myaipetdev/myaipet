@@ -1024,7 +1024,7 @@ export default function SovereigntyDashboard() {
                 🔐 YOUR DATA
               </span>
               <span className="sov-tag" style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)", color: "#7c3aed" }}>
-                ⛓ BSC-NATIVE
+                ⛓ ON-CHAIN AT TGE
               </span>
             </div>
             <h1 style={{ fontSize: 52, fontWeight: 900, letterSpacing: "-0.04em", color: "#1a1a2e", lineHeight: 1.0, margin: "0 0 16px" }}>
@@ -1556,7 +1556,7 @@ export default function SovereigntyDashboard() {
                 {memoryNfts.length} minted
               </span>
               <div
-                title="NFT minting launches after BSC contract deployment"
+                title="NFT minting launches on-chain at TGE"
                 style={{
                   marginLeft: "auto",
                   padding: "9px 20px",
@@ -2213,7 +2213,7 @@ export default function SovereigntyDashboard() {
               fontSize: 15, color: "rgba(26,26,46,0.5)", marginBottom: 20,
               fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1.65,
             }}>
-              19 platform connectors. Your pet, everywhere you are.
+              21 platform connectors. Your pet, everywhere you are.
             </p>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 8 }}>
@@ -2263,10 +2263,10 @@ export default function SovereigntyDashboard() {
 
             <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
               <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 8, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.55)" }}>
-                7 Skills
+                18 Skills
               </span>
               <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 8, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.55)" }}>
-                5 MCP Clients
+                6 MCP Clients
               </span>
               <span style={{ fontFamily: "monospace", fontSize: 12, padding: "5px 12px", borderRadius: 8, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.55)" }}>
                 npm petclaw-sdk
