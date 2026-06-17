@@ -5,6 +5,8 @@ import { api, getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 import PetClawConsole from "@/components/PetClawConsole";
 import ModelsPanel from "@/components/ModelsPanel";
+import { toast } from "@/components/Toast";
+import { confirmDialog, promptDialog } from "@/components/Dialog";
 
 // ── Types ──
 interface SoulState {
@@ -181,7 +183,7 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
   };
 
   const disconnect = async (id: string) => {
-    if (!confirm(`Disconnect ${id}?`)) return;
+    if (!(await confirmDialog({ title: `Disconnect ${id}?` }))) return;
     setActioning(id);
     try {
       const res = await fetch(`/api/petclaw/connections?petId=${petId}&platform=${id}`, {
@@ -189,12 +191,12 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
         headers: getAuthHeaders(),
       });
       if (!res.ok) {
-        alert("Couldn't disconnect that channel — please try again.");
+        toast("Couldn't disconnect that channel — please try again.", "error");
       } else {
         await load();
       }
     } catch {
-      alert("Couldn't disconnect that channel — please try again.");
+      toast("Couldn't disconnect that channel — please try again.", "error");
     }
     setActioning(null);
   };
@@ -326,35 +328,35 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
   useEffect(() => { load(); }, [load]);
 
   const del = async (entryType: string, keyOrId: string | number) => {
-    if (!confirm(`Delete this ${entryType} entry?`)) return;
+    if (!(await confirmDialog({ title: `Delete this ${entryType} entry?` }))) return;
     const k = entryType === "session" ? "id" : "key";
     setBusy(`${entryType}_${keyOrId}`);
     try {
       const res = await fetch(`/api/petclaw/memory?petId=${petId}&entryType=${entryType}&${k}=${encodeURIComponent(String(keyOrId))}`, {
         method: "DELETE", headers: getAuthHeaders(),
       });
-      if (!res.ok) alert("Couldn't delete that entry — try again.");
+      if (!res.ok) toast("Couldn't delete that entry — try again.", "error");
       else await load();
     } catch {}
     setBusy(null);
   };
 
   const clearAll = async (entryType: string) => {
-    if (!confirm(`Wipe ALL ${entryType} entries? This is irreversible.`)) return;
+    if (!(await confirmDialog({ title: `Wipe ALL ${entryType} entries?`, body: "This is irreversible.", danger: true, confirmLabel: "Wipe" }))) return;
     setBusy(`${entryType}_all`);
     try {
       const res = await fetch(`/api/petclaw/memory?petId=${petId}&entryType=${entryType}&all=1`, {
         method: "DELETE", headers: getAuthHeaders(),
       });
-      if (!res.ok) alert("Couldn't clear those entries — try again.");
+      if (!res.ok) toast("Couldn't clear those entries — try again.", "error");
       else await load();
     } catch {}
     setBusy(null);
   };
 
   const editContent = async (entryType: string, key: string, current: string) => {
-    const next = prompt("Edit content:", current);
-    if (next === null || next === current) return;
+    const next = await promptDialog({ title: "Edit content", defaultValue: current });
+    if (next == null || next === current) return;
     setBusy(`${entryType}_${key}`);
     try {
       const res = await fetch(`/api/petclaw/memory?petId=${petId}&entryType=${entryType}`, {
@@ -362,14 +364,14 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
         headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ key, content: next }),
       });
-      if (!res.ok) alert("Couldn't save that edit — try again.");
+      if (!res.ok) toast("Couldn't save that edit — try again.", "error");
       else await load();
     } catch {}
     setBusy(null);
   };
 
   const triggerConsolidate = async () => {
-    if (!confirm("Run memory consolidation now? (uses one LLM call to compress/dedupe)")) return;
+    if (!(await confirmDialog({ title: "Run memory consolidation now?", body: "Uses one LLM call to compress/dedupe." }))) return;
     setConsolidating(true);
     try {
       const res = await fetch(`/api/petclaw/memory/consolidate?petId=${petId}&force=1`, {
@@ -377,15 +379,17 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
       });
       const r = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(r.error || `Consolidation failed (${res.status})`);
+        toast(r.error || `Consolidation failed (${res.status})`, "error");
       } else {
-        alert(r.result
-          ? `Done. ${r.result.before.memories}→${r.result.after.memories} memories, ${r.result.before.userProfile}→${r.result.after.userProfile} profile entries.`
-          : "Skipped (gated or nothing to do)");
+        if (r.result) {
+          toast(`Done. ${r.result.before.memories}→${r.result.after.memories} memories, ${r.result.before.userProfile}→${r.result.after.userProfile} profile entries.`, "success");
+        } else {
+          toast("Skipped (gated or nothing to do)", "info");
+        }
         await load();
       }
     } catch (e: any) {
-      alert("Failed: " + e?.message);
+      toast("Failed: " + e?.message, "error");
     }
     setConsolidating(false);
   };

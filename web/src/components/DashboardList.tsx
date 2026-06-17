@@ -14,6 +14,7 @@
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import PaywallModal from "@/components/PaywallModal";
+import { toast } from "@/components/Toast";
 
 export interface LeaderRow {
   rank: number;
@@ -67,7 +68,7 @@ export default function DashboardList({ rows }: { rows: LeaderRow[] }) {
       }
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err.error || "Challenge failed");
+        toast(err.error || "Challenge failed", "error");
         return;
       }
       const { result } = await res.json();

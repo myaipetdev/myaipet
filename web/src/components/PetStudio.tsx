@@ -29,6 +29,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import { toast } from "@/components/Toast";
 
 interface StudioModel {
   id: string; displayName: string; provider: string; kind: "image" | "video";
@@ -302,7 +303,7 @@ export default function PetStudio() {
                     key={m.id} selected={false}
                     leading={<span style={{ fontSize: 18 }}>🎵</span>}
                     title={m.label} subtitle={m.mood}
-                    onClick={() => alert("Music selection happens inside the editor.")}
+                    onClick={() => toast("Music selection happens inside the editor.", "info")}
                   />
                 ))}
               </div>

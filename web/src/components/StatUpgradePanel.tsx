@@ -14,6 +14,7 @@
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import PaywallModal from "@/components/PaywallModal";
+import { toast } from "@/components/Toast";
 
 interface Stats { atk: number; def: number; spd: number; }
 interface PanelData {
@@ -80,7 +81,7 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
       }
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err.error || "Upgrade failed");
+        toast(err.error || "Upgrade failed", "error");
         return;
       }
       const j = await res.json();

@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
 import { getAuthHeaders } from "@/lib/api";
+import { toast } from "@/components/Toast";
 
 interface EditorState {
   trimStart: number;
@@ -143,7 +144,7 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
       const url = URL.createObjectURL(blob);
       setExportedUrl(url);
     } catch (e: any) {
-      alert(`Export failed: ${e?.message || e}`);
+      toast(`Export failed: ${e?.message || e}`, "error");
     } finally {
       setExporting(false);
     }
@@ -163,9 +164,9 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Upload failed");
-      alert(`Saved! URL: ${data.url}`);
+      toast(`Saved! URL: ${data.url}`, "success");
     } catch (e: any) {
-      alert(`Save failed: ${e?.message || e}`);
+      toast(`Save failed: ${e?.message || e}`, "error");
     }
   };
 

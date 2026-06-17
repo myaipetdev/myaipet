@@ -16,6 +16,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { toast } from "@/components/Toast";
 
 export interface BattleData {
   battleId: number;
@@ -286,7 +287,7 @@ function ShareButton({ url, text }: { url: string; text: string }) {
     if (typeof navigator !== "undefined" && (navigator as any).share) {
       (navigator as any).share({ url: full, text }).catch(() => {});
     } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(full).then(() => alert("Battle URL copied to clipboard."));
+      navigator.clipboard.writeText(full).then(() => toast("Battle URL copied to clipboard.", "success"));
     } else {
       window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(full)}`, "_blank");
     }

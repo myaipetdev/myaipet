@@ -15,6 +15,7 @@ import RaisePitch from "@/components/RaisePitch";
 import WalletGate from "@/components/WalletGate";
 import TrustStrip from "@/components/TrustStrip";
 import ToastHost from "@/components/Toast";
+import DialogHost from "@/components/Dialog";
 import SeasonRewardsHub from "@/components/SeasonRewardsHub";
 import CommunityHighlights from "@/components/CommunityHighlights";
 import PetOfTheWeek from "@/components/PetOfTheWeek";
@@ -427,6 +428,7 @@ export default function App() {
       {/* Always show app (landing is on separate domain myaipet.ai) */}
           <Grid />
           <ToastHost />
+          <DialogHost />
           <Nav
             section={section}
             setSection={setSection}
