@@ -14,6 +14,7 @@ import EvolutionAnimation from "@/components/EvolutionAnimation";
 import PaywallModal from "@/components/PaywallModal";
 import StatUpgradePanel from "@/components/StatUpgradePanel";
 import WardrobeCard from "@/components/WardrobeCard";
+import MemoryJournal from "@/components/MemoryJournal";
 
 const PET_SPECIES = ["Cat","Dog","Parrot","Turtle","Hamster","Rabbit","Fox","Pomeranian"];
 
@@ -2551,6 +2552,9 @@ export default function PetProfile() {
           {/* Pet Daydream FIRST — the payoff of the memory ledger ("your pet has
               been thinking about you") should land before the diary/feed loop. */}
           {pet && <PetInsightCard petId={pet.id} petName={pet.name} />}
+
+          {/* Your story — what the pet has learned about YOU (the memory moat, felt). */}
+          {pet && pet.id > 0 && <MemoryJournal petId={pet.id} petName={pet.name} />}
 
           {/* Power up — pay-to-boost stats (402 → PaywallModal loop, mounted below). */}
           {pet && <StatUpgradePanel petId={pet.id} onStatsChanged={() => loadPetStatus(pet.id)} />}
