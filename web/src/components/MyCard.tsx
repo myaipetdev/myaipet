@@ -7,6 +7,7 @@
  */
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import { seasonTier } from "@/lib/season";
 
 interface Summary {
   points: number;
@@ -31,6 +32,8 @@ export default function MyCard() {
 
   if (authed === false || !me) return null;
 
+  const st = seasonTier(me.points);
+
   return (
     <div className="mp-enter" style={{ maxWidth: 1060, margin: "0 auto", padding: "0 24px" }}>
       <div className="mp-lift" style={{
@@ -52,6 +55,11 @@ export default function MyCard() {
             </div>
             <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em" }}>
               {me.pet?.name || "Your pet"}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>
+              <span style={{ fontSize: 13 }}>{st.tier.emoji}</span>
+              <span style={{ fontWeight: 700, color: st.tier.color }}>{st.tier.name}</span>
+              <span style={{ color: "rgba(255,255,255,0.45)" }}>{st.next ? `· ${st.toNext.toLocaleString()} to ${st.next.name}` : "· max tier"}</span>
             </div>
           </div>
         </div>
