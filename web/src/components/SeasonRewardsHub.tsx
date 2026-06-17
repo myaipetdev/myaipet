@@ -17,6 +17,7 @@
 import { useState, type ReactNode } from "react";
 
 import MyCard from "@/components/MyCard";
+import SeasonTierCard from "@/components/SeasonTierCard";
 import HourlyDropBanner from "@/components/HourlyDropBanner";
 import MissionsCard from "@/components/MissionsCard";
 import WeeklyMonthlyCard from "@/components/WeeklyMonthlyCard";
@@ -76,6 +77,7 @@ export default function SeasonRewardsHub({ banner }: { banner?: React.ReactNode 
       {/* Persistent status header — doubles as the user's "my page". */}
       <MyCard />
       {banner}
+      <SeasonTierCard />
 
       {/* Pillar tabs — big, labelled, so each pillar's purpose reads instantly. */}
       <div style={{ maxWidth: 1060, margin: "16px auto 0", padding: "0 24px", width: "100%" }}>
