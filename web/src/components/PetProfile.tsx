@@ -1019,6 +1019,10 @@ export default function PetProfile() {
   const [paywall, setPaywall] = useState<any>(null);   // PaywallInfo | null
   const [editingDesc, setEditingDesc] = useState(false);
   const [descInput, setDescInput] = useState("");
+  // Inline pet rename (replaces the old native window.prompt).
+  const [naming, setNaming] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const [savingName, setSavingName] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
   const [showChat, setShowChat] = useState(false);
   const [chatMessages, setChatMessages] = useState<{role: string; text: string}[]>([]);
@@ -1680,32 +1684,75 @@ export default function PetProfile() {
                 <div style={{ fontSize: 12, color: "#7c3aed", fontWeight: 700, marginBottom: 6 }}>
                   ✨ Give them a real name
                 </div>
-                <button
-                  className="mp-btn-primary mp-lift"
-                  onClick={async () => {
-                    const newName = window.prompt(
-                      `What should we call this ${pet.name.toLowerCase()}?\n(2-20 letters)`,
-                      ""
-                    );
-                    if (!newName) return;
-                    const trimmed = newName.trim().slice(0, 20);
+                {(() => {
+                  const saveName = async () => {
+                    const trimmed = nameInput.trim().slice(0, 20);
                     if (trimmed.length < 2) { showError("Pick a name with at least 2 letters."); return; }
+                    setSavingName(true);
                     try {
                       const r = await fetch(`/api/pets/${pet.id}`, {
                         method: "PATCH",
                         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
                         body: JSON.stringify({ name: trimmed }),
                       });
-                      if (!r.ok) { showError("Couldn't save — try again?"); return; }
-                      window.location.reload();
+                      if (!r.ok) { showError("Couldn't save — try again?"); setSavingName(false); return; }
+                      setNaming(false);
+                      setNameInput("");
+                      await loadPetStatus(pet.id);
+                      await loadPets();
                     } catch { showError("Network error"); }
-                  }}
-                  style={{
-                    width: "100%", padding: "10px 16px", fontSize: 14,
-                    background: "linear-gradient(135deg,#a855f7,#7c3aed)",
-                    boxShadow: "0 6px 16px rgba(124,58,237,0.30), inset 0 1px 0 rgba(255,255,255,0.25)",
-                  }}
-                >Name them →</button>
+                    setSavingName(false);
+                  };
+                  return naming ? (
+                    <div>
+                      <input
+                        autoFocus
+                        value={nameInput}
+                        onChange={(e) => setNameInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") saveName(); if (e.key === "Escape") { setNaming(false); setNameInput(""); } }}
+                        maxLength={20}
+                        placeholder={`Name this ${pet.name.toLowerCase()}… (2–20 letters)`}
+                        style={{
+                          width: "100%", padding: "9px 12px", borderRadius: 9, marginBottom: 6,
+                          border: "1px solid rgba(168,85,247,0.4)", outline: "none", boxSizing: "border-box",
+                          fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "#1a1a2e",
+                        }}
+                      />
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          className="mp-btn-primary mp-lift"
+                          onClick={saveName}
+                          disabled={savingName || nameInput.trim().length < 2}
+                          style={{
+                            flex: 1, padding: "9px 16px", fontSize: 14,
+                            background: "linear-gradient(135deg,#a855f7,#7c3aed)",
+                            boxShadow: "0 6px 16px rgba(124,58,237,0.30), inset 0 1px 0 rgba(255,255,255,0.25)",
+                            opacity: savingName || nameInput.trim().length < 2 ? 0.55 : 1,
+                            cursor: savingName ? "wait" : "pointer",
+                          }}
+                        >{savingName ? "Saving…" : "Save name"}</button>
+                        <button
+                          onClick={() => { setNaming(false); setNameInput(""); }}
+                          style={{
+                            padding: "9px 14px", borderRadius: 9, fontSize: 13, cursor: "pointer",
+                            border: "1px solid rgba(0,0,0,0.1)", background: "white", color: "rgba(26,26,46,0.6)",
+                            fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600,
+                          }}
+                        >Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      className="mp-btn-primary mp-lift"
+                      onClick={() => { setNameInput(""); setNaming(true); }}
+                      style={{
+                        width: "100%", padding: "10px 16px", fontSize: 14,
+                        background: "linear-gradient(135deg,#a855f7,#7c3aed)",
+                        boxShadow: "0 6px 16px rgba(124,58,237,0.30), inset 0 1px 0 rgba(255,255,255,0.25)",
+                      }}
+                    >Name them →</button>
+                  );
+                })()}
               </div>
             )}
             <h2 style={{
