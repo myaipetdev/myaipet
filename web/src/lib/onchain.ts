@@ -64,6 +64,11 @@ export const ERC20_TRANSFER_TOPIC =
 
 /** Payment routes must FAIL CLOSED when no treasury is configured (audit H4). */
 export function treasuryConfigured(): boolean {
+  // Master payment kill-switch: PAYMENTS_ENABLED=false reports "no treasury" so
+  // every paid surface shows "payments paused" / 503 even while a treasury wallet
+  // stays configured in env (used during the BSC→Base chain migration). Flip the
+  // flag back to re-enable — no code change needed.
+  if (process.env.PAYMENTS_ENABLED === "false") return false;
   return ONCHAIN.treasuryWallet.length > 0;
 }
 
