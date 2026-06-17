@@ -828,8 +828,9 @@ function PetAvatar({ pet, mood, size = 80, reaction }: any) {
   const hasAvatar = pet.avatar_url;
   const [bubbleText, setBubbleText] = useState<string | null>(null);
   const [bubbleVisible, setBubbleVisible] = useState(false);
-  // One-shot care reaction (portrait motion + burst emote).
-  const [react, setReact] = useState<{ anim: string; burst: string } | null>(null);
+  // One-shot reaction (portrait motion + burst emote); `n` nonce so repeats re-fire.
+  const [react, setReact] = useState<{ anim: string; burst: string; n: number } | null>(null);
+  const fireReact = (cfg: { anim: string; burst: string }) => setReact({ ...cfg, n: Date.now() });
 
   useEffect(() => {
     const phrases = MOOD_PHRASES[mood] || MOOD_PHRASES.neutral;
@@ -854,11 +855,15 @@ function PetAvatar({ pet, mood, size = 80, reaction }: any) {
   // Play a one-shot reaction whenever the parent signals a fresh interaction.
   useEffect(() => {
     if (!reaction?.type) return;
-    const cfg = REACTION_CFG[reaction.type] || REACTION_CFG.pet;
-    setReact(cfg);
+    fireReact(REACTION_CFG[reaction.type] || REACTION_CFG.pet);
+  }, [reaction?.n]);
+
+  // Auto-clear any reaction after it plays (covers care-driven and tap-driven).
+  useEffect(() => {
+    if (!react) return;
     const t = setTimeout(() => setReact(null), 900);
     return () => clearTimeout(t);
-  }, [reaction?.n]);
+  }, [react?.n]);
 
   const moodAnim = MOOD_ANIMATIONS[mood] || "none";
   const moodEmote = MOOD_EMOTE[mood] || MOOD_EMOTE.neutral;
@@ -935,16 +940,25 @@ function PetAvatar({ pet, mood, size = 80, reaction }: any) {
           {bubbleText}
         </div>
       )}
-      {/* Ambient mood emotes — the fixed image, made to feel alive */}
-      {moodEmote.count > 0 && Array.from({ length: moodEmote.count }).map((_, i) => (
-        <div key={`${mood}-${i}`} style={{
-          position: "absolute", top: size * 0.1, left: `${28 + i * 22}%`,
-          fontSize: size * 0.18, zIndex: 9, pointerEvents: "none",
-          animation: `emoteDrift ${2.4 + i * 0.5}s ease-out ${i * 0.7}s infinite`,
-        }}>
-          {moodEmote.emote}
-        </div>
-      ))}
+      {/* Ambient mood emotes — rise from just above the head so the fixed image
+          reads as a living, feeling creature. Outer div centers (transform), inner
+          div drifts (so the animation's transform doesn't fight the centering). */}
+      {moodEmote.count > 0 && Array.from({ length: moodEmote.count }).map((_, i) => {
+        const offset = (i - (moodEmote.count - 1) / 2) * 17; // symmetric spread, %
+        return (
+          <div key={`${mood}-${i}`} style={{
+            position: "absolute", top: -size * 0.06, left: `calc(50% + ${offset}%)`,
+            transform: "translateX(-50%)", zIndex: 9, pointerEvents: "none",
+          }}>
+            <div style={{
+              fontSize: size * 0.2,
+              animation: `emoteDrift ${2.3 + i * 0.45}s ease-out ${i * 0.55}s infinite`,
+            }}>
+              {moodEmote.emote}
+            </div>
+          </div>
+        );
+      })}
       {/* Care-reaction burst */}
       {react && (
         <div style={{
@@ -954,11 +968,14 @@ function PetAvatar({ pet, mood, size = 80, reaction }: any) {
           {react.burst}
         </div>
       )}
-      <div style={{
+      <div
+        onClick={() => fireReact({ anim: "petReactWiggle", burst: "💖" })}
+        title="boop"
+        style={{
         width: size, height: size, borderRadius: size * 0.3,
         background: "rgba(0,0,0,0.02)",
         border: `2px solid ${moodCfg.color}30`,
-        overflow: "hidden",
+        overflow: "hidden", cursor: "pointer",
         boxShadow: `0 2px 12px rgba(0,0,0,0.08), 0 0 ${size * 0.4}px ${moodCfg.color}15`,
         transition: "all 0.5s ease",
         animation: react ? `${react.anim} 0.85s ease-in-out` : "petFloat 6s ease-in-out infinite",
