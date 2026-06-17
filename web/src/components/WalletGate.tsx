@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAuth } from "@/hooks/useAuth";
+import DemoPet from "@/components/DemoPet";
 
 // Session-global guard: the address we've already auto-prompted for a signature.
 // Module scope (not a per-component ref) so it survives WalletGate remounts —
@@ -42,6 +43,38 @@ export default function WalletGate({ children, section }: any) {
 
   if (isDev) return children;
   if (isConnected && isAuthenticated) return children;
+
+  // ── Adopt funnel: instead of a wallet wall, let cold visitors meet a living
+  // demo pet first, with the right next-step (Connect / Sign In) inline. ──
+  if (section === "my pet") {
+    const ctaBtnStyle: React.CSSProperties = {
+      padding: "13px 30px", borderRadius: 13, border: "none",
+      background: "linear-gradient(135deg, #fbbf24, #f59e0b)", color: "#1a1a2e",
+      fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 800,
+      cursor: isAuthenticating ? "wait" : "pointer", boxShadow: "0 6px 16px rgba(245,158,11,0.35)",
+    };
+    let cta: ReactNode;
+    let ctaNote: string | undefined;
+    if (!isConnected) {
+      cta = <ConnectButton chainStatus="none" showBalance={false} label="Connect wallet to adopt" />;
+    } else if (error) {
+      cta = (
+        <button onClick={() => { autoAuthTriedFor = null; authenticate(); }} disabled={isAuthenticating} style={ctaBtnStyle}>
+          Sign in to adopt
+        </button>
+      );
+      ctaNote = `${friendlyError(error)} No gas — identity only.`;
+    } else {
+      // connected, signing or checking
+      cta = (
+        <button onClick={() => { autoAuthTriedFor = null; authenticate(); }} disabled={isAuthenticating} style={ctaBtnStyle}>
+          {isAuthenticating ? "Check your wallet…" : "Sign in to adopt"}
+        </button>
+      );
+      ctaNote = "Approve the signature in your wallet to adopt — no gas, identity only.";
+    }
+    return <DemoPet cta={cta} ctaNote={ctaNote} />;
+  }
 
   if (isConnected && (isAuthenticating || (!isAuthenticated && !error))) {
     return (
