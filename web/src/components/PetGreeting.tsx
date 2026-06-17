@@ -55,6 +55,19 @@ function absenceLine(hoursAway: number | null): string | null {
   return "You were gone a good long while… I kept your spot warm the whole time.";
 }
 
+// Proactive recall — surface ONE concrete thing the pet actually remembers
+// (a stored memory or a fact it learned about you), so the moat is felt in the
+// pet's own voice. Deterministic + free; rotates daily so it doesn't repeat.
+function pickRecall(memories: any[], profile: any[]): string | null {
+  const mems = (Array.isArray(memories) ? memories : []).filter((m) => m?.content && typeof m.content === "string");
+  const profs = (Array.isArray(profile) ? profile : []).filter((p) => p?.content && typeof p.content === "string");
+  const sortedMems = [...mems].sort((a, b) => (b.importance || 0) - (a.importance || 0));
+  const candidates = [...sortedMems.map((m) => m.content as string), ...profs.map((p) => p.content as string)];
+  if (!candidates.length) return null;
+  const dayIdx = Math.floor(Date.now() / 86_400_000);
+  return candidates[dayIdx % candidates.length];
+}
+
 interface Props {
   petId: number;
   petName: string;
@@ -65,6 +78,7 @@ interface Props {
 
 export default function PetGreeting({ petId, petName, mood, accent, lastInteractionAt }: Props) {
   const [thought, setThought] = useState<string | null>(null);
+  const [recall, setRecall] = useState<string | null>(null);
   // Computed each render (not frozen in state) so the time-of-day greeting
   // re-anchors to the wall clock instead of sticking at the mount-time hour.
   const now = new Date();
@@ -74,6 +88,10 @@ export default function PetGreeting({ petId, petName, mood, accent, lastInteract
     fetch(`/api/pets/${petId}/thought`, { headers: getAuthHeaders() })
       .then(r => (r.ok ? r.json() : null))
       .then(d => { if (!cancelled && d?.thought) setThought(d.thought); })
+      .catch(() => {});
+    fetch(`/api/petclaw/memory?petId=${petId}`, { headers: getAuthHeaders() })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (!cancelled && d) setRecall(pickRecall(d.memories, d.userProfile)); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [petId]);
@@ -124,6 +142,14 @@ export default function PetGreeting({ petId, petName, mood, accent, lastInteract
           {absence && (
             <div style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", marginTop: 5, lineHeight: 1.4 }}>
               {absence}
+            </div>
+          )}
+
+          {/* Proactive recall — the pet brings up something specific it remembers. */}
+          {recall && (
+            <div style={{ fontSize: 13, color: "rgba(26,26,46,0.62)", marginTop: 7, lineHeight: 1.45, display: "flex", gap: 7, alignItems: "flex-start" }}>
+              <span style={{ flexShrink: 0 }}>💭</span>
+              <span><span style={{ fontWeight: 700 }}>Still on my mind</span> — {recall}</span>
             </div>
           )}
 
