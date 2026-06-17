@@ -23,7 +23,10 @@ export default function CommunityHighlights() {
       .catch(() => {});
   }, []);
 
-  if (!h) return null;
+  // Hide the whole hero on an empty/near-empty DB — otherwise a fresh launch
+  // shows "A place full of pets · PETS 0 / CREATIONS 0", which reads as broken.
+  // The gallery below has its own "No Creations Yet → Create the first one" state.
+  if (!h || ((h.stats?.pets || 0) === 0 && (h.stats?.generations || 0) === 0)) return null;
 
   return (
     <div className="mp-enter" style={{ maxWidth: 1060, margin: "0 auto 18px", padding: "0 24px" }}>

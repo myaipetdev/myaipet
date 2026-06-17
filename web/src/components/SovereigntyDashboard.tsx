@@ -1036,7 +1036,7 @@ export default function SovereigntyDashboard() {
             </p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               {[
-                { n: "6+", l: "Platforms" },
+                { n: "4", l: "Channels" },
                 { n: "100%", l: "Data Ownership" },
                 { n: "∞", l: "Memory" },
               ].map(({ n, l }) => (

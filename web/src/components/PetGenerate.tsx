@@ -167,18 +167,18 @@ export default function PetGenerate() {
       } else {
         await recordImageGeneration(petId, style);
       }
-      setChainToast("✅ 온체인 기록 완료!");
+      setChainToast("✅ Recorded on-chain!");
       setTimeout(() => setChainToast(null), 3000);
     } catch (e: any) {
       console.error("[PETActivity] Full error:", JSON.stringify(e, Object.getOwnPropertyNames(e)));
       const raw = (e?.shortMessage || e?.message || "").toLowerCase();
       const msg = raw.includes("insufficient") || raw.includes("bnb") || raw.includes("fund")
-        ? "BNB 잔액이 부족합니다"
+        ? "Insufficient BNB balance"
         : raw.includes("reject") || raw.includes("denied") || raw.includes("user refused")
-        ? "트랜잭션이 거부되었습니다"
+        ? "Transaction rejected"
         : raw.includes("chain") || raw.includes("network")
-        ? "BSC 네트워크로 전환해주세요"
-        : `온체인 기록 실패: ${e?.shortMessage || e?.message || "알 수 없는 오류"}`;
+        ? "Please switch to the BSC network"
+        : `On-chain record failed: ${e?.shortMessage || e?.message || "unknown error"}`;
       setChainToast(`❌ ${msg}`);
       setTimeout(() => setChainToast(null), 6000);
     }
@@ -189,12 +189,9 @@ export default function PetGenerate() {
   const handleGenerate = async () => {
     if (!selectedPet || generating) return;
     if (balance !== null && balance < creditCost) {
-      setError(`Insufficient credits — need ${creditCost} but have ${balance}. Buy credits on the home page.`);
-      // Auto-scroll to pricing if rendered on the same page
-      setTimeout(() => {
-        const el = document.querySelector(".pricing-root");
-        if (el) el.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+      // Pricing only renders on Home, so there's nothing to scroll to here —
+      // point the user to the Home tab (the Nav balance pill also opens it).
+      setError(`Insufficient credits — need ${creditCost} but have ${balance}. Open the Home tab to buy more credits.`);
       return;
     }
     setError(null);
@@ -263,7 +260,14 @@ export default function PetGenerate() {
   };
 
   const isOriginal = style === 0;
-  const creditCost = (isOriginal && genType === "image") ? 0 : 1;
+  // Mirror the server pricing (api/pets/[petId]/generate): original photo = free,
+  // image = 5, video = 15/30/60 by duration. (Was hard-coded to 1, so the button
+  // and pre-flight check lied about the real cost.)
+  const creditCost = (isOriginal && genType === "image")
+    ? 0
+    : genType === "video"
+    ? (duration <= 3 ? 15 : duration <= 5 ? 30 : 60)
+    : 5;
 
   if (pets.length === 0) {
     return (
@@ -720,7 +724,7 @@ export default function PetGenerate() {
                       }}>
                         {d}s
                         <div style={{ fontFamily: "mono", fontSize: 8, color: "rgba(26,26,46,0.3)", marginTop: 2 }}>
-                          🪙 1
+                          🪙 {d <= 3 ? 15 : d <= 5 ? 30 : 60}
                         </div>
                       </button>
                     ))}
