@@ -85,6 +85,13 @@ function moodReason(pet: any): string {
   return "doing just fine";
 }
 
+// localStorage key for the per-pet, per-(local)-day care checklist.
+function careDayKey(pid: number): string {
+  const d = new Date();
+  const local = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return `aipet_care_${pid}_${local}`;
+}
+
 function AnimatedStatBar({ label, value, color, max = 100, icon }: any) {
   const [displayValue, setDisplayValue] = useState(0);
 
@@ -943,6 +950,10 @@ export default function PetProfile() {
   // looks like a debug screen at first glance, bars communicate immediately.
   const [statsView, setStatsView] = useState<"radar" | "slots">("slots");
   const [combosUnlocked, setCombosUnlocked] = useState<string[]>([]);
+  // Floating "+8💖" stat-delta pops shown briefly after a care interaction.
+  const [statPops, setStatPops] = useState<Array<{ id: number; delta: number; color: string; icon: string }>>([]);
+  // Care actions completed today (client-side per-day tracker, localStorage-backed).
+  const [careToday, setCareToday] = useState<string[]>([]);
   const [evolutionAnim, setEvolutionAnim] = useState<{
     fromStage: { icon: string; name: string };
     toStage: { icon: string; name: string };
@@ -965,6 +976,13 @@ export default function PetProfile() {
       .then((d: any) => { if (alive && Array.isArray(d?.messages) && d.messages.length) setChatMessages(d.messages); })
       .catch(() => {});
     return () => { alive = false; };
+  }, [activePet?.id]);
+
+  // Load today's completed care actions for the active pet (resets daily).
+  useEffect(() => {
+    if (!activePet?.id) { setCareToday([]); return; }
+    try { setCareToday(JSON.parse(localStorage.getItem(careDayKey(activePet.id)) || "[]")); }
+    catch { setCareToday([]); }
   }, [activePet?.id]);
 
   // Escape closes the chat modal — keyboard users can't reach the backdrop or ✕.
@@ -1162,7 +1180,36 @@ export default function PetProfile() {
           setTimeout(() => setComboToast(null), 4500);
         }
         setPetRequest(result.interaction?.next_request || null);
+
+        // Floating stat-delta pops — surface the reward of caring, animated.
+        const fx = result.interaction?.effects || {};
+        const popDefs: Array<{ key: string; color: string; icon: string }> = [
+          { key: "happiness", color: "#f472b6", icon: "💖" },
+          { key: "bond", color: "#c084fc", icon: "🤝" },
+          { key: "experience", color: "#4ade80", icon: "✨" },
+          { key: "energy", color: "#60a5fa", icon: "⚡" },
+          { key: "hunger", color: "#fbbf24", icon: "🍖" },
+        ];
+        const pops = popDefs
+          .filter((d) => typeof fx[d.key] === "number" && fx[d.key] !== 0)
+          .map((d, i) => ({ id: Date.now() + i, delta: fx[d.key] as number, color: d.color, icon: d.icon }));
+        if (pops.length) {
+          setStatPops(pops);
+          setTimeout(() => setStatPops([]), 1600);
+        }
       }
+
+      // Mark this care action done for today (client-side daily checklist).
+      try {
+        const k = careDayKey(petId);
+        const done: string[] = JSON.parse(localStorage.getItem(k) || "[]");
+        if (!done.includes(type)) {
+          const next = [...done, type];
+          localStorage.setItem(k, JSON.stringify(next));
+          if (activePetIdRef.current === petId) setCareToday(next);
+        }
+      } catch {}
+
       loadPetStatus(activePet.id);
       loadEvoStatus(activePet.id);
       loadPets();
@@ -1403,6 +1450,23 @@ export default function PetProfile() {
           </div>
         </div>
       )}
+      {/* Floating stat-delta pops after a care interaction */}
+      {statPops.length > 0 && (
+        <div style={{
+          position: "fixed", top: "30%", left: "50%", transform: "translateX(-50%)",
+          zIndex: 9998, display: "flex", gap: 16, pointerEvents: "none",
+        }}>
+          {statPops.map((p, i) => (
+            <div key={p.id} style={{
+              fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 24,
+              color: p.color, textShadow: "0 2px 10px rgba(0,0,0,0.22)",
+              animation: "floatUpPop 1.5s ease-out forwards", animationDelay: `${i * 70}ms`,
+            }}>
+              {p.delta > 0 ? "+" : ""}{p.delta}{p.icon}
+            </div>
+          ))}
+        </div>
+      )}
       <style>{`
         @keyframes slideDown { from { opacity:0; transform:translateX(-50%) translateY(-20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
         @keyframes petFloat {
@@ -1423,6 +1487,12 @@ export default function PetProfile() {
           0% { opacity: 0; transform: translateX(-50%) scale(0.6) translateY(-30px); }
           60% { opacity: 1; transform: translateX(-50%) scale(1.05) translateY(0); }
           100% { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+        }
+        @keyframes floatUpPop {
+          0% { opacity: 0; transform: translateY(12px) scale(0.7); }
+          25% { opacity: 1; transform: translateY(-4px) scale(1.12); }
+          60% { opacity: 1; transform: translateY(-24px) scale(1); }
+          100% { opacity: 0; transform: translateY(-58px) scale(0.95); }
         }
       `}</style>
 
@@ -1712,6 +1782,44 @@ export default function PetProfile() {
             </div>
           )}
 
+          {/* Daily care checklist — client-side per-day tracker of completed care actions */}
+          {(() => {
+            const careActions = INTERACTIONS.filter((i) => i.type !== "talk" && i.minLevel <= pet.level);
+            const doneCount = careActions.filter((a) => careToday.includes(a.type)).length;
+            const allDone = doneCount === careActions.length && careActions.length > 0;
+            return (
+              <div style={{
+                marginTop: 12, padding: "10px 12px", borderRadius: 10,
+                background: "rgba(74,222,128,0.05)", border: "1px solid rgba(74,222,128,0.15)",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <span style={{ fontSize: 10, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(26,26,46,0.5)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    ✅ Today&apos;s Care
+                  </span>
+                  <span style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: allDone ? "#16a34a" : "rgba(26,26,46,0.4)" }}>
+                    {doneCount}/{careActions.length}{allDone ? " · all done! 🎉" : ""}
+                  </span>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {careActions.map((a) => {
+                    const done = careToday.includes(a.type);
+                    return (
+                      <div key={a.type} style={{
+                        display: "flex", alignItems: "center", gap: 5, padding: "4px 9px", borderRadius: 8,
+                        background: done ? "rgba(74,222,128,0.14)" : "rgba(0,0,0,0.03)",
+                        border: `1px solid ${done ? "rgba(74,222,128,0.3)" : "rgba(0,0,0,0.06)"}`,
+                        opacity: done ? 1 : 0.65,
+                      }}>
+                        <span style={{ fontSize: 12 }}>{done ? "✓" : a.icon}</span>
+                        <span style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, color: done ? "#16a34a" : "rgba(26,26,46,0.55)" }}>{a.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
           <div style={{
             marginTop: 14, padding: "10px 14px", borderRadius: 10,
             background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)",
@@ -1754,6 +1862,53 @@ export default function PetProfile() {
               }}>EARN</div>
             </div>
           )}
+
+          {/* Achievements — milestones derived client-side from live pet stats */}
+          {(() => {
+            const ach = [
+              { id: "first", icon: "🐾", label: "First Bond", earned: pet.total_interactions >= 1, desc: "Meet your pet" },
+              { id: "lv5", icon: "⭐", label: "Rising Star", earned: pet.level >= 5, desc: "Reach Lv.5" },
+              { id: "lv10", icon: "🌟", label: "Veteran", earned: pet.level >= 10, desc: "Reach Lv.10" },
+              { id: "lv20", icon: "👑", label: "Elite", earned: pet.level >= 20, desc: "Reach Lv.20" },
+              { id: "bond50", icon: "🤝", label: "Close Friends", earned: pet.bond_level >= 50, desc: "Bond 50+" },
+              { id: "bond100", icon: "💞", label: "Soulmate", earned: pet.bond_level >= 100, desc: "Max bond" },
+              { id: "evolve", icon: "🦋", label: "Evolved", earned: ((pet as any).evolution_stage ?? 0) >= 1, desc: "Evolve once" },
+              { id: "combo", icon: "✨", label: "Combo Master", earned: combosUnlocked.length >= 3, desc: "3 combos" },
+              { id: "streak7", icon: "🔥", label: "Dedicated", earned: ((pet as any).care_streak ?? 0) >= 7, desc: "7-day streak" },
+              { id: "social", icon: "💬", label: "Inseparable", earned: pet.total_interactions >= 50, desc: "50 interactions" },
+            ];
+            const earnedCount = ach.filter((a) => a.earned).length;
+            return (
+              <div style={{
+                marginTop: 10, padding: "10px 12px", borderRadius: 10,
+                background: "linear-gradient(135deg, rgba(139,92,246,0.05), rgba(245,158,11,0.04))",
+                border: "1px solid rgba(139,92,246,0.15)",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <span style={{ fontSize: 10, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(26,26,46,0.5)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    🏆 Achievements
+                  </span>
+                  <span style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#7c3aed" }}>
+                    {earnedCount}/{ach.length}
+                  </span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
+                  {ach.map((a) => (
+                    <div key={a.id} title={`${a.label} — ${a.desc}`} style={{
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+                      padding: "7px 3px", borderRadius: 8, textAlign: "center",
+                      background: a.earned ? "rgba(139,92,246,0.1)" : "rgba(0,0,0,0.03)",
+                      border: `1px solid ${a.earned ? "rgba(139,92,246,0.25)" : "rgba(0,0,0,0.05)"}`,
+                      filter: a.earned ? "none" : "grayscale(1)", opacity: a.earned ? 1 : 0.45,
+                    }}>
+                      <span style={{ fontSize: 17, lineHeight: 1 }}>{a.icon}</span>
+                      <span style={{ fontSize: 7.5, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: a.earned ? "#6d28d9" : "rgba(26,26,46,0.5)", letterSpacing: "-0.02em" }}>{a.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Power Training + Battle are paused. The pet identity / memory /
               streak loop is the product; on-chain stat fighting was the wrong

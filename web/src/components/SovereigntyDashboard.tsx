@@ -49,6 +49,42 @@ interface MintableMemory {
   created_at?: string;
 }
 
+// Receipts surfaced from the export/delete responses (cryptographic proof of
+// exactly what left / was erased from the system).
+interface ExportReceipt {
+  exportedAt?: string;
+  integrityHash?: string;
+  memoriesCount: number;
+  skillsCount: number;
+  checkpointsCount: number;
+}
+
+interface DeleteReceipt {
+  deletedAt?: string;
+  deletionHash?: string;
+}
+
+// A single sovereign pet on the open network (discovery endpoint, no auth).
+interface NetworkNode {
+  petId: number | string;
+  name: string;
+  avatarUrl?: string;
+  personality?: string;
+  element?: string;
+  level?: number;
+  status?: "online" | "offline" | "busy";
+  trustScore?: number;
+  totalInteractions?: number;
+  lastSeen?: string;
+}
+
+interface NetworkStats {
+  totalNodes?: number;
+  onlineNodes?: number;
+  totalInvocations?: number;
+  avgTrustScore?: number;
+}
+
 // ── Helpers ──
 const BSCSCAN = "https://bscscan.com";
 
@@ -778,6 +814,20 @@ export default function SovereigntyDashboard() {
     allowInteraction: true,
   });
 
+  // ── Transparency snapshot ("what we hold about you") ──
+  // Memory stats are NOT fetched by fetchSovereigntyData — pulled in below.
+  const [memoryStats, setMemoryStats] = useState<{ memoryCount?: number; profileCount?: number; learnedSkillCount?: number } | null>(null);
+  const [connectedCount, setConnectedCount] = useState<number | null>(null);
+  const [installedSkillCount, setInstalledSkillCount] = useState<number | null>(null);
+
+  // ── Export / Delete proof receipts (surfaced from response payloads) ──
+  const [exportReceipt, setExportReceipt] = useState<ExportReceipt | null>(null);
+  const [deleteReceipt, setDeleteReceipt] = useState<DeleteReceipt | null>(null);
+
+  // ── Pet Network (public discovery; not pet-specific) ──
+  const [networkStats, setNetworkStats] = useState<NetworkStats | null>(null);
+  const [networkNodes, setNetworkNodes] = useState<NetworkNode[]>([]);
+
   // ── Load pets (fallback to demo) ──
   const [isDemo, setIsDemo] = useState(false);
   useEffect(() => {
@@ -809,12 +859,23 @@ export default function SovereigntyDashboard() {
     const pid = selectedPet.id;
     setLoading(true);
     try {
-      const [soulRes, ckptRes, memsRes, mintableRes, consentRes] = await Promise.all([
+      const [soulRes, ckptRes, memsRes, mintableRes, consentRes, memStatsRes, connRes, skillsRes] = await Promise.all([
         soulApi.get(pid).catch(() => null),
         soulApi.checkpoints(pid, 50, 0).catch(() => null),
         memoryNftApi.list(pid).catch(() => null),
         memoryNftApi.mintable(pid).catch(() => null),
         fetch(`/api/petclaw/consent?petId=${pid}`, {
+          headers: getAuthHeaders(),
+        }).then(r => r.ok ? r.json() : null).catch(() => null),
+        // Transparency snapshot data — memory ledger counts, connected platforms,
+        // installed skills. Each guarded so one failure never breaks the others.
+        fetch(`/api/petclaw/memory?petId=${pid}`, {
+          headers: getAuthHeaders(),
+        }).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`/api/petclaw/connections?petId=${pid}`, {
+          headers: getAuthHeaders(),
+        }).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`/api/petclaw/skills?petId=${pid}`, {
           headers: getAuthHeaders(),
         }).then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
@@ -828,6 +889,9 @@ export default function SovereigntyDashboard() {
       setMintableMemories(toArr(mintableRes?.items ?? mintableRes?.memories ?? mintableRes));
       setSuccessorInput((soulRes?.soul?.successor_wallet || soulRes?.successor_wallet) || "");
       if (consentRes?.consent) setConsent(consentRes.consent);
+      setMemoryStats(memStatsRes?.stats ?? null);
+      setConnectedCount(toArr(connRes?.providers).filter((p: any) => p?.connected).length);
+      setInstalledSkillCount(toArr(skillsRes?.installed).length);
     } catch {}
     setLoading(false);
   }, [selectedPet]);
@@ -850,6 +914,20 @@ export default function SovereigntyDashboard() {
   };
 
   useEffect(() => { fetchSovereigntyData(); }, [fetchSovereigntyData]);
+
+  // ── Pet Network discovery (public, no auth, runs once) ──
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/petclaw/network/discover`)
+      .then(r => r.ok ? r.json() : null)
+      .then((d: any) => {
+        if (cancelled || !d) return;
+        setNetworkStats(d.network ?? null);
+        setNetworkNodes(Array.isArray(d.nodes) ? d.nodes : []);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   // ── Copy-to-clipboard ──
   const copyHash = (hash: string, label: string) => {
@@ -1708,6 +1786,77 @@ export default function SovereigntyDashboard() {
               </div>
             )}
           </div>
+
+          {/* ───── "What we hold about you" transparency snapshot ───── */}
+          <div
+            className="sov-card"
+            style={{
+              padding: 30,
+              borderRadius: 20,
+              background: "linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(59,130,246,0.04) 100%)",
+              border: "1px solid rgba(16,185,129,0.18)",
+              marginBottom: 32,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 22 }}>🔍</span>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
+                What we hold about {selectedPet?.name || "your pet"}
+              </h2>
+              <span style={{
+                fontSize: 9, padding: "3px 10px", borderRadius: 999,
+                background: "rgba(16,185,129,0.12)", color: "#059669",
+                fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.08em",
+              }}>FULL TRANSPARENCY</span>
+            </div>
+            <p style={{
+              fontSize: 14, color: "rgba(26,26,46,0.62)", lineHeight: 1.6, margin: "0 0 22px",
+              fontFamily: "'Space Grotesk',sans-serif",
+            }}>
+              Every category of data the system holds, with a live count. Nothing hidden —
+              everything here is <strong>exportable and deletable by you</strong> below.
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginBottom: 22 }}>
+              <Stat label="Memories" value={memoryStats?.memoryCount ?? 0} />
+              <Stat label="Profile facts" value={memoryStats?.profileCount ?? 0} />
+              <Stat label="Learned patterns" value={memoryStats?.learnedSkillCount ?? 0} />
+              <Stat label="Connected platforms" value={connectedCount ?? 0} />
+              <Stat label="Installed skills" value={installedSkillCount ?? 0} />
+              <Stat label="Soul checkpoints" value={checkpoints.length} />
+              <Stat label="Memory NFTs" value={memoryNfts.length} />
+            </div>
+
+            <div style={{ fontSize: 11, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(26,26,46,0.4)", marginBottom: 8, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              Consent state
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {[
+                { key: "allowPublicProfile", label: "Public profile" },
+                { key: "allowDataSharing", label: "Data sharing" },
+                { key: "allowAITraining", label: "AI training" },
+                { key: "allowInteraction", label: "Pet interactions" },
+              ].map(({ key, label }) => {
+                const on = !!(consent as any)[key];
+                return (
+                  <span key={key} style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    fontSize: 12, padding: "5px 12px", borderRadius: 999,
+                    fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600,
+                    background: on ? "rgba(16,185,129,0.1)" : "rgba(0,0,0,0.04)",
+                    border: `1px solid ${on ? "rgba(16,185,129,0.25)" : "rgba(0,0,0,0.07)"}`,
+                    color: on ? "#059669" : "rgba(26,26,46,0.45)",
+                  }}>
+                    <span style={{
+                      width: 7, height: 7, borderRadius: "50%",
+                      background: on ? "#10b981" : "rgba(0,0,0,0.18)",
+                    }} />
+                    {label}: {on ? "ON" : "OFF"}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
         </>
       )}
 
@@ -1928,6 +2077,15 @@ export default function SovereigntyDashboard() {
                     a.download = `${selectedPet.name}_SOUL.json`;
                     a.click();
                     URL.revokeObjectURL(url);
+                    // Surface the cryptographic proof of exactly what left the system.
+                    const d = data as any;
+                    setExportReceipt({
+                      exportedAt: d?.exportedAt,
+                      integrityHash: d?.integrityHash,
+                      memoriesCount: Array.isArray(d?.memories) ? d.memories.length : 0,
+                      skillsCount: Array.isArray(d?.skills) ? d.skills.length : 0,
+                      checkpointsCount: Array.isArray(d?.checkpoints) ? d.checkpoints.length : 0,
+                    });
                     setSovMsg("SOUL data exported successfully");
                   } catch (e: any) {
                     setSovMsg(e.message || "Export failed");
@@ -1966,7 +2124,9 @@ export default function SovereigntyDashboard() {
                       setDeleting(true);
                       try {
                         const result = await api.petclaw.delete(selectedPet.id);
-                        setSovMsg(`Data deleted. Proof: ${(result as any).deletionHash?.slice(0, 16)}...`);
+                        const r = result as any;
+                        setDeleteReceipt({ deletedAt: r?.deletedAt, deletionHash: r?.deletionHash });
+                        setSovMsg("All data permanently deleted");
                         setDeleteConfirm(false);
                         fetchSovereigntyData();
                       } catch (e: any) {
@@ -2008,6 +2168,74 @@ export default function SovereigntyDashboard() {
                 border: `1px solid ${sovMsg.includes("failed") ? "rgba(248,113,113,0.2)" : "rgba(16,185,129,0.2)"}`,
               }}>
                 {sovMsg}
+              </div>
+            )}
+
+            {/* ── Export proof receipt — cryptographic proof of exactly what left ── */}
+            {exportReceipt && (
+              <div style={{
+                marginBottom: 16, padding: "16px 18px", borderRadius: 14,
+                background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.22)",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 16 }}>📦</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif" }}>Export proof receipt</span>
+                  <span style={{
+                    fontSize: 8, padding: "2px 8px", borderRadius: 10,
+                    background: "rgba(16,185,129,0.14)", color: "#059669",
+                    fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em",
+                  }}>SHA-256</span>
+                  <span style={{ marginLeft: "auto", fontSize: 11, fontFamily: "monospace", color: "rgba(26,26,46,0.45)" }}>
+                    {exportReceipt.exportedAt ? new Date(exportReceipt.exportedAt).toLocaleString() : "—"}
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 10 }}>
+                  {[
+                    { l: "Memories", v: exportReceipt.memoriesCount },
+                    { l: "Skills", v: exportReceipt.skillsCount },
+                    { l: "Checkpoints", v: exportReceipt.checkpointsCount },
+                  ].map(({ l, v }) => (
+                    <div key={l}>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: "#059669", fontFamily: "'Space Grotesk',sans-serif" }}>{v}</div>
+                      <div style={{ fontSize: 9, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(26,26,46,0.55)", fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1.6 }}>
+                  Integrity hash{" "}
+                  <span style={{ fontFamily: "monospace", color: "#1a1a2e", fontWeight: 700 }}>
+                    {exportReceipt.integrityHash ? `${exportReceipt.integrityHash.slice(0, 16)}…` : "—"}
+                  </span>
+                  {" "}— verifies the bundle is exactly what left the system, unchanged.
+                </div>
+              </div>
+            )}
+
+            {/* ── Delete proof receipt — proof of permanent erasure ── */}
+            {deleteReceipt && (
+              <div style={{
+                marginBottom: 16, padding: "16px 18px", borderRadius: 14,
+                background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.22)",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 16 }}>🗑</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif" }}>Deletion proof receipt</span>
+                  <span style={{
+                    fontSize: 8, padding: "2px 8px", borderRadius: 10,
+                    background: "rgba(248,113,113,0.14)", color: "#dc2626",
+                    fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em",
+                  }}>SHA-256</span>
+                  <span style={{ marginLeft: "auto", fontSize: 11, fontFamily: "monospace", color: "rgba(26,26,46,0.45)" }}>
+                    {deleteReceipt.deletedAt ? new Date(deleteReceipt.deletedAt).toLocaleString() : "—"}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(26,26,46,0.55)", fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1.6 }}>
+                  Deletion hash{" "}
+                  <span style={{ fontFamily: "monospace", color: "#dc2626", fontWeight: 700 }}>
+                    {deleteReceipt.deletionHash ? `${deleteReceipt.deletionHash.slice(0, 16)}…` : "—"}
+                  </span>
+                  {" "}— your pet&apos;s data has been <strong>permanently deleted</strong>. This cannot be undone.
+                </div>
               </div>
             )}
 
@@ -2183,6 +2411,116 @@ export default function SovereigntyDashboard() {
           {/* ───── Channel Connections (OAuth) ───── */}
           {selectedPet && <MemoryInspectorCard key={selectedPet.id} petId={selectedPet.id} />}
           {selectedPet && <ChannelConnectionsCard key={selectedPet.id} petId={selectedPet.id} />}
+
+          {/* ───── Pet Network (public discovery) ───── */}
+          <div
+            className="sov-card"
+            style={{
+              padding: 30,
+              borderRadius: 20,
+              background: "linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(16,185,129,0.04) 100%)",
+              border: "1px solid rgba(59,130,246,0.18)",
+              marginBottom: 32,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 22 }}>🌐</span>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
+                Pet Network
+              </h2>
+              <span style={{
+                fontSize: 9, padding: "3px 10px", borderRadius: 999,
+                background: "rgba(59,130,246,0.12)", color: "#2563eb",
+                fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.08em",
+              }}>OPEN · PUBLIC</span>
+            </div>
+            <p style={{
+              fontSize: 14, color: "rgba(26,26,46,0.62)", lineHeight: 1.6, margin: "0 0 22px",
+              fontFamily: "'Space Grotesk',sans-serif",
+            }}>
+              Your pet can discover and interact with other sovereign pets on the open network —
+              each one owned by its person, reachable by its pet card.
+            </p>
+
+            {/* Network stats */}
+            <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 22 }}>
+              <div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif" }}>
+                  {networkStats?.totalNodes ?? 0}
+                </div>
+                <div style={{ fontSize: 9, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Total pets</div>
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px rgba(16,185,129,0.5)" }} />
+                  <span style={{ fontSize: 24, fontWeight: 800, color: "#059669", fontFamily: "'Space Grotesk',sans-serif" }}>
+                    {networkStats?.onlineNodes ?? 0}
+                  </span>
+                </div>
+                <div style={{ fontSize: 9, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Online now</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif" }}>
+                  {networkStats?.avgTrustScore ?? 0}
+                </div>
+                <div style={{ fontSize: 9, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Avg trust</div>
+              </div>
+            </div>
+
+            {/* Online nodes */}
+            {(() => {
+              const online = networkNodes.filter((n) => n.status === "online");
+              if (online.length === 0) {
+                return (
+                  <div style={{
+                    padding: 24, borderRadius: 14, border: "1px dashed rgba(0,0,0,0.08)",
+                    textAlign: "center", fontSize: 13, color: "rgba(26,26,46,0.45)",
+                    fontFamily: "'Space Grotesk',sans-serif",
+                  }}>
+                    No pets online yet — check back soon.
+                  </div>
+                );
+              }
+              return (
+                <div style={{ display: "grid", gap: 8 }}>
+                  {online.slice(0, 5).map((n) => (
+                    <div key={n.petId} style={{
+                      display: "flex", alignItems: "center", gap: 12,
+                      padding: "10px 14px", borderRadius: 12,
+                      background: "white", border: "1px solid rgba(0,0,0,0.06)",
+                    }}>
+                      <div style={{
+                        width: 38, height: 38, borderRadius: 10, flexShrink: 0, overflow: "hidden",
+                        background: "linear-gradient(135deg, #1a1a2e, #2d1b69)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        {n.avatarUrl ? (
+                          <img src={n.avatarUrl} alt={n.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : (
+                          <Icon name="paw" size={18} />
+                        )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {n.name}
+                        </div>
+                        <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", fontFamily: "monospace", marginTop: 2 }}>
+                          {[n.personality, n.element, n.level != null ? `Lv.${n.level}` : null].filter(Boolean).join(" · ")}
+                        </div>
+                      </div>
+                      <span style={{
+                        fontSize: 11, padding: "4px 10px", borderRadius: 999,
+                        background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)",
+                        color: "#059669", fontFamily: "monospace", fontWeight: 700,
+                      }}>
+                        ⛨ {n.trustScore ?? 0}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
 
           {/* ───── Chrome Extension ───── */}
           <ChromeExtensionSection />

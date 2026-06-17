@@ -142,6 +142,12 @@ export default function PetStudioPro() {
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [avatarSaved, setAvatarSaved] = useState(false);
   const [resultIsDemo, setResultIsDemo] = useState(false);
+  // generationId of the current result — powers the public Share link (/c/<id>).
+  const [lastGenId, setLastGenId] = useState<number | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
+  // ×N variations of the current image result (each its own paid generation).
+  const [variations, setVariations] = useState<string[]>([]);
+  const [varRunning, setVarRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const modelMenuRef = useRef<HTMLDivElement>(null);
@@ -292,6 +298,8 @@ export default function PetStudioPro() {
     setError(null);
     setResultUrl(null);
     setResultIsDemo(false);
+    setLastGenId(null);
+    setVariations([]);
 
     try {
       if (isDemo) {
@@ -314,6 +322,8 @@ export default function PetStudioPro() {
       // Functional + only when a number, so an out-of-order response can't stomp
       // a newer (lower) balance with a stale (higher) one.
       setCredits(c => (typeof data.creditsRemaining === "number" ? data.creditsRemaining : c));
+
+      if (typeof data.generationId === "number") setLastGenId(data.generationId);
 
       if (data.status === "completed" && data.url) {
         setResultUrl(data.url); setView("done"); refreshHistory(); return;
@@ -372,6 +382,56 @@ export default function PetStudioPro() {
     });
     setResultUrl(null);
     setView("idle");
+  };
+
+  // Animate: turn a still result into a short video. Flips to video output —
+  // the outputKind effect snaps the engine to grok-imagine-video (free tier,
+  // pet-anchored) — and returns to compose so the user confirms the spend.
+  const animateThis = () => {
+    setOutputKind("video");
+    setResultUrl(null);
+    setVariations([]);
+    setLastGenId(null);
+    setView("idle");
+  };
+
+  // ×4 variations of the current image: four independent paid generations of the
+  // same prompt. Sequential so we never burst the rate-limit; each shows as it lands.
+  const generateVariations = async () => {
+    if (!pet || isDemo || varRunning) return;
+    const model = chosenModel;
+    if (!model || model.kind !== "image") return;
+    setVarRunning(true);
+    setVariations([]);
+    const finalPrompt = buildFullPrompt();
+    const got: string[] = [];
+    for (let i = 0; i < 4; i++) {
+      try {
+        const res = await fetch("/api/studio/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+          body: JSON.stringify({ modelId: model.id, petId: pet.id, prompt: finalPrompt, aspect }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { if (data?.error) setError(data.error); break; }
+        if (typeof data.creditsRemaining === "number") setCredits(data.creditsRemaining);
+        let url: string | null = null;
+        if (data.status === "completed" && data.url) url = data.url;
+        else if (data.generationId) {
+          for (let p = 0; p < 40; p++) {
+            await new Promise(r => setTimeout(r, 3000));
+            const r2 = await fetch(`/api/studio/generate/${data.generationId}`, { headers: getAuthHeaders() }).catch(() => null);
+            if (!r2?.ok) continue;
+            const d2 = await r2.json().catch(() => null);
+            if (d2?.status === "completed") { url = d2.url; break; }
+            if (d2?.status === "failed") break;
+          }
+        }
+        if (url) { got.push(url); setVariations([...got]); }
+      } catch { break; }
+    }
+    setVarRunning(false);
+    refreshHistory();
   };
 
   return (
@@ -465,7 +525,7 @@ export default function PetStudioPro() {
 
             {/* Result actions */}
             {view === "done" && resultUrl && resultUrl !== "__demo__" && (
-              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12, alignItems: "center" }}>
                 <button
                   onClick={() => remix()}
                   aria-label="Remix this in a new style"
@@ -476,6 +536,17 @@ export default function PetStudioPro() {
                     fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
                   }}
                 >🎨 Remix (new style)</button>
+                {!isDemo && pet && pet.id > 0 && !/\.(mp4|webm)$/i.test(resultUrl) && (
+                  <button
+                    onClick={animateThis}
+                    title="Bring your pet to life — generate a short video anchored on your pet"
+                    style={{
+                      padding: "9px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+                      background: "linear-gradient(135deg,#8b5cf6,#7c3aed)", color: "white",
+                      fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
+                    }}
+                  >🎬 Animate</button>
+                )}
                 <button onClick={() => { setView("idle"); setResultUrl(null); }} style={btnGhost}>⟳ Start over</button>
                 {!isDemo && pet && pet.id > 0 && !/\.(mp4|webm)$/i.test(resultUrl) && (
                   <button
@@ -502,9 +573,52 @@ export default function PetStudioPro() {
                     title="Use this image as your pet's profile picture (improves identity lock on future generations)"
                   >{avatarSaved ? "✓ Avatar set" : "⭐ Set as avatar"}</button>
                 )}
+                {!isDemo && lastGenId != null && (
+                  <button
+                    onClick={async () => {
+                      const link = `${window.location.origin}/c/${lastGenId}`;
+                      try { await navigator.clipboard.writeText(link); setShareCopied(true); setTimeout(() => setShareCopied(false), 2200); }
+                      catch { window.open(link, "_blank", "noreferrer"); }
+                    }}
+                    style={btnGhost}
+                    title="Copy a public share link to this creation"
+                  >{shareCopied ? "✓ Link copied" : "🔗 Share"}</button>
+                )}
+                {!isDemo && pet && pet.id > 0 && chosenModel?.kind === "image" && !/\.(mp4|webm)$/i.test(resultUrl) && (
+                  <button
+                    onClick={generateVariations}
+                    disabled={varRunning}
+                    style={{ ...btnGhost, cursor: varRunning ? "wait" : "pointer", opacity: varRunning ? 0.6 : 1 }}
+                    title={`Generate 4 fresh takes of this prompt (costs ${(chosenModel?.creditsPerRun ?? 0) * 4} credits)`}
+                  >{varRunning ? "✦ Generating…" : `✦ 4 variations · ${(chosenModel?.creditsPerRun ?? 0) * 4} cr`}</button>
+                )}
                 <div style={{ flex: 1 }} />
                 <a href={resultUrl} download style={btnGhost}>↓ Download</a>
                 <a href={resultUrl} target="_blank" rel="noreferrer" style={btnGhost}>↗ Open</a>
+              </div>
+            )}
+
+            {/* Variations grid — each tile swaps into the main result on click */}
+            {view === "done" && (varRunning || variations.length > 0) && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(26,26,46,0.5)", fontWeight: 700, marginBottom: 8 }}>
+                  ✦ VARIATIONS{varRunning ? ` · ${variations.length}/4…` : ""}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                  {variations.map((u, i) => (
+                    <button key={i} onClick={() => { setResultUrl(u); setVariations([]); }} className="mp-lift" title="Use this variation" style={{
+                      padding: 0, border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, overflow: "hidden",
+                      cursor: "pointer", aspectRatio: "1 / 1", background: `url(${u}) center/cover no-repeat`,
+                    }} />
+                  ))}
+                  {varRunning && Array.from({ length: Math.max(0, 4 - variations.length) }).map((_, i) => (
+                    <div key={`s${i}`} className="studio-pulse" style={{
+                      border: "1px solid rgba(0,0,0,0.06)", borderRadius: 10, aspectRatio: "1 / 1",
+                      background: "rgba(0,0,0,0.04)", display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 18, color: "rgba(26,26,46,0.25)",
+                    }}>◌</div>
+                  ))}
+                </div>
               </div>
             )}
 
