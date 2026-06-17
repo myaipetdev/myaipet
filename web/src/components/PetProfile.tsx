@@ -15,6 +15,8 @@ import PaywallModal from "@/components/PaywallModal";
 import StatUpgradePanel from "@/components/StatUpgradePanel";
 import WardrobeCard from "@/components/WardrobeCard";
 import MemoryJournal from "@/components/MemoryJournal";
+import ExpressionPack from "@/components/ExpressionPack";
+import { moodToExpressionKey } from "@/lib/moodPortraits";
 
 const PET_SPECIES = ["Cat","Dog","Parrot","Turtle","Hamster","Rabbit","Fox","Pomeranian"];
 
@@ -825,9 +827,12 @@ const MOOD_ANIMATIONS: Record<string, string> = {
   neutral: "none",
 };
 
-function PetAvatar({ pet, mood, size = 80, reaction, equipped }: any) {
+function PetAvatar({ pet, mood, size = 80, reaction, equipped, moodPortraits }: any) {
   const moodCfg = MOOD_CONFIG[mood] || MOOD_CONFIG.neutral;
-  const hasAvatar = pet.avatar_url;
+  // Real facial expression for this mood if the owner generated one; else the base identity image.
+  const exprKey = moodToExpressionKey(mood);
+  const moodImg = exprKey && moodPortraits ? moodPortraits[exprKey] : null;
+  const imgSrc = moodImg || pet.avatar_url || "/mascot.jpg";
   const [bubbleText, setBubbleText] = useState<string | null>(null);
   const [bubbleVisible, setBubbleVisible] = useState(false);
   // One-shot reaction (portrait motion + burst emote); `n` nonce so repeats re-fire.
@@ -984,13 +989,7 @@ function PetAvatar({ pet, mood, size = 80, reaction, equipped }: any) {
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         <div style={{ width: "100%", height: "100%", animation: "petBreathe 3.4s ease-in-out infinite" }}>
-          {hasAvatar ? (
-            <img src={pet.avatar_url} alt={pet.name} style={{
-              width: "100%", height: "100%", objectFit: "cover",
-            }} />
-          ) : (
-            <img src="/mascot.jpg" alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          )}
+          <img src={imgSrc} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.3s" }} />
         </div>
       </div>
       {/* Equipped cosmetics — accessory rests on the head, cosmetic glows in a corner */}
@@ -1074,6 +1073,8 @@ export default function PetProfile() {
   const [petReaction, setPetReaction] = useState<{ type: string; n: number } | null>(null);
   // Equipped cosmetics for the portrait overlay (slot → { icon, key }).
   const [equipped, setEquipped] = useState<Record<string, { icon: string; key: string; category: string }>>({});
+  // Generated mood-expression portraits (expression key → image url).
+  const [moodPortraits, setMoodPortraits] = useState<Record<string, string>>({});
   // Care actions completed today (client-side per-day tracker, localStorage-backed).
   const [careToday, setCareToday] = useState<string[]>([]);
   const [evolutionAnim, setEvolutionAnim] = useState<{
@@ -1116,6 +1117,18 @@ export default function PetProfile() {
   };
   useEffect(() => {
     if (activePet?.id) loadEquipped(activePet.id); else setEquipped({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePet?.id]);
+
+  // Generated mood-expression portraits (refetched after the user generates a pack).
+  const loadMoodPortraits = (pid: number) => {
+    fetch(`/api/pets/${pid}/mood-portrait`, { headers: getAuthHeaders() })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d) setMoodPortraits(d.moodPortraits || {}); })
+      .catch(() => {});
+  };
+  useEffect(() => {
+    if (activePet?.id) loadMoodPortraits(activePet.id); else setMoodPortraits({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePet?.id]);
 
@@ -1716,7 +1729,7 @@ export default function PetProfile() {
           }} />
 
           <div style={{ textAlign: "center", marginBottom: 24, position: "relative" }}>
-            <PetAvatar pet={pet} mood={mood} size={140} reaction={petReaction} equipped={equipped} />
+            <PetAvatar pet={pet} mood={mood} size={140} reaction={petReaction} equipped={equipped} moodPortraits={moodPortraits} />
             {/* If the pet still has the default species name ("Cat"/"Dog"…),
                 surface a clear rename CTA. Generic names kill the emotional
                 lock-in we're trying to build. */}
@@ -2088,6 +2101,11 @@ export default function PetProfile() {
               </div>
             );
           })()}
+
+          {/* Expression Pack — generate real mood faces; portrait swaps by mood */}
+          {pet.id > 0 && (
+            <ExpressionPack pet={pet} petId={pet.id} moodPortraits={moodPortraits} onChange={() => loadMoodPortraits(pet.id)} />
+          )}
 
           {/* Wardrobe — buy cute cosmetics with credits + wear them on the portrait */}
           {pet.id > 0 && (
