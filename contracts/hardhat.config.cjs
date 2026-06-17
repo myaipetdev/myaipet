@@ -25,6 +25,18 @@ module.exports = {
       chainId: 97,
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
     },
+    base: {
+      type: "http",
+      url: process.env.BASE_RPC_URL || "https://mainnet.base.org",
+      chainId: 8453,
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
+    },
+    baseSepolia: {
+      type: "http",
+      url: process.env.BASE_RPC_URL || "https://sepolia.base.org",
+      chainId: 84532,
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
+    },
   },
   etherscan: {
     apiKey: process.env.BSCSCAN_API_KEY || "",

@@ -6,18 +6,24 @@ import { ethers } from "ethers";
 import fs from "fs";
 import path from "path";
 
-const BSC_USDT = "0x55d398326f99059fF775485246999027B3197955";
-const BSC_TESTNET_USDT = "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd";
 const MULTISIG_ADDRESS = process.env.MULTISIG_ADDRESS || "";
 const RELAYER_ADDRESS = process.env.RELAYER_ADDRESS || "";
 const PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 
+// PETShop's stablecoin arg = USDT on BSC, USDC on Base (both ERC-20, 6/18 dp differ
+// but the contract just transfers the token, so the canonical address is enough).
+const NETWORKS = {
+  bsc:         { rpc: "https://bsc-dataseed1.binance.org",              chainId: 56,    usdt: "0x55d398326f99059fF775485246999027B3197955", sym: "BNB" },
+  bscTestnet:  { rpc: "https://data-seed-prebsc-1-s1.binance.org:8545", chainId: 97,    usdt: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd", sym: "tBNB" },
+  base:        { rpc: process.env.BASE_RPC_URL || "https://mainnet.base.org", chainId: 8453,  usdt: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", sym: "ETH" },
+  baseSepolia: { rpc: process.env.BASE_RPC_URL || "https://sepolia.base.org", chainId: 84532, usdt: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", sym: "ETH" },
+};
+
 const networkName = hre.globalOptions.network || "bsc";
-const isTestnet = networkName === "bscTestnet";
-const rpcUrl = isTestnet
-  ? "https://data-seed-prebsc-1-s1.binance.org:8545"
-  : "https://bsc-dataseed1.binance.org";
-const usdtAddress = isTestnet ? BSC_TESTNET_USDT : BSC_USDT;
+const net = NETWORKS[networkName] || NETWORKS.bsc;
+const rpcUrl = net.rpc;
+const usdtAddress = net.usdt;
+const chainId = net.chainId;
 
 function loadArtifact(name) {
   const p = path.join("artifacts", "contracts", `${name}.sol`, `${name}.json`);
@@ -34,12 +40,12 @@ async function deployContract(wallet, name, args = []) {
 }
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider(rpcUrl, isTestnet ? 97 : 56);
+  const provider = new ethers.JsonRpcProvider(rpcUrl, chainId);
   const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
   console.log(`\n🚀 Deploying MY AI PET contracts on ${networkName}`);
   console.log(`   Deployer: ${wallet.address}`);
-  console.log(`   Balance: ${ethers.formatEther(await provider.getBalance(wallet.address))} BNB`);
+  console.log(`   Balance: ${ethers.formatEther(await provider.getBalance(wallet.address))} ${net.sym}`);
   console.log(`   USDT: ${usdtAddress}\n`);
 
   if (wallet.address === "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf") {
@@ -112,7 +118,7 @@ async function main() {
 
   // Save addresses
   const config = {
-    chainId: isTestnet ? 97 : 56,
+    chainId,
     network: networkName,
     petToken: petToken.address,
     petShop: petShop.address,
@@ -126,7 +132,7 @@ async function main() {
   console.log("\nSaved to deployed-addresses.json");
 
   // Remaining balance
-  console.log(`\n💰 Remaining: ${ethers.formatEther(await provider.getBalance(wallet.address))} BNB`);
+  console.log(`\n💰 Remaining: ${ethers.formatEther(await provider.getBalance(wallet.address))} ${net.sym}`);
 }
 
 main().catch((error) => {
