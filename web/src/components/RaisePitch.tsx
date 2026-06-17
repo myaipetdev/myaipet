@@ -21,6 +21,7 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import { seasonTier } from "@/lib/season";
 
 interface ProjectionData {
   signedIn: boolean;
@@ -91,6 +92,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
   );
 
   const me = data?.me;
+  const st = me ? seasonTier(me.points) : null;
 
   return (
     <section style={{ padding: "60px 40px", maxWidth: 1060, margin: "0 auto" }}>
@@ -134,8 +136,10 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
                   {me.points.toLocaleString()}
                   <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
                 </div>
-                <div style={mini}>
-                  {me.inTop100 ? `rank #${me.rank} — in the Top 100` : `rank #${me.rank} — climb into the Top 100`}
+                <div style={{ ...mini, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                  <span style={{ color: st ? st.tier.color : "#fff", fontWeight: 700 }}>{st?.tier.emoji} {st?.tier.name}</span>
+                  <span style={{ opacity: 0.7 }}>· rank #{me.rank}{me.inTop100 ? " · Top 100" : ""}</span>
+                  {st?.next && <span style={{ opacity: 0.7 }}>· {st.toNext.toLocaleString()} to {st.next.name}</span>}
                 </div>
               </div>
 

@@ -16,6 +16,7 @@ import WalletGate from "@/components/WalletGate";
 import TrustStrip from "@/components/TrustStrip";
 import ToastHost from "@/components/Toast";
 import DialogHost from "@/components/Dialog";
+import { seasonTier } from "@/lib/season";
 import SeasonRewardsHub from "@/components/SeasonRewardsHub";
 import CommunityHighlights from "@/components/CommunityHighlights";
 import PetOfTheWeek from "@/components/PetOfTheWeek";
@@ -176,6 +177,8 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
   const minutes = Math.floor((remaining % 3_600_000) / 60_000);
   const seconds = Math.floor((remaining % 60_000) / 1000);
   const progress = Math.min(1, Math.max(0, (now - SEASON_START) / SEASON_TOTAL));
+  // Tier standing — climbs with the user's loyalty points (non-financial status).
+  const { tier, next, toNext, progress: tierProgress } = seasonTier(seasonPoints);
 
   const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -217,10 +220,12 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
               Season 1 Rewards
             </div>
             <div style={{
-              fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.75)",
-              marginTop: 1, whiteSpace: "nowrap",
+              fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.85)",
+              marginTop: 2, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 5,
             }}>
-              100,000 pt Reward Pool
+              <span style={{ fontSize: 13 }}>{tier.emoji}</span>
+              <span style={{ fontWeight: 700, color: "#fff" }}>{tier.name}</span>
+              <span style={{ opacity: 0.8 }}>{next ? `· ${toNext.toLocaleString()} to ${next.name}` : "· max tier"}</span>
             </div>
           </div>
         </div>
@@ -279,12 +284,12 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
             <div style={{
               height: "100%", borderRadius: 3,
               background: "linear-gradient(90deg, #fde68a, #fff)",
-              width: `${(progress * 100).toFixed(1)}%`,
-              transition: "width 1s linear",
+              width: `${(tierProgress * 100).toFixed(1)}%`,
+              transition: "width 0.6s ease",
             }} />
           </div>
           <div style={{ fontFamily: "monospace", fontSize: 8, color: "rgba(255,255,255,0.5)" }}>
-            Season {(progress * 100).toFixed(0)}% complete
+            {next ? `${toNext.toLocaleString()} pts to ${next.name}` : "👑 Top tier reached"}
           </div>
         </div>
       </div>
