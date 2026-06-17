@@ -66,6 +66,25 @@ const MOOD_CONFIG: any = {
   hungry: { emoji: "😋", color: "#fbbf24", label: "Hungry" },
 };
 
+function bondTier(b: number): string {
+  if (b >= 100) return "Soulmate";
+  if (b >= 75) return "Best Friend";
+  if (b >= 50) return "Close Friend";
+  if (b >= 25) return "Friend";
+  return "Stranger";
+}
+
+// Short, human reason for the current mood, derived from the most pressing stat.
+function moodReason(pet: any): string {
+  if (pet.hunger >= 80) return "hasn't eaten in a while";
+  if (pet.energy < 15) return "running low on energy";
+  if (pet.happiness < 30) return "could use some company";
+  if (pet.happiness >= 80 && pet.energy >= 50 && pet.hunger < 40) return "thriving right now";
+  if (pet.hunger >= 60) return "getting a little hungry";
+  if (pet.energy < 35) return "a bit tired";
+  return "doing just fine";
+}
+
 function AnimatedStatBar({ label, value, color, max = 100, icon }: any) {
   const [displayValue, setDisplayValue] = useState(0);
 
@@ -1562,6 +1581,16 @@ export default function PetProfile() {
               }}>
                 {moodCfg.emoji} {moodCfg.label}
               </span>
+            </div>
+            {/* Progression + mood context */}
+            <div style={{ marginTop: 9, display: "flex", flexDirection: "column", gap: 4, alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,46,0.55)" }}>
+                <span>✨ {pet.experience % 100}/100 XP → Lv.{pet.level + 1}</span>
+                <span>🤝 {bondTier(pet.bond_level)} · {pet.bond_level}/100</span>
+              </div>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: moodCfg.color, opacity: 0.85 }}>
+                {moodCfg.label} — {moodReason(pet)}
+              </div>
             </div>
           </div>
 

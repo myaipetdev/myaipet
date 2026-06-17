@@ -140,6 +140,7 @@ export default function PetStudioPro() {
 
   const [view, setView] = useState<View>("idle");
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [avatarSaved, setAvatarSaved] = useState(false);
   const [resultIsDemo, setResultIsDemo] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -476,6 +477,31 @@ export default function PetStudioPro() {
                   }}
                 >🎨 Remix (new style)</button>
                 <button onClick={() => { setView("idle"); setResultUrl(null); }} style={btnGhost}>⟳ Start over</button>
+                {!isDemo && pet && pet.id > 0 && !/\.(mp4|webm)$/i.test(resultUrl) && (
+                  <button
+                    onClick={async () => {
+                      // PATCH accepts only an absolute, scheme-valid URL (safeUrlOrEmpty
+                      // rejects bare /uploads paths), so resolve relative results first.
+                      const abs = /^https?:\/\//i.test(resultUrl)
+                        ? resultUrl
+                        : `${window.location.origin}${resultUrl.startsWith("/") ? "" : "/"}${resultUrl}`;
+                      try {
+                        const res = await fetch(`/api/pets/${pet.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+                          body: JSON.stringify({ avatar_url: abs }),
+                        });
+                        if (res.ok) {
+                          setPets(ps => ps.map(p => (p.id === pet.id ? { ...p, avatar_url: abs } : p)));
+                          setAvatarSaved(true);
+                          setTimeout(() => setAvatarSaved(false), 2200);
+                        }
+                      } catch { /* ignore — non-blocking */ }
+                    }}
+                    style={btnGhost}
+                    title="Use this image as your pet's profile picture (improves identity lock on future generations)"
+                  >{avatarSaved ? "✓ Avatar set" : "⭐ Set as avatar"}</button>
+                )}
                 <div style={{ flex: 1 }} />
                 <a href={resultUrl} download style={btnGhost}>↓ Download</a>
                 <a href={resultUrl} target="_blank" rel="noreferrer" style={btnGhost}>↗ Open</a>
@@ -871,7 +897,9 @@ export default function PetStudioPro() {
             : !prompt.trim()
             ? "Write a prompt or tap a template to start →"
             : `▶  Generate · ${chosenModel?.creditsPerRun ?? 0} credits${
-                credits != null && credits >= (chosenModel?.creditsPerRun ?? 0) ? ` · you have ${credits}` : ""
+                credits != null && credits >= (chosenModel?.creditsPerRun ?? 0)
+                  ? ` · you have ${credits} (≈${Math.floor(credits / Math.max(1, chosenModel?.creditsPerRun ?? 1))} more)`
+                  : ""
               }`}
         </button>
 
