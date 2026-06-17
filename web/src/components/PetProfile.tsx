@@ -13,6 +13,7 @@ import PetDiary from "@/components/PetDiary";
 import EvolutionAnimation from "@/components/EvolutionAnimation";
 import PaywallModal from "@/components/PaywallModal";
 import StatUpgradePanel from "@/components/StatUpgradePanel";
+import WardrobeCard from "@/components/WardrobeCard";
 
 const PET_SPECIES = ["Cat","Dog","Parrot","Turtle","Hamster","Rabbit","Fox","Pomeranian"];
 
@@ -823,7 +824,7 @@ const MOOD_ANIMATIONS: Record<string, string> = {
   neutral: "none",
 };
 
-function PetAvatar({ pet, mood, size = 80, reaction }: any) {
+function PetAvatar({ pet, mood, size = 80, reaction, equipped }: any) {
   const moodCfg = MOOD_CONFIG[mood] || MOOD_CONFIG.neutral;
   const hasAvatar = pet.avatar_url;
   const [bubbleText, setBubbleText] = useState<string | null>(null);
@@ -991,6 +992,20 @@ function PetAvatar({ pet, mood, size = 80, reaction }: any) {
           )}
         </div>
       </div>
+      {/* Equipped cosmetics — accessory rests on the head, cosmetic glows in a corner */}
+      {equipped?.accessory && (
+        <div style={{
+          position: "absolute", top: -size * 0.16, left: "50%",
+          transform: "translateX(-50%) rotate(-6deg)", fontSize: size * 0.32,
+          zIndex: 8, pointerEvents: "none", filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.25))",
+        }}>{equipped.accessory.icon}</div>
+      )}
+      {equipped?.cosmetic && (
+        <div style={{
+          position: "absolute", bottom: -2, left: -4, fontSize: size * 0.26,
+          zIndex: 8, pointerEvents: "none", animation: "petBreathe 3s ease-in-out infinite",
+        }}>{equipped.cosmetic.icon}</div>
+      )}
       <div style={{
         position: "absolute", bottom: -4, right: -4,
         fontSize: size * 0.25, background: "white",
@@ -1056,6 +1071,8 @@ export default function PetProfile() {
   const [statPops, setStatPops] = useState<Array<{ id: number; delta: number; color: string; icon: string }>>([]);
   // One-shot signal to make the pet portrait react (bounce/wiggle + burst emote).
   const [petReaction, setPetReaction] = useState<{ type: string; n: number } | null>(null);
+  // Equipped cosmetics for the portrait overlay (slot → { icon, key }).
+  const [equipped, setEquipped] = useState<Record<string, { icon: string; key: string; category: string }>>({});
   // Care actions completed today (client-side per-day tracker, localStorage-backed).
   const [careToday, setCareToday] = useState<string[]>([]);
   const [evolutionAnim, setEvolutionAnim] = useState<{
@@ -1087,6 +1104,18 @@ export default function PetProfile() {
     if (!activePet?.id) { setCareToday([]); return; }
     try { setCareToday(JSON.parse(localStorage.getItem(careDayKey(activePet.id)) || "[]")); }
     catch { setCareToday([]); }
+  }, [activePet?.id]);
+
+  // Equipped cosmetics for the portrait overlay (refetched after wardrobe changes).
+  const loadEquipped = (pid: number) => {
+    fetch(`/api/pets/${pid}/wardrobe`, { headers: getAuthHeaders() })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d) setEquipped(d.equipped || {}); })
+      .catch(() => {});
+  };
+  useEffect(() => {
+    if (activePet?.id) loadEquipped(activePet.id); else setEquipped({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePet?.id]);
 
   // Escape closes the chat modal — keyboard users can't reach the backdrop or ✕.
@@ -1686,7 +1715,7 @@ export default function PetProfile() {
           }} />
 
           <div style={{ textAlign: "center", marginBottom: 24, position: "relative" }}>
-            <PetAvatar pet={pet} mood={mood} size={140} reaction={petReaction} />
+            <PetAvatar pet={pet} mood={mood} size={140} reaction={petReaction} equipped={equipped} />
             {/* If the pet still has the default species name ("Cat"/"Dog"…),
                 surface a clear rename CTA. Generic names kill the emotional
                 lock-in we're trying to build. */}
@@ -2058,6 +2087,11 @@ export default function PetProfile() {
               </div>
             );
           })()}
+
+          {/* Wardrobe — buy cute cosmetics with credits + wear them on the portrait */}
+          {pet.id > 0 && (
+            <WardrobeCard petId={pet.id} onChange={() => loadEquipped(pet.id)} />
+          )}
 
           {/* Power Training + Battle are paused. The pet identity / memory /
               streak loop is the product; on-chain stat fighting was the wrong
