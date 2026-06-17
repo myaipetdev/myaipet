@@ -221,9 +221,8 @@ export default async function DashboardPage() {
           fontSize: 12, color: "rgba(26,26,46,0.7)", lineHeight: 1.65,
         }}>
           <strong style={{ fontFamily: "'JetBrains Mono', monospace", color: "#b45309" }}>HOW TO CLIMB ↑</strong><br />
-          Each Power Training (+5 stat) costs <strong>1 USDT</strong>. Top-100 pets share the weekly
-          Season Rewards points pool every Sunday — Position #1 takes the largest share. Train consistently:
-          a 7-day care streak auto-mints a memory NFT.
+          Season Rewards points are earned free — care <strong>+5</strong>, create <strong>+10</strong>, evolve <strong>+200</strong> —
+          and rank you for Season 1. Show up daily: a 7-day care streak earns a Memory NFT (mints at on-chain go-live).
         </div>
       </div>
     </main>

@@ -386,7 +386,7 @@ export default function App() {
   // always-true facts when stats are unavailable or still zero.
   const stats = (platformStats && ((platformStats.total_users ?? 0) > 0 || (platformStats.total_generations ?? 0) > 0))
     ? [
-        { label: "Pets Adopted", value: (platformStats.total_users ?? 0).toLocaleString(), raw: platformStats.total_users ?? 0, animated: true, sub: "On-chain companions" },
+        { label: "Pets Adopted", value: (platformStats.total_users ?? 0).toLocaleString(), raw: platformStats.total_users ?? 0, animated: true, sub: "Companions raised" },
         { label: "AI Content Created", value: (platformStats.total_generations ?? 0).toLocaleString(), raw: platformStats.total_generations ?? 0, animated: true, sub: "Videos & Images" },
       ]
     : [

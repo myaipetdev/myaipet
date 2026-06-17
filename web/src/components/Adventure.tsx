@@ -843,7 +843,7 @@ function WildEncounter({ onBack }: { onBack: () => void }) {
           {/* Action buttons (RPG menu style) */}
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             {[
-              { key: "befriend" as const, label: "Befriend", emoji: <Icon name="heart" size={28} />, color: "#6bcf7f", desc: "+EXP, +Bond, $PET chance" },
+              { key: "befriend" as const, label: "Befriend", emoji: <Icon name="heart" size={28} />, color: "#6bcf7f", desc: "+EXP, +Bond, rare bonus" },
               { key: "feed" as const, label: "Feed", emoji: "\u{1F356}", color: "#ffa726", desc: "+EXP, Hunger recovery" },
               { key: "flee" as const, label: "Flee", emoji: "\u{1F4A8}", color: "#90a4ae", desc: "Safe retreat, +2 EXP" },
             ].map((act, i) => (

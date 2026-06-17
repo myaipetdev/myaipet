@@ -20,7 +20,7 @@ export default function Feed({ activities }: any) {
             fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.55)",
             fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em",
           }}>
-            Live On-Chain Activity
+            Recent Activity
           </span>
         </div>
         <span style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.35)" }}>

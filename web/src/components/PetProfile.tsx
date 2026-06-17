@@ -1850,8 +1850,8 @@ export default function PetProfile() {
                   </div>
                   <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: "rgba(180,83,9,0.7)", marginTop: 1 }}>
                     {(pet as any).care_streak % 7 === 0
-                      ? "NFT minted! ✨"
-                      : `Next NFT at day ${Math.ceil((pet as any).care_streak / 7) * 7}`}
+                      ? "Memory NFT earned ✨ (mints at go-live)"
+                      : `Next Memory NFT at day ${Math.ceil((pet as any).care_streak / 7) * 7}`}
                   </div>
                 </div>
               </div>

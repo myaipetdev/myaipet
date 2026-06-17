@@ -22,18 +22,15 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { getAuthHeaders } from "@/lib/api";
 
-interface PetProjection {
-  petId: number; name: string; level: number; avatar: string | null;
-  combinedPower: number; rank: number; projectedShare: number;
-  afterOneUpgrade: { ranksGained: number; newRank: number; newProjectedShare: number; shareDelta: number };
-  rival: { name: string; combinedPower: number; powerGap: number; avatar?: string | null } | null;
-}
-
 interface ProjectionData {
   signedIn: boolean;
-  pool: { points: number; livePoints: number; entries: number; closesAtIso: string };
-  pets?: PetProjection[];
-  topThree: Array<{ rank: number; name: string; level: number; combinedPower: number; avatar: string | null; projectedShare: number }>;
+  started: boolean;
+  pool: { points: number; participants: number; closesAtIso: string };
+  me?: {
+    rank: number; points: number; petId: number | null; petName: string;
+    petAvatar: string | null; petLevel: number; pointsToNextRank: number; inTop100: boolean;
+  };
+  topThree: Array<{ rank: number; petId: number | null; name: string; level: number; avatar: string | null; points: number }>;
 }
 
 interface TickerEvent { at: string; kind: string; text: string; accent: string; }
@@ -66,20 +63,24 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
 
   // Once we know the user's primary pet, fetch its thought
   useEffect(() => {
-    const pet = data?.pets?.[0] ?? data?.topThree?.[0];
-    if (!pet) return;
-    fetch(`/api/pets/${(pet as any).petId}/thought`)
+    const petId = data?.me?.petId ?? data?.topThree?.[0]?.petId;
+    const petName = data?.me?.petName ?? data?.topThree?.[0]?.name;
+    if (!petId || !petName) return;
+    fetch(`/api/pets/${petId}/thought`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => d?.thought && setThought({ text: d.thought, emotion: d.emotion, petName: pet.name }))
+      .then(d => d?.thought && setThought({ text: d.thought, emotion: d.emotion, petName }))
       .catch(() => {});
   }, [data]);
 
-  // Countdown
+  // Countdown — before Season 1 opens this targets the START, once running the END.
   const closesAt = data ? new Date(data.pool.closesAtIso).getTime() : 0;
   const remaining = Math.max(0, closesAt - now);
   const cdDays = Math.floor(remaining / 86_400_000);
   const cdHours = Math.floor((remaining % 86_400_000) / 3_600_000);
   const cdMins = Math.floor((remaining % 3_600_000) / 60_000);
+  const seasonStarted = data?.started ?? false;
+  const cdLabel = seasonStarted ? "SEASON 1 CLOSES IN" : "SEASON 1 STARTS IN";
+  const cdWhen = seasonStarted ? "Aug 1 00:00 UTC" : "Jul 1 00:00 UTC";
 
   // Show a placeholder until the pool data loads — otherwise the countdown
   // renders a zeroed "00d 00h 00m" for a frame and then jumps to real values.
@@ -89,7 +90,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
     <span style={{ color: "rgba(255,255,255,0.5)" }}>—</span>
   );
 
-  const myPet = data?.pets?.[0];
+  const me = data?.me;
 
   return (
     <section style={{ padding: "60px 40px", maxWidth: 1060, margin: "0 auto" }}>
@@ -99,7 +100,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
         <h2 style={headline}>Your pet earns Season Rewards.</h2>
         <p style={sub}>
           Every interaction stacks loyalty points. Raise &amp; create to climb the
-          weekly leaderboard. Top-100 split the pool every Sunday.
+          Season 1 leaderboard before it closes.
         </p>
       </div>
 
@@ -115,43 +116,32 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
           background: "radial-gradient(circle at 85% 25%, rgba(251,191,36,0.18) 0%, transparent 55%)",
         }} />
 
-        {myPet ? (
-          // ── SIGNED IN: personal projection ──
+        {me ? (
+          // ── SIGNED IN: personal Season Rewards standing (by loyalty points) ──
           <div style={{ position: "relative" }}>
             <div style={{
               fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
               color: "rgba(255,255,255,0.5)", letterSpacing: "0.16em", marginBottom: 6,
             }}>
-              {myPet.name.toUpperCase()} · RANK #{myPet.rank} · LV.{myPet.level}
+              {me.petName.toUpperCase()} · RANK #{me.rank} · LV.{me.petLevel}
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", gap: 24, alignItems: "center" }} className="pitch-projection-grid">
-              {/* Projected payout from current rank (pool-share, not earned pts) */}
+              {/* Your real Season Rewards points + rank */}
               <div>
-                <div style={miniLabel}>PROJECTED PAYOUT</div>
-                {myPet.projectedShare > 0 ? (
-                  <>
-                    <div style={{ ...bigNumber, color: "#fbbf24" }}>
-                      {myPet.projectedShare.toLocaleString()}
-                      <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
-                    </div>
-                    <div style={mini}>
-                      projected from your rank #{myPet.rank}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ ...bigNumber, color: "#fbbf24", fontSize: 22 }}>Top 100</div>
-                    <div style={mini}>
-                      reach the top 100 (you&apos;re #{myPet.rank}) to earn a pool share
-                    </div>
-                  </>
-                )}
+                <div style={miniLabel}>YOUR SEASON 1 POINTS</div>
+                <div style={{ ...bigNumber, color: "#fbbf24" }}>
+                  {me.points.toLocaleString()}
+                  <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
+                </div>
+                <div style={mini}>
+                  {me.inTop100 ? `rank #${me.rank} — in the Top 100` : `rank #${me.rank} — climb into the Top 100`}
+                </div>
               </div>
 
               {/* How to earn — free, no purchase */}
               <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24 }}>
-                <div style={miniLabel}>EARN THIS WEEK</div>
+                <div style={miniLabel}>EARN MORE</div>
                 <div style={{ ...bigNumber, color: "#34d399", fontSize: 22 }}>
                   Free
                 </div>
@@ -160,18 +150,18 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
                 </div>
               </div>
 
-              {/* Countdown */}
+              {/* Countdown to Season 1 start/close */}
               <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24 }}>
-                <div style={miniLabel}>POOL CLOSES IN</div>
+                <div style={miniLabel}>{cdLabel}</div>
                 <div style={{ ...bigNumber, fontSize: 22, color: "white" }}>
                   {countdownEl}
                 </div>
-                <div style={mini}>Sunday 00:00 UTC</div>
+                <div style={mini}>{cdWhen}</div>
               </div>
             </div>
 
-            {/* Rival call-out */}
-            {myPet.rival && (
+            {/* Next-rank call-out */}
+            {me.pointsToNextRank > 0 && (
               <div style={{
                 marginTop: 18, padding: "10px 14px", borderRadius: 10,
                 background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.18)",
@@ -179,7 +169,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
               }}>
                 <span style={{ fontSize: 18 }}>🎯</span>
                 <div style={{ flex: 1, fontSize: 13, color: "rgba(255,255,255,0.85)", fontFamily: "'Space Grotesk',sans-serif" }}>
-                  <strong style={{ color: "#fbbf24" }}>{myPet.rival.name}</strong> is just {myPet.rival.powerGap} power ahead. Keep raising to overtake.
+                  Just <strong style={{ color: "#fbbf24" }}>{me.pointsToNextRank.toLocaleString()} pts</strong> to rank #{me.rank - 1}. One care session is +5. Keep climbing.
                 </div>
                 <button onClick={() => onNavigate?.("my pet")} style={{
                   padding: "6px 14px", borderRadius: 8, border: "none",
@@ -193,19 +183,19 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
           // ── ANON: pool + top-3 sneak peek ──
           <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", gap: 24, alignItems: "center" }} className="pitch-projection-grid">
             <div>
-              <div style={miniLabel}>WEEKLY REWARD POOL</div>
+              <div style={miniLabel}>SEASON 1 · POINTS IN PLAY</div>
               <div style={{ ...bigNumber, color: "#fbbf24" }}>
-                {(data?.pool.points ?? 100_000).toLocaleString()}
+                {(data?.pool.points ?? 0).toLocaleString()}
                 <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
               </div>
-              <div style={mini}>{data?.pool.entries ?? 0} entries · grows as players raise &amp; create</div>
+              <div style={mini}>{data?.pool.participants ?? 0} raising · grows as players raise &amp; create</div>
             </div>
             <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24 }}>
-              <div style={miniLabel}>CLOSES IN</div>
+              <div style={miniLabel}>{cdLabel}</div>
               <div style={{ ...bigNumber, fontSize: 22, color: "white" }}>
                 {String(cdDays).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>d</span> {String(cdHours).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>h</span> {String(cdMins).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>m</span>
               </div>
-              <div style={mini}>Sunday 00:00 UTC</div>
+              <div style={mini}>{cdWhen}</div>
             </div>
             <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24, textAlign: "right" }}>
               <button onClick={() => onNavigate?.("my pet")} style={{
@@ -295,11 +285,11 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
         display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14,
       }} className="pitch-how-grid">
         <PathCard step="01" emoji="🐾" title="Care daily"
-          body="Feed, play, talk. 5 free / day. 7-day streak auto-mints a Memory NFT."
-          earn="+1–3 pts per click" cta="Start raising"
+          body="Feed, play, talk. 5 free / day. A 7-day streak earns a Memory NFT (mints at on-chain go-live)."
+          earn="+5 pts per care" cta="Start raising"
           onClick={() => onNavigate?.("my pet")} accent="#16a34a" />
         <PathCard step="02" emoji="🔥" title="Keep your streak"
-          body="Show up daily. A 7-day streak pays a bonus, 30 days pays more — and auto-mints a Memory NFT."
+          body="Show up daily. A 7-day streak pays a bonus, 30 days pays more — and earns a Memory NFT at on-chain go-live."
           earn="+100 (7d) · +500 (30d)" cta="Check in"
           onClick={() => onNavigate?.("my pet")} accent="#dc2626" />
         <PathCard step="03" emoji="🎬" title="Create together"
@@ -307,8 +297,8 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
           earn="+10 image · +25 video" cta="Create"
           onClick={() => onNavigate?.("create")} accent="#f59e0b" />
         <PathCard step="04" emoji="🏆" title="Climb leaderboard"
-          body="Top-100 by combined power share the pool every Sunday. #1 takes the largest slice."
-          earn="Top share = #1 pool" cta="See ranks"
+          body="Rank by Season Rewards points. Top raisers earn rewards when Season 1 closes."
+          earn="Top 100 = rewards" cta="See ranks"
           onClick={() => onNavigate?.("leaderboard")} accent="#b45309" />
       </div>
 
@@ -316,7 +306,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
         marginTop: 26, fontSize: 12, color: "rgba(26,26,46,0.5)",
         textAlign: "center", lineHeight: 1.65, fontFamily: "'JetBrains Mono', monospace",
       }}>
-        Points are a non-financial loyalty currency. Pool sized relative to weekly USDT credit spend.
+        Points are a non-financial loyalty currency — earned by raising &amp; creating, not bought.
       </div>
 
       <style>{`
