@@ -119,7 +119,7 @@ export const BEST_OF_N_ENABLED = process.env.PETCLAW_BEST_OF_N === "true";
  * The keyword heuristic (scoreReply/pickBest above) can't reliably tell a better
  * reply from a worse one, so best-of-N spends N× tokens for no defensible gain.
  * An independent judge over the full candidate set is the actual mechanism by
- * which best-of-N beats single-shot — this is what OpenRouter Fusion does, at
+ * which best-of-N beats single-shot — the same generate-many-then-select idea, at
  * the model level; here we do it at the sampling level.
  *
  * Same GROK_API_KEY / x.ai endpoint / temperature-0 / json_object contract as

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * PetClawConsole — a Hermes-Agent-style terminal that surfaces the PetClaw
+ * PetClawConsole — a VIGIL-style terminal that surfaces the PetClaw
  * agentic harness AND lets you actually talk to your pet through it (the
  * petclaw_chat tool, live). Dark terminal panel on the app's light pages.
  *

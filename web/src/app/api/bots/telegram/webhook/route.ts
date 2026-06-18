@@ -8,7 +8,7 @@
  *   2. Look up the user via pet_platform_connections (credentials.access_token =
  *      stringified telegram user_id at OAuth time — see /api/auth/oauth/telegram/callback)
  *   3. Run pethub.executeSkill(petId, "companion-chat", { message, platform: "telegram" })
- *      — this carries memory across web/extension/telegram per Hermes design
+ *      — this carries memory across web/extension/telegram per VIGIL design
  *   4. Reply via Telegram sendMessage API
  *
  * To activate (one-time, ops):

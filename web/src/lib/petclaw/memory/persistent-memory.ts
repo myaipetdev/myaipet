@@ -1,6 +1,6 @@
 /**
  * PetClaw Persistent Memory System
- * Inspired by Hermes Agent — agent-curated memory with sovereignty
+ * VIGIL — agent-curated memory with sovereignty
  *
  * Architecture:
  * 1. MEMORY.md — Pet's accumulated knowledge/facts (auto-managed, ~2000 chars)
@@ -18,7 +18,7 @@ import { prisma } from "@/lib/prisma";
 
 // ── Constants ──
 // SCRUM-74 §2-2: caps raised. 20-entry ledger risked "forgetting" for 6mo+
-// users; bumped to 40 entries / 4KB. Beyond ~50 entries the Anthropic Hermes
+// users; bumped to 40 entries / 4KB. Beyond ~50 entries the VIGIL
 // markdown-ledger pattern starts losing precision — at that point we fall
 // back to an embedding layer (planned layer 6, see /architecture page).
 const MEMORY_MD_MAX_CHARS = 4000;

@@ -74,7 +74,7 @@ export default function SkillsPage() {
           </div>
         </div>
 
-        {/* Learned-skills explainer — Hermes-style self-improvement */}
+        {/* Learned-skills explainer — VIGIL self-improvement */}
         <div style={{
           padding: 22, borderRadius: 16, marginBottom: 36,
           background: "linear-gradient(135deg, rgba(168,85,247,0.06), rgba(236,72,153,0.06))",
@@ -89,7 +89,7 @@ export default function SkillsPage() {
               fontSize: 9, padding: "3px 10px", borderRadius: 999,
               background: "rgba(168,85,247,0.12)", color: "#a855f7",
               fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.08em",
-            }}>HERMES-STYLE</span>
+            }}>VIGIL</span>
           </div>
           <p style={{ fontSize: 14, color: "rgba(26,26,46,0.7)", lineHeight: 1.65, margin: "0 0 10px" }}>
             Every conversation feeds a topic detector. After three similar exchanges with positive

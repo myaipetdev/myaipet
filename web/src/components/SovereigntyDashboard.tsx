@@ -303,7 +303,7 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
   );
 }
 
-// ── Memory Inspector (Hermes-style sovereignty) ──
+// ── Memory Inspector (VIGIL sovereignty) ──
 // Shows the pet's MEMORY.md, USER.md, learned skills, session log, with per-entry
 // delete/edit. The pet's "self-improvement" surface is finally inspectable.
 function MemoryInspectorCard({ petId }: { petId: number }) {
@@ -421,7 +421,7 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
           fontSize: 9, padding: "3px 10px", borderRadius: 999,
           background: "rgba(168,85,247,0.12)", color: "#a855f7",
           fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.08em",
-        }}>HERMES-STYLE</span>
+        }}>VIGIL</span>
         <span title="Each reply pulls the most relevant memories via reciprocal-rank fusion (lexical + recency + importance; plus semantic cosine when you connect an embedding key)." style={{
           fontSize: 9, padding: "3px 10px", borderRadius: 999,
           background: "rgba(245,158,11,0.12)", color: "#b45309",
@@ -2327,7 +2327,7 @@ export default function SovereigntyDashboard() {
                   { icon: "⚡", title: "Real-time Sync", desc: "State changes on Telegram reflect instantly on Discord, Web, and wherever Claw runs" },
                   { icon: "🔒", title: "Encrypted Sessions", desc: "AES-256 session keys. Only your pet can read its own history" },
                   { icon: "🪝", title: "MCP Compatible", desc: "Plug into any Model Context Protocol client in under 5 minutes" },
-                  { icon: "📜", title: "SOUL.md", desc: "Hermes-inspired personality definition file. Define your pet's values and voice in plain markdown" },
+                  { icon: "📜", title: "SOUL.md", desc: "Your pet's personality definition file — define its values and voice in plain markdown" },
                   { icon: "🔄", title: "Self-improving", desc: "Skills evolve as interactions accumulate. The more your pet knows you, the better it converses" },
                 ].map(({ icon, title, desc }) => (
                   <div key={title} style={{ padding: 18, borderRadius: 14, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.07)" }}>
@@ -2360,7 +2360,7 @@ export default function SovereigntyDashboard() {
               </div>
               <div style={{ flex: 1, minWidth: 200, paddingTop: 26 }}>
                 <div style={{ fontSize: 14, color: "rgba(26,26,46,0.6)", fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1.9 }}>
-                  <div>Inspired by Hermes Agent's personality architecture.</div>
+                  <div>Part of PetClaw's VIGIL memory architecture.</div>
                   <div style={{ marginTop: 6 }}>Edit SOUL.md and your pet's voice and values update immediately.</div>
                   <div style={{ marginTop: 6 }}>Version-controlled — track your pet's growth with git.</div>
                 </div>

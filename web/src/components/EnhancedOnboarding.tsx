@@ -717,7 +717,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           <p style={{ color: "rgba(26,26,46,0.55)", fontSize: 14, margin: "16px 0 18px", lineHeight: 1.55 }}>
             {pet.name} keeps learning every time you talk. Here's what's ahead:
           </p>
-          {/* Capability welcome (Hermes-style "what your companion can do") */}
+          {/* Capability welcome (VIGIL "what your companion can do") */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, maxWidth: 430, margin: "0 auto 22px", textAlign: "left" }}>
             {([
               ["🧠", "Remembers you", "grows every chat"],

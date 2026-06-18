@@ -7,7 +7,7 @@
  * Generates a short 1st-person snippet of "what the pet is thinking" right
  * now, drawing from:
  *   - Current stat (hungry, sleepy, ecstatic, etc.)
- *   - Recent memory (last 3 session messages via Hermes memory)
+ *   - Recent memory (last 3 session messages via VIGIL memory)
  *   - Personality archetype
  *
  * Caches per-pet for 4 hours so we don't burn LLM budget per page-view.

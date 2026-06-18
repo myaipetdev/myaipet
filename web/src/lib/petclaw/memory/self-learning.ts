@@ -2,7 +2,7 @@
  * PetClaw Self-Learning System
  * Pet learns from experience and creates new skills autonomously
  *
- * Inspired by Hermes Agent's learning loop:
+ * VIGIL — PetClaw's self-improvement learning loop:
  * 1. After N conversations on a topic → pet creates a skill for it
  * 2. Skills improve based on user feedback (positive/negative)
  * 3. Learned skills are exportable via SOUL export

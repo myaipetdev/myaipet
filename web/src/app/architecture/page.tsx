@@ -25,7 +25,7 @@ export default function ArchitecturePage() {
         </h1>
         <p style={{ fontSize: 15, color: "rgba(26,26,46,0.65)", marginBottom: 36, lineHeight: 1.6 }}>
           PetClaw memory is not a single vector store. It&apos;s a 5-layer system inspired by how
-          modern coding agents like Claude Code organize context — agent-curated, human-readable,
+          modern coding agents organize context — agent-curated, human-readable,
           and exportable.
         </p>
 

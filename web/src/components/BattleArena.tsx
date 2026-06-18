@@ -8,7 +8,7 @@
  *   2. Versus cards — two pet avatars, stats, live-decreasing HP bars
  *   3. Turn log — typewriter-paced, monospace, crits/misses highlighted
  *
- * Matches /architecture, /skills, Hermes Memory Inspector tone:
+ * Matches /architecture, /skills, VIGIL Memory Inspector tone:
  * cream background, amber accents, mono labels, 1a1a2e text.
  *
  * Accepts either a fresh result (from /api/battle/create) or a replay

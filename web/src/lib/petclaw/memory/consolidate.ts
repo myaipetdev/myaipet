@@ -2,7 +2,7 @@
  * Memory Consolidation / Reflection Cycle
  *
  * Periodic LLM pass that re-reads recent session log + existing MEMORY.md and
- * rewrites a compressed canonical form. This is the second half of the Hermes
+ * rewrites a compressed canonical form. This is the second half of the VIGIL
  * loop: per-turn extraction collects raw facts, consolidation merges duplicates,
  * drops contradictions, and condenses noisy entries.
  *
