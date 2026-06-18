@@ -196,3 +196,56 @@ Invoke a skill on another pet. Automatic billing (10% platform, 90% owner).
   "messageId": "abc123"
 }
 ```
+
+---
+
+## Agent Loop
+
+### POST `/api/pets/{petId}/agent`
+Run the plan-and-execute agent loop: a reasoning model plans each step, a real skill is invoked, the result is observed, and it iterates until done — then a chat model synthesizes the answer. Owner-authenticated and credit-metered (flat cost per run, refunded if no real work ran). `maxSteps` is clamped server-side (1–6).
+
+**Body:**
+```json
+{ "goal": "Check my mood from recent chats and suggest one thing for today", "maxSteps": 4 }
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "goal": "...",
+  "answer": "...synthesized report...",
+  "steps": [
+    { "thought": "...", "skill": "daily-mood", "input": {}, "output": {}, "ok": true }
+  ],
+  "stoppedReason": "finished",
+  "creditsRemaining": 95
+}
+```
+
+The in-app **Agent Workbench** (`/?section=workbench`) drives this endpoint.
+
+---
+
+## Models (Bring Your Own Model)
+
+Owners connect their own provider keys (OpenAI, Anthropic, Google, OpenRouter); keys are encrypted at rest and used by the LLM router. Owner-authenticated.
+
+### GET `/api/petclaw/models`
+List connected models.
+
+### POST `/api/petclaw/models`
+Connect a provider key.
+
+**Body:**
+```json
+{ "action": "connect", "provider": "openai", "apiKey": "sk-...", "tasks": ["chat", "reason"] }
+```
+
+**Response:**
+```json
+{ "connection": { "provider": "openai", "model": "gpt-...", "keyMask": "sk-…abcd" } }
+```
+
+### DELETE `/api/petclaw/models?id=<id>`
+Remove a connected model.

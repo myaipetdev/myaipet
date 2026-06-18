@@ -169,7 +169,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         }}>
           Credits power AI image &amp; video creation with your pet — the same
           companion you raise, the same memory that travels with you. Spend on
-          what serves the bond. Points details at <a href="/tokenomics" style={{ color: "#b45309", fontWeight: 700 }}>economy</a>.
+          what serves the bond. Points details in the <a href="/docs" style={{ color: "#b45309", fontWeight: 700 }}>docs</a>.
         </p>
       </div>
 

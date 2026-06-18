@@ -1,35 +1,61 @@
 # PetClaw Ecosystem
 
+PetClaw is an open protocol for companion AI. SDK: **`@myaipet/petclaw-sdk`** (npm, public).
+
 ## Architecture
 
 ```
                     ┌─────────────────────┐
                     │   PetClaw Protocol   │
-                    │        v1.2          │
+                    │   v1 · SDK 1.6.0     │
                     └──────────┬──────────┘
                                │
-            ┌──────────────────┼──────────────────┐
-            │                  │                  │
-      ┌─────┴─────┐     ┌─────┴─────┐     ┌─────┴─────┐
-      │   SKILLS   │     │  NETWORK  │     │SOVEREIGNTY│
-      │   (MCP)    │     │   (A2A)   │     │  (SOUL)   │
-      └─────┬─────┘     └─────┬─────┘     └─────┬─────┘
-            │                  │                  │
+        ┌──────────────┬───────┼───────┬──────────────┐
+        │              │       │       │              │
+   ┌────┴────┐   ┌────┴───┐ ┌─┴──┐ ┌──┴───┐    ┌─────┴─────┐
+   │ SKILLS  │   │ AGENT  │ │ MCP│ │NETWORK│    │SOVEREIGNTY│
+   │  (18)   │   │ (VIGIL)│ │(6) │ │ (A2A) │    │  (SOUL)   │
+   └─────────┘   └────────┘ └────┘ └───────┘    └───────────┘
 ```
 
-## Skills (7 Built-in)
+## Skills (18 built-in — selected)
 
 | Skill | Category | Description |
 |-------|----------|-------------|
 | 💬 `companion-chat` | Emotional | Personality-driven conversation with persistent memory |
 | 🪞 `persona-mirror` | Social | Mirror owner's speech patterns across platforms |
 | 🧠 `memory-recall` | Knowledge | Cross-platform memory search and reasoning |
-| 📝 `autonomous-post` | Creative | Generate social content in pet's voice |
+| 🎯 `vibe-check` | Emotional | Read a message/post → emotional vibe + one-line take |
 | 📦 `soul-export` | Utility | Export complete identity as portable data |
 | 📓 `daily-mood` | Emotional | AI-generated daily mood journal |
+| 📄 `summarize-page` | Knowledge | Summarize page text in the pet's voice (Chrome ext) |
 | 📸 `image-gen` | Creative | AI pet selfie / artwork generation |
+| 🎬 `video-gen` | Creative | AI pet video (async) |
+| 📔 `pet-diary` | Emotional | First-person diary entry about the past week |
 
-## Platform Connectors (6)
+Full set is 18 (5 run in-loop via the LLM router; the rest route to REST endpoints). See `/skills` or `GET /api/petclaw`.
+
+## Agent Orchestration (VIGIL)
+
+Under the skills is a coordinated agent loop:
+
+- **VIGIL** — an always-on self-improvement loop that runs on every chat turn (memory ledger, implicit feedback, self-learning; a bond/self-reflect pass periodically). CHORUS (best-of-N) is opt-in (`PETCLAW_BEST_OF_N`).
+- **Plan → Act** — a reasoning model plans each step, a real skill runs, the result is observed, it iterates, then a chat model synthesizes. See `POST /api/pets/{id}/agent` (the Agent Workbench drives this).
+- **Recall** — reciprocal-rank fusion over keyword (full-text) + recency + importance; semantic vector recall activates when you connect an embedding key (BYOK).
+
+## Bring Your Own Model (BYOK)
+
+Owners can connect their own provider keys (OpenAI, Anthropic, Google, OpenRouter); keys are encrypted at rest and used by the LLM router.
+
+```bash
+petclaw-sdk auth <jwt>
+petclaw-sdk models connect openai sk-...
+petclaw-sdk models list
+```
+
+Endpoints: `GET/POST/DELETE /api/petclaw/models` (owner-auth).
+
+## Connectors (21 across 5 categories — examples)
 
 | Platform | Type | Capabilities |
 |----------|------|-------------|
@@ -37,27 +63,24 @@
 | **Twitter/X** | Social | Post tweets, timeline, search, likes, DMs |
 | **Discord** | Community | Server messages, reactions, channel management |
 | **Slack** | Workspace | Channel messages, threads, reactions, history |
-| **Web Search** | Knowledge | DuckDuckGo search, page summarization (no API key needed) |
+| **Web Search** | Knowledge | Search + page summarization (no API key needed) |
 | **Enhanced Memory** | Internal | Semantic search, timeline, cross-platform recall |
 
 ## MCP Compatibility
 
-Any MCP-compatible client can invoke PetClaw skills:
+Any MCP-compatible client can invoke PetClaw skills (6 tools exposed):
 
 | Client | Status |
 |--------|--------|
-| Claude Code | ✅ Tested |
-| OpenClaw | ✅ Compatible |
+| Claude Desktop / Claude Code | ✅ Tested |
 | Cursor | ✅ Compatible |
 | Gemini CLI | ✅ Compatible |
 | Any MCP stdio client | ✅ Standard protocol |
 
 ```bash
-# Start MCP server
 petclaw-sdk mcp
-
-# Or via npx
-npx petclaw-sdk mcp --url https://app.myaipet.ai --pet-id 1
+# or via npx
+npx @myaipet/petclaw-sdk mcp --url https://app.myaipet.ai --pet-id 1
 ```
 
 ## On-Chain (at go-live)
@@ -86,31 +109,32 @@ Contracts are non-upgradeable with minimized owner privileges (Ownable2Step, Pau
 ## Discovery
 
 ```
-GET /.well-known/pet-card.json    → Server capabilities
-GET /api/petclaw                  → Full manifest
-GET /api/petclaw/network/discover → Find other pets
-POST /api/petclaw/network/invoke  → Pet-to-Pet skill invocation
+GET  /.well-known/pet-card.json    → Server capabilities
+GET  /api/petclaw                  → Full manifest
+GET  /api/petclaw/network/discover → Find other pets
+POST /api/petclaw/network/invoke   → Pet-to-Pet skill invocation
 ```
 
 ## CLI
 
 ```bash
-petclaw-sdk init              # Setup connection
-petclaw-sdk status            # Health check
-petclaw-sdk chat "hello"      # Single message
-petclaw-sdk talk              # Interactive chat
-petclaw-sdk skills            # List skills
-petclaw-sdk install <id>      # Install skill
-petclaw-sdk execute <id>      # Run skill
-petclaw-sdk export            # Download SOUL
-petclaw-sdk discover          # Find pets
-petclaw-sdk mcp               # Start MCP server
+petclaw-sdk init                  # Setup connection
+petclaw-sdk status                # Health check
+petclaw-sdk chat "hello"          # Single message
+petclaw-sdk talk                  # Interactive chat
+petclaw-sdk models connect ...    # Bring your own model (BYOK)
+petclaw-sdk skills                # List skills
+petclaw-sdk install <id>          # Install skill
+petclaw-sdk execute <id>          # Run skill
+petclaw-sdk export                # Download SOUL
+petclaw-sdk discover              # Find pets
+petclaw-sdk mcp                   # Start MCP server
 ```
 
 ## Integration
 
 ```typescript
-import { PetClawClient } from "petclaw-sdk";
+import { PetClawClient } from "@myaipet/petclaw-sdk";
 
 const pet = new PetClawClient({ baseUrl: "https://app.myaipet.ai" });
 

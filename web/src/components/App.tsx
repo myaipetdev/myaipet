@@ -626,7 +626,6 @@ export default function App() {
             { href: "/terms", label: "Terms" },
             { href: "/privacy", label: "Privacy" },
             { href: "/contracts", label: "Contracts" },
-            { href: "/tokenomics", label: "Tokenomics" },
             { href: "/architecture", label: "Architecture" },
           ].map(l => (
             <a key={l.href} href={l.href} style={{
@@ -650,7 +649,7 @@ export default function App() {
           color: "rgba(26,26,46,0.35)", lineHeight: 1.6, fontWeight: 400,
         }}>
           Engagement points are non-financial loyalty credits, not securities. No token is issued —
-          the economy is points-only loyalty (see /tokenomics). Nothing here is financial advice.
+          the economy is points-only loyalty. Nothing here is financial advice.
         </div>
       </footer>
     </div>
