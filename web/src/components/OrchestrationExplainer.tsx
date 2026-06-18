@@ -20,7 +20,7 @@ const ROLES: { icon: string; title: string; body: string; tag: string }[] = [
   { icon: "🌐", title: "Agent-to-Agent", tag: "PACK", body: "Pets discover and call each other's skills across the open network — agent-to-agent, not a silo." },
 ];
 
-export default function OrchestrationExplainer() {
+export default function OrchestrationExplainer({ onTry }: { onTry?: () => void } = {}) {
   return (
     <section style={{ padding: "56px 24px", maxWidth: 1060, margin: "0 auto" }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
@@ -67,7 +67,19 @@ export default function OrchestrationExplainer() {
         ))}
       </div>
 
-      <div style={{ textAlign: "center", marginTop: 20, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "rgba(26,26,46,0.5)" }}>
+      {/* Run it for real — the workbench drives the same loop on your own pet. */}
+      {onTry && (
+        <div style={{ textAlign: "center", marginTop: 24 }}>
+          <button
+            onClick={onTry}
+            style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 800, letterSpacing: "-0.01em", color: "white", padding: "12px 24px", borderRadius: 12, border: "none", cursor: "pointer", background: "linear-gradient(135deg,#7c3aed,#9333ea)", boxShadow: "0 4px 16px rgba(124,58,237,0.28)" }}
+          >
+            ▶ Run the agent loop on your pet
+          </button>
+        </div>
+      )}
+
+      <div style={{ textAlign: "center", marginTop: 18, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "rgba(26,26,46,0.5)" }}>
         18 skills · 6 MCP tools · 21 connectors · open SDK —{" "}
         <a href="/api-docs" style={{ color: "#b45309", fontWeight: 700, textDecoration: "none" }}>build on it →</a>
       </div>

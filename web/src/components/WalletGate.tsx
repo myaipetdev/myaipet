@@ -143,6 +143,7 @@ export default function WalletGate({ children, section }: any) {
     create: "Create",
     community: "Community",
     arena: "Arena",
+    workbench: "the Agent Workbench",
   };
 
   return (

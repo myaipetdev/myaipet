@@ -27,6 +27,7 @@ const PetGenerate = lazy(() => import("@/components/PetGenerate"));
 const SocialGallery = lazy(() => import("@/components/SocialGallery"));
 const Leaderboard = lazy(() => import("@/components/Leaderboard"));
 const AgentDashboard = lazy(() => import("@/components/AgentDashboard"));
+const AgentWorkbench = lazy(() => import("@/components/AgentWorkbench"));
 const SovereigntyDashboard = lazy(() => import("@/components/SovereigntyDashboard"));
 const PetStudioPro = lazy(() => import("@/components/PetStudioPro"));
 
@@ -462,7 +463,7 @@ export default function App() {
               {/* Pitch: why raise + how to earn (closes the gap between Hero and Pricing) */}
               <RaisePitch onNavigate={setSection} />
               {/* How the agent infrastructure orchestrates (Trinity-style explainer) */}
-              <OrchestrationExplainer />
+              <OrchestrationExplainer onTry={() => setSection("workbench")} />
               <Pricing
                 isAuthenticated={isAuthenticated}
                 onCreditsChange={handleCreditsChange}
@@ -513,6 +514,16 @@ export default function App() {
         <WalletGate section="agent">
           <Suspense fallback={<Loader />}>
             <AgentDashboard />
+          </Suspense>
+        </WalletGate>
+      )}
+
+      {/* Agent Workbench — give your pet a goal, watch the plan-execute loop run.
+          Reached from the Home OrchestrationExplainer ("Run the loop") + ?section=workbench. */}
+      {section === "workbench" && (
+        <WalletGate section="workbench">
+          <Suspense fallback={<Loader />}>
+            <AgentWorkbench />
           </Suspense>
         </WalletGate>
       )}
