@@ -11,6 +11,7 @@ import Hero from "@/components/Hero";
 import Stats from "@/components/Stats";
 import Feed from "@/components/Feed";
 import Pricing from "@/components/Pricing";
+import OrchestrationExplainer from "@/components/OrchestrationExplainer";
 import RaisePitch from "@/components/RaisePitch";
 import WalletGate from "@/components/WalletGate";
 import TrustStrip from "@/components/TrustStrip";
@@ -460,6 +461,8 @@ export default function App() {
               )}
               {/* Pitch: why raise + how to earn (closes the gap between Hero and Pricing) */}
               <RaisePitch onNavigate={setSection} />
+              {/* How the agent infrastructure orchestrates (Trinity-style explainer) */}
+              <OrchestrationExplainer />
               <Pricing
                 isAuthenticated={isAuthenticated}
                 onCreditsChange={handleCreditsChange}
