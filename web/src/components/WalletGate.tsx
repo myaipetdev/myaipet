@@ -6,6 +6,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAuth } from "@/hooks/useAuth";
 import DemoPet from "@/components/DemoPet";
 import PetClawPreview from "@/components/PetClawPreview";
+import CommunityPreview from "@/components/CommunityPreview";
 
 // Session-global guard: the address we've already auto-prompted for a signature.
 // Module scope (not a per-component ref) so it survives WalletGate remounts —
@@ -48,14 +49,14 @@ export default function WalletGate({ children, section }: any) {
   // ── Preview-before-wall: cold visitors should experience the value (a living
   // demo pet; the PetClaw sovereignty showcase) BEFORE being asked for a wallet,
   // with the right next-step (Connect / Sign In) inline. ──
-  if (section === "my pet" || section === "sovereignty") {
+  if (section === "my pet" || section === "sovereignty" || section === "community") {
     const ctaBtnStyle: React.CSSProperties = {
       padding: "13px 30px", borderRadius: 13, border: "none",
       background: "linear-gradient(135deg, #fbbf24, #f59e0b)", color: "#1a1a2e",
       fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 800,
       cursor: isAuthenticating ? "wait" : "pointer", boxShadow: "0 6px 16px rgba(245,158,11,0.35)",
     };
-    const verb = section === "sovereignty" ? "claim it" : "adopt";
+    const verb = section === "sovereignty" ? "claim it" : section === "community" ? "join" : "adopt";
     let cta: ReactNode;
     let ctaNote: string | undefined;
     if (!isConnected) {
@@ -76,7 +77,9 @@ export default function WalletGate({ children, section }: any) {
       );
       ctaNote = "Approve the signature in your wallet — no gas, identity only.";
     }
-    return section === "sovereignty" ? <PetClawPreview cta={cta} /> : <DemoPet cta={cta} ctaNote={ctaNote} />;
+    if (section === "sovereignty") return <PetClawPreview cta={cta} />;
+    if (section === "community") return <CommunityPreview cta={cta} />;
+    return <DemoPet cta={cta} ctaNote={ctaNote} />;
   }
 
   if (isConnected && (isAuthenticating || (!isAuthenticated && !error))) {
