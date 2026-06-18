@@ -202,7 +202,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           animation: "pulse 2s ease-in-out infinite",
         }} />
         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "#b45309", fontWeight: 500 }}>
-          {txToday > 0 ? `${txToday} creations this week` : "Live on BSC Mainnet"}
+          {txToday > 0 ? `${txToday} creations this week` : "Adopt free · no gas to start"}
         </span>
       </div>
 
@@ -437,7 +437,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 700,
             color: "#b45309", letterSpacing: "0.08em", textTransform: "uppercase",
           }}>
-            Season 1 Active
+            Season 1 · Starts Jul 1
           </span>
         </div>
 
