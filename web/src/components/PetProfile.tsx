@@ -827,6 +827,19 @@ const MOOD_ANIMATIONS: Record<string, string> = {
   neutral: "none",
 };
 
+// Lightweight section divider — gives the (long) pet card visual hierarchy so
+// the stacked cards read as grouped sections instead of a flat wall.
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      marginTop: 24, marginBottom: 4, paddingTop: 14,
+      borderTop: "1px solid rgba(0,0,0,0.07)",
+      fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700,
+      letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(26,26,46,0.38)",
+    }}>{children}</div>
+  );
+}
+
 function PetAvatar({ pet, mood, size = 80, reaction, equipped, moodPortraits }: any) {
   const moodCfg = MOOD_CONFIG[mood] || MOOD_CONFIG.neutral;
   // Real facial expression for this mood if the owner generated one; else the base identity image.
@@ -2012,8 +2025,10 @@ export default function PetProfile() {
             );
           })()}
 
+          <SectionLabel>Progress</SectionLabel>
+
           <div style={{
-            marginTop: 14, padding: "10px 14px", borderRadius: 10,
+            marginTop: 8, padding: "10px 14px", borderRadius: 10,
             background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)",
             display: "flex", justifyContent: "space-between",
           }}>
@@ -2101,6 +2116,8 @@ export default function PetProfile() {
               </div>
             );
           })()}
+
+          {pet.id > 0 && <SectionLabel>Customize {pet.name}</SectionLabel>}
 
           {/* Expression Pack — generate real mood faces; portrait swaps by mood */}
           {pet.id > 0 && (
