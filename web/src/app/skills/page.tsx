@@ -68,7 +68,7 @@ export default function SkillsPage() {
           overflowX: "auto",
         }}>
           <div style={{ color: "#fbbf24", marginBottom: 6, fontSize: 11, letterSpacing: "0.1em" }}>$ ONE-LINE INSTALL</div>
-          <div><span style={{ color: "#4ade80" }}>npx</span> petclaw-sdk install <span style={{ color: "#fbbf24" }}>&lt;skill-id&gt;</span></div>
+          <div><span style={{ color: "#4ade80" }}>npx</span> @myaipet/petclaw-sdk install <span style={{ color: "#fbbf24" }}>&lt;skill-id&gt;</span></div>
           <div style={{ color: "rgba(255,255,255,0.5)", marginTop: 6, fontSize: 12 }}>
             # or via API: POST /api/petclaw/skills {"{"} action:"install", petId, skillId {"}"}
           </div>
@@ -183,7 +183,7 @@ export default function SkillsPage() {
                         background: "#0f0f1a", color: "#f8f8f8",
                         whiteSpace: "normal", wordBreak: "break-all", lineHeight: 1.45,
                       }}>
-                        petclaw-sdk install {s.id}
+                        npx @myaipet/petclaw-sdk install {s.id}
                       </code>
                       <a
                         href={`/api/petclaw/skills?id=${s.id}&format=md`}

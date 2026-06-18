@@ -2377,7 +2377,7 @@ export default function SovereigntyDashboard() {
               <div style={{ fontSize: 11, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(26,26,46,0.4)", marginBottom: 12, letterSpacing: "0.08em", textTransform: "uppercase" }}>CLI Onboarding — Up in 5 Minutes</div>
               <div style={{ background: "#0f0f1a", borderRadius: 14, padding: "18px 22px", fontFamily: "monospace", fontSize: 13, color: "#f8f8f8", lineHeight: 2.1, overflowX: "auto" }}>
                 {[
-                  { prompt: "$", cmd: "npm install -g petclaw-sdk", comment: "" },
+                  { prompt: "$", cmd: "npm install -g @myaipet/petclaw-sdk", comment: "" },
                   { prompt: "$", cmd: "petclaw-sdk init", comment: "# set server URL + pet ID → saved to ~/.petclaw.json" },
                   { prompt: "$", cmd: "petclaw-sdk status", comment: "# ✓ Server Online · Skills: 7 · Ownership: user" },
                   { prompt: "$", cmd: "petclaw-sdk soul init", comment: "# generates SOUL.md — your pet's personality file" },
@@ -2611,7 +2611,7 @@ export default function SovereigntyDashboard() {
                 6 MCP Clients
               </span>
               <span style={{ fontFamily: "monospace", fontSize: 12, padding: "5px 12px", borderRadius: 8, background: "rgba(0,0,0,0.04)", color: "rgba(26,26,46,0.55)" }}>
-                npm petclaw-sdk
+                @myaipet/petclaw-sdk
               </span>
             </div>
           </div>

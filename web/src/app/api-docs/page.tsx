@@ -158,7 +158,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
           PetClaw API Docs
         </h1>
         <p style={{ fontSize: 14, color: "rgba(26,26,46,0.6)", marginBottom: 28 }}>
-          SDK reference for the <code style={{ fontSize: 13 }}>petclaw-sdk</code> npm package and HTTP API.
+          SDK reference for the <code style={{ fontSize: 13 }}>@myaipet/petclaw-sdk</code> npm package and HTTP API.
           Default server: <code style={{ fontSize: 13 }}>https://app.myaipet.ai</code>
         </p>
 

@@ -500,7 +500,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           }}>
             <span style={{ color: "rgba(255,255,255,0.4)" }}>$</span>
             <span style={{ color: "#4ade80" }}>npm i</span>
-            <span>petclaw-sdk</span>
+            <span>@myaipet/petclaw-sdk</span>
           </div>
           <div style={{
             background: "white", padding: "10px 16px",

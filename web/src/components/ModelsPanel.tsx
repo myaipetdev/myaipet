@@ -133,9 +133,9 @@ export default function ModelsPanel() {
         {/* Primary path: connect via the CLI / on install. */}
         <div style={{ marginTop: 14, background: "#0e0e14", borderRadius: 12, padding: "14px 16px", fontFamily: "monospace", fontSize: 12.5, lineHeight: 1.7, color: "#e8e4da", overflowX: "auto" }}>
           <div style={{ color: "#8a8577", marginBottom: 6 }}># connect when you install / use the SDK</div>
-          <div><span style={{ color: "#9bd1c4" }}>npx petclaw-sdk init</span><span style={{ color: "#5f5e5a" }}>            # guided: server · pet · model</span></div>
-          <div><span style={{ color: "#9bd1c4" }}>npx petclaw-sdk models connect</span> <span style={{ color: "#fde68a" }}>openai sk-…</span></div>
-          <div><span style={{ color: "#9bd1c4" }}>npx petclaw-sdk models list</span></div>
+          <div><span style={{ color: "#9bd1c4" }}>npx @myaipet/petclaw-sdk init</span><span style={{ color: "#5f5e5a" }}>            # guided: server · pet · model</span></div>
+          <div><span style={{ color: "#9bd1c4" }}>npx @myaipet/petclaw-sdk models connect</span> <span style={{ color: "#fde68a" }}>openai sk-…</span></div>
+          <div><span style={{ color: "#9bd1c4" }}>npx @myaipet/petclaw-sdk models list</span></div>
         </div>
       </div>
 

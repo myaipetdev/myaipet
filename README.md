@@ -9,7 +9,7 @@ fully exportable, deletable, yours. Built on **PetClaw**, an open protocol.*
 
 [![Status](https://img.shields.io/badge/status-beta-7c3aed)](https://app.myaipet.ai)
 [![Protocol](https://img.shields.io/badge/PetClaw-v1-f59e0b)](https://app.myaipet.ai/api-docs)
-[![SDK](https://img.shields.io/npm/v/petclaw-sdk?color=4ade80&label=petclaw-sdk)](https://www.npmjs.com/package/petclaw-sdk)
+[![SDK](https://img.shields.io/npm/v/@myaipet/petclaw-sdk?color=4ade80&label=@myaipet%2Fpetclaw-sdk)](https://www.npmjs.com/package/@myaipet/petclaw-sdk)
 [![MCP](https://img.shields.io/badge/MCP-native-2563eb)](https://app.myaipet.ai/api-docs)
 [![License](https://img.shields.io/badge/license-MIT-94a3b8)](#license)
 
@@ -62,7 +62,7 @@ Under the cute pet is a real, coordinated agent loop. Every piece is open and gr
 
 ```bash
 # 1. Install
-npm i -g petclaw-sdk          # or: npx petclaw-sdk <cmd>
+npm i -g @myaipet/petclaw-sdk    # or: npx @myaipet/petclaw-sdk <cmd>
 
 # 2. Set up a project
 petclaw-sdk init
@@ -81,7 +81,7 @@ petclaw-sdk mcp
 Or use it as a library:
 
 ```ts
-import { PetClawClient } from "petclaw-sdk";
+import { PetClawClient } from "@myaipet/petclaw-sdk";
 
 const client = new PetClawClient({ baseUrl: "https://app.myaipet.ai", authToken });
 
@@ -116,7 +116,7 @@ console.log(res.output.reply);
 - **Frontend** — Next.js 16 (App Router), React 19, RainbowKit + wagmi (SIWE auth, no gas — identity only).
 - **Backend** — Next.js API routes, PostgreSQL (self-hosted) + Prisma, JWT sessions.
 - **AI** — xAI **Grok** + **fal.ai**; LLM router with BYOK (owners connect their own models, encrypted).
-- **Protocol** — `petclaw-sdk` package: CLI + MCP server + skills registry + sovereignty exports.
+- **Protocol** — `@myaipet/petclaw-sdk` package: CLI + MCP server + skills registry + sovereignty exports.
 
 ---
 
@@ -140,7 +140,7 @@ This is early, and we say so honestly.
 - **Docs / API** — https://app.myaipet.ai/api-docs
 - **Skills registry** — https://app.myaipet.ai/skills
 - **Contracts** — https://app.myaipet.ai/contracts
-- **SDK** — `petclaw-sdk` ([github.com/myaipetdev/petclaw](https://github.com/myaipetdev/petclaw))
+- **SDK** — `@myaipet/petclaw-sdk` ([github.com/myaipetdev/petclaw](https://github.com/myaipetdev/petclaw))
 - **𝕏** — https://x.com/MYAIPETS
 
 ## License
