@@ -30,7 +30,7 @@ export default function CommunityPreview({ cta }: { cta?: ReactNode }) {
           FRESH FROM THE COMMUNITY
         </div>
         <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 26, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.02em", margin: "0 0 4px" }}>
-          A place full of pets, not a wall of images
+          See what the pets are making
         </h2>
         <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "rgba(26,26,46,0.55)", margin: 0 }}>
           Real creations, made by real people raising real pets. Peek in — then make your own.

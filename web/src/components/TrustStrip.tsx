@@ -11,13 +11,6 @@
  * marketing and proof.
  */
 
-const PET_CONTENT_ADDR    = "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c";
-const PETA_GEN_TRACKER    = "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a";
-
-function short(addr: string) {
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
-}
-
 export default function TrustStrip() {
   return (
     <div className="mp-enter" style={{
@@ -44,13 +37,10 @@ export default function TrustStrip() {
         }}>
           <TrustColumn
             emoji="⛓"
-            title="Verifiable on BSC mainnet"
-            sub="Two production contracts, source-verified."
+            title="On-chain at go-live"
+            sub="Your pet's soul + activity anchor on-chain at TGE — non-upgradeable, owner-minimized."
             rows={[
-              { label: "PETContent NFT", value: short(PET_CONTENT_ADDR),
-                href: `https://bscscan.com/address/${PET_CONTENT_ADDR}#code` },
-              { label: "PetaGenTracker", value: short(PETA_GEN_TRACKER),
-                href: `https://bscscan.com/address/${PETA_GEN_TRACKER}#code` },
+              { label: "Contracts & roadmap", value: "View →", href: "/contracts" },
             ]}
           />
           <TrustColumn
