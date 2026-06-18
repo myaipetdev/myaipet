@@ -200,13 +200,22 @@ export async function invokePet(req: InvokeRequest): Promise<InvokeResult> {
   // Execute skill on provider pet
   const result = await executeSkill(req.providerPetId, req.skillId, req.input);
 
+  // api-call skills don't actually run inside invoke() — they return an
+  // "invoke_via_endpoint" descriptor that the caller must execute at the skill's
+  // own REST endpoint (with its OWN auth + credits). Billing for a descriptor
+  // would charge for undelivered work, so we only settle when real output ran.
+  const delivered =
+    result.success &&
+    !(result.output && typeof result.output === "object" &&
+      (result.output as { status?: string }).status === "invoke_via_endpoint");
+
   // Calculate billing
   const cost = skill.price;
   let callerCharged = 0;
   let providerEarned = 0;
   let platformFee = 0;
 
-  if (cost > 0 && result.success) {
+  if (cost > 0 && delivered) {
     platformFee = Math.ceil(cost * PLATFORM_FEE_RATE);
     providerEarned = cost - platformFee;
     callerCharged = cost;
