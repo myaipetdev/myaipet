@@ -202,7 +202,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           animation: "pulse 2s ease-in-out infinite",
         }} />
         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "#b45309", fontWeight: 500 }}>
-          {txToday > 0 ? `${txToday} creation${txToday === 1 ? "" : "s"} this week` : "Adopt free · no gas to start"}
+          {txToday >= 20 ? `${txToday} creations this week` : "Adopt free · no gas to start"}
         </span>
       </div>
 
@@ -607,59 +607,67 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         </div>
       </div>
 
-      {/* ─── Footer CTA ─── */}
+      {/* ─── Footer CTA — X profile card ─── */}
       <div style={{
         position: "relative", zIndex: 2,
         marginTop: 80, padding: "0 20px",
-        maxWidth: 700, marginLeft: "auto", marginRight: "auto",
+        maxWidth: 540, marginLeft: "auto", marginRight: "auto",
       }}>
-        <div style={{
-          background: "linear-gradient(135deg, rgba(254,243,199,0.6), rgba(254,215,170,0.4))",
-          border: "1px solid rgba(245,158,11,0.15)",
-          borderRadius: 24, padding: "48px 40px", textAlign: "center",
-        }}>
+        <a
+          href="https://x.com/MYAIPETS"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mp-lift"
+          style={{
+            display: "block", textDecoration: "none", textAlign: "left",
+            borderRadius: 22, overflow: "hidden", background: "#fff",
+            border: "1px solid rgba(0,0,0,0.08)",
+            boxShadow: "0 10px 36px rgba(15,23,42,0.08)",
+          }}
+        >
+          {/* banner */}
           <div style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "6px 16px", borderRadius: 20,
-            background: "rgba(255,255,255,0.7)", border: "1px solid rgba(245,158,11,0.15)",
-            marginBottom: 20,
+            height: 104, position: "relative",
+            background: "linear-gradient(120deg, #14142a 0%, #2d1b69 55%, #f59e0b 130%)",
           }}>
-            <Icon name="chat" size={16} />
-            <span style={{ fontFamily: "mono", fontSize: 11, color: "#b45309", fontWeight: 600 }}>
-              Join us now
-            </span>
+            <div style={{
+              position: "absolute", inset: 0, opacity: 0.18,
+              background: "radial-gradient(circle at 80% 30%, rgba(255,255,255,0.5) 0%, transparent 45%)",
+            }} />
+            <span style={{
+              position: "absolute", top: 14, right: 16, color: "rgba(255,255,255,0.85)",
+              fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 18,
+            }}>𝕏</span>
           </div>
-          <h3 style={{
-            fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(18px,3vw,24px)",
-            fontWeight: 700, color: "#1a1a2e", lineHeight: 1.4,
-            margin: "0 auto 24px", maxWidth: 480,
-          }}>
-            Building the first AI companion you actually own.
-          </h3>
-          <a
-            href="https://x.com/MYAIPETS"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "12px 28px", borderRadius: 14,
-              background: "#1a1a2e", color: "white",
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600,
-              textDecoration: "none", transition: "all 0.3s ease",
-              boxShadow: "0 4px 16px rgba(26,26,46,0.2)",
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "0 8px 24px rgba(26,26,46,0.3)";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 4px 16px rgba(26,26,46,0.2)";
-            }}
-          >
-            𝕏 @MYAIPETS
-          </a>
-        </div>
+          <div style={{ padding: "0 22px 22px" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+              <img src={LOGO_SRC} alt="MY AI PET" style={{
+                width: 78, height: 78, borderRadius: 20, objectFit: "cover",
+                border: "4px solid #fff", marginTop: -40,
+                boxShadow: "0 3px 12px rgba(0,0,0,0.18)",
+                background: "linear-gradient(135deg,#fef3c7,#fde68a)",
+              }} />
+              <span style={{
+                marginBottom: 4, padding: "9px 22px", borderRadius: 999,
+                background: "#1a1a2e", color: "#fff",
+                fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 700,
+                display: "inline-flex", alignItems: "center", gap: 7,
+                boxShadow: "0 4px 14px rgba(26,26,46,0.22)",
+              }}>𝕏 Follow</span>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 19, color: "#1a1a2e", letterSpacing: "-0.01em" }}>
+                MY AI PET
+              </div>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "rgba(26,26,46,0.5)", marginTop: 1 }}>
+                @MYAIPETS
+              </div>
+            </div>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14.5, color: "rgba(26,26,46,0.72)", marginTop: 12, lineHeight: 1.55 }}>
+              Building the first AI companion you actually own — it remembers you, you own the data, and it lives everywhere. Follow along, built in public. 🐾
+            </div>
+          </div>
+        </a>
       </div>
     </div>
   );
