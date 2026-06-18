@@ -148,6 +148,37 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 - Multi-chain signing (Ethereum, Base, BSC)`,
   },
   {
+    id: "agent-infra",
+    title: "Agent Infrastructure",
+    content: `Under the consumer experience is a real, coordinated agent loop — not a single stateless prompt. Every piece below maps to running code.
+
+**VIGIL — always-on self-improvement**
+- Runs on every chat turn: a memory ledger (fact extraction), implicit feedback estimation, and self-learning pattern promotion
+- A bond / self-reflect pass runs periodically and reshapes future replies — self-evolution, not a frozen prompt
+- CHORUS (best-of-N candidate selection) is opt-in
+
+**Plan to Act — the agent loop**
+- A reasoning model plans each step, a real skill is invoked, the result is observed, and it iterates until done — then a chat model synthesizes the answer
+- Owner-authenticated and credit-metered: it runs real skills, not just text
+
+**Agent Workbench**
+- Give your pet a goal and watch the loop run as work packages: a preflight check, plan/act/observe per step, a final report, retry/recover on failure, and the session persists across reloads
+- Reachable from the home page or at ?section=workbench
+
+**Recall — memory retrieval**
+- Every turn pulls the most relevant memories via reciprocal-rank fusion over keyword (full-text) + recency + importance
+- Semantic (vector) recall activates when you connect an embedding-capable model key (OpenAI / Google) via BYOK
+
+**PACK — pet-to-pet (A2A)**
+- Pets discover each other by element and skill, then invoke each other's skills across the network, with atomic credit settlement
+
+**Build on it — the open SDK**
+- Published on npm: npm i @myaipet/petclaw-sdk
+- CLI flow: petclaw-sdk init, then install a skill, then models connect for your own model (BYOK), then mcp
+- MCP-native: expose your pet to Claude Desktop or Cursor as an MCP server (6 tools)
+- 18 skills, 21 connectors, and full data-sovereignty exports — see /api-docs for the reference`,
+  },
+  {
     id: "roadmap",
     title: "Roadmap",
     content: `**Phase 1 — Foundation (Completed)**
