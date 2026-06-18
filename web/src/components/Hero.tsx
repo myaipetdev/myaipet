@@ -216,6 +216,26 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         }} />
       </div>
 
+      {/* Infrastructure positioning eyebrow + honest Beta tag */}
+      <div style={{
+        display: "inline-flex", alignItems: "center", gap: 9, marginBottom: 16,
+        position: "relative", zIndex: 2, flexWrap: "wrap", justifyContent: "center",
+      }}>
+        <span style={{
+          fontFamily: "'JetBrains Mono', monospace", fontSize: 11.5, letterSpacing: "0.2em",
+          color: "#b45309", fontWeight: 700, textTransform: "uppercase",
+        }}>
+          The open infrastructure for AI companions
+        </span>
+        <span style={{
+          fontSize: 9.5, fontWeight: 800, letterSpacing: "0.14em", padding: "3px 8px", borderRadius: 7,
+          background: "rgba(124,58,237,0.12)", color: "#7c3aed",
+          fontFamily: "'JetBrains Mono', monospace", border: "1px solid rgba(124,58,237,0.25)",
+        }}>
+          BETA
+        </span>
+      </div>
+
       {/* Main headline — aligned with landing voice (sovereign AI companion) */}
       <h1 className="mp-enter" style={{
         fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(40px,5.5vw,72px)",
@@ -447,14 +467,58 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           fontWeight: 700, color: "#1a1a2e", letterSpacing: "-0.02em",
           marginBottom: 10, lineHeight: 1.15,
         }}>
-          The Ecosystem
+          Built as infrastructure, not a walled garden.
         </h2>
         <p style={{
-          fontFamily: "monospace", fontSize: 18, color: "rgba(26,26,46,0.45)",
-          maxWidth: 480, margin: "0 auto 40px", lineHeight: 1.7,
+          fontFamily: "monospace", fontSize: 17, color: "rgba(26,26,46,0.5)",
+          maxWidth: 560, margin: "0 auto 24px", lineHeight: 1.7,
         }}>
-          One pet. Four dimensions. Infinite possibilities.
+          Your pet&apos;s memory + identity live on <strong style={{ color: "#b45309" }}>PetClaw</strong> — an
+          open protocol, not our database. Exportable, MCP-callable, portable. Yours.
         </p>
+
+        {/* Infrastructure evidence chips */}
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, marginBottom: 18 }}>
+          {["Open SDK", "MCP-native", "21 connectors", "Your data, portable"].map((c) => (
+            <span key={c} style={{
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700,
+              padding: "6px 14px", borderRadius: 999, color: "#7c3aed",
+              background: "rgba(124,58,247,0.07)", border: "1px solid rgba(124,58,247,0.2)",
+            }}>{c}</span>
+          ))}
+        </div>
+
+        {/* Developer SDK strip (#4) — reads as serious infra, not a token */}
+        <div style={{
+          maxWidth: 540, margin: "0 auto 40px", borderRadius: 14, overflow: "hidden",
+          border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 2px 12px rgba(15,23,42,0.05)",
+        }}>
+          <div style={{
+            background: "#0f0f1a", padding: "12px 16px",
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "#f8f8f8",
+            display: "flex", alignItems: "center", gap: 8, textAlign: "left",
+          }}>
+            <span style={{ color: "rgba(255,255,255,0.4)" }}>$</span>
+            <span style={{ color: "#4ade80" }}>npm i</span>
+            <span>petclaw-sdk</span>
+          </div>
+          <div style={{
+            background: "white", padding: "10px 16px",
+            fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(26,26,46,0.55)",
+            textAlign: "left",
+          }}>
+            Open protocol · MCP server · 18 skills · build on the pet layer ·{" "}
+            <a href="/api-docs" style={{ color: "#b45309", fontWeight: 700, textDecoration: "none" }}>docs →</a>
+          </div>
+        </div>
+
+        {/* The experience on top */}
+        <div style={{
+          fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.18em",
+          color: "rgba(26,26,46,0.4)", textTransform: "uppercase", marginBottom: 14, fontWeight: 700,
+        }}>
+          And the experience on top
+        </div>
 
         {/* Feature cards grid */}
         <style>{`
