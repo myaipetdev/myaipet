@@ -187,12 +187,21 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
           // ── ANON: pool + top-3 sneak peek ──
           <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", gap: 24, alignItems: "center" }} className="pitch-projection-grid">
             <div>
-              <div style={miniLabel}>SEASON 1 · POINTS IN PLAY</div>
-              <div style={{ ...bigNumber, color: "#fbbf24" }}>
-                {(data?.pool.points ?? 0).toLocaleString()}
-                <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
-              </div>
-              <div style={mini}>{data?.pool.participants ?? 0} raising · grows as players raise &amp; create</div>
+              <div style={miniLabel}>{seasonStarted ? "SEASON 1 · POINTS IN PLAY" : "SEASON 1 · OPENS JUL 1"}</div>
+              {seasonStarted ? (
+                <>
+                  <div style={{ ...bigNumber, color: "#fbbf24" }}>
+                    {(data?.pool.points ?? 0).toLocaleString()}
+                    <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
+                  </div>
+                  <div style={mini}>{data?.pool.participants ?? 0} raising · grows as players raise &amp; create</div>
+                </>
+              ) : (
+                <>
+                  <div style={{ ...bigNumber, color: "#fbbf24", fontSize: 30 }}>Get ready</div>
+                  <div style={mini}>Adopt now — every care &amp; creation banks points the moment Season 1 opens.</div>
+                </>
+              )}
             </div>
             <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24 }}>
               <div style={miniLabel}>{cdLabel}</div>

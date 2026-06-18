@@ -120,7 +120,9 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
     }
   };
 
+  const paused = !directPay.treasuryConfigured;
   const getButtonLabel = (planKey: string) => {
+    if (paused) return "Coming soon";
     if (purchasing !== planKey) return "Pay with USDT →";
     if (step === "purchase") return "Confirm in wallet...";
     if (step === "confirm") return "Verifying tx...";
@@ -171,6 +173,19 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         </p>
       </div>
 
+      {paused && (
+        <div style={{
+          maxWidth: 620, margin: "0 auto 32px", padding: "14px 20px", borderRadius: 14,
+          background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.28)",
+          display: "flex", alignItems: "center", gap: 12, textAlign: "left",
+        }}>
+          <span style={{ fontSize: 20 }}>💳</span>
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "#92400e", lineHeight: 1.5 }}>
+            <strong>Credit purchases are paused right now.</strong> You can still earn credits free by raising &amp; creating — buying reopens soon.
+          </div>
+        </div>
+      )}
+
       {/* Earn methods grid */}
       <div className="pricing-earn-grid" style={{
         display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 48,
@@ -210,7 +225,9 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           Get Credits
         </h3>
         <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "rgba(26,26,46,0.5)", marginBottom: 10 }}>
-          Pay with USDT on BNB Chain · Verified on-chain · Credits delivered instantly
+          {paused
+            ? "Purchases are paused right now — earn credits free by raising & creating"
+            : "Credits power AI image & video creation with your pet"}
         </p>
       </div>
 
@@ -312,21 +329,21 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
             </div>
             <button
               onClick={() => handlePurchase(p)}
-              disabled={!!purchasing}
+              disabled={!!purchasing || paused}
               className={p.pop ? "" : "pricing-btn-default"}
               style={{
                 width: "100%",
-                background: purchasing === p.key
-                  ? "rgba(245,158,11,0.5)"
+                background: paused ? "rgba(26,26,46,0.25)"
+                  : purchasing === p.key ? "rgba(245,158,11,0.5)"
                   : p.pop ? "linear-gradient(135deg,#f59e0b,#d97706)" : "#1a1a2e",
                 border: "none",
                 borderRadius: 10, padding: "13px",
                 fontFamily: "'Space Grotesk',sans-serif", fontSize: 14,
                 color: "white",
-                cursor: purchasing ? "wait" : "pointer", fontWeight: 700,
+                cursor: paused ? "not-allowed" : purchasing ? "wait" : "pointer", fontWeight: 700,
                 transition: "all 0.3s ease",
-                boxShadow: p.pop ? "0 4px 12px rgba(245,158,11,0.3)" : "none",
-                opacity: purchasing && purchasing !== p.key ? 0.5 : 1,
+                boxShadow: p.pop && !paused ? "0 4px 12px rgba(245,158,11,0.3)" : "none",
+                opacity: paused ? 0.85 : (purchasing && purchasing !== p.key ? 0.5 : 1),
               }}
             >
               {getButtonLabel(p.key)}

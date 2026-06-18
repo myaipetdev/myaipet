@@ -91,16 +91,16 @@ The current system is loyalty-only — no token mint, no buyback-and-burn.
 - Referrals: +100 points per referred user
 
 **Spending credits (bought with USDT)**
-- Image generation: 1 credits
-- Video generation: 15–60 credits (based on duration)
+- Image generation: from 5 credits per styled image
+- Video generation: 25–120 credits (based on model)
 - Marketplace items
 - Premium features
 
-**Purchasing credits**
-Three tiers available:
-- Explorer: 500 credits for 5 USDT
-- Companion: 2,500 credits for 20 USDT (most popular)
-- Breeder: 10,000 credits for 50 USDT
+**Purchasing credits (currently paused — reopen at launch)**
+USDT checkout is paused during the holding period. Three tiers at launch:
+- Starter: 100 credits for 5 USDT
+- Creator: 500 credits for 20 USDT (most popular)
+- Pro: 2,000 credits for 50 USDT
 
 **Note**
 Credits are a non-financial loyalty mechanism. They are not a token, security, or transferable claim.`,
@@ -125,8 +125,8 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 
 **Backend**
 - Next.js API Routes (serverless)
-- PostgreSQL database (Neon serverless)
-- Prisma ORM with Neon serverless adapter
+- PostgreSQL database (self-hosted)
+- Prisma ORM
 - JWT-based session management after SIWE authentication
 
 **AI Pipeline**
@@ -135,11 +135,12 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 - Personalized prompt engineering per pet identity
 - Async video processing with status polling
 
-**On-Chain (BSC)**
-- BNB Chain (BSC) for all on-chain activity
-- USDT / BNB for payment settlement
-- PetaGenTracker contract for activity recording
-- Smart contracts verified on BscScan
+**On-Chain (at go-live)**
+- On-chain anchoring activates at go-live — migrating to Base; currently paused (holding period)
+- The economy is points-only loyalty — no token, no on-chain settlement of value
+- USDT credit purchases are currently paused — reopen at launch
+- PetaGenTracker contract for activity anchoring (deploys at go-live)
+- Contracts will be verified on the block explorer at go-live — see /contracts for status
 
 **Wallet Support**
 - MetaMask, Rainbow, Coinbase Wallet
@@ -158,11 +159,11 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 - AI avatar generation for pets
 
 **Phase 2 — On-Chain Activity (In Progress · holding period)**
-- On-chain activity recording on BNB Chain (BSC)
-- USDT payment integration for credit purchases
-- Smart contract deployment (PETContent, PetaGenTracker)
-- BscScan verified contracts
-- Note: server-side on-chain recording + SOUL NFT minting are temporarily paused during the holding period — see /contracts for status.
+- On-chain activity anchoring at go-live (migrating to Base)
+- USDT credit purchases (currently paused — reopen at launch)
+- Smart contract deployment (PetaGenTracker) at go-live
+- Contracts verified on the block explorer at go-live
+- Note: on-chain anchoring + USDT purchases are paused during the holding period (migrating BSC → Base) — see /contracts for status.
 
 **Phase 3 — Evolution & Marketplace (Shipped)**
 - Pet evolution system with visual stage changes

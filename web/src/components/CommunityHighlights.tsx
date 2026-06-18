@@ -41,15 +41,18 @@ export default function CommunityHighlights() {
           fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
           letterSpacing: "0.18em", color: "#fbbf24", marginBottom: 8,
         }}>THE PACK</div>
-        <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 16 }}>
+        <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: h.stats.pets >= 50 ? 16 : 0 }}>
           A place full of pets, not a wall of images.
         </div>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <Stat label="PETS" value={h.stats.pets.toLocaleString()} accent="#fbbf24" />
-          <Stat label="CREATIONS" value={h.stats.generations.toLocaleString()} accent="#34d399" />
-          <Stat label="THIS WEEK" value={`+${h.stats.generationsThisWeek.toLocaleString()}`} accent="#a855f7" />
-          <Stat label="CREATORS · 7D" value={h.stats.activeCreators.toLocaleString()} accent="#60a5fa" />
-        </div>
+        {/* Only surface raw totals once they read as traction, not "10 pets". */}
+        {h.stats.pets >= 50 && (
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <Stat label="PETS" value={h.stats.pets.toLocaleString()} accent="#fbbf24" />
+            <Stat label="CREATIONS" value={h.stats.generations.toLocaleString()} accent="#34d399" />
+            <Stat label="THIS WEEK" value={`+${h.stats.generationsThisWeek.toLocaleString()}`} accent="#a855f7" />
+            <Stat label="CREATORS · 7D" value={h.stats.activeCreators.toLocaleString()} accent="#60a5fa" />
+          </div>
+        )}
       </div>
 
       {/* Featured pets row */}

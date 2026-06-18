@@ -390,7 +390,7 @@ export default function App() {
 
   // Never show "0" in a social-proof slot — fall back to qualitative,
   // always-true facts when stats are unavailable or still zero.
-  const stats = (platformStats && ((platformStats.total_users ?? 0) > 0 || (platformStats.total_generations ?? 0) > 0))
+  const stats = (platformStats && ((platformStats.total_users ?? 0) >= 100 || (platformStats.total_generations ?? 0) >= 100))
     ? [
         { label: "Pets Adopted", value: (platformStats.total_users ?? 0).toLocaleString(), raw: platformStats.total_users ?? 0, animated: true, sub: "Companions raised" },
         { label: "AI Content Created", value: (platformStats.total_generations ?? 0).toLocaleString(), raw: platformStats.total_generations ?? 0, animated: true, sub: "Videos & Images" },
@@ -625,7 +625,7 @@ export default function App() {
           fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, color: "rgba(26,26,46,0.4)",
           fontWeight: 500, letterSpacing: "0.02em", marginBottom: 12,
         }}>
-          © 2026 My AI Pet Protocol · Raise · Bond · Earn
+          © 2026 My AI Pet Protocol · Raise · Bond · Remember
         </div>
 
         {/* Disclaimer */}

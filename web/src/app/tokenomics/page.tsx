@@ -47,7 +47,8 @@ export default function TokenomicsPage() {
           fontSize: 14, lineHeight: 1.8, color: "rgba(26,26,46,0.8)",
         }}>
           <strong>Earn:</strong> daily care · AI creations · level-ups · evolutions ·
-          weekly Top-100 Season Rewards points · 7-day care streak NFT mint.<br /><br />
+          weekly Top-100 Season Rewards points · 7-day care streak earns a Memory NFT
+          (mints at on-chain go-live).<br /><br />
           <strong>Spend:</strong> shop items · pet slot unlocks · equipment · premium actions
           (overflow Feed/Play after the daily free cap).
         </div>
@@ -58,8 +59,8 @@ export default function TokenomicsPage() {
           border: "1px solid rgba(0,0,0,0.06)", marginBottom: 18,
           fontSize: 14, lineHeight: 1.8, color: "rgba(26,26,46,0.8)",
         }}>
-          The product accepts USDT for credit purchases, power upgrades, extra feeds/plays,
-          skill installs, and premium items. All revenue flows to the project treasury and
+          The product will accept USDT for credit purchases, power upgrades, extra feeds/plays,
+          skill installs, and premium items (purchases are currently paused). All revenue flows to the project treasury and
           funds AI inference, engineering, and ops. No token is created from this revenue.
           A future token + redemption path may be introduced — see <a href="/architecture"
           style={{ color: "#b45309", fontWeight: 700 }}>/architecture</a>.

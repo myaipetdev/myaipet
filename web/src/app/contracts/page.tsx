@@ -6,8 +6,8 @@ export const metadata: Metadata = {
 };
 
 const CONTRACTS = [
-  { name: "PETContent (NFT)",       addr: "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c", status: "Deployed", note: "ERC-721 for AI-generated content NFTs + memory anchors" },
-  { name: "PetaGenTracker",         addr: "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a", status: "Deployed", note: "Records generation events on-chain" },
+  { name: "PETContent (NFT)",       addr: "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c", status: "Deployed (paused)", note: "ERC-721 for AI-generated content NFTs + memory anchors — on BSC, migrating to Base" },
+  { name: "PetaGenTracker",         addr: "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a", status: "Deployed (paused)", note: "Records generation events on-chain — on BSC, migrating to Base" },
   { name: "PETActivity",            addr: "TBD",                                          status: "Planned",    note: "Per-user activity recorder (gasless, roadmap)" },
   { name: "PETSoul",                addr: "TBD",                                          status: "Planned",    note: "Pet identity registry + successor inheritance (roadmap)" },
 ];
@@ -31,11 +31,12 @@ export default function ContractsPage() {
           Smart Contracts
         </h1>
         <p style={{ fontSize: 15, color: "rgba(26,26,46,0.65)", marginBottom: 32, lineHeight: 1.6 }}>
-          Two production contracts are live on <strong>BNB Smart Chain (chain id 56)</strong> and
-          BSCScan-verified; the deployment is being migrated to <strong>Base</strong> ahead of go-live,
-          and further contracts are prepared. An external audit is planned pre-launch — announcements
-          published here once finalized. On-chain features are currently in{" "}
-          <strong>holding period</strong> — see the disclosure below.
+          Two production contracts were deployed on <strong>BNB Smart Chain (chain id 56)</strong>{" "}
+          during the build (BSCScan-verified at deploy time); the deployment is being migrated to{" "}
+          <strong>Base</strong> ahead of go-live, and further contracts are prepared. On-chain
+          features are currently <strong>paused (holding period)</strong> and will be anchored on
+          Base at go-live. An external audit is planned pre-launch — announcements published here
+          once finalized. See the disclosure below.
         </p>
 
         <div style={{
@@ -71,8 +72,8 @@ export default function ContractsPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
                 <span style={{
                   fontSize: 10, padding: "3px 10px", borderRadius: 999,
-                  background: c.status === "Deployed" ? "rgba(74,222,128,0.15)" : "rgba(0,0,0,0.06)",
-                  color: c.status === "Deployed" ? "#16a34a" : "rgba(26,26,46,0.65)",
+                  background: c.status.startsWith("Deployed") ? "rgba(245,158,11,0.12)" : "rgba(0,0,0,0.06)",
+                  color: c.status.startsWith("Deployed") ? "#92400e" : "rgba(26,26,46,0.65)",
                   fontWeight: 700, letterSpacing: "0.06em",
                 }}>{c.status.toUpperCase()}</span>
                 {c.addr !== "TBD" && (
@@ -85,7 +86,7 @@ export default function ContractsPage() {
                       textDecoration: "none", fontWeight: 600,
                       border: "1px solid rgba(0,0,0,0.08)",
                     }}
-                  >BSCScan ↗</a>
+                  >BSCScan (build) ↗</a>
                 )}
               </div>
             </div>

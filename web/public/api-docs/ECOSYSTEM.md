@@ -60,18 +60,18 @@ petclaw-sdk mcp
 npx petclaw-sdk mcp --url https://app.myaipet.ai --pet-id 1
 ```
 
-## On-Chain (BSC Mainnet)
+## On-Chain (at go-live)
+
+On-chain features are currently paused (holding period) and the deployment is migrating from BSC to **Base**; they activate at go-live. The economy is points-only loyalty — **no token**.
 
 | Contract | Type | Purpose |
 |----------|------|---------|
-| PETToken | ERC20 | Governance + utility token |
-| PetSoul | ERC721 | Soulbound pet identity + memory NFTs |
+| PetSoul | ERC721 | Soulbound pet identity + memory anchors |
 | PETContent | ERC721 | AI-generated content as NFTs |
 | PETActivity | — | On-chain activity recording |
 | PetaGenTracker | — | Batch activity tracking |
-| PETShop | — | Token purchase (USDT tiers) |
 
-All contracts audited (2 audits + code review), with Ownable2Step, Pausable, ReentrancyGuard.
+Contracts are non-upgradeable with minimized owner privileges (Ownable2Step, Pausable, ReentrancyGuard). An external audit is planned pre-launch.
 
 ## Data Sovereignty
 

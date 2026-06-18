@@ -52,19 +52,20 @@ export default function TermsPage() {
           or other professional advice.
         </Section>
 
-        <Section title="5. Points & Future Token (Important)">
-          The platform may issue non-financial loyalty points for engagement. Points are utility
-          credits redeemable for in-app features. Points do not represent equity, debt, profit
-          share, or any investment in any entity. Any future conversion or distribution related
-          to points will be announced separately and may be subject to additional terms,
-          jurisdictional eligibility, and KYC/AML compliance. Nothing on this Service constitutes
-          an offer or sale of securities.
+        <Section title="5. Points (Important)">
+          The platform may issue non-financial loyalty points for engagement. Points are in-app
+          loyalty credits with no monetary value. There is no token, and no token is planned.
+          Points are not convertible into any token, currency, or other asset, and carry no
+          conversion right. Points do not represent equity, debt, profit share, or any investment
+          in any entity. Nothing on this Service constitutes an offer or sale of securities.
         </Section>
 
         <Section title="6. On-chain Recording">
-          Certain actions may be recorded on the BNB Smart Chain. On-chain records are immutable;
-          we cannot delete or modify them. By using on-chain features you consent to permanent
-          public recording of the relevant action data.
+          On-chain recording is currently paused during a holding period and is not active. It will
+          activate at go-live, when on-chain features migrate to Base. Once active, certain actions
+          may be anchored on-chain; such records are immutable and we cannot delete or modify them.
+          By using on-chain features after go-live you consent to permanent public recording of the
+          relevant action data.
         </Section>
 
         <Section title="7. Acceptable Use">

@@ -29,7 +29,8 @@ export default function PetClawPreview({ cta }: { cta?: ReactNode }) {
   }, []);
 
   const stats = net?.network || {};
-  const online = (net?.nodes || []).filter((n: any) => n.status === "online").slice(0, 6);
+  const onlineAll = (net?.nodes || []).filter((n: any) => n.status === "online");
+  const online = onlineAll.slice(0, 8);
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "104px 20px 56px" }}>
@@ -76,7 +77,7 @@ export default function PetClawPreview({ cta }: { cta?: ReactNode }) {
           <div style={{ flex: 1 }} />
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "#059669", fontWeight: 700 }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px rgba(16,185,129,0.6)" }} />
-            {stats.onlineNodes ?? 0} online
+            {onlineAll.length} online
           </span>
         </div>
         {online.length === 0 ? (

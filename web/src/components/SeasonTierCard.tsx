@@ -59,7 +59,7 @@ export default function SeasonTierCard() {
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 800, fontSize: 24, color: "#fde68a" }}>
-              {signedIn ? points.toLocaleString() : "—"}<span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginLeft: 5 }}>pts</span>
+              {signedIn ? points.toLocaleString() : "0"}<span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginLeft: 5 }}>pts</span>
             </div>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
               {next ? `${toNext.toLocaleString()} to ${next.name}` : "👑 Top tier reached"}
