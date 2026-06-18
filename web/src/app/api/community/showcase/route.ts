@@ -37,7 +37,9 @@ export async function GET(req: NextRequest) {
       likes: g._count?.likes || 0,
       createdAt: g.created_at,
     }))
-    .filter((it) => it.url && /^https?:\/\//i.test(it.url));
+    // Only real generation outputs — exclude input avatars / the default mascot
+    // placeholder that would otherwise show as a "creation".
+    .filter((it) => it.url && /^https?:\/\//i.test(it.url) && /\/uploads\/(generations|videos)\//i.test(it.url));
 
   return NextResponse.json({ items });
 }

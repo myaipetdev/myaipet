@@ -181,7 +181,7 @@ export default function SkillsPage() {
                       <code style={{
                         flex: 1, fontSize: 11, padding: "6px 10px", borderRadius: 8,
                         background: "#0f0f1a", color: "#f8f8f8",
-                        overflowX: "auto", whiteSpace: "nowrap",
+                        whiteSpace: "normal", wordBreak: "break-all", lineHeight: 1.45,
                       }}>
                         petclaw-sdk install {s.id}
                       </code>

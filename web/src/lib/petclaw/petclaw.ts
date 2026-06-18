@@ -311,7 +311,7 @@ export const DEFAULT_SKILLS: PetClawSkill[] = [
   {
     id: "memory-anchor",
     name: "Memory Anchor",
-    description: "Compute/record a memory checkpoint hash (optional on-chain BSC anchor).",
+    description: "Compute/record a memory checkpoint hash (optional on-chain anchor at TGE).",
     category: "utility",
     protocol: PETCLAW_PROTOCOL,
     version: "1.0.0",

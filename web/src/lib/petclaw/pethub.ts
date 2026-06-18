@@ -247,7 +247,7 @@ export const BUILTIN_SKILLS: PetSkillManifest[] = [
   {
     id: "memory-anchor", name: "Memory Anchor", version: "1.0.0", author: "petclaw",
     protocol: PETCLAW_PROTOCOL, category: "utility",
-    description: "Compute/record a memory checkpoint hash (optional on-chain BSC anchor). Invoke via GET/POST /api/petclaw/memory/anchor.",
+    description: "Compute/record a memory checkpoint hash (optional on-chain anchor at TGE). Invoke via GET/POST /api/petclaw/memory/anchor.",
     tags: ["anchor", "checkpoint", "integrity", "onchain"],
     handler: "api-call", apiUrl: "/api/petclaw/memory/anchor",
     inputSchema: { type: "object", properties: {} },

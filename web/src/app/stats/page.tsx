@@ -53,7 +53,7 @@ export default function StatsPage() {
           fontFamily: "'JetBrains Mono', monospace",
         }}>
           What's publicly verifiable today: deployed contracts at{" "}
-          <a href="/contracts" style={{ color: "#b45309", fontWeight: 700 }}>/contracts</a> (on BscScan),
+          <a href="/contracts" style={{ color: "#b45309", fontWeight: 700 }}>/contracts</a> (on-chain),
           the open{" "}
           <a href="/.well-known/pet-card.json" style={{ color: "#b45309", fontWeight: 700 }}>petclaw protocol manifest</a>,
           and the skill registry at{" "}

@@ -32,8 +32,9 @@ export default function ContractsPage() {
         </h1>
         <p style={{ fontSize: 15, color: "rgba(26,26,46,0.65)", marginBottom: 32, lineHeight: 1.6 }}>
           Two production contracts are live on <strong>BNB Smart Chain (chain id 56)</strong> and
-          BSCScan-verified; further contracts are prepared for TGE. An external audit is planned
-          pre-TGE — announcements published here once finalized. On-chain features are currently in
+          BSCScan-verified; the deployment is being migrated to <strong>Base</strong> for TGE, and
+          further contracts are prepared. An external audit is planned pre-TGE — announcements
+          published here once finalized. On-chain features are currently in{" "}
           <strong>holding period</strong> — see the disclosure below.
         </p>
 

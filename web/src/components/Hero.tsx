@@ -202,7 +202,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           animation: "pulse 2s ease-in-out infinite",
         }} />
         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "#b45309", fontWeight: 500 }}>
-          {txToday > 0 ? `${txToday} creations this week` : "Adopt free · no gas to start"}
+          {txToday > 0 ? `${txToday} creation${txToday === 1 ? "" : "s"} this week` : "Adopt free · no gas to start"}
         </span>
       </div>
 
