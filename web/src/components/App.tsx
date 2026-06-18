@@ -634,9 +634,8 @@ export default function App() {
           fontFamily: "'Space Grotesk',sans-serif", fontSize: 11,
           color: "rgba(26,26,46,0.35)", lineHeight: 1.6, fontWeight: 400,
         }}>
-          Engagement points are non-financial loyalty credits, not securities. $PET is a proposed
-          utility token; final tokenomics will be published with a standalone whitepaper and
-          legal opinion before TGE. Nothing here is financial advice.
+          Engagement points are non-financial loyalty credits, not securities. No token is issued —
+          the economy is points-only loyalty (see /tokenomics). Nothing here is financial advice.
         </div>
       </footer>
     </div>

@@ -17,7 +17,7 @@ Every pet has a distinct personality shaped by user interactions. The platform u
     id: "getting-started",
     title: "Getting Started",
     content: `**1. Connect Your Wallet**
-Connect using MetaMask, Rainbow, Coinbase Wallet, or any WalletConnect-compatible wallet. Sign-in (SIWE) works with any EVM wallet — no gas, identity only. On-chain anchoring activates at go-live (migrating to Base for TGE).
+Connect using MetaMask, Rainbow, Coinbase Wallet, or any WalletConnect-compatible wallet. Sign-in (SIWE) works with any EVM wallet — no gas, identity only. On-chain anchoring activates at go-live (migrating to Base). The economy is points-only loyalty — no token.
 
 **2. Sign In**
 Sign a message to verify wallet ownership (SIWE — Sign-In with Ethereum). No gas fees for signing.

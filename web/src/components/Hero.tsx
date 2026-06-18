@@ -116,7 +116,7 @@ const PILLARS = [
   { icon: <Icon name="film-reel" size={20} />, label: "AI Video Engine", desc: "Personalized content for every moment" },
   { icon: <Icon name="sparkling" size={20} />, label: "Evolve & Equip", desc: "Skills, skins & marketplace" },
   { icon: <Icon name="chat" size={20} />, label: "Social Circle", desc: "Life sharing & network effects" },
-  { icon: <Icon name="trophy" size={20} />, label: "Portable Legacy", desc: "Export your pet's soul; on-chain anchor at TGE" },
+  { icon: <Icon name="trophy" size={20} />, label: "Portable Legacy", desc: "Export your pet's soul; on-chain anchor at go-live" },
 ];
 
 export default function Hero({ onAdopt, onExplore, txToday }: any) {

@@ -38,7 +38,7 @@ export default function TrustStrip() {
           <TrustColumn
             emoji="⛓"
             title="On-chain at go-live"
-            sub="Your pet's soul + activity anchor on-chain at TGE — non-upgradeable, owner-minimized."
+            sub="Your pet's soul + activity anchor on-chain at go-live — non-upgradeable, owner-minimized."
             rows={[
               { label: "Contracts & roadmap", value: "View →", href: "/contracts" },
             ]}

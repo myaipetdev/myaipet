@@ -1106,7 +1106,7 @@ export default function SovereigntyDashboard() {
                 🔐 YOUR DATA
               </span>
               <span className="sov-tag" style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)", color: "#7c3aed" }}>
-                ⛓ ON-CHAIN AT TGE
+                ⛓ ON-CHAIN AT GO-LIVE
               </span>
             </div>
             <h1 style={{ fontSize: 52, fontWeight: 900, letterSpacing: "-0.04em", color: "#1a1a2e", lineHeight: 1.0, margin: "0 0 16px" }}>
@@ -1114,7 +1114,7 @@ export default function SovereigntyDashboard() {
               <span style={{ color: "#f59e0b" }}>Truly Yours.</span>
             </h1>
             <p style={{ fontSize: 16, color: "rgba(26,26,46,0.55)", lineHeight: 1.7, margin: "0 0 28px", maxWidth: 380 }}>
-              Every memory, every conversation, every bond — owned by you. Not us. Export your pet&apos;s full soul anytime; its on-chain anchor and inheritance activate at TGE.
+              Every memory, every conversation, every bond — owned by you. Not us. Export your pet&apos;s full soul anytime; its on-chain anchor and inheritance activate at go-live.
             </p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               {[
@@ -1638,7 +1638,7 @@ export default function SovereigntyDashboard() {
                 {memoryNfts.length} minted
               </span>
               <div
-                title="NFT minting launches on-chain at TGE"
+                title="NFT minting launches on-chain at go-live"
                 style={{
                   marginLeft: "auto",
                   padding: "9px 20px",

@@ -79,7 +79,7 @@ const SOVEREIGNTY: { k: string; v: React.ReactNode }[] = [
   { k: "export", v: "full memory ledger, signed JSON" },
   { k: "consent", v: "public / sharing / AI-training / interact" },
   { k: "delete", v: "erase everything, cryptographic proof" },
-  { k: "on-chain", v: <>SOUL anchor + inheritance <span style={{ color: MUTED }}>○ at TGE</span></> },
+  { k: "on-chain", v: <>SOUL anchor + inheritance <span style={{ color: MUTED }}>○ at go-live</span></> },
 ];
 
 function Row({ k, v, kw = 132 }: { k: string; v: React.ReactNode; kw?: number }) {
@@ -100,7 +100,7 @@ interface Line { role: "sys" | "you" | "pet"; text: string }
 const BOOT: Line[] = [
   { role: "sys", text: "initializing petclaw-mcp · protocol v1 · SDK 1.6.0" },
   { role: "sys", text: "connectors ▸ 21   tools ▸ 6 ready   skills ▸ 18 loaded   VIGIL ▸ 5 · PACK ▸ A2A" },
-  { role: "sys", text: "soul ▸ portable · consent ▸ enforced · on-chain ▸ holding (TGE)" },
+  { role: "sys", text: "soul ▸ portable · consent ▸ enforced · on-chain ▸ holding (go-live)" },
 ];
 
 const DEMO_REPLIES = [
