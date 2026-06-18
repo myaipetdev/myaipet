@@ -396,8 +396,8 @@ export default function App() {
         { label: "AI Content Created", value: (platformStats.total_generations ?? 0).toLocaleString(), raw: platformStats.total_generations ?? 0, animated: true, sub: "Videos & Images" },
       ]
     : [
-        { label: "Protocol", value: "PetClaw v1", sub: "Live on BSC Mainnet" },
-        { label: "Network", value: "BSC", sub: "Chain ID 56 · verified" },
+        { label: "Protocol", value: "PetClaw v1", sub: "Open data standard" },
+        { label: "Your data", value: "Yours", sub: "Export & delete anytime" },
       ];
 
   const handleCreditsChange = (newCredits: any) => {
