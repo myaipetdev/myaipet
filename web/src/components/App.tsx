@@ -27,6 +27,7 @@ const SocialGallery = lazy(() => import("@/components/SocialGallery"));
 const Leaderboard = lazy(() => import("@/components/Leaderboard"));
 const AgentDashboard = lazy(() => import("@/components/AgentDashboard"));
 const SovereigntyDashboard = lazy(() => import("@/components/SovereigntyDashboard"));
+const PetStudioPro = lazy(() => import("@/components/PetStudioPro"));
 
 // ── Grid Background ──
 function Grid() {
@@ -481,11 +482,11 @@ export default function App() {
       )}
 
       {section === "create" && (
-        <WalletGate section="create">
-          <Suspense fallback={<Loader />}>
-            <PetGenerate />
-          </Suspense>
-        </WalletGate>
+        <Suspense fallback={<Loader />}>
+          {/* Same Studio as /studio — PetStudioPro handles its own demo (no-wallet)
+              + signed-in modes, so "Create" no longer dead-ends at a bare wallet gate. */}
+          <PetStudioPro />
+        </Suspense>
       )}
 
       {section === "community" && (

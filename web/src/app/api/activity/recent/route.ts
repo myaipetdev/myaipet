@@ -53,10 +53,15 @@ export async function GET(req: NextRequest) {
     }
 
     for (const p of newPets) {
+      // Don't surface unnamed/junk names (bare species default or numeric) as if
+      // they were real pet names in a public activity feed.
+      const nm = (p.name || "").trim();
+      const junk = nm.length < 2 || /^\d+$/.test(nm)
+        || ["cat", "dog", "parrot", "turtle", "hamster", "rabbit", "fox", "pomeranian"].includes(nm.toLowerCase());
       items.push({
         icon: "🐣",
         wallet: truncateWallet(p.user?.wallet_address || ""),
-        text: `Adopted a new pet: ${p.name}`,
+        text: junk ? "Adopted a new pet" : `Adopted a new pet: ${nm}`,
         time: timeAgo(p.created_at),
         timestamp: p.created_at.getTime(),
       });

@@ -57,7 +57,7 @@ export default function Nav({ section, setSection, credits }: any) {
         @media (max-width: 768px) {
           .nav-desktop-logo-text { display: none !important; }
           .nav-container { padding: 8px 12px !important; }
-          .nav-items-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; mask-image: linear-gradient(to right, black 85%, transparent); -webkit-mask-image: linear-gradient(to right, black 85%, transparent); }
+          .nav-items-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; mask-image: linear-gradient(to right, black 97%, transparent); -webkit-mask-image: linear-gradient(to right, black 97%, transparent); padding-right: 6px; }
           .nav-items-wrap::-webkit-scrollbar { display: none; }
           .nav-btn { padding: 6px 10px !important; font-size: 11px !important; white-space: nowrap; flex-shrink: 0; }
           .nav-credits { font-size: 10px !important; padding: 4px 8px !important; }
