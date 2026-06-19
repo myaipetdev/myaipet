@@ -703,11 +703,11 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
               fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 18,
             }}>𝕏</span>
           </div>
-          <div style={{ padding: "0 22px 22px" }}>
+          <div style={{ padding: "0 22px 22px", position: "relative", zIndex: 1 }}>
             <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
               <img src={LOGO_SRC} alt="MY AI PET" style={{
                 width: 78, height: 78, borderRadius: 20, objectFit: "cover",
-                border: "4px solid #fff", marginTop: -40,
+                border: "4px solid #fff", marginTop: -40, position: "relative", zIndex: 1,
                 boxShadow: "0 3px 12px rgba(0,0,0,0.18)",
                 background: "linear-gradient(135deg,#fef3c7,#fde68a)",
               }} />
