@@ -14,7 +14,6 @@ import Pricing from "@/components/Pricing";
 import OrchestrationExplainer from "@/components/OrchestrationExplainer";
 import RaisePitch from "@/components/RaisePitch";
 import WalletGate from "@/components/WalletGate";
-import TrustStrip from "@/components/TrustStrip";
 import ToastHost from "@/components/Toast";
 import DialogHost from "@/components/Dialog";
 import { seasonTier } from "@/lib/season";
@@ -536,9 +535,6 @@ export default function App() {
         </WalletGate>
       )}
 
-
-      {/* Trust signals — sits on every page so the proof is one scroll away. */}
-      <TrustStrip />
 
       {/* Footer — only show in app mode */}
       <footer style={{ padding: "48px 24px 36px", textAlign: "center", borderTop: "1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.015)" }}>

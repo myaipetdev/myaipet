@@ -1,11 +1,10 @@
 "use client";
 
 /**
- * ModelsPanel — the user-facing surface for FEATURE 1 (BYO models) + FEATURE 2
- * (plan-execute agent loop). Lets an owner:
- *   - connect their own provider key (xAI / OpenAI / Anthropic / OpenRouter),
- *     scoped to tasks; the router then routes those tasks to their model.
- *   - run the plan-and-execute agent loop on a pet and inspect the step trace.
+ * ModelsPanel — the user-facing surface for BYO models + CLI token pairing.
+ * Lets an owner connect their own provider key (xAI / OpenAI / Anthropic /
+ * OpenRouter), scoped to tasks; the router then routes those tasks to their
+ * model. Also mints CLI personal-access tokens for the SDK / browser extension.
  *
  * The API key the user types is THEIR OWN key for THEIR OWN usage; the server
  * stores it encrypted (AES-256-GCM) and never returns it. (api.petclaw.models)
@@ -61,13 +60,6 @@ export default function ModelsPanel() {
   const [scopes, setScopes] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
-  // agent runner
-  const [pets, setPets] = useState<{ id: number; name: string }[]>([]);
-  const [agentPet, setAgentPet] = useState<number | null>(null);
-  const [goal, setGoal] = useState("");
-  const [running, setRunning] = useState(false);
-  const [run, setRun] = useState<any>(null);
-
   const load = async () => {
     setLoading(true);
     try {
@@ -90,11 +82,6 @@ export default function ModelsPanel() {
   useEffect(() => {
     load();
     loadTokens();
-    api.pets.list().then((d: any) => {
-      const list = (d?.pets || []).map((p: any) => ({ id: p.id, name: p.name }));
-      setPets(list);
-      if (list[0]) setAgentPet(list[0].id);
-    }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -138,19 +125,6 @@ export default function ModelsPanel() {
   const remove = async (id: number) => {
     try { await api.petclaw.models.remove(id); await load(); }
     catch (e: any) { setErr(e?.message || "Remove failed"); }
-  };
-
-  const runAgent = async () => {
-    if (!agentPet || goal.trim().length < 3) return;
-    setRunning(true); setRun(null);
-    try {
-      const r = await api.pets.runAgent(agentPet, goal.trim());
-      setRun(r);
-    } catch (e: any) {
-      setRun({ error: e?.message || "Agent run failed", status: e?.status });
-    } finally {
-      setRunning(false);
-    }
   };
 
   const inputStyle: React.CSSProperties = { width: "100%", padding: "10px 12px", borderRadius: 10, border: `1px solid ${LINE}`, fontSize: 14, color: INK, background: "#fafafa", boxSizing: "border-box" };
@@ -266,40 +240,6 @@ export default function ModelsPanel() {
         {loading && <div style={{ color: MUTED, fontSize: 13.5 }}>Loading…</div>}
       </Card>
 
-      <Card title="Agent loop" sub="Give your pet a goal — it plans, calls its real skills, observes, iterates, and answers. Costs 5 credits per run.">
-        {pets.length === 0 ? (
-          <div style={{ padding: "10px 0", fontSize: 13.5, color: MUTED }}>
-            Adopt a pet first to run the agent loop. <a href="/?section=my%20pet" style={{ color: GOLD, fontWeight: 600, textDecoration: "none" }}>Adopt a pet ▸</a>
-          </div>
-        ) : (
-        <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-          <select value={agentPet ?? ""} onChange={(e) => setAgentPet(Number(e.target.value))} style={{ ...inputStyle, width: 180 }}>
-            {pets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-          <input value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="e.g. summarize my week and tell me how you feel" style={inputStyle} onKeyDown={(e) => e.key === "Enter" && runAgent()} />
-          <button onClick={runAgent} disabled={running || !agentPet} style={{ ...btn, whiteSpace: "nowrap", opacity: running || !agentPet ? 0.6 : 1 }}>{running ? "Running…" : "Run"}</button>
-        </div>
-        )}
-        {run && (
-          <div style={{ marginTop: 8, background: "#0e0e14", borderRadius: 12, padding: "16px 18px", fontFamily: "monospace", fontSize: 12.5, color: "#e8e4da" }}>
-            {run.error ? (
-              <div style={{ color: "#f0997b" }}>error: {run.error}{run.status === 401 ? " (connect wallet)" : ""}{run.status === 402 ? " (need 5 credits)" : ""}</div>
-            ) : (
-              <>
-                {(run.steps || []).map((s: any, i: number) => (
-                  <div key={i} style={{ marginBottom: 6, color: s.skill === "finish" ? "#8a8577" : "#9bd1c4" }}>
-                    <span style={{ color: GOLD_SOFT }}>{i + 1}.</span> {s.skill === "finish" ? "✓ finish" : `${s.skill}`} <span style={{ color: "#8a8577" }}>{s.thought ? `— ${s.thought}` : ""}</span>
-                  </div>
-                ))}
-                <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.08)", color: "#fde68a" }}>
-                  {run.answer}
-                </div>
-                <div style={{ marginTop: 8, color: "#5f5e5a", fontSize: 11 }}>stopped: {run.stoppedReason} · credits left: {run.creditsRemaining}</div>
-              </>
-            )}
-          </div>
-        )}
-      </Card>
     </div>
   );
 }

@@ -205,6 +205,12 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
     discord: "#5865F2", telegram: "#2AABEE", twitter: "#000", github: "#181717",
   };
 
+  // Only surface channels that are actually usable (admin-configured) or already
+  // connected. A card full of disabled "Coming soon — admin not configured"
+  // rows just reads as broken, so when nothing is actionable we hide it entirely.
+  const visible = providers.filter((p) => p.configured || p.connected);
+  if (!loading && visible.length === 0) return null;
+
   return (
     <div className="sov-card" style={{
       padding: 30, borderRadius: 20, marginBottom: 32,
@@ -231,7 +237,7 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
         <div style={{ padding: 20, textAlign: "center", color: "rgba(26,26,46,0.5)", fontSize: 13 }}>Loading…</div>
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
-          {providers.map((p) => {
+          {visible.map((p) => {
             const color = COLORS[p.id] || "#999";
             const isActing = actioning === p.id;
             const profile = p.connection?.profile;
@@ -334,6 +340,62 @@ function collapseConsolidations(cks: Checkpoint[]): DisplayCheckpoint[] {
     out.push(plain ? { ...ck, _count: 1, _fromVersion: ck.version } : ck);
   }
   return out;
+}
+
+// A small labeled custom dropdown for switching the active pet. Replaces a bare
+// native <select> whose OS-rendered (dark) option list looked unstyled/awkward
+// and gave no hint that "Cat" was even the active pet.
+function PetSwitcher({ pets, selectedPet, onSelect }: { pets: any[]; selectedPet: any; onSelect: (p: any) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  if (!pets.length) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <span style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(26,26,46,0.4)", textTransform: "uppercase" }}>Active pet</span>
+      <div ref={ref} style={{ position: "relative" }}>
+        <button onClick={() => setOpen((o) => !o)} style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "8px 14px", borderRadius: 999, border: "1.5px solid rgba(0,0,0,0.1)",
+          background: "white", color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif",
+          fontSize: 13, fontWeight: 700, cursor: "pointer", outline: "none",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+        }}>
+          <span>🐾</span>
+          <span>{selectedPet?.name || "Pet"}</span>
+          <span style={{ color: "rgba(26,26,46,0.4)", transform: open ? "rotate(180deg)" : "none", transition: "transform .15s" }}>▾</span>
+        </button>
+        {open && (
+          <div style={{
+            position: "absolute", right: 0, top: "calc(100% + 6px)", minWidth: 180,
+            background: "white", borderRadius: 14, border: "1px solid rgba(0,0,0,0.08)",
+            boxShadow: "0 8px 28px rgba(15,23,42,0.14)", padding: 6, zIndex: 30,
+          }}>
+            {pets.map((p) => {
+              const active = p.id === selectedPet?.id;
+              return (
+                <button key={p.id} onClick={() => { onSelect(p); setOpen(false); }} style={{
+                  display: "flex", alignItems: "center", gap: 6, width: "100%", textAlign: "left",
+                  padding: "9px 12px", borderRadius: 10, border: "none", cursor: "pointer",
+                  background: active ? "rgba(245,158,11,0.1)" : "transparent",
+                  color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13.5,
+                  fontWeight: active ? 700 : 500,
+                }}>
+                  <span style={{ width: 12, color: "#f59e0b" }}>{active ? "✓" : ""}</span>
+                  {p.name || `Pet #${p.id}`}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function MemoryInspectorCard({ petId }: { petId: number }) {
@@ -1097,25 +1159,10 @@ export default function SovereigntyDashboard() {
 
       {/* ───── Hero ───── */}
       <div className="sov-card" style={{ marginBottom: 48 }}>
-        {/* Pet selector pill — top right */}
+        {/* Active-pet switcher — top right (labeled custom dropdown) */}
         {pets.length > 0 && (
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 32 }}>
-            <select
-              value={selectedPet?.id || ""}
-              onChange={(e) => { const p = pets.find((x) => String(x.id) === e.target.value); if (p) setSelectedPet(p); }}
-              style={{
-                padding: "8px 36px 8px 16px", borderRadius: 999, border: "1.5px solid rgba(0,0,0,0.1)",
-                background: `white url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%231a1a2e' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>") no-repeat right 14px center`,
-                color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif",
-                fontSize: 13, fontWeight: 600, cursor: "pointer", outline: "none",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                appearance: "none", WebkitAppearance: "none", MozAppearance: "none",
-              }}
-            >
-              {pets.map((p) => (
-                <option key={p.id} value={p.id}>{p.name || `Pet #${p.id}`}</option>
-              ))}
-            </select>
+            <PetSwitcher pets={pets} selectedPet={selectedPet} onSelect={setSelectedPet} />
           </div>
         )}
 
@@ -2498,9 +2545,12 @@ export default function SovereigntyDashboard() {
             </div>
           </div>
 
-          {/* ───── Channel Connections (OAuth) ───── */}
-          {selectedPet && <MemoryInspectorCard key={selectedPet.id} petId={selectedPet.id} />}
-          {selectedPet && <ChannelConnectionsCard key={selectedPet.id} petId={selectedPet.id} />}
+          {/* ───── Memory Ledger + Channel Connections ───── */}
+          {/* Distinct key prefixes: these two are ADJACENT SIBLINGS, so sharing the
+              bare selectedPet.id as key collided and made React duplicate the
+              ledger. Prefix per-component to keep remount-on-pet-switch behavior. */}
+          {selectedPet && <MemoryInspectorCard key={`mem-${selectedPet.id}`} petId={selectedPet.id} />}
+          {selectedPet && <ChannelConnectionsCard key={`chan-${selectedPet.id}`} petId={selectedPet.id} />}
 
           {/* ───── Pet Network (public discovery) ───── */}
           <div
