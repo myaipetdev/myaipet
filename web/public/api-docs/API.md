@@ -29,6 +29,8 @@ Server capabilities and endpoints.
 }
 ```
 
+> Note: `version` here is the **protocol** version (`petclaw-v1`, semver `1.0.0`) — it is distinct from, and not pinned to, the npm **SDK package** version (currently `1.6.0`).
+
 ### GET `/api/petclaw`
 Full manifest with skills and stats.
 
@@ -82,7 +84,7 @@ Install, uninstall, or execute a skill.
 {
   "skillId": "companion-chat",
   "success": true,
-  "output": { "reply": "Hi there!", "model": "grok-3-mini" },
+  "output": { "reply": "Hi there!", "model": "grok-4" },
   "latencyMs": 2500,
   "cost": 0
 }

@@ -192,6 +192,16 @@ export default function AgentWorkbench() {
           Not a single prompt — a real loop. Your pet <b>plans</b> each step, runs a real
           <b> skill</b>, <b>recalls</b> what it knows, <b>observes</b> the result, and reports back.
         </p>
+
+        {/* Honest scope note: what the loop runs vs. what it can only point to. */}
+        <div style={{ marginTop: 14, padding: "10px 13px", borderRadius: 10, background: "rgba(26,26,46,0.035)", border: "1px solid rgba(0,0,0,0.07)", fontFamily: SANS, fontSize: 12.5, color: "rgba(26,26,46,0.6)", lineHeight: 1.55, maxWidth: 620 }}>
+          <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.1em", color: "rgba(26,26,46,0.45)", fontWeight: 700 }}>HOW IT CHAINS</span>
+          <div style={{ marginTop: 4 }}>
+            The loop runs the <b>5 in-loop skills</b> end-to-end and reasons over their output.
+            The other <b>13 skills run on their own REST endpoints</b> — the planner can <i>locate</i> and
+            hand one off, but it returns a pointer (not a result), so the loop won&apos;t chain it.
+          </div>
+        </div>
       </div>
 
       {/* ── Persistent-session strip ── */}
@@ -329,6 +339,9 @@ export default function AgentWorkbench() {
           {workPackages.map((s, i) => {
             const isOpen = !!open[i];
             const tone = s.ok ? TONE.ok : TONE.err;
+            // Endpoint-only steps don't execute in-loop: executeSkill returns an
+            // invoke_via_endpoint descriptor (a pointer), not a real result.
+            const endpointOnly = (s.output as any)?.status === "invoke_via_endpoint";
             return (
               <div key={i} style={{ ...card, padding: 0, marginBottom: 10, overflow: "hidden" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px" }}>
@@ -341,8 +354,13 @@ export default function AgentWorkbench() {
                         {s.skill}
                       </span>
                       <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 6, color: tone.fg, background: tone.bg, border: `1px solid ${tone.bd}` }}>
-                        {s.ok ? "✓ done" : "✕ failed"}
+                        {s.ok ? (endpointOnly ? "→ located" : "✓ ran in-loop") : "✕ failed"}
                       </span>
+                      {endpointOnly && (
+                        <span title="This skill runs on its own REST endpoint. The loop located it and returned a pointer — it did not execute it or chain its result." style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, color: "rgba(26,26,46,0.55)", background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.1)" }}>
+                        endpoint-only · pointer
+                        </span>
+                      )}
                     </div>
                     <div style={{ fontFamily: SANS, fontSize: 14, color: "rgba(26,26,46,0.78)", lineHeight: 1.5 }}>
                       {s.thought || "(no plan recorded)"}

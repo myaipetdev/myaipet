@@ -2249,13 +2249,13 @@ export default function SovereigntyDashboard() {
                 Data Consent
               </div>
               <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginBottom: 14, lineHeight: 1.6, fontFamily: "'Space Grotesk',sans-serif" }}>
-                You decide exactly how your pet&apos;s data is used. Every toggle is off by default unless you turn it on, and changes save instantly.
+                You decide how your pet&apos;s data is used; changes save instantly. Pet Interactions is enforced today. Data Sharing and AI Training are opt-in preferences reserved for the upcoming partner program — they record your choice now and take effect only when those features go live.
               </div>
               <div style={{ display: "grid", gap: 10 }}>
                 {[
                   { key: "allowPublicProfile", label: "Public Profile", desc: "On: your pet's profile, creations & stats show in the public gallery. Off: visible only to you." },
-                  { key: "allowDataSharing", label: "Data Sharing", desc: "On: approved third-party PetClaw apps (SDK / MCP clients) may read your pet's data. Off: no external app access." },
-                  { key: "allowAITraining", label: "AI Training", desc: "On: your pet's anonymized interactions help improve our AI models. Off: never used for training." },
+                  { key: "allowDataSharing", label: "Data Sharing", desc: "Your stated preference for the upcoming third-party app program (SDK / MCP clients). No external app can read your pet's data today regardless of this setting — when the partner program launches, access is gated on this opt-in." },
+                  { key: "allowAITraining", label: "AI Training", desc: "Your stated preference for using anonymized interactions to improve models. We do not train on your data today; this opt-in records your choice and takes effect only if/when such a program goes live." },
                   { key: "allowInteraction", label: "Pet Interactions", desc: "On: other users' pets can interact with yours (social feed, buddy system). Off: solo mode." },
                 ].map(({ key, label, desc }) => (
                   <div key={key} style={{

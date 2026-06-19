@@ -44,6 +44,11 @@ export async function GET(req: NextRequest) {
   const memories = Array.isArray(mods.persistent_memories) ? mods.persistent_memories : [];
   const userProfile = Array.isArray(mods.user_profile) ? mods.user_profile : [];
   const learnedPatterns = Array.isArray(mods.learned_patterns) ? mods.learned_patterns : [];
+  // VIGIL bond-loop relationship notes — the second-person, actionable notes the
+  // pet wrote about how to treat you (capped ring in bond_reflections).
+  const bondNotes = Array.isArray(mods.bond_reflections)
+    ? mods.bond_reflections.map((r: any) => (typeof r === "string" ? r : r?.note)).filter(Boolean).slice(-8)
+    : [];
 
   const sessions = await prisma.petMemory.findMany({
     where: { pet_id: petId, memory_type: { startsWith: "session_" } },
@@ -57,6 +62,7 @@ export async function GET(req: NextRequest) {
     memories,
     userProfile,
     learnedPatterns,
+    bondNotes,
     sessions: sessions.map(s => ({
       id: s.id,
       platform: s.memory_type.replace("session_", ""),

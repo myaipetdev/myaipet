@@ -78,14 +78,32 @@ interface PlannerDecision {
 // in-process skills because their observations are real content it can reason
 // over; api-call skills give it a "go call this endpoint" pointer, not a result.
 
+// A skill is RUNNABLE-IN-LOOP iff its handler runs in-process (`llm-prompt`):
+// executeSkill produces real text the planner can observe and chain. Every other
+// handler (`api-call`, and any future non-in-process handler) is ENDPOINT-ONLY:
+// executeSkill returns an `invoke_via_endpoint` DESCRIPTOR (see executeAPISkill in
+// pethub.ts), i.e. a pointer the loop can LOCATE but cannot itself execute/chain.
+// We key off the in-process handler allowlist (not a !== "api-call" denylist) so a
+// new endpoint handler added later is treated as endpoint-only by default — fail
+// closed, so the planner is never told an unrunnable skill is chainable.
+const IN_PROCESS_HANDLERS = new Set(["llm-prompt"]);
+
+/** True when executeSkill actually runs this skill in-loop (real, chainable output). */
+function isRunnableInLoop(handler: string | undefined): boolean {
+  return IN_PROCESS_HANDLERS.has(handler ?? "");
+}
+
 const IN_PROCESS_SKILLS = new Set(
-  BUILTIN_SKILLS.filter((s) => s.handler === "llm-prompt").map((s) => s.id),
+  BUILTIN_SKILLS.filter((s) => isRunnableInLoop(s.handler)).map((s) => s.id),
 ); // companion-chat, persona-mirror, daily-mood, summarize-page, vibe-check
 
 function buildSkillCatalog(): string {
   return BUILTIN_SKILLS.map((s) => {
-    const kind = s.handler === "llm-prompt" ? "in-process (returns real text you can reason over)"
-      : "endpoint-only (returns a pointer telling you how to call its REST endpoint; NOT executed here)";
+    // Explicit, robust per-skill annotation: RUNNABLE-IN-LOOP vs ENDPOINT-ONLY.
+    const runnable = isRunnableInLoop(s.handler);
+    const kind = runnable
+      ? "RUNNABLE-IN-LOOP — executeSkill runs it here and returns real text you can observe and chain"
+      : "ENDPOINT-ONLY — NOT executed here; returns a pointer to its REST endpoint (you can locate/trigger it, but you will NOT get a result to reason over)";
     const inputKeys = Object.keys((s.inputSchema as any)?.properties || {});
     const args = inputKeys.length ? inputKeys.join(", ") : "(no args)";
     return `- ${s.id}: ${s.description} [${kind}] args: ${args}`;
@@ -134,7 +152,7 @@ You MUST reply with ONLY a single JSON object, no prose, in this exact shape:
 }
 
 RULES:
-- Prefer "in-process" skills — their results are real content you can reason over. "endpoint-only" skills just return a pointer; only choose one if the goal is literally to locate/trigger that endpoint.
+- Prefer "RUNNABLE-IN-LOOP" skills — their results are real content you can reason over and chain into later steps. "ENDPOINT-ONLY" skills are NOT executed here; they only return a pointer to a REST endpoint, so they give you NOTHING to reason over. Only choose an ENDPOINT-ONLY skill if the goal is literally to locate or hand off that endpoint, and never expect a usable result back from one.
 - Use the OBSERVATIONS from previous steps. Do not repeat an identical skill+input.
 - Most goals need 1–3 steps. If you already have enough to answer, action MUST be "finish".
 - "skill" must be an EXACT id from the catalog. Never invent skills or arguments.`;
@@ -331,7 +349,12 @@ export async function runAgentLoop({
   return { goal, steps, answer, stoppedReason };
 }
 
-/** Exposed for the route + tests: which skills truly execute in-loop. */
+/** Exposed for the route + tests: which skills truly execute (chain) in-loop. */
 export function inProcessSkillIds(): string[] {
   return [...IN_PROCESS_SKILLS];
+}
+
+/** Exposed for the route + tests: which skills are endpoint-only (located, not run). */
+export function endpointOnlySkillIds(): string[] {
+  return BUILTIN_SKILLS.filter((s) => !isRunnableInLoop(s.handler)).map((s) => s.id);
 }

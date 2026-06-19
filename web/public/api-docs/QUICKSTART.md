@@ -42,7 +42,7 @@ petclaw-sdk talk                        # interactive
 
 ```
   🐾 Hey! I'm doing great, thanks for asking! What's up?
-     1234ms · grok-3-mini
+     1234ms · grok-4
 ```
 
 ## 5. Bring Your Own Model (BYOK)

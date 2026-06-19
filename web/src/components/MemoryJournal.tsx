@@ -14,6 +14,7 @@ import { getAuthHeaders } from "@/lib/api";
 
 interface MemoryEntry { key: string; content: string; category: string; importance: number; createdAt: string; }
 interface UserProfile { key: string; content: string; category: string; }
+interface LearnedPattern { id?: string; topic: string; frequency?: number; successRate?: number; promotedToSkill?: boolean; }
 
 const MEM_ICON: Record<string, string> = { fact: "💡", preference: "💝", event: "📅", relationship: "🤝", skill_learned: "🎓" };
 const PROFILE_ICON: Record<string, string> = { identity: "🪪", preference: "💝", communication: "💬", interest: "✨", context: "📍" };
@@ -33,6 +34,8 @@ function timeAgo(iso: string): string {
 export default function MemoryJournal({ petId, petName }: { petId: number; petName: string }) {
   const [profile, setProfile] = useState<UserProfile[] | null>(null);
   const [memories, setMemories] = useState<MemoryEntry[] | null>(null);
+  const [learned, setLearned] = useState<LearnedPattern[]>([]);
+  const [bondNotes, setBondNotes] = useState<string[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -42,8 +45,10 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
         if (!alive || !d) return;
         setProfile(Array.isArray(d.userProfile) ? d.userProfile : []);
         setMemories(Array.isArray(d.memories) ? d.memories : []);
+        setLearned(Array.isArray(d.learnedPatterns) ? d.learnedPatterns : []);
+        setBondNotes(Array.isArray(d.bondNotes) ? d.bondNotes : []);
       })
-      .catch(() => { if (alive) { setProfile([]); setMemories([]); } });
+      .catch(() => { if (alive) { setProfile([]); setMemories([]); setLearned([]); setBondNotes([]); } });
     return () => { alive = false; };
   }, [petId]);
 
@@ -118,6 +123,58 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* How the pet is learning to treat YOU — the bond/adaptation signal.
+          The relationship notes that shape the pet's tone live privately in the
+          chat prompt and aren't exposed by the memory API, so we surface the
+          learned patterns that ARE available and label this honestly: these are
+          the topics the pet has adapted to, not invented bond text. */}
+      {!empty && (
+        <div style={{ marginTop: memories.length > 0 || profile.length > 0 ? 16 : 0 }}>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9.5, letterSpacing: "0.12em", color: "rgba(13,148,136,0.8)", fontWeight: 700, marginBottom: 8 }}>
+            HOW {petName.toUpperCase()} IS LEARNING TO TREAT YOU
+          </div>
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 11.5, color: "rgba(26,26,46,0.55)", lineHeight: 1.55, marginBottom: 10 }}>
+            Every few chats, {petName} quietly reflects on the relationship — what helps, what to avoid — and folds it into how it talks to you next time. Here&apos;s what it has noted so far.
+          </div>
+          {bondNotes.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: learned.length > 0 ? 12 : 0 }}>
+              {bondNotes.slice().reverse().map((note, i) => (
+                <div key={i} style={{
+                  display: "flex", gap: 7, padding: "8px 11px", borderRadius: 10,
+                  background: "rgba(13,148,136,0.05)", border: "1px solid rgba(13,148,136,0.18)",
+                  fontFamily: "'Space Grotesk',sans-serif", fontSize: 12.5, color: "#1a1a2e", lineHeight: 1.5,
+                }}>
+                  <span style={{ color: "rgba(13,148,136,0.85)", fontWeight: 700 }}>“</span>{note}
+                </div>
+              ))}
+            </div>
+          )}
+          {learned.length > 0 ? (
+            <>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.1em", color: "rgba(26,26,46,0.4)", fontWeight: 700, margin: "2px 0 6px" }}>TOPICS IT&apos;S TUNED TO</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {[...learned]
+                  .sort((a, b) => (b.frequency || 0) - (a.frequency || 0))
+                  .slice(0, 10)
+                  .map((p, i) => (
+                    <span key={p.id || p.topic || i} title={`seen ${p.frequency ?? 0}× · ${Math.round((p.successRate || 0) * 100)}% landed well`} style={{
+                      display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 999,
+                      background: "white", border: `1px solid ${p.promotedToSkill ? "rgba(13,148,136,0.4)" : "rgba(0,0,0,0.06)"}`,
+                      fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, color: "#1a1a2e",
+                    }}>
+                      <span>{p.promotedToSkill ? "⭐" : "🌱"}</span>{p.topic}
+                    </span>
+                  ))}
+              </div>
+            </>
+          ) : bondNotes.length === 0 ? (
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, color: "rgba(26,26,46,0.4)", fontStyle: "italic" }}>
+              Nothing noted yet — {petName} starts reflecting after a few real conversations.
+            </div>
+          ) : null}
         </div>
       )}
     </div>
