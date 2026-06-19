@@ -722,44 +722,41 @@ async function importSoul(soul) {
 async function fetchPetInfo() {
   const config = await getConfig();
 
-  // Try authenticated /api/pets first
-  let pet = null;
-  const data = await callPetClawAPI(`/api/pets`);
-  if (data?.pets?.length > 0) {
-    pet = data.pets[0];
-  }
-
-  // Fallback: try PetClaw network discover (no auth needed)
-  if (!pet) {
-    const discover = await callPetClawAPI(`/api/petclaw/network/discover?limit=1`);
-    if (discover?.nodes?.length > 0) {
-      const node = discover.nodes.find(n => n.petId === config.petId) || discover.nodes[0];
-      pet = {
-        id: node.petId,
-        name: node.name,
-        species: 0,
-        avatar_url: node.avatarUrl || "",
-        personality_type: node.personality,
-        level: node.level,
-        element: node.element,
-      };
-    }
-  }
-
-  if (pet) {
-    const updated = {
-      ...config,
-      petId: pet.id,
-      petName: pet.name,
-      petEmoji: ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"][pet.species] || "🐾",
-      avatarUrl: pet.avatar_url || "",
-      personality: pet.personality_type || "playful",
-      level: pet.level || 1,
-    };
+  // Only the authenticated owner endpoint (/api/pets) can tell which pet is
+  // YOURS. Without a token we must NOT adopt a random stranger from the public
+  // network directory — that was the "weird/random pet" bug. Surface a pairing
+  // prompt instead so the user links their own pet via a CLI token.
+  if (!config.authToken) {
+    const updated = { ...config, needsPairing: true };
     await saveConfig(updated);
     return updated;
   }
-  return config;
+
+  const data = await callPetClawAPI(`/api/pets`);
+  const pets = (data && data.pets) || [];
+  // Prefer the configured petId if it's actually one the owner holds, else the
+  // most recent. Never fall back to a pet the user doesn't own.
+  const pet = pets.find(p => p.id === config.petId) || pets[0];
+
+  if (!pet) {
+    // Token present but no pets returned (no pet yet, or token expired/invalid).
+    const updated = { ...config, needsPairing: true };
+    await saveConfig(updated);
+    return updated;
+  }
+
+  const updated = {
+    ...config,
+    needsPairing: false,
+    petId: pet.id,
+    petName: pet.name,
+    petEmoji: ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"][pet.species] || "🐾",
+    avatarUrl: pet.avatar_url || "",
+    personality: pet.personality_type || "playful",
+    level: pet.level || 1,
+  };
+  await saveConfig(updated);
+  return updated;
 }
 
 // ══════════════════════════════════════

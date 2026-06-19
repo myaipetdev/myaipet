@@ -18,6 +18,10 @@ export async function GET(
     where: { id: Number(petId), user_id: user.id },
     include: {
       memories: {
+        // The Memory Timeline shows curated milestones/emotions — NOT raw chat.
+        // Exclude session_* turns (the "[user]/[pet]" lines, which may be legacy
+        // Korean) so they never surface here. Mirrors retrieval.ts.
+        where: { NOT: { memory_type: { startsWith: "session_" } } },
         orderBy: { created_at: "desc" },
         take: 10,
       },

@@ -176,7 +176,14 @@ Rewrite the ledger.`,
   // relayer is enabled + funded. Failures are non-fatal.
   try {
     const { anchorMemory } = await import("./anchor");
-    await anchorMemory(petId, "post_consolidation");
+    // Pass real before/after counts so the Persona Evolution timeline shows a
+    // meaningful per-row summary instead of a repeated generic sentence.
+    await anchorMemory(petId, "post_consolidation", {
+      memoriesBefore: before.memories,
+      memoriesAfter: consolidated.memories.length,
+      profileItems: consolidated.userProfile.length,
+      reason: force ? "forced" : `${turnsSinceLast} new turns`,
+    });
   } catch (e: any) {
     console.warn("[consolidate] anchor failed:", e?.message);
   }

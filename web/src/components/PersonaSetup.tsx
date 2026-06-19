@@ -35,8 +35,8 @@ interface ConnectedPlatform {
 
 // ── Constants ──
 const TABS = [
-  { key: "quick", label: "Quick Setup", icon: "Q", desc: "온보딩 질문" },
-  { key: "chat", label: "Chat Import", icon: "C", desc: "대화 학습" },
+  { key: "quick", label: "Quick Setup", icon: "Q", desc: "Onboarding questions" },
+  { key: "chat", label: "Chat Import", icon: "C", desc: "Chat learning" },
   { key: "live", label: "Live Learning", icon: "L", desc: "Connected Agent" },
 ] as const;
 
@@ -52,13 +52,13 @@ const TONE_OPTIONS = [
 const SUGGESTED_TAGS = ["Crypto", "Gaming", "Music", "Food", "Travel", "Art", "Coding", "Memes"];
 
 const SPEECH_OPTIONS = [
-  { value: "casual", label: "반말 (캐주얼)" },
-  { value: "formal", label: "존댓말 (정중)" },
-  { value: "mix", label: "Mix (상황에 따라)" },
+  { value: "casual", label: "Casual" },
+  { value: "formal", label: "Formal" },
+  { value: "mix", label: "Mix (situational)" },
 ];
 
 const LANGUAGE_OPTIONS = [
-  { value: "ko", label: "한국어" },
+  { value: "ko", label: "Korean" },
   { value: "en", label: "English" },
   { value: "mixed", label: "Mixed (both)" },
 ];
@@ -1056,7 +1056,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
               color: "rgba(255,255,255,0.2)",
               marginTop: 8,
             }}>
-              Last updated: {new Date(lastUpdated).toLocaleString()}
+              Last updated: {new Date(lastUpdated).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
             </div>
           )}
         </div>

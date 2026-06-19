@@ -305,7 +305,7 @@ export default function PetGenerate() {
           }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>&#x26d3;&#xfe0f;</div>
             <div style={{ fontSize: 24, fontWeight: 700, color: "#1a1a1a" }}>{chainToast}</div>
-            <div style={{ fontSize: 14, color: "#888", marginTop: 8 }}>{chainToast?.startsWith("❌") ? "지갑을 닫으면 자동으로 사라집니다" : "지갑에서 확인해주세요"}</div>
+            <div style={{ fontSize: 14, color: "#888", marginTop: 8 }}>{chainToast?.startsWith("❌") ? "Dismisses automatically when you close your wallet" : "Please confirm in your wallet"}</div>
           </div>
         </div>
       )}

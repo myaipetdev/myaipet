@@ -2,9 +2,10 @@
  * GET /api/community/pet-of-week — auto-curated featured pet for the Community
  * tab. Public.
  *
- * "Of the week" = the pet whose owner invested the most this week, scored on
- * the metrics that actually mean devotion here:
- *   bond_level (×3) + level (×2) + moments logged in the last 7 days (×1).
+ * "Of the week" = the pet most active THIS WEEK. Score is dominated by moments
+ * logged in the last 7 days (×10), with bond_level and level as tiebreakers, so
+ * the hero actually rotates week to week instead of freezing on the single
+ * highest-bond pet. A maxed-bond but idle pet only wins on a quiet week.
  *
  * Generations aren't pet-linked yet (only user+species), so the hero image is
  * the owner's best recent creation rather than a strictly pet-attributed one.
@@ -22,13 +23,30 @@ function maskWallet(w: string | null | undefined): string {
 export async function GET(_req: NextRequest) {
   const weekAgo = new Date(Date.now() - 7 * 86_400_000);
 
-  // Curation pool: the bond leaders with a face. Bond is the north-star metric,
-  // so the strongest candidates already sort to the top — we only need a small
-  // pool to re-rank with this week's activity.
-  const pool = await prisma.pet.findMany({
+  // Candidates this week = the most ACTIVE pets in the last 7 days. This is the
+  // heart of "of the week" and what makes the hero rotate.
+  const activeGroups = await prisma.petMemory.groupBy({
+    by: ["pet_id"],
+    where: { created_at: { gte: weekAgo } },
+    _count: { _all: true },
+    orderBy: { _count: { pet_id: "desc" } },
+    take: 30,
+  });
+  const activeIds = activeGroups.map(g => g.pet_id);
+  const weekMoments = new Map<number, number>();
+  for (const g of activeGroups) weekMoments.set(g.pet_id, g._count._all);
+
+  // Bond leaders as a fallback so a quiet week still has a worthy hero.
+  const bondLeaders = await prisma.pet.findMany({
     where: { is_active: true, avatar_url: { not: null } },
     orderBy: [{ bond_level: "desc" }, { level: "desc" }],
-    take: 20,
+    take: 10,
+    select: { id: true },
+  });
+
+  const candidateIds = Array.from(new Set([...activeIds, ...bondLeaders.map(b => b.id)]));
+  const pool = await prisma.pet.findMany({
+    where: { id: { in: candidateIds }, is_active: true, avatar_url: { not: null } },
     select: {
       id: true, name: true, avatar_url: true, level: true, bond_level: true,
       personality_type: true, user_id: true,
@@ -39,20 +57,11 @@ export async function GET(_req: NextRequest) {
     return NextResponse.json({ pet: null });
   }
 
-  // This week's activity per candidate (one grouped query).
-  const ids = pool.map(p => p.id);
-  const grouped = await prisma.petMemory.groupBy({
-    by: ["pet_id"],
-    where: { pet_id: { in: ids }, created_at: { gte: weekAgo } },
-    _count: { _all: true },
-  });
-  const weekMoments = new Map<number, number>();
-  for (const g of grouped) weekMoments.set(g.pet_id, g._count._all);
-
   const scored = pool
     .map(p => {
       const moments = weekMoments.get(p.id) || 0;
-      return { p, moments, score: p.bond_level * 3 + p.level * 2 + moments };
+      // "Of the WEEK": this week's activity dominates; bond/level break ties.
+      return { p, moments, score: moments * 10 + p.bond_level + p.level };
     })
     .sort((a, b) => b.score - a.score);
 
@@ -69,9 +78,9 @@ export async function GET(_req: NextRequest) {
   ]);
 
   const reasons: string[] = [];
+  if (winner.moments > 0) reasons.push(`🔥 ${winner.moments} moment${winner.moments === 1 ? "" : "s"} this week`);
   if (p.bond_level > 0) reasons.push(`💝 Bond Lv.${p.bond_level}`);
   reasons.push(`⭐ Level ${p.level}`);
-  if (winner.moments > 0) reasons.push(`🔥 ${winner.moments} moment${winner.moments === 1 ? "" : "s"} this week`);
 
   return NextResponse.json({
     pet: {

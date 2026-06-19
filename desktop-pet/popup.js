@@ -638,9 +638,11 @@ chrome.runtime.sendMessage({ type: "getConfig" }, (res) => {
   if ($("authToken")) $("authToken").value = c.authToken || "";
   if ($("syncStatus")) {
     $("syncStatus").textContent = c.authToken
-      ? "✓ Server sync on — pulls live pet stats every 3 min"
-      : "Local-only mode. Paste a JWT to mirror your app pet.";
-    $("syncStatus").style.color = c.authToken ? "#4ade80" : "#888";
+      ? (c.needsPairing
+          ? "Token saved, but no pet found — check the token in 'Connect your CLI' and try again."
+          : "✓ Linked — shows your pet, pulls live stats every 3 min")
+      : "Not linked yet. Paste your CLI token (pck_…) from 'Connect your CLI' in the app to show YOUR pet.";
+    $("syncStatus").style.color = (c.authToken && !c.needsPairing) ? "#4ade80" : "#888";
   }
   $("petName").textContent = c.petName || "My Pet";
   $("petLevel").textContent = `Lv.${c.level || 1}`;
@@ -668,7 +670,7 @@ $("saveBtn").addEventListener("click", () => {
     config: { apiUrl, petId, autoTalkInterval, authToken, enabled: true },
   }, () => {
     chrome.runtime.sendMessage({ type: "fetchPetInfo" }, (res) => {
-      if (res?.config) {
+      if (res?.config && !res.config.needsPairing) {
         $("petName").textContent = res.config.petName;
         $("petLevel").textContent = `Lv.${res.config.level}`;
         $("petPersonality").textContent = res.config.personality;
@@ -677,9 +679,11 @@ $("saveBtn").addEventListener("click", () => {
         } else {
           $("avatar").textContent = res.config.petEmoji || "🐾";
         }
-        showStatus("✅ Connected! Pet info loaded.");
+        showStatus("✅ Linked! Your pet is loaded.");
+      } else if (res?.config?.needsPairing) {
+        showStatus("⚠️ Couldn't find your pet — paste a valid CLI token (pck_…)", true);
       } else {
-        showStatus("⚠️ Saved, but couldn't reach API", true);
+        showStatus("⚠️ Saved, but couldn't reach the server", true);
       }
     });
   });

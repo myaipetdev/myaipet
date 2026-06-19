@@ -17,7 +17,7 @@ export function isPETActivityEnabled(): boolean {
 /** Check native-gas-token balance and throw if insufficient */
 function checkBalance(balance: bigint | undefined) {
   if (balance !== undefined && balance < MIN_GAS) {
-    throw new Error(`${NATIVE_SYMBOL} 잔액이 부족합니다. 온체인 기록을 위해 지갑에 최소 0.001 ${NATIVE_SYMBOL}가 필요합니다.`);
+    throw new Error(`Insufficient ${NATIVE_SYMBOL} balance. You need at least 0.001 ${NATIVE_SYMBOL} in your wallet to record this on-chain.`);
   }
 }
 

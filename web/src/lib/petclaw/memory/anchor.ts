@@ -63,7 +63,12 @@ export interface AnchorResult {
 
 export async function anchorMemory(
   petId: number,
-  triggerEvent: string = "manual_anchor"
+  triggerEvent: string = "manual_anchor",
+  // Optional, human-meaningful detail about what this anchor captured (e.g. the
+  // before/after memory counts from a consolidation). Stored in persona_snapshot
+  // so the Persona Evolution timeline can show a real per-row summary instead of
+  // a generic repeated sentence.
+  detail?: Record<string, unknown>,
 ): Promise<AnchorResult> {
   const hash = await computeMemoryHash(petId);
 
@@ -105,7 +110,7 @@ export async function anchorMemory(
         pet_id: petId,
         version,
         persona_hash: hash.slice(0, 66),
-        persona_snapshot: { kind: "memory_anchor", computedAt: new Date().toISOString() },
+        persona_snapshot: { kind: "memory_anchor", computedAt: new Date().toISOString(), ...(detail || {}) },
         trigger_event: triggerEvent.slice(0, 50),
         tx_hash: txHash?.slice(0, 66),
         on_chain: onChain,

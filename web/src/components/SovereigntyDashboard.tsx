@@ -306,6 +306,36 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
 // ── Memory Inspector (VIGIL sovereignty) ──
 // Shows the pet's MEMORY.md, USER.md, learned skills, session log, with per-entry
 // delete/edit. The pet's "self-improvement" surface is finally inspectable.
+
+// The product is English-only on shared/inspectable surfaces. Legacy session
+// turns may contain Korean (chats predating the English-only enforcement); we
+// hide those from the log rather than fabricating translations. Underlying data
+// is untouched and still exportable.
+const hasHangul = (s: string) => /[㄰-㆏가-힣]/.test(s || "");
+// Strip the leading "[user]" / "[pet]" speaker tag for display.
+const stripSpeakerTag = (s: string) => (s || "").replace(/^\[(user(?::[^\]]+)?|pet)\]\s*/, "");
+
+// Collapse consecutive automatic "post_consolidation" checkpoints that carry no
+// real summary into ONE row (with a count + version range), so the Persona
+// Evolution timeline never shows N byte-identical "Memory consolidated" entries.
+// Rows with a real summary, or any other trigger, stay individual. List is
+// newest-first, so _fromVersion trends toward the oldest in the run.
+type DisplayCheckpoint = Checkpoint & { _count?: number; _fromVersion?: number };
+function collapseConsolidations(cks: Checkpoint[]): DisplayCheckpoint[] {
+  const out: DisplayCheckpoint[] = [];
+  for (const ck of cks) {
+    const plain = ck.trigger_event === "post_consolidation" && !ck.summary;
+    const prev = out[out.length - 1];
+    if (plain && prev && prev.trigger_event === "post_consolidation" && !prev.summary) {
+      prev._count = (prev._count || 1) + 1;
+      prev._fromVersion = ck.version;
+      continue;
+    }
+    out.push(plain ? { ...ck, _count: 1, _fromVersion: ck.version } : ck);
+  }
+  return out;
+}
+
 function MemoryInspectorCard({ petId }: { petId: number }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -404,7 +434,8 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
   const memories: any[] = data.memories || [];
   const userProfile: any[] = data.userProfile || [];
   const learned: any[] = data.learnedPatterns || [];
-  const sessions: any[] = data.sessions || [];
+  // English-only surface: drop legacy Korean turns from the visible log.
+  const sessions: any[] = (data.sessions || []).filter((s: any) => !hasHangul(s.content));
 
   return (
     <div className="sov-card" style={{
@@ -437,12 +468,12 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
         Everything your pet has learned about you — inspectable, editable, deletable.
         {data.stats?.lastConsolidatedAt && (
           <span style={{ marginLeft: 8, color: "rgba(26,26,46,0.45)", fontSize: 12 }}>
-            · last consolidated {new Date(data.stats.lastConsolidatedAt).toLocaleString()}
+            · last consolidated {new Date(data.stats.lastConsolidatedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
           </span>
         )}
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 10, marginBottom: 22 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 10, marginBottom: 22 }}>
         <Stat label="Memories" value={memories.length} />
         <Stat label="About Owner" value={userProfile.length} />
         <Stat label="Learned Skills" value={data.stats?.learnedSkillCount ?? 0} />
@@ -487,7 +518,7 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
       <Section title={`Session log (recent ${sessions.length})`} onClear={sessions.length ? () => clearAll("session") : undefined} disabled={!!busy}>
         {sessions.length === 0 ? <Empty msg="No session log." /> :
           sessions.slice(0, 25).map((s) => (
-            <EntryRow key={s.id} primary={s.content} secondary={`${s.platform} · ${new Date(s.createdAt).toLocaleString()}`}
+            <EntryRow key={s.id} primary={stripSpeakerTag(s.content)} secondary={`${s.platform} · ${new Date(s.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}`}
               onDelete={() => del("session", s.id)}
               busy={busy === `session_${s.id}`}
             />
@@ -532,23 +563,25 @@ function Section({ title, children, onClear, disabled }: { title: string; childr
 function EntryRow({ primary, secondary, onEdit, onDelete, busy }: { primary: string; secondary: string; onEdit?: () => void; onDelete: () => void; busy: boolean }) {
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 10,
+      display: "flex", alignItems: "flex-start", gap: 10,
       padding: "8px 12px", borderRadius: 10,
       background: "white", border: "1px solid rgba(0,0,0,0.05)",
       opacity: busy ? 0.5 : 1,
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, color: "#1a1a2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{primary}</div>
-        <div style={{ fontSize: 10, color: "rgba(26,26,46,0.45)", marginTop: 2 }}>{secondary}</div>
+        <div style={{ fontSize: 13, color: "#1a1a2e", overflowWrap: "anywhere", wordBreak: "break-word", lineHeight: 1.5 }}>{primary}</div>
+        <div style={{ fontSize: 10, color: "rgba(26,26,46,0.45)", marginTop: 2, overflowWrap: "anywhere" }}>{secondary}</div>
       </div>
       {onEdit && (
         <button onClick={onEdit} disabled={busy} style={{
+          flexShrink: 0,
           padding: "4px 10px", borderRadius: 6,
           border: "1px solid rgba(0,0,0,0.08)", background: "white",
           fontSize: 11, color: "rgba(26,26,46,0.7)", cursor: "pointer",
         }}>Edit</button>
       )}
       <button onClick={onDelete} disabled={busy} style={{
+        flexShrink: 0,
         padding: "4px 10px", borderRadius: 6,
         border: "1px solid rgba(220,38,38,0.2)", background: "white",
         fontSize: 11, color: "#dc2626", cursor: "pointer",
@@ -570,7 +603,8 @@ function ChromeExtensionSection() {
     { n: 2, title: "Unzip", desc: "Extract the ZIP to any folder on your computer." },
     { n: 3, title: "Open Extensions", desc: "Go to chrome://extensions in Chrome and enable Developer Mode (top-right toggle)." },
     { n: 4, title: "Load Unpacked", desc: 'Click "Load unpacked" and select the extracted folder.' },
-    { n: 5, title: "Done!", desc: "The MY AI PET companion icon appears in your toolbar — click it to meet your pet!" },
+    { n: 5, title: "Link your pet", desc: 'Open the toolbar icon → Settings, and paste your CLI token (generate one in "Connect your CLI" above). This is what makes it show YOUR pet instead of a random one.' },
+    { n: 6, title: "Done!", desc: "Your pet now lives in your toolbar — click it to chat, ask about a page, or play." },
   ];
 
   return (
@@ -588,9 +622,22 @@ function ChromeExtensionSection() {
           <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>Desktop Companion Extension</h2>
           <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(74,222,128,0.15)", color: "#16a34a", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>v2.0 READY</span>
         </div>
-        <p style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", fontFamily: "monospace", lineHeight: 1.65, marginBottom: 20 }}>
-          Your pet lives in your browser. Browse any site with your AI companion active — it watches context, earns points passively, evolves through interaction, and runs mini-games right from your toolbar. Install it in developer mode below.
+        <p style={{ fontSize: 14, color: "rgba(26,26,46,0.62)", lineHeight: 1.65, marginBottom: 14 }}>
+          Your pet follows you across the web — a little companion in the corner of every page. Click it to chat,
+          ask <em>&ldquo;what&apos;s this page?&rdquo;</em>, feed or play. It reads the page you&apos;re on (locally,
+          on your machine) so it can react in your pet&apos;s voice.
         </p>
+        <div style={{
+          display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 14px", borderRadius: 12,
+          background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)", marginBottom: 20,
+        }}>
+          <span style={{ fontSize: 16, lineHeight: 1.4 }}>🔑</span>
+          <p style={{ fontSize: 13, color: "rgba(26,26,46,0.7)", lineHeight: 1.6, margin: 0 }}>
+            <strong>To see YOUR pet</strong> (not a random one): after installing, open the extension&apos;s
+            <strong> Settings</strong> and paste your <strong>CLI token</strong> — generate one in
+            <strong> &ldquo;Connect your CLI&rdquo;</strong> above. Without it, the extension can&apos;t tell which pet is yours.
+          </p>
+        </div>
       </div>
 
       {/* Two-column: features left, popup mockup right */}
@@ -1072,6 +1119,40 @@ export default function SovereigntyDashboard() {
           </div>
         )}
 
+        {/* Plain-language explainer for non-developers — sits ABOVE the dev console. */}
+        <div className="sov-card" style={{
+          padding: "24px 26px", borderRadius: 18, marginBottom: 24,
+          background: "linear-gradient(135deg, rgba(245,158,11,0.06), rgba(168,85,247,0.05))",
+          border: "1px solid rgba(168,85,247,0.18)",
+        }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#1a1a2e", margin: "0 0 8px", letterSpacing: "-0.02em" }}>
+            What is PetClaw?
+          </h2>
+          <p style={{ fontSize: 14.5, lineHeight: 1.65, color: "rgba(26,26,46,0.7)", margin: "0 0 14px" }}>
+            Think of your pet as a <strong>personal assistant that actually remembers you</strong>. It keeps a private
+            memory of what matters to you, replies in its own voice, and can come with you across the apps you connect —
+            chat, X/Twitter, and your browser. Everything it learns is yours: inspectable, exportable, and deletable.
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            {[
+              ["🧠", "Remembers you", "Builds a private memory from every chat"],
+              ["🔗", "Across your apps", "Connect channels + your browser extension"],
+              ["🔒", "Your data, yours", "Export or delete it anytime, on your terms"],
+            ].map(([icon, title, sub]) => (
+              <div key={title} style={{
+                flex: "1 1 180px", minWidth: 0, padding: "12px 14px", borderRadius: 12,
+                background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.05)",
+              }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>{icon} {title}</div>
+                <div style={{ fontSize: 12, color: "rgba(26,26,46,0.55)", marginTop: 3, lineHeight: 1.45 }}>{sub}</div>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 12.5, color: "rgba(26,26,46,0.45)", margin: "14px 0 0" }}>
+            The console below is the advanced <strong>developer</strong> view — you don&apos;t need it to use your pet.
+          </p>
+        </div>
+
         {/* PetClaw agentic-harness console — the headline of this tab */}
         <div style={{ marginBottom: 40 }}>
           <PetClawConsole
@@ -1333,9 +1414,10 @@ export default function SovereigntyDashboard() {
               </div>
             ) : (
               <div style={{ position: "relative", paddingLeft: 6 }}>
-                {checkpoints.map((ck, i) => {
-                  const isLast = i === checkpoints.length - 1;
+                {collapseConsolidations(checkpoints).map((ck, i, arr) => {
+                  const isLast = i === arr.length - 1;
                   const verified = !!ck.tx_hash;
+                  const rolled = (ck._count || 1) > 1;
                   return (
                     <div key={ck.id} style={{ position: "relative", paddingLeft: 26, paddingBottom: isLast ? 0 : 24 }}>
                       {/* Timeline line */}
@@ -1384,7 +1466,7 @@ export default function SovereigntyDashboard() {
                             letterSpacing: "0.04em",
                           }}
                         >
-                          v{ck.version}
+                          {rolled ? `v${ck._fromVersion}–v${ck.version}` : `v${ck.version}`}
                         </span>
                         <span
                           style={{
@@ -1394,7 +1476,9 @@ export default function SovereigntyDashboard() {
                           }}
                         >
                           {ck.trigger_event === "adoption" ? "Adopted"
-                            : ck.trigger_event === "post_consolidation" ? "Memory consolidated"
+                            : ck.trigger_event === "post_consolidation" ? (rolled ? `Memory consolidated ×${ck._count}` : "Memory consolidated")
+                            : ck.trigger_event === "onboarding" ? "Onboarding learned"
+                            : ck.trigger_event === "chat_analysis" ? "Learned from chat"
                             : (ck.trigger_event || "checkpoint").replace(/_/g, " ")}
                         </span>
                         <span
@@ -1448,7 +1532,9 @@ export default function SovereigntyDashboard() {
                           : ck.trigger_event === "adoption"
                             ? "Origin identity sealed — who your pet first was."
                             : ck.trigger_event === "post_consolidation"
-                              ? "Memories distilled; the persona sharpened into a clearer read on you."
+                              ? (rolled
+                                  ? `${ck._count} automatic memory passes · latest ${formatDate(ck.created_at)}`
+                                  : `Memory pass · ${formatDate(ck.created_at)}`)
                               : "A turning point in your pet's identity, snapshotted and fingerprinted."}
                       </div>
                     </div>
@@ -2190,7 +2276,7 @@ export default function SovereigntyDashboard() {
                     fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em",
                   }}>SHA-256</span>
                   <span style={{ marginLeft: "auto", fontSize: 11, fontFamily: "monospace", color: "rgba(26,26,46,0.45)" }}>
-                    {exportReceipt.exportedAt ? new Date(exportReceipt.exportedAt).toLocaleString() : "—"}
+                    {exportReceipt.exportedAt ? new Date(exportReceipt.exportedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "—"}
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 10 }}>
@@ -2230,7 +2316,7 @@ export default function SovereigntyDashboard() {
                     fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em",
                   }}>SHA-256</span>
                   <span style={{ marginLeft: "auto", fontSize: 11, fontFamily: "monospace", color: "rgba(26,26,46,0.45)" }}>
-                    {deleteReceipt.deletedAt ? new Date(deleteReceipt.deletedAt).toLocaleString() : "—"}
+                    {deleteReceipt.deletedAt ? new Date(deleteReceipt.deletedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "—"}
                   </span>
                 </div>
                 <div style={{ fontSize: 11, color: "rgba(26,26,46,0.55)", fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1.6 }}>

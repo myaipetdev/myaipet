@@ -203,7 +203,7 @@ export default function ModelsPanel() {
                     {t.label} <span style={{ color: MUTED, fontWeight: 400 }}>· {t.prefix}…</span>
                   </div>
                   <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
-                    {t.revoked_at ? "revoked" : t.last_used_at ? `last used ${new Date(t.last_used_at).toLocaleDateString()}` : "never used"}
+                    {t.revoked_at ? "revoked" : t.last_used_at ? `last used ${new Date(t.last_used_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : "never used"}
                   </div>
                 </div>
                 {!t.revoked_at && (

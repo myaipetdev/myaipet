@@ -216,7 +216,7 @@ export default function AgentDashboard() {
     if (diffMin < 60) return `${diffMin}m ago`;
     const diffH = Math.floor(diffMin / 60);
     if (diffH < 24) return `${diffH}h ago`;
-    return d.toLocaleDateString();
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
   const platformOf = (key: string) => PLATFORMS.find(p => p.key === key);
