@@ -3,7 +3,7 @@ import { getUser } from "@/lib/auth";
 import { PREMIUM_MAP } from "@/lib/premium";
 import { SKILL_DB, SKILL_MAP } from "@/lib/skills";
 import { consumePaymentTx, PaymentAlreadyConsumed } from "@/lib/payments";
-import { verifyUsdtTransfer, treasuryConfigured } from "@/lib/onchain";
+import { verifyUsdtTransfer, treasuryConfigured, ONCHAIN } from "@/lib/onchain";
 import { NextRequest, NextResponse } from "next/server";
 
 // POST /api/shop/premium — Purchase a premium item
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
         amountUsd: item.priceUSD,
       });
       await tx.transaction.create({
-        data: { user_id: user.id, type: "premium_buy", tx_hash, chain: "BSC" },
+        data: { user_id: user.id, type: "premium_buy", tx_hash, chain: ONCHAIN.chainName },
       });
     }
 

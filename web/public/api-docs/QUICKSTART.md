@@ -33,7 +33,25 @@ petclaw-sdk status
     Ownership:  user
 ```
 
-## 4. Chat
+> **What needs auth, what doesn't.** The read-only and demo commands below work
+> with **no auth** — `status`, `skills` (list), `chat`/`talk` and `execute` against
+> the **demo pet** (`petId 1`). Anything that mutates *your own* pet —
+> `install`, `execute` on your pet, `export`, `models connect` — needs an owner
+> token. Get one from the web app (logged in): copy `localStorage['petagen_jwt']`,
+> then run `petclaw-sdk auth <jwt>` once. Do this **before** the install/execute
+> steps below so you don't hit a `401`.
+
+## 4. Authenticate (for your own pet)
+
+```bash
+petclaw-sdk auth <your-jwt>
+```
+
+Saves the owner token to `~/.petclaw.json`. Skip this only if you're just
+chatting with the demo pet. The JWT comes from the web app while logged in
+(`localStorage['petagen_jwt']`).
+
+## 5. Chat
 
 ```bash
 petclaw-sdk chat "Hey, how are you?"   # single message
@@ -45,27 +63,27 @@ petclaw-sdk talk                        # interactive
      1234ms · grok-4
 ```
 
-## 5. Bring Your Own Model (BYOK)
+## 6. Bring Your Own Model (BYOK)
 
 Connect your own model so calls run on your key (encrypted at rest):
 
 ```bash
-petclaw-sdk auth <your-jwt>
+# (requires auth — see step 4)
 petclaw-sdk models connect openai sk-...
 petclaw-sdk models list
 ```
 
 Owner-authenticated; keys are encrypted server-side. See `POST /api/petclaw/models`.
 
-## 6. Explore Skills
+## 7. Explore Skills
 
 ```bash
-petclaw-sdk skills               # list all 18
-petclaw-sdk install daily-mood   # install one
-petclaw-sdk execute daily-mood   # run it
+petclaw-sdk skills               # list all 18 — no auth needed
+petclaw-sdk install daily-mood   # install one — needs auth (step 4)
+petclaw-sdk execute daily-mood   # run it      — needs auth on your pet
 ```
 
-## 7. Export Your Pet (Data Sovereignty)
+## 8. Export Your Pet (Data Sovereignty)
 
 ```bash
 petclaw-sdk export
@@ -73,7 +91,7 @@ petclaw-sdk export
 
 Downloads your pet's complete SOUL data — personality, memories, skills — as portable JSON, with an integrity hash. Re-importable on any PetClaw server.
 
-## 8. Discover & Invoke Other Pets (A2A / PACK)
+## 9. Discover & Invoke Other Pets (A2A / PACK)
 
 ```bash
 petclaw-sdk discover
@@ -81,7 +99,7 @@ petclaw-sdk discover
 
 Find other pets on the network by element/skill and invoke their skills.
 
-## 9. MCP Server
+## 10. MCP Server
 
 ```bash
 petclaw-sdk mcp
@@ -89,9 +107,11 @@ petclaw-sdk mcp
 
 Starts a Model Context Protocol server (6 tools) for Claude Desktop, Cursor, or any MCP stdio client.
 
-## 10. Run the Agent Loop
+## 11. Run the Agent Loop
 
-Give your pet a goal — it plans each step, runs a real skill, observes, iterates, then reports:
+The agent loop is **an HTTP endpoint, not a CLI command** — there is no
+`petclaw-sdk agent`. Give your pet a goal (owner-authed) and it plans each step,
+runs a real skill, observes, iterates, then reports:
 
 ```bash
 curl -X POST https://app.myaipet.ai/api/pets/1/agent \
@@ -102,7 +122,7 @@ curl -X POST https://app.myaipet.ai/api/pets/1/agent \
 
 Returns `{ answer, steps: [{ thought, skill, output, ok }], stoppedReason }`. Try it in the app at **/?section=workbench**.
 
-## 11. Use in Code
+## 12. Use in Code
 
 ```typescript
 import { PetClawClient } from "@myaipet/petclaw-sdk";

@@ -6,6 +6,38 @@
  * Pure + dependency-free so both server routes and client components can import.
  */
 
+// ── Season 1 window (single source of truth; mirrors SeasonBanner in App.tsx) ──
+// Season 1 runs Jul 1 → Aug 1 2026 (UTC).
+export const SEASON_KEY = "SEASON-1";
+export const SEASON_START_MS = Date.UTC(2026, 6, 1); // 2026-07-01 00:00 UTC
+export const SEASON_END_MS = Date.UTC(2026, 7, 1);   // 2026-08-01 00:00 UTC
+
+export type SeasonPhase = "upcoming" | "live" | "ended";
+
+export function seasonPhase(now: number = Date.now()): SeasonPhase {
+  if (now < SEASON_START_MS) return "upcoming";
+  if (now >= SEASON_END_MS) return "ended";
+  return "live";
+}
+
+/** A frozen final-standings snapshot, persisted at close. */
+export interface SeasonSnapshotEntry {
+  rank: number;
+  userId: number;
+  points: number;
+  petId: number | null;
+  petName: string;
+  petLevel: number;
+  petAvatar: string | null;
+}
+export interface SeasonSnapshot {
+  seasonKey: string;
+  closedAtIso: string;
+  participants: number;
+  poolPoints: number;
+  top: SeasonSnapshotEntry[]; // top N final standings (frozen)
+}
+
 export interface SeasonTier {
   key: string;
   name: string;

@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { getMission } from "@/lib/missions/catalog";
 import { recordCompletionForStreakBookkeeping, todayUtcString } from "@/lib/missions/streak";
+import { tryGrantAllCompleteBonus } from "@/lib/missions/today";
 
 export async function POST(
   req: NextRequest,
@@ -85,10 +86,15 @@ export async function POST(
 
   const streakUpdate = await recordCompletionForStreakBookkeeping(user.id);
 
+  // If this was the last mission of the day, actually credit the +25
+  // all-complete bonus now (idempotent — guarded per user/day).
+  const bonusGranted = await tryGrantAllCompleteBonus(user.id, date);
+
   return NextResponse.json({
     ok: true,
     pointsEarned: row.points,
     rankPointsEarned: rankPoints,
+    allCompleteBonusGranted: bonusGranted,
     streak: streakUpdate.streak,
     shieldUsed: streakUpdate.shieldUsed,
     newPeakReached: streakUpdate.newPeakReached,

@@ -3,37 +3,40 @@
 import { useWriteContract, useAccount, useSwitchChain, useBalance } from "wagmi";
 import { CONTRACTS, PETActivityABI } from "@/lib/contracts";
 
-const bscChainId = 56;
-const MIN_BNB = BigInt(5e13); // 0.00005 BNB minimum for gas (~$0.03)
+// Single source of truth for the target chain (BSC today → Base via
+// NEXT_PUBLIC_CHAIN_ID). Mirrored server-side in lib/onchain.ts.
+const targetChainId = CONTRACTS.chainId;
+const NATIVE_SYMBOL = CONTRACTS.nativeSymbol; // BNB on BSC, ETH on Base
+const MIN_GAS = BigInt(5e13); // 0.00005 native token minimum for gas (~$0.03)
 
 /** Returns true if the PETActivity contract address is configured */
 export function isPETActivityEnabled(): boolean {
   return !!CONTRACTS.petActivity;
 }
 
-/** Check BNB balance and throw if insufficient */
+/** Check native-gas-token balance and throw if insufficient */
 function checkBalance(balance: bigint | undefined) {
-  if (balance !== undefined && balance < MIN_BNB) {
-    throw new Error("BNB 잔액이 부족합니다. 온체인 기록을 위해 BSC 지갑에 최소 0.001 BNB가 필요합니다.");
+  if (balance !== undefined && balance < MIN_GAS) {
+    throw new Error(`${NATIVE_SYMBOL} 잔액이 부족합니다. 온체인 기록을 위해 지갑에 최소 0.001 ${NATIVE_SYMBOL}가 필요합니다.`);
   }
 }
 
-/** Pre-check hook: check BNB balance and switch to BSC before starting a flow */
+/** Pre-check hook: check gas balance and switch to the target chain before starting a flow */
 export function useCheckBnbBalance() {
   const { address, chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
-  const { data: balanceData } = useBalance({ address, chainId: bscChainId });
+  const { data: balanceData } = useBalance({ address, chainId: targetChainId });
 
   const checkBnb = (): boolean => {
-    if (balanceData?.value !== undefined && balanceData.value < MIN_BNB) {
+    if (balanceData?.value !== undefined && balanceData.value < MIN_GAS) {
       return false;
     }
     return true;
   };
 
   const switchToBsc = async () => {
-    if (chainId !== bscChainId) {
-      await switchChainAsync({ chainId: bscChainId });
+    if (chainId !== targetChainId) {
+      await switchChainAsync({ chainId: targetChainId });
     }
   };
 
@@ -45,15 +48,15 @@ export function useRecordAdoption() {
   const { writeContractAsync, data: hash, isPending, error } = useWriteContract();
   const { address, chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
-  const { data: balanceData } = useBalance({ address, chainId: bscChainId });
+  const { data: balanceData } = useBalance({ address, chainId: targetChainId });
 
   const recordAdoption = async (petName: string, species: string) => {
     if (!isPETActivityEnabled()) return;
 
     checkBalance(balanceData?.value);
 
-    if (chainId !== bscChainId) {
-      await switchChainAsync({ chainId: bscChainId });
+    if (chainId !== targetChainId) {
+      await switchChainAsync({ chainId: targetChainId });
     }
 
     await writeContractAsync({
@@ -61,7 +64,7 @@ export function useRecordAdoption() {
       abi: PETActivityABI,
       functionName: "recordAdoption",
       args: [petName, species],
-      chainId: bscChainId,
+      chainId: targetChainId,
     });
   };
 
@@ -73,15 +76,15 @@ export function useRecordImageGeneration() {
   const { writeContractAsync, data: hash, isPending, error } = useWriteContract();
   const { address, chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
-  const { data: balanceData } = useBalance({ address, chainId: bscChainId });
+  const { data: balanceData } = useBalance({ address, chainId: targetChainId });
 
   const recordImageGeneration = async (petId: number, style: number) => {
     if (!isPETActivityEnabled()) return;
 
     checkBalance(balanceData?.value);
 
-    if (chainId !== bscChainId) {
-      await switchChainAsync({ chainId: bscChainId });
+    if (chainId !== targetChainId) {
+      await switchChainAsync({ chainId: targetChainId });
     }
 
     await writeContractAsync({
@@ -89,7 +92,7 @@ export function useRecordImageGeneration() {
       abi: PETActivityABI,
       functionName: "recordImageGeneration",
       args: [BigInt(petId), style],
-      chainId: bscChainId,
+      chainId: targetChainId,
     });
   };
 
@@ -101,15 +104,15 @@ export function useRecordVideoGeneration() {
   const { writeContractAsync, data: hash, isPending, error } = useWriteContract();
   const { address, chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
-  const { data: balanceData } = useBalance({ address, chainId: bscChainId });
+  const { data: balanceData } = useBalance({ address, chainId: targetChainId });
 
   const recordVideoGeneration = async (petId: number, style: number, duration: number) => {
     if (!isPETActivityEnabled()) return;
 
     checkBalance(balanceData?.value);
 
-    if (chainId !== bscChainId) {
-      await switchChainAsync({ chainId: bscChainId });
+    if (chainId !== targetChainId) {
+      await switchChainAsync({ chainId: targetChainId });
     }
 
     await writeContractAsync({
@@ -117,7 +120,7 @@ export function useRecordVideoGeneration() {
       abi: PETActivityABI,
       functionName: "recordVideoGeneration",
       args: [BigInt(petId), style, duration],
-      chainId: bscChainId,
+      chainId: targetChainId,
     });
   };
 

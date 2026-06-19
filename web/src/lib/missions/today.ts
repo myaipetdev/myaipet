@@ -43,6 +43,58 @@ export interface TodayResponse {
 }
 
 const BONUS_ALL_COMPLETE = 25;
+const ALL_COMPLETE_GUARD_KEY = "daily_all_complete_bonus";
+
+/**
+ * Credit the "all daily missions complete" +25 bonus — ONCE per user per UTC day.
+ *
+ * Idempotency: we reuse the DailyActionCount table as a per-user/day flag. The
+ * row's composite unique (user_id, action_key, day) means createMany w/
+ * skipDuplicates lets exactly one caller win; the grant only fires when that
+ * insert actually created a row. This guards against:
+ *   - double-grant across the two completion paths (auto-verify in
+ *     getOrAssignToday + manual /complete route), and
+ *   - re-grant on every subsequent today-fetch once 5/5 is reached.
+ *
+ * Returns true iff the bonus was credited on THIS call.
+ */
+export async function tryGrantAllCompleteBonus(userId: number, date: string): Promise<boolean> {
+  // Only grant when all of today's missions are actually completed.
+  const rows = await prisma.dailyMission.findMany({
+    where: { user_id: userId, date },
+    select: { status: true },
+  });
+  if (rows.length === 0 || !rows.every(r => r.status === "completed")) return false;
+
+  return prisma.$transaction(async (tx: any) => {
+    // Atomic claim of the per-user/day flag — skipDuplicates means the row is
+    // inserted at most once, so count===1 only for the winning caller.
+    const claim = await tx.dailyActionCount.createMany({
+      data: [{ user_id: userId, action_key: ALL_COMPLETE_GUARD_KEY, day: date, count: 1 }],
+      skipDuplicates: true,
+    });
+    if (claim.count !== 1) return false; // already granted today
+    await tx.user.update({
+      where: { id: userId },
+      data: { airdrop_points: { increment: BONUS_ALL_COMPLETE } },
+    });
+    await tx.userStreak.upsert({
+      where: { user_id: userId },
+      update: { total_points_earned: { increment: BONUS_ALL_COMPLETE } },
+      create: { user_id: userId, total_points_earned: BONUS_ALL_COMPLETE },
+    });
+    return true;
+  });
+}
+
+/** Has the all-complete bonus already been credited for this user/day? */
+export async function allCompleteBonusGranted(userId: number, date: string): Promise<boolean> {
+  const row = await prisma.dailyActionCount.findUnique({
+    where: { user_action_day: { user_id: userId, action_key: ALL_COMPLETE_GUARD_KEY, day: date } },
+    select: { id: true },
+  });
+  return !!row;
+}
 
 export async function getOrAssignToday(userId: number): Promise<TodayResponse> {
   const date = todayUtcString();
@@ -140,7 +192,14 @@ export async function getOrAssignToday(userId: number): Promise<TodayResponse> {
   });
 
   const allComplete = missions.length > 0 && missions.every(m => m.status === "completed");
-  if (allComplete) earned += BONUS_ALL_COMPLETE;
+  if (allComplete) {
+    // Credit the +25 bonus for real (idempotent). The displayed earnedToday
+    // total must equal what we actually grant — so we add the bonus to the
+    // shown total only once 5/5 is reached, which is exactly when the guarded
+    // grant succeeds (or has already succeeded earlier today).
+    await tryGrantAllCompleteBonus(userId, date);
+    earned += BONUS_ALL_COMPLETE;
+  }
 
   return {
     date,

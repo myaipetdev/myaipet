@@ -15,6 +15,12 @@ export const CONTRACTS = {
   tracker: (process.env.NEXT_PUBLIC_PET_TRACKER || "").trim(),
   petActivity: (process.env.NEXT_PUBLIC_PET_ACTIVITY || "").trim(),
   usdt: (process.env.NEXT_PUBLIC_USDT_CONTRACT || "0x55d398326f99059fF775485246999027B3197955").trim(), // BSC-USD default
+  // Paid-token decimals. BSC-USD = 18 (default); Base USDC = 6. Mirrors the
+  // server USDT_DECIMALS so a chain swap is purely an env change.
+  usdtDecimals: Number(process.env.NEXT_PUBLIC_USDT_DECIMALS || 18),
+  // Native gas-token symbol for the target chain (BNB on BSC, ETH on Base).
+  // Used in user-facing "you need gas" copy.
+  nativeSymbol: (process.env.NEXT_PUBLIC_NATIVE_SYMBOL || "BNB").trim(),
 } as const;
 
 export { PETTokenABI, PETShopABI, PETContentABI, PetaGenTrackerABI, PETActivityABI };

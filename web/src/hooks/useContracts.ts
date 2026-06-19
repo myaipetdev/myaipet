@@ -4,7 +4,9 @@ import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 
 import { parseEther, formatEther } from "viem";
 import { CONTRACTS, PETShopABI, PETTokenABI, PetaGenTrackerABI, ERC20_ABI } from "@/lib/contracts";
 
-const bscChainId = 56;
+// Single source of truth for the target chain (BSC today → Base via
+// NEXT_PUBLIC_CHAIN_ID). Mirrored server-side in lib/onchain.ts.
+const targetChainId = CONTRACTS.chainId;
 
 // ── Read $PET balance ──
 export function usePETBalance(address: `0x${string}` | undefined) {
@@ -13,7 +15,7 @@ export function usePETBalance(address: `0x${string}` | undefined) {
     abi: PETTokenABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
-    chainId: bscChainId,
+    chainId: targetChainId,
     query: { enabled: !!address && !!CONTRACTS.petToken },
   });
 }
@@ -25,7 +27,7 @@ export function useUSDTAllowance(address: `0x${string}` | undefined) {
     abi: ERC20_ABI,
     functionName: "allowance",
     args: address && CONTRACTS.petShop ? [address, CONTRACTS.petShop as `0x${string}`] : undefined,
-    chainId: bscChainId,
+    chainId: targetChainId,
     query: { enabled: !!address && !!CONTRACTS.petShop },
   });
 }
@@ -37,7 +39,7 @@ export function useUSDTBalance(address: `0x${string}` | undefined) {
     abi: ERC20_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
-    chainId: bscChainId,
+    chainId: targetChainId,
     query: { enabled: !!address },
   });
 }
@@ -48,7 +50,7 @@ export function useTrackerStats() {
     address: CONTRACTS.tracker as `0x${string}`,
     abi: PetaGenTrackerABI,
     functionName: "getStats",
-    chainId: bscChainId,
+    chainId: targetChainId,
     query: { enabled: !!CONTRACTS.tracker },
   });
 }
@@ -64,7 +66,7 @@ export function useApproveUSDT() {
       abi: ERC20_ABI,
       functionName: "approve",
       args: [CONTRACTS.petShop as `0x${string}`, amount],
-      chainId: bscChainId,
+      chainId: targetChainId,
     });
   };
 
@@ -82,7 +84,7 @@ export function usePurchasePET() {
       abi: PETShopABI,
       functionName: "purchase",
       args: [tierKey, expectedPrice, expectedAmount],
-      chainId: bscChainId,
+      chainId: targetChainId,
     });
   };
 

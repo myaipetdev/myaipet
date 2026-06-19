@@ -3,8 +3,11 @@
 import { useState, useEffect } from "react";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseUnits } from "viem";
+import { CONTRACTS } from "@/lib/contracts";
 
-const USDT_BSC = "0x55d398326f99059fF775485246999027B3197955" as const;
+// Paid token address comes from the single on-chain config (CONTRACTS.usdt),
+// so a BSC→Base swap is an env change (NEXT_PUBLIC_USDT_CONTRACT), not a code edit.
+const USDT_ADDRESS = CONTRACTS.usdt as `0x${string}`;
 const TRANSFER_ABI = [{
   name: "transfer",
   type: "function",
@@ -45,10 +48,10 @@ export function useDirectUsdtPay() {
       return { error: msg };
     }
     try {
-      // BSC-USD uses 18 decimals
-      const amountWei = parseUnits(String(amountUsd), 18);
+      // BSC-USD / Base USDC both use the configured decimal count
+      const amountWei = parseUnits(String(amountUsd), CONTRACTS.usdtDecimals);
       const tx = await writeContractAsync({
-        address: USDT_BSC,
+        address: USDT_ADDRESS,
         abi: TRANSFER_ABI,
         functionName: "transfer",
         args: [treasury, amountWei],

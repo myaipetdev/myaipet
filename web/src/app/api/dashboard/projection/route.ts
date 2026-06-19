@@ -20,9 +20,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
-
-const SEASON_START = Date.UTC(2026, 6, 1); // 2026-07-01 00:00 UTC
-const SEASON_END = Date.UTC(2026, 7, 1);   // 2026-08-01 00:00 UTC
+import { SEASON_START_MS as SEASON_START, SEASON_END_MS as SEASON_END, seasonPhase } from "@/lib/season";
+import { readSeasonSnapshot, computeFinalStandings } from "@/lib/seasonSnapshot";
 
 export async function GET(req: NextRequest) {
   const rl = rateLimit(req, { key: "projection", limit: 60, windowMs: 60_000 });
@@ -30,7 +29,60 @@ export async function GET(req: NextRequest) {
 
   const now = Date.now();
   const started = now >= SEASON_START;
+  const phase = seasonPhase(now);
+  const closed = phase === "ended";
   const closesAtIso = new Date(started ? SEASON_END : SEASON_START).toISOString();
+
+  // ── Season ended: report CLOSED with final standings ──────────────────────
+  // Prefer the durable snapshot frozen by the season-close cron; if the cron
+  // hasn't run yet, fall back to live-computed final standings (honestly
+  // flagged `final: false` so the client knows they may still settle slightly).
+  if (closed) {
+    const frozen = await readSeasonSnapshot();
+    const standings = frozen ?? (await computeFinalStandings());
+    const user = await getUser(req).catch(() => null);
+
+    let me: any = undefined;
+    if (user) {
+      const myPoints = user.airdrop_points ?? 0;
+      const minePet = await prisma.pet.findFirst({
+        where: { user_id: user.id, is_active: true },
+        orderBy: { level: "desc" },
+        select: { id: true, name: true, avatar_url: true, level: true },
+      });
+      // Rank from the snapshot if listed; else compute live rank.
+      const fromSnap = standings.top.find(e => e.userId === user.id);
+      const rank = fromSnap
+        ? fromSnap.rank
+        : (await prisma.user.count({
+            where: { airdrop_points: { gt: myPoints }, pets: { some: { is_active: true } } },
+          })) + 1;
+      me = {
+        rank,
+        points: myPoints,
+        petId: minePet?.id ?? null,
+        petName: minePet?.name ?? "Your pet",
+        petAvatar: minePet?.avatar_url ?? null,
+        petLevel: minePet?.level ?? 1,
+        pointsToNextRank: 0,
+        inTop100: rank <= 100,
+      };
+    }
+
+    return NextResponse.json({
+      signedIn: !!user,
+      started: true,
+      seasonClosed: true,
+      final: !!frozen, // true = frozen snapshot; false = live standings, cron pending
+      pool: { points: standings.poolPoints, participants: standings.participants, closesAtIso },
+      closedAtIso: standings.closedAtIso,
+      me,
+      topThree: standings.top.slice(0, 3).map(e => ({
+        rank: e.rank, petId: e.petId, name: e.petName, level: e.petLevel, avatar: e.petAvatar, points: e.points,
+      })),
+      finalStandings: standings.top, // full frozen/live final ranking
+    });
+  }
 
   // "Pool" = total loyalty points in play across active raisers. This genuinely
   // grows as players raise & create (each care/creation banks points), so the
@@ -64,7 +116,7 @@ export async function GET(req: NextRequest) {
   const user = await getUser(req).catch(() => null);
   if (!user) {
     return NextResponse.json({
-      signedIn: false, started,
+      signedIn: false, started, seasonClosed: false,
       pool: { points: poolPoints, participants, closesAtIso },
       topThree,
     });
@@ -89,7 +141,7 @@ export async function GET(req: NextRequest) {
   const pointsToNextRank = above ? Math.max(1, above.airdrop_points - myPoints) : 0;
 
   return NextResponse.json({
-    signedIn: true, started,
+    signedIn: true, started, seasonClosed: false,
     pool: { points: poolPoints, participants, closesAtIso },
     me: {
       rank,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ONCHAIN } from "@/lib/onchain";
 
 const PETCLAW_PROTOCOL = "petclaw-v1";
 const PETCLAW_VERSION = "1.0.0";
@@ -48,7 +49,10 @@ export async function GET(req: NextRequest) {
 
     authentication: {
       methods: ["wallet-signature", "jwt-bearer"],
-      chain: "bsc",
+      // Advertised chain follows the single on-chain config (BSC today → Base
+      // via CHAIN_NAME/CHAIN_ID), so discovery never points at a chain we left.
+      chain: ONCHAIN.chainName.toLowerCase(),
+      chainId: ONCHAIN.chainId,
     },
 
     skills: [

@@ -8,8 +8,11 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useAccount, useSignMessage } from "wagmi";
 import { api } from "@/lib/api";
+import { CONTRACTS } from "@/lib/contracts";
 
-const BSC_CHAIN_ID = 56;
+// SIWE chain id — sourced from the single on-chain config so BSC→Base is an
+// env change (NEXT_PUBLIC_CHAIN_ID). Mirrored server-side in lib/onchain.ts.
+const SIWE_CHAIN_ID = CONTRACTS.chainId;
 
 const TOKEN_KEY = "petagen_jwt";
 const USER_KEY = "petagen_user";
@@ -84,8 +87,8 @@ export function useAuth() {
       // We intentionally do NOT force a chain switch here (the UI promises
       // "no gas, identity only"); a switchChain prompt at sign-in surprised
       // users. Genuine on-chain-tx flows (e.g. adoption) keep their own
-      // switch-to-BSC logic where the gas is actually spent.
-      const nonceRes = await api.auth.getNonce(address, BSC_CHAIN_ID);
+      // switch-to-chain logic where the gas is actually spent.
+      const nonceRes = await api.auth.getNonce(address, SIWE_CHAIN_ID);
       const signature = await signMessageAsync({ message: nonceRes.message });
       const authRes = await api.auth.verify(nonceRes.message, signature);
 
