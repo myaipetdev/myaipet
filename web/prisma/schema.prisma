@@ -296,6 +296,26 @@ model ModelConnection {
   @@map("model_connections")
 }
 
+// CLI personal access tokens. Minted from the web app ("Generate CLI token"),
+// these are long-lived, revocable, owner-bound credentials the CLI/SDK use
+// instead of pasting the short-lived (8h, nonce-bound) web JWT. Only the
+// sha256 hash is stored — the plaintext is shown once at mint time. Auth path:
+// lib/auth.ts getUser() resolves a `pck_`-prefixed Bearer token here.
+model CliToken {
+  id            Int       @id @default(autoincrement())
+  owner_user_id Int
+  token_hash    String    @unique @db.VarChar(64)
+  prefix        String    @db.VarChar(16)
+  label         String    @db.VarChar(60)
+  created_at    DateTime  @default(now())
+  last_used_at  DateTime?
+  revoked_at    DateTime?
+  expires_at    DateTime?
+
+  @@index([owner_user_id])
+  @@map("cli_tokens")
+}
+
 model PetNotification {
   id                Int      @id @default(autoincrement())
   pet_id            Int

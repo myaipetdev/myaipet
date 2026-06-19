@@ -48,6 +48,12 @@ export default function ModelsPanel() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
+  // CLI tokens (personal access tokens for `petclaw-sdk auth`)
+  const [tokens, setTokens] = useState<any[]>([]);
+  const [newToken, setNewToken] = useState<string | null>(null);
+  const [genLoading, setGenLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   // connect form
   const [provider, setProvider] = useState("anthropic");
   const [apiKey, setApiKey] = useState("");
@@ -77,8 +83,13 @@ export default function ModelsPanel() {
     }
   };
 
+  const loadTokens = async () => {
+    try { const d = await api.petclaw.cliTokens.list(); setTokens(d.tokens || []); } catch { /* not signed in — card shows the connect prompt */ }
+  };
+
   useEffect(() => {
     load();
+    loadTokens();
     api.pets.list().then((d: any) => {
       const list = (d?.pets || []).map((p: any) => ({ id: p.id, name: p.name }));
       setPets(list);
@@ -86,6 +97,29 @@ export default function ModelsPanel() {
     }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const genToken = async () => {
+    setGenLoading(true); setNewToken(null); setCopied(false);
+    try {
+      const d = await api.petclaw.cliTokens.create();
+      setNewToken(d.token);
+      await loadTokens();
+    } catch (e: any) {
+      setErr(e?.status === 401 ? "Connect your wallet to generate a CLI token." : e?.message || "Could not create token");
+    } finally {
+      setGenLoading(false);
+    }
+  };
+
+  const revokeToken = async (id: number) => {
+    try { await api.petclaw.cliTokens.revoke(id); await loadTokens(); }
+    catch (e: any) { setErr(e?.message || "Revoke failed"); }
+  };
+
+  const copyToken = () => {
+    if (!newToken) return;
+    navigator.clipboard?.writeText(`petclaw-sdk auth ${newToken}`).then(() => setCopied(true)).catch(() => {});
+  };
 
   const connect = async () => {
     if (!apiKey.trim()) { setErr("Enter your API key."); return; }
@@ -132,16 +166,54 @@ export default function ModelsPanel() {
         </p>
         {/* Primary path: connect via the CLI / on install. */}
         <div style={{ marginTop: 14, background: "#0e0e14", borderRadius: 12, padding: "14px 16px", fontFamily: "monospace", fontSize: 12.5, lineHeight: 1.7, color: "#e8e4da", overflowX: "auto" }}>
-          <div style={{ color: "#8a8577", marginBottom: 6 }}># connect when you install / use the SDK</div>
-          <div><span style={{ color: "#9bd1c4" }}>npx @myaipet/petclaw-sdk init</span><span style={{ color: "#5f5e5a" }}>            # guided: server · pet · model</span></div>
+          <div style={{ color: "#8a8577", marginBottom: 6 }}># install, authenticate, then connect a model</div>
+          <div><span style={{ color: "#9bd1c4" }}>npx @myaipet/petclaw-sdk init</span><span style={{ color: "#5f5e5a" }}>            # guided: server · token · pick your pet · model</span></div>
+          <div><span style={{ color: "#9bd1c4" }}>npx @myaipet/petclaw-sdk auth</span> <span style={{ color: "#fde68a" }}>pck_…</span><span style={{ color: "#5f5e5a" }}>        # the CLI token from "Connect your CLI" below</span></div>
           <div><span style={{ color: "#9bd1c4" }}>npx @myaipet/petclaw-sdk models connect</span> <span style={{ color: "#fde68a" }}>openai sk-…</span></div>
-          <div><span style={{ color: "#9bd1c4" }}>npx @myaipet/petclaw-sdk models list</span></div>
         </div>
       </div>
 
       {err && <div style={{ background: "#fde8e8", color: "#9b1c1c", borderRadius: 10, padding: "10px 14px", fontSize: 13.5, margin: "16px 0" }}>{err}</div>}
 
       <div style={{ height: 20 }} />
+
+      <Card title="Connect your CLI" sub="Generate a token, then run it once in your terminal. It replaces copy-pasting the web session, stays valid until you revoke it, and only works for your account.">
+        <button onClick={genToken} disabled={genLoading} style={{ ...btn, opacity: genLoading ? 0.6 : 1 }}>
+          {genLoading ? "Generating…" : "Generate CLI token"}
+        </button>
+
+        {newToken && (
+          <div style={{ marginTop: 16, background: "#0e0e14", borderRadius: 12, padding: "14px 16px" }}>
+            <div style={{ color: "#9bd1c4", fontSize: 12, marginBottom: 8 }}>Copy this now — it won't be shown again.</div>
+            <div style={{ fontFamily: "monospace", fontSize: 12.5, color: "#e8e4da", wordBreak: "break-all", lineHeight: 1.6 }}>
+              petclaw-sdk auth {newToken}
+            </div>
+            <button onClick={copyToken} style={{ marginTop: 10, padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: copied ? "#9bd1c4" : "#fde68a", fontSize: 13, cursor: "pointer" }}>
+              {copied ? "Copied ✓" : "Copy command"}
+            </button>
+          </div>
+        )}
+
+        {tokens.length > 0 && (
+          <div style={{ marginTop: 18 }}>
+            {tokens.map((t) => (
+              <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderTop: `1px solid ${LINE}` }}>
+                <div>
+                  <div style={{ fontWeight: 600, color: INK, fontSize: 14, opacity: t.revoked_at ? 0.5 : 1 }}>
+                    {t.label} <span style={{ color: MUTED, fontWeight: 400 }}>· {t.prefix}…</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
+                    {t.revoked_at ? "revoked" : t.last_used_at ? `last used ${new Date(t.last_used_at).toLocaleDateString()}` : "never used"}
+                  </div>
+                </div>
+                {!t.revoked_at && (
+                  <button onClick={() => revokeToken(t.id)} style={{ background: "none", border: `1px solid ${LINE}`, borderRadius: 8, padding: "6px 12px", color: "#9b1c1c", fontSize: 13, cursor: "pointer" }}>Revoke</button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       <Card title="Or connect here (manual)" sub="Prefer the CLI above. This web form does the same thing — API-key providers (BYOK); OpenRouter reaches almost any model, including Gemini.">
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>

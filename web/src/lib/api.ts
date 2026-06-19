@@ -67,6 +67,11 @@ function devMock(path: string, options: any = {}): any | null {
   if (path === "/api/credits/balance") return { credits: 9999 };
   if (path.match(/\/api\/analytics/)) return method === "GET" ? {} : {};
 
+  // CLI personal access tokens (dev preview only — real minting needs the server)
+  if (path === "/api/petclaw/cli/token" && method === "GET") return { tokens: [] };
+  if (path === "/api/petclaw/cli/token" && method === "POST")
+    return { ok: true, token: "pck_devPreviewExampleToken0000000000000000000", cliToken: { id: 1, prefix: "pck_devPrevi", label: "CLI token", created_at: new Date().toISOString(), expires_at: new Date(Date.now() + 365 * 864e5).toISOString() } };
+
   // Soul / Sovereignty
   if (path.match(/\/api\/pets\/\d+\/soul$/) && method === "GET") return {
     soul: {
@@ -471,6 +476,12 @@ export const api = {
       connect: (provider: string, apiKey: string, opts: { label?: string; model?: string; taskScopes?: string[] } = {}) =>
         request("/api/petclaw/models", { method: "POST", body: { provider, apiKey, ...opts } }),
       remove: (id: number) => request(`/api/petclaw/models?id=${id}`, { method: "DELETE" }),
+    },
+    // CLI personal access tokens — mint here, paste into `petclaw-sdk auth <token>`
+    cliTokens: {
+      list: () => request("/api/petclaw/cli/token"),
+      create: (label?: string) => request("/api/petclaw/cli/token", { method: "POST", body: { label } }),
+      revoke: (id: number) => request(`/api/petclaw/cli/token?id=${id}`, { method: "DELETE" }),
     },
   },
 
