@@ -42,6 +42,21 @@ export async function POST(
     }
   }
 
+  // Anti-gaming: manual missions (verifier:"manual") flip to completed on pure
+  // self-report — there is no server-side proof the user actually did them. So
+  // they must NOT inflate the Season RANK pool (airdrop_points) at full weight,
+  // or the leaderboard becomes trivially gameable by spamming "Mark done".
+  //
+  //   - airdrop_points (the ranking pool) gets only a small capped weight for
+  //     manual missions — enough to feel rewarding, too small to climb on.
+  //   - total_points_earned (lifetime loyalty / streak ledger, non-ranking)
+  //     still gets the FULL reward, so the user keeps their honest progress.
+  //
+  // Auto missions are server-verified, so they grant the full reward to rank.
+  const isManual = tpl.verifier === "manual";
+  const MANUAL_RANK_CAP = 2;
+  const rankPoints = isManual ? Math.min(row.points, MANUAL_RANK_CAP) : row.points;
+
   // Flip is the atomic claim: updateMany only matches while status is not yet
   // "completed", so exactly one of two concurrent requests wins and grants the
   // points (the status-read guard above is outside the tx and was racy → the
@@ -54,7 +69,7 @@ export async function POST(
     if (flip.count !== 1) return false; // already completed by a concurrent request
     await tx.user.update({
       where: { id: user.id },
-      data: { airdrop_points: { increment: row.points } },
+      data: { airdrop_points: { increment: rankPoints } },
     });
     await tx.userStreak.upsert({
       where: { user_id: user.id },
@@ -73,6 +88,7 @@ export async function POST(
   return NextResponse.json({
     ok: true,
     pointsEarned: row.points,
+    rankPointsEarned: rankPoints,
     streak: streakUpdate.streak,
     shieldUsed: streakUpdate.shieldUsed,
     newPeakReached: streakUpdate.newPeakReached,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import PetClawConsole from "@/components/PetClawConsole";
 
@@ -20,7 +20,7 @@ interface Props {
   onSkip: () => void;
 }
 
-type Step = "intro" | "voice" | "quiz" | "social" | "testdrive" | "done";
+type Step = "intro" | "quiz" | "social" | "testdrive" | "done";
 
 const QUIZ_QUESTIONS = [
   {
@@ -113,12 +113,6 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   const [step, setStep] = useState<Step>("intro");
   const [points, setPoints] = useState(0);
 
-  const [recording, setRecording] = useState(false);
-  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
-  const [voiceDuration, setVoiceDuration] = useState(0);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const voiceTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string | string[]>>({});
 
@@ -141,31 +135,6 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   }, [pet.id]);
 
   const addPoints = (pts: number) => setPoints(p => p + pts);
-
-  // Voice handlers
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      const chunks: Blob[] = [];
-      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-      mediaRecorder.onstop = () => {
-        setVoiceBlob(new Blob(chunks, { type: "audio/webm" }));
-        stream.getTracks().forEach(t => t.stop());
-      };
-      mediaRecorderRef.current = mediaRecorder;
-      mediaRecorder.start();
-      setRecording(true);
-      setVoiceDuration(0);
-      voiceTimerRef.current = setInterval(() => setVoiceDuration(d => d + 1), 1000);
-    } catch { /* ignore */ }
-  };
-
-  const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
-    setRecording(false);
-    if (voiceTimerRef.current) clearInterval(voiceTimerRef.current);
-  };
 
   const handleQuizAnswer = (qId: string, val: string, isMulti?: boolean) => {
     if (isMulti) {
@@ -220,9 +189,9 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   };
 
   // ── Shared shell ──
-  const stepIndex: Record<Step, number> = { intro: 0, voice: 1, quiz: 2, social: 3, testdrive: 4, done: 5 };
-  const totalSteps = 5; // intro + 3 substeps + testdrive
-  const progressIdx = step === "done" ? 5 : stepIndex[step];
+  const stepIndex: Record<Step, number> = { intro: 0, quiz: 1, social: 2, testdrive: 3, done: 4 };
+  const totalSteps = 4; // intro + 2 substeps + testdrive
+  const progressIdx = step === "done" ? 4 : stepIndex[step];
 
   const Shell = ({ children, hideProgress }: { children: React.ReactNode; hideProgress?: boolean }) => (
     <div style={{
@@ -332,13 +301,12 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             {pet.element && pet.element !== "normal" && (<><span>·</span><span style={{ textTransform: "capitalize" }}>{pet.element}</span></>)}
           </div>
           <p style={{ color: "rgba(26,26,46,0.62)", fontSize: 15, lineHeight: 1.55, margin: 0, padding: "0 8px" }}>
-            A 2-minute setup so {pet.name} can match your voice, tone, and where you live online.
+            A 1-minute setup so {pet.name} can match your tone and live wherever you do online.
           </p>
         </div>
 
         <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
           {[
-            { icon: "🎤", label: "Teach your voice", pts: "+50", desc: "Pet learns your tone" },
             { icon: "📝", label: "Personality match", pts: "+30", desc: "5 quick questions" },
             { icon: "🔗", label: "Connect platforms", pts: "+100", desc: "Same pet, everywhere" },
           ].map((item) => (
@@ -367,84 +335,12 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           ))}
         </div>
 
-        <button onClick={() => setStep("voice")} style={primaryBtn}
+        <button onClick={() => setStep("quiz")} style={primaryBtn}
           onMouseOver={(e) => e.currentTarget.style.transform = "translateY(-1px)"}
           onMouseOut={(e) => e.currentTarget.style.transform = ""}>
           Let's go ✨
         </button>
         <button onClick={onSkip} style={ghostBtn}>Skip for now</button>
-      </Shell>
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // ── VOICE ──
-  // ══════════════════════════════════════════════════════════
-  if (step === "voice") {
-    return (
-      <Shell>
-        <div style={{ textAlign: "center", marginBottom: 18 }}>
-          {eyebrow("Step 1 of 3")}
-          <h3 style={{ fontSize: 24, fontWeight: 800, color: "#1a1a2e", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
-            🎤 Teach {pet.name} your voice
-          </h3>
-          <p style={{ color: "rgba(26,26,46,0.55)", fontSize: 14, margin: 0 }}>
-            10–30 seconds. We&apos;ll match the tone, not store the audio.
-          </p>
-        </div>
-
-        <div style={{
-          padding: "32px 20px", borderRadius: 20,
-          background: recording ? "linear-gradient(135deg, rgba(248,113,113,0.08), rgba(220,38,38,0.04))" : "rgba(0,0,0,0.025)",
-          border: recording ? "2px dashed rgba(220,38,38,0.3)" : "1px dashed rgba(0,0,0,0.1)",
-          textAlign: "center",
-          transition: "all 0.3s",
-        }}>
-          {recording ? (
-            <>
-              <div style={{
-                width: 80, height: 80, borderRadius: "50%",
-                margin: "0 auto 12px",
-                background: "linear-gradient(135deg, #f87171, #dc2626)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 32, color: "white",
-                boxShadow: "0 0 0 0 rgba(220,38,38,0.5)",
-                animation: "obPulseRing 1.4s ease-out infinite",
-              }}>🎙️</div>
-              <div style={{ fontSize: 32, fontWeight: 800, color: "#dc2626", fontFamily: "monospace" }}>{voiceDuration}s</div>
-              <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginTop: 4 }}>Recording…</div>
-              <button onClick={stopRecording} style={{ ...primaryBtn, background: "#dc2626", boxShadow: "0 8px 24px rgba(220,38,38,0.32)", maxWidth: 220, margin: "16px auto 0" }}>
-                Stop Recording
-              </button>
-            </>
-          ) : voiceBlob ? (
-            <>
-              <div style={{
-                width: 70, height: 70, borderRadius: "50%",
-                margin: "0 auto 14px",
-                background: "linear-gradient(135deg, #4ade80, #16a34a)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 32, color: "white",
-              }}>✓</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#16a34a" }}>Got {voiceDuration}s</div>
-              <button onClick={() => { addPoints(50); setStep("quiz"); }} style={{ ...primaryBtn, maxWidth: 280, margin: "16px auto 0" }}>
-                Save & Continue (+50)
-              </button>
-              <button onClick={() => { setVoiceBlob(null); setVoiceDuration(0); }} style={ghostBtn}>Re-record</button>
-            </>
-          ) : (
-            <>
-              <div style={{ fontSize: 56, marginBottom: 10 }}>🎙️</div>
-              <p style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", margin: "0 0 14px" }}>
-                Tap below and read anything — a sentence, a memory, a hello.
-              </p>
-              <button onClick={startRecording} style={{ ...primaryBtn, maxWidth: 240, margin: 0 }}>
-                Start Recording
-              </button>
-            </>
-          )}
-        </div>
-        <button onClick={() => setStep("quiz")} style={ghostBtn}>Skip this step</button>
       </Shell>
     );
   }
@@ -461,7 +357,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
     return (
       <Shell>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          {eyebrow(`Step 2 of 3 · Q${quizIndex + 1}/${QUIZ_QUESTIONS.length}`)}
+          {eyebrow(`Step 1 of 2 · Q${quizIndex + 1}/${QUIZ_QUESTIONS.length}`)}
           <h3 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
             {q.question}
           </h3>
@@ -511,7 +407,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
     return (
       <Shell>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          {eyebrow("Step 3 of 3")}
+          {eyebrow("Step 2 of 2")}
           <h3 style={{ fontSize: 24, fontWeight: 800, color: "#1a1a2e", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
             Where should {pet.name} live?
           </h3>

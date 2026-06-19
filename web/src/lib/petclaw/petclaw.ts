@@ -144,14 +144,81 @@ export function buildPetDID(ownerWallet: string, petId: number): string {
 }
 
 export function computeIntegrityHash(data: Omit<SoulExport, "integrityHash">): string {
+  // Hash the ACTUAL content (not just counts) so any tampering with memory text,
+  // persona, checkpoints, or consent is detectable. Each field is serialized with
+  // a stable, deterministic key order; arrays are mapped to fixed-shape tuples so
+  // re-ordering or property-shuffling can't silently change the canonical form.
+  const memories = (data.memories || []).map((m) => [
+    m.type,
+    m.content,
+    m.emotion ?? null,
+    m.importance,
+    m.createdAt,
+  ]);
+
+  const skills = (data.skills || []).map((s) => [s.key, s.level, s.slot ?? null]);
+
+  const checkpoints = (data.checkpoints || []).map((c) => [
+    c.version,
+    c.hash,
+    c.trigger,
+    c.createdAt,
+  ]);
+
+  const persona = data.persona
+    ? [
+        data.persona.speechStyle ?? null,
+        data.persona.interests ?? null,
+        data.persona.tone ?? null,
+        data.persona.language ?? null,
+        data.persona.bio ?? null,
+        // analyzedPatterns can have arbitrary key order — sort keys deterministically
+        stableStringify(data.persona.analyzedPatterns ?? null),
+      ]
+    : null;
+
+  const consent = data.consent
+    ? [
+        data.consent.allowPublicProfile,
+        data.consent.allowDataSharing,
+        data.consent.allowAITraining,
+        data.consent.allowInteraction,
+      ]
+    : null;
+
   const payload = JSON.stringify({
-    pet: data.pet,
-    memories: data.memories.length,
-    skills: data.skills,
-    soul: data.soul,
+    protocol: data.protocol,
+    version: data.version,
     exportedAt: data.exportedAt,
+    pet: stableStringify(data.pet),
+    persona,
+    memories,
+    skills,
+    soul: stableStringify(data.soul ?? null),
+    checkpoints,
+    consent,
   });
   return createHash("sha256").update(payload).digest("hex");
+}
+
+// Deterministic JSON: recursively sort object keys so equal data → equal string
+// regardless of property insertion order. Arrays keep their order (order is
+// semantically meaningful for memories/skills/checkpoints).
+function stableStringify(value: unknown): string {
+  return JSON.stringify(sortKeys(value));
+}
+
+function sortKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortKeys);
+  if (value && typeof value === "object") {
+    return Object.keys(value as Record<string, unknown>)
+      .sort()
+      .reduce<Record<string, unknown>>((acc, key) => {
+        acc[key] = sortKeys((value as Record<string, unknown>)[key]);
+        return acc;
+      }, {});
+  }
+  return value;
 }
 
 export function verifySoulExport(soulData: SoulExport): boolean {

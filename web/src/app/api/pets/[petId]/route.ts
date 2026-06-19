@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
+import { applyDecay } from "@/lib/petMechanics";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -27,7 +28,43 @@ export async function GET(
     return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   }
 
-  // Calculate mood based on stats
+  // ── Lazy time-based decay ──
+  // A neglected pet should get hungry/tired/sad even when never clicked.
+  // Uses a DEDICATED decay clock (personality_modifiers.last_decay_at), measured
+  // from the most recent meaningful event. It NEVER writes last_interaction_at —
+  // that timestamp drives neglect detection ("Pet Wants") and active-pet crons,
+  // so merely viewing the pet must not look like an interaction.
+  const mods = (pet.personality_modifiers as Record<string, any>) || {};
+  const lastDecay = mods.last_decay_at ? new Date(mods.last_decay_at).getTime() : 0;
+  const lastInteract = pet.last_interaction_at ? new Date(pet.last_interaction_at).getTime() : 0;
+  const decayClockMs = Math.max(lastDecay, lastInteract, new Date(pet.updated_at).getTime());
+  const elapsedMs = Date.now() - decayClockMs;
+  const decayed = applyDecay(
+    { happiness: pet.happiness, energy: pet.energy, hunger: pet.hunger },
+    elapsedMs
+  );
+
+  if (decayed.changed) {
+    try {
+      await prisma.pet.update({
+        where: { id: pet.id },
+        data: {
+          happiness: decayed.happiness,
+          energy: decayed.energy,
+          hunger: decayed.hunger,
+          // Advance the dedicated decay clock — does NOT touch last_interaction_at.
+          personality_modifiers: { ...mods, last_decay_at: new Date().toISOString() },
+        },
+      });
+    } catch {
+      // Best-effort persistence; still serve the decayed view below.
+    }
+    pet.happiness = decayed.happiness;
+    pet.energy = decayed.energy;
+    pet.hunger = decayed.hunger;
+  }
+
+  // Calculate mood based on (decayed) stats
   let current_mood = "neutral";
   if (pet.happiness >= 80 && pet.energy >= 50) current_mood = "ecstatic";
   else if (pet.happiness >= 60) current_mood = "happy";

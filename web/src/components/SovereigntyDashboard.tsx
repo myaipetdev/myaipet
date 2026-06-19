@@ -953,7 +953,7 @@ export default function SovereigntyDashboard() {
     setSuccessorMsg(null);
     try {
       await soulApi.setSuccessor(selectedPet.id, successorInput.trim());
-      setSuccessorMsg("Successor saved on-chain");
+      setSuccessorMsg("Successor saved — anchors on-chain at go-live");
       fetchSovereigntyData();
     } catch (err: any) {
       setSuccessorMsg(err?.message || "Failed to save");
@@ -2379,7 +2379,7 @@ export default function SovereigntyDashboard() {
                 {[
                   { prompt: "$", cmd: "npm install -g @myaipet/petclaw-sdk", comment: "" },
                   { prompt: "$", cmd: "petclaw-sdk init", comment: "# set server URL + pet ID → saved to ~/.petclaw.json" },
-                  { prompt: "$", cmd: "petclaw-sdk status", comment: "# ✓ Server Online · Skills: 7 · Ownership: user" },
+                  { prompt: "$", cmd: "petclaw-sdk status", comment: "# ✓ Server Online · Skills: 18 · Ownership: user" },
                   { prompt: "$", cmd: "petclaw-sdk soul init", comment: "# generates SOUL.md — your pet's personality file" },
                   { prompt: "$", cmd: "petclaw-sdk chat \"hello\"", comment: "# 🐾 Hey! What's up? — 1234ms · grok-3-mini" },
                   { prompt: "$", cmd: "petclaw-sdk export", comment: "# Sparky_SOUL_1713200000.json saved" },

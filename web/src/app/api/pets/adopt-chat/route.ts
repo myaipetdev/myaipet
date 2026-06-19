@@ -59,11 +59,24 @@ export async function POST(req: NextRequest) {
   if (!rl.ok) return rl.response;
 
   const body = await req.json();
-  const { messages, action, petData, signedMessage, signature } = body;
+  const { messages, action, petData, signedMessage, signature, manual } = body;
 
   // === CREATE ACTION: actually create the pet in DB ===
   if (action === "create") {
-    if (!petData || !petData.name) {
+    // MANUAL fallback: if the user hits "Just create my pet" before the LLM ever
+    // emitted [PET_READY] (Grok slow / down / never tagged), we must NOT dead-end
+    // them. Backfill sensible defaults from whatever fields were gathered so the
+    // create can proceed instead of 400-ing on a missing name.
+    const effectivePetData = manual
+      ? {
+          name: petData?.name || "Buddy",
+          species_name: petData?.species_name || "",
+          personality: petData?.personality || "",
+          custom_traits: petData?.custom_traits || "",
+        }
+      : petData;
+
+    if (!effectivePetData || !effectivePetData.name) {
       return NextResponse.json({ error: "petData with name is required" }, { status: 400 });
     }
 
@@ -89,9 +102,9 @@ export async function POST(req: NextRequest) {
 
     // audit M7: sanitize + moderate the LLM-supplied pet fields with the SAME
     // gate /api/pets enforces — they flow into the DB, prompts, and social feed.
-    const name = sanitizeName(petData.name, 50);
-    const species_name = sanitizeName(petData.species_name, 50);
-    const custom_traits = sanitizeText(petData.custom_traits, 500);
+    const name = sanitizeName(effectivePetData.name, 50);
+    const species_name = sanitizeName(effectivePetData.species_name, 50);
+    const custom_traits = sanitizeText(effectivePetData.custom_traits, 500);
     if (!name) {
       return NextResponse.json({ error: "A valid pet name is required" }, { status: 400 });
     }
@@ -105,8 +118,8 @@ export async function POST(req: NextRequest) {
     }
 
     const finalPersonality =
-      petData.personality && PERSONALITIES.includes(petData.personality as any)
-        ? petData.personality
+      effectivePetData.personality && PERSONALITIES.includes(effectivePetData.personality as any)
+        ? effectivePetData.personality
         : PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)];
 
     const pet = await prisma.pet.create({

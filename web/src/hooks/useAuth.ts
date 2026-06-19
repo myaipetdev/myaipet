@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useAccount, useSignMessage, useSwitchChain } from "wagmi";
+import { useAccount, useSignMessage } from "wagmi";
 import { api } from "@/lib/api";
 
 const BSC_CHAIN_ID = 56;
@@ -26,9 +26,8 @@ function loadStored(): { token: string | null; user: any } {
 }
 
 export function useAuth() {
-  const { address, isConnected, chainId, status } = useAccount();
+  const { address, isConnected, status } = useAccount();
   const { signMessageAsync } = useSignMessage();
-  const { switchChainAsync } = useSwitchChain();
 
   const isDev = process.env.NODE_ENV === "development";
 
@@ -81,11 +80,11 @@ export function useAuth() {
     setError(null);
 
     try {
-      // Switch to BSC before signing
-      if (chainId !== BSC_CHAIN_ID) {
-        await switchChainAsync({ chainId: BSC_CHAIN_ID });
-      }
-
+      // SIWE is identity-only — it works on any chain and needs no on-chain tx.
+      // We intentionally do NOT force a chain switch here (the UI promises
+      // "no gas, identity only"); a switchChain prompt at sign-in surprised
+      // users. Genuine on-chain-tx flows (e.g. adoption) keep their own
+      // switch-to-BSC logic where the gas is actually spent.
       const nonceRes = await api.auth.getNonce(address, BSC_CHAIN_ID);
       const signature = await signMessageAsync({ message: nonceRes.message });
       const authRes = await api.auth.verify(nonceRes.message, signature);

@@ -230,8 +230,26 @@ function CreatePetModal({ onClose, onCreated }: any) {
 
   const [adoptError, setAdoptError] = useState<string | null>(null);
 
-  const handleAdopt = async () => {
-    if (!petData || creating) return;
+  // MANUAL fallback: best-effort parse of name/species/personality from the
+  // user's chat turns, so "Just create my pet" works even when the LLM never
+  // emitted [PET_READY] (Grok down/slow/untagged). The server backfills any
+  // remaining defaults; this just seeds whatever we can cheaply infer.
+  const inferPetDataFromChat = (): { name: string; species_name: string; personality: string; custom_traits: string } => {
+    const userTurns = chatMessages.filter(m => m.role === "user").map(m => m.text);
+    const joined = userTurns.join(" ");
+    const PERSONALITIES = ["friendly", "playful", "shy", "brave", "lazy", "curious", "mischievous", "gentle", "adventurous", "dramatic", "wise", "sassy"];
+    const personality = PERSONALITIES.find(p => joined.toLowerCase().includes(p)) || "";
+    // First user turn is the most likely to carry a name/species description.
+    const custom_traits = userTurns[0] ? userTurns[0].slice(0, 200) : "";
+    return { name: "", species_name: "", personality, custom_traits };
+  };
+
+  const handleAdopt = async (manual = false) => {
+    // In manual mode we proceed even without petData — the server fills defaults.
+    if (creating) return;
+    if (!manual && !petData) return;
+    const effectiveData = petData || (manual ? inferPetDataFromChat() : null);
+    if (!effectiveData) return;
     setCreating(true);
     setAdoptError(null);
 
@@ -247,21 +265,21 @@ function CreatePetModal({ onClose, onCreated }: any) {
 
       // Step 2: On-chain recording FIRST (user pays gas)
       if (isPETActivityEnabled()) {
-        const speciesName = petData.species_name || "Pet";
-        await parentRecordAdoption(petData.name, speciesName);
+        const speciesName = effectiveData.species_name || "Pet";
+        await parentRecordAdoption(effectiveData.name || "Buddy", speciesName);
       }
 
       // Step 3: Wallet signature
       const { message: signedMessage, signature } = await signAction(
         wagmiConfig,
-        `Adopt pet: ${petData.name} (${petData.species_name || "Pet"})`,
+        `Adopt pet: ${effectiveData.name || "Buddy"} (${effectiveData.species_name || "Pet"})`,
       );
 
       // Step 4: Create pet in DB
       const res = await fetch("/api/pets/adopt-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ messages: chatMessages, action: "create", petData, signedMessage, signature }),
+        body: JSON.stringify({ messages: chatMessages, action: "create", petData: effectiveData, manual, signedMessage, signature }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -269,9 +287,15 @@ function CreatePetModal({ onClose, onCreated }: any) {
       }
       const pet = await res.json();
 
-      // Step 5: Generate avatar
+      // Step 5: Generate avatar (use the server-created pet's resolved fields,
+      // since manual fallback may have backfilled name/personality on the server)
       try {
-        const avatarRes = await api.pets.generateAvatar(0, petData.personality, petData.species_name, petData.custom_traits);
+        const avatarRes = await api.pets.generateAvatar(
+          0,
+          pet.personality_type || effectiveData.personality,
+          effectiveData.species_name,
+          effectiveData.custom_traits,
+        );
         if (avatarRes.avatar_url) {
           await api.pets.update(pet.id, { avatar_url: avatarRes.avatar_url });
           pet.avatar_url = avatarRes.avatar_url;
@@ -612,6 +636,11 @@ function CreatePetModal({ onClose, onCreated }: any) {
     "Surprise me!",
   ];
   const showSuggestions = chatMessages.length <= 1 && !chatLoading;
+  // Manual escape hatch: once the user has had a couple of exchanges but the LLM
+  // still hasn't produced a ready-to-adopt pet (Grok slow / down / never tagged),
+  // surface a "Just create my pet" affordance so they're never dead-ended.
+  const userTurnCount = chatMessages.filter(m => m.role === "user").length;
+  const showManualCreate = !petData && !creating && userTurnCount >= 2;
 
   return (
     <div style={{
@@ -744,7 +773,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
                   "{petData.custom_traits}"
                 </div>
               )}
-              <button onClick={handleAdopt} disabled={creating} style={{
+              <button onClick={() => handleAdopt(false)} disabled={creating} style={{
                 width: "100%", marginTop: 16, padding: "13px", borderRadius: 14, border: "none", cursor: "pointer",
                 background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
                 color: "white", fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700,
@@ -757,6 +786,24 @@ function CreatePetModal({ onClose, onCreated }: any) {
           )}
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Manual create fallback — never dead-end if the AI hasn't finalized */}
+        {showManualCreate && (
+          <div style={{ padding: "0 20px 8px", flexShrink: 0 }}>
+            <button onClick={() => handleAdopt(true)} disabled={creating} style={{
+              width: "100%", padding: "11px", borderRadius: 12, cursor: creating ? "default" : "pointer",
+              border: "1px solid rgba(124,58,237,0.3)", background: "rgba(124,58,237,0.06)",
+              color: "#7c3aed", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13.5, fontWeight: 700,
+              transition: "all 0.2s",
+            }}>
+              {creating ? "Creating…" : "✨ Just create my pet"}
+            </button>
+            <div style={{ textAlign: "center", fontSize: 11, color: "rgba(26,26,46,0.45)", marginTop: 5, fontFamily: "'Space Grotesk',sans-serif" }}>
+              We'll use what you've told us so far — you can refine details anytime.
+            </div>
+            {adoptError && <div style={{ color: "#ef4444", fontSize: 12.5, marginTop: 6, textAlign: "center", fontWeight: 600 }}>{adoptError}</div>}
+          </div>
+        )}
 
         {/* Suggestions */}
         {showSuggestions && (

@@ -22,6 +22,62 @@ export const BASE_EFFECTS: Record<InteractionType, BaseEffects> = {
   train: { happiness: 3,  energy: -25, hunger: 5,   exp: 20, bond: 1 },
 };
 
+// ── Time-based stat decay ──
+// A neglected pet drifts toward "neglected" values over time: hunger rises,
+// energy and happiness fall. Rates are tuned so a pet goes from fully-cared-for
+// to fully-neglected after ~2.5 days of zero interaction (not instantly).
+// Applied lazily on read; caller persists results and resets the decay clock.
+
+export interface DecayableStats {
+  happiness: number;
+  energy: number;
+  hunger: number;
+}
+
+// Full swing (0→100 or 100→0) over this many ms ≈ 2.5 days.
+const DECAY_FULL_MS = 2.5 * 24 * 60 * 60 * 1000;
+// Per-stat points changed per ms (positive = stat increases as it decays).
+const DECAY_RATES_PER_MS = {
+  hunger: 100 / DECAY_FULL_MS, // rises toward 100 (starving)
+  energy: -100 / DECAY_FULL_MS, // falls toward 0 (exhausted) — resting isn't modeled here
+  happiness: -100 / DECAY_FULL_MS, // falls toward 0 (sad) when ignored
+};
+
+const clamp01 = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
+
+/**
+ * Decay stats proportional to elapsed time since last interaction.
+ * Returns clamped (0–100) stats. `changed` is false when no meaningful drift
+ * occurred (so callers can skip a write).
+ */
+export function applyDecay(
+  stats: DecayableStats,
+  elapsedMs: number
+): { happiness: number; energy: number; hunger: number; changed: boolean } {
+  // Guard against clock skew / fresh interactions.
+  if (!Number.isFinite(elapsedMs) || elapsedMs <= 0) {
+    return {
+      happiness: clamp01(stats.happiness),
+      energy: clamp01(stats.energy),
+      hunger: clamp01(stats.hunger),
+      changed: false,
+    };
+  }
+
+  const hunger = clamp01(stats.hunger + DECAY_RATES_PER_MS.hunger * elapsedMs);
+  const energy = clamp01(stats.energy + DECAY_RATES_PER_MS.energy * elapsedMs);
+  const happiness = clamp01(
+    stats.happiness + DECAY_RATES_PER_MS.happiness * elapsedMs
+  );
+
+  const changed =
+    hunger !== clamp01(stats.hunger) ||
+    energy !== clamp01(stats.energy) ||
+    happiness !== clamp01(stats.happiness);
+
+  return { happiness, energy, hunger, changed };
+}
+
 // ── Personality modifiers ──
 // Each personality boosts certain interactions and dampens others.
 type Mod = Partial<Record<keyof BaseEffects, number>>;

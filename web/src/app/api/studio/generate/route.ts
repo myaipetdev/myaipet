@@ -31,6 +31,7 @@ import { getTemplate } from "@/lib/studio/templates";
 import { submitToBackend } from "@/lib/studio/backend";
 import { getCurrentSubscription, gateModel, incrementUsage } from "@/lib/studio/subscription";
 import { moderateText } from "@/lib/moderation";
+import { saveRemoteFile } from "@/lib/storage";
 
 export async function POST(req: NextRequest) {
   const rl = rateLimit(req, { key: "studio-generate", limit: 30, windowMs: 60_000 });
@@ -168,12 +169,22 @@ export async function POST(req: NextRequest) {
 
   // Some backends return synchronously (Grok image). Mark completed immediately.
   if (result.immediateUrl) {
+    // Upstream xAI/fal URLs expire within hours — persist to permanent storage
+    // BEFORE saving so History + public /c/<id> share links don't rot. Fall
+    // back to the raw URL only if the copy fails (better a short-lived link
+    // than a failed generation the user already paid for).
+    let persistedUrl = result.immediateUrl;
+    try {
+      persistedUrl = await saveRemoteFile(result.immediateUrl, "generations");
+    } catch (e) {
+      console.error("studio: saveRemoteFile (immediate) failed, using raw URL:", e);
+    }
     await prisma.generation.update({
       where: { id: created.gen.id },
       data: {
         status: "completed",
-        video_path: model.kind === "video" ? result.immediateUrl : null,
-        photo_path: model.kind === "image" ? result.immediateUrl : created.gen.photo_path,
+        video_path: model.kind === "video" ? persistedUrl : null,
+        photo_path: model.kind === "image" ? persistedUrl : created.gen.photo_path,
         completed_at: new Date(),
       },
     });
@@ -182,7 +193,7 @@ export async function POST(req: NextRequest) {
       ok: true,
       generationId: created.gen.id,
       status: "completed",
-      url: result.immediateUrl,
+      url: persistedUrl,
       creditsRemaining: created.user?.credits ?? 0,
       model: { id: model.id, displayName: model.displayName, provider: model.provider },
     });
@@ -190,9 +201,16 @@ export async function POST(req: NextRequest) {
 
   // Queued — store jobId for polling + count toward monthly quota now (we
   // already charged credits and submitted to upstream).
+  //
+  // No model_id column exists on `generations` and we can't add a migration,
+  // so we encode the model id onto fal_request_id as "<modelId>::<jobId>".
+  // The poll route splits this back out to poll ONLY the originating provider
+  // instead of brute-forcing every model. The bare jobId is still recoverable
+  // for any legacy rows that lack the prefix.
+  const taggedJobId = result.jobId ? `${model.id}::${result.jobId}` : null;
   await prisma.generation.update({
     where: { id: created.gen.id },
-    data: { status: "running", fal_request_id: result.jobId || null },
+    data: { status: "running", fal_request_id: taggedJobId },
   });
   await incrementUsage(user.id, model.kind);
 
@@ -200,7 +218,9 @@ export async function POST(req: NextRequest) {
     ok: true,
     generationId: created.gen.id,
     status: "running",
-    jobId: result.jobId,
+    // Return the tagged id so a poll by jobId resolves the same row (the poll
+    // route also accepts the bare numeric generationId, which the UI uses).
+    jobId: taggedJobId,
     creditsRemaining: created.user.credits,
     model: { id: model.id, displayName: model.displayName, provider: model.provider },
   });

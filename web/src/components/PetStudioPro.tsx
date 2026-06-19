@@ -384,9 +384,11 @@ export default function PetStudioPro() {
     setView("idle");
   };
 
-  // Animate: turn a still result into a short video. Flips to video output —
-  // the outputKind effect snaps the engine to grok-imagine-video (free tier,
-  // pet-anchored) — and returns to compose so the user confirms the spend.
+  // Animate: generate a NEW short video from the SAME prompt (not an img2v of
+  // the shown still — the studio backend re-renders from text, anchored on the
+  // pet). Flips to video output — the outputKind effect snaps the engine to
+  // grok-imagine-video (free tier, pet-anchored) — and returns to compose so
+  // the user confirms the spend. Copy below is kept honest about this.
   const animateThis = () => {
     setOutputKind("video");
     setResultUrl(null);
@@ -395,17 +397,28 @@ export default function PetStudioPro() {
     setView("idle");
   };
 
-  // ×4 variations of the current image: four independent paid generations of the
-  // same prompt. Sequential so we never burst the rate-limit; each shows as it lands.
+  // ×4 variations of the current image: four independent paid generations. To
+  // make them genuinely DIFFERENT (and not four identical paid calls), each run
+  // appends a distinct composition/lighting hint to the same base prompt so the
+  // model explores a different take. Sequential so we never burst the
+  // rate-limit; each shows as it lands.
+  const VARIATION_HINTS = [
+    "three-quarter angle, soft natural lighting",
+    "front-on framing, dramatic rim light",
+    "low angle hero shot, warm golden tones",
+    "candid off-center composition, cool cinematic lighting",
+  ];
   const generateVariations = async () => {
     if (!pet || isDemo || varRunning) return;
     const model = chosenModel;
     if (!model || model.kind !== "image") return;
     setVarRunning(true);
     setVariations([]);
-    const finalPrompt = buildFullPrompt();
+    const basePrompt = buildFullPrompt();
     const got: string[] = [];
     for (let i = 0; i < 4; i++) {
+      // distinct per-take hint so each of the 4 charges yields a different image
+      const finalPrompt = `${basePrompt} — variation ${i + 1}: ${VARIATION_HINTS[i]}`;
       try {
         const res = await fetch("/api/studio/generate", {
           method: "POST",
@@ -539,13 +552,13 @@ export default function PetStudioPro() {
                 {!isDemo && pet && pet.id > 0 && !/\.(mp4|webm)$/i.test(resultUrl) && (
                   <button
                     onClick={animateThis}
-                    title="Bring your pet to life — generate a short video anchored on your pet"
+                    title="Generate a new short video from this same prompt (a fresh render anchored on your pet — not an animation of this exact still)"
                     style={{
                       padding: "9px 16px", borderRadius: 10, border: "none", cursor: "pointer",
                       background: "linear-gradient(135deg,#8b5cf6,#7c3aed)", color: "white",
                       fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
                     }}
-                  >🎬 Animate</button>
+                  >🎬 Video from prompt</button>
                 )}
                 <button onClick={() => { setView("idle"); setResultUrl(null); }} style={btnGhost}>⟳ Start over</button>
                 {!isDemo && pet && pet.id > 0 && !/\.(mp4|webm)$/i.test(resultUrl) && (

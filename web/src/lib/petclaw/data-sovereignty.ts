@@ -14,6 +14,19 @@ import {
   type ConsentSettings,
 } from "./petclaw";
 
+// Read the pet's consent settings from its stored personality_modifiers.
+// Single source of truth shared by getConsent() and exportPetData() so the
+// exported (and hashed) consent block always matches the live stored values.
+function readConsentFromPet(personalityModifiers: unknown): ConsentSettings {
+  const mods = (personalityModifiers as Record<string, unknown>) || {};
+  return {
+    allowPublicProfile: (mods.consent_public_profile as boolean) ?? true,
+    allowDataSharing: (mods.consent_data_sharing as boolean) ?? false,
+    allowAITraining: (mods.consent_ai_training as boolean) ?? false,
+    allowInteraction: (mods.consent_interaction as boolean) ?? true,
+  };
+}
+
 // ── Export: Full pet data as portable JSON ──
 
 export async function exportPetData(petId: number, userId: number): Promise<SoulExport> {
@@ -107,12 +120,10 @@ export async function exportPetData(petId: number, userId: number): Promise<Soul
       createdAt: c.created_at.toISOString(),
     })),
 
-    consent: {
-      allowPublicProfile: true,
-      allowDataSharing: false,
-      allowAITraining: false,
-      allowInteraction: true,
-    },
+    // Export the pet's REAL stored consent (persisted in personality_modifiers by
+    // updateConsent), not hardcoded defaults — otherwise the integrity hash signs a
+    // consent block that doesn't reflect what the owner actually chose.
+    consent: readConsentFromPet(pet.personality_modifiers),
   };
 
   const integrityHash = computeIntegrityHash(exportData);
@@ -221,6 +232,43 @@ export async function importSoulData(userId: number, soulData: SoulExport): Prom
     });
   }
 
+  // Restore extended PetClaw v1.1 state into personality_modifiers so the
+  // export→import round-trip is LOSSLESS. exportPetData attaches persistentMemory
+  // ({ memories, userProfile, ... }) and learningData ({ patterns, ... }); these
+  // live in personality_modifiers.{persistent_memories,user_profile,learned_patterns}
+  // (see persistent-memory.ts / self-learning.ts). We also persist the consent
+  // toggles so the imported pet starts with the owner's chosen settings, not defaults.
+  const extended = soulData as SoulExport & {
+    persistentMemory?: { memories?: unknown[]; userProfile?: unknown[] };
+    learningData?: { patterns?: unknown[] };
+  };
+  const restoredMods: Record<string, unknown> = {};
+  if (extended.persistentMemory?.memories) {
+    restoredMods.persistent_memories = extended.persistentMemory.memories;
+  }
+  if (extended.persistentMemory?.userProfile) {
+    restoredMods.user_profile = extended.persistentMemory.userProfile;
+  }
+  if (extended.learningData?.patterns) {
+    restoredMods.learned_patterns = extended.learningData.patterns;
+  }
+  if (soulData.consent) {
+    restoredMods.consent_public_profile = soulData.consent.allowPublicProfile;
+    restoredMods.consent_data_sharing = soulData.consent.allowDataSharing;
+    restoredMods.consent_ai_training = soulData.consent.allowAITraining;
+    restoredMods.consent_interaction = soulData.consent.allowInteraction;
+  }
+  if (Object.keys(restoredMods).length > 0) {
+    const existing =
+      (pet.personality_modifiers as Record<string, unknown>) || {};
+    await prisma.pet.update({
+      where: { id: pet.id },
+      data: {
+        personality_modifiers: { ...existing, ...restoredMods } as any,
+      },
+    });
+  }
+
   // Create import memory
   await prisma.petMemory.create({
     data: {
@@ -255,13 +303,29 @@ export async function deletePetData(petId: number, userId: number): Promise<{ de
   const deletionHash = createHash("sha256").update(deletionPayload).digest("hex");
   const deletedAt = new Date().toISOString();
 
+  // The deletion proof must be RECOVERABLE later, not just returned once. The pet
+  // and all its pet-scoped rows (incl. its own soul_exports / notifications) are
+  // about to be wiped, so the proof can't live on the deleted pet. Anchor it on a
+  // surviving sibling pet of the SAME owner via the existing soul_exports table:
+  // soul_hash holds the SHA-256 deletion hash; ipfs_cid carries a recoverable
+  // marker (`petclaw-deletion:<deletedPetId>`) so the owner can look the proof up.
+  // If the user has no other pet, the proof is still returned to the caller, but
+  // there is no surviving owner-scoped row to anchor it to (see couldNotDo).
+  const proofAnchor = await prisma.pet.findFirst({
+    where: { user_id: userId, id: { not: petId } },
+    orderBy: { id: "desc" },
+    select: { id: true },
+  });
+
   // Delete all related data in correct order (respecting foreign keys).
   // audit M11: also delete the child tables whose FK defaults to onDelete:
   // Restrict (DreamJournal, PetNotification, PetAutonomousAction, SoulExport) —
   // otherwise pet.delete() throws and the whole "right to be forgotten" deletion
   // fails for any pet that has those rows. (Cascade-FK children delete with the
-  // pet automatically.)
-  await prisma.$transaction([
+  // pet automatically.) DailyTrainingLog carries pet_id but has NO pet FK, so it
+  // is NOT cascade-deleted and would otherwise survive the wipe — delete it
+  // explicitly here so "complete data removal" really is complete.
+  const ops: any[] = [
     prisma.memoryNft.deleteMany({ where: { pet_id: petId } }),
     prisma.personaCheckpoint.deleteMany({ where: { pet_id: petId } }),
     prisma.petSoulNft.deleteMany({ where: { pet_id: petId } }),
@@ -274,9 +338,29 @@ export async function deletePetData(petId: number, userId: number): Promise<{ de
     prisma.dreamJournal.deleteMany({ where: { pet_id: petId } }),
     prisma.petNotification.deleteMany({ where: { pet_id: petId } }),
     prisma.petAutonomousAction.deleteMany({ where: { pet_id: petId } }),
+    prisma.dailyTrainingLog.deleteMany({ where: { pet_id: petId } }),
     prisma.soulExport.deleteMany({ where: { pet_id: petId } }),
     prisma.pet.delete({ where: { id: petId } }),
-  ]);
+  ];
+
+  // Persist the recoverable deletion proof on a surviving sibling pet (same txn,
+  // so either everything commits or nothing does — the proof never desyncs from
+  // the actual deletion).
+  if (proofAnchor) {
+    ops.push(
+      prisma.soulExport.create({
+        data: {
+          pet_id: proofAnchor.id,
+          ipfs_cid: `petclaw-deletion:${petId}`,
+          soul_hash: deletionHash,
+          chain: "none",
+          exported_at: new Date(deletedAt),
+        },
+      })
+    );
+  }
+
+  await prisma.$transaction(ops);
 
   return { deletionHash, deletedAt };
 }
@@ -290,13 +374,7 @@ export async function getConsent(petId: number, userId: number): Promise<Consent
   });
   if (!pet) throw new Error("Pet not found");
 
-  const mods = (pet.personality_modifiers as Record<string, unknown>) || {};
-  return {
-    allowPublicProfile: (mods.consent_public_profile as boolean) ?? true,
-    allowDataSharing: (mods.consent_data_sharing as boolean) ?? false,
-    allowAITraining: (mods.consent_ai_training as boolean) ?? false,
-    allowInteraction: (mods.consent_interaction as boolean) ?? true,
-  };
+  return readConsentFromPet(pet.personality_modifiers);
 }
 
 export async function updateConsent(

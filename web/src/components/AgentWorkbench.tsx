@@ -36,7 +36,7 @@ const MAX_STEPS = 6;
 
 const STOP: Record<string, { label: string; tone: "ok" | "warn" | "err" }> = {
   finished: { label: "Completed", tone: "ok" },
-  max_steps: { label: "Reached step budget", tone: "warn" },
+  budget_exhausted: { label: "Reached step budget", tone: "warn" },
   planner_error: { label: "Planner failed", tone: "err" },
 };
 

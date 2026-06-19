@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { SEASON_TIERS } from "@/lib/season";
 
 const EVOLUTION_STAGES: Record<string, { name: string; color: string }> = {
   baby:      { name: "Baby",      color: "#a3e635" },
@@ -115,7 +116,7 @@ export default function Leaderboard() {
         {[
           { label: "Total Participants", value: loading ? "..." : entries.length.toLocaleString() },
           { label: "Season", value: "Season 1" },
-          { label: "Reward Pool", value: "100,000 pts" },
+          { label: "Tiers", value: `${SEASON_TIERS.length} ranks` },
         ].map((s, i) => (
           <div key={i} style={{
             flex: 1, padding: "16px 20px", background: "rgba(255,255,255,0.5)",
@@ -181,7 +182,7 @@ export default function Leaderboard() {
         </div>
       )}
 
-      {/* Season Reward Tiers — Special Goods */}
+      {/* Season Reward Tiers — single source of truth: lib/season.ts */}
       {!loading && !error && entries.length > 0 && (
         <div style={{
           background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
@@ -199,84 +200,49 @@ export default function Leaderboard() {
                 fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700,
                 color: "#78350f", letterSpacing: "-0.01em",
               }}>
-                Exclusive Merch Rewards
+                Season Tiers
               </div>
               <div style={{ fontFamily: "mono", fontSize: 10, color: "#92400e", marginTop: 2 }}>
-                Top rankers receive custom merch with your AI pet printed on real products!
+                Earn Season points to climb tiers. Standing is snapshotted at season close.
               </div>
             </div>
           </div>
 
           <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
-            {[
-              {
-                tier: "\uD83C\uDFC6 #1 Champion",
-                reward: "10,000 pts",
-                goods: "Hoodie + 3D Figure + Full Set",
-                color: "#f59e0b",
-                items: ["\uD83E\uDDE5", "\uD83D\uDDFF", "\u2615", "\uD83D\uDCF1", "\uD83D\uDCD4"],
-              },
-              {
-                tier: "\uD83E\uDD47 Top 3",
-                reward: "5,000 pts",
-                goods: "3D Figure + Mug + Phone Case",
-                color: "#d97706",
-                items: ["\uD83D\uDDFF", "\u2615", "\uD83D\uDCF1", "\uD83D\uDCD4"],
-              },
-              {
-                tier: "\uD83E\uDD48 Top 10",
-                reward: "2,000 pts",
-                goods: "Mug + Notebook + Tote Bag",
-                color: "#9ca3af",
-                items: ["\u2615", "\uD83D\uDCD4", "\uD83D\uDC5C"],
-              },
-              {
-                tier: "\uD83E\uDD49 Top 10%",
-                reward: "500 pts",
-                goods: "Sticker Pack + Hair Clip",
-                color: "#cd7f32",
-                items: ["\uD83C\uDFF7\uFE0F", "\u2728"],
-              },
-            ].map(t => (
-              <div key={t.tier} style={{
-                flex: "0 0 auto", minWidth: 180, maxWidth: 220,
-                padding: "16px 18px", borderRadius: 16,
-                background: "rgba(255,255,255,0.8)",
-                border: `1.5px solid ${t.color}30`,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-              }}>
-                <div style={{
-                  fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
-                  color: t.color, marginBottom: 6,
+            {SEASON_TIERS.map(t => {
+              const reached = (myRank?.points || 0) >= t.min;
+              return (
+                <div key={t.key} style={{
+                  flex: "0 0 auto", minWidth: 150, maxWidth: 200,
+                  padding: "16px 18px", borderRadius: 16,
+                  background: "rgba(255,255,255,0.8)",
+                  border: `1.5px solid ${t.color}${reached ? "55" : "25"}`,
+                  boxShadow: reached ? `0 2px 12px ${t.color}22` : "0 2px 8px rgba(0,0,0,0.04)",
+                  opacity: reached ? 1 : 0.85,
                 }}>
-                  {t.tier}
-                </div>
-                <div style={{
-                  fontFamily: "'Space Mono',monospace", fontSize: 16, fontWeight: 700,
-                  color: "#78350f", marginBottom: 4,
-                }}>
-                  {t.reward}
-                </div>
-                <div style={{
-                  fontFamily: "mono", fontSize: 10, color: "#92400e",
-                  marginBottom: 10, lineHeight: 1.4,
-                }}>
-                  {t.goods}
-                </div>
-                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                  {t.items.map((emoji, i) => (
-                    <span key={i} style={{
-                      width: 28, height: 28, borderRadius: 8,
-                      background: `${t.color}10`, border: `1px solid ${t.color}20`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 14,
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                    <span style={{ fontSize: 18 }}>{t.emoji}</span>
+                    <span style={{
+                      fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 700,
+                      color: t.color,
                     }}>
-                      {emoji}
+                      {t.name}
                     </span>
-                  ))}
+                  </div>
+                  <div style={{
+                    fontFamily: "'Space Mono',monospace", fontSize: 15, fontWeight: 700,
+                    color: "#78350f", marginBottom: 4,
+                  }}>
+                    {t.min.toLocaleString()}+ pts
+                  </div>
+                  <div style={{
+                    fontFamily: "mono", fontSize: 10, color: "#92400e", lineHeight: 1.4,
+                  }}>
+                    {reached ? "Reached" : `${(t.min - (myRank?.points || 0)).toLocaleString()} pts to go`}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div style={{
@@ -288,8 +254,8 @@ export default function Leaderboard() {
             <span style={{
               fontFamily: "mono", fontSize: 10, color: "#92400e", lineHeight: 1.5,
             }}>
-              All merch is custom-made with your AI pet&apos;s artwork printed directly on the product.
-              Notebook covers, phone cases, mugs — your pet becomes real merchandise!
+              Tiers are non-financial standing — your felt status in the season. Higher tiers
+              unlock claimable merch with your AI pet&apos;s artwork printed on real products.
             </span>
           </div>
         </div>

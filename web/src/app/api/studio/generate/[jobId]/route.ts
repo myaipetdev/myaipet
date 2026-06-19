@@ -14,6 +14,7 @@ import { getUser } from "@/lib/auth";
 import { getModel } from "@/lib/studio/providers";
 import { pollBackend } from "@/lib/studio/backend";
 import { MODELS } from "@/lib/studio/providers";
+import { saveRemoteFile } from "@/lib/storage";
 
 export async function GET(
   req: NextRequest,
@@ -24,10 +25,21 @@ export async function GET(
 
   const { jobId } = await params;
 
-  // jobId can be either a Generation.id (number) or fal_request_id (string)
+  // jobId can be either a Generation.id (number) or fal_request_id (string).
+  // The fal_request_id is stored as "<modelId>::<upstreamId>" (see generate
+  // route); the caller may pass either the tagged form or a bare upstream id.
   const gen = /^\d+$/.test(jobId)
     ? await prisma.generation.findFirst({ where: { id: Number(jobId), user_id: user.id } })
-    : await prisma.generation.findFirst({ where: { fal_request_id: jobId, user_id: user.id } });
+    : await prisma.generation.findFirst({
+        where: {
+          user_id: user.id,
+          OR: [
+            { fal_request_id: jobId },
+            // bare upstream id passed by a client that dropped the tag
+            { fal_request_id: { endsWith: `::${jobId}` } },
+          ],
+        },
+      });
 
   if (!gen) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -50,23 +62,40 @@ export async function GET(
     return NextResponse.json({ status: gen.status, generationId: gen.id });
   }
 
-  // Need to know which model was used. We stored the upstream job id but not
-  // the model row. Best-effort: try each backend model until one resolves.
-  // For tighter coupling we could add a model_id column on generations —
-  // future refactor.
-  for (const model of MODELS) {
-    const r = await pollBackend(model, gen.fal_request_id);
+  // The model id is encoded onto fal_request_id as "<modelId>::<upstreamId>"
+  // (no model_id column exists and we can't add a migration). Decode it so we
+  // poll ONLY the originating provider instead of brute-forcing every model.
+  const sepIdx = gen.fal_request_id.indexOf("::");
+  const taggedModelId = sepIdx > 0 ? gen.fal_request_id.slice(0, sepIdx) : null;
+  const upstreamId = sepIdx > 0 ? gen.fal_request_id.slice(sepIdx + 2) : gen.fal_request_id;
+  const taggedModel = taggedModelId ? getModel(taggedModelId) : null;
+
+  // Targeted poll when we know the model; otherwise (legacy untagged rows)
+  // fall back to a DETERMINISTIC scan that short-circuits on first success.
+  const candidates = taggedModel ? [taggedModel] : MODELS;
+
+  for (const model of candidates) {
+    const r = await pollBackend(model, upstreamId);
     if (r.status === "completed" && r.url) {
+      // Upstream URLs expire within hours — persist to permanent storage BEFORE
+      // saving so History + public /c/<id> share links don't rot. Fall back to
+      // the raw URL only if the copy fails.
+      let persistedUrl = r.url;
+      try {
+        persistedUrl = await saveRemoteFile(r.url, "generations");
+      } catch (e) {
+        console.error("studio: saveRemoteFile (poll) failed, using raw URL:", e);
+      }
       await prisma.generation.update({
         where: { id: gen.id },
         data: {
           status: "completed",
-          video_path: model.kind === "video" ? r.url : null,
-          photo_path: model.kind === "image" ? r.url : gen.photo_path,
+          video_path: model.kind === "video" ? persistedUrl : null,
+          photo_path: model.kind === "image" ? persistedUrl : gen.photo_path,
           completed_at: new Date(),
         },
       });
-      return NextResponse.json({ status: "completed", url: r.url, generationId: gen.id });
+      return NextResponse.json({ status: "completed", url: persistedUrl, generationId: gen.id });
     }
     if (r.status === "failed") continue; // try next model — might be a poll URL mismatch
     if (r.status === "running") {
@@ -76,6 +105,3 @@ export async function GET(
 
   return NextResponse.json({ status: gen.status, generationId: gen.id });
 }
-
-// Suppress unused import warning for getModel — kept for future tighter coupling
-void getModel;

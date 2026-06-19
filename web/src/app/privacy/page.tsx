@@ -51,7 +51,8 @@ export default function PrivacyPage() {
 
         <Section title="4. On-Chain Data">
           On-chain records (BSC) are public and permanent. We cannot delete them. Avoid putting
-          sensitive personal information into on-chain fields.
+          sensitive personal information into on-chain fields. On-chain anchoring is currently
+          migrating to Base and activates at go-live.
         </Section>
 
         <Section title="5. Cookies & Local Storage">
