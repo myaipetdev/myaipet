@@ -29,6 +29,7 @@ const AgentDashboard = lazy(() => import("@/components/AgentDashboard"));
 const AgentWorkbench = lazy(() => import("@/components/AgentWorkbench"));
 const SovereigntyDashboard = lazy(() => import("@/components/SovereigntyDashboard"));
 const PetStudioPro = lazy(() => import("@/components/PetStudioPro"));
+const WorldCupPet = lazy(() => import("@/components/WorldCupPet")); // time-boxed World Cup 2026 event
 
 // ── Grid Background ──
 function Grid() {
@@ -533,6 +534,16 @@ export default function App() {
             <SovereigntyDashboard />
           </Suspense>
         </WalletGate>
+      )}
+
+      {section === "worldcup" && (
+        <div style={{ paddingTop: 96, paddingLeft: 20, paddingRight: 20 }}>
+          <WalletGate section="worldcup">
+            <Suspense fallback={<Loader />}>
+              <WorldCupPet />
+            </Suspense>
+          </WalletGate>
+        </div>
       )}
 
 
