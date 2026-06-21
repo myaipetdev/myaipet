@@ -9,6 +9,7 @@ const LOGO_SRC = "/mascot.jpg";
 const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
   { key: "home", label: "Home" },
   { key: "my pet", label: "My Pet" },
+  { key: "cards", label: "Cards 🃏" },
   { key: "studio", label: "Studio", url: "/studio" },
   { key: "community", label: "Community" },
   // Time-boxed World Cup 2026 event (remove this entry after ~2026-07-19).

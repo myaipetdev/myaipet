@@ -30,6 +30,7 @@ const AgentWorkbench = lazy(() => import("@/components/AgentWorkbench"));
 const SovereigntyDashboard = lazy(() => import("@/components/SovereigntyDashboard"));
 const PetStudioPro = lazy(() => import("@/components/PetStudioPro"));
 const WorldCupPet = lazy(() => import("@/components/WorldCupPet")); // time-boxed World Cup 2026 event
+const CardDeck = lazy(() => import("@/components/CardDeck")); // TCG trading cards
 
 // ── Grid Background ──
 function Grid() {
@@ -541,6 +542,16 @@ export default function App() {
           <WalletGate section="worldcup">
             <Suspense fallback={<Loader />}>
               <WorldCupPet />
+            </Suspense>
+          </WalletGate>
+        </div>
+      )}
+
+      {section === "cards" && (
+        <div style={{ paddingTop: 96, paddingLeft: 20, paddingRight: 20 }}>
+          <WalletGate section="cards">
+            <Suspense fallback={<Loader />}>
+              <CardDeck />
             </Suspense>
           </WalletGate>
         </div>

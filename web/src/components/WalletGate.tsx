@@ -145,6 +145,7 @@ export default function WalletGate({ children, section }: any) {
     arena: "Arena",
     workbench: "the Agent Workbench",
     worldcup: "the World Cup event",
+    cards: "your card deck",
   };
 
   return (

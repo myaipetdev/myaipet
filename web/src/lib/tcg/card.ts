@@ -89,6 +89,8 @@ export interface CardData {
   personality: string;
   avatarUrl: string | null;
   rarity: Rarity;
+  /** "Top N%" rarity rank across all active pets (real count). null if unknown. */
+  topPercent: number | null;
   /** Up to 3 equipped move names (humanized). */
   moves: string[];
   bornAt: string; // ISO
@@ -123,10 +125,26 @@ export async function getCardData(petId: number): Promise<CardData | null> {
   }
   if (!pet) return null;
 
-  const { rarity } = computeRarity({
+  const { rarity, score } = computeRarity({
     level: pet.level, bond_level: pet.bond_level, care_streak: pet.care_streak,
     atk: pet.atk, def: pet.def, spd: pet.spd, evolution_stage: pet.evolution_stage,
   });
+
+  // "Top N%" = share of active pets whose rarity score is >= this pet's. One
+  // aggregate query; tolerate failure (badge just hides). The SQL score mirrors
+  // computeRarity (integer division on (atk+def+spd)/3 is close enough for a %).
+  let topPercent: number | null = null;
+  try {
+    const rows = await prisma.$queryRaw<{ total: bigint; higher: bigint }[]>`
+      SELECT COUNT(*)::bigint AS total,
+             COUNT(*) FILTER (
+               WHERE (level*2 + bond_level*3 + care_streak + (atk+def+spd)/3 + evolution_stage*6) >= ${score}
+             )::bigint AS higher
+      FROM pets WHERE is_active = true`;
+    const total = Number(rows?.[0]?.total || 0);
+    const higher = Number(rows?.[0]?.higher || 0);
+    if (total > 0) topPercent = Math.min(100, Math.max(1, Math.round((higher / total) * 100)));
+  } catch { topPercent = null; }
 
   return {
     id: pet.id,
@@ -145,6 +163,7 @@ export async function getCardData(petId: number): Promise<CardData | null> {
     personality: pet.personality_type,
     avatarUrl: pet.avatar_url,
     rarity,
+    topPercent,
     moves: pet.skills.map((s) => humanizeSkill(s.skill_key)),
     bornAt: pet.created_at.toISOString(),
   };
