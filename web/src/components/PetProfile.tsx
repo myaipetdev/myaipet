@@ -1914,6 +1914,19 @@ export default function PetProfile() {
                 {moodCfg.label} — {moodReason(pet)}
               </div>
             </div>
+            <a
+              href={`/card/${pet.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mp-lift"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6, marginTop: 12,
+                padding: "8px 16px", borderRadius: 999, textDecoration: "none",
+                background: "linear-gradient(135deg,#1a1a2e,#3a3a52)", color: "#fff",
+                fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
+                border: "1px solid rgba(255,255,255,0.12)",
+              }}
+            >🃏 Trading Card</a>
           </div>
 
           {/* Appearance description */}
