@@ -1,0 +1,37 @@
+/**
+ * Client-safe TCG theme constants (no prisma import) — shared by the server
+ * card lib, the OG image route, and the client <PetCard> component.
+ */
+
+export type Rarity = "Common" | "Uncommon" | "Rare" | "Epic" | "Legendary";
+
+export interface ElementTheme {
+  label: string;
+  /** primary accent */
+  color: string;
+  /** dark gradient stops for the card/background */
+  grad: [string, string];
+}
+
+export const ELEMENT_THEME: Record<string, ElementTheme> = {
+  fire:     { label: "Fire",     color: "#f97316", grad: ["#7c2d12", "#f97316"] },
+  water:    { label: "Water",    color: "#3b82f6", grad: ["#1e3a8a", "#3b82f6"] },
+  grass:    { label: "Grass",    color: "#22c55e", grad: ["#14532d", "#22c55e"] },
+  electric: { label: "Electric", color: "#eab308", grad: ["#713f12", "#eab308"] },
+  normal:   { label: "Normal",   color: "#9ca3af", grad: ["#374151", "#9ca3af"] },
+};
+
+export function elementTheme(element: string): ElementTheme {
+  return ELEMENT_THEME[element] || ELEMENT_THEME.normal;
+}
+
+const RARITY_COLOR: Record<Rarity, string> = {
+  Common: "#9ca3af",
+  Uncommon: "#22c55e",
+  Rare: "#3b82f6",
+  Epic: "#a855f7",
+  Legendary: "#f59e0b",
+};
+export function rarityColor(r: Rarity): string {
+  return RARITY_COLOR[r];
+}

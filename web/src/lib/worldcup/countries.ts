@@ -67,6 +67,15 @@ export function getCountry(code: string): WorldCupCountry | undefined {
 }
 
 /**
+ * Real flag image from flagcdn (emoji flags don't render on many platforms).
+ * Codes are ISO alpha-2; England is the one subdivision (gb-eng).
+ */
+export function flagUrl(c: WorldCupCountry, w: 80 | 160 | 320 = 160): string {
+  const slug = c.code.toLowerCase() === "en" ? "gb-eng" : c.code.toLowerCase();
+  return `https://flagcdn.com/w${w}/${slug}.png`;
+}
+
+/**
  * Build the additive prompt fragment that themes a pet as a country's symbol.
  * Kept separate so both the client (preview) and server (generation) agree.
  */

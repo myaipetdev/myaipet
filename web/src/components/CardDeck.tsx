@@ -14,6 +14,7 @@
 
 import { useEffect, useState } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
+import PetCard from "@/components/PetCard";
 
 const INK = "#1a1a22";
 const MUTED = "#6b6b73";
@@ -23,7 +24,6 @@ const GOLD = "#b45309";
 type Pet = { id: number; name: string; avatar_url?: string | null };
 type Opp = { petId: number; name: string; element: string; level: number };
 
-const cardImg = (id: number, bust?: number) => `/card/${id}/opengraph-image${bust ? `?v=${bust}` : ""}`;
 const cardUrl = (id: number) => `/card/${id}`;
 const APP = "https://app.myaipet.ai";
 
@@ -126,14 +126,13 @@ export default function CardDeck() {
       {err && <div style={{ background: "#fde8e8", color: "#9b1c1c", borderRadius: 10, padding: "10px 14px", fontSize: 13.5, marginBottom: 16 }}>{err}</div>}
 
       {tab === "deck" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 18 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(232px, 1fr))", gap: 22, justifyItems: "center" }}>
           {pets.map((p) => (
-            <div key={p.id} style={{ borderRadius: 14, overflow: "hidden", border: `1px solid ${LINE}`, background: "#fff" }}>
-              <a href={cardUrl(p.id)} target="_blank" rel="noopener noreferrer">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={cardImg(p.id, bust[p.id])} alt={`${p.name} card`} style={{ width: "100%", display: "block" }} />
+            <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%", maxWidth: 280 }}>
+              <a href={cardUrl(p.id)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+                <PetCard key={`${p.id}-${bust[p.id] || 0}`} petId={p.id} />
               </a>
-              <div style={{ display: "flex", gap: 8, padding: 10 }}>
+              <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
                 <button onClick={() => shareCard(p.id, p.name)} style={btn}>𝕏 Share</button>
                 <button onClick={() => illustrate(p.id, p.name)} disabled={illustrating === p.id} style={{ ...ghost, opacity: illustrating === p.id ? 0.6 : 1 }}>
                   {illustrating === p.id ? "Illustrating…" : "✨ Illustrate"}
@@ -171,13 +170,16 @@ export default function CardDeck() {
                 {battle.winner === "you" ? `🏆 ${battle.you.name} wins!` : `${battle.opponent.name} wins`}
                 <div style={{ fontSize: 12, color: MUTED, fontWeight: 500, marginTop: 4 }}>{battle.result.turns} turns · your HP {battle.result.yourHp}/{battle.result.yourHpMax} · their HP {battle.result.oppHp}/{battle.result.oppHpMax}</div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                {[battle.you, battle.opponent].map((c: any, i: number) => (
-                  <div key={i} style={{ borderRadius: 12, overflow: "hidden", border: `2px solid ${i === 0 ? (battle.winner === "you" ? "#16a34a" : LINE) : (battle.winner === "opponent" ? "#16a34a" : LINE)}` }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={cardImg(c.id, bust[c.id])} alt={`${c.name} card`} style={{ width: "100%", display: "block" }} />
-                  </div>
-                ))}
+              <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+                {[battle.you, battle.opponent].map((c: any, i: number) => {
+                  const isWinner = (i === 0 && battle.winner === "you") || (i === 1 && battle.winner === "opponent");
+                  return (
+                    <div key={i} style={{ width: 220, opacity: isWinner ? 1 : 0.72, transform: isWinner ? "scale(1.03)" : "none", transition: "all .2s" }}>
+                      <PetCard petId={c.id} maxWidth={220} />
+                      <div style={{ textAlign: "center", marginTop: 8, fontSize: 13, fontWeight: 800, color: isWinner ? "#16a34a" : MUTED }}>{isWinner ? "WINNER" : ""}</div>
+                    </div>
+                  );
+                })}
               </div>
               <div style={{ textAlign: "center", marginTop: 14 }}>
                 <button onClick={() => shareCard(battle.winner === "you" ? battle.you.id : battle.opponent.id, battle.winner === "you" ? battle.you.name : battle.opponent.name)} style={btn}>𝕏 Share the winner</button>

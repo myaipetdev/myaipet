@@ -14,7 +14,7 @@
 
 import { useEffect, useState } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
-import { WORLD_CUP_COUNTRIES, buildCountryPromptFragment, type WorldCupCountry } from "@/lib/worldcup/countries";
+import { WORLD_CUP_COUNTRIES, buildCountryPromptFragment, flagUrl, type WorldCupCountry } from "@/lib/worldcup/countries";
 
 const INK = "#1a1a22";
 const MUTED = "#6b6b73";
@@ -142,25 +142,25 @@ export default function WorldCupPet() {
       <div style={{ fontSize: 13.5, color: MUTED, marginBottom: 12 }}>
         Pick a country — your pet becomes its iconic animal in the flag&apos;s colors.
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: 8, marginBottom: 22 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 10, marginBottom: 22 }}>
         {WORLD_CUP_COUNTRIES.map((c) => {
           const on = country?.code === c.code;
           return (
             <button key={c.code} onClick={() => setCountry(c)} title={`${c.name} — ${c.animal}`} style={{
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-              padding: "10px 6px", borderRadius: 12, cursor: "pointer",
-              border: `1.5px solid ${on ? GOLD : LINE}`,
-              background: on ? "rgba(245,158,11,0.08)" : "#fff",
-              boxShadow: on ? "0 2px 10px rgba(245,158,11,0.18)" : "none",
-              transition: "all .12s",
+              display: "flex", flexDirection: "column", alignItems: "stretch", gap: 0,
+              padding: 0, borderRadius: 12, cursor: "pointer", overflow: "hidden",
+              border: `2px solid ${on ? GOLD : LINE}`,
+              background: "#fff",
+              boxShadow: on ? "0 6px 18px rgba(245,158,11,0.3)" : "0 1px 4px rgba(0,0,0,0.06)",
+              transform: on ? "translateY(-2px)" : "none",
+              transition: "all .14s",
             }}>
-              <span style={{ fontSize: 26, lineHeight: 1 }}>{c.flag || "🏳️"}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: INK, textAlign: "center", lineHeight: 1.2 }}>{c.name}</span>
-              <span style={{ display: "flex", gap: 2, marginTop: 1 }}>
-                {c.colors.slice(0, 3).map((hex, i) => (
-                  <span key={i} style={{ width: 8, height: 8, borderRadius: 2, background: hex, border: "1px solid rgba(0,0,0,0.08)" }} />
-                ))}
-              </span>
+              <div style={{ position: "relative", width: "100%", aspectRatio: "3 / 2", background: "#eee" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={flagUrl(c, 160)} alt={`${c.name} flag`} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                {on && <div style={{ position: "absolute", inset: 0, background: "rgba(245,158,11,0.18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>✓</div>}
+              </div>
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: on ? "#7a3d00" : INK, textAlign: "center", lineHeight: 1.2, padding: "7px 4px" }}>{c.name}</span>
             </button>
           );
         })}
@@ -212,11 +212,16 @@ const ghostBtn: React.CSSProperties = { padding: "10px 16px", borderRadius: 10, 
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "8px 0 40px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
-      <div style={{ marginBottom: 18 }}>
-        <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase" }}>World Cup 2026 · national pet</div>
-        <h1 style={{ fontSize: 26, fontWeight: 800, color: INK, margin: "6px 0 0" }}>Suit up your pet ⚽🏆</h1>
-        <p style={{ fontSize: 14.5, color: MUTED, margin: "8px 0 0", lineHeight: 1.55 }}>
+    <div style={{ maxWidth: 760, margin: "0 auto", padding: "8px 0 40px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
+      <div style={{
+        position: "relative", overflow: "hidden", borderRadius: 22, padding: "30px 28px", marginBottom: 24,
+        background: "linear-gradient(120deg, #16a34a 0%, #0ea5e9 48%, #f59e0b 100%)",
+        boxShadow: "0 14px 40px rgba(14,165,233,0.28)",
+      }}>
+        <div style={{ position: "absolute", right: -10, top: -18, fontSize: 130, opacity: 0.16, lineHeight: 1 }}>🏆</div>
+        <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.2em", color: "rgba(255,255,255,0.92)", textTransform: "uppercase" }}>World Cup 2026 · national pet</div>
+        <h1 style={{ fontSize: 32, fontWeight: 900, color: "#fff", margin: "8px 0 0", letterSpacing: "-0.02em", textShadow: "0 2px 12px rgba(0,0,0,0.18)" }}>Suit up your pet ⚽</h1>
+        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.92)", margin: "10px 0 0", lineHeight: 1.55, maxWidth: 540 }}>
           Reimagine your pet as your country&apos;s iconic animal in its flag colors — then share your national pride on X.
         </p>
       </div>

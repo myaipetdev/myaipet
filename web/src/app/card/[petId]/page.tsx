@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getCardData, elementTheme, rarityColor } from "@/lib/tcg/card";
 import CardActions from "./CardActions";
+import PetCard from "@/components/PetCard";
 
 // Public, wallet-free share page for a pet's trading card. The card image is the
 // opengraph-image route (Next auto-wires it as og:image + twitter summary_large
@@ -52,13 +53,8 @@ export default async function CardPage(
         {card.rarity} · {t.label} card
       </div>
 
-      {/* The card image (same PNG that X unfurls + you download) */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={imgUrl}
-        alt={`${card.name} trading card`}
-        style={{ width: "min(560px, 92vw)", height: "auto", borderRadius: 16, boxShadow: "0 24px 60px rgba(0,0,0,0.5)" }}
-      />
+      {/* Crisp portrait card (the landscape OG PNG is only for X-unfurl/download) */}
+      <PetCard card={card} maxWidth={400} />
 
       <CardActions petId={id} name={card.name} imgUrl={imgUrl} appUrl={APP_URL} />
 
