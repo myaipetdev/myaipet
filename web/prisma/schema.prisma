@@ -316,6 +316,31 @@ model CliToken {
   @@map("cli_tokens")
 }
 
+// Cat Catch — collectible street cats caught via the live camera. A caught cat
+// is a lightweight creature (NOT a full Pet): real capture photo + game stats
+// rolled at catch time by rarity. lat/lng power the nearby-catches map.
+model CaughtCat {
+  id            Int      @id @default(autoincrement())
+  owner_user_id Int
+  name          String   @db.VarChar(40)
+  breed         String   @db.VarChar(40)
+  rarity        String   @db.VarChar(12) // gray | green | blue | purple | orange
+  element       String   @db.VarChar(10)
+  hp            Int
+  atk           Int
+  def           Int
+  spd           Int
+  level         Int      @default(1)
+  photo_path    String   @db.Text
+  lat           Float?
+  lng           Float?
+  caught_at     DateTime @default(now())
+
+  @@index([owner_user_id])
+  @@index([lat, lng])
+  @@map("caught_cats")
+}
+
 model PetNotification {
   id                Int      @id @default(autoincrement())
   pet_id            Int

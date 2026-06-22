@@ -9,6 +9,7 @@ const LOGO_SRC = "/mascot.jpg";
 const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
   { key: "home", label: "Home" },
   { key: "my pet", label: "My Pet" },
+  { key: "catch", label: "Cat Catch 🐱" },
   { key: "cards", label: "Cards 🃏" },
   { key: "studio", label: "Studio", url: "/studio" },
   { key: "community", label: "Community" },

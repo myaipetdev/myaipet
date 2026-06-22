@@ -31,6 +31,7 @@ const SovereigntyDashboard = lazy(() => import("@/components/SovereigntyDashboar
 const PetStudioPro = lazy(() => import("@/components/PetStudioPro"));
 const WorldCupPet = lazy(() => import("@/components/WorldCupPet")); // time-boxed World Cup 2026 event
 const CardDeck = lazy(() => import("@/components/CardDeck")); // TCG trading cards
+const CatCatch = lazy(() => import("@/components/CatCatch")); // catch real street cats
 
 // ── Grid Background ──
 function Grid() {
@@ -552,6 +553,16 @@ export default function App() {
           <WalletGate section="cards">
             <Suspense fallback={<Loader />}>
               <CardDeck />
+            </Suspense>
+          </WalletGate>
+        </div>
+      )}
+
+      {section === "catch" && (
+        <div style={{ paddingTop: 96, paddingLeft: 20, paddingRight: 20 }}>
+          <WalletGate section="catch">
+            <Suspense fallback={<Loader />}>
+              <CatCatch />
             </Suspense>
           </WalletGate>
         </div>
