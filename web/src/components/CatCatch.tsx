@@ -50,12 +50,13 @@ type Cat = {
   source?: string; // "camera" (real) | "wild" (game spawn)
 };
 
-type Phase = "intro" | "camera" | "catching" | "result";
+type Phase = "intro" | "camera" | "throw" | "catching" | "result";
 
 export default function CatCatch() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [phase, setPhase] = useState<Phase>("intro");
+  const [pendingImg, setPendingImg] = useState<string | null>(null); // captured image awaiting the throw
   const [view, setView] = useState<"catch" | "map">("catch");
   const [camErr, setCamErr] = useState<string | null>(null);
   const [result, setResult] = useState<{ caught: boolean; cat?: Cat; reason?: string; antiCheat?: boolean; pointsAwarded?: number } | null>(null);
@@ -135,7 +136,9 @@ export default function CatCatch() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    submitPhoto(canvas.toDataURL("image/jpeg", 0.85));
+    // Snap → throw-the-can mini-game → then submit for vision verification.
+    setPendingImg(canvas.toDataURL("image/jpeg", 0.85));
+    setPhase("throw");
   };
 
   // Desktop / no-camera fallback. The SAME vision anti-cheat runs on uploads,
@@ -144,7 +147,7 @@ export default function CatCatch() {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = () => { if (typeof reader.result === "string") submitPhoto(reader.result); };
+      reader.onload = () => { if (typeof reader.result === "string") { setPendingImg(reader.result); setPhase("throw"); } };
       reader.readAsDataURL(file);
     }
     e.target.value = "";
@@ -221,27 +224,22 @@ export default function CatCatch() {
           </>
         )}
 
+        {phase === "throw" && pendingImg && (
+          <ThrowCan image={pendingImg} onThrow={() => submitPhoto(pendingImg)} onCancel={again} />
+        )}
+
         {phase === "result" && result && (
-          <div style={{ position: "absolute", inset: 0, background: CREAM, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: 20, textAlign: "center", overflowY: "auto" }}>
-            {result.caught && result.cat ? (
-              <>
-                <div style={{ fontSize: 14, fontWeight: 800, color: result.cat.rarityColor, letterSpacing: 1 }}>{result.cat.rarityLabel.toUpperCase()} — CAUGHT!</div>
-                <CatCard cat={result.cat} />
-                {!!result.pointsAwarded && (
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 800, color: "#b45309", background: "rgba(245,158,11,0.14)", borderRadius: 999, padding: "5px 14px" }}>+{result.pointsAwarded} season points <Icon name="coin" size={16} /></div>
-                )}
-                <button onClick={again} style={bigBtn}>Catch another</button>
-              </>
-            ) : (
-              <>
-                <Icon name={result.antiCheat ? "shield" : "footprints"} size={52} />
-                <div style={{ fontSize: 17, fontWeight: 800, color: INK, maxWidth: 320, lineHeight: 1.4 }}>{result.antiCheat ? "Nice try!" : "No catch"}</div>
-                <div style={{ fontSize: 14, color: MUTED, maxWidth: 320 }}>{result.reason}</div>
-                <button onClick={again} style={bigBtn}>Try again</button>
-              </>
-            )}
-            <button onClick={done} style={{ ...ghostBtn, marginTop: 2 }}>Done</button>
-          </div>
+          result.caught && result.cat ? (
+            <RevealCard cat={result.cat} points={result.pointsAwarded || 0} onAgain={again} onDone={done} />
+          ) : (
+            <div style={{ position: "absolute", inset: 0, background: CREAM, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: 20, textAlign: "center", overflowY: "auto" }}>
+              <Icon name={result.antiCheat ? "shield" : "footprints"} size={52} />
+              <div style={{ fontSize: 17, fontWeight: 800, color: INK, maxWidth: 320, lineHeight: 1.4 }}>{result.antiCheat ? "Nice try!" : "No catch"}</div>
+              <div style={{ fontSize: 14, color: MUTED, maxWidth: 320 }}>{result.reason}</div>
+              <button onClick={again} style={bigBtn}>Try again</button>
+              <button onClick={done} style={{ ...ghostBtn, marginTop: 2 }}>Done</button>
+            </div>
+          )
         )}
       </div>
 
@@ -259,8 +257,94 @@ export default function CatCatch() {
       )}
       </>)}
 
-      <style>{`@keyframes ccBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}`}</style>
+      <style>{`
+        @keyframes ccBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+        @keyframes ccPulse{0%,100%{transform:translateX(-50%) scale(1);opacity:.9}50%{transform:translateX(-50%) scale(1.12);opacity:.55}}
+        @keyframes ccFade{from{opacity:0}to{opacity:1}}
+        @keyframes ccSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+        @keyframes ccPop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+      `}</style>
     </Shell>
+  );
+}
+
+const tinyGhost: React.CSSProperties = { padding: "5px 12px", borderRadius: 999, border: "2px solid #fff", background: "rgba(0,0,0,0.4)", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" };
+
+/** Cat-food can graphic (the throwable). */
+function CanGraphic() {
+  return (
+    <svg width="72" height="72" viewBox="0 0 72 72" style={{ filter: "drop-shadow(0 4px 6px rgba(0,0,0,.4))" }} aria-hidden>
+      <ellipse cx="36" cy="20" rx="22" ry="7" fill="#c0392b" stroke={OUTLINE} strokeWidth="3" />
+      <rect x="14" y="20" width="44" height="34" fill="#e74c3c" stroke={OUTLINE} strokeWidth="3" />
+      <ellipse cx="36" cy="54" rx="22" ry="7" fill="#c0392b" stroke={OUTLINE} strokeWidth="3" />
+      <rect x="18" y="29" width="36" height="17" rx="3" fill={CREAM} stroke={OUTLINE} strokeWidth="2" />
+      <circle cx="36" cy="37.5" r="6" fill="#f59e0b" stroke={OUTLINE} strokeWidth="2" />
+    </svg>
+  );
+}
+
+/** Throw-the-can mini-game: drag the can and release to throw, then submit. */
+function ThrowCan({ image, onThrow, onCancel }: { image: string; onThrow: () => void; onCancel: () => void }) {
+  const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
+  const [flying, setFlying] = useState(false);
+  const startRef = useRef<{ x: number; y: number } | null>(null);
+
+  const launch = () => { if (flying) return; setFlying(true); setTimeout(onThrow, 520); };
+  const onDown = (e: React.PointerEvent) => { (e.target as HTMLElement).setPointerCapture?.(e.pointerId); startRef.current = { x: e.clientX, y: e.clientY }; setDrag({ x: 0, y: 0 }); };
+  const onMove = (e: React.PointerEvent) => { if (!startRef.current) return; setDrag({ x: e.clientX - startRef.current.x, y: e.clientY - startRef.current.y }); };
+  const onUp = () => { if (!startRef.current) return; startRef.current = null; setDrag(null); launch(); };
+
+  const canStyle: React.CSSProperties = flying
+    ? { transform: "translate(-50%, -260px) scale(0.4) rotate(220deg)", opacity: 0, transition: "transform 0.52s cubic-bezier(.2,.7,.3,1), opacity 0.52s ease" }
+    : drag
+      ? { transform: `translate(calc(-50% + ${Math.max(-120, Math.min(120, drag.x))}px), ${Math.max(-190, Math.min(20, drag.y))}px)`, transition: "none" }
+      : { transform: "translate(-50%, 0)", transition: "transform 0.2s ease" };
+
+  return (
+    <div style={{ position: "absolute", inset: 0, background: "#000" }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={image} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.92)" }} />
+      <div style={{ position: "absolute", top: "26%", left: "50%", transform: "translateX(-50%)", width: 92, height: 92, border: "3px dashed rgba(255,255,255,0.9)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", animation: "ccPulse 1.6s ease-in-out infinite", pointerEvents: "none" }}>
+        <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff" }} />
+      </div>
+      {!flying && <div style={{ position: "absolute", top: 16, left: 0, right: 0, textAlign: "center", color: "#fff", fontWeight: 800, fontSize: 14, textShadow: "0 1px 4px rgba(0,0,0,.6)", pointerEvents: "none" }}>Hold &amp; drag the can — release to throw</div>}
+      <div onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+        style={{ position: "absolute", bottom: 26, left: "50%", width: 84, height: 84, cursor: "grab", touchAction: "none", display: "flex", alignItems: "center", justifyContent: "center", ...canStyle }} aria-label="Throw the can">
+        <CanGraphic />
+      </div>
+      {!flying && <button onClick={launch} style={{ position: "absolute", bottom: 12, right: 10, ...tinyGhost }}>Throw</button>}
+      {!flying && <button onClick={onCancel} style={{ position: "absolute", bottom: 12, left: 10, ...tinyGhost }}>Cancel</button>}
+    </div>
+  );
+}
+
+/** The "ANIMAL FOUND" reveal card shown on a successful catch. */
+function RevealCard({ cat, points, onAgain, onDone }: { cat: Cat; points: number; onAgain: () => void; onDone: () => void }) {
+  const rc = cat.rarityColor;
+  return (
+    <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 50% 36%, ${rc}40, #2a2620 72%)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 11, padding: 18, textAlign: "center", overflowY: "auto", animation: "ccFade .35s ease" }}>
+      <div style={{ position: "absolute", top: "30%", left: "50%", width: 250, height: 250, transform: "translate(-50%,-50%)", background: `conic-gradient(from 0deg, ${rc}22, transparent 12%, ${rc}22 24%, transparent 36%, ${rc}22 48%, transparent 60%, ${rc}22 72%, transparent 84%, ${rc}22 96%)`, borderRadius: "50%", animation: "ccSpin 16s linear infinite", pointerEvents: "none" }} />
+      <div style={{ position: "relative", width: 148, height: 148, animation: "ccPop .5s cubic-bezier(.2,1.3,.4,1)" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={cat.photo_path} alt={cat.name} style={{ width: "100%", height: "100%", objectFit: cat.source === "wild" ? "contain" : "cover", borderRadius: 18, border: "3px solid #fff", boxShadow: `0 0 24px ${rc}, 0 8px 0 rgba(0,0,0,.25)`, background: cat.source === "wild" ? CREAM : "#000", padding: cat.source === "wild" ? 14 : 0 }} />
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 900, color: rc, letterSpacing: 2, display: "inline-flex", alignItems: "center", gap: 6 }}><span>★</span> ANIMAL FOUND <span>★</span></div>
+      <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{cat.name}</div>
+      <div style={{ fontSize: 12, fontWeight: 800, color: rc, textTransform: "uppercase", letterSpacing: 1 }}>{cat.rarityLabel} · {cat.kind}</div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
+        {([["HP", cat.hp], ["ATK", cat.atk], ["DEF", cat.def], ["SPD", cat.spd]] as const).map(([k, v]) => (
+          <span key={k} style={{ background: "rgba(255,255,255,0.14)", color: "#fff", borderRadius: 8, padding: "3px 9px", fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{k} {v}</span>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}>
+        {points > 0 && <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#f59e0b", color: INK, fontWeight: 800, fontSize: 13, borderRadius: 999, padding: "4px 12px", border: `2px solid ${INK}` }}>+{points} <Icon name="coin" size={14} /></span>}
+        <span style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700 }}>{`#${String(cat.id).padStart(6, "0")}`}</span>
+      </div>
+      <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
+        <button onClick={onAgain} style={bigBtn}>Catch another</button>
+        <button onClick={onDone} style={{ ...ghostBtn, borderColor: "rgba(255,255,255,0.5)", color: "#fff" }}>Done</button>
+      </div>
+    </div>
   );
 }
 
