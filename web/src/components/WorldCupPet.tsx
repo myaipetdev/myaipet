@@ -157,12 +157,20 @@ export default function WorldCupPet() {
               transform: on ? "translateY(-2px)" : "none",
               transition: "all .14s",
             }}>
-              <div style={{ position: "relative", width: "100%", aspectRatio: "3 / 2", background: "#eee" }}>
+              <div style={{ position: "relative", width: "100%", aspectRatio: "3 / 2", background: "#eee", flexShrink: 0 }}>
+                {/* Absolute so the img's intrinsic ratio (e.g. Switzerland is
+                    square 1:1, Denmark 37:28) can't override the box's 3:2 —
+                    otherwise odd-ratio flags make their card taller. cover crops
+                    every flag into the same uniform 3:2 frame. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={flagUrl(c, 160)} alt={`${c.name} flag`} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                <img src={flagUrl(c, 160)} alt={`${c.name} flag`} loading="lazy" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                 {on && <div style={{ position: "absolute", inset: 0, background: "rgba(245,158,11,0.18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>✓</div>}
               </div>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: on ? "#7a3d00" : INK, textAlign: "center", lineHeight: 1.2, padding: "7px 4px" }}>{c.name}</span>
+              {/* Single line for every name (all fit — longest is "Saudi
+                  Arabia" at ~69px in ~106px), so each label is the same height
+                  with identical padding above/below → uniform gap on every card.
+                  Ellipsis is just a safety net; it never triggers for this set. */}
+              <span style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 11.5, fontWeight: 700, color: on ? "#7a3d00" : INK, textAlign: "center", lineHeight: 1.2, padding: "9px 6px" }}>{c.name}</span>
             </button>
           );
         })}
