@@ -89,7 +89,7 @@ const QUIZ_QUESTIONS = [
 const SOCIAL_PLATFORMS = [
   { id: "discord",  name: "Discord",   icon: "D", color: "#5865F2", desc: "Server presence + DMs" },
   { id: "telegram", name: "Telegram",  icon: "T", color: "#2AABEE", desc: "Pet chats with you here" },
-  { id: "twitter",  name: "Twitter/X", icon: "𝕏", color: "#000",   desc: "Autonomous posting" },
+  { id: "twitter",  name: "Twitter/X", icon: "𝕏", color: "#000",   desc: "Share your pet to X" },
   { id: "github",   name: "GitHub",    icon: "⌥", color: "#181717", desc: "Reads your dev vibe" },
 ];
 

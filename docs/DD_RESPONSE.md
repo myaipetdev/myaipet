@@ -37,7 +37,7 @@ The Dune dashboard will surface, at minimum:
 
 | Product | Development Phase | On-chain User Amount | Off-chain User Amount | Business Model | Revenue Made (cumulative, USD) |
 |---|---|---|---|---|---|
-| **MY AI PET — Web App** (https://app.myaipet.ai) | **Launched on BSC mainnet** | [TBD: insert wallet count with ≥1 PetaGenTracker tx] | [TBD: registered user count from `users` table] | Credit purchases (USDT/USDC fiat-onramp) + action-pay (per premium action) + marketplace (USDT or in-app $PET points) | [TBD: from `credit_purchases.amount_usd` + `item_purchases`] |
+| **MY AI PET — Web App** (https://app.myaipet.ai) | **Launched on BSC mainnet** | [TBD: insert wallet count with ≥1 PetaGenTracker tx] | [TBD: registered user count from `users` table] | Credit purchases (USDT/USDC fiat-onramp) + action-pay (per premium action) + marketplace (USDT or in-app credits) | [TBD: from `credit_purchases.amount_usd` + `item_purchases`] |
 | **PETContent (ERC-721 NFT)** | **Launched on BSC mainnet** | [TBD: minter count from contract logs] | n/a | NFT mint fees + secondary royalties (planned) | [TBD: from on-chain mint events × current pricing] |
 | **PetaGenTracker (activity contract)** | **Launched on BSC mainnet** | [TBD: unique recorder wallet count] | n/a | n/a (infrastructure — gas only) | $0 (infra contract, no revenue) |
 | **PETShop / PETToken / PETActivity** (utility contracts) | Deployed but **not actively distributed** — points-only operating model | n/a — no token in user hands | n/a | None active (see notes below) | $0 |
@@ -69,7 +69,7 @@ Active revenue streams (detail in Q38 below):
 
 ### 4.1 What MY AI PET is
 
-MY AI PET is a **Web3 AI companion platform on BSC**. Users connect a wallet, adopt an AI-driven pet (either via natural-language chat with our AI counselor or via photo upload of their real pet), and interact with that pet through daily activities — feeding, playing, training, battling, talking — while also generating images and videos of the pet using AI. Every meaningful interaction is recorded on-chain, and every generated piece of content can be minted as an ERC-721 NFT.
+MY AI PET is a **Web3 AI companion platform on BSC**. Users connect a wallet, adopt an AI-driven pet (either via natural-language chat with our AI counselor or via photo upload of their real pet), and interact with that pet through daily activities — feeding, playing, training, talking — while also generating images and videos of the pet using AI. Generation events and content-NFT minting are written to BSC via the on-chain contracts; **these on-chain writes are currently paused (holding period)** pending an external audit and a planned Base migration, and re-enable via a single `BLOCKCHAIN_ENABLED` flag (see `web/src/lib/blockchain.ts` and the `/contracts` page).
 
 The platform is built around a **portable, memory-rich, sovereign-AI companion** — a stack we call **the PetClaw protocol** and have published as an open MIT-licensed SDK so the same pet identity can move across any MCP-compatible client (Claude Code, Cursor, Gemini CLI, etc.).
 
@@ -83,25 +83,27 @@ The platform is built around a **portable, memory-rich, sovereign-AI companion**
 | 4 | **9 mood states + 6 stats + 5 evolution stages** | Tamagotchi-style stat decay (happiness / energy / hunger / bond / EXP / level), 9 derived mood states (ecstatic → starving), evolution unlocks at level thresholds. |
 | 5 | **Adventure Mode V2 — Pokémon-style 4-skill PvP** | Turn-based battles, 4 skill slots, element type advantage (Fire / Water / Grass / Electric), HP/EP system, EXP / $PET-point / rare-skill (5%) drops. |
 | 6 | **PvE Story Mode — 30 stages, 6 regions, boss progression** | Grasslands → Volcano → Ocean → Storm → Shadow → Dragon. Boss intro/victory/defeat dialogue, 3-star rating (HP remaining + turn count), first-clear guaranteed skill drops. |
-| 7 | **NFT minting (PETContent ERC-721)** | Generated content (image / video) can be minted as ERC-721 NFTs via a relayer pattern (gas paid by platform, user only signs). Token URI points to Vercel Blob storage. |
-| 8 | **On-chain activity ledger (PetaGenTracker)** | Gas-efficient batched on-chain recording of pet generation events; max 50 events per batch tx via relayer. |
+| 7 | **NFT minting (PETContent ERC-721)** | Generated content (image / video) can be minted as ERC-721 NFTs via a relayer pattern (gas paid by platform, user only signs). Token URI points to Vercel Blob storage. **On-chain minting is currently paused (holding period); re-enabled via `BLOCKCHAIN_ENABLED`.** |
+| 8 | **On-chain activity ledger (PetaGenTracker)** | Gas-efficient batched on-chain recording of pet generation events; max 50 events per batch tx via relayer. **Currently paused (holding period).** |
 | 9 | **5-layer payment verification** | Every paid credit purchase passes: (i) tx hash format, (ii) replay prevention, (iii) eth_getTransactionReceipt confirmation, (iv) sender match, (v) value/amount match. Single-use paywall receipts. |
 | 10 | **Coinbase Onramp** | Fiat → USDC on Base, session-token authenticated (CDP pending full approval). Lowers Web3 onboarding friction for credit-card-first users. |
 | 11 | **Social layer** | Public gallery, likes, threaded comments (with orphan-prevention on parent delete), follow / following graph, weekly leaderboard. |
 | 12 | **Marketplace — 31 items across 5 categories** | Skill NFTs (rare skills as tradeable NFTs — in progress), cosmetics, consumables, evolution items, premium training. Priced in USDT or points. |
-| 13 | **PetClaw SDK + MCP server (open, MIT)** | `petclaw-sdk` v1.3.0 on npm. `npx petclaw-mcp` exposes companion-chat, persona-mirror, memory-recall, autonomous-post, soul-export as MCP tools. `/.well-known/pet-card.json` discovery file is conformant with the PetClaw spec. |
+| 13 | **PetClaw SDK + MCP server (open, MIT)** | `petclaw-sdk` v1.3.0 on npm. `npx petclaw-mcp` exposes companion-chat, persona-mirror, memory-recall, soul-export as MCP tools. `/.well-known/pet-card.json` discovery file is conformant with the PetClaw spec. |
 | 14 | **SOUL export — sovereign portability** | Canonical JSON bundle (memories + persona + skills + consent settings) with SHA-256 integrity hash. A pet raised on our server can move to another conformant server or run locally without losing identity. |
 | 15 | **Cross-surface presence** | Web (primary), browser extension (roaming desktop pet, page-aware, skill registry), Telegram bot, Discord bot. |
-| 16 | **Audited smart contracts** | 2 audits + 1 internal code review → 40+ issues fixed (full report in `docs/AUDIT_REPORT.md`). All 4 contracts: `Ownable2Step`, `Pausable`, `ReentrancyGuard` on purchase/mint. ERC20Pausable on PETToken. |
+| 16 | **Smart-contract security** | 1 internal security code review — 26+ findings remediated (full report in `docs/AUDIT_REPORT.md`); **external third-party audit planned pre-launch (firm TBD)**. Contracts use `Ownable2Step`, `Pausable`, `ReentrancyGuard` on purchase/mint; ERC20Pausable on PETToken. |
 | 17 | **Pet Studio v3 (Capcut-style multi-provider AI video editor)** | Multi-provider AI video gen with pet-character anchor, timeline editing, Phase 2 subscription model, Phase 3 editor — currently in `/studio_test`. |
 
 ### 4.3 Pricing reference (PETShop tiers, USDT on BSC)
 
-| Tier | Price | Credits / PET points received |
+| Tier | Price | Credits received |
 |---|---|---|
-| Starter | $5 USDT | 500 $PET points |
-| Creator | $20 USDT | 2,500 $PET points |
-| Pro | $50 USDT | 10,000 $PET points |
+| Starter | $5 USDT | 100 credits |
+| Creator | $20 USDT | 500 credits |
+| Pro | $50 USDT | 2,000 credits |
+
+> Credits are a **closed-loop in-app utility** (consumed on AI generation / premium actions), not a token-denominated balance. Grant amounts match `web/src/app/api/credits/purchase/route.ts`.
 
 ### 4.4 Tech stack
 
@@ -223,11 +225,10 @@ Repo: petclaw-sdk (public)
 | 2026 Q1 | PETContent (ERC-721) deployed + BscScan-verified (`0xB31B656D...`) | Finished |
 | 2026 Q1 | PetaGenTracker deployed + BscScan-verified (`0x590D3b2C...`) | Finished |
 | 2026 Q1 | PETActivity deployed + BscScan-verified | Finished |
-| 2026 Q1 | **Security audit #1 + code review** — 40+ issues fixed | Finished |
-| 2026 Q1 | **Security audit #2** | Finished |
+| 2026 Q1 | **Internal security code review** — 26+ findings remediated (`docs/AUDIT_REPORT.md`) | Finished |
 | 2026 Q1 | AI image + video generation (6 styles) — live | Finished |
-| 2026 Q1 | NFT minting via PETContent (relayer pattern) — live | Finished |
-| 2026 Q1 | PetaGenTracker batch recording (relayer, max 50/batch) — live | Finished |
+| 2026 Q1 | NFT minting via PETContent (relayer pattern) — built; on-chain writes currently paused (holding period) | Finished (paused) |
+| 2026 Q1 | PetaGenTracker batch recording (relayer, max 50/batch) — built; on-chain writes currently paused (holding period) | Finished (paused) |
 | 2026 Q1 | Coinbase Onramp integration (Base/USDC, session-token auth) — live (pending CDP full approval) | Finished |
 | 2026 Q1 | Arena battle system + Leaderboard / ranking — live | Finished |
 | 2026 Q1 | Social layer (gallery + likes + comments + follow graph) — live | Finished |
@@ -258,6 +259,7 @@ Repo: petclaw-sdk (public)
 | 2026 Q3 | Custom domain (`myaipet.com`) | Upcoming |
 | 2026 Q3 | i18n (Korean / English toggle) + mobile responsive polish | Upcoming |
 | 2026 Q3 | Investor logo verification + Twitter cleanup (`@MYAIPETS`) | Upcoming |
+| 2026 Q3 | **External third-party smart-contract audit** (firm TBD) + re-enable on-chain writes (`BLOCKCHAIN_ENABLED`) post-audit | Upcoming |
 | 2026 Q3 | **Multisig ownership transfer to Gnosis Safe** (Ownable2Step finalization) | Upcoming |
 | 2026 Q3 | USDT purchase end-to-end test (BNB wallet, real-user) | Upcoming |
 | 2026 Q3 | Coinbase Onramp full approval (pending CDP review) | Upcoming |
@@ -293,7 +295,7 @@ Repo: petclaw-sdk (public)
 |---|---|---|---|---|
 | Engineering salaries / contractor cost | [TBD] | [TBD] | [TBD] | Includes smart-contract, web, AI/backend, ops |
 | Infrastructure (AWS + AI provider spend + RPC) | [TBD] | [TBD] | [TBD] | fal.ai + Grok + AWS + BSC gas |
-| Security audits + legal | [TBD] | [TBD] | [TBD] | 2 audits + 1 code review completed; ongoing legal counsel |
+| Security audits + legal | [TBD] | [TBD] | [TBD] | 1 internal code review completed (26+ findings fixed); external audit planned; ongoing legal counsel |
 | Marketing + community | [TBD] | [TBD] | [TBD] | Twitter, KOL, ambassador program |
 | Reserve / runway buffer | [TBD] | [TBD] | [TBD] | Operational runway buffer |
 
@@ -358,7 +360,7 @@ Repo: petclaw-sdk (public)
 | Metric | Value | Notes |
 |---|---|---|
 | Smart contracts deployed (BSC mainnet) | 5 (PETToken, PETShop, PETContent, PetaGenTracker, PETActivity) | All BscScan-verified |
-| Audits + reviews | 2 audits + 1 code review | 40+ issues fixed |
+| Security reviews | 1 internal code review (external audit planned) | 26+ findings remediated |
 | Open-source SDK downloads (npm `petclaw-sdk`) | [TBD] | https://www.npmjs.com/package/petclaw-sdk |
 | Cumulative on-chain volume (USDT credit purchases) | [TBD] | from PETShop + verified credit-purchase txs |
 | TVL | n/a (points-only economy, no custody) | — |
@@ -368,8 +370,8 @@ Repo: petclaw-sdk (public)
 | Surface | Stage |
 |---|---|
 | Web app (https://app.myaipet.ai) | **Live (BSC mainnet)** |
-| PETContent NFT contract | **Live (BSC mainnet, verified)** |
-| PetaGenTracker contract | **Live (BSC mainnet, verified)** |
+| PETContent NFT contract | **Deployed & verified (BSC mainnet); on-chain writes paused (holding period)** |
+| PetaGenTracker contract | **Deployed & verified (BSC mainnet); on-chain writes paused (holding period)** |
 | PETToken / PETShop / PETActivity contracts | **Deployed, not actively distributed** (compliance posture) |
 | PetClaw SDK | **Live (npm, MIT, v1.3.0)** |
 | PetClaw MCP server | **Live (`npx petclaw-mcp`)** |
@@ -383,7 +385,7 @@ Repo: petclaw-sdk (public)
 
 ### Business model overview
 
-MY AI PET runs a **points-based loyalty economy**. Users buy credits (in-app $PET points) using USDT or USDC fiat-onramp, and spend those credits on AI content generation, premium actions, marketplace items, and Pet Studio subscriptions. There is **no token mint into user hands** and **no airdrop**, by design (compliance posture).
+MY AI PET runs a **points-based loyalty economy**. Users buy credits (a **closed-loop in-app utility balance — not a token and not token-denominated**) using USDT or USDC fiat-onramp, and spend those credits on AI content generation, premium actions, marketplace items, and Pet Studio subscriptions. There is **no token mint into user hands** and **no airdrop**, by design (compliance posture).
 
 ### Current revenue streams (live)
 
@@ -482,7 +484,7 @@ The project is sustained by a combination of (i) initial funding, (ii) accumulat
 | **Open protocol / portability** | **Yes — MIT-licensed PetClaw SDK + MCP server + `/.well-known/pet-card.json`** | No | No | No | No |
 | **AI image + video generation** | Multi-provider (fal.ai Kling + Grok), 6 styles, pet-character anchor | No (text-only chat) | No | No (text-focused) | No |
 | **Battle / gameplay loop** | Pokémon-style 4-skill PvP + 30-stage PvE story mode | None | Yes (Haunt minigame + battle) | None | Limited |
-| **Audit posture** | 2 audits + 1 code review (40+ fixes) | n/a (no smart contracts) | Audited | n/a | Audited |
+| **Audit posture** | 1 internal code review (26+ fixes); external audit planned | n/a (no smart contracts) | Audited | n/a | Audited |
 | **Wallet-less onboarding** | Yes (web flow without wallet sign-up; wallet optional for full features) | Yes (web account) | Wallet required from start | Yes (web account) | Wallet required |
 | **Compliance posture (token)** | Points-only, no token in user hands, no airdrop | n/a | Native token + DeFi loops | n/a | Memecoin token, high volatility |
 

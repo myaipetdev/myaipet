@@ -114,7 +114,6 @@ export function buildPetCard(pet: RegisteredPet, baseUrl: string): PetCard {
       "companion-chat",
       "persona-mirror",
       "memory-recall",
-      "autonomous-post",
       "soul-export",
       "data-sovereignty",
     ],

@@ -59,7 +59,6 @@ export async function GET(req: NextRequest) {
       { id: "companion-chat", name: "Companion Chat", description: "Personality-driven conversation with persistent memory", category: "emotional" },
       { id: "persona-mirror", name: "Persona Mirror", description: "Mirror owner's speech patterns and tone", category: "social" },
       { id: "memory-recall", name: "Memory Recall", description: "Retrieve and reason over past conversations", category: "knowledge" },
-      { id: "autonomous-post", name: "Autonomous Post", description: "Generate and publish content on social platforms", category: "creative" },
       { id: "soul-export", name: "Soul Export", description: "Export complete pet identity as portable data", category: "utility" },
     ],
 
