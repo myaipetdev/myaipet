@@ -46,7 +46,10 @@ export async function POST(req: NextRequest) {
   const player: Combatant = { atk: cat.atk, def: cat.def, spd: cat.spd, level: cat.level, hpMax: cat.hp, name: cat.name };
   const opponent: Combatant = { atk: s(cat.atk), def: s(cat.def), spd: s(cat.spd), level: cat.level, hpMax: s(cat.hp), name: oppName };
 
-  const sim = simulateBattle(player, opponent, seed);
+  // Opponent identity/scale is stable per (user, animal, day) — but each
+  // "Battle again" is a FRESH fight: per-attempt entropy on the combat rolls so
+  // a win isn't a free farm and a loss isn't frozen for 24h.
+  const sim = simulateBattle(player, opponent, `${seed}:${Date.now()}:${Math.random().toString(36).slice(2)}`);
 
   let pointsAwarded = 0;
   if (sim.won) {

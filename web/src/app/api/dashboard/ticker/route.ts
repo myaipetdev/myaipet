@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(50, Math.max(5, Number(req.nextUrl.searchParams.get("limit")) || 20));
 
   const since = new Date(Date.now() - 7 * 86_400_000);
-  const [creations, nfts, poolCloses] = await Promise.all([
+  const [creations, nfts] = await Promise.all([
     prisma.generation.findMany({
       where: { status: "completed", created_at: { gte: since } },
       orderBy: { created_at: "desc" }, take: limit,
@@ -46,10 +46,6 @@ export async function GET(req: NextRequest) {
       where: { created_at: { gte: since } },
       orderBy: { created_at: "desc" }, take: limit,
       select: { memory_type: true, title: true, created_at: true, pet_id: true },
-    }),
-    prisma.weeklyBattlePool.findMany({
-      orderBy: { closed_at: "desc" }, take: 3,
-      select: { week_key: true, closed_at: true, payouts: true },
     }),
   ]);
 
@@ -88,17 +84,6 @@ export async function GET(req: NextRequest) {
       accent: ACCENTS.nft,
       text: `${petName} minted ${kind} NFT — ${n.title || "milestone"}`,
     });
-  }
-  for (const p of poolCloses) {
-    const top = Array.isArray(p.payouts) && (p.payouts as any[])[0];
-    if (top) {
-      events.push({
-        at: p.closed_at.toISOString(),
-        kind: "pool_close",
-        accent: ACCENTS.pool_close,
-        text: `${p.week_key}: ${top.petName || "A pet"} earned ${(top.pointsPayout || 0).toLocaleString()} Season Rewards pts`,
-      });
-    }
   }
 
   events.sort((a, b) => b.at.localeCompare(a.at));

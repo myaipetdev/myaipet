@@ -121,7 +121,7 @@ export function useAuth() {
     if (!token) return;
     try {
       const me = await api.auth.getMe();
-      const newUser = { wallet_address: me.wallet_address, credits: me.credits };
+      const newUser = { wallet_address: me.wallet_address, credits: me.credits, season_points: me.season_points };
       setUser(newUser);
       try { localStorage.setItem(USER_KEY, JSON.stringify(newUser)); } catch {}
     } catch {
@@ -138,7 +138,7 @@ export function useAuth() {
       // Validate existing token
       api.setToken(token);
       api.auth.getMe().then((me: any) => {
-        const newUser = { wallet_address: me.wallet_address, credits: me.credits };
+        const newUser = { wallet_address: me.wallet_address, credits: me.credits, season_points: me.season_points };
         setUser(newUser);
         try { localStorage.setItem(USER_KEY, JSON.stringify(newUser)); } catch {}
       }).catch(() => {

@@ -81,6 +81,16 @@ export default function CatCatch() {
 
   useEffect(() => () => stopCamera(), [stopCamera]);
 
+  // The <video> is unmounted during throw/result; whenever we (re)enter a phase
+  // that shows it, re-attach the still-live stream. Without this, "Catch another"
+  // / throw-"Cancel" remount a blank <video> → black camera + dead shutter.
+  useEffect(() => {
+    if ((phase === "camera" || phase === "catching") && videoRef.current && streamRef.current && videoRef.current.srcObject !== streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [phase]);
+
   const startCamera = async () => {
     setCamErr(null);
     try {

@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Airdrop points for a real catch, scaled by rarity, daily-capped (anti-farm).
+  // Season points for a real catch, scaled by rarity, daily-capped (anti-farm).
   const pts = await awardPointsCapped(user.id, "catch", CATCH_POINTS[rarity], DAILY_POINT_CAPS.catch);
 
   return NextResponse.json({

@@ -81,7 +81,7 @@ The platform is built around a **portable, memory-rich, sovereign-AI companion**
 | 2 | **AI image + video generation (6 styles)** | Per-pet, character-anchored AI image and short-video gen. Multi-provider fallback (fal.ai Kling 3.0, Grok x.ai) for resilience and cost optimization. |
 | 3 | **Five-layer persistent memory** | (i) curated facts (`MEMORY.md`), (ii) owner profile (`USER.md`), (iii) session log, (iv) lexical pre-fetch, (v) post-turn LLM extraction. Memories survive across sessions and devices. |
 | 4 | **9 mood states + 6 stats + 5 evolution stages** | Tamagotchi-style stat decay (happiness / energy / hunger / bond / EXP / level), 9 derived mood states (ecstatic → starving), evolution unlocks at level thresholds. |
-| 5 | **Adventure Mode V2 — Pokémon-style 4-skill PvP** | Turn-based battles, 4 skill slots, element type advantage (Fire / Water / Grass / Electric), HP/EP system, EXP / $PET-point / rare-skill (5%) drops. |
+| 5 | **Adventure Mode V2 — Pokémon-style 4-skill PvP** | Turn-based battles, 4 skill slots, element type advantage (Fire / Water / Grass / Electric), HP/EP system, EXP / season-point / rare-skill (5%) drops. |
 | 6 | **PvE Story Mode — 30 stages, 6 regions, boss progression** | Grasslands → Volcano → Ocean → Storm → Shadow → Dragon. Boss intro/victory/defeat dialogue, 3-star rating (HP remaining + turn count), first-clear guaranteed skill drops. |
 | 7 | **NFT minting (PETContent ERC-721)** | Generated content (image / video) can be minted as ERC-721 NFTs via a relayer pattern (gas paid by platform, user only signs). Token URI points to Vercel Blob storage. **On-chain minting is currently paused (holding period); re-enabled via `BLOCKCHAIN_ENABLED`.** |
 | 8 | **On-chain activity ledger (PetaGenTracker)** | Gas-efficient batched on-chain recording of pet generation events; max 50 events per batch tx via relayer. **Currently paused (holding period).** |
@@ -235,7 +235,7 @@ Repo: petclaw-sdk (public)
 | 2026 Q1 | Marketplace (31 items, 5 categories) — live | Finished |
 | 2026 Q1 | Pet evolution (5 stages) — live | Finished |
 | 2026 Q1 | **5-layer on-chain TX verification + single-use paywall receipts** — production | Finished |
-| 2026 Q2 | **Adventure Mode V2 (Pokémon-style PvP)** — 4 skill slots, type advantage, EXP/$PET/skill drops | Finished |
+| 2026 Q2 | **Adventure Mode V2 (Pokémon-style PvP)** — 4 skill slots, type advantage, EXP/season-point/skill drops | Finished |
 | 2026 Q2 | **PvE Story Mode — 30 stages, 6 regions, boss progression (up to Dragon King Bahamut Lv.60)** | Finished |
 | 2026 Q2 | Telegram bot + Discord bot (cross-surface presence) | Finished |
 | 2026 Q2 | Browser Extension v2.0.2 (roaming desktop pet, page-aware, skill registry, live test-drive) | Finished |

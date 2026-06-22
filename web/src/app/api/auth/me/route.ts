@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     wallet_address: user.wallet_address,
     credits: user.credits,
+    season_points: user.season_points ?? 0,
     generation_count: generationCount,
     created_at: user.created_at,
   });
