@@ -839,10 +839,12 @@ model PaidAction {
   @@map("paid_actions")
 }
 
-// ── Weekly Battle Pool snapshots ──
-// Every Sunday 00:00 UTC the cron at /api/cron/distribute-pool closes the
-// current week, captures top-100 by power, and records payouts. Actual USDT
-// transfer happens manually (or via funded relayer) using the rows here.
+// ── Season snapshot store (legacy table name) ──
+// The original weekly pay-to-enter "battle pool" was RETIRED (no entry fee, no
+// prize-pool cron, no payouts). This table is now reused only by the Season
+// system (see lib/seasonSnapshot.ts) to store season-close snapshots keyed by a
+// "SEASON-…" sentinel in week_key. No USDT is transferred. Kept under the old
+// name to avoid a migration; pool_usd/payouts are vestigial (0 for season rows).
 model WeeklyBattlePool {
   id            Int       @id @default(autoincrement())
   week_key      String    @unique @db.VarChar(10) // "2026-W21"

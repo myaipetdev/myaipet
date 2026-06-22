@@ -125,13 +125,6 @@ export async function GET(req: NextRequest) {
     prisma.battleHistory.count({ where: { created_at: { gte: since } } }),
   ]);
 
-  // ── 6. Current weekly pool projection ──
-  const battlePoolAgg = await prisma.paidAction.aggregate({
-    _sum: { amount_usd: true },
-    _count: { _all: true },
-    where: { action_key: "battle_entry", created_at: { gte: since } },
-  });
-
   return NextResponse.json({
     windowDays: days,
     since: since.toISOString(),
@@ -147,10 +140,5 @@ export async function GET(req: NextRequest) {
     paywallConversion,
     dailyActiveUsers,
     topSpenders: topSpendersOut,
-    battlePool: {
-      entriesInWindow: battlePoolAgg._count._all,
-      grossUsd: battlePoolAgg._sum.amount_usd || 0,
-      projectedPoolPoints: Math.round((battlePoolAgg._sum.amount_usd || 0) * 1000),
-    },
   });
 }

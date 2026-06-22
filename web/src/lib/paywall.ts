@@ -32,11 +32,9 @@ export const ACTIONS: Record<string, ActionConfig> = {
   stat_upgrade_atk:  { freeCap: 0,  priceUsd: 1.00, description: "Boost ATK by +5" },
   stat_upgrade_def:  { freeCap: 0,  priceUsd: 1.00, description: "Boost DEF by +5" },
   stat_upgrade_spd:  { freeCap: 0,  priceUsd: 1.00, description: "Boost SPD by +5" },
-  battle_entry:      { freeCap: 1,  priceUsd: 0.50, description: "Enter Battle League (1 match)" },
-  skill_install:     { freeCap: 0,  priceUsd: 2.00, description: "Install a premium skill" },
   generation_extra:  { freeCap: 1,  priceUsd: 0.20, description: "Generate one more pet image/video" },
-  xp_boost:          { freeCap: 0,  priceUsd: 0.50, description: "+50 XP instant" },
-  pet_adopt_extra:   { freeCap: 1,  priceUsd: 5.00, description: "Adopt an additional pet" },
+  // Removed: battle_entry (retired pay-to-enter prize pool — gambling-adjacent),
+  // and skill_install / xp_boost / pet_adopt_extra (zero consumers — dead keys).
 };
 
 function utcDayKey(): string {
