@@ -277,8 +277,14 @@ function ChampionPrediction() {
           {total} {total === 1 ? "vote" : "votes"}
         </span>
       </div>
-      <div style={{ fontSize: 13, color: MUTED, margin: "6px 0 14px", lineHeight: 1.5 }}>
+      <div style={{ fontSize: 13, color: MUTED, margin: "6px 0 10px", lineHeight: 1.5 }}>
         Who lifts the 2026 trophy? Cast your pick — the board below is the live community count. (A prediction poll, not live match results.)
+      </div>
+      {/* Factual tournament reference — real, verifiable WC2026 format (no fabricated scores/draws). */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+        {["48 nations", "Hosts: USA · Canada · Mexico", "Group stage → knockout → final"].map((f) => (
+          <span key={f} style={{ fontSize: 10.5, fontFamily: "monospace", color: MUTED, background: "rgba(0,0,0,0.04)", border: `1px solid ${LINE}`, borderRadius: 999, padding: "3px 9px" }}>{f}</span>
+        ))}
       </div>
 
       {/* Picker */}
@@ -323,7 +329,27 @@ function ChampionPrediction() {
         </div>
       )}
 
-      {/* Leaderboard bars */}
+      {/* Community podium — top-3 most-predicted, styled like a tournament board */}
+      {rows.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 10.5, fontFamily: "monospace", letterSpacing: ".1em", color: MUTED, textTransform: "uppercase", marginBottom: 10 }}>Community podium · who players back to win</div>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 10 }}>
+            {[{ r: rows[1], place: 2, h: 50, medal: "#cbd5e1" }, { r: rows[0], place: 1, h: 72, medal: "#f59e0b" }, { r: rows[2], place: 3, h: 38, medal: "#d8a06a" }]
+              .filter((x) => x.r)
+              .map(({ r, place, h, medal }) => (
+                <div key={r!.code} style={{ flex: "0 1 100px", textAlign: "center" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={r!.flag} alt={r!.name} style={{ width: 42, height: 29, objectFit: "cover", borderRadius: 4, border: `2px solid ${medal}`, margin: "0 auto 5px", display: "block", boxShadow: place === 1 ? `0 0 12px ${medal}88` : "none" }} />
+                  <div style={{ fontSize: 12, fontWeight: 800, color: INK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r!.name}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: MUTED }}>{r!.pct}%</div>
+                  <div style={{ height: h, borderRadius: "8px 8px 0 0", background: `linear-gradient(${medal}, ${medal}cc)`, border: `2px solid ${INK}`, borderBottom: "none", marginTop: 6, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 5, color: INK, fontWeight: 900, fontSize: 17 }}>{place}</div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Full standings */}
       {rows.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {rows.map((r, i) => {
