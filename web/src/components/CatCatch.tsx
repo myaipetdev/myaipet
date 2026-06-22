@@ -46,6 +46,7 @@ const MUTED = "#6b6b73";
 type Cat = {
   id: number; kind?: string; name: string; breed: string; rarity: string; rarityLabel: string; rarityColor: string;
   element: string; hp: number; atk: number; def: number; spd: number; photo_path: string; caught_at?: string;
+  source?: string; // "camera" (real) | "wild" (game spawn)
 };
 
 type Phase = "intro" | "camera" | "catching" | "result";
@@ -174,7 +175,7 @@ export default function CatCatch() {
 
       {view === "map" && (
         <Suspense fallback={<Empty>Loading map…</Empty>}>
-          <NearbyMap />
+          <NearbyMap onCaught={(cat: Cat) => setCollection((c) => [cat, ...c])} />
         </Suspense>
       )}
 
@@ -268,8 +269,11 @@ function CatCard({ cat, compact }: { cat: Cat; compact?: boolean }) {
     <div style={{ width: "100%", maxWidth: compact ? undefined : 260, margin: "0 auto", borderRadius: 16, overflow: "hidden", border: `3px solid ${rc}`, background: "#fff", boxShadow: `0 6px 0 ${rc}33` }}>
       <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", background: "#eee" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={cat.photo_path} alt={cat.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        <img src={cat.photo_path} alt={cat.name} style={{ width: "100%", height: "100%", objectFit: cat.source === "wild" ? "contain" : "cover", display: "block", padding: cat.source === "wild" ? "12%" : 0, background: cat.source === "wild" ? "#fbf6ec" : undefined }} />
         <div style={{ position: "absolute", top: 6, right: 6, background: rc, color: "#fff", fontSize: 10, fontWeight: 900, padding: "2px 8px", borderRadius: 999, textTransform: "uppercase", letterSpacing: 0.5 }}>{cat.rarityLabel}</div>
+        {cat.source === "wild" && (
+          <div style={{ position: "absolute", top: 6, left: 6, background: "#f59e0b", color: INK, fontSize: 9.5, fontWeight: 900, padding: "2px 7px", borderRadius: 999, textTransform: "uppercase", letterSpacing: 0.5, border: `1.5px solid ${INK}` }}>Wild</div>
+        )}
       </div>
       <div style={{ padding: compact ? "8px 10px" : "10px 12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: compact ? 14 : 16, fontWeight: 800, color: INK }}>

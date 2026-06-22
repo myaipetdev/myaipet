@@ -336,7 +336,13 @@ model CaughtCat {
   lat           Float?
   lng           Float?
   caught_at     DateTime @default(now())
+  // Track 1 = "camera" (real animal, vision-verified). Track 2 = "wild" (a
+  // tap-to-catch game spawn — see lib/catch/spawns.ts). spawn_key dedups a
+  // wild spawn per user; null for camera catches (Postgres allows many nulls).
+  source        String   @default("camera") @db.VarChar(10)
+  spawn_key     String?  @db.VarChar(64)
 
+  @@unique([owner_user_id, spawn_key], map: "caught_cats_owner_spawn_key")
   @@index([owner_user_id])
   @@index([lat, lng])
   @@map("caught_cats")

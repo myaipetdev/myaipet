@@ -19,9 +19,11 @@ export async function GET(req: NextRequest) {
   const hasPoint = Number.isFinite(lat) && Number.isFinite(lng);
   const D = 0.25; // ~27km bounding box
 
+  // Only REAL camera catches on this layer — wild game spawns have their own
+  // (clearly-labelled) layer, so they must not masquerade as real sightings.
   const where = hasPoint
-    ? { lat: { gte: lat - D, lte: lat + D }, lng: { gte: lng - D, lte: lng + D } }
-    : { lat: { not: null } };
+    ? { source: "camera", lat: { gte: lat - D, lte: lat + D }, lng: { gte: lng - D, lte: lng + D } }
+    : { source: "camera", lat: { not: null } };
 
   const rows = await prisma.caughtCat.findMany({
     where: where as any,
