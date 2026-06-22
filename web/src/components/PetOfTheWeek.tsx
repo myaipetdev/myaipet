@@ -6,6 +6,7 @@
  * celebrated each week for the devotion the metrics reveal.
  */
 import { useEffect, useState } from "react";
+import Icon from "@/components/Icon";
 
 interface PotW {
   id: number;
@@ -62,7 +63,7 @@ export default function PetOfTheWeek() {
             padding: "5px 11px", borderRadius: 999,
             background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)",
           }}>
-            ⭐ PET OF THE WEEK
+            <Icon name="medal" size={14} /> PET OF THE WEEK
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 18 }}>
@@ -134,7 +135,7 @@ export default function PetOfTheWeek() {
             <div style={{
               position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
               background: "rgba(255,255,255,0.03)", fontSize: 46, opacity: 0.5,
-            }}>🎬</div>
+            }}><Icon name="film-reel" size={46} /></div>
           )}
           {/* left-edge fade so the image melts into the card */}
           <div style={{

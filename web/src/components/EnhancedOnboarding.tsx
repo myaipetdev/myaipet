@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import PetClawConsole from "@/components/PetClawConsole";
+import Icon from "@/components/Icon";
 
 interface Pet {
   id: number;
@@ -307,8 +308,8 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
 
         <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
           {[
-            { icon: "📝", label: "Personality match", pts: "+30", desc: "5 quick questions" },
-            { icon: "🔗", label: "Connect platforms", pts: "+100", desc: "Same pet, everywhere" },
+            { icon: "scroll", label: "Personality match", pts: "+30", desc: "5 quick questions" },
+            { icon: "extension-icon", label: "Connect platforms", pts: "+100", desc: "Same pet, everywhere" },
           ].map((item) => (
             <div key={item.label} style={{
               display: "flex", alignItems: "center", gap: 14,
@@ -322,7 +323,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
                 background: "linear-gradient(135deg, rgba(245,158,11,0.14), rgba(192,132,252,0.08))",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 19,
-              }}>{item.icon}</div>
+              }}><Icon name={item.icon} size={22} /></div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>{item.label}</div>
                 <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginTop: 1 }}>{item.desc}</div>
@@ -616,12 +617,12 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           {/* Capability welcome (VIGIL "what your companion can do") */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, maxWidth: 430, margin: "0 auto 22px", textAlign: "left" }}>
             {([
-              ["🧠", "Remembers you", "grows every chat"],
-              ["🎯", "Give it a goal", "it plans & acts"],
-              ["🔑", "Yours to own", "your data & model"],
+              ["crystal-ball", "Remembers you", "grows every chat"],
+              ["compass", "Give it a goal", "it plans & acts"],
+              ["lock", "Yours to own", "your data & model"],
             ] as const).map(([icon, t, s]) => (
               <div key={t} style={{ padding: "12px 12px", borderRadius: 12, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.14)" }}>
-                <div style={{ fontSize: 18 }}>{icon}</div>
+                <div style={{ fontSize: 18 }}><Icon name={icon} size={20} /></div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginTop: 4 }}>{t}</div>
                 <div style={{ fontSize: 11.5, color: "rgba(26,26,46,0.5)", marginTop: 2 }}>{s}</div>
               </div>

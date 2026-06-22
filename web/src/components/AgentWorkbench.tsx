@@ -17,6 +17,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
+import Icon from "@/components/Icon";
 
 interface AgentStep { thought: string; skill: string; input?: any; output?: any; ok: boolean; }
 interface RunResult {
@@ -293,7 +294,7 @@ export default function AgentWorkbench() {
       {/* ── Result: work packages ── */}
       {running && !result && (
         <div style={{ ...card, marginTop: 18, textAlign: "center", color: "rgba(26,26,46,0.55)", fontFamily: SANS }}>
-          <div style={{ fontSize: 30, marginBottom: 8 }}>🧭</div>
+          <div style={{ marginBottom: 8 }}><Icon name="compass" size={30} /></div>
           {petName} is planning the first step…
         </div>
       )}
@@ -382,8 +383,8 @@ export default function AgentWorkbench() {
           {/* Synthesis */}
           {result.answer && (
             <div style={{ ...card, marginTop: 14, background: "linear-gradient(135deg,rgba(245,158,11,0.06),rgba(124,58,237,0.05))", border: "1px solid rgba(245,158,11,0.22)" }}>
-              <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.12em", color: "#b45309", fontWeight: 700, marginBottom: 8 }}>
-                🏁 {petName.toUpperCase()} REPORTS BACK
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: MONO, fontSize: 10, letterSpacing: "0.12em", color: "#b45309", fontWeight: 700, marginBottom: 8 }}>
+                <Icon name="scroll" size={14} /> {petName.toUpperCase()} REPORTS BACK
               </div>
               <div style={{ fontFamily: SANS, fontSize: 15.5, color: INK, lineHeight: 1.62, whiteSpace: "pre-wrap" }}>
                 {result.answer}

@@ -11,13 +11,16 @@
 
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import Icon from "@/components/Icon";
 
 interface MemoryEntry { key: string; content: string; category: string; importance: number; createdAt: string; }
 interface UserProfile { key: string; content: string; category: string; }
 interface LearnedPattern { id?: string; topic: string; frequency?: number; successRate?: number; promotedToSkill?: boolean; }
 
-const MEM_ICON: Record<string, string> = { fact: "💡", preference: "💝", event: "📅", relationship: "🤝", skill_learned: "🎓" };
-const PROFILE_ICON: Record<string, string> = { identity: "🪪", preference: "💝", communication: "💬", interest: "✨", context: "📍" };
+// Memory-category → 3D icon name (was bare emoji; now real iconography).
+const MEM_ICON: Record<string, string> = { fact: "crystal-ball", preference: "heart", event: "scroll", relationship: "chat", skill_learned: "medal" };
+// User-profile-category → 3D icon name.
+const PROFILE_ICON: Record<string, string> = { identity: "compass", preference: "heart", communication: "chat", interest: "sparkling", context: "world-map" };
 
 function timeAgo(iso: string): string {
   const t = new Date(iso).getTime();
@@ -66,7 +69,7 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
       border: "1px solid rgba(245,158,11,0.18)",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-        <span style={{ fontSize: 17 }}>📖</span>
+        <span style={{ fontSize: 17, lineHeight: 1, display: "inline-flex" }}><Icon name="scroll" size={18} /></span>
         <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "#1a1a2e", letterSpacing: "-0.01em" }}>
           Your story with {petName}
         </span>
@@ -93,7 +96,7 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
                 background: "white", border: "1px solid rgba(0,0,0,0.06)",
                 fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, color: "#1a1a2e",
               }}>
-                <span>{PROFILE_ICON[p.category] || "•"}</span>{p.content}
+                <span style={{ display: "inline-flex", alignItems: "center" }}>{PROFILE_ICON[p.category] ? <Icon name={PROFILE_ICON[p.category]} size={14} /> : "•"}</span>{p.content}
               </span>
             ))}
           </div>
@@ -108,7 +111,7 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {topMemories.map((m, i) => (
               <div key={m.key || i} style={{ display: "flex", alignItems: "flex-start", gap: 9 }}>
-                <span style={{ fontSize: 15, lineHeight: 1.3, flexShrink: 0 }}>{MEM_ICON[m.category] || "💭"}</span>
+                <span style={{ fontSize: 15, lineHeight: 1.3, flexShrink: 0, display: "inline-flex" }}><Icon name={MEM_ICON[m.category] || "chat"} size={16} /></span>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, color: "rgba(26,26,46,0.82)", lineHeight: 1.45 }}>
                     {m.content}
@@ -119,7 +122,7 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
                     </div>
                   )}
                 </div>
-                {m.importance >= 4 && <span title="core memory" style={{ fontSize: 11, flexShrink: 0 }}>⭐</span>}
+                {m.importance >= 4 && <span title="core memory" style={{ fontSize: 11, flexShrink: 0, display: "inline-flex" }}><Icon name="crown" size={13} alt="core memory" /></span>}
               </div>
             ))}
           </div>
@@ -165,7 +168,7 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
                       background: "white", border: `1px solid ${p.promotedToSkill ? "rgba(13,148,136,0.4)" : "rgba(0,0,0,0.06)"}`,
                       fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, color: "#1a1a2e",
                     }}>
-                      <span>{p.promotedToSkill ? "⭐" : "🌱"}</span>{p.topic}
+                      <span style={{ display: "inline-flex", alignItems: "center" }}><Icon name={p.promotedToSkill ? "medal" : "grass"} size={14} /></span>{p.topic}
                     </span>
                   ))}
               </div>

@@ -12,15 +12,16 @@
  */
 
 import { useState, type ReactNode } from "react";
+import Icon from "@/components/Icon";
 
 const NAME = "Mochi";
 const clamp = (n: number) => Math.max(0, Math.min(100, n));
 
 type CareType = "feed" | "play" | "pet";
-const CARE: Record<CareType, { label: string; icon: string; burst: string; anim: string; happiness: number; energy: number; hunger: number; bond: number; mem: string }> = {
-  feed: { label: "Feed", icon: "🍖", burst: "🍖", anim: "dpBounce", happiness: 6,  energy: 3,   hunger: -22, bond: 1, mem: `You fed ${NAME}` },
-  play: { label: "Play", icon: "⚽", burst: "🎉", anim: "dpBounce", happiness: 13, energy: -12, hunger: 8,   bond: 2, mem: `You played with ${NAME}` },
-  pet:  { label: "Pet",  icon: "🤚", burst: "💖", anim: "dpWiggle", happiness: 9,  energy: 4,   hunger: 2,   bond: 4, mem: `You pet ${NAME}` },
+const CARE: Record<CareType, { label: string; icon: ReactNode; burst: string; anim: string; happiness: number; energy: number; hunger: number; bond: number; mem: string }> = {
+  feed: { label: "Feed", icon: <Icon name="chicken" size={18} />, burst: "🍖", anim: "dpBounce", happiness: 6,  energy: 3,   hunger: -22, bond: 1, mem: `You fed ${NAME}` },
+  play: { label: "Play", icon: <Icon name="joystick" size={18} />, burst: "🎉", anim: "dpBounce", happiness: 13, energy: -12, hunger: 8,   bond: 2, mem: `You played with ${NAME}` },
+  pet:  { label: "Pet",  icon: <Icon name="paw" size={18} />, burst: "💖", anim: "dpWiggle", happiness: 9,  energy: 4,   hunger: 2,   bond: 4, mem: `You pet ${NAME}` },
 };
 
 export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: string }) {
@@ -112,13 +113,13 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
       {/* Stat bars */}
       <div style={{ maxWidth: 320, margin: "0 auto 18px", display: "flex", flexDirection: "column", gap: 7 }}>
         {([
-          { k: "happiness", label: "Happy", icon: "💖", color: "#f472b6" },
-          { k: "energy", label: "Energy", icon: "⚡", color: "#60a5fa" },
-          { k: "bond", label: "Bond", icon: "🤝", color: "#c084fc" },
+          { k: "happiness", label: "Happy", icon: "heart", color: "#f472b6" },
+          { k: "energy", label: "Energy", icon: "electric", color: "#60a5fa" },
+          { k: "bond", label: "Bond", icon: "paw", color: "#c084fc" },
         ] as const).map((row) => (
           <div key={row.k}>
             <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,46,0.5)", marginBottom: 3 }}>
-              <span>{row.icon} {row.label}</span><span>{Math.round((stats as any)[row.k])}</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name={row.icon} size={13} /> {row.label}</span><span>{Math.round((stats as any)[row.k])}</span>
             </div>
             <div style={{ height: 7, background: "rgba(0,0,0,0.05)", borderRadius: 4, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${(stats as any)[row.k]}%`, background: row.color, borderRadius: 4, transition: "width 0.4s ease" }} />
@@ -135,7 +136,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
             cursor: "pointer", fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14, color: "#1a1a2e",
             display: "flex", alignItems: "center", gap: 6,
           }}>
-            <span style={{ fontSize: 16 }}>{CARE[k].icon}</span>{CARE[k].label}
+            <span style={{ fontSize: 16, display: "inline-flex" }}>{CARE[k].icon}</span>{CARE[k].label}
           </button>
         ))}
       </div>

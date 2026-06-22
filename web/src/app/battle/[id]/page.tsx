@@ -24,7 +24,32 @@ export default function BattleArchivedPage() {
         padding: "44px 36px", textAlign: "center",
         boxShadow: "0 4px 24px rgba(0,0,0,0.04)",
       }}>
-        <div style={{ fontSize: 60, marginBottom: 20 }}>🕊️</div>
+        <div style={{ marginBottom: 20, lineHeight: 0 }}>
+          <svg
+            width={60} height={60} viewBox="0 0 60 60"
+            fill="none" xmlns="http://www.w3.org/2000/svg"
+            role="img" aria-label="Archived"
+            style={{ display: "inline-block" }}
+          >
+            {/* peaceful dove — retirement / archived */}
+            <path
+              d="M11 38c0-9.4 7.6-17 17-17 4.7 0 9 1.9 12.1 5l8.4-3.2-3.6 7.7c.7 1.8 1.1 3.7 1.1 5.7"
+              stroke="#f59e0b" strokeWidth={2.6}
+              strokeLinecap="round" strokeLinejoin="round"
+            />
+            <path
+              d="M28 21c-1.4-4.2-5-7.2-9.4-7.6M28 21l-9.5 9.5c-2.5 2.5-6.1 3.6-9.6 2.9"
+              stroke="#1a1a2e" strokeWidth={2.6}
+              strokeLinecap="round" strokeLinejoin="round"
+            />
+            <path
+              d="M28 38c2.6 4.4 7.4 7.2 12.6 7.2"
+              stroke="#1a1a2e" strokeWidth={2.6}
+              strokeLinecap="round" strokeLinejoin="round"
+            />
+            <circle cx={40.5} cy={26} r={1.6} fill="#1a1a2e" />
+          </svg>
+        </div>
         <div style={{
           fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
           letterSpacing: "0.18em", color: "rgba(26,26,46,0.55)",

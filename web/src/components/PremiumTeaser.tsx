@@ -106,8 +106,11 @@ function Tier({
       }}>{price}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
         {features.map((f, i) => (
-          <div key={i} style={{ fontSize: 12, color: "rgba(26,26,46,0.7)" }}>
-            ✓ {f}
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "rgba(26,26,46,0.7)" }}>
+            <svg width={13} height={13} viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="#16a34a" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {f}
           </div>
         ))}
       </div>

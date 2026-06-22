@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { resolveCardBattle, parseMatchup } from "@/lib/tcg/battle";
 import PetCard from "@/components/PetCard";
+import Icon from "@/components/Icon";
 import ShareButtons from "./ShareButtons";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://app.myaipet.ai";
@@ -23,7 +24,7 @@ export default async function BattleResultPage({ params }: { params: Promise<{ m
   if (!battle) {
     return (
       <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, background: "#0f0f14", color: "#fff", fontFamily: "system-ui, sans-serif", padding: 24, textAlign: "center" }}>
-        <div style={{ fontSize: 40 }}>⚔️</div>
+        <div><Icon name="sword" size={40} /></div>
         <h1 style={{ fontSize: 24, margin: 0 }}>This duel isn&apos;t available</h1>
         <a href={APP_URL} style={{ background: "#f59e0b", color: "#1a1a22", fontWeight: 800, padding: "12px 22px", borderRadius: 999, textDecoration: "none" }}>Make your own pet ▸</a>
       </main>
@@ -35,7 +36,7 @@ export default async function BattleResultPage({ params }: { params: Promise<{ m
 
   return (
     <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 22, padding: "40px 20px", background: "linear-gradient(160deg, #1e293b, #0f0f14 70%)", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
-      <div style={{ fontSize: 22, fontWeight: 900, color: "#f59e0b", letterSpacing: 0.5 }}>🏆 {winName} wins!</div>
+      <div style={{ fontSize: 22, fontWeight: 900, color: "#f59e0b", letterSpacing: 0.5 }}><Icon name="trophy" size={22} style={{ marginRight: 8 }} /> {winName} wins!</div>
       <div style={{ fontFamily: "monospace", fontSize: 12, color: "#94a3b8" }}>{battle.result.turns} turns · card duel</div>
 
       <div style={{ display: "flex", gap: 18, justifyContent: "center", flexWrap: "wrap", alignItems: "center" }}>

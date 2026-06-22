@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Icon from "@/components/Icon";
 
 interface UpcomingDrop {
   kind: string;
@@ -93,7 +94,7 @@ export default function HourlyDropBanner() {
             background: live ? "rgba(168,85,247,0.16)" : "rgba(0,0,0,0.03)",
             borderRadius: 999,
           }}
-        >{live ? drop.emoji : "⏳"}</div>
+        >{live ? drop.emoji : <Icon name="crystal-ball" size={32} />}</div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{
             fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
@@ -140,8 +141,9 @@ export default function HourlyDropBanner() {
               fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
               letterSpacing: "0.12em", color: "#7e22ce", fontWeight: 800,
               whiteSpace: "nowrap",
+              display: "inline-flex", alignItems: "center", gap: 5,
             }}>
-              ⚡ TODAY'S DROPS
+              <Icon name="electric" size={14} /> TODAY'S DROPS
             </div>
             <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", fontWeight: 600 }}>
               New drop every hour — check back to catch more 2-3× windows.

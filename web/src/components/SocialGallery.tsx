@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { api } from "@/lib/api";
+import Icon from "@/components/Icon";
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -103,7 +104,12 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
                 ) : c.is_agent ? (
                   <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
-                  <span style={{ fontSize: 12 }}>👤</span>
+                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none"
+                    stroke="rgba(139,92,246,0.55)" strokeWidth={1.8}
+                    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx={12} cy={8} r={3.5} />
+                    <path d="M5.5 19.5a6.5 6.5 0 0 1 13 0" />
+                  </svg>
                 )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -207,7 +213,14 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
                 borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.6)",
                 backdropFilter: "blur(8px)", cursor: "pointer", display: "flex",
                 alignItems: "center", justifyContent: "center", fontSize: 16, color: "white",
-              }}>🔊</button>
+              }}>
+                <svg width={17} height={17} viewBox="0 0 24 24" fill="none"
+                  stroke="white" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M4 9v6h3.5L13 19V5L7.5 9H4Z" fill="white" stroke="none" />
+                  <path d="M16.5 8.5a5 5 0 0 1 0 7" />
+                  <path d="M19 6a8.5 8.5 0 0 1 0 12" />
+                </svg>
+              </button>
             </>
           ) : item.photo_url || item.photo_path ? (
             <img src={item.photo_url || item.photo_path} alt=""
@@ -290,7 +303,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
               </span>
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ fontSize: 14, color: "rgba(26,26,46,0.35)" }}>💬</span>
+              <Icon name="chat" size={14} />
               <span style={{
                 fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#1a1a2e",
               }}>
@@ -314,7 +327,13 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
                 fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
                 color: copied ? "#16a34a" : "#1a1a2e",
               }}
-            ><span style={{ fontSize: 13 }}>{copied ? "✓" : "🔗"}</span> {copied ? "Copied" : "Copy link"}</button>
+            ><span style={{ fontSize: 13, display: "inline-flex", alignItems: "center" }}>{copied ? "✓" : (
+              <svg width={13} height={13} viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M9.5 14.5a4 4 0 0 0 5.66 0l3-3a4 4 0 1 0-5.66-5.66l-1.2 1.2" />
+                <path d="M14.5 9.5a4 4 0 0 0-5.66 0l-3 3a4 4 0 1 0 5.66 5.66l1.2-1.2" />
+              </svg>
+            )}</span> {copied ? "Copied" : "Copy link"}</button>
             <button
               onClick={() => {
                 const text = encodeURIComponent(`${item.prompt || "My AI Pet creation"} — generated on MY AI PET 🐾`);
@@ -351,7 +370,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
                 fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 700,
                 marginBottom: 12,
               }}
-            >✨ Make one like this →</button>
+            ><Icon name="sparkling" size={15} style={{ marginRight: 4 }} /> Make one like this →</button>
           )}
 
           {/* Comments */}
@@ -591,8 +610,9 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
               <span style={{
                 fontFamily: "mono", fontSize: 9, color: "rgba(255,255,255,0.45)",
                 textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+                display: "inline-flex", alignItems: "center", gap: 3,
               }}>
-                💬 {item.comments_count || 0}
+                <Icon name="chat" size={10} /> {item.comments_count || 0}
               </span>
             )}
 
@@ -615,7 +635,13 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
                 title={copied ? "Copied!" : "Copy link"}
                 aria-label="Copy link"
               >
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.85)", fontWeight: 700, lineHeight: 1 }}>{copied ? "✓" : "🔗"}</span>
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.85)", fontWeight: 700, lineHeight: 1, display: "inline-flex" }}>{copied ? "✓" : (
+                  <svg width={11} height={11} viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M9.5 14.5a4 4 0 0 0 5.66 0l3-3a4 4 0 1 0-5.66-5.66l-1.2 1.2" />
+                    <path d="M14.5 9.5a4 4 0 0 0-5.66 0l-3 3a4 4 0 1 0 5.66 5.66l1.2-1.2" />
+                  </svg>
+                )}</span>
               </button>
             )}
             {hovered && (
@@ -897,7 +923,14 @@ export default function SocialGallery() {
               <span style={{
                 position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
                 fontSize: 12, color: "rgba(26,26,46,0.2)", pointerEvents: "none",
-              }}>⌕</span>
+                display: "inline-flex",
+              }}>
+                <svg width={13} height={13} viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx={10.5} cy={10.5} r={6.5} />
+                  <path d="M20 20l-4.2-4.2" />
+                </svg>
+              </span>
               <input
                 className="gallery-search"
                 aria-label="Search creations"
@@ -951,9 +984,22 @@ export default function SocialGallery() {
       ) : filteredItems.length === 0 ? (
         <div style={{ textAlign: "center", padding: "100px 40px" }}>
           {search ? (
-            <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.2 }}>🔍</div>
+            <div style={{ marginBottom: 14, opacity: 0.2, display: "flex", justifyContent: "center" }}>
+              <svg width={44} height={44} viewBox="0 0 24 24" fill="none"
+                stroke="#1a1a2e" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx={10.5} cy={10.5} r={6.5} />
+                <path d="M20 20l-4.5-4.5" />
+              </svg>
+            </div>
           ) : feedFailed ? (
-            <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.3 }}>⚠️</div>
+            <div style={{ marginBottom: 14, opacity: 0.3, display: "flex", justifyContent: "center" }}>
+              <svg width={44} height={44} viewBox="0 0 24 24" fill="none"
+                stroke="#1a1a2e" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 3.5 1.8 20.5h20.4L12 3.5Z" />
+                <path d="M12 9.5v5" />
+                <path d="M12 17.6h.01" />
+              </svg>
+            </div>
           ) : (
             <img src="/mascot.jpg" alt="" style={{
               width: 72, height: 72, borderRadius: "50%", objectFit: "cover",
@@ -981,7 +1027,7 @@ export default function SocialGallery() {
               marginTop: 16, padding: "10px 24px", borderRadius: 999, border: "none", cursor: "pointer",
               background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "white",
               fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 700,
-            }}>✨ Create the first one</button>
+            }}><Icon name="sparkling" size={15} style={{ marginRight: 4 }} /> Create the first one</button>
           )}
         </div>
       ) : (
@@ -1036,7 +1082,7 @@ export default function SocialGallery() {
           fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 700,
           boxShadow: "0 6px 20px rgba(245,158,11,0.4)",
         }}
-      >✨ Create yours</button>
+      ><Icon name="sparkling" size={15} style={{ marginRight: 4 }} /> Create yours</button>
     </div>
   );
 }

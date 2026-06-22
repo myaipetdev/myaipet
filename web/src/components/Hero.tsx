@@ -5,32 +5,55 @@ import { LOGO_SRC } from "./Nav";
 import Icon from "@/components/Icon";
 import { MOCK_IMAGES } from "@/lib/mockData";
 
+// ── Soft ambient glyphs (no 3D-icon match) — flat SVGs tuned to the hero's warm palette ──
+function BlossomGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      {[0, 72, 144, 216, 288].map((deg) => (
+        <ellipse key={deg} cx="12" cy="6.4" rx="3.1" ry="4.4" fill="#f9a8d4"
+          transform={`rotate(${deg} 12 12)`} />
+      ))}
+      <circle cx="12" cy="12" r="2.4" fill="#fde68a" />
+    </svg>
+  );
+}
+
+function CloudGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <path d="M6.5 17.5a3.5 3.5 0 0 1-.4-6.97A4.5 4.5 0 0 1 15 9.2a3.4 3.4 0 0 1 2.7 8.3H6.5z"
+        fill="#ffffff" stroke="rgba(180,83,9,0.25)" strokeWidth="1" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 const FLOAT_PETS = [
-  { emoji: "🐱", x: 8, y: 18, delay: 0, size: 38 },
-  { emoji: "🐕", x: 82, y: 12, delay: 1.2, size: 34 },
-  { emoji: "🦜", x: 18, y: 62, delay: 2.4, size: 30 },
-  { emoji: "🐢", x: 88, y: 52, delay: 0.8, size: 32 },
-  { emoji: "🐹", x: 45, y: 78, delay: 1.8, size: 28 },
-  { emoji: "🦊", x: 5, y: 45, delay: 3.0, size: 32 },
-  { emoji: "🐰", x: 92, y: 32, delay: 0.4, size: 30 },
-  { emoji: "🐶", x: 65, y: 10, delay: 2.0, size: 34 },
-  { emoji: "🌸", x: 15, y: 35, delay: 0.6, size: 22 },
-  { emoji: "✨", x: 75, y: 40, delay: 1.5, size: 20 },
-  { emoji: "💛", x: 30, y: 80, delay: 2.8, size: 18 },
-  { emoji: "🌿", x: 55, y: 20, delay: 3.5, size: 20 },
-  { emoji: "☁️", x: 25, y: 8, delay: 0.3, size: 26 },
-  { emoji: "☁️", x: 70, y: 5, delay: 1.9, size: 30 },
+  { icon: <Icon name="cat" size={38} />, x: 8, y: 18, delay: 0, size: 38 },
+  { icon: <Icon name="dog" size={34} />, x: 82, y: 12, delay: 1.2, size: 34 },
+  { icon: <Icon name="parrot" size={30} />, x: 18, y: 62, delay: 2.4, size: 30 },
+  { icon: <Icon name="turtle" size={32} />, x: 88, y: 52, delay: 0.8, size: 32 },
+  { icon: <Icon name="hamster" size={28} />, x: 45, y: 78, delay: 1.8, size: 28 },
+  { icon: <Icon name="fox" size={32} />, x: 5, y: 45, delay: 3.0, size: 32 },
+  { icon: <Icon name="rabbit" size={30} />, x: 92, y: 32, delay: 0.4, size: 30 },
+  { icon: <Icon name="dog" size={34} />, x: 65, y: 10, delay: 2.0, size: 34 },
+  { icon: <BlossomGlyph size={22} />, x: 15, y: 35, delay: 0.6, size: 22 },
+  { icon: <Icon name="sparkling" size={20} />, x: 75, y: 40, delay: 1.5, size: 20 },
+  { icon: <Icon name="heart" size={18} />, x: 30, y: 80, delay: 2.8, size: 18 },
+  { icon: <Icon name="grass" size={20} />, x: 55, y: 20, delay: 3.5, size: 20 },
+  { icon: <CloudGlyph size={26} />, x: 25, y: 8, delay: 0.3, size: 26 },
+  { icon: <CloudGlyph size={30} />, x: 70, y: 5, delay: 1.9, size: 30 },
 ];
 
-function FloatingPet({ emoji, x, y, delay, size }: any) {
+function FloatingPet({ icon, x, y, delay, size }: any) {
   return (
     <div style={{
       position: "absolute", left: `${x}%`, top: `${y}%`,
       fontSize: size, opacity: 0.35,
       animation: `petFloat 6s ease-in-out ${delay}s infinite`,
       pointerEvents: "none", zIndex: 1,
+      lineHeight: 0,
     }}>
-      {emoji}
+      {icon}
     </div>
   );
 }
@@ -549,8 +572,8 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           {[
             { icon: <Icon name="paw" size={28} />, title: "Raise", desc: "Feed, play, and train your AI pet. Watch them grow from Baby to Legendary." },
             { icon: <Icon name="sparkling" size={28} />, title: "Create", desc: "Generate stunning AI images and videos of your pet in any scene or style." },
-            { icon: "💎", title: "Earn", desc: "Climb the leaderboard, earn Season Rewards points, and unlock exclusive rewards." },
-            { icon: "🏆", title: "Collect", desc: "Real merchandise redemption — mugs, hoodies, figures & more — coming with the creator marketplace." },
+            { icon: <Icon name="diamond" size={28} />, title: "Earn", desc: "Climb the leaderboard, earn Season Rewards points, and unlock exclusive rewards." },
+            { icon: <Icon name="trophy" size={28} />, title: "Collect", desc: "Real merchandise redemption — mugs, hoodies, figures & more — coming with the creator marketplace." },
           ].map((card) => (
             <div key={card.title} className="eco-card">
               <div className="eco-icon" style={{

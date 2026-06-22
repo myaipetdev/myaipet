@@ -12,12 +12,13 @@
  */
 
 import type { ReactNode } from "react";
+import Icon from "@/components/Icon";
 
 const ROLES: { icon: string; title: string; body: string; tag: string }[] = [
-  { icon: "🧭", title: "Plan → Act", tag: "plan-execute", body: "A reasoning model plans each step; a real skill runs it, the result is observed, and it loops until done — then synthesizes the answer. Not text, actions." },
-  { icon: "🧠", title: "Recall", tag: "GBrain", body: "Full-memory retrieval (vector + keyword + reciprocal-rank fusion) feeds every step. Your pet doesn't start cold — it remembers everything." },
-  { icon: "🔁", title: "Reflect", tag: "VIGIL", body: "It consolidates what it learned and reshapes future replies — self-evolution, not a frozen prompt." },
-  { icon: "🌐", title: "Agent-to-Agent", tag: "PACK", body: "Pets discover and call each other's skills across the open network — agent-to-agent, not a silo." },
+  { icon: "compass", title: "Plan → Act", tag: "plan-execute", body: "A reasoning model plans each step; a real skill runs it, the result is observed, and it loops until done — then synthesizes the answer. Not text, actions." },
+  { icon: "crystal-ball", title: "Recall", tag: "GBrain", body: "Full-memory retrieval (vector + keyword + reciprocal-rank fusion) feeds every step. Your pet doesn't start cold — it remembers everything." },
+  { icon: "sparkling", title: "Reflect", tag: "VIGIL", body: "It consolidates what it learned and reshapes future replies — self-evolution, not a frozen prompt." },
+  { icon: "world-map", title: "Agent-to-Agent", tag: "PACK", body: "Pets discover and call each other's skills across the open network — agent-to-agent, not a silo." },
 ];
 
 export default function OrchestrationExplainer({ onTry }: { onTry?: () => void } = {}) {
@@ -58,7 +59,7 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
         {ROLES.map((r) => (
           <div key={r.title} style={{ background: "white", borderRadius: 16, padding: "20px 20px", border: "1px solid rgba(0,0,0,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.04)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 24 }}>{r.icon}</span>
+              <span style={{ fontSize: 24, lineHeight: 0 }}><Icon name={r.icon} size={24} /></span>
               <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", padding: "2px 7px", borderRadius: 6, background: "rgba(124,58,237,0.1)", color: "#7c3aed" }}>{r.tag}</span>
             </div>
             <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 16, color: "#1a1a2e", marginBottom: 5, letterSpacing: "-0.01em" }}>{r.title}</div>

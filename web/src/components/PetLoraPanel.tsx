@@ -10,6 +10,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import Icon from "@/components/Icon";
 
 interface Lora {
   id: number;
@@ -104,7 +105,7 @@ export default function PetLoraPanel({ petId, petName }: { petId: number; petNam
   if (status === "ready") {
     return (
       <div style={wrap}>
-        <div style={eyebrow}>🧬 IDENTITY MODEL · LIVE</div>
+        <div style={eyebrow}><Icon name="test-tube" size={12} style={{ marginRight: 5 }} /> IDENTITY MODEL · LIVE</div>
         <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.5 }}>
           {petName}&rsquo;s face is locked. Every image you generate now renders
           their <b>real</b> features — not a lookalike.
@@ -119,7 +120,7 @@ export default function PetLoraPanel({ petId, petName }: { petId: number; petNam
   if (status === "training") {
     return (
       <div style={wrap}>
-        <div style={eyebrow}>🧬 TRAINING {petName.toUpperCase()}&rsquo;S IDENTITY</div>
+        <div style={eyebrow}><Icon name="test-tube" size={12} style={{ marginRight: 5 }} /> TRAINING {petName.toUpperCase()}&rsquo;S IDENTITY</div>
         <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.5, display: "flex", alignItems: "center", gap: 8 }}>
           <Spinner /> Learning their face from {lora?.imagesUsed || "your"} photos — a few minutes.
           Keep creating; it&rsquo;ll switch on automatically.
@@ -131,7 +132,7 @@ export default function PetLoraPanel({ petId, petName }: { petId: number; petNam
   // none yet, or failed
   return (
     <div style={wrap}>
-      <div style={eyebrow}>✨ LOCK {petName.toUpperCase()}&rsquo;S EXACT FACE</div>
+      <div style={eyebrow}><Icon name="sparkling" size={12} style={{ marginRight: 5 }} /> LOCK {petName.toUpperCase()}&rsquo;S EXACT FACE</div>
       <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.5 }}>
         Train a one-time identity model from {petName}&rsquo;s photos. After that,
         every generation keeps their exact face — consistent across any style.

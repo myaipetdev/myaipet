@@ -16,6 +16,7 @@ import StatUpgradePanel from "@/components/StatUpgradePanel";
 import WardrobeCard from "@/components/WardrobeCard";
 import MemoryJournal from "@/components/MemoryJournal";
 import ExpressionPack from "@/components/ExpressionPack";
+import Icon from "@/components/Icon";
 import { moodToExpressionKey } from "@/lib/moodPortraits";
 
 const PET_SPECIES = ["Cat","Dog","Parrot","Turtle","Hamster","Rabbit","Fox","Pomeranian"];
@@ -424,7 +425,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
           boxShadow: "0 24px 80px rgba(0,0,0,0.15)", animation: "slideIn 0.3s ease-out",
           padding: 32, textAlign: "center",
         }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🥚</div>
+          <div style={{ marginBottom: 16, lineHeight: 0 }}><Icon name="paw" size={48} /></div>
           <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, fontWeight: 800, color: "#1a1a2e", margin: "0 0 6px" }}>
             Adopt a Pet
           </h3>
@@ -440,7 +441,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
               textAlign: "left", transition: "all 0.2s",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{ fontSize: 28, width: 44, textAlign: "center" }}>🤖</div>
+                <div style={{ width: 44, textAlign: "center", lineHeight: 0 }}><Icon name="sparkling" size={28} /></div>
                 <div>
                   <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700, color: "#1a1a2e" }}>
                     Create with AI
@@ -459,7 +460,12 @@ function CreatePetModal({ onClose, onCreated }: any) {
               textAlign: "left", transition: "all 0.2s",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{ fontSize: 28, width: 44, textAlign: "center" }}>📸</div>
+                <div style={{ width: 44, textAlign: "center", display: "flex", justifyContent: "center" }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2L8 5h8l1.5 2h2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5v-9Z" />
+                    <circle cx="12" cy="13" r="3.2" />
+                  </svg>
+                </div>
                 <div>
                   <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700, color: "#1a1a2e" }}>
                     Upload My Pet's Photo
@@ -505,8 +511,12 @@ function CreatePetModal({ onClose, onCreated }: any) {
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>←</button>
             <div>
-              <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1a2e", margin: 0 }}>
-                📸 Upload Pet Photo
+              <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, fontWeight: 700, color: "#1a1a2e", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2L8 5h8l1.5 2h2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5v-9Z" />
+                  <circle cx="12" cy="13" r="3.2" />
+                </svg>
+                Upload Pet Photo
               </h3>
             </div>
           </div>
@@ -531,7 +541,12 @@ function CreatePetModal({ onClose, onCreated }: any) {
                 }} />
               ) : (
                 <>
-                  <div style={{ fontSize: 36, marginBottom: 8 }}>📷</div>
+                  <div style={{ marginBottom: 8, display: "flex", justifyContent: "center" }}>
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2L8 5h8l1.5 2h2A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5v-9Z" />
+                      <circle cx="12" cy="13" r="3.2" />
+                    </svg>
+                  </div>
                   <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600, color: "#1a1a2e" }}>
                     Tap to upload your pet's photo
                   </div>
@@ -1518,7 +1533,7 @@ export default function PetProfile() {
             75% { transform: translateY(8px) rotate(-3deg); }
           }
         `}</style>
-        <div style={{ fontSize: 80, marginBottom: 20, animation: "eggBounce 2s ease-in-out infinite" }}>🥚</div>
+        <div style={{ marginBottom: 20, lineHeight: 0, animation: "eggBounce 2s ease-in-out infinite" }}><Icon name="paw" size={80} /></div>
         <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 30, color: "#1a1a2e", marginBottom: 10 }}>
           No Pets Yet
         </h2>
@@ -1744,8 +1759,9 @@ export default function PetProfile() {
             background: "rgba(251,191,36,0.08)", border: "1px dashed rgba(251,191,36,0.3)",
             borderRadius: 10, padding: "10px 18px", cursor: unlockingSlot ? "wait" : "pointer",
             fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "#b45309", transition: "all 0.2s",
+            display: "inline-flex", alignItems: "center", gap: 6,
           }}>
-            🔓 Unlock Slot ({slotPrices[petSlots] || 500} credits)
+            <Icon name="lock" size={13} /> Unlock Slot ({slotPrices[petSlots] || 500} credits)
           </button>
         ) : null}
         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "rgba(26,26,46,0.3)" }}>
@@ -1759,7 +1775,7 @@ export default function PetProfile() {
             color: "#b45309", fontWeight: 600,
             display: "flex", alignItems: "center", gap: 4, cursor: "pointer",
           }} onClick={() => { const el = document.querySelector(".pricing-root"); if (el) el.scrollIntoView({ behavior: "smooth" }); }}>
-            <span style={{ fontSize: 13 }}>🪙</span> {balance.toLocaleString()} credits
+            <Icon name="coin" size={13} /> {balance.toLocaleString()} credits
           </div>
         </>)}
       </div>
@@ -1926,7 +1942,13 @@ export default function PetProfile() {
                 fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
                 border: "1px solid rgba(255,255,255,0.12)",
               }}
-            >🃏 Trading Card</a>
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <rect x="4" y="3" width="16" height="18" rx="2.5" />
+                <path d="M12 8.2 13.9 12 12 15.8 10.1 12 12 8.2Z" fill="#fff" stroke="none" />
+              </svg>
+              Trading Card
+            </a>
           </div>
 
           {/* Appearance description */}
@@ -2110,7 +2132,7 @@ export default function PetProfile() {
               display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 18 }}>🔥</span>
+                <Icon name="fire" size={18} />
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 800, color: "#b45309", letterSpacing: "-0.01em" }}>
                     {(pet as any).care_streak}-day care streak
@@ -2133,16 +2155,16 @@ export default function PetProfile() {
           {/* Achievements — milestones derived client-side from live pet stats */}
           {(() => {
             const ach = [
-              { id: "first", icon: "🐾", label: "First Bond", earned: pet.total_interactions >= 1, desc: "Meet your pet" },
-              { id: "lv5", icon: "⭐", label: "Rising Star", earned: pet.level >= 5, desc: "Reach Lv.5" },
-              { id: "lv10", icon: "🌟", label: "Veteran", earned: pet.level >= 10, desc: "Reach Lv.10" },
-              { id: "lv20", icon: "👑", label: "Elite", earned: pet.level >= 20, desc: "Reach Lv.20" },
-              { id: "bond50", icon: "🤝", label: "Close Friends", earned: pet.bond_level >= 50, desc: "Bond 50+" },
-              { id: "bond100", icon: "💞", label: "Soulmate", earned: pet.bond_level >= 100, desc: "Max bond" },
-              { id: "evolve", icon: "🦋", label: "Evolved", earned: ((pet as any).evolution_stage ?? 0) >= 1, desc: "Evolve once" },
-              { id: "combo", icon: "✨", label: "Combo Master", earned: combosUnlocked.length >= 3, desc: "3 combos" },
-              { id: "streak7", icon: "🔥", label: "Dedicated", earned: ((pet as any).care_streak ?? 0) >= 7, desc: "7-day streak" },
-              { id: "social", icon: "💬", label: "Inseparable", earned: pet.total_interactions >= 50, desc: "50 interactions" },
+              { id: "first", icon: "paw", label: "First Bond", earned: pet.total_interactions >= 1, desc: "Meet your pet" },
+              { id: "lv5", icon: "medal", label: "Rising Star", earned: pet.level >= 5, desc: "Reach Lv.5" },
+              { id: "lv10", icon: "trophy", label: "Veteran", earned: pet.level >= 10, desc: "Reach Lv.10" },
+              { id: "lv20", icon: "crown", label: "Elite", earned: pet.level >= 20, desc: "Reach Lv.20" },
+              { id: "bond50", icon: "like", label: "Close Friends", earned: pet.bond_level >= 50, desc: "Bond 50+" },
+              { id: "bond100", icon: "heart", label: "Soulmate", earned: pet.bond_level >= 100, desc: "Max bond" },
+              { id: "evolve", icon: "sparkling", label: "Evolved", earned: ((pet as any).evolution_stage ?? 0) >= 1, desc: "Evolve once" },
+              { id: "combo", icon: "diamond", label: "Combo Master", earned: combosUnlocked.length >= 3, desc: "3 combos" },
+              { id: "streak7", icon: "fire", label: "Dedicated", earned: ((pet as any).care_streak ?? 0) >= 7, desc: "7-day streak" },
+              { id: "social", icon: "chat", label: "Inseparable", earned: pet.total_interactions >= 50, desc: "50 interactions" },
             ];
             const earnedCount = ach.filter((a) => a.earned).length;
             return (
@@ -2152,8 +2174,8 @@ export default function PetProfile() {
                 border: "1px solid rgba(139,92,246,0.15)",
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <span style={{ fontSize: 10, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(26,26,46,0.5)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                    🏆 Achievements
+                  <span style={{ fontSize: 10, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: "rgba(26,26,46,0.5)", letterSpacing: "0.08em", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <Icon name="trophy" size={13} /> Achievements
                   </span>
                   <span style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: "#7c3aed" }}>
                     {earnedCount}/{ach.length}
@@ -2168,7 +2190,7 @@ export default function PetProfile() {
                       border: `1px solid ${a.earned ? "rgba(139,92,246,0.25)" : "rgba(0,0,0,0.05)"}`,
                       filter: a.earned ? "none" : "grayscale(1)", opacity: a.earned ? 1 : 0.45,
                     }}>
-                      <span style={{ fontSize: 17, lineHeight: 1 }}>{a.icon}</span>
+                      <Icon name={a.icon} size={17} />
                       <span style={{ fontSize: 7.5, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: a.earned ? "#6d28d9" : "rgba(26,26,46,0.5)", letterSpacing: "-0.02em" }}>{a.label}</span>
                     </div>
                   ))}
@@ -2353,8 +2375,8 @@ export default function PetProfile() {
                     {/* Lock icon if level-gated */}
                     {levelLocked && (
                       <div style={{
-                        position: "absolute", top: 6, right: 6, fontSize: 12,
-                      }}>🔒</div>
+                        position: "absolute", top: 6, right: 6, lineHeight: 0,
+                      }}><Icon name="lock" size={12} /></div>
                     )}
                     <div style={{
                       fontSize: 26, marginBottom: 4,
@@ -2674,7 +2696,7 @@ export default function PetProfile() {
               }}>
                 Memory Timeline
               </div>
-              <div style={{ fontSize: 48, marginBottom: 10, opacity: 0.7 }}>📔</div>
+              <div style={{ marginBottom: 10, opacity: 0.7, lineHeight: 0 }}><Icon name="scroll" size={48} /></div>
               <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1a2e", marginBottom: 6 }}>
                 {pet.name}'s memories will live here
               </div>

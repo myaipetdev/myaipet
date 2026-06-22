@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import Icon from "@/components/Icon";
 
 interface RewardItem {
   id: number;
@@ -66,7 +67,9 @@ function ProductMockupWithAvatar({ shape, avatar, color }: { shape: string; avat
         fontSize: 10, color: "rgba(255,255,255,0.9)",
         fontFamily: "mono", fontWeight: 600, letterSpacing: "0.05em",
       }}>
-        <span style={{ fontSize: 12 }}>{productIcons[shape] || "\u{1F43E}"}</span>
+        {productIcons[shape]
+          ? <span style={{ fontSize: 12 }}>{productIcons[shape]}</span>
+          : <Icon name="paw" size={13} />}
         MY AI PET
       </div>
     </div>
@@ -135,7 +138,7 @@ function ProductMockup({ item, isLocked, petAvatar, mockupImage }: { item: Rewar
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 28, boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
             }}>
-              {"\u{1F43E}"}
+              <Icon name="paw" size={28} />
             </div>
             <span style={{
               fontSize: 9, color: "rgba(255,255,255,0.7)",
@@ -161,8 +164,9 @@ function ProductMockup({ item, isLocked, petAvatar, mockupImage }: { item: Rewar
           color: isLocked ? "#9ca3af" : "#fff",
           boxShadow: isLocked ? "none" : "0 2px 8px rgba(0,0,0,0.2)",
           fontFamily: "'Space Grotesk', sans-serif",
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          {isLocked ? "🔒" : item.badge}
+          {isLocked ? <Icon name="lock" size={12} /> : item.badge}
         </div>
       )}
 
@@ -174,7 +178,7 @@ function ProductMockup({ item, isLocked, petAvatar, mockupImage }: { item: Rewar
           background: "rgba(0,0,0,0.08)",
           display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
         }}>
-          🔒
+          <Icon name="lock" size={14} />
         </div>
       )}
     </div>
@@ -240,7 +244,7 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 28, boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
               }}>
-                {"\u{1F43E}"}
+                <Icon name="paw" size={28} />
               </div>
               <span style={{
                 fontSize: 9, color: "rgba(255,255,255,0.7)",
@@ -289,7 +293,7 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
             gap: 10,
             marginBottom: 16,
           }}>
-            <span style={{ fontSize: 28 }}>🐾</span>
+            <Icon name="paw" size={28} />
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: "#92400e" }}>
                 Your pet&apos;s image will be printed on this product
@@ -302,7 +306,7 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
-                <span style={{ fontSize: 14 }}>🪙</span>
+                <Icon name="coin" size={14} />
                 <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 18, fontWeight: 700, color: "#b45309" }}>
                   {item.points.toLocaleString()}
                 </span>
@@ -336,10 +340,10 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
 }
 
 const REWARD_TIERS = [
-  { tier: "Top 1", minRank: 1, maxRank: 1, color: "#f59e0b", icon: "\uD83C\uDFC6", label: "Champion", allowedItems: [1,2,3,4,5,6,7,8,9] },
-  { tier: "Top 3", minRank: 2, maxRank: 3, color: "#d97706", icon: "\uD83E\uDD47", label: "Elite", allowedItems: [1,2,3,4,5,6,7,8,9] },
-  { tier: "Top 10", minRank: 4, maxRank: 10, color: "#9ca3af", icon: "\uD83E\uDD48", label: "Top 10", allowedItems: [1,2,3,4,5,6,7] },
-  { tier: "Top 10%", minRank: 11, maxRank: Infinity, color: "#cd7f32", icon: "\uD83E\uDD49", label: "Top 10%", allowedItems: [1,2,3] },
+  { tier: "Top 1", minRank: 1, maxRank: 1, color: "#f59e0b", icon: "trophy", label: "Champion", allowedItems: [1,2,3,4,5,6,7,8,9] },
+  { tier: "Top 3", minRank: 2, maxRank: 3, color: "#d97706", icon: "medal", label: "Elite", allowedItems: [1,2,3,4,5,6,7,8,9] },
+  { tier: "Top 10", minRank: 4, maxRank: 10, color: "#9ca3af", icon: "medal", label: "Top 10", allowedItems: [1,2,3,4,5,6,7] },
+  { tier: "Top 10%", minRank: 11, maxRank: Infinity, color: "#cd7f32", icon: "medal", label: "Top 10%", allowedItems: [1,2,3] },
 ];
 
 function getUserTier(rank: number | null, totalParticipants: number) {
@@ -639,7 +643,9 @@ export default function Rewards() {
               width: "100%", padding: "32px 28px", textAlign: "center",
               background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
             }}>
-              <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
+              <div style={{ fontSize: 48, marginBottom: 8, display: "flex", justifyContent: "center" }}>
+                <Icon name="sparkling" size={48} />
+              </div>
               <h3 style={{
                 fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 700,
                 color: "#065f46", margin: 0,
@@ -687,7 +693,7 @@ export default function Rewards() {
       {/* Header */}
       <div style={styles.header}>
         <div style={styles.headerTop}>
-          <span style={styles.headerIcon}>🎁</span>
+          <Icon name="gift" size={36} />
           <h2 style={styles.title}>Pet Rewards Shop</h2>
         </div>
         <p style={styles.subtitle}>
@@ -829,7 +835,7 @@ export default function Rewards() {
       {/* Points Bar */}
       <div style={styles.pointsBar}>
         <div style={styles.pointsLeft}>
-          <span style={styles.coinIcon}>🪙</span>
+          <Icon name="coin" size={32} />
           <div>
             <div style={styles.pointsLabel}>Your Points</div>
             <div style={styles.pointsValue}>{userPoints.toLocaleString()}</div>
@@ -857,7 +863,9 @@ export default function Rewards() {
         gap: 20,
         flexWrap: "wrap" as const,
       }}>
-        <div style={{ fontSize: 36 }}>{userTier ? userTier.icon : "\uD83C\uDFC6"}</div>
+        <div style={{ fontSize: 36, display: "flex", alignItems: "center" }}>
+          <Icon name={userTier ? userTier.icon : "trophy"} size={36} />
+        </div>
         <div style={{ flex: 1, minWidth: 160 }}>
           <div style={{
             fontFamily: "'Space Grotesk', sans-serif", fontSize: 11,
@@ -903,8 +911,9 @@ export default function Rewards() {
               fontFamily: "mono", fontSize: 10, fontWeight: 700,
               color: userTier?.tier === t.tier ? t.color : "rgba(26,26,46,0.3)",
               transition: "all 0.2s",
+              display: "flex", alignItems: "center", gap: 4,
             }}>
-              {t.icon} {t.tier}
+              <Icon name={t.icon} size={12} /> {t.tier}
             </div>
           ))}
         </div>
@@ -960,7 +969,7 @@ export default function Rewards() {
 
                 {/* Points Cost */}
                 <div style={styles.costRow}>
-                  <span style={styles.costCoin}>🪙</span>
+                  <Icon name="coin" size={16} />
                   <span style={styles.costValue}>{item.points.toLocaleString()}</span>
                   <span style={styles.costUnit}>pts</span>
                 </div>
@@ -972,9 +981,11 @@ export default function Rewards() {
                     background: isLocked ? "rgba(107,114,128,0.08)" : `${item.accentColor}10`,
                     color: isLocked ? "#9ca3af" : item.accentColor,
                     borderColor: isLocked ? "rgba(107,114,128,0.15)" : `${item.accentColor}30`,
+                    display: "inline-flex", alignItems: "center", gap: 4,
                   }}
                 >
-                  {isLocked ? "🔒 " : "⭐ "}Lv.{item.levelReq}+
+                  <Icon name={isLocked ? "lock" : "sparkling"} size={12} />
+                  Lv.{item.levelReq}+
                 </div>
 
                 {/* Description */}

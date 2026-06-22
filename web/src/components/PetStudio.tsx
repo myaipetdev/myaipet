@@ -30,6 +30,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import { toast } from "@/components/Toast";
+import Icon from "@/components/Icon";
 
 interface StudioModel {
   id: string; displayName: string; provider: string; kind: "image" | "video";
@@ -211,7 +212,7 @@ export default function PetStudio() {
         fontSize: 13,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 16 }}>🎬</span>
+          <span style={{ fontSize: 16, display: "inline-flex" }}><Icon name="film-reel" size={18} /></span>
           <span style={{ fontWeight: 800, fontSize: 14 }}>Pet Studio</span>
           <span style={tag}>BETA</span>
         </div>
@@ -272,7 +273,7 @@ export default function PetStudio() {
             {libTab === "pets" && (
               pets.length === 0 ? (
                 <div style={emptyState}>
-                  <div style={{ fontSize: 24, marginBottom: 6 }}>🐣</div>
+                  <div style={{ fontSize: 24, marginBottom: 6 }}><Icon name="paw" size={28} /></div>
                   <div style={{ fontSize: 12, color: "rgba(26,26,46,0.55)", marginBottom: 10 }}>No pet yet. Adopt one to use as a character.</div>
                   <a href="/?section=my pet" style={btnPrimarySmall}>Adopt →</a>
                 </div>
@@ -283,7 +284,7 @@ export default function PetStudio() {
                       key={p.id} selected={petId === p.id}
                       leading={p.avatar_url
                         ? <img src={p.avatar_url} alt={p.name} style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover" }} />
-                        : <span style={{ fontSize: 18 }}>🐾</span>}
+                        : <Icon name="paw" size={20} />}
                       title={p.name} subtitle={`Lv.${p.level}`}
                       onClick={() => setPetId(p.id)}
                     />
@@ -301,7 +302,7 @@ export default function PetStudio() {
                 ].map(m => (
                   <LibraryRow
                     key={m.id} selected={false}
-                    leading={<span style={{ fontSize: 18 }}>🎵</span>}
+                    leading={<MusicNoteIcon size={18} />}
                     title={m.label} subtitle={m.mood}
                     onClick={() => toast("Music selection happens inside the editor.", "info")}
                   />
@@ -320,7 +321,7 @@ export default function PetStudio() {
                       key={g.id} selected={false}
                       leading={g.photo_path
                         ? <img src={g.photo_path} alt="" style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover" }} />
-                        : <span style={{ fontSize: 14 }}>⏳</span>}
+                        : <ClockIcon size={16} />}
                       title={(g.prompt || "").slice(0, 30) || "(empty)"}
                       subtitle={g.status}
                       onClick={() => { if (g.video_path || g.photo_path) setPreviewUrl(g.video_path || g.photo_path); }}
@@ -373,7 +374,7 @@ export default function PetStudio() {
                 </>
               ) : (
                 <div style={{ color: "rgba(255,255,255,0.6)", textAlign: "center" }}>
-                  <div style={{ fontSize: 36, marginBottom: 8 }}>🎞</div>
+                  <div style={{ fontSize: 36, marginBottom: 8 }}><Icon name="film-reel" size={40} /></div>
                   <div style={{ fontSize: 13 }}>Pick a pet on the left to start.</div>
                 </div>
               )}
@@ -394,10 +395,11 @@ export default function PetStudio() {
               {previewUrl && isVideo && (
                 <button onClick={() => setEditorOpen(true)} disabled={!subscription?.limits?.editorAccess} style={{
                   ...btnGhost,
+                  display: "inline-flex", alignItems: "center", gap: 6,
                   opacity: subscription?.limits?.editorAccess ? 1 : 0.5,
                   cursor: subscription?.limits?.editorAccess ? "pointer" : "not-allowed",
                 }}>
-                  ✂️ {subscription?.limits?.editorAccess ? "Edit" : "Edit (Pro+)"}
+                  <ScissorsIcon size={13} /> {subscription?.limits?.editorAccess ? "Edit" : "Edit (Pro+)"}
                 </button>
               )}
             </div>
@@ -536,6 +538,67 @@ export default function PetStudio() {
   );
 }
 
+// ── Inline iconography (flat/outline, inherits currentColor) ──
+
+function MusicNoteIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"
+      style={{ display: "block", color: "#b45309" }} aria-hidden>
+      <path d="M9 18V6l11-2v12" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="17" cy="16" r="3" />
+    </svg>
+  );
+}
+
+function ClockIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"
+      style={{ display: "block", color: "rgba(26,26,46,0.55)" }} aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
+    </svg>
+  );
+}
+
+function ScissorsIcon({ size = 13 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"
+      style={{ display: "block" }} aria-hidden>
+      <circle cx="6" cy="6" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <path d="M8.1 8.1 20 20M20 4 8.1 15.9" />
+    </svg>
+  );
+}
+
+function ClapperboardIcon({ size = 13 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"
+      style={{ display: "block" }} aria-hidden>
+      <path d="M3 9.5 4.2 5l16.2 1.6L19.5 11z" />
+      <path d="M3 9.5h16.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
+      <path d="M8 5.4 6 9.7M13 6 11 10.3" />
+    </svg>
+  );
+}
+
+function ImageIcon({ size = 13 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"
+      style={{ display: "block" }} aria-hidden>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="8.5" cy="9.5" r="1.7" />
+      <path d="m4 18 5-5 4 4 3-3 4 4" />
+    </svg>
+  );
+}
+
 // ── Sub-components ──
 
 function LibraryRow({ leading, title, subtitle, selected, onClick }: {
@@ -600,8 +663,9 @@ function TimelineStrip({ videoClip, imageClip, templateTitle, duration }: {
             border: "1px solid rgba(245,158,11,0.5)",
             display: "flex", alignItems: "center", padding: "0 10px",
             fontSize: 11, fontWeight: 700, color: "#1a1a2e",
+            gap: 6,
           }}>
-            {videoClip ? "🎥" : "🖼"} {templateTitle || "Clip"}
+            {videoClip ? <ClapperboardIcon size={13} /> : <ImageIcon size={13} />} {templateTitle || "Clip"}
           </div>
         )}
       </div>
@@ -609,11 +673,11 @@ function TimelineStrip({ videoClip, imageClip, templateTitle, duration }: {
       <div style={{
         height: 22, borderRadius: 6,
         background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.06)",
-        display: "flex", alignItems: "center", padding: "0 8px",
+        display: "flex", alignItems: "center", gap: 6, padding: "0 8px",
         fontSize: 9, color: "rgba(26,26,46,0.4)",
         fontFamily: "'JetBrains Mono', monospace",
       }}>
-        🎵 (no music selected — add inside the editor)
+        <MusicNoteIcon size={11} /> (no music selected — add inside the editor)
       </div>
     </div>
   );

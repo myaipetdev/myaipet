@@ -40,13 +40,73 @@ const TABS = [
   { key: "live", label: "Live Learning", icon: "L", desc: "Connected Agent" },
 ] as const;
 
+// Flat line-icons (16px, currentColor) replacing bare tone emoji — they inherit
+// each chip's selected/unselected text color, matching the pill surface style.
+const ToneIcon = ({ tone }: { tone: string }) => {
+  const c: React.SVGProps<SVGSVGElement> = {
+    width: 16, height: 16, viewBox: "0 0 24 24", fill: "none",
+    stroke: "currentColor", strokeWidth: 1.6,
+    strokeLinecap: "round", strokeLinejoin: "round",
+    style: { flexShrink: 0 },
+  };
+  switch (tone) {
+    case "casual": // sunglasses (cool / laid-back)
+      return (
+        <svg {...c}>
+          <path d="M3 9h18" />
+          <rect x="3" y="9" width="7.5" height="5.5" rx="2.5" />
+          <rect x="13.5" y="9" width="7.5" height="5.5" rx="2.5" />
+          <path d="M10.5 11h3" />
+        </svg>
+      );
+    case "meme": // grinning face (funny)
+      return (
+        <svg {...c}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M8.5 14a4 4 0 0 0 7 0" />
+          <path d="M8 9.5h.01M16 9.5h.01" />
+        </svg>
+      );
+    case "chill": // snowflake (cool / chill)
+      return (
+        <svg {...c}>
+          <path d="M12 3v18M3 12h18" />
+          <path d="m5.6 5.6 12.8 12.8M18.4 5.6 5.6 18.4" />
+        </svg>
+      );
+    case "professional": // briefcase
+      return (
+        <svg {...c}>
+          <rect x="3" y="7.5" width="18" height="12" rx="2" />
+          <path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5" />
+          <path d="M3 13h18" />
+        </svg>
+      );
+    case "sassy": // spark / wink (attitude)
+      return (
+        <svg {...c}>
+          <path d="M12 3c.6 4.2 1.8 5.4 6 6-4.2.6-5.4 1.8-6 6-.6-4.2-1.8-5.4-6-6 4.2-.6 5.4-1.8 6-6Z" />
+          <path d="M18.5 16.5c.3 1.8.7 2.2 2.5 2.5-1.8.3-2.2.7-2.5 2.5-.3-1.8-.7-2.2-2.5-2.5 1.8-.3 2.2-.7 2.5-2.5Z" />
+        </svg>
+      );
+    case "sweet": // heart
+      return (
+        <svg {...c}>
+          <path d="M12 20s-7-4.6-7-9.6A3.9 3.9 0 0 1 12 7a3.9 3.9 0 0 1 7 3.4c0 5-7 9.6-7 9.6Z" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+};
+
 const TONE_OPTIONS = [
-  { value: "casual", label: "Casual", emoji: "😎" },
-  { value: "meme", label: "Meme/Funny", emoji: "🤣" },
-  { value: "chill", label: "Chill", emoji: "🧊" },
-  { value: "professional", label: "Professional", emoji: "💼" },
-  { value: "sassy", label: "Sassy", emoji: "💅" },
-  { value: "sweet", label: "Sweet", emoji: "🥰" },
+  { value: "casual", label: "Casual" },
+  { value: "meme", label: "Meme/Funny" },
+  { value: "chill", label: "Chill" },
+  { value: "professional", label: "Professional" },
+  { value: "sassy", label: "Sassy" },
+  { value: "sweet", label: "Sweet" },
 ];
 
 const SUGGESTED_TAGS = ["Crypto", "Gaming", "Music", "Food", "Travel", "Art", "Coding", "Memes"];
@@ -482,7 +542,12 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                       display: "flex", alignItems: "center", gap: 6,
                     }}
                   >
-                    <span style={{ fontSize: 16 }}>{opt.emoji}</span>
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      width: 16, height: 16,
+                    }}>
+                      <ToneIcon tone={opt.value} />
+                    </span>
                     {opt.label}
                   </button>
                 );

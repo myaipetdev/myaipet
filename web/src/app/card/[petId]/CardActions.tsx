@@ -39,7 +39,12 @@ export default function CardActions({ petId, name, imgUrl, appUrl }: { petId: nu
 
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
-      <button onClick={shareToX} style={primary}>𝕏 &nbsp;Share on X</button>
+      <button onClick={shareToX} style={primary}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ verticalAlign: "-1px" }}>
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.656l-5.214-6.817-5.967 6.817H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+        </svg>
+        &nbsp;Share on X
+      </button>
       <button onClick={download} style={ghost}>Download PNG</button>
       <button onClick={copyLink} style={ghost}>{copied ? "Link copied ✓" : "Copy link"}</button>
     </div>

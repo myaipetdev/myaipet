@@ -7,6 +7,7 @@
  */
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import Icon from "@/components/Icon";
 
 interface Insight {
   id: number;
@@ -17,11 +18,11 @@ interface Insight {
   wasNew: boolean;
 }
 
-const MOOD: Record<string, { emoji: string; bg: string; fg: string; ring: string }> = {
-  tender:    { emoji: "🫶", bg: "rgba(244,114,182,0.08)", fg: "#be185d", ring: "rgba(244,114,182,0.25)" },
-  playful:   { emoji: "✨", bg: "rgba(245,158,11,0.08)",  fg: "#b45309", ring: "rgba(245,158,11,0.25)" },
-  concerned: { emoji: "🥺", bg: "rgba(139,92,246,0.08)",  fg: "#6d28d9", ring: "rgba(139,92,246,0.25)" },
-  hopeful:   { emoji: "🌱", bg: "rgba(34,197,94,0.08)",   fg: "#15803d", ring: "rgba(34,197,94,0.25)" },
+const MOOD: Record<string, { icon: string; bg: string; fg: string; ring: string }> = {
+  tender:    { icon: "heart",        bg: "rgba(244,114,182,0.08)", fg: "#be185d", ring: "rgba(244,114,182,0.25)" },
+  playful:   { icon: "sparkling",    bg: "rgba(245,158,11,0.08)",  fg: "#b45309", ring: "rgba(245,158,11,0.25)" },
+  concerned: { icon: "shield",       bg: "rgba(139,92,246,0.08)",  fg: "#6d28d9", ring: "rgba(139,92,246,0.25)" },
+  hopeful:   { icon: "grass",        bg: "rgba(34,197,94,0.08)",   fg: "#15803d", ring: "rgba(34,197,94,0.25)" },
 };
 
 export default function PetInsightCard({ petId, petName }: { petId: number; petName: string }) {
@@ -69,7 +70,7 @@ export default function PetInsightCard({ petId, petName }: { petId: number; petN
       marginTop: 16,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: insights.length ? 16 : 8 }}>
-        <span style={{ fontSize: 22 }}>💭</span>
+        <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="crystal-ball" size={22} /></span>
         <div style={{ flex: 1 }}>
           <div style={{
             fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
@@ -127,7 +128,7 @@ export default function PetInsightCard({ petId, petName }: { petId: number; petN
                   background: "white", border: `1px solid ${m.ring}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 17, flexShrink: 0,
-                }}>{m.emoji}</div>
+                }}><Icon name={m.icon} size={17} /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, lineHeight: 1.55, color: "#1a1a2e", fontWeight: 500 }}>
                     {ins.insight}

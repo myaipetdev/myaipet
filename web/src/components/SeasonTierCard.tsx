@@ -14,6 +14,17 @@
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import { SEASON_TIERS, seasonTier } from "@/lib/season";
+import Icon from "@/components/Icon";
+
+/** Maps each season tier to a crafted 3D icon (replaces the bare medal/rank emoji). */
+const TIER_ICON: Record<string, string> = {
+  sprout: "grass",
+  bronze: "medal",
+  silver: "medal",
+  gold: "medal",
+  diamond: "diamond",
+  legend: "crown",
+};
 
 export default function SeasonTierCard() {
   const [data, setData] = useState<any>(null);
@@ -51,7 +62,7 @@ export default function SeasonTierCard() {
               SEASON 1 STANDING
             </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 4 }}>
-              <span style={{ fontSize: 30, lineHeight: 1 }}>{tier.emoji}</span>
+              <span style={{ fontSize: 30, lineHeight: 1, display: "inline-flex" }}><Icon name={TIER_ICON[tier.key] || "medal"} size={30} /></span>
               <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 26, letterSpacing: "-0.02em", color: tier.color }}>
                 {tier.name}
               </span>
@@ -61,8 +72,13 @@ export default function SeasonTierCard() {
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 800, fontSize: 24, color: "#fde68a" }}>
               {signedIn ? points.toLocaleString() : "0"}<span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginLeft: 5 }}>pts</span>
             </div>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
-              {next ? `${toNext.toLocaleString()} to ${next.name}` : "👑 Top tier reached"}
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
+              {next ? `${toNext.toLocaleString()} to ${next.name}` : (
+                <>
+                  <Icon name="crown" size={12} />
+                  Top tier reached
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -90,7 +106,7 @@ export default function SeasonTierCard() {
                 opacity: reached ? 1 : 0.4, filter: reached ? "none" : "grayscale(0.6)",
                 transition: "all 0.3s",
               }}>
-                <div style={{ fontSize: 18, lineHeight: 1.1 }}>{t.emoji}</div>
+                <div style={{ fontSize: 18, lineHeight: 1.1, display: "flex", justifyContent: "center" }}><Icon name={TIER_ICON[t.key] || "medal"} size={18} /></div>
                 <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 9.5, fontWeight: 700, color: reached ? t.color : "rgba(255,255,255,0.7)", marginTop: 2, letterSpacing: "-0.01em" }}>
                   {t.name}
                 </div>
@@ -108,7 +124,12 @@ export default function SeasonTierCard() {
           display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
           fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, color: "rgba(255,255,255,0.78)",
         }}>
-          <span style={{ fontSize: 14 }}>📸</span>
+          <span style={{ fontSize: 14, display: "inline-flex", flexShrink: 0 }} aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.78)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 8.5A1.5 1.5 0 0 1 4.5 7h2.2l1-1.6A1 1 0 0 1 8.5 5h7a1 1 0 0 1 .85.46l1 1.54h2.15A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5v-9Z" />
+              <circle cx="12" cy="13" r="3.2" />
+            </svg>
+          </span>
           <span>Your standing is <strong style={{ color: "#fff" }}>snapshotted when Season 1 closes</strong> · {participants.toLocaleString()} raising now.</span>
           <span style={{ marginLeft: "auto", fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "rgba(255,255,255,0.4)" }}>
             non-financial status

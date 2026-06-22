@@ -66,8 +66,13 @@ export default function WardrobeCard({ petId, onChange }: { petId: number; onCha
   return (
     <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 14, background: "linear-gradient(135deg, rgba(168,85,247,0.06), rgba(245,158,11,0.04))", border: "1px solid rgba(168,85,247,0.16)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <span style={{ fontSize: 12, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, color: "#7c3aed", letterSpacing: "0.04em" }}>
-          👗 Wardrobe
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, color: "#7c3aed", letterSpacing: "0.04em" }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+            <path d="M12 2.5a2 2 0 0 0-2 2c0 1 1 1.6 1.4 2.4" />
+            <path d="M11.4 6.9 4.5 11a1 1 0 0 0-.5.9V20a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 20v-8.1a1 1 0 0 0-.5-.9l-6.9-4.1" />
+            <path d="m9 12 3 2 3-2" />
+          </svg>
+          Wardrobe
         </span>
         {credits != null && (
           <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.5)" }}>

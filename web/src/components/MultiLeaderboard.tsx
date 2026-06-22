@@ -8,14 +8,15 @@
  */
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import Icon from "@/components/Icon";
 
 const METRICS = [
-  { key: "streak",   label: "Streak King",     emoji: "🔥" },
-  { key: "chats",    label: "Most Talked To",  emoji: "💬" },
-  { key: "memories", label: "Memory Master",   emoji: "🧠" },
-  { key: "creator",  label: "Top Creator",     emoji: "🎬" },
-  { key: "bond",     label: "Most Bonded",     emoji: "💝" },
-  { key: "oldest",   label: "Day-One",         emoji: "🎂" },
+  { key: "streak",   label: "Streak King",     icon: "fire" },
+  { key: "chats",    label: "Most Talked To",  icon: "chat" },
+  { key: "memories", label: "Memory Master",   icon: "crystal-ball" },
+  { key: "creator",  label: "Top Creator",     icon: "film-reel" },
+  { key: "bond",     label: "Most Bonded",     icon: "heart" },
+  { key: "oldest",   label: "Day-One",         icon: "crown" },
 ] as const;
 
 type Metric = typeof METRICS[number]["key"];
@@ -33,6 +34,28 @@ interface Resp {
   meta: { label: string; unit: string; emoji: string; description: string };
   entries: Entry[];
   myRank: Entry | null;
+}
+
+// Flat rank medal (gold / silver / bronze) — crafted to match the leaderboard's
+// rounded, soft-shadow card style, while preserving the per-rank color distinction
+// the old 🥇🥈🥉 emoji carried.
+const MEDAL_PALETTE: Record<number, { ribbon: string; disc: string; rim: string; face: string }> = {
+  1: { ribbon: "#ef4444", disc: "#fbbf24", rim: "#d97706", face: "#7c2d12" },
+  2: { ribbon: "#60a5fa", disc: "#e2e8f0", rim: "#94a3b8", face: "#475569" },
+  3: { ribbon: "#fb923c", disc: "#e0a872", rim: "#a16207", face: "#5b3a1a" },
+};
+function MedalIcon({ place, size }: { place: number; size: number }) {
+  const c = MEDAL_PALETTE[place] || MEDAL_PALETTE[3];
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <path d="M11 3l4.5 9h-5L8 5.5z" fill={c.ribbon} opacity={0.85} />
+      <path d="M21 3l-4.5 9h5L24 5.5z" fill={c.ribbon} />
+      <circle cx="16" cy="21" r="9" fill={c.disc} stroke={c.rim} strokeWidth="1.6" />
+      <circle cx="16" cy="21" r="6" fill="none" stroke={c.rim} strokeWidth="1" opacity={0.45} />
+      <text x="16" y="24.4" textAnchor="middle" fontSize="9" fontWeight="800"
+        fontFamily="'JetBrains Mono', monospace" fill={c.face}>{place}</text>
+    </svg>
+  );
 }
 
 export default function MultiLeaderboard() {
@@ -77,8 +100,10 @@ export default function MultiLeaderboard() {
                 cursor: "pointer", whiteSpace: "nowrap",
                 fontFamily: "'Space Grotesk', sans-serif",
                 boxShadow: sel ? "0 1px 0 rgba(0,0,0,0.04)" : "none",
+                display: "inline-flex", alignItems: "center", gap: 6,
               }}>
-                {m.emoji} {m.label}
+                <Icon name={m.icon} size={16} />
+                {m.label}
               </button>
             );
           })}
@@ -137,7 +162,7 @@ export default function MultiLeaderboard() {
         {/* Empty */}
         {!loading && data?.entries.length === 0 && (
           <div style={{ padding: "40px 22px", textAlign: "center" }}>
-            <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.7 }}>🏆</div>
+            <div style={{ marginBottom: 10, opacity: 0.7 }}><Icon name="trophy" size={36} /></div>
             <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>No entries yet</div>
             <div style={{ fontSize: 13, color: "rgba(26,26,46,0.55)" }}>
               Be the first — your name appears at the top of an empty board.
@@ -157,7 +182,6 @@ export default function MultiLeaderboard() {
           }}>
             {[top3[1], top3[0], top3[2]].filter(Boolean).map((e, i) => {
               const place = e.rank;
-              const medal = place === 1 ? "🥇" : place === 2 ? "🥈" : "🥉";
               const podiumH = place === 1 ? 130 : place === 2 ? 110 : 100;
               return (
                 <div key={place} className="mp-lift" style={{
@@ -176,7 +200,7 @@ export default function MultiLeaderboard() {
                   boxShadow: place === 1 ? "0 8px 24px rgba(245,158,11,0.18)" : "none",
                   cursor: "default",
                 }}>
-                  <div style={{ fontSize: place === 1 ? 32 : 24, lineHeight: 1 }}>{medal}</div>
+                  <div style={{ lineHeight: 1 }}><MedalIcon place={place} size={place === 1 ? 32 : 24} /></div>
                   {e.pet?.avatar_url
                     ? <img src={e.pet.avatar_url} alt={e.pet.name} style={{
                         width: place === 1 ? 56 : 44,

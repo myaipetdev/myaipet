@@ -62,11 +62,17 @@ export default function CommunityPreview({ cta }: { cta?: ReactNode }) {
                   background: "rgba(0,0,0,0.55)", color: "#fff", borderRadius: 999, padding: "3px 9px",
                   fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 700, backdropFilter: "blur(4px)",
                 }}>
-                  <span style={{ color: "#f472b6" }}>♥</span> {it.likes}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#f472b6" aria-hidden="true" style={{ display: "block" }}>
+                    <path d="M12 20.7l-1.45-1.32C5.4 14.74 2 11.66 2 7.9 2 4.82 4.42 2.4 7.5 2.4c1.74 0 3.41.81 4.5 2.09 1.09-1.28 2.76-2.09 4.5-2.09 3.08 0 5.5 2.42 5.5 5.5 0 3.76-3.4 6.84-8.55 11.49L12 20.7z" />
+                  </svg> {it.likes}
                 </div>
               )}
               {it.isVideo && (
-                <div style={{ position: "absolute", top: 8, right: 8, fontSize: 12, background: "rgba(0,0,0,0.5)", color: "#fff", borderRadius: 8, padding: "2px 7px", fontFamily: "'JetBrains Mono', monospace" }}>▶</div>
+                <div style={{ position: "absolute", top: 8, right: 8, display: "inline-flex", alignItems: "center", background: "rgba(0,0,0,0.5)", color: "#fff", borderRadius: 8, padding: "5px 7px" }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="#fff" aria-hidden="true" style={{ display: "block" }}>
+                    <path d="M6 4.5v15a1 1 0 0 0 1.53.85l12-7.5a1 1 0 0 0 0-1.7l-12-7.5A1 1 0 0 0 6 4.5z" />
+                  </svg>
+                </div>
               )}
             </div>
           ))}

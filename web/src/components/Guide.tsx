@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import Icon from "@/components/Icon";
 
 const SECTIONS = [
-  { key: "overview", label: "Overview", icon: "📖" },
-  { key: "raising", label: "Raising", icon: "🐣" },
-  { key: "evolution", label: "Evolution", icon: "⭐" },
-  { key: "arena", label: "Arena", icon: "⚔️" },
-  { key: "items", label: "Items & Shop", icon: "🛒" },
-  { key: "rewards", label: "Rewards", icon: "🎁" },
-  { key: "economy", label: "pts Economy", icon: "🪙" },
+  { key: "overview", label: "Overview", icon: "scroll" },
+  { key: "raising", label: "Raising", icon: "chicken" },
+  { key: "evolution", label: "Evolution", icon: "sparkling" },
+  { key: "arena", label: "Arena", icon: "sword" },
+  { key: "items", label: "Items & Shop", icon: "shopping-cart" },
+  { key: "rewards", label: "Rewards", icon: "gift" },
+  { key: "economy", label: "pts Economy", icon: "coin" },
 ];
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -75,16 +76,16 @@ function OverviewSection() {
         </P>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginTop: 8 }}>
           {[
-            { icon: "🐣", title: "Adopt", desc: "Create your unique AI pet with custom personality and appearance" },
-            { icon: "❤️", title: "Raise", desc: "Feed, play, train — every interaction matters" },
-            { icon: "⚔️", title: "Battle", desc: "Compete in the Arena for glory and pts rewards" },
+            { icon: "chicken", title: "Adopt", desc: "Create your unique AI pet with custom personality and appearance" },
+            { icon: "heart", title: "Raise", desc: "Feed, play, train — every interaction matters" },
+            { icon: "sword", title: "Battle", desc: "Compete in the Arena for glory and pts rewards" },
           ].map(item => (
             <div key={item.title} style={{
               padding: "16px", borderRadius: 14,
               background: "rgba(251,191,36,0.04)", border: "1px solid rgba(251,191,36,0.1)",
               textAlign: "center",
             }}>
-              <div style={{ fontSize: 28, marginBottom: 6 }}>{item.icon}</div>
+              <div style={{ marginBottom: 6 }}><Icon name={item.icon} size={28} /></div>
               <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginBottom: 4 }}>{item.title}</div>
               <div style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.5)", lineHeight: 1.6 }}>{item.desc}</div>
             </div>
@@ -130,18 +131,18 @@ function RaisingSection() {
         <P>Your pet has 5 core stats. Keep them balanced for optimal growth!</P>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {[
-            { icon: "💖", name: "Happiness", desc: "Affects mood and battle HP. Keep above 40 to avoid sadness.", color: "#f472b6" },
-            { icon: "⚡", name: "Energy", desc: "Required for Play, Walk, Train. Recovers slowly over time.", color: "#60a5fa" },
-            { icon: "🍖", name: "Hunger", desc: "Increases over time. Feed your pet before it reaches 80+!", color: "#fbbf24" },
-            { icon: "🤝", name: "Bond", desc: "Deepens through Talk and Pet. Affects battle loyalty.", color: "#c084fc" },
-            { icon: "✨", name: "EXP", desc: "100 EXP per level. Train gives the most EXP (+20).", color: "#4ade80" },
+            { icon: "heart", name: "Happiness", desc: "Affects mood and battle HP. Keep above 40 to avoid sadness.", color: "#f472b6" },
+            { icon: "electric", name: "Energy", desc: "Required for Play, Walk, Train. Recovers slowly over time.", color: "#60a5fa" },
+            { icon: "chicken", name: "Hunger", desc: "Increases over time. Feed your pet before it reaches 80+!", color: "#fbbf24" },
+            { icon: "like", name: "Bond", desc: "Deepens through Talk and Pet. Affects battle loyalty.", color: "#c084fc" },
+            { icon: "sparkling", name: "EXP", desc: "100 EXP per level. Train gives the most EXP (+20).", color: "#4ade80" },
           ].map(s => (
             <div key={s.name} style={{
               padding: "12px 14px", borderRadius: 12,
               background: `${s.color}08`, border: `1px solid ${s.color}20`,
               display: "flex", gap: 10, alignItems: "flex-start",
             }}>
-              <span style={{ fontSize: 20, flexShrink: 0 }}>{s.icon}</span>
+              <span style={{ flexShrink: 0 }}><Icon name={s.icon} size={20} /></span>
               <div>
                 <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: s.color }}>{s.name}</div>
                 <div style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.5)", lineHeight: 1.6 }}>{s.desc}</div>
@@ -181,11 +182,11 @@ function EvolutionSection() {
         <P>Your pet evolves through 5 stages. Each evolution unlocks new battle skills and grants 50 credits!</P>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, flexWrap: "wrap", justifyContent: "center" }}>
           {[
-            { icon: "🥚", name: "Baby", lv: 1, skills: "—" },
-            { icon: "🌱", name: "Young", lv: 5, skills: "Fetch, Sit" },
-            { icon: "⭐", name: "Adult", lv: 10, skills: "Guard, Trick" },
-            { icon: "👑", name: "Elder", lv: 20, skills: "Inspire, Heal" },
-            { icon: "🔱", name: "Legendary", lv: 35, skills: "Transcend" },
+            { icon: "open-box", name: "Baby", lv: 1, skills: "—" },
+            { icon: "grass", name: "Young", lv: 5, skills: "Fetch, Sit" },
+            { icon: "sparkling", name: "Adult", lv: 10, skills: "Guard, Trick" },
+            { icon: "crown", name: "Elder", lv: 20, skills: "Inspire, Heal" },
+            { icon: "trophy", name: "Legendary", lv: 35, skills: "Transcend" },
           ].map((stage, i, arr) => (
             <div key={stage.name} style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{
@@ -193,7 +194,7 @@ function EvolutionSection() {
                 background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.15)",
                 minWidth: 90,
               }}>
-                <div style={{ fontSize: 28, marginBottom: 4 }}>{stage.icon}</div>
+                <div style={{ marginBottom: 4 }}><Icon name={stage.icon} size={28} /></div>
                 <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 700, color: "#1a1a2e" }}>{stage.name}</div>
                 <div style={{ fontFamily: "mono", fontSize: 9, color: "#b45309" }}>Lv.{stage.lv}+</div>
                 <div style={{ fontFamily: "mono", fontSize: 8, color: "rgba(26,26,46,0.4)", marginTop: 4 }}>{stage.skills}</div>
@@ -229,17 +230,17 @@ function ArenaSection() {
         </P>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
           {[
-            { label: "HP", desc: "Based on level + happiness", icon: "❤️" },
-            { label: "ATK", desc: "Based on evolution stage + energy", icon: "⚔️" },
-            { label: "DEF", desc: "Based on evolution stage + energy", icon: "🛡️" },
-            { label: "SPD", desc: "Based on total interactions", icon: "💨" },
+            { label: "HP", desc: "Based on level + happiness", icon: "heart" },
+            { label: "ATK", desc: "Based on evolution stage + energy", icon: "sword" },
+            { label: "DEF", desc: "Based on evolution stage + energy", icon: "shield" },
+            { label: "SPD", desc: "Based on total interactions", icon: "footprints" },
           ].map(s => (
             <div key={s.label} style={{
               padding: "10px 14px", borderRadius: 10,
               background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)",
               display: "flex", alignItems: "center", gap: 8,
             }}>
-              <span style={{ fontSize: 18 }}>{s.icon}</span>
+              <span><Icon name={s.icon} size={18} /></span>
               <div>
                 <div style={{ fontFamily: "mono", fontSize: 12, fontWeight: 700, color: "#1a1a2e" }}>{s.label}</div>
                 <div style={{ fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.5)" }}>{s.desc}</div>
@@ -453,7 +454,7 @@ export default function Guide() {
           fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700,
           color: "#1a1a2e", marginBottom: 6, display: "flex", alignItems: "center", gap: 10,
         }}>
-          <span style={{ fontSize: 28 }}>📖</span> Game Guide
+          <Icon name="scroll" size={28} /> Game Guide
         </h2>
         <p style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.45)" }}>
           Everything you need to know about raising your AI pet
@@ -476,7 +477,7 @@ export default function Guide() {
             transition: "all 0.2s", whiteSpace: "nowrap",
             display: "flex", alignItems: "center", gap: 5,
           }}>
-            <span style={{ fontSize: 13 }}>{s.icon}</span>
+            <Icon name={s.icon} size={14} />
             {s.label}
           </button>
         ))}

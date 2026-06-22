@@ -17,6 +17,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import Icon, { PET_ICONS } from "@/components/Icon";
 
 const DEMO_PET: Pet = {
   id: -1,
@@ -325,10 +326,10 @@ function StudioInner() {
             generate up to 10 seconds at 1080p, and add native audio.
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            <CapPill emoji="🎭" label="Pet Anchor (PuLID)" />
-            <CapPill emoji="🎵" label="Native Audio (Veo 3)" />
-            <CapPill emoji="📺" label="1080p · up to 10s" />
-            <CapPill emoji="⚡" label="6 video models" />
+            <CapPill icon="crystal-ball" label="Pet Anchor (PuLID)" />
+            <CapPill icon="sparkling" label="Native Audio (Veo 3)" />
+            <CapPill icon="film-reel" label="1080p · up to 10s" />
+            <CapPill icon="electric" label="6 video models" />
           </div>
         </div>
 
@@ -347,7 +348,7 @@ function StudioInner() {
             }}>
               {pet.avatar_url
                 ? <img src={pet.avatar_url} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : <span>🐾</span>}
+                : <Icon name={PET_ICONS[pet.species] || "paw"} size={32} alt={pet.name} />}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.55)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 2 }}>
@@ -449,7 +450,7 @@ function StudioInner() {
             background: "white", borderRadius: 18, padding: "60px 28px",
             border: "1px solid rgba(0,0,0,0.06)", textAlign: "center",
           }}>
-            <div className="studio-spin" style={{ fontSize: 44, marginBottom: 14, display: "inline-block" }}>⏳</div>
+            <div className="studio-spin" style={{ marginBottom: 14, display: "inline-flex", lineHeight: 0 }}><Icon name="compass" size={44} /></div>
             <div style={{ fontSize: 18, fontWeight: 700 }}>Loading your pets…</div>
             <div style={{ fontSize: 14, color: "rgba(26,26,46,0.55)", marginTop: 6 }}>
               Fetching from /api/pets
@@ -466,7 +467,11 @@ function StudioInner() {
             border: "1px solid rgba(59,130,246,0.25)",
             fontSize: 14, color: "#1e3a8a",
           }}>
-            <span style={{ fontSize: 18 }}>💡</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
+              <path d="M9 18h6" />
+              <path d="M10 21h4" />
+              <path d="M12 3a6 6 0 0 0-3.7 10.7c.7.6 1.2 1.4 1.4 2.3h4.6c.2-.9.7-1.7 1.4-2.3A6 6 0 0 0 12 3Z" />
+            </svg>
             <span style={{ flex: 1 }}>
               <strong>Demo mode</strong> — try the full flow with Sparky. Sign in & adopt a real pet to actually generate.
             </span>
@@ -613,7 +618,7 @@ function StudioInner() {
         {view === "generating" && (
           <div style={card}>
             <div style={{ padding: "56px 24px", textAlign: "center" }}>
-              <div style={{ fontSize: 56, marginBottom: 18 }} className="studio-spin">🎞</div>
+              <div style={{ marginBottom: 18, display: "inline-flex", lineHeight: 0 }} className="studio-spin"><Icon name="film-reel" size={56} /></div>
               <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Generating…</div>
               <div style={{ fontSize: 15, color: "rgba(26,26,46,0.65)" }}>
                 30 – 90 seconds. Don't close the page.
@@ -727,7 +732,13 @@ function StudioInner() {
         {view === "error" && (
           <div style={card}>
             <div style={{ padding: 32, textAlign: "center" }}>
-              <div style={{ fontSize: 40, marginBottom: 10 }}>⚠</div>
+              <div style={{ marginBottom: 10, display: "inline-flex", lineHeight: 0 }}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+                  <path d="M12 9v4" />
+                  <path d="M12 17h.01" />
+                </svg>
+              </div>
               <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Generation failed</div>
               <div style={{ fontSize: 15, color: "rgba(26,26,46,0.65)", marginBottom: 22, maxWidth: 460, margin: "0 auto 22px", lineHeight: 1.5 }}>{error}</div>
               <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
@@ -768,7 +779,21 @@ function ChatBubble({ msg }: { msg: Msg; isLast: boolean; onChip: (c: Chip) => v
         background: isAi ? "rgba(245,158,11,0.14)" : "rgba(26,26,46,0.08)",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 18,
-      }}>{isAi ? "🤖" : "🧑"}</div>
+      }}>
+        {isAi ? (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="4" y="8" width="16" height="11" rx="3" />
+            <path d="M12 4v4" />
+            <circle cx="12" cy="3" r="1.4" />
+            <path d="M9 13h.01M15 13h.01" />
+          </svg>
+        ) : (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a1a2e" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="3.5" />
+            <path d="M5 20a7 7 0 0 1 14 0" />
+          </svg>
+        )}
+      </div>
       <div style={{ maxWidth: "82%" }}>
         <div style={{
           padding: "12px 16px", borderRadius: 16,
@@ -783,14 +808,47 @@ function ChatBubble({ msg }: { msg: Msg; isLast: boolean; onChip: (c: Chip) => v
   );
 }
 
-function ModelBadges({ model }: { model: StudioModel }) {
-  const badges: { label: string; bg: string; fg: string }[] = [];
+// Tiny flat glyphs sized to sit inside a 10px monospace badge.
+// They use currentColor so each inherits its badge's `fg`.
+const BADGE_ICONS = {
+  audio: (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 18V6l11-2v12" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="17" cy="16" r="3" />
+    </svg>
+  ),
+  anchor: (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="5" r="2.5" />
+      <path d="M12 7.5V21" />
+      <path d="M5 13a7 7 0 0 0 14 0" />
+      <path d="M4 13h3M17 13h3" />
+    </svg>
+  ),
+  resolution: (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="5" width="20" height="13" rx="2" />
+      <path d="M9 21h6" />
+    </svg>
+  ),
+  duration: (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="13" r="8" />
+      <path d="M12 9v4l2.5 1.5" />
+      <path d="M9 2h6" />
+    </svg>
+  ),
+} as const;
 
-  if (model.id === "veo-3") badges.push({ label: "🎵 AUDIO", bg: "rgba(168,85,247,0.12)", fg: "#7e22ce" });
-  if (model.supportsImageRef) badges.push({ label: "🎭 PET ANCHOR", bg: "rgba(245,158,11,0.12)", fg: "#b45309" });
+function ModelBadges({ model }: { model: StudioModel }) {
+  const badges: { icon?: React.ReactNode; label: string; bg: string; fg: string }[] = [];
+
+  if (model.id === "veo-3") badges.push({ icon: BADGE_ICONS.audio, label: "AUDIO", bg: "rgba(168,85,247,0.12)", fg: "#7e22ce" });
+  if (model.supportsImageRef) badges.push({ icon: BADGE_ICONS.anchor, label: "PET ANCHOR", bg: "rgba(245,158,11,0.12)", fg: "#b45309" });
   if (model.maxResolution.includes("1080") || model.maxResolution === "4K")
-    badges.push({ label: `📺 ${model.maxResolution}`, bg: "rgba(22,163,74,0.10)", fg: "#15803d" });
-  if (model.maxDurationSec >= 8) badges.push({ label: `⏱ ${model.maxDurationSec}s`, bg: "rgba(59,130,246,0.10)", fg: "#1e3a8a" });
+    badges.push({ icon: BADGE_ICONS.resolution, label: model.maxResolution, bg: "rgba(22,163,74,0.10)", fg: "#15803d" });
+  if (model.maxDurationSec >= 8) badges.push({ icon: BADGE_ICONS.duration, label: `${model.maxDurationSec}s`, bg: "rgba(59,130,246,0.10)", fg: "#1e3a8a" });
   if (model.tier === "free") badges.push({ label: "FREE", bg: "rgba(0,0,0,0.05)", fg: "#1a1a2e" });
   else badges.push({ label: model.tier.toUpperCase(), bg: "rgba(245,158,11,0.16)", fg: "#b45309" });
 
@@ -798,17 +856,18 @@ function ModelBadges({ model }: { model: StudioModel }) {
     <>
       {badges.map((b, i) => (
         <span key={i} style={{
+          display: "inline-flex", alignItems: "center", gap: 4,
           padding: "3px 8px", borderRadius: 999,
           fontSize: 10, fontWeight: 800, letterSpacing: "0.08em",
           fontFamily: "'JetBrains Mono', monospace",
           background: b.bg, color: b.fg,
-        }}>{b.label}</span>
+        }}>{b.icon}{b.label}</span>
       ))}
     </>
   );
 }
 
-function CapPill({ emoji, label }: { emoji: string; label: string }) {
+function CapPill({ icon, label }: { icon: string; label: string }) {
   return (
     <div style={{
       display: "inline-flex", alignItems: "center", gap: 6,
@@ -818,7 +877,7 @@ function CapPill({ emoji, label }: { emoji: string; label: string }) {
       fontSize: 12, color: "rgba(255,255,255,0.92)",
       fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600,
     }}>
-      <span style={{ fontSize: 14 }}>{emoji}</span>{label}
+      <Icon name={icon} size={16} />{label}
     </div>
   );
 }

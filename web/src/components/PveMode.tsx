@@ -10,7 +10,7 @@ import {
   SKILL_MAP, ELEMENTS, SPECIES_ELEMENTS, calcDamageV2, getStarterSkills,
   type Element, type SkillDef,
 } from "@/lib/skills";
-import Icon, { ELEMENT_ICONS } from "@/components/Icon";
+import Icon, { ELEMENT_ICONS, PET_ICONS } from "@/components/Icon";
 import HpBarOverlay from "@/components/three/HpBarOverlay";
 import { useBattleAnimations } from "@/hooks/useBattleAnimations";
 
@@ -69,13 +69,6 @@ const STRUGGLE_SKILL: EquippedSkill = {
 // ── Phases ──
 type Phase = "map" | "select_pet" | "pre_battle" | "battle" | "result";
 
-const PET_EMOJIS = [
-  "🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶",
-  "🐕‍🦺","🐶","🐉","🦅","🦄","🐺","🐯","🐼",
-  "🐧","🦉","🐻","🐒","🐍","🦅","🐬","🦈",
-  "🦝","🐾","🦎","🐹",
-];
-
 // ── Region theme gradients ──
 const REGION_GRADIENTS: Record<number, string> = {
   1: "linear-gradient(135deg, #064e3b 0%, #022c22 100%)", // Grasslands
@@ -112,7 +105,7 @@ function buildPlayerBattle(pet: Pet, skills: EquippedSkill[]): BattlePet {
   const m = getPersonalityMods(pet.personality_type);
   const el = (pet.element as Element) || SPECIES_ELEMENTS[pet.species] || "normal";
   return {
-    name: pet.name, emoji: PET_EMOJIS[pet.species] || "🐾",
+    name: pet.name, emoji: PET_ICONS[pet.species] || "paw",
     element: el, level: pet.level,
     hp: Math.floor((pet.level * 10 + pet.happiness) * m.hp),
     maxHp: Math.floor((pet.level * 10 + pet.happiness) * m.hp),
@@ -730,7 +723,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                       {regionStars}/{region.stages.length * 3}
                     </span>
                   </div>
-                  {allCleared && <span style={{ fontSize: 14 }}>✅</span>}
+                  {allCleared && <span style={{ fontSize: 14 }}><Icon name="medal" size={14} /></span>}
                 </div>
               </div>
 
@@ -1060,7 +1053,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                         width: 40, height: 40, borderRadius: 10, objectFit: "cover",
                         border: `2px solid ${el.color}30`,
                       }} />
-                    : PET_EMOJIS[pet.species] || "🐾"}
+                    : <Icon name={PET_ICONS[pet.species] || "paw"} size={40} />}
                 </div>
                 <div style={{
                   color: "#e8e8e8", fontSize: 13, fontWeight: 700,
@@ -1250,14 +1243,14 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
     const playerBuffIcons: React.ReactNode[] = [];
     if (buffs.def_up.stacks > 0) playerBuffIcons.push(<Icon key="def" name="shield" size={12} />);
     if (buffs.sp_atk_up.stacks > 0) playerBuffIcons.push(<Icon key="atk" name="sword" size={12} />);
-    if (playerDodging) playerBuffIcons.push(<span key="dodge">💨</span>);
+    if (playerDodging) playerBuffIcons.push(<span key="dodge"><Icon name="footprints" size={12} /></span>);
     if (buffs.water_boost) playerBuffIcons.push(<Icon key="water" name="water" size={12} />);
 
     const enemyDebuffIcons: React.ReactNode[] = [];
     if (buffs.burn) enemyDebuffIcons.push(<Icon key="burn" name="fire" size={12} />);
     if (buffs.paralyze) enemyDebuffIcons.push(<Icon key="para" name="electric" size={12} />);
     if (buffs.drain) enemyDebuffIcons.push(<Icon key="drain" name="grass" size={12} />);
-    if (enemyDodging) enemyDebuffIcons.push(<span key="dodge">💨</span>);
+    if (enemyDodging) enemyDebuffIcons.push(<span key="dodge"><Icon name="footprints" size={12} /></span>);
 
     return (
       <div style={{

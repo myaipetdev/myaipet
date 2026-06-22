@@ -22,6 +22,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import { seasonTier } from "@/lib/season";
+import Icon from "@/components/Icon";
 
 interface ProjectionData {
   signedIn: boolean;
@@ -171,7 +172,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
                 background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.18)",
                 display: "flex", alignItems: "center", gap: 12, position: "relative",
               }}>
-                <span style={{ fontSize: 18 }}>🎯</span>
+                <span style={{ fontSize: 18, display: "inline-flex" }}><Icon name="compass" size={18} /></span>
                 <div style={{ flex: 1, fontSize: 13, color: "rgba(255,255,255,0.85)", fontFamily: "'Space Grotesk',sans-serif" }}>
                   Just <strong style={{ color: "#fbbf24" }}>{me.pointsToNextRank.toLocaleString()} pts</strong> to rank #{me.rank - 1}. One care session is +5. Keep climbing.
                 </div>
@@ -297,19 +298,19 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
       <div style={{
         display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14,
       }} className="pitch-how-grid">
-        <PathCard step="01" emoji="🐾" title="Care daily"
+        <PathCard step="01" icon="paw" title="Care daily"
           body="Feed, play, talk. 5 free / day. A 7-day streak earns a Memory NFT (mints at on-chain go-live)."
           earn="+5 pts per care" cta="Start raising"
           onClick={() => onNavigate?.("my pet")} accent="#16a34a" />
-        <PathCard step="02" emoji="🔥" title="Keep your streak"
+        <PathCard step="02" icon="fire" title="Keep your streak"
           body="Show up daily. A 7-day streak pays a bonus, 30 days pays more — and earns a Memory NFT at on-chain go-live."
           earn="+100 (7d) · +500 (30d)" cta="Check in"
           onClick={() => onNavigate?.("my pet")} accent="#dc2626" />
-        <PathCard step="03" emoji="🎬" title="Create together"
+        <PathCard step="03" icon="film-reel" title="Create together"
           body="Generate AI images & videos starring your pet. Every creation stacks Season Rewards points."
           earn="+10 image · +25 video" cta="Create"
           onClick={() => onNavigate?.("create")} accent="#f59e0b" />
-        <PathCard step="04" emoji="🏆" title="Climb leaderboard"
+        <PathCard step="04" icon="trophy" title="Climb leaderboard"
           body="Rank by Season Rewards points. Top raisers earn rewards when Season 1 closes."
           earn="Top 100 = rewards" cta="See ranks"
           onClick={() => onNavigate?.("leaderboard")} accent="#b45309" />
@@ -346,8 +347,8 @@ function timeAgo(iso: string, nowMs: number): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-function PathCard({ step, emoji, title, body, earn, cta, onClick, accent }: {
-  step: string; emoji: string; title: string; body: string;
+function PathCard({ step, icon, title, body, earn, cta, onClick, accent }: {
+  step: string; icon: string; title: string; body: string;
   earn: string; cta: string; onClick?: () => void; accent: string;
 }) {
   return (
@@ -365,7 +366,7 @@ function PathCard({ step, emoji, title, body, earn, cta, onClick, accent }: {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(26,26,46,0.4)", letterSpacing: "0.08em" }}>{step}</span>
-        <span style={{ fontSize: 22 }}>{emoji}</span>
+        <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name={icon} size={22} /></span>
       </div>
       <div style={{ fontSize: 17, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.02em" }}>{title}</div>
       <div style={{ fontSize: 13, color: "rgba(26,26,46,0.6)", lineHeight: 1.55 }}>{body}</div>

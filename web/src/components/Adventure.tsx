@@ -27,8 +27,9 @@ interface Pet {
   personality_modifiers?: any;
 }
 
-const PET_EMOJIS = [
-  "\u{1F431}", "\u{1F415}", "\u{1F99C}", "\u{1F422}", "\u{1F439}", "\u{1F430}", "\u{1F98A}", "\u{1F436}",
+// Pet-species avatar icon names (index = species), mapped to the 3D icon set
+const PET_ICON_NAMES = [
+  "cat", "dog", "parrot", "turtle", "hamster", "rabbit", "fox", "dog",
 ];
 
 const MOOD_MAP: Record<string, { emoji: string; color: string }> = {
@@ -301,16 +302,16 @@ const MENU_ITEMS = [
 
 // ── Wild Encounter Data ──
 const WILD_PETS = [
-  { name: "Mossy Frog", emoji: "\u{1F438}", personality: "shy", rarity: "common" },
-  { name: "Shadow Fox", emoji: "\u{1F98A}", personality: "cunning", rarity: "uncommon" },
-  { name: "Crystal Bunny", emoji: "\u{1F430}", personality: "gentle", rarity: "rare" },
-  { name: "Thunder Pup", emoji: "\u{1F436}", personality: "brave", rarity: "uncommon" },
-  { name: "Mystic Owl", emoji: "\u{1F989}", personality: "wise", rarity: "rare" },
-  { name: "Flame Lizard", emoji: "\u{1F98E}", personality: "fierce", rarity: "uncommon" },
-  { name: "Coral Turtle", emoji: "\u{1F422}", personality: "calm", rarity: "common" },
-  { name: "Starlight Cat", emoji: "\u{1F431}", personality: "mysterious", rarity: "rare" },
-  { name: "Berry Hamster", emoji: "\u{1F439}", personality: "playful", rarity: "common" },
-  { name: "Wind Parrot", emoji: "\u{1F99C}", personality: "chatty", rarity: "uncommon" },
+  { name: "Mossy Frog", icon: "turtle", personality: "shy", rarity: "common" },
+  { name: "Shadow Fox", icon: "fox", personality: "cunning", rarity: "uncommon" },
+  { name: "Crystal Bunny", icon: "rabbit", personality: "gentle", rarity: "rare" },
+  { name: "Thunder Pup", icon: "dog", personality: "brave", rarity: "uncommon" },
+  { name: "Mystic Owl", icon: "chicken", personality: "wise", rarity: "rare" },
+  { name: "Flame Lizard", icon: "snake", personality: "fierce", rarity: "uncommon" },
+  { name: "Coral Turtle", icon: "turtle", personality: "calm", rarity: "common" },
+  { name: "Starlight Cat", icon: "cat", personality: "mysterious", rarity: "rare" },
+  { name: "Berry Hamster", icon: "hamster", personality: "playful", rarity: "common" },
+  { name: "Wind Parrot", icon: "parrot", personality: "chatty", rarity: "uncommon" },
 ];
 
 const RARITY_COLORS: Record<string, string> = {
@@ -327,15 +328,15 @@ const RARITY_BG: Record<string, string> = {
 
 // ── Explore Data ──
 const EXPLORE_LOCATIONS = [
-  { name: "Ancient Ruins", emoji: "\u{1F3DA}\uFE0F", type: "treasure" as const, desc: "Crumbling stones hide forgotten wealth" },
-  { name: "Sunlit Meadow", emoji: "\u{1F33B}", type: "rest" as const, desc: "Warm grass and gentle breeze" },
-  { name: "Training Dojo", emoji: "\u{1F94B}", type: "training" as const, desc: "A master awaits within" },
-  { name: "Crystal Cave", emoji: "\u{1F48E}", type: "treasure" as const, desc: "Glimmering gems line the walls" },
-  { name: "Hot Springs", emoji: "\u2668\uFE0F", type: "rest" as const, desc: "Rejuvenating mineral waters" },
-  { name: "Obstacle Course", emoji: "\u{1F3CB}\uFE0F", type: "training" as const, desc: "Test your pet's limits" },
-  { name: "Pirate Cove", emoji: "\u{1F3F4}\u200D\u2620\uFE0F", type: "treasure" as const, desc: "X marks the spot" },
-  { name: "Zen Garden", emoji: "\u{1F33F}", type: "rest" as const, desc: "Inner peace and recovery" },
-  { name: "Sparring Ring", emoji: "\u{1F94A}", type: "training" as const, desc: "Practice makes perfect" },
+  { name: "Ancient Ruins", icon: "treasure-chest", type: "treasure" as const, desc: "Crumbling stones hide forgotten wealth" },
+  { name: "Sunlit Meadow", icon: "grass", type: "rest" as const, desc: "Warm grass and gentle breeze" },
+  { name: "Training Dojo", icon: "boxing", type: "training" as const, desc: "A master awaits within" },
+  { name: "Crystal Cave", icon: "diamond", type: "treasure" as const, desc: "Glimmering gems line the walls" },
+  { name: "Hot Springs", icon: "water", type: "rest" as const, desc: "Rejuvenating mineral waters" },
+  { name: "Obstacle Course", icon: "footprints", type: "training" as const, desc: "Test your pet's limits" },
+  { name: "Pirate Cove", icon: "treasure-chest", type: "treasure" as const, desc: "X marks the spot" },
+  { name: "Zen Garden", icon: "tree", type: "rest" as const, desc: "Inner peace and recovery" },
+  { name: "Sparring Ring", icon: "boxing", type: "training" as const, desc: "Practice makes perfect" },
 ];
 
 const LOCATION_COLORS: Record<string, { accent: string; bg: string }> = {
@@ -551,7 +552,7 @@ function PetSelector({ pets, onSelect, accent, loading }: {
         textAlign: "center", padding: 40,
         ...glassCard("#666", { padding: "40px 20px" }),
       }}>
-        <div style={{ fontSize: 32, marginBottom: 10, opacity: 0.5 }}>{"\u{1F43E}"}</div>
+        <div style={{ fontSize: 32, marginBottom: 10, opacity: 0.5 }}><Icon name="paw" size={32} /></div>
         <div style={{ color: "#666", fontSize: 13 }}>No pets found. Adopt a pet first!</div>
       </div>
     );
@@ -605,8 +606,8 @@ function PetSelector({ pets, onSelect, accent, loading }: {
                   border: `2px solid ${accent}30`,
                 }} />
               ) : (
-                <span style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.3))" }}>
-                  {PET_EMOJIS[pet.species] || "\u{1F43E}"}
+                <span style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.3))", display: "inline-flex" }}>
+                  <Icon name={PET_ICON_NAMES[pet.species] || "paw"} size={36} />
                 </span>
               )}
               {/* Mood indicator */}
@@ -628,11 +629,11 @@ function PetSelector({ pets, onSelect, accent, loading }: {
             {/* Mini stat bars */}
             <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ fontSize: 8, color: "#4ade80", width: 10 }}>{"\u26A1"}</span>
+                <span style={{ width: 10, display: "inline-flex", justifyContent: "center" }}><Icon name="electric" size={10} /></span>
                 <HpBar value={pet.energy} max={100} color="#4ade80" height={4} />
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ fontSize: 8, color: "#f472b6", width: 10 }}>{"\u2764"}</span>
+                <span style={{ width: 10, display: "inline-flex", justifyContent: "center" }}><Icon name="heart" size={10} /></span>
                 <HpBar value={pet.happiness} max={100} color="#f472b6" height={4} />
               </div>
             </div>
@@ -786,7 +787,7 @@ function WildEncounter({ onBack }: { onBack: () => void }) {
                     width: 44, height: 44, borderRadius: 10, objectFit: "cover",
                   }} />
                 ) : (
-                  PET_EMOJIS[selectedPet.species] || "\u{1F43E}"
+                  <Icon name={PET_ICON_NAMES[selectedPet.species] || "paw"} size={40} />
                 )}
               </div>
               <div style={{ color: "#e0e0e0", fontSize: 13, fontWeight: 700 }}>{selectedPet.name}</div>
@@ -816,7 +817,7 @@ function WildEncounter({ onBack }: { onBack: () => void }) {
               background: RARITY_BG[wildPet.rarity],
             }}>
               <div style={{ fontSize: 40, marginBottom: 6, animation: "bounce 2.5s ease-in-out infinite" }}>
-                {wildPet.emoji}
+                <Icon name={wildPet.icon} size={40} />
               </div>
               <div style={{ color: "#e0e0e0", fontSize: 13, fontWeight: 700 }}>{wildPet.name}</div>
               <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 6 }}>
@@ -844,8 +845,8 @@ function WildEncounter({ onBack }: { onBack: () => void }) {
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             {[
               { key: "befriend" as const, label: "Befriend", emoji: <Icon name="heart" size={28} />, color: "#6bcf7f", desc: "+EXP, +Bond, rare bonus" },
-              { key: "feed" as const, label: "Feed", emoji: "\u{1F356}", color: "#ffa726", desc: "+EXP, Hunger recovery" },
-              { key: "flee" as const, label: "Flee", emoji: "\u{1F4A8}", color: "#90a4ae", desc: "Safe retreat, +2 EXP" },
+              { key: "feed" as const, label: "Feed", emoji: <Icon name="chicken" size={28} />, color: "#ffa726", desc: "+EXP, Hunger recovery" },
+              { key: "flee" as const, label: "Flee", emoji: <Icon name="footprints" size={28} />, color: "#90a4ae", desc: "Safe retreat, +2 EXP" },
             ].map((act, i) => (
               <RpgButton
                 key={act.key}
@@ -883,7 +884,9 @@ function WildEncounter({ onBack }: { onBack: () => void }) {
             animation: "resultPop 0.6s cubic-bezier(0.2, 0, 0.2, 1)",
             filter: result.hasSkill ? "drop-shadow(0 0 20px rgba(245,158,11,0.6))" : undefined,
           }}>
-            {result.success ? (result.action === "flee" ? "\u{1F4A8}" : "\u2728") : "\u{1F343}"}
+            {result.success
+              ? (result.action === "flee" ? <Icon name="footprints" size={64} /> : <Icon name="sparkling" size={64} />)
+              : <Icon name="grass" size={64} />}
           </div>
           <div style={{
             color: result.success ? accent : "#f87171",
@@ -1062,10 +1065,10 @@ function Explore({ onBack }: { onBack: () => void }) {
             display: "flex", justifyContent: "center", alignItems: "center", gap: 10,
             marginBottom: 16,
           }}>
-            <span style={{ fontSize: 20 }}>
+            <span style={{ fontSize: 20, display: "inline-flex" }}>
               {selectedPet.avatar_url ? (
                 <img src={selectedPet.avatar_url} alt="" style={{ width: 24, height: 24, borderRadius: 6, objectFit: "cover" }} />
-              ) : PET_EMOJIS[selectedPet.species] || "\u{1F43E}"}
+              ) : <Icon name={PET_ICON_NAMES[selectedPet.species] || "paw"} size={24} />}
             </span>
             <span style={{ color: "#888", fontSize: 11, letterSpacing: 1 }}>
               {selectedPet.name} ventures into the unknown...
@@ -1148,12 +1151,13 @@ function Explore({ onBack }: { onBack: () => void }) {
                         fontSize: 40, marginBottom: 8, position: "relative",
                         animation: `${animationType} 2.5s ease-in-out infinite`,
                       }}>
-                        {loc.emoji}
+                        <Icon name={loc.icon} size={40} />
                         {loc.type === "treasure" && (
                           <span style={{
                             position: "absolute", top: -4, right: -8, fontSize: 12,
+                            display: "inline-flex",
                             animation: "sparkle 1.5s ease-in-out infinite 0.3s",
-                          }}>{"\u2728"}</span>
+                          }}><Icon name="sparkling" size={12} /></span>
                         )}
                       </div>
                       <div style={{ color: "#e0e0e0", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{loc.name}</div>
@@ -1391,8 +1395,8 @@ function GymChallenge({ onBack }: { onBack: () => void }) {
             display: "flex", justifyContent: "center", alignItems: "center", gap: 8,
             marginBottom: 20,
           }}>
-            <span style={{ fontSize: 18 }}>
-              {PET_EMOJIS[selectedPet.species] || "\u{1F43E}"}
+            <span style={{ fontSize: 18, display: "inline-flex" }}>
+              <Icon name={PET_ICON_NAMES[selectedPet.species] || "paw"} size={22} />
             </span>
             <span style={{ color: "#888", fontSize: 11, letterSpacing: 1 }}>
               {selectedPet.name} enters the gym. Choose a training focus:
@@ -1547,7 +1551,7 @@ function GymChallenge({ onBack }: { onBack: () => void }) {
             animation: "resultPop 0.6s cubic-bezier(0.2, 0, 0.2, 1)",
             filter: result.success ? `drop-shadow(0 0 20px ${accent}80)` : undefined,
           }}>
-            {result.success ? "\u{1F3C6}" : "\u{1F4AA}"}
+            {result.success ? <Icon name="trophy" size={64} /> : <Icon name="boxing" size={64} />}
           </div>
           <div style={{
             color: result.success ? accent : "#aaa",
@@ -1861,7 +1865,8 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                     <div style={{
                       fontSize: 42,
                       filter: "drop-shadow(0 0 20px rgba(80,200,120,0.4))",
-                    }}>{"\u{1F3AE}"}</div>
+                      display: "flex",
+                    }}>{<Icon name="joystick" size={42} />}</div>
                     <div
                       style={{
                         color: "#e0e0e0",
@@ -1950,7 +1955,8 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                       fontSize: 64, marginBottom: 20,
                       filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.3))",
                       animation: "bounce 3s ease-in-out infinite",
-                    }}>{"\u{1F95A}"}</div>
+                      display: "flex", justifyContent: "center",
+                    }}>{<Icon name="open-box" size={64} />}</div>
                     <h2 style={{
                       color: "#e0e0e0", fontSize: 22, fontWeight: 800, margin: "0 0 8px",
                       letterSpacing: 2,
@@ -1989,7 +1995,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                         (e.currentTarget as HTMLElement).style.boxShadow = "none";
                       }}
                     >
-                      {"\u{1F43E}"} Adopt a Pet
+                      <Icon name="paw" size={16} style={{ marginRight: 6 }} /> Adopt a Pet
                     </button>
                   </div>
                 ) : !isInMode ? (

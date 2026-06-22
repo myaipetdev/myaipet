@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import { seasonTier } from "@/lib/season";
+import Icon from "@/components/Icon";
 
 interface Summary {
   points: number;
@@ -75,14 +76,14 @@ export default function MyCard() {
             <Tile label="SEASON RANK" value={`#${me.streakRank}`} accent="#a855f7" sub="by streak" />
           )}
           <Tile label="CREDITS" value={me.credits.toLocaleString()} accent="#34d399" />
-          {me.shields > 0 && <Tile label="SHIELDS" value={`🛡 ${me.shields}`} accent="#60a5fa" />}
+          {me.shields > 0 && <Tile label="SHIELDS" value={<><Icon name="shield" size={18} style={{ marginRight: 4 }} />{me.shields}</>} accent="#60a5fa" />}
         </div>
       </div>
     </div>
   );
 }
 
-function Tile({ label, value, accent, sub }: { label: string; value: string; accent: string; sub?: string }) {
+function Tile({ label, value, accent, sub }: { label: string; value: React.ReactNode; accent: string; sub?: string }) {
   return (
     <div style={{
       padding: "10px 16px", borderRadius: 12,

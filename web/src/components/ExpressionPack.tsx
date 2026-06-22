@@ -11,6 +11,7 @@
 import { useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import { toast } from "@/components/Toast";
+import Icon from "@/components/Icon";
 import { EXPRESSION_KEYS, EXPRESSION_META, type ExpressionKey } from "@/lib/moodPortraits";
 
 const COST_EACH = 5; // grok-imagine creditsPerRun
@@ -78,8 +79,8 @@ export default function ExpressionPack({ pet, petId, moodPortraits, onChange }: 
   return (
     <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 14, background: "linear-gradient(135deg, rgba(96,165,250,0.06), rgba(168,85,247,0.05))", border: "1px solid rgba(96,165,250,0.18)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-        <span style={{ fontSize: 12, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, color: "#2563eb", letterSpacing: "0.02em" }}>
-          🎭 Expression Pack
+        <span style={{ fontSize: 12, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, color: "#2563eb", letterSpacing: "0.02em", display: "inline-flex", alignItems: "center", gap: 5 }}>
+          <Icon name="sparkling" size={14} /> Expression Pack
         </span>
         <span style={{ fontSize: 9.5, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.4)" }}>
           {have.length}/{EXPRESSION_KEYS.length}
@@ -108,7 +109,9 @@ export default function ExpressionPack({ pet, petId, moodPortraits, onChange }: 
                     background: url ? `center/cover no-repeat url(${url})` : "rgba(0,0,0,0.03)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
-                    {!url && <span style={{ fontSize: 22, opacity: thisBusy ? 1 : 0.5 }}>{thisBusy ? "✨" : meta.emoji}</span>}
+                    {!url && (thisBusy
+                      ? <Icon name="sparkling" size={22} />
+                      : <span style={{ fontSize: 22, opacity: 0.5 }}>{meta.emoji}</span>)}
                     {url && !thisBusy && (
                       <button onClick={() => clearOne(k)} title="Clear" style={{
                         position: "absolute", top: 3, right: 3, width: 16, height: 16, borderRadius: "50%", border: "none",

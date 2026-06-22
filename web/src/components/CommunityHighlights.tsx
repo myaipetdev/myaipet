@@ -7,6 +7,7 @@
  * pets" (featured pet row). The gallery below stays as-is.
  */
 import { useEffect, useState } from "react";
+import Icon from "@/components/Icon";
 
 interface Highlights {
   stats: { pets: number; generations: number; generationsThisWeek: number; activeCreators: number };
@@ -65,7 +66,8 @@ export default function CommunityHighlights() {
             fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
             letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)", marginBottom: 12,
             fontWeight: 800,
-          }}>⭐ MOST-BONDED PETS</div>
+            display: "flex", alignItems: "center", gap: 6,
+          }}><Icon name="trophy" size={14} /> MOST-BONDED PETS</div>
           <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }}>
             {h.featuredPets.map(p => (
               <div key={p.id} className="mp-lift" style={{

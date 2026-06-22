@@ -32,6 +32,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import Icon from "@/components/Icon";
 import PetLoraPanel from "@/components/PetLoraPanel";
 import { TEMPLATES, type StudioTemplate } from "@/lib/studio/templates";
 import { STYLE_EXAMPLES, TEMPLATE_EXAMPLES } from "@/lib/studio/example-assets";
@@ -53,12 +54,12 @@ interface Generation {
 
 
 const STYLES = [
-  { id: "cinematic",      emoji: "🎬", label: "Cinematic",  hint: "Hollywood", swatch: "linear-gradient(135deg,#0f172a 0%,#334155 55%,#b45309 100%)" },
-  { id: "anime",          emoji: "✨", label: "Anime",      hint: "Japan",     swatch: "linear-gradient(135deg,#f472b6 0%,#a855f7 60%,#6366f1 100%)" },
-  { id: "photorealistic", emoji: "📷", label: "Photoreal",  hint: "Real",      swatch: "linear-gradient(135deg,#475569 0%,#94a3b8 60%,#cbd5e1 100%)" },
-  { id: "watercolor",     emoji: "🎨", label: "Watercolor", hint: "Soft",      swatch: "linear-gradient(135deg,#fde68a 0%,#fda4af 50%,#a5b4fc 100%)" },
-  { id: "pixar",          emoji: "🧸", label: "3D Pixar",   hint: "Toon",      swatch: "linear-gradient(135deg,#38bdf8 0%,#818cf8 50%,#fbbf24 100%)" },
-  { id: "pixel",          emoji: "👾", label: "Pixel",      hint: "Retro",     swatch: "linear-gradient(135deg,#22c55e 0%,#0ea5e9 50%,#7c3aed 100%)" },
+  { id: "cinematic",      icon: "film-reel", label: "Cinematic",  hint: "Hollywood", swatch: "linear-gradient(135deg,#0f172a 0%,#334155 55%,#b45309 100%)" },
+  { id: "anime",          icon: "sparkling", label: "Anime",      hint: "Japan",     swatch: "linear-gradient(135deg,#f472b6 0%,#a855f7 60%,#6366f1 100%)" },
+  { id: "photorealistic", icon: "compass",   label: "Photoreal",  hint: "Real",      swatch: "linear-gradient(135deg,#475569 0%,#94a3b8 60%,#cbd5e1 100%)" },
+  { id: "watercolor",     icon: "water2",    label: "Watercolor", hint: "Soft",      swatch: "linear-gradient(135deg,#fde68a 0%,#fda4af 50%,#a5b4fc 100%)" },
+  { id: "pixar",          icon: "bear",      label: "3D Pixar",   hint: "Toon",      swatch: "linear-gradient(135deg,#38bdf8 0%,#818cf8 50%,#fbbf24 100%)" },
+  { id: "pixel",          icon: "joystick",  label: "Pixel",      hint: "Retro",     swatch: "linear-gradient(135deg,#22c55e 0%,#0ea5e9 50%,#7c3aed 100%)" },
 ];
 
 const PROMPT_IDEAS = [
@@ -462,7 +463,7 @@ export default function PetStudioPro() {
           display: "flex", alignItems: "center", gap: 14, paddingBottom: 4,
           flexWrap: "wrap",
         }}>
-          <span style={{ fontSize: 36 }}>🎬</span>
+          <span style={{ display: "inline-flex" }}><Icon name="film-reel" size={40} /></span>
           <div style={{ flex: "1 1 240px", minWidth: 0 }}>
             <div style={{
               fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
@@ -485,7 +486,27 @@ export default function PetStudioPro() {
                 border: "1px solid rgba(59,130,246,0.25)",
                 fontWeight: 800, textDecoration: "none",
                 fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.05em",
-              }}>{authed ? "🐾 Adopt a pet to star →" : "💡 DEMO · Sign in →"}</a>
+                display: "inline-flex", alignItems: "center", gap: 7,
+              }}>{authed ? (
+                <>
+                  <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <ellipse cx="6" cy="9.5" rx="1.8" ry="2.4" />
+                    <ellipse cx="10.3" cy="6.6" rx="1.8" ry="2.5" />
+                    <ellipse cx="13.7" cy="6.6" rx="1.8" ry="2.5" />
+                    <ellipse cx="18" cy="9.5" rx="1.8" ry="2.4" />
+                    <path d="M12 11.5c-2.7 0-5 2.1-5 4.4 0 1.7 1.4 2.6 3 2.6.9 0 1.4-.4 2-.4s1.1.4 2 .4c1.6 0 3-.9 3-2.6 0-2.3-2.3-4.4-5-4.4Z" />
+                  </svg>Adopt a pet to star →
+                </>
+              ) : (
+                <>
+                  <svg width={15} height={15} viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+                    aria-hidden="true">
+                    <path d="M9 18h6" /><path d="M10 21h4" />
+                    <path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.4 1 2.5h6c0-1.1.3-1.8 1-2.5A6 6 0 0 0 12 3Z" />
+                  </svg>DEMO · Sign in →
+                </>
+              )}</a>
             );
           })()}
           <Pill label="CREDITS" value={credits == null ? "—" : String(credits)} />
@@ -521,7 +542,15 @@ export default function PetStudioPro() {
               )}
               {view === "error" && (
                 <div style={{ color: "white", textAlign: "center", padding: 30 }}>
-                  <div style={{ fontSize: 40, marginBottom: 10 }}>⚠</div>
+                  <div style={{ marginBottom: 10, display: "flex", justifyContent: "center" }}>
+                    <svg width={40} height={40} viewBox="0 0 24 24" fill="none"
+                      stroke="#fbbf24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+                      aria-hidden="true">
+                      <path d="M10.3 3.2 1.7 18a2 2 0 0 0 1.7 3h17.2a2 2 0 0 0 1.7-3L13.7 3.2a2 2 0 0 0-3.4 0Z" />
+                      <line x1="12" y1="9" x2="12" y2="13" />
+                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                  </div>
                   <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Generation failed</div>
                   <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", maxWidth: 380, margin: "0 auto 16px" }}>{error}</div>
                   <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
@@ -547,8 +576,17 @@ export default function PetStudioPro() {
                     padding: "9px 16px", borderRadius: 10, border: "none", cursor: "pointer",
                     background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "white",
                     fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
+                    display: "inline-flex", alignItems: "center", gap: 7,
                   }}
-                >🎨 Remix (new style)</button>
+                ><svg width={15} height={15} viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+                    aria-hidden="true">
+                    <circle cx="13.5" cy="6.5" r=".7" fill="currentColor" />
+                    <circle cx="17.5" cy="10.5" r=".7" fill="currentColor" />
+                    <circle cx="8.5" cy="7.5" r=".7" fill="currentColor" />
+                    <circle cx="6.5" cy="12.5" r=".7" fill="currentColor" />
+                    <path d="M12 2a10 10 0 1 0 0 20 2.5 2.5 0 0 0 2-4 2.5 2.5 0 0 1 2-4h2a4 4 0 0 0 4-4 10 10 0 0 0-10-8Z" />
+                  </svg>Remix (new style)</button>
                 {!isDemo && pet && pet.id > 0 && !/\.(mp4|webm)$/i.test(resultUrl) && (
                   <button
                     onClick={animateThis}
@@ -557,8 +595,14 @@ export default function PetStudioPro() {
                       padding: "9px 16px", borderRadius: 10, border: "none", cursor: "pointer",
                       background: "linear-gradient(135deg,#8b5cf6,#7c3aed)", color: "white",
                       fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
+                      display: "inline-flex", alignItems: "center", gap: 7,
                     }}
-                  >🎬 Video from prompt</button>
+                  ><svg width={15} height={15} viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+                      aria-hidden="true">
+                      <rect x="2.5" y="6" width="13" height="12" rx="2" />
+                      <path d="M15.5 10l6-3v10l-6-3z" />
+                    </svg>Video from prompt</button>
                 )}
                 <button onClick={() => { setView("idle"); setResultUrl(null); }} style={btnGhost}>⟳ Start over</button>
                 {!isDemo && pet && pet.id > 0 && !/\.(mp4|webm)$/i.test(resultUrl) && (
@@ -582,9 +626,17 @@ export default function PetStudioPro() {
                         }
                       } catch { /* ignore — non-blocking */ }
                     }}
-                    style={btnGhost}
+                    style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6 }}
                     title="Use this image as your pet's profile picture (improves identity lock on future generations)"
-                  >{avatarSaved ? "✓ Avatar set" : "⭐ Set as avatar"}</button>
+                  >{avatarSaved ? "✓ Avatar set" : (
+                    <>
+                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+                        aria-hidden="true">
+                        <path d="M12 3.5l2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 16.9l-5.25 2.75 1-5.85L3.5 9.65l5.9-.85z" />
+                      </svg>Set as avatar
+                    </>
+                  )}</button>
                 )}
                 {!isDemo && lastGenId != null && (
                   <button
@@ -593,9 +645,18 @@ export default function PetStudioPro() {
                       try { await navigator.clipboard.writeText(link); setShareCopied(true); setTimeout(() => setShareCopied(false), 2200); }
                       catch { window.open(link, "_blank", "noreferrer"); }
                     }}
-                    style={btnGhost}
+                    style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6 }}
                     title="Copy a public share link to this creation"
-                  >{shareCopied ? "✓ Link copied" : "🔗 Share"}</button>
+                  >{shareCopied ? "✓ Link copied" : (
+                    <>
+                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+                        aria-hidden="true">
+                        <path d="M9.5 13.5a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 1 0-5-5l-1.2 1.2" />
+                        <path d="M14.5 10.5a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 1 0 5 5l1.2-1.2" />
+                      </svg>Share
+                    </>
+                  )}</button>
                 )}
                 {!isDemo && pet && pet.id > 0 && chosenModel?.kind === "image" && !/\.(mp4|webm)$/i.test(resultUrl) && (
                   <button
@@ -715,11 +776,11 @@ export default function PetStudioPro() {
                         padding: 6,
                       }}>
                         <span style={{
-                          fontSize: ex ? 14 : 22,
+                          display: "inline-flex",
                           filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))",
                           transform: sel ? "scale(1.14)" : "scale(1)",
                           transition: "transform 220ms cubic-bezier(0.2,0.8,0.2,1)",
-                        }}>{s.emoji}</span>
+                        }}><Icon name={s.icon} size={ex ? 18 : 26} /></span>
                       </div>
                       <div style={{
                         padding: "7px 4px", textAlign: "center",
@@ -749,8 +810,10 @@ export default function PetStudioPro() {
                       fontFamily: "'Space Grotesk',sans-serif",
                       boxShadow: sel ? "0 1px 0 rgba(0,0,0,0.04)" : "none",
                       letterSpacing: "0.02em",
+                      display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
                     }}>
-                      {k === "image" ? "📷 Image" : "🎬 Video"}
+                      <Icon name={k === "image" ? "compass" : "film-reel"} size={16} style={{ opacity: sel ? 1 : 0.55 }} />
+                      {k === "image" ? "Image" : "Video"}
                     </button>
                   );
                 })}
@@ -828,7 +891,13 @@ export default function PetStudioPro() {
                               fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
                               fontFamily: "'JetBrains Mono', monospace",
                               background: "rgba(0,0,0,0.06)", color: "rgba(26,26,46,0.55)",
-                            }}>🔒 {m.comingSoonEta || "SOON"}</span>}
+                              display: "inline-flex", alignItems: "center", gap: 4,
+                            }}><svg width={9} height={9} viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+                                aria-hidden="true">
+                                <rect x="5" y="11" width="14" height="10" rx="2" />
+                                <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                              </svg>{m.comingSoonEta || "SOON"}</span>}
                             {!locked && <ModelBadges model={m} compact />}
                           </div>
                           <div style={{
@@ -904,7 +973,13 @@ export default function PetStudioPro() {
               <div style={{
                 fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
                 color: "#6d28d9", letterSpacing: "0.1em", fontWeight: 800, marginBottom: 8,
-              }}>💭 FROM {(pet?.name || "YOUR PET").toUpperCase()}'S MEMORY</div>
+                display: "flex", alignItems: "center", gap: 6,
+              }}><svg width={14} height={14} viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+                  aria-hidden="true">
+                  <path d="M7.5 5A5.5 5.5 0 0 1 18 7.2 4 4 0 0 1 17 15H8A4.5 4.5 0 0 1 7.5 5Z" />
+                  <circle cx="5" cy="18.5" r="1.6" /><circle cx="8.5" cy="21.5" r="1" />
+                </svg>FROM {(pet?.name || "YOUR PET").toUpperCase()}'S MEMORY</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {memorySeeds.map((seed, i) => (
                   <button key={i} onClick={() => setPrompt(seed)} className="mp-lift" style={{
@@ -1055,7 +1130,15 @@ export default function PetStudioPro() {
                           background: "rgba(0,0,0,0.05)",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: 18, color: "rgba(26,26,46,0.35)",
-                        }}>{g.status === "pending" ? "⏳" : "?"}</div>}
+                        }}>{g.status === "pending"
+                          ? <svg width={20} height={20} viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+                              className="studio-pulse" aria-label="Pending">
+                              <path d="M6 3h12" /><path d="M6 21h12" />
+                              <path d="M7 3c0 4 3.5 6 5 9-1.5 3-5 5-5 9" />
+                              <path d="M17 3c0 4-3.5 6-5 9 1.5 3 5 5 5 9" />
+                            </svg>
+                          : "?"}</div>}
                   </button>
                   {g.prompt && (
                     <button
@@ -1070,7 +1153,12 @@ export default function PetStudioPro() {
                         display: "flex", alignItems: "center", justifyContent: "center",
                         boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
                       }}
-                    >🎨</button>
+                    ><svg width={14} height={14} viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
+                        aria-hidden="true">
+                        <path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M21 3v5h-5" />
+                        <path d="M21 12a9 9 0 0 1-15 6.7L3 16" /><path d="M3 21v-5h5" />
+                      </svg></button>
                   )}
                 </div>
               ))}
@@ -1084,7 +1172,7 @@ export default function PetStudioPro() {
             borderRadius: 14,
             display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
           }}>
-            <div style={{ fontSize: 28 }}>🎞</div>
+            <div style={{ display: "flex" }}><Icon name="film-reel" size={28} /></div>
             <div style={{ flex: "1 1 200px" }}>
               <div style={{ ...panelLabel, marginBottom: 4 }}>RECENT</div>
               <div style={{ fontSize: 14, color: "rgba(26,26,46,0.65)", fontWeight: 500 }}>
@@ -1119,31 +1207,31 @@ export default function PetStudioPro() {
             gap: 10,
           }}>
             <RoadmapItem
-              emoji="🎞"
+              icon="film-reel"
               eta="Q3 2026"
               title="Auto Memory Recap"
               body="Your pet's week → 30s video. Built from the memory ledger. No prompt needed."
             />
             <RoadmapItem
-              emoji="🤖"
+              icon="rocket"
               eta="Q3 2026"
               title="Daily Content Bot"
               body="Wake up to a fresh pet photo every day. Auto-posted to your gallery."
             />
             <RoadmapItem
-              emoji="🛠"
+              icon="extension-icon"
               eta="Q4 2026"
               title="Pet Anchor API"
               body="PuLID-based pet identity API for other pet-tech builders. B2B."
             />
             <RoadmapItem
-              emoji="🪙"
+              icon="coins"
               eta="Q4 2026"
               title="NFT-Gated Premium"
               body="Own a PETContent NFT → free access to premium engines. Exploring."
             />
             <RoadmapItem
-              emoji="🛍"
+              icon="shopping-cart"
               eta="2027"
               title="Pet LoRA Marketplace"
               body="Train a LoRA on your pet, list it as an NFT. Others use 'your' Sparky."
@@ -1192,7 +1280,7 @@ function PreviewIdle({ pet }: { pet: Pet | null }) {
       }} />
       <div style={{ position: "relative", textAlign: "center", padding: 30 }}>
         {!pet?.avatar_url && (
-          <div style={{ fontSize: 56, marginBottom: 12, opacity: 0.6 }}>🎞</div>
+          <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><Icon name="film-reel" size={56} style={{ opacity: 0.6 }} /></div>
         )}
         <div style={{
           fontSize: 28, fontWeight: 800, color: "white",
@@ -1226,7 +1314,7 @@ function PreviewGenerating({ kind }: { kind: "image" | "video" }) {
   const pct = Math.min(95, Math.round((secs / total) * 100));
   return (
     <div style={{ color: "white", textAlign: "center", padding: 30, width: "100%" }}>
-      <div className="studio-spin" style={{ fontSize: 44, marginBottom: 14 }}>🎞</div>
+      <div className="studio-spin" style={{ marginBottom: 14, display: "inline-flex" }}><Icon name="film-reel" size={44} /></div>
       <div style={{ fontSize: 17, fontWeight: 700 }}>Generating · {secs}s</div>
       <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 4 }}>{line}</div>
       <div style={{ height: 4, borderRadius: 999, background: "rgba(255,255,255,0.15)", marginTop: 16, maxWidth: 240, marginInline: "auto", overflow: "hidden" }}>
@@ -1261,12 +1349,15 @@ function PreviewDemo({ pet, prompt }: { pet: Pet | null; prompt: string }) {
         color: "white", fontWeight: 800, fontSize: 13,
         textDecoration: "none",
         fontFamily: "'Space Grotesk',sans-serif",
-      }}>⚡ Sign in to generate for real →</a>
+        display: "inline-flex", alignItems: "center", gap: 7,
+      }}><svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12z" />
+        </svg>Sign in to generate for real →</a>
     </div>
   );
 }
 
-function RoadmapItem({ emoji, eta, title, body }: { emoji: string; eta: string; title: string; body: string }) {
+function RoadmapItem({ icon, eta, title, body }: { icon: string; eta: string; title: string; body: string }) {
   return (
     <div style={{
       background: "white",
@@ -1274,7 +1365,7 @@ function RoadmapItem({ emoji, eta, title, body }: { emoji: string; eta: string; 
       borderRadius: 12, padding: 14,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-        <span style={{ fontSize: 18 }}>{emoji}</span>
+        <span style={{ display: "inline-flex" }}><Icon name={icon} size={20} /></span>
         <span style={{
           padding: "2px 7px", borderRadius: 999,
           fontSize: 9, fontWeight: 800, letterSpacing: "0.1em",
@@ -1288,10 +1379,26 @@ function RoadmapItem({ emoji, eta, title, body }: { emoji: string; eta: string; 
   );
 }
 
+// Small flat badge glyphs that match the mono pill style (currentColor, 9px).
+const AudioGlyph = () => (
+  <svg width={10} height={10} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M9 18V5l11-2v13" />
+    <circle cx="6" cy="18" r="3" /><circle cx="17" cy="16" r="3" />
+  </svg>
+);
+const AnchorGlyph = () => (
+  <svg width={10} height={10} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="5" r="2.4" /><path d="M12 7.4V21" />
+    <path d="M5 13a7 7 0 0 0 14 0" /><path d="M8 11H5v2M19 13v-2h-3" />
+  </svg>
+);
+
 function ModelBadges({ model, compact }: { model: StudioModel; compact?: boolean }) {
-  const badges: { label: string; bg: string; fg: string }[] = [];
-  if (model.id === "veo-3") badges.push({ label: "🎵 AUDIO", bg: "rgba(168,85,247,0.14)", fg: "#7e22ce" });
-  if (model.supportsImageRef) badges.push({ label: "🎭 ANCHOR", bg: "rgba(245,158,11,0.14)", fg: "#b45309" });
+  const badges: { label: string; bg: string; fg: string; icon?: React.ReactNode }[] = [];
+  if (model.id === "veo-3") badges.push({ label: "AUDIO", bg: "rgba(168,85,247,0.14)", fg: "#7e22ce", icon: <AudioGlyph /> });
+  if (model.supportsImageRef) badges.push({ label: "ANCHOR", bg: "rgba(245,158,11,0.14)", fg: "#b45309", icon: <AnchorGlyph /> });
   if (model.maxResolution.includes("1080") || model.maxResolution === "4K")
     badges.push({ label: `${model.maxResolution}`, bg: "rgba(22,163,74,0.10)", fg: "#15803d" });
   if (model.maxDurationSec >= 8) badges.push({ label: `${model.maxDurationSec}s`, bg: "rgba(59,130,246,0.10)", fg: "#1e3a8a" });
@@ -1305,7 +1412,8 @@ function ModelBadges({ model, compact }: { model: StudioModel; compact?: boolean
           fontSize: 9, fontWeight: 800, letterSpacing: "0.06em",
           fontFamily: "'JetBrains Mono', monospace",
           background: b.bg, color: b.fg,
-        }}>{b.label}</span>
+          display: "inline-flex", alignItems: "center", gap: 3,
+        }}>{b.icon}{b.label}</span>
       ))}
     </>
   );

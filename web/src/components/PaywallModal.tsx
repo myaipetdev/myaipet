@@ -24,6 +24,7 @@
 
 import { useState } from "react";
 import { useDirectUsdtPay } from "@/hooks/useDirectUsdtPay";
+import Icon from "@/components/Icon";
 
 export interface PaywallInfo {
   actionKey: string;
@@ -93,7 +94,7 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
         fontFamily: "'Space Grotesk',sans-serif", color: "#1a1a2e",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-          <span style={{ fontSize: 26 }}>💎</span>
+          <span style={{ fontSize: 26 }}><Icon name="diamond" size={26} /></span>
           <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>
             {info.reason === "free_cap_exhausted" ? "Daily free cap reached" : "Premium action"}
           </h2>
@@ -122,8 +123,14 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
             padding: 10, borderRadius: 8, marginBottom: 12,
             background: "rgba(220,38,38,0.08)", color: "#dc2626",
             fontSize: 12, fontFamily: "mono",
+            display: "flex", alignItems: "center", gap: 6,
           }}>
-            ⚠️ Treasury wallet not configured — contact support.
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <span>Treasury wallet not configured — contact support.</span>
           </div>
         )}
 
@@ -155,11 +162,19 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
           <div style={{
             padding: 14, borderRadius: 12, textAlign: "center",
             background: "rgba(245,158,11,0.06)", fontSize: 13, color: "#92400e",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
           }}>
             {step === "signing" && "Sign the USDT transfer in your wallet…"}
             {step === "confirming" && "Waiting for BSC confirmation…"}
             {step === "registering" && "Registering receipt with server…"}
-            {step === "done" && "✅ Done! Applying action…"}
+            {step === "done" && (
+              <>
+                <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                <span>Done! Applying action…</span>
+              </>
+            )}
           </div>
         )}
       </div>

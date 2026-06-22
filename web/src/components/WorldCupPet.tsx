@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useState } from "react";
+import Icon from "@/components/Icon";
 import { api, getAuthHeaders } from "@/lib/api";
 import { WORLD_CUP_COUNTRIES, buildCountryPromptFragment, flagUrl, type WorldCupCountry } from "@/lib/worldcup/countries";
 
@@ -271,7 +272,7 @@ function ChampionPrediction() {
       padding: "20px 20px 22px", marginBottom: 24, boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 19, fontWeight: 900, color: INK, letterSpacing: "-0.01em" }}>Predict the Champion 🏆</span>
+        <span style={{ fontSize: 19, fontWeight: 900, color: INK, letterSpacing: "-0.01em", display: "inline-flex", alignItems: "center", gap: 7 }}>Predict the Champion <Icon name="trophy" size={20} /></span>
         <span style={{ fontSize: 11, fontFamily: "monospace", letterSpacing: "0.08em", color: MUTED, background: "rgba(0,0,0,0.04)", padding: "3px 8px", borderRadius: 999, textTransform: "uppercase" }}>
           {total} {total === 1 ? "vote" : "votes"}
         </span>
@@ -365,7 +366,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         background: "linear-gradient(120deg, #16a34a 0%, #0ea5e9 48%, #f59e0b 100%)",
         boxShadow: "0 14px 40px rgba(14,165,233,0.28)",
       }}>
-        <div style={{ position: "absolute", right: -10, top: -18, fontSize: 130, opacity: 0.16, lineHeight: 1 }}>🏆</div>
+        <div style={{ position: "absolute", right: -10, top: -18, opacity: 0.16, lineHeight: 1 }}><Icon name="trophy" size={130} /></div>
         <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.2em", color: "rgba(255,255,255,0.92)", textTransform: "uppercase" }}>World Cup 2026 · national pet</div>
         <h1 style={{ fontSize: 32, fontWeight: 900, color: "#fff", margin: "8px 0 0", letterSpacing: "-0.02em", textShadow: "0 2px 12px rgba(0,0,0,0.18)" }}>Suit up your pet ⚽</h1>
         <p style={{ fontSize: 15, color: "rgba(255,255,255,0.92)", margin: "10px 0 0", lineHeight: 1.55, maxWidth: 540 }}>

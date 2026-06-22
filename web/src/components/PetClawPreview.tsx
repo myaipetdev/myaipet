@@ -9,12 +9,13 @@
  */
 
 import { useEffect, useState, type ReactNode } from "react";
+import Icon from "@/components/Icon";
 
 const PILLARS = [
-  { icon: "📤", title: "Export your pet's soul", body: "Memories, personality, skills — as portable JSON. Take it anywhere, anytime." },
-  { icon: "🗑", title: "Delete with proof", body: "Wipe everything and get a SHA-256 receipt. Real erasure you can verify." },
-  { icon: "🔍", title: "See what we hold", body: "Every memory, fact, and connection we keep about your pet — in the open." },
-  { icon: "🧬", title: "Inheritance", body: "Name a successor wallet. Your pet's soul outlives any single device." },
+  { icon: "scroll", title: "Export your pet's soul", body: "Memories, personality, skills — as portable JSON. Take it anywhere, anytime." },
+  { icon: "fire", title: "Delete with proof", body: "Wipe everything and get a SHA-256 receipt. Real erasure you can verify." },
+  { icon: "crystal-ball", title: "See what we hold", body: "Every memory, fact, and connection we keep about your pet — in the open." },
+  { icon: "footprints", title: "Inheritance", body: "Name a successor wallet. Your pet's soul outlives any single device." },
 ];
 
 export default function PetClawPreview({ cta }: { cta?: ReactNode }) {
@@ -61,7 +62,7 @@ export default function PetClawPreview({ cta }: { cta?: ReactNode }) {
             background: "white", borderRadius: 16, padding: "18px 18px",
             border: "1px solid rgba(0,0,0,0.06)", boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
           }}>
-            <div style={{ fontSize: 26, marginBottom: 8 }}>{p.icon}</div>
+            <div style={{ fontSize: 26, marginBottom: 8 }}><Icon name={p.icon} size={26} /></div>
             <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 15, color: "#1a1a2e", letterSpacing: "-0.01em" }}>{p.title}</div>
             <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, color: "rgba(26,26,46,0.6)", marginTop: 5, lineHeight: 1.5 }}>{p.body}</div>
           </div>
@@ -71,7 +72,7 @@ export default function PetClawPreview({ cta }: { cta?: ReactNode }) {
       {/* Live Pet Network (public, real) */}
       <div style={{ marginTop: 16, background: "linear-gradient(135deg, rgba(59,130,246,0.06), rgba(16,185,129,0.05))", borderRadius: 18, padding: "20px 22px", border: "1px solid rgba(59,130,246,0.18)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 20 }}>🌐</span>
+          <span style={{ fontSize: 20 }}><Icon name="world-map" size={20} /></span>
           <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 18, color: "#1a1a2e" }}>Pet Network</span>
           <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, letterSpacing: "0.08em", padding: "3px 10px", borderRadius: 999, background: "rgba(16,185,129,0.12)", color: "#059669" }}>LIVE · PUBLIC</span>
           <div style={{ flex: 1 }} />
@@ -89,7 +90,7 @@ export default function PetClawPreview({ cta }: { cta?: ReactNode }) {
             {online.map((n: any) => (
               <div key={n.petId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: 12, background: "white", border: "1px solid rgba(0,0,0,0.05)" }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "linear-gradient(135deg,#1a1a2e,#2d1b69)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
-                  {n.avatarUrl ? <img src={n.avatarUrl} alt={n.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "🐾"}
+                  {n.avatarUrl ? <img src={n.avatarUrl} alt={n.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Icon name="paw" size={20} />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14, color: "#1a1a2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.name}</div>
@@ -97,8 +98,11 @@ export default function PetClawPreview({ cta }: { cta?: ReactNode }) {
                     {[n.personality, n.element, n.level != null ? `Lv.${n.level}` : null].filter(Boolean).join(" · ")}
                   </div>
                 </div>
-                <span style={{ fontSize: 11, padding: "4px 10px", borderRadius: 999, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", color: "#059669", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>
-                  ⛨ {n.trustScore ?? 0}
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, padding: "4px 10px", borderRadius: 999, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", color: "#059669", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z" />
+                  </svg>
+                  {n.trustScore ?? 0}
                 </span>
               </div>
             ))}

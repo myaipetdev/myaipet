@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getCardData, elementTheme, rarityColor } from "@/lib/tcg/card";
 import CardActions from "./CardActions";
 import PetCard from "@/components/PetCard";
+import Icon from "@/components/Icon";
 
 // Public, wallet-free share page for a pet's trading card. The card image is the
 // opengraph-image route (Next auto-wires it as og:image + twitter summary_large
@@ -35,7 +36,7 @@ export default async function CardPage(
   if (!card) {
     return (
       <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18, background: "#0f0f14", color: "#fff", fontFamily: "system-ui, sans-serif", padding: 24, textAlign: "center" }}>
-        <div style={{ fontSize: 40 }}>🃏</div>
+        <div style={{ fontSize: 40, lineHeight: 0 }}><Icon name="trophy" size={40} /></div>
         <h1 style={{ fontSize: 24, margin: 0 }}>This card isn&apos;t available</h1>
         <p style={{ color: "#9a9aa3", maxWidth: 420 }}>Turn your own AI pet into a collectible trading card — raise it, battle it, share it.</p>
         <a href={APP_URL} style={{ background: "#f59e0b", color: "#1a1a22", fontWeight: 800, padding: "12px 22px", borderRadius: 999, textDecoration: "none" }}>Create your pet ▸</a>

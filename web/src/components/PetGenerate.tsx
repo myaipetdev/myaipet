@@ -6,8 +6,8 @@ import { api } from "@/lib/api";
 import { signAction } from "@/lib/signAction";
 import { useRecordImageGeneration, useRecordVideoGeneration, isPETActivityEnabled, useCheckBnbBalance } from "@/hooks/usePETActivity";
 import { CONTRACTS } from "@/lib/contracts";
+import Icon, { PET_ICONS } from "@/components/Icon";
 
-const PET_EMOJIS = ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"];
 const PET_SPECIES = ["Cat","Dog","Parrot","Turtle","Hamster","Rabbit","Fox","Pomeranian"];
 // Pet images removed - using avatar_url from pet data or emoji fallback
 const STYLES = [
@@ -272,7 +272,7 @@ export default function PetGenerate() {
   if (pets.length === 0) {
     return (
       <div style={{ padding: "120px 40px", textAlign: "center", maxWidth: 500, margin: "0 auto" }}>
-        <div style={{ fontSize: 56, marginBottom: 16, opacity: 0.5 }}>🐾</div>
+        <div style={{ marginBottom: 16, opacity: 0.5 }}><Icon name="paw" size={56} /></div>
         <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 24, color: "#1a1a2e", marginBottom: 12 }}>
           Adopt a Pet First
         </h2>
@@ -326,7 +326,7 @@ export default function PetGenerate() {
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 22 }}>🎨</span>
+            <Icon name="sparkling" size={22} />
             <div>
               <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 600, color: "#1a1a2e" }}>
                 Pet Content Studio
@@ -353,7 +353,7 @@ export default function PetGenerate() {
               onClick={() => { window.location.href = "/"; }}
               title="Buy more credits on the Home tab"
             >
-              🪙 {balance !== null ? balance : "—"} credits
+              <Icon name="coin" size={12} /> {balance !== null ? balance : "—"} credits
             </span>
           </div>
         </div>
@@ -382,7 +382,7 @@ export default function PetGenerate() {
                         <img src={p.avatar_url} alt={PET_SPECIES[p.species]}
                           style={{ width: 28, height: 28, borderRadius: 8, objectFit: "cover" }} />
                       ) : (
-                        <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(251,191,36,0.1)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>{PET_EMOJIS[p.species] || "🐾"}</span>
+                        <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(251,191,36,0.1)", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Icon name={PET_ICONS[p.species] || "paw"} size={18} /></span>
                       )}
                       <div style={{ textAlign: "left" }}>
                         <div style={{
@@ -505,10 +505,10 @@ export default function PetGenerate() {
                         <span style={{
                           width: 80, height: 80, borderRadius: 20,
                           background: "rgba(251,191,36,0.1)", display: "inline-flex",
-                          alignItems: "center", justifyContent: "center", fontSize: 40,
+                          alignItems: "center", justifyContent: "center",
                           animation: "pulse 2s ease-in-out infinite",
                           border: "3px solid rgba(251,191,36,0.3)",
-                        }}>{PET_EMOJIS[selectedPet.species] || "🐾"}</span>
+                        }}><Icon name={PET_ICONS[selectedPet.species] || "paw"} size={48} /></span>
                       )}
                       <div style={{
                         position: "absolute", bottom: -4, right: -4,
@@ -556,7 +556,7 @@ export default function PetGenerate() {
                       <img src={selectedPet.avatar_url} alt={selectedPet.name}
                         style={{ width: 96, height: 96, borderRadius: 24, objectFit: "cover", marginBottom: 14 }} />
                     ) : (
-                      <span style={{ width: 96, height: 96, borderRadius: 24, background: "rgba(251,191,36,0.1)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 48, marginBottom: 14 }}>{PET_EMOJIS[selectedPet?.species] || "🐾"}</span>
+                      <span style={{ width: 96, height: 96, borderRadius: 24, background: "rgba(251,191,36,0.1)", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}><Icon name={PET_ICONS[selectedPet?.species] || "paw"} size={56} /></span>
                     )}
                     <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, color: "#1a1a2e", marginBottom: 4, fontWeight: 600 }}>
                       {selectedPet?.name}
@@ -724,7 +724,7 @@ export default function PetGenerate() {
                       }}>
                         {d}s
                         <div style={{ fontFamily: "mono", fontSize: 8, color: "rgba(26,26,46,0.3)", marginTop: 2 }}>
-                          🪙 {d <= 3 ? 15 : d <= 5 ? 30 : 60}
+                          <Icon name="coin" size={9} /> {d <= 3 ? 15 : d <= 5 ? 30 : 60}
                         </div>
                       </button>
                     ))}

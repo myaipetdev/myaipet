@@ -29,6 +29,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { getAuthHeaders } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/Toast";
+import Icon from "@/components/Icon";
 
 interface MissionView {
   id: string;
@@ -69,9 +70,10 @@ interface StreakInfo {
   pending_apology_days: number;
 }
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  checkin: "📅", conversation: "💬", memory: "🧠", creation: "🎬",
-  social: "👥", care: "💝", reflection: "🪞", exploration: "🔍", streak: "🔥",
+// Maps each mission category to a crafted 3D icon (was bare emoji).
+const CATEGORY_ICON: Record<string, string> = {
+  checkin: "paw", conversation: "chat", memory: "crystal-ball", creation: "film-reel",
+  social: "like", care: "heart", reflection: "sparkling", exploration: "compass", streak: "fire",
 };
 
 export default function MissionsCard() {
@@ -192,7 +194,7 @@ export default function MissionsCard() {
           borderBottom: "1px solid rgba(0,0,0,0.05)",
           background: "linear-gradient(180deg, rgba(245,158,11,0.04) 0%, transparent 100%)",
         }}>
-          <div style={{ fontSize: 22 }}>🎯</div>
+          <div style={{ fontSize: 22 }}><Icon name="compass" size={22} /></div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)" }}>
               TODAY · {today.date}
@@ -213,11 +215,11 @@ export default function MissionsCard() {
             fontFamily: "'JetBrains Mono', monospace",
             cursor: canBuyShield ? "pointer" : "default",
           }}>
-            🔥 {today.streak.current}d
+            <Icon name="fire" size={16} /> {today.streak.current}d
           </button>
           {streak && (
             <button aria-label={`Streak shields owned: ${streak.shield.owned} — buy more`} onClick={() => setShieldModal(true)} style={shieldBtn}>
-              🛡 {streak.shield.owned}
+              <Icon name="shield" size={15} /> {streak.shield.owned}
             </button>
           )}
         </div>
@@ -231,7 +233,7 @@ export default function MissionsCard() {
             display: "flex", alignItems: "center", gap: 10,
             fontSize: 13, color: "#7e22ce",
           }}>
-            <span style={{ fontSize: 18 }}>🥺</span>
+            <span style={{ fontSize: 18 }}><Icon name="heart" size={18} /></span>
             <span style={{ flex: 1 }}>
               Sparky's been wondering where you've been{" "}
               {today.streak.pending_apology_days > 1 ? `(${today.streak.pending_apology_days} days)` : ""} —
@@ -255,7 +257,7 @@ export default function MissionsCard() {
             display: "flex", alignItems: "center", gap: 10,
             fontSize: 13, color: "#991b1b",
           }}>
-            <span style={{ fontSize: 18 }}>💔</span>
+            <span style={{ fontSize: 18 }}><Icon name="fire" size={18} /></span>
             <span style={{ flex: 1 }}>
               Your {streak.repair.lost_days}-day streak broke. Restore it for{" "}
               <strong>{streak.repair.credits} credits</strong> (${streak.repair.usd.toFixed(2)}).
@@ -291,7 +293,7 @@ export default function MissionsCard() {
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 14, fontWeight: 800,
                 }}>
-                  {completed ? "✓" : CATEGORY_EMOJI[m.category] || "•"}
+                  {completed ? "✓" : <Icon name={CATEGORY_ICON[m.category] || "compass"} size={16} />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
@@ -365,7 +367,7 @@ export default function MissionsCard() {
               color: "#7e22ce",
               fontSize: 12, fontWeight: 700,
             }}>
-              💎 Complete all {today.missions.length} → <strong>+{today.bonusAllComplete}</strong> bonus
+              <Icon name="diamond" size={14} /> Complete all {today.missions.length} → <strong>+{today.bonusAllComplete}</strong> bonus
             </div>
           )}
           {allComplete && (
@@ -386,7 +388,7 @@ export default function MissionsCard() {
       {shieldModal && streak && (
         <Modal onClose={() => setShieldModal(false)}>
           <div style={{ padding: 28 }}>
-            <div style={{ fontSize: 44, marginBottom: 14 }}>🛡</div>
+            <div style={{ fontSize: 44, marginBottom: 14 }}><Icon name="shield" size={44} /></div>
             <h2 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px" }}>Streak Shield</h2>
             <p style={{ fontSize: 14, color: "rgba(26,26,46,0.7)", lineHeight: 1.55, margin: "0 0 18px" }}>
               Auto-bridges a missed day. Up to {streak.shield.max_owned} can stack — currently you own{" "}
@@ -422,7 +424,11 @@ export default function MissionsCard() {
       {repairModal && streak?.repair && (
         <Modal onClose={() => setRepairModal(false)}>
           <div style={{ padding: 28 }}>
-            <div style={{ fontSize: 44, marginBottom: 14 }}>💔→🔥</div>
+            <div style={{ fontSize: 44, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+              <Icon name="skull" size={44} />
+              <span style={{ color: "rgba(26,26,46,0.4)", fontWeight: 700 }}>→</span>
+              <Icon name="fire" size={44} />
+            </div>
             <h2 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px" }}>Restore Streak</h2>
             <p style={{ fontSize: 14, color: "rgba(26,26,46,0.7)", lineHeight: 1.55, margin: "0 0 18px" }}>
               Brings back your <strong>{streak.repair.lost_days}-day streak</strong> and starts counting
@@ -468,7 +474,7 @@ function UnauthTeaser() {
         border: "1px solid rgba(0,0,0,0.06)", padding: "26px 28px",
         display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap",
       }}>
-        <div style={{ fontSize: 36 }}>🎯</div>
+        <div style={{ fontSize: 36 }}><Icon name="compass" size={36} /></div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)", marginBottom: 4 }}>
             DAILY MISSIONS · STREAK · LEADERBOARD

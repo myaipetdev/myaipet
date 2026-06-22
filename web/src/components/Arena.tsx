@@ -12,7 +12,7 @@ import {
   spawnDamageNumber, updateDamagePopups, renderDamagePopups,
   type VFXState, type DamagePopup,
 } from "@/lib/vfx";
-import Icon, { ELEMENT_ICONS } from "@/components/Icon";
+import Icon, { ELEMENT_ICONS, PET_ICONS } from "@/components/Icon";
 import HpBarOverlay from "@/components/three/HpBarOverlay";
 import { useBattleAnimations } from "@/hooks/useBattleAnimations";
 
@@ -1396,7 +1396,7 @@ export default function Arena() {
                         {pet.avatar_url ? (
                           <img src={pet.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         ) : (
-                          <span style={{ fontSize: 44 }}>{PET_EMOJIS[pet.species] || "\u{1F43E}"}</span>
+                          <Icon name={PET_ICONS[pet.species] || "paw"} size={44} />
                         )}
                       </div>
 
@@ -1505,7 +1505,7 @@ export default function Arena() {
                 {selectedPet.avatar_url ? (
                   <img src={selectedPet.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
-                  <span style={{ fontSize: 52 }}>{PET_EMOJIS[selectedPet.species] || "\u{1F43E}"}</span>
+                  <Icon name={PET_ICONS[selectedPet.species] || "paw"} size={52} />
                 )}
               </div>
             </div>

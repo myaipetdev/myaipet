@@ -218,7 +218,7 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
       border: "1px solid rgba(88,101,242,0.18)",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-        <span style={{ fontSize: 22 }}>🔗</span>
+        <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="chat" size={22} /></span>
         <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
           Channel Subscriptions
         </h2>
@@ -366,7 +366,7 @@ function PetSwitcher({ pets, selectedPet, onSelect }: { pets: any[]; selectedPet
           fontSize: 13, fontWeight: 700, cursor: "pointer", outline: "none",
           boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
         }}>
-          <span>🐾</span>
+          <Icon name="paw" size={16} />
           <span>{selectedPet?.name || "Pet"}</span>
           <span style={{ color: "rgba(26,26,46,0.4)", transform: open ? "rotate(180deg)" : "none", transition: "transform .15s" }}>▾</span>
         </button>
@@ -506,7 +506,7 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
       border: "1px solid rgba(168,85,247,0.18)",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 22 }}>🧠</span>
+        <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="scroll" size={22} /></span>
         <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
           Memory Ledger
         </h2>
@@ -680,7 +680,7 @@ function ChromeExtensionSection() {
     >
       <div style={{ padding: 30 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-          <span style={{ fontSize: 22 }}>🌐</span>
+          <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="extension-icon" size={22} /></span>
           <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>Desktop Companion Extension</h2>
           <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(74,222,128,0.15)", color: "#16a34a", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>v2.0 READY</span>
         </div>
@@ -693,7 +693,7 @@ function ChromeExtensionSection() {
           display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 14px", borderRadius: 12,
           background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)", marginBottom: 20,
         }}>
-          <span style={{ fontSize: 16, lineHeight: 1.4 }}>🔑</span>
+          <span style={{ fontSize: 16, lineHeight: 1.4, display: "inline-flex" }}><Icon name="lock" size={16} /></span>
           <p style={{ fontSize: 13, color: "rgba(26,26,46,0.7)", lineHeight: 1.6, margin: 0 }}>
             <strong>To see YOUR pet</strong> (not a random one): after installing, open the extension&apos;s
             <strong> Settings</strong> and paste your <strong>CLI token</strong> — generate one in
@@ -708,15 +708,15 @@ function ChromeExtensionSection() {
         <div style={{ flex: "1 1 280px", padding: "24px 30px", borderRight: "1px solid rgba(0,0,0,0.05)" }}>
           <div className="sov-2col" style={{ gap: 10, marginBottom: 24 }}>
             {[
-              { icon: "🐾", title: "Always Alive", desc: "Your pet runs in the background and sends push notifications." },
-              { icon: "🎯", title: "Season Rewards", desc: "Earn loyalty points for browsing, chats, streaks, and evolution." },
-              { icon: "🎮", title: "Mini Games", desc: "Tap-to-feed, click-the-bug, and memory games built into the popup." },
-              { icon: "🧠", title: "Context Aware", desc: "Pet reads the current page and reacts to what you're looking at." },
-              { icon: "⚡", title: "Evolution", desc: "6 stages from Baby → Legendary. Each stage unlocks new behaviors." },
-              { icon: "🔔", title: "Mood System", desc: "Pet gets hungry, tired, or excited based on your activity." },
+              { icon: "paw", title: "Always Alive", desc: "Your pet runs in the background and sends push notifications." },
+              { icon: "medal", title: "Season Rewards", desc: "Earn loyalty points for browsing, chats, streaks, and evolution." },
+              { icon: "joystick", title: "Mini Games", desc: "Tap-to-feed, click-the-bug, and memory games built into the popup." },
+              { icon: "crystal-ball", title: "Context Aware", desc: "Pet reads the current page and reacts to what you're looking at." },
+              { icon: "sparkling", title: "Evolution", desc: "6 stages from Baby → Legendary. Each stage unlocks new behaviors." },
+              { icon: "heart", title: "Mood System", desc: "Pet gets hungry, tired, or excited based on your activity." },
             ].map(({ icon, title, desc }) => (
               <div key={title} style={{ padding: 12, borderRadius: 10, background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.05)" }}>
-                <div style={{ fontSize: 18, marginBottom: 6 }}>{icon}</div>
+                <div style={{ fontSize: 18, marginBottom: 6 }}><Icon name={icon} size={18} /></div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#1a1a2e", marginBottom: 3 }}>{title}</div>
                 <div style={{ fontSize: 10, color: "rgba(26,26,46,0.45)", fontFamily: "monospace", lineHeight: 1.55 }}>{desc}</div>
               </div>
@@ -770,7 +770,12 @@ function ChromeExtensionSection() {
             onMouseOver={(e) => (e.currentTarget.style.opacity = "0.88")}
             onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
           >
-            ⬇ Download Extension
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <path d="M12 4v11" />
+              <path d="M7 11l5 5 5-5" />
+              <path d="M5 20h14" />
+            </svg>
+            Download Extension
           </a>
           <div style={{ marginTop: 8, fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.35)" }}>
             Developer-mode install
@@ -1182,15 +1187,15 @@ export default function SovereigntyDashboard() {
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {[
-              ["🧠", "Remembers you", "Builds a private memory from every chat"],
-              ["🔗", "Across your apps", "Connect channels + your browser extension"],
-              ["🔒", "Your data, yours", "Export or delete it anytime, on your terms"],
+              ["crystal-ball", "Remembers you", "Builds a private memory from every chat"],
+              ["chat", "Across your apps", "Connect channels + your browser extension"],
+              ["lock", "Your data, yours", "Export or delete it anytime, on your terms"],
             ].map(([icon, title, sub]) => (
               <div key={title} style={{
                 flex: "1 1 180px", minWidth: 0, padding: "12px 14px", borderRadius: 12,
                 background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.05)",
               }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>{icon} {title}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", display: "flex", alignItems: "center", gap: 6 }}><Icon name={icon} size={16} /> {title}</div>
                 <div style={{ fontSize: 12, color: "rgba(26,26,46,0.55)", marginTop: 3, lineHeight: 1.45 }}>{sub}</div>
               </div>
             ))}
@@ -1231,10 +1236,19 @@ export default function SovereigntyDashboard() {
                 SOUL-BOUND
               </span>
               <span className="sov-tag" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)", color: "#b45309" }}>
-                🔐 YOUR DATA
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="4" y="10.5" width="16" height="10" rx="2.5" />
+                  <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+                  <circle cx="12" cy="15.5" r="1.4" fill="currentColor" stroke="none" />
+                </svg>
+                YOUR DATA
               </span>
               <span className="sov-tag" style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)", color: "#7c3aed" }}>
-                ⛓ ON-CHAIN AT GO-LIVE
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="9" width="9.5" height="6" rx="3" />
+                  <rect x="11.5" y="9" width="9.5" height="6" rx="3" />
+                </svg>
+                ON-CHAIN AT GO-LIVE
               </span>
             </div>
             <h1 style={{ fontSize: 52, fontWeight: 900, letterSpacing: "-0.04em", color: "#1a1a2e", lineHeight: 1.0, margin: "0 0 16px" }}>
@@ -1394,8 +1408,8 @@ export default function SovereigntyDashboard() {
               padding: "24px 24px", borderRadius: 16, marginBottom: 28,
               background: "rgba(245,158,11,0.05)", border: "1.5px dashed rgba(245,158,11,0.3)",
             }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#1a1a2e", marginBottom: 8 }}>
-                🪶 Soul not yet anchored on-chain
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#1a1a2e", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                <Icon name="crystal-ball" size={18} /> Soul not yet anchored on-chain
               </div>
               <div style={{ fontSize: 13, color: "rgba(26,26,46,0.65)", lineHeight: 1.7 }}>
                 Your pet&apos;s Soul — its 5-layer memory, persona, and identity — already lives in your
@@ -1605,7 +1619,7 @@ export default function SovereigntyDashboard() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <span style={{ fontSize: 22 }}>🕊</span>
+              <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="crown" size={22} /></span>
               <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
                 Legacy &amp; Inheritance
               </h2>
@@ -1936,7 +1950,7 @@ export default function SovereigntyDashboard() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 22 }}>🔍</span>
+              <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="crystal-ball" size={22} /></span>
               <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
                 What we hold about {selectedPet?.name || "your pet"}
               </h2>
@@ -2093,19 +2107,20 @@ export default function SovereigntyDashboard() {
                 <label style={{ display: "block", fontFamily: "monospace", fontSize: 10, color: "rgba(26,26,46,0.45)", letterSpacing: "0.1em", marginBottom: 8 }}>TYPE</label>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {[
-                    { v: "conversation", l: "💬 Chat" },
-                    { v: "milestone", l: "🏆 Milestone" },
-                    { v: "dream", l: "✨ Dream" },
-                    { v: "achievement", l: "🎖 Achievement" },
-                  ].map(({ v, l }) => (
+                    { v: "conversation", icon: "chat", l: "Chat" },
+                    { v: "milestone", icon: "trophy", l: "Milestone" },
+                    { v: "dream", icon: "sparkling", l: "Dream" },
+                    { v: "achievement", icon: "medal", l: "Achievement" },
+                  ].map(({ v, icon, l }) => (
                     <button key={v} onClick={() => setMintType(v)} style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
                       padding: "6px 14px", borderRadius: 999, fontSize: 12, fontFamily: "'Space Grotesk',sans-serif",
                       border: mintType === v ? "2px solid #f59e0b" : "1.5px solid rgba(0,0,0,0.09)",
                       background: mintType === v ? "rgba(245,158,11,0.1)" : "rgba(0,0,0,0.02)",
                       color: mintType === v ? "#b45309" : "rgba(26,26,46,0.55)",
                       fontWeight: mintType === v ? 700 : 400,
                       cursor: "pointer", transition: "all 0.15s",
-                    }}>{l}</button>
+                    }}><Icon name={icon} size={14} /> {l}</button>
                   ))}
                 </div>
               </div>
@@ -2178,7 +2193,7 @@ export default function SovereigntyDashboard() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <span style={{ fontSize: 22 }}>🛡</span>
+              <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="shield" size={22} /></span>
               <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
                 Data Sovereignty
               </h2>
@@ -2232,26 +2247,34 @@ export default function SovereigntyDashboard() {
                 }}
                 disabled={exporting}
                 style={{
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
                   padding: "12px 24px", borderRadius: 12, border: "none",
                   background: "linear-gradient(135deg, #f59e0b, #d97706)",
                   color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
                   cursor: exporting ? "not-allowed" : "pointer", opacity: exporting ? 0.5 : 1,
                 }}
               >
-                {exporting ? "Exporting..." : "📦 Export SOUL Data"}
+                {exporting ? "Exporting..." : <><Icon name="open-box" size={16} /> Export SOUL Data</>}
               </button>
 
               {!deleteConfirm ? (
                 <button
                   onClick={() => setDeleteConfirm(true)}
                   style={{
+                    display: "inline-flex", alignItems: "center", gap: 8,
                     padding: "12px 24px", borderRadius: 12,
                     background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)",
                     color: "#f87171", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
                     cursor: "pointer",
                   }}
                 >
-                  🗑 Delete All Data
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+                    <path d="M4 7h16" />
+                    <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+                    <path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" />
+                    <path d="M10 11v7M14 11v7" />
+                  </svg>
+                  Delete All Data
                 </button>
               ) : (
                 <div style={{ display: "flex", gap: 6 }}>
@@ -2315,7 +2338,7 @@ export default function SovereigntyDashboard() {
                 background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.22)",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 16 }}>📦</span>
+                  <span style={{ fontSize: 16, display: "inline-flex" }}><Icon name="open-box" size={16} /></span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif" }}>Export proof receipt</span>
                   <span style={{
                     fontSize: 8, padding: "2px 8px", borderRadius: 10,
@@ -2355,7 +2378,14 @@ export default function SovereigntyDashboard() {
                 background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.22)",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 16 }}>🗑</span>
+                  <span style={{ fontSize: 16, display: "inline-flex" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M4 7h16" />
+                      <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+                      <path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" />
+                      <path d="M10 11v7M14 11v7" />
+                    </svg>
+                  </span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif" }}>Deletion proof receipt</span>
                   <span style={{
                     fontSize: 8, padding: "2px 8px", borderRadius: 10,
@@ -2444,7 +2474,7 @@ export default function SovereigntyDashboard() {
           >
             <div style={{ padding: 30 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                <span style={{ fontSize: 22 }}>🐾</span>
+                <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="paw" size={22} /></span>
                 <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>PetClaw SDK</h2>
                 <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(139,92,246,0.15)", color: "#8b5cf6", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>MEMORY · SESSION</span>
                 <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(74,222,128,0.1)", color: "#16a34a", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>v1.3.0</span>
@@ -2456,15 +2486,15 @@ export default function SovereigntyDashboard() {
               {/* Why PetClaw — 6 cards */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 28 }}>
                 {[
-                  { icon: "🧠", title: "Persistent Memory", desc: "Context survives sessions, restarts, and platform switches — no re-explaining yourself" },
-                  { icon: "⚡", title: "Real-time Sync", desc: "State changes on Telegram reflect instantly on Discord, Web, and wherever Claw runs" },
-                  { icon: "🔒", title: "Encrypted Sessions", desc: "AES-256 session keys. Only your pet can read its own history" },
-                  { icon: "🪝", title: "MCP Compatible", desc: "Plug into any Model Context Protocol client in under 5 minutes" },
-                  { icon: "📜", title: "SOUL.md", desc: "Your pet's personality definition file — define its values and voice in plain markdown" },
-                  { icon: "🔄", title: "Self-improving", desc: "Skills evolve as interactions accumulate. The more your pet knows you, the better it converses" },
+                  { icon: "crystal-ball", title: "Persistent Memory", desc: "Context survives sessions, restarts, and platform switches — no re-explaining yourself" },
+                  { icon: "electric", title: "Real-time Sync", desc: "State changes on Telegram reflect instantly on Discord, Web, and wherever Claw runs" },
+                  { icon: "lock", title: "Encrypted Sessions", desc: "AES-256 session keys. Only your pet can read its own history" },
+                  { icon: "extension-icon", title: "MCP Compatible", desc: "Plug into any Model Context Protocol client in under 5 minutes" },
+                  { icon: "scroll", title: "SOUL.md", desc: "Your pet's personality definition file — define its values and voice in plain markdown" },
+                  { icon: "sparkling", title: "Self-improving", desc: "Skills evolve as interactions accumulate. The more your pet knows you, the better it converses" },
                 ].map(({ icon, title, desc }) => (
                   <div key={title} style={{ padding: 18, borderRadius: 14, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.07)" }}>
-                    <div style={{ fontSize: 26, marginBottom: 10 }}>{icon}</div>
+                    <div style={{ fontSize: 26, marginBottom: 10 }}><Icon name={icon} size={26} /></div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e", marginBottom: 6, fontFamily: "'Space Grotesk',sans-serif" }}>{title}</div>
                     <div style={{ fontSize: 13, color: "rgba(26,26,46,0.5)", fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1.6 }}>{desc}</div>
                   </div>
@@ -2564,7 +2594,7 @@ export default function SovereigntyDashboard() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 22 }}>🌐</span>
+              <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="world-map" size={22} /></span>
               <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
                 Pet Network
               </h2>
@@ -2677,7 +2707,7 @@ export default function SovereigntyDashboard() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-              <span style={{ fontSize: 22 }}>🔌</span>
+              <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="extension-icon" size={22} /></span>
               <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>
                 PetClaw Ecosystem
               </h2>

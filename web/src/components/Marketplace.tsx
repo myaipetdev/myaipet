@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { SKILL_DB, ELEMENTS, SKILL_MAP, getSkillUpgradeCost, type Element } from "@/lib/skills";
-import Icon from "@/components/Icon";
+import Icon, { ELEMENT_ICONS } from "@/components/Icon";
 
 const RARITY_COLORS: Record<string, { bg: string; border: string; text: string; glow: string; shimmer: string }> = {
   common: { bg: "rgba(255,255,255,0.03)", border: "rgba(255,255,255,0.06)", text: "rgba(255,255,255,0.4)", glow: "rgba(255,255,255,0.05)", shimmer: "rgba(255,255,255,0.03)" },
@@ -316,12 +316,12 @@ export default function Marketplace() {
                   }}>
                     {def ? (
                       <>
-                        <div style={{ fontSize: 28, marginBottom: 6, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))" }}>{def.emoji}</div>
+                        <div style={{ fontSize: 28, marginBottom: 6, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))" }}><Icon name={ELEMENT_ICONS[def.element] || "normal"} size={28} /></div>
                         <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 11, fontWeight: 700, color: "#fff" }}>
                           {def.name}
                         </div>
-                        <div style={{ fontFamily: "monospace", fontSize: 9, color: el!.color, marginBottom: 6 }}>
-                          {el!.emoji} {def.element} | {"★".repeat(equipped.level)}
+                        <div style={{ fontFamily: "monospace", fontSize: 9, color: el!.color, marginBottom: 6, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <Icon name={ELEMENT_ICONS[def.element] || "normal"} size={10} /> {def.element} | {"★".repeat(equipped.level)}
                         </div>
                         <button onClick={() => handleUnequipSkill(equipped.skill_key)} style={{
                           fontFamily: "monospace", fontSize: 9, color: "#f87171",
@@ -389,14 +389,14 @@ export default function Marketplace() {
                           border: `1px solid ${el.color}20`,
                           display: "flex", alignItems: "center", justifyContent: "center",
                         }}>
-                          <span style={{ fontSize: 22 }}>{def.emoji}</span>
+                          <Icon name={ELEMENT_ICONS[def.element] || "normal"} size={22} />
                         </div>
                         <div>
                           <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#fff" }}>
                             {def.name}
                           </div>
-                          <div style={{ fontFamily: "monospace", fontSize: 9, color: el.color }}>
-                            {el.emoji} {"★".repeat(s.level)}{"☆".repeat(def.maxLevel - s.level)} | PWR {def.power}
+                          <div style={{ fontFamily: "monospace", fontSize: 9, color: el.color, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            <Icon name={ELEMENT_ICONS[def.element] || "normal"} size={10} /> {"★".repeat(s.level)}{"☆".repeat(def.maxLevel - s.level)} | PWR {def.power}
                           </div>
                         </div>
                       </div>
@@ -476,14 +476,14 @@ export default function Marketplace() {
                             border: `1px solid ${el.color}20`,
                             display: "flex", alignItems: "center", justifyContent: "center",
                           }}>
-                            <span style={{ fontSize: 24 }}>{s.emoji}</span>
+                            <Icon name={ELEMENT_ICONS[s.element] || "normal"} size={24} />
                           </div>
                           <div>
                             <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#fff" }}>
                               {s.name}
                             </div>
-                            <div style={{ fontFamily: "monospace", fontSize: 9, color: el.color }}>
-                              {el.emoji} {s.element} | {"★".repeat(s.rarity)} | PWR {s.power}
+                            <div style={{ fontFamily: "monospace", fontSize: 9, color: el.color, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                              <Icon name={ELEMENT_ICONS[s.element] || "normal"} size={10} /> {s.element} | {"★".repeat(s.rarity)} | PWR {s.power}
                             </div>
                           </div>
                         </div>

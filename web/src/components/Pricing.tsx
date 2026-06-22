@@ -5,14 +5,15 @@ import { useAccount, useSwitchChain } from "wagmi";
 import { useCoinbaseOnramp } from "@/hooks/useCoinbaseOnramp";
 import { useDirectUsdtPay } from "@/hooks/useDirectUsdtPay";
 import { getAuthHeaders } from "@/lib/api";
+import Icon from "@/components/Icon";
 
 const EARN_METHODS = [
-  { icon: "🐾", label: "Daily check-in", desc: "Show up. Your pet remembers.", reward: "+10 pts" },
-  { icon: "🎬", label: "Create together", desc: "AI image & video starring your pet", reward: "+5 pts" },
-  { icon: "💬", label: "Share moments", desc: "Like, comment, signal-boost", reward: "+2 pts" },
-  { icon: "🤝", label: "Build the bond", desc: "Talk, feed, walk, train", reward: "+1–3 pts" },
-  { icon: "🧬", label: "Evolution", desc: "Each stage unlocks new behavior", reward: "+200 pts/evolution" },
-  { icon: "📢", label: "Invite a friend", desc: "Bring someone into the ecosystem", reward: "+100 pts" },
+  { icon: "paw", label: "Daily check-in", desc: "Show up. Your pet remembers.", reward: "+10 pts" },
+  { icon: "film-reel", label: "Create together", desc: "AI image & video starring your pet", reward: "+5 pts" },
+  { icon: "chat", label: "Share moments", desc: "Like, comment, signal-boost", reward: "+2 pts" },
+  { icon: "heart", label: "Build the bond", desc: "Talk, feed, walk, train", reward: "+1–3 pts" },
+  { icon: "crystal-ball", label: "Evolution", desc: "Each stage unlocks new behavior", reward: "+200 pts/evolution" },
+  { icon: "gift", label: "Invite a friend", desc: "Bring someone into the ecosystem", reward: "+100 pts" },
 ];
 
 const BSC_CHAIN_ID = 56;
@@ -34,9 +35,9 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
     // 100/500/2000) — the cards previously advertised 5× and under-delivered.
     // Kept at the server's lower grants on purpose to stay margin-positive over
     // Grok generation costs.
-    { name: "Explorer", key: "starter", cookies: 100, price: 5, usdtPrice: "5 USDT", pop: false, desc: "Try the ecosystem", emoji: "🌱" },
-    { name: "Companion", key: "creator", cookies: 500, price: 20, usdtPrice: "20 USDT", pop: true, desc: "Full Raise-to-Earn", emoji: "🐾" },
-    { name: "Breeder", key: "pro", cookies: 2000, price: 50, usdtPrice: "50 USDT", pop: false, desc: "Power user tier", emoji: "👑" },
+    { name: "Explorer", key: "starter", cookies: 100, price: 5, usdtPrice: "5 USDT", pop: false, desc: "Try the ecosystem", emoji: "grass" },
+    { name: "Companion", key: "creator", cookies: 500, price: 20, usdtPrice: "20 USDT", pop: true, desc: "Full Raise-to-Earn", emoji: "paw" },
+    { name: "Breeder", key: "pro", cookies: 2000, price: 50, usdtPrice: "50 USDT", pop: false, desc: "Power user tier", emoji: "crown" },
   ];
 
   // Direct USDT pay (BSC-USD → treasury → server verifies → grants credits)
@@ -179,7 +180,13 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.28)",
           display: "flex", alignItems: "center", gap: 12, textAlign: "left",
         }}>
-          <span style={{ fontSize: 20 }}>💳</span>
+          <span style={{ fontSize: 20, flexShrink: 0, display: "inline-flex", color: "#d97706" }} aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2.5" />
+              <path d="M2 9.5h20" />
+              <path d="M6 14.5h3" />
+            </svg>
+          </span>
           <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "#92400e", lineHeight: 1.5 }}>
             <strong>Credit purchases are paused right now.</strong> You can still earn credits free by raising &amp; creating — buying reopens soon.
           </div>
@@ -196,7 +203,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
             border: "1px solid rgba(0,0,0,0.06)", padding: "18px 16px",
             display: "flex", alignItems: "flex-start", gap: 12,
           }}>
-            <span style={{ fontSize: 22, flexShrink: 0 }}>{m.icon}</span>
+            <span style={{ flexShrink: 0, display: "inline-flex", lineHeight: 0 }}><Icon name={m.icon} size={22} /></span>
             <div>
               <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 600, color: "#1a1a2e", marginBottom: 3 }}>
                 {m.label}
@@ -311,7 +318,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
                 MOST POPULAR
               </div>
             )}
-            <div style={{ fontSize: 32, marginBottom: 8 }}>{p.emoji}</div>
+            <div style={{ marginBottom: 8 }}><Icon name={p.emoji} size={32} /></div>
             <div style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.5)", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>
               {p.name}
             </div>
@@ -321,8 +328,8 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
             }}>
               {p.usdtPrice}
             </div>
-            <div style={{ fontFamily: "mono", fontSize: 14, color: "#b45309", marginBottom: 4, fontWeight: 600 }}>
-              🪙 {p.cookies.toLocaleString()} credits
+            <div style={{ fontFamily: "mono", fontSize: 14, color: "#b45309", marginBottom: 4, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>
+              <Icon name="coin" size={16} /> {p.cookies.toLocaleString()} credits
             </div>
             <div style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.4)", marginBottom: 18 }}>
               {p.desc}
@@ -374,7 +381,13 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
                 onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span>{"💳"}</span> Buy with Card
+                  <span style={{ display: "inline-flex", lineHeight: 0 }} aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="5" width="20" height="14" rx="2.5" />
+                      <path d="M2 9.5h20" />
+                      <path d="M6 14.5h3" />
+                    </svg>
+                  </span> Buy with Card
                 </span>
                 <span style={{ fontSize: 9, opacity: 0.7, fontWeight: 500 }}>
                   Powered by Coinbase

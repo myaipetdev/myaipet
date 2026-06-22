@@ -12,6 +12,7 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import DashboardList from "@/components/DashboardList";
+import Icon from "@/components/Icon";
 
 // DB-backed: never prerender at build time (no DB connection there)
 export const dynamic = "force-dynamic";
@@ -196,7 +197,7 @@ export default async function DashboardPage() {
                     {p.avatarUrl ? (
                       <img src={p.avatarUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
-                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>🐾</div>
+                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}><Icon name="paw" size={32} /></div>
                     )}
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 700, textAlign: "center" }}>{p.name}</div>

@@ -13,6 +13,7 @@
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import { toast } from "@/components/Toast";
+import Icon from "@/components/Icon";
 
 interface Pet { id: number; name: string; avatar_url: string | null; }
 interface DateResult {
@@ -84,7 +85,7 @@ export default function PetDateWidget() {
           padding: "16px 22px", borderBottom: "1px solid rgba(0,0,0,0.05)",
           display: "flex", alignItems: "center", gap: 10,
         }}>
-          <span style={{ fontSize: 22 }}>🗓</span>
+          <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="heart" size={22} /></span>
           <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)" }}>
             PET DATE · AI-WRITTEN MEETUP
           </div>

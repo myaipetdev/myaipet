@@ -16,6 +16,7 @@
  */
 import { useState, type ReactNode } from "react";
 
+import Icon from "@/components/Icon";
 import MyCard from "@/components/MyCard";
 import SeasonTierCard from "@/components/SeasonTierCard";
 import HourlyDropBanner from "@/components/HourlyDropBanner";
@@ -28,10 +29,10 @@ import PremiumTeaser from "@/components/PremiumTeaser";
 
 type Pillar = "earn" | "compete" | "connect";
 
-const TABS: Array<{ key: Pillar; emoji: string; title: string; sub: string }> = [
-  { key: "earn",    emoji: "🎯", title: "Earn",    sub: "Missions · drops · streak" },
-  { key: "compete", emoji: "🏆", title: "Compete", sub: "Leaderboards" },
-  { key: "connect", emoji: "🤝", title: "Connect", sub: "SOS · buddies · dates" },
+const TABS: Array<{ key: Pillar; icon: string; title: string; sub: string }> = [
+  { key: "earn",    icon: "coins",  title: "Earn",    sub: "Missions · drops · streak" },
+  { key: "compete", icon: "trophy", title: "Compete", sub: "Leaderboards" },
+  { key: "connect", icon: "chat",   title: "Connect", sub: "SOS · buddies · dates" },
 ];
 
 const INTRO: Record<Pillar, { eyebrow: string; line: string }> = {
@@ -103,7 +104,9 @@ export default function SeasonRewardsHub({ banner }: { banner?: React.ReactNode 
                   transition: "background 0.15s, box-shadow 0.15s",
                 }}
               >
-                <span style={{ fontSize: 22, lineHeight: 1 }}>{t.emoji}</span>
+                <span style={{ fontSize: 22, lineHeight: 1, display: "inline-flex" }}>
+                  <Icon name={t.icon} size={22} />
+                </span>
                 <span style={{ minWidth: 0 }}>
                   <span style={{
                     display: "block",

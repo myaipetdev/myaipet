@@ -8,6 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import Icon from "@/components/Icon";
 
 export default function PetDiary({
   petId, petName, accent,
@@ -57,7 +58,7 @@ export default function PetDiary({
           fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
           letterSpacing: "0.12em", color: accent, fontWeight: 800, textTransform: "uppercase",
         }}>
-          📔 {petName}&rsquo;s week
+          <Icon name="scroll" size={14} /> {petName}&rsquo;s week
         </div>
         {week && (
           <span style={{

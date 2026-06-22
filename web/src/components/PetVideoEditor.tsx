@@ -174,7 +174,12 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
     <div style={{ color: "white" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
         <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>Editor</h2>
-        <button onClick={onClose} style={btnSecondary}>✕ Close</button>
+        <button onClick={onClose} style={{ ...btnSecondary, display: "inline-flex", alignItems: "center", gap: 7 }}>
+          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+          Close
+        </button>
       </div>
 
       {loading ? (
@@ -272,8 +277,18 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
               }}>
                 <video src={exportedUrl} controls style={{ width: "100%", borderRadius: 8 }} />
                 <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <a href={exportedUrl} download="edited.mp4" style={btnPrimary}>↓ Download</a>
-                  <button onClick={saveToLibrary} style={btnSecondary}>☁︎ Save to library</button>
+                  <a href={exportedUrl} download="edited.mp4" style={{ ...btnPrimary, display: "inline-flex", alignItems: "center", gap: 7 }}>
+                    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M12 3v12M7 11l5 5 5-5M5 20h14" />
+                    </svg>
+                    Download
+                  </a>
+                  <button onClick={saveToLibrary} style={{ ...btnSecondary, display: "inline-flex", alignItems: "center", gap: 7 }}>
+                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M6.5 18A4.5 4.5 0 0 1 6 9.05a6 6 0 0 1 11.6 1.45A3.75 3.75 0 0 1 17 18H6.5z" />
+                    </svg>
+                    Save to library
+                  </button>
                 </div>
               </div>
             )}

@@ -15,6 +15,7 @@
 import { useEffect, useState } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import PetCard from "@/components/PetCard";
+import Icon from "@/components/Icon";
 
 const INK = "#1a1a22";
 const MUTED = "#6b6b73";
@@ -119,7 +120,9 @@ export default function CardDeck() {
           <button key={t} onClick={() => setTab(t)} style={{
             padding: "8px 18px", borderRadius: 999, cursor: "pointer", fontSize: 14, fontWeight: 700,
             border: `1.5px solid ${tab === t ? INK : LINE}`, background: tab === t ? INK : "#fff", color: tab === t ? "#fff" : MUTED,
-          }}>{t === "deck" ? "My Deck" : "⚔️ Battle"}</button>
+          }}>{t === "deck" ? "My Deck" : (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="sword" size={16} /> Battle</span>
+          )}</button>
         ))}
       </div>
 
@@ -134,8 +137,8 @@ export default function CardDeck() {
               </a>
               <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
                 <button onClick={() => shareCard(p.id, p.name)} style={btn}>𝕏 Share</button>
-                <button onClick={() => illustrate(p.id, p.name)} disabled={illustrating === p.id} style={{ ...ghost, opacity: illustrating === p.id ? 0.6 : 1 }}>
-                  {illustrating === p.id ? "Illustrating…" : "✨ Illustrate"}
+                <button onClick={() => illustrate(p.id, p.name)} disabled={illustrating === p.id} style={{ ...ghost, opacity: illustrating === p.id ? 0.6 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  {illustrating === p.id ? "Illustrating…" : <><Icon name="sparkling" size={15} /> Illustrate</>}
                 </button>
               </div>
             </div>
@@ -167,7 +170,9 @@ export default function CardDeck() {
           {battle && (
             <div style={{ borderRadius: 16, border: `1px solid ${LINE}`, padding: 20, background: "#fff" }}>
               <div style={{ textAlign: "center", fontSize: 22, fontWeight: 800, color: battle.winner === "you" ? "#16a34a" : "#dc2626", marginBottom: 16 }}>
-                {battle.winner === "you" ? `🏆 ${battle.you.name} wins!` : `${battle.opponent.name} wins`}
+                {battle.winner === "you" ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><Icon name="trophy" size={24} /> {battle.you.name} wins!</span>
+                ) : `${battle.opponent.name} wins`}
                 <div style={{ fontSize: 12, color: MUTED, fontWeight: 500, marginTop: 4 }}>{battle.result.turns} turns · your HP {battle.result.yourHp}/{battle.result.yourHpMax} · their HP {battle.result.oppHp}/{battle.result.oppHpMax}</div>
               </div>
               <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
@@ -216,7 +221,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div style={{ maxWidth: 860, margin: "0 auto", padding: "8px 0 40px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase" }}>Trading cards</div>
-        <h1 style={{ fontSize: 26, fontWeight: 800, color: INK, margin: "6px 0 0" }}>Your deck 🃏</h1>
+        <h1 style={{ fontSize: 26, fontWeight: 800, color: INK, margin: "6px 0 0" }}>Your deck</h1>
         <p style={{ fontSize: 14.5, color: MUTED, margin: "8px 0 0", lineHeight: 1.55 }}>
           Every pet is a collectible card — real stats, real rarity. Share it, illustrate it, or duel another pet&apos;s card.
         </p>

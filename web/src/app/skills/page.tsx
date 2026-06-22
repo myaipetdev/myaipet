@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import { BUILTIN_SKILLS } from "@/lib/petclaw/pethub";
+import Icon from "@/components/Icon";
 
 export const metadata: Metadata = {
   title: "Skills — PetClaw Marketplace",
   description: "Built-in skills your pet can run — chat, memory recall, social posting, summarization, and more. Install with one command.",
 };
 
-const CATEGORY_META: Record<string, { color: string; bg: string; emoji: string }> = {
-  emotional:  { color: "#dc2626", bg: "rgba(248,113,113,0.10)", emoji: "💭" },
-  social:     { color: "#2563eb", bg: "rgba(96,165,250,0.10)",  emoji: "💬" },
-  knowledge:  { color: "#7c3aed", bg: "rgba(167,139,250,0.10)", emoji: "🧠" },
-  creative:   { color: "#db2777", bg: "rgba(244,114,182,0.10)", emoji: "🎨" },
-  utility:    { color: "#0891b2", bg: "rgba(34,211,238,0.10)",  emoji: "⚙️" },
+const CATEGORY_META: Record<string, { color: string; bg: string; icon: string }> = {
+  emotional:  { color: "#dc2626", bg: "rgba(248,113,113,0.10)", icon: "heart" },
+  social:     { color: "#2563eb", bg: "rgba(96,165,250,0.10)",  icon: "chat" },
+  knowledge:  { color: "#7c3aed", bg: "rgba(167,139,250,0.10)", icon: "crystal-ball" },
+  creative:   { color: "#db2777", bg: "rgba(244,114,182,0.10)", icon: "sparkling" },
+  utility:    { color: "#0891b2", bg: "rgba(34,211,238,0.10)",  icon: "extension-icon" },
 };
 
 export default function SkillsPage() {
@@ -81,7 +82,7 @@ export default function SkillsPage() {
           border: "1px solid rgba(168,85,247,0.18)",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            <span style={{ fontSize: 20 }}>🌱</span>
+            <span style={{ fontSize: 20 }}><Icon name="grass" size={20} /></span>
             <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, letterSpacing: "-0.01em" }}>
               Pets grow new skills on their own
             </h2>
@@ -110,7 +111,7 @@ export default function SkillsPage() {
               <div style={{
                 display: "flex", alignItems: "center", gap: 10, marginBottom: 16,
               }}>
-                <span style={{ fontSize: 20 }}>{meta.emoji}</span>
+                <span style={{ fontSize: 20 }}><Icon name={meta.icon} size={20} /></span>
                 <h2 style={{
                   fontSize: 13, fontWeight: 700, letterSpacing: "0.12em",
                   textTransform: "uppercase", color: "rgba(26,26,46,0.5)", margin: 0,

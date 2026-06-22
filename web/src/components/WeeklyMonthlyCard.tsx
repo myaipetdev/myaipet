@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+import Icon from "@/components/Icon";
 
 interface PeriodicView {
   id: string;
@@ -53,8 +54,8 @@ export default function WeeklyMonthlyCard() {
       <div style={{
         display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14,
       }} className="weekly-monthly-grid">
-        {weekly && <Block period={weekly} title="THIS WEEK" emoji="📆" />}
-        {monthly && <Block period={monthly} title="THIS MONTH" emoji="🗓" />}
+        {weekly && <Block period={weekly} title="THIS WEEK" icon="scroll" />}
+        {monthly && <Block period={monthly} title="THIS MONTH" icon="medal" />}
       </div>
 
       <style>{`
@@ -66,7 +67,7 @@ export default function WeeklyMonthlyCard() {
   );
 }
 
-function Block({ period, title, emoji }: { period: PeriodicResponse; title: string; emoji: string }) {
+function Block({ period, title, icon }: { period: PeriodicResponse; title: string; icon: string }) {
   return (
     <div style={{
       background: "white", borderRadius: 16,
@@ -74,7 +75,7 @@ function Block({ period, title, emoji }: { period: PeriodicResponse; title: stri
       padding: "18px 20px",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-        <span style={{ fontSize: 22 }}>{emoji}</span>
+        <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name={icon} size={22} /></span>
         <div style={{
           fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
           letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)",

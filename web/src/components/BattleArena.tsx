@@ -17,6 +17,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "@/components/Toast";
+import Icon from "@/components/Icon";
 
 export interface BattleData {
   battleId: number;
@@ -224,7 +225,7 @@ function PetCard({ side, pet, hpNow, isWinner }: { side: "player" | "opponent"; 
           : <div style={{
               width: "100%", height: "100%", display: "flex", alignItems: "center",
               justifyContent: "center", fontSize: 40,
-            }}>{(pet as any).isNpc ? "👻" : "🐾"}</div>
+            }}><Icon name={(pet as any).isNpc ? "skull" : "paw"} size={40} /></div>
         }
       </div>
       <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{pet.name}</div>

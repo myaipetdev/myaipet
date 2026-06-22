@@ -87,7 +87,13 @@ export default function SosFeedAndBuddy() {
         {/* SOS Feed */}
         <div style={card}>
           <div style={cardHeader}>
-            <span style={{ fontSize: 22 }}>🆘</span>
+            <span style={{ fontSize: 22, display: "inline-flex", lineHeight: 0 }}>
+              <svg width={22} height={22} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="#f59e0b" strokeWidth="2" />
+                <circle cx="12" cy="12" r="3.5" stroke="#f59e0b" strokeWidth="2" />
+                <path d="M12 3v3.5M12 17.5V21M3 12h3.5M17.5 12H21" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </span>
             <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)" }}>
               SOS · SAVE OUR STREAKS
             </div>
@@ -97,7 +103,14 @@ export default function SosFeedAndBuddy() {
               <div style={{
                 padding: "32px 22px", textAlign: "center",
               }}>
-                <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.7 }}>☕</div>
+                <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.7, display: "flex", justifyContent: "center" }}>
+                  <svg width={36} height={36} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 11.5h11v3a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-3Z" stroke="#1a1a2e" strokeWidth="1.6" strokeLinejoin="round" />
+                    <path d="M16 12.5h1.5a2 2 0 0 1 0 4H16" stroke="#1a1a2e" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M8 4.5c-.7.8-.7 1.7 0 2.5M11.5 4.5c-.7.8-.7 1.7 0 2.5" stroke="#1a1a2e" strokeWidth="1.6" strokeLinecap="round" />
+                    <path d="M5 20.5h11" stroke="#1a1a2e" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
+                </div>
                 <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6, color: "#1a1a2e" }}>
                   Everyone's streak is safe
                 </div>
@@ -135,7 +148,12 @@ export default function SosFeedAndBuddy() {
         {/* Buddy panel */}
         <div style={card}>
           <div style={cardHeader}>
-            <span style={{ fontSize: 22 }}>🤝</span>
+            <span style={{ fontSize: 22, display: "inline-flex", lineHeight: 0 }}>
+              <svg width={22} height={22} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="8.5" cy="12" r="5" stroke="#f59e0b" strokeWidth="2" />
+                <circle cx="15.5" cy="12" r="5" stroke="#f59e0b" strokeWidth="2" />
+              </svg>
+            </span>
             <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)" }}>
               BUDDY LOCK · SHARED STREAK
             </div>
@@ -144,7 +162,12 @@ export default function SosFeedAndBuddy() {
           <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
             {authed === false && (
               <div style={{ padding: "32px 22px", textAlign: "center" }}>
-                <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.7 }}>🤝</div>
+                <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.7, display: "flex", justifyContent: "center" }}>
+                  <svg width={36} height={36} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="8.5" cy="12" r="5.5" stroke="#1a1a2e" strokeWidth="1.6" />
+                    <circle cx="15.5" cy="12" r="5.5" stroke="#1a1a2e" strokeWidth="1.6" />
+                  </svg>
+                </div>
                 <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6, color: "#1a1a2e" }}>
                   Pair up with one friend
                 </div>
@@ -195,7 +218,12 @@ export default function SosFeedAndBuddy() {
                 border: "1px solid rgba(59,130,246,0.20)",
                 display: "flex", alignItems: "center", gap: 10,
               }}>
-                <span style={{ fontSize: 18 }}>📨</span>
+                <span style={{ fontSize: 18, display: "inline-flex", lineHeight: 0 }}>
+                  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="3" y="5.5" width="18" height="13" rx="2.5" stroke="#3b82f6" strokeWidth="1.8" />
+                    <path d="M4 7.5l8 5.5 8-5.5" stroke="#3b82f6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
                 <div style={{ fontSize: 12, flex: 1 }}>
                   Invite from <strong>{inv.sender.wallet}</strong>
                 </div>

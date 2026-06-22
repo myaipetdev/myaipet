@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAuth } from "@/hooks/useAuth";
+import Icon from "@/components/Icon";
 import DemoPet from "@/components/DemoPet";
 import PetClawPreview from "@/components/PetClawPreview";
 import CommunityPreview from "@/components/CommunityPreview";
@@ -86,7 +87,7 @@ export default function WalletGate({ children, section }: any) {
     return (
       <div style={{ maxWidth: 480, margin: "0 auto", padding: "140px 24px 60px", textAlign: "center" }}>
         <div style={{ fontSize: 64, marginBottom: 24, opacity: 0.7, animation: "petFloat 6s ease-in-out infinite" }}>
-          🔄
+          <Icon name="compass" size={64} />
         </div>
         <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700, color: "#1a1a2e", marginBottom: 12 }}>
           Verifying...
@@ -105,7 +106,7 @@ export default function WalletGate({ children, section }: any) {
     return (
       <div style={{ maxWidth: 480, margin: "0 auto", padding: "140px 24px 60px", textAlign: "center" }}>
         <div style={{ fontSize: 64, marginBottom: 24, opacity: 0.7, animation: "petFloat 6s ease-in-out infinite" }}>
-          🔐
+          <Icon name="lock" size={64} />
         </div>
         <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700, color: "#1a1a2e", marginBottom: 12 }}>
           Sign In Required
@@ -152,7 +153,7 @@ export default function WalletGate({ children, section }: any) {
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", padding: "140px 24px 60px", textAlign: "center" }}>
       <div style={{ fontSize: 64, marginBottom: 24, opacity: 0.7, animation: "petFloat 6s ease-in-out infinite" }}>
-        🔐
+        <Icon name="lock" size={64} />
       </div>
       <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700, color: "#1a1a2e", marginBottom: 12 }}>
         Connect Your Wallet

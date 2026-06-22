@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Icon from "@/components/Icon";
 
 interface Props {
   open: boolean;
@@ -253,8 +254,9 @@ export default function EvolutionAnimation({
                         border: "1px solid rgba(192,132,252,0.4)",
                         color: "#c084fc",
                         fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
+                        display: "inline-flex", alignItems: "center", gap: 6,
                       }}>
-                        ✨ New Skills: {skillsUnlocked.join(", ")}
+                        <Icon name="sparkling" size={16} /> New Skills: {skillsUnlocked.join(", ")}
                       </div>
                     )}
                     {creditsEarned > 0 && (

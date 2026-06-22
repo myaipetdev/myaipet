@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import PaywallModal from "@/components/PaywallModal";
 import { toast } from "@/components/Toast";
+import Icon from "@/components/Icon";
 
 interface Stats { atk: number; def: number; spd: number; }
 interface PanelData {
@@ -27,10 +28,10 @@ interface PanelData {
   pricePerUpgradeUsd: number;
 }
 
-const STAT_META: Record<keyof Stats, { label: string; emoji: string; color: string }> = {
-  atk: { label: "ATK", emoji: "⚔️", color: "#dc2626" },
-  def: { label: "DEF", emoji: "🛡️", color: "#2563eb" },
-  spd: { label: "SPD", emoji: "💨", color: "#16a34a" },
+const STAT_META: Record<keyof Stats, { label: string; icon: string; color: string }> = {
+  atk: { label: "ATK", icon: "sword", color: "#dc2626" },
+  def: { label: "DEF", icon: "shield", color: "#2563eb" },
+  spd: { label: "SPD", icon: "rocket", color: "#16a34a" },
 };
 
 export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: number; onStatsChanged?: (stats: Stats) => void }) {
@@ -105,7 +106,7 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
     }}>
       {/* Header — combined power = ranking input */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-        <span style={{ fontSize: 20 }}>💪</span>
+        <span style={{ fontSize: 20, display: "inline-flex" }}><Icon name="boxing" size={20} /></span>
         <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0, letterSpacing: "-0.01em" }}>
           Power Training
         </h3>
@@ -137,7 +138,7 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
               padding: "10px 14px", borderRadius: 10, background: "white",
               border: "1px solid rgba(0,0,0,0.05)",
             }}>
-              <span style={{ fontSize: 18 }}>{meta.emoji}</span>
+              <span style={{ fontSize: 18, display: "inline-flex" }}><Icon name={meta.icon} size={18} /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ fontSize: 12, fontWeight: 800, color: meta.color }}>{meta.label}</span>
@@ -194,8 +195,9 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
             fontFamily: "'Space Grotesk',sans-serif", textAlign: "center",
             animation: "celebPop 0.4s ease, celebFade 2.8s ease forwards",
           }}>
-            <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em" }}>
-              {(STAT_META[celebrate.stat] as any).emoji} {celebrate.stat.toUpperCase()} {celebrate.from} → {celebrate.to}
+            <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+              <Icon name={STAT_META[celebrate.stat].icon} size={38} />
+              <span>{celebrate.stat.toUpperCase()} {celebrate.from} → {celebrate.to}</span>
             </div>
             <div style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", marginTop: 6, opacity: 0.9, letterSpacing: "0.08em" }}>
               POWER {celebrate.combinedPower} · CLIMBING

@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import PaywallModal from "@/components/PaywallModal";
 import { toast } from "@/components/Toast";
+import Icon from "@/components/Icon";
 
 export interface LeaderRow {
   rank: number;
@@ -101,14 +102,14 @@ export default function DashboardList({ rows }: { rows: LeaderRow[] }) {
               {p.avatarUrl ? (
                 <img src={p.avatarUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
-                <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🐾</div>
+                <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}><Icon name="paw" size={18} /></div>
               )}
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700 }}>
                 {p.name}
                 {p.careStreak >= 7 && (
-                  <span style={{ marginLeft: 6, fontSize: 10, color: "#b45309" }}>🔥{p.careStreak}d</span>
+                  <span style={{ marginLeft: 6, fontSize: 10, color: "#b45309", display: "inline-flex", alignItems: "center", gap: 2 }}><Icon name="fire" size={11} />{p.careStreak}d</span>
                 )}
               </div>
               <div style={{ fontSize: 10, fontFamily: "mono", color: "rgba(26,26,46,0.45)" }}>
