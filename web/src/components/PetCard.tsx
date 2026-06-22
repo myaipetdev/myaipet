@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { elementTheme, rarityColor } from "@/lib/tcg/theme";
+import { elementTheme, rarityColor, rarityFx, rarityTier } from "@/lib/tcg/theme";
 import type { CardData } from "@/lib/tcg/card";
 
 export default function PetCard({ card: cardProp, petId, maxWidth = 320 }: { card?: CardData; petId?: number; maxWidth?: number }) {
@@ -33,22 +33,51 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320 }: { car
 
   const t = elementTheme(card.element);
   const rc = rarityColor(card.rarity);
-  const holo = card.rarity === "Epic" || card.rarity === "Legendary";
+  const fx = rarityFx(rarityTier(card.rarity), rc);
+  const SPARKS = [
+    { top: "11%", left: "16%", d: "0s" }, { top: "20%", right: "13%", d: ".7s" },
+    { top: "44%", left: "7%", d: "1.3s" }, { bottom: "30%", right: "9%", d: ".4s" },
+    { bottom: "15%", left: "22%", d: "1.6s" }, { top: "63%", right: "20%", d: "1s" },
+  ];
 
   return (
-    <div style={{ width: "100%", maxWidth, margin: "0 auto" }}>
-      <style>{`@keyframes tcgHolo{0%{transform:translateX(-120%) rotate(8deg)}100%{transform:translateX(220%) rotate(8deg)}}`}</style>
+    <div style={{ position: "relative", width: "100%", maxWidth, margin: "0 auto" }}>
+      <style>{`
+        @keyframes tcgHolo{0%{transform:translateX(-130%) rotate(8deg)}100%{transform:translateX(240%) rotate(8deg)}}
+        @keyframes tcgSpin{to{transform:rotate(360deg)}}
+        @keyframes tcgPulse{0%,100%{opacity:.3}50%{opacity:.7}}
+        @keyframes tcgTwinkle{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1)}}
+      `}</style>
+
+      {/* Pulsing/static aura glow (Uncommon+) — outside the clipped frame */}
+      {fx.glow > 0 && (
+        <div aria-hidden style={{ position: "absolute", inset: -4, borderRadius: 24, background: rc, filter: `blur(${Math.round(fx.glow * 0.7)}px)`, opacity: fx.glowPulse ? undefined : 0.4, animation: fx.glowPulse ? "tcgPulse 2.6s ease-in-out infinite" : "none", zIndex: 0 }} />
+      )}
+
+      {/* Frame — animated gradient border (Epic/Legendary) via a spinning conic
+          ring behind a padded card; solid border otherwise. */}
+      <div style={{ position: "relative", zIndex: 1, borderRadius: 18, overflow: "hidden", padding: fx.animatedBorder ? fx.borderWidth : 0, boxShadow: "0 14px 40px rgba(0,0,0,0.4)" }}>
+        {fx.animatedBorder && (
+          <div aria-hidden style={{ position: "absolute", inset: "-60%", background: fx.ringGradient, animation: `tcgSpin ${fx.tier === 4 ? 5 : 7}s linear infinite`, zIndex: 0 }} />
+        )}
+
       <div style={{
-        position: "relative", display: "flex", flexDirection: "column", overflow: "hidden",
-        borderRadius: 18, border: `4px solid ${rc}`, background: "#0f0f14",
-        boxShadow: `0 14px 40px rgba(0,0,0,0.4)${holo ? `, 0 0 26px ${rc}66` : ""}`,
+        position: "relative", zIndex: 1, display: "flex", flexDirection: "column", overflow: "hidden",
+        borderRadius: fx.animatedBorder ? 14 : 16, border: fx.animatedBorder ? "none" : `${fx.borderWidth}px solid ${rc}`, background: "#0f0f14",
+        boxShadow: fx.innerRing ? "inset 0 0 0 1.5px rgba(255,255,255,0.22)" : "none",
       }}>
-        {/* Holographic sheen (Epic/Legendary) */}
-        {holo && (
+        {/* Holographic sheen (Rare+) */}
+        {fx.holo && (
           <div style={{ position: "absolute", inset: 0, zIndex: 3, pointerEvents: "none", overflow: "hidden", borderRadius: 14 }}>
-            <div style={{ position: "absolute", top: 0, bottom: 0, width: "40%", background: "linear-gradient(115deg, transparent, rgba(255,255,255,0.45), transparent)", mixBlendMode: "overlay", animation: "tcgHolo 4.5s ease-in-out infinite" }} />
+            <div style={{ position: "absolute", top: 0, bottom: 0, width: "42%", background: `linear-gradient(115deg, transparent, rgba(255,255,255,${fx.holoOpacity}), transparent)`, mixBlendMode: "overlay", animation: "tcgHolo 4.5s ease-in-out infinite" }} />
           </div>
         )}
+        {/* Sparkles (Legendary) */}
+        {fx.sparkles && SPARKS.map((s, i) => (
+          <div key={i} aria-hidden style={{ position: "absolute", zIndex: 4, width: 7, height: 7, pointerEvents: "none",
+            top: (s as any).top, bottom: (s as any).bottom, left: (s as any).left, right: (s as any).right,
+            background: "radial-gradient(circle, #fff, rgba(255,255,255,0) 70%)", animation: `tcgTwinkle 1.8s ease-in-out ${s.d} infinite` }} />
+        ))}
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: t.color }}>
@@ -104,6 +133,7 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320 }: { car
           <span style={{ fontSize: 11, fontWeight: 800, color: t.color, fontFamily: "'Space Grotesk',sans-serif" }}>MY AI PET</span>
           <span style={{ fontSize: 10.5, color: "#8a8a93" }}>{card.evolutionName || card.speciesName} · {card.personality}</span>
         </div>
+      </div>
       </div>
     </div>
   );

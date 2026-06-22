@@ -14,6 +14,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 import { kindIcon } from "@/lib/catch/game";
+import { rarityFx } from "@/lib/tcg/theme";
 
 /** Camera glyph in the cream/thick-outline Catch style (no emoji). */
 function CameraIcon({ size = 20 }: { size?: number }) {
@@ -281,6 +282,7 @@ export default function CatCatch() {
         @keyframes ccFade{from{opacity:0}to{opacity:1}}
         @keyframes ccSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
         @keyframes ccPop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+        @keyframes ccSheen{0%{transform:translateX(-130%) rotate(8deg)}100%{transform:translateX(240%) rotate(8deg)}}
       `}</style>
     </Shell>
   );
@@ -503,11 +505,18 @@ function FieldJournal({ collection }: { collection: Cat[] }) {
 
 function CatCard({ cat, compact }: { cat: Cat; compact?: boolean }) {
   const rc = cat.rarityColor;
+  const fx = rarityFx(rarityRank(cat.rarity), rc);
   return (
-    <div style={{ width: "100%", maxWidth: compact ? undefined : 260, margin: "0 auto", borderRadius: 16, overflow: "hidden", border: `3px solid ${rc}`, background: "#fff", boxShadow: `0 6px 0 ${rc}33` }}>
+    <div style={{ width: "100%", maxWidth: compact ? undefined : 260, margin: "0 auto", borderRadius: 16, overflow: "hidden", border: `${fx.borderWidth}px solid ${rc}`, background: "#fff", boxShadow: `0 6px 0 ${rc}33${fx.glow ? `, 0 0 ${Math.round(fx.glow * 0.8)}px ${rc}66` : ""}` }}>
       <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", background: "#eee" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={cat.photo_path} alt={cat.name} style={{ width: "100%", height: "100%", objectFit: cat.source === "wild" ? "contain" : "cover", display: "block", padding: cat.source === "wild" ? "12%" : 0, background: cat.source === "wild" ? "#fbf6ec" : undefined }} />
+        {/* rarity holo sheen (Rare+) */}
+        {fx.holo && (
+          <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+            <div style={{ position: "absolute", top: 0, bottom: 0, width: "45%", background: `linear-gradient(115deg, transparent, rgba(255,255,255,${fx.holoOpacity}), transparent)`, mixBlendMode: "overlay", animation: "ccSheen 4.5s ease-in-out infinite" }} />
+          </div>
+        )}
         <div style={{ position: "absolute", top: 6, right: 6, background: rc, color: "#fff", fontSize: 10, fontWeight: 900, padding: "2px 8px", borderRadius: 999, textTransform: "uppercase", letterSpacing: 0.5 }}>{cat.rarityLabel}</div>
         {cat.source === "wild" && (
           <div style={{ position: "absolute", top: 6, left: 6, background: "#f59e0b", color: INK, fontSize: 9.5, fontWeight: 900, padding: "2px 7px", borderRadius: 999, textTransform: "uppercase", letterSpacing: 0.5, border: `1.5px solid ${INK}` }}>Wild</div>
