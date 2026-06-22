@@ -61,6 +61,7 @@ export default function CatCatch() {
   const [camErr, setCamErr] = useState<string | null>(null);
   const [result, setResult] = useState<{ caught: boolean; cat?: Cat; reason?: string; antiCheat?: boolean; pointsAwarded?: number } | null>(null);
   const [collection, setCollection] = useState<Cat[]>([]);
+  const [sort, setSort] = useState<"recent" | "rarity">("recent");
   const [notAuthed, setNotAuthed] = useState(false);
 
   const loadCollection = useCallback(() => {
@@ -243,16 +244,28 @@ export default function CatCatch() {
         )}
       </div>
 
-      {/* ── Collection ── */}
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: 26, marginBottom: 12 }}>
-        <h2 style={{ fontSize: 19, fontWeight: 800, color: INK, margin: 0 }}>Your collection</h2>
-        <span style={{ fontSize: 13, color: MUTED }}>{collection.length} caught</span>
+      {/* ── Field Journal dashboard ── */}
+      <FieldJournal collection={collection} />
+
+      {/* ── Album ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 22, marginBottom: 12 }}>
+        <h2 style={{ fontSize: 19, fontWeight: 800, color: INK, margin: 0 }}>Your album</h2>
+        {collection.length > 1 && (
+          <div style={{ display: "flex", gap: 6 }}>
+            {(["recent", "rarity"] as const).map((s) => (
+              <button key={s} onClick={() => setSort(s)} style={{
+                padding: "5px 12px", borderRadius: 999, cursor: "pointer", fontSize: 12, fontWeight: 800,
+                border: `2px solid ${OUTLINE}`, background: sort === s ? "#f59e0b" : "#fff", color: INK,
+              }}>{s === "recent" ? "Recent" : "Rarity"}</button>
+            ))}
+          </div>
+        )}
       </div>
       {collection.length === 0 ? (
         <Empty>No catches yet — go find an animal!</Empty>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 14 }}>
-          {collection.map((c) => <CatCard key={c.id} cat={c} compact />)}
+          {sortCollection(collection, sort).map((c) => <CatCard key={c.id} cat={c} compact />)}
         </div>
       )}
       </>)}
@@ -343,6 +356,50 @@ function RevealCard({ cat, points, onAgain, onDone }: { cat: Cat; points: number
       <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
         <button onClick={onAgain} style={bigBtn}>Catch another</button>
         <button onClick={onDone} style={{ ...ghostBtn, borderColor: "rgba(255,255,255,0.5)", color: "#fff" }}>Done</button>
+      </div>
+    </div>
+  );
+}
+
+const RARITY_ORDER = ["gray", "green", "blue", "purple", "orange"];
+function rarityRank(r: string): number { const i = RARITY_ORDER.indexOf(r); return i < 0 ? 0 : i; }
+function sortCollection(list: Cat[], sort: "recent" | "rarity"): Cat[] {
+  const arr = [...list];
+  if (sort === "rarity") arr.sort((a, b) => rarityRank(b.rarity) - rarityRank(a.rarity) || b.id - a.id);
+  else arr.sort((a, b) => b.id - a.id); // id increases with time → newest first
+  return arr;
+}
+function isToday(iso?: string): boolean {
+  if (!iso) return false;
+  const d = new Date(iso), n = new Date();
+  return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
+}
+
+/** "Field Journal" dashboard — real counts derived from the collection. */
+function FieldJournal({ collection }: { collection: Cat[] }) {
+  const collected = collection.length;
+  const rarest = collection.reduce<Cat | null>((best, c) => (!best || rarityRank(c.rarity) > rarityRank(best.rarity) ? c : best), null);
+  const today = collection.filter((c) => isToday(c.caught_at)).length;
+  const kinds = new Set(collection.map((c) => c.kind)).size;
+  const note = (label: string, value: string, color: string) => (
+    <div style={{ background: CREAM, border: `2px solid rgba(26,26,34,0.12)`, borderRadius: 12, padding: "8px 10px" }}>
+      <div style={{ fontSize: 9.5, fontFamily: "monospace", letterSpacing: ".1em", color: MUTED, textTransform: "uppercase" }}>{label}</div>
+      <div style={{ fontSize: 15, fontWeight: 800, color }}>{value}</div>
+    </div>
+  );
+  return (
+    <div style={{ background: "#fff", border: `3px solid ${OUTLINE}`, borderRadius: 18, boxShadow: "0 6px 0 rgba(26,26,34,0.12)", padding: "16px 18px", marginTop: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 10.5, fontFamily: "monospace", letterSpacing: ".14em", color: "#b45309", textTransform: "uppercase" }}>Animals collected</div>
+          <div style={{ fontSize: 19, fontWeight: 900, color: INK }}>Field Journal</div>
+        </div>
+        <div style={{ fontSize: 40, fontWeight: 900, color: INK, lineHeight: 1, fontFamily: "'Space Grotesk',sans-serif" }}>{collected}</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        {note("Rarest", rarest ? rarest.rarityLabel : "—", rarest ? rarest.rarityColor : MUTED)}
+        {note("Today", String(today), INK)}
+        {note("Species", String(kinds), INK)}
       </div>
     </div>
   );
