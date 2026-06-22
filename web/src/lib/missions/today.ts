@@ -76,7 +76,7 @@ export async function tryGrantAllCompleteBonus(userId: number, date: string): Pr
     if (claim.count !== 1) return false; // already granted today
     await tx.user.update({
       where: { id: userId },
-      data: { airdrop_points: { increment: BONUS_ALL_COMPLETE } },
+      data: { season_points: { increment: BONUS_ALL_COMPLETE } },
     });
     await tx.userStreak.upsert({
       where: { user_id: userId },
@@ -147,7 +147,7 @@ export async function getOrAssignToday(userId: number): Promise<TodayResponse> {
           if (f.count !== 1) return false;
           await tx.user.update({
             where: { id: userId },
-            data: { airdrop_points: { increment: row.points } },
+            data: { season_points: { increment: row.points } },
           });
           await tx.userStreak.upsert({
             where: { user_id: userId },

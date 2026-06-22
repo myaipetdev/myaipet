@@ -23,10 +23,10 @@ export async function awardPoints(
   try {
     await prisma.user.update({
       where: { id: userId },
-      data: { airdrop_points: { increment: points } },
+      data: { season_points: { increment: points } },
     });
 
-    // Log not needed with raw SQL tables, but we track in user.airdrop_points
+    // Log not needed with raw SQL tables, but we track in user.season_points
     return { points, reason };
   } catch (e) {
     console.error("Award points error:", e);
@@ -76,7 +76,7 @@ export async function awardPointsCapped(
       const give = Math.min(perActionPoints, remaining);
       if (give <= 0) return 0;
       await tx.dailyActionCount.update({ where: { id: row.id }, data: { count: { increment: give } } });
-      await tx.user.update({ where: { id: userId }, data: { airdrop_points: { increment: give } } });
+      await tx.user.update({ where: { id: userId }, data: { season_points: { increment: give } } });
       return give;
     });
     return { points: granted, reason, capped: granted < perActionPoints };

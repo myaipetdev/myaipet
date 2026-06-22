@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
         });
         await tx.user.update({
           where: { id: user.id },
-          data: { airdrop_points: { increment: rewardPoints } },
+          data: { season_points: { increment: rewardPoints } },
         });
       });
     } catch (e: unknown) {

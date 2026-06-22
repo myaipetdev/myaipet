@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
 import { resolveCardBattle, advantage } from "@/lib/tcg/battle";
-import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/airdrop";
+import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 import type { CardData } from "@/lib/tcg/card";
 
 function summary(c: CardData) {

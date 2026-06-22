@@ -1,6 +1,6 @@
 /**
  * POST /api/sos/[id]/help — donate a shield (50 cr) to save another user's
- * streak. Helper gets +20 airdrop_points + "Streak Savior" reputation.
+ * streak. Helper gets +20 season_points + "Streak Savior" reputation.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -32,7 +32,7 @@ export async function POST(
 
   // Atomic — debit helper, give sender a shield, mark SOS helped, reward helper.
   await prisma.$transaction([
-    prisma.user.update({ where: { id: helper.id }, data: { credits: { decrement: HELP_COST_CREDITS }, airdrop_points: { increment: HELPER_REWARD_PTS } } }),
+    prisma.user.update({ where: { id: helper.id }, data: { credits: { decrement: HELP_COST_CREDITS }, season_points: { increment: HELPER_REWARD_PTS } } }),
     prisma.userStreak.upsert({
       where: { user_id: sos.sender_id },
       update: { shields_owned: { increment: 1 } },

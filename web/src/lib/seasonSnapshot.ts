@@ -37,17 +37,17 @@ export async function readSeasonSnapshot(): Promise<SeasonSnapshot | null> {
  * the cron has run.
  */
 export async function computeFinalStandings(): Promise<SeasonSnapshot> {
-  const where = { airdrop_points: { gt: 0 }, pets: { some: { is_active: true } } } as const;
+  const where = { season_points: { gt: 0 }, pets: { some: { is_active: true } } } as const;
   const [poolAgg, participants, top] = await Promise.all([
-    prisma.user.aggregate({ _sum: { airdrop_points: true }, where }),
+    prisma.user.aggregate({ _sum: { season_points: true }, where }),
     prisma.user.count({ where }),
     prisma.user.findMany({
       where,
-      orderBy: { airdrop_points: "desc" },
+      orderBy: { season_points: "desc" },
       take: TOP_N,
       select: {
         id: true,
-        airdrop_points: true,
+        season_points: true,
         pets: {
           where: { is_active: true },
           orderBy: { level: "desc" },
@@ -61,7 +61,7 @@ export async function computeFinalStandings(): Promise<SeasonSnapshot> {
   const entries: SeasonSnapshotEntry[] = top.map((u, i) => ({
     rank: i + 1,
     userId: u.id,
-    points: u.airdrop_points,
+    points: u.season_points,
     petId: u.pets[0]?.id ?? null,
     petName: u.pets[0]?.name ?? "—",
     petLevel: u.pets[0]?.level ?? 1,
@@ -72,7 +72,7 @@ export async function computeFinalStandings(): Promise<SeasonSnapshot> {
     seasonKey: SEASON_KEY,
     closedAtIso: new Date(Math.max(SEASON_END_MS, Date.now())).toISOString(),
     participants,
-    poolPoints: poolAgg._sum.airdrop_points ?? 0,
+    poolPoints: poolAgg._sum.season_points ?? 0,
     top: entries,
   };
 }

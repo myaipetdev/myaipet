@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
 
     let me: any = undefined;
     if (user) {
-      const myPoints = user.airdrop_points ?? 0;
+      const myPoints = user.season_points ?? 0;
       const minePet = await prisma.pet.findFirst({
         where: { user_id: user.id, is_active: true },
         orderBy: { level: "desc" },
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
       const rank = fromSnap
         ? fromSnap.rank
         : (await prisma.user.count({
-            where: { airdrop_points: { gt: myPoints }, pets: { some: { is_active: true } } },
+            where: { season_points: { gt: myPoints }, pets: { some: { is_active: true } } },
           })) + 1;
       me = {
         rank,
@@ -87,20 +87,20 @@ export async function GET(req: NextRequest) {
   // "Pool" = total loyalty points in play across active raisers. This genuinely
   // grows as players raise & create (each care/creation banks points), so the
   // "grows as players raise & create" copy is now true.
-  const onlyRaisers = { airdrop_points: { gt: 0 }, pets: { some: { is_active: true } } };
+  const onlyRaisers = { season_points: { gt: 0 }, pets: { some: { is_active: true } } };
   const [poolAgg, participants] = await Promise.all([
-    prisma.user.aggregate({ _sum: { airdrop_points: true }, where: onlyRaisers }),
+    prisma.user.aggregate({ _sum: { season_points: true }, where: onlyRaisers }),
     prisma.user.count({ where: onlyRaisers }),
   ]);
-  const poolPoints = poolAgg._sum.airdrop_points ?? 0;
+  const poolPoints = poolAgg._sum.season_points ?? 0;
 
   // Top-3 by points (sneak preview, always shown)
   const topUsers = await prisma.user.findMany({
     where: { pets: { some: { is_active: true } } },
-    orderBy: { airdrop_points: "desc" },
+    orderBy: { season_points: "desc" },
     take: 3,
     select: {
-      airdrop_points: true,
+      season_points: true,
       pets: { where: { is_active: true }, orderBy: { level: "desc" }, take: 1, select: { id: true, name: true, level: true, avatar_url: true } },
     },
   });
@@ -110,7 +110,7 @@ export async function GET(req: NextRequest) {
     name: u.pets[0]?.name ?? "—",
     level: u.pets[0]?.level ?? 1,
     avatar: u.pets[0]?.avatar_url ?? null,
-    points: u.airdrop_points,
+    points: u.season_points,
   }));
 
   const user = await getUser(req).catch(() => null);
@@ -122,23 +122,23 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const myPoints = user.airdrop_points ?? 0;
+  const myPoints = user.season_points ?? 0;
   const [myPet, higherCount, above] = await Promise.all([
     prisma.pet.findFirst({
       where: { user_id: user.id, is_active: true },
       orderBy: { level: "desc" },
       select: { id: true, name: true, avatar_url: true, level: true },
     }),
-    prisma.user.count({ where: { airdrop_points: { gt: myPoints }, pets: { some: { is_active: true } } } }),
+    prisma.user.count({ where: { season_points: { gt: myPoints }, pets: { some: { is_active: true } } } }),
     // The raiser just above me — how many points to climb one rank.
     prisma.user.findFirst({
-      where: { airdrop_points: { gt: myPoints }, pets: { some: { is_active: true } } },
-      orderBy: { airdrop_points: "asc" },
-      select: { airdrop_points: true },
+      where: { season_points: { gt: myPoints }, pets: { some: { is_active: true } } },
+      orderBy: { season_points: "asc" },
+      select: { season_points: true },
     }),
   ]);
   const rank = higherCount + 1;
-  const pointsToNextRank = above ? Math.max(1, above.airdrop_points - myPoints) : 0;
+  const pointsToNextRank = above ? Math.max(1, above.season_points - myPoints) : 0;
 
   return NextResponse.json({
     signedIn: true, started, seasonClosed: false,

@@ -334,8 +334,8 @@ export default function App() {
   useEffect(() => {
     if (user) {
       setCredits(user.credits);
-      // `airdrop_points` is the persisted API/DB field; surfaced as Season Rewards points.
-      if (user.airdrop_points) setSeasonPoints(user.airdrop_points);
+      // `season_points` is the persisted API/DB field; surfaced as Season Rewards points.
+      if (user.season_points) setSeasonPoints(user.season_points);
     } else {
       // Logout / token expiry — clear so SeasonBanner doesn't keep showing the
       // previous user's point total.

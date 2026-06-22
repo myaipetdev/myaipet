@@ -16,7 +16,7 @@ import { rateLimit } from "@/lib/rateLimit";
 import { uploadFile } from "@/lib/storage";
 import { verifyAndDescribeCat } from "@/lib/catch/vision";
 import { rollRarity, rollStats, pickElement, pickName, rarityMeta, CATCH_POINTS } from "@/lib/catch/game";
-import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/airdrop";
+import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 
 export const runtime = "nodejs";
 

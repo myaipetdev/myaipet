@@ -226,7 +226,7 @@ export default function CatCatch() {
                 <div style={{ fontSize: 14, fontWeight: 800, color: result.cat.rarityColor, letterSpacing: 1 }}>{result.cat.rarityLabel.toUpperCase()} — CAUGHT!</div>
                 <CatCard cat={result.cat} />
                 {!!result.pointsAwarded && (
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 800, color: "#b45309", background: "rgba(245,158,11,0.14)", borderRadius: 999, padding: "5px 14px" }}>+{result.pointsAwarded} airdrop points <Icon name="coin" size={16} /></div>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 800, color: "#b45309", background: "rgba(245,158,11,0.14)", borderRadius: 999, padding: "5px 14px" }}>+{result.pointsAwarded} season points <Icon name="coin" size={16} /></div>
                 )}
                 <button onClick={again} style={bigBtn}>Catch another</button>
               </>

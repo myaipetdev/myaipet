@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const [full, streak, pet] = await Promise.all([
-    prisma.user.findUnique({ where: { id: user.id }, select: { airdrop_points: true, credits: true } }),
+    prisma.user.findUnique({ where: { id: user.id }, select: { season_points: true, credits: true } }),
     prisma.userStreak.findUnique({ where: { user_id: user.id } }),
     prisma.pet.findFirst({
       where: { user_id: user.id, is_active: true },
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     : null;
 
   return NextResponse.json({
-    points: full?.airdrop_points ?? 0,
+    points: full?.season_points ?? 0,
     credits: full?.credits ?? 0,
     streak: myStreak,
     longest: streak?.longest_streak ?? 0,

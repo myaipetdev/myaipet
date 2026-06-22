@@ -2,7 +2,7 @@
 
 /**
  * Multi-dimensional leaderboard with 6 tabs. Replaces the legacy
- * airdrop_points-only leaderboard.
+ * season_points-only leaderboard.
  *
  * Tabs: 🔥 Streak · 💬 Chats · 🧠 Memories · 🎬 Creator · 💝 Bond · 🎂 Day-One
  */

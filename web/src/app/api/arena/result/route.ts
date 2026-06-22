@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { awardPoints } from "@/lib/airdrop";
+import { awardPoints } from "@/lib/seasonRewards";
 import { SKILL_DB, DAILY_BATTLE_CAP, DAILY_EXP_CAP, getGrowthMultiplier } from "@/lib/skills";
 import { simulateBattle } from "@/lib/battleSim";
 import crypto from "crypto";
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
     }),
     prisma.user.update({
       where: { id: user.id },
-      data: { airdrop_points: { increment: airdropIncrement } },
+      data: { season_points: { increment: airdropIncrement } },
     }),
     prisma.dailyTrainingLog.update({
       where: { id: dailyLog.id },

@@ -24,7 +24,7 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
 import { enforcePaywall } from "@/lib/paywall";
-import { awardPoints } from "@/lib/airdrop";
+import { awardPoints } from "@/lib/seasonRewards";
 import crypto from "crypto";
 
 const ENTRY_FEE_USD = 0.50;

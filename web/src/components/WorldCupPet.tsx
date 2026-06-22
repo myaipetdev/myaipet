@@ -319,7 +319,7 @@ function ChampionPrediction() {
       {myCountry && (
         <div style={{ fontSize: 13, color: INK, marginBottom: 14 }}>
           Your pick: <strong>{myCountry.flag} {myCountry.name}</strong>
-          {pts !== null && <span style={{ color: GOLD, fontWeight: 700 }}> · +{pts} airdrop points 🪙</span>}
+          {pts !== null && <span style={{ color: GOLD, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}> · +{pts} season points <Icon name="coin" size={14} /></span>}
         </div>
       )}
 

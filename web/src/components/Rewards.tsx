@@ -436,7 +436,7 @@ export default function Rewards() {
           bestPetId = best.id;
         }
         if (userData) {
-          setUserPoints(userData.airdrop_points ?? 0);
+          setUserPoints(userData.season_points ?? 0);
         }
         if (streakRes) {
           setStreakData(streakRes);

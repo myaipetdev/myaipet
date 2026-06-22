@@ -256,7 +256,7 @@ async function projectPeriodic(
         });
         await prisma.user.update({
           where: { id: userId },
-          data: { airdrop_points: { increment: r.points } },
+          data: { season_points: { increment: r.points } },
         });
         status = "completed";
       } else if (progress !== r.progress) {

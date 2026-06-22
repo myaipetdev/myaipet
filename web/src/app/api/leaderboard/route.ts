@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         wallet_address: true,
-        airdrop_points: true,
+        season_points: true,
         credits: true,
         pets: {
           where: { is_active: true },
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
           },
         },
       },
-      orderBy: { airdrop_points: "desc" },
+      orderBy: { season_points: "desc" },
       take: limit,
     });
 
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         rank: i + 1,
         wallet: `${u.wallet_address.slice(0, 6)}...${u.wallet_address.slice(-4)}`,
         ...(isMe ? { wallet_full: u.wallet_address } : {}),
-        points: u.airdrop_points,
+        points: u.season_points,
         isMe,
         pet: u.pets[0] ? {
           name: u.pets[0].name,
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
         // Count users with more points to determine rank
         const higherCount = await prisma.user.count({
           where: {
-            airdrop_points: { gt: currentUser.airdrop_points },
+            season_points: { gt: currentUser.season_points },
             pets: { some: { is_active: true } },
           },
         });
@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
           myRank = {
             rank: higherCount + 1,
             wallet: `${currentUser.wallet_address.slice(0, 6)}...${currentUser.wallet_address.slice(-4)}`,
-            points: currentUser.airdrop_points,
+            points: currentUser.season_points,
             isMe: true,
             pet: {
               name: myPet.name,

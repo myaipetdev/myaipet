@@ -45,10 +45,10 @@ export async function POST(
 
   // Anti-gaming: manual missions (verifier:"manual") flip to completed on pure
   // self-report — there is no server-side proof the user actually did them. So
-  // they must NOT inflate the Season RANK pool (airdrop_points) at full weight,
+  // they must NOT inflate the Season RANK pool (season_points) at full weight,
   // or the leaderboard becomes trivially gameable by spamming "Mark done".
   //
-  //   - airdrop_points (the ranking pool) gets only a small capped weight for
+  //   - season_points (the ranking pool) gets only a small capped weight for
   //     manual missions — enough to feel rewarding, too small to climb on.
   //   - total_points_earned (lifetime loyalty / streak ledger, non-ranking)
   //     still gets the FULL reward, so the user keeps their honest progress.
@@ -70,7 +70,7 @@ export async function POST(
     if (flip.count !== 1) return false; // already completed by a concurrent request
     await tx.user.update({
       where: { id: user.id },
-      data: { airdrop_points: { increment: rankPoints } },
+      data: { season_points: { increment: rankPoints } },
     });
     await tx.userStreak.upsert({
       where: { user_id: user.id },

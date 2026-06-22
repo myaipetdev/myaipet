@@ -4,7 +4,7 @@ import { verifySignature } from "@/lib/signAction";
 import { buildPetPrompt, generateGrokImage, generateGrokImageWithRef, describePetAvatar, submitGrokVideo, translatePromptIfNeeded } from "@/lib/services/video";
 import { loraEnabled, getReadyPetLora, falLoraImage } from "@/lib/services/lora";
 import { moderateGeneration } from "@/lib/moderation";
-import { awardPoints } from "@/lib/airdrop";
+import { awardPoints } from "@/lib/seasonRewards";
 import { triggerAgentReactions } from "@/lib/agents";
 import { recordGenerationOnChain, mintContentNFT } from "@/lib/blockchain";
 import { ethers } from "ethers";

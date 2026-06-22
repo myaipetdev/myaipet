@@ -10,7 +10,7 @@ import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import { getCountry, WORLD_CUP_COUNTRIES, flagUrl } from "@/lib/worldcup/countries";
-import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/airdrop";
+import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 
 function leaderboardFrom(rows: { country_code: string; _count: { _all: number } }[], total: number) {
   return rows

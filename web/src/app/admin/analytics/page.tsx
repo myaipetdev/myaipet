@@ -94,7 +94,6 @@ export default function AdminAnalyticsPage() {
           <Tile label="Interactions" value={data.headline.interactionsInWindow} />
           <Tile label="Battles" value={data.headline.battlesInWindow} />
           <Tile label="Memories created" value={data.headline.memoriesInWindow} />
-          <Tile label="Airdrop pool (pts)" value={data.battlePool.projectedPoolPoints.toLocaleString()} accent="#16a34a" />
         </div>
 
         {/* DAU bar chart (text-based, PetClaw tone) */}

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { awardPoints, awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/airdrop";
+import { awardPoints, awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 import {
   BASE_EFFECTS,
   applyPersonality,

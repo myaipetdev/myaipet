@@ -25,7 +25,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/airdrop";
+import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 import { rateLimit } from "@/lib/rateLimit";
 import { getModel } from "@/lib/studio/providers";
 import { getTemplate } from "@/lib/studio/templates";

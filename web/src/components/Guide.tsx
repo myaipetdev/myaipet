@@ -158,8 +158,8 @@ function RaisingSection() {
             "Train is the fastest way to level up — use Energy Drinks to keep training!",
             "Feed before hunger hits 80 to prevent mood drops.",
             "Talk and Pet cost almost no energy — great for when energy is low.",
-            "Every interaction gives +1 Airdrop Point. Consistency matters!",
-            "Level-up grants a bonus +50 Airdrop Points.",
+            "Every interaction gives +1 Season Point. Consistency matters!",
+            "Level-up grants a bonus +50 Season Points.",
           ].map((tip, i) => (
             <div key={i} style={{
               display: "flex", gap: 8, alignItems: "flex-start",
@@ -252,9 +252,9 @@ function ArenaSection() {
 
       <SectionCard title="🏆 Arena Rewards">
         <StatTable rows={[
-          ["🏅 Victory", "+30 Airdrop Points, +25 EXP", "Win the battle"],
-          ["💪 Defeat", "+10 Airdrop Points, +10 EXP", "You still earn!"],
-          ["⬆️ Level Up Bonus", "+50 Airdrop Points", "When your pet levels up"],
+          ["🏅 Victory", "+30 Season Points, +25 EXP", "Win the battle"],
+          ["💪 Defeat", "+10 Season Points, +10 EXP", "You still earn!"],
+          ["⬆️ Level Up Bonus", "+50 Season Points", "When your pet levels up"],
         ]} />
         <div style={{
           marginTop: 14, padding: "12px 16px", borderRadius: 12,
@@ -335,7 +335,7 @@ function RewardsSection() {
     <>
       <SectionCard title="🎁 Real Merch Rewards">
         <P>
-          Level up your pet and earn Airdrop Points to redeem real physical merchandise —
+          Level up your pet and earn Season Points to redeem real physical merchandise —
           custom printed with your pet&apos;s AI-generated artwork!
         </P>
         <StatTable rows={[

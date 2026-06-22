@@ -166,7 +166,7 @@ export async function GET(req: NextRequest) {
           // Award airdrop points
           await prisma.user.update({
             where: { id: schedule.pet.user_id },
-            data: { airdrop_points: { increment: 2 } },
+            data: { season_points: { increment: 2 } },
           }).catch(() => {});
 
           actions.push({ petId: schedule.pet.id, petName: schedule.pet.name, action: "post", credits: decision.creditCost });
@@ -197,7 +197,7 @@ export async function GET(req: NextRequest) {
           // Award airdrop points
           await prisma.user.update({
             where: { id: schedule.pet.user_id },
-            data: { airdrop_points: { increment: 5 } },
+            data: { season_points: { increment: 5 } },
           }).catch(() => {});
 
           actions.push({ petId: schedule.pet.id, petName: schedule.pet.name, action: "selfie", credits: decision.creditCost });

@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     const userData = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { airdrop_points: true },
+      select: { season_points: true },
     });
 
     if (!userData) {
@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
 
     // Standing = lifetime Season points (the ranking pool). Redemption is gated
     // by the tier you've REACHED, and is NON-deductive: claiming merch never
-    // subtracts airdrop_points, so it never lowers your rank.
-    const standing = seasonTier(userData.airdrop_points);
+    // subtracts season_points, so it never lowers your rank.
+    const standing = seasonTier(userData.season_points);
     const userTierIdx = SEASON_TIERS.findIndex(t => t.key === standing.tier.key);
     const requiredTier = SEASON_TIERS[reward.tierReq];
 
@@ -59,13 +59,13 @@ export async function POST(req: NextRequest) {
           requiredTier: requiredTier.key,
           requiredPoints: requiredTier.min,
           yourTier: standing.tier.key,
-          yourPoints: userData.airdrop_points,
+          yourPoints: userData.season_points,
         },
         { status: 400 }
       );
     }
 
-    // Record the redemption WITHOUT touching airdrop_points (rank is preserved).
+    // Record the redemption WITHOUT touching season_points (rank is preserved).
     const redemption = await prisma.rewardRedemption.create({
       data: {
         user_id: user.id,
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       reward_name: reward.name,
       tier: requiredTier.key,
       tier_name: requiredTier.name,
-      remaining_points: userData.airdrop_points, // unchanged — rank preserved
+      remaining_points: userData.season_points, // unchanged — rank preserved
       delivery_estimate: reward.deliveryDays,
     });
   } catch (error: unknown) {

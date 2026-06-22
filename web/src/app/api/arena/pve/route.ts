@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { awardPoints } from "@/lib/airdrop";
+import { awardPoints } from "@/lib/seasonRewards";
 import { SKILL_DB, SKILL_MAP, DAILY_BATTLE_CAP, DAILY_EXP_CAP, getGrowthMultiplier } from "@/lib/skills";
 import { PVE_STAGES, REGIONS, getStage, getRegionForStage, generateMinion, calculateStars, getStageMinLevel } from "@/lib/pve";
 import { simulateBattle } from "@/lib/battleSim";
@@ -197,7 +197,7 @@ export async function POST(req: NextRequest) {
       where: { id: user.id },
       data: {
         credits: { increment: creditsGain },
-        airdrop_points: { increment: airdropGain },
+        season_points: { increment: airdropGain },
       },
     }),
     // Daily training log
