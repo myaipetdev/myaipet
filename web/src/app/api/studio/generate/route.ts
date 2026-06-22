@@ -25,6 +25,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
+import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/airdrop";
 import { rateLimit } from "@/lib/rateLimit";
 import { getModel } from "@/lib/studio/providers";
 import { getTemplate } from "@/lib/studio/templates";
@@ -189,11 +190,13 @@ export async function POST(req: NextRequest) {
       },
     });
     await incrementUsage(user.id, model.kind);
+    const genPts = await awardPointsCapped(user.id, "studio_gen", model.kind === "video" ? 20 : 10, DAILY_POINT_CAPS.studio_gen);
     return NextResponse.json({
       ok: true,
       generationId: created.gen.id,
       status: "completed",
       url: persistedUrl,
+      pointsAwarded: genPts.points || 0,
       creditsRemaining: created.user?.credits ?? 0,
       model: { id: model.id, displayName: model.displayName, provider: model.provider },
     });

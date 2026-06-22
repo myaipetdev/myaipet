@@ -342,6 +342,19 @@ model CaughtCat {
   @@map("caught_cats")
 }
 
+// World Cup 2026 champion prediction — one per user, upsertable. Community
+// aggregate drives the "most-predicted" leaderboard. A prediction, not a result.
+model WorldCupPrediction {
+  id            Int      @id @default(autoincrement())
+  owner_user_id Int      @unique
+  country_code  String   @db.VarChar(4)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @default(now()) @updatedAt
+
+  @@index([country_code])
+  @@map("world_cup_predictions")
+}
+
 model PetNotification {
   id                Int      @id @default(autoincrement())
   pet_id            Int

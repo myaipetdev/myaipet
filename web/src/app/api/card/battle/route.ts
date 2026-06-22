@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
 import { resolveCardBattle, advantage } from "@/lib/tcg/battle";
+import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/airdrop";
 import type { CardData } from "@/lib/tcg/card";
 
 function summary(c: CardData) {
@@ -35,11 +36,15 @@ export async function POST(req: NextRequest) {
   const b = await resolveCardBattle(petId, opponentId);
   if (!b) return NextResponse.json({ error: "Card not found" }, { status: 404 });
 
+  // Small, daily-capped airdrop points for dueling (anti-spam).
+  const pts = await awardPointsCapped(user.id, "card_battle", 5, DAILY_POINT_CAPS.card_battle);
+
   return NextResponse.json({
     you: summary(b.you),
     opponent: summary(b.opp),
     winner: b.winner === "you" ? "you" : "opponent",
     matchup: `${petId}-vs-${opponentId}`,
+    pointsAwarded: pts.points || 0,
     result: {
       won: b.result.won,
       turns: b.result.turns,

@@ -39,7 +39,11 @@ export async function awardPoints(
 // currency at near-zero cost (audit H5) and there is no bound on total emission
 // (audit M5). Hard-gated actions (purchases, evolutions) are not capped here.
 export const DAILY_POINT_CAPS: Record<string, number> = {
-  interact: 150, // ≈30 interactions/day count toward the airdrop
+  interact: 150,    // ≈30 interactions/day count toward the airdrop
+  catch: 300,       // Cat/dog catches (points scaled by rarity, capped/day)
+  card_battle: 40,  // Card duels (small, anti-spam)
+  studio_gen: 120,  // Studio generations (World Cup pet, card art, etc.)
+  worldcup: 30,     // World Cup national-pet + champion prediction
 };
 
 function todayKey(): string {

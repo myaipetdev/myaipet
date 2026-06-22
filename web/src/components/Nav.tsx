@@ -9,12 +9,13 @@ const LOGO_SRC = "/mascot.jpg";
 const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
   { key: "home", label: "Home" },
   { key: "my pet", label: "My Pet" },
+  // Game features grouped right after My Pet.
   { key: "catch", label: "Catch 🐾" },
   { key: "cards", label: "Cards 🃏" },
-  { key: "studio", label: "Studio", url: "/studio" },
-  { key: "community", label: "Community" },
   // Time-boxed World Cup 2026 event (remove this entry after ~2026-07-19).
   { key: "worldcup", label: "World Cup ⚽" },
+  { key: "studio", label: "Studio", url: "/studio" },
+  { key: "community", label: "Community" },
   { key: "sovereignty", label: "PetClaw" },
   // (Agent — multi-platform autonomous presence — intentionally NOT a top-level
   // tab per owner. The AgentDashboard still renders via /?section=agent.)

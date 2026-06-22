@@ -25,6 +25,11 @@ export function rarityMeta(key: string): RarityTier {
   return RARITY_TIERS.find((t) => t.key === key) || RARITY_TIERS[0];
 }
 
+/** Airdrop points awarded per catch, scaled by rarity (daily-capped in the route). */
+export const CATCH_POINTS: Record<CatRarity, number> = {
+  gray: 10, green: 18, blue: 30, purple: 50, orange: 80,
+};
+
 /** Weighted rarity roll. A very clear, confident sighting gets a small luck nudge. */
 export function rollRarity(confidence = 0.6): CatRarity {
   const tiers = RARITY_TIERS.map((t) => ({

@@ -34,7 +34,7 @@ export default function CatCatch() {
   const [phase, setPhase] = useState<Phase>("intro");
   const [view, setView] = useState<"catch" | "map">("catch");
   const [camErr, setCamErr] = useState<string | null>(null);
-  const [result, setResult] = useState<{ caught: boolean; cat?: Cat; reason?: string; antiCheat?: boolean } | null>(null);
+  const [result, setResult] = useState<{ caught: boolean; cat?: Cat; reason?: string; antiCheat?: boolean; pointsAwarded?: number } | null>(null);
   const [collection, setCollection] = useState<Cat[]>([]);
   const [notAuthed, setNotAuthed] = useState(false);
 
@@ -81,17 +81,7 @@ export default function CatCatch() {
       );
     });
 
-  const capture = async () => {
-    const video = videoRef.current;
-    if (!video || !video.videoWidth) return;
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.min(1024, video.videoWidth);
-    canvas.height = Math.round(canvas.width * (video.videoHeight / video.videoWidth));
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageDataUrl = canvas.toDataURL("image/jpeg", 0.85);
-
+  const submitPhoto = async (imageDataUrl: string) => {
     setPhase("catching");
     const geo = await getGeo();
     try {
@@ -110,6 +100,30 @@ export default function CatCatch() {
       setResult({ caught: false, reason: "Network error — try again." });
     }
     setPhase("result");
+  };
+
+  const capture = () => {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.min(1024, video.videoWidth);
+    canvas.height = Math.round(canvas.width * (video.videoHeight / video.videoWidth));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    submitPhoto(canvas.toDataURL("image/jpeg", 0.85));
+  };
+
+  // Desktop / no-camera fallback. The SAME vision anti-cheat runs on uploads,
+  // so screenshots, photos of screens, drawings and memes are still rejected.
+  const onUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => { if (typeof reader.result === "string") submitPhoto(reader.result); };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = "";
   };
 
   const again = () => { setResult(null); setPhase("camera"); };
@@ -148,6 +162,11 @@ export default function CatCatch() {
             <div style={{ fontSize: 13, color: MUTED, maxWidth: 300 }}>Real animals only — screenshots and photos of screens won&apos;t work. 🕵️</div>
             <button onClick={startCamera} style={bigBtn}>📷 Open camera</button>
             {camErr && <div style={{ fontSize: 13, color: "#9b1c1c", maxWidth: 300 }}>{camErr}</div>}
+            <label style={{ ...bigBtn, background: "#fff", border: `2.5px solid ${OUTLINE}`, display: "inline-flex", alignItems: "center", gap: 6 }}>
+              🖼️ Upload a photo
+              <input type="file" accept="image/*" onChange={onUpload} style={{ display: "none" }} />
+            </label>
+            <div style={{ fontSize: 11, color: MUTED, maxWidth: 280 }}>No camera? Upload works too — but it&apos;s still checked, so screenshots won&apos;t pass. 🕵️</div>
           </div>
         )}
 
@@ -177,6 +196,9 @@ export default function CatCatch() {
               <>
                 <div style={{ fontSize: 14, fontWeight: 800, color: result.cat.rarityColor, letterSpacing: 1 }}>{result.cat.rarityLabel.toUpperCase()} — CAUGHT!</div>
                 <CatCard cat={result.cat} />
+                {!!result.pointsAwarded && (
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#b45309", background: "rgba(245,158,11,0.14)", borderRadius: 999, padding: "5px 14px" }}>+{result.pointsAwarded} airdrop points 🪙</div>
+                )}
                 <button onClick={again} style={bigBtn}>Catch another 🐱</button>
               </>
             ) : (

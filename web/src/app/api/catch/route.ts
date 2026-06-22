@@ -15,7 +15,8 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import { uploadFile } from "@/lib/storage";
 import { verifyAndDescribeCat } from "@/lib/catch/vision";
-import { rollRarity, rollStats, pickElement, pickName, rarityMeta } from "@/lib/catch/game";
+import { rollRarity, rollStats, pickElement, pickName, rarityMeta, CATCH_POINTS } from "@/lib/catch/game";
+import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/airdrop";
 
 export const runtime = "nodejs";
 
@@ -86,7 +87,15 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ caught: true, cat: withRarity(cat), verdict: { breed: verdict.breed, furColor: verdict.furColor, mood: verdict.mood } });
+  // Airdrop points for a real catch, scaled by rarity, daily-capped (anti-farm).
+  const pts = await awardPointsCapped(user.id, "catch", CATCH_POINTS[rarity], DAILY_POINT_CAPS.catch);
+
+  return NextResponse.json({
+    caught: true,
+    cat: withRarity(cat),
+    pointsAwarded: pts.points || 0,
+    verdict: { kind, breed: verdict.breed, furColor: verdict.furColor, mood: verdict.mood },
+  });
 }
 
 export async function GET(req: NextRequest) {

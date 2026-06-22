@@ -123,6 +123,8 @@ export default function WorldCupPet() {
 
   return (
     <Shell>
+      <ChampionPrediction />
+
       {/* Pet picker (only if >1) */}
       {pets.length > 1 && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
@@ -204,6 +206,143 @@ export default function WorldCupPet() {
         </div>
       )}
     </Shell>
+  );
+}
+
+/**
+ * Community "Predict the Champion" — honest poll, NOT a live bracket/result.
+ * We can't fabricate real-time World Cup 2026 scores, so instead the community
+ * votes its predicted winner; the leaderboard is the live count of those picks.
+ */
+type WcRow = { code: string; name: string; flag: string; color: string; count: number; pct: number };
+
+function ChampionPrediction() {
+  const [rows, setRows] = useState<WcRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [myPick, setMyPick] = useState<string | null>(null);
+  const [sel, setSel] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [pts, setPts] = useState<number | null>(null);
+  const [authed, setAuthed] = useState(true);
+
+  const apply = (d: any) => {
+    setRows(Array.isArray(d?.leaderboard) ? d.leaderboard : []);
+    setTotal(d?.total || 0);
+    if (typeof d?.myPick === "string" || d?.myPick === null) setMyPick(d.myPick);
+  };
+
+  useEffect(() => {
+    fetch("/api/worldcup/predict", { headers: { ...getAuthHeaders() } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d) { apply(d); if (d.myPick) setSel(d.myPick); } })
+      .catch(() => {});
+  }, []);
+
+  const submit = async () => {
+    if (!sel || saving) return;
+    setSaving(true); setPts(null);
+    try {
+      const res = await fetch("/api/worldcup/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ code: sel }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.status === 401) { setAuthed(false); return; }
+      if (res.ok) { apply(d); if (typeof d.pointsAwarded === "number" && d.pointsAwarded > 0) setPts(d.pointsAwarded); }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const myCountry = myPick ? WORLD_CUP_COUNTRIES.find((c) => c.code === myPick) : null;
+
+  return (
+    <div style={{
+      borderRadius: 18, border: `1px solid ${LINE}`, background: "#fff",
+      padding: "20px 20px 22px", marginBottom: 24, boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 19, fontWeight: 900, color: INK, letterSpacing: "-0.01em" }}>Predict the Champion 🏆</span>
+        <span style={{ fontSize: 11, fontFamily: "monospace", letterSpacing: "0.08em", color: MUTED, background: "rgba(0,0,0,0.04)", padding: "3px 8px", borderRadius: 999, textTransform: "uppercase" }}>
+          {total} {total === 1 ? "vote" : "votes"}
+        </span>
+      </div>
+      <div style={{ fontSize: 13, color: MUTED, margin: "6px 0 14px", lineHeight: 1.5 }}>
+        Who lifts the 2026 trophy? Cast your pick — the board below is the live community count. (A prediction poll, not live match results.)
+      </div>
+
+      {/* Picker */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: rows.length ? 18 : 4 }}>
+        <select
+          value={sel}
+          onChange={(e) => setSel(e.target.value)}
+          style={{
+            flex: "1 1 200px", minWidth: 0, padding: "10px 12px", borderRadius: 10,
+            border: `1.5px solid ${LINE}`, background: "#fff", color: INK, fontSize: 14, fontWeight: 600,
+            fontFamily: "'Space Grotesk', system-ui, sans-serif", cursor: "pointer",
+          }}
+        >
+          <option value="">— Pick a country —</option>
+          {WORLD_CUP_COUNTRIES.map((c) => (
+            <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
+          ))}
+        </select>
+        <button
+          onClick={submit}
+          disabled={!sel || saving}
+          style={{
+            padding: "10px 18px", borderRadius: 10, border: "none",
+            background: !sel || saving ? "rgba(0,0,0,0.12)" : GOLD, color: "#fff",
+            fontWeight: 800, fontSize: 14, cursor: !sel || saving ? "not-allowed" : "pointer",
+            fontFamily: "'Space Grotesk', system-ui, sans-serif", flexShrink: 0,
+          }}
+        >
+          {saving ? "Saving…" : myPick ? "Update pick" : "Predict"}
+        </button>
+      </div>
+
+      {!authed && (
+        <div style={{ fontSize: 12.5, color: "#9b1c1c", background: "#fde8e8", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
+          Connect your wallet to cast your prediction.
+        </div>
+      )}
+      {myCountry && (
+        <div style={{ fontSize: 13, color: INK, marginBottom: 14 }}>
+          Your pick: <strong>{myCountry.flag} {myCountry.name}</strong>
+          {pts !== null && <span style={{ color: GOLD, fontWeight: 700 }}> · +{pts} airdrop points 🪙</span>}
+        </div>
+      )}
+
+      {/* Leaderboard bars */}
+      {rows.length > 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {rows.map((r, i) => {
+            const mine = r.code === myPick;
+            return (
+              <div key={r.code} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: MUTED, width: 18, textAlign: "right", flexShrink: 0 }}>{i + 1}</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={r.flag} alt={`${r.name} flag`} loading="lazy" style={{ width: 26, height: 18, objectFit: "cover", borderRadius: 3, flexShrink: 0, border: `1px solid ${LINE}` }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, marginBottom: 3 }}>
+                    <span style={{ fontWeight: mine ? 800 : 600, color: mine ? GOLD : INK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {r.name}{mine ? " · you" : ""}
+                    </span>
+                    <span style={{ color: MUTED, fontWeight: 700, flexShrink: 0, marginLeft: 8 }}>{r.pct}%</span>
+                  </div>
+                  <div style={{ height: 7, borderRadius: 999, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
+                    <div style={{ width: `${Math.max(r.pct, 2)}%`, height: "100%", borderRadius: 999, background: mine ? GOLD : (r.color === "#FFFFFF" ? "#94a3b8" : r.color) }} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{ fontSize: 12.5, color: MUTED, fontStyle: "italic" }}>No predictions yet — be the first to call it.</div>
+      )}
+    </div>
   );
 }
 
