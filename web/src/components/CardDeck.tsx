@@ -181,8 +181,14 @@ export default function CardDeck() {
                   );
                 })}
               </div>
-              <div style={{ textAlign: "center", marginTop: 14 }}>
-                <button onClick={() => shareCard(battle.winner === "you" ? battle.you.id : battle.opponent.id, battle.winner === "you" ? battle.you.name : battle.opponent.name)} style={btn}>𝕏 Share the winner</button>
+              <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginTop: 14 }}>
+                <button onClick={() => {
+                  const url = `${APP}/card/battle/${battle.matchup}`;
+                  const wName = battle.winner === "you" ? battle.you.name : battle.opponent.name;
+                  const text = `${wName} won the duel! ${battle.you.name} ⚔️ ${battle.opponent.name} 🃏`;
+                  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=MyAIPet`, "_blank", "width=600,height=420");
+                }} style={btn}>𝕏 Share result</button>
+                <a href={`/card/battle/${battle.matchup}`} target="_blank" rel="noopener noreferrer" style={{ ...ghost, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>View result page ▸</a>
               </div>
             </div>
           )}

@@ -10,7 +10,10 @@
  */
 
 export interface CatVerdict {
-  isCat: boolean;
+  /** a real cat OR dog is the subject */
+  isPet: boolean;
+  /** which animal — "cat" or "dog" (or "other" if neither) */
+  kind: "cat" | "dog" | "other";
   /** anti-cheat: a genuine real-world photo, NOT a screen/print/drawing/meme/AI */
   isLivePhoto: boolean;
   confidence: number; // 0..1
@@ -22,14 +25,15 @@ export interface CatVerdict {
 
 const VISION_MODELS = ["grok-4-1-fast-non-reasoning", "grok-4-fast-non-reasoning", "grok-3"];
 
-const PROMPT = `You are the strict referee of a game where players must photograph a REAL, LIVE cat in the real world with their phone camera. Inspect the image and decide.
+const PROMPT = `You are the strict referee of a game where players must photograph a REAL, LIVE cat or dog in the real world with their phone camera. Inspect the image and decide.
 
 Return STRICT JSON only (no markdown), with these fields:
-- "isCat": true only if a real cat is clearly the subject.
-- "isLivePhoto": true only if this is a genuine photo of a real cat in the real world. Set FALSE if it is any of: a screenshot, a photo of a screen/monitor/phone/TV (look for moiré, pixel grid, bezels, glare, UI), a printed photo (paper/halftone texture), a drawing/illustration/cartoon/painting (flat shading, outlines), a meme, or an AI-generated image.
-- "confidence": 0..1 — how sure a real live cat is present.
-- "breed": best guess breed, else "Domestic Shorthair".
-- "furColor": short color/markings description (e.g. "orange tabby", "black and white tuxedo").
+- "isPet": true only if a real cat or dog is clearly the subject.
+- "kind": "cat" if it's a cat, "dog" if it's a dog, otherwise "other".
+- "isLivePhoto": true only if this is a genuine photo of a real animal in the real world. Set FALSE if it is any of: a screenshot, a photo of a screen/monitor/phone/TV (look for moiré, pixel grid, bezels, glare, UI), a printed photo (paper/halftone texture), a drawing/illustration/cartoon/painting (flat shading, outlines), a plush toy/figurine, a meme, or an AI-generated image.
+- "confidence": 0..1 — how sure a real live cat or dog is present.
+- "breed": best guess breed, else "Domestic Shorthair" (cat) or "Mixed Breed" (dog).
+- "furColor": short color/markings description (e.g. "orange tabby", "black and white").
 - "mood": ONE word from calm, playful, grumpy, curious, sleepy, fierce, shy.
 - "reason": one short sentence; if rejecting, say why (e.g. "looks like a photo of a computer screen").
 
@@ -44,11 +48,13 @@ function parseVerdict(raw: string): CatVerdict | null {
     const m = raw.match(/\{[\s\S]*\}/);
     if (!m) return null;
     const j = JSON.parse(m[0]);
+    const kind = j.kind === "dog" ? "dog" : j.kind === "cat" ? "cat" : "other";
     return {
-      isCat: !!j.isCat,
+      isPet: !!j.isPet && kind !== "other",
+      kind,
       isLivePhoto: !!j.isLivePhoto,
       confidence: typeof j.confidence === "number" ? Math.max(0, Math.min(1, j.confidence)) : 0.5,
-      breed: String(j.breed || "Domestic Shorthair").slice(0, 40),
+      breed: String(j.breed || (kind === "dog" ? "Mixed Breed" : "Domestic Shorthair")).slice(0, 40),
       furColor: String(j.furColor || "").slice(0, 60),
       mood: String(j.mood || "calm").toLowerCase().slice(0, 12),
       reason: String(j.reason || "").slice(0, 200),

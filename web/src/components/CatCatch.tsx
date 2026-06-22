@@ -9,8 +9,10 @@
  * Cream tones + thick outlines + game-like, per the catchcat aesthetic.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
+
+const NearbyMap = lazy(() => import("@/components/NearbyMap")); // leaflet bundle — load only on the Map tab
 
 const CREAM = "#fbf6ec";
 const INK = "#1a1a22";
@@ -18,9 +20,11 @@ const OUTLINE = "#1a1a22";
 const MUTED = "#6b6b73";
 
 type Cat = {
-  id: number; name: string; breed: string; rarity: string; rarityLabel: string; rarityColor: string;
+  id: number; kind?: string; name: string; breed: string; rarity: string; rarityLabel: string; rarityColor: string;
   element: string; hp: number; atk: number; def: number; spd: number; photo_path: string; caught_at?: string;
 };
+
+const kindEmoji = (k?: string) => (k === "dog" ? "🐶" : "🐱");
 
 type Phase = "intro" | "camera" | "catching" | "result";
 
@@ -28,6 +32,7 @@ export default function CatCatch() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [phase, setPhase] = useState<Phase>("intro");
+  const [view, setView] = useState<"catch" | "map">("catch");
   const [camErr, setCamErr] = useState<string | null>(null);
   const [result, setResult] = useState<{ caught: boolean; cat?: Cat; reason?: string; antiCheat?: boolean } | null>(null);
   const [collection, setCollection] = useState<Cat[]>([]);
@@ -111,18 +116,36 @@ export default function CatCatch() {
   const done = () => { setResult(null); stopCamera(); setPhase("intro"); };
 
   if (notAuthed) {
-    return <Shell><Empty>Connect your wallet to start catching cats.</Empty></Shell>;
+    return <Shell><Empty>Connect your wallet to start catching.</Empty></Shell>;
   }
 
   return (
     <Shell>
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 18 }}>
+        {(["catch", "map"] as const).map((t) => (
+          <button key={t} onClick={() => setView(t)} style={{
+            padding: "8px 20px", borderRadius: 999, cursor: "pointer", fontSize: 14, fontWeight: 800,
+            border: `2.5px solid ${OUTLINE}`, background: view === t ? "#f59e0b" : "#fff", color: INK,
+            boxShadow: view === t ? "0 3px 0 rgba(26,26,34,0.25)" : "none",
+          }}>{t === "catch" ? "📷 Catch" : "🗺️ Nearby"}</button>
+        ))}
+      </div>
+
+      {view === "map" && (
+        <Suspense fallback={<Empty>Loading map…</Empty>}>
+          <NearbyMap />
+        </Suspense>
+      )}
+
+      {view === "catch" && (<>
       {/* ── Capture zone ── */}
       <div style={{ position: "relative", borderRadius: 22, overflow: "hidden", border: `3px solid ${OUTLINE}`, background: "#000", aspectRatio: "3 / 4", maxHeight: 520, margin: "0 auto 18px", boxShadow: "0 10px 0 rgba(26,26,34,0.12)" }}>
         {phase === "intro" && (
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, background: CREAM, padding: 24, textAlign: "center" }}>
-            <div style={{ fontSize: 60 }}>🐱</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: INK, maxWidth: 320, lineHeight: 1.4 }}>See a street cat? Point your camera and catch it.</div>
-            <div style={{ fontSize: 13, color: MUTED, maxWidth: 300 }}>Real cats only — screenshots and photos of screens won&apos;t work. 🕵️</div>
+            <div style={{ fontSize: 60 }}>🐱🐶</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: INK, maxWidth: 320, lineHeight: 1.4 }}>See a street cat or dog? Point your camera and catch it.</div>
+            <div style={{ fontSize: 13, color: MUTED, maxWidth: 300 }}>Real animals only — screenshots and photos of screens won&apos;t work. 🕵️</div>
             <button onClick={startCamera} style={bigBtn}>📷 Open camera</button>
             {camErr && <div style={{ fontSize: 13, color: "#9b1c1c", maxWidth: 300 }}>{camErr}</div>}
           </div>
@@ -175,12 +198,13 @@ export default function CatCatch() {
         <span style={{ fontSize: 13, color: MUTED }}>{collection.length} caught</span>
       </div>
       {collection.length === 0 ? (
-        <Empty>No cats yet — go find one! 🐾</Empty>
+        <Empty>No catches yet — go find a cat or dog! 🐾</Empty>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 14 }}>
           {collection.map((c) => <CatCard key={c.id} cat={c} compact />)}
         </div>
       )}
+      </>)}
 
       <style>{`@keyframes ccBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}`}</style>
     </Shell>
@@ -197,7 +221,7 @@ function CatCard({ cat, compact }: { cat: Cat; compact?: boolean }) {
         <div style={{ position: "absolute", top: 6, right: 6, background: rc, color: "#fff", fontSize: 10, fontWeight: 900, padding: "2px 8px", borderRadius: 999, textTransform: "uppercase", letterSpacing: 0.5 }}>{cat.rarityLabel}</div>
       </div>
       <div style={{ padding: compact ? "8px 10px" : "10px 12px" }}>
-        <div style={{ fontSize: compact ? 14 : 16, fontWeight: 800, color: INK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cat.name}</div>
+        <div style={{ fontSize: compact ? 14 : 16, fontWeight: 800, color: INK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{kindEmoji(cat.kind)} {cat.name}</div>
         <div style={{ fontSize: 11, color: MUTED, marginBottom: 6 }}>{cat.breed} · {cat.element}</div>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", fontSize: 10.5, fontFamily: "'JetBrains Mono',monospace", color: INK }}>
           {([["HP", cat.hp], ["ATK", cat.atk], ["DEF", cat.def], ["SPD", cat.spd]] as const).map(([k, v]) => (
@@ -216,10 +240,10 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "8px 0 40px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
       <div style={{ marginBottom: 18, textAlign: "center" }}>
-        <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.18em", color: "#b45309", textTransform: "uppercase" }}>Cat Catch · real cats only</div>
-        <h1 style={{ fontSize: 28, fontWeight: 900, color: INK, margin: "6px 0 0", letterSpacing: "-0.02em" }}>Catch street cats 🐱</h1>
+        <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.18em", color: "#b45309", textTransform: "uppercase" }}>Catch · real animals only</div>
+        <h1 style={{ fontSize: 28, fontWeight: 900, color: INK, margin: "6px 0 0", letterSpacing: "-0.02em" }}>Catch cats &amp; dogs 🐾</h1>
         <p style={{ fontSize: 14.5, color: MUTED, margin: "8px auto 0", lineHeight: 1.55, maxWidth: 440 }}>
-          Spot a cat in the wild, snap it, and it becomes a collectible — with its own rarity, element and stats. No cheating: screenshots don&apos;t count.
+          Spot a cat or dog in the wild, snap it, and it becomes a collectible — with its own rarity, element and stats. No cheating: screenshots don&apos;t count.
         </p>
       </div>
       {children}

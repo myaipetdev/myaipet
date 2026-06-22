@@ -322,6 +322,7 @@ model CliToken {
 model CaughtCat {
   id            Int      @id @default(autoincrement())
   owner_user_id Int
+  kind          String   @default("cat") @db.VarChar(8) // cat | dog
   name          String   @db.VarChar(40)
   breed         String   @db.VarChar(40)
   rarity        String   @db.VarChar(12) // gray | green | blue | purple | orange

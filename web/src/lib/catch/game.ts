@@ -70,6 +70,13 @@ const CAT_NAMES = [
   "Pixel", "Gizmo", "Bandit", "Cleo", "Nori", "Dumpling", "Marble", "Toast",
 ];
 
-export function pickName(): string {
-  return CAT_NAMES[Math.floor(Math.random() * CAT_NAMES.length)];
+const DOG_NAMES = [
+  "Rocky", "Bella", "Cooper", "Max", "Daisy", "Buddy", "Rex", "Coco",
+  "Bruno", "Nala", "Zeus", "Hazel", "Duke", "Ruby", "Otis", "Maple",
+  "Bear", "Pippin", "Scout", "Tofu", "Biscuit", "Pretzel", "Moose", "Pumpkin",
+];
+
+export function pickName(kind: "cat" | "dog" = "cat"): string {
+  const pool = kind === "dog" ? DOG_NAMES : CAT_NAMES;
+  return pool[Math.floor(Math.random() * pool.length)];
 }

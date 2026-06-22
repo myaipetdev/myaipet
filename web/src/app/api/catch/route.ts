@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
   if (!verdict) {
     return NextResponse.json({ caught: false, reason: "Couldn't read that photo — try again with more light 🔦" });
   }
-  if (!verdict.isCat) {
-    return NextResponse.json({ caught: false, reason: verdict.reason || "No cat in frame — point your camera at a real cat 🐱" });
+  if (!verdict.isPet) {
+    return NextResponse.json({ caught: false, reason: verdict.reason || "No cat or dog in frame — point your camera at a real one 🐾" });
   }
   if (!verdict.isLivePhoto) {
     return NextResponse.json({
@@ -69,12 +69,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Couldn't save the photo — try again" }, { status: 500 });
   }
 
+  const kind = verdict.kind === "dog" ? "dog" : "cat";
   const rarity = rollRarity(verdict.confidence);
   const stats = rollStats(rarity);
   const cat = await prisma.caughtCat.create({
     data: {
       owner_user_id: user.id,
-      name: pickName(),
+      kind,
+      name: pickName(kind),
       breed: verdict.breed,
       rarity,
       element: pickElement(verdict.mood),

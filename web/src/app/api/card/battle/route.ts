@@ -1,29 +1,13 @@
 /**
- * POST /api/card/battle — a deterministic, read-only card duel.
- *
- * { petId, opponentId } → resolves a stat-based duel between two pets' cards
- * using the SAME server battle resolver as the arena (lib/battleSim) plus the
- * element TYPE_CHART. Purely cosmetic: NO credits, NO stat changes, NO DB writes
- * — it just compares two cards' real ATK/DEF/SPD/level/element and reports who
- * would win. Deterministic by the pair, so a shared result is reproducible.
+ * POST /api/card/battle — a deterministic, read-only card duel between two pets'
+ * cards (same arena resolver + element TYPE_CHART). NO credits, NO stat changes,
+ * NO DB writes. Deterministic by the pair, so a shared result reproduces.
  */
-
 import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
-import { simulateBattle, type Combatant } from "@/lib/battleSim";
-import { TYPE_CHART } from "@/lib/skills";
-import { getCardData, type CardData } from "@/lib/tcg/card";
-
-function advantage(attacker: string, defender: string): number {
-  const row = (TYPE_CHART as Record<string, Record<string, number>>)[attacker];
-  return (row && row[defender]) ?? 1;
-}
-
-function combatant(c: CardData, vsElement: string): Combatant {
-  // Element advantage scales the attacker's ATK against the defender's element.
-  return { atk: Math.round(c.atk * advantage(c.element, vsElement)), def: c.def, spd: c.spd, level: c.level, name: c.name };
-}
+import { resolveCardBattle, advantage } from "@/lib/tcg/battle";
+import type { CardData } from "@/lib/tcg/card";
 
 function summary(c: CardData) {
   return {
@@ -48,28 +32,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Pick two different pets" }, { status: 400 });
   }
 
-  const [you, opp] = await Promise.all([getCardData(petId), getCardData(opponentId)]);
-  if (!you || !opp) return NextResponse.json({ error: "Card not found" }, { status: 404 });
-
-  // Deterministic by the ordered pair so a shared duel reproduces the same log.
-  const seed = `card-duel-${petId}-vs-${opponentId}`;
-  const result = simulateBattle(combatant(you, opp.element), combatant(opp, you.element), seed);
+  const b = await resolveCardBattle(petId, opponentId);
+  if (!b) return NextResponse.json({ error: "Card not found" }, { status: 404 });
 
   return NextResponse.json({
-    you: summary(you),
-    opponent: summary(opp),
-    winner: result.won ? "you" : "opponent",
+    you: summary(b.you),
+    opponent: summary(b.opp),
+    winner: b.winner === "you" ? "you" : "opponent",
+    matchup: `${petId}-vs-${opponentId}`,
     result: {
-      won: result.won,
-      turns: result.turns,
-      yourHp: result.player_hp_left,
-      yourHpMax: result.player_hp_max,
-      oppHp: result.opponent_hp_left,
-      oppHpMax: result.opponent_hp_max,
+      won: b.result.won,
+      turns: b.result.turns,
+      yourHp: b.result.player_hp_left,
+      yourHpMax: b.result.player_hp_max,
+      oppHp: b.result.opponent_hp_left,
+      oppHpMax: b.result.opponent_hp_max,
     },
     advantage: {
-      you: advantage(you.element, opp.element),
-      opponent: advantage(opp.element, you.element),
+      you: advantage(b.you.element, b.opp.element),
+      opponent: advantage(b.opp.element, b.you.element),
     },
   });
 }
