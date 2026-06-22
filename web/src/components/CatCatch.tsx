@@ -1,10 +1,11 @@
 "use client";
 
 /**
- * CatCatch — photograph REAL street cats and collect them like Pokémon.
- * Live camera only (no gallery upload). The capture is verified by Grok vision
- * server-side: screenshots / photos-of-screens / drawings / memes are rejected,
- * so you can only catch cats you actually find.
+ * CatCatch — photograph REAL street cats & dogs and collect them like Pokémon.
+ * Live camera, with a photo-upload fallback for desktop / no-camera devices.
+ * Either way the image is verified by Grok vision server-side: screenshots /
+ * photos-of-screens / drawings / memes are rejected, so you can only catch
+ * animals you actually find.
  *
  * Cream tones + thick outlines + game-like, per the catchcat aesthetic.
  */
