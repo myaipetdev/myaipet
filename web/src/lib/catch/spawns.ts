@@ -13,7 +13,7 @@ import { RARITY_TIERS, type CatRarity, rarityMeta } from "./game";
 
 export interface WildSpawn {
   id: string;          // deterministic + reconstructible server-side
-  kind: "cat" | "dog";
+  kind: string;        // mostly cat/dog, sometimes other animals
   species: string;     // display "breed"
   rarity: CatRarity;
   element: string;
@@ -21,6 +21,10 @@ export interface WildSpawn {
   lat: number;
   lng: number;
 }
+
+// Spawn kinds — cats & dogs dominate, with the occasional other critter so the
+// wild track reflects "real animals", not only cats/dogs.
+const SPAWN_KINDS = ["cat", "cat", "cat", "cat", "dog", "dog", "dog", "dog", "bird", "rabbit", "squirrel", "duck", "fox"];
 
 const CELL = 0.01;               // ~1.1km grid cell
 const SPAWN_RADIUS_DEG = 0.0045; // spawns sit within ~500m of cell centre
@@ -88,10 +92,10 @@ export function spawnsFor(lat: number, lng: number, period: number): WildSpawn[]
   const count = 6 + Math.floor(rng() * 7); // 6–12 spawns
   const out: WildSpawn[] = [];
   for (let i = 0; i < count; i++) {
-    const kind: "cat" | "dog" = rng() < 0.5 ? "cat" : "dog";
+    const kind = pick(SPAWN_KINDS, rng);
     const rarity = rollRarityDet(rng);
     const element = pick(ELEMENTS, rng);
-    const species = pick(kind === "dog" ? DOG_SPECIES : CAT_SPECIES, rng);
+    const species = kind === "cat" ? pick(CAT_SPECIES, rng) : kind === "dog" ? pick(DOG_SPECIES, rng) : kind.charAt(0).toUpperCase() + kind.slice(1);
     const name = pick(kind === "dog" ? DOG_NAMES : CAT_NAMES, rng);
     const dlat = (rng() - 0.5) * 2 * SPAWN_RADIUS_DEG;
     const dlng = (rng() - 0.5) * 2 * SPAWN_RADIUS_DEG;

@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
-import { rollStats, rarityMeta } from "@/lib/catch/game";
+import { rollStats, rarityMeta, kindIcon } from "@/lib/catch/game";
 import { spawnsFor, findSpawn, currentPeriod, withSpawnMeta, WILD_POINTS } from "@/lib/catch/spawns";
 import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
         rarity: spawn.rarity,
         element: spawn.element,
         hp: stats.hp, atk: stats.atk, def: stats.def, spd: stats.spd,
-        photo_path: `/icons/${spawn.kind}.png`, // game creature → 3D icon, not a real photo
+        photo_path: `/icons/${kindIcon(spawn.kind)}.png`, // game creature → 3D icon, not a real photo
         lat: spawn.lat, lng: spawn.lng,
         source: "wild",
         spawn_key: id,

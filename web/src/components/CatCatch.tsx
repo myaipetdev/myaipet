@@ -13,6 +13,7 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
+import { kindIcon } from "@/lib/catch/game";
 
 /** Camera glyph in the cream/thick-outline Catch style (no emoji). */
 function CameraIcon({ size = 20 }: { size?: number }) {
@@ -188,8 +189,8 @@ export default function CatCatch() {
               <Icon name="cat" size={74} />
               <Icon name="dog" size={74} />
             </div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: INK, maxWidth: 320, lineHeight: 1.4 }}>See a street cat or dog? Point your camera and catch it.</div>
-            <div style={{ fontSize: 13, color: MUTED, maxWidth: 300 }}>Real animals only — screenshots and photos of screens won&apos;t work.</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: INK, maxWidth: 320, lineHeight: 1.4 }}>See an animal out in the world? Point your camera and catch it.</div>
+            <div style={{ fontSize: 13, color: MUTED, maxWidth: 300 }}>Mostly cats &amp; dogs — but any real animal counts. Screenshots and photos of screens won&apos;t work.</div>
             <button onClick={startCamera} style={{ ...bigBtn, display: "inline-flex", alignItems: "center", gap: 8 }}><CameraIcon size={20} /> Open camera</button>
             {camErr && <div style={{ fontSize: 13, color: "#9b1c1c", maxWidth: 300 }}>{camErr}</div>}
             <label style={{ ...bigBtn, background: "#fff", border: `2.5px solid ${OUTLINE}`, display: "inline-flex", alignItems: "center", gap: 8 }}>
@@ -250,7 +251,7 @@ export default function CatCatch() {
         <span style={{ fontSize: 13, color: MUTED }}>{collection.length} caught</span>
       </div>
       {collection.length === 0 ? (
-        <Empty>No catches yet — go find a cat or dog!</Empty>
+        <Empty>No catches yet — go find an animal!</Empty>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 14 }}>
           {collection.map((c) => <CatCard key={c.id} cat={c} compact />)}
@@ -277,7 +278,7 @@ function CatCard({ cat, compact }: { cat: Cat; compact?: boolean }) {
       </div>
       <div style={{ padding: compact ? "8px 10px" : "10px 12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: compact ? 14 : 16, fontWeight: 800, color: INK }}>
-          <Icon name={cat.kind === "dog" ? "dog" : "cat"} size={compact ? 15 : 17} />
+          <Icon name={kindIcon(cat.kind)} size={compact ? 15 : 17} />
           <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cat.name}</span>
         </div>
         <div style={{ fontSize: 11, color: MUTED, marginBottom: 6 }}>{cat.breed} · {cat.element}</div>
@@ -299,9 +300,9 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "8px 0 40px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
       <div style={{ marginBottom: 18, textAlign: "center" }}>
         <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.18em", color: "#b45309", textTransform: "uppercase" }}>Catch · real animals only</div>
-        <h1 style={{ fontSize: 28, fontWeight: 900, color: INK, margin: "6px 0 0", letterSpacing: "-0.02em" }}>Catch cats &amp; dogs</h1>
+        <h1 style={{ fontSize: 28, fontWeight: 900, color: INK, margin: "6px 0 0", letterSpacing: "-0.02em" }}>Catch animals</h1>
         <p style={{ fontSize: 14.5, color: MUTED, margin: "8px auto 0", lineHeight: 1.55, maxWidth: 440 }}>
-          Spot a cat or dog in the wild, snap it, and it becomes a collectible — with its own rarity, element and stats. No cheating: screenshots don&apos;t count.
+          Spot an animal in the wild — mostly cats &amp; dogs, but anything counts — snap it, and it becomes a collectible with its own rarity, element and stats. No cheating: screenshots don&apos;t count.
         </p>
       </div>
       {children}

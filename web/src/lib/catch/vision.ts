@@ -1,19 +1,21 @@
 /**
- * Cat Catch vision referee — the anti-cheat heart of the game.
+ * Catch vision referee — the anti-cheat heart of the game.
  *
- * Players must photograph a REAL, LIVE cat with their camera. This asks Grok
- * vision to (a) confirm a real cat is present and (b) reject screenshots, photos
- * of screens, printed photos, drawings/illustrations, memes, and AI images — so
- * you can't cheat by snapping a picture off the internet.
+ * Players must photograph a REAL, LIVE animal with their camera — most often a
+ * cat or dog, but ANY real animal counts (bird, squirrel, rabbit, duck, etc.).
+ * Grok vision (a) confirms a real live animal is present and (b) rejects
+ * screenshots, photos of screens, printed photos, drawings/illustrations,
+ * memes, and AI images — so you can't cheat by snapping a picture off a screen.
  *
  * Reuses the x.ai chat/completions image_url pattern (see services/video.ts).
  */
 
-export interface CatVerdict {
-  /** a real cat OR dog is the subject */
-  isPet: boolean;
-  /** which animal — "cat" or "dog" (or "other" if neither) */
-  kind: "cat" | "dog" | "other";
+export interface AnimalVerdict {
+  /** a real, live animal is clearly the subject (cat/dog or otherwise) */
+  isAnimal: boolean;
+  /** the animal type, lowercased — e.g. "cat", "dog", "bird", "squirrel",
+   *  "rabbit", "duck", "fox"; "other" if a real animal but unidentifiable */
+  kind: string;
   /** anti-cheat: a genuine real-world photo, NOT a screen/print/drawing/meme/AI */
   isLivePhoto: boolean;
   confidence: number; // 0..1
@@ -25,14 +27,14 @@ export interface CatVerdict {
 
 const VISION_MODELS = ["grok-4-1-fast-non-reasoning", "grok-4-fast-non-reasoning", "grok-3"];
 
-const PROMPT = `You are the strict referee of a game where players must photograph a REAL, LIVE cat or dog in the real world with their phone camera. Inspect the image and decide.
+const PROMPT = `You are the strict referee of a game where players must photograph a REAL, LIVE animal in the real world with their phone camera. It is usually a cat or a dog, but ANY real animal counts (bird, squirrel, rabbit, duck, pigeon, fox, etc.). Inspect the image and decide.
 
 Return STRICT JSON only (no markdown), with these fields:
-- "isPet": true only if a real cat or dog is clearly the subject.
-- "kind": "cat" if it's a cat, "dog" if it's a dog, otherwise "other".
+- "isAnimal": true only if a real, live animal is clearly the subject.
+- "kind": the animal type as ONE lowercase word — e.g. "cat", "dog", "bird", "squirrel", "rabbit", "duck", "pigeon", "fox", "horse". Use "other" only if it's clearly a real animal you can't name.
 - "isLivePhoto": true only if this is a genuine photo of a real animal in the real world. Set FALSE if it is any of: a screenshot, a photo of a screen/monitor/phone/TV (look for moiré, pixel grid, bezels, glare, UI), a printed photo (paper/halftone texture), a drawing/illustration/cartoon/painting (flat shading, outlines), a plush toy/figurine, a meme, or an AI-generated image.
-- "confidence": 0..1 — how sure a real live cat or dog is present.
-- "breed": best guess breed, else "Domestic Shorthair" (cat) or "Mixed Breed" (dog).
+- "confidence": 0..1 — how sure a real live animal is present.
+- "breed": best-guess breed/species (e.g. "Domestic Shorthair", "Golden Retriever", "House Sparrow"); else a sensible default for the kind.
 - "furColor": short color/markings description (e.g. "orange tabby", "black and white").
 - "mood": ONE word from calm, playful, grumpy, curious, sleepy, fierce, shy.
 - "reason": one short sentence; if rejecting, say why (e.g. "looks like a photo of a computer screen").
@@ -43,18 +45,26 @@ function getKey(): string {
   return process.env.GROK_API_KEY || process.env.XAI_API_KEY || "";
 }
 
-function parseVerdict(raw: string): CatVerdict | null {
+function sanitizeKind(raw: any): string {
+  const k = String(raw || "other").toLowerCase().trim().replace(/[^a-z]/g, "").slice(0, 16);
+  return k || "other";
+}
+
+function parseVerdict(raw: string): AnimalVerdict | null {
   try {
     const m = raw.match(/\{[\s\S]*\}/);
     if (!m) return null;
     const j = JSON.parse(m[0]);
-    const kind = j.kind === "dog" ? "dog" : j.kind === "cat" ? "cat" : "other";
+    const kind = sanitizeKind(j.kind);
+    // Back-compat: older prompt used "isPet".
+    const isAnimal = !!(j.isAnimal ?? j.isPet);
+    const isDog = kind === "dog";
     return {
-      isPet: !!j.isPet && kind !== "other",
+      isAnimal,
       kind,
       isLivePhoto: !!j.isLivePhoto,
       confidence: typeof j.confidence === "number" ? Math.max(0, Math.min(1, j.confidence)) : 0.5,
-      breed: String(j.breed || (kind === "dog" ? "Mixed Breed" : "Domestic Shorthair")).slice(0, 40),
+      breed: String(j.breed || (isDog ? "Mixed Breed" : kind === "cat" ? "Domestic Shorthair" : "Wild")).slice(0, 40),
       furColor: String(j.furColor || "").slice(0, 60),
       mood: String(j.mood || "calm").toLowerCase().slice(0, 12),
       reason: String(j.reason || "").slice(0, 200),
@@ -64,8 +74,8 @@ function parseVerdict(raw: string): CatVerdict | null {
   }
 }
 
-/** Verify + describe a cat photo via Grok vision. Returns null on total failure. */
-export async function verifyAndDescribeCat(imageUrl: string): Promise<CatVerdict | null> {
+/** Verify + describe an animal photo via Grok vision. Returns null on total failure. */
+export async function verifyAndDescribeAnimal(imageUrl: string): Promise<AnimalVerdict | null> {
   const key = getKey();
   if (!key) return null;
 

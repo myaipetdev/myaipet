@@ -15,6 +15,7 @@
 import { useEffect, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import { getAuthHeaders } from "@/lib/api";
+import { kindIcon } from "@/lib/catch/game";
 
 const MUTED = "#6b6b73";
 const INK = "#1a1a22";
@@ -94,7 +95,7 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
 
           const spawnIconHtml = (s: Spawn, caught: boolean) =>
             `<div style="width:40px;height:40px;border-radius:50%;border:3px solid ${caught ? "#9ca3af" : s.rarityColor};background:#fff;box-shadow:0 0 0 4px ${caught ? "rgba(156,163,175,0.25)" : s.rarityColor + "40"},0 2px 7px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;${caught ? "opacity:0.45" : ""}">
-               <img src="/icons/${s.kind}.png" style="width:27px;height:27px;object-fit:contain"/>
+               <img src="/icons/${kindIcon(s.kind)}.png" style="width:27px;height:27px;object-fit:contain"/>
              </div>`;
 
           for (const s of spawns) {

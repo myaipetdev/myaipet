@@ -14,7 +14,7 @@ import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import { uploadFile } from "@/lib/storage";
-import { verifyAndDescribeCat } from "@/lib/catch/vision";
+import { verifyAndDescribeAnimal } from "@/lib/catch/vision";
 import { rollRarity, rollStats, pickElement, pickName, rarityMeta, CATCH_POINTS } from "@/lib/catch/game";
 import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 
@@ -44,13 +44,13 @@ export async function POST(req: NextRequest) {
   const lat = typeof body?.lat === "number" ? body.lat : null;
   const lng = typeof body?.lng === "number" ? body.lng : null;
 
-  // ── Anti-cheat: verify a real live cat BEFORE storing anything ──
-  const verdict = await verifyAndDescribeCat(dataUrl);
+  // ── Anti-cheat: verify a real live animal BEFORE storing anything ──
+  const verdict = await verifyAndDescribeAnimal(dataUrl);
   if (!verdict) {
-    return NextResponse.json({ caught: false, reason: "Couldn't read that photo — try again with more light 🔦" });
+    return NextResponse.json({ caught: false, reason: "Couldn't read that photo — try again with more light." });
   }
-  if (!verdict.isPet) {
-    return NextResponse.json({ caught: false, reason: verdict.reason || "No cat or dog in frame — point your camera at a real one 🐾" });
+  if (!verdict.isAnimal) {
+    return NextResponse.json({ caught: false, reason: verdict.reason || "No animal in frame — point your camera at a real one." });
   }
   if (!verdict.isLivePhoto) {
     return NextResponse.json({
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Couldn't save the photo — try again" }, { status: 500 });
   }
 
-  const kind = verdict.kind === "dog" ? "dog" : "cat";
+  const kind = (verdict.kind || "other").slice(0, 16); // real animal type (cat/dog mostly, but anything)
   const rarity = rollRarity(verdict.confidence);
   const stats = rollStats(rarity);
   const cat = await prisma.caughtCat.create({

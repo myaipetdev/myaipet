@@ -81,7 +81,28 @@ const DOG_NAMES = [
   "Bear", "Pippin", "Scout", "Tofu", "Biscuit", "Pretzel", "Moose", "Pumpkin",
 ];
 
-export function pickName(kind: "cat" | "dog" = "cat"): string {
-  const pool = kind === "dog" ? DOG_NAMES : CAT_NAMES;
+export function pickName(kind?: string): string {
+  const pool = kind === "dog" ? DOG_NAMES : CAT_NAMES; // cat names read as generic whimsical names for any animal
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/**
+ * Map a real animal kind to the closest available 3D icon (/public/icons).
+ * Catch accepts any real animal — most are cats/dogs, but birds/rabbits/etc.
+ * get a sensible icon; anything unknown falls back to a paw.
+ */
+const KIND_ICON: Record<string, string> = {
+  cat: "cat", kitten: "cat",
+  dog: "dog", puppy: "dog",
+  bird: "parrot", parrot: "parrot", sparrow: "parrot", crow: "parrot", seagull: "parrot",
+  duck: "chicken", goose: "chicken", pigeon: "chicken", chicken: "chicken", hen: "chicken", rooster: "chicken",
+  rabbit: "rabbit", bunny: "rabbit", hare: "rabbit",
+  squirrel: "hamster", chipmunk: "hamster", hamster: "hamster", mouse: "hamster", rat: "hamster",
+  fox: "fox", wolf: "wolf", bear: "bear", panda: "panda", tiger: "tiger", lion: "tiger",
+  turtle: "turtle", tortoise: "turtle", snake: "snake", lizard: "snake", gecko: "snake",
+  dolphin: "dolphin", fish: "dolphin", horse: "unicorn", deer: "unicorn",
+};
+
+export function kindIcon(kind?: string): string {
+  return KIND_ICON[(kind || "").toLowerCase()] || "paw";
 }
