@@ -57,7 +57,7 @@ export default function CatCatch() {
   const streamRef = useRef<MediaStream | null>(null);
   const [phase, setPhase] = useState<Phase>("intro");
   const [pendingImg, setPendingImg] = useState<string | null>(null); // captured image awaiting the throw
-  const [view, setView] = useState<"catch" | "map">("catch");
+  const [view, setView] = useState<"catch" | "map" | "battle">("catch");
   const [camErr, setCamErr] = useState<string | null>(null);
   const [result, setResult] = useState<{ caught: boolean; cat?: Cat; reason?: string; antiCheat?: boolean; pointsAwarded?: number } | null>(null);
   const [collection, setCollection] = useState<Cat[]>([]);
@@ -168,13 +168,16 @@ export default function CatCatch() {
     <Shell>
       {/* Tabs */}
       <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 18 }}>
-        {(["catch", "map"] as const).map((t) => (
+        {(["catch", "map", "battle"] as const).map((t) => (
           <button key={t} onClick={() => setView(t)} style={{
-            padding: "8px 20px", borderRadius: 999, cursor: "pointer", fontSize: 14, fontWeight: 800,
+            padding: "8px 18px", borderRadius: 999, cursor: "pointer", fontSize: 14, fontWeight: 800,
             border: `2.5px solid ${OUTLINE}`, background: view === t ? "#f59e0b" : "#fff", color: INK,
             boxShadow: view === t ? "0 3px 0 rgba(26,26,34,0.25)" : "none",
             display: "inline-flex", alignItems: "center", gap: 7,
-          }}>{t === "catch" ? <CameraIcon size={17} /> : <Icon name="compass" size={18} />}{t === "catch" ? "Catch" : "Nearby"}</button>
+          }}>
+            {t === "catch" ? <CameraIcon size={17} /> : t === "map" ? <Icon name="compass" size={18} /> : <Icon name="boxing" size={18} />}
+            {t === "catch" ? "Catch" : t === "map" ? "Nearby" : "Battle"}
+          </button>
         ))}
       </div>
 
@@ -183,6 +186,8 @@ export default function CatCatch() {
           <NearbyMap onCaught={(cat: Cat) => setCollection((c) => [cat, ...c])} />
         </Suspense>
       )}
+
+      {view === "battle" && <AlleyClash collection={collection} />}
 
       {view === "catch" && (<>
       {/* ── Capture zone ── */}
@@ -356,6 +361,97 @@ function RevealCard({ cat, points, onAgain, onDone }: { cat: Cat; points: number
       <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
         <button onClick={onAgain} style={bigBtn}>Catch another</button>
         <button onClick={onDone} style={{ ...ghostBtn, borderColor: "rgba(255,255,255,0.5)", color: "#fff" }}>Done</button>
+      </div>
+    </div>
+  );
+}
+
+/** Alley Clash — battle a caught animal against a generated practice opponent. */
+function AlleyClash({ collection }: { collection: Cat[] }) {
+  const [sel, setSel] = useState<Cat | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [res, setRes] = useState<any>(null);
+
+  const fight = async () => {
+    if (!sel || busy) return;
+    setBusy(true); setRes(null);
+    try {
+      const r = await fetch("/api/catch/battle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ catId: sel.id }),
+      });
+      const d = await r.json().catch(() => ({}));
+      setRes(r.ok ? d : { error: d?.error || "Battle failed — try again." });
+    } catch { setRes({ error: "Network error — try again." }); }
+    setBusy(false);
+  };
+
+  if (collection.length === 0) {
+    return <Empty>Catch an animal first, then bring it to the alley.</Empty>;
+  }
+  if (res && !res.error) return <BattleResult res={res} onAgain={() => setRes(null)} />;
+
+  return (
+    <div>
+      <div style={{ textAlign: "center", marginBottom: 14 }}>
+        <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.18em", color: "#b45309", textTransform: "uppercase" }}>Alley Clash · practice</div>
+        <h2 style={{ fontSize: 20, fontWeight: 900, color: INK, margin: "4px 0 0" }}>Send a fighter to the alley</h2>
+        <p style={{ fontSize: 13, color: MUTED, margin: "6px auto 0", maxWidth: 380, lineHeight: 1.5 }}>Pick one of your caught animals to spar a street stray — a practice opponent, not another player. Win to earn season points.</p>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(94px, 1fr))", gap: 10, marginBottom: 16 }}>
+        {collection.map((c) => {
+          const on = sel?.id === c.id;
+          return (
+            <button key={c.id} onClick={() => setSel(c)} style={{ padding: 0, borderRadius: 14, overflow: "hidden", cursor: "pointer", border: `3px solid ${on ? c.rarityColor : OUTLINE}`, background: "#fff", boxShadow: on ? `0 4px 0 ${c.rarityColor}66` : "0 2px 0 rgba(26,26,34,.15)", transform: on ? "translateY(-2px)" : "none" }}>
+              <div style={{ position: "relative", width: "100%", aspectRatio: "1", background: c.source === "wild" ? CREAM : "#eee" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={c.photo_path} alt={c.name} style={{ width: "100%", height: "100%", objectFit: c.source === "wild" ? "contain" : "cover", padding: c.source === "wild" ? "14%" : 0 }} />
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: INK, padding: "5px 4px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</div>
+            </button>
+          );
+        })}
+      </div>
+      {sel && (
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 13, color: MUTED, marginBottom: 10 }}>Sending <b style={{ color: INK }}>{sel.name}</b> · ATK {sel.atk} · DEF {sel.def} · SPD {sel.spd}</div>
+          <button onClick={fight} disabled={busy} style={{ ...bigBtn, opacity: busy ? 0.7 : 1, display: "inline-flex", alignItems: "center", gap: 8 }}><Icon name="boxing" size={20} /> {busy ? "Fighting…" : "Fight!"}</button>
+        </div>
+      )}
+      {res?.error && <div style={{ textAlign: "center", color: "#9b1c1c", fontSize: 13, marginTop: 12 }}>{res.error}</div>}
+    </div>
+  );
+}
+
+function BattleResult({ res, onAgain }: { res: any; onAgain: () => void }) {
+  const won = !!res.won;
+  const fighter = (f: any, side: "you" | "them") => (
+    <div style={{ textAlign: "center", flex: 1, minWidth: 0 }}>
+      <div style={{ width: 84, height: 84, margin: "0 auto", borderRadius: 16, border: `3px solid ${OUTLINE}`, background: side === "you" ? "#fff" : CREAM, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Icon name={f.icon} size={52} />
+      </div>
+      <div style={{ fontWeight: 800, color: INK, marginTop: 6, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.name}</div>
+      <div style={{ height: 8, borderRadius: 999, background: "rgba(0,0,0,.1)", overflow: "hidden", marginTop: 6 }}>
+        <div style={{ width: `${Math.max(0, Math.round((f.hpLeft / f.hpMax) * 100))}%`, height: "100%", background: side === "you" ? "#22c55e" : "#ef4444", transition: "width .6s ease" }} />
+      </div>
+      <div style={{ fontSize: 10.5, color: MUTED, marginTop: 3, fontFamily: "monospace" }}>HP {Math.max(0, f.hpLeft)}/{f.hpMax}</div>
+    </div>
+  );
+  return (
+    <div style={{ textAlign: "center", padding: "6px 0 4px" }}>
+      <div style={{ fontSize: 26, fontWeight: 900, color: won ? "#16a34a" : "#dc2626", letterSpacing: 1 }}>{won ? "VICTORY!" : "DEFEATED"}</div>
+      <div style={{ fontSize: 12, color: MUTED, marginBottom: 16 }}>{res.turns} turns in the alley</div>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12, maxWidth: 360, margin: "0 auto" }}>
+        {fighter(res.you, "you")}
+        <div style={{ fontWeight: 900, color: INK, alignSelf: "center", fontSize: 18 }}>VS</div>
+        {fighter(res.opponent, "them")}
+      </div>
+      {won && res.pointsAwarded > 0 && (
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 16, background: "#f59e0b", color: INK, fontWeight: 800, fontSize: 13, borderRadius: 999, padding: "5px 14px", border: `2px solid ${OUTLINE}` }}>+{res.pointsAwarded} season points <Icon name="coin" size={14} /></div>
+      )}
+      <div style={{ marginTop: 18 }}>
+        <button onClick={onAgain} style={bigBtn}>Battle again</button>
       </div>
     </div>
   );

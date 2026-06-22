@@ -45,6 +45,7 @@ export const DAILY_POINT_CAPS: Record<string, number> = {
   studio_gen: 120,  // Studio generations (World Cup pet, card art, etc.)
   worldcup: 30,     // World Cup national-pet + champion prediction
   wild_catch: 60,   // Wild Encounters (tap-to-catch game spawns — lower than real catch)
+  alley_battle: 30, // Alley Clash wins (free practice battles with caught animals)
 };
 
 function todayKey(): string {
