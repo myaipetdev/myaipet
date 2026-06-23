@@ -24,9 +24,10 @@
   // "주변만 맴도는" report — previous walk used fixed-duration random shuffles that
   // never covered much ground before flipping direction.
   let posX = window.innerWidth / 2;
-  let posY = 0;                     // hop height above bottom (px)
+  let posY = 0;                     // rendered height above bottom (px)
   let targetX = posX;
-  let targetY = 0;
+  let targetY = 0;                  // desired roam height the pet drifts toward
+  let baseY = 0;                    // smoothed roam height (posY = baseY + hop bob)
   let direction = 1;
   let state = "idle";
   let walkSpeed = 2.4;               // base px/frame; modulated by energy
@@ -195,10 +196,18 @@
     return Math.round(dest);
   }
 
+  // Vertical roam target — so the pet drifts to varied heights instead of being
+  // stuck along the bottom edge. Mostly low-ish, sometimes floats well up.
+  function pickTargetY() {
+    const maxY = Math.min(Math.round(window.innerHeight * 0.55), 380);
+    return Math.random() < 0.4 ? Math.round(Math.random() * 70) : Math.round(Math.random() * maxY);
+  }
+
   function startWalking() {
     if (emotions.energy < 10) return; // too tired
     state = "walking";
     targetX = pickTarget();
+    targetY = pickTargetY();
     direction = targetX > posX ? 1 : -1;
     // Faster, more responsive to energy
     walkSpeed = 1.5 + (emotions.energy / 100) * 2.5;
@@ -213,9 +222,8 @@
   function stopWalking() {
     state = "idle";
     body.classList.remove("walking", "walking-left");
-    posY = 0;
     hopPhase = 0;
-    container.style.bottom = "0px";
+    targetY = baseY;   // rest perched at the current roam height (not yanked to the bottom)
     // Short pauses so the pet keeps moving and exploring
     nextWalkDelay = randomBetween(1.0, 2.5);
   }
@@ -727,6 +735,7 @@
         // 60% pick a new target and keep walking, 40% stop and rest
         if (Math.random() < 0.6) {
           targetX = pickTarget();
+          targetY = pickTargetY();
           direction = targetX > posX ? 1 : -1;
           body.classList.toggle("walking-left", direction === -1);
         } else {
@@ -735,13 +744,17 @@
         }
       }
 
-      // Optional hop — small vertical bob during the walk
+      // Vertical roaming: smoothly drift toward the roam height so the pet
+      // explores the whole screen, not just the bottom edge — plus a small
+      // walk bob on top.
+      baseY += (targetY - baseY) * Math.min(1, dt * 1.8);
+      let bob = 0;
       if (hopPhase > 0) {
         hopPhase += dt * 4;
-        posY = Math.max(0, Math.sin(hopPhase) * 18);
-        // Trigger a fresh hop every ~2 seconds while exploring
+        bob = Math.max(0, Math.sin(hopPhase) * 12);
         if (hopPhase > Math.PI * 2 * 4) hopPhase = 0.001;
       }
+      posY = Math.max(0, baseY + bob);
 
       updatePosition();
       walkTimer -= dt;
