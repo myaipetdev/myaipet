@@ -12,6 +12,24 @@ const POINT_REWARDS: Record<string, number> = {
   streak_30: 500,     // 30-day streak bonus
 };
 
+/**
+ * On-chain anchoring of season points — PREPARED, currently PAUSED.
+ *
+ * Every season-point grant in the app (catch, cards, studio, world cup,
+ * community, petclaw, chat, …) flows through here, so the moment on-chain
+ * recording is switched on (BLOCKCHAIN_ENABLED=true + the PETActivity recorder
+ * deployed) ALL activity is anchored on-chain with no further wiring. It is a
+ * fire-and-forget no-op today (on-chain is paused per /contracts), so it never
+ * blocks or slows the in-app award and records nothing yet.
+ */
+function anchorSeasonOnChain(userId: number, reason: string, points: number): void {
+  if (points <= 0 || process.env.BLOCKCHAIN_ENABLED !== "true") return; // paused — ready to flip on
+  // Ready to deploy: delegates to the relayer-backed PETActivity recorder.
+  import("./blockchain")
+    .then((m: any) => m.recordSeasonActivity?.(userId, reason, points))
+    .catch(() => {});
+}
+
 export async function awardPoints(
   userId: number,
   petId: number | null,
@@ -26,7 +44,7 @@ export async function awardPoints(
       data: { season_points: { increment: points } },
     });
 
-    // Log not needed with raw SQL tables, but we track in user.season_points
+    anchorSeasonOnChain(userId, reason, points); // prepared, paused
     return { points, reason };
   } catch (e) {
     console.error("Award points error:", e);
@@ -46,6 +64,9 @@ export const DAILY_POINT_CAPS: Record<string, number> = {
   worldcup: 30,     // World Cup national-pet + champion prediction
   wild_catch: 60,   // Wild Encounters (tap-to-catch game spawns — lower than real catch)
   alley_battle: 30, // Alley Clash wins (free practice battles with caught animals)
+  pet_chat: 60,     // Talking to your pet (web + Chrome extension companion chat)
+  community: 50,    // Social contributions: comment, your content liked, follow
+  petclaw: 40,      // PetClaw protocol use: skill runs + soul export (sovereignty)
 };
 
 function todayKey(): string {
@@ -81,6 +102,7 @@ export async function awardPointsCapped(
       await tx.user.update({ where: { id: userId }, data: { season_points: { increment: give } } });
       return give;
     });
+    if (granted > 0) anchorSeasonOnChain(userId, reason, granted); // prepared, paused
     return { points: granted, reason, capped: granted < perActionPoints };
   } catch (e) {
     console.error("Award capped points error:", e);

@@ -205,10 +205,8 @@ export default function CatCatch() {
       <div style={{ position: "relative", borderRadius: 22, overflow: "hidden", border: `3px solid ${OUTLINE}`, background: "#000", aspectRatio: "3 / 4", maxHeight: 520, margin: "0 auto 18px", boxShadow: "0 10px 0 rgba(26,26,34,0.12)" }}>
         {phase === "intro" && (
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, background: CREAM, padding: 24, textAlign: "center" }}>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 4 }}>
-              <Icon name="cat" size={74} />
-              <Icon name="dog" size={74} />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/mascot.jpg" alt="MY AI PET" style={{ width: 92, height: 92, borderRadius: 22, objectFit: "cover", border: `3px solid ${OUTLINE}`, boxShadow: "0 5px 0 rgba(26,26,34,0.18)" }} />
             <div style={{ fontSize: 17, fontWeight: 800, color: INK, maxWidth: 320, lineHeight: 1.4 }}>See an animal out in the world? Point your camera and catch it.</div>
             <div style={{ fontSize: 13, color: MUTED, maxWidth: 300 }}>Mostly cats &amp; dogs — but any real animal counts. Screenshots and photos of screens won&apos;t work.</div>
             <button onClick={startCamera} style={{ ...bigBtn, display: "inline-flex", alignItems: "center", gap: 8 }}><CameraIcon size={20} /> Open camera</button>

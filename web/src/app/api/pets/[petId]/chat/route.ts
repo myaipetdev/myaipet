@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
+import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 import { NextRequest, NextResponse } from "next/server";
 import { createMemoryManager } from "@/lib/petclaw/memory/persistent-memory";
 import { getRelevantMemories } from "@/lib/petclaw/memory/retrieval";
@@ -294,10 +295,14 @@ ${learnedPatternsBlock(pet)}
       .update({ where: { id: user.id }, data: { last_active_at: new Date() } })
       .catch(() => {});
 
+    // Talking to your pet feeds the season (web + Chrome extension), capped.
+    const sp = await awardPointsCapped(user.id, "pet_chat", 2, DAILY_POINT_CAPS.pet_chat).catch(() => ({ points: 0 }));
+
     return NextResponse.json({
       reply,
       mood,
       effects: { happiness: 8, energy: -3, hunger: 2, experience: 8, bond: 2 },
+      pointsAwarded: sp.points || 0,
     });
   } catch (error: any) {
     console.error("Pet chat error:", error);

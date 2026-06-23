@@ -149,3 +149,38 @@ export async function mintContentNFT(
     return null;
   }
 }
+
+/**
+ * Anchor a season-points contribution on-chain via the PETActivity recorder.
+ * PREPARED but currently a no-op — returns early unless ALL of these are in
+ * place: BLOCKCHAIN_ENABLED=true, a funded relayer (BACKEND_RELAYER_KEY), and a
+ * deployed PETActivity address (PET_ACTIVITY_ADDRESS). seasonRewards routes every
+ * grant through here, so the day those three land + the PETActivity ABI is wired
+ * below, all activity (catch/cards/studio/world cup/community/petclaw/chat) is
+ * anchored on-chain with zero further changes. Honest: records nothing today.
+ */
+export async function recordSeasonActivity(
+  userId: number,
+  reason: string,
+  points: number,
+): Promise<{ txHash: string } | null> {
+  try {
+    const relayer = await getRelayerWallet(); // null while on-chain is paused
+    if (!relayer) return null;
+    const activityAddr = ONCHAIN.contracts.petActivity;
+    if (!activityAddr) {
+      console.warn("[blockchain] PETActivity not deployed (PET_ACTIVITY_ADDRESS unset) — season anchoring prepared but inactive");
+      return null;
+    }
+    // READY TO DEPLOY — uncomment once PETActivity is deployed + its ABI added:
+    //   const c = new ethers.Contract(activityAddr, PETActivityABI, relayer);
+    //   const tx = await c.recordPoints(userId, reason, points);
+    //   await tx.wait();
+    //   return { txHash: tx.hash };
+    console.info(`[blockchain] (prepared) season activity user=${userId} reason=${reason} points=${points}`);
+    return null;
+  } catch (err) {
+    console.error("[blockchain] recordSeasonActivity error:", err);
+    return null;
+  }
+}

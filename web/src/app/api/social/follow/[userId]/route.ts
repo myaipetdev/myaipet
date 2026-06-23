@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
+import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
@@ -46,6 +47,12 @@ export async function POST(
         },
       });
       following = true;
+    }
+
+    // Gaining a follower is community standing for the FOLLOWED user (capped;
+    // self-follow already rejected above).
+    if (following) {
+      await awardPointsCapped(Number(userId), "community", 2, DAILY_POINT_CAPS.community).catch(() => {});
     }
 
     return NextResponse.json({ following });

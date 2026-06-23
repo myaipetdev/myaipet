@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { exportPetData } from "@/lib/petclaw/data-sovereignty";
+import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 
 export async function GET(req: NextRequest) {
   // SCRUM-36: authentication is REQUIRED. Previously a "dev/extension fallback"
@@ -16,6 +17,8 @@ export async function GET(req: NextRequest) {
   try {
     // exportPetData internally verifies ownership against userId
     const soulExport = await exportPetData(Number(petId), user.id);
+    // Exercising data sovereignty (SOUL export) feeds the season (capped).
+    await awardPointsCapped(user.id, "petclaw", 10, DAILY_POINT_CAPS.petclaw).catch(() => {});
     return NextResponse.json(soulExport);
   } catch (e: any) {
     // Generic 403 — don't leak whether the pet exists

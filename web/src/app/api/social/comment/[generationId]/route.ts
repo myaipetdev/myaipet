@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
+import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
@@ -49,6 +50,9 @@ export async function POST(
         parent_id: parent_id || null,
       },
     });
+
+    // Commenting is a community contribution → season points (capped).
+    await awardPointsCapped(user.id, "community", 3, DAILY_POINT_CAPS.community).catch(() => {});
 
     return NextResponse.json(comment, { status: 201 });
   } catch (error) {

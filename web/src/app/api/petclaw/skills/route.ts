@@ -4,6 +4,7 @@ import {
   installSkill, uninstallSkill, getInstalledSkills, executeSkill,
 } from "@/lib/petclaw/pethub";
 import { getUser } from "@/lib/auth";
+import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 import { prisma } from "@/lib/prisma";
 
 const PUBLIC_DEMO_PET_ID = 1; // Sparky — the landing-page playground pet
@@ -113,6 +114,12 @@ export async function POST(req: NextRequest) {
       case "execute": {
         if (!skillId) return NextResponse.json({ error: "skillId required" }, { status: 400 });
         const result = await executeSkill(pid, skillId, input || {});
+        // Running a PetClaw skill as the owner feeds the season (capped; the
+        // public demo pet doesn't earn).
+        if (pid !== PUBLIC_DEMO_PET_ID) {
+          const u = await getUser(req).catch(() => null);
+          if (u) await awardPointsCapped(u.id, "petclaw", 5, DAILY_POINT_CAPS.petclaw).catch(() => {});
+        }
         return NextResponse.json(result);
       }
 

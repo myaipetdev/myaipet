@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
+import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
@@ -55,6 +56,12 @@ export async function POST(
       import("@/lib/petclaw/nft-mint").then(({ autoMintTopContent }) =>
         autoMintTopContent(Number(generationId))
       ).catch((e) => console.error("[like] content NFT mint failed:", e?.message));
+    }
+
+    // Engagement reward: when someone likes your creation, the AUTHOR earns a
+    // little season standing (capped; no self-like farming).
+    if (liked && generation.user_id && generation.user_id !== user.id) {
+      await awardPointsCapped(generation.user_id, "community", 1, DAILY_POINT_CAPS.community).catch(() => {});
     }
 
     return NextResponse.json({ liked, likes_count });
