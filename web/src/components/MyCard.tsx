@@ -38,18 +38,18 @@ export default function MyCard() {
   return (
     <div className="mp-enter" style={{ maxWidth: 1060, margin: "0 auto", padding: "0 24px" }}>
       <div className="mp-lift" style={{
-        background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+        background: "#1f1b16",
         color: "white", borderRadius: 18, padding: "20px 24px",
-        border: "1px solid rgba(255,255,255,0.06)",
+        border: "3px solid #1a1a22",
         display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap",
         cursor: "default",
-        boxShadow: "0 8px 28px rgba(15,23,42,0.18)",
+        boxShadow: "0 6px 0 rgba(26,26,34,0.16)",
       }}>
         {/* Pet identity */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
           {me.pet?.avatar_url
-            ? <img src={me.pet.avatar_url} alt={me.pet.name} style={{ width: 52, height: 52, borderRadius: 14, objectFit: "cover", boxShadow: "0 2px 10px rgba(0,0,0,0.25)" }} />
-            : <img src="/mascot.jpg" alt="" style={{ width: 52, height: 52, borderRadius: 14, objectFit: "cover", opacity: 0.9, boxShadow: "0 2px 10px rgba(0,0,0,0.25)" }} />}
+            ? <img src={me.pet.avatar_url} alt={me.pet.name} style={{ width: 52, height: 52, borderRadius: 14, objectFit: "cover", border: "2px solid #1a1a22", boxShadow: "0 3px 0 rgba(0,0,0,0.3)" }} />
+            : <img src="/mascot.jpg" alt="" style={{ width: 52, height: 52, borderRadius: 14, objectFit: "cover", opacity: 0.9, border: "2px solid #1a1a22", boxShadow: "0 3px 0 rgba(0,0,0,0.3)" }} />}
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(255,255,255,0.55)" }}>
               YOUR SEASON
@@ -58,8 +58,8 @@ export default function MyCard() {
               {me.pet?.name || "Your pet"}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>
-              <span style={{ fontSize: 13 }}>{st.tier.emoji}</span>
-              <span style={{ fontWeight: 700, color: st.tier.color }}>{st.tier.name}</span>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: "#f59e0b", display: "inline-block" }} />
+              <span style={{ fontWeight: 700, color: "#f59e0b" }}>{st.tier.name}</span>
               <span style={{ color: "rgba(255,255,255,0.45)" }}>{st.next ? `· ${st.toNext.toLocaleString()} to ${st.next.name}` : "· max tier"}</span>
             </div>
           </div>
@@ -70,13 +70,13 @@ export default function MyCard() {
 
         {/* Stat tiles */}
         <div className="mycard-tiles" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <Tile label="POINTS" value={me.points.toLocaleString()} accent="#fbbf24" />
-          <Tile label="STREAK" value={`${me.streak}d`} accent="#f97316" sub={`best ${me.longest}d`} />
+          <Tile label="POINTS" value={me.points.toLocaleString()} accent="#f59e0b" />
+          <Tile label="STREAK" value={`${me.streak}d`} accent="#f59e0b" sub={`best ${me.longest}d`} />
           {me.streakRank != null && (
-            <Tile label="SEASON RANK" value={`#${me.streakRank}`} accent="#a855f7" sub="by streak" />
+            <Tile label="SEASON RANK" value={`#${me.streakRank}`} accent="#f59e0b" sub="by streak" />
           )}
-          <Tile label="CREDITS" value={me.credits.toLocaleString()} accent="#34d399" />
-          {me.shields > 0 && <Tile label="SHIELDS" value={<><Icon name="shield" size={18} style={{ marginRight: 4 }} />{me.shields}</>} accent="#60a5fa" />}
+          <Tile label="CREDITS" value={me.credits.toLocaleString()} accent="#f59e0b" />
+          {me.shields > 0 && <Tile label="SHIELDS" value={<><Icon name="shield" size={18} style={{ marginRight: 4 }} />{me.shields}</>} accent="#f59e0b" />}
         </div>
       </div>
     </div>
@@ -88,7 +88,8 @@ function Tile({ label, value, accent, sub }: { label: string; value: React.React
     <div style={{
       padding: "10px 16px", borderRadius: 12,
       background: "rgba(255,255,255,0.05)",
-      border: "1px solid rgba(255,255,255,0.08)",
+      border: "2px solid #1a1a22",
+      boxShadow: "0 3px 0 rgba(0,0,0,0.25)",
       minWidth: 88,
     }}>
       <div style={{ fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "rgba(255,255,255,0.5)" }}>

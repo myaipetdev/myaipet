@@ -1,14 +1,17 @@
 "use client";
 
 /**
- * PetCard — premium PORTRAIT trading card rendered in crisp CSS (not the
- * landscape OG PNG, which is for X-unfurl/download only). Element-themed frame,
- * rarity glow, and a holographic sheen for Epic/Legendary. Pass `card` directly,
- * or a `petId` to self-fetch /api/card/[petId].
+ * PetCard — a portrait trading card in the "Printed Stock" system: a die-cut
+ * sticker (thick ink keyline + cream/foil margin + ONE hard offset shadow) that
+ * peels on hover and presses on tap. Rarity is carried entirely by a hand-
+ * stamped WAX SEAL — never glow. Element colour is demoted to a left rule on
+ * the header + the footer wordmark. Pass `card` directly, or a `petId` to
+ * self-fetch /api/card/[petId].
  */
 
 import { useEffect, useState } from "react";
-import { elementTheme, rarityColor, rarityFx, rarityTier } from "@/lib/tcg/theme";
+import { elementTheme, rarityTier } from "@/lib/tcg/theme";
+import { WaxSeal, rarityStock, dcVars, INK, CREAM } from "@/components/Sticker";
 import type { CardData } from "@/lib/tcg/card";
 
 export default function PetCard({ card: cardProp, petId, maxWidth = 320 }: { card?: CardData; petId?: number; maxWidth?: number }) {
@@ -27,113 +30,92 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320 }: { car
   }, [petId, cardProp]);
 
   if (loading) {
-    return <div style={{ width: "100%", maxWidth, aspectRatio: "5 / 7", borderRadius: 18, background: "linear-gradient(135deg,#1a1a22,#2a2a35)", margin: "0 auto" }} />;
+    return <div style={{ width: "100%", maxWidth, aspectRatio: "5 / 7", borderRadius: 18, background: "#fff", border: `2.5px solid ${INK}`, margin: "0 auto", boxShadow: "0 8px 0 rgba(26,26,34,0.10)" }} />;
   }
   if (!card) return null;
 
   const t = elementTheme(card.element);
-  const rc = rarityColor(card.rarity);
-  const fx = rarityFx(rarityTier(card.rarity), rc);
-  const SPARKS = [
-    { top: "11%", left: "16%", d: "0s" }, { top: "20%", right: "13%", d: ".7s" },
-    { top: "44%", left: "7%", d: "1.3s" }, { bottom: "30%", right: "9%", d: ".4s" },
-    { bottom: "15%", left: "22%", d: "1.6s" }, { top: "63%", right: "20%", d: "1s" },
-  ];
+  const tier = rarityTier(card.rarity);
+  const stock = rarityStock(tier);
+  const hairline = stock.marginHairline ? "inset 0 0 0 1.5px rgba(26,26,34,0.18)" : "";
 
   return (
-    <div style={{ position: "relative", width: "100%", maxWidth, margin: "0 auto" }}>
-      <style>{`
-        @keyframes tcgHolo{0%{transform:translateX(-130%) rotate(8deg)}100%{transform:translateX(240%) rotate(8deg)}}
-        @keyframes tcgSpin{to{transform:rotate(360deg)}}
-        @keyframes tcgPulse{0%,100%{opacity:.3}50%{opacity:.7}}
-        @keyframes tcgTwinkle{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1)}}
-      `}</style>
-
-      {/* Pulsing/static aura glow (Uncommon+) — outside the clipped frame */}
-      {fx.glow > 0 && (
-        <div aria-hidden style={{ position: "absolute", inset: -4, borderRadius: 24, background: rc, filter: `blur(${Math.round(fx.glow * 0.7)}px)`, opacity: fx.glowPulse ? undefined : 0.4, animation: fx.glowPulse ? "tcgPulse 2.6s ease-in-out infinite" : "none", zIndex: 0 }} />
-      )}
-
-      {/* Frame — animated gradient border (Epic/Legendary) via a spinning conic
-          ring behind a padded card; solid border otherwise. */}
-      <div style={{ position: "relative", zIndex: 1, borderRadius: 18, overflow: "hidden", padding: fx.animatedBorder ? fx.borderWidth : 0, boxShadow: "0 14px 40px rgba(0,0,0,0.4)" }}>
-        {fx.animatedBorder && (
-          <div aria-hidden style={{ position: "absolute", inset: "-60%", background: fx.ringGradient, animation: `tcgSpin ${fx.tier === 4 ? 5 : 7}s linear infinite`, zIndex: 0 }} />
-        )}
-
-      <div style={{
-        position: "relative", zIndex: 1, display: "flex", flexDirection: "column", overflow: "hidden",
-        borderRadius: fx.animatedBorder ? 14 : 16, border: fx.animatedBorder ? "none" : `${fx.borderWidth}px solid ${rc}`, background: "#0f0f14",
-        boxShadow: fx.innerRing ? "inset 0 0 0 1.5px rgba(255,255,255,0.22)" : "none",
+    <div className="mp-enter" style={{ width: "100%", maxWidth, margin: "0 auto" }}>
+      {/* The die-cut sticker: keyline + margin + hard offset shadow + peel/press */}
+      <div className="dc" style={{
+        position: "relative", borderRadius: 18, padding: 11,
+        border: `${stock.keyline}px solid ${stock.keylineColor}`,
+        background: stock.marginStock,
+        ...dcVars(stock.shadowAlpha, false, hairline),
       }}>
-        {/* Holographic sheen (Rare+) */}
-        {fx.holo && (
-          <div style={{ position: "absolute", inset: 0, zIndex: 3, pointerEvents: "none", overflow: "hidden", borderRadius: 14 }}>
-            <div style={{ position: "absolute", top: 0, bottom: 0, width: "42%", background: `linear-gradient(115deg, transparent, rgba(255,255,255,${fx.holoOpacity}), transparent)`, mixBlendMode: "overlay", animation: "tcgHolo 4.5s ease-in-out infinite" }} />
-          </div>
+        {/* Rare+ dashed ink stitch inside the margin */}
+        {stock.stitch && (
+          <div aria-hidden style={{ position: "absolute", inset: 5, borderRadius: 14, border: "1px dashed rgba(26,26,34,0.5)", pointerEvents: "none" }} />
         )}
-        {/* Sparkles (Legendary) */}
-        {fx.sparkles && SPARKS.map((s, i) => (
-          <div key={i} aria-hidden style={{ position: "absolute", zIndex: 4, width: 7, height: 7, pointerEvents: "none",
-            top: (s as any).top, bottom: (s as any).bottom, left: (s as any).left, right: (s as any).right,
-            background: "radial-gradient(circle, #fff, rgba(255,255,255,0) 70%)", animation: `tcgTwinkle 1.8s ease-in-out ${s.d} infinite` }} />
-        ))}
 
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: t.color }}>
-          <span style={{ fontSize: 19, fontWeight: 800, color: "#fff", fontFamily: "'Space Grotesk',sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{card.name}</span>
-          <span style={{ fontSize: 14, fontWeight: 800, color: "#fff", flexShrink: 0, marginLeft: 8 }}>Lv {card.level}</span>
-        </div>
+        {/* Wax seal — the sole rarity carrier, stamped onto the margin */}
+        <WaxSeal seal={stock.seal} size={34} title={`${card.rarity} rarity`} style={{ position: "absolute", top: 3, right: 3, zIndex: 5 }} />
 
-        {/* Art */}
-        <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", background: `linear-gradient(135deg, ${t.grad[0]}, ${t.grad[1]})` }}>
-          {card.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={card.avatarUrl} alt={card.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-          ) : (
-            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, fontWeight: 800, color: "rgba(255,255,255,0.9)" }}>{card.speciesName}</div>
-          )}
-          {/* element badge */}
-          <div style={{ position: "absolute", top: 8, left: 8, padding: "3px 10px", borderRadius: 999, background: t.color, color: "#fff", fontSize: 11, fontWeight: 800, boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>{t.label}</div>
-          {/* rarity */}
-          <div style={{ position: "absolute", top: 8, right: 8, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
-            <div style={{ padding: "3px 10px", borderRadius: 999, background: rc, color: "#1a1a22", fontSize: 11, fontWeight: 900, letterSpacing: 0.5, boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>{card.rarity.toUpperCase()}</div>
-            {card.topPercent != null && <div style={{ fontSize: 10, fontWeight: 700, color: "#fff", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>TOP {card.topPercent}%</div>}
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div style={{ display: "flex", gap: 6, padding: "10px 12px 4px" }}>
-          {([["ATK", card.atk], ["DEF", card.def], ["SPD", card.spd]] as const).map(([lab, val]) => (
-            <div key={lab} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", background: "#1a1a22", borderRadius: 9, padding: "7px 2px" }}>
-              <span style={{ fontSize: 19, fontWeight: 900, color: "#fff", fontFamily: "'Space Grotesk',sans-serif" }}>{val}</span>
-              <span style={{ fontSize: 9.5, color: "#8a8a93", letterSpacing: 1 }}>{lab}</span>
+        {/* Inner block — printed on the sticker */}
+        <div style={{ position: "relative", display: "flex", flexDirection: "column", overflow: "hidden", borderRadius: 12, border: `2px solid ${INK}`, background: CREAM }}>
+          {/* Header — element left-rule, name, level */}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, padding: "10px 12px", borderLeft: `3px solid ${t.color}` }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: INK, fontFamily: "'Space Grotesk',sans-serif", letterSpacing: "-0.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.1 }}>{card.name}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: t.color, fontFamily: "'JetBrains Mono',monospace", letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 2 }}>{t.label}</div>
             </div>
-          ))}
-        </div>
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#b45309", fontFamily: "'JetBrains Mono',monospace" }}>Lv {card.level}</div>
+              {card.topPercent != null && <div style={{ fontSize: 9.5, fontWeight: 700, color: "rgba(26,26,46,0.5)", fontFamily: "'JetBrains Mono',monospace", marginTop: 2 }}>TOP {card.topPercent}%</div>}
+            </div>
+          </div>
 
-        {/* Sub-stats */}
-        <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 16px", fontSize: 11, color: "#b8b8c0", fontFamily: "'JetBrains Mono',monospace" }}>
-          <span>PWR {card.power}</span>
-          <span>BOND {card.bondLevel}</span>
-          <span>STREAK {card.careStreak}d</span>
-        </div>
+          {/* Art — square image with an ink hairline separator below */}
+          <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", background: "#fff", borderTop: `2px solid ${INK}`, borderBottom: `2px solid ${INK}` }}>
+            {card.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={card.avatarUrl} alt={card.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            ) : (
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, fontWeight: 800, color: "rgba(26,26,46,0.35)", fontFamily: "'Space Grotesk',sans-serif" }}>{card.speciesName}</div>
+            )}
+          </div>
 
-        {/* Moves */}
-        {card.moves.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, padding: "2px 14px 6px" }}>
-            {card.moves.map((m, i) => (
-              <span key={i} style={{ fontSize: 11, color: "#e8e8ee", background: "#222230", borderRadius: 6, padding: "3px 9px" }}>{m}</span>
+          {/* Stats — three printed tiles */}
+          <div style={{ display: "flex", gap: 6, padding: "10px 12px 4px" }}>
+            {([["ATK", card.atk], ["DEF", card.def], ["SPD", card.spd]] as const).map(([lab, val]) => (
+              <div key={lab} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", background: "#fff", borderRadius: 9, border: `2px solid ${INK}`, padding: "6px 2px", boxShadow: "0 3px 0 rgba(26,26,34,0.14)" }}>
+                <span style={{ fontSize: 18, fontWeight: 800, color: INK, fontFamily: "'Space Grotesk',sans-serif", lineHeight: 1 }}>{val}</span>
+                <span style={{ fontSize: 9, color: "rgba(26,26,46,0.5)", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, marginTop: 3 }}>{lab}</span>
+              </div>
             ))}
           </div>
-        )}
 
-        {/* Footer */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto", padding: "8px 14px", background: "#000" }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: t.color, fontFamily: "'Space Grotesk',sans-serif" }}>MY AI PET</span>
-          <span style={{ fontSize: 10.5, color: "#8a8a93" }}>{card.evolutionName || card.speciesName} · {card.personality}</span>
+          {/* Sub-stats */}
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 14px", fontSize: 10.5, color: "rgba(26,26,46,0.55)", fontFamily: "'JetBrains Mono',monospace" }}>
+            <span>PWR {card.power}</span>
+            <span>BOND {card.bondLevel}</span>
+            <span>STREAK {card.careStreak}d</span>
+          </div>
+
+          {/* Moves */}
+          {card.moves.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, padding: "2px 12px 8px" }}>
+              {card.moves.map((m, i) => (
+                <span key={i} style={{ fontSize: 10.5, fontWeight: 700, color: INK, background: "#fff", borderRadius: 7, border: `2px solid ${INK}`, padding: "2px 8px", fontFamily: "'Space Grotesk',sans-serif" }}>{m}</span>
+              ))}
+            </div>
+          )}
+
+          {/* Footer — wordmark in element colour, edition line for Legendary */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: "auto", padding: "8px 12px", borderTop: `2px solid ${INK}`, background: "#fff" }}>
+            <span style={{ fontSize: 10.5, fontWeight: 800, color: t.color, fontFamily: "'Space Grotesk',sans-serif", letterSpacing: "0.01em" }}>MY AI PET</span>
+            {tier === 4 ? (
+              <span style={{ fontSize: 9.5, fontWeight: 700, color: "#b45309", fontFamily: "'JetBrains Mono',monospace" }}>№ {String(card.id).padStart(3, "0")} · SEASON 1</span>
+            ) : (
+              <span style={{ fontSize: 9.5, color: "rgba(26,26,46,0.5)", fontFamily: "'JetBrains Mono',monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "62%" }}>{card.evolutionName || card.speciesName} · {card.personality}</span>
+            )}
+          </div>
         </div>
-      </div>
       </div>
     </div>
   );

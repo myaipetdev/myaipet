@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
+import { INK } from "@/components/Sticker";
 
 interface PeriodicView {
   id: string;
@@ -71,7 +72,8 @@ function Block({ period, title, icon }: { period: PeriodicResponse; title: strin
   return (
     <div style={{
       background: "white", borderRadius: 16,
-      border: "1px solid rgba(0,0,0,0.06)",
+      border: `2px solid ${INK}`,
+      boxShadow: "0 6px 0 rgba(26,26,34,0.14)",
       padding: "18px 20px",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
@@ -102,21 +104,20 @@ function Block({ period, title, icon }: { period: PeriodicResponse; title: strin
                 }}>{m.title}</div>
                 <div style={{
                   fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-                  color: done ? "#16a34a" : "rgba(26,26,46,0.55)",
+                  color: done ? "#b45309" : "rgba(26,26,46,0.55)",
                   fontWeight: 800,
                 }}>
                   {done ? `✓ +${m.points}` : `${m.progress}/${m.target} · +${m.points}`}
                 </div>
               </div>
               <div style={{
-                height: 6, borderRadius: 6, background: "rgba(0,0,0,0.06)", overflow: "hidden",
+                height: 8, borderRadius: 6, background: "#fff",
+                border: `2px solid ${INK}`, overflow: "hidden",
               }}>
                 <div style={{
                   height: "100%", width: `${pct}%`,
-                  background: done
-                    ? "linear-gradient(90deg, #4ade80, #16a34a)"
-                    : "linear-gradient(90deg, #fbbf24, #f59e0b)",
-                  borderRadius: 6, transition: "width 280ms ease",
+                  background: "#f59e0b",
+                  transition: "width 280ms ease",
                 }} />
               </div>
             </div>

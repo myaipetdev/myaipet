@@ -96,11 +96,9 @@ export default function SeasonRewardsHub({ banner }: { banner?: React.ReactNode 
                   display: "flex", alignItems: "center", gap: 11,
                   padding: "13px 16px", borderRadius: 14, cursor: "pointer",
                   textAlign: "left",
-                  background: sel
-                    ? "linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%)"
-                    : "white",
-                  border: sel ? "1px solid transparent" : "1px solid rgba(0,0,0,0.07)",
-                  boxShadow: sel ? "0 6px 20px rgba(245,158,11,0.24)" : "0 1px 0 rgba(0,0,0,0.03)",
+                  background: sel ? "#f59e0b" : "white",
+                  border: "2px solid #1a1a22",
+                  boxShadow: sel ? "0 3px 0 rgba(26,26,34,0.2)" : "0 3px 0 rgba(26,26,34,0.12)",
                   transition: "background 0.15s, box-shadow 0.15s",
                 }}
               >
@@ -111,13 +109,13 @@ export default function SeasonRewardsHub({ banner }: { banner?: React.ReactNode 
                   <span style={{
                     display: "block",
                     fontFamily: "'Space Grotesk', sans-serif", fontWeight: 800, fontSize: 15,
-                    color: sel ? "#fff" : "#1a1a2e", letterSpacing: "-0.01em",
+                    color: "#1a1a2e", letterSpacing: "-0.01em",
                   }}>
                     {t.title}
                   </span>
                   <span style={{
                     display: "block", fontSize: 11, marginTop: 1,
-                    color: sel ? "rgba(255,255,255,0.8)" : "rgba(26,26,46,0.5)",
+                    color: sel ? "rgba(26,26,46,0.7)" : "rgba(26,26,46,0.5)",
                     fontFamily: "'Space Grotesk', sans-serif",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>

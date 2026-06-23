@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 
 import Nav from "@/components/Nav";
+import Icon from "@/components/Icon";
 import Hero from "@/components/Hero";
 import Stats from "@/components/Stats";
 import Feed from "@/components/Feed";
@@ -54,7 +55,8 @@ function Loader() {
     <div style={{ paddingTop: 120, textAlign: "center" }}>
       <img src="/mascot.jpg" alt="" style={{
         width: 64, height: 64, borderRadius: "50%", objectFit: "cover",
-        boxShadow: "0 6px 20px rgba(0,0,0,0.10)",
+        border: "2px solid #1a1a22",
+        boxShadow: "0 3px 0 rgba(26,26,34,0.16)",
         animation: "loaderFloat 2.4s ease-in-out infinite",
       }} />
       <div style={{ marginTop: 14, color: "rgba(26,26,46,0.4)", fontFamily: "mono", fontSize: 12 }}>
@@ -97,11 +99,17 @@ function CheckinCard({ isAuthenticated }: { isAuthenticated: boolean }) {
     <div style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
       <div style={{
         borderRadius: 14, padding: "14px 20px", marginBottom: 8,
-        background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.06)",
+        background: "#fbf6ec", border: "2px solid #1a1a22",
+        boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
         display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          <span style={{ fontSize: 18 }}>📅</span>
+          <span style={{
+            width: 26, height: 26, borderRadius: 7, flexShrink: 0,
+            background: "#f59e0b", border: "2px solid #1a1a22",
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, fontSize: 11, color: "#1a1a22",
+          }}>1</span>
           <div>
             <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: "#1a1a2e" }}>
               Daily Check-in
@@ -121,14 +129,15 @@ function CheckinCard({ isAuthenticated }: { isAuthenticated: boolean }) {
             return (
               <div key={day} style={{
                 padding: "4px 8px", borderRadius: 8, textAlign: "center",
-                background: done ? "rgba(245,158,11,0.12)" : isToday ? "rgba(245,158,11,0.06)" : "rgba(0,0,0,0.03)",
-                border: `1px solid ${done ? "rgba(245,158,11,0.3)" : isToday ? "rgba(245,158,11,0.2)" : "rgba(0,0,0,0.05)"}`,
+                background: done ? "#f59e0b" : "#fff",
+                border: "2px solid #1a1a22",
+                boxShadow: isToday ? "0 3px 0 rgba(26,26,34,0.16)" : "none",
                 minWidth: 36,
               }}>
-                <div style={{ fontFamily: "monospace", fontSize: 9, color: done ? "#b45309" : isToday ? "#d97706" : "rgba(26,26,46,0.3)", fontWeight: 700 }}>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: done ? "#1a1a22" : isToday ? "#b45309" : "rgba(26,26,46,0.45)", fontWeight: 700 }}>
                   {done ? "✓" : `D${day}`}
                 </div>
-                <div style={{ fontFamily: "monospace", fontSize: 8, color: done ? "#d97706" : "rgba(26,26,46,0.25)" }}>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8, color: done ? "#1a1a22" : "rgba(26,26,46,0.45)" }}>
                   +{r}
                 </div>
               </div>
@@ -136,17 +145,19 @@ function CheckinCard({ isAuthenticated }: { isAuthenticated: boolean }) {
           })}
         </div>
 
-        {msg && <span style={{ fontFamily: "monospace", fontSize: 11, color: "#16a34a" }}>{msg}</span>}
+        {msg && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#b45309", fontWeight: 700 }}>{msg}</span>}
 
         {isAuthenticated ? (
           <button
             onClick={doCheckin}
             disabled={checkedIn || loading}
             style={{
-              padding: "8px 18px", borderRadius: 10, border: "none", flexShrink: 0,
-              background: checkedIn ? "rgba(0,0,0,0.05)" : "linear-gradient(135deg,#f59e0b,#d97706)",
-              color: checkedIn ? "rgba(26,26,46,0.35)" : "#fff",
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 700,
+              padding: "8px 18px", borderRadius: 10, flexShrink: 0,
+              background: checkedIn ? "#fff" : "#f59e0b",
+              color: checkedIn ? "rgba(26,26,46,0.45)" : "#1a1a22",
+              border: "2px solid #1a1a22",
+              boxShadow: checkedIn ? "none" : "0 3px 0 rgba(26,26,34,0.2)",
+              fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 800,
               cursor: checkedIn ? "default" : "pointer",
             }}
           >
@@ -189,48 +200,41 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
 
   return (
     <div className="mp-enter" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
+      {/* A flat amber ticket-stub sticker: ink keyline, hard offset shadow,
+          one perforated tear edge. No gradient, no glow, no shimmer. */}
       <div
-        className="mp-lift"
         style={{
-          background: "linear-gradient(135deg, #f59e0b 0%, #d97706 40%, #b45309 100%)",
+          background: "#f59e0b",
           borderRadius: 16,
-          padding: "16px 26px",
+          padding: "14px 22px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "wrap",
-          gap: 12,
+          gap: 14,
           marginBottom: 8,
-          boxShadow: "0 4px 24px rgba(245,158,11,0.22), inset 0 1px 0 rgba(255,255,255,0.20)",
+          border: "3px solid #1a1a22",
+          boxShadow: "0 4px 0 rgba(26,26,34,0.25)",
           position: "relative",
-          overflow: "hidden",
           cursor: "default",
         }}
       >
-        {/* Decorative shimmer */}
-        <div style={{
-          position: "absolute", inset: 0, opacity: 0.07,
-          background: "linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.6) 50%, transparent 70%)",
-          pointerEvents: "none",
-        }} />
-
-        {/* Left: title + prize */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, zIndex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 28, lineHeight: 1 }}>🏆</span>
+        {/* Left: title + standing — with a perforated tear line after it */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, paddingRight: 16, borderRight: "2px dashed rgba(26,26,34,0.4)" }}>
+          <Icon name="trophy" size={26} />
           <div style={{ minWidth: 0 }}>
             <div style={{
               fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 17,
-              color: "#fff", letterSpacing: "-0.02em", whiteSpace: "nowrap",
+              color: "#1a1a22", letterSpacing: "-0.02em", whiteSpace: "nowrap",
             }}>
               Season 1 Rewards
             </div>
             <div style={{
-              fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.85)",
+              fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "rgba(26,26,34,0.7)",
               marginTop: 2, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 5,
             }}>
-              <span style={{ fontSize: 13 }}>{tier.emoji}</span>
-              <span style={{ fontWeight: 700, color: "#fff" }}>{tier.name}</span>
-              <span style={{ opacity: 0.8 }}>{next ? `· ${toNext.toLocaleString()} to ${next.name}` : "· max tier"}</span>
+              <span style={{ fontWeight: 700, color: "#1a1a22" }}>{tier.name}</span>
+              <span>{next ? `· ${toNext.toLocaleString()} to ${next.name}` : "· max tier"}</span>
             </div>
           </div>
         </div>
@@ -238,16 +242,16 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
         {/* Center: countdown (or a season-over badge once it ends) */}
         {seasonOver ? (
           <div style={{
-            display: "flex", alignItems: "center", gap: 8, zIndex: 1,
-            fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 14, color: "#fff",
+            display: "flex", alignItems: "center", gap: 8,
+            fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 14, color: "#1a1a22",
           }}>
-            🏁 Season 1 wrapped · <span style={{ opacity: 0.85, fontWeight: 700 }}>Season 2 soon</span>
+            Season 1 wrapped · <span style={{ opacity: 0.7, fontWeight: 700 }}>Season 2 soon</span>
           </div>
         ) : (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, zIndex: 1 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
           {notStarted && (
-            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 11, color: "#fff", whiteSpace: "nowrap" }}>
-              🚀 Starts Jul 1 — get ready
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 10.5, color: "#1a1a22", whiteSpace: "nowrap", letterSpacing: "0.04em" }}>
+              STARTS JUL 1 — GET READY
             </div>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -259,13 +263,13 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
           ].map((t, i) => (
             <div key={i} style={{ textAlign: "center" }}>
               <div style={{
-                fontFamily: "monospace", fontWeight: 700, fontSize: 18, color: "#fff",
-                lineHeight: 1, minWidth: 28,
-                background: "rgba(0,0,0,0.15)", borderRadius: 6, padding: "4px 5px",
+                fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, fontSize: 18, color: "#1a1a22",
+                lineHeight: 1, minWidth: 30,
+                background: "#fff", borderRadius: 6, border: "2px solid #1a1a22", padding: "4px 5px",
               }}>
                 {t.val}
               </div>
-              <div style={{ fontFamily: "monospace", fontSize: 8, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8, color: "rgba(26,26,34,0.6)", marginTop: 3 }}>
                 {t.label}
               </div>
             </div>
@@ -275,26 +279,23 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
         )}
 
         {/* Right: points + progress */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, zIndex: 1, minWidth: 120 }}>
-          <div style={{
-            fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.8)",
-            whiteSpace: "nowrap",
-          }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, minWidth: 120 }}>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "rgba(26,26,34,0.7)", whiteSpace: "nowrap" }}>
             {seasonPoints > 0
-              ? <><span style={{ fontWeight: 700, color: "#fff" }}>{seasonPoints.toLocaleString()}</span> pts</>
-              : <>Your Points: <span style={{ fontWeight: 700, color: "#fff" }}>0</span></>
+              ? <><span style={{ fontWeight: 800, color: "#1a1a22" }}>{seasonPoints.toLocaleString()}</span> pts</>
+              : <>Your Points: <span style={{ fontWeight: 800, color: "#1a1a22" }}>0</span></>
             }
           </div>
-          <div style={{ width: "100%", height: 5, background: "rgba(0,0,0,0.18)", borderRadius: 3, overflow: "hidden" }}>
+          <div style={{ width: "100%", height: 8, background: "#fff", borderRadius: 999, border: "2px solid #1a1a22", overflow: "hidden" }}>
             <div style={{
-              height: "100%", borderRadius: 3,
-              background: "linear-gradient(90deg, #fde68a, #fff)",
+              height: "100%",
+              background: "#1a1a22",
               width: `${(tierProgress * 100).toFixed(1)}%`,
               transition: "width 0.6s ease",
             }} />
           </div>
-          <div style={{ fontFamily: "monospace", fontSize: 8, color: "rgba(255,255,255,0.5)" }}>
-            {next ? `${toNext.toLocaleString()} pts to ${next.name}` : "👑 Top tier reached"}
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8, color: "rgba(26,26,34,0.6)" }}>
+            {next ? `${toNext.toLocaleString()} pts to ${next.name}` : "Top tier reached"}
           </div>
         </div>
       </div>
@@ -580,9 +581,9 @@ export default function App() {
           </span>
           <span style={{
             fontSize: 11, padding: "4px 12px", borderRadius: 999,
-            background: "linear-gradient(135deg, rgba(251,191,36,0.18), rgba(139,92,246,0.12))",
-            color: "#b45309", fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
-            border: "1px solid rgba(251,191,36,0.3)",
+            background: "#f59e0b",
+            color: "#1a1a22", fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800,
+            border: "2px solid #1a1a22",
             letterSpacing: "0.04em",
           }}>
             CompanionFi
@@ -600,13 +601,14 @@ export default function App() {
           <a href="https://x.com/myaipets" target="_blank" rel="noopener noreferrer" style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "12px 22px", borderRadius: 12,
-            background: "#1a1a2e", color: "#fff",
-            fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700,
-            textDecoration: "none", transition: "all 0.2s",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+            background: "#1f1b16", color: "#fff",
+            border: "2px solid #1a1a22",
+            fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 800,
+            textDecoration: "none", transition: "transform 0.15s, box-shadow 0.15s",
+            boxShadow: "0 3px 0 rgba(0,0,0,0.25)",
           }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,0.18)"; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.12)"; }}
+            onMouseOver={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 5px 0 rgba(0,0,0,0.25)"; }}
+            onMouseOut={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 3px 0 rgba(0,0,0,0.25)"; }}
           >
             <span style={{ fontSize: 18, fontWeight: 900 }}>𝕏</span>
             Twitter
@@ -630,13 +632,14 @@ export default function App() {
           <a href="/petclaw-extension.zip" download="myaipet-extension.zip" style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "12px 22px", borderRadius: 12,
-            background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "white",
-            fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700,
-            textDecoration: "none", transition: "all 0.2s",
-            boxShadow: "0 2px 8px rgba(245,158,11,0.3)",
+            background: "#f59e0b", color: "#1a1a22",
+            border: "2px solid #1a1a22",
+            fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 800,
+            textDecoration: "none", transition: "transform 0.15s, box-shadow 0.15s",
+            boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
           }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(245,158,11,0.4)"; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 2px 8px rgba(245,158,11,0.3)"; }}
+            onMouseOver={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 5px 0 rgba(26,26,34,0.2)"; }}
+            onMouseOut={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 3px 0 rgba(26,26,34,0.2)"; }}
           >
             <span>⬇</span>
             Chrome Extension

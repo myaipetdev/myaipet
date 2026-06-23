@@ -29,8 +29,8 @@ export default function PremiumTeaser() {
       <div style={{
         background: "white",
         color: "#1a1a2e", borderRadius: 18, padding: "24px 26px",
-        border: "1px solid rgba(0,0,0,0.06)",
-        boxShadow: "0 2px 14px rgba(15,23,42,0.04)",
+        border: "3px solid #1a1a22",
+        boxShadow: "0 6px 0 rgba(26,26,34,0.14)",
       }}>
         <div style={{
           fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
@@ -85,9 +85,9 @@ function Tier({
   return (
     <div className="mp-lift" style={{
       padding: 18, borderRadius: 14,
-      background: highlight ? "rgba(245,158,11,0.08)" : "rgba(0,0,0,0.025)",
-      border: highlight ? "1px solid rgba(245,158,11,0.35)" : "1px solid rgba(0,0,0,0.06)",
-      boxShadow: highlight ? "0 6px 24px rgba(245,158,11,0.10)" : "none",
+      background: highlight ? "#fbf6ec" : "#faf7f2",
+      border: "2px solid #1a1a22",
+      boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
       cursor: disabled ? "default" : "pointer",
     }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
@@ -95,7 +95,7 @@ function Tier({
         {current && (
           <span style={{
             padding: "2px 7px", borderRadius: 999,
-            background: "rgba(22,163,74,0.12)", color: "#16a34a",
+            background: "#f59e0b", color: "#1a1a22", border: "2px solid #1a1a22",
             fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em",
           }}>CURRENT</span>
         )}
@@ -108,7 +108,7 @@ function Tier({
         {features.map((f, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "rgba(26,26,46,0.7)" }}>
             <svg width={13} height={13} viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-              <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="#16a34a" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="#d97706" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             {f}
           </div>
@@ -116,9 +116,10 @@ function Tier({
       </div>
       <button disabled={disabled} style={{
         width: "100%", padding: "10px", borderRadius: 10,
-        border: highlight ? "none" : "1px solid rgba(0,0,0,0.08)",
-        background: highlight ? "linear-gradient(135deg,#fbbf24,#f59e0b)" : "white",
-        color: highlight ? "white" : "rgba(26,26,46,0.6)", fontWeight: 800, fontSize: 12,
+        border: highlight ? "2px solid #1a1a22" : "2px solid #1a1a22",
+        background: highlight ? "#f59e0b" : "white",
+        boxShadow: highlight ? "0 3px 0 rgba(26,26,34,0.2)" : "0 3px 0 rgba(26,26,34,0.12)",
+        color: highlight ? "#1a1a22" : "rgba(26,26,46,0.6)", fontWeight: 800, fontSize: 12,
         cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.75 : 1,
         fontFamily: "'Space Grotesk', sans-serif",
       }}>{cta}</button>

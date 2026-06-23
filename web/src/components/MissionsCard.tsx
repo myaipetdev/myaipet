@@ -184,15 +184,15 @@ export default function MissionsCard() {
   return (
     <div className="mp-enter mp-enter-1" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
-        background: "white", borderRadius: 18,
-        border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+        background: "#faf7f2", borderRadius: 18,
+        border: "3px solid #1a1a22", overflow: "hidden",
+        boxShadow: "0 8px 0 rgba(26,26,34,0.16)",
       }}>
         {/* Header */}
         <div style={{
           padding: "18px 24px", display: "flex", alignItems: "center", gap: 16,
-          borderBottom: "1px solid rgba(0,0,0,0.05)",
-          background: "linear-gradient(180deg, rgba(245,158,11,0.04) 0%, transparent 100%)",
+          borderBottom: "2px solid #1a1a22",
+          background: "#fbf6ec",
         }}>
           <div style={{ fontSize: 22 }}><Icon name="compass" size={22} /></div>
           <div style={{ flex: 1 }}>
@@ -209,9 +209,10 @@ export default function MissionsCard() {
             onClick={canBuyShield ? () => setShieldModal(true) : undefined} style={{
             display: "flex", alignItems: "center", gap: 6,
             padding: "8px 14px", borderRadius: 12,
-            background: "rgba(245,158,11,0.10)",
-            border: "1px solid rgba(245,158,11,0.25)",
-            color: "#b45309", fontWeight: 800, fontSize: 14,
+            background: "#f59e0b",
+            border: "2px solid #1a1a22",
+            boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
+            color: "#1a1a22", fontWeight: 800, fontSize: 14,
             fontFamily: "'JetBrains Mono', monospace",
             cursor: canBuyShield ? "pointer" : "default",
           }}>
@@ -228,10 +229,10 @@ export default function MissionsCard() {
         {today.streak.pending_apology && (
           <div style={{
             padding: "10px 24px",
-            background: "rgba(168,85,247,0.06)",
-            borderBottom: "1px solid rgba(168,85,247,0.20)",
+            background: "#fbf6ec",
+            borderBottom: "2px solid #1a1a22",
             display: "flex", alignItems: "center", gap: 10,
-            fontSize: 13, color: "#7e22ce",
+            fontSize: 13, color: "#1a1a22",
           }}>
             <span style={{ fontSize: 18 }}><Icon name="heart" size={18} /></span>
             <span style={{ flex: 1 }}>
@@ -241,8 +242,9 @@ export default function MissionsCard() {
             </span>
             <a href="/?section=my pet" style={{
               padding: "5px 12px", borderRadius: 8,
-              background: "white", border: "1px solid rgba(168,85,247,0.30)",
-              color: "#7e22ce", fontWeight: 700, fontSize: 12,
+              background: "white", border: "2px solid #1a1a22",
+              boxShadow: "0 3px 0 rgba(26,26,34,0.16)",
+              color: "#1a1a22", fontWeight: 700, fontSize: 12,
               textDecoration: "none", fontFamily: "'JetBrains Mono', monospace",
             }}>Open chat →</a>
           </div>
@@ -252,10 +254,10 @@ export default function MissionsCard() {
         {streak?.repair?.applicable && (
           <div style={{
             padding: "12px 24px",
-            background: "rgba(239,68,68,0.06)",
-            borderBottom: "1px solid rgba(239,68,68,0.20)",
+            background: "#fbf6ec",
+            borderBottom: "2px solid #1a1a22",
             display: "flex", alignItems: "center", gap: 10,
-            fontSize: 13, color: "#991b1b",
+            fontSize: 13, color: "#1a1a22",
           }}>
             <span style={{ fontSize: 18 }}><Icon name="fire" size={18} /></span>
             <span style={{ flex: 1 }}>
@@ -264,8 +266,9 @@ export default function MissionsCard() {
             </span>
             <button onClick={() => setRepairModal(true)} style={{
               padding: "6px 14px", borderRadius: 8,
-              background: "linear-gradient(135deg,#f87171,#dc2626)",
-              border: "none", color: "white", fontWeight: 800, fontSize: 12,
+              background: "#f59e0b",
+              border: "2px solid #1a1a22", boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
+              color: "#1a1a22", fontWeight: 800, fontSize: 12,
               cursor: "pointer",
             }}>Restore →</button>
           </div>
@@ -281,15 +284,16 @@ export default function MissionsCard() {
                 padding: "14px 24px",
                 display: "flex", alignItems: "center", gap: 14,
                 opacity: completed ? 0.62 : 1,
-                background: completed ? "rgba(22,163,74,0.04)" : "transparent",
+                background: completed ? "rgba(245,158,11,0.06)" : "transparent",
                 transition: "background 160ms ease",
               }}
-              onMouseEnter={e => { if (!completed) e.currentTarget.style.background = "rgba(245,158,11,0.04)"; }}
+              onMouseEnter={e => { if (!completed) e.currentTarget.style.background = "rgba(245,158,11,0.06)"; }}
               onMouseLeave={e => { if (!completed) e.currentTarget.style.background = "transparent"; }}>
                 <div style={{
                   width: 28, height: 28, borderRadius: 8,
-                  background: completed ? "#16a34a" : "rgba(0,0,0,0.05)",
-                  color: completed ? "white" : "rgba(26,26,46,0.4)",
+                  background: completed ? "#f59e0b" : "#fff",
+                  border: "2px solid #1a1a22",
+                  color: "#1a1a22",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 14, fontWeight: 800,
                 }}>
@@ -305,7 +309,7 @@ export default function MissionsCard() {
                   </div>
                 </div>
                 <div style={{
-                  fontSize: 13, fontWeight: 800, color: completed ? "#16a34a" : "#b45309",
+                  fontSize: 13, fontWeight: 800, color: completed ? "rgba(26,26,34,0.55)" : "#b45309",
                   fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap",
                 }}>
                   +{m.points} pts
@@ -326,8 +330,8 @@ export default function MissionsCard() {
         {/* Totals */}
         <div style={{
           padding: "16px 24px 18px",
-          borderTop: "1px solid rgba(0,0,0,0.05)",
-          background: "rgba(0,0,0,0.02)",
+          borderTop: "2px solid #1a1a22",
+          background: "#fbf6ec",
           display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap",
         }}>
           <div>
@@ -342,7 +346,7 @@ export default function MissionsCard() {
               {today.earnedToday}<span style={{ fontSize: 16, color: "rgba(26,26,46,0.45)", fontWeight: 600 }}>{" "}pts</span>
             </div>
           </div>
-          <div style={{ width: 1, alignSelf: "stretch", background: "rgba(0,0,0,0.08)" }} />
+          <div style={{ width: 2, alignSelf: "stretch", background: "rgba(26,26,34,0.45)" }} />
           <div>
             <div style={{
               fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
@@ -351,9 +355,8 @@ export default function MissionsCard() {
             <div style={{
               fontSize: 48, fontWeight: 800,
               fontFamily: "'JetBrains Mono', monospace",
-              color: today.remainingToday > 0 ? "#b45309" : "#16a34a",
+              color: today.remainingToday > 0 ? "#b45309" : "#1a1a22",
               lineHeight: 1, letterSpacing: "-0.03em", marginTop: 4,
-              textShadow: today.remainingToday > 0 ? "0 2px 24px rgba(245,158,11,0.20)" : "none",
             }}>
               {today.remainingToday}<span style={{ fontSize: 20, color: "rgba(26,26,46,0.45)", fontWeight: 600 }}>{" "}pts</span>
             </div>
@@ -362,9 +365,10 @@ export default function MissionsCard() {
           {!allComplete && (
             <div style={{
               padding: "8px 14px", borderRadius: 10,
-              background: "linear-gradient(135deg, rgba(168,85,247,0.10), rgba(139,92,246,0.06))",
-              border: "1px solid rgba(168,85,247,0.20)",
-              color: "#7e22ce",
+              background: "#fff",
+              border: "2px solid #1a1a22",
+              boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
+              color: "#1a1a22",
               fontSize: 12, fontWeight: 700,
             }}>
               <Icon name="diamond" size={14} /> Complete all {today.missions.length} → <strong>+{today.bonusAllComplete}</strong> bonus
@@ -373,9 +377,10 @@ export default function MissionsCard() {
           {allComplete && (
             <div style={{
               padding: "8px 14px", borderRadius: 10,
-              background: "rgba(22,163,74,0.10)",
-              border: "1px solid rgba(22,163,74,0.25)",
-              color: "#15803d",
+              background: "#f59e0b",
+              border: "2px solid #1a1a22",
+              boxShadow: "0 3px 0 rgba(26,26,34,0.16)",
+              color: "#1a1a22",
               fontSize: 13, fontWeight: 800,
             }}>
               ✓ All done — see you tomorrow
@@ -470,8 +475,9 @@ function UnauthTeaser() {
   return (
     <div style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
-        background: "white", borderRadius: 18,
-        border: "1px solid rgba(0,0,0,0.06)", padding: "26px 28px",
+        background: "#faf7f2", borderRadius: 18,
+        border: "3px solid #1a1a22", padding: "26px 28px",
+        boxShadow: "0 8px 0 rgba(26,26,34,0.16)",
         display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap",
       }}>
         <div style={{ fontSize: 36 }}><Icon name="compass" size={36} /></div>
@@ -496,10 +502,11 @@ function UnauthTeaser() {
               window.location.reload();
             } catch { /* state already shows error */ }
           }} disabled={isAuthenticating} style={{
-            padding: "14px 24px", borderRadius: 12, border: "none",
-            background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
-            color: "white", fontWeight: 800, fontSize: 16, cursor: "pointer",
-            boxShadow: "0 4px 14px rgba(245,158,11,0.30)",
+            padding: "14px 24px", borderRadius: 12,
+            border: "3px solid #1a1a22",
+            background: "#f59e0b",
+            color: "#1a1a22", fontWeight: 800, fontSize: 16, cursor: "pointer",
+            boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
             fontFamily: "'Space Grotesk', sans-serif",
             opacity: isAuthenticating ? 0.6 : 1,
           }}>{isAuthenticating ? "Signing…" : "Sign in →"}</button>
@@ -515,8 +522,9 @@ function Skeleton() {
   return (
     <div className="mp-enter" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
-        background: "white", borderRadius: 18, padding: "22px 24px",
-        border: "1px solid rgba(0,0,0,0.06)",
+        background: "#faf7f2", borderRadius: 18, padding: "22px 24px",
+        border: "3px solid #1a1a22",
+        boxShadow: "0 8px 0 rgba(26,26,34,0.16)",
         display: "flex", flexDirection: "column", gap: 14,
       }}>
         {/* Header */}
@@ -552,9 +560,10 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
       padding: 20,
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: "white", borderRadius: 18,
+        background: "#faf7f2", borderRadius: 18,
+        border: "3px solid #1a1a22",
         maxWidth: 480, width: "100%",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.30)",
+        boxShadow: "0 8px 0 rgba(26,26,34,0.16)",
       }}>{children}</div>
     </div>
   );
@@ -564,23 +573,26 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
 const shieldBtn: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 4,
   padding: "8px 12px", borderRadius: 10,
-  background: "white", border: "1px solid rgba(0,0,0,0.10)",
+  background: "white", border: "2px solid #1a1a22",
+  boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
   color: "#1a1a2e", fontWeight: 800, fontSize: 13,
   fontFamily: "'JetBrains Mono', monospace", cursor: "pointer",
 };
 const ctaBtnPrimary: React.CSSProperties = {
   display: "inline-block",
   padding: "8px 14px", borderRadius: 10,
-  background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
-  color: "white", fontWeight: 700, fontSize: 12,
+  background: "#f59e0b",
+  color: "#1a1a22", fontWeight: 700, fontSize: 12,
   textDecoration: "none",
   fontFamily: "'Space Grotesk', sans-serif",
-  boxShadow: "0 2px 8px rgba(245,158,11,0.25)",
+  border: "2px solid #1a1a22",
+  boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
   whiteSpace: "nowrap",
 };
 const ctaBtnGhost: React.CSSProperties = {
   padding: "8px 14px", borderRadius: 10,
-  background: "white", border: "1px solid rgba(0,0,0,0.10)",
+  background: "white", border: "2px solid #1a1a22",
+  boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
   color: "#1a1a2e", fontWeight: 700, fontSize: 12,
   cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif",
   whiteSpace: "nowrap",
@@ -588,15 +600,16 @@ const ctaBtnGhost: React.CSSProperties = {
 const priceBlock: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 16,
   padding: "16px 18px", borderRadius: 12,
-  background: "rgba(0,0,0,0.03)",
-  border: "1px solid rgba(0,0,0,0.06)",
+  background: "#fff",
+  border: "2px solid #1a1a22",
+  boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
 };
 const purchaseBtn: React.CSSProperties = {
   flex: 1, padding: "14px 18px", borderRadius: 12,
-  background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
-  border: "none", color: "white", fontWeight: 800, fontSize: 14,
+  background: "#f59e0b",
+  border: "3px solid #1a1a22", color: "#1a1a22", fontWeight: 800, fontSize: 14,
   cursor: "pointer",
-  boxShadow: "0 4px 14px rgba(245,158,11,0.30)",
+  boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
   fontFamily: "'Space Grotesk', sans-serif",
 };
 const mini: React.CSSProperties = {

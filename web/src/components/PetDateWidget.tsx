@@ -24,11 +24,11 @@ interface DateResult {
   friendship: number;
 }
 
-const VIBE_STYLE: Record<string, { bg: string; fg: string; emoji: string }> = {
-  playful:  { bg: "rgba(245,158,11,0.10)", fg: "#b45309", emoji: "🎉" },
-  deep:     { bg: "rgba(59,130,246,0.10)", fg: "#1e3a8a", emoji: "💭" },
-  rivalry:  { bg: "rgba(239,68,68,0.10)",  fg: "#991b1b", emoji: "⚔️" },
-  shy:      { bg: "rgba(168,85,247,0.10)", fg: "#7e22ce", emoji: "🥺" },
+const VIBE_STYLE: Record<string, { bg: string; fg: string }> = {
+  playful:  { bg: "rgba(245,158,11,0.12)", fg: "#b45309" },
+  deep:     { bg: "rgba(245,158,11,0.08)", fg: "#1a1a22" },
+  rivalry:  { bg: "rgba(245,158,11,0.16)", fg: "#b45309" },
+  shy:      { bg: "rgba(26,26,34,0.06)",   fg: "#1a1a22" },
 };
 
 export default function PetDateWidget() {
@@ -78,11 +78,12 @@ export default function PetDateWidget() {
   return (
     <div className="mp-enter mp-enter-4" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
-        background: "white", borderRadius: 16,
-        border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden",
+        background: "#fff", borderRadius: 16,
+        border: "3px solid #1a1a22", overflow: "hidden",
+        boxShadow: "0 6px 0 rgba(26,26,34,0.14)",
       }}>
         <div style={{
-          padding: "16px 22px", borderBottom: "1px solid rgba(0,0,0,0.05)",
+          padding: "16px 22px", borderBottom: "2px solid rgba(26,26,46,0.45)",
           display: "flex", alignItems: "center", gap: 10,
         }}>
           <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="heart" size={22} /></span>
@@ -92,9 +93,9 @@ export default function PetDateWidget() {
           <div style={{ flex: 1 }} />
           <span style={{
             padding: "3px 8px", borderRadius: 999,
-            background: "rgba(0,0,0,0.05)",
+            background: "rgba(245,158,11,0.12)", border: "2px solid #1a1a22",
             fontSize: 10, fontWeight: 800,
-            fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.65)",
+            fontFamily: "'JetBrains Mono', monospace", color: "#b45309",
           }}>20 cr</span>
         </div>
 
@@ -106,8 +107,8 @@ export default function PetDateWidget() {
               onChange={e => setMyPetId(Number(e.target.value))}
               style={{
                 flex: "1 1 200px", padding: "10px 12px", borderRadius: 10,
-                border: "1px solid rgba(0,0,0,0.10)", fontSize: 13,
-                fontFamily: "'Space Grotesk', sans-serif", background: "white",
+                border: "2px solid #1a1a22", fontSize: 13,
+                fontFamily: "'Space Grotesk', sans-serif", background: "#fff",
               }}
             >
               {pets.map(p => <option key={p.id} value={p.id}>🐾 {p.name}</option>)}
@@ -120,15 +121,15 @@ export default function PetDateWidget() {
               placeholder="Target pet ID (from leaderboard)"
               style={{
                 flex: "1 1 220px", padding: "10px 12px", borderRadius: 10,
-                border: "1px solid rgba(0,0,0,0.10)", fontSize: 13,
-                fontFamily: "'JetBrains Mono', monospace",
+                border: "2px solid #1a1a22", fontSize: 13,
+                fontFamily: "'JetBrains Mono', monospace", background: "#fff",
               }}
             />
             <button onClick={go} disabled={busy || !myPetId || !validTarget} style={{
-              padding: "10px 16px", borderRadius: 10, border: "none",
-              background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
-              color: "white", fontWeight: 800, fontSize: 13,
-              cursor: "pointer", boxShadow: "0 2px 8px rgba(245,158,11,0.25)",
+              padding: "10px 16px", borderRadius: 10, border: "2px solid #1a1a22",
+              background: "#f59e0b",
+              color: "#1a1a22", fontWeight: 800, fontSize: 13,
+              cursor: "pointer", boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
               opacity: busy || !myPetId || !validTarget ? 0.5 : 1,
               fontFamily: "'Space Grotesk', sans-serif",
             }}>{busy ? "Setting up date…" : "Start date"}</button>
@@ -146,20 +147,21 @@ function DateLog({ result }: { result: DateResult }) {
   return (
     <div style={{
       marginTop: 6, padding: 16, borderRadius: 12,
-      background: "rgba(0,0,0,0.02)",
-      border: "1px solid rgba(0,0,0,0.05)",
+      background: "#faf7f2",
+      border: "2px solid #1a1a22",
+      boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
         <div style={{
           padding: "4px 10px", borderRadius: 999,
-          background: vibe.bg, color: vibe.fg,
+          background: vibe.bg, color: vibe.fg, border: "2px solid #1a1a22",
           fontSize: 11, fontWeight: 800,
           fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em",
-        }}>{vibe.emoji} {result.vibe.toUpperCase()}</div>
+        }}>{result.vibe.toUpperCase()}</div>
         <div style={{ flex: 1 }} />
         <div style={{
-          fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-          color: result.friendship >= 0 ? "#16a34a" : "#b91c1c",
+          fontSize: 12, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace",
+          color: result.friendship >= 0 ? "#b45309" : "rgba(26,26,46,0.55)",
         }}>
           friendship {result.friendship >= 0 ? `+${result.friendship}` : result.friendship}
         </div>
@@ -174,12 +176,12 @@ function DateLog({ result }: { result: DateResult }) {
               gap: 10,
             }}>
               {speaker.avatar_url
-                ? <img src={speaker.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, objectFit: "cover" }} />
-                : <img src="/mascot.jpg" alt="" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, objectFit: "cover" }} />}
+                ? <img src={speaker.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, objectFit: "cover", border: "2px solid #1a1a22" }} />
+                : <img src="/mascot.jpg" alt="" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, objectFit: "cover", border: "2px solid #1a1a22" }} />}
               <div style={{
                 padding: "8px 12px", borderRadius: 12,
-                background: isA ? "rgba(245,158,11,0.10)" : "rgba(59,130,246,0.06)",
-                border: `1px solid ${isA ? "rgba(245,158,11,0.20)" : "rgba(59,130,246,0.20)"}`,
+                background: isA ? "rgba(245,158,11,0.12)" : "#fff",
+                border: "2px solid #1a1a22",
                 maxWidth: "70%",
                 borderTopLeftRadius: isA ? 4 : 12,
                 borderTopRightRadius: isA ? 12 : 4,

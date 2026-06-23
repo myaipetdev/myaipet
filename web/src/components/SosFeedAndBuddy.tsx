@@ -130,7 +130,11 @@ export default function SosFeedAndBuddy() {
                   : <img src="/mascot.jpg" alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700 }}>
-                    {item.sender.pet?.name || "—"} <span style={{ color: "#b45309", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>· 🔥 {item.sender_streak}d</span>
+                    {item.sender.pet?.name || "—"} <span style={{ color: "#b45309", fontFamily: "'JetBrains Mono', monospace", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 4 }}>·
+                      <svg width={11} height={11} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "inline-block" }}>
+                        <path d="M12 3c1 3 4 4 4 8a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5C10 8 11 6 12 3Z" stroke="#f59e0b" strokeWidth="1.8" strokeLinejoin="round" />
+                      </svg>
+                      {item.sender_streak}d</span>
                   </div>
                   {item.message && (
                     <div style={{ fontSize: 11, color: "rgba(26,26,46,0.65)", marginTop: 1 }}>{item.message}</div>
@@ -179,8 +183,9 @@ export default function SosFeedAndBuddy() {
             {authed && buddy?.active.length === 0 && buddy?.inboundInvites.length === 0 && buddy?.outboundInvites.length === 0 && (
               <div style={{
                 padding: "16px 18px", borderRadius: 12,
-                background: "rgba(245,158,11,0.05)",
-                border: "1px solid rgba(245,158,11,0.18)",
+                background: "#fbf6ec",
+                border: "2px solid #1a1a22",
+                boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
               }}>
                 <div style={{ fontSize: 14, color: "#1a1a2e", lineHeight: 1.55, marginBottom: 6, fontWeight: 600 }}>
                   Pair with one friend
@@ -195,8 +200,9 @@ export default function SosFeedAndBuddy() {
             {buddy?.active.map(b => (
               <div key={b.id} style={{
                 padding: 14, borderRadius: 12,
-                background: "rgba(245,158,11,0.06)",
-                border: "1px solid rgba(245,158,11,0.20)",
+                background: "#fbf6ec",
+                border: "2px solid #1a1a22",
+                boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
                 display: "flex", alignItems: "center", gap: 12,
               }}>
                 {b.partner.pet?.avatar_url
@@ -204,8 +210,11 @@ export default function SosFeedAndBuddy() {
                   : <img src="/mascot.jpg" alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover" }} />}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 800 }}>{b.partner.pet?.name || b.partner.wallet}</div>
-                  <div style={{ fontSize: 11, color: "rgba(26,26,46,0.55)", fontFamily: "'JetBrains Mono', monospace" }}>
-                    🔥 shared streak · {b.shared_streak}d
+                  <div style={{ fontSize: 11, color: "rgba(26,26,46,0.55)", fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", gap: 4 }}>
+                    <svg width={11} height={11} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "inline-block" }}>
+                      <path d="M12 3c1 3 4 4 4 8a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5C10 8 11 6 12 3Z" stroke="#f59e0b" strokeWidth="1.8" strokeLinejoin="round" />
+                    </svg>
+                    shared streak · {b.shared_streak}d
                   </div>
                 </div>
               </div>
@@ -214,14 +223,15 @@ export default function SosFeedAndBuddy() {
             {buddy?.inboundInvites.map(inv => (
               <div key={inv.id} style={{
                 padding: 12, borderRadius: 12,
-                background: "rgba(59,130,246,0.06)",
-                border: "1px solid rgba(59,130,246,0.20)",
+                background: "#fff",
+                border: "2px solid #1a1a22",
+                boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
                 display: "flex", alignItems: "center", gap: 10,
               }}>
                 <span style={{ fontSize: 18, display: "inline-flex", lineHeight: 0 }}>
                   <svg width={18} height={18} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <rect x="3" y="5.5" width="18" height="13" rx="2.5" stroke="#3b82f6" strokeWidth="1.8" />
-                    <path d="M4 7.5l8 5.5 8-5.5" stroke="#3b82f6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <rect x="3" y="5.5" width="18" height="13" rx="2.5" stroke="#f59e0b" strokeWidth="1.8" />
+                    <path d="M4 7.5l8 5.5 8-5.5" stroke="#f59e0b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
                 <div style={{ fontSize: 12, flex: 1 }}>
@@ -236,10 +246,12 @@ export default function SosFeedAndBuddy() {
             {buddy?.outboundInvites.map(inv => (
               <div key={inv.id} style={{
                 padding: 12, borderRadius: 12,
-                background: "rgba(0,0,0,0.04)",
+                background: "#fff",
+                border: "2px solid #1a1a22",
+                boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
                 fontSize: 12, color: "rgba(26,26,46,0.65)",
               }}>
-                ⏳ Waiting for <strong>{inv.target.wallet}</strong> to accept…
+                Waiting for <strong>{inv.target.wallet}</strong> to accept…
               </div>
             ))}
 
@@ -252,8 +264,9 @@ export default function SosFeedAndBuddy() {
                   placeholder="Partner wallet 0x…"
                   style={{
                     flex: 1, padding: "9px 12px", borderRadius: 10,
-                    border: "1px solid rgba(0,0,0,0.10)", fontSize: 13,
+                    border: "2px solid #1a1a22", fontSize: 13,
                     fontFamily: "'JetBrains Mono', monospace",
+                    background: "#fff", color: "#1a1a22",
                   }}
                 />
                 <button onClick={sendInvite} disabled={!inviteWallet.trim() || busy === -1} style={{
@@ -277,12 +290,13 @@ export default function SosFeedAndBuddy() {
 
 // ── Styles ──
 const card: React.CSSProperties = {
-  background: "white", borderRadius: 16,
-  border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden",
+  background: "#faf7f2", borderRadius: 16,
+  border: "2px solid #1a1a22", overflow: "hidden",
+  boxShadow: "0 6px 0 rgba(26,26,34,0.14)",
 };
 const cardHeader: React.CSSProperties = {
   padding: "16px 18px",
-  borderBottom: "1px solid rgba(0,0,0,0.05)",
+  borderBottom: "2px solid #1a1a22",
   display: "flex", alignItems: "center", gap: 10,
 };
 const empty: React.CSSProperties = {
@@ -290,10 +304,11 @@ const empty: React.CSSProperties = {
   fontSize: 13, color: "rgba(26,26,46,0.5)",
 };
 const primaryBtn: React.CSSProperties = {
-  padding: "9px 16px", borderRadius: 10, border: "none",
-  background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
-  color: "white", fontWeight: 800, fontSize: 13,
+  padding: "9px 16px", borderRadius: 10,
+  border: "2px solid #1a1a22",
+  background: "#f59e0b",
+  color: "#1a1a22", fontWeight: 800, fontSize: 13,
   cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif",
-  boxShadow: "0 2px 8px rgba(245,158,11,0.25)",
+  boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
   whiteSpace: "nowrap",
 };

@@ -33,6 +33,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
+import { dcVars } from "@/components/Sticker";
 import PetLoraPanel from "@/components/PetLoraPanel";
 import { TEMPLATES, type StudioTemplate } from "@/lib/studio/templates";
 import { STYLE_EXAMPLES, TEMPLATE_EXAMPLES } from "@/lib/studio/example-assets";
@@ -53,13 +54,15 @@ interface Generation {
 }
 
 
+// Fallback swatches stay inside the warm printed-stock palette (cream / amber /
+// warm-ink) — the style is differentiated by its icon + label, not a rainbow.
 const STYLES = [
-  { id: "cinematic",      icon: "film-reel", label: "Cinematic",  hint: "Hollywood", swatch: "linear-gradient(135deg,#0f172a 0%,#334155 55%,#b45309 100%)" },
-  { id: "anime",          icon: "sparkling", label: "Anime",      hint: "Japan",     swatch: "linear-gradient(135deg,#f472b6 0%,#a855f7 60%,#6366f1 100%)" },
-  { id: "photorealistic", icon: "compass",   label: "Photoreal",  hint: "Real",      swatch: "linear-gradient(135deg,#475569 0%,#94a3b8 60%,#cbd5e1 100%)" },
-  { id: "watercolor",     icon: "water2",    label: "Watercolor", hint: "Soft",      swatch: "linear-gradient(135deg,#fde68a 0%,#fda4af 50%,#a5b4fc 100%)" },
-  { id: "pixar",          icon: "bear",      label: "3D Pixar",   hint: "Toon",      swatch: "linear-gradient(135deg,#38bdf8 0%,#818cf8 50%,#fbbf24 100%)" },
-  { id: "pixel",          icon: "joystick",  label: "Pixel",      hint: "Retro",     swatch: "linear-gradient(135deg,#22c55e 0%,#0ea5e9 50%,#7c3aed 100%)" },
+  { id: "cinematic",      icon: "film-reel", label: "Cinematic",  hint: "Hollywood", swatch: "linear-gradient(135deg,#1f1b16 0%,#3a3027 55%,#b45309 100%)" },
+  { id: "anime",          icon: "sparkling", label: "Anime",      hint: "Japan",     swatch: "linear-gradient(135deg,#fbf6ec 0%,#f59e0b 100%)" },
+  { id: "photorealistic", icon: "compass",   label: "Photoreal",  hint: "Real",      swatch: "linear-gradient(135deg,#e7ddcc 0%,#8a7d68 100%)" },
+  { id: "watercolor",     icon: "water2",    label: "Watercolor", hint: "Soft",      swatch: "linear-gradient(135deg,#faf7f2 0%,#fde7b8 55%,#f59e0b 100%)" },
+  { id: "pixar",          icon: "bear",      label: "3D Pixar",   hint: "Toon",      swatch: "linear-gradient(135deg,#f59e0b 0%,#fbe6b0 100%)" },
+  { id: "pixel",          icon: "joystick",  label: "Pixel",      hint: "Retro",     swatch: "linear-gradient(135deg,#3a3027 0%,#f59e0b 100%)" },
 ];
 
 const PROMPT_IDEAS = [
@@ -517,15 +520,15 @@ export default function PetStudioPro() {
           display: "grid", gap: 16,
           gridTemplateColumns: "minmax(0, 1fr) 340px",
         }}>
-          {/* PREVIEW */}
+          {/* PREVIEW — a developing plate: warm-ink canvas in a die-cut frame */}
           <div style={{
-            background: "white", borderRadius: 16, padding: 14,
-            border: "1px solid rgba(0,0,0,0.06)",
+            background: "#faf7f2", borderRadius: 18, padding: 11,
+            border: "3px solid #1a1a22", boxShadow: "0 8px 0 rgba(26,26,34,0.14)",
           }}>
             <div style={{
               position: "relative",
               aspectRatio: aspect.replace(":", " / "), borderRadius: 12, overflow: "hidden",
-              background: "linear-gradient(135deg,#0f172a,#1e293b)",
+              background: "#1f1b16", border: "2px solid #1a1a22",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               {view === "idle" && (
@@ -534,8 +537,8 @@ export default function PetStudioPro() {
               {view === "generating" && <PreviewGenerating kind={outputKind} />}
               {view === "done" && resultUrl && resultUrl !== "__demo__" && (
                 /\.(mp4|webm)$/i.test(resultUrl)
-                  ? <video src={resultUrl} controls autoPlay loop playsInline style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                  : <img src={resultUrl} alt="result" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                  ? <video src={resultUrl} controls autoPlay loop playsInline style={{ width: "100%", height: "100%", objectFit: "contain", animation: "studioPop .5s cubic-bezier(.2,1.3,.4,1)" }} />
+                  : <img src={resultUrl} alt="result" style={{ width: "100%", height: "100%", objectFit: "contain", animation: "studioPop .5s cubic-bezier(.2,1.3,.4,1)" }} />
               )}
               {view === "done" && resultIsDemo && (
                 <PreviewDemo pet={pet} prompt={buildFullPrompt()} />
@@ -592,8 +595,8 @@ export default function PetStudioPro() {
                     onClick={animateThis}
                     title="Generate a new short video from this same prompt (a fresh render anchored on your pet — not an animation of this exact still)"
                     style={{
-                      padding: "9px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                      background: "linear-gradient(135deg,#8b5cf6,#7c3aed)", color: "white",
+                      padding: "9px 16px", borderRadius: 10, border: "2px solid #1a1a22", cursor: "pointer",
+                      background: "#f59e0b", color: "#1a1a22", boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
                       fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
                       display: "inline-flex", alignItems: "center", gap: 7,
                     }}
@@ -757,34 +760,31 @@ export default function PetStudioPro() {
                     <button
                       key={s.id}
                       onClick={() => setStyleId(s.id)}
-                      className="mp-lift"
+                      className="dc dc-sm"
                       style={{
-                        padding: 0, borderRadius: 12, overflow: "hidden", cursor: "pointer",
-                        background: "white",
-                        border: sel ? "2px solid #f59e0b" : "1px solid rgba(0,0,0,0.08)",
-                        boxShadow: sel
-                          ? "0 6px 18px rgba(245,158,11,0.22)"
-                          : "0 1px 2px rgba(0,0,0,0.02)",
-                        transition: "all 200ms cubic-bezier(0.2,0.8,0.2,1)",
+                        padding: 3, borderRadius: 12, cursor: "pointer",
+                        background: "#faf7f2",
+                        border: `2px solid ${sel ? "#f59e0b" : "#1a1a22"}`,
+                        ...dcVars(sel ? 0.2 : 0.14),
                       }}>
-                      {/* Real Grok example art (gradient fallback) so each style
-                          reads at a glance, not just as a label. */}
+                      {/* Real Grok example art (gradient fallback) framed as a
+                          printed sample chip, not a glowing tile. */}
                       <div style={{
-                        height: 60,
+                        height: 58, borderRadius: 8, overflow: "hidden",
+                        border: "1.5px solid #1a1a22",
                         background: ex ? `url(${ex}) center/cover no-repeat` : s.swatch,
                         display: "flex", alignItems: "flex-end", justifyContent: "flex-end",
                         padding: 6,
                       }}>
                         <span style={{
                           display: "inline-flex",
-                          filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))",
-                          transform: sel ? "scale(1.14)" : "scale(1)",
-                          transition: "transform 220ms cubic-bezier(0.2,0.8,0.2,1)",
+                          filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.55))",
                         }}><Icon name={s.icon} size={ex ? 18 : 26} /></span>
                       </div>
                       <div style={{
-                        padding: "7px 4px", textAlign: "center",
+                        padding: "6px 4px 2px", textAlign: "center",
                         fontSize: 12, fontWeight: 800, lineHeight: 1.2,
+                        fontFamily: "'Space Grotesk',sans-serif",
                         color: sel ? "#b45309" : "#1a1a2e",
                       }}>{s.label}</div>
                     </button>
@@ -862,7 +862,7 @@ export default function PetStudioPro() {
                     position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
                     background: "white", borderRadius: 12, padding: 6,
                     border: "1px solid rgba(0,0,0,0.10)",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
+                    boxShadow: "0 8px 0 rgba(0,0,0,0.14)",
                     zIndex: 20, maxHeight: 400, overflowY: "auto",
                   }}>
                     {visibleModels.map(m => {
@@ -967,12 +967,12 @@ export default function PetStudioPro() {
           {memorySeeds.length > 0 && (
             <div style={{
               marginTop: 12, padding: "12px 14px", borderRadius: 12,
-              background: "linear-gradient(135deg, rgba(139,92,246,0.06), rgba(245,158,11,0.04))",
-              border: "1px solid rgba(139,92,246,0.18)",
+              background: "#faf7f2",
+              border: "2px solid #1a1a22", boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
             }}>
               <div style={{
                 fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-                color: "#6d28d9", letterSpacing: "0.1em", fontWeight: 800, marginBottom: 8,
+                color: "#b45309", letterSpacing: "0.1em", fontWeight: 800, marginBottom: 8,
                 display: "flex", alignItems: "center", gap: 6,
               }}><svg width={14} height={14} viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
@@ -982,9 +982,9 @@ export default function PetStudioPro() {
                 </svg>FROM {(pet?.name || "YOUR PET").toUpperCase()}'S MEMORY</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {memorySeeds.map((seed, i) => (
-                  <button key={i} onClick={() => setPrompt(seed)} className="mp-lift" style={{
+                  <button key={i} onClick={() => setPrompt(seed)} className="dc dc-sm" style={{
                     textAlign: "left", padding: "9px 12px", borderRadius: 10,
-                    background: "white", border: "1px solid rgba(139,92,246,0.16)",
+                    background: "#fff", border: "2px solid #1a1a22", ...dcVars(0.12),
                     fontSize: 13, color: "#1a1a2e", cursor: "pointer", lineHeight: 1.45,
                     fontFamily: "'Space Grotesk', sans-serif",
                   }}>{seed}</button>
@@ -1013,20 +1013,17 @@ export default function PetStudioPro() {
               display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10,
             }}>
               {TEMPLATES.slice(0, 8).map(t => {
-                const color = ({
-                  celebration: "#f59e0b", everyday: "#3b82f6", cinematic: "#8b5cf6",
-                  social: "#ec4899", fantasy: "#6366f1",
-                } as Record<string, string>)[t.category] || "#8b5cf6";
                 const ex = TEMPLATE_EXAMPLES[t.id];
                 const vid = TEMPLATE_EXAMPLE_VIDEOS[t.id];
                 return (
                   <button
                     key={t.id}
                     onClick={() => applyTemplate(t)}
-                    className="mp-lift"
+                    className="dc dc-sm"
                     style={{
                       textAlign: "left", padding: 0, borderRadius: 14, overflow: "hidden",
-                      border: `1px solid ${color}33`, background: "white", cursor: "pointer",
+                      border: "2px solid #1a1a22", background: "white", cursor: "pointer",
+                      ...dcVars(0.14),
                       display: "flex", flexDirection: "column",
                     }}
                   >
@@ -1036,12 +1033,12 @@ export default function PetStudioPro() {
                           src={vid} poster={ex} autoPlay loop muted playsInline preload="metadata"
                           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                         />
-                        <span style={{ position: "absolute", left: 9, bottom: 7, fontSize: 18, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.6))" }}>{t.emoji}</span>
+                        <span style={{ position: "absolute", left: 9, bottom: 7, fontSize: 18, filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.65))" }}>{t.emoji}</span>
                         <span style={{
                           position: "absolute", right: 9, bottom: 8,
                           fontSize: 8, fontFamily: "'JetBrains Mono', monospace",
                           letterSpacing: "0.1em", fontWeight: 800, textTransform: "uppercase",
-                          color: "white", filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.7))",
+                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
                         }}>{t.category}</span>
                       </div>
                     ) : ex ? (
@@ -1050,17 +1047,17 @@ export default function PetStudioPro() {
                         display: "flex", alignItems: "flex-end", justifyContent: "space-between",
                         padding: "8px 9px",
                       }}>
-                        <span style={{ fontSize: 18, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.6))" }}>{t.emoji}</span>
+                        <span style={{ fontSize: 18, filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.65))" }}>{t.emoji}</span>
                         <span style={{
                           fontSize: 8, fontFamily: "'JetBrains Mono', monospace",
                           letterSpacing: "0.1em", fontWeight: 800, textTransform: "uppercase",
-                          color: "white", filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.7))",
+                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
                         }}>{t.category}</span>
                       </div>
                     ) : (
                       <div style={{
                         height: 62,
-                        background: `linear-gradient(135deg, ${color}26, ${color}0d)`,
+                        background: "#faf7f2", borderBottom: "2px solid #1a1a22",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 30, position: "relative",
                       }}>
@@ -1069,7 +1066,7 @@ export default function PetStudioPro() {
                           position: "absolute", top: 7, right: 8,
                           fontSize: 8, fontFamily: "'JetBrains Mono', monospace",
                           letterSpacing: "0.1em", fontWeight: 800, textTransform: "uppercase",
-                          color, opacity: 0.85,
+                          color: "#b45309", opacity: 0.85,
                         }}>{t.category}</span>
                       </div>
                     )}
@@ -1119,7 +1116,7 @@ export default function PetStudioPro() {
                     width: 140, height: 80, borderRadius: 12, overflow: "hidden",
                     border: "1px solid rgba(0,0,0,0.08)", background: "white",
                     cursor: "pointer", padding: 0, display: "block",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                    boxShadow: "0 2px 0 rgba(0,0,0,0.06)",
                   }} title={g.prompt || "(no prompt)"} aria-label={g.prompt ? `View: ${g.prompt}` : "View creation"}>
                     {g.video_path && /\.(mp4|webm)$/i.test(g.video_path)
                       ? <video src={g.video_path} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -1151,7 +1148,7 @@ export default function PetStudioPro() {
                         background: "rgba(245,158,11,0.92)", color: "white",
                         fontSize: 12, cursor: "pointer", padding: 0, lineHeight: 1,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+                        boxShadow: "0 1px 0 rgba(0,0,0,0.25)",
                       }}
                     ><svg width={14} height={14} viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
@@ -1186,10 +1183,10 @@ export default function PetStudioPro() {
             doesn't push the Generate CTA + recent work down on first load) ── */}
         <div style={{
           marginTop: 12,
-          background: "linear-gradient(135deg, rgba(245,158,11,0.05), rgba(139,92,246,0.04) 60%, white)",
+          background: "#faf7f2",
           color: "#1a1a2e", borderRadius: 18, padding: "22px 24px",
-          border: "1px solid rgba(0,0,0,0.06)",
-          boxShadow: "0 2px 14px rgba(15,23,42,0.04)",
+          border: "2px solid #1a1a22",
+          boxShadow: "0 4px 0 rgba(26,26,34,0.12)",
         }}>
           <div style={{
             fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
@@ -1241,10 +1238,9 @@ export default function PetStudioPro() {
       </div>
 
       <style>{`
-        @keyframes studioSpinKf { from { transform: rotate(0); } to { transform: rotate(360deg); } }
-        .studio-spin { animation: studioSpinKf 2s linear infinite; display: inline-block; }
         @keyframes studioPulseKf { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
         .studio-pulse { animation: studioPulseKf 1.6s ease-in-out infinite; }
+        @keyframes studioPop { 0%{transform:scale(.92);opacity:0} 60%{transform:scale(1.02)} 100%{transform:scale(1);opacity:1} }
         @media (max-width: 880px) {
           .studio-pro-grid { grid-template-columns: 1fr !important; }
         }
@@ -1270,13 +1266,13 @@ function PreviewIdle({ pet }: { pet: Pet | null }) {
         <img src={pet.avatar_url} alt={pet.name} style={{
           position: "absolute", inset: 0,
           width: "100%", height: "100%", objectFit: "cover",
-          opacity: 0.35, filter: "blur(2px) saturate(1.1)",
+          opacity: 0.32, filter: "saturate(0.85)",
         }} />
       )}
-      {/* Gradient floor so text stays readable over any photo */}
+      {/* Gradient floor so text stays readable over any photo (warm-ink, not slate) */}
       <div style={{
         position: "absolute", inset: 0,
-        background: "linear-gradient(180deg, rgba(15,23,42,0.0) 0%, rgba(15,23,42,0.70) 100%)",
+        background: "linear-gradient(180deg, rgba(31,27,22,0.0) 0%, rgba(31,27,22,0.72) 100%)",
       }} />
       <div style={{ position: "relative", textAlign: "center", padding: 30 }}>
         {!pet?.avatar_url && (
@@ -1313,14 +1309,16 @@ function PreviewGenerating({ kind }: { kind: "image" | "video" }) {
   const total = kind === "image" ? 12 : 90;
   const pct = Math.min(95, Math.round((secs / total) * 100));
   return (
-    <div style={{ color: "white", textAlign: "center", padding: 30, width: "100%" }}>
-      <div className="studio-spin" style={{ marginBottom: 14, display: "inline-flex" }}><Icon name="film-reel" size={44} /></div>
-      <div style={{ fontSize: 17, fontWeight: 700 }}>Generating · {secs}s</div>
-      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 4 }}>{line}</div>
-      <div style={{ height: 4, borderRadius: 999, background: "rgba(255,255,255,0.15)", marginTop: 16, maxWidth: 240, marginInline: "auto", overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#f59e0b,#fbbf24)", transition: "width 1s linear" }} />
+    <div style={{ color: "#faf7f2", textAlign: "center", padding: 28, width: "100%", maxWidth: 320 }}>
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, letterSpacing: "0.2em", color: "rgba(250,247,242,0.5)", textTransform: "uppercase" }}>Developing</div>
+      <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 20, marginTop: 6, letterSpacing: "-0.01em" }}>Generating · {secs}s</div>
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12.5, color: "rgba(250,247,242,0.7)", marginTop: 6 }}>{line}</div>
+      {/* Honest determinate progress — a printed strip on the developing plate.
+          The ONLY motion: this bar advancing and the status line swapping. */}
+      <div style={{ marginTop: 16, height: 12, borderRadius: 999, background: "rgba(250,247,242,0.12)", border: "2px solid rgba(250,247,242,0.85)", overflow: "hidden", maxWidth: 260, marginInline: "auto" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: "#f59e0b", transition: "width 1s linear" }} />
       </div>
-      {kind === "video" && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 8 }}>Don&apos;t close the page</div>}
+      <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9.5, color: "rgba(250,247,242,0.5)", marginTop: 8 }}>{pct}% · {kind === "video" ? "keep this page open" : "rendering"}</div>
     </div>
   );
 }
@@ -1495,12 +1493,12 @@ const btnGhost: React.CSSProperties = {
 };
 
 const generateBtn: React.CSSProperties = {
-  width: "100%", padding: "20px 24px",
-  borderRadius: 16, border: "none",
-  background: "linear-gradient(135deg,#fbbf24,#f59e0b 70%,#ea580c)",
-  color: "white", fontWeight: 800, fontSize: 19,
+  width: "100%", padding: "18px 24px",
+  borderRadius: 16, border: "3px solid #1a1a22",
+  background: "#f59e0b",
+  color: "#1a1a22", fontWeight: 800, fontSize: 19,
   fontFamily: "'Space Grotesk',sans-serif",
-  boxShadow: "0 10px 32px rgba(245,158,11,0.40), inset 0 1px 0 rgba(255,255,255,0.25)",
+  boxShadow: "0 6px 0 rgba(26,26,34,0.25)",
   letterSpacing: "0.01em",
   transition: "transform 140ms ease, box-shadow 140ms ease",
 };

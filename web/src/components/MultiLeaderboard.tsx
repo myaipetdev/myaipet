@@ -36,13 +36,13 @@ interface Resp {
   myRank: Entry | null;
 }
 
-// Flat rank medal (gold / silver / bronze) — crafted to match the leaderboard's
-// rounded, soft-shadow card style, while preserving the per-rank color distinction
-// the old 🥇🥈🥉 emoji carried.
+// Flat rank medal (gold / silver / bronze) — a printed-stock stamp: ink-keyline
+// disc on the single amber accent, with neutral ink shades carrying the per-rank
+// distinction the old 🥇🥈🥉 emoji held (no second hue).
 const MEDAL_PALETTE: Record<number, { ribbon: string; disc: string; rim: string; face: string }> = {
-  1: { ribbon: "#ef4444", disc: "#fbbf24", rim: "#d97706", face: "#7c2d12" },
-  2: { ribbon: "#60a5fa", disc: "#e2e8f0", rim: "#94a3b8", face: "#475569" },
-  3: { ribbon: "#fb923c", disc: "#e0a872", rim: "#a16207", face: "#5b3a1a" },
+  1: { ribbon: "#b45309", disc: "#f59e0b", rim: "#1a1a22", face: "#1a1a22" },
+  2: { ribbon: "#1a1a22", disc: "#faf7f2", rim: "#1a1a22", face: "#1a1a22" },
+  3: { ribbon: "#d97706", disc: "#cdb89a", rim: "#1a1a22", face: "#1a1a22" },
 };
 function MedalIcon({ place, size }: { place: number; size: number }) {
   const c = MEDAL_PALETTE[place] || MEDAL_PALETTE[3];
@@ -79,27 +79,29 @@ export default function MultiLeaderboard() {
   return (
     <div className="mp-enter" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
-        background: "white", borderRadius: 18,
-        border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden",
+        background: "#fff", borderRadius: 18,
+        border: "3px solid #1a1a22", boxShadow: "0 8px 0 rgba(26,26,34,0.14)",
+        overflow: "hidden",
       }}>
         {/* Tabs */}
         <div style={{
           padding: "10px 12px",
-          borderBottom: "1px solid rgba(0,0,0,0.05)",
-          background: "rgba(0,0,0,0.02)",
+          borderBottom: "2px solid rgba(26,26,34,0.1)",
+          background: "#faf7f2",
           display: "flex", gap: 6, overflowX: "auto",
         }}>
           {METRICS.map(m => {
             const sel = m.key === metric;
             return (
               <button key={m.key} onClick={() => setMetric(m.key)} style={{
-                padding: "8px 14px", borderRadius: 10, border: "none",
-                background: sel ? "white" : "transparent",
-                color: sel ? "#b45309" : "rgba(26,26,46,0.55)",
+                padding: "8px 14px", borderRadius: 10,
+                border: sel ? "2px solid #1a1a22" : "2px solid transparent",
+                background: sel ? "#f59e0b" : "transparent",
+                color: sel ? "#1a1a22" : "rgba(26,26,46,0.55)",
                 fontWeight: sel ? 800 : 600, fontSize: 13,
                 cursor: "pointer", whiteSpace: "nowrap",
                 fontFamily: "'Space Grotesk', sans-serif",
-                boxShadow: sel ? "0 1px 0 rgba(0,0,0,0.04)" : "none",
+                boxShadow: sel ? "0 3px 0 rgba(26,26,34,0.2)" : "none",
                 display: "inline-flex", alignItems: "center", gap: 6,
               }}>
                 <Icon name={m.icon} size={16} />
@@ -114,7 +116,7 @@ export default function MultiLeaderboard() {
           <div style={{
             padding: "12px 22px",
             display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
-            borderBottom: "1px solid rgba(0,0,0,0.05)",
+            borderBottom: "2px solid rgba(26,26,34,0.1)",
           }}>
             <div style={{ fontSize: 28 }}>{data.meta.emoji}</div>
             <div style={{ flex: 1 }}>
@@ -124,8 +126,9 @@ export default function MultiLeaderboard() {
             {data.myRank && (
               <div style={{
                 padding: "8px 14px", borderRadius: 10,
-                background: "rgba(245,158,11,0.10)",
-                border: "1px solid rgba(245,158,11,0.25)",
+                background: "#fbf6ec",
+                border: "2px solid #1a1a22",
+                boxShadow: "0 3px 0 rgba(26,26,34,0.14)",
               }}>
                 <div style={{
                   fontSize: 9, fontFamily: "'JetBrains Mono', monospace",
@@ -174,8 +177,8 @@ export default function MultiLeaderboard() {
         {!loading && top3.length > 0 && (
           <div style={{
             padding: "20px 22px 16px",
-            background: "linear-gradient(180deg, rgba(245,158,11,0.04), transparent)",
-            borderBottom: "1px solid rgba(0,0,0,0.05)",
+            background: "#fbf6ec",
+            borderBottom: "2px solid rgba(26,26,34,0.1)",
             display: "grid",
             gridTemplateColumns: "1fr 1.15fr 1fr",
             gap: 10, alignItems: "end",
@@ -185,19 +188,15 @@ export default function MultiLeaderboard() {
               const podiumH = place === 1 ? 130 : place === 2 ? 110 : 100;
               return (
                 <div key={place} className="mp-lift" style={{
-                  background: place === 1
-                    ? "linear-gradient(180deg, rgba(245,158,11,0.10), rgba(245,158,11,0.04))"
-                    : "rgba(0,0,0,0.025)",
-                  border: place === 1
-                    ? "1px solid rgba(245,158,11,0.30)"
-                    : "1px solid rgba(0,0,0,0.05)",
+                  background: place === 1 ? "#f59e0b" : "#fff",
+                  border: "2px solid #1a1a22",
                   borderRadius: 14,
                   padding: "14px 12px",
                   textAlign: "center",
                   minHeight: podiumH,
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start",
                   gap: 8,
-                  boxShadow: place === 1 ? "0 8px 24px rgba(245,158,11,0.18)" : "none",
+                  boxShadow: place === 1 ? "0 6px 0 rgba(26,26,34,0.16)" : "0 3px 0 rgba(26,26,34,0.12)",
                   cursor: "default",
                 }}>
                   <div style={{ lineHeight: 1 }}><MedalIcon place={place} size={place === 1 ? 32 : 24} /></div>
@@ -206,13 +205,15 @@ export default function MultiLeaderboard() {
                         width: place === 1 ? 56 : 44,
                         height: place === 1 ? 56 : 44,
                         borderRadius: 12, objectFit: "cover",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+                        border: "2px solid #1a1a22",
+                        boxShadow: "0 3px 0 rgba(26,26,34,0.16)",
                       }} />
                     : <img src="/mascot.jpg" alt={e.pet?.name || ""} style={{
                         width: place === 1 ? 56 : 44,
                         height: place === 1 ? 56 : 44,
                         borderRadius: 12, objectFit: "cover",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+                        border: "2px solid #1a1a22",
+                        boxShadow: "0 3px 0 rgba(26,26,34,0.16)",
                       }} />}
                   <div style={{
                     fontSize: place === 1 ? 15 : 13, fontWeight: 800,
@@ -222,7 +223,7 @@ export default function MultiLeaderboard() {
                   <div style={{
                     fontSize: place === 1 ? 17 : 14, fontWeight: 800,
                     fontFamily: "'JetBrains Mono', monospace",
-                    color: place === 1 ? "#b45309" : "#1a1a2e",
+                    color: "#1a1a22",
                     lineHeight: 1,
                   }}>
                     {e.value}
@@ -253,8 +254,8 @@ export default function MultiLeaderboard() {
                 #{e.rank}
               </div>
               {e.pet?.avatar_url
-                ? <img src={e.pet.avatar_url} alt={e.pet.name} style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover" }} />
-                : <img src="/mascot.jpg" alt={e.pet?.name || ""} style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover" }} />}
+                ? <img src={e.pet.avatar_url} alt={e.pet.name} style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover", border: "2px solid #1a1a22" }} />
+                : <img src="/mascot.jpg" alt={e.pet?.name || ""} style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover", border: "2px solid #1a1a22" }} />}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 700 }}>{e.pet?.name || "—"}</div>
                 <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.45)" }}>
