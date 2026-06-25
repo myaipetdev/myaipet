@@ -657,16 +657,113 @@ function Empty({ msg }: { msg: string }) {
 }
 
 // ── Chrome Extension in-app showcase ──
-function ChromeExtensionSection() {
-  const [installStep, setInstallStep] = useState<number | null>(null);
+/**
+ * Printed line-art "what you'll see" illustration for each install step — drawn
+ * in the Printed Stock idiom (ink linework on cream, amber accents) so the steps
+ * read as a hand-illustrated guide, not a wall of text. viewBox 220×128.
+ */
+function StepArt({ n }: { n: number }) {
+  const INK = "#1a1a22", AMBER = "#f59e0b", CREAM = "#fbf6ec", WHITE = "#fff";
+  const S = { stroke: INK, strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, fill: "none" };
+  const common = { width: "100%", viewBox: "0 0 220 128", role: "img" as const, "aria-hidden": true as const, style: { display: "block" } };
+  switch (n) {
+    case 1: // Download — amber button → .zip
+      return (
+        <svg {...common}>
+          <rect x="22" y="20" width="176" height="58" rx="9" fill={WHITE} {...S} />
+          <line x1="22" y1="34" x2="198" y2="34" {...S} />
+          <circle cx="32" cy="27" r="2" fill={INK} /><circle cx="40" cy="27" r="2" fill={INK} /><circle cx="48" cy="27" r="2" fill={INK} />
+          <rect x="66" y="46" width="88" height="20" rx="10" fill={AMBER} {...S} />
+          <path d="M110 51v8M106 56l4 4 4-4" stroke={INK} strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M110 80v14M104 90l6 6 6-6" stroke={AMBER} strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="92" y="98" width="36" height="24" rx="4" fill={CREAM} {...S} />
+          <path d="M104 98v24M116 98v24" stroke={INK} strokeWidth="1.4" />
+          <text x="110" y="114" fontSize="8" fontFamily="'JetBrains Mono',monospace" fontWeight="700" fill={INK} textAnchor="middle">ZIP</text>
+        </svg>
+      );
+    case 2: // Unzip — zip → open folder
+      return (
+        <svg {...common}>
+          <rect x="20" y="44" width="40" height="44" rx="5" fill={CREAM} {...S} />
+          <path d="M34 44v44M46 44v44" stroke={INK} strokeWidth="1.4" />
+          <text x="40" y="70" fontSize="8" fontFamily="'JetBrains Mono',monospace" fontWeight="700" fill={INK} textAnchor="middle">ZIP</text>
+          <path d="M84 64h40M116 56l10 8-10 8" {...S} stroke={AMBER} strokeWidth="2.4" />
+          <path d="M150 52h20l6 8h26a4 4 0 0 1 4 4v34a4 4 0 0 1-4 4h-52a4 4 0 0 1-4-4V56a4 4 0 0 1 4-4Z" fill={CREAM} {...S} />
+          <rect x="158" y="40" width="16" height="20" rx="2" fill={WHITE} {...S} />
+          <rect x="178" y="36" width="16" height="24" rx="2" fill={WHITE} {...S} />
+        </svg>
+      );
+    case 3: // Open Extensions — address bar + dev-mode toggle ON
+      return (
+        <svg {...common}>
+          <rect x="20" y="26" width="180" height="22" rx="11" fill={WHITE} {...S} />
+          <circle cx="34" cy="37" r="4" {...S} /><path d="M37 40l4 4" {...S} />
+          <text x="52" y="41" fontSize="9.5" fontFamily="'JetBrains Mono',monospace" fontWeight="700" fill={INK}>chrome://extensions</text>
+          <rect x="20" y="64" width="180" height="44" rx="8" fill={CREAM} {...S} />
+          <text x="32" y="82" fontSize="9" fontFamily="'Space Grotesk',sans-serif" fontWeight="700" fill={INK}>Developer mode</text>
+          <text x="32" y="96" fontSize="7.5" fontFamily="'JetBrains Mono',monospace" fill="rgba(26,26,46,0.55)">top-right toggle</text>
+          <rect x="150" y="76" width="38" height="20" rx="10" fill={AMBER} {...S} />
+          <circle cx="178" cy="86" r="7" fill={WHITE} {...S} />
+        </svg>
+      );
+    case 4: // Load Unpacked — toolbar with amber "Load unpacked" + folder
+      return (
+        <svg {...common}>
+          <rect x="20" y="26" width="180" height="76" rx="8" fill={WHITE} {...S} />
+          <line x1="20" y1="50" x2="200" y2="50" {...S} />
+          <rect x="30" y="34" width="58" height="10" rx="5" fill={AMBER} {...S} />
+          <text x="59" y="42" fontSize="6.5" fontFamily="'Space Grotesk',sans-serif" fontWeight="800" fill={INK} textAnchor="middle">Load unpacked</text>
+          <rect x="96" y="34" width="40" height="10" rx="5" fill={CREAM} {...S} />
+          <rect x="144" y="34" width="40" height="10" rx="5" fill={CREAM} {...S} />
+          <path d="M70 64h16l4 5h30a3 3 0 0 1 3 3v18a3 3 0 0 1-3 3H70a3 3 0 0 1-3-3V67a3 3 0 0 1 3-3Z" fill={AMBER} {...S} />
+          <path d="M150 78l8 8 14-16" stroke={INK} strokeWidth="2.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case 5: // Link your pet — settings field with pasted CLI token
+      return (
+        <svg {...common}>
+          <rect x="24" y="20" width="172" height="88" rx="9" fill={WHITE} {...S} />
+          <circle cx="40" cy="34" r="5" {...S} /><path d="M40 31v6M37 34h6" stroke={INK} strokeWidth="1.6" />
+          <text x="52" y="38" fontSize="8.5" fontFamily="'Space Grotesk',sans-serif" fontWeight="700" fill={INK}>Settings</text>
+          <text x="40" y="60" fontSize="7.5" fontFamily="'JetBrains Mono',monospace" fontWeight="700" fill="rgba(26,26,46,0.55)">CLI TOKEN</text>
+          <rect x="40" y="66" width="116" height="22" rx="6" fill={CREAM} {...S} />
+          <text x="50" y="81" fontSize="10" fontFamily="'JetBrains Mono',monospace" fontWeight="700" fill={INK}>pck_••••••••</text>
+          <rect x="160" y="66" width="22" height="22" rx="6" fill={AMBER} {...S} />
+          <path d="M166 77l4 4 6-8" stroke={INK} strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    default: // 6: Done — toolbar pet icon + the pet popping up + a stamped check
+      return (
+        <svg {...common}>
+          {/* browser toolbar with the pinned pet icon */}
+          <rect x="20" y="22" width="180" height="20" rx="10" fill={WHITE} {...S} />
+          <circle cx="180" cy="32" r="9" fill={AMBER} {...S} />
+          <circle cx="177" cy="31" r="1.4" fill={INK} /><circle cx="183" cy="31" r="1.4" fill={INK} />
+          <path d="M177 35q3 2 6 0" stroke={INK} strokeWidth="1.4" fill="none" strokeLinecap="round" />
+          <path d="M180 44l-5 7h10Z" fill={AMBER} {...S} />
+          {/* the popped-open companion */}
+          <rect x="120" y="54" width="80" height="56" rx="9" fill={CREAM} {...S} />
+          <circle cx="160" cy="76" r="13" fill={WHITE} {...S} />
+          <circle cx="155" cy="74" r="1.8" fill={INK} /><circle cx="165" cy="74" r="1.8" fill={INK} />
+          <path d="M154 80q6 4 12 0" stroke={INK} strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path d="M150 66l3-5 3 4M170 66l-3-5-3 4" {...S} strokeWidth="1.6" />
+          <text x="160" y="102" fontSize="8.5" fontFamily="'Space Grotesk',sans-serif" fontWeight="800" fill={INK} textAnchor="middle">Hi!</text>
+          {/* success seal */}
+          <circle cx="44" cy="76" r="20" fill={AMBER} {...S} />
+          <path d="M35 76l6 6 13-15" stroke={INK} strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+  }
+}
 
+function ChromeExtensionSection() {
   const steps = [
     { n: 1, title: "Download", desc: 'Click "Download Extension" below to get the ZIP file.' },
     { n: 2, title: "Unzip", desc: "Extract the ZIP to any folder on your computer." },
-    { n: 3, title: "Open Extensions", desc: "Go to chrome://extensions in Chrome and enable Developer Mode (top-right toggle)." },
-    { n: 4, title: "Load Unpacked", desc: 'Click "Load unpacked" and select the extracted folder.' },
-    { n: 5, title: "Link your pet", desc: 'Open the toolbar icon → Settings, and paste your CLI token (generate one in "Connect your CLI" above). This is what makes it show YOUR pet instead of a random one.' },
-    { n: 6, title: "Done!", desc: "Your pet now lives in your toolbar — click it to chat, ask about a page, or play." },
+    { n: 3, title: "Open Extensions", desc: "Go to chrome://extensions and turn on Developer Mode (top-right)." },
+    { n: 4, title: "Load Unpacked", desc: 'Click "Load unpacked" and pick the extracted folder.' },
+    { n: 5, title: "Link your pet", desc: 'Toolbar icon → Settings, paste your CLI token (from "Connect your CLI" above) so it shows YOUR pet.' },
+    { n: 6, title: "Done!", desc: "Your pet lives in your toolbar — click it to chat, ask about a page, or play." },
   ];
 
   return (
@@ -674,15 +771,16 @@ function ChromeExtensionSection() {
       className="sov-card"
       style={{
         borderRadius: 20, marginBottom: 32, overflow: "hidden",
-        border: "1px solid rgba(66,133,244,0.18)",
-        background: "linear-gradient(135deg, rgba(66,133,244,0.04) 0%, rgba(139,92,246,0.04) 100%)",
+        border: "3px solid #1a1a22",
+        background: "#faf7f2",
+        boxShadow: "0 8px 0 rgba(26,26,34,0.14)",
       }}
     >
       <div style={{ padding: 30 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
           <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="extension-icon" size={22} /></span>
           <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.03em" }}>Desktop Companion Extension</h2>
-          <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 10, background: "rgba(74,222,128,0.15)", color: "#16a34a", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.1em" }}>v2.0 READY</span>
+          <span style={{ fontSize: 8, padding: "2px 8px", borderRadius: 6, background: "#f59e0b", color: "#1a1a22", border: "1.5px solid #1a1a22", fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, letterSpacing: "0.1em" }}>v2.0 READY</span>
         </div>
         <p style={{ fontSize: 14, color: "rgba(26,26,46,0.62)", lineHeight: 1.65, marginBottom: 14 }}>
           Your pet follows you across the web — a little companion in the corner of every page. Click it to chat,
@@ -691,7 +789,7 @@ function ChromeExtensionSection() {
         </p>
         <div style={{
           display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 14px", borderRadius: 12,
-          background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)", marginBottom: 20,
+          background: "#fff", border: "2px solid #1a1a22", boxShadow: "0 3px 0 rgba(26,26,34,0.12)", marginBottom: 20,
         }}>
           <span style={{ fontSize: 16, lineHeight: 1.4, display: "inline-flex" }}><Icon name="lock" size={16} /></span>
           <p style={{ fontSize: 13, color: "rgba(26,26,46,0.7)", lineHeight: 1.6, margin: 0 }}>
@@ -715,60 +813,47 @@ function ChromeExtensionSection() {
               { icon: "sparkling", title: "Evolution", desc: "6 stages from Baby → Legendary. Each stage unlocks new behaviors." },
               { icon: "heart", title: "Mood System", desc: "Pet gets hungry, tired, or excited based on your activity." },
             ].map(({ icon, title, desc }) => (
-              <div key={title} style={{ padding: 12, borderRadius: 10, background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.05)" }}>
+              <div key={title} style={{ padding: 12, borderRadius: 10, background: "#fff", border: "2px solid #1a1a22", boxShadow: "0 3px 0 rgba(26,26,34,0.12)" }}>
                 <div style={{ fontSize: 18, marginBottom: 6 }}><Icon name={icon} size={18} /></div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#1a1a2e", marginBottom: 3 }}>{title}</div>
-                <div style={{ fontSize: 10, color: "rgba(26,26,46,0.45)", fontFamily: "monospace", lineHeight: 1.55 }}>{desc}</div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: "#1a1a2e", marginBottom: 3, fontFamily: "'Space Grotesk',sans-serif" }}>{title}</div>
+                <div style={{ fontSize: 10, color: "rgba(26,26,46,0.5)", fontFamily: "'JetBrains Mono',monospace", lineHeight: 1.55 }}>{desc}</div>
               </div>
             ))}
           </div>
 
-          {/* Install steps */}
+          {/* Install steps — each with a "what you'll see" illustration */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.4)", letterSpacing: "0.1em", marginBottom: 12 }}>DEVELOPER MODE INSTALL</div>
-            {steps.map((s) => (
-              <div
-                key={s.n}
-                onClick={() => setInstallStep(installStep === s.n ? null : s.n)}
-                style={{
-                  display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px",
-                  borderRadius: 10, marginBottom: 6, cursor: "pointer",
-                  background: installStep === s.n ? "rgba(66,133,244,0.07)" : "rgba(0,0,0,0.025)",
-                  border: `1px solid ${installStep === s.n ? "rgba(66,133,244,0.2)" : "rgba(0,0,0,0.05)"}`,
-                  transition: "all 0.2s",
-                }}
-              >
-                <div style={{
-                  width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
-                  background: installStep === s.n ? "#4285F4" : "rgba(0,0,0,0.08)",
-                  color: installStep === s.n ? "#fff" : "rgba(26,26,46,0.5)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 10, fontWeight: 800, fontFamily: "monospace",
-                }}>
-                  {s.n}
+            <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono',monospace", color: "rgba(26,26,46,0.5)", letterSpacing: "0.12em", marginBottom: 12 }}>DEVELOPER MODE INSTALL · ~2 MIN</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(158px, 1fr))", gap: 10 }}>
+              {steps.map((s) => (
+                <div key={s.n} className="mp-lift" style={{ background: "#fff", border: "2px solid #1a1a22", borderRadius: 12, boxShadow: "0 3px 0 rgba(26,26,34,0.13)", overflow: "hidden" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderBottom: "2px solid #1a1a22", background: "#fbf6ec" }}>
+                    <span style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, background: "#f59e0b", border: "2px solid #1a1a22", color: "#1a1a22", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace" }}>{s.n}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: "#1a1a22", fontFamily: "'Space Grotesk',sans-serif", letterSpacing: "-0.01em" }}>{s.title}</span>
+                  </div>
+                  <div style={{ padding: "10px 10px 2px", background: "#fbf6ec", borderBottom: "2px solid #1a1a22" }}>
+                    <StepArt n={s.n} />
+                  </div>
+                  <div style={{ fontSize: 10, color: "rgba(26,26,46,0.62)", fontFamily: "'JetBrains Mono',monospace", lineHeight: 1.5, padding: "8px 10px 11px" }}>{s.desc}</div>
                 </div>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e" }}>{s.title}</div>
-                  {installStep === s.n && (
-                    <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", fontFamily: "monospace", lineHeight: 1.55, marginTop: 3 }}>{s.desc}</div>
-                  )}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
           <a
             href="/petclaw-extension.zip"
             download="myaipet-extension.zip"
+            className="dc dc-sm"
             style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "12px 24px", borderRadius: 12,
-              background: "linear-gradient(135deg, #4285F4, #3b5de7)",
-              color: "#fff", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
-              textDecoration: "none", transition: "opacity 0.2s",
+              background: "#f59e0b", border: "3px solid #1a1a22",
+              ["--dc-rest" as any]: "0 4px 0 rgba(26,26,34,0.25)",
+              ["--dc-hover" as any]: "0 6px 0 rgba(26,26,34,0.25)",
+              ["--dc-press" as any]: "0 2px 0 rgba(26,26,34,0.25)",
+              color: "#1a1a22", fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 800,
+              textDecoration: "none",
             }}
-            onMouseOver={(e) => (e.currentTarget.style.opacity = "0.88")}
-            onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
               <path d="M12 4v11" />
@@ -787,9 +872,9 @@ function ChromeExtensionSection() {
           <div style={{ fontSize: 10, fontFamily: "monospace", color: "rgba(26,26,46,0.35)", letterSpacing: "0.1em", marginBottom: 12 }}>POPUP PREVIEW</div>
           {/* Extension popup mockup */}
           <div style={{
-            width: 320, borderRadius: 14, overflow: "hidden",
-            background: "#0a0a14", fontFamily: "'Segoe UI', -apple-system, sans-serif",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.08)",
+            width: 320, borderRadius: 16, overflow: "hidden",
+            background: "#1f1b16", fontFamily: "'Segoe UI', -apple-system, sans-serif",
+            boxShadow: "0 8px 0 rgba(26,26,34,0.22)", border: "3px solid #1a1a22",
             fontSize: 12,
           }}>
             {/* Header */}
