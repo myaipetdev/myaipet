@@ -221,8 +221,12 @@ export default function CatCatch() {
             {[["top","left"],["top","right"],["bottom","left"],["bottom","right"]].map(([v,h]) => (
               <span key={v+h} aria-hidden style={{ position: "absolute", [v]: 16, [h]: 16, width: 22, height: 22, [`border${v[0].toUpperCase()+v.slice(1)}`]: "2px solid rgba(252,239,224,.7)", [`border${h[0].toUpperCase()+h.slice(1)}`]: "2px solid rgba(252,239,224,.7)", borderRadius: v === "top" ? (h === "left" ? "6px 0 0 0" : "0 6px 0 0") : (h === "left" ? "0 0 0 6px" : "0 0 6px 0") } as React.CSSProperties} />
             ))}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/mascot.jpg" alt="MY AI PET" style={{ width: 92, height: 92, borderRadius: 16, objectFit: "cover", border: "2px solid rgba(252,239,224,.5)", boxShadow: "inset 0 0 0 2px rgba(184,130,44,.45)" }} />
+            <svg width="96" height="96" viewBox="0 0 96 96" aria-hidden style={{ display: "block" }}>
+              <circle cx="48" cy="48" r="36" fill="none" stroke="rgba(252,239,224,.55)" strokeWidth="2" strokeDasharray="4 7" />
+              <circle cx="48" cy="48" r="23" fill="none" stroke="rgba(252,239,224,.35)" strokeWidth="1.5" />
+              <path d="M48 16v13M48 67v13M16 48h13M67 48h13" stroke="rgba(252,239,224,.7)" strokeWidth="2" strokeLinecap="round" />
+              <circle cx="48" cy="48" r="3" fill="rgba(252,239,224,.9)" />
+            </svg>
             <div style={{ fontFamily: DISP, fontSize: 19, fontWeight: 700, color: "#FCEFE0", maxWidth: 320, lineHeight: 1.3 }}>See an animal out in the world? Point your camera and catch it.</div>
             <div style={{ fontFamily: BODY, fontSize: 13, color: "rgba(252,239,224,.72)", maxWidth: 300 }}>Mostly cats &amp; dogs — but any real animal counts. Screenshots and photos of screens won&apos;t work.</div>
             <button onClick={startCamera} style={{ ...bigBtn, display: "inline-flex", alignItems: "center", gap: 8 }}><CameraIcon size={20} /> Open camera</button>
