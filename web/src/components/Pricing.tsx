@@ -151,43 +151,43 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
       <div className="mp-enter" style={{ textAlign: "center", marginBottom: 48 }}>
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 16px",
-          borderRadius: 999, background: "linear-gradient(135deg, rgba(251,191,36,0.12), rgba(245,158,11,0.06))",
-          border: "1px solid rgba(251,191,36,0.25)", marginBottom: 16,
+          borderRadius: 999, background: "#F5EFE2",
+          border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", marginBottom: 16,
         }}>
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#b45309", fontWeight: 800, letterSpacing: "0.18em" }}>
+          <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#9A4E1E", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase" }}>
             COMPANIONSHIP · OWNED
           </span>
         </div>
         <h2 style={{
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 36, fontWeight: 800,
-          color: "#1a1a2e", marginBottom: 12, letterSpacing: "-0.025em", lineHeight: 1.1,
+          fontFamily: "var(--ed-disp)", fontSize: 36, fontWeight: 800,
+          color: "#211A12", marginBottom: 12, letterSpacing: "-0.025em", lineHeight: 1.1,
         }}>
           Made with care, not hype.
         </h2>
         <p style={{
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 17, color: "rgba(26,26,46,0.65)",
+          fontFamily: "var(--ed-body)", fontSize: 17, color: "#5C5140",
           maxWidth: 600, margin: "0 auto", lineHeight: 1.65, fontWeight: 500,
         }}>
           Credits power AI image &amp; video creation with your pet — the same
           companion you raise, the same memory that travels with you. Spend on
-          what serves the bond. Points details in the <a href="/docs" style={{ color: "#b45309", fontWeight: 700 }}>docs</a>.
+          what serves the bond. Points details in the <a href="/docs" style={{ color: "#9A4E1E", fontWeight: 700 }}>docs</a>.
         </p>
       </div>
 
       {paused && (
         <div style={{
           maxWidth: 620, margin: "0 auto 32px", padding: "14px 20px", borderRadius: 14,
-          background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.28)",
+          background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           display: "flex", alignItems: "center", gap: 12, textAlign: "left",
         }}>
-          <span style={{ fontSize: 20, flexShrink: 0, display: "inline-flex", color: "#d97706" }} aria-hidden="true">
+          <span style={{ fontSize: 20, flexShrink: 0, display: "inline-flex", color: "#BE4F28" }} aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <rect x="2" y="5" width="20" height="14" rx="2.5" />
               <path d="M2 9.5h20" />
               <path d="M6 14.5h3" />
             </svg>
           </span>
-          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "#92400e", lineHeight: 1.5 }}>
+          <div style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#9A4E1E", lineHeight: 1.5 }}>
             <strong>Credit purchases are paused right now.</strong> You can still earn credits free by raising &amp; creating — buying reopens soon.
           </div>
         </div>
@@ -199,22 +199,22 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
       }}>
         {EARN_METHODS.map((m) => (
           <div key={m.label} style={{
-            background: "rgba(255,255,255,0.7)", borderRadius: 14,
-            border: "1px solid rgba(0,0,0,0.06)", padding: "18px 16px",
+            background: "#FBF6EC", borderRadius: 14,
+            border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", padding: "18px 16px",
             display: "flex", alignItems: "flex-start", gap: 12,
           }}>
             <span style={{ flexShrink: 0, display: "inline-flex", lineHeight: 0 }}><Icon name={m.icon} size={22} /></span>
             <div>
-              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 600, color: "#1a1a2e", marginBottom: 3 }}>
+              <div style={{ fontFamily: "var(--ed-disp)", fontSize: 16, fontWeight: 600, color: "#211A12", marginBottom: 3 }}>
                 {m.label}
               </div>
-              <div style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.45)", marginBottom: 6 }}>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A", marginBottom: 6 }}>
                 {m.desc}
               </div>
               <span style={{
-                fontFamily: "mono", fontSize: 12, color: "#16a34a", fontWeight: 600,
+                fontFamily: "var(--ed-m)", fontSize: 12, color: "#5C8A4E", fontWeight: 600,
                 padding: "2px 8px", borderRadius: 6,
-                background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.12)",
+                background: "rgba(92,138,78,0.08)", border: "1px solid rgba(92,138,78,0.20)",
               }}>
                 {m.reward}
               </span>
@@ -226,12 +226,12 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
       {/* Purchase section */}
       <div style={{ textAlign: "center", marginBottom: 24 }}>
         <h3 style={{
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, fontWeight: 700,
-          color: "#1a1a2e", marginBottom: 6,
+          fontFamily: "var(--ed-disp)", fontSize: 22, fontWeight: 700,
+          color: "#211A12", marginBottom: 6,
         }}>
           Get Credits
         </h3>
-        <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "rgba(26,26,46,0.5)", marginBottom: 10 }}>
+        <p style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#7A6E5A", marginBottom: 10 }}>
           {paused
             ? "Purchases are paused right now — earn credits free by raising & creating"
             : "Credits power AI image & video creation with your pet"}
@@ -242,7 +242,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         <div style={{
           marginBottom: 16, padding: "14px 20px", borderRadius: 12,
           background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 600,
+          fontFamily: "var(--ed-body)", fontSize: 15, fontWeight: 600,
           color: "#dc2626", textAlign: "center", lineHeight: 1.5,
           maxWidth: 560, marginLeft: "auto", marginRight: "auto",
         }}>
@@ -252,9 +252,9 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
       {success && (
         <div style={{
           marginBottom: 16, padding: "14px 20px", borderRadius: 12,
-          background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.25)",
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 600,
-          color: "#16a34a", textAlign: "center", lineHeight: 1.5,
+          background: "rgba(92,138,78,0.08)", border: "1px solid rgba(92,138,78,0.25)",
+          fontFamily: "var(--ed-body)", fontSize: 15, fontWeight: 600,
+          color: "#5C8A4E", textAlign: "center", lineHeight: 1.5,
           maxWidth: 560, marginLeft: "auto", marginRight: "auto",
         }}>
           {success}
@@ -265,7 +265,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         .pricing-card {
           border-radius: 16px;
           padding: 28px 22px; position: relative; text-align: center;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+          box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5));
           transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
         }
         .pricing-cards-grid:hover .pricing-card {
@@ -276,33 +276,32 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           opacity: 1;
           filter: saturate(1);
           transform: translateY(-6px);
-          box-shadow: 0 16px 40px rgba(0,0,0,0.08);
+          box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5));
         }
         .pricing-card:hover {
           transform: translateY(-6px);
-          box-shadow: 0 16px 40px rgba(0,0,0,0.08);
+          box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5));
         }
         .pricing-card.popular {
-          background: rgba(251,191,36,0.06);
-          border: 1px solid rgba(251,191,36,0.15);
+          background: #F5EFE2;
+          border: 1px solid rgba(190,79,40,0.30);
         }
         .pricing-card.popular:hover {
-          border-color: rgba(251,191,36,0.35);
-          box-shadow: 0 16px 40px rgba(245,158,11,0.15);
+          border-color: rgba(190,79,40,0.50);
+          box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5));
         }
         .pricing-card:not(.popular) {
-          background: rgba(255,255,255,0.8);
-          border: 1px solid rgba(0,0,0,0.06);
+          background: #FBF6EC;
+          border: 1px solid var(--ed-hair, rgba(33,26,18,.13));
         }
         .pricing-card:not(.popular):hover {
-          border-color: rgba(251,191,36,0.2);
-          background: rgba(251,191,36,0.03);
+          border-color: rgba(190,79,40,0.30);
+          background: #F5EFE2;
         }
         .pricing-card:hover .pricing-btn-default {
-          background: linear-gradient(135deg,#f59e0b,#d97706) !important;
-          color: white !important;
+          background: linear-gradient(180deg,#F49B2A,#E27D0C) !important;
+          color: #FFF8EE !important;
           border-color: transparent !important;
-          box-shadow: 0 0 20px rgba(245,158,11,0.2);
         }
       `}</style>
       <div className="pricing-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, maxWidth: 860, margin: "0 auto" }}>
@@ -311,27 +310,27 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
             {p.pop && (
               <div style={{
                 position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)",
-                background: "linear-gradient(135deg,#f59e0b,#d97706)",
+                background: "#BE4F28",
                 padding: "3px 14px", borderRadius: 16,
-                fontFamily: "mono", fontSize: 9, color: "white", fontWeight: 600,
+                fontFamily: "var(--ed-m)", fontSize: 9, color: "#FFF8EE", fontWeight: 600,
               }}>
                 MOST POPULAR
               </div>
             )}
             <div style={{ marginBottom: 8 }}><Icon name={p.emoji} size={32} /></div>
-            <div style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.5)", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em" }}>
               {p.name}
             </div>
             <div style={{
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 36, fontWeight: 700,
-              color: "#1a1a2e", marginBottom: 3,
+              fontFamily: "var(--ed-disp)", fontSize: 36, fontWeight: 700,
+              color: "#211A12", marginBottom: 3,
             }}>
               {p.usdtPrice}
             </div>
-            <div style={{ fontFamily: "mono", fontSize: 14, color: "#b45309", marginBottom: 4, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 14, color: "#9A4E1E", marginBottom: 4, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>
               <Icon name="coin" size={16} /> {p.cookies.toLocaleString()} credits
             </div>
-            <div style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.4)", marginBottom: 18 }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E", marginBottom: 18 }}>
               {p.desc}
             </div>
             <button
@@ -340,16 +339,16 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
               className={p.pop ? "" : "pricing-btn-default"}
               style={{
                 width: "100%",
-                background: paused ? "rgba(26,26,46,0.25)"
-                  : purchasing === p.key ? "rgba(245,158,11,0.5)"
-                  : p.pop ? "linear-gradient(135deg,#f59e0b,#d97706)" : "#1a1a2e",
+                background: paused ? "rgba(33,26,18,0.25)"
+                  : purchasing === p.key ? "rgba(190,79,40,0.5)"
+                  : p.pop ? "linear-gradient(180deg,#F49B2A,#E27D0C)" : "#211A12",
                 border: "none",
                 borderRadius: 10, padding: "13px",
-                fontFamily: "'Space Grotesk',sans-serif", fontSize: 14,
-                color: "white",
+                fontFamily: "var(--ed-disp)", fontSize: 14,
+                color: p.pop && !paused ? "#FFF8EE" : "#fff",
                 cursor: paused ? "not-allowed" : purchasing ? "wait" : "pointer", fontWeight: 700,
                 transition: "all 0.3s ease",
-                boxShadow: p.pop && !paused ? "0 4px 12px rgba(245,158,11,0.3)" : "none",
+                boxShadow: "none",
                 opacity: paused ? 0.85 : (purchasing && purchasing !== p.key ? 0.5 : 1),
               }}
             >
@@ -365,9 +364,9 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
                   border: "none",
                   borderRadius: 12,
                   padding: "12px 24px",
-                  fontFamily: "'Space Grotesk',sans-serif",
+                  fontFamily: "var(--ed-disp)",
                   fontSize: 13,
-                  color: "white",
+                  color: "#fff",
                   cursor: "pointer",
                   fontWeight: 700,
                   transition: "all 0.3s ease",

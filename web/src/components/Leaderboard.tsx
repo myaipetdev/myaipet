@@ -9,7 +9,7 @@ const EVOLUTION_STAGES: Record<string, { name: string; color: string }> = {
   young:     { name: "Young",     color: "#34d399" },
   adult:     { name: "Adult",     color: "#818cf8" },
   elder:     { name: "Elder",     color: "#c084fc" },
-  legendary: { name: "Legendary", color: "#f59e0b" },
+  legendary: { name: "Legendary", color: "#C8932F" },
 };
 
 function getEvolutionFromLevel(level: number): { name: string; color: string } {
@@ -26,10 +26,10 @@ function truncateWallet(wallet: string): string {
 }
 
 function getRankStyle(rank: number): { bg: string; border: string; color: string; icon: string } {
-  if (rank === 1) return { bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.2)", color: "#d97706", icon: "\uD83E\uDD47" };
-  if (rank === 2) return { bg: "rgba(156,163,175,0.08)", border: "rgba(156,163,175,0.2)", color: "#9ca3af", icon: "\uD83E\uDD48" };
-  if (rank === 3) return { bg: "rgba(205,127,50,0.08)", border: "rgba(205,127,50,0.2)", color: "#cd7f32", icon: "\uD83E\uDD49" };
-  return { bg: "transparent", border: "rgba(0,0,0,0.06)", color: "rgba(26,26,46,0.35)", icon: "" };
+  if (rank === 1) return { bg: "rgba(190,79,40,0.06)", border: "rgba(190,79,40,0.22)", color: "#BE4F28", icon: "\uD83E\uDD47" };
+  if (rank === 2) return { bg: "rgba(122,110,90,0.06)", border: "rgba(122,110,90,0.22)", color: "#7A6E5A", icon: "\uD83E\uDD48" };
+  if (rank === 3) return { bg: "rgba(154,78,30,0.06)", border: "rgba(154,78,30,0.22)", color: "#9A4E1E", icon: "\uD83E\uDD49" };
+  return { bg: "transparent", border: "var(--ed-hair, rgba(33,26,18,.13))", color: "rgba(33,26,18,0.35)", icon: "" };
 }
 
 export default function Leaderboard() {
@@ -93,15 +93,15 @@ export default function Leaderboard() {
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
           <span style={{ fontSize: 26 }}>{"\uD83C\uDFC6"}</span>
           <h1 style={{
-            fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700,
-            color: "#1a1a2e", margin: 0, letterSpacing: "-0.03em",
+            fontFamily: "var(--ed-disp)", fontSize: 28, fontWeight: 700,
+            color: "#211A12", margin: 0, letterSpacing: "-0.03em",
           }}>
             Leaderboard
           </h1>
         </div>
         <p style={{
-          fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.45)",
-          margin: 0, marginLeft: 38,
+          fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E",
+          margin: 0, marginLeft: 38, textTransform: "uppercase", letterSpacing: ".12em",
         }}>
           Top pets by Season Rewards
         </p>
@@ -109,9 +109,9 @@ export default function Leaderboard() {
 
       {/* Stats Bar */}
       <div style={{
-        display: "flex", gap: 1, background: "rgba(255,255,255,0.7)",
-        borderRadius: 14, overflow: "hidden", border: "1px solid rgba(0,0,0,0.06)",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.04)", marginBottom: 28,
+        display: "flex", gap: 1, background: "#FBF6EC",
+        borderRadius: 14, overflow: "hidden", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))", marginBottom: 28,
       }}>
         {[
           { label: "Total Participants", value: loading ? "..." : entries.length.toLocaleString() },
@@ -119,18 +119,18 @@ export default function Leaderboard() {
           { label: "Tiers", value: `${SEASON_TIERS.length} ranks` },
         ].map((s, i) => (
           <div key={i} style={{
-            flex: 1, padding: "16px 20px", background: "rgba(255,255,255,0.5)",
-            borderRight: i < 2 ? "1px solid rgba(0,0,0,0.06)" : "none",
+            flex: 1, padding: "16px 20px", background: "#F5EFE2",
+            borderRight: i < 2 ? "1px solid var(--ed-hair, rgba(33,26,18,.13))" : "none",
           }}>
             <div style={{
-              fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.45)",
-              textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4,
+              fontFamily: "var(--ed-m)", fontSize: 9, color: "#7A6E5A",
+              textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 4,
             }}>
               {s.label}
             </div>
             <div style={{
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, fontWeight: 700,
-              color: "#1a1a2e", letterSpacing: "-0.02em",
+              fontFamily: "var(--ed-disp)", fontSize: 18, fontWeight: 700,
+              color: "#211A12", letterSpacing: "-0.02em",
             }}>
               {s.value}
             </div>
@@ -143,21 +143,21 @@ export default function Leaderboard() {
         <div style={{
           display: "flex", alignItems: "center", gap: 14,
           padding: "14px 20px", borderRadius: 14, marginBottom: 20,
-          background: "linear-gradient(135deg, rgba(245,158,11,0.06), rgba(251,191,36,0.04))",
-          border: "1.5px solid rgba(245,158,11,0.2)",
-          boxShadow: "0 2px 12px rgba(245,158,11,0.08)",
+          background: "#FBF6EC",
+          border: "1px solid rgba(190,79,40,0.22)",
+          boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
         }}>
           <div style={{
-            fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, fontWeight: 700,
-            color: "#d97706", minWidth: 50, textAlign: "center",
+            fontFamily: "var(--ed-disp)", fontSize: 22, fontWeight: 700,
+            color: "#BE4F28", minWidth: 50, textAlign: "center",
           }}>
             #{myRank.rank}
           </div>
           <div style={{
             width: 42, height: 42, borderRadius: 12, overflow: "hidden",
-            border: "2px solid rgba(245,158,11,0.2)", flexShrink: 0,
+            border: "1px solid rgba(190,79,40,0.22)", flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
-            background: "rgba(251,191,36,0.06)",
+            background: "#F5EFE2",
           }}>
             {myRank.pet?.avatar_url ? (
               <img src={myRank.pet.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -166,16 +166,16 @@ export default function Leaderboard() {
             )}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600, color: "#1a1a2e" }}>
-              {myRank.pet?.name || "My Pet"} <span style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.4)" }}>YOU</span>
+            <div style={{ fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 600, color: "#211A12" }}>
+              {myRank.pet?.name || "My Pet"} <span style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A7B4E" }}>YOU</span>
             </div>
-            <div style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.4)" }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A7B4E" }}>
               Lv.{myRank.pet?.level || 1} · {myRank.wallet}
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.4)", textTransform: "uppercase" }}>{"\u2B50"} Points</div>
-            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 20, fontWeight: 700, color: "#d97706" }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "#9A7B4E", textTransform: "uppercase", letterSpacing: ".12em" }}>{"\u2B50"} Points</div>
+            <div style={{ fontFamily: "var(--ed-disp)", fontSize: 20, fontWeight: 700, color: "#BE4F28" }}>
               {(myRank.points || 0).toLocaleString()}
             </div>
           </div>
@@ -185,11 +185,12 @@ export default function Leaderboard() {
       {/* Season Reward Tiers — single source of truth: lib/season.ts */}
       {!loading && !error && entries.length > 0 && (
         <div style={{
-          background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
-          border: "1.5px solid rgba(245,158,11,0.2)",
+          background: "#FBF6EC",
+          border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           borderRadius: 20,
           padding: "24px 24px 20px",
           marginBottom: 24,
+          boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
         }}>
           <div style={{
             display: "flex", alignItems: "center", gap: 8, marginBottom: 16,
@@ -197,12 +198,12 @@ export default function Leaderboard() {
             <span style={{ fontSize: 22 }}>{"\uD83C\uDF81"}</span>
             <div>
               <div style={{
-                fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 700,
-                color: "#78350f", letterSpacing: "-0.01em",
+                fontFamily: "var(--ed-disp)", fontSize: 16, fontWeight: 700,
+                color: "#211A12", letterSpacing: "-0.01em",
               }}>
                 Season Tiers
               </div>
-              <div style={{ fontFamily: "mono", fontSize: 10, color: "#92400e", marginTop: 2 }}>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A4E1E", marginTop: 2 }}>
                 Earn Season points to climb tiers. Standing is snapshotted at season close.
               </div>
             </div>
@@ -215,28 +216,28 @@ export default function Leaderboard() {
                 <div key={t.key} style={{
                   flex: "0 0 auto", minWidth: 150, maxWidth: 200,
                   padding: "16px 18px", borderRadius: 16,
-                  background: "rgba(255,255,255,0.8)",
-                  border: `1.5px solid ${t.color}${reached ? "55" : "25"}`,
-                  boxShadow: reached ? `0 2px 12px ${t.color}22` : "0 2px 8px rgba(0,0,0,0.04)",
+                  background: "#F5EFE2",
+                  border: `1px solid ${t.color}${reached ? "55" : "25"}`,
+                  boxShadow: reached ? "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" : "none",
                   opacity: reached ? 1 : 0.85,
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
                     <span style={{ fontSize: 18 }}>{t.emoji}</span>
                     <span style={{
-                      fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 700,
+                      fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 700,
                       color: t.color,
                     }}>
                       {t.name}
                     </span>
                   </div>
                   <div style={{
-                    fontFamily: "'Space Mono',monospace", fontSize: 15, fontWeight: 700,
-                    color: "#78350f", marginBottom: 4,
+                    fontFamily: "var(--ed-m)", fontSize: 15, fontWeight: 700,
+                    color: "#211A12", marginBottom: 4,
                   }}>
                     {t.min.toLocaleString()}+ pts
                   </div>
                   <div style={{
-                    fontFamily: "mono", fontSize: 10, color: "#92400e", lineHeight: 1.4,
+                    fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A4E1E", lineHeight: 1.4,
                   }}>
                     {reached ? "Reached" : `${(t.min - (myRank?.points || 0)).toLocaleString()} pts to go`}
                   </div>
@@ -247,12 +248,12 @@ export default function Leaderboard() {
 
           <div style={{
             marginTop: 14, padding: "10px 16px", borderRadius: 12,
-            background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.1)",
+            background: "rgba(190,79,40,0.06)", border: "1px solid rgba(190,79,40,0.13)",
             display: "flex", alignItems: "center", gap: 8,
           }}>
             <span style={{ fontSize: 16 }}>{"\uD83D\uDC3E"}</span>
             <span style={{
-              fontFamily: "mono", fontSize: 10, color: "#92400e", lineHeight: 1.5,
+              fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A4E1E", lineHeight: 1.5,
             }}>
               Tiers are non-financial standing — your felt status in the season. Higher tiers
               unlock claimable merch with your AI pet&apos;s artwork printed on real products.
@@ -265,7 +266,7 @@ export default function Leaderboard() {
       {loading && (
         <div style={{
           textAlign: "center", padding: "60px 0",
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, color: "rgba(26,26,46,0.4)",
+          fontFamily: "var(--ed-body)", fontSize: 15, color: "#7A6E5A",
         }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>{"\uD83D\uDD04"}</div>
           Loading rankings...
@@ -276,7 +277,7 @@ export default function Leaderboard() {
       {error && !loading && (
         <div style={{
           textAlign: "center", padding: "40px 0",
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "#f87171",
+          fontFamily: "var(--ed-body)", fontSize: 14, color: "#C0432A",
         }}>
           <div style={{ fontSize: 28, marginBottom: 8 }}>{"\u26A0\uFE0F"}</div>
           {error}
@@ -309,15 +310,13 @@ export default function Leaderboard() {
                 <div key={rank} style={{
                   flex: 1, maxWidth: isFirst ? 260 : 220,
                   marginBottom: elevation,
-                  background: "rgba(255,255,255,0.9)",
+                  background: "#FBF6EC",
                   borderRadius: 18,
-                  border: `1.5px solid ${rs.border}`,
+                  border: `1px solid ${rs.border}`,
                   padding: "28px 18px 20px",
                   textAlign: "center",
                   position: "relative",
-                  boxShadow: isFirst
-                    ? "0 8px 30px rgba(245,158,11,0.15)"
-                    : "0 2px 12px rgba(0,0,0,0.06)",
+                  boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
                   animation: `leaderFadeUp 0.4s ease-out ${rank * 0.1}s both`,
                   transform: isFirst ? "scale(1.04)" : "scale(1)",
                 }}>
@@ -332,7 +331,7 @@ export default function Leaderboard() {
 
                   {/* Rank */}
                   <div style={{
-                    fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 700,
+                    fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 700,
                     color: rs.color, marginBottom: 10,
                   }}>
                     #{rank}
@@ -342,8 +341,8 @@ export default function Leaderboard() {
                   <div style={{
                     width: avatarSize, height: avatarSize,
                     borderRadius: isFirst ? 22 : 16, margin: "0 auto 10px",
-                    border: `2.5px solid ${rs.border}`,
-                    overflow: "hidden", background: "rgba(251,191,36,0.06)",
+                    border: `1px solid ${rs.border}`,
+                    overflow: "hidden", background: "#F5EFE2",
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
                     {entry.pet?.avatar_url ? (
@@ -356,8 +355,8 @@ export default function Leaderboard() {
 
                   {/* Name */}
                   <div style={{
-                    fontFamily: "'Space Grotesk',sans-serif", fontSize: isFirst ? 16 : 14, fontWeight: 600,
-                    color: "#1a1a2e", marginBottom: 6,
+                    fontFamily: "var(--ed-disp)", fontSize: isFirst ? 16 : 14, fontWeight: 600,
+                    color: "#211A12", marginBottom: 6,
                   }}>
                     {entry.pet?.name || "Unknown"}
                   </div>
@@ -365,14 +364,14 @@ export default function Leaderboard() {
                   {/* Level + Evolution */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginBottom: 8 }}>
                     <span style={{
-                      fontFamily: "mono", fontSize: 9, padding: "2px 8px", borderRadius: 6,
-                      background: "rgba(245,158,11,0.08)", color: "#b45309",
-                      border: "1px solid rgba(245,158,11,0.15)", fontWeight: 600,
+                      fontFamily: "var(--ed-m)", fontSize: 9, padding: "2px 8px", borderRadius: 6,
+                      background: "rgba(190,79,40,0.08)", color: "#9A4E1E",
+                      border: "1px solid rgba(190,79,40,0.15)", fontWeight: 600,
                     }}>
                       Lv.{entry.pet?.level || 1}
                     </span>
                     <span style={{
-                      fontFamily: "mono", fontSize: 9, padding: "2px 8px", borderRadius: 6,
+                      fontFamily: "var(--ed-m)", fontSize: 9, padding: "2px 8px", borderRadius: 6,
                       background: `${evo.color}15`, color: evo.color,
                       border: `1px solid ${evo.color}30`, fontWeight: 600,
                     }}>
@@ -382,26 +381,26 @@ export default function Leaderboard() {
 
                   {/* Wallet */}
                   <div style={{
-                    fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.3)", marginBottom: 10,
+                    fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A7B4E", marginBottom: 10,
                   }}>
                     {truncateWallet(entry.wallet)}
                   </div>
 
                   {/* Points */}
                   <div style={{
-                    background: isFirst ? "rgba(245,158,11,0.08)" : "rgba(0,0,0,0.02)",
+                    background: isFirst ? "rgba(190,79,40,0.06)" : "#F5EFE2",
                     borderRadius: 10, padding: "10px 14px",
-                    border: isFirst ? "1px solid rgba(245,158,11,0.15)" : "1px solid rgba(0,0,0,0.06)",
+                    border: isFirst ? "1px solid rgba(190,79,40,0.15)" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                   }}>
                     <div style={{
-                      fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.4)",
-                      textTransform: "uppercase", marginBottom: 3,
+                      fontFamily: "var(--ed-m)", fontSize: 9, color: "#9A7B4E",
+                      textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 3,
                     }}>
                       {"\u2B50"} Season Rewards
                     </div>
                     <div style={{
-                      fontFamily: "'Space Grotesk',sans-serif", fontSize: isFirst ? 22 : 18, fontWeight: 700,
-                      color: "#d97706",
+                      fontFamily: "var(--ed-disp)", fontSize: isFirst ? 22 : 18, fontWeight: 700,
+                      color: "#BE4F28",
                     }}>
                       {(entry.points || 0).toLocaleString()}
                     </div>
@@ -416,20 +415,20 @@ export default function Leaderboard() {
       {/* Remaining Rankings */}
       {!loading && !error && rest.length > 0 && (
         <div style={{
-          background: "rgba(255,255,255,0.8)", borderRadius: 16,
-          border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+          background: "#FBF6EC", borderRadius: 16,
+          border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", overflow: "hidden",
+          boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
         }}>
           {/* Table Header */}
           <div className="lb-table-header" style={{
             display: "grid", gridTemplateColumns: "50px 1fr 140px 120px 100px",
-            padding: "12px 18px", borderBottom: "1px solid rgba(0,0,0,0.06)",
-            background: "rgba(0,0,0,0.015)",
+            padding: "12px 18px", borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+            background: "#F5EFE2",
           }}>
             {["Rank", "Pet", "Wallet", "Evolution", "Points"].map((h) => (
               <div key={h} className={h === "Wallet" || h === "Evolution" ? "lb-hide-mobile" : undefined} style={{
-                fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.35)",
-                textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600,
+                fontFamily: "var(--ed-m)", fontSize: 9, color: "#7A6E5A",
+                textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 600,
               }}>
                 {h}
               </div>
@@ -446,15 +445,15 @@ export default function Leaderboard() {
               <div key={entry.rank} className="lb-table-row" style={{
                 display: "grid", gridTemplateColumns: "50px 1fr 140px 120px 100px",
                 padding: "12px 18px", alignItems: "center",
-                borderBottom: i < rest.length - 1 ? "1px solid rgba(0,0,0,0.04)" : "none",
-                background: entry.isMe ? "rgba(245,158,11,0.06)" : i % 2 === 0 ? "transparent" : "rgba(0,0,0,0.01)",
+                borderBottom: i < rest.length - 1 ? "1px solid var(--ed-hair, rgba(33,26,18,.13))" : "none",
+                background: entry.isMe ? "rgba(190,79,40,0.06)" : i % 2 === 0 ? "transparent" : "rgba(33,26,18,0.02)",
                 animation: `leaderFadeUp 0.3s ease-out ${(i + 3) * 0.04}s both`,
                 transition: "background 0.2s",
               }}>
                 {/* Rank */}
                 <div style={{
-                  fontFamily: "mono", fontSize: 13, fontWeight: 700,
-                  color: "rgba(26,26,46,0.3)",
+                  fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
+                  color: "rgba(33,26,18,0.3)",
                 }}>
                   {entry.rank}
                 </div>
@@ -463,8 +462,8 @@ export default function Leaderboard() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                   <div style={{
                     width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                    border: "1.5px solid rgba(0,0,0,0.06)", overflow: "hidden",
-                    background: "rgba(251,191,36,0.05)",
+                    border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", overflow: "hidden",
+                    background: "#F5EFE2",
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
                     {entry.pet?.avatar_url ? (
@@ -479,21 +478,21 @@ export default function Leaderboard() {
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <div style={{
-                      fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 600,
-                      color: "#1a1a2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      fontFamily: "var(--ed-disp)", fontSize: 13, fontWeight: 600,
+                      color: "#211A12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     }}>
                       {entry.pet?.name || "Unknown"}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
                       <span style={{
-                        fontFamily: "mono", fontSize: 9, padding: "1px 6px", borderRadius: 4,
-                        background: "rgba(245,158,11,0.08)", color: "#b45309", fontWeight: 600,
+                        fontFamily: "var(--ed-m)", fontSize: 9, padding: "1px 6px", borderRadius: 4,
+                        background: "rgba(190,79,40,0.08)", color: "#9A4E1E", fontWeight: 600,
                       }}>
                         Lv.{entry.pet?.level || 1}
                       </span>
                       {entry.pet?.personality && (
                         <span style={{
-                          fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.35)",
+                          fontFamily: "var(--ed-m)", fontSize: 9, color: "#7A6E5A",
                         }}>
                           {entry.pet.personality}
                         </span>
@@ -504,7 +503,7 @@ export default function Leaderboard() {
 
                 {/* Wallet */}
                 <div className="lb-hide-mobile" style={{
-                  fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.4)",
+                  fontFamily: "var(--ed-m)", fontSize: 11, color: "#9A7B4E",
                 }}>
                   {truncateWallet(entry.wallet)}
                 </div>
@@ -512,7 +511,7 @@ export default function Leaderboard() {
                 {/* Evolution */}
                 <div className="lb-hide-mobile">
                   <span style={{
-                    fontFamily: "mono", fontSize: 10, padding: "3px 8px", borderRadius: 6,
+                    fontFamily: "var(--ed-m)", fontSize: 10, padding: "3px 8px", borderRadius: 6,
                     background: `${evo.color}12`, color: evo.color,
                     border: `1px solid ${evo.color}25`, fontWeight: 600,
                   }}>
@@ -522,8 +521,8 @@ export default function Leaderboard() {
 
                 {/* Points */}
                 <div style={{
-                  fontFamily: "mono", fontSize: 13, fontWeight: 700,
-                  color: "#d97706", textAlign: "right",
+                  fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
+                  color: "#BE4F28", textAlign: "right",
                 }}>
                   {"\u2B50"} {(entry.points || 0).toLocaleString()}
                 </div>
@@ -537,7 +536,7 @@ export default function Leaderboard() {
       {!loading && !error && entries.length === 0 && (
         <div style={{
           textAlign: "center", padding: "60px 0",
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, color: "rgba(26,26,46,0.4)",
+          fontFamily: "var(--ed-body)", fontSize: 15, color: "#7A6E5A",
         }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>{"\uD83C\uDFC6"}</div>
           No rankings yet. Be the first to earn Season Rewards points!
@@ -548,11 +547,11 @@ export default function Leaderboard() {
       {!loading && !error && entries.length > 0 && (
         <div style={{
           marginTop: 24, padding: "16px 20px", borderRadius: 14,
-          background: "rgba(255,255,255,0.6)", border: "1px solid rgba(0,0,0,0.06)",
+          background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
         }}>
           <div style={{
-            fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.35)",
-            textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10,
+            fontFamily: "var(--ed-m)", fontSize: 9, color: "#7A6E5A",
+            textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 10,
           }}>
             Evolution Stages
           </div>
@@ -562,7 +561,7 @@ export default function Leaderboard() {
               { name: "Young", level: "Lv.5+", color: "#34d399" },
               { name: "Adult", level: "Lv.10+", color: "#818cf8" },
               { name: "Elder", level: "Lv.20+", color: "#c084fc" },
-              { name: "Legendary", level: "Lv.35+", color: "#f59e0b" },
+              { name: "Legendary", level: "Lv.35+", color: "#C8932F" },
             ].map((s) => (
               <div key={s.name} style={{
                 display: "flex", alignItems: "center", gap: 6,
@@ -572,10 +571,10 @@ export default function Leaderboard() {
                 <div style={{
                   width: 6, height: 6, borderRadius: "50%", background: s.color,
                 }} />
-                <span style={{ fontFamily: "mono", fontSize: 10, color: s.color, fontWeight: 600 }}>
+                <span style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: s.color, fontWeight: 600 }}>
                   {s.name}
                 </span>
-                <span style={{ fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.3)" }}>
+                <span style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "rgba(33,26,18,0.3)" }}>
                   {s.level}
                 </span>
               </div>

@@ -76,43 +76,43 @@ export default function HourlyDropBanner() {
   return (
     <div className="mp-enter" style={{ maxWidth: 1060, margin: "12px auto 0", padding: "0 24px" }}>
       <div style={{
-        background: live ? "#f59e0b" : "#faf7f2",
-        border: `2px solid #1a1a22`,
+        background: live ? "#BE4F28" : "#FBF6EC",
+        border: `1px solid var(--ed-hair, rgba(33,26,18,.13))`,
         borderRadius: 14, padding: "14px 20px",
         display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
-        boxShadow: live ? "0 6px 0 rgba(26,26,34,0.16)" : "0 3px 0 rgba(26,26,34,0.12)",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       }}>
         <div
           style={{
             fontSize: 32,
             width: 44, height: 44,
             display: "flex", alignItems: "center", justifyContent: "center",
-            background: live ? "#fff" : "rgba(26,26,46,0.04)",
-            border: "2px solid #1a1a22",
+            background: live ? "#FFF8EE" : "#F5EFE2",
+            border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
             borderRadius: 999,
           }}
         >{live ? drop.emoji : <Icon name="crystal-ball" size={32} />}</div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{
-            fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: "0.14em", color: live ? "#b45309" : "rgba(26,26,46,0.55)",
+            fontSize: 10, fontFamily: "var(--ed-m)",
+            letterSpacing: "0.14em", color: live ? "#FFF8EE" : "#9A4E1E",
             fontWeight: 800,
           }}>
             {live ? `HOURLY DROP · ${drop.multiplier_x}× ${drop.applies_to.toUpperCase()}` : "NEXT DROP"}
           </div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: "#1a1a2e", marginTop: 2 }}>
+          <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "var(--ed-disp)", color: live ? "#FFF8EE" : "#211A12", marginTop: 2 }}>
             {live ? drop.label : `${drop.next_emoji} ${drop.next_label}`}
           </div>
-          <div style={{ fontSize: 12, color: live ? "rgba(26,26,46,0.75)" : "rgba(26,26,46,0.65)", marginTop: 2 }}>
+          <div style={{ fontSize: 12, fontFamily: "var(--ed-body)", color: live ? "#FFF8EE" : "#5C5140", marginTop: 2 }}>
             {live ? drop.description : "starts at the top of next hour"}
           </div>
         </div>
         <div style={{
           padding: "8px 14px", borderRadius: 10,
-          background: "#fff",
-          border: `2px solid #1a1a22`,
-          color: live ? "#b45309" : "rgba(26,26,46,0.55)",
-          fontFamily: "'JetBrains Mono', monospace",
+          background: "#FBF6EC",
+          border: `1px solid var(--ed-hair, rgba(33,26,18,.13))`,
+          color: live ? "#9A4E1E" : "#7A6E5A",
+          fontFamily: "var(--ed-m)",
           fontWeight: 800, fontSize: 14,
         }}>
           {live ? fmt(remaining) : "soon"}
@@ -124,9 +124,9 @@ export default function HourlyDropBanner() {
       {drop.upcoming && drop.upcoming.length > 1 && (
         <div style={{
           marginTop: 8, padding: "12px 16px",
-          background: "#fff", borderRadius: 14,
-          border: "2px solid #1a1a22",
-          boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
+          background: "#FBF6EC", borderRadius: 14,
+          border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+          boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
           display: "flex", flexDirection: "column", gap: 10,
         }}>
           {/* Header line — title + the "why check back" nudge, on their own
@@ -136,14 +136,14 @@ export default function HourlyDropBanner() {
             gap: 12, flexWrap: "wrap",
           }}>
             <div style={{
-              fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-              letterSpacing: "0.12em", color: "#b45309", fontWeight: 800,
+              fontSize: 11, fontFamily: "var(--ed-m)",
+              letterSpacing: "0.12em", color: "#9A4E1E", fontWeight: 800,
               whiteSpace: "nowrap",
               display: "inline-flex", alignItems: "center", gap: 5,
             }}>
               <Icon name="electric" size={14} /> TODAY'S DROPS
             </div>
-            <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", fontWeight: 600 }}>
+            <div style={{ fontSize: 11, fontFamily: "var(--ed-body)", color: "#7A6E5A", fontWeight: 600 }}>
               New drop every hour — check back to catch more 2-3× windows.
             </div>
           </div>
@@ -153,16 +153,16 @@ export default function HourlyDropBanner() {
               <div key={i} style={{
                 display: "flex", alignItems: "center", gap: 7,
                 padding: "6px 11px", borderRadius: 999,
-                background: u.is_live ? "#f59e0b" : "#faf7f2",
-                border: u.is_live ? "2px solid #1a1a22" : "2px solid rgba(26,26,46,0.45)",
+                background: u.is_live ? "#BE4F28" : "#F5EFE2",
+                border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
               }}>
                 <span style={{ fontSize: 15 }}>{u.emoji}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e" }}>
+                <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "var(--ed-disp)", color: u.is_live ? "#FFF8EE" : "#211A12" }}>
                   {u.label}
                 </span>
                 <span style={{
-                  fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
-                  color: u.is_live ? "#b45309" : "rgba(26,26,46,0.45)", fontWeight: 700,
+                  fontSize: 10, fontFamily: "var(--ed-m)",
+                  color: u.is_live ? "#FFF8EE" : "#9A7B4E", fontWeight: 700,
                 }}>
                   {u.is_live ? "LIVE" : (i === arr.findIndex((x: any) => !x.is_live) ? "next" : clockLabel(u.starts_at))} · {u.multiplier_x}×
                 </span>

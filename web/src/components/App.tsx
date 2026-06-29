@@ -98,23 +98,23 @@ function CheckinCard({ isAuthenticated }: { isAuthenticated: boolean }) {
   return (
     <div style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
       <div style={{
-        borderRadius: 14, padding: "14px 20px", marginBottom: 8,
-        background: "#fbf6ec", border: "2px solid #1a1a22",
-        boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
+        borderRadius: 16, padding: "14px 20px", marginBottom: 8,
+        background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
         display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           <span style={{
-            width: 26, height: 26, borderRadius: 7, flexShrink: 0,
-            background: "#f59e0b", border: "2px solid #1a1a22",
+            width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+            background: "#BE4F28", border: "none",
             display: "inline-flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, fontSize: 11, color: "#1a1a22",
+            fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 11, color: "#FFF8EE",
           }}>1</span>
           <div>
-            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: "#1a1a2e" }}>
+            <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 700, fontSize: 14, color: "#211A12" }}>
               Daily Check-in
             </div>
-            <div style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(26,26,46,0.4)" }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A7B4E" }}>
               {checkedIn ? `Day ${streak} streak active 🔥` : "Check in to earn Season Rewards points"}
             </div>
           </div>
@@ -128,16 +128,16 @@ function CheckinCard({ isAuthenticated }: { isAuthenticated: boolean }) {
             const isToday = checkedIn ? streak === day : streak + 1 === day;
             return (
               <div key={day} style={{
-                padding: "4px 8px", borderRadius: 8, textAlign: "center",
-                background: done ? "#f59e0b" : "#fff",
-                border: "2px solid #1a1a22",
-                boxShadow: isToday ? "0 3px 0 rgba(26,26,34,0.16)" : "none",
+                padding: "4px 8px", borderRadius: 9, textAlign: "center",
+                background: done ? "#BE4F28" : "#F5EFE2",
+                border: `1px solid ${isToday ? "#BE4F28" : "var(--ed-hair, rgba(33,26,18,.13))"}`,
+                boxShadow: isToday ? "0 0 0 2px rgba(190,79,40,0.18)" : "none",
                 minWidth: 36,
               }}>
-                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: done ? "#1a1a22" : isToday ? "#b45309" : "rgba(26,26,46,0.45)", fontWeight: 700 }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: done ? "#FFF8EE" : isToday ? "#BE4F28" : "#9A7B4E", fontWeight: 700 }}>
                   {done ? "✓" : `D${day}`}
                 </div>
-                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8, color: done ? "#1a1a22" : "rgba(26,26,46,0.45)" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 8, color: done ? "#FCE9CF" : "#9A7B4E" }}>
                   +{r}
                 </div>
               </div>
@@ -145,26 +145,26 @@ function CheckinCard({ isAuthenticated }: { isAuthenticated: boolean }) {
           })}
         </div>
 
-        {msg && <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#b45309", fontWeight: 700 }}>{msg}</span>}
+        {msg && <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#BE4F28", fontWeight: 700 }}>{msg}</span>}
 
         {isAuthenticated ? (
           <button
             onClick={doCheckin}
             disabled={checkedIn || loading}
             style={{
-              padding: "8px 18px", borderRadius: 10, flexShrink: 0,
-              background: checkedIn ? "#fff" : "#f59e0b",
-              color: checkedIn ? "rgba(26,26,46,0.45)" : "#1a1a22",
-              border: "2px solid #1a1a22",
-              boxShadow: checkedIn ? "none" : "0 3px 0 rgba(26,26,34,0.2)",
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 800,
+              padding: "9px 18px", borderRadius: 11, flexShrink: 0,
+              background: checkedIn ? "#F5EFE2" : "linear-gradient(180deg,#F49B2A,#E27D0C)",
+              color: checkedIn ? "#9A8A70" : "#FFF8EE",
+              border: checkedIn ? "1px solid var(--ed-hair, rgba(33,26,18,.13))" : "none",
+              boxShadow: checkedIn ? "none" : "0 10px 20px -12px rgba(226,125,12,.7)",
+              fontFamily: "var(--ed-body)", fontSize: 12.5, fontWeight: 700,
               cursor: checkedIn ? "default" : "pointer",
             }}
           >
             {loading ? "..." : checkedIn ? "Done ✓" : "Check In"}
           </button>
         ) : (
-          <span style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(26,26,46,0.3)" }}>Connect wallet to earn</span>
+          <span style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A7B4E" }}>Connect wallet to earn</span>
         )}
       </div>
     </div>
@@ -200,40 +200,40 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
 
   return (
     <div className="mp-enter" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
-      {/* A flat amber ticket-stub sticker: ink keyline, hard offset shadow,
-          one perforated tear edge. No gradient, no glow, no shimmer. */}
+      {/* Terracotta foil ticket: brand fill, cream content, soft floating shadow,
+          one perforated cream tear edge. Editorial — no hard keyline, no offset. */}
       <div
         style={{
-          background: "#f59e0b",
-          borderRadius: 16,
-          padding: "14px 22px",
+          background: "#BE4F28",
+          borderRadius: 18,
+          padding: "15px 22px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "wrap",
           gap: 14,
           marginBottom: 8,
-          border: "3px solid #1a1a22",
-          boxShadow: "0 4px 0 rgba(26,26,34,0.25)",
+          border: "none",
+          boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
           position: "relative",
           cursor: "default",
         }}
       >
-        {/* Left: title + standing — with a perforated tear line after it */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, paddingRight: 16, borderRight: "2px dashed rgba(26,26,34,0.4)" }}>
+        {/* Left: title + standing — with a perforated cream tear line after it */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, paddingRight: 16, borderRight: "2px dashed rgba(252,233,207,0.4)" }}>
           <Icon name="trophy" size={26} />
           <div style={{ minWidth: 0 }}>
             <div style={{
-              fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 17,
-              color: "#1a1a22", letterSpacing: "-0.02em", whiteSpace: "nowrap",
+              fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 18,
+              color: "#FFF8EE", letterSpacing: "-0.02em", whiteSpace: "nowrap",
             }}>
               Season 1 Rewards
             </div>
             <div style={{
-              fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "rgba(26,26,34,0.7)",
+              fontFamily: "var(--ed-m)", fontSize: 11, color: "rgba(252,233,207,0.85)",
               marginTop: 2, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 5,
             }}>
-              <span style={{ fontWeight: 700, color: "#1a1a22" }}>{tier.name}</span>
+              <span style={{ fontWeight: 700, color: "#FFF8EE" }}>{tier.name}</span>
               <span>{next ? `· ${toNext.toLocaleString()} to ${next.name}` : "· max tier"}</span>
             </div>
           </div>
@@ -243,14 +243,14 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
         {seasonOver ? (
           <div style={{
             display: "flex", alignItems: "center", gap: 8,
-            fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 14, color: "#1a1a22",
+            fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 14, color: "#FFF8EE",
           }}>
-            Season 1 wrapped · <span style={{ opacity: 0.7, fontWeight: 700 }}>Season 2 soon</span>
+            Season 1 wrapped · <span style={{ opacity: 0.75, fontWeight: 700 }}>Season 2 soon</span>
           </div>
         ) : (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
           {notStarted && (
-            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 10.5, color: "#1a1a22", whiteSpace: "nowrap", letterSpacing: "0.04em" }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 10.5, color: "#FFF8EE", whiteSpace: "nowrap", letterSpacing: "0.1em", textTransform: "uppercase" }}>
               STARTS JUL 1 — GET READY
             </div>
           )}
@@ -263,13 +263,14 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
           ].map((t, i) => (
             <div key={i} style={{ textAlign: "center" }}>
               <div style={{
-                fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, fontSize: 18, color: "#1a1a22",
+                fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 18, color: "#BE4F28",
                 lineHeight: 1, minWidth: 30,
-                background: "#fff", borderRadius: 6, border: "2px solid #1a1a22", padding: "4px 5px",
+                background: "#FBF6EC", borderRadius: 8, border: "none", padding: "5px 6px",
+                fontVariantNumeric: "tabular-nums",
               }}>
                 {t.val}
               </div>
-              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8, color: "rgba(26,26,34,0.6)", marginTop: 3 }}>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 8, color: "rgba(252,233,207,0.8)", marginTop: 3 }}>
                 {t.label}
               </div>
             </div>
@@ -280,21 +281,21 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
 
         {/* Right: points + progress */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, minWidth: 120 }}>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "rgba(26,26,34,0.7)", whiteSpace: "nowrap" }}>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "rgba(252,233,207,0.85)", whiteSpace: "nowrap" }}>
             {seasonPoints > 0
-              ? <><span style={{ fontWeight: 800, color: "#1a1a22" }}>{seasonPoints.toLocaleString()}</span> pts</>
-              : <>Your Points: <span style={{ fontWeight: 800, color: "#1a1a22" }}>0</span></>
+              ? <><span style={{ fontWeight: 700, color: "#FFF8EE" }}>{seasonPoints.toLocaleString()}</span> pts</>
+              : <>Your Points: <span style={{ fontWeight: 700, color: "#FFF8EE" }}>0</span></>
             }
           </div>
-          <div style={{ width: "100%", height: 8, background: "#fff", borderRadius: 999, border: "2px solid #1a1a22", overflow: "hidden" }}>
+          <div style={{ width: "100%", height: 8, background: "rgba(252,233,207,0.28)", borderRadius: 999, border: "none", overflow: "hidden" }}>
             <div style={{
               height: "100%",
-              background: "#1a1a22",
+              background: "#FFF8EE",
               width: `${(tierProgress * 100).toFixed(1)}%`,
               transition: "width 0.6s ease",
             }} />
           </div>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8, color: "rgba(26,26,34,0.6)" }}>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 8, color: "rgba(252,233,207,0.8)" }}>
             {next ? `${toNext.toLocaleString()} pts to ${next.name}` : "Top tier reached"}
           </div>
         </div>
@@ -571,26 +572,26 @@ export default function App() {
 
 
       {/* Footer — only show in app mode */}
-      <footer style={{ padding: "48px 24px 36px", textAlign: "center", borderTop: "1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.015)" }}>
+      <footer style={{ padding: "48px 24px 36px", textAlign: "center", borderTop: "1px solid var(--ed-hair, rgba(33,26,18,.13))", background: "rgba(33,26,18,0.02)" }}>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, marginBottom: 20 }}>
           <span style={{
-            fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, fontWeight: 800,
-            color: "#1a1a2e", letterSpacing: "-0.02em",
+            fontFamily: "var(--ed-disp)", fontSize: 22, fontWeight: 800,
+            color: "#211A12", letterSpacing: "-0.02em",
           }}>
             MY AI PET
           </span>
           <span style={{
-            fontSize: 11, padding: "4px 12px", borderRadius: 999,
-            background: "#f59e0b",
-            color: "#1a1a22", fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800,
-            border: "2px solid #1a1a22",
-            letterSpacing: "0.04em",
+            fontSize: 10.5, padding: "4px 11px", borderRadius: 999,
+            background: "transparent",
+            color: "#9A4E1E", fontFamily: "var(--ed-m)", fontWeight: 700,
+            border: "1px solid rgba(154,78,30,0.4)",
+            letterSpacing: "0.12em", textTransform: "uppercase",
           }}>
             CompanionFi
           </span>
         </div>
         <p style={{
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, color: "rgba(26,26,46,0.7)",
+          fontFamily: "var(--ed-body)", fontSize: 16, color: "#5C5140",
           maxWidth: 560, margin: "0 auto 26px", lineHeight: 1.6, fontWeight: 500,
         }}>
           Your AI. Your data. Your companion. An open protocol for AI pets you actually own — across every surface you use.
@@ -601,14 +602,14 @@ export default function App() {
           <a href="https://x.com/myaipets" target="_blank" rel="noopener noreferrer" style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "12px 22px", borderRadius: 12,
-            background: "#1f1b16", color: "#fff",
-            border: "2px solid #1a1a22",
-            fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 800,
+            background: "#211A12", color: "#FBF6EC",
+            border: "none",
+            fontFamily: "var(--ed-body)", fontSize: 15, fontWeight: 700,
             textDecoration: "none", transition: "transform 0.15s, box-shadow 0.15s",
-            boxShadow: "0 3px 0 rgba(0,0,0,0.25)",
+            boxShadow: "0 12px 24px -16px rgba(33,26,18,.7)",
           }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 5px 0 rgba(0,0,0,0.25)"; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 3px 0 rgba(0,0,0,0.25)"; }}
+            onMouseOver={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; }}
+            onMouseOut={(e) => { e.currentTarget.style.transform = ""; }}
           >
             <span style={{ fontSize: 18, fontWeight: 900 }}>𝕏</span>
             Twitter
@@ -632,14 +633,14 @@ export default function App() {
           <a href="/petclaw-extension.zip" download="myaipet-extension.zip" style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "12px 22px", borderRadius: 12,
-            background: "#f59e0b", color: "#1a1a22",
-            border: "2px solid #1a1a22",
-            fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 800,
+            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+            border: "none",
+            fontFamily: "var(--ed-body)", fontSize: 15, fontWeight: 700,
             textDecoration: "none", transition: "transform 0.15s, box-shadow 0.15s",
-            boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
+            boxShadow: "0 12px 22px -12px rgba(226,125,12,.7)",
           }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 5px 0 rgba(26,26,34,0.2)"; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 3px 0 rgba(26,26,34,0.2)"; }}
+            onMouseOver={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; }}
+            onMouseOut={(e) => { e.currentTarget.style.transform = ""; }}
           >
             <span>⬇</span>
             Chrome Extension
@@ -661,15 +662,16 @@ export default function App() {
             { href: "/architecture", label: "Architecture" },
           ].map(l => (
             <a key={l.href} href={l.href} style={{
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 500,
-              color: "rgba(26,26,46,0.5)", textDecoration: "none",
+              fontFamily: "var(--ed-m)", fontSize: 11.5, fontWeight: 700,
+              letterSpacing: "0.08em", textTransform: "uppercase",
+              color: "#9A7B4E", textDecoration: "none",
             }}>{l.label}</a>
           ))}
         </div>
 
         <div style={{
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, color: "rgba(26,26,46,0.4)",
-          fontWeight: 500, letterSpacing: "0.02em", marginBottom: 12,
+          fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E",
+          fontWeight: 700, letterSpacing: "0.06em", marginBottom: 12,
         }}>
           © 2026 My AI Pet Protocol · Raise · Bond · Remember
         </div>
@@ -677,8 +679,8 @@ export default function App() {
         {/* Disclaimer */}
         <div style={{
           maxWidth: 680, margin: "0 auto",
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 11,
-          color: "rgba(26,26,46,0.35)", lineHeight: 1.6, fontWeight: 400,
+          fontFamily: "var(--ed-body)", fontSize: 11.5,
+          color: "#8A7E68", lineHeight: 1.6, fontWeight: 400,
         }}>
           Engagement points are non-financial loyalty credits, not securities. No token is issued —
           the economy is points-only loyalty. Nothing here is financial advice.

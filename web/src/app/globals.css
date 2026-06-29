@@ -338,6 +338,18 @@ body {
   --ed-shadow-float:0 54px 84px -28px rgba(38,12,2,.72),0 14px 28px -12px rgba(38,12,2,.45);
   --ed-shadow-dark:0 16px 30px -14px rgba(33,26,18,.7);
 }
+/* Type tokens MUST be declared on body, not :root — next/font sets --font-display /
+   --font-body / --font-mono-ed on the <body> className. A custom property that
+   references var() is substituted at the scope where it's DECLARED, so declaring
+   these on :root (where --font-* don't exist) makes them guaranteed-invalid and every
+   var(--ed-disp) consumer silently falls back to the base font. Declaring them on body
+   (where --font-* are defined) resolves Bricolage / Hanken / Space Mono correctly and
+   inherits to the whole tree. */
+body {
+  --ed-disp:var(--font-display),'Bricolage Grotesque',system-ui,sans-serif;
+  --ed-body:var(--font-body),'Hanken Grotesk',system-ui,sans-serif;
+  --ed-m:var(--font-mono-ed),'Space Mono',ui-monospace,monospace;
+}
 
 /* surface dressing — drop these as absolutely-positioned layers inside a frame */
 .ed-grain{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.05;z-index:1;

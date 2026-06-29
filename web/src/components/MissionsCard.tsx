@@ -184,22 +184,22 @@ export default function MissionsCard() {
   return (
     <div className="mp-enter mp-enter-1" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
-        background: "#faf7f2", borderRadius: 18,
-        border: "3px solid #1a1a22", overflow: "hidden",
-        boxShadow: "0 8px 0 rgba(26,26,34,0.16)",
+        background: "#FBF6EC", borderRadius: 18,
+        border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", overflow: "hidden",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       }}>
         {/* Header */}
         <div style={{
           padding: "18px 24px", display: "flex", alignItems: "center", gap: 16,
-          borderBottom: "2px solid #1a1a22",
-          background: "#fbf6ec",
+          borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+          background: "#F5EFE2",
         }}>
           <div style={{ fontSize: 22 }}><Icon name="compass" size={22} /></div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)" }}>
+            <div style={{ fontSize: 11, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E", textTransform: "uppercase" }}>
               TODAY · {today.date}
             </div>
-            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em" }}>
+            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", fontFamily: "var(--ed-disp)", color: "#211A12" }}>
               Daily Missions
             </div>
           </div>
@@ -209,11 +209,10 @@ export default function MissionsCard() {
             onClick={canBuyShield ? () => setShieldModal(true) : undefined} style={{
             display: "flex", alignItems: "center", gap: 6,
             padding: "8px 14px", borderRadius: 12,
-            background: "#f59e0b",
-            border: "2px solid #1a1a22",
-            boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
-            color: "#1a1a22", fontWeight: 800, fontSize: 14,
-            fontFamily: "'JetBrains Mono', monospace",
+            background: "#BE4F28",
+            border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+            color: "#FFF8EE", fontWeight: 800, fontSize: 14,
+            fontFamily: "var(--ed-m)",
             cursor: canBuyShield ? "pointer" : "default",
           }}>
             <Icon name="fire" size={16} /> {today.streak.current}d
@@ -229,10 +228,10 @@ export default function MissionsCard() {
         {today.streak.pending_apology && (
           <div style={{
             padding: "10px 24px",
-            background: "#fbf6ec",
-            borderBottom: "2px solid #1a1a22",
+            background: "#F5EFE2",
+            borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
             display: "flex", alignItems: "center", gap: 10,
-            fontSize: 13, color: "#1a1a22",
+            fontSize: 13, color: "#211A12", fontFamily: "var(--ed-body)",
           }}>
             <span style={{ fontSize: 18 }}><Icon name="heart" size={18} /></span>
             <span style={{ flex: 1 }}>
@@ -242,10 +241,9 @@ export default function MissionsCard() {
             </span>
             <a href="/?section=my pet" style={{
               padding: "5px 12px", borderRadius: 8,
-              background: "white", border: "2px solid #1a1a22",
-              boxShadow: "0 3px 0 rgba(26,26,34,0.16)",
-              color: "#1a1a22", fontWeight: 700, fontSize: 12,
-              textDecoration: "none", fontFamily: "'JetBrains Mono', monospace",
+              background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+              color: "#211A12", fontWeight: 700, fontSize: 12,
+              textDecoration: "none", fontFamily: "var(--ed-m)",
             }}>Open chat →</a>
           </div>
         )}
@@ -254,10 +252,10 @@ export default function MissionsCard() {
         {streak?.repair?.applicable && (
           <div style={{
             padding: "12px 24px",
-            background: "#fbf6ec",
-            borderBottom: "2px solid #1a1a22",
+            background: "#F5EFE2",
+            borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
             display: "flex", alignItems: "center", gap: 10,
-            fontSize: 13, color: "#1a1a22",
+            fontSize: 13, color: "#211A12", fontFamily: "var(--ed-body)",
           }}>
             <span style={{ fontSize: 18 }}><Icon name="fire" size={18} /></span>
             <span style={{ flex: 1 }}>
@@ -266,10 +264,10 @@ export default function MissionsCard() {
             </span>
             <button onClick={() => setRepairModal(true)} style={{
               padding: "6px 14px", borderRadius: 8,
-              background: "#f59e0b",
-              border: "2px solid #1a1a22", boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
-              color: "#1a1a22", fontWeight: 800, fontSize: 12,
-              cursor: "pointer",
+              background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+              border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+              color: "#FFF8EE", fontWeight: 800, fontSize: 12,
+              cursor: "pointer", fontFamily: "var(--ed-disp)",
             }}>Restore →</button>
           </div>
         )}
@@ -284,16 +282,16 @@ export default function MissionsCard() {
                 padding: "14px 24px",
                 display: "flex", alignItems: "center", gap: 14,
                 opacity: completed ? 0.62 : 1,
-                background: completed ? "rgba(245,158,11,0.06)" : "transparent",
+                background: completed ? "rgba(190,79,40,0.06)" : "transparent",
                 transition: "background 160ms ease",
               }}
-              onMouseEnter={e => { if (!completed) e.currentTarget.style.background = "rgba(245,158,11,0.06)"; }}
+              onMouseEnter={e => { if (!completed) e.currentTarget.style.background = "rgba(190,79,40,0.06)"; }}
               onMouseLeave={e => { if (!completed) e.currentTarget.style.background = "transparent"; }}>
                 <div style={{
                   width: 28, height: 28, borderRadius: 8,
-                  background: completed ? "#f59e0b" : "#fff",
-                  border: "2px solid #1a1a22",
-                  color: "#1a1a22",
+                  background: completed ? "#BE4F28" : "#F5EFE2",
+                  border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                  color: completed ? "#FFF8EE" : "#211A12",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 14, fontWeight: 800,
                 }}>
@@ -301,16 +299,16 @@ export default function MissionsCard() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: 14, fontWeight: 700,
+                    fontSize: 14, fontWeight: 700, fontFamily: "var(--ed-disp)", color: "#211A12",
                     textDecoration: completed ? "line-through" : "none",
                   }}>{m.title}</div>
-                  <div style={{ fontSize: 12, color: "rgba(26,26,46,0.55)", marginTop: 1 }}>
+                  <div style={{ fontSize: 12, color: "#7A6E5A", marginTop: 1, fontFamily: "var(--ed-body)" }}>
                     {m.description}
                   </div>
                 </div>
                 <div style={{
-                  fontSize: 13, fontWeight: 800, color: completed ? "rgba(26,26,34,0.55)" : "#b45309",
-                  fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap",
+                  fontSize: 13, fontWeight: 800, color: completed ? "#9A7B4E" : "#9A4E1E",
+                  fontFamily: "var(--ed-m)", whiteSpace: "nowrap",
                 }}>
                   +{m.points} pts
                 </div>
@@ -330,46 +328,45 @@ export default function MissionsCard() {
         {/* Totals */}
         <div style={{
           padding: "16px 24px 18px",
-          borderTop: "2px solid #1a1a22",
-          background: "#fbf6ec",
+          borderTop: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+          background: "#F5EFE2",
           display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap",
         }}>
           <div>
             <div style={{
-              fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-              letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)",
+              fontSize: 12, fontFamily: "var(--ed-m)",
+              letterSpacing: "0.14em", color: "#9A4E1E", textTransform: "uppercase",
             }}>EARNED TODAY</div>
             <div style={{
-              fontSize: 32, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 32, fontWeight: 800, fontFamily: "var(--ed-m)", color: "#211A12",
               letterSpacing: "-0.02em", lineHeight: 1, marginTop: 4,
             }}>
-              {today.earnedToday}<span style={{ fontSize: 16, color: "rgba(26,26,46,0.45)", fontWeight: 600 }}>{" "}pts</span>
+              {today.earnedToday}<span style={{ fontSize: 16, color: "#9A7B4E", fontWeight: 600 }}>{" "}pts</span>
             </div>
           </div>
-          <div style={{ width: 2, alignSelf: "stretch", background: "rgba(26,26,34,0.45)" }} />
+          <div style={{ width: 1, alignSelf: "stretch", background: "var(--ed-hair, rgba(33,26,18,.13))" }} />
           <div>
             <div style={{
-              fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-              letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)",
+              fontSize: 12, fontFamily: "var(--ed-m)",
+              letterSpacing: "0.14em", color: "#9A4E1E", textTransform: "uppercase",
             }}>STILL ON THE TABLE</div>
             <div style={{
               fontSize: 48, fontWeight: 800,
-              fontFamily: "'JetBrains Mono', monospace",
-              color: today.remainingToday > 0 ? "#b45309" : "#1a1a22",
+              fontFamily: "var(--ed-m)",
+              color: today.remainingToday > 0 ? "#9A4E1E" : "#211A12",
               lineHeight: 1, letterSpacing: "-0.03em", marginTop: 4,
             }}>
-              {today.remainingToday}<span style={{ fontSize: 20, color: "rgba(26,26,46,0.45)", fontWeight: 600 }}>{" "}pts</span>
+              {today.remainingToday}<span style={{ fontSize: 20, color: "#9A7B4E", fontWeight: 600 }}>{" "}pts</span>
             </div>
           </div>
           <div style={{ flex: 1 }} />
           {!allComplete && (
             <div style={{
               padding: "8px 14px", borderRadius: 10,
-              background: "#fff",
-              border: "2px solid #1a1a22",
-              boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
-              color: "#1a1a22",
-              fontSize: 12, fontWeight: 700,
+              background: "#FBF6EC",
+              border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+              color: "#211A12",
+              fontSize: 12, fontWeight: 700, fontFamily: "var(--ed-body)",
             }}>
               <Icon name="diamond" size={14} /> Complete all {today.missions.length} → <strong>+{today.bonusAllComplete}</strong> bonus
             </div>
@@ -377,11 +374,10 @@ export default function MissionsCard() {
           {allComplete && (
             <div style={{
               padding: "8px 14px", borderRadius: 10,
-              background: "#f59e0b",
-              border: "2px solid #1a1a22",
-              boxShadow: "0 3px 0 rgba(26,26,34,0.16)",
-              color: "#1a1a22",
-              fontSize: 13, fontWeight: 800,
+              background: "#BE4F28",
+              border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+              color: "#FFF8EE",
+              fontSize: 13, fontWeight: 800, fontFamily: "var(--ed-disp)",
             }}>
               ✓ All done — see you tomorrow
             </div>
@@ -394,18 +390,18 @@ export default function MissionsCard() {
         <Modal onClose={() => setShieldModal(false)}>
           <div style={{ padding: 28 }}>
             <div style={{ fontSize: 44, marginBottom: 14 }}><Icon name="shield" size={44} /></div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px" }}>Streak Shield</h2>
-            <p style={{ fontSize: 14, color: "rgba(26,26,46,0.7)", lineHeight: 1.55, margin: "0 0 18px" }}>
+            <h2 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px", fontFamily: "var(--ed-disp)", color: "#211A12" }}>Streak Shield</h2>
+            <p style={{ fontSize: 14, color: "#5C5140", lineHeight: 1.55, margin: "0 0 18px", fontFamily: "var(--ed-body)" }}>
               Auto-bridges a missed day. Up to {streak.shield.max_owned} can stack — currently you own{" "}
               <strong>{streak.shield.owned}</strong>.
             </p>
             <div style={priceBlock}>
               <div>
                 <div style={mini}>PRICE</div>
-                <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>
+                <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "var(--ed-m)", color: "#211A12" }}>
                   {streak.shield.credits} cr
                 </div>
-                <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", fontFamily: "'JetBrains Mono', monospace" }}>
+                <div style={{ fontSize: 11, color: "#9A7B4E", fontFamily: "var(--ed-m)" }}>
                   ≈ ${streak.shield.usd.toFixed(2)}
                 </div>
               </div>
@@ -431,21 +427,21 @@ export default function MissionsCard() {
           <div style={{ padding: 28 }}>
             <div style={{ fontSize: 44, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
               <Icon name="skull" size={44} />
-              <span style={{ color: "rgba(26,26,46,0.4)", fontWeight: 700 }}>→</span>
+              <span style={{ color: "#9A7B4E", fontWeight: 700 }}>→</span>
               <Icon name="fire" size={44} />
             </div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px" }}>Restore Streak</h2>
-            <p style={{ fontSize: 14, color: "rgba(26,26,46,0.7)", lineHeight: 1.55, margin: "0 0 18px" }}>
+            <h2 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px", fontFamily: "var(--ed-disp)", color: "#211A12" }}>Restore Streak</h2>
+            <p style={{ fontSize: 14, color: "#5C5140", lineHeight: 1.55, margin: "0 0 18px", fontFamily: "var(--ed-body)" }}>
               Brings back your <strong>{streak.repair.lost_days}-day streak</strong> and starts counting
               from today. The pet remembers the gap but won't dock you for it.
             </p>
             <div style={priceBlock}>
               <div>
                 <div style={mini}>PRICE</div>
-                <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>
+                <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "var(--ed-m)", color: "#211A12" }}>
                   {streak.repair.credits} cr
                 </div>
-                <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", fontFamily: "'JetBrains Mono', monospace" }}>
+                <div style={{ fontSize: 11, color: "#9A7B4E", fontFamily: "var(--ed-m)" }}>
                   ≈ ${streak.repair.usd.toFixed(2)}
                 </div>
               </div>
@@ -475,20 +471,20 @@ function UnauthTeaser() {
   return (
     <div style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
-        background: "#faf7f2", borderRadius: 18,
-        border: "3px solid #1a1a22", padding: "26px 28px",
-        boxShadow: "0 8px 0 rgba(26,26,34,0.16)",
+        background: "#FBF6EC", borderRadius: 18,
+        border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", padding: "26px 28px",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
         display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap",
       }}>
         <div style={{ fontSize: 36 }}><Icon name="compass" size={36} /></div>
         <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)", marginBottom: 4 }}>
+          <div style={{ fontSize: 11, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E", marginBottom: 4, textTransform: "uppercase" }}>
             DAILY MISSIONS · STREAK · LEADERBOARD
           </div>
-          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", marginBottom: 4 }}>
+          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", marginBottom: 4, fontFamily: "var(--ed-disp)", color: "#211A12" }}>
             {headline}
           </div>
-          <div style={{ fontSize: 13, color: error ? "#b91c1c" : "rgba(26,26,46,0.6)" }}>
+          <div style={{ fontSize: 13, color: error ? "#b91c1c" : "#5C5140", fontFamily: "var(--ed-body)" }}>
             {subtitle}
           </div>
         </div>
@@ -503,11 +499,10 @@ function UnauthTeaser() {
             } catch { /* state already shows error */ }
           }} disabled={isAuthenticating} style={{
             padding: "14px 24px", borderRadius: 12,
-            border: "3px solid #1a1a22",
-            background: "#f59e0b",
-            color: "#1a1a22", fontWeight: 800, fontSize: 16, cursor: "pointer",
-            boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
-            fontFamily: "'Space Grotesk', sans-serif",
+            border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+            background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+            color: "#FFF8EE", fontWeight: 800, fontSize: 16, cursor: "pointer",
+            fontFamily: "var(--ed-disp)",
             opacity: isAuthenticating ? 0.6 : 1,
           }}>{isAuthenticating ? "Signing…" : "Sign in →"}</button>
         ) : (
@@ -522,9 +517,9 @@ function Skeleton() {
   return (
     <div className="mp-enter" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
-        background: "#faf7f2", borderRadius: 18, padding: "22px 24px",
-        border: "3px solid #1a1a22",
-        boxShadow: "0 8px 0 rgba(26,26,34,0.16)",
+        background: "#FBF6EC", borderRadius: 18, padding: "22px 24px",
+        border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
         display: "flex", flexDirection: "column", gap: 14,
       }}>
         {/* Header */}
@@ -560,10 +555,10 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
       padding: 20,
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: "#faf7f2", borderRadius: 18,
-        border: "3px solid #1a1a22",
+        background: "#FBF6EC", borderRadius: 18,
+        border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
         maxWidth: 480, width: "100%",
-        boxShadow: "0 8px 0 rgba(26,26,34,0.16)",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       }}>{children}</div>
     </div>
   );
@@ -573,46 +568,41 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
 const shieldBtn: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 4,
   padding: "8px 12px", borderRadius: 10,
-  background: "white", border: "2px solid #1a1a22",
-  boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
-  color: "#1a1a2e", fontWeight: 800, fontSize: 13,
-  fontFamily: "'JetBrains Mono', monospace", cursor: "pointer",
+  background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+  color: "#211A12", fontWeight: 800, fontSize: 13,
+  fontFamily: "var(--ed-m)", cursor: "pointer",
 };
 const ctaBtnPrimary: React.CSSProperties = {
   display: "inline-block",
   padding: "8px 14px", borderRadius: 10,
-  background: "#f59e0b",
-  color: "#1a1a22", fontWeight: 700, fontSize: 12,
+  background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+  color: "#FFF8EE", fontWeight: 700, fontSize: 12,
   textDecoration: "none",
-  fontFamily: "'Space Grotesk', sans-serif",
-  border: "2px solid #1a1a22",
-  boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
+  fontFamily: "var(--ed-disp)",
+  border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
   whiteSpace: "nowrap",
 };
 const ctaBtnGhost: React.CSSProperties = {
   padding: "8px 14px", borderRadius: 10,
-  background: "white", border: "2px solid #1a1a22",
-  boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
-  color: "#1a1a2e", fontWeight: 700, fontSize: 12,
-  cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif",
+  background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+  color: "#211A12", fontWeight: 700, fontSize: 12,
+  cursor: "pointer", fontFamily: "var(--ed-disp)",
   whiteSpace: "nowrap",
 };
 const priceBlock: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 16,
   padding: "16px 18px", borderRadius: 12,
-  background: "#fff",
-  border: "2px solid #1a1a22",
-  boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
+  background: "#F5EFE2",
+  border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
 };
 const purchaseBtn: React.CSSProperties = {
   flex: 1, padding: "14px 18px", borderRadius: 12,
-  background: "#f59e0b",
-  border: "3px solid #1a1a22", color: "#1a1a22", fontWeight: 800, fontSize: 14,
+  background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+  border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", color: "#FFF8EE", fontWeight: 800, fontSize: 14,
   cursor: "pointer",
-  boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
-  fontFamily: "'Space Grotesk', sans-serif",
+  fontFamily: "var(--ed-disp)",
 };
 const mini: React.CSSProperties = {
-  fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
-  color: "rgba(26,26,46,0.55)", letterSpacing: "0.12em",
+  fontSize: 10, fontFamily: "var(--ed-m)",
+  color: "#9A4E1E", letterSpacing: "0.12em", textTransform: "uppercase",
 };

@@ -109,21 +109,16 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
 
       {/* ── 1. PERSONAL PROJECTION (the punch) ── */}
       <div style={{
-        background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)",
+        background: "linear-gradient(135deg, #1A130C 0%, #211A12 100%)",
         borderRadius: 18, padding: "28px 32px", marginBottom: 18,
-        boxShadow: "0 8px 32px rgba(15,15,26,0.22)",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
         position: "relative", overflow: "hidden",
       }} className="pitch-prize-bar">
-        <div style={{
-          position: "absolute", inset: 0, pointerEvents: "none",
-          background: "radial-gradient(circle at 85% 25%, rgba(251,191,36,0.18) 0%, transparent 55%)",
-        }} />
-
         {me ? (
           // ── SIGNED IN: personal Season Rewards standing (by loyalty points) ──
           <div style={{ position: "relative" }}>
             <div style={{
-              fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+              fontFamily: "var(--ed-m)", fontSize: 10,
               color: "rgba(255,255,255,0.5)", letterSpacing: "0.16em", marginBottom: 6,
             }}>
               {me.petName.toUpperCase()} · RANK #{me.rank} · LV.{me.petLevel}
@@ -133,7 +128,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
               {/* Your real Season Rewards points + rank */}
               <div>
                 <div style={miniLabel}>YOUR SEASON 1 POINTS</div>
-                <div style={{ ...bigNumber, color: "#fbbf24" }}>
+                <div style={{ ...bigNumber, color: "#F49B2A" }}>
                   {me.points.toLocaleString()}
                   <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
                 </div>
@@ -147,7 +142,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
               {/* How to earn — free, no purchase */}
               <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24 }}>
                 <div style={miniLabel}>EARN MORE</div>
-                <div style={{ ...bigNumber, color: "#34d399", fontSize: 22 }}>
+                <div style={{ ...bigNumber, color: "#7FB069", fontSize: 22 }}>
                   Free
                 </div>
                 <div style={mini}>
@@ -169,17 +164,17 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
             {me.pointsToNextRank > 0 && (
               <div style={{
                 marginTop: 18, padding: "10px 14px", borderRadius: 10,
-                background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.18)",
+                background: "rgba(244,155,42,0.08)", border: "1px solid rgba(244,155,42,0.18)",
                 display: "flex", alignItems: "center", gap: 12, position: "relative",
               }}>
                 <span style={{ fontSize: 18, display: "inline-flex" }}><Icon name="compass" size={18} /></span>
-                <div style={{ flex: 1, fontSize: 13, color: "rgba(255,255,255,0.85)", fontFamily: "'Space Grotesk',sans-serif" }}>
-                  Just <strong style={{ color: "#fbbf24" }}>{me.pointsToNextRank.toLocaleString()} pts</strong> to rank #{me.rank - 1}. One care session is +5. Keep climbing.
+                <div style={{ flex: 1, fontSize: 13, color: "rgba(255,255,255,0.85)", fontFamily: "var(--ed-body)" }}>
+                  Just <strong style={{ color: "#F49B2A" }}>{me.pointsToNextRank.toLocaleString()} pts</strong> to rank #{me.rank - 1}. One care session is +5. Keep climbing.
                 </div>
                 <button onClick={() => onNavigate?.("my pet")} style={{
                   padding: "6px 14px", borderRadius: 8, border: "none",
-                  background: "#fbbf24", color: "#1a1a2e", fontWeight: 700, fontSize: 12, cursor: "pointer",
-                  fontFamily: "'Space Grotesk',sans-serif",
+                  background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontWeight: 700, fontSize: 12, cursor: "pointer",
+                  fontFamily: "var(--ed-disp)",
                 }}>Raise →</button>
               </div>
             )}
@@ -191,7 +186,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
               <div style={miniLabel}>{seasonStarted ? "SEASON 1 · POINTS IN PLAY" : "SEASON 1 · OPENS JUL 1"}</div>
               {seasonStarted ? (
                 <>
-                  <div style={{ ...bigNumber, color: "#fbbf24" }}>
+                  <div style={{ ...bigNumber, color: "#F49B2A" }}>
                     {(data?.pool.points ?? 0).toLocaleString()}
                     <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
                   </div>
@@ -199,7 +194,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
                 </>
               ) : (
                 <>
-                  <div style={{ ...bigNumber, color: "#fbbf24", fontSize: 30 }}>Get ready</div>
+                  <div style={{ ...bigNumber, color: "#F49B2A", fontSize: 30 }}>Get ready</div>
                   <div style={mini}>Adopt now — every care &amp; creation banks points the moment Season 1 opens.</div>
                 </>
               )}
@@ -214,9 +209,10 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
             <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24, textAlign: "right" }}>
               <button onClick={() => onNavigate?.("my pet")} style={{
                 padding: "12px 22px", borderRadius: 12, border: "none",
-                background: "linear-gradient(135deg,#fbbf24,#f59e0b)", color: "white",
+                background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
                 fontWeight: 700, fontSize: 14, cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(245,158,11,0.32)",
+                fontFamily: "var(--ed-disp)",
+                boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
               }}>Adopt → Start earning</button>
             </div>
           </div>
@@ -227,13 +223,13 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
       <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 14, marginBottom: 38 }} className="pitch-twin-row">
         {/* Ticker */}
         <div style={{
-          background: "white", borderRadius: 14, padding: "16px 18px",
-          border: "1px solid rgba(0,0,0,0.06)",
+          background: "#FBF6EC", borderRadius: 14, padding: "16px 18px",
+          border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           maxHeight: 180, overflow: "hidden", position: "relative",
         }}>
-          <div style={{ ...miniLabel, color: "rgba(26,26,46,0.5)", marginBottom: 8 }}>LIVE · LAST 7 DAYS</div>
+          <div style={{ ...miniLabel, color: "#7A6E5A", marginBottom: 8 }}>LIVE · LAST 7 DAYS</div>
           {ticker.length === 0 ? (
-            <div style={{ fontSize: 13, color: "rgba(26,26,46,0.45)", fontStyle: "italic", padding: 8 }}>
+            <div style={{ fontSize: 13, color: "#9A7B4E", fontStyle: "italic", padding: 8 }}>
               Be the first to create with your pet and climb this week&apos;s board.
             </div>
           ) : (
@@ -241,7 +237,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
               {ticker.slice(0, 5).map((e, i) => (
                 <div key={i} style={{
                   display: "flex", alignItems: "center", gap: 10, fontSize: 12,
-                  fontFamily: "'Space Grotesk',sans-serif", color: "#1a1a2e",
+                  fontFamily: "var(--ed-body)", color: "#211A12",
                 }}>
                   <span style={{
                     width: 6, height: 6, borderRadius: 99,
@@ -250,7 +246,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
                   <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {e.text}
                   </span>
-                  <span style={{ fontSize: 10, color: "rgba(26,26,46,0.4)", fontFamily: "'JetBrains Mono', monospace" }}>
+                  <span style={{ fontSize: 10, color: "#9A7B4E", fontFamily: "var(--ed-m)" }}>
                     {timeAgo(e.at, now)}
                   </span>
                 </div>
@@ -261,30 +257,30 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
 
         {/* Pet thought */}
         <div style={{
-          background: "linear-gradient(135deg, rgba(245,158,11,0.06), rgba(168,85,247,0.04))",
+          background: "#F5EFE2",
           borderRadius: 14, padding: "16px 18px",
-          border: "1px solid rgba(245,158,11,0.18)",
+          border: "1px solid rgba(190,79,40,0.18)",
         }}>
-          <div style={{ ...miniLabel, color: "rgba(26,26,46,0.5)", marginBottom: 8 }}>
+          <div style={{ ...miniLabel, color: "#9A4E1E", marginBottom: 8 }}>
             {thought ? `${thought.petName.toUpperCase()} IS THINKING` : "PET THOUGHTS"}
           </div>
           {thought ? (
             <>
               <div style={{
-                fontSize: 14, color: "#1a1a2e", lineHeight: 1.5,
-                fontStyle: "italic", fontFamily: "'Space Grotesk',sans-serif",
+                fontSize: 14, color: "#211A12", lineHeight: 1.5,
+                fontStyle: "italic", fontFamily: "var(--ed-body)",
               }}>
                 "{thought.text}"
               </div>
               <button onClick={() => onNavigate?.("my pet")} style={{
                 marginTop: 12, padding: "6px 12px", borderRadius: 8,
-                border: "1px solid rgba(245,158,11,0.3)", background: "white",
-                color: "#b45309", fontSize: 11, fontWeight: 700, cursor: "pointer",
-                fontFamily: "'Space Grotesk',sans-serif",
+                border: "1px solid rgba(190,79,40,0.3)", background: "#FBF6EC",
+                color: "#9A4E1E", fontSize: 11, fontWeight: 700, cursor: "pointer",
+                fontFamily: "var(--ed-disp)",
               }}>Reply →</button>
             </>
           ) : (
-            <div style={{ fontSize: 13, color: "rgba(26,26,46,0.45)", fontStyle: "italic" }}>
+            <div style={{ fontSize: 13, color: "#9A7B4E", fontStyle: "italic" }}>
               Adopt a pet and it'll share what it's thinking.
             </div>
           )}
@@ -293,7 +289,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
 
       {/* ── HOW grid (unchanged, kept tight) ── */}
       <div style={{ textAlign: "center", marginBottom: 14 }}>
-        <span style={{ ...miniLabel, color: "rgba(26,26,46,0.55)" }}>HOW TO CLIMB</span>
+        <span style={{ ...miniLabel, color: "#7A6E5A" }}>HOW TO CLIMB</span>
       </div>
       <div style={{
         display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14,
@@ -301,24 +297,24 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
         <PathCard step="01" icon="paw" title="Care daily"
           body="Feed, play, talk. 5 free / day. A 7-day streak earns a Memory NFT (mints at on-chain go-live)."
           earn="+5 pts per care" cta="Start raising"
-          onClick={() => onNavigate?.("my pet")} accent="#16a34a" />
+          onClick={() => onNavigate?.("my pet")} accent="#5C8A4E" />
         <PathCard step="02" icon="fire" title="Keep your streak"
           body="Show up daily. A 7-day streak pays a bonus, 30 days pays more — and earns a Memory NFT at on-chain go-live."
           earn="+100 (7d) · +500 (30d)" cta="Check in"
-          onClick={() => onNavigate?.("my pet")} accent="#dc2626" />
+          onClick={() => onNavigate?.("my pet")} accent="#A8432B" />
         <PathCard step="03" icon="film-reel" title="Create together"
           body="Generate AI images & videos starring your pet. Every creation stacks Season Rewards points."
           earn="+10 image · +25 video" cta="Create"
-          onClick={() => onNavigate?.("create")} accent="#f59e0b" />
+          onClick={() => onNavigate?.("create")} accent="#BE4F28" />
         <PathCard step="04" icon="trophy" title="Climb leaderboard"
           body="Rank by Season Rewards points. Top raisers earn rewards when Season 1 closes."
           earn="Top 100 = rewards" cta="See ranks"
-          onClick={() => onNavigate?.("leaderboard")} accent="#b45309" />
+          onClick={() => onNavigate?.("leaderboard")} accent="#9A4E1E" />
       </div>
 
       <div style={{
-        marginTop: 26, fontSize: 12, color: "rgba(26,26,46,0.5)",
-        textAlign: "center", lineHeight: 1.65, fontFamily: "'JetBrains Mono', monospace",
+        marginTop: 26, fontSize: 12, color: "#7A6E5A",
+        textAlign: "center", lineHeight: 1.65, fontFamily: "var(--ed-m)",
       }}>
         Points are a non-financial loyalty currency — earned by raising &amp; creating, not bought.
       </div>
@@ -353,27 +349,27 @@ function PathCard({ step, icon, title, body, earn, cta, onClick, accent }: {
 }) {
   return (
     <div style={{
-      padding: "20px 18px", borderRadius: 16, background: "white",
-      border: "1px solid rgba(0,0,0,0.06)",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+      padding: "20px 18px", borderRadius: 16, background: "#FBF6EC",
+      border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+      boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       display: "flex", flexDirection: "column", gap: 8,
       transition: "transform 160ms ease, box-shadow 160ms ease",
       cursor: onClick ? "pointer" : "default",
     }}
-      onMouseEnter={(e) => { if (onClick) { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 12px 28px rgba(0,0,0,0.10)"; } }}
-      onMouseLeave={(e) => { if (onClick) { (e.currentTarget as HTMLDivElement).style.transform = ""; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; } }}
+      onMouseEnter={(e) => { if (onClick) { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "var(--ed-shadow-card-hover, 0 26px 50px -24px rgba(80,55,20,.55))"; } }}
+      onMouseLeave={(e) => { if (onClick) { (e.currentTarget as HTMLDivElement).style.transform = ""; (e.currentTarget as HTMLDivElement).style.boxShadow = "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))"; } }}
       onClick={onClick}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: "rgba(26,26,46,0.4)", letterSpacing: "0.08em" }}>{step}</span>
+        <span style={{ fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700, color: "#9A7B4E", letterSpacing: "0.08em" }}>{step}</span>
         <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name={icon} size={22} /></span>
       </div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.02em" }}>{title}</div>
-      <div style={{ fontSize: 13, color: "rgba(26,26,46,0.6)", lineHeight: 1.55 }}>{body}</div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: "#211A12", letterSpacing: "-0.02em", fontFamily: "var(--ed-disp)" }}>{title}</div>
+      <div style={{ fontSize: 13, color: "#5C5140", lineHeight: 1.55, fontFamily: "var(--ed-body)" }}>{body}</div>
       <div style={{
         marginTop: 4, padding: "4px 10px", borderRadius: 6,
         background: `${accent}10`, color: accent,
-        fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700,
+        fontSize: 10, fontFamily: "var(--ed-m)", fontWeight: 700,
         alignSelf: "flex-start", letterSpacing: "0.04em",
       }}>{earn}</div>
       {onClick && (
@@ -388,29 +384,31 @@ function PathCard({ step, icon, title, body, earn, cta, onClick, accent }: {
 // ── shared styles ──
 const pill: React.CSSProperties = {
   display: "inline-block", padding: "5px 14px", borderRadius: 999,
-  background: "rgba(245,158,11,0.10)", color: "#b45309",
+  background: "rgba(190,79,40,0.10)", color: "#9A4E1E",
   fontSize: 11, fontWeight: 700, letterSpacing: "0.16em",
   textTransform: "uppercase", marginBottom: 14,
-  fontFamily: "'JetBrains Mono', monospace",
+  fontFamily: "var(--ed-m)",
 };
 const headline: React.CSSProperties = {
   fontSize: 42, fontWeight: 800, letterSpacing: "-0.03em",
-  margin: "0 0 10px", lineHeight: 1.1, color: "#1a1a2e",
+  margin: "0 0 10px", lineHeight: 1.1, color: "#211A12",
+  fontFamily: "var(--ed-disp)",
 };
 const sub: React.CSSProperties = {
-  fontSize: 17, color: "rgba(26,26,46,0.65)", lineHeight: 1.6,
+  fontSize: 17, color: "#5C5140", lineHeight: 1.6,
   maxWidth: 580, margin: "0 auto", fontWeight: 500,
+  fontFamily: "var(--ed-body)",
 };
 const miniLabel: React.CSSProperties = {
-  fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+  fontFamily: "var(--ed-m)", fontSize: 10,
   color: "rgba(255,255,255,0.55)", letterSpacing: "0.16em",
   marginBottom: 6, fontWeight: 700,
 };
 const mini: React.CSSProperties = {
   fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 6,
-  fontFamily: "'JetBrains Mono', monospace",
+  fontFamily: "var(--ed-m)",
 };
 const bigNumber: React.CSSProperties = {
-  fontFamily: "'JetBrains Mono', monospace",
+  fontFamily: "var(--ed-disp)",
   fontSize: 38, fontWeight: 800, lineHeight: 1,
 };

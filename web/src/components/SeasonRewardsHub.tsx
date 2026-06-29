@@ -55,14 +55,14 @@ function SectionIntro({ pillar }: { pillar: Pillar }) {
   return (
     <div style={{ maxWidth: 1060, margin: "18px auto 2px", padding: "0 24px" }}>
       <div style={{
-        fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
-        letterSpacing: "0.16em", color: "#b45309", fontWeight: 700,
+        fontSize: 10, fontFamily: "var(--ed-m)",
+        letterSpacing: "0.14em", color: "#9A4E1E", fontWeight: 700,
       }}>
         {eyebrow}
       </div>
       <div style={{
-        fontSize: 14, color: "rgba(26,26,46,0.6)", marginTop: 4,
-        fontFamily: "'Space Grotesk', sans-serif", lineHeight: 1.45, maxWidth: 640,
+        fontSize: 14, color: "#5C5140", marginTop: 4,
+        fontFamily: "var(--ed-body)", lineHeight: 1.45, maxWidth: 640,
       }}>
         {line}
       </div>
@@ -96,9 +96,9 @@ export default function SeasonRewardsHub({ banner }: { banner?: React.ReactNode 
                   display: "flex", alignItems: "center", gap: 11,
                   padding: "13px 16px", borderRadius: 14, cursor: "pointer",
                   textAlign: "left",
-                  background: sel ? "#f59e0b" : "white",
-                  border: "2px solid #1a1a22",
-                  boxShadow: sel ? "0 3px 0 rgba(26,26,34,0.2)" : "0 3px 0 rgba(26,26,34,0.12)",
+                  background: sel ? "#BE4F28" : "#FBF6EC",
+                  border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                  boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
                   transition: "background 0.15s, box-shadow 0.15s",
                 }}
               >
@@ -108,15 +108,15 @@ export default function SeasonRewardsHub({ banner }: { banner?: React.ReactNode 
                 <span style={{ minWidth: 0 }}>
                   <span style={{
                     display: "block",
-                    fontFamily: "'Space Grotesk', sans-serif", fontWeight: 800, fontSize: 15,
-                    color: "#1a1a2e", letterSpacing: "-0.01em",
+                    fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 15,
+                    color: sel ? "#FFF8EE" : "#211A12", letterSpacing: "-0.01em",
                   }}>
                     {t.title}
                   </span>
                   <span style={{
                     display: "block", fontSize: 11, marginTop: 1,
-                    color: sel ? "rgba(26,26,46,0.7)" : "rgba(26,26,46,0.5)",
-                    fontFamily: "'Space Grotesk', sans-serif",
+                    color: sel ? "rgba(255,248,238,0.8)" : "#7A6E5A",
+                    fontFamily: "var(--ed-body)",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>
                     {t.sub}

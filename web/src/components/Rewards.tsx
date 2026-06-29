@@ -19,7 +19,7 @@ interface RewardItem {
 }
 
 const REWARDS_CATALOG: RewardItem[] = [
-  { id: 1, name: "Sticker Pack", points: 500, levelReq: 5, emoji: "🐾", description: "Custom pet sticker set (5 sheets) — glossy vinyl, waterproof", gradient: "linear-gradient(135deg, #fde68a 0%, #fbbf24 100%)", accentColor: "#b45309", productShape: "sticker", deliveryDays: "3-5 days" },
+  { id: 1, name: "Sticker Pack", points: 500, levelReq: 5, emoji: "🐾", description: "Custom pet sticker set (5 sheets) — glossy vinyl, waterproof", gradient: "linear-gradient(135deg, #F4D9A8 0%, #E2A24C 100%)", accentColor: "#9A4E1E", productShape: "sticker", deliveryDays: "3-5 days" },
   { id: 2, name: "Hair Clip", points: 1000, levelReq: 10, emoji: "✨", description: "Pet-shaped hair accessory — acrylic resin, handcrafted", gradient: "linear-gradient(135deg, #fbcfe8 0%, #f472b6 100%)", accentColor: "#be185d", productShape: "clip", badge: "POPULAR", deliveryDays: "5-7 days" },
   { id: 3, name: "Phone Case", points: 2000, levelReq: 15, emoji: "📱", description: "Custom printed pet phone case — premium TPU, all models", gradient: "linear-gradient(135deg, #bfdbfe 0%, #3b82f6 100%)", accentColor: "#1d4ed8", productShape: "phone", badge: "POPULAR", deliveryDays: "5-7 days" },
   { id: 4, name: "Mug", points: 3000, levelReq: 20, emoji: "☕", description: "Ceramic mug with your pet's portrait — 11oz, dishwasher safe", gradient: "linear-gradient(135deg, #d9f99d 0%, #84cc16 100%)", accentColor: "#4d7c0f", productShape: "mug", badge: "POPULAR", deliveryDays: "5-7 days" },
@@ -27,7 +27,7 @@ const REWARDS_CATALOG: RewardItem[] = [
   { id: 6, name: "Pen Set", points: 4000, levelReq: 30, emoji: "🖋️", description: "Premium pen set with pet charm — brass body, refillable", gradient: "linear-gradient(135deg, #fecaca 0%, #ef4444 100%)", accentColor: "#b91c1c", productShape: "pen", deliveryDays: "7-10 days" },
   { id: 7, name: "Tote Bag", points: 5000, levelReq: 35, emoji: "👜", description: "Canvas tote with AI pet print — organic cotton, reinforced", gradient: "linear-gradient(135deg, #99f6e4 0%, #14b8a6 100%)", accentColor: "#0f766e", productShape: "tote", deliveryDays: "7-10 days" },
   { id: 8, name: "Hoodie", points: 10000, levelReq: 40, emoji: "🧥", description: "Limited edition pet hoodie — 100% cotton, embroidered", gradient: "linear-gradient(135deg, #c4b5fd 0%, #7c3aed 100%)", accentColor: "#5b21b6", productShape: "hoodie", badge: "LIMITED", deliveryDays: "10-14 days" },
-  { id: 9, name: "3D Figure", points: 20000, levelReq: 50, emoji: "🗿", description: "3D printed pet figure — hand-painted, collector's box", gradient: "linear-gradient(135deg, #fde68a 0%, #f59e0b 50%, #d97706 100%)", accentColor: "#92400e", productShape: "figure", badge: "LIMITED", deliveryDays: "14-21 days" },
+  { id: 9, name: "3D Figure", points: 20000, levelReq: 50, emoji: "🗿", description: "3D printed pet figure — hand-painted, collector's box", gradient: "linear-gradient(135deg, #F4D9A8 0%, #E2A24C 50%, #BE4F28 100%)", accentColor: "#9A4E1E", productShape: "figure", badge: "LIMITED", deliveryDays: "14-21 days" },
 ];
 
 /* SVG-based product illustrations */
@@ -65,7 +65,7 @@ function ProductMockupWithAvatar({ shape, avatar, color }: { shape: string; avat
         background: "rgba(255,255,255,0.25)",
         backdropFilter: "blur(4px)",
         fontSize: 10, color: "rgba(255,255,255,0.9)",
-        fontFamily: "mono", fontWeight: 600, letterSpacing: "0.05em",
+        fontFamily: "var(--ed-m)", fontWeight: 600, letterSpacing: "0.05em",
       }}>
         {productIcons[shape]
           ? <span style={{ fontSize: 12 }}>{productIcons[shape]}</span>
@@ -91,15 +91,6 @@ function ProductMockup({ item, isLocked, petAvatar, mockupImage }: { item: Rewar
         overflow: "hidden",
       }}
     >
-      {/* Ambient glow */}
-      {!isLocked && !mockupImage && (
-        <div style={{
-          position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-          width: 140, height: 140, borderRadius: "50%",
-          background: "rgba(255,255,255,0.3)", filter: "blur(30px)", pointerEvents: "none",
-        }}/>
-      )}
-
       {/* Shine */}
       {!isLocked && !mockupImage && (
         <div style={{
@@ -142,7 +133,7 @@ function ProductMockup({ item, isLocked, petAvatar, mockupImage }: { item: Rewar
             </div>
             <span style={{
               fontSize: 9, color: "rgba(255,255,255,0.7)",
-              fontFamily: "mono", fontWeight: 600,
+              fontFamily: "var(--ed-m)", fontWeight: 600,
             }}>
               MY AI PET
             </span>
@@ -157,13 +148,13 @@ function ProductMockup({ item, isLocked, petAvatar, mockupImage }: { item: Rewar
           padding: "4px 10px", borderRadius: 6,
           fontSize: 10, fontWeight: 800, letterSpacing: "0.08em",
           background: isLocked
-            ? "rgba(0,0,0,0.1)"
+            ? "rgba(33,26,18,0.1)"
             : item.badge === "LIMITED"
-              ? "linear-gradient(135deg, #1a1a2e, #334155)"
-              : "linear-gradient(135deg, #f59e0b, #d97706)",
-          color: isLocked ? "#9ca3af" : "#fff",
-          boxShadow: isLocked ? "none" : "0 2px 8px rgba(0,0,0,0.2)",
-          fontFamily: "'Space Grotesk', sans-serif",
+              ? "#211A12"
+              : "linear-gradient(180deg,#F49B2A,#E27D0C)",
+          color: isLocked ? "#9A7B4E" : "#FFF8EE",
+          boxShadow: isLocked ? "none" : "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
+          fontFamily: "var(--ed-disp)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           {isLocked ? <Icon name="lock" size={12} /> : item.badge}
@@ -175,7 +166,7 @@ function ProductMockup({ item, isLocked, petAvatar, mockupImage }: { item: Rewar
         <div style={{
           position: "absolute", top: 12, right: 12,
           width: 28, height: 28, borderRadius: "50%",
-          background: "rgba(0,0,0,0.08)",
+          background: "rgba(33,26,18,0.08)",
           display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
         }}>
           <Icon name="lock" size={14} />
@@ -204,12 +195,12 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
     >
       <div
         style={{
-          background: "#fff",
+          background: "#FBF6EC",
           borderRadius: 24,
           maxWidth: 420,
           width: "100%",
           overflow: "hidden",
-          boxShadow: "0 32px 64px rgba(0,0,0,0.2)",
+          boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -248,7 +239,7 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
               </div>
               <span style={{
                 fontSize: 9, color: "rgba(255,255,255,0.7)",
-                fontFamily: "mono", fontWeight: 600,
+                fontFamily: "var(--ed-m)", fontWeight: 600,
               }}>
                 MY AI PET
               </span>
@@ -259,10 +250,10 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
         <div style={{ padding: "24px 28px 28px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
             <h3 style={{
-              fontFamily: "'Space Grotesk', sans-serif",
+              fontFamily: "var(--ed-disp)",
               fontSize: 22,
               fontWeight: 700,
-              color: "#1a1a2e",
+              color: "#211A12",
               margin: 0,
             }}>
               {item.name}
@@ -274,18 +265,18 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
                 fontSize: 9,
                 fontWeight: 800,
                 letterSpacing: "0.08em",
-                background: item.badge === "LIMITED" ? "#1a1a2e" : "#f59e0b",
-                color: "#fff",
+                background: item.badge === "LIMITED" ? "#211A12" : "#BE4F28",
+                color: "#FFF8EE",
               }}>
                 {item.badge}
               </span>
             )}
           </div>
-          <p style={{ fontSize: 14, color: "#78716c", margin: "0 0 16px", lineHeight: 1.5 }}>
+          <p style={{ fontSize: 14, color: "#5C5140", margin: "0 0 16px", lineHeight: 1.5 }}>
             {item.description}
           </p>
           <div style={{
-            background: "rgba(245,158,11,0.06)",
+            background: "rgba(190,79,40,0.06)",
             borderRadius: 12,
             padding: "14px 16px",
             display: "flex",
@@ -295,10 +286,10 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
           }}>
             <Icon name="paw" size={28} />
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#92400e" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#9A4E1E" }}>
                 Your pet&apos;s image will be printed on this product
               </div>
-              <div style={{ fontSize: 12, color: "#b45309", marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: "#9A4E1E", marginTop: 2 }}>
                 AI-generated custom artwork based on your pet
               </div>
             </div>
@@ -307,12 +298,12 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
                 <Icon name="coin" size={14} />
-                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 18, fontWeight: 700, color: "#b45309" }}>
+                <span style={{ fontFamily: "var(--ed-m)", fontSize: 18, fontWeight: 700, color: "#9A4E1E" }}>
                   {item.points.toLocaleString()}
                 </span>
-                <span style={{ fontSize: 13, color: "#78716c", marginLeft: 4 }}>points</span>
+                <span style={{ fontSize: 13, color: "#5C5140", marginLeft: 4 }}>points</span>
               </div>
-              <div style={{ fontSize: 12, color: "#a8a29e" }}>
+              <div style={{ fontSize: 12, color: "#9A7B4E" }}>
                 Est. delivery: {item.deliveryDays}
               </div>
             </div>
@@ -321,13 +312,13 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
               style={{
                 padding: "10px 24px",
                 borderRadius: 12,
-                border: "1px solid rgba(0,0,0,0.08)",
-                background: "#fff",
+                border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                background: "#F5EFE2",
                 fontSize: 14,
                 fontWeight: 600,
-                color: "#78716c",
+                color: "#5C5140",
                 cursor: "pointer",
-                fontFamily: "'Space Grotesk', sans-serif",
+                fontFamily: "var(--ed-disp)",
               }}
             >
               Close
@@ -340,8 +331,8 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
 }
 
 const REWARD_TIERS = [
-  { tier: "Top 1", minRank: 1, maxRank: 1, color: "#f59e0b", icon: "trophy", label: "Champion", allowedItems: [1,2,3,4,5,6,7,8,9] },
-  { tier: "Top 3", minRank: 2, maxRank: 3, color: "#d97706", icon: "medal", label: "Elite", allowedItems: [1,2,3,4,5,6,7,8,9] },
+  { tier: "Top 1", minRank: 1, maxRank: 1, color: "#C8932F", icon: "trophy", label: "Champion", allowedItems: [1,2,3,4,5,6,7,8,9] },
+  { tier: "Top 3", minRank: 2, maxRank: 3, color: "#BE4F28", icon: "medal", label: "Elite", allowedItems: [1,2,3,4,5,6,7,8,9] },
   { tier: "Top 10", minRank: 4, maxRank: 10, color: "#9ca3af", icon: "medal", label: "Top 10", allowedItems: [1,2,3,4,5,6,7] },
   { tier: "Top 10%", minRank: 11, maxRank: Infinity, color: "#cd7f32", icon: "medal", label: "Top 10%", allowedItems: [1,2,3] },
 ];
@@ -531,9 +522,9 @@ export default function Rewards() {
   if (loading) {
     return (
       <div style={{ padding: "140px 40px", textAlign: "center" }}>
-        <div style={{ width: 40, height: 40, border: "2px solid rgba(245,158,11,0.2)", borderTopColor: "#f59e0b", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+        <div style={{ width: 40, height: 40, border: "2px solid rgba(190,79,40,0.2)", borderTopColor: "#BE4F28", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-        <div style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.35)" }}>Loading rewards...</div>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(33,26,18,0.35)" }}>Loading rewards...</div>
       </div>
     );
   }
@@ -558,8 +549,8 @@ export default function Rewards() {
         >
           <div
             style={{
-              background: "#fff", borderRadius: 24, maxWidth: 400, width: "100%",
-              overflow: "hidden", boxShadow: "0 32px 64px rgba(0,0,0,0.2)",
+              background: "#FBF6EC", borderRadius: 24, maxWidth: 400, width: "100%",
+              overflow: "hidden", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -576,18 +567,18 @@ export default function Rewards() {
             </div>
             <div style={{ padding: "24px 28px 28px", textAlign: "center" }}>
               <h3 style={{
-                fontFamily: "'Space Grotesk', sans-serif", fontSize: 20, fontWeight: 700,
-                color: "#1a1a2e", margin: "0 0 8px",
+                fontFamily: "var(--ed-disp)", fontSize: 20, fontWeight: 700,
+                color: "#211A12", margin: "0 0 8px",
               }}>
                 Confirm Redemption
               </h3>
-              <p style={{ fontSize: 14, color: "#78716c", margin: "0 0 16px", lineHeight: 1.5 }}>
+              <p style={{ fontSize: 14, color: "#5C5140", margin: "0 0 16px", lineHeight: 1.5 }}>
                 Redeem <strong>{confirmItem.name}</strong> for{" "}
                 <strong>{confirmItem.points.toLocaleString()} points</strong>?
               </p>
               <div style={{
-                background: "rgba(245,158,11,0.06)", borderRadius: 12, padding: "12px 16px",
-                marginBottom: 20, fontSize: 13, color: "#92400e",
+                background: "rgba(190,79,40,0.06)", borderRadius: 12, padding: "12px 16px",
+                marginBottom: 20, fontSize: 13, color: "#9A4E1E",
               }}>
                 Your balance: {userPoints.toLocaleString()} pts → {(userPoints - confirmItem.points).toLocaleString()} pts
               </div>
@@ -596,9 +587,9 @@ export default function Rewards() {
                   onClick={() => setConfirmItem(null)}
                   style={{
                     flex: 1, padding: "12px 0", borderRadius: 12,
-                    border: "1px solid rgba(0,0,0,0.08)", background: "#fff",
-                    fontSize: 14, fontWeight: 600, color: "#78716c", cursor: "pointer",
-                    fontFamily: "'Space Grotesk', sans-serif",
+                    border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", background: "#F5EFE2",
+                    fontSize: 14, fontWeight: 600, color: "#5C5140", cursor: "pointer",
+                    fontFamily: "var(--ed-disp)",
                   }}
                 >
                   Cancel
@@ -607,10 +598,10 @@ export default function Rewards() {
                   onClick={() => executeRedeem(confirmItem)}
                   style={{
                     flex: 1, padding: "12px 0", borderRadius: 12, border: "none",
-                    background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                    fontSize: 14, fontWeight: 700, color: "#fff", cursor: "pointer",
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    boxShadow: "0 2px 8px rgba(245,158,11,0.25)",
+                    background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+                    fontSize: 14, fontWeight: 700, color: "#FFF8EE", cursor: "pointer",
+                    fontFamily: "var(--ed-disp)",
+                    boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
                   }}
                 >
                   Confirm
@@ -634,8 +625,8 @@ export default function Rewards() {
         >
           <div
             style={{
-              background: "#fff", borderRadius: 24, maxWidth: 400, width: "100%",
-              overflow: "hidden", boxShadow: "0 32px 64px rgba(0,0,0,0.2)",
+              background: "#FBF6EC", borderRadius: 24, maxWidth: 400, width: "100%",
+              overflow: "hidden", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -647,7 +638,7 @@ export default function Rewards() {
                 <Icon name="sparkling" size={48} />
               </div>
               <h3 style={{
-                fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 700,
+                fontFamily: "var(--ed-disp)", fontSize: 22, fontWeight: 700,
                 color: "#065f46", margin: 0,
               }}>
                 Redemption Confirmed!
@@ -658,10 +649,10 @@ export default function Rewards() {
                 background: "rgba(16,185,129,0.06)", borderRadius: 12, padding: "16px",
                 marginBottom: 16,
               }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a2e", marginBottom: 8 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#211A12", marginBottom: 8 }}>
                   {redemptionResult.reward_name}
                 </div>
-                <div style={{ fontSize: 13, color: "#78716c", lineHeight: 1.6 }}>
+                <div style={{ fontSize: 13, color: "#5C5140", lineHeight: 1.6 }}>
                   <div>Order #{redemptionResult.redemption_id}</div>
                   <div>Points spent: {redemptionResult.points_spent.toLocaleString()}</div>
                   <div>Est. delivery: {redemptionResult.delivery_estimate}</div>
@@ -678,9 +669,9 @@ export default function Rewards() {
                 style={{
                   width: "100%", padding: "12px 0", borderRadius: 12, border: "none",
                   background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                  fontSize: 14, fontWeight: 700, color: "#fff", cursor: "pointer",
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  boxShadow: "0 2px 8px rgba(16,185,129,0.25)",
+                  fontSize: 14, fontWeight: 700, color: "#FFF8EE", cursor: "pointer",
+                  fontFamily: "var(--ed-disp)",
+                  boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
                 }}
               >
                 Done
@@ -715,10 +706,10 @@ export default function Rewards() {
           flexWrap: "wrap" as const,
         }}>
           <div style={{ display: "flex", flexDirection: "column" as const, gap: 4, minWidth: 100 }}>
-            <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: 700, color: "#1e40af", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 14, fontWeight: 700, color: "#1e40af", textTransform: "uppercase" as const, letterSpacing: "0.12em" }}>
               Daily Check-In
             </div>
-            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: "#3b82f6", fontWeight: 600 }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#3b82f6", fontWeight: 600 }}>
               Streak: {streakData.streak} day{streakData.streak !== 1 ? "s" : ""}
             </div>
           </div>
@@ -751,16 +742,14 @@ export default function Rewards() {
                     : completed
                     ? "2px solid transparent"
                     : "1px solid rgba(59,130,246,0.1)",
-                  boxShadow: isToday && !completed
-                    ? "0 0 12px rgba(59,130,246,0.3)"
-                    : "none",
+                  boxShadow: "none",
                   transition: "all 0.3s ease",
                 }}>
                   <span style={{
                     fontSize: 14,
                     fontWeight: 700,
                     color: completed ? "#fff" : isToday ? "#2563eb" : "#93c5fd",
-                    fontFamily: "'Space Mono', monospace",
+                    fontFamily: "var(--ed-m)",
                   }}>
                     {completed ? "\u2713" : `D${dayNum}`}
                   </span>
@@ -785,13 +774,13 @@ export default function Rewards() {
               border: "none",
               fontSize: 14,
               fontWeight: 700,
-              fontFamily: "'Space Grotesk', sans-serif",
+              fontFamily: "var(--ed-disp)",
               cursor: streakData.checkedInToday ? "default" : "pointer",
               background: streakData.checkedInToday
                 ? "rgba(59,130,246,0.1)"
                 : "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
               color: streakData.checkedInToday ? "#93c5fd" : "#fff",
-              boxShadow: streakData.checkedInToday ? "none" : "0 2px 8px rgba(37,99,235,0.3)",
+              boxShadow: streakData.checkedInToday ? "none" : "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
               transition: "all 0.2s ease",
               whiteSpace: "nowrap" as const,
               opacity: checkingIn ? 0.7 : 1,
@@ -868,33 +857,33 @@ export default function Rewards() {
         </div>
         <div style={{ flex: 1, minWidth: 160 }}>
           <div style={{
-            fontFamily: "'Space Grotesk', sans-serif", fontSize: 11,
-            fontWeight: 700, color: userTier ? userTier.color : "#9ca3af",
-            textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 4,
+            fontFamily: "var(--ed-m)", fontSize: 11,
+            fontWeight: 700, color: userTier ? userTier.color : "#7A6E5A",
+            textTransform: "uppercase" as const, letterSpacing: "0.12em", marginBottom: 4,
           }}>
             Your Ranking Tier
           </div>
           {userTier ? (
             <>
               <div style={{
-                fontFamily: "'Space Grotesk', sans-serif", fontSize: 20, fontWeight: 700,
-                color: "#1a1a2e",
+                fontFamily: "var(--ed-disp)", fontSize: 20, fontWeight: 700,
+                color: "#211A12",
               }}>
                 {userTier.label} — Rank #{userRank}
               </div>
-              <div style={{ fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.5)", marginTop: 2 }}>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "rgba(33,26,18,0.5)", marginTop: 2 }}>
                 You can redeem {userTier.allowedItems.length} of {REWARDS_CATALOG.length} rewards
               </div>
             </>
           ) : (
             <>
               <div style={{
-                fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700,
-                color: "#1a1a2e",
+                fontFamily: "var(--ed-disp)", fontSize: 18, fontWeight: 700,
+                color: "#211A12",
               }}>
                 {userRank ? `Rank #${userRank} — Not in top tier yet` : "Unranked"}
               </div>
-              <div style={{ fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.5)", marginTop: 2 }}>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "rgba(33,26,18,0.5)", marginTop: 2 }}>
                 Rewards are exclusive to top-ranked players. Keep earning Season Rewards points!
               </div>
             </>
@@ -906,10 +895,10 @@ export default function Rewards() {
           {REWARD_TIERS.map(t => (
             <div key={t.tier} style={{
               padding: "6px 12px", borderRadius: 10,
-              background: userTier?.tier === t.tier ? `${t.color}20` : "rgba(0,0,0,0.03)",
-              border: userTier?.tier === t.tier ? `1.5px solid ${t.color}40` : "1px solid rgba(0,0,0,0.06)",
-              fontFamily: "mono", fontSize: 10, fontWeight: 700,
-              color: userTier?.tier === t.tier ? t.color : "rgba(26,26,46,0.3)",
+              background: userTier?.tier === t.tier ? `${t.color}20` : "rgba(33,26,18,0.03)",
+              border: userTier?.tier === t.tier ? `1.5px solid ${t.color}40` : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+              fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700,
+              color: userTier?.tier === t.tier ? t.color : "rgba(33,26,18,0.3)",
               transition: "all 0.2s",
               display: "flex", alignItems: "center", gap: 4,
             }}>
@@ -951,12 +940,12 @@ export default function Rewards() {
               onMouseEnter={(e) => {
                 if (!isLocked) {
                   e.currentTarget.style.transform = "translateY(-6px)";
-                  e.currentTarget.style.boxShadow = "0 20px 40px rgba(0,0,0,0.1)";
+                  e.currentTarget.style.boxShadow = "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))";
                 }
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.06)";
+                e.currentTarget.style.boxShadow = "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))";
               }}
             >
               {/* Product Mockup */}
@@ -1018,12 +1007,12 @@ export default function Rewards() {
                     onClick={() => handleRedeem(item)}
                     onMouseEnter={(e) => {
                       if (state === "available") {
-                        e.currentTarget.style.background = "linear-gradient(135deg, #d97706 0%, #b45309 100%)";
+                        e.currentTarget.style.background = "linear-gradient(180deg,#E27D0C,#C8650A)";
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (state === "available") {
-                        e.currentTarget.style.background = "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)";
+                        e.currentTarget.style.background = "linear-gradient(180deg,#F49B2A,#E27D0C)";
                       }
                     }}
                   >
@@ -1090,7 +1079,7 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: 960,
     margin: "0 auto",
     padding: "80px 16px 60px",
-    fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif",
+    fontFamily: "var(--ed-body)",
   },
 
   /* Header */
@@ -1109,37 +1098,38 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 36,
   },
   title: {
-    fontFamily: "'Space Grotesk', sans-serif",
+    fontFamily: "var(--ed-disp)",
     fontSize: 32,
     fontWeight: 700,
-    color: "#1a1a2e",
+    color: "#211A12",
     margin: 0,
     letterSpacing: "-0.02em",
   },
   subtitle: {
     fontSize: 16,
-    color: "#78716c",
+    color: "#5C5140",
     margin: 0,
     fontWeight: 400,
   },
 
   /* How It Works */
   howItWorks: {
-    background: "linear-gradient(135deg, #fefce8 0%, #fef3c7 100%)",
-    border: "1px solid rgba(245,158,11,0.12)",
+    background: "#FBF6EC",
+    border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
     borderRadius: 20,
     padding: "24px 28px",
     marginBottom: 24,
+    boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
   },
   howTitle: {
-    fontFamily: "'Space Grotesk', sans-serif",
+    fontFamily: "var(--ed-m)",
     fontSize: 16,
     fontWeight: 700,
-    color: "#92400e",
+    color: "#9A4E1E",
     margin: "0 0 16px",
     textAlign: "center" as const,
     textTransform: "uppercase" as const,
-    letterSpacing: "0.06em",
+    letterSpacing: "0.12em",
   },
   stepsRow: {
     display: "flex",
@@ -1152,21 +1142,21 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: 10,
-    background: "rgba(255,255,255,0.7)",
+    background: "#F5EFE2",
     borderRadius: 14,
     padding: "12px 18px",
-    border: "1px solid rgba(245,158,11,0.1)",
+    border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
   },
   stepNumber: {
     width: 32,
     height: 32,
     borderRadius: "50%",
-    background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-    color: "#fff",
+    background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+    color: "#FFF8EE",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontFamily: "'Space Mono', monospace",
+    fontFamily: "var(--ed-m)",
     fontSize: 14,
     fontWeight: 700,
     flexShrink: 0,
@@ -1175,16 +1165,16 @@ const styles: Record<string, React.CSSProperties> = {
   stepLabel: {
     fontSize: 14,
     fontWeight: 700,
-    color: "#78350f",
+    color: "#211A12",
   },
   stepDesc: {
     fontSize: 12,
-    color: "#92400e",
+    color: "#7A6E5A",
     marginTop: 1,
   },
   stepArrow: {
     fontSize: 18,
-    color: "#d97706",
+    color: "#9A4E1E",
     fontWeight: 700,
   },
 
@@ -1193,13 +1183,14 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
-    border: "1px solid rgba(245,158,11,0.15)",
+    background: "#FBF6EC",
+    border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
     borderRadius: 16,
     padding: "16px 24px",
     marginBottom: 28,
     flexWrap: "wrap" as const,
     gap: 12,
+    boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
   },
   pointsLeft: {
     display: "flex",
@@ -1212,15 +1203,16 @@ const styles: Record<string, React.CSSProperties> = {
   pointsLabel: {
     fontSize: 12,
     fontWeight: 500,
-    color: "#92400e",
+    color: "#9A4E1E",
     textTransform: "uppercase" as const,
-    letterSpacing: "0.05em",
+    letterSpacing: "0.12em",
+    fontFamily: "var(--ed-m)",
   },
   pointsValue: {
-    fontFamily: "'Space Mono', 'JetBrains Mono', monospace",
+    fontFamily: "var(--ed-m)",
     fontSize: 24,
     fontWeight: 700,
-    color: "#78350f",
+    color: "#211A12",
   },
   pointsRight: {
     display: "flex",
@@ -1228,9 +1220,9 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 12,
   },
   levelBadge: {
-    fontFamily: "'Space Mono', monospace",
-    background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-    color: "#fff",
+    fontFamily: "var(--ed-m)",
+    background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+    color: "#FFF8EE",
     fontSize: 14,
     fontWeight: 700,
     padding: "6px 14px",
@@ -1238,7 +1230,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   pointsMeta: {
     fontSize: 13,
-    color: "#92400e",
+    color: "#7A6E5A",
     fontWeight: 500,
   },
 
@@ -1262,13 +1254,13 @@ const styles: Record<string, React.CSSProperties> = {
 
   /* Card */
   card: {
-    background: "#ffffff",
-    border: "1px solid rgba(0,0,0,0.06)",
+    background: "#FBF6EC",
+    border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
     borderRadius: 20,
     overflow: "hidden" as const,
     display: "flex",
     flexDirection: "column" as const,
-    boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
+    boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
     transition: "transform 0.3s ease, box-shadow 0.3s ease",
     cursor: "default",
   },
@@ -1288,10 +1280,10 @@ const styles: Record<string, React.CSSProperties> = {
 
   /* Item Info */
   itemName: {
-    fontFamily: "'Space Grotesk', sans-serif",
+    fontFamily: "var(--ed-disp)",
     fontSize: 20,
     fontWeight: 700,
-    color: "#1a1a2e",
+    color: "#211A12",
     margin: 0,
     letterSpacing: "-0.01em",
   },
@@ -1304,14 +1296,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 16,
   },
   costValue: {
-    fontFamily: "'Space Mono', 'JetBrains Mono', monospace",
+    fontFamily: "var(--ed-m)",
     fontSize: 18,
     fontWeight: 700,
-    color: "#b45309",
+    color: "#9A4E1E",
   },
   costUnit: {
     fontSize: 12,
-    color: "#a8a29e",
+    color: "#9A7B4E",
     fontWeight: 500,
     marginLeft: 2,
   },
@@ -1325,14 +1317,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   description: {
     fontSize: 13,
-    color: "#78716c",
+    color: "#5C5140",
     margin: 0,
     lineHeight: 1.5,
     flex: 1,
   },
   deliveryInfo: {
     fontSize: 11,
-    color: "#a8a29e",
+    color: "#9A7B4E",
     fontWeight: 500,
     letterSpacing: "0.02em",
   },
@@ -1348,13 +1340,13 @@ const styles: Record<string, React.CSSProperties> = {
     flex: "0 0 auto",
     padding: "10px 14px",
     borderRadius: 12,
-    border: "1px solid rgba(0,0,0,0.08)",
-    background: "#fff",
+    border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+    background: "#F5EFE2",
     fontSize: 13,
     fontWeight: 600,
-    fontFamily: "'Space Grotesk', sans-serif",
+    fontFamily: "var(--ed-disp)",
     cursor: "pointer",
-    color: "#78716c",
+    color: "#5C5140",
     transition: "background 0.2s ease",
   },
   button: {
@@ -1364,59 +1356,59 @@ const styles: Record<string, React.CSSProperties> = {
     border: "none",
     fontSize: 14,
     fontWeight: 700,
-    fontFamily: "'Space Grotesk', sans-serif",
+    fontFamily: "var(--ed-disp)",
     cursor: "pointer",
     transition: "background 0.2s ease, opacity 0.2s ease",
     letterSpacing: "0.01em",
   },
   buttonAvailable: {
-    background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-    color: "#ffffff",
-    boxShadow: "0 2px 8px rgba(245,158,11,0.25)",
+    background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+    color: "#FFF8EE",
+    boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
   },
   buttonInsufficient: {
-    background: "rgba(0,0,0,0.04)",
-    color: "#a8a29e",
+    background: "rgba(33,26,18,0.04)",
+    color: "#9A7B4E",
     cursor: "not-allowed",
   },
   buttonLocked: {
-    background: "rgba(0,0,0,0.04)",
-    color: "#a8a29e",
+    background: "rgba(33,26,18,0.04)",
+    color: "#9A7B4E",
     cursor: "not-allowed",
   },
 
   /* Journey */
   journey: {
-    background: "#ffffff",
-    border: "1px solid rgba(0,0,0,0.06)",
+    background: "#FBF6EC",
+    border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
     borderRadius: 20,
     padding: "28px 32px",
-    boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+    boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
   },
   journeyTitle: {
-    fontFamily: "'Space Grotesk', sans-serif",
+    fontFamily: "var(--ed-disp)",
     fontSize: 20,
     fontWeight: 700,
-    color: "#1a1a2e",
+    color: "#211A12",
     margin: "0 0 16px",
   },
   progressOuter: {
     width: "100%",
     height: 10,
-    background: "rgba(0,0,0,0.04)",
+    background: "rgba(33,26,18,0.04)",
     borderRadius: 8,
     overflow: "hidden" as const,
     marginBottom: 8,
   },
   progressInner: {
     height: "100%",
-    background: "linear-gradient(90deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)",
+    background: "linear-gradient(90deg,#F49B2A,#E27D0C)",
     borderRadius: 8,
     transition: "width 0.6s ease",
   },
   progressLabel: {
     fontSize: 13,
-    color: "#78716c",
+    color: "#5C5140",
     fontWeight: 500,
     marginBottom: 20,
   },
@@ -1434,9 +1426,9 @@ const styles: Record<string, React.CSSProperties> = {
     transition: "opacity 0.3s ease",
   },
   milestoneLv: {
-    fontFamily: "'Space Mono', monospace",
+    fontFamily: "var(--ed-m)",
     fontSize: 11,
     fontWeight: 600,
-    color: "#92400e",
+    color: "#9A4E1E",
   },
 };

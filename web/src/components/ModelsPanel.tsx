@@ -13,11 +13,24 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
-const GOLD = "#b45309";
-const GOLD_SOFT = "#fbbf24";
-const INK = "#1a1a22";
-const MUTED = "#6b6b73";
-const LINE = "rgba(16,16,28,0.10)";
+// ── Collectible Editorial palette ──
+const GOLD = "#9A4E1E";          // terracotta-sub (eyebrows / accents)
+const GOLD_SOFT = "#FCE9CF";     // warm terracotta tint (active pill bg)
+const INK = "#211A12";           // editorial ink
+const MUTED = "#7A6E5A";         // editorial muted
+const LINE = "rgba(33,26,18,0.13)"; // hairline
+const PAPER = "#FBF6EC";         // card paper
+const INSET = "#F5EFE2";         // input inset
+const CTA = "linear-gradient(180deg,#F49B2A,#E27D0C)"; // primary button
+const DANGER = "#9A3412";        // warm danger text
+const TERM_BG = "#1E1710";       // warm-dark terminal
+const TERM_CREAM = "#ECE0CE";
+const TERM_MUTED = "#8E7F68";
+const TERM_GREEN = "#9FC59A";
+const TERM_GOLD = "#E7C57C";
+const DISP = "var(--ed-disp)";
+const BODY = "var(--ed-body)";
+const MONO = "var(--ed-m)";
 
 interface Conn {
   id: number;
@@ -32,9 +45,9 @@ interface Supported { id: string; label: string; keyFormat: string }
 
 function Card({ children, title, sub }: { children: React.ReactNode; title: string; sub?: string }) {
   return (
-    <div style={{ background: "#fff", border: `1px solid ${LINE}`, borderRadius: 16, padding: "22px 24px", marginBottom: 20 }}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, color: INK, margin: 0 }}>{title}</h2>
-      {sub && <p style={{ fontSize: 13.5, color: MUTED, margin: "6px 0 16px", lineHeight: 1.5 }}>{sub}</p>}
+    <div style={{ background: PAPER, border: `1px solid ${LINE}`, borderRadius: 18, padding: "22px 24px", marginBottom: 20, boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
+      <h2 style={{ fontFamily: DISP, fontSize: 20, fontWeight: 800, color: INK, margin: 0, letterSpacing: "-0.01em" }}>{title}</h2>
+      {sub && <p style={{ fontFamily: BODY, fontSize: 13.5, color: MUTED, margin: "6px 0 16px", lineHeight: 1.5 }}>{sub}</p>}
       {children}
     </div>
   );
@@ -127,27 +140,27 @@ export default function ModelsPanel() {
     catch (e: any) { setErr(e?.message || "Remove failed"); }
   };
 
-  const inputStyle: React.CSSProperties = { width: "100%", padding: "10px 12px", borderRadius: 10, border: `1px solid ${LINE}`, fontSize: 14, color: INK, background: "#fafafa", boxSizing: "border-box" };
-  const btn: React.CSSProperties = { padding: "10px 18px", borderRadius: 10, border: "none", background: INK, color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer" };
+  const inputStyle: React.CSSProperties = { width: "100%", padding: "10px 12px", borderRadius: 10, border: `1px solid ${LINE}`, fontSize: 14, color: INK, background: INSET, boxSizing: "border-box", fontFamily: BODY };
+  const btn: React.CSSProperties = { padding: "11px 20px", borderRadius: 12, border: "none", background: CTA, color: "#FFF8EE", fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: BODY, boxShadow: "0 8px 18px -10px rgba(226,125,12,.7)" };
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "8px 0 20px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "8px 0 20px", fontFamily: BODY }}>
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase" }}>PetClaw protocol · bring your own model</div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: INK, margin: "6px 0 0" }}>Your model, your pet</h1>
-        <p style={{ fontSize: 14, color: MUTED, margin: "8px 0 0", lineHeight: 1.55 }}>
-          A PetClaw-protocol (developer) feature — the intended path is the <strong>CLI / at install</strong>. Your pet then routes its chat replies, agent-loop reasoning, and best-of-N judging to your model; other background tasks use the platform default (Grok). Keys are encrypted at rest, never shown again.
+        <div style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase" }}>PetClaw protocol · bring your own model</div>
+        <h1 style={{ fontFamily: DISP, fontSize: 28, fontWeight: 800, color: INK, margin: "6px 0 0", letterSpacing: "-0.02em" }}>Your model, your pet</h1>
+        <p style={{ fontFamily: BODY, fontSize: 14.5, color: MUTED, margin: "8px 0 0", lineHeight: 1.55 }}>
+          A PetClaw-protocol (developer) feature — the intended path is the <strong style={{ color: INK, fontWeight: 600 }}>CLI / at install</strong>. Your pet then routes its chat replies, agent-loop reasoning, and best-of-N judging to your model; other background tasks use the platform default (Grok). Keys are encrypted at rest, never shown again.
         </p>
         {/* Primary path: connect via the CLI / on install. */}
-        <div style={{ marginTop: 14, background: "#0e0e14", borderRadius: 12, padding: "14px 16px", fontFamily: "monospace", fontSize: 12.5, lineHeight: 1.7, color: "#e8e4da", overflowX: "auto" }}>
-          <div style={{ color: "#8a8577", marginBottom: 6 }}># install, authenticate, then connect a model</div>
-          <div><span style={{ color: "#9bd1c4" }}>npx @myaipet/petclaw-sdk init</span><span style={{ color: "#5f5e5a" }}>            # guided: server · token · pick your pet · model</span></div>
-          <div><span style={{ color: "#9bd1c4" }}>npx @myaipet/petclaw-sdk auth</span> <span style={{ color: "#fde68a" }}>pck_…</span><span style={{ color: "#5f5e5a" }}>        # the CLI token from "Connect your CLI" below</span></div>
-          <div><span style={{ color: "#9bd1c4" }}>npx @myaipet/petclaw-sdk models connect</span> <span style={{ color: "#fde68a" }}>openai sk-…</span></div>
+        <div style={{ marginTop: 14, background: TERM_BG, borderRadius: 14, padding: "16px 18px", fontFamily: MONO, fontSize: 12.5, lineHeight: 1.7, color: TERM_CREAM, overflowX: "auto", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
+          <div style={{ color: TERM_MUTED, marginBottom: 6 }}># install, authenticate, then connect a model</div>
+          <div><span style={{ color: TERM_GREEN }}>npx @myaipet/petclaw-sdk init</span><span style={{ color: TERM_MUTED }}>            # guided: server · token · pick your pet · model</span></div>
+          <div><span style={{ color: TERM_GREEN }}>npx @myaipet/petclaw-sdk auth</span> <span style={{ color: TERM_GOLD }}>pck_…</span><span style={{ color: TERM_MUTED }}>        # the CLI token from "Connect your CLI" below</span></div>
+          <div><span style={{ color: TERM_GREEN }}>npx @myaipet/petclaw-sdk models connect</span> <span style={{ color: TERM_GOLD }}>openai sk-…</span></div>
         </div>
       </div>
 
-      {err && <div style={{ background: "#fde8e8", color: "#9b1c1c", borderRadius: 10, padding: "10px 14px", fontSize: 13.5, margin: "16px 0" }}>{err}</div>}
+      {err && <div style={{ fontFamily: BODY, background: "#F6E3DA", color: DANGER, borderRadius: 10, padding: "10px 14px", fontSize: 13.5, margin: "16px 0", border: "1px solid rgba(154,52,18,.18)" }}>{err}</div>}
 
       <div style={{ height: 20 }} />
 
@@ -157,12 +170,12 @@ export default function ModelsPanel() {
         </button>
 
         {newToken && (
-          <div style={{ marginTop: 16, background: "#0e0e14", borderRadius: 12, padding: "14px 16px" }}>
-            <div style={{ color: "#9bd1c4", fontSize: 12, marginBottom: 8 }}>Copy this now — it won't be shown again.</div>
-            <div style={{ fontFamily: "monospace", fontSize: 12.5, color: "#e8e4da", wordBreak: "break-all", lineHeight: 1.6 }}>
+          <div style={{ marginTop: 16, background: TERM_BG, borderRadius: 14, padding: "14px 16px" }}>
+            <div style={{ fontFamily: BODY, color: TERM_GREEN, fontSize: 12, marginBottom: 8 }}>Copy this now — it won&apos;t be shown again.</div>
+            <div style={{ fontFamily: MONO, fontSize: 12.5, color: TERM_CREAM, wordBreak: "break-all", lineHeight: 1.6 }}>
               petclaw-sdk auth {newToken}
             </div>
-            <button onClick={copyToken} style={{ marginTop: 10, padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: copied ? "#9bd1c4" : "#fde68a", fontSize: 13, cursor: "pointer" }}>
+            <button onClick={copyToken} style={{ marginTop: 10, padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(236,224,206,0.18)", background: "transparent", color: copied ? TERM_GREEN : TERM_GOLD, fontSize: 13, cursor: "pointer", fontFamily: MONO }}>
               {copied ? "Copied ✓" : "Copy command"}
             </button>
           </div>
@@ -181,7 +194,7 @@ export default function ModelsPanel() {
                   </div>
                 </div>
                 {!t.revoked_at && (
-                  <button onClick={() => revokeToken(t.id)} style={{ background: "none", border: `1px solid ${LINE}`, borderRadius: 8, padding: "6px 12px", color: "#9b1c1c", fontSize: 13, cursor: "pointer" }}>Revoke</button>
+                  <button onClick={() => revokeToken(t.id)} style={{ background: "none", border: `1px solid ${LINE}`, borderRadius: 8, padding: "6px 12px", color: DANGER, fontSize: 13, cursor: "pointer" }}>Revoke</button>
                 )}
               </div>
             ))}
@@ -198,22 +211,22 @@ export default function ModelsPanel() {
             </select>
           </div>
           <div>
-            <label style={{ fontSize: 12.5, color: MUTED }}>Model <span style={{ color: "#b0b0b8" }}>(optional)</span></label>
+            <label style={{ fontSize: 12.5, color: MUTED }}>Model <span style={{ color: "#A99C84" }}>(optional)</span></label>
             <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="default for provider" style={inputStyle} />
           </div>
         </div>
         <div style={{ marginTop: 12 }}>
-          <label style={{ fontSize: 12.5, color: MUTED }}>API key <span style={{ color: "#b0b0b8" }}>(stored encrypted, never shown again)</span></label>
+          <label style={{ fontSize: 12.5, color: MUTED }}>API key <span style={{ color: "#A99C84" }}>(stored encrypted, never shown again)</span></label>
           <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={supported.find((s) => s.id === provider)?.keyFormat || "sk-..."} style={inputStyle} autoComplete="off" />
         </div>
         <div style={{ marginTop: 14 }}>
-          <label style={{ fontSize: 12.5, color: MUTED }}>Use for <span style={{ color: "#b0b0b8" }}>(none = all supported tasks below)</span></label>
+          <label style={{ fontSize: 12.5, color: MUTED }}>Use for <span style={{ color: "#A99C84" }}>(none = all supported tasks below)</span></label>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
             {tasks.map((t) => {
               const on = scopes.includes(t);
               return (
                 <button key={t} onClick={() => setScopes(on ? scopes.filter((x) => x !== t) : [...scopes, t])}
-                  style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${on ? GOLD : LINE}`, background: on ? GOLD_SOFT : "#fff", color: on ? "#7a3d00" : MUTED, fontSize: 12.5, cursor: "pointer", fontWeight: on ? 600 : 400 }}>
+                  style={{ fontFamily: BODY, padding: "5px 12px", borderRadius: 999, border: `1px solid ${on ? "#BE4F28" : LINE}`, background: on ? GOLD_SOFT : PAPER, color: on ? GOLD : MUTED, fontSize: 12.5, cursor: "pointer", fontWeight: on ? 600 : 400 }}>
                   {t}
                 </button>
               );
@@ -234,7 +247,7 @@ export default function ModelsPanel() {
                 {c.provider} · {c.task_scopes?.length ? c.task_scopes.join(", ") : "all tasks"} · key {c.keyMask || "••••••"}
               </div>
             </div>
-            <button onClick={() => remove(c.id)} style={{ background: "none", border: `1px solid ${LINE}`, borderRadius: 8, padding: "6px 12px", color: "#9b1c1c", fontSize: 13, cursor: "pointer" }}>Remove</button>
+            <button onClick={() => remove(c.id)} style={{ background: "none", border: `1px solid ${LINE}`, borderRadius: 8, padding: "6px 12px", color: DANGER, fontSize: 13, cursor: "pointer" }}>Remove</button>
           </div>
         ))}
         {loading && <div style={{ color: MUTED, fontSize: 13.5 }}>Loading…</div>}

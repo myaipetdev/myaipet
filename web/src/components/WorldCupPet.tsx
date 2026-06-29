@@ -410,25 +410,18 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
         <div aria-hidden style={{ position: "absolute", right: -8, top: -16, opacity: 0.08, lineHeight: 1, zIndex: 1 }}><Icon name="trophy" size={130} /></div>
         <div style={{ position: "relative", zIndex: 2 }}>
-          <div style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: T.terraSub, textTransform: "uppercase" }}>PET WORLD CUP · NATIONAL PET</div>
-          <h1 style={{ fontFamily: T.disp, fontSize: 52, fontWeight: 800, color: T.ink, margin: "10px 0 0", letterSpacing: "-0.03em", lineHeight: 0.96 }}>Pick the cutest</h1>
-          {/* terracotta vs teal match lockup */}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 10, margin: "14px 0 0", fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase" }}>
-            <span style={{ color: T.terra }}>● HOME</span>
-            <span style={{ color: T.muted }}>R16 · MATCH №01</span>
-            <span style={{ color: T.teal }}>AWAY ●</span>
-          </div>
-          <p style={{ fontFamily: T.body, fontSize: 15, color: T.muted2, margin: "12px auto 0", lineHeight: 1.55, maxWidth: 540 }}>
-            Reimagine your pet as your country&apos;s iconic animal in its flag colors — then share your national pride on X.
+          <div style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: T.terraSub, textTransform: "uppercase" }}>Pet World Cup · 2026</div>
+          <h1 style={{ fontFamily: T.disp, fontSize: 52, fontWeight: 800, color: T.ink, margin: "10px 0 0", letterSpacing: "-0.03em", lineHeight: 0.96 }}>Fly your colors</h1>
+          <p style={{ fontFamily: T.body, fontSize: 15.5, color: T.muted2, margin: "16px auto 0", lineHeight: 1.6, maxWidth: 580 }}>
+            The 2026 World Cup is on. <strong style={{ color: T.ink, fontWeight: 600 }}>Pick your country below</strong> — your pet is reimagined as that nation&apos;s iconic animal in its flag colors, ready to share on X. And cast your prediction for who lifts the trophy.
           </p>
-          {/* bracket progress strip R16 → QF → SF → Final */}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 0, margin: "16px 0 0", fontFamily: T.m, fontSize: 9.5, fontWeight: 700, letterSpacing: ".1em" }}>
-            {["R16", "QF", "SF", "FINAL"].map((s, i, arr) => (
-              <span key={s} style={{ display: "inline-flex", alignItems: "center" }}>
-                <span style={{ color: i === 0 ? T.gold : T.mono, padding: "3px 8px", borderRadius: 999, border: `1px solid ${i === 0 ? T.gold : T.hair}`, background: i === 0 ? "rgba(200,147,47,.1)" : "transparent" }}>{s}</span>
-                {i < arr.length - 1 && <span aria-hidden style={{ width: 14, height: 1, background: T.hair }} />}
-              </span>
-            ))}
+          {/* how it reads — host info + a clear lead-in to the flag picker (no fake bracket) */}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 12, margin: "18px 0 0", fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: T.mono, flexWrap: "wrap", justifyContent: "center" }}>
+            <span>48 Nations</span>
+            <span aria-hidden style={{ width: 4, height: 4, borderRadius: "50%", background: T.hair }} />
+            <span>Hosts: USA · Canada · Mexico</span>
+            <span aria-hidden style={{ width: 4, height: 4, borderRadius: "50%", background: T.hair }} />
+            <span style={{ color: T.terraSub }}>↓ Pick your country</span>
           </div>
         </div>
       </div>

@@ -175,34 +175,37 @@ export default function Nav({ section, setSection, credits }: any) {
               {balanceOpen && (
                 <div style={{
                   position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 200,
-                  background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)",
-                  borderRadius: 14, border: "1px solid rgba(0,0,0,0.08)",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+                  background: "var(--ed-paper, #FBF6EC)",
+                  borderRadius: 16, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                  boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
                   padding: "20px", minWidth: 220,
                   animation: "slideIn 0.2s ease",
                 }}>
                   <div style={{
-                    fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 600,
-                    color: "rgba(26,26,46,0.5)", marginBottom: 8,
+                    fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700,
+                    letterSpacing: "0.14em", textTransform: "uppercase",
+                    color: "#9A7B4E", marginBottom: 8,
                   }}>
                     Your Balance
                   </div>
                   <div style={{
-                    fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700,
-                    color: "#1a1a2e", marginBottom: 4,
+                    fontFamily: "var(--ed-disp)", fontSize: 30, fontWeight: 800,
+                    color: "#211A12", marginBottom: 4, letterSpacing: "-0.02em",
+                    fontVariantNumeric: "tabular-nums",
                   }}>
-                    {credits.toLocaleString()} <span style={{ fontSize: 14, color: "#b45309" }}>credits</span>
+                    {credits.toLocaleString()} <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#9A4E1E", letterSpacing: "0.06em" }}>credits</span>
                   </div>
                   <div style={{
-                    height: 1, background: "rgba(0,0,0,0.06)", margin: "14px 0",
+                    height: 1, background: "var(--ed-hair, rgba(33,26,18,.13))", margin: "14px 0",
                   }} />
                   <button
                     onClick={() => { setBalanceOpen(false); setSection("home"); setTimeout(() => { document.querySelector(".pricing-root")?.scrollIntoView({ behavior: "smooth" }); }, 100); }}
                     style={{
-                      width: "100%", padding: "10px 14px", borderRadius: 10, border: "none",
-                      background: "linear-gradient(135deg, #f59e0b, #d97706)",
-                      color: "white", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13,
-                      fontWeight: 600, cursor: "pointer", marginBottom: 8,
+                      width: "100%", padding: "11px 14px", borderRadius: 12, border: "none",
+                      background: "linear-gradient(180deg, #F49B2A, #E27D0C)",
+                      color: "#FFF8EE", fontFamily: "var(--ed-body)", fontSize: 13.5,
+                      fontWeight: 600, cursor: "pointer", marginBottom: 0,
+                      boxShadow: "0 8px 18px -10px rgba(226,125,12,.7)",
                       transition: "all 0.2s ease",
                     }}
                   >

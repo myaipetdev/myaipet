@@ -30,14 +30,15 @@ interface Props {
   variant?: "full" | "compact";
 }
 
-const GOLD = "#fbbf24";
-const GOLD2 = "#f59e0b";
-const AMBER_DIM = "#c08a3a";
-const TXT = "#e8e4da";
-const MUTED = "#8a8577";
-const GREEN = "#34d399";
-const LINE = "rgba(245,158,11,0.22)";
-const MONO = "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace";
+// ── Collectible Editorial — warm-dark terminal palette (foil gold on warm ink) ──
+const GOLD = "#E8C77E";        // warm foil gold (was #fbbf24)
+const GOLD2 = "#D98E3C";       // warm amber accent (was #f59e0b)
+const AMBER_DIM = "#B5894A";   // dim warm key
+const TXT = "#ECE0CE";         // warm cream
+const MUTED = "#8E7F68";       // warm muted
+const GREEN = "#9FC59A";       // warm sage (live)
+const LINE = "rgba(231,197,124,0.20)"; // warm gold hairline
+const MONO = "var(--ed-m)";    // Space Mono
 
 // Always-on surfaces + the 21-connector registry (lib/petclaw/connectors).
 const RUNS_ON = "web · chrome-extension · mcp clients (Claude · Cursor · any)";
@@ -245,31 +246,31 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
   return (
     <div style={{ fontFamily: MONO, color: TXT }}>
       <div style={{
-        borderRadius: 16, overflow: "hidden", border: "1px solid rgba(255,255,255,0.06)",
-        boxShadow: "0 24px 64px rgba(15,15,26,0.45)", background: "#13131a",
+        borderRadius: 18, overflow: "hidden", border: "1px solid rgba(236,224,206,0.07)",
+        boxShadow: "0 28px 64px -28px rgba(40,28,12,0.6)", background: "#1E1710",
       }}>
         {/* chrome */}
         <div style={{
           display: "flex", alignItems: "center", gap: 8, padding: "11px 16px",
-          background: "#1b1b24", borderBottom: "1px solid rgba(255,255,255,0.05)",
+          background: "#241B12", borderBottom: "1px solid rgba(236,224,206,0.06)",
         }}>
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff5f57" }} />
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#febc2e" }} />
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#28c840" }} />
-          <span style={{ marginLeft: 10, color: "#b9b3a6", fontSize: 12.5 }}>
+          <span style={{ marginLeft: 10, color: "#C2B49A", fontSize: 12.5 }}>
             petclaw connect{pet?.name ? ` · ${pet.name.toLowerCase()}` : ""}
           </span>
         </div>
 
         <div style={{
           padding: compact ? "22px 26px 14px" : "26px 30px 16px",
-          background: "radial-gradient(900px 360px at 50% -20%, #1b2330 0%, #0e0e14 60%)",
+          background: "radial-gradient(900px 360px at 50% -20%, #2C2114 0%, #1A140D 60%)",
         }}>
           <div style={{
-            fontFamily: "'Space Grotesk', sans-serif", fontWeight: 800, letterSpacing: "-0.02em",
+            fontFamily: "var(--ed-disp)", fontWeight: 800, letterSpacing: "-0.02em",
             textAlign: "center", fontSize: compact ? "clamp(34px,7vw,56px)" : "clamp(38px,8vw,76px)",
             lineHeight: 0.95, margin: "2px 0 2px",
-            background: "linear-gradient(180deg,#fde68a 0%,#fbbf24 44%,#d97706 100%)",
+            background: "linear-gradient(180deg,#FFE6A8 0%,#E8C77E 44%,#C8932F 100%)",
             WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
           }}>PETCLAW</div>
           <div style={{ textAlign: "center", color: MUTED, fontSize: 12.5, marginBottom: 18 }}>
@@ -315,8 +316,8 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
 
           {/* LIVE terminal */}
           {interactive && (
-            <div style={{ marginTop: 16, border: `1px solid ${LINE}`, borderRadius: 12, overflow: "hidden", background: "#0b0b11" }}>
-              <div style={{ padding: "8px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", color: MUTED, fontSize: 11.5, letterSpacing: "0.08em" }}>
+            <div style={{ marginTop: 16, border: `1px solid ${LINE}`, borderRadius: 12, overflow: "hidden", background: "#16110B" }}>
+              <div style={{ padding: "8px 14px", borderBottom: "1px solid rgba(236,224,206,0.06)", color: MUTED, fontSize: 11.5, letterSpacing: "0.08em" }}>
                 LIVE · petclaw_chat — {isSim ? `demo of ${petName} (connect to chat live)` : `talk to ${petName} right here`}
               </div>
               <div ref={scrollRef} style={{ maxHeight: 240, overflowY: "auto", padding: "12px 14px", fontSize: 12.5, lineHeight: 1.7 }}>
@@ -327,7 +328,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   </div>
                 ))}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderTop: "1px solid rgba(236,224,206,0.06)" }}>
                 <span style={{ color: GOLD, fontSize: 13 }}>petclaw ❯</span>
                 <input
                   value={input}
@@ -353,8 +354,8 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
         {/* status bar */}
         <div style={{
           display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
-          padding: "11px 22px", background: "#101017", borderTop: "1px solid rgba(245,158,11,0.18)",
-          fontSize: 12.5, color: "#b9b3a6",
+          padding: "11px 22px", background: "#1E1710", borderTop: "1px solid rgba(231,197,124,0.18)",
+          fontSize: 12.5, color: "#C2B49A",
         }}>
           <span>⌁ <b style={{ color: GOLD }}>{petName}</b>
             {pet?.level ? ` · Lv.${pet.level}` : ""}

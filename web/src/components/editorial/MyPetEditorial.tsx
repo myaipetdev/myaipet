@@ -50,9 +50,10 @@ const CareIcon = ({ d }: { d: string }) => (
 function CareTile({ label, icon, onClick, busy }: { label: string; icon: React.ReactNode; onClick: () => void; busy?: boolean }) {
   return (
     <button onClick={onClick} disabled={busy} style={{
-      flex: 1, background: "linear-gradient(160deg,#FBEAC8,#F3D69B)", border: "1px solid #F0CF95", borderRadius: 14,
+      flex: 1, background: "#FCE9CF", border: "1px solid rgba(190,79,40,0.22)", borderRadius: 14,
       padding: "13px 6px", textAlign: "center", cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
       transition: "transform .12s ease", fontFamily: T.body,
+      boxShadow: "0 10px 22px -18px rgba(190,79,40,.55)",
     }}
       onMouseDown={(e) => (e.currentTarget.style.transform = "translateY(1px)")}
       onMouseUp={(e) => (e.currentTarget.style.transform = "none")}
