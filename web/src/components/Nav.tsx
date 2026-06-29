@@ -111,7 +111,7 @@ export default function Nav({ section, setSection, credits }: any) {
 
         {/* Nav items — scrollable on mobile */}
         <div className="nav-items-wrap" style={{
-          display: "flex", gap: 8, alignItems: "center", justifyContent: "center",
+          display: "flex", gap: 26, alignItems: "center", justifyContent: "center",
           flex: 1, minWidth: 0,
         }}>
           {NAV_ITEMS.map((item) => {

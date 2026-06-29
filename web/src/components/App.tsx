@@ -412,7 +412,7 @@ export default function App() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#faf7f2", color: "#1a1a2e", position: "relative", overflow: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "#ECE4D4", color: "#211A12", position: "relative", overflow: "hidden" }}>
       <style>{`
         * { margin: 0; padding: 0; box-sizing: border-box }
         ::selection { background: rgba(251,191,36,0.2) }

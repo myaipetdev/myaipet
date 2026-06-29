@@ -68,7 +68,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${spaceGrotesk.variable} ${bricolage.variable} ${hanken.variable} ${spaceMono.variable}`}
-        style={{ background: "#faf7f2" }}
+        style={{ background: "#ECE4D4" }}
       >
         <Providers>
           {children}
