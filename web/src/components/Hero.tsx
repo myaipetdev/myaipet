@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { LOGO_SRC } from "./Nav";
 import Icon from "@/components/Icon";
 import { MOCK_IMAGES } from "@/lib/mockData";
+import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 
 // ── Soft ambient glyphs (no 3D-icon match) — flat SVGs tuned to the hero's warm palette ──
 function BlossomGlyph({ size }: { size: number }) {
@@ -229,14 +230,9 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         </span>
       </div>
 
-      {/* Logo */}
-      <div style={{ marginBottom: 28, position: "relative", zIndex: 2 }}>
-        <img src={LOGO_SRC} alt="mascot" className="hero-logo-img" style={{
-          width: 160, height: 160, borderRadius: 40, objectFit: "cover",
-          border: "4px solid rgba(251,191,36,0.25)",
-          animation: "logoGlow 3s ease-in-out infinite",
-          background: "linear-gradient(135deg, #fef3c7, #fde68a)",
-        }} />
+      {/* Hero pet — a foil-stamped collectible (the brand mascot, Mochi) */}
+      <div style={{ marginBottom: 30, position: "relative", zIndex: 2, display: "flex", justifyContent: "center" }}>
+        <CollectibleFrame photoUrl={LOGO_SRC} level={5} speciesLabel="POMERANIAN" elementLabel="GRASS" width={208} tilt={-2.4} />
       </div>
 
       {/* Infrastructure positioning eyebrow + honest Beta tag */}
@@ -432,7 +428,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         {/* Row 2 — square cards, slow right */}
         <div className="gs-row" style={{ marginBottom: 10 }}>
           <div className="gs-track" style={{ animation: "scrollR 55s linear infinite" }}>
-            {[...MOCK_IMAGES.slice(4, 20), ...MOCK_IMAGES.slice(4, 20)].map((img, i) => (
+            {[...MOCK_IMAGES.slice(16), ...MOCK_IMAGES.slice(16)].map((img, i) => (
               <div key={i} className="gs-card" style={{ width: 120, height: 120 }}>
                 <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 <span className="gs-badge">{img.style}</span>
@@ -444,7 +440,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         {/* Row 3 — wide-ish, medium left */}
         <div className="gs-row">
           <div className="gs-track" style={{ animation: "scrollL 45s linear infinite" }}>
-            {[...MOCK_IMAGES.slice(8), ...MOCK_IMAGES.slice(8)].map((img, i) => (
+            {[...[...MOCK_IMAGES].reverse(), ...[...MOCK_IMAGES].reverse()].map((img, i) => (
               <div key={i} className="gs-card" style={{ width: 110, height: 100 }}>
                 <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 <span className="gs-badge">{img.style}</span>
