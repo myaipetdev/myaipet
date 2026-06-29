@@ -7,21 +7,23 @@
  * photos-of-screens / drawings / memes are rejected, so you can only catch
  * animals you actually find.
  *
- * Cream tones + thick outlines + game-like, per the catchcat aesthetic.
+ * Collectible Editorial — every caught animal is a foil-stamped collectible on a
+ * warm cream editorial print piece. Section signature: teal-green (#1A7E68).
  */
 
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 import { kindIcon } from "@/lib/catch/game";
-import { WaxSeal, rarityStock, dcVars } from "@/components/Sticker";
+import { rarityStock } from "@/components/Sticker";
+import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 
-/** Camera glyph in the cream/thick-outline Catch style (no emoji). */
+/** Camera glyph in the editorial teal/ink style (no emoji). */
 function CameraIcon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ display: "block", flexShrink: 0 }} aria-hidden>
-      <path d="M3 8.5C3 7.4 3.9 6.5 5 6.5H7L8.2 4.6C8.4 4.2 8.8 4 9.2 4H14.8C15.2 4 15.6 4.2 15.8 4.6L17 6.5H19C20.1 6.5 21 7.4 21 8.5V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V8.5Z" fill="#f59e0b" stroke="#1a1a22" strokeWidth="2" strokeLinejoin="round" />
-      <circle cx="12" cy="12.5" r="3.6" fill="#fff" stroke="#1a1a22" strokeWidth="2" />
+      <path d="M3 8.5C3 7.4 3.9 6.5 5 6.5H7L8.2 4.6C8.4 4.2 8.8 4 9.2 4H14.8C15.2 4 15.6 4.2 15.8 4.6L17 6.5H19C20.1 6.5 21 7.4 21 8.5V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V8.5Z" fill="#1A7E68" stroke="#211A12" strokeWidth="2" strokeLinejoin="round" />
+      <circle cx="12" cy="12.5" r="3.6" fill="#FBF6EC" stroke="#211A12" strokeWidth="2" />
     </svg>
   );
 }
@@ -30,20 +32,28 @@ function CameraIcon({ size = 20 }: { size?: number }) {
 function UploadIcon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ display: "block", flexShrink: 0 }} aria-hidden>
-      <rect x="3" y="4.5" width="18" height="15" rx="3" fill="#fff" stroke="#1a1a22" strokeWidth="2" />
-      <circle cx="15.5" cy="9" r="1.9" fill="#f59e0b" stroke="#1a1a22" strokeWidth="1.5" />
-      <path d="M3.5 16.5L8.5 11.5L12.5 15.5" stroke="#1a1a22" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M11 17.5L15 13.5L20.5 18" stroke="#1a1a22" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="3" y="4.5" width="18" height="15" rx="3" fill="#FBF6EC" stroke="#211A12" strokeWidth="2" />
+      <circle cx="15.5" cy="9" r="1.9" fill="#1A7E68" stroke="#211A12" strokeWidth="1.5" />
+      <path d="M3.5 16.5L8.5 11.5L12.5 15.5" stroke="#211A12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M11 17.5L15 13.5L20.5 18" stroke="#211A12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
 const NearbyMap = lazy(() => import("@/components/NearbyMap")); // leaflet bundle — load only on the Map tab
 
-const CREAM = "#fbf6ec";
-const INK = "#1a1a22";
-const OUTLINE = "#1a1a22";
-const MUTED = "#6b6b73";
+// ── Collectible Editorial tokens (section signature: teal-green) ──
+const FIELD = "#ECE4D4";
+const PAPER = "#FBF6EC";
+const INSET = "#F5EFE2";
+const CREAM = "#FBF6EC"; // legacy alias → paper
+const INK = "#211A12";
+const OUTLINE = "rgba(33,26,18,.13)"; // hairline rule
+const MUTED = "#7A6E5A";
+const TEAL = "#1A7E68"; // catch section accent
+const DISP = "var(--ed-disp)";
+const BODY = "var(--ed-body)";
+const MONO = "var(--ed-m)";
 
 type Cat = {
   id: number; kind?: string; name: string; breed: string; rarity: string; rarityLabel: string; rarityColor: string;
@@ -178,12 +188,14 @@ export default function CatCatch() {
   return (
     <Shell>
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 18 }}>
+      <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 22 }}>
         {(["catch", "map", "battle"] as const).map((t) => (
           <button key={t} onClick={() => setView(t)} style={{
-            padding: "8px 18px", borderRadius: 999, cursor: "pointer", fontSize: 14, fontWeight: 800,
-            border: `2.5px solid ${OUTLINE}`, background: view === t ? "#f59e0b" : "#fff", color: INK,
-            boxShadow: view === t ? "0 3px 0 rgba(26,26,34,0.25)" : "none",
+            padding: "9px 18px", borderRadius: 999, cursor: "pointer", fontSize: 11, fontWeight: 700,
+            fontFamily: MONO, letterSpacing: ".12em", textTransform: "uppercase",
+            border: `1px solid ${view === t ? TEAL : OUTLINE}`,
+            background: view === t ? TEAL : PAPER, color: view === t ? "#FCEFE0" : INK,
+            boxShadow: view === t ? "var(--ed-shadow-card)" : "none",
             display: "inline-flex", alignItems: "center", gap: 7,
           }}>
             {t === "catch" ? <CameraIcon size={17} /> : t === "map" ? <Icon name="compass" size={18} /> : <Icon name="boxing" size={18} />}
@@ -201,40 +213,51 @@ export default function CatCatch() {
       {view === "battle" && <AlleyClash collection={collection} />}
 
       {view === "catch" && (<>
-      {/* ── Capture zone ── */}
-      <div style={{ position: "relative", borderRadius: 22, overflow: "hidden", border: `3px solid ${OUTLINE}`, background: "#000", aspectRatio: "3 / 4", maxHeight: 520, margin: "0 auto 18px", boxShadow: "0 10px 0 rgba(26,26,34,0.12)" }}>
+      {/* ── Viewfinder card ── */}
+      <div style={{ position: "relative", borderRadius: 18, overflow: "hidden", border: `1px solid ${OUTLINE}`, background: INSET, aspectRatio: "3 / 4", maxHeight: 520, margin: "0 auto 18px", boxShadow: "var(--ed-shadow-card)" }}>
         {phase === "intro" && (
-          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, background: CREAM, padding: 24, textAlign: "center" }}>
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, background: "linear-gradient(160deg,#123029,#1B5A4B)", padding: 24, textAlign: "center" }}>
+            {/* corner brackets */}
+            {[["top","left"],["top","right"],["bottom","left"],["bottom","right"]].map(([v,h]) => (
+              <span key={v+h} aria-hidden style={{ position: "absolute", [v]: 16, [h]: 16, width: 22, height: 22, [`border${v[0].toUpperCase()+v.slice(1)}`]: "2px solid rgba(252,239,224,.7)", [`border${h[0].toUpperCase()+h.slice(1)}`]: "2px solid rgba(252,239,224,.7)", borderRadius: v === "top" ? (h === "left" ? "6px 0 0 0" : "0 6px 0 0") : (h === "left" ? "0 0 0 6px" : "0 0 6px 0") } as React.CSSProperties} />
+            ))}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/mascot.jpg" alt="MY AI PET" style={{ width: 92, height: 92, borderRadius: 22, objectFit: "cover", border: `3px solid ${OUTLINE}`, boxShadow: "0 5px 0 rgba(26,26,34,0.18)" }} />
-            <div style={{ fontSize: 17, fontWeight: 800, color: INK, maxWidth: 320, lineHeight: 1.4 }}>See an animal out in the world? Point your camera and catch it.</div>
-            <div style={{ fontSize: 13, color: MUTED, maxWidth: 300 }}>Mostly cats &amp; dogs — but any real animal counts. Screenshots and photos of screens won&apos;t work.</div>
+            <img src="/mascot.jpg" alt="MY AI PET" style={{ width: 92, height: 92, borderRadius: 16, objectFit: "cover", border: "2px solid rgba(252,239,224,.5)", boxShadow: "inset 0 0 0 2px rgba(184,130,44,.45)" }} />
+            <div style={{ fontFamily: DISP, fontSize: 19, fontWeight: 700, color: "#FCEFE0", maxWidth: 320, lineHeight: 1.3 }}>See an animal out in the world? Point your camera and catch it.</div>
+            <div style={{ fontFamily: BODY, fontSize: 13, color: "rgba(252,239,224,.72)", maxWidth: 300 }}>Mostly cats &amp; dogs — but any real animal counts. Screenshots and photos of screens won&apos;t work.</div>
             <button onClick={startCamera} style={{ ...bigBtn, display: "inline-flex", alignItems: "center", gap: 8 }}><CameraIcon size={20} /> Open camera</button>
-            {camErr && <div style={{ fontSize: 13, color: "#9b1c1c", maxWidth: 300 }}>{camErr}</div>}
-            <label style={{ ...bigBtn, background: "#fff", border: `2.5px solid ${OUTLINE}`, display: "inline-flex", alignItems: "center", gap: 8 }}>
+            {camErr && <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".08em", color: "#F2B8A0", maxWidth: 300 }}>{camErr}</div>}
+            <label style={{ ...ghostBtn, color: "#FCEFE0", borderColor: "rgba(252,239,224,.5)", display: "inline-flex", alignItems: "center", gap: 8 }}>
               <UploadIcon size={20} /> Upload a photo
               <input type="file" accept="image/*" onChange={onUpload} style={{ display: "none" }} />
             </label>
-            <div style={{ fontSize: 11, color: MUTED, maxWidth: 280 }}>No camera? Upload works too — but it&apos;s still checked, so screenshots won&apos;t pass.</div>
+            <div style={{ fontFamily: BODY, fontSize: 11, color: "rgba(252,239,224,.55)", maxWidth: 280 }}>No camera? Upload works too — but it&apos;s still checked, so screenshots won&apos;t pass.</div>
           </div>
         )}
 
         {(phase === "camera" || phase === "catching") && (
           <>
             {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-            <video ref={videoRef} playsInline muted style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-            {/* reticle */}
-            <div style={{ position: "absolute", inset: 0, pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: "62%", aspectRatio: "1", border: "3px dashed rgba(255,255,255,0.85)", borderRadius: 24 }} />
+            <video ref={videoRef} playsInline muted style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", background: "linear-gradient(160deg,#123029,#1B5A4B)" }} />
+            {/* dashed inner frame + corner brackets + circular reticle */}
+            <div style={{ position: "absolute", inset: 14, pointerEvents: "none", border: "1px dashed rgba(252,239,224,.6)", borderRadius: 12 }} />
+            {[["top","left"],["top","right"],["bottom","left"],["bottom","right"]].map(([v,h]) => (
+              <span key={v+h} aria-hidden style={{ position: "absolute", [v]: 16, [h]: 16, width: 22, height: 22, pointerEvents: "none", [`border${v[0].toUpperCase()+v.slice(1)}`]: "2px solid rgba(252,239,224,.85)", [`border${h[0].toUpperCase()+h.slice(1)}`]: "2px solid rgba(252,239,224,.85)", borderRadius: v === "top" ? (h === "left" ? "6px 0 0 0" : "0 6px 0 0") : (h === "left" ? "0 0 0 6px" : "0 0 6px 0") } as React.CSSProperties} />
+            ))}
+            <div style={{ position: "absolute", inset: 0, pointerEvents: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14 }}>
+              <div style={{ width: "58%", aspectRatio: "1", border: "1.5px solid rgba(252,239,224,.85)", borderRadius: "50%", boxShadow: "0 0 0 1px rgba(26,126,104,.5) inset" }} />
             </div>
+            {phase === "camera" && (
+              <div style={{ position: "absolute", top: 26, left: 0, right: 0, textAlign: "center", fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: ".18em", color: "rgba(252,239,224,.85)", pointerEvents: "none" }}>SCANNING FOR LIFE…</div>
+            )}
             {phase === "catching" && (
-              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, color: "#fff" }}>
+              <div style={{ position: "absolute", inset: 0, background: "rgba(18,48,41,0.66)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, color: "#FCEFE0" }}>
                 <div style={{ animation: "ccBob 0.7s ease-in-out infinite" }}><Icon name="paw" size={56} /></div>
-                <div style={{ fontWeight: 800, fontSize: 18 }}>Catching…</div>
+                <div style={{ fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".18em" }}>CATCHING…</div>
               </div>
             )}
             {phase === "camera" && (
-              <button onClick={capture} aria-label="Catch" style={{ position: "absolute", bottom: 18, left: "50%", transform: "translateX(-50%)", width: 74, height: 74, borderRadius: "50%", border: `5px solid #fff`, background: "#f59e0b", cursor: "pointer", boxShadow: "0 4px 0 rgba(0,0,0,0.3)" }} />
+              <button onClick={capture} aria-label="Catch" style={{ position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)", width: 72, height: 72, borderRadius: "50%", border: "4px solid #FCEFE0", background: TEAL, cursor: "pointer", boxShadow: "var(--ed-shadow-card)" }} />
             )}
           </>
         )}
@@ -247,10 +270,11 @@ export default function CatCatch() {
           result.caught && result.cat ? (
             <RevealCard cat={result.cat} points={result.pointsAwarded || 0} onAgain={again} onDone={done} />
           ) : (
-            <div style={{ position: "absolute", inset: 0, background: CREAM, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: 20, textAlign: "center", overflowY: "auto" }}>
+            <div style={{ position: "absolute", inset: 0, background: PAPER, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: 20, textAlign: "center", overflowY: "auto" }}>
               <Icon name={result.antiCheat ? "shield" : "footprints"} size={52} />
-              <div style={{ fontSize: 17, fontWeight: 800, color: INK, maxWidth: 320, lineHeight: 1.4 }}>{result.antiCheat ? "Nice try!" : "No catch"}</div>
-              <div style={{ fontSize: 14, color: MUTED, maxWidth: 320 }}>{result.reason}</div>
+              <div style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: ".14em", color: TEAL, textTransform: "uppercase" }}>{result.antiCheat ? "ANTI-CHEAT" : "NO CATCH"}</div>
+              <div style={{ fontFamily: DISP, fontSize: 22, fontWeight: 700, color: INK, maxWidth: 320, lineHeight: 1.2 }}>{result.antiCheat ? "Nice try!" : "No catch"}</div>
+              <div style={{ fontFamily: BODY, fontSize: 14, color: MUTED, maxWidth: 320, lineHeight: 1.5 }}>{result.reason}</div>
               <button onClick={again} style={bigBtn}>Try again</button>
               <button onClick={done} style={{ ...ghostBtn, marginTop: 2 }}>Done</button>
             </div>
@@ -262,14 +286,18 @@ export default function CatCatch() {
       <FieldJournal collection={collection} />
 
       {/* ── Album ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 22, marginBottom: 12 }}>
-        <h2 style={{ fontSize: 19, fontWeight: 800, color: INK, margin: 0 }}>Your album</h2>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 26, marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${OUTLINE}` }}>
+        <div>
+          <div style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: ".14em", color: TEAL, textTransform: "uppercase" }}>The collection</div>
+          <h2 style={{ fontFamily: DISP, fontSize: 26, fontWeight: 800, color: INK, margin: "2px 0 0", letterSpacing: "-0.01em" }}>Your album</h2>
+        </div>
         {collection.length > 1 && (
           <div style={{ display: "flex", gap: 6 }}>
             {(["recent", "rarity"] as const).map((s) => (
               <button key={s} onClick={() => setSort(s)} style={{
-                padding: "5px 12px", borderRadius: 999, cursor: "pointer", fontSize: 12, fontWeight: 800,
-                border: `2px solid ${OUTLINE}`, background: sort === s ? "#f59e0b" : "#fff", color: INK,
+                padding: "6px 12px", borderRadius: 999, cursor: "pointer", fontSize: 10, fontWeight: 700,
+                fontFamily: MONO, letterSpacing: ".1em", textTransform: "uppercase",
+                border: `1px solid ${sort === s ? TEAL : OUTLINE}`, background: sort === s ? TEAL : PAPER, color: sort === s ? "#FCEFE0" : INK,
               }}>{s === "recent" ? "Recent" : "Rarity"}</button>
             ))}
           </div>
@@ -294,17 +322,17 @@ export default function CatCatch() {
   );
 }
 
-const tinyGhost: React.CSSProperties = { padding: "5px 12px", borderRadius: 999, border: "2px solid #fff", background: "rgba(0,0,0,0.4)", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" };
+const tinyGhost: React.CSSProperties = { padding: "5px 13px", borderRadius: 999, border: "1px solid rgba(252,239,224,.6)", background: "rgba(18,48,41,0.55)", color: "#FCEFE0", fontFamily: MONO, fontWeight: 700, fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", cursor: "pointer" };
 
 /** Cat-food can graphic (the throwable). */
 function CanGraphic() {
   return (
-    <svg width="72" height="72" viewBox="0 0 72 72" style={{ filter: "drop-shadow(0 4px 0 rgba(0,0,0,.4))" }} aria-hidden>
-      <ellipse cx="36" cy="20" rx="22" ry="7" fill="#c0392b" stroke={OUTLINE} strokeWidth="3" />
-      <rect x="14" y="20" width="44" height="34" fill="#e74c3c" stroke={OUTLINE} strokeWidth="3" />
-      <ellipse cx="36" cy="54" rx="22" ry="7" fill="#c0392b" stroke={OUTLINE} strokeWidth="3" />
-      <rect x="18" y="29" width="36" height="17" rx="3" fill={CREAM} stroke={OUTLINE} strokeWidth="2" />
-      <circle cx="36" cy="37.5" r="6" fill="#f59e0b" stroke={OUTLINE} strokeWidth="2" />
+    <svg width="72" height="72" viewBox="0 0 72 72" style={{ filter: "drop-shadow(0 8px 12px rgba(38,12,2,.45))" }} aria-hidden>
+      <ellipse cx="36" cy="20" rx="22" ry="7" fill="#9A4E1E" stroke={INK} strokeWidth="2" />
+      <rect x="14" y="20" width="44" height="34" fill="#BE4F28" stroke={INK} strokeWidth="2" />
+      <ellipse cx="36" cy="54" rx="22" ry="7" fill="#9A4E1E" stroke={INK} strokeWidth="2" />
+      <rect x="18" y="29" width="36" height="17" rx="3" fill={CREAM} stroke={INK} strokeWidth="1.5" />
+      <circle cx="36" cy="37.5" r="6" fill="#1A7E68" stroke={INK} strokeWidth="1.5" />
     </svg>
   );
 }
@@ -330,10 +358,10 @@ function ThrowCan({ image, onThrow, onCancel }: { image: string; onThrow: () => 
     <div style={{ position: "absolute", inset: 0, background: "#000" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={image} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.92)" }} />
-      <div style={{ position: "absolute", top: "26%", left: "50%", transform: "translateX(-50%)", width: 92, height: 92, border: "3px dashed rgba(255,255,255,0.9)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", animation: "ccPulse 1.6s ease-in-out infinite", pointerEvents: "none" }}>
-        <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff" }} />
+      <div style={{ position: "absolute", top: "26%", left: "50%", transform: "translateX(-50%)", width: 92, height: 92, border: "1.5px dashed rgba(252,239,224,0.9)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", animation: "ccPulse 1.6s ease-in-out infinite", pointerEvents: "none" }}>
+        <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#FCEFE0" }} />
       </div>
-      {!flying && <div style={{ position: "absolute", top: 16, left: 0, right: 0, textAlign: "center", color: "#fff", fontWeight: 800, fontSize: 14, textShadow: "0 1px 4px rgba(0,0,0,.6)", pointerEvents: "none" }}>Hold &amp; drag the can — release to throw</div>}
+      {!flying && <div style={{ position: "absolute", top: 16, left: 0, right: 0, textAlign: "center", color: "#FCEFE0", fontFamily: MONO, fontWeight: 700, fontSize: 11, letterSpacing: ".1em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,.6)", pointerEvents: "none" }}>Hold &amp; drag the can — release to throw</div>}
       <div onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
         style={{ position: "absolute", bottom: 26, left: "50%", width: 84, height: 84, cursor: "grab", touchAction: "none", display: "flex", alignItems: "center", justifyContent: "center", ...canStyle }} aria-label="Throw the can">
         <CanGraphic />
@@ -344,36 +372,31 @@ function ThrowCan({ image, onThrow, onCancel }: { image: string; onThrow: () => 
   );
 }
 
-/** The "ANIMAL FOUND" reveal — the caught animal slaps down as a fresh die-cut
- *  sticker on a warm-ink developing plate, then its rarity wax seal stamps in. */
+/** The "ANIMAL FOUND" reveal — the caught animal is presented as a foil-stamped
+ *  CollectibleFrame (holo + gold rarity seal) on a warm-ink editorial plate. */
 function RevealCard({ cat, points, onAgain, onDone }: { cat: Cat; points: number; onAgain: () => void; onDone: () => void }) {
   const stock = rarityStock(rarityRank(cat.rarity));
-  const wild = cat.source === "wild";
   return (
-    <div style={{ position: "absolute", inset: 0, background: "#1f1b16", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 11, padding: 18, textAlign: "center", overflowY: "auto", animation: "ccFade .35s ease" }}>
-      {/* Freshly-slapped sticker */}
-      <div style={{ position: "relative", padding: 9, borderRadius: 18, background: "#fff", border: "3px solid #1a1a22", boxShadow: "0 8px 0 rgba(0,0,0,.35)", animation: "ccPop .5s cubic-bezier(.2,1.3,.4,1)" }}>
-        <div style={{ width: 138, height: 138, borderRadius: 12, overflow: "hidden", border: "2px solid #1a1a22", background: wild ? CREAM : "#000" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={cat.photo_path} alt={cat.name} style={{ width: "100%", height: "100%", objectFit: wild ? "contain" : "cover", padding: wild ? 12 : 0 }} />
-        </div>
-        <WaxSeal seal={stock.seal} size={36} stamp title={`${cat.rarityLabel} rarity`} style={{ position: "absolute", top: -8, right: -8, animationDelay: "140ms", zIndex: 2 }} />
+    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg,#1B1308,#2A2014)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 11, padding: "30px 18px 18px", textAlign: "center", overflowY: "auto", animation: "ccFade .35s ease" }}>
+      {/* Caught animal as a foil-stamped collectible */}
+      <div style={{ animation: "ccPop .5s cubic-bezier(.2,1.3,.4,1)" }}>
+        <CollectibleFrame photoUrl={cat.photo_path} level={stock.seal.glyph} speciesLabel={cat.kind} elementLabel={cat.element} width={186} tilt={-2.4} holo seal float />
       </div>
-      <div style={{ fontSize: 12, fontWeight: 800, color: "#f59e0b", letterSpacing: 3, fontFamily: "'JetBrains Mono', monospace" }}>ANIMAL FOUND</div>
-      <div style={{ fontSize: 26, fontWeight: 800, color: "#fff", fontFamily: "'Space Grotesk', sans-serif", lineHeight: 1, letterSpacing: "-0.01em" }}>{cat.name}</div>
-      <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: 1.5, fontFamily: "'JetBrains Mono', monospace" }}>{cat.rarityLabel} · {cat.kind}</div>
+      <div style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: "#F2CD86", letterSpacing: ".22em" }}>ANIMAL FOUND</div>
+      <div style={{ fontFamily: DISP, fontSize: 28, fontWeight: 800, color: "#FBF6EC", lineHeight: 1, letterSpacing: "-0.01em" }}>{cat.name}</div>
+      <div style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: "rgba(251,246,236,0.7)", textTransform: "uppercase", letterSpacing: ".14em" }}>{cat.rarityLabel} · {cat.kind}</div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
         {([["HP", cat.hp], ["ATK", cat.atk], ["DEF", cat.def], ["SPD", cat.spd]] as const).map(([k, v]) => (
-          <span key={k} style={{ background: CREAM, color: INK, borderRadius: 8, padding: "3px 9px", fontSize: 11, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", boxShadow: "0 3px 0 rgba(0,0,0,.3)" }}>{k} {v}</span>
+          <span key={k} style={{ background: "rgba(251,246,236,0.06)", color: "#FBF6EC", borderRadius: 6, padding: "3px 9px", fontSize: 10, fontWeight: 700, letterSpacing: ".08em", fontFamily: MONO, border: "1px solid rgba(251,246,236,0.16)", fontVariantNumeric: "tabular-nums" }}>{k} {v}</span>
         ))}
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}>
-        {points > 0 && <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#f59e0b", color: INK, fontWeight: 800, fontSize: 13, borderRadius: 999, padding: "4px 12px", border: `2px solid ${INK}` }}>+{points} <Icon name="coin" size={14} /></span>}
-        <span style={{ color: "rgba(255,255,255,0.55)", fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700 }}>{`№ ${String(cat.id).padStart(6, "0")}`}</span>
+        {points > 0 && <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontFamily: MONO, fontWeight: 700, fontSize: 11, letterSpacing: ".06em", borderRadius: 999, padding: "5px 12px", fontVariantNumeric: "tabular-nums" }}>+{points} <Icon name="coin" size={14} /></span>}
+        <span style={{ color: "rgba(251,246,236,0.55)", fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: ".08em", fontVariantNumeric: "tabular-nums" }}>{`FILE № ${String(cat.id).padStart(6, "0")}`}</span>
       </div>
       <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
         <button onClick={onAgain} style={bigBtn}>Catch another</button>
-        <button onClick={onDone} style={{ ...ghostBtn, borderColor: "rgba(255,255,255,0.5)", color: "#fff" }}>Done</button>
+        <button onClick={onDone} style={{ ...ghostBtn, borderColor: "rgba(251,246,236,0.4)", color: "#FBF6EC" }}>Done</button>
       </div>
     </div>
   );
@@ -407,32 +430,29 @@ function AlleyClash({ collection }: { collection: Cat[] }) {
 
   return (
     <div>
-      <div style={{ textAlign: "center", marginBottom: 14 }}>
-        <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.18em", color: "#b45309", textTransform: "uppercase" }}>Alley Clash · practice</div>
-        <h2 style={{ fontSize: 20, fontWeight: 900, color: INK, margin: "4px 0 0" }}>Send a fighter to the alley</h2>
-        <p style={{ fontSize: 13, color: MUTED, margin: "6px auto 0", maxWidth: 380, lineHeight: 1.5 }}>Pick one of your caught animals to spar a street stray — a practice opponent, not another player. Win to earn season points.</p>
+      <div style={{ textAlign: "center", marginBottom: 18 }}>
+        <div style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", color: TEAL, textTransform: "uppercase" }}>Alley Clash · practice</div>
+        <h2 style={{ fontFamily: DISP, fontSize: 28, fontWeight: 800, color: INK, margin: "4px 0 0", letterSpacing: "-0.01em" }}>Send a fighter to the alley</h2>
+        <p style={{ fontFamily: BODY, fontSize: 13, color: MUTED, margin: "8px auto 0", maxWidth: 380, lineHeight: 1.55 }}>Pick one of your caught animals to spar a street stray — a practice opponent, not another player. Win to earn season points.</p>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(94px, 1fr))", gap: 10, marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(94px, 1fr))", gap: 10, marginBottom: 18 }}>
         {collection.map((c) => {
           const on = sel?.id === c.id;
           return (
-            <button key={c.id} onClick={() => setSel(c)} style={{ padding: 0, borderRadius: 14, overflow: "hidden", cursor: "pointer", border: `3px solid ${on ? "#f59e0b" : OUTLINE}`, background: "#fff", boxShadow: on ? "0 4px 0 rgba(26,26,34,.25)" : "0 2px 0 rgba(26,26,34,.15)", transform: on ? "translateY(-2px)" : "none" }}>
-              <div style={{ position: "relative", width: "100%", aspectRatio: "1", background: c.source === "wild" ? CREAM : "#eee" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={c.photo_path} alt={c.name} style={{ width: "100%", height: "100%", objectFit: c.source === "wild" ? "contain" : "cover", padding: c.source === "wild" ? "14%" : 0 }} />
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: INK, padding: "5px 4px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</div>
+            <button key={c.id} onClick={() => setSel(c)} style={{ padding: 7, borderRadius: 10, overflow: "hidden", cursor: "pointer", border: `1px solid ${on ? TEAL : OUTLINE}`, background: PAPER, boxShadow: on ? "var(--ed-shadow-card)" : "none", transform: on ? "translateY(-2px)" : "none", transition: "transform .12s ease" }}>
+              <Thumb cat={c} />
+              <div style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: INK, padding: "6px 2px 1px", letterSpacing: ".04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</div>
             </button>
           );
         })}
       </div>
       {sel && (
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 13, color: MUTED, marginBottom: 10 }}>Sending <b style={{ color: INK }}>{sel.name}</b> · ATK {sel.atk} · DEF {sel.def} · SPD {sel.spd}</div>
+          <div style={{ fontFamily: MONO, fontSize: 11, color: MUTED, letterSpacing: ".06em", marginBottom: 12, fontVariantNumeric: "tabular-nums" }}>Sending <b style={{ color: INK }}>{sel.name}</b> · ATK {sel.atk} · DEF {sel.def} · SPD {sel.spd}</div>
           <button onClick={fight} disabled={busy} style={{ ...bigBtn, opacity: busy ? 0.7 : 1, display: "inline-flex", alignItems: "center", gap: 8 }}><Icon name="boxing" size={20} /> {busy ? "Fighting…" : "Fight!"}</button>
         </div>
       )}
-      {res?.error && <div style={{ textAlign: "center", color: "#9b1c1c", fontSize: 13, marginTop: 12 }}>{res.error}</div>}
+      {res?.error && <div style={{ textAlign: "center", fontFamily: MONO, color: "#B14A2C", fontSize: 11, letterSpacing: ".06em", marginTop: 12 }}>{res.error}</div>}
     </div>
   );
 }
@@ -441,29 +461,30 @@ function BattleResult({ res, onAgain }: { res: any; onAgain: () => void }) {
   const won = !!res.won;
   const fighter = (f: any, side: "you" | "them") => (
     <div style={{ textAlign: "center", flex: 1, minWidth: 0 }}>
-      <div style={{ width: 84, height: 84, margin: "0 auto", borderRadius: 16, border: `3px solid ${OUTLINE}`, background: side === "you" ? "#fff" : CREAM, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: 84, height: 84, margin: "0 auto", borderRadius: 8, border: `1px solid ${OUTLINE}`, background: side === "you" ? PAPER : INSET, boxShadow: "inset 0 0 0 2px rgba(184,130,44,.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Icon name={f.icon} size={52} />
       </div>
-      <div style={{ fontWeight: 800, color: INK, marginTop: 6, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.name}</div>
-      <div style={{ height: 8, borderRadius: 999, background: "rgba(0,0,0,.1)", overflow: "hidden", marginTop: 6 }}>
-        <div style={{ width: `${Math.max(0, Math.round((f.hpLeft / f.hpMax) * 100))}%`, height: "100%", background: side === "you" ? "#22c55e" : "#ef4444", transition: "width .6s ease" }} />
+      <div style={{ fontFamily: DISP, fontWeight: 700, color: INK, marginTop: 7, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.name}</div>
+      <div style={{ height: 6, borderRadius: 999, background: "rgba(33,26,18,.1)", overflow: "hidden", marginTop: 7 }}>
+        <div style={{ width: `${Math.max(0, Math.round((f.hpLeft / f.hpMax) * 100))}%`, height: "100%", background: side === "you" ? TEAL : "#B14A2C", transition: "width .6s ease" }} />
       </div>
-      <div style={{ fontSize: 10.5, color: MUTED, marginTop: 3, fontFamily: "monospace" }}>HP {Math.max(0, f.hpLeft)}/{f.hpMax}</div>
+      <div style={{ fontSize: 10, color: MUTED, marginTop: 4, fontFamily: MONO, letterSpacing: ".06em", fontVariantNumeric: "tabular-nums" }}>HP {Math.max(0, f.hpLeft)}/{f.hpMax}</div>
     </div>
   );
   return (
     <div style={{ textAlign: "center", padding: "6px 0 4px" }}>
-      <div style={{ fontSize: 26, fontWeight: 900, color: won ? "#16a34a" : "#dc2626", letterSpacing: 1 }}>{won ? "VICTORY!" : "DEFEATED"}</div>
-      <div style={{ fontSize: 12, color: MUTED, marginBottom: 16 }}>{res.turns} turns in the alley</div>
+      <div style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: ".18em", color: won ? TEAL : "#B14A2C", textTransform: "uppercase" }}>{won ? "OUTCOME · WIN" : "OUTCOME · LOSS"}</div>
+      <div style={{ fontFamily: DISP, fontSize: 30, fontWeight: 800, color: won ? TEAL : "#B14A2C", letterSpacing: "-0.01em", marginTop: 2 }}>{won ? "Victory!" : "Defeated"}</div>
+      <div style={{ fontFamily: MONO, fontSize: 11, color: MUTED, letterSpacing: ".06em", marginBottom: 18, fontVariantNumeric: "tabular-nums" }}>{res.turns} turns in the alley</div>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, maxWidth: 360, margin: "0 auto" }}>
         {fighter(res.you, "you")}
-        <div style={{ fontWeight: 900, color: INK, alignSelf: "center", fontSize: 18 }}>VS</div>
+        <div style={{ fontFamily: MONO, fontWeight: 700, color: MUTED, alignSelf: "center", fontSize: 14, letterSpacing: ".1em" }}>VS</div>
         {fighter(res.opponent, "them")}
       </div>
       {won && res.pointsAwarded > 0 && (
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 16, background: "#f59e0b", color: INK, fontWeight: 800, fontSize: 13, borderRadius: 999, padding: "5px 14px", border: `2px solid ${OUTLINE}` }}>+{res.pointsAwarded} season points <Icon name="coin" size={14} /></div>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 18, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontFamily: MONO, fontWeight: 700, fontSize: 11, letterSpacing: ".06em", borderRadius: 999, padding: "6px 14px", fontVariantNumeric: "tabular-nums" }}>+{res.pointsAwarded} season points <Icon name="coin" size={14} /></div>
       )}
-      <div style={{ marginTop: 18 }}>
+      <div style={{ marginTop: 20 }}>
         <button onClick={onAgain} style={bigBtn}>Battle again</button>
       </div>
     </div>
@@ -491,19 +512,19 @@ function FieldJournal({ collection }: { collection: Cat[] }) {
   const today = collection.filter((c) => isToday(c.caught_at)).length;
   const kinds = new Set(collection.map((c) => c.kind)).size;
   const note = (label: string, value: string, color: string) => (
-    <div style={{ background: "#fff", border: `2px solid ${INK}`, borderRadius: 10, padding: "8px 10px", boxShadow: "0 3px 0 rgba(26,26,34,0.14)" }}>
-      <div style={{ fontSize: 9.5, fontFamily: "'JetBrains Mono',monospace", letterSpacing: ".1em", color: MUTED, textTransform: "uppercase" }}>{label}</div>
-      <div style={{ fontSize: 15, fontWeight: 800, color, fontFamily: "'Space Grotesk',sans-serif" }}>{value}</div>
+    <div style={{ background: INSET, border: `1px solid ${OUTLINE}`, borderRadius: 10, padding: "9px 11px" }}>
+      <div style={{ fontSize: 9, fontFamily: MONO, fontWeight: 700, letterSpacing: ".12em", color: MUTED, textTransform: "uppercase" }}>{label}</div>
+      <div style={{ fontSize: 17, fontWeight: 700, color, fontFamily: DISP, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{value}</div>
     </div>
   );
   return (
-    <div style={{ background: "#fff", border: `3px solid ${OUTLINE}`, borderRadius: 18, boxShadow: "0 6px 0 rgba(26,26,34,0.12)", padding: "16px 18px", marginTop: 4 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+    <div style={{ background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 16, boxShadow: "var(--ed-shadow-card)", padding: "18px 20px", marginTop: 4 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${OUTLINE}` }}>
         <div>
-          <div style={{ fontSize: 10.5, fontFamily: "monospace", letterSpacing: ".14em", color: "#b45309", textTransform: "uppercase" }}>Animals collected</div>
-          <div style={{ fontSize: 19, fontWeight: 900, color: INK }}>Field Journal</div>
+          <div style={{ fontSize: 10, fontFamily: MONO, fontWeight: 700, letterSpacing: ".14em", color: TEAL, textTransform: "uppercase" }}>Field Journal</div>
+          <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, letterSpacing: ".08em", color: MUTED, textTransform: "uppercase", marginTop: 4 }}>Animals collected</div>
         </div>
-        <div style={{ fontSize: 40, fontWeight: 900, color: INK, lineHeight: 1, fontFamily: "'Space Grotesk',sans-serif" }}>{collected}</div>
+        <div style={{ fontSize: 46, fontWeight: 800, color: INK, lineHeight: 0.9, fontFamily: DISP, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{collected}</div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
         {note("Rarest", rarest ? rarest.rarityLabel : "—", rarest ? rarest.rarityColor : MUTED)}
@@ -514,62 +535,81 @@ function FieldJournal({ collection }: { collection: Cat[] }) {
   );
 }
 
-function CatCard({ cat, compact }: { cat: Cat; compact?: boolean }) {
-  const stock = rarityStock(rarityRank(cat.rarity));
+/** Small framed collectible thumbnail — cream mat + gold inset keyline + small holo. */
+function Thumb({ cat }: { cat: Cat }) {
   const wild = cat.source === "wild";
   return (
-    <div className="dc dc-sm" style={{
-      position: "relative",
-      width: "100%", maxWidth: compact ? undefined : 260, margin: "0 auto",
-      borderRadius: 16, padding: 8,
-      border: `${stock.keyline}px solid ${stock.keylineColor}`, background: stock.marginStock,
-      ...dcVars(stock.shadowAlpha, false, stock.marginHairline ? "inset 0 0 0 1.5px rgba(26,26,34,0.18)" : ""),
-    }}>
-      <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", border: `2px solid ${INK}`, background: "#fff" }}>
-        <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", background: wild ? CREAM : "#eee" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={cat.photo_path} alt={cat.name} style={{ width: "100%", height: "100%", objectFit: wild ? "contain" : "cover", display: "block", padding: wild ? "12%" : 0 }} />
-          {wild && (
-            <div style={{ position: "absolute", bottom: 6, left: 6, background: "#f59e0b", color: INK, fontSize: 9, fontWeight: 800, padding: "2px 7px", borderRadius: 6, textTransform: "uppercase", letterSpacing: 0.5, border: `1.5px solid ${INK}`, fontFamily: "'JetBrains Mono',monospace" }}>Wild</div>
-          )}
-        </div>
-        <div style={{ padding: compact ? "8px 9px" : "9px 11px", background: CREAM, borderTop: `2px solid ${INK}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: compact ? 14 : 16, fontWeight: 800, color: INK, fontFamily: "'Space Grotesk',sans-serif" }}>
-            <Icon name={kindIcon(cat.kind)} size={compact ? 15 : 17} />
-            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cat.name}</span>
-          </div>
-          <div style={{ fontSize: 11, color: MUTED, marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>{cat.breed} · {cat.element}</div>
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", fontSize: 10, fontFamily: "'JetBrains Mono',monospace", color: INK }}>
-            {([["HP", cat.hp], ["ATK", cat.atk], ["DEF", cat.def], ["SPD", cat.spd]] as const).map(([k, v]) => (
-              <span key={k} style={{ background: "#fff", borderRadius: 6, padding: "2px 6px", border: `1.5px solid ${INK}` }}>{k} {v}</span>
-            ))}
-          </div>
-        </div>
-      </div>
-      {/* Rarity wax seal — anchored to the die-cut margin */}
-      <WaxSeal seal={stock.seal} size={compact ? 26 : 30} title={`${cat.rarityLabel} rarity`} style={{ position: "absolute", top: -7, right: -7, zIndex: 2 }} />
+    <div style={{ position: "relative", borderRadius: 6, overflow: "hidden", background: wild ? INSET : "#000", boxShadow: "inset 0 0 0 2px rgba(184,130,44,.5)", width: "100%", aspectRatio: "1 / 1" }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={cat.photo_path} alt={cat.name} style={{ width: "100%", height: "100%", objectFit: wild ? "contain" : "cover", display: "block", padding: wild ? "12%" : 0 }} />
+      <div className="ed-holo-sheen" aria-hidden />
     </div>
   );
 }
 
-const bigBtn: React.CSSProperties = { padding: "13px 26px", borderRadius: 999, border: `3px solid ${OUTLINE}`, background: "#f59e0b", color: INK, fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 0 rgba(26,26,34,0.25)" };
-const ghostBtn: React.CSSProperties = { padding: "9px 18px", borderRadius: 999, border: `2px solid ${OUTLINE}`, background: "transparent", color: INK, fontWeight: 700, fontSize: 13.5, cursor: "pointer" };
+function CatCard({ cat, compact }: { cat: Cat; compact?: boolean }) {
+  const wild = cat.source === "wild";
+  // Rarity seal letter in the rarity color (C/R/E/L)
+  const rarityLetter = ["C", "U", "R", "E", "L"][rarityRank(cat.rarity)] || "C";
+  return (
+    <div style={{
+      position: "relative",
+      width: "100%", maxWidth: compact ? undefined : 260, margin: "0 auto",
+      borderRadius: 12, padding: 9, background: PAPER,
+      border: `1px solid ${OUTLINE}`, boxShadow: "var(--ed-shadow-card)",
+    }}>
+      <div style={{ position: "relative", borderRadius: 8, overflow: "hidden", background: PAPER }}>
+        <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", background: wild ? INSET : "#000", borderRadius: 6, overflow: "hidden", boxShadow: "inset 0 0 0 2px rgba(184,130,44,.5)" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={cat.photo_path} alt={cat.name} style={{ width: "100%", height: "100%", objectFit: wild ? "contain" : "cover", display: "block", padding: wild ? "12%" : 0 }} />
+          <div className="ed-holo-sheen" aria-hidden />
+          {/* rarity seal letter in the rarity color */}
+          <div style={{ position: "absolute", top: 6, right: 6, width: compact ? 22 : 26, height: compact ? 22 : 26, borderRadius: "50%", background: PAPER, border: `1.5px solid ${cat.rarityColor}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: MONO, fontWeight: 700, fontSize: compact ? 11 : 13, color: cat.rarityColor, boxShadow: "0 4px 10px -4px rgba(80,55,20,.5)" }}>{rarityLetter}</div>
+          {wild && (
+            <div style={{ position: "absolute", bottom: 6, left: 6, background: "rgba(33,26,18,.78)", color: "#FCEFE0", fontSize: 8, fontWeight: 700, padding: "2px 7px", borderRadius: 5, textTransform: "uppercase", letterSpacing: ".12em", fontFamily: MONO }}>Wild</div>
+          )}
+        </div>
+        <div style={{ padding: compact ? "9px 4px 2px" : "11px 4px 2px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: compact ? 15 : 17, fontWeight: 700, color: INK, fontFamily: DISP, minWidth: 0 }}>
+              <Icon name={kindIcon(cat.kind)} size={compact ? 15 : 17} />
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cat.name}</span>
+            </div>
+            <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: MUTED, letterSpacing: ".06em", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>HP {cat.hp}</span>
+          </div>
+          <div style={{ fontSize: 9.5, color: MUTED, margin: "5px 0 8px", fontFamily: MONO, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase" }}>{cat.breed} · {cat.element}</div>
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", fontSize: 9.5, fontFamily: MONO, fontWeight: 700, color: INK, letterSpacing: ".06em", fontVariantNumeric: "tabular-nums" }}>
+            {([["ATK", cat.atk], ["DEF", cat.def], ["SPD", cat.spd]] as const).map(([k, v]) => (
+              <span key={k} style={{ background: INSET, borderRadius: 5, padding: "2px 7px", border: `1px solid ${OUTLINE}` }}>{k} {v}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const bigBtn: React.CSSProperties = { padding: "12px 24px", borderRadius: 999, border: "1px solid #211A12", background: "linear-gradient(180deg,#2C2316,#211A12)", color: "#FCEFE0", fontFamily: MONO, fontWeight: 700, fontSize: 12, letterSpacing: ".08em", textTransform: "uppercase", cursor: "pointer", boxShadow: "var(--ed-shadow-card)" };
+const ghostBtn: React.CSSProperties = { padding: "10px 18px", borderRadius: 999, border: `1px solid ${INK}`, background: "transparent", color: INK, fontFamily: MONO, fontWeight: 700, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", cursor: "pointer" };
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "8px 0 40px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
-      <div style={{ marginBottom: 18, textAlign: "center" }}>
-        <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.18em", color: "#b45309", textTransform: "uppercase" }}>Catch · real animals only</div>
-        <h1 style={{ fontSize: 28, fontWeight: 900, color: INK, margin: "6px 0 0", letterSpacing: "-0.02em" }}>Catch animals</h1>
-        <p style={{ fontSize: 14.5, color: MUTED, margin: "8px auto 0", lineHeight: 1.55, maxWidth: 440 }}>
+    <div style={{ position: "relative", maxWidth: 640, margin: "0 auto", padding: "8px 0 40px", fontFamily: BODY, color: INK, background: `radial-gradient(120% 80% at 50% -10%, ${PAPER}, ${FIELD} 70%)` }}>
+      <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
+      <div style={{ position: "relative", zIndex: 2 }}>
+      <div style={{ marginBottom: 22, textAlign: "center" }}>
+        <div style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", color: TEAL, textTransform: "uppercase" }}>Catch · real animals only</div>
+        <h1 style={{ fontFamily: DISP, fontSize: 46, fontWeight: 800, color: INK, margin: "8px 0 0", letterSpacing: "-0.02em", lineHeight: 1 }}>Catch animals</h1>
+        <p style={{ fontFamily: BODY, fontSize: 14.5, color: MUTED, margin: "12px auto 0", lineHeight: 1.55, maxWidth: 440 }}>
           Spot an animal in the wild — mostly cats &amp; dogs, but anything counts — snap it, and it becomes a collectible with its own rarity, element and stats. No cheating: screenshots don&apos;t count.
         </p>
       </div>
       {children}
+      </div>
     </div>
   );
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <div style={{ padding: "24px 0", fontSize: 14, color: MUTED, textAlign: "center" }}>{children}</div>;
+  return <div style={{ padding: "24px 0", fontFamily: MONO, fontSize: 12, letterSpacing: ".06em", color: MUTED, textAlign: "center" }}>{children}</div>;
 }

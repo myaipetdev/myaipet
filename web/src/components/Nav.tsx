@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import Icon from "@/components/Icon";
 
 const LOGO_SRC = "/mascot.jpg";
 
@@ -10,10 +9,10 @@ const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
   { key: "home", label: "Home" },
   { key: "my pet", label: "My Pet" },
   // Game features grouped right after My Pet.
-  { key: "catch", label: "Catch 🐾" },
-  { key: "cards", label: "Cards 🃏" },
+  { key: "catch", label: "Catch" },
+  { key: "cards", label: "Cards" },
   // Time-boxed World Cup 2026 event (remove this entry after ~2026-07-19).
-  { key: "worldcup", label: "World Cup ⚽" },
+  { key: "worldcup", label: "World Cup" },
   { key: "studio", label: "Studio", url: "/studio" },
   { key: "community", label: "Community" },
   { key: "sovereignty", label: "PetClaw" },
@@ -78,9 +77,9 @@ export default function Nav({ section, setSection, credits }: any) {
         className="nav-container"
         style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-          display: "flex", alignItems: "center", gap: 10,
-          padding: "10px 24px", background: "rgba(250,247,242,0.92)",
-          backdropFilter: "blur(24px)", borderBottom: "1px solid rgba(0,0,0,0.06)",
+          display: "flex", alignItems: "center", gap: 14,
+          padding: "11px 30px", background: "rgba(236,228,212,0.94)",
+          backdropFilter: "blur(8px)", borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
         }}
       >
         {/* Logo */}
@@ -90,35 +89,29 @@ export default function Nav({ section, setSection, credits }: any) {
             className="nav-logo-img"
             src={LOGO_SRC} alt="MY AI PET"
             style={{
-              width: 34, height: 34, borderRadius: 10, objectFit: "cover",
-              border: "2px solid rgba(251,191,36,0.25)",
-              boxShadow: "0 0 12px rgba(251,191,36,0.12)",
-              background: "linear-gradient(135deg, #fef3c7, #fde68a)",
+              width: 32, height: 32, borderRadius: 7, objectFit: "cover",
+              border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
             }}
           />
           <span className="nav-desktop-logo-text" style={{
-            fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 15,
-            color: "#1a1a2e", letterSpacing: "-0.02em",
+            fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 18,
+            color: "#211A12", letterSpacing: "-0.01em",
           }}>
             MY AI PET
           </span>
           <span className="nav-desktop-badge" style={{
-            fontSize: 8, padding: "2px 8px", borderRadius: 16,
-            background: "linear-gradient(135deg, rgba(251,191,36,0.12), rgba(139,92,246,0.08))",
-            color: "#d97706",
-            fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, letterSpacing: "0.06em",
-            border: "1px solid rgba(251,191,36,0.2)",
+            fontSize: 9.5, padding: "3px 9px", borderRadius: 20,
+            color: "#9A4E1E",
+            fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.12em",
+            border: "1px solid rgba(154,78,30,0.4)",
           }}>
-            CompanionFi
+            COMPANIONFI
           </span>
         </div>
 
         {/* Nav items — scrollable on mobile */}
         <div className="nav-items-wrap" style={{
-          display: "flex", gap: 2, alignItems: "center",
-          padding: 3, borderRadius: 12,
-          background: "rgba(0,0,0,0.03)",
-          border: "1px solid rgba(0,0,0,0.06)",
+          display: "flex", gap: 8, alignItems: "center", justifyContent: "center",
           flex: 1, minWidth: 0,
         }}>
           {NAV_ITEMS.map((item) => {
@@ -127,28 +120,24 @@ export default function Nav({ section, setSection, credits }: any) {
               ? typeof window !== "undefined" && window.location.pathname === item.url
               : section === item.key;
             const sharedStyle: React.CSSProperties = {
-              background: isActive
-                ? "linear-gradient(135deg, rgba(251,191,36,0.18), rgba(245,158,11,0.10))"
-                : "transparent",
+              background: "transparent",
               border: "none", cursor: "pointer",
-              borderRadius: 10, padding: "8px 16px",
-              fontFamily: "'Space Grotesk',sans-serif",
-              fontSize: 13, fontWeight: isActive ? 800 : 600,
-              color: isActive ? "#b45309" : "rgba(26,26,46,0.55)",
-              transition: "color 180ms ease, background 180ms ease",
+              borderRadius: 0, padding: "20px 2px",
+              fontFamily: "var(--ed-body)",
+              fontSize: 14, fontWeight: isActive ? 600 : 500,
+              color: isActive ? "#211A12" : "#7A6E5A",
+              transition: "color 180ms ease",
               position: "relative", whiteSpace: "nowrap", flexShrink: 0,
               textDecoration: "none",
               display: "inline-block",
-              boxShadow: isActive ? "inset 0 0 0 1px rgba(245,158,11,0.20)" : "none",
             };
             const inner = (
               <>
                 {item.label}
                 {isActive && (
                   <div style={{
-                    position: "absolute", bottom: -1, left: "50%", transform: "translateX(-50%)",
-                    width: 18, height: 2, borderRadius: 2,
-                    background: "linear-gradient(90deg,#fbbf24,#f59e0b)", opacity: 0.85,
+                    position: "absolute", bottom: -1, left: 0, right: 0,
+                    height: 2, background: "#211A12",
                   }} />
                 )}
               </>
@@ -173,15 +162,15 @@ export default function Nav({ section, setSection, credits }: any) {
                 aria-haspopup="true"
                 onClick={() => setBalanceOpen((v: boolean) => !v)}
                 style={{
-                  fontFamily: "mono", fontSize: 11, color: "#b45309", fontWeight: 600,
-                  padding: "5px 10px", borderRadius: 8,
-                  background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)",
+                  fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A4E1E", fontWeight: 700,
+                  padding: "5px 11px", borderRadius: 8,
+                  background: "transparent", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                   whiteSpace: "nowrap", cursor: "pointer",
                   display: "inline-block",
                   transition: "all 0.2s ease",
                 }}
               >
-                <Icon name="coin" size={14} /> {credits}
+                ◎ {credits}
               </button>
               {balanceOpen && (
                 <div style={{

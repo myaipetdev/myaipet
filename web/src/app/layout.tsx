@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Space_Grotesk } from "next/font/google";
+import { Space_Grotesk, Bricolage_Grotesque, Hanken_Grotesk, Space_Mono } from "next/font/google";
 import "@rainbow-me/rainbowkit/styles.css";
 import "./globals.css";
 import Providers from "./providers";
@@ -7,6 +7,23 @@ import Providers from "./providers";
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   subsets: ["latin"],
+});
+
+// ── Collectible Editorial type system ──
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
+});
+const hanken = Hanken_Grotesk({
+  variable: "--font-body",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+const spaceMono = Space_Mono({
+  variable: "--font-mono-ed",
+  subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://app.myaipet.ai";
@@ -50,7 +67,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={spaceGrotesk.variable}
+        className={`${spaceGrotesk.variable} ${bricolage.variable} ${hanken.variable} ${spaceMono.variable}`}
         style={{ background: "#faf7f2" }}
       >
         <Providers>

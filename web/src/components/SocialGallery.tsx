@@ -3,6 +3,17 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { api } from "@/lib/api";
 import Icon from "@/components/Icon";
+import CollectibleFrame from "@/components/editorial/CollectibleFrame";
+
+// ── Collectible Editorial tokens ──
+const T = {
+  field: "#ECE4D4", paper: "#FBF6EC", inset: "#F5EFE2", ink: "#211A12", ink70: "#3A3024",
+  muted: "#7A6E5A", muted2: "#5C5140", mono: "#9A7B4E", hair: "rgba(33,26,18,.13)",
+  terra: "#BE4F28", terraSub: "#9A4E1E", creamOn: "#FCE9CF", cta1: "#F49B2A", cta2: "#E27D0C",
+  happy: "#F0589E", energy: "#3E8FE0", bond: "#9E72E8",
+  rareCommon: "#5C8A4E", rareRare: "#3E8FE0", rareEpic: "#9E72E8", rareLegend: "#C8932F",
+  disp: "var(--ed-disp)", body: "var(--ed-body)", m: "var(--ed-m)",
+};
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -68,20 +79,20 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
       <div style={{
-        fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.35)",
-        textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 8, fontWeight: 600,
+        fontFamily: T.m, fontSize: 9, color: T.mono,
+        textTransform: "uppercase", letterSpacing: "0.13em", marginBottom: 8, fontWeight: 700,
       }}>
-        Comments ({comments.length})
+        Comments · {comments.length}
       </div>
 
       {/* Comment list */}
       <div style={{ flex: 1, overflowY: "auto", marginBottom: 10, maxHeight: 200 }}>
         {loading ? (
-          <div style={{ fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.25)", padding: 8 }}>Loading...</div>
+          <div style={{ fontFamily: T.m, fontSize: 11, color: T.mono, padding: 8, letterSpacing: "0.04em" }}>Loading…</div>
         ) : comments.length === 0 ? (
           <div style={{
-            fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.25)",
-            textAlign: "center", padding: "16px 0",
+            fontFamily: T.m, fontSize: 11, color: T.mono,
+            textAlign: "center", padding: "16px 0", letterSpacing: "0.04em",
           }}>
             No comments yet. Be the first!
           </div>
@@ -89,15 +100,17 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
           comments.map((c: any) => (
             <div key={c.id} style={{
               display: "flex", gap: 8, marginBottom: 10, padding: "8px 0",
-              borderBottom: "1px solid rgba(0,0,0,0.04)",
+              borderBottom: `1px solid ${T.hair}`,
               animation: "fadeUp 0.2s ease-out",
             }}>
               {/* Avatar */}
               <div style={{
-                width: 26, height: 26, borderRadius: 8, flexShrink: 0, overflow: "hidden",
-                background: c.is_agent ? "rgba(251,191,36,0.15)" : "rgba(139,92,246,0.1)",
+                width: 26, height: 26, borderRadius: 7, flexShrink: 0, overflow: "hidden",
+                background: T.inset,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                border: c.is_agent ? "1.5px solid rgba(251,191,36,0.3)" : "1px solid rgba(139,92,246,0.15)",
+                boxShadow: c.is_agent
+                  ? "inset 0 0 0 1.5px rgba(184,130,44,.55)"
+                  : `inset 0 0 0 1px ${T.hair}`,
               }}>
                 {c.pet?.avatar_url ? (
                   <img src={c.pet.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -105,7 +118,7 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
                   <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
                   <svg width={14} height={14} viewBox="0 0 24 24" fill="none"
-                    stroke="rgba(139,92,246,0.55)" strokeWidth={1.8}
+                    stroke={T.muted} strokeWidth={1.8}
                     strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <circle cx={12} cy={8} r={3.5} />
                     <path d="M5.5 19.5a6.5 6.5 0 0 1 13 0" />
@@ -115,24 +128,24 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
                   <span style={{
-                    fontFamily: "'Space Grotesk',sans-serif", fontSize: 11, fontWeight: 600,
-                    color: c.is_agent ? "#b45309" : "#1a1a2e",
+                    fontFamily: T.body, fontSize: 11, fontWeight: 600,
+                    color: c.is_agent ? T.rareLegend : T.ink,
                   }}>
                     {c.is_agent ? (c.pet?.name || "Pet Agent") : (c.display_name || c.wallet_address?.slice(0, 8) || "User")}
                   </span>
                   {c.is_agent && (
                     <span style={{
                       fontSize: 7, padding: "1px 5px", borderRadius: 4,
-                      background: "rgba(251,191,36,0.12)", color: "#b45309",
-                      fontFamily: "mono", fontWeight: 600,
+                      background: "rgba(200,147,47,0.14)", color: T.rareLegend,
+                      fontFamily: T.m, fontWeight: 700, letterSpacing: "0.1em",
                     }}>PET</span>
                   )}
-                  <span style={{ fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.25)" }}>
+                  <span style={{ fontFamily: T.m, fontSize: 9, color: T.mono }}>
                     {c.created_at ? timeAgo(c.created_at) : ""}
                   </span>
                 </div>
                 <div style={{
-                  fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, color: "rgba(26,26,46,0.65)",
+                  fontFamily: T.body, fontSize: 12, color: T.muted2,
                   lineHeight: 1.5, wordBreak: "break-word",
                 }}>
                   {c.content}
@@ -149,21 +162,22 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
           value={newComment}
           onChange={e => setNewComment(e.target.value)}
           onKeyDown={e => e.key === "Enter" && handleSubmit()}
-          placeholder="Write a comment..."
+          placeholder="Write a comment…"
           style={{
             flex: 1, padding: "9px 12px", borderRadius: 8,
-            background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.08)",
-            fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, color: "#1a1a2e",
+            background: T.inset, border: `1px solid ${T.hair}`,
+            fontFamily: T.body, fontSize: 12, color: T.ink,
             outline: "none", boxSizing: "border-box",
           }}
         />
         <button onClick={handleSubmit} disabled={!newComment.trim() || submitting} style={{
           padding: "9px 14px", borderRadius: 8, border: "none", cursor: "pointer",
-          background: newComment.trim() ? "linear-gradient(135deg,#f59e0b,#d97706)" : "rgba(0,0,0,0.04)",
-          color: newComment.trim() ? "white" : "rgba(26,26,46,0.25)",
-          fontFamily: "mono", fontSize: 11, fontWeight: 600,
+          background: newComment.trim() ? `linear-gradient(135deg,${T.cta1},${T.cta2})` : T.inset,
+          color: newComment.trim() ? "#fff" : T.mono,
+          fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
+          boxShadow: newComment.trim() ? "var(--ed-shadow-card)" : "none",
         }}>
-          {submitting ? "..." : "Post"}
+          {submitting ? "…" : "Post"}
         </button>
       </div>
     </div>
@@ -185,19 +199,19 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center",
-      background: "rgba(0,0,0,0.6)", backdropFilter: "blur(24px)",
+      background: "rgba(38,28,12,0.52)",
     }} onClick={onClose}>
       <style>{`@keyframes modalIn { from { opacity:0; transform:scale(0.96) } to { opacity:1; transform:scale(1) } }`}</style>
       <div onClick={e => e.stopPropagation()} style={{
         display: "flex", maxWidth: 1000, width: "92vw", maxHeight: "88vh",
-        background: "white", borderRadius: 16, overflow: "hidden",
-        boxShadow: "0 40px 120px rgba(0,0,0,0.3)",
+        background: T.paper, borderRadius: 16, overflow: "hidden",
+        boxShadow: "var(--ed-shadow-float)",
         animation: "modalIn 0.25s ease-out",
       }}>
         {/* Media */}
         <div style={{
           flex: "1 1 58%", position: "relative", overflow: "hidden",
-          background: "#f5f3ee", display: "flex", alignItems: "center", justifyContent: "center",
+          background: T.inset, display: "flex", alignItems: "center", justifyContent: "center",
           minHeight: 400,
         }}>
           {item.video_url || item.video_path ? (
@@ -210,9 +224,10 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
                 if (v) v.muted = !v.muted;
               }} style={{
                 position: "absolute", bottom: 14, right: 14, width: 36, height: 36,
-                borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.6)",
-                backdropFilter: "blur(8px)", cursor: "pointer", display: "flex",
+                borderRadius: "50%", border: `2px solid ${T.paper}`, background: T.ink,
+                cursor: "pointer", display: "flex",
                 alignItems: "center", justifyContent: "center", fontSize: 16, color: "white",
+                boxShadow: "var(--ed-shadow-card)",
               }}>
                 <svg width={17} height={17} viewBox="0 0 24 24" fill="none"
                   stroke="white" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -223,19 +238,29 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
               </button>
             </>
           ) : item.photo_url || item.photo_path ? (
-            <img src={item.photo_url || item.photo_path} alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            // Foil-stamped collectible reveal — the creation presented as an artifact.
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", padding: "40px 28px" }}>
+              <CollectibleFrame
+                photoUrl={item.photo_url || item.photo_path}
+                level={item.generation_id || item.id || 0}
+                speciesLabel={(item.gen_type === "video" ? "MOTION" : "STILL")}
+                elementLabel={`FILE №${item.generation_id || item.id || "—"}`}
+                width={330}
+                tilt={-2.4}
+                seal={false}
+              />
+            </div>
           ) : (
             <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.45 }} />
           )}
           {item.gen_type === "video" && (
             <div style={{
               position: "absolute", top: 14, left: 14,
-              padding: "5px 12px", borderRadius: 20, background: "rgba(0,0,0,0.6)",
-              backdropFilter: "blur(8px)", display: "flex", alignItems: "center", gap: 5,
+              padding: "5px 12px", borderRadius: 6, background: T.paper,
+              boxShadow: "var(--ed-shadow-card)", display: "flex", alignItems: "center", gap: 6,
             }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 6px #4ade80" }} />
-              <span style={{ fontFamily: "mono", fontSize: 10, color: "white" }}>Video · {item.duration}s</span>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.rareCommon }} />
+              <span style={{ fontFamily: T.m, fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: T.ink70, textTransform: "uppercase" }}>Video · {item.duration}s</span>
             </div>
           )}
         </div>
@@ -245,24 +270,24 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{
-                width: 34, height: 34, borderRadius: "50%",
-                background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                width: 34, height: 34, borderRadius: 9,
+                background: T.inset,
                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15,
-                overflow: "hidden",
+                overflow: "hidden", boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.55)",
               }}>
-                <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+                <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", borderRadius: 8, objectFit: "cover" }} />
               </div>
               <div>
-                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "#1a1a2e", fontWeight: 600 }}>
+                <div style={{ fontFamily: T.body, fontSize: 14, color: T.ink, fontWeight: 600 }}>
                   {item.display_name || item.wallet_address || "Anonymous"}
                 </div>
-                <div style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.35)" }}>
+                <div style={{ fontFamily: T.m, fontSize: 10, color: T.mono, letterSpacing: "0.06em" }}>
                   {item.created_at ? timeAgo(item.created_at) : ""}
                 </div>
               </div>
             </div>
             <button aria-label="Close" onClick={onClose} style={{
-              background: "rgba(0,0,0,0.04)", border: "none", color: "rgba(26,26,46,0.4)",
+              background: T.inset, border: "none", color: T.muted,
               cursor: "pointer", width: 30, height: 30, borderRadius: 8,
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15,
             }}>✕</button>
@@ -270,9 +295,9 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
 
           <div style={{ marginBottom: 12 }}>
             <div style={{
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, color: "rgba(26,26,46,0.55)",
+              fontFamily: T.body, fontSize: 12, color: T.muted2,
               lineHeight: 1.6, padding: "10px 12px", borderRadius: 8,
-              background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.05)",
+              background: T.inset, border: `1px solid ${T.hair}`,
               maxHeight: 60, overflow: "hidden",
             }}>
               {item.prompt}
@@ -281,15 +306,15 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
 
           <div style={{
             display: "flex", gap: 12, padding: "10px 0", marginBottom: 12,
-            borderTop: "1px solid rgba(0,0,0,0.06)",
-            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            borderTop: `1px solid ${T.hair}`,
+            borderBottom: `1px solid ${T.hair}`,
           }}>
             <button onClick={() => onLike(item.generation_id || item.id, index)} style={{
               display: "flex", alignItems: "center", gap: 5, background: "none",
               border: "none", cursor: "pointer", padding: 0,
             }}>
               <span style={{
-                fontSize: 15, color: item.is_liked ? "#f472b6" : "rgba(26,26,46,0.35)",
+                fontSize: 15, color: item.is_liked ? T.happy : T.muted,
                 display: "inline-block",
                 transform: item.is_liked ? "scale(1.3)" : "scale(1)",
                 transition: "transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s",
@@ -297,7 +322,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
                 {item.is_liked ? "♥" : "♡"}
               </span>
               <span style={{
-                fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#1a1a2e",
+                fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.ink,
               }}>
                 {item.likes_count || 0}
               </span>
@@ -305,7 +330,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <Icon name="chat" size={14} />
               <span style={{
-                fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#1a1a2e",
+                fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.ink,
               }}>
                 {item.comments_count || 0}
               </span>
@@ -324,8 +349,8 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
               style={{
                 display: "flex", alignItems: "center", gap: 5, background: "none",
                 border: "none", cursor: "pointer", padding: 0, marginRight: 14,
-                fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
-                color: copied ? "#16a34a" : "#1a1a2e",
+                fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
+                color: copied ? T.rareCommon : T.ink70,
               }}
             ><span style={{ fontSize: 13, display: "inline-flex", alignItems: "center" }}>{copied ? "✓" : (
               <svg width={13} height={13} viewBox="0 0 24 24" fill="none"
@@ -346,7 +371,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
               style={{
                 display: "flex", alignItems: "center", gap: 5, background: "none",
                 border: "none", cursor: "pointer", padding: 0,
-                fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#1a1a2e",
+                fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.04em", color: T.ink70,
               }}
             ><span style={{ fontSize: 13 }}>𝕏</span> Share</button>
           </div>
@@ -366,16 +391,16 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
               }}
               style={{
                 width: "100%", padding: "11px", borderRadius: 10, border: "none", cursor: "pointer",
-                background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "white",
-                fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 700,
-                marginBottom: 12,
+                background: `linear-gradient(135deg,${T.cta1},${T.cta2})`, color: "white",
+                fontFamily: T.body, fontSize: 14, fontWeight: 700,
+                marginBottom: 12, boxShadow: "var(--ed-shadow-card)",
               }}
             ><Icon name="sparkling" size={15} style={{ marginRight: 4 }} /> Make one like this →</button>
           )}
 
           {/* Comments */}
           {item.__mock
-            ? <div style={{ fontSize: 12, color: "rgba(26,26,46,0.4)", padding: "12px 2px" }}>Sample post — comments open up on real creations.</div>
+            ? <div style={{ fontFamily: T.m, fontSize: 11, color: T.mono, padding: "12px 2px", letterSpacing: "0.04em" }}>Sample post — comments open up on real creations.</div>
             : <CommentSection generationId={item.generation_id || item.id} onAdded={onCommentAdded} />}
         </div>
       </div>
@@ -449,14 +474,22 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
       style={{
         borderRadius: 10, overflow: "hidden", cursor: "pointer",
         height: cardHeight, position: "relative",
-        marginBottom: 4,
+        marginBottom: 4, background: T.paper,
+        boxSizing: "border-box",
         transition: "transform 0.3s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.3s ease",
-        transform: hovered ? "scale(1.01)" : "scale(1)",
+        transform: hovered ? "translateY(-3px) scale(1.01)" : "translateY(0) scale(1)",
         boxShadow: hovered
-          ? "0 8px 28px rgba(0,0,0,0.12)"
-          : "0 1px 3px rgba(0,0,0,0.08)",
+          ? "0 26px 46px -24px rgba(80,55,20,.6)"
+          : "var(--ed-shadow-card)",
       }}
     >
+      {/* gold inset keyline — the collectible's foil edge (small grid thumb) */}
+      <span aria-hidden style={{
+        position: "absolute", inset: 0, borderRadius: 10, zIndex: 12, pointerEvents: "none",
+        boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)",
+      }} />
+      {/* small holographic sheen (not the giant float) */}
+      <div className="ed-holo-sheen" aria-hidden style={{ inset: 0, borderRadius: 10, zIndex: 2, opacity: 0.18 }} />
       {/* Media layer */}
       {hasMedia ? (
         item.video_url || item.video_path ? (
@@ -487,9 +520,9 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
             {!imgLoaded && (
               <div style={{
                 position: "absolute", inset: 0,
-                background: "linear-gradient(135deg, #f5f3ee, #ebe8e1)",
+                background: "linear-gradient(135deg, #F5EFE2, #ECE4D4)",
                 animation: "shimmer 1.5s ease-in-out infinite",
-                backgroundImage: "linear-gradient(90deg, #f5f3ee 0%, #faf7f2 50%, #f5f3ee 100%)",
+                backgroundImage: "linear-gradient(90deg, #F5EFE2 0%, #FBF6EC 50%, #F5EFE2 100%)",
                 backgroundSize: "200% 100%",
               }} />
             )}
@@ -510,7 +543,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
       ) : (
         <div style={{
           width: "100%", height: "100%",
-          background: "linear-gradient(135deg, #faf7f2, #f0ede8)",
+          background: "linear-gradient(135deg, #FBF6EC, #ECE4D4)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.45 }} />
@@ -521,17 +554,16 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
       {isVideo && (
         <div style={{
           position: "absolute", top: 8, left: 8, zIndex: 10,
-          padding: "3px 8px", borderRadius: 6,
-          background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)",
-          display: "flex", alignItems: "center", gap: 4,
+          padding: "3px 8px", borderRadius: 5,
+          background: T.paper, boxShadow: "var(--ed-shadow-card)",
+          display: "flex", alignItems: "center", gap: 5,
         }}>
           <span style={{
             width: 5, height: 5, borderRadius: "50%",
-            background: hovered ? "#4ade80" : "#fbbf24",
-            boxShadow: hovered ? "0 0 4px #4ade80" : "none",
+            background: hovered ? T.rareCommon : T.cta2,
             transition: "all 0.3s",
           }} />
-          <span style={{ fontFamily: "mono", fontSize: 9, color: "rgba(255,255,255,0.85)", fontWeight: 500 }}>
+          <span style={{ fontFamily: T.m, fontSize: 9, color: T.ink70, fontWeight: 700, letterSpacing: "0.08em" }}>
             {item.duration || 5}s
           </span>
         </div>
@@ -559,18 +591,18 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
             {hovered && (
               <div style={{
-                width: 20, height: 20, borderRadius: "50%",
-                background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                width: 20, height: 20, borderRadius: 6,
+                background: T.inset,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 9, animation: "fadeUp 0.15s ease-out",
-                border: "1.5px solid rgba(255,255,255,0.3)", overflow: "hidden",
+                boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.7)", overflow: "hidden",
               }}>
-                <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+                <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", borderRadius: 5, objectFit: "cover" }} />
               </div>
             )}
             <span style={{
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 11, fontWeight: 600,
-              color: "rgba(255,255,255,0.85)",
+              fontFamily: T.body, fontSize: 11, fontWeight: 600,
+              color: "rgba(255,255,255,0.92)",
               textShadow: "0 1px 3px rgba(0,0,0,0.5)",
               maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>
@@ -587,19 +619,19 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
               }}
             >
               <span style={{
-                color: item.is_liked ? "#f472b6" : "rgba(255,255,255,0.65)",
+                color: item.is_liked ? T.happy : "rgba(255,255,255,0.7)",
                 fontSize: 13,
                 // Overshoot easing → a tactile "pop" on like instead of a flat ease.
                 transition: "transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s, filter 0.15s",
                 transform: item.is_liked ? "scale(1.3)" : "scale(1)",
                 display: "inline-block",
-                filter: item.is_liked ? "drop-shadow(0 0 4px rgba(244,114,182,0.5))" : "none",
+                filter: item.is_liked ? "drop-shadow(0 1px 3px rgba(240,88,158,0.55))" : "none",
               }}>
                 {item.is_liked ? "♥" : "♡"}
               </span>
               <span style={{
-                fontFamily: "mono", fontSize: 10, fontWeight: 600,
-                color: "rgba(255,255,255,0.6)",
+                fontFamily: T.m, fontSize: 10, fontWeight: 700,
+                color: "rgba(255,255,255,0.7)",
                 textShadow: "0 1px 2px rgba(0,0,0,0.5)",
               }}>
                 {item.likes_count > 999 ? `${(item.likes_count/1000).toFixed(1)}k` : item.likes_count || 0}
@@ -608,7 +640,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
 
             {(hovered || (item.comments_count || 0) > 0) && (
               <span style={{
-                fontFamily: "mono", fontSize: 9, color: "rgba(255,255,255,0.45)",
+                fontFamily: T.m, fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.55)",
                 textShadow: "0 1px 2px rgba(0,0,0,0.5)",
                 display: "inline-flex", alignItems: "center", gap: 3,
               }}>
@@ -627,7 +659,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
                   } catch {}
                 }}
                 style={{
-                  background: copied ? "rgba(22,163,74,0.85)" : "rgba(0,0,0,0.45)", border: "none", cursor: "pointer",
+                  background: copied ? "rgba(92,138,78,0.9)" : "rgba(33,26,18,0.5)", border: "none", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   width: 22, height: 22, borderRadius: 6, padding: 0,
                   animation: "fadeUp 0.15s ease-out", flexShrink: 0,
@@ -654,7 +686,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
                   window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=${tags}`, "_blank", "width=600,height=400");
                 }}
                 style={{
-                  background: "rgba(0,0,0,0.45)", border: "none", cursor: "pointer",
+                  background: "rgba(33,26,18,0.5)", border: "none", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   width: 22, height: 22, borderRadius: 6, padding: 0,
                   animation: "fadeUp 0.15s ease-out", flexShrink: 0,
@@ -860,35 +892,43 @@ export default function SocialGallery() {
   ];
 
   return (
-    <div style={{ padding: "0 16px 60px", maxWidth: 1440, margin: "0 auto", paddingTop: 88 }}>
+    <div style={{ position: "relative", fontFamily: T.body, color: T.ink, paddingTop: 88 }}>
+      <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
+      <div style={{ position: "relative", zIndex: 2, padding: "0 16px 60px", maxWidth: 1440, margin: "0 auto" }}>
       <style>{`
         @keyframes fadeUp { from { opacity:0; transform:translateY(4px) } to { opacity:1; transform:translateY(0) } }
         @keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
         .gallery-search { transition: all 0.2s }
-        .gallery-search::placeholder { color: rgba(26,26,46,0.25) }
-        .gallery-search:focus { border-color: rgba(0,0,0,0.12) !important; background: rgba(0,0,0,0.02) !important }
-        .sort-tab:hover { color: rgba(26,26,46,0.7) !important }
+        .gallery-search::placeholder { color: #9A7B4E }
+        .gallery-search:focus { border-color: rgba(184,130,44,.55) !important; background: #FBF6EC !important }
+        .sort-tab:hover { color: #211A12 !important }
       `}</style>
 
       {/* Real community stats + featured pets live in <CommunityHighlights>,
           mounted just above this gallery — we don't repeat them here with mock
           data (the old fake stats/creators/trending blocks were removed). */}
 
-      {/* Header — minimal like Midjourney */}
-      <div style={{ marginBottom: 16 }}>
+      {/* Header — Collectible Editorial masthead */}
+      <div style={{ marginBottom: 18 }}>
         <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          marginBottom: 12, flexWrap: "wrap", gap: 12,
+          fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.14em",
+          textTransform: "uppercase", color: T.terra, marginBottom: 8,
         }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          Community · {filteredItems.length} Creations Today
+        </div>
+        <div style={{
+          display: "flex", alignItems: "flex-end", justifyContent: "space-between",
+          marginBottom: 14, flexWrap: "wrap", gap: 12,
+        }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
             <h2 style={{
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, fontWeight: 700,
-              color: "#1a1a2e", margin: 0, letterSpacing: "-0.03em",
+              fontFamily: T.disp, fontSize: 46, fontWeight: 800,
+              color: T.ink, margin: 0, letterSpacing: "-0.035em", lineHeight: 0.95,
             }}>
-              Explore
+              The remix wall
             </h2>
             <span style={{
-              fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.3)", fontWeight: 500,
+              fontFamily: T.m, fontSize: 10, color: T.mono, fontWeight: 700, letterSpacing: "0.08em",
             }}>
               {filteredItems.length} works
             </span>
@@ -896,21 +936,23 @@ export default function SocialGallery() {
 
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {/* Type filters — inline with search */}
-            <div style={{ display: "flex", gap: 2 }}>
+            <div style={{ display: "flex", gap: 4 }}>
               {[
-                { key: "all", label: "All", color: "#f59e0b" },
-                { key: "image", label: "Images", color: "#3b82f6" },
-                { key: "video", label: "Videos", color: "#a855f7" },
+                { key: "all", label: "All", color: T.terra },
+                { key: "image", label: "Images", color: T.rareRare },
+                { key: "video", label: "Videos", color: T.rareEpic },
               ].map(f => {
                 const on = typeFilter === f.key;
                 return (
                   <button key={f.key} onClick={() => setTypeFilter(f.key)} style={{
-                    background: on ? f.color : "transparent",
-                    border: `1px solid ${on ? f.color : "rgba(0,0,0,0.08)"}`,
-                    borderRadius: 999, padding: "5px 13px",
-                    fontFamily: "mono", fontSize: 10, cursor: "pointer",
-                    color: on ? "#fff" : "rgba(26,26,46,0.45)",
-                    transition: "all 0.2s", fontWeight: on ? 700 : 500,
+                    background: on ? f.color : T.paper,
+                    border: `1px solid ${on ? f.color : T.hair}`,
+                    borderRadius: 6, padding: "5px 13px",
+                    fontFamily: T.m, fontSize: 10, cursor: "pointer",
+                    letterSpacing: "0.08em", textTransform: "uppercase",
+                    color: on ? T.creamOn : T.muted,
+                    transition: "all 0.2s", fontWeight: 700,
+                    boxShadow: on ? "var(--ed-shadow-card)" : "none",
                   }}>
                     {f.label}
                   </button>
@@ -922,7 +964,7 @@ export default function SocialGallery() {
             <div style={{ position: "relative" }}>
               <span style={{
                 position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
-                fontSize: 12, color: "rgba(26,26,46,0.2)", pointerEvents: "none",
+                fontSize: 12, color: T.mono, pointerEvents: "none",
                 display: "inline-flex",
               }}>
                 <svg width={13} height={13} viewBox="0 0 24 24" fill="none"
@@ -938,8 +980,8 @@ export default function SocialGallery() {
                 placeholder="Search..."
                 style={{
                   width: 180, padding: "7px 12px 7px 28px", borderRadius: 8,
-                  background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)",
-                  color: "#1a1a2e", fontFamily: "'Space Grotesk',sans-serif", fontSize: 12,
+                  background: T.inset, border: `1px solid ${T.hair}`,
+                  color: T.ink, fontFamily: T.body, fontSize: 12,
                   outline: "none", boxSizing: "border-box",
                 }}
               />
@@ -947,15 +989,17 @@ export default function SocialGallery() {
           </div>
         </div>
 
-        {/* Sort tabs */}
-        <div style={{ display: "flex", gap: 0 }}>
+        {/* Sort tabs — ink underline on active */}
+        <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${T.hair}` }}>
           {TABS.map(t => (
             <button className="sort-tab" key={t.key} onClick={() => setSort(t.key)} style={{
-              background: "transparent", border: "none", padding: "6px 14px",
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, cursor: "pointer",
-              color: sort === t.key ? "#1a1a2e" : "rgba(26,26,46,0.35)",
-              fontWeight: sort === t.key ? 600 : 400,
-              borderBottom: sort === t.key ? "2px solid #fbbf24" : "2px solid transparent",
+              background: "transparent", border: "none", padding: "8px 16px",
+              fontFamily: T.m, fontSize: 11, cursor: "pointer",
+              letterSpacing: "0.1em", textTransform: "uppercase",
+              color: sort === t.key ? T.ink : T.mono,
+              fontWeight: 700,
+              borderBottom: sort === t.key ? `2px solid ${T.ink}` : "2px solid transparent",
+              marginBottom: -1,
               transition: "all 0.2s", borderRadius: 0,
             }}>
               {t.label}
@@ -972,10 +1016,11 @@ export default function SocialGallery() {
               {Array.from({ length: 4 }, (_, ri) => (
                 <div key={ri} style={{
                   height: 220 + ((ci * 3 + ri) % 5) * 50, borderRadius: 10,
-                  background: "linear-gradient(90deg, #f5f3ee 25%, #faf7f2 50%, #f5f3ee 75%)",
+                  background: "linear-gradient(90deg, #F5EFE2 25%, #FBF6EC 50%, #F5EFE2 75%)",
                   backgroundSize: "200% 100%",
                   animation: "shimmer 1.5s ease-in-out infinite",
                   animationDelay: `${(ci + ri) * 0.12}s`,
+                  boxShadow: "var(--ed-shadow-card)",
                 }} />
               ))}
             </div>
@@ -984,49 +1029,52 @@ export default function SocialGallery() {
       ) : filteredItems.length === 0 ? (
         <div style={{ textAlign: "center", padding: "100px 40px" }}>
           {search ? (
-            <div style={{ marginBottom: 14, opacity: 0.2, display: "flex", justifyContent: "center" }}>
+            <div style={{ marginBottom: 14, opacity: 0.35, display: "flex", justifyContent: "center" }}>
               <svg width={44} height={44} viewBox="0 0 24 24" fill="none"
-                stroke="#1a1a2e" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                stroke={T.ink} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx={10.5} cy={10.5} r={6.5} />
                 <path d="M20 20l-4.5-4.5" />
               </svg>
             </div>
           ) : feedFailed ? (
-            <div style={{ marginBottom: 14, opacity: 0.3, display: "flex", justifyContent: "center" }}>
+            <div style={{ marginBottom: 14, opacity: 0.4, display: "flex", justifyContent: "center" }}>
               <svg width={44} height={44} viewBox="0 0 24 24" fill="none"
-                stroke="#1a1a2e" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                stroke={T.terra} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 3.5 1.8 20.5h20.4L12 3.5Z" />
                 <path d="M12 9.5v5" />
                 <path d="M12 17.6h.01" />
               </svg>
             </div>
           ) : (
-            <img src="/mascot.jpg" alt="" style={{
-              width: 72, height: 72, borderRadius: "50%", objectFit: "cover",
-              opacity: 0.9, marginBottom: 14, boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
-            }} />
+            <div style={{ display: "inline-flex", padding: 7, background: T.paper, borderRadius: 16, marginBottom: 14, boxShadow: "var(--ed-shadow-card)" }}>
+              <img src="/mascot.jpg" alt="" style={{
+                width: 72, height: 72, borderRadius: 11, objectFit: "cover",
+                boxShadow: "inset 0 0 0 2px rgba(184,130,44,.55)",
+              }} />
+            </div>
           )}
           <h3 style={{
-            fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, color: "rgba(26,26,46,0.45)",
-            marginBottom: 6, fontWeight: 500,
+            fontFamily: T.disp, fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em",
+            color: T.ink, marginBottom: 6,
           }}>
-            {search ? "No results found" : feedFailed ? "Couldn't load the feed" : "No Creations Yet"}
+            {search ? "No results found" : feedFailed ? "Couldn't load the feed" : "No creations yet"}
           </h3>
-          <p style={{ fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.3)" }}>
+          <p style={{ fontFamily: T.m, fontSize: 11, color: T.mono, letterSpacing: "0.06em" }}>
             {search ? "Try different keywords" : feedFailed ? "Check your connection and try again" : "Be the first to create something"}
           </p>
           {feedFailed && !search && (
             <button onClick={() => loadFeed()} style={{
-              marginTop: 16, padding: "8px 20px", borderRadius: 999,
-              border: "1px solid rgba(0,0,0,0.1)", background: "white", cursor: "pointer",
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 600, color: "#1a1a2e",
+              marginTop: 16, padding: "9px 22px", borderRadius: 8,
+              border: `1px solid ${T.hair}`, background: T.paper, cursor: "pointer",
+              fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em",
+              textTransform: "uppercase", color: T.ink, boxShadow: "var(--ed-shadow-card)",
             }}>Retry</button>
           )}
           {!search && !feedFailed && (
             <button onClick={() => { window.location.href = "/?section=create"; }} style={{
-              marginTop: 16, padding: "10px 24px", borderRadius: 999, border: "none", cursor: "pointer",
-              background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "white",
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 700,
+              marginTop: 16, padding: "11px 26px", borderRadius: 10, border: "none", cursor: "pointer",
+              background: `linear-gradient(135deg,${T.cta1},${T.cta2})`, color: "white",
+              fontFamily: T.body, fontSize: 14, fontWeight: 700, boxShadow: "var(--ed-shadow-card)",
             }}><Icon name="sparkling" size={15} style={{ marginRight: 4 }} /> Create the first one</button>
           )}
         </div>
@@ -1045,11 +1093,12 @@ export default function SocialGallery() {
             onClick={loadMore}
             disabled={loadingMore}
             style={{
-              padding: "12px 32px", borderRadius: 999,
-              border: "1px solid rgba(0,0,0,0.1)", background: "white",
+              padding: "11px 32px", borderRadius: 8,
+              border: `1px solid ${T.hair}`, background: T.paper,
               cursor: loadingMore ? "wait" : "pointer",
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600,
-              color: "#1a1a2e", boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: T.ink, boxShadow: "var(--ed-shadow-card)",
               opacity: loadingMore ? 0.6 : 1,
             }}
           >{loadingMore ? "Loading…" : "Load more"}</button>
@@ -1077,12 +1126,13 @@ export default function SocialGallery() {
         aria-label="Create your own"
         style={{
           position: "fixed", bottom: 24, right: 24, zIndex: 100,
-          padding: "12px 20px", borderRadius: 999, border: "none", cursor: "pointer",
-          background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "white",
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 700,
-          boxShadow: "0 6px 20px rgba(245,158,11,0.4)",
+          padding: "13px 22px", borderRadius: 12, border: "none", cursor: "pointer",
+          background: `linear-gradient(135deg,${T.cta1},${T.cta2})`, color: "white",
+          fontFamily: T.body, fontSize: 14, fontWeight: 700,
+          boxShadow: "0 20px 40px -16px rgba(226,125,12,.65), 0 6px 14px -8px rgba(38,12,2,.4)",
         }}
       ><Icon name="sparkling" size={15} style={{ marginRight: 4 }} /> Create yours</button>
+      </div>
     </div>
   );
 }

@@ -17,10 +17,18 @@ import { api, getAuthHeaders } from "@/lib/api";
 import PetCard from "@/components/PetCard";
 import Icon from "@/components/Icon";
 
-const INK = "#1a1a22";
-const MUTED = "#6b6b73";
-const LINE = "rgba(16,16,28,0.10)";
-const GOLD = "#b45309";
+// ── Collectible Editorial tokens ──
+const T = {
+  field: "#ECE4D4", paper: "#FBF6EC", inset: "#F5EFE2", ink: "#211A12", ink70: "#3A3024",
+  muted: "#7A6E5A", muted2: "#5C5140", mono: "#9A7B4E", hair: "rgba(33,26,18,.13)",
+  terra: "#BE4F28", terraSub: "#9A4E1E", creamOn: "#FCE9CF",
+  win: "#5C8A4E", lose: "#BE4F28",
+  disp: "var(--ed-disp)", body: "var(--ed-body)", m: "var(--ed-m)",
+} as const;
+const INK = T.ink;
+const MUTED = T.muted;
+const LINE = T.hair;
+const GOLD = T.terra;
 
 type Pet = { id: number; name: string; avatar_url?: string | null };
 type Opp = { petId: number; name: string; element: string; level: number };
@@ -114,19 +122,22 @@ export default function CardDeck() {
 
   return (
     <Shell>
-      {/* Tabs */}
+      {/* Tabs — mono-labelled editorial pills, active = ink */}
       <div style={{ display: "flex", gap: 8, marginBottom: 22 }}>
         {(["deck", "battle"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)} style={{
-            padding: "8px 18px", borderRadius: 999, cursor: "pointer", fontSize: 14, fontWeight: 700,
-            border: `1.5px solid ${tab === t ? INK : LINE}`, background: tab === t ? INK : "#fff", color: tab === t ? "#fff" : MUTED,
+            padding: "9px 18px", borderRadius: 999, cursor: "pointer",
+            fontFamily: T.m, fontWeight: 700, fontSize: 11.5, letterSpacing: "0.12em", textTransform: "uppercase",
+            border: `1px solid ${tab === t ? T.ink : T.hair}`, background: tab === t ? T.ink : T.paper,
+            color: tab === t ? T.creamOn : T.muted, boxShadow: tab === t ? "var(--ed-shadow-card)" : "none",
+            transition: "all .15s ease",
           }}>{t === "deck" ? "My Deck" : (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="sword" size={16} /> Battle</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="sword" size={15} /> Battle</span>
           )}</button>
         ))}
       </div>
 
-      {err && <div style={{ background: "#fde8e8", color: "#9b1c1c", borderRadius: 10, padding: "10px 14px", fontSize: 13.5, marginBottom: 16 }}>{err}</div>}
+      {err && <div style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "10px 14px", fontFamily: T.body, fontSize: 13.5, marginBottom: 16, boxShadow: "var(--ed-shadow-card)" }}>{err}</div>}
 
       {tab === "deck" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(232px, 1fr))", gap: 22, justifyItems: "center" }}>
@@ -138,7 +149,7 @@ export default function CardDeck() {
               <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
                 <button onClick={() => shareCard(p.id, p.name)} style={btn}>𝕏 Share</button>
                 <button onClick={() => illustrate(p.id, p.name)} disabled={illustrating === p.id} style={{ ...ghost, opacity: illustrating === p.id ? 0.6 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  {illustrating === p.id ? "Illustrating…" : <><Icon name="sparkling" size={15} /> Illustrate</>}
+                  {illustrating === p.id ? "Illustrating…" : <><Icon name="sparkling" size={14} /> Illustrate</>}
                 </button>
               </div>
             </div>
@@ -154,7 +165,7 @@ export default function CardDeck() {
                 {pets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </Field>
-            <div style={{ fontSize: 20, fontWeight: 800, color: MUTED, paddingBottom: 8 }}>vs</div>
+            <div style={{ fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.mono, paddingBottom: 10 }}>vs</div>
             <Field label="Opponent">
               <select value={oppId ?? ""} onChange={(e) => setOppId(Number(e.target.value))} style={select}>
                 <option value="">Pick an opponent…</option>
@@ -165,15 +176,18 @@ export default function CardDeck() {
               {battling ? "Battling…" : "Battle!"}
             </button>
           </div>
-          {oppList.length === 0 && <div style={{ fontSize: 13, color: MUTED, marginBottom: 16 }}>No other pets to battle yet — invite a friend to adopt one.</div>}
+          {oppList.length === 0 && <div style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted, marginBottom: 16 }}>No other pets to battle yet — invite a friend to adopt one.</div>}
 
           {battle && (
-            <div style={{ borderRadius: 16, border: `1px solid ${LINE}`, padding: 20, background: "#fff" }}>
-              <div style={{ textAlign: "center", fontSize: 22, fontWeight: 800, color: battle.winner === "you" ? "#16a34a" : "#dc2626", marginBottom: 16 }}>
-                {battle.winner === "you" ? (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><Icon name="trophy" size={24} /> {battle.you.name} wins!</span>
-                ) : `${battle.opponent.name} wins`}
-                <div style={{ fontSize: 12, color: MUTED, fontWeight: 500, marginTop: 4 }}>{battle.result.turns} turns · your HP {battle.result.yourHp}/{battle.result.yourHpMax} · their HP {battle.result.oppHp}/{battle.result.oppHpMax}</div>
+            <div style={{ borderRadius: 22, border: `1px solid ${T.hair}`, padding: 22, background: T.paper, boxShadow: "var(--ed-shadow-card)" }}>
+              <div style={{ textAlign: "center", marginBottom: 18 }}>
+                <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.mono, marginBottom: 7 }}>Duel result</div>
+                <div style={{ fontFamily: T.disp, fontSize: 26, fontWeight: 800, color: battle.winner === "you" ? T.win : T.terra }}>
+                  {battle.winner === "you" ? (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><Icon name="trophy" size={24} /> {battle.you.name} wins!</span>
+                  ) : `${battle.opponent.name} wins`}
+                </div>
+                <div style={{ fontFamily: T.m, fontSize: 11, color: T.muted, fontWeight: 700, letterSpacing: "0.06em", marginTop: 7 }}>{battle.result.turns} turns · your HP {battle.result.yourHp}/{battle.result.yourHpMax} · their HP {battle.result.oppHp}/{battle.result.oppHpMax}</div>
               </div>
               <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
                 {[battle.you, battle.opponent].map((c: any, i: number) => {
@@ -181,7 +195,7 @@ export default function CardDeck() {
                   return (
                     <div key={i} style={{ width: 220, opacity: isWinner ? 1 : 0.72, transform: isWinner ? "scale(1.03)" : "none", transition: "all .2s" }}>
                       <PetCard petId={c.id} maxWidth={220} />
-                      <div style={{ textAlign: "center", marginTop: 8, fontSize: 13, fontWeight: 800, color: isWinner ? "#16a34a" : MUTED }}>{isWinner ? "WINNER" : ""}</div>
+                      <div style={{ textAlign: "center", marginTop: 9, fontFamily: T.m, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.14em", color: isWinner ? T.win : T.muted }}>{isWinner ? "WINNER" : ""}</div>
                     </div>
                   );
                 })}
@@ -203,14 +217,15 @@ export default function CardDeck() {
   );
 }
 
-const btn: React.CSSProperties = { padding: "9px 14px", borderRadius: 9, border: "none", background: INK, color: "#fff", fontWeight: 700, fontSize: 13.5, cursor: "pointer" };
-const ghost: React.CSSProperties = { padding: "9px 14px", borderRadius: 9, border: `1px solid ${LINE}`, background: "#fff", color: INK, fontWeight: 600, fontSize: 13.5, cursor: "pointer" };
-const select: React.CSSProperties = { padding: "9px 12px", borderRadius: 9, border: `1px solid ${LINE}`, fontSize: 14, color: INK, background: "#fff", minWidth: 180 };
+// Primary action — ink fill, mono label, soft floating shadow (never a hard offset)
+const btn: React.CSSProperties = { padding: "9px 15px", borderRadius: 999, border: `1px solid ${T.ink}`, background: T.ink, color: T.creamOn, fontFamily: T.m, fontWeight: 700, fontSize: 11.5, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", boxShadow: "var(--ed-shadow-card)" };
+const ghost: React.CSSProperties = { padding: "9px 15px", borderRadius: 999, border: `1px solid ${T.hair}`, background: T.paper, color: T.ink70, fontFamily: T.m, fontWeight: 700, fontSize: 11.5, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" };
+const select: React.CSSProperties = { padding: "9px 13px", borderRadius: 12, border: `1px solid ${T.hair}`, fontFamily: T.body, fontSize: 14, color: T.ink, background: T.paper, minWidth: 180 };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-      <span style={{ fontSize: 11, fontFamily: "monospace", letterSpacing: "0.1em", color: MUTED, textTransform: "uppercase" }}>{label}</span>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <span style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", color: T.mono, textTransform: "uppercase" }}>{label}</span>
       {children}
     </div>
   );
@@ -218,19 +233,24 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ maxWidth: 860, margin: "0 auto", padding: "8px 0 40px", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
-      <div style={{ marginBottom: 18 }}>
-        <div style={{ fontFamily: "monospace", fontSize: 11, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase" }}>Trading cards</div>
-        <h1 style={{ fontSize: 26, fontWeight: 800, color: INK, margin: "6px 0 0" }}>Your deck</h1>
-        <p style={{ fontSize: 14.5, color: MUTED, margin: "8px 0 0", lineHeight: 1.55 }}>
-          Every pet is a collectible card — real stats, real rarity. Share it, illustrate it, or duel another pet&apos;s card.
-        </p>
+    <div style={{ position: "relative", fontFamily: T.body, color: T.ink }}>
+      <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
+      <div style={{ position: "relative", zIndex: 2, maxWidth: 860, margin: "0 auto", padding: "8px 0 48px" }}>
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ fontFamily: T.m, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.14em", color: T.terra, textTransform: "uppercase" }}>Field Album · Gotta Catch The Real Ones</div>
+          <h1 style={{ fontFamily: T.disp, fontSize: 46, fontWeight: 800, color: T.ink, margin: "8px 0 0", letterSpacing: "-0.02em", lineHeight: 1.02 }}>Your collection</h1>
+          {/* hairline rule under the title */}
+          <div style={{ height: 1, background: T.hair, margin: "16px 0 0" }} />
+          <p style={{ fontFamily: T.body, fontSize: 14.5, color: T.muted2, margin: "14px 0 0", lineHeight: 1.55, maxWidth: 560 }}>
+            Every pet is a foil-stamped collectible — real stats, real rarity. Share it, illustrate it, or duel another pet&apos;s card.
+          </p>
+        </div>
+        {children}
       </div>
-      {children}
     </div>
   );
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <div style={{ padding: "28px 0", fontSize: 14, color: MUTED }}>{children}</div>;
+  return <div style={{ padding: "28px 0", fontFamily: T.body, fontSize: 14.5, color: T.muted2 }}>{children}</div>;
 }

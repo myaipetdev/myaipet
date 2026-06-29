@@ -22,7 +22,7 @@ import SeasonRewardsHub from "@/components/SeasonRewardsHub";
 import CommunityHighlights from "@/components/CommunityHighlights";
 import PetOfTheWeek from "@/components/PetOfTheWeek";
 
-const PetProfile = lazy(() => import("@/components/PetProfile"));
+const MyPetEditorial = lazy(() => import("@/components/editorial/MyPetEditorial"));
 const PetGenerate = lazy(() => import("@/components/PetGenerate"));
 const SocialGallery = lazy(() => import("@/components/SocialGallery"));
 const Leaderboard = lazy(() => import("@/components/Leaderboard"));
@@ -483,7 +483,7 @@ export default function App() {
       {section === "my pet" && (
         <WalletGate section="my pet">
           <Suspense fallback={<Loader />}>
-            <PetProfile />
+            <MyPetEditorial onNavigate={setSection} />
           </Suspense>
         </WalletGate>
       )}

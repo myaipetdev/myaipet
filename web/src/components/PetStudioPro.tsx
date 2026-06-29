@@ -33,7 +33,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
-import { dcVars } from "@/components/Sticker";
+import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import PetLoraPanel from "@/components/PetLoraPanel";
 import { TEMPLATES, type StudioTemplate } from "@/lib/studio/templates";
 import { STYLE_EXAMPLES, TEMPLATE_EXAMPLES } from "@/lib/studio/example-assets";
@@ -54,15 +54,26 @@ interface Generation {
 }
 
 
-// Fallback swatches stay inside the warm printed-stock palette (cream / amber /
-// warm-ink) — the style is differentiated by its icon + label, not a rainbow.
+// Collectible Editorial tokens. Studio's section signature is indigo-purple
+// (#6B4FA0) — used for the eyebrow, active/selected states and the Generate CTA.
+const T = {
+  field: "#ECE4D4", paper: "#FBF6EC", inset: "#F5EFE2", ink: "#211A12", ink70: "#3A3024",
+  muted: "#7A6E5A", muted2: "#5C5140", mono: "#9A7B4E", hair: "rgba(33,26,18,.13)",
+  terra: "#BE4F28", creamOn: "#FCE9CF", cta1: "#F49B2A", cta2: "#E27D0C",
+  studio: "#6B4FA0", studioDeep: "#3E3470", studioInk: "#191334",
+  thrive: "#5C8A4E",
+  disp: "var(--ed-disp)", body: "var(--ed-body)", m: "var(--ed-m)",
+};
+
+// Style swatches stay inside the warm editorial palette as printed sample chips
+// — the style is differentiated by its icon + label, not a rainbow.
 const STYLES = [
-  { id: "cinematic",      icon: "film-reel", label: "Cinematic",  hint: "Hollywood", swatch: "linear-gradient(135deg,#1f1b16 0%,#3a3027 55%,#b45309 100%)" },
-  { id: "anime",          icon: "sparkling", label: "Anime",      hint: "Japan",     swatch: "linear-gradient(135deg,#fbf6ec 0%,#f59e0b 100%)" },
-  { id: "photorealistic", icon: "compass",   label: "Photoreal",  hint: "Real",      swatch: "linear-gradient(135deg,#e7ddcc 0%,#8a7d68 100%)" },
-  { id: "watercolor",     icon: "water2",    label: "Watercolor", hint: "Soft",      swatch: "linear-gradient(135deg,#faf7f2 0%,#fde7b8 55%,#f59e0b 100%)" },
-  { id: "pixar",          icon: "bear",      label: "3D Pixar",   hint: "Toon",      swatch: "linear-gradient(135deg,#f59e0b 0%,#fbe6b0 100%)" },
-  { id: "pixel",          icon: "joystick",  label: "Pixel",      hint: "Retro",     swatch: "linear-gradient(135deg,#3a3027 0%,#f59e0b 100%)" },
+  { id: "cinematic",      icon: "film-reel", label: "Cinematic",  hint: "Hollywood", swatch: "linear-gradient(135deg,#211A12 0%,#3A3024 55%,#6B4FA0 100%)" },
+  { id: "anime",          icon: "sparkling", label: "Anime",      hint: "Japan",     swatch: "linear-gradient(135deg,#FBF6EC 0%,#9E72E8 100%)" },
+  { id: "photorealistic", icon: "compass",   label: "Photoreal",  hint: "Real",      swatch: "linear-gradient(135deg,#E7DDCC 0%,#7A6E5A 100%)" },
+  { id: "watercolor",     icon: "water2",    label: "Watercolor", hint: "Soft",      swatch: "linear-gradient(135deg,#FAF7F2 0%,#D7C7F0 55%,#9E72E8 100%)" },
+  { id: "pixar",          icon: "bear",      label: "3D Pixar",   hint: "Toon",      swatch: "linear-gradient(135deg,#9E72E8 0%,#E7DCF6 100%)" },
+  { id: "pixel",          icon: "joystick",  label: "Pixel",      hint: "Retro",     swatch: "linear-gradient(135deg,#3A3024 0%,#6B4FA0 100%)" },
 ];
 
 const PROMPT_IDEAS = [
@@ -453,13 +464,16 @@ export default function PetStudioPro() {
 
   return (
     <div style={{
+      position: "relative",
       minHeight: "calc(100vh - 60px)",
-      background: "#faf7f2", color: "#1a1a2e",
-      fontFamily: "'Space Grotesk', sans-serif",
+      background: T.field, color: T.ink,
+      fontFamily: T.body,
       // Top: clear the fixed nav (60px) + breathing room.
       padding: "100px 24px 60px",
     }}>
-      <div style={{ maxWidth: 1180, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* editorial surface dressing (absolute layers; content sits above at zIndex 2) */}
+      <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
+      <div style={{ position: "relative", zIndex: 2, maxWidth: 1180, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
 
         {/* ── Header ── */}
         <div style={{
@@ -469,12 +483,12 @@ export default function PetStudioPro() {
           <span style={{ display: "inline-flex" }}><Icon name="film-reel" size={40} /></span>
           <div style={{ flex: "1 1 240px", minWidth: 0 }}>
             <div style={{
-              fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-              letterSpacing: "0.18em", color: "#b45309", marginBottom: 4,
+              fontSize: 12, fontFamily: T.m, fontWeight: 700,
+              letterSpacing: "0.14em", color: T.studio, marginBottom: 6, textTransform: "uppercase",
             }}>PRO PET STUDIO</div>
             <h1 style={{
-              fontSize: 36, fontWeight: 800, letterSpacing: "-0.025em",
-              margin: 0, lineHeight: 1.1,
+              fontSize: 46, fontFamily: T.disp, fontWeight: 800, letterSpacing: "-0.025em",
+              margin: 0, lineHeight: 1.05, color: T.ink,
             }}>
               Make {petDisplayName} a star
             </h1>
@@ -484,11 +498,11 @@ export default function PetStudioPro() {
             const authed = typeof window !== "undefined" && !!localStorage.getItem("petagen_jwt");
             return (
               <a href={authed ? "/?section=my%20pet" : "/"} style={{
-                padding: "10px 16px", borderRadius: 12, fontSize: 13,
-                background: "rgba(59,130,246,0.10)", color: "#1e3a8a",
-                border: "1px solid rgba(59,130,246,0.25)",
-                fontWeight: 800, textDecoration: "none",
-                fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.05em",
+                padding: "10px 16px", borderRadius: 12, fontSize: 12,
+                background: T.paper, color: T.studio,
+                border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
+                fontWeight: 700, textDecoration: "none",
+                fontFamily: T.m, letterSpacing: "0.08em", textTransform: "uppercase",
                 display: "inline-flex", alignItems: "center", gap: 7,
               }}>{authed ? (
                 <>
@@ -520,15 +534,25 @@ export default function PetStudioPro() {
           display: "grid", gap: 16,
           gridTemplateColumns: "minmax(0, 1fr) 340px",
         }}>
-          {/* PREVIEW — a developing plate: warm-ink canvas in a die-cut frame */}
+          {/* PREVIEW — the collectible plate: an indigo studio scene on a cream
+              paper mount with a soft floating shadow (never a hard offset). */}
           <div style={{
-            background: "#faf7f2", borderRadius: 18, padding: 11,
-            border: "3px solid #1a1a22", boxShadow: "0 8px 0 rgba(26,26,34,0.14)",
+            position: "relative",
+            background: T.paper, borderRadius: 18, padding: 13,
+            border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
           }}>
+            {/* PREVIEW mono label, top-left on the mount */}
+            <div style={{
+              position: "absolute", top: 22, left: 26, zIndex: 5,
+              fontFamily: T.m, fontWeight: 700, fontSize: 10, letterSpacing: "0.14em",
+              color: "rgba(252,233,207,0.85)", textTransform: "uppercase",
+              pointerEvents: "none",
+            }}>PREVIEW</div>
             <div style={{
               position: "relative",
               aspectRatio: aspect.replace(":", " / "), borderRadius: 12, overflow: "hidden",
-              background: "#1f1b16", border: "2px solid #1a1a22",
+              background: `radial-gradient(120% 100% at 50% 30%, ${T.studioDeep}, ${T.studioInk})`,
+              boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               {view === "idle" && (
@@ -547,20 +571,20 @@ export default function PetStudioPro() {
                 <div style={{ color: "white", textAlign: "center", padding: 30 }}>
                   <div style={{ marginBottom: 10, display: "flex", justifyContent: "center" }}>
                     <svg width={40} height={40} viewBox="0 0 24 24" fill="none"
-                      stroke="#fbbf24" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+                      stroke={T.cta1} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
                       aria-hidden="true">
                       <path d="M10.3 3.2 1.7 18a2 2 0 0 0 1.7 3h17.2a2 2 0 0 0 1.7-3L13.7 3.2a2 2 0 0 0-3.4 0Z" />
                       <line x1="12" y1="9" x2="12" y2="13" />
                       <line x1="12" y1="17" x2="12.01" y2="17" />
                     </svg>
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Generation failed</div>
+                  <div style={{ fontSize: 16, fontFamily: T.disp, fontWeight: 700, marginBottom: 6 }}>Generation failed</div>
                   <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", maxWidth: 380, margin: "0 auto 16px" }}>{error}</div>
                   <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
                     <button onClick={() => generate()} style={{
                       padding: "9px 18px", borderRadius: 10, border: "none", cursor: "pointer",
-                      background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "white",
-                      fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
+                      background: `linear-gradient(135deg,${T.cta1},${T.cta2})`, color: "#fff",
+                      fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
                     }}>⟳ Try again</button>
                     <button onClick={() => setView("idle")} style={btnGhost}>✎ Edit prompt</button>
                   </div>
@@ -577,8 +601,9 @@ export default function PetStudioPro() {
                   title="Same pet, new style — tweak & generate again"
                   style={{
                     padding: "9px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                    background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "white",
-                    fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
+                    background: `linear-gradient(135deg,${T.cta1},${T.cta2})`, color: "#fff",
+                    fontFamily: T.body, fontSize: 13, fontWeight: 700,
+                    boxShadow: "var(--ed-shadow-card)",
                     display: "inline-flex", alignItems: "center", gap: 7,
                   }}
                 ><svg width={15} height={15} viewBox="0 0 24 24" fill="none"
@@ -595,9 +620,9 @@ export default function PetStudioPro() {
                     onClick={animateThis}
                     title="Generate a new short video from this same prompt (a fresh render anchored on your pet — not an animation of this exact still)"
                     style={{
-                      padding: "9px 16px", borderRadius: 10, border: "2px solid #1a1a22", cursor: "pointer",
-                      background: "#f59e0b", color: "#1a1a22", boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
-                      fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
+                      padding: "9px 16px", borderRadius: 10, border: `1px solid ${T.studio}`, cursor: "pointer",
+                      background: T.paper, color: T.studio, boxShadow: "var(--ed-shadow-card)",
+                      fontFamily: T.body, fontSize: 13, fontWeight: 700,
                       display: "inline-flex", alignItems: "center", gap: 7,
                     }}
                   ><svg width={15} height={15} viewBox="0 0 24 24" fill="none"
@@ -678,21 +703,24 @@ export default function PetStudioPro() {
             {/* Variations grid — each tile swaps into the main result on click */}
             {view === "done" && (varRunning || variations.length > 0) && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(26,26,46,0.5)", fontWeight: 700, marginBottom: 8 }}>
+                <div style={{ fontSize: 10, fontFamily: T.m, letterSpacing: "0.14em", color: T.mono, fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>
                   ✦ VARIATIONS{varRunning ? ` · ${variations.length}/4…` : ""}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
                   {variations.map((u, i) => (
                     <button key={i} onClick={() => { setResultUrl(u); setVariations([]); }} className="mp-lift" title="Use this variation" style={{
-                      padding: 0, border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, overflow: "hidden",
-                      cursor: "pointer", aspectRatio: "1 / 1", background: `url(${u}) center/cover no-repeat`,
-                    }} />
+                      padding: 4, background: T.paper, borderRadius: 10, overflow: "hidden",
+                      border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
+                      cursor: "pointer", aspectRatio: "1 / 1",
+                    }}>
+                      <span style={{ display: "block", width: "100%", height: "100%", borderRadius: 7, boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)", background: `url(${u}) center/cover no-repeat` }} />
+                    </button>
                   ))}
                   {varRunning && Array.from({ length: Math.max(0, 4 - variations.length) }).map((_, i) => (
                     <div key={`s${i}`} className="studio-pulse" style={{
-                      border: "1px solid rgba(0,0,0,0.06)", borderRadius: 10, aspectRatio: "1 / 1",
-                      background: "rgba(0,0,0,0.04)", display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 18, color: "rgba(26,26,46,0.25)",
+                      border: `1px solid ${T.hair}`, borderRadius: 10, aspectRatio: "1 / 1",
+                      background: T.inset, display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 18, color: T.mono,
                     }}>◌</div>
                   ))}
                 </div>
@@ -703,8 +731,8 @@ export default function PetStudioPro() {
             {view === "idle" && (
               <div style={{ marginTop: 12 }}>
                 <div style={{
-                  fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
-                  letterSpacing: "0.14em", color: "rgba(26,26,46,0.5)", fontWeight: 700, marginBottom: 8,
+                  fontSize: 10, fontFamily: T.m,
+                  letterSpacing: "0.14em", color: T.mono, fontWeight: 700, marginBottom: 8, textTransform: "uppercase",
                 }}>✨ WHAT YOU CAN MAKE</div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
                   {TEMPLATES.slice(0, 4).map(t => {
@@ -712,10 +740,12 @@ export default function PetStudioPro() {
                     if (!ex) return null;
                     return (
                       <button key={t.id} onClick={() => applyTemplate(t)} className="mp-lift" title={t.title} aria-label={`Use template: ${t.title}`} style={{
-                        padding: 0, border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, overflow: "hidden",
+                        padding: 4, background: T.paper, borderRadius: 10, overflow: "hidden",
+                        border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
                         cursor: "pointer", aspectRatio: "1 / 1",
-                        background: `url(${ex}) center/cover no-repeat`,
-                      }} />
+                      }}>
+                        <span style={{ display: "block", width: "100%", height: "100%", borderRadius: 7, boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)", background: `url(${ex}) center/cover no-repeat` }} />
+                      </button>
                     );
                   })}
                 </div>
@@ -733,17 +763,25 @@ export default function PetStudioPro() {
                   return (
                     <button key={p.id} onClick={() => setPetId(p.id)} style={{
                       ...petChip,
-                      background: selected ? "rgba(245,158,11,0.10)" : "white",
-                      border: selected ? "2px solid #f59e0b" : "1px solid rgba(0,0,0,0.08)",
+                      background: selected ? "rgba(107,79,160,0.08)" : T.paper,
+                      border: selected ? `1.5px solid ${T.studio}` : `1px solid ${T.hair}`,
+                      boxShadow: selected ? "0 0 0 3px rgba(107,79,160,0.12)" : "none",
                     }}>
                       {p.avatar_url
-                        ? <img src={p.avatar_url} alt={p.name} style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover" }} />
-                        : <img src="/mascot.jpg" alt="" style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover", opacity: 0.9 }} />}
-                      <span style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</span>
-                      <span style={{
-                        fontSize: 10, color: "rgba(26,26,46,0.5)",
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}>Lv{p.level}</span>
+                        ? <img src={p.avatar_url} alt={p.name} style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover", boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)" }} />
+                        : <img src="/mascot.jpg" alt="" style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover", opacity: 0.9, boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)" }} />}
+                      <span style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700 }}>{p.name}</span>
+                      {selected ? (
+                        <span style={{
+                          fontSize: 9, color: T.studio, fontWeight: 700, letterSpacing: "0.08em",
+                          fontFamily: T.m,
+                        }}>✓ LOCKED</span>
+                      ) : (
+                        <span style={{
+                          fontSize: 10, color: T.mono,
+                          fontFamily: T.m,
+                        }}>Lv{p.level}</span>
+                      )}
                     </button>
                   );
                 })}
@@ -760,18 +798,19 @@ export default function PetStudioPro() {
                     <button
                       key={s.id}
                       onClick={() => setStyleId(s.id)}
-                      className="dc dc-sm"
                       style={{
                         padding: 3, borderRadius: 12, cursor: "pointer",
-                        background: "#faf7f2",
-                        border: `2px solid ${sel ? "#f59e0b" : "#1a1a22"}`,
-                        ...dcVars(sel ? 0.2 : 0.14),
+                        background: T.paper,
+                        border: `1px solid ${T.hair}`,
+                        // selected = purple ring (soft), never a hard offset shadow
+                        boxShadow: sel ? `0 0 0 2px ${T.studio}, var(--ed-shadow-card)` : "var(--ed-shadow-card)",
+                        transition: "box-shadow 140ms ease",
                       }}>
                       {/* Real Grok example art (gradient fallback) framed as a
-                          printed sample chip, not a glowing tile. */}
+                          printed sample chip: gold keyline, cream margin. */}
                       <div style={{
                         height: 58, borderRadius: 8, overflow: "hidden",
-                        border: "1.5px solid #1a1a22",
+                        boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)",
                         background: ex ? `url(${ex}) center/cover no-repeat` : s.swatch,
                         display: "flex", alignItems: "flex-end", justifyContent: "flex-end",
                         padding: 6,
@@ -783,9 +822,8 @@ export default function PetStudioPro() {
                       </div>
                       <div style={{
                         padding: "6px 4px 2px", textAlign: "center",
-                        fontSize: 12, fontWeight: 800, lineHeight: 1.2,
-                        fontFamily: "'Space Grotesk',sans-serif",
-                        color: sel ? "#b45309" : "#1a1a2e",
+                        fontSize: 12, fontFamily: T.disp, fontWeight: 700, lineHeight: 1.2,
+                        color: sel ? T.studio : T.ink,
                       }}>{s.label}</div>
                     </button>
                   );
@@ -797,18 +835,18 @@ export default function PetStudioPro() {
             <Panel label="OUTPUT">
               <div style={{
                 display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6,
-                padding: 4, borderRadius: 12, background: "rgba(0,0,0,0.04)",
+                padding: 4, borderRadius: 12, background: T.inset, border: `1px solid ${T.hair}`,
               }}>
                 {(["image", "video"] as const).map(k => {
                   const sel = outputKind === k;
                   return (
                     <button key={k} onClick={() => setOutputKind(k)} style={{
                       padding: "9px 0", borderRadius: 9, border: "none",
-                      background: sel ? "white" : "transparent",
-                      color: sel ? "#1a1a2e" : "rgba(26,26,46,0.5)",
+                      background: sel ? T.studio : "transparent",
+                      color: sel ? T.creamOn : T.muted2,
                       fontWeight: 700, fontSize: 13, cursor: "pointer",
-                      fontFamily: "'Space Grotesk',sans-serif",
-                      boxShadow: sel ? "0 1px 0 rgba(0,0,0,0.04)" : "none",
+                      fontFamily: T.body,
+                      boxShadow: sel ? "var(--ed-shadow-card)" : "none",
                       letterSpacing: "0.02em",
                       display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
                     }}>
@@ -824,17 +862,17 @@ export default function PetStudioPro() {
                 aspect_ratio; Grok renders a fixed ratio, so don't show a dead control. */}
             {chosenModel?.backend === "fal" && (
             <Panel label="ASPECT">
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: 4, borderRadius: 12, background: "rgba(0,0,0,0.04)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: 4, borderRadius: 12, background: T.inset, border: `1px solid ${T.hair}` }}>
                 {(["16:9", "9:16", "1:1"] as const).map(a => {
                   const sel = aspect === a;
                   return (
                     <button key={a} onClick={() => setAspect(a)} style={{
                       padding: "9px 0", borderRadius: 9, border: "none",
-                      background: sel ? "white" : "transparent",
-                      color: sel ? "#1a1a2e" : "rgba(26,26,46,0.5)",
+                      background: sel ? T.studio : "transparent",
+                      color: sel ? T.creamOn : T.muted2,
                       fontWeight: 700, fontSize: 12.5, cursor: "pointer",
-                      fontFamily: "'Space Grotesk',sans-serif",
-                      boxShadow: sel ? "0 1px 0 rgba(0,0,0,0.04)" : "none",
+                      fontFamily: T.m, letterSpacing: "0.04em",
+                      boxShadow: sel ? "var(--ed-shadow-card)" : "none",
                     }}>{a === "16:9" ? "▭ 16:9" : a === "9:16" ? "▯ 9:16" : "◻ 1:1"}</button>
                   );
                 })}
@@ -847,22 +885,22 @@ export default function PetStudioPro() {
               <div style={{ position: "relative" }} ref={modelMenuRef}>
                 <button onClick={() => setModelOpen(o => !o)} style={engineBtn}>
                   <div style={{ textAlign: "left", flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>
+                    <div style={{ fontSize: 14, fontFamily: T.disp, fontWeight: 700, color: T.ink }}>
                       {chosenModel?.displayName || "—"}
                     </div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 5 }}>
                       {chosenModel && <ModelBadges model={chosenModel} compact />}
                     </div>
                   </div>
-                  <span style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginLeft: 8 }}>{modelOpen ? "▴" : "▾"}</span>
+                  <span style={{ fontSize: 12, color: T.muted, marginLeft: 8 }}>{modelOpen ? "▴" : "▾"}</span>
                 </button>
 
                 {modelOpen && (
                   <div style={{
                     position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
-                    background: "white", borderRadius: 12, padding: 6,
-                    border: "1px solid rgba(0,0,0,0.10)",
-                    boxShadow: "0 8px 0 rgba(0,0,0,0.14)",
+                    background: T.paper, borderRadius: 12, padding: 6,
+                    border: `1px solid ${T.hair}`,
+                    boxShadow: "var(--ed-shadow-card)",
                     zIndex: 20, maxHeight: 400, overflowY: "auto",
                   }}>
                     {visibleModels.map(m => {
@@ -875,22 +913,22 @@ export default function PetStudioPro() {
                           style={{
                             position: "relative",
                             width: "100%", textAlign: "left", padding: 10, borderRadius: 10,
-                            background: sel ? "rgba(245,158,11,0.10)" : "transparent",
+                            background: sel ? "rgba(107,79,160,0.10)" : "transparent",
                             border: "none",
                             cursor: locked ? "not-allowed" : "pointer",
                             opacity: locked ? 0.6 : 1,
-                            color: "#1a1a2e",
-                            fontFamily: "'Space Grotesk',sans-serif",
+                            color: T.ink,
+                            fontFamily: T.body,
                           }}
                           title={locked ? `Coming ${m.comingSoonEta || "soon"}` : ""}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                            <strong style={{ fontSize: 13 }}>{m.displayName}</strong>
+                            <strong style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700, color: sel ? T.studio : T.ink }}>{m.displayName}</strong>
                             {locked && <span style={{
                               padding: "2px 7px", borderRadius: 999,
-                              fontSize: 9, fontWeight: 800, letterSpacing: "0.08em",
-                              fontFamily: "'JetBrains Mono', monospace",
-                              background: "rgba(0,0,0,0.06)", color: "rgba(26,26,46,0.55)",
+                              fontSize: 9, fontWeight: 700, letterSpacing: "0.08em",
+                              fontFamily: T.m,
+                              background: T.inset, color: T.muted,
                               display: "inline-flex", alignItems: "center", gap: 4,
                             }}><svg width={9} height={9} viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
@@ -901,8 +939,8 @@ export default function PetStudioPro() {
                             {!locked && <ModelBadges model={m} compact />}
                           </div>
                           <div style={{
-                            fontSize: 11, color: "rgba(26,26,46,0.55)", marginTop: 4,
-                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 11, color: T.mono, marginTop: 4,
+                            fontFamily: T.m,
                           }}>
                             {m.kind === "video" ? `${m.maxDurationSec}s · ` : ""}{m.maxResolution} · {m.creditsPerRun} cr
                           </div>
@@ -915,10 +953,10 @@ export default function PetStudioPro() {
               {chosenModel?.supportsImageRef && pet?.avatar_url && (
                 <div style={{
                   marginTop: 8, padding: "7px 10px", borderRadius: 8,
-                  background: "rgba(22,163,74,0.08)",
-                  border: "1px solid rgba(22,163,74,0.20)",
-                  fontSize: 12, color: "#15803d",
-                  fontFamily: "'JetBrains Mono', monospace", fontWeight: 700,
+                  background: "rgba(92,138,78,0.08)",
+                  border: "1px solid rgba(92,138,78,0.22)",
+                  fontSize: 11, color: T.thrive,
+                  fontFamily: T.m, fontWeight: 700, letterSpacing: "0.04em",
                 }}>
                   ✓ {pet.name}'s photo locks character
                 </div>
@@ -929,8 +967,8 @@ export default function PetStudioPro() {
 
         {/* ── Prompt block (full width below) ── */}
         <div style={{
-          background: "white", borderRadius: 16, padding: 18,
-          border: "1px solid rgba(0,0,0,0.06)",
+          background: T.paper, borderRadius: 16, padding: 18,
+          border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
         }}>
           <div style={panelLabel}>WHAT TO MAKE</div>
           <textarea
@@ -940,10 +978,10 @@ export default function PetStudioPro() {
             placeholder={`What should ${petDisplayName} be doing? e.g. "running through cherry blossoms"`}
             style={{
               marginTop: 10, width: "100%", minHeight: 78, padding: "14px 16px",
-              borderRadius: 12, border: "1px solid rgba(0,0,0,0.10)",
-              fontSize: 16, fontFamily: "'Space Grotesk',sans-serif",
-              lineHeight: 1.5, resize: "vertical", background: "rgba(0,0,0,0.02)",
-              color: "#1a1a2e",
+              borderRadius: 12, border: `1px solid ${T.hair}`,
+              fontSize: 16, fontFamily: T.body,
+              lineHeight: 1.5, resize: "vertical", background: T.inset,
+              color: T.ink,
             }}
           />
 
@@ -952,8 +990,8 @@ export default function PetStudioPro() {
               prompt is the first thing they see — not buried under templates. */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
             <span style={{
-              fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-              color: "rgba(26,26,46,0.55)", letterSpacing: "0.06em",
+              fontSize: 11, fontFamily: T.m, fontWeight: 700,
+              color: T.mono, letterSpacing: "0.1em",
               alignSelf: "center", marginRight: 4,
             }}>TRY:</span>
             {promptIdeasFor(pet).map((idea, i) => (
@@ -967,12 +1005,12 @@ export default function PetStudioPro() {
           {memorySeeds.length > 0 && (
             <div style={{
               marginTop: 12, padding: "12px 14px", borderRadius: 12,
-              background: "#faf7f2",
-              border: "2px solid #1a1a22", boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
+              background: T.inset,
+              border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
             }}>
               <div style={{
-                fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-                color: "#b45309", letterSpacing: "0.1em", fontWeight: 800, marginBottom: 8,
+                fontSize: 11, fontFamily: T.m,
+                color: T.studio, letterSpacing: "0.1em", fontWeight: 700, marginBottom: 8,
                 display: "flex", alignItems: "center", gap: 6,
               }}><svg width={14} height={14} viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
@@ -982,11 +1020,11 @@ export default function PetStudioPro() {
                 </svg>FROM {(pet?.name || "YOUR PET").toUpperCase()}'S MEMORY</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {memorySeeds.map((seed, i) => (
-                  <button key={i} onClick={() => setPrompt(seed)} className="dc dc-sm" style={{
+                  <button key={i} onClick={() => setPrompt(seed)} style={{
                     textAlign: "left", padding: "9px 12px", borderRadius: 10,
-                    background: "#fff", border: "2px solid #1a1a22", ...dcVars(0.12),
-                    fontSize: 13, color: "#1a1a2e", cursor: "pointer", lineHeight: 1.45,
-                    fontFamily: "'Space Grotesk', sans-serif",
+                    background: T.paper, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
+                    fontSize: 13, color: T.ink, cursor: "pointer", lineHeight: 1.45,
+                    fontFamily: T.body,
                   }}>{seed}</button>
                 ))}
               </div>
@@ -1002,10 +1040,10 @@ export default function PetStudioPro() {
           <div style={{ marginTop: 16 }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
               <span style={{
-                fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-                letterSpacing: "0.14em", color: "#7e22ce", fontWeight: 800,
+                fontSize: 12, fontFamily: T.m,
+                letterSpacing: "0.14em", color: T.studio, fontWeight: 700, textTransform: "uppercase",
               }}>✨ TEMPLATES</span>
-              <span style={{ fontSize: 11, color: "rgba(26,26,46,0.5)" }}>
+              <span style={{ fontSize: 11, fontFamily: T.m, color: T.mono }}>
                 one tap → a full scene
               </span>
             </div>
@@ -1019,11 +1057,10 @@ export default function PetStudioPro() {
                   <button
                     key={t.id}
                     onClick={() => applyTemplate(t)}
-                    className="dc dc-sm"
                     style={{
                       textAlign: "left", padding: 0, borderRadius: 14, overflow: "hidden",
-                      border: "2px solid #1a1a22", background: "white", cursor: "pointer",
-                      ...dcVars(0.14),
+                      border: `1px solid ${T.hair}`, background: T.paper, cursor: "pointer",
+                      boxShadow: "var(--ed-shadow-card)",
                       display: "flex", flexDirection: "column",
                     }}
                   >
@@ -1036,8 +1073,8 @@ export default function PetStudioPro() {
                         <span style={{ position: "absolute", left: 9, bottom: 7, fontSize: 18, filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.65))" }}>{t.emoji}</span>
                         <span style={{
                           position: "absolute", right: 9, bottom: 8,
-                          fontSize: 8, fontFamily: "'JetBrains Mono', monospace",
-                          letterSpacing: "0.1em", fontWeight: 800, textTransform: "uppercase",
+                          fontSize: 8, fontFamily: T.m,
+                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
                         }}>{t.category}</span>
                       </div>
@@ -1049,32 +1086,32 @@ export default function PetStudioPro() {
                       }}>
                         <span style={{ fontSize: 18, filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.65))" }}>{t.emoji}</span>
                         <span style={{
-                          fontSize: 8, fontFamily: "'JetBrains Mono', monospace",
-                          letterSpacing: "0.1em", fontWeight: 800, textTransform: "uppercase",
+                          fontSize: 8, fontFamily: T.m,
+                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
                         }}>{t.category}</span>
                       </div>
                     ) : (
                       <div style={{
                         height: 62,
-                        background: "#faf7f2", borderBottom: "2px solid #1a1a22",
+                        background: T.inset, borderBottom: `1px solid ${T.hair}`,
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 30, position: "relative",
                       }}>
                         <span>{t.emoji}</span>
                         <span style={{
                           position: "absolute", top: 7, right: 8,
-                          fontSize: 8, fontFamily: "'JetBrains Mono', monospace",
-                          letterSpacing: "0.1em", fontWeight: 800, textTransform: "uppercase",
-                          color: "#b45309", opacity: 0.85,
+                          fontSize: 8, fontFamily: T.m,
+                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
+                          color: T.studio, opacity: 0.9,
                         }}>{t.category}</span>
                       </div>
                     )}
                     <div style={{ padding: "9px 11px 11px" }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.01em" }}>
+                      <div style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700, color: T.ink, letterSpacing: "-0.01em" }}>
                         {t.title}
                       </div>
-                      <div style={{ fontSize: 11, color: "rgba(26,26,46,0.55)", marginTop: 3, lineHeight: 1.4 }}>
+                      <div style={{ fontSize: 11, color: T.muted, marginTop: 3, lineHeight: 1.4 }}>
                         {t.description}
                       </div>
                     </div>
@@ -1114,9 +1151,9 @@ export default function PetStudioPro() {
                 <div key={g.id} style={{ position: "relative", flexShrink: 0 }}>
                   <button onClick={() => reusePrompt(g)} className="mp-lift" style={{
                     width: 140, height: 80, borderRadius: 12, overflow: "hidden",
-                    border: "1px solid rgba(0,0,0,0.08)", background: "white",
+                    border: `1px solid ${T.hair}`, background: T.paper,
                     cursor: "pointer", padding: 0, display: "block",
-                    boxShadow: "0 2px 0 rgba(0,0,0,0.06)",
+                    boxShadow: "var(--ed-shadow-card)",
                   }} title={g.prompt || "(no prompt)"} aria-label={g.prompt ? `View: ${g.prompt}` : "View creation"}>
                     {g.video_path && /\.(mp4|webm)$/i.test(g.video_path)
                       ? <video src={g.video_path} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -1124,9 +1161,9 @@ export default function PetStudioPro() {
                       ? <img src={g.photo_path || g.video_path || ""} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       : <div style={{
                           width: "100%", height: "100%",
-                          background: "rgba(0,0,0,0.05)",
+                          background: T.inset,
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 18, color: "rgba(26,26,46,0.35)",
+                          fontSize: 18, color: T.mono,
                         }}>{g.status === "pending"
                           ? <svg width={20} height={20} viewBox="0 0 24 24" fill="none"
                               stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
@@ -1145,10 +1182,10 @@ export default function PetStudioPro() {
                       style={{
                         position: "absolute", top: 4, right: 4,
                         width: 24, height: 24, borderRadius: 8, border: "none",
-                        background: "rgba(245,158,11,0.92)", color: "white",
+                        background: T.studio, color: T.creamOn,
                         fontSize: 12, cursor: "pointer", padding: 0, lineHeight: 1,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: "0 1px 0 rgba(0,0,0,0.25)",
+                        boxShadow: "0 4px 10px -4px rgba(62,52,112,.7)",
                       }}
                     ><svg width={14} height={14} viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
@@ -1164,15 +1201,15 @@ export default function PetStudioPro() {
         ) : (
           <div style={{
             marginTop: 6, padding: "22px 24px",
-            background: "rgba(0,0,0,0.02)",
-            border: "1px dashed rgba(0,0,0,0.12)",
+            background: T.paper,
+            border: `1px dashed ${T.hair}`,
             borderRadius: 14,
             display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
           }}>
             <div style={{ display: "flex" }}><Icon name="film-reel" size={28} /></div>
             <div style={{ flex: "1 1 200px" }}>
               <div style={{ ...panelLabel, marginBottom: 4 }}>RECENT</div>
-              <div style={{ fontSize: 14, color: "rgba(26,26,46,0.65)", fontWeight: 500 }}>
+              <div style={{ fontSize: 14, color: T.muted, fontWeight: 500 }}>
                 Your generations will appear here. Click any to reuse the prompt.
               </div>
             </div>
@@ -1183,19 +1220,19 @@ export default function PetStudioPro() {
             doesn't push the Generate CTA + recent work down on first load) ── */}
         <div style={{
           marginTop: 12,
-          background: "#faf7f2",
-          color: "#1a1a2e", borderRadius: 18, padding: "22px 24px",
-          border: "2px solid #1a1a22",
-          boxShadow: "0 4px 0 rgba(26,26,34,0.12)",
+          background: T.paper,
+          color: T.ink, borderRadius: 18, padding: "22px 24px",
+          border: `1px solid ${T.hair}`,
+          boxShadow: "var(--ed-shadow-card)",
         }}>
           <div style={{
-            fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: "0.18em", color: "#b45309", marginBottom: 10, fontWeight: 700,
+            fontSize: 11, fontFamily: T.m,
+            letterSpacing: "0.14em", color: T.studio, marginBottom: 10, fontWeight: 700, textTransform: "uppercase",
           }}>COMING TO STUDIO</div>
-          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 6 }}>
+          <div style={{ fontSize: 22, fontFamily: T.disp, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 6 }}>
             Beyond prompts — features only we can build
           </div>
-          <div style={{ fontSize: 14, color: "rgba(26,26,46,0.6)", marginBottom: 18, maxWidth: 560 }}>
+          <div style={{ fontSize: 14, color: T.muted, marginBottom: 18, maxWidth: 560 }}>
             Stuff other AI tools can't do because they don't have your pet's
             memory ledger, persona, or the rest of the PetClaw graph.
           </div>
@@ -1257,35 +1294,30 @@ function PreviewIdle({ pet }: { pet: Pet | null }) {
   return (
     <div style={{
       position: "relative", width: "100%", height: "100%",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      overflow: "hidden",
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      gap: 22, overflow: "hidden", padding: 30,
     }}>
-      {/* Soft pet portrait filling the canvas — gives the empty state a hero
-          instead of a tiny film-strip icon. Stays under text via opacity. */}
-      {pet?.avatar_url && (
-        <img src={pet.avatar_url} alt={pet.name} style={{
-          position: "absolute", inset: 0,
-          width: "100%", height: "100%", objectFit: "cover",
-          opacity: 0.32, filter: "saturate(0.85)",
-        }} />
+      {/* The pet, presented as a tilted foil-stamped collectible floating on the
+          indigo studio scene (holo + gloss baked into CollectibleFrame). */}
+      {pet?.avatar_url ? (
+        <CollectibleFrame
+          photoUrl={pet.avatar_url}
+          level={pet.level}
+          width={210}
+          tilt={-3}
+        />
+      ) : (
+        <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><Icon name="film-reel" size={56} style={{ opacity: 0.6 }} /></div>
       )}
-      {/* Gradient floor so text stays readable over any photo (warm-ink, not slate) */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "linear-gradient(180deg, rgba(31,27,22,0.0) 0%, rgba(31,27,22,0.72) 100%)",
-      }} />
-      <div style={{ position: "relative", textAlign: "center", padding: 30 }}>
-        {!pet?.avatar_url && (
-          <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><Icon name="film-reel" size={56} style={{ opacity: 0.6 }} /></div>
-        )}
+      <div style={{ position: "relative", textAlign: "center" }}>
         <div style={{
-          fontSize: 28, fontWeight: 800, color: "white",
+          fontSize: 24, fontFamily: "var(--ed-disp)", fontWeight: 800, color: "#FCE9CF",
           letterSpacing: "-0.02em", marginBottom: 8,
         }}>
           {pet ? (named ? `${who} is ready` : "Ready to create") : "Pick a pet"}
         </div>
         <div style={{
-          fontSize: 15, color: "rgba(255,255,255,0.78)",
+          fontSize: 14, color: "rgba(252,233,207,0.72)",
           maxWidth: 320, margin: "0 auto", lineHeight: 1.55,
         }}>
           Pick a style, write a prompt, hit <strong>Generate</strong>{" "}
@@ -1309,16 +1341,16 @@ function PreviewGenerating({ kind }: { kind: "image" | "video" }) {
   const total = kind === "image" ? 12 : 90;
   const pct = Math.min(95, Math.round((secs / total) * 100));
   return (
-    <div style={{ color: "#faf7f2", textAlign: "center", padding: 28, width: "100%", maxWidth: 320 }}>
-      <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, letterSpacing: "0.2em", color: "rgba(250,247,242,0.5)", textTransform: "uppercase" }}>Developing</div>
-      <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 20, marginTop: 6, letterSpacing: "-0.01em" }}>Generating · {secs}s</div>
-      <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12.5, color: "rgba(250,247,242,0.7)", marginTop: 6 }}>{line}</div>
+    <div style={{ color: "#FCE9CF", textAlign: "center", padding: 28, width: "100%", maxWidth: 320 }}>
+      <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 11, letterSpacing: "0.16em", color: "rgba(252,233,207,0.55)", textTransform: "uppercase" }}>Developing</div>
+      <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 22, marginTop: 6, letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums" }}>Generating · {secs}s</div>
+      <div style={{ fontFamily: "var(--ed-m)", fontSize: 12.5, color: "rgba(252,233,207,0.78)", marginTop: 6 }}>{line}</div>
       {/* Honest determinate progress — a printed strip on the developing plate.
           The ONLY motion: this bar advancing and the status line swapping. */}
-      <div style={{ marginTop: 16, height: 12, borderRadius: 999, background: "rgba(250,247,242,0.12)", border: "2px solid rgba(250,247,242,0.85)", overflow: "hidden", maxWidth: 260, marginInline: "auto" }}>
-        <div style={{ height: "100%", width: `${pct}%`, background: "#f59e0b", transition: "width 1s linear" }} />
+      <div style={{ marginTop: 16, height: 12, borderRadius: 999, background: "rgba(252,233,207,0.14)", border: "1px solid rgba(252,233,207,0.4)", overflow: "hidden", maxWidth: 260, marginInline: "auto" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#F49B2A,#E27D0C)", transition: "width 1s linear" }} />
       </div>
-      <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9.5, color: "rgba(250,247,242,0.5)", marginTop: 8 }}>{pct}% · {kind === "video" ? "keep this page open" : "rendering"}</div>
+      <div style={{ fontFamily: "var(--ed-m)", fontSize: 9.5, color: "rgba(252,233,207,0.55)", marginTop: 8, fontVariantNumeric: "tabular-nums" }}>{pct}% · {kind === "video" ? "keep this page open" : "rendering"}</div>
     </div>
   );
 }
@@ -1330,23 +1362,24 @@ function PreviewDemo({ pet, prompt }: { pet: Pet | null; prompt: string }) {
       display: "flex", flexDirection: "column", justifyContent: "center", height: "100%",
     }}>
       <div style={{
-        fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-        letterSpacing: "0.14em", color: "#fbbf24", marginBottom: 12,
+        fontSize: 11, fontFamily: "var(--ed-m)", fontWeight: 700,
+        letterSpacing: "0.14em", color: "rgba(252,233,207,0.7)", marginBottom: 12, textTransform: "uppercase",
       }}>DEMO · WOULD GENERATE</div>
-      <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 8, lineHeight: 1.3 }}>
+      <div style={{ fontSize: 22, fontFamily: "var(--ed-disp)", fontWeight: 800, color: "#FCE9CF", marginBottom: 8, lineHeight: 1.3 }}>
         A scene starring {pet?.name || "your pet"}
       </div>
       <div style={{
-        fontSize: 14, color: "rgba(255,255,255,0.78)", fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 14, color: "rgba(252,233,207,0.78)", fontFamily: "var(--ed-m)",
         marginBottom: 18, lineHeight: 1.5,
       }}>"{prompt}"</div>
       <a href="/" style={{
         alignSelf: "flex-start",
         padding: "10px 18px", borderRadius: 10,
-        background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
-        color: "white", fontWeight: 800, fontSize: 13,
+        background: "linear-gradient(135deg,#F49B2A,#E27D0C)",
+        color: "#fff", fontWeight: 800, fontSize: 13,
         textDecoration: "none",
-        fontFamily: "'Space Grotesk',sans-serif",
+        fontFamily: "var(--ed-disp)",
+        boxShadow: "0 14px 26px -14px rgba(226,125,12,.8)",
         display: "inline-flex", alignItems: "center", gap: 7,
       }}><svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12z" />
@@ -1358,21 +1391,21 @@ function PreviewDemo({ pet, prompt }: { pet: Pet | null; prompt: string }) {
 function RoadmapItem({ icon, eta, title, body }: { icon: string; eta: string; title: string; body: string }) {
   return (
     <div style={{
-      background: "white",
-      border: "1px solid rgba(0,0,0,0.06)",
+      background: T.inset,
+      border: `1px solid ${T.hair}`,
       borderRadius: 12, padding: 14,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
         <span style={{ display: "inline-flex" }}><Icon name={icon} size={20} /></span>
         <span style={{
           padding: "2px 7px", borderRadius: 999,
-          fontSize: 9, fontWeight: 800, letterSpacing: "0.1em",
-          fontFamily: "'JetBrains Mono', monospace",
-          background: "rgba(245,158,11,0.14)", color: "#b45309",
+          fontSize: 9, fontWeight: 700, letterSpacing: "0.1em",
+          fontFamily: T.m,
+          background: "rgba(107,79,160,0.12)", color: T.studio,
         }}>{eta}</span>
       </div>
-      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4, color: "#1a1a2e" }}>{title}</div>
-      <div style={{ fontSize: 12, color: "rgba(26,26,46,0.6)", lineHeight: 1.5 }}>{body}</div>
+      <div style={{ fontSize: 14, fontFamily: T.disp, fontWeight: 700, marginBottom: 4, color: T.ink }}>{title}</div>
+      <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.5 }}>{body}</div>
     </div>
   );
 }
@@ -1395,20 +1428,20 @@ const AnchorGlyph = () => (
 
 function ModelBadges({ model, compact }: { model: StudioModel; compact?: boolean }) {
   const badges: { label: string; bg: string; fg: string; icon?: React.ReactNode }[] = [];
-  if (model.id === "veo-3") badges.push({ label: "AUDIO", bg: "rgba(168,85,247,0.14)", fg: "#7e22ce", icon: <AudioGlyph /> });
-  if (model.supportsImageRef) badges.push({ label: "ANCHOR", bg: "rgba(245,158,11,0.14)", fg: "#b45309", icon: <AnchorGlyph /> });
+  if (model.id === "veo-3") badges.push({ label: "AUDIO", bg: "rgba(158,114,232,0.14)", fg: "#9E72E8", icon: <AudioGlyph /> });
+  if (model.supportsImageRef) badges.push({ label: "ANCHOR", bg: "rgba(107,79,160,0.12)", fg: T.studio, icon: <AnchorGlyph /> });
   if (model.maxResolution.includes("1080") || model.maxResolution === "4K")
-    badges.push({ label: `${model.maxResolution}`, bg: "rgba(22,163,74,0.10)", fg: "#15803d" });
-  if (model.maxDurationSec >= 8) badges.push({ label: `${model.maxDurationSec}s`, bg: "rgba(59,130,246,0.10)", fg: "#1e3a8a" });
-  if (model.tier !== "free") badges.push({ label: model.tier.toUpperCase(), bg: "rgba(0,0,0,0.06)", fg: "#1a1a2e" });
+    badges.push({ label: `${model.maxResolution}`, bg: "rgba(92,138,78,0.12)", fg: T.thrive });
+  if (model.maxDurationSec >= 8) badges.push({ label: `${model.maxDurationSec}s`, bg: "rgba(62,143,224,0.12)", fg: "#3E8FE0" });
+  if (model.tier !== "free") badges.push({ label: model.tier.toUpperCase(), bg: T.inset, fg: T.ink70 });
 
   return (
     <>
       {badges.slice(0, compact ? 3 : 5).map((b, i) => (
         <span key={i} style={{
           padding: "2px 7px", borderRadius: 999,
-          fontSize: 9, fontWeight: 800, letterSpacing: "0.06em",
-          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 9, fontWeight: 700, letterSpacing: "0.06em",
+          fontFamily: T.m,
           background: b.bg, color: b.fg,
           display: "inline-flex", alignItems: "center", gap: 3,
         }}>{b.icon}{b.label}</span>
@@ -1420,8 +1453,8 @@ function ModelBadges({ model, compact }: { model: StudioModel; compact?: boolean
 function Panel({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{
-      background: "white", borderRadius: 16, padding: 14,
-      border: "1px solid rgba(0,0,0,0.06)",
+      background: T.paper, borderRadius: 16, padding: 14,
+      border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
     }}>
       <div style={panelLabel}>{label}</div>
       <div style={{ marginTop: 10 }}>{children}</div>
@@ -1433,14 +1466,14 @@ function Pill({ label, value }: { label: string; value: string }) {
   return (
     <div style={{
       padding: "6px 12px", borderRadius: 10,
-      background: "white", border: "1px solid rgba(0,0,0,0.08)",
+      background: T.paper, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
       display: "flex", alignItems: "baseline", gap: 8,
     }}>
       <span style={{
-        fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
-        color: "rgba(26,26,46,0.5)", letterSpacing: "0.1em",
+        fontSize: 10, fontFamily: T.m,
+        color: T.mono, letterSpacing: "0.1em", fontWeight: 700,
       }}>{label}</span>
-      <span style={{ fontSize: 14, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>{value}</span>
+      <span style={{ fontSize: 14, fontWeight: 700, fontFamily: T.m, fontVariantNumeric: "tabular-nums" }}>{value}</span>
     </div>
   );
 }
@@ -1449,56 +1482,56 @@ function Pill({ label, value }: { label: string; value: string }) {
 
 const tag: React.CSSProperties = {
   padding: "3px 9px", borderRadius: 999,
-  background: "rgba(245,158,11,0.14)", color: "#b45309",
-  fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
-  fontFamily: "'JetBrains Mono', monospace",
+  background: "rgba(107,79,160,0.12)", color: T.studio,
+  fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+  fontFamily: T.m,
 };
 
 const panelLabel: React.CSSProperties = {
-  fontSize: 11, fontWeight: 800, letterSpacing: "0.14em",
-  textTransform: "uppercase", color: "rgba(26,26,46,0.55)",
-  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: 11, fontWeight: 700, letterSpacing: "0.14em",
+  textTransform: "uppercase", color: T.mono,
+  fontFamily: T.m,
 };
 
 const petChip: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 8,
   padding: "6px 10px 6px 6px", borderRadius: 12,
-  cursor: "pointer", color: "#1a1a2e",
-  fontFamily: "'Space Grotesk',sans-serif",
+  cursor: "pointer", color: T.ink,
+  fontFamily: T.body,
   transition: "all 140ms ease",
 };
 
 const engineBtn: React.CSSProperties = {
   width: "100%", display: "flex", alignItems: "center",
   padding: "12px 14px", borderRadius: 12,
-  background: "white", border: "1px solid rgba(0,0,0,0.10)",
-  cursor: "pointer", fontFamily: "'Space Grotesk',sans-serif",
-  color: "#1a1a2e", textAlign: "left",
+  background: T.paper, border: `1px solid ${T.hair}`,
+  cursor: "pointer", fontFamily: T.body,
+  color: T.ink, textAlign: "left",
 };
 
 const suggestionChip: React.CSSProperties = {
   padding: "5px 10px", borderRadius: 999,
-  border: "1px solid rgba(0,0,0,0.10)",
-  background: "white", fontSize: 12, fontWeight: 600,
-  color: "#1a1a2e", cursor: "pointer",
-  fontFamily: "'Space Grotesk',sans-serif",
+  border: `1px solid ${T.hair}`,
+  background: T.paper, fontSize: 12, fontWeight: 600,
+  color: T.ink70, cursor: "pointer",
+  fontFamily: T.body,
 };
 
 const btnGhost: React.CSSProperties = {
   display: "inline-block",
   padding: "9px 14px", borderRadius: 10,
-  border: "1px solid rgba(0,0,0,0.10)", background: "white",
-  color: "#1a1a2e", fontWeight: 700, fontSize: 12, cursor: "pointer",
-  fontFamily: "'Space Grotesk',sans-serif", textDecoration: "none",
+  border: `1px solid ${T.hair}`, background: T.paper,
+  color: T.ink70, fontWeight: 700, fontSize: 12, cursor: "pointer",
+  fontFamily: T.body, textDecoration: "none",
 };
 
 const generateBtn: React.CSSProperties = {
   width: "100%", padding: "18px 24px",
-  borderRadius: 16, border: "3px solid #1a1a22",
-  background: "#f59e0b",
-  color: "#1a1a22", fontWeight: 800, fontSize: 19,
-  fontFamily: "'Space Grotesk',sans-serif",
-  boxShadow: "0 6px 0 rgba(26,26,34,0.25)",
+  borderRadius: 16, border: "none",
+  background: "linear-gradient(135deg,#7D5FB8,#6B4FA0)",
+  color: "#FCE9CF", fontWeight: 800, fontSize: 19,
+  fontFamily: "var(--ed-disp)",
+  boxShadow: "0 20px 40px -22px rgba(62,52,112,.8)",
   letterSpacing: "0.01em",
   transition: "transform 140ms ease, box-shadow 140ms ease",
 };

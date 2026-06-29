@@ -309,3 +309,62 @@ body {
   /* On tiny screens, hide the A/D/S stats column to keep names readable */
   body .leader-row > .leader-stats { display: none !important; }
 }
+
+/* ═══════════════════════ Collectible Editorial design system ═══════════════════════
+   Authoritative redesign ("treat every pet as a foil-stamped collectible artifact;
+   lay the product out like a premium editorial print piece"). Warm cream field, no
+   dark mode, terracotta brand + section signature colors, gold-foil / holographic
+   finishes, soft floating shadows, and physical "alive" motion (petFloat / glossSlide
+   / foilShift / shadowPulse / moteFloat / tickerSlide). Namespaced `ed-` / `--ed-`. */
+:root {
+  /* neutrals / field */
+  --ed-field:#ECE4D4; --ed-paper:#FBF6EC; --ed-inset:#F5EFE2; --ed-ink:#211A12;
+  --ed-ink70:#3A3024; --ed-muted:#7A6E5A; --ed-muted2:#5C5140; --ed-mono:#9A7B4E;
+  --ed-hair:rgba(33,26,18,.13);
+  /* brand terracotta */
+  --ed-terra:#BE4F28; --ed-terra-sub:#9A4E1E; --ed-cream-on:#FCE9CF; --ed-cream-on2:#FAD9B8;
+  --ed-cta1:#F49B2A; --ed-cta2:#E27D0C; --ed-cta-chip:#E68A2E;
+  /* section signatures */
+  --ed-catch:#1A7E68; --ed-studio:#6B4FA0;
+  /* stats + rarity */
+  --ed-happy:#F0589E; --ed-energy:#3E8FE0; --ed-bond:#9E72E8; --ed-thrive:#5C8A4E;
+  --ed-rare-common:#5C8A4E; --ed-rare-rare:#3E8FE0; --ed-rare-epic:#9E72E8; --ed-rare-legend:#C8932F;
+  /* type */
+  --ed-disp:var(--font-display),'Bricolage Grotesque',system-ui,sans-serif;
+  --ed-body:var(--font-body),'Hanken Grotesk',system-ui,sans-serif;
+  --ed-m:var(--font-mono-ed),'Space Mono',ui-monospace,monospace;
+  /* elevation */
+  --ed-shadow-card:0 20px 40px -26px rgba(80,55,20,.5);
+  --ed-shadow-float:0 54px 84px -28px rgba(38,12,2,.72),0 14px 28px -12px rgba(38,12,2,.45);
+  --ed-shadow-dark:0 16px 30px -14px rgba(33,26,18,.7);
+}
+
+/* surface dressing — drop these as absolutely-positioned layers inside a frame */
+.ed-grain{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.05;z-index:1;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.8'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.ed-glow{position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(120% 70% at 50% -8%,rgba(255,224,160,.4),transparent 60%)}
+.ed-vignette{position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(120% 120% at 50% 45%,transparent 62%,rgba(80,55,20,.12))}
+
+/* signature finishes */
+.ed-foil-text{background:linear-gradient(100deg,#FFF7E6,#F2CD86 32%,#FFFBF0 50%,#E8B257 68%,#FFF7E6);
+  background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+  animation:edFoilShift 6s linear infinite;filter:drop-shadow(0 3px 12px rgba(40,14,4,.4))}
+.ed-holo-sheen{position:absolute;inset:0;mix-blend-mode:screen;opacity:.32;pointer-events:none;
+  background:linear-gradient(118deg,#ff5e8a,#ffd36e,#54ffc8,#5e8aff,#ff5eef,#ff5e8a);background-size:300% 300%;animation:edFoilShift 5.5s linear infinite}
+.ed-gloss{position:absolute;top:0;bottom:0;width:42%;pointer-events:none;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.45),transparent);animation:edGlossSlide 7s ease-in-out infinite}
+.ed-foilstrip{background:linear-gradient(100deg,#FFF7E6,#F2CD86 32%,#FFFBF0 50%,#E8B257 68%,#FFF7E6);background-size:300% 100%;animation:edFoilShift 6s linear infinite}
+
+@keyframes edPetFloat{0%,100%{transform:rotate(var(--ed-tilt,-2.4deg)) translateY(0)}50%{transform:rotate(var(--ed-tilt,-2.4deg)) translateY(-7px)}}
+@keyframes edGlossSlide{0%{transform:translateX(-130%)}60%,100%{transform:translateX(330%)}}
+@keyframes edFoilShift{0%{background-position:0 0}100%{background-position:300% 0}}
+@keyframes edShadowPulse{0%,100%{opacity:.5;transform:translateX(-50%) scaleX(1)}50%{opacity:.35;transform:translateX(-50%) scaleX(.88)}}
+@keyframes edMoteFloat{0%{transform:translateY(0) scale(.7);opacity:0}20%{opacity:.9}100%{transform:translateY(-150px) scale(1);opacity:0}}
+@keyframes edTickerSlide{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes edTypingDot{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-4px);opacity:1}}
+
+.ed-float{animation:edPetFloat 5.5s ease-in-out infinite}
+
+@media (prefers-reduced-motion: reduce){
+  .ed-foil-text,.ed-holo-sheen,.ed-gloss,.ed-foilstrip,.ed-float{animation:none!important}
+}
