@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { useAccount } from "wagmi";
 
-import { api } from "@/lib/api";
+import { api, getAuthHeaders } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 
 import Nav from "@/components/Nav";
@@ -19,10 +19,10 @@ import ToastHost from "@/components/Toast";
 import DialogHost from "@/components/Dialog";
 import { seasonTier } from "@/lib/season";
 import SeasonRewardsHub from "@/components/SeasonRewardsHub";
-import CommunityHighlights from "@/components/CommunityHighlights";
 import PetOfTheWeek from "@/components/PetOfTheWeek";
 
 const MyPetEditorial = lazy(() => import("@/components/editorial/MyPetEditorial"));
+const ChatEditorial = lazy(() => import("@/components/editorial/ChatEditorial"));
 const PetGenerate = lazy(() => import("@/components/PetGenerate"));
 const SocialGallery = lazy(() => import("@/components/SocialGallery"));
 const Leaderboard = lazy(() => import("@/components/Leaderboard"));
@@ -68,23 +68,30 @@ function Loader() {
 }
 
 // ── Daily Check-in Card ──
-function CheckinCard({ isAuthenticated }: { isAuthenticated: boolean }) {
+function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: boolean; onPointsChanged?: () => void }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    fetch("/api/checkin").then(r => (r.ok ? r.json() : null)).then(d => d && setData(d)).catch(() => {});
+    // SCRUM-98: the check-in endpoint is authenticated — without the Bearer token
+    // both the state GET and the POST 401 ("Unauthorized"), so streak never loads
+    // and Check In silently fails even with a connected wallet.
+    fetch("/api/checkin", { headers: getAuthHeaders() }).then(r => (r.ok ? r.json() : null)).then(d => d && setData(d)).catch(() => {});
   }, [isAuthenticated]);
 
   const doCheckin = async () => {
     if (!isAuthenticated || loading || data?.checkedInToday) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/checkin", { method: "POST" });
+      const res = await fetch("/api/checkin", { method: "POST", headers: getAuthHeaders() });
       const d = await res.json();
-      if (d.streak) { setData(d); setMsg(`+${d.awarded} pts! Day ${d.streak} streak 🔥`); }
+      if (d.streak) {
+        setData(d);
+        setMsg(`+${d.awarded} pts! Day ${d.streak} streak 🔥`);
+        onPointsChanged?.(); // SCRUM-102: refresh header points immediately after the award
+      }
       else setMsg(d.error || "Already checked in");
     } catch { setMsg("Failed"); }
     setLoading(false);
@@ -455,7 +462,7 @@ export default function App() {
                 txToday={platformStats?.tx_today || 0}
               />
               <SeasonBanner seasonPoints={seasonPoints} />
-              <CheckinCard isAuthenticated={isAuthenticated} />
+              <CheckinCard isAuthenticated={isAuthenticated} onPointsChanged={refreshUser} />
               <div className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
                 <Stats stats={stats} />
               </div>
@@ -489,6 +496,14 @@ export default function App() {
         </WalletGate>
       )}
 
+      {section === "chat" && (
+        <WalletGate section="chat">
+          <Suspense fallback={<Loader />}>
+            <ChatEditorial onNavigate={setSection} />
+          </Suspense>
+        </WalletGate>
+      )}
+
       {section === "create" && (
         <Suspense fallback={<Loader />}>
           {/* Same Studio as /studio — PetStudioPro handles its own demo (no-wallet)
@@ -499,10 +514,10 @@ export default function App() {
 
       {section === "community" && (
         <div style={{ paddingTop: 90 }}>
-          {/* Public highlights header — frames the tab as "a place full of
-              pets" and proves it's alive before the (gated) gallery. */}
+          {/* Per the design 시안, Community opens straight into the remix wall
+              (SocialGallery). The old dark "THE PACK — not a wall of images"
+              hero was off-mockup and self-contradictory, so it's removed. */}
           <PetOfTheWeek />
-          <CommunityHighlights />
           <WalletGate section="community">
             <Suspense fallback={<Loader />}>
               <SocialGallery />

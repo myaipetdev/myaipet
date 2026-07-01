@@ -152,6 +152,25 @@ export function useAuth() {
   // Restore auth from storage when wallet connects, or clear on a genuine
   // disconnect.
   useEffect(() => {
+    // SCRUM-104: account switched in the wallet. wagmi flips `address`, but we were
+    // still holding the PREVIOUS account's token/user (isAuthenticated stays true),
+    // so the connect branch below — gated on !isAuthenticated — never ran and the
+    // app kept showing Account 1's pets/cards/rewards until a full disconnect+reconnect.
+    // Detect the address↔user mismatch and swap accounts: restore the new account's
+    // stored session if present, otherwise clear (drop the stale one, prompt re-auth).
+    if (!isDev && isConnected && address && user?.wallet_address &&
+        user.wallet_address.toLowerCase() !== address.toLowerCase()) {
+      const stored = loadStored();
+      if (stored.token && stored.user?.wallet_address?.toLowerCase() === address.toLowerCase()) {
+        api.setToken(stored.token);
+        setToken(stored.token);
+        setUser(stored.user);
+      } else {
+        clearAuth();
+      }
+      prevAddress.current = address;
+      return;
+    }
     if (isConnected && address) {
       wasConnected.current = true;
       if (!isAuthenticated && !isAuthenticating && prevAddress.current !== address) {

@@ -110,33 +110,12 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
     <div style={{ position: "relative", fontFamily: T.body, color: T.ink, paddingTop: 78 }}>
       <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
       <div style={{ position: "relative", zIndex: 2, maxWidth: 1200, margin: "0 auto", padding: "8px 24px 48px" }}>
-        <div style={{ display: "flex", gap: 24, alignItems: "stretch", flexWrap: "wrap" }}>
+        <div className="mp-grid" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 24, alignItems: "start" }}>
+          <style>{`@media (max-width: 880px) { .mp-grid { grid-template-columns: 1fr !important; } }`}</style>
 
-          {/* ── status column ── */}
-          <div style={{ flex: "1 1 290px", maxWidth: 330, display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ background: T.paper, borderRadius: 22, padding: 20, boxShadow: "var(--ed-shadow-card)" }}>
-              <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 10, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Status</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: T.disp, fontWeight: 700, fontSize: 15, marginTop: 6 }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: T.thrive }} />{status}
-              </div>
-              <StatRow label="Happy" value={happy} pct={happy} color={T.happy} />
-              <StatRow label="Energy" value={energy} pct={energy} color={T.energy} />
-              <StatRow label="Bond" value={bond} pct={Math.min(100, bond * 10)} color={T.bond} />
-            </div>
-            <button onClick={() => onNavigate?.("create")} style={{ textAlign: "left", border: "none", cursor: "pointer", background: "linear-gradient(150deg,#2B2250,#3A2D63)", borderRadius: 22, padding: 18, color: "#EDE7FF" }}>
-              <div style={{ fontFamily: T.m, fontSize: 10, letterSpacing: ".14em", color: "#B9A9F0" }}>PRO PET STUDIO</div>
-              <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 19, margin: "5px 0 12px" }}>Make {active.name} a star ✦</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {["Cinematic", "Anime", "3D Pixar", "Pixel"].map((s) => (
-                  <span key={s} style={{ fontSize: 11, fontWeight: 600, border: "1px solid rgba(255,255,255,.18)", borderRadius: 8, padding: "4px 9px", color: "#D9CFFB" }}>{s}</span>
-                ))}
-              </div>
-            </button>
-          </div>
-
-          {/* ── poster ── */}
-          <div style={{ flex: "2 1 460px" }}>
-            <div style={{ position: "relative", background: T.terra, borderRadius: 18, minHeight: 640, overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
+          {/* ── poster (left, dominant) ── */}
+          <div>
+            <div style={{ position: "relative", background: T.terra, borderRadius: 18, minHeight: 660, overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div aria-hidden style={{ position: "absolute", inset: 14, border: "1px solid rgba(252,233,207,.35)", borderRadius: 8, pointerEvents: "none" }} />
               {[["14px", "14px", "", ""], ["14px", "", "", "14px"], ["", "14px", "14px", ""], ["", "", "14px", "14px"]].map((c, i) => (
                 <span key={i} aria-hidden style={{ position: "absolute", top: c[0] || undefined, left: c[1] || undefined, bottom: c[2] || undefined, right: c[3] || undefined, width: 11, height: 11,
@@ -172,8 +151,27 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
             </div>
           </div>
 
-          {/* ── care column ── */}
-          <div style={{ flex: "1 1 290px", maxWidth: 330, display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* ── right column: identity · status · care · memory · chat · studio · catch ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {/* identity chips */}
+            <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+              {[`LV.${String(active.level).padStart(2, "0")}`, species.toUpperCase(), element.toUpperCase()].map((t) => (
+                <span key={t} style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".1em", color: "#9A4E1E", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 9, padding: "5px 11px" }}>{t}</span>
+              ))}
+            </div>
+
+            {/* status */}
+            <div style={{ background: T.paper, borderRadius: 22, padding: 20, boxShadow: "var(--ed-shadow-card)" }}>
+              <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 10, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Status</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: T.disp, fontWeight: 700, fontSize: 15, marginTop: 6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: T.thrive }} />{status}
+              </div>
+              <StatRow label="Happy" value={happy} pct={happy} color={T.happy} />
+              <StatRow label="Energy" value={energy} pct={energy} color={T.energy} />
+              <StatRow label="Bond" value={bond} pct={Math.min(100, bond * 10)} color={T.bond} />
+            </div>
+
+            {/* care */}
             <div style={{ background: T.paper, borderRadius: 22, padding: 20, boxShadow: "var(--ed-shadow-card)" }}>
               <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 10, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Care</div>
               <div style={{ display: "flex", gap: 9, marginTop: 14 }}>
@@ -183,14 +181,38 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               </div>
               {flash && <div style={{ marginTop: 12, fontSize: 12, color: T.muted2, fontStyle: "italic", lineHeight: 1.4 }}>{flash}</div>}
             </div>
+
+            {/* memory */}
             <div style={{ border: "1.5px dashed #E8C079", borderRadius: 16, padding: "15px 16px", background: "rgba(255,250,235,.5)" }}>
               <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".12em", color: "#A9712B" }}>{active.name.toUpperCase()} REMEMBERS</div>
-              <p style={{ fontStyle: "italic", fontSize: 13, color: T.muted2, marginTop: 7, lineHeight: 1.5 }}>Care for {active.name} and they'll remember it — your habits, your mood, the little things.</p>
+              <p style={{ fontStyle: "italic", fontSize: 13, color: T.muted2, marginTop: 7, lineHeight: 1.5 }}>Care for {active.name} and they&apos;ll remember it — your habits, your mood, the little things.</p>
             </div>
-            <button onClick={() => onNavigate?.("catch")} style={{ textAlign: "left", border: "none", cursor: "pointer", background: "linear-gradient(150deg,#241C44,#34295F)", borderRadius: 22, padding: 20, color: "#E9E4FB" }}>
-              <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 20 }}>Catch in the wild</div>
-              <p style={{ fontSize: 12.5, color: "#B7AEDC", margin: "8px 0 14px", lineHeight: 1.5 }}>Find real animals out there and turn them into collectibles for {active.name}'s field album.</p>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#fff", fontFamily: T.disp, fontWeight: 700, fontSize: 14, borderRadius: 12, padding: "11px 18px" }}>Open camera →</span>
+
+            {/* chat — primary companion action */}
+            <button onClick={() => onNavigate?.("chat")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, textAlign: "left", border: "none", cursor: "pointer", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", borderRadius: 18, padding: "15px 18px", color: "#FFF8EE", boxShadow: "0 12px 24px -14px rgba(226,125,12,.7)" }}>
+              <span>
+                <span style={{ display: "block", fontFamily: T.disp, fontWeight: 800, fontSize: 17 }}>Chat with {active.name}</span>
+                <span style={{ display: "block", fontFamily: T.body, fontSize: 12.5, color: "#FCE9CF", marginTop: 2 }}>Talk live — every chat grows your Bond.</span>
+              </span>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>→</span>
+            </button>
+
+            {/* studio teaser */}
+            <button onClick={() => onNavigate?.("create")} style={{ textAlign: "left", border: "none", cursor: "pointer", background: "linear-gradient(150deg,#2B2250,#3A2D63)", borderRadius: 18, padding: 18, color: "#EDE7FF" }}>
+              <div style={{ fontFamily: T.m, fontSize: 10, letterSpacing: ".14em", color: "#B9A9F0" }}>PRO PET STUDIO</div>
+              <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 19, margin: "5px 0 12px" }}>Make {active.name} a star ✦</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {["Cinematic", "Anime", "3D Pixar", "Pixel"].map((s) => (
+                  <span key={s} style={{ fontSize: 11, fontWeight: 600, border: "1px solid rgba(255,255,255,.18)", borderRadius: 8, padding: "4px 9px", color: "#D9CFFB" }}>{s}</span>
+                ))}
+              </div>
+            </button>
+
+            {/* catch */}
+            <button onClick={() => onNavigate?.("catch")} style={{ textAlign: "left", border: "none", cursor: "pointer", background: "linear-gradient(150deg,#241C44,#34295F)", borderRadius: 18, padding: 18, color: "#E9E4FB" }}>
+              <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 18 }}>Catch in the wild</div>
+              <p style={{ fontSize: 12.5, color: "#B7AEDC", margin: "7px 0 12px", lineHeight: 1.5 }}>Find real animals out there and turn them into collectibles for {active.name}&apos;s field album.</p>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "rgba(252,233,207,.16)", color: "#FCE9CF", fontFamily: T.disp, fontWeight: 700, fontSize: 13.5, borderRadius: 11, padding: "9px 15px" }}>Open camera →</span>
             </button>
           </div>
         </div>

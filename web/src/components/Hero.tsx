@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { LOGO_SRC } from "./Nav";
-import Icon from "@/components/Icon";
-import { MOCK_IMAGES } from "@/lib/mockData";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
+import Icon from "@/components/Icon";
 
 // ── Soft ambient glyphs (no 3D-icon match) — flat SVGs tuned to the hero's warm palette ──
 function BlossomGlyph({ size }: { size: number }) {
@@ -66,6 +65,39 @@ const PILLARS = [
   { icon: <Icon name="trophy" size={20} />, label: "Portable Legacy", desc: "Export your pet's soul; on-chain anchor at go-live" },
 ];
 
+// Right-rail hero — the PET as the star: a foil-stamped collectible poster of the
+// brand companion on a terracotta editorial stage (matches 시안 02). The pet is the
+// hero, not a montage of samples.
+function HeroShowcase({ txToday }: { txToday?: number }) {
+  return (
+    <div className="hero-showcase" style={{ position: "relative", zIndex: 2 }}>
+      <div style={{ position: "relative", background: "#BE4F28", borderRadius: 26, padding: "20px 22px 16px", overflow: "hidden", boxShadow: "var(--ed-shadow-float, 0 54px 84px -28px rgba(38,12,2,.72),0 14px 28px -12px rgba(38,12,2,.45))", minHeight: 440, display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <div className="ed-grain" />
+        {/* corner registration ticks */}
+        {[["16px","16px","",""],["16px","","","16px"],["","16px","16px",""],["","","16px","16px"]].map((c, i) => (
+          <span key={i} aria-hidden style={{ position: "absolute", top: c[0] || undefined, left: c[1] || undefined, bottom: c[2] || undefined, right: c[3] || undefined, width: 11, height: 11,
+            backgroundImage: "linear-gradient(rgba(252,233,207,.6),rgba(252,233,207,.6)),linear-gradient(rgba(252,233,207,.6),rgba(252,233,207,.6))",
+            backgroundSize: "1px 11px,11px 1px", backgroundPosition: "center,center", backgroundRepeat: "no-repeat", zIndex: 3 }} />
+        ))}
+        <div style={{ position: "relative", zIndex: 2, width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4, padding: "0 2px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#FCE9CF", boxShadow: "0 0 0 3px rgba(252,233,207,.22)", animation: "pulse 2s ease-in-out infinite" }} />
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, fontWeight: 700, letterSpacing: ".12em", color: "#FCE9CF", textTransform: "uppercase" }}>
+              {txToday && txToday >= 20 ? `${txToday} creations this week` : "Meet your companion"}
+            </span>
+          </div>
+          <span style={{ fontFamily: "var(--ed-m)", fontSize: 9.5, fontWeight: 700, letterSpacing: ".14em", color: "rgba(252,233,207,.7)" }}>FILE №0742</span>
+        </div>
+        <div style={{ position: "relative", zIndex: 2, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "6px 0" }}>
+          <CollectibleFrame photoUrl={LOGO_SRC} level={5} speciesLabel="POMERANIAN" elementLabel="GRASS" width={280} tilt={-2.4} />
+        </div>
+        <div className="ed-foil-text" style={{ position: "relative", zIndex: 2, fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 40, lineHeight: 0.9, letterSpacing: "-0.03em" }}>Mochi</div>
+        <div style={{ position: "relative", zIndex: 2, fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700, letterSpacing: ".22em", color: "rgba(252,233,207,.7)", marginTop: 6, textTransform: "uppercase" }}>Adopt · Remember · Own</div>
+      </div>
+    </div>
+  );
+}
+
 export default function Hero({ onAdopt, onExplore, txToday }: any) {
   const [activePillar, setActivePillar] = useState(0);
 
@@ -88,8 +120,12 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           25% { transform: translateY(-12px) rotate(3deg); }
           75% { transform: translateY(8px) rotate(-3deg); }
         }
-        @media (max-width: 768px) {
+        @media (max-width: 860px) {
           .hero-root { padding: 100px 16px 40px !important; min-height: auto !important; }
+          .hero-2col { grid-template-columns: 1fr !important; gap: 30px !important; text-align: center !important; }
+          .hero-2col-left { display: flex; flex-direction: column; align-items: center; }
+          .hero-cta { justify-content: center !important; }
+          .hero-showcase { max-width: 400px; margin: 0 auto; width: 100%; }
           .hero-pillars { flex-wrap: wrap !important; }
           .hero-pillars button { min-width: 120px !important; flex: 1 1 40% !important; }
           .hero-cta { flex-direction: column !important; gap: 10px !important; }
@@ -108,88 +144,93 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         <FloatingPet key={i} {...p} />
       ))}
 
-      {/* Live counter badge */}
-      <div style={{
-        display: "inline-flex", alignItems: "center", gap: 7, padding: "6px 16px",
-        borderRadius: 20, background: "#F5EFE2",
-        border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", marginBottom: 28,
-        position: "relative", zIndex: 2,
+      {/* ═══ 2-column hero — text left, live "what you can make" reel right (시안 02) ═══ */}
+      <div className="hero-2col" style={{
+        position: "relative", zIndex: 2, maxWidth: 1180, margin: "0 auto",
+        display: "grid", gridTemplateColumns: "1.04fr 0.92fr", gap: 46, alignItems: "center", textAlign: "left",
       }}>
-        <div style={{
-          width: 6, height: 6, borderRadius: "50%", background: "#1A7E68",
-          animation: "pulse 2s ease-in-out infinite",
-        }} />
-        <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#9A4E1E", fontWeight: 500 }}>
-          {txToday >= 20 ? `${txToday} creations this week` : "Adopt free · no gas to start"}
-        </span>
+        {/* LEFT — text column */}
+        <div className="hero-2col-left">
+          {/* Live counter badge */}
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 7, padding: "6px 16px",
+            borderRadius: 20, background: "#F5EFE2",
+            border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", marginBottom: 22,
+          }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#1A7E68", animation: "pulse 2s ease-in-out infinite" }} />
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#9A4E1E", fontWeight: 500 }}>Adopt free · no gas to start</span>
+          </div>
+
+          {/* Eyebrow + honest Beta tag */}
+          <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 14, flexWrap: "wrap" }}>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 11.5, letterSpacing: "0.18em", color: "#9A4E1E", fontWeight: 700, textTransform: "uppercase" }}>
+              The open infrastructure for AI companions
+            </span>
+            <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.14em", padding: "3px 8px", borderRadius: 7, background: "rgba(107,79,160,0.12)", color: "#6B4FA0", fontFamily: "var(--ed-m)", border: "1px solid rgba(107,79,160,0.25)" }}>
+              BETA
+            </span>
+          </div>
+
+          {/* Headline — stacked, three colors (시안) */}
+          <h1 className="mp-enter" style={{
+            fontFamily: "var(--ed-disp)", fontSize: "clamp(40px,5vw,68px)",
+            fontWeight: 800, color: "#211A12", lineHeight: 1.0, margin: "0 0 16px", letterSpacing: "-0.035em",
+          }}>
+            <span style={{ display: "block" }}>Your AI.</span>
+            <span style={{ display: "block", color: "rgba(33,26,18,0.35)" }}>Your data.</span>
+            <span style={{ display: "block", color: "#BE4F28" }}>Your companion.</span>
+          </h1>
+
+          {/* Adopt · Remember · Own */}
+          <div style={{ display: "inline-flex", gap: 14, alignItems: "center", fontFamily: "var(--ed-disp)", fontSize: 15, fontWeight: 600, color: "#9A4E1E", marginBottom: 16, letterSpacing: "0.04em" }}>
+            <span><Icon name="paw" size={15} /> Adopt</span>
+            <span style={{ color: "rgba(33,26,18,0.15)" }}>·</span>
+            <span>Remember</span>
+            <span style={{ color: "rgba(33,26,18,0.15)" }}>·</span>
+            <span>Own</span>
+          </div>
+
+          {/* Description */}
+          <p className="mp-enter mp-enter-2" style={{ fontFamily: "var(--ed-body)", fontSize: 18, color: "#5C5140", maxWidth: 500, margin: "0 0 28px", lineHeight: 1.6, fontWeight: 500 }}>
+            Not another chatbot with a cute avatar. An AI pet that remembers you,
+            grows with you, and lives across every surface you do — fully exportable,
+            deletable, yours.
+          </p>
+
+          {/* CTA */}
+          <style>{`
+            .hero-cta-primary {
+              background: linear-gradient(180deg,#F49B2A,#E27D0C); border: none;
+              border-radius: 12px; padding: 14px 36px;
+              font-family: var(--ed-disp); font-size: 14px; font-weight: 600; color: #FFF8EE; cursor: pointer;
+              box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5));
+              transition: all 0.3s;
+            }
+            .hero-cta-primary:hover { transform: translateY(-2px); box-shadow: 0 22px 44px -24px rgba(80,55,20,.55); background: linear-gradient(180deg,#E27D0C,#C96A05); }
+            .hero-cta-secondary {
+              background: #FBF6EC; border: 1px solid var(--ed-hair, rgba(33,26,18,.13));
+              border-radius: 12px; padding: 14px 36px;
+              font-family: var(--ed-disp); font-size: 14px; font-weight: 600; color: #5C5140; cursor: pointer; transition: all 0.3s;
+            }
+            .hero-cta-secondary:hover { transform: translateY(-2px); background: #F5EFE2; border-color: rgba(190,79,40,0.3); color: #9A4E1E; box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5)); }
+          `}</style>
+          <div className="hero-cta" style={{ display: "flex", gap: 14 }}>
+            <button onClick={onAdopt} className="hero-cta-primary">
+              <Icon name="paw" size={16} /> Adopt your pet
+            </button>
+            <button onClick={onExplore} className="hero-cta-secondary">
+              Explore Community
+            </button>
+          </div>
+        </div>
+
+        {/* RIGHT — live reel of real generated pet clips */}
+        <HeroShowcase txToday={txToday} />
       </div>
 
-      {/* Hero pet — a foil-stamped collectible (the brand mascot, Mochi) */}
-      <div style={{ marginBottom: 30, position: "relative", zIndex: 2, display: "flex", justifyContent: "center" }}>
-        <CollectibleFrame photoUrl={LOGO_SRC} level={5} speciesLabel="POMERANIAN" elementLabel="GRASS" width={208} tilt={-2.4} />
-      </div>
-
-      {/* Infrastructure positioning eyebrow + honest Beta tag */}
-      <div style={{
-        display: "inline-flex", alignItems: "center", gap: 9, marginBottom: 16,
-        position: "relative", zIndex: 2, flexWrap: "wrap", justifyContent: "center",
-      }}>
-        <span style={{
-          fontFamily: "var(--ed-m)", fontSize: 11.5, letterSpacing: "0.2em",
-          color: "#9A4E1E", fontWeight: 700, textTransform: "uppercase",
-        }}>
-          The open infrastructure for AI companions
-        </span>
-        <span style={{
-          fontSize: 9.5, fontWeight: 800, letterSpacing: "0.14em", padding: "3px 8px", borderRadius: 7,
-          background: "rgba(107,79,160,0.12)", color: "#6B4FA0",
-          fontFamily: "var(--ed-m)", border: "1px solid rgba(107,79,160,0.25)",
-        }}>
-          BETA
-        </span>
-      </div>
-
-      {/* Main headline — aligned with landing voice (sovereign AI companion) */}
-      <h1 className="mp-enter" style={{
-        fontFamily: "var(--ed-disp)", fontSize: "clamp(40px,5.5vw,72px)",
-        fontWeight: 800, color: "#211A12", lineHeight: 1.05,
-        margin: "0 auto 6px", maxWidth: 820, letterSpacing: "-0.035em",
-        position: "relative", zIndex: 2,
-      }}>
-        Your AI.{" "}
-        <span style={{ color: "rgba(33,26,18,0.35)" }}>Your data.</span>{" "}
-        <span style={{ color: "#BE4F28" }}>
-          Your companion.
-        </span>
-      </h1>
-
-      {/* Tagline — pillars that match the landing's "sovereignty" frame */}
-      <div style={{
-        display: "inline-flex", gap: 14, alignItems: "center",
-        fontFamily: "var(--ed-disp)", fontSize: 16, fontWeight: 600,
-        color: "#9A4E1E", marginBottom: 18, position: "relative", zIndex: 2,
-        letterSpacing: "0.04em",
-      }}>
-        <span><Icon name="paw" size={16} /> Adopt</span>
-        <span style={{ color: "rgba(33,26,18,0.15)" }}>·</span>
-        <span>Remember</span>
-        <span style={{ color: "rgba(33,26,18,0.15)" }}>·</span>
-        <span>Own</span>
-      </div>
-
-      <p className="mp-enter mp-enter-2" style={{
-        fontFamily: "var(--ed-body)", fontSize: 19, color: "#5C5140",
-        maxWidth: 620, margin: "0 auto 34px", lineHeight: 1.65, fontWeight: 500,
-        position: "relative", zIndex: 2,
-      }}>
-        Not another chatbot with a cute avatar. An AI pet that remembers you,
-        grows with you, and lives across every surface you do — fully exportable,
-        deletable, yours.
-      </p>
-
-      {/* Ecosystem pillars */}
+      {/* Ecosystem pillars — full width below the hero */}
       <div className="hero-pillars" style={{
-        display: "flex", justifyContent: "center", gap: 8, marginBottom: 36,
+        display: "flex", justifyContent: "center", gap: 8, margin: "46px auto 0", maxWidth: 1180,
         position: "relative", zIndex: 2, flexWrap: "wrap",
       }}>
         <style>{`
@@ -246,98 +287,8 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         ))}
       </div>
 
-      {/* CTA */}
-      <style>{`
-        .hero-cta-primary {
-          background: linear-gradient(180deg,#F49B2A,#E27D0C); border: none;
-          border-radius: 12px; padding: 14px 36px;
-          font-family: var(--ed-disp); font-size: 14px; font-weight: 600; color: #FFF8EE; cursor: pointer;
-          box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5));
-          transition: all 0.3s;
-        }
-        .hero-cta-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 22px 44px -24px rgba(80,55,20,.55);
-          background: linear-gradient(180deg,#E27D0C,#C96A05);
-        }
-        .hero-cta-secondary {
-          background: #FBF6EC;
-          border: 1px solid var(--ed-hair, rgba(33,26,18,.13));
-          border-radius: 12px; padding: 14px 36px;
-          font-family: var(--ed-disp); font-size: 14px; font-weight: 600;
-          color: #5C5140; cursor: pointer; transition: all 0.3s;
-        }
-        .hero-cta-secondary:hover {
-          transform: translateY(-2px);
-          background: #F5EFE2;
-          border-color: rgba(190,79,40,0.3);
-          color: #9A4E1E;
-          box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5));
-        }
-      `}</style>
-      <div className="hero-cta" style={{ display: "flex", gap: 14, justifyContent: "center", position: "relative", zIndex: 2 }}>
-        <button onClick={onAdopt} className="hero-cta-primary">
-          <Icon name="paw" size={16} /> Adopt your pet
-        </button>
-        <button onClick={onExplore} className="hero-cta-secondary">
-          Explore Community
-        </button>
-      </div>
-
-      {/* ─── Gallery Preview Strip ─── */}
-      <div style={{ marginTop: 44, position: "relative", zIndex: 2 }}>
-        <style>{`
-          @keyframes scrollL { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
-          @keyframes scrollR { 0% { transform: translateX(-50%) } 100% { transform: translateX(0) } }
-          .gs-row { display: flex; gap: 10px; overflow: hidden; mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent); }
-          .gs-row:hover .gs-track { animation-play-state: paused !important; }
-          .gs-track { display: flex; gap: 10px; width: max-content; }
-          .gs-card { position: relative; border-radius: 14px; overflow: hidden; flex-shrink: 0; cursor: pointer; transition: transform 0.25s, box-shadow 0.25s; }
-          .gs-card:hover { transform: scale(1.04) translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.18); }
-          .gs-card:hover .gs-badge { opacity: 1; }
-          .gs-badge { position: absolute; bottom: 6px; left: 6px; padding: 2px 7px; border-radius: 6px; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); font-family: var(--ed-m); font-size: 9px; color: #FFF8EE; font-weight: 700; letter-spacing: 0.06em; opacity: 0; transition: opacity 0.2s; white-space: nowrap; }
-        `}</style>
-
-        <div style={{ fontSize: 10, fontFamily: "var(--ed-m)", color: "#9A7B4E", letterSpacing: "0.12em", textAlign: "center", marginBottom: 16, textTransform: "uppercase" }}>
-          Style Showcase
-        </div>
-
-        {/* Row 1 — tall cards, fast left */}
-        <div className="gs-row" style={{ marginBottom: 10 }}>
-          <div className="gs-track" style={{ animation: "scrollL 35s linear infinite" }}>
-            {[...MOCK_IMAGES.slice(0, 16), ...MOCK_IMAGES.slice(0, 16)].map((img, i) => (
-              <div key={i} className="gs-card" style={{ width: 100, height: 130 }}>
-                <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                <span className="gs-badge">{img.style}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Row 2 — square cards, slow right */}
-        <div className="gs-row" style={{ marginBottom: 10 }}>
-          <div className="gs-track" style={{ animation: "scrollR 55s linear infinite" }}>
-            {[...MOCK_IMAGES.slice(16), ...MOCK_IMAGES.slice(16)].map((img, i) => (
-              <div key={i} className="gs-card" style={{ width: 120, height: 120 }}>
-                <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                <span className="gs-badge">{img.style}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Row 3 — wide-ish, medium left */}
-        <div className="gs-row">
-          <div className="gs-track" style={{ animation: "scrollL 45s linear infinite" }}>
-            {[...[...MOCK_IMAGES].reverse(), ...[...MOCK_IMAGES].reverse()].map((img, i) => (
-              <div key={i} className="gs-card" style={{ width: 110, height: 100 }}>
-                <img src={img.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                <span className="gs-badge">{img.style}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* (Style-showcase marquee removed per feedback — the hero pet is the star,
+          not a row of sample images.) */}
 
       {/* spacer */}
       <div style={{ marginTop: 44 }} />
@@ -386,7 +337,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
 
         {/* Infrastructure evidence chips */}
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, marginBottom: 18 }}>
-          {["Open SDK", "MCP-native", "21 connectors", "Your data, portable"].map((c) => (
+          {["Open SDK", "MCP-native", "19 connectors", "Your data, portable"].map((c) => (
             <span key={c} style={{
               fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
               padding: "6px 14px", borderRadius: 999, color: "#6B4FA0",

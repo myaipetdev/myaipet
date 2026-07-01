@@ -6,7 +6,7 @@
  * petclaw_chat tool, live). Dark terminal panel on the app's light pages.
  *
  * Inventory is the REAL thing (kept honest):
- *   • 21 connectors  • 18 SDK skills  • 6 MCP tools  • VIGIL (5-stage harness)  • PACK (A2A)  • sovereignty
+ *   • 19 connectors  • 18 SDK skills  • 6 MCP tools  • VIGIL (5-stage harness)  • PACK (A2A)  • sovereignty
  *
  * variant="full"    → manifest + LIVE terminal (boot effect + chat). Needs petId.
  * variant="compact" → banner + channels only, static (onboarding intro).
@@ -40,7 +40,7 @@ const GREEN = "#9FC59A";       // warm sage (live)
 const LINE = "rgba(231,197,124,0.20)"; // warm gold hairline
 const MONO = "var(--ed-m)";    // Space Mono
 
-// Always-on surfaces + the 21-connector registry (lib/petclaw/connectors).
+// Always-on surfaces + the 19-connector registry (lib/petclaw/connectors).
 const RUNS_ON = "web · chrome-extension · mcp clients (Claude · Cursor · any)";
 const CONNECTORS = [
   { k: "messaging (8)", v: "telegram · discord · x · whatsapp · slack · line · instagram · gmail" },
@@ -100,7 +100,7 @@ interface Line { role: "sys" | "you" | "pet"; text: string }
 
 const BOOT: Line[] = [
   { role: "sys", text: "initializing petclaw-mcp · protocol v1 · SDK 1.6.0" },
-  { role: "sys", text: "connectors ▸ 21   tools ▸ 6 ready   skills ▸ 18 loaded   VIGIL ▸ 5 · PACK ▸ A2A" },
+  { role: "sys", text: "connectors ▸ 19   tools ▸ 6 ready   skills ▸ 18 loaded   VIGIL ▸ 5 · PACK ▸ A2A" },
   { role: "sys", text: "soul ▸ portable · consent ▸ enforced · on-chain ▸ holding (go-live)" },
 ];
 
@@ -284,7 +284,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
             </div>
             <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: "0 40px" }}>
               <div>
-                <SectionHead>Connectors — 21 integrations</SectionHead>
+                <SectionHead>Connectors — 19 integrations</SectionHead>
                 {CONNECTORS.map((c) => <Row key={c.k} k={c.k} v={c.v} kw={112} />)}
                 <div style={{ display: "flex", gap: 10, fontSize: 12, lineHeight: 1.8, marginTop: 4 }}>
                   <span style={{ color: AMBER_DIM, minWidth: 112, flexShrink: 0 }}>runs on</span>
@@ -311,7 +311,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                 </div>
               )}
             </div>
-            <div style={{ marginTop: 14, color: MUTED, fontSize: 12.5 }}>21 connectors · 18 skills · 5-stage harness · 6 MCP tools · BYO models · 100% your data</div>
+            <div style={{ marginTop: 14, color: MUTED, fontSize: 12.5 }}>19 connectors · 18 skills · 5-stage harness · 6 MCP tools · BYO models · 100% your data</div>
           </div>
 
           {/* LIVE terminal */}

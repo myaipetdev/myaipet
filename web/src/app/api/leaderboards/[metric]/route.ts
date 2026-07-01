@@ -23,7 +23,7 @@ const META: Record<Metric, { label: string; unit: string; emoji: string; descrip
   chats:    { label: "Most Talked To",   unit: "chats",  emoji: "💬", description: "Total lifetime chats with any pet." },
   memories: { label: "Memory Master",    unit: "memories", emoji: "🧠", description: "Total memories captured across all pets." },
   creator:  { label: "Top Creator",      unit: "generations", emoji: "🎬", description: "Total Studio generations." },
-  bond:     { label: "Most Bonded",      unit: "bond",   emoji: "💝", description: "Highest bond_level across your pets." },
+  bond:     { label: "Most Bonded",      unit: "bond",   emoji: "💝", description: "Highest bond across your pets — ties broken by pet level, then tenure." },
   oldest:   { label: "Day-One Trainer",  unit: "days",   emoji: "🎂", description: "Active pet adopted earliest." },
 };
 
@@ -101,9 +101,13 @@ export async function GET(
       pet_name: u.pets[0]?.name || null, pet_avatar: u.pets[0]?.avatar_url || null,
     }));
   } else if (m === "bond") {
+    // SCRUM-103: bond_level caps at 100, so a raw bond sort ties everyone at the
+    // cap (#1..#10 all show 100) with no ranking differentiation. Break ties with
+    // real, differentiating signals — pet level (deeper investment), then adoption
+    // tenure (earliest adopter wins) — so equal-bond users still get a stable order.
     const pets = await prisma.pet.findMany({
       where: { is_active: true },
-      orderBy: { bond_level: "desc" },
+      orderBy: [{ bond_level: "desc" }, { level: "desc" }, { created_at: "asc" }],
       take: limit,
       include: { user: true },
     });

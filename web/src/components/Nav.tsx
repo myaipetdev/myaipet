@@ -55,7 +55,11 @@ export default function Nav({ section, setSection, credits }: any) {
         @media (max-width: 1024px) {
           .nav-landing-btn { display: none !important; }
         }
-        @media (max-width: 900px) {
+        @media (max-width: 1180px) {
+          .nav-items-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; justify-content: flex-start !important; mask-image: linear-gradient(to right, black 95%, transparent); -webkit-mask-image: linear-gradient(to right, black 95%, transparent); }
+          .nav-items-wrap::-webkit-scrollbar { display: none; }
+        }
+        @media (max-width: 1060px) {
           .nav-desktop-badge { display: none !important; }
         }
         @media (max-width: 768px) {
@@ -77,8 +81,8 @@ export default function Nav({ section, setSection, credits }: any) {
         className="nav-container"
         style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-          display: "flex", alignItems: "center", gap: 14,
-          padding: "11px 30px", background: "rgba(236,228,212,0.94)",
+          display: "flex", alignItems: "center", gap: 18,
+          padding: "11px 22px", background: "rgba(236,228,212,0.94)",
           backdropFilter: "blur(8px)", borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
         }}
       >
@@ -111,7 +115,7 @@ export default function Nav({ section, setSection, credits }: any) {
 
         {/* Nav items — scrollable on mobile */}
         <div className="nav-items-wrap" style={{
-          display: "flex", gap: 26, alignItems: "center", justifyContent: "center",
+          display: "flex", gap: 17, alignItems: "center", justifyContent: "center",
           flex: 1, minWidth: 0,
         }}>
           {NAV_ITEMS.map((item) => {
@@ -186,7 +190,7 @@ export default function Nav({ section, setSection, credits }: any) {
                     letterSpacing: "0.14em", textTransform: "uppercase",
                     color: "#9A7B4E", marginBottom: 8,
                   }}>
-                    Your Balance
+                    Platform Credits
                   </div>
                   <div style={{
                     fontFamily: "var(--ed-disp)", fontSize: 30, fontWeight: 800,
@@ -194,6 +198,11 @@ export default function Nav({ section, setSection, credits }: any) {
                     fontVariantNumeric: "tabular-nums",
                   }}>
                     {credits.toLocaleString()} <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#9A4E1E", letterSpacing: "0.06em" }}>credits</span>
+                  </div>
+                  {/* SCRUM-99: this is the in-app credit balance, NOT the connected
+                      wallet's on-chain balance — label it so users don't conflate them. */}
+                  <div style={{ fontFamily: "var(--ed-body)", fontSize: 11.5, color: "#7A6E5A", lineHeight: 1.45 }}>
+                    In-app credits for AI generation — not your wallet balance.
                   </div>
                   <div style={{
                     height: 1, background: "var(--ed-hair, rgba(33,26,18,.13))", margin: "14px 0",

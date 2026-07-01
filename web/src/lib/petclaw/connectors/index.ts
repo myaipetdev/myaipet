@@ -1,6 +1,6 @@
 /**
  * PetClaw Connectors Registry
- * 21 platform integrations across 5 categories
+ * 19 platform integrations across 5 categories
  */
 
 // ── Messaging ──

@@ -81,7 +81,7 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
       )}
 
       <div style={{ textAlign: "center", marginTop: 18, fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A" }}>
-        18 skills · 6 MCP tools · 21 connectors · open SDK —{" "}
+        18 skills · 6 MCP tools · 19 connectors · open SDK —{" "}
         <a href="/api-docs" style={{ color: "#9A4E1E", fontWeight: 700, textDecoration: "none" }}>build on it →</a>
       </div>
       <style>{`@media (max-width: 640px) { .orch-contrast { grid-template-columns: 1fr !important; } }`}</style>

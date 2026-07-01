@@ -176,7 +176,7 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 - Published on npm: npm i @myaipet/petclaw-sdk
 - CLI flow: petclaw-sdk init, then install a skill, then models connect for your own model (BYOK), then mcp
 - MCP-native: expose your pet to Claude Desktop or Cursor as an MCP server (6 tools)
-- 18 skills, 21 connectors, and full data-sovereignty exports — see /api-docs for the reference`,
+- 18 skills, 19 connectors, and full data-sovereignty exports — see /api-docs for the reference`,
   },
   {
     id: "roadmap",

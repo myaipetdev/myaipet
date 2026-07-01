@@ -2821,7 +2821,7 @@ export default function SovereigntyDashboard() {
               fontSize: 15, color: MUTED2, marginBottom: 20,
               fontFamily: BODY, lineHeight: 1.65,
             }}>
-              21 platform connectors. Your pet, everywhere you are.
+              19 platform connectors. Your pet, everywhere you are.
             </p>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 8 }}>
