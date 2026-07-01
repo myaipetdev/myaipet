@@ -128,7 +128,13 @@ export default function WorldCupPet() {
 
   return (
     <Shell>
-      <ChampionPrediction />
+      <CutenessCup pets={pets} onEnter={() => document.getElementById("wc-national")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
+
+      {/* ── National Pet path ── */}
+      <div id="wc-national" style={{ scrollMarginTop: 90, borderTop: `1px solid ${T.hair}`, paddingTop: 22, marginBottom: 6 }}>
+        <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".14em", color: T.terraSub, textTransform: "uppercase" }}>Pet World Cup · National Pet</div>
+        <h2 style={{ fontFamily: T.disp, fontSize: 28, fontWeight: 800, color: T.ink, margin: "6px 0 2px", letterSpacing: "-.02em" }}>Fly your colors</h2>
+      </div>
 
       {/* Pet picker (only if >1) */}
       {pets.length > 1 && (
@@ -228,6 +234,11 @@ export default function WorldCupPet() {
           </div>
         </div>
       )}
+
+      {/* ── Predict the Champion (real community poll) ── */}
+      <div style={{ borderTop: `1px solid ${T.hair}`, marginTop: 30, paddingTop: 24 }}>
+        <ChampionPrediction />
+      </div>
     </Shell>
   );
 }
@@ -399,6 +410,72 @@ function ChampionPrediction() {
 const primaryBtn: React.CSSProperties = { padding: "10px 18px", borderRadius: 10, border: "none", background: T.ink, color: T.creamOn, fontFamily: T.disp, fontWeight: 700, fontSize: 14, cursor: "pointer" };
 const ghostBtn: React.CSSProperties = { padding: "10px 16px", borderRadius: 10, border: `1px solid ${T.hair}`, background: T.paper, color: T.ink70, fontFamily: T.body, fontWeight: 600, fontSize: 14, cursor: "pointer" };
 
+/**
+ * Cuteness Cup — the head-to-head bracket (design 시안 08/09). HONEST by design:
+ * the tournament forms from real community pets and shows NO vote counts, matchups,
+ * or champion until voting is actually live — the slots are entry CTAs, not a
+ * fabricated live match. The gold Champion is explicitly "crowned at the Final",
+ * never a made-up winner.
+ */
+function CutenessCup({ pets, onEnter }: { pets: Pet[]; onEnter: () => void }) {
+  const stages = ["R16", "QF", "SF", "FINAL"];
+  return (
+    <div style={{ marginBottom: 26 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
+        <div>
+          <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".14em", color: T.gold, textTransform: "uppercase" }}>Pet World Cup · Cuteness Cup</div>
+          <h2 style={{ fontFamily: T.disp, fontSize: 30, fontWeight: 800, color: T.ink, margin: "6px 0 0", letterSpacing: "-.02em" }}>Pick the cutest</h2>
+        </div>
+        <span style={{ alignSelf: "center", fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".12em", color: T.terraSub, textTransform: "uppercase", background: "rgba(190,79,40,.08)", border: `1px solid rgba(190,79,40,.22)`, borderRadius: 999, padding: "6px 12px" }}>Bracket opening</span>
+      </div>
+      <p style={{ fontFamily: T.body, fontSize: 14, color: T.muted2, margin: "0 0 16px", lineHeight: 1.55, maxWidth: 580 }}>
+        Enter your pet into a head-to-head cuteness bracket — the community votes each matchup, winners climb R16 → Final, and one pet is crowned Champion. Real pets, real votes: no scores show until voting goes live.
+      </p>
+
+      {/* VS card — entry slots (no fabricated votes) */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "stretch", marginBottom: 16 }}>
+        <Slot side="home" pet={pets[0]} onEnter={onEnter} />
+        <div style={{ alignSelf: "center", zIndex: 3, width: 52, height: 52, margin: "0 -12px", borderRadius: "50%", background: "radial-gradient(circle at 35% 30%,#FFF0C0,#EBB84E 48%,#B8822C)", border: `3px solid ${T.paper}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.disp, fontWeight: 800, fontSize: 15, color: "#5A3A0A", boxShadow: "0 12px 22px -10px rgba(80,55,20,.6)" }}>VS</div>
+        <Slot side="away" pet={pets[1]} onEnter={onEnter} />
+      </div>
+
+      {/* bracket strip R16 → Final + champion note */}
+      <div style={{ display: "flex", alignItems: "center", gap: 0, flexWrap: "wrap", rowGap: 8 }}>
+        {stages.map((s, i) => (
+          <span key={s} style={{ display: "inline-flex", alignItems: "center" }}>
+            <span style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".08em", color: i === 0 ? T.terra : T.mono, border: `1px solid ${i === 0 ? "rgba(190,79,40,.4)" : T.hair}`, background: i === 0 ? "rgba(190,79,40,.08)" : "transparent", borderRadius: 999, padding: "5px 12px" }}>{s}</span>
+            {i < stages.length - 1 && <span aria-hidden style={{ width: 16, height: 1, background: T.hair }} />}
+          </span>
+        ))}
+        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".1em", color: T.gold, textTransform: "uppercase" }}>
+          <Icon name="trophy" size={13} /> Champion — crowned at the Final
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function Slot({ side, pet, onEnter }: { side: "home" | "away"; pet?: Pet; onEnter: () => void }) {
+  const isHome = side === "home";
+  const accent = isHome ? T.terra : T.teal;
+  return (
+    <button onClick={onEnter} style={{
+      position: "relative", cursor: "pointer", border: "none", textAlign: "center",
+      background: accent, borderRadius: isHome ? "18px 10px 10px 18px" : "10px 18px 18px 10px",
+      padding: "20px 16px 18px", boxShadow: "var(--ed-shadow-card)", overflow: "hidden",
+    }}>
+      <div style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "1 / 1", background: "rgba(252,233,207,.14)", border: "2px solid rgba(252,233,207,.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {pet?.avatar_url
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={pet.avatar_url} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : <span style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 42, color: "rgba(252,233,207,.55)" }}>?</span>}
+      </div>
+      <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 18, color: T.creamOn, marginTop: 12 }}>{pet?.name || (isHome ? "Your pet" : "A challenger")}</div>
+      <div style={{ fontFamily: T.m, fontSize: 9.5, fontWeight: 700, letterSpacing: ".1em", color: "rgba(252,233,207,.78)", marginTop: 4, textTransform: "uppercase" }}>{pet ? "Ready to enter" : "Enter to claim a slot"}</div>
+    </button>
+  );
+}
+
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "8px 0 40px", fontFamily: T.body, color: T.ink }}>
@@ -411,17 +488,16 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div aria-hidden style={{ position: "absolute", right: -8, top: -16, opacity: 0.08, lineHeight: 1, zIndex: 1 }}><Icon name="trophy" size={130} /></div>
         <div style={{ position: "relative", zIndex: 2 }}>
           <div style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: T.terraSub, textTransform: "uppercase" }}>Pet World Cup · 2026</div>
-          <h1 style={{ fontFamily: T.disp, fontSize: 52, fontWeight: 800, color: T.ink, margin: "10px 0 0", letterSpacing: "-0.03em", lineHeight: 0.96 }}>Fly your colors</h1>
+          <h1 style={{ fontFamily: T.disp, fontSize: 50, fontWeight: 800, color: T.ink, margin: "10px 0 0", letterSpacing: "-0.03em", lineHeight: 0.96 }}>Two ways to play</h1>
           <p style={{ fontFamily: T.body, fontSize: 15.5, color: T.muted2, margin: "16px auto 0", lineHeight: 1.6, maxWidth: 580 }}>
-            The 2026 World Cup is on. <strong style={{ color: T.ink, fontWeight: 600 }}>Pick your country below</strong> — your pet is reimagined as that nation&apos;s iconic animal in its flag colors, ready to share on X. And cast your prediction for who lifts the trophy.
+            The 2026 World Cup is on. Enter your pet in the <strong style={{ color: T.terra, fontWeight: 600 }}>Cuteness Cup</strong> head-to-head bracket, or <strong style={{ color: T.ink, fontWeight: 600 }}>fly your colors</strong> — reimagine your pet as your country&apos;s national animal. Then predict who lifts the trophy.
           </p>
-          {/* how it reads — host info + a clear lead-in to the flag picker (no fake bracket) */}
           <div style={{ display: "inline-flex", alignItems: "center", gap: 12, margin: "18px 0 0", fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: T.mono, flexWrap: "wrap", justifyContent: "center" }}>
-            <span>48 Nations</span>
+            <span>Cuteness Cup</span>
             <span aria-hidden style={{ width: 4, height: 4, borderRadius: "50%", background: T.hair }} />
-            <span>Hosts: USA · Canada · Mexico</span>
+            <span>National Pet</span>
             <span aria-hidden style={{ width: 4, height: 4, borderRadius: "50%", background: T.hair }} />
-            <span style={{ color: T.terraSub }}>↓ Pick your country</span>
+            <span style={{ color: T.terraSub }}>Predict the Champion</span>
           </div>
         </div>
       </div>

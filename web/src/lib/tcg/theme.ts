@@ -42,6 +42,32 @@ export function rarityTier(r: Rarity): number {
   return i < 0 ? 0 : i;
 }
 
+/**
+ * Deterministic rarity from a pet's REAL grind signals — client-safe (no prisma
+ * import), so the collection album can label each owned card by its true rarity
+ * without an extra fetch. The server card lib re-exports this and derives its
+ * `CardData.rarity` from the exact same function, so client and server agree.
+ * No fabricated numbers: every input is a real Pet column.
+ */
+export function computeRarity(p: {
+  level: number; bond_level: number; care_streak: number;
+  atk: number; def: number; spd: number; evolution_stage: number;
+}): { rarity: Rarity; score: number } {
+  const power = p.atk + p.def + p.spd;
+  const score =
+    p.level * 2 +
+    p.bond_level * 3 +
+    p.care_streak +
+    Math.round(power / 3) +
+    p.evolution_stage * 6;
+  let rarity: Rarity = "Common";
+  if (score >= 140) rarity = "Legendary";
+  else if (score >= 90) rarity = "Epic";
+  else if (score >= 55) rarity = "Rare";
+  else if (score >= 28) rarity = "Uncommon";
+  return { rarity, score };
+}
+
 /* Rarity is now carried by the wax-seal "Printed Stock" material model in
  * @/components/Sticker (rarityStock) — the old glow/holo/sparkle rarityFx was
  * retired with the visual system v2. */

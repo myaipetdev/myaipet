@@ -230,12 +230,21 @@ ${learnedPatternsBlock(pet)}
       reply = out.text || `*${pet.name} tilts head curiously*`;
     }
 
-    // Save as interaction + memory
+    // Save as interaction + memory.
+    // interaction_type MUST be "chat" (not "talk") — this row is the ledger the
+    // Season Rewards conversation missions count off. The daily missions
+    // say_hi / chat_5 / chat_10 (catalog.ts) and the weekly/monthly
+    // week_chats_30 / month_conversationalist (periodic.ts) all query
+    // petInteraction rows with interaction_type === "chat". Writing "talk" here
+    // (the value the manual /interact talk-button uses) meant not a single chat
+    // turn ever counted, so those missions were permanently stuck at 0 and their
+    // points never awarded (SCRUM-101). "talk" from the /interact route is a
+    // separate, deliberate affordance and is unaffected.
     await prisma.petInteraction.create({
       data: {
         pet_id: pet.id,
         user_id: user.id,
-        interaction_type: "talk",
+        interaction_type: "chat",
         response_text: reply,
         happiness_change: 8,
         energy_change: -3,

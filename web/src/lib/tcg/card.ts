@@ -9,34 +9,15 @@
 
 import { prisma } from "@/lib/prisma";
 import type { Rarity } from "@/lib/tcg/theme";
+import { computeRarity } from "@/lib/tcg/theme";
 
-export { ELEMENT_THEME, elementTheme, rarityColor } from "@/lib/tcg/theme";
+export { ELEMENT_THEME, elementTheme, rarityColor, computeRarity } from "@/lib/tcg/theme";
 export type { Rarity, ElementTheme } from "@/lib/tcg/theme";
 
 const SPECIES_NAMES: Record<number, string> = {
   0: "Cat", 1: "Dog", 2: "Parrot", 3: "Turtle",
   4: "Hamster", 5: "Rabbit", 6: "Fox", 7: "Pomeranian",
 };
-
-/** Deterministic rarity from real grind signals — higher = rarer. */
-export function computeRarity(p: {
-  level: number; bond_level: number; care_streak: number;
-  atk: number; def: number; spd: number; evolution_stage: number;
-}): { rarity: Rarity; score: number } {
-  const power = p.atk + p.def + p.spd;
-  const score =
-    p.level * 2 +
-    p.bond_level * 3 +
-    p.care_streak +
-    Math.round(power / 3) +
-    p.evolution_stage * 6;
-  let rarity: Rarity = "Common";
-  if (score >= 140) rarity = "Legendary";
-  else if (score >= 90) rarity = "Epic";
-  else if (score >= 55) rarity = "Rare";
-  else if (score >= 28) rarity = "Uncommon";
-  return { rarity, score };
-}
 
 /** Humanize a skill_key like "water_gun" → "Water Gun". */
 export function humanizeSkill(key: string): string {

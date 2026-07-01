@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     const INTERACTION_ICONS: Record<string, string> = {
-      feed: "🍖", play: "⚽", talk: "💬", pet: "🤚", walk: "🚶", train: "🎓",
+      feed: "🍖", play: "⚽", talk: "💬", chat: "💬", pet: "🤚", walk: "🚶", train: "🎓",
     };
 
     // Merge all activities into a single timeline
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
         icon: INTERACTION_ICONS[i.interaction_type] || "🐾",
         wallet: truncateWallet(i.pet?.user?.wallet_address || ""),
         chain: "Base",
-        text: `${i.interaction_type === "train" ? "Trained" : i.interaction_type === "feed" ? "Fed" : i.interaction_type === "play" ? "Played with" : i.interaction_type === "talk" ? "Talked to" : i.interaction_type === "pet" ? "Petted" : "Walked with"} ${i.pet?.name || "their pet"}`,
+        text: `${i.interaction_type === "train" ? "Trained" : i.interaction_type === "feed" ? "Fed" : i.interaction_type === "play" ? "Played with" : i.interaction_type === "talk" || i.interaction_type === "chat" ? "Talked to" : i.interaction_type === "pet" ? "Petted" : "Walked with"} ${i.pet?.name || "their pet"}`,
         time: timeAgo(i.created_at),
         timestamp: i.created_at.getTime(),
       });
