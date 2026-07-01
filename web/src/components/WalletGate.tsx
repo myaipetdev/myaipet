@@ -53,9 +53,9 @@ export default function WalletGate({ children, section }: any) {
   if (section === "my pet" || section === "sovereignty" || section === "community") {
     const ctaBtnStyle: React.CSSProperties = {
       padding: "13px 30px", borderRadius: 13, border: "none",
-      background: "linear-gradient(135deg, #fbbf24, #f59e0b)", color: "#1a1a2e",
-      fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 800,
-      cursor: isAuthenticating ? "wait" : "pointer", boxShadow: "0 6px 16px rgba(245,158,11,0.35)",
+      background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+      fontFamily: "var(--ed-disp)", fontSize: 15, fontWeight: 800,
+      cursor: isAuthenticating ? "wait" : "pointer", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
     };
     const verb = section === "sovereignty" ? "claim it" : section === "community" ? "join" : "adopt";
     let cta: ReactNode;
@@ -89,10 +89,10 @@ export default function WalletGate({ children, section }: any) {
         <div style={{ fontSize: 64, marginBottom: 24, opacity: 0.7, animation: "petFloat 6s ease-in-out infinite" }}>
           <Icon name="compass" size={64} />
         </div>
-        <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700, color: "#1a1a2e", marginBottom: 12 }}>
+        <h2 style={{ fontFamily: "var(--ed-disp)", fontSize: 28, fontWeight: 700, color: "#211A12", marginBottom: 12 }}>
           Verifying...
         </h2>
-        <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, color: "rgba(26,26,46,0.5)", lineHeight: 1.8, marginBottom: 28 }}>
+        <p style={{ fontFamily: "var(--ed-body)", fontSize: 16, color: "#7A6E5A", lineHeight: 1.8, marginBottom: 28 }}>
           {isAuthenticating
             ? "Please sign the message in your wallet."
             : "Checking authentication..."}
@@ -108,13 +108,13 @@ export default function WalletGate({ children, section }: any) {
         <div style={{ fontSize: 64, marginBottom: 24, opacity: 0.7, animation: "petFloat 6s ease-in-out infinite" }}>
           <Icon name="lock" size={64} />
         </div>
-        <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700, color: "#1a1a2e", marginBottom: 12 }}>
+        <h2 style={{ fontFamily: "var(--ed-disp)", fontSize: 28, fontWeight: 700, color: "#211A12", marginBottom: 12 }}>
           Sign In Required
         </h2>
-        <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, color: "rgba(26,26,46,0.5)", lineHeight: 1.8, marginBottom: 20 }}>
+        <p style={{ fontFamily: "var(--ed-body)", fontSize: 16, color: "#7A6E5A", lineHeight: 1.8, marginBottom: 20 }}>
           Wallet connected. Sign in to verify your identity.
         </p>
-        <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "#dc2626", marginBottom: 20 }}>
+        <p style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#dc2626", marginBottom: 20 }}>
           {friendlyError(error)}
         </p>
         <div style={{ display: "inline-block" }}>
@@ -123,15 +123,15 @@ export default function WalletGate({ children, section }: any) {
             disabled={isAuthenticating}
             style={{
               padding: "14px 40px", borderRadius: 14, border: "none",
-              background: "linear-gradient(135deg, #f59e0b, #d97706)",
-              color: "white", fontFamily: "'Space Grotesk',sans-serif",
+              background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+              color: "#FFF8EE", fontFamily: "var(--ed-disp)",
               fontSize: 17, fontWeight: 600, cursor: "pointer",
             }}
           >
             Sign In
           </button>
         </div>
-        <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "rgba(26,26,46,0.35)", marginTop: 24 }}>
+        <p style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#9A7B4E", marginTop: 24 }}>
           No gas fees required. Wallet is used for identity only.
         </p>
         <style>{`@keyframes petFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }`}</style>
@@ -155,17 +155,17 @@ export default function WalletGate({ children, section }: any) {
       <div style={{ fontSize: 64, marginBottom: 24, opacity: 0.7, animation: "petFloat 6s ease-in-out infinite" }}>
         <Icon name="lock" size={64} />
       </div>
-      <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700, color: "#1a1a2e", marginBottom: 12 }}>
+      <h2 style={{ fontFamily: "var(--ed-disp)", fontSize: 28, fontWeight: 700, color: "#211A12", marginBottom: 12 }}>
         Connect Your Wallet
       </h2>
-      <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, color: "rgba(26,26,46,0.5)", lineHeight: 1.8, marginBottom: 28 }}>
+      <p style={{ fontFamily: "var(--ed-body)", fontSize: 16, color: "#7A6E5A", lineHeight: 1.8, marginBottom: 28 }}>
         Connect your wallet to access{" "}
-        <span style={{ color: "#d97706", fontWeight: 600 }}>{sectionLabels[section] || section}</span>.
+        <span style={{ color: "#BE4F28", fontWeight: 600 }}>{sectionLabels[section] || section}</span>.
       </p>
       <div style={{ display: "inline-block" }}>
         <ConnectButton chainStatus="none" showBalance={false} label="Connect Wallet" />
       </div>
-      <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "rgba(26,26,46,0.35)", marginTop: 24 }}>
+      <p style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#9A7B4E", marginTop: 24 }}>
         No gas fees required. Wallet is used for identity only.
       </p>
       <style>{`@keyframes petFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }`}</style>

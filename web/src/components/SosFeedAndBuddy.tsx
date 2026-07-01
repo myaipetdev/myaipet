@@ -89,12 +89,12 @@ export default function SosFeedAndBuddy() {
           <div style={cardHeader}>
             <span style={{ fontSize: 22, display: "inline-flex", lineHeight: 0 }}>
               <svg width={22} height={22} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" stroke="#f59e0b" strokeWidth="2" />
-                <circle cx="12" cy="12" r="3.5" stroke="#f59e0b" strokeWidth="2" />
-                <path d="M12 3v3.5M12 17.5V21M3 12h3.5M17.5 12H21" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="12" cy="12" r="9" stroke="#BE4F28" strokeWidth="2" />
+                <circle cx="12" cy="12" r="3.5" stroke="#BE4F28" strokeWidth="2" />
+                <path d="M12 3v3.5M12 17.5V21M3 12h3.5M17.5 12H21" stroke="#BE4F28" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </span>
-            <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)" }}>
+            <div style={{ fontSize: 11, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E" }}>
               SOS · SAVE OUR STREAKS
             </div>
           </div>
@@ -105,21 +105,21 @@ export default function SosFeedAndBuddy() {
               }}>
                 <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.7, display: "flex", justifyContent: "center" }}>
                   <svg width={36} height={36} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M5 11.5h11v3a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-3Z" stroke="#1a1a2e" strokeWidth="1.6" strokeLinejoin="round" />
-                    <path d="M16 12.5h1.5a2 2 0 0 1 0 4H16" stroke="#1a1a2e" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M8 4.5c-.7.8-.7 1.7 0 2.5M11.5 4.5c-.7.8-.7 1.7 0 2.5" stroke="#1a1a2e" strokeWidth="1.6" strokeLinecap="round" />
-                    <path d="M5 20.5h11" stroke="#1a1a2e" strokeWidth="1.6" strokeLinecap="round" />
+                    <path d="M5 11.5h11v3a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4v-3Z" stroke="#211A12" strokeWidth="1.6" strokeLinejoin="round" />
+                    <path d="M16 12.5h1.5a2 2 0 0 1 0 4H16" stroke="#211A12" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M8 4.5c-.7.8-.7 1.7 0 2.5M11.5 4.5c-.7.8-.7 1.7 0 2.5" stroke="#211A12" strokeWidth="1.6" strokeLinecap="round" />
+                    <path d="M5 20.5h11" stroke="#211A12" strokeWidth="1.6" strokeLinecap="round" />
                   </svg>
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6, color: "#1a1a2e" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6, color: "#211A12", fontFamily: "var(--ed-disp)" }}>
                   Everyone's streak is safe
                 </div>
                 <div style={{
-                  fontSize: 13, color: "rgba(26,26,46,0.55)",
-                  maxWidth: 280, margin: "0 auto", lineHeight: 1.5,
+                  fontSize: 13, color: "#5C5140",
+                  maxWidth: 280, margin: "0 auto", lineHeight: 1.5, fontFamily: "var(--ed-body)",
                 }}>
                   When someone's about to break a streak, their call for help shows up here.
-                  Help and earn <strong style={{ color: "#b45309" }}>+20 pts</strong>.
+                  Help and earn <strong style={{ color: "#9A4E1E" }}>+20 pts</strong>.
                 </div>
               </div>
             )}
@@ -129,15 +129,15 @@ export default function SosFeedAndBuddy() {
                   ? <img src={item.sender.pet.avatar_url} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />
                   : <img src="/mascot.jpg" alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>
-                    {item.sender.pet?.name || "—"} <span style={{ color: "#b45309", fontFamily: "'JetBrains Mono', monospace", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 4 }}>·
+                  <div style={{ fontSize: 13, fontWeight: 700, fontFamily: "var(--ed-disp)" }}>
+                    {item.sender.pet?.name || "—"} <span style={{ color: "#9A4E1E", fontFamily: "var(--ed-m)", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 4 }}>·
                       <svg width={11} height={11} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "inline-block" }}>
-                        <path d="M12 3c1 3 4 4 4 8a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5C10 8 11 6 12 3Z" stroke="#f59e0b" strokeWidth="1.8" strokeLinejoin="round" />
+                        <path d="M12 3c1 3 4 4 4 8a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5C10 8 11 6 12 3Z" stroke="#BE4F28" strokeWidth="1.8" strokeLinejoin="round" />
                       </svg>
                       {item.sender_streak}d</span>
                   </div>
                   {item.message && (
-                    <div style={{ fontSize: 11, color: "rgba(26,26,46,0.65)", marginTop: 1 }}>{item.message}</div>
+                    <div style={{ fontSize: 11, color: "#7A6E5A", marginTop: 1, fontFamily: "var(--ed-body)" }}>{item.message}</div>
                   )}
                 </div>
                 <button onClick={() => help(item.id)} disabled={busy === item.id} style={{
@@ -154,11 +154,11 @@ export default function SosFeedAndBuddy() {
           <div style={cardHeader}>
             <span style={{ fontSize: 22, display: "inline-flex", lineHeight: 0 }}>
               <svg width={22} height={22} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="8.5" cy="12" r="5" stroke="#f59e0b" strokeWidth="2" />
-                <circle cx="15.5" cy="12" r="5" stroke="#f59e0b" strokeWidth="2" />
+                <circle cx="8.5" cy="12" r="5" stroke="#BE4F28" strokeWidth="2" />
+                <circle cx="15.5" cy="12" r="5" stroke="#BE4F28" strokeWidth="2" />
               </svg>
             </span>
-            <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)" }}>
+            <div style={{ fontSize: 11, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E" }}>
               BUDDY LOCK · SHARED STREAK
             </div>
           </div>
@@ -168,14 +168,14 @@ export default function SosFeedAndBuddy() {
               <div style={{ padding: "32px 22px", textAlign: "center" }}>
                 <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.7, display: "flex", justifyContent: "center" }}>
                   <svg width={36} height={36} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle cx="8.5" cy="12" r="5.5" stroke="#1a1a2e" strokeWidth="1.6" />
-                    <circle cx="15.5" cy="12" r="5.5" stroke="#1a1a2e" strokeWidth="1.6" />
+                    <circle cx="8.5" cy="12" r="5.5" stroke="#211A12" strokeWidth="1.6" />
+                    <circle cx="15.5" cy="12" r="5.5" stroke="#211A12" strokeWidth="1.6" />
                   </svg>
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6, color: "#1a1a2e" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6, color: "#211A12", fontFamily: "var(--ed-disp)" }}>
                   Pair up with one friend
                 </div>
-                <div style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", lineHeight: 1.55 }}>
+                <div style={{ fontSize: 13, color: "#5C5140", lineHeight: 1.55, fontFamily: "var(--ed-body)" }}>
                   Both of you have to keep the streak alive — strongest accountability mechanism we know.
                 </div>
               </div>
@@ -183,14 +183,14 @@ export default function SosFeedAndBuddy() {
             {authed && buddy?.active.length === 0 && buddy?.inboundInvites.length === 0 && buddy?.outboundInvites.length === 0 && (
               <div style={{
                 padding: "16px 18px", borderRadius: 12,
-                background: "#fbf6ec",
-                border: "2px solid #1a1a22",
-                boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
+                background: "#F5EFE2",
+                border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
               }}>
-                <div style={{ fontSize: 14, color: "#1a1a2e", lineHeight: 1.55, marginBottom: 6, fontWeight: 600 }}>
+                <div style={{ fontSize: 14, color: "#211A12", lineHeight: 1.55, marginBottom: 6, fontWeight: 600, fontFamily: "var(--ed-disp)" }}>
                   Pair with one friend
                 </div>
-                <div style={{ fontSize: 12, color: "rgba(26,26,46,0.65)", lineHeight: 1.55 }}>
+                <div style={{ fontSize: 12, color: "#7A6E5A", lineHeight: 1.55, fontFamily: "var(--ed-body)" }}>
                   Both of you have to complete a mission each day for the shared streak to tick.
                   Hardest accountability mechanism ever — that's the point.
                 </div>
@@ -200,19 +200,19 @@ export default function SosFeedAndBuddy() {
             {buddy?.active.map(b => (
               <div key={b.id} style={{
                 padding: 14, borderRadius: 12,
-                background: "#fbf6ec",
-                border: "2px solid #1a1a22",
-                boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
+                background: "#F5EFE2",
+                border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
                 display: "flex", alignItems: "center", gap: 12,
               }}>
                 {b.partner.pet?.avatar_url
                   ? <img src={b.partner.pet.avatar_url} alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover" }} />
                   : <img src="/mascot.jpg" alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover" }} />}
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800 }}>{b.partner.pet?.name || b.partner.wallet}</div>
-                  <div style={{ fontSize: 11, color: "rgba(26,26,46,0.55)", fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", gap: 4 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "var(--ed-disp)" }}>{b.partner.pet?.name || b.partner.wallet}</div>
+                  <div style={{ fontSize: 11, color: "#7A6E5A", fontFamily: "var(--ed-m)", display: "flex", alignItems: "center", gap: 4 }}>
                     <svg width={11} height={11} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "inline-block" }}>
-                      <path d="M12 3c1 3 4 4 4 8a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5C10 8 11 6 12 3Z" stroke="#f59e0b" strokeWidth="1.8" strokeLinejoin="round" />
+                      <path d="M12 3c1 3 4 4 4 8a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5C10 8 11 6 12 3Z" stroke="#BE4F28" strokeWidth="1.8" strokeLinejoin="round" />
                     </svg>
                     shared streak · {b.shared_streak}d
                   </div>
@@ -223,18 +223,18 @@ export default function SosFeedAndBuddy() {
             {buddy?.inboundInvites.map(inv => (
               <div key={inv.id} style={{
                 padding: 12, borderRadius: 12,
-                background: "#fff",
-                border: "2px solid #1a1a22",
-                boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
+                background: "#FBF6EC",
+                border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
                 display: "flex", alignItems: "center", gap: 10,
               }}>
                 <span style={{ fontSize: 18, display: "inline-flex", lineHeight: 0 }}>
                   <svg width={18} height={18} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <rect x="3" y="5.5" width="18" height="13" rx="2.5" stroke="#f59e0b" strokeWidth="1.8" />
-                    <path d="M4 7.5l8 5.5 8-5.5" stroke="#f59e0b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <rect x="3" y="5.5" width="18" height="13" rx="2.5" stroke="#BE4F28" strokeWidth="1.8" />
+                    <path d="M4 7.5l8 5.5 8-5.5" stroke="#BE4F28" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
-                <div style={{ fontSize: 12, flex: 1 }}>
+                <div style={{ fontSize: 12, flex: 1, fontFamily: "var(--ed-body)" }}>
                   Invite from <strong>{inv.sender.wallet}</strong>
                 </div>
                 <button onClick={() => acceptInvite(inv.id)} disabled={busy === inv.id} style={{ ...primaryBtn, padding: "6px 10px", fontSize: 12 }}>
@@ -246,10 +246,10 @@ export default function SosFeedAndBuddy() {
             {buddy?.outboundInvites.map(inv => (
               <div key={inv.id} style={{
                 padding: 12, borderRadius: 12,
-                background: "#fff",
-                border: "2px solid #1a1a22",
-                boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
-                fontSize: 12, color: "rgba(26,26,46,0.65)",
+                background: "#FBF6EC",
+                border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
+                fontSize: 12, color: "#7A6E5A", fontFamily: "var(--ed-body)",
               }}>
                 Waiting for <strong>{inv.target.wallet}</strong> to accept…
               </div>
@@ -264,9 +264,9 @@ export default function SosFeedAndBuddy() {
                   placeholder="Partner wallet 0x…"
                   style={{
                     flex: 1, padding: "9px 12px", borderRadius: 10,
-                    border: "2px solid #1a1a22", fontSize: 13,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    background: "#fff", color: "#1a1a22",
+                    border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", fontSize: 13,
+                    fontFamily: "var(--ed-m)",
+                    background: "#F5EFE2", color: "#211A12",
                   }}
                 />
                 <button onClick={sendInvite} disabled={!inviteWallet.trim() || busy === -1} style={{
@@ -290,25 +290,24 @@ export default function SosFeedAndBuddy() {
 
 // ── Styles ──
 const card: React.CSSProperties = {
-  background: "#faf7f2", borderRadius: 16,
-  border: "2px solid #1a1a22", overflow: "hidden",
-  boxShadow: "0 6px 0 rgba(26,26,34,0.14)",
+  background: "#FBF6EC", borderRadius: 16,
+  border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", overflow: "hidden",
+  boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
 };
 const cardHeader: React.CSSProperties = {
   padding: "16px 18px",
-  borderBottom: "2px solid #1a1a22",
+  borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
   display: "flex", alignItems: "center", gap: 10,
 };
 const empty: React.CSSProperties = {
   padding: "30px 18px", textAlign: "center",
-  fontSize: 13, color: "rgba(26,26,46,0.5)",
+  fontSize: 13, color: "#9A7B4E", fontFamily: "var(--ed-body)",
 };
 const primaryBtn: React.CSSProperties = {
   padding: "9px 16px", borderRadius: 10,
-  border: "2px solid #1a1a22",
-  background: "#f59e0b",
-  color: "#1a1a22", fontWeight: 800, fontSize: 13,
-  cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif",
-  boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
+  border: "none",
+  background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+  color: "#FFF8EE", fontWeight: 800, fontSize: 13,
+  cursor: "pointer", fontFamily: "var(--ed-disp)",
   whiteSpace: "nowrap",
 };

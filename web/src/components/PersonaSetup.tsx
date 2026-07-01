@@ -313,27 +313,27 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
 
   // ── Shared styles ──
   const cardStyle: React.CSSProperties = {
-    background: "linear-gradient(145deg, rgba(20,20,50,0.6), rgba(15,15,40,0.4))",
-    border: "1px solid rgba(255,255,255,0.06)",
+    background: "#FBF6EC",
+    border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
     borderRadius: 16,
     padding: "24px",
-    backdropFilter: "blur(12px)",
+    boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
     marginBottom: 16,
   };
 
   const labelStyle: React.CSSProperties = {
-    fontFamily: "monospace",
+    fontFamily: "var(--ed-m)",
     fontSize: 11,
-    color: "rgba(255,255,255,0.4)",
+    color: "#7A6E5A",
     marginBottom: 8,
     textTransform: "uppercase" as const,
-    letterSpacing: "0.08em",
+    letterSpacing: "0.12em",
   };
 
   const helpStyle: React.CSSProperties = {
-    fontFamily: "monospace",
+    fontFamily: "var(--ed-m)",
     fontSize: 10,
-    color: "rgba(255,255,255,0.25)",
+    color: "#9A7B4E",
     marginTop: 6,
     lineHeight: 1.5,
   };
@@ -342,10 +342,10 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
     width: "100%",
     padding: "12px 16px",
     borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(255,255,255,0.03)",
-    color: "#fff",
-    fontFamily: "'Space Grotesk',sans-serif",
+    border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+    background: "#F5EFE2",
+    color: "#211A12",
+    fontFamily: "var(--ed-body)",
     fontSize: 13,
     outline: "none",
     transition: "border-color 0.2s",
@@ -363,11 +363,11 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
   return (
     <div style={{ animation: "fadeUp 0.4s ease-out" }}>
       <style>{`
-        .persona-input:focus { border-color: rgba(245,158,11,0.4) !important; }
-        .persona-tab:hover { background: rgba(255,255,255,0.06) !important; }
+        .persona-input:focus { border-color: rgba(190,79,40,0.5) !important; }
+        .persona-tab:hover { background: rgba(33,26,18,0.04) !important; }
         .persona-chip:hover { opacity: 0.85 !important; transform: scale(1.02); }
         .persona-tag:hover .persona-tag-x { opacity: 1 !important; }
-        .persona-suggested:hover { border-color: rgba(139,92,246,0.4) !important; background: rgba(139,92,246,0.1) !important; }
+        .persona-suggested:hover { border-color: rgba(190,79,40,0.4) !important; background: rgba(190,79,40,0.08) !important; }
         @keyframes analyzeDots { 0%,20% { content: '.' } 40% { content: '..' } 60%,100% { content: '...' } }
         @keyframes fadeSlide { from { opacity:0; transform:translateX(10px) } to { opacity:1; transform:translateX(0) } }
         @keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
@@ -376,31 +376,31 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
       {/* Section Header */}
       <div style={{ marginBottom: 20 }}>
         <div style={{
-          fontFamily: "'Space Grotesk',sans-serif",
-          fontSize: 16, fontWeight: 700, color: "#fff",
+          fontFamily: "var(--ed-disp)",
+          fontSize: 16, fontWeight: 700, color: "#211A12",
           display: "flex", alignItems: "center", gap: 10,
         }}>
           <span style={{
             width: 32, height: 32, borderRadius: 10,
-            background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(245,158,11,0.15))",
-            border: "1px solid rgba(139,92,246,0.2)",
+            background: "#F5EFE2",
+            border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
             display: "inline-flex", alignItems: "center", justifyContent: "center",
-            fontSize: 16,
+            fontSize: 16, color: "#BE4F28",
           }}>
             P
           </span>
           Persona Setup
           <span style={{
-            fontFamily: "monospace", fontSize: 10,
-            color: "#f59e0b", background: "rgba(245,158,11,0.1)",
+            fontFamily: "var(--ed-m)", fontSize: 10,
+            color: "#9A4E1E", background: "rgba(190,79,40,0.1)",
             padding: "2px 8px", borderRadius: 6,
           }}>
             {petName}
           </span>
         </div>
         <div style={{
-          fontFamily: "monospace", fontSize: 11,
-          color: "rgba(255,255,255,0.3)", marginTop: 6, marginLeft: 42,
+          fontFamily: "var(--ed-m)", fontSize: 11,
+          color: "#7A6E5A", marginTop: 6, marginLeft: 42,
         }}>
           Configure your pet&apos;s personality to reflect you
         </div>
@@ -409,9 +409,9 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
       {/* Tab Navigation */}
       <div style={{
         display: "flex", gap: 4, marginBottom: 20,
-        background: "rgba(255,255,255,0.02)",
+        background: "#ECE4D4",
         borderRadius: 14, padding: 4,
-        border: "1px solid rgba(255,255,255,0.04)",
+        border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
       }}>
         {TABS.map((tab) => (
           <button
@@ -422,7 +422,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
               flex: 1, padding: "12px 16px",
               borderRadius: 10, border: "none",
               background: activeTab === tab.key
-                ? "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(139,92,246,0.1))"
+                ? "#FBF6EC"
                 : "transparent",
               cursor: "pointer",
               transition: "all 0.25s ease",
@@ -433,21 +433,21 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
               <div style={{
                 position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
                 width: "60%", height: 2,
-                background: "linear-gradient(90deg, transparent, #f59e0b, transparent)",
+                background: "#BE4F28",
                 borderRadius: 1,
               }} />
             )}
             <div style={{
-              fontFamily: "'Space Grotesk',sans-serif",
+              fontFamily: "var(--ed-disp)",
               fontSize: 12, fontWeight: activeTab === tab.key ? 700 : 500,
-              color: activeTab === tab.key ? "#fff" : "rgba(255,255,255,0.4)",
+              color: activeTab === tab.key ? "#211A12" : "#7A6E5A",
               transition: "color 0.2s",
             }}>
               {tab.label}
             </div>
             <div style={{
-              fontFamily: "monospace", fontSize: 9,
-              color: activeTab === tab.key ? "rgba(245,158,11,0.7)" : "rgba(255,255,255,0.2)",
+              fontFamily: "var(--ed-m)", fontSize: 9,
+              color: activeTab === tab.key ? "#9A4E1E" : "#9A7B4E",
               marginTop: 2,
             }}>
               {tab.desc}
@@ -461,11 +461,11 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
         <div style={{
           padding: "10px 16px", borderRadius: 12, marginBottom: 16,
           background: saveResult.type === "success"
-            ? "rgba(74,222,128,0.08)"
-            : "rgba(239,68,68,0.08)",
-          border: `1px solid ${saveResult.type === "success" ? "rgba(74,222,128,0.2)" : "rgba(239,68,68,0.2)"}`,
-          fontFamily: "monospace", fontSize: 12,
-          color: saveResult.type === "success" ? "#4ade80" : "#f87171",
+            ? "rgba(92,138,78,0.1)"
+            : "rgba(190,79,40,0.08)",
+          border: `1px solid ${saveResult.type === "success" ? "rgba(92,138,78,0.25)" : "rgba(190,79,40,0.25)"}`,
+          fontFamily: "var(--ed-m)", fontSize: 12,
+          color: saveResult.type === "success" ? "#5C8A4E" : "#BE4F28",
           animation: "fadeSlide 0.3s ease-out",
         }}>
           {saveResult.type === "success" ? "\u2713 " : "\u2717 "}{saveResult.text}
@@ -488,13 +488,13 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                     padding: "10px 18px",
                     borderRadius: 12,
                     border: persona.speech_style === opt.value
-                      ? "1.5px solid rgba(245,158,11,0.4)"
-                      : "1px solid rgba(255,255,255,0.08)",
+                      ? "1.5px solid rgba(190,79,40,0.4)"
+                      : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                     background: persona.speech_style === opt.value
-                      ? "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05))"
-                      : "rgba(255,255,255,0.03)",
-                    color: persona.speech_style === opt.value ? "#f59e0b" : "rgba(255,255,255,0.6)",
-                    fontFamily: "'Space Grotesk',sans-serif",
+                      ? "rgba(190,79,40,0.1)"
+                      : "#F5EFE2",
+                    color: persona.speech_style === opt.value ? "#BE4F28" : "#5C5140",
+                    fontFamily: "var(--ed-disp)",
                     fontSize: 13, fontWeight: 600,
                     cursor: "pointer",
                     transition: "all 0.2s",
@@ -529,13 +529,13 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                       padding: "10px 16px",
                       borderRadius: 24,
                       border: isSelected
-                        ? "1.5px solid rgba(139,92,246,0.4)"
-                        : "1px solid rgba(255,255,255,0.08)",
+                        ? "1.5px solid rgba(190,79,40,0.4)"
+                        : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                       background: isSelected
-                        ? "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(139,92,246,0.08))"
-                        : "rgba(255,255,255,0.03)",
-                      color: isSelected ? "#c4b5fd" : "rgba(255,255,255,0.5)",
-                      fontFamily: "'Space Grotesk',sans-serif",
+                        ? "rgba(190,79,40,0.1)"
+                        : "#F5EFE2",
+                      color: isSelected ? "#BE4F28" : "#7A6E5A",
+                      fontFamily: "var(--ed-disp)",
                       fontSize: 13, fontWeight: 600,
                       cursor: "pointer",
                       transition: "all 0.2s",
@@ -562,8 +562,8 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
             <div style={{
               display: "flex", flexWrap: "wrap", gap: 6,
               padding: "10px 14px", borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(255,255,255,0.03)",
+              border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+              background: "#F5EFE2",
               minHeight: 44, alignItems: "center",
               marginBottom: 10,
             }}>
@@ -574,10 +574,10 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 4,
                     padding: "5px 12px", borderRadius: 8,
-                    background: "rgba(139,92,246,0.15)",
-                    border: "1px solid rgba(139,92,246,0.25)",
-                    color: "#c4b5fd",
-                    fontFamily: "'Space Grotesk',sans-serif",
+                    background: "rgba(190,79,40,0.12)",
+                    border: "1px solid rgba(190,79,40,0.25)",
+                    color: "#9A4E1E",
+                    fontFamily: "var(--ed-disp)",
                     fontSize: 12, fontWeight: 600,
                   }}
                 >
@@ -602,7 +602,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                 placeholder={persona.interests.length === 0 ? "\ud0a4\uc6cc\ub4dc \uc785\ub825 \ud6c4 Enter" : ""}
                 style={{
                   border: "none", background: "transparent",
-                  color: "#fff", fontFamily: "'Space Grotesk',sans-serif",
+                  color: "#211A12", fontFamily: "var(--ed-body)",
                   fontSize: 13, outline: "none",
                   minWidth: 80, flex: 1,
                 }}
@@ -616,10 +616,10 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   onClick={() => addTag(tag)}
                   style={{
                     padding: "5px 12px", borderRadius: 8,
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    background: "rgba(255,255,255,0.02)",
-                    color: "rgba(255,255,255,0.35)",
-                    fontFamily: "monospace", fontSize: 11,
+                    border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                    background: "#F5EFE2",
+                    color: "#9A7B4E",
+                    fontFamily: "var(--ed-m)", fontSize: 11,
                     cursor: "pointer", transition: "all 0.2s",
                   }}
                 >
@@ -655,13 +655,13 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                     flex: 1, padding: "12px 16px",
                     borderRadius: 12,
                     border: persona.language === opt.value
-                      ? "1.5px solid rgba(245,158,11,0.4)"
-                      : "1px solid rgba(255,255,255,0.08)",
+                      ? "1.5px solid rgba(190,79,40,0.4)"
+                      : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                     background: persona.language === opt.value
-                      ? "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05))"
-                      : "rgba(255,255,255,0.03)",
-                    color: persona.language === opt.value ? "#f59e0b" : "rgba(255,255,255,0.5)",
-                    fontFamily: "'Space Grotesk',sans-serif",
+                      ? "rgba(190,79,40,0.1)"
+                      : "#F5EFE2",
+                    color: persona.language === opt.value ? "#BE4F28" : "#7A6E5A",
+                    fontFamily: "var(--ed-disp)",
                     fontSize: 13, fontWeight: 600,
                     cursor: "pointer", transition: "all 0.2s",
                     textAlign: "center" as const,
@@ -696,14 +696,14 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
               width: "100%", padding: "16px",
               borderRadius: 14, border: "none",
               background: saving
-                ? "rgba(245,158,11,0.15)"
-                : "linear-gradient(135deg, #f59e0b, #d97706)",
-              color: saving ? "rgba(245,158,11,0.6)" : "#000",
-              fontFamily: "'Space Grotesk',sans-serif",
+                ? "rgba(190,79,40,0.15)"
+                : "linear-gradient(180deg,#F49B2A,#E27D0C)",
+              color: saving ? "rgba(190,79,40,0.6)" : "#FFF8EE",
+              fontFamily: "var(--ed-disp)",
               fontSize: 14, fontWeight: 800,
               cursor: saving ? "not-allowed" : "pointer",
               transition: "all 0.3s",
-              boxShadow: saving ? "none" : "0 4px 20px rgba(245,158,11,0.25)",
+              boxShadow: saving ? "none" : "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
               letterSpacing: "0.02em",
             }}
           >
@@ -728,13 +728,13 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                     flex: 1, padding: "12px 16px",
                     borderRadius: 12,
                     border: importMethod === method
-                      ? "1.5px solid rgba(245,158,11,0.4)"
-                      : "1px solid rgba(255,255,255,0.08)",
+                      ? "1.5px solid rgba(190,79,40,0.4)"
+                      : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                     background: importMethod === method
-                      ? "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05))"
-                      : "rgba(255,255,255,0.03)",
-                    color: importMethod === method ? "#f59e0b" : "rgba(255,255,255,0.5)",
-                    fontFamily: "'Space Grotesk',sans-serif",
+                      ? "rgba(190,79,40,0.1)"
+                      : "#F5EFE2",
+                    color: importMethod === method ? "#BE4F28" : "#7A6E5A",
+                    fontFamily: "var(--ed-disp)",
                     fontSize: 13, fontWeight: 600,
                     cursor: "pointer", transition: "all 0.2s",
                     textAlign: "center" as const,
@@ -761,8 +761,8 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                 }}>
                   <div style={helpStyle}>Paste chat history from any platform for AI analysis</div>
                   <div style={{
-                    fontFamily: "monospace", fontSize: 10,
-                    color: chatText.length > 5000 ? "#f87171" : "rgba(255,255,255,0.25)",
+                    fontFamily: "var(--ed-m)", fontSize: 10,
+                    color: chatText.length > 5000 ? "#BE4F28" : "#9A7B4E",
                   }}>
                     {chatText.length.toLocaleString()} chars
                   </div>
@@ -782,10 +782,10 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   style={{
                     padding: "16px 32px",
                     borderRadius: 14,
-                    border: "2px dashed rgba(139,92,246,0.3)",
-                    background: "rgba(139,92,246,0.05)",
-                    color: "#c4b5fd",
-                    fontFamily: "'Space Grotesk',sans-serif",
+                    border: "2px dashed rgba(190,79,40,0.35)",
+                    background: "rgba(190,79,40,0.06)",
+                    color: "#9A4E1E",
+                    fontFamily: "var(--ed-disp)",
                     fontSize: 13, fontWeight: 600,
                     cursor: "pointer", transition: "all 0.2s",
                   }}
@@ -794,8 +794,8 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                 </button>
                 {chatText && (
                   <div style={{
-                    fontFamily: "monospace", fontSize: 11,
-                    color: "#4ade80", marginTop: 12,
+                    fontFamily: "var(--ed-m)", fontSize: 11,
+                    color: "#5C8A4E", marginTop: 12,
                   }}>
                     File loaded ({chatText.length.toLocaleString()} chars)
                   </div>
@@ -815,22 +815,22 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
               width: "100%", padding: "16px",
               borderRadius: 14, border: "none",
               background: analyzing
-                ? "linear-gradient(90deg, rgba(139,92,246,0.15), rgba(245,158,11,0.15), rgba(139,92,246,0.15))"
+                ? "linear-gradient(90deg, rgba(107,79,160,0.12), rgba(190,79,40,0.12), rgba(107,79,160,0.12))"
                 : !chatText.trim()
-                  ? "rgba(255,255,255,0.04)"
-                  : "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+                  ? "#ECE4D4"
+                  : "linear-gradient(135deg, #6B4FA0, #5A3F8C)",
               backgroundSize: analyzing ? "200% 100%" : "100% 100%",
               animation: analyzing ? "shimmer 2s linear infinite" : "none",
               color: analyzing
-                ? "#c4b5fd"
+                ? "#6B4FA0"
                 : !chatText.trim()
-                  ? "rgba(255,255,255,0.2)"
-                  : "#fff",
-              fontFamily: "'Space Grotesk',sans-serif",
+                  ? "#9A7B4E"
+                  : "#FFF8EE",
+              fontFamily: "var(--ed-disp)",
               fontSize: 14, fontWeight: 700,
               cursor: analyzing || !chatText.trim() ? "not-allowed" : "pointer",
               transition: "all 0.3s",
-              boxShadow: !chatText.trim() ? "none" : "0 4px 20px rgba(139,92,246,0.2)",
+              boxShadow: !chatText.trim() ? "none" : "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
               marginBottom: 16,
             }}
           >
@@ -841,18 +841,17 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
           {analysisResult && (
             <div style={{
               ...cardStyle,
-              border: "1px solid rgba(139,92,246,0.2)",
+              border: "1px solid rgba(107,79,160,0.25)",
               animation: "fadeSlide 0.4s ease-out",
             }}>
               <div style={{
-                fontFamily: "'Space Grotesk',sans-serif",
-                fontSize: 14, fontWeight: 700, color: "#c4b5fd",
+                fontFamily: "var(--ed-disp)",
+                fontSize: 14, fontWeight: 700, color: "#6B4FA0",
                 marginBottom: 16, display: "flex", alignItems: "center", gap: 8,
               }}>
                 <span style={{
                   width: 8, height: 8, borderRadius: "50%",
-                  background: "#8b5cf6",
-                  boxShadow: "0 0 8px rgba(139,92,246,0.5)",
+                  background: "#6B4FA0",
                 }} />
                 Analysis Results
               </div>
@@ -861,13 +860,13 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                 {/* Detected Style */}
                 <div style={{
                   padding: "12px 16px", borderRadius: 12,
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.05)",
+                  background: "#F5EFE2",
+                  border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 }}>
-                  <div style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 6 }}>
+                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 6 }}>
                     DETECTED STYLE / \uac10\uc9c0\ub41c \ub9d0\ud22c
                   </div>
-                  <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "#f59e0b", fontWeight: 600 }}>
+                  <div style={{ fontFamily: "var(--ed-disp)", fontSize: 14, color: "#BE4F28", fontWeight: 600 }}>
                     {analysisResult.detected_style}
                   </div>
                 </div>
@@ -875,20 +874,20 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                 {/* Key Expressions */}
                 <div style={{
                   padding: "12px 16px", borderRadius: 12,
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.05)",
+                  background: "#F5EFE2",
+                  border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 }}>
-                  <div style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>
+                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 8 }}>
                     KEY EXPRESSIONS / \uc8fc\uc694 \ud45c\ud604
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {analysisResult.key_expressions.map((expr, i) => (
                       <span key={i} style={{
                         padding: "4px 10px", borderRadius: 8,
-                        background: "rgba(245,158,11,0.1)",
-                        border: "1px solid rgba(245,158,11,0.2)",
-                        color: "#fbbf24",
-                        fontFamily: "monospace", fontSize: 12,
+                        background: "rgba(190,79,40,0.1)",
+                        border: "1px solid rgba(190,79,40,0.22)",
+                        color: "#9A4E1E",
+                        fontFamily: "var(--ed-m)", fontSize: 12,
                       }}>
                         {expr}
                       </span>
@@ -899,20 +898,20 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                 {/* Topics */}
                 <div style={{
                   padding: "12px 16px", borderRadius: 12,
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.05)",
+                  background: "#F5EFE2",
+                  border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 }}>
-                  <div style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>
+                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 8 }}>
                     INTEREST TOPICS / \uad00\uc2ec \uc8fc\uc81c
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {analysisResult.topics.map((topic, i) => (
                       <span key={i} style={{
                         padding: "4px 10px", borderRadius: 8,
-                        background: "rgba(139,92,246,0.1)",
-                        border: "1px solid rgba(139,92,246,0.2)",
-                        color: "#c4b5fd",
-                        fontFamily: "monospace", fontSize: 12,
+                        background: "rgba(107,79,160,0.1)",
+                        border: "1px solid rgba(107,79,160,0.22)",
+                        color: "#6B4FA0",
+                        fontFamily: "var(--ed-m)", fontSize: 12,
                       }}>
                         {topic}
                       </span>
@@ -923,20 +922,20 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                 {/* Sample Messages */}
                 <div style={{
                   padding: "12px 16px", borderRadius: 12,
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.05)",
+                  background: "#F5EFE2",
+                  border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 }}>
-                  <div style={{ fontFamily: "monospace", fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 8 }}>
+                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 8 }}>
                     SAMPLE MESSAGES / \ub300\ud45c \uba54\uc2dc\uc9c0 5\uac1c
                   </div>
                   <div style={{ display: "grid", gap: 6 }}>
                     {analysisResult.sample_messages.map((msg, i) => (
                       <div key={i} style={{
                         padding: "8px 12px", borderRadius: 8,
-                        background: "rgba(255,255,255,0.02)",
-                        fontFamily: "monospace", fontSize: 12,
-                        color: "rgba(255,255,255,0.6)",
-                        borderLeft: "2px solid rgba(139,92,246,0.3)",
+                        background: "#FBF6EC",
+                        fontFamily: "var(--ed-m)", fontSize: 12,
+                        color: "#5C5140",
+                        borderLeft: "2px solid rgba(107,79,160,0.4)",
                       }}>
                         {msg}
                       </div>
@@ -952,12 +951,12 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                 style={{
                   width: "100%", padding: "14px",
                   borderRadius: 12,
-                  border: "1px solid rgba(139,92,246,0.2)",
+                  border: "none",
                   background: applyingAnalysis
-                    ? "rgba(139,92,246,0.15)"
-                    : "linear-gradient(135deg, rgba(139,92,246,0.3), rgba(245,158,11,0.2))",
-                  color: applyingAnalysis ? "rgba(139,92,246,0.5)" : "#fff",
-                  fontFamily: "'Space Grotesk',sans-serif",
+                    ? "rgba(190,79,40,0.15)"
+                    : "linear-gradient(180deg,#F49B2A,#E27D0C)",
+                  color: applyingAnalysis ? "rgba(190,79,40,0.5)" : "#FFF8EE",
+                  fontFamily: "var(--ed-disp)",
                   fontSize: 13, fontWeight: 700,
                   cursor: applyingAnalysis ? "not-allowed" : "pointer",
                   marginTop: 16, transition: "all 0.3s",
@@ -978,8 +977,8 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
           <div style={{
             ...cardStyle,
             border: liveLearning
-              ? "1px solid rgba(74,222,128,0.15)"
-              : "1px solid rgba(255,255,255,0.06)",
+              ? "1px solid rgba(92,138,78,0.25)"
+              : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           }}>
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -988,14 +987,13 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{
                   width: 10, height: 10, borderRadius: "50%",
-                  background: liveLearning ? "#4ade80" : "rgba(255,255,255,0.15)",
-                  boxShadow: liveLearning ? "0 0 12px rgba(74,222,128,0.4)" : "none",
+                  background: liveLearning ? "#5C8A4E" : "rgba(33,26,18,0.15)",
                   animation: liveLearning ? "pulse 2s ease-in-out infinite" : "none",
                 }} />
                 <div style={{
-                  fontFamily: "'Space Grotesk',sans-serif",
+                  fontFamily: "var(--ed-disp)",
                   fontSize: 14, fontWeight: 600,
-                  color: liveLearning ? "#4ade80" : "rgba(255,255,255,0.4)",
+                  color: liveLearning ? "#5C8A4E" : "#7A6E5A",
                 }}>
                   {liveLearning ? "\uc5f0\uacb0\ub41c \ud50c\ub7ab\ud3fc\uc5d0\uc11c \uc2e4\uc2dc\uac04\uc73c\ub85c \ud559\uc2b5\ud569\ub2c8\ub2e4" : "\uc2e4\uc2dc\uac04 \ud559\uc2b5 \ube44\ud65c\uc131\ud654\ub428"}
                 </div>
@@ -1008,20 +1006,19 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                 style={{
                   width: 48, height: 26, borderRadius: 13,
                   background: liveLearning
-                    ? "linear-gradient(135deg, #4ade80, #22c55e)"
-                    : "rgba(255,255,255,0.08)",
+                    ? "#5C8A4E"
+                    : "rgba(33,26,18,0.12)",
                   border: "none", cursor: loadingLive ? "not-allowed" : "pointer",
                   position: "relative", transition: "all 0.3s ease",
-                  boxShadow: liveLearning ? "0 0 12px rgba(74,222,128,0.2)" : "none",
                 }}
               >
                 <div style={{
                   width: 20, height: 20, borderRadius: "50%",
-                  background: "#fff",
+                  background: "#FFF8EE",
                   position: "absolute", top: 3,
                   left: liveLearning ? 25 : 3,
                   transition: "left 0.3s ease",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  boxShadow: "0 1px 3px rgba(80,55,20,0.25)",
                 }} />
               </button>
             </div>
@@ -1036,8 +1033,8 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
             {platforms.length === 0 ? (
               <div style={{
                 textAlign: "center", padding: "24px 0",
-                fontFamily: "monospace", fontSize: 12,
-                color: "rgba(255,255,255,0.25)",
+                fontFamily: "var(--ed-m)", fontSize: 12,
+                color: "#9A7B4E",
               }}>
                 No platforms connected yet. Connect in the Platform Connections section above.
               </div>
@@ -1047,13 +1044,13 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   <div key={p.platform} style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     padding: "12px 16px", borderRadius: 12,
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.05)",
+                    background: "#F5EFE2",
+                    border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <span style={{
-                        fontFamily: "'Space Grotesk',sans-serif",
-                        fontSize: 14, fontWeight: 700, color: "#fff",
+                        fontFamily: "var(--ed-disp)",
+                        fontSize: 14, fontWeight: 700, color: "#211A12",
                         textTransform: "capitalize" as const,
                       }}>
                         {p.platform}
@@ -1064,11 +1061,11 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                     }}>
                       <div style={{
                         width: 6, height: 6, borderRadius: "50%",
-                        background: p.connected && liveLearning ? "#4ade80" : "rgba(255,255,255,0.15)",
+                        background: p.connected && liveLearning ? "#5C8A4E" : "rgba(33,26,18,0.15)",
                       }} />
                       <span style={{
-                        fontFamily: "monospace", fontSize: 11,
-                        color: p.connected && liveLearning ? "#4ade80" : "rgba(255,255,255,0.3)",
+                        fontFamily: "var(--ed-m)", fontSize: 11,
+                        color: p.connected && liveLearning ? "#5C8A4E" : "#9A7B4E",
                       }}>
                         {p.connected && liveLearning ? "\ud559\uc2b5 \uc911" : "\ubbf8\uc5f0\uacb0"}
                       </span>
@@ -1085,8 +1082,8 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
             {observedTopics.length === 0 ? (
               <div style={{
                 textAlign: "center", padding: "24px 0",
-                fontFamily: "monospace", fontSize: 12,
-                color: "rgba(255,255,255,0.25)",
+                fontFamily: "var(--ed-m)", fontSize: 12,
+                color: "#9A7B4E",
               }}>
                 No topics detected yet. Topics will appear as your pet observes conversations.
               </div>
@@ -1098,10 +1095,10 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   return (
                     <span key={topic} style={{
                       padding: "6px 14px", borderRadius: 10,
-                      background: `rgba(139,92,246,${0.08 + opacity * 0.12})`,
-                      border: `1px solid rgba(139,92,246,${0.15 + opacity * 0.15})`,
-                      color: `rgba(196,181,253,${opacity})`,
-                      fontFamily: "'Space Grotesk',sans-serif",
+                      background: `rgba(107,79,160,${0.06 + opacity * 0.1})`,
+                      border: `1px solid rgba(107,79,160,${0.15 + opacity * 0.15})`,
+                      color: `rgba(107,79,160,${opacity})`,
+                      fontFamily: "var(--ed-disp)",
                       fontSize: 11 + Math.floor(opacity * 3), fontWeight: 600,
                     }}>
                       {topic}
@@ -1117,8 +1114,8 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
           {lastUpdated && (
             <div style={{
               textAlign: "center",
-              fontFamily: "monospace", fontSize: 10,
-              color: "rgba(255,255,255,0.2)",
+              fontFamily: "var(--ed-m)", fontSize: 10,
+              color: "#9A7B4E",
               marginTop: 8,
             }}>
               Last updated: {new Date(lastUpdated).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}

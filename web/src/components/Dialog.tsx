@@ -87,7 +87,7 @@ export default function DialogHost() {
   };
 
   const danger = req.kind === "confirm" && req.danger;
-  const accent = danger ? "#dc2626" : "#7c3aed";
+  const accent = danger ? "#C0392B" : "#BE4F28";
   const confirmLabel = req.confirmLabel || (req.kind === "confirm" ? (danger ? "Confirm" : "OK") : "Save");
   const cancelLabel = (req.kind === "confirm" && req.cancelLabel) || "Cancel";
   const promptTooShort = req.kind === "prompt" && input.trim().length === 0;
@@ -100,24 +100,24 @@ export default function DialogHost() {
       style={{
         position: "fixed", inset: 0, zIndex: 10_001,
         display: "flex", alignItems: "center", justifyContent: "center",
-        background: "rgba(15,15,26,0.45)", backdropFilter: "blur(2px)",
+        background: "rgba(33,26,18,0.42)", backdropFilter: "blur(2px)",
         padding: 20, animation: "dlgFade 160ms ease",
       }}
     >
       <div
         onMouseDown={(e) => e.stopPropagation()}
         style={{
-          width: "100%", maxWidth: 400, background: "white", borderRadius: 18,
-          padding: "22px 24px", boxShadow: "0 24px 64px rgba(15,15,26,0.32)",
-          border: "1px solid rgba(0,0,0,0.06)", animation: "dlgPop 200ms cubic-bezier(0.2,0.8,0.2,1)",
-          fontFamily: "'Space Grotesk', sans-serif",
+          width: "100%", maxWidth: 400, background: "#FBF6EC", borderRadius: 18,
+          padding: "22px 24px", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
+          border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", animation: "dlgPop 200ms cubic-bezier(0.2,0.8,0.2,1)",
+          fontFamily: "var(--ed-body)",
         }}
       >
-        <div style={{ fontSize: 17, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.02em", lineHeight: 1.35 }}>
+        <div style={{ fontSize: 17, fontWeight: 800, color: "#211A12", letterSpacing: "-0.02em", lineHeight: 1.35, fontFamily: "var(--ed-disp)" }}>
           {req.title}
         </div>
         {req.body && (
-          <div style={{ fontSize: 13.5, color: "rgba(26,26,46,0.6)", marginTop: 8, lineHeight: 1.55 }}>
+          <div style={{ fontSize: 13.5, color: "#7A6E5A", marginTop: 8, lineHeight: 1.55 }}>
             {req.body}
           </div>
         )}
@@ -132,8 +132,9 @@ export default function DialogHost() {
             style={{
               width: "100%", boxSizing: "border-box", marginTop: 14,
               padding: "10px 13px", borderRadius: 10, outline: "none",
-              border: `1px solid ${accent}55`, fontSize: 14.5, color: "#1a1a2e",
-              fontFamily: "'Space Grotesk', sans-serif",
+              background: "#F5EFE2",
+              border: `1px solid ${accent}55`, fontSize: 14.5, color: "#211A12",
+              fontFamily: "var(--ed-body)",
             }}
           />
         )}
@@ -143,9 +144,9 @@ export default function DialogHost() {
             onClick={() => finish(req.kind === "confirm" ? false : null)}
             style={{
               padding: "9px 16px", borderRadius: 10, cursor: "pointer",
-              border: "1px solid rgba(0,0,0,0.1)", background: "white",
-              color: "rgba(26,26,46,0.6)", fontSize: 13.5, fontWeight: 700,
-              fontFamily: "'Space Grotesk', sans-serif",
+              border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", background: "#F5EFE2",
+              color: "#7A6E5A", fontSize: 13.5, fontWeight: 700,
+              fontFamily: "var(--ed-disp)",
             }}
           >{cancelLabel}</button>
           <button
@@ -155,12 +156,12 @@ export default function DialogHost() {
             style={{
               padding: "9px 18px", borderRadius: 10,
               cursor: promptTooShort ? "not-allowed" : "pointer",
-              border: "none", color: "white", fontSize: 13.5, fontWeight: 800,
-              fontFamily: "'Space Grotesk', sans-serif",
+              border: "none", color: "#FFF8EE", fontSize: 13.5, fontWeight: 800,
+              fontFamily: "var(--ed-disp)",
               background: danger
-                ? "linear-gradient(135deg,#ef4444,#dc2626)"
-                : "linear-gradient(135deg,#a855f7,#7c3aed)",
-              boxShadow: `0 6px 16px ${accent}40`,
+                ? "linear-gradient(180deg,#D4553A,#C0392B)"
+                : "linear-gradient(180deg,#F49B2A,#E27D0C)",
+              boxShadow: "var(--ed-shadow-card, 0 12px 24px -16px rgba(80,55,20,.5))",
               opacity: promptTooShort ? 0.55 : 1,
             }}
           >{confirmLabel}</button>

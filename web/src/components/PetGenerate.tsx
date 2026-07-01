@@ -273,10 +273,10 @@ export default function PetGenerate() {
     return (
       <div style={{ padding: "120px 40px", textAlign: "center", maxWidth: 500, margin: "0 auto" }}>
         <div style={{ marginBottom: 16, opacity: 0.5 }}><Icon name="paw" size={56} /></div>
-        <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 24, color: "#1a1a2e", marginBottom: 12 }}>
+        <h2 style={{ fontFamily: "var(--ed-disp)", fontSize: 24, color: "#211A12", marginBottom: 12 }}>
           Adopt a Pet First
         </h2>
-        <p style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.5)", lineHeight: 1.8 }}>
+        <p style={{ fontFamily: "var(--ed-body)", fontSize: 12, color: "#5C5140", lineHeight: 1.8 }}>
           Go to the "My Pet" tab to adopt your first AI pet, then come back here to generate personalized content.
         </p>
       </div>
@@ -297,15 +297,15 @@ export default function PetGenerate() {
           backgroundColor: "rgba(0,0,0,0.5)",
         }}>
           <div style={{
-            background: "white",
+            background: "#FBF6EC",
             borderRadius: 20,
             padding: "40px 60px",
             textAlign: "center",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+            boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
           }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>&#x26d3;&#xfe0f;</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: "#1a1a1a" }}>{chainToast}</div>
-            <div style={{ fontSize: 14, color: "#888", marginTop: 8 }}>{chainToast?.startsWith("❌") ? "Dismisses automatically when you close your wallet" : "Please confirm in your wallet"}</div>
+            <div style={{ fontSize: 24, fontWeight: 700, fontFamily: "var(--ed-disp)", color: "#211A12" }}>{chainToast}</div>
+            <div style={{ fontSize: 14, fontFamily: "var(--ed-body)", color: "#7A6E5A", marginTop: 8 }}>{chainToast?.startsWith("❌") ? "Dismisses automatically when you close your wallet" : "Please confirm in your wallet"}</div>
           </div>
         </div>
       )}
@@ -316,40 +316,40 @@ export default function PetGenerate() {
       `}</style>
 
       <div style={{
-        background: "rgba(255,255,255,0.85)",
-        borderRadius: 20, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+        background: "#FBF6EC",
+        borderRadius: 20, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", overflow: "hidden",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       }}>
         {/* Header */}
         <div style={{
-          padding: "20px 28px", borderBottom: "1px solid rgba(0,0,0,0.06)",
+          padding: "20px 28px", borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Icon name="sparkling" size={22} />
             <div>
-              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 16, fontWeight: 600, color: "#1a1a2e" }}>
+              <span style={{ fontFamily: "var(--ed-disp)", fontSize: 16, fontWeight: 600, color: "#211A12" }}>
                 Pet Content Studio
               </span>
               <div style={{ display: "flex", gap: 6, marginTop: 2 }}>
                 <span style={{
                   fontSize: 8, padding: "2px 7px", borderRadius: 8,
-                  background: "rgba(251,191,36,0.1)", color: "#b45309", fontFamily: "mono", fontWeight: 600,
-                  border: "1px solid rgba(251,191,36,0.2)",
+                  background: "rgba(190,79,40,0.09)", color: "#9A4E1E", fontFamily: "var(--ed-m)", fontWeight: 600,
+                  border: "1px solid rgba(190,79,40,0.18)",
                 }}>AI IMAGE</span>
                 <span style={{
                   fontSize: 8, padding: "2px 7px", borderRadius: 8,
-                  background: "rgba(139,92,246,0.08)", color: "#7c3aed", fontFamily: "mono", fontWeight: 600,
-                  border: "1px solid rgba(139,92,246,0.15)",
+                  background: "rgba(107,79,160,0.08)", color: "#6B4FA0", fontFamily: "var(--ed-m)", fontWeight: 600,
+                  border: "1px solid rgba(107,79,160,0.15)",
                 }}>AI VIDEO</span>
               </div>
             </div>
           </div>
           <div style={{
             padding: "6px 14px", borderRadius: 10,
-            background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.15)",
+            background: "rgba(190,79,40,0.07)", border: "1px solid rgba(190,79,40,0.15)",
           }}>
-            <span style={{ fontFamily: "mono", fontSize: 11, color: "#b45309", fontWeight: 600, cursor: "pointer" }}
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#9A4E1E", fontWeight: 600, cursor: "pointer" }}
               onClick={() => { window.location.href = "/"; }}
               title="Buy more credits on the Home tab"
             >
@@ -365,16 +365,16 @@ export default function PetGenerate() {
               {/* Pet selector */}
               <div style={{ marginBottom: 18 }}>
                 <label style={{
-                  fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.45)",
-                  textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 8, fontWeight: 600,
+                  fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A",
+                  textTransform: "uppercase", letterSpacing: "0.12em", display: "block", marginBottom: 8, fontWeight: 600,
                 }}>
                   Choose Your Pet
                 </label>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {pets.map((p: any) => (
                     <button key={p.id} onClick={() => { setSelectedPet(p); setResult(null); setError(null); setGenerating(false); setProgress(0); }} style={{
-                      background: selectedPet?.id === p.id ? "rgba(251,191,36,0.1)" : "rgba(0,0,0,0.02)",
-                      border: selectedPet?.id === p.id ? "2px solid rgba(251,191,36,0.3)" : "1px solid rgba(0,0,0,0.06)",
+                      background: selectedPet?.id === p.id ? "rgba(190,79,40,0.09)" : "#F5EFE2",
+                      border: selectedPet?.id === p.id ? "1px solid rgba(190,79,40,0.35)" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                       borderRadius: 12, padding: "10px 14px", cursor: "pointer",
                       display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s",
                     }}>
@@ -382,16 +382,16 @@ export default function PetGenerate() {
                         <img src={p.avatar_url} alt={PET_SPECIES[p.species]}
                           style={{ width: 28, height: 28, borderRadius: 8, objectFit: "cover" }} />
                       ) : (
-                        <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(251,191,36,0.1)", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Icon name={PET_ICONS[p.species] || "paw"} size={18} /></span>
+                        <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(190,79,40,0.09)", display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Icon name={PET_ICONS[p.species] || "paw"} size={18} /></span>
                       )}
                       <div style={{ textAlign: "left" }}>
                         <div style={{
-                          fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 600,
-                          color: selectedPet?.id === p.id ? "#b45309" : "rgba(26,26,46,0.5)",
+                          fontFamily: "var(--ed-disp)", fontSize: 12, fontWeight: 600,
+                          color: selectedPet?.id === p.id ? "#9A4E1E" : "#5C5140",
                         }}>
                           {p.name}
                         </div>
-                        <div style={{ fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.35)" }}>
+                        <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "#9A7B4E" }}>
                           Lv.{p.level} · {p.personality_type}
                         </div>
                       </div>
@@ -402,8 +402,8 @@ export default function PetGenerate() {
 
               {/* Preview / Generation / Result area */}
               <div style={{
-                background: "rgba(0,0,0,0.02)", borderRadius: 16,
-                border: "1px solid rgba(0,0,0,0.06)", minHeight: 320,
+                background: "#F5EFE2", borderRadius: 16,
+                border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", minHeight: 320,
                 position: "relative", overflow: "hidden",
               }}>
                 {/* Result */}
@@ -419,26 +419,25 @@ export default function PetGenerate() {
                     <div style={{ padding: 18 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                         <div style={{
-                          width: 8, height: 8, borderRadius: "50%", background: "#4ade80",
-                          boxShadow: "0 0 6px rgba(74,222,128,0.5)",
+                          width: 8, height: 8, borderRadius: "50%", background: "#5C8A4E",
                         }} />
-                        <span style={{ fontFamily: "mono", fontSize: 12, color: "#16a34a", fontWeight: 600 }}>
+                        <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#5C8A4E", fontWeight: 600 }}>
                           {result.demo ? "Demo Preview" : "Generated Successfully!"}
                         </span>
                         {result.style_name && (
                           <span style={{
                             fontSize: 9, padding: "2px 8px", borderRadius: 6,
-                            background: "rgba(251,191,36,0.1)", color: "#b45309",
-                            fontFamily: "mono", fontWeight: 600,
+                            background: "rgba(190,79,40,0.09)", color: "#9A4E1E",
+                            fontFamily: "var(--ed-m)", fontWeight: 600,
                           }}>{result.style_name}</span>
                         )}
                       </div>
                       <div style={{ display: "flex", gap: 8 }}>
                         <button onClick={() => setResult(null)} style={{
-                          flex: 1, background: "linear-gradient(135deg,#f59e0b,#d97706)",
+                          flex: 1, background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
                           border: "none", borderRadius: 10, padding: "11px",
-                          fontFamily: "mono", fontSize: 12, color: "white", cursor: "pointer",
-                          fontWeight: 600, boxShadow: "0 0 20px rgba(245,158,11,0.2)",
+                          fontFamily: "var(--ed-disp)", fontSize: 12, color: "#FFF8EE", cursor: "pointer",
+                          fontWeight: 600,
                         }}>
                           Generate Another
                         </button>
@@ -459,11 +458,10 @@ export default function PetGenerate() {
                               } catch { window.open(result.video_path || result.image_url || result.photo_path, "_blank"); }
                             }} style={{
                               padding: "11px 16px", borderRadius: 10,
-                              background: "linear-gradient(135deg,#f59e0b,#d97706)",
+                              background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
                               border: "none",
-                              fontFamily: "mono", fontSize: 12, color: "white", fontWeight: 600,
+                              fontFamily: "var(--ed-m)", fontSize: 12, color: "#FFF8EE", fontWeight: 600,
                               cursor: "pointer",
-                              boxShadow: "0 0 16px rgba(245,158,11,0.2)",
                               transition: "all 0.2s",
                             }}>
                               ↓ Save
@@ -475,8 +473,8 @@ export default function PetGenerate() {
                               window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=${tags}`, "_blank", "width=600,height=400");
                             }} style={{
                               padding: "11px 14px", borderRadius: 10,
-                              background: "#000", border: "none",
-                              fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, color: "white", fontWeight: 700,
+                              background: "#211A12", border: "none",
+                              fontFamily: "var(--ed-disp)", fontSize: 12, color: "#FFF8EE", fontWeight: 700,
                               cursor: "pointer", transition: "all 0.2s",
                             }}>
                               𝕏 Share
@@ -499,21 +497,21 @@ export default function PetGenerate() {
                           style={{
                           width: 80, height: 80, borderRadius: 20, objectFit: "cover",
                           animation: "pulse 2s ease-in-out infinite",
-                          border: "3px solid rgba(251,191,36,0.3)",
+                          border: "1px solid rgba(190,79,40,0.35)",
                         }} />
                       ) : (
                         <span style={{
                           width: 80, height: 80, borderRadius: 20,
-                          background: "rgba(251,191,36,0.1)", display: "inline-flex",
+                          background: "rgba(190,79,40,0.09)", display: "inline-flex",
                           alignItems: "center", justifyContent: "center",
                           animation: "pulse 2s ease-in-out infinite",
-                          border: "3px solid rgba(251,191,36,0.3)",
+                          border: "1px solid rgba(190,79,40,0.35)",
                         }}><Icon name={PET_ICONS[selectedPet.species] || "paw"} size={48} /></span>
                       )}
                       <div style={{
                         position: "absolute", bottom: -4, right: -4,
                         width: 24, height: 24, borderRadius: "50%",
-                        background: "linear-gradient(135deg,#f59e0b,#d97706)",
+                        background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 11, animation: "pulse 1s ease-in-out infinite",
                       }}>
@@ -521,10 +519,10 @@ export default function PetGenerate() {
                       </div>
                     </div>
                     <div style={{ width: "70%", maxWidth: 240, marginBottom: 14 }}>
-                      <div style={{ height: 5, borderRadius: 3, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
+                      <div style={{ height: 5, borderRadius: 3, background: "rgba(33,26,18,0.08)", overflow: "hidden" }}>
                         <div style={{
                           height: "100%", borderRadius: 3,
-                          background: "linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b)",
+                          background: "linear-gradient(90deg, #E27D0C, #F49B2A, #E27D0C)",
                           backgroundSize: "200% 100%",
                           animation: "shimmer 1.5s ease-in-out infinite",
                           width: `${Math.min(100, progress)}%`,
@@ -533,15 +531,15 @@ export default function PetGenerate() {
                       </div>
                       <div style={{
                         display: "flex", justifyContent: "space-between", marginTop: 4,
-                        fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.3)",
+                        fontFamily: "var(--ed-m)", fontSize: 9, color: "#9A7B4E",
                       }}>
                         <span>{statusText}</span>
                         <span>{Math.round(progress)}%</span>
                       </div>
                     </div>
                     <div style={{
-                      fontFamily: "'Space Grotesk',sans-serif", fontSize: 14,
-                      color: "rgba(26,26,46,0.6)", fontWeight: 500,
+                      fontFamily: "var(--ed-disp)", fontSize: 14,
+                      color: "#5C5140", fontWeight: 500,
                     }}>
                       Creating {genType} for {selectedPet.name}
                     </div>
@@ -556,16 +554,16 @@ export default function PetGenerate() {
                       <img src={selectedPet.avatar_url} alt={selectedPet.name}
                         style={{ width: 96, height: 96, borderRadius: 24, objectFit: "cover", marginBottom: 14 }} />
                     ) : (
-                      <span style={{ width: 96, height: 96, borderRadius: 24, background: "rgba(251,191,36,0.1)", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}><Icon name={PET_ICONS[selectedPet?.species] || "paw"} size={56} /></span>
+                      <span style={{ width: 96, height: 96, borderRadius: 24, background: "rgba(190,79,40,0.09)", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}><Icon name={PET_ICONS[selectedPet?.species] || "paw"} size={56} /></span>
                     )}
-                    <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 22, color: "#1a1a2e", marginBottom: 4, fontWeight: 600 }}>
+                    <div style={{ fontFamily: "var(--ed-disp)", fontSize: 22, color: "#211A12", marginBottom: 4, fontWeight: 600 }}>
                       {selectedPet?.name}
                     </div>
-                    <div style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.4)", marginBottom: 16 }}>
+                    <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A7B4E", marginBottom: 16 }}>
                       {selectedPet?.personality_type} · mood: {selectedPet?.current_mood} · Lv.{selectedPet?.level}
                     </div>
                     <div style={{
-                      fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.3)",
+                      fontFamily: "var(--ed-body)", fontSize: 10, color: "#9A7B4E",
                       maxWidth: 280, lineHeight: 1.7, textAlign: "center",
                     }}>
                       AI generates content based on {selectedPet?.name}&apos;s personality and mood.
@@ -579,8 +577,8 @@ export default function PetGenerate() {
               {history.filter((h: any) => h.photo_path || h.photo_url || h.image_url || h.video_path || h.video_url).length > 0 && !result && !generating && (
                 <div style={{ marginTop: 16 }}>
                   <div style={{
-                    fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.4)",
-                    marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em",
+                    fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A",
+                    marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em",
                   }}>
                     Recent Creations
                   </div>
@@ -588,7 +586,7 @@ export default function PetGenerate() {
                     {history.filter((h: any) => h.photo_path || h.photo_url || h.image_url).slice(0, 6).map((h: any, i: number) => (
                       <div key={h.id || i} className="recent-thumb" style={{
                         width: 72, height: 72, borderRadius: 10, overflow: "hidden",
-                        flexShrink: 0, cursor: "pointer", border: "1px solid rgba(0,0,0,0.06)",
+                        flexShrink: 0, cursor: "pointer", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                       }} onClick={() => setResult(h)}>
                         <img src={h.photo_path || h.photo_url || h.image_url} alt=""
                           style={{ width: "100%", height: "100%", objectFit: "cover" }}
@@ -605,14 +603,14 @@ export default function PetGenerate() {
               {/* Type toggle */}
               <div>
                 <label style={{
-                  fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.45)",
-                  textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 8, fontWeight: 600,
+                  fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A",
+                  textTransform: "uppercase", letterSpacing: "0.12em", display: "block", marginBottom: 8, fontWeight: 600,
                 }}>
                   Generation Type
                 </label>
                 <div style={{
                   display: "flex", gap: 4, padding: 3, borderRadius: 10,
-                  background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)",
+                  background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 }}>
                   {[
                     { key: "image", label: "Image", icon: "🖼" },
@@ -620,10 +618,10 @@ export default function PetGenerate() {
                   ].map(t => (
                     <button key={t.key} onClick={() => setGenType(t.key)} style={{
                       flex: 1,
-                      background: genType === t.key ? "rgba(251,191,36,0.1)" : "transparent",
+                      background: genType === t.key ? "rgba(190,79,40,0.09)" : "transparent",
                       border: "none", borderRadius: 8, padding: "10px",
-                      fontFamily: "mono", fontSize: 12,
-                      color: genType === t.key ? "#b45309" : "rgba(26,26,46,0.4)",
+                      fontFamily: "var(--ed-m)", fontSize: 12,
+                      color: genType === t.key ? "#9A4E1E" : "#7A6E5A",
                       cursor: "pointer", transition: "all 0.2s", fontWeight: genType === t.key ? 600 : 400,
                     }}>
                       {t.icon} {t.label}
@@ -635,8 +633,8 @@ export default function PetGenerate() {
               {/* Prompt — hidden for Original style */}
               {!isOriginal && <div>
                 <label style={{
-                  fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.45)",
-                  textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 8, fontWeight: 600,
+                  fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A",
+                  textTransform: "uppercase", letterSpacing: "0.12em", display: "block", marginBottom: 8, fontWeight: 600,
                 }}>
                   Prompt (Optional)
                 </label>
@@ -644,29 +642,29 @@ export default function PetGenerate() {
                   placeholder={`Describe a scene for ${selectedPet?.name || "your pet"}...`}
                   maxLength={500}
                   style={{
-                    width: "100%", height: 80, borderRadius: 12, background: "rgba(0,0,0,0.02)",
-                    border: "1px solid rgba(0,0,0,0.08)", padding: 14, resize: "none",
-                    fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, color: "#1a1a2e",
+                    width: "100%", height: 80, borderRadius: 12, background: "#F5EFE2",
+                    border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", padding: 14, resize: "none",
+                    fontFamily: "var(--ed-body)", fontSize: 13, color: "#211A12",
                     outline: "none", boxSizing: "border-box", lineHeight: 1.5,
                     transition: "border-color 0.2s",
                   }}
-                  onFocus={e => e.target.style.borderColor = "rgba(245,158,11,0.4)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(0,0,0,0.08)"}
+                  onFocus={e => e.target.style.borderColor = "rgba(190,79,40,0.4)"}
+                  onBlur={e => e.target.style.borderColor = "var(--ed-hair, rgba(33,26,18,.13))"}
                 />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
                   <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                     {PROMPT_SUGGESTIONS.slice(0, 3).map(s => (
                       <button key={s} onClick={() => useSuggestion(s)} style={{
-                        background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)",
+                        background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                         borderRadius: 6, padding: "3px 8px", cursor: "pointer",
-                        fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.4)",
+                        fontFamily: "var(--ed-m)", fontSize: 9, color: "#7A6E5A",
                         transition: "all 0.2s",
                       }}>
                         {s.split(" ").slice(0, 3).join(" ")}...
                       </button>
                     ))}
                   </div>
-                  <span style={{ fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.25)" }}>
+                  <span style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "#9A7B4E" }}>
                     {prompt.length}/500
                   </span>
                 </div>
@@ -675,23 +673,23 @@ export default function PetGenerate() {
               {/* Style */}
               <div>
                 <label style={{
-                  fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.45)",
-                  textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 8, fontWeight: 600,
+                  fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A",
+                  textTransform: "uppercase", letterSpacing: "0.12em", display: "block", marginBottom: 8, fontWeight: 600,
                 }}>
                   Style
                 </label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {STYLES.map((s, idx) => (
                     <button key={s.name} onClick={() => setStyle(idx)} style={{
-                      background: style === idx ? "rgba(251,191,36,0.1)" : "rgba(0,0,0,0.02)",
-                      border: style === idx ? "1px solid rgba(251,191,36,0.25)" : "1px solid rgba(0,0,0,0.06)",
+                      background: style === idx ? "rgba(190,79,40,0.09)" : "#F5EFE2",
+                      border: style === idx ? "1px solid rgba(190,79,40,0.3)" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                       borderRadius: 10, padding: "8px 12px", cursor: "pointer",
                       transition: "all 0.2s",
                     }}>
                       <div style={{ fontSize: 14, marginBottom: 2 }}>{s.icon}</div>
                       <div style={{
-                        fontFamily: "mono", fontSize: 10,
-                        color: style === idx ? "#b45309" : "rgba(26,26,46,0.5)",
+                        fontFamily: "var(--ed-m)", fontSize: 10,
+                        color: style === idx ? "#9A4E1E" : "#5C5140",
                       }}>{s.name}</div>
                     </button>
                   ))}
@@ -702,13 +700,13 @@ export default function PetGenerate() {
               {genType === "video" && (
                 <div style={{
                   padding: "12px 16px", borderRadius: 12,
-                  background: "rgba(139,92,246,0.04)", border: "1px solid rgba(139,92,246,0.1)",
+                  background: "rgba(107,79,160,0.05)", border: "1px solid rgba(107,79,160,0.14)",
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <span style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.45)", fontWeight: 600 }}>
+                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A", fontWeight: 600 }}>
                       Video Duration
                     </span>
-                    <span style={{ fontFamily: "mono", fontSize: 9, color: "#7c3aed" }}>
+                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "#6B4FA0" }}>
                       AI Video
                     </span>
                   </div>
@@ -716,14 +714,14 @@ export default function PetGenerate() {
                     {[3, 5, 10].map(d => (
                       <button key={d} onClick={() => setDuration(d)} style={{
                         flex: 1, padding: "8px", borderRadius: 8, cursor: "pointer",
-                        background: d === duration ? "rgba(251,191,36,0.1)" : "rgba(0,0,0,0.02)",
-                        border: d === duration ? "1px solid rgba(251,191,36,0.25)" : "1px solid rgba(0,0,0,0.06)",
-                        fontFamily: "mono", fontSize: 12, fontWeight: 600,
-                        color: d === duration ? "#b45309" : "rgba(26,26,46,0.35)",
+                        background: d === duration ? "rgba(190,79,40,0.09)" : "#F5EFE2",
+                        border: d === duration ? "1px solid rgba(190,79,40,0.3)" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                        fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 600,
+                        color: d === duration ? "#9A4E1E" : "#9A7B4E",
                         transition: "all 0.2s",
                       }}>
                         {d}s
-                        <div style={{ fontFamily: "mono", fontSize: 8, color: "rgba(26,26,46,0.3)", marginTop: 2 }}>
+                        <div style={{ fontFamily: "var(--ed-m)", fontSize: 8, color: "#9A7B4E", marginTop: 2 }}>
                           <Icon name="coin" size={9} /> {d <= 3 ? 15 : d <= 5 ? 30 : 60}
                         </div>
                       </button>
@@ -735,11 +733,11 @@ export default function PetGenerate() {
               {/* Error */}
               {error && (
                 <div style={{
-                  padding: "12px 16px", borderRadius: 12, background: "rgba(248,113,113,0.06)",
-                  border: "1px solid rgba(248,113,113,0.15)", display: "flex", alignItems: "center", gap: 8,
+                  padding: "12px 16px", borderRadius: 12, background: "rgba(190,79,40,0.06)",
+                  border: "1px solid rgba(190,79,40,0.18)", display: "flex", alignItems: "center", gap: 8,
                 }}>
                   <span style={{ fontSize: 14 }}>⚠️</span>
-                  <span style={{ fontFamily: "mono", fontSize: 11, color: "#dc2626" }}>{error}</span>
+                  <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#9A4E1E" }}>{error}</span>
                 </div>
               )}
 
@@ -747,13 +745,13 @@ export default function PetGenerate() {
               <button onClick={handleGenerate} disabled={!selectedPet || generating} style={{
                 marginTop: "auto", width: "100%",
                 background: generating
-                  ? "rgba(0,0,0,0.04)"
-                  : "linear-gradient(135deg,#f59e0b,#d97706)",
+                  ? "rgba(33,26,18,0.06)"
+                  : "linear-gradient(180deg,#F49B2A,#E27D0C)",
                 border: "none", borderRadius: 12, padding: "14px 0",
-                fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, fontWeight: 600,
-                color: generating ? "rgba(26,26,46,0.25)" : "white",
+                fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 600,
+                color: generating ? "#9A7B4E" : "#FFF8EE",
                 cursor: generating ? "not-allowed" : "pointer",
-                boxShadow: generating ? "none" : "0 0 28px rgba(245,158,11,0.25)",
+                boxShadow: "none",
                 transition: "all 0.3s",
                 letterSpacing: "-0.01em",
               }}>

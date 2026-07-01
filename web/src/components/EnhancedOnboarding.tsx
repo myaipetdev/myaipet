@@ -103,8 +103,8 @@ function PetAvatar({ pet, size = 96 }: { pet: Pet; size?: number }) {
       alt={pet.name}
       style={{
         width: size, height: size, borderRadius: size * 0.28, objectFit: "cover",
-        border: "4px solid #fff",
-        boxShadow: "0 12px 32px rgba(245,158,11,0.25), 0 0 0 6px rgba(245,158,11,0.12)",
+        border: "4px solid #FBF6EC",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       }}
     />
   );
@@ -197,33 +197,28 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   const Shell = ({ children, hideProgress }: { children: React.ReactNode; hideProgress?: boolean }) => (
     <div style={{
       width: "100%", maxWidth: 460,
-      background: "linear-gradient(180deg, #fffaf0 0%, #ffffff 100%)",
+      background: "#FBF6EC",
       borderRadius: 28,
-      border: "1px solid rgba(245,158,11,0.18)",
-      boxShadow: "0 24px 60px rgba(245,158,11,0.16), 0 8px 24px rgba(26,26,46,0.08)",
+      border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+      boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       padding: "32px 28px",
-      fontFamily: "'Space Grotesk', sans-serif",
-      color: "#1a1a2e",
+      fontFamily: "var(--ed-body)",
+      color: "#211A12",
       animation: "obSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
       position: "relative",
       overflow: "hidden",
     }}>
-      {/* Decorative blobs */}
-      <div style={{ position: "absolute", top: -60, right: -60, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,158,11,0.18), transparent 70%)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", bottom: -80, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(192,132,252,0.13), transparent 70%)", pointerEvents: "none" }} />
-
       {!hideProgress && (
         <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 22, position: "relative" }}>
           {Array.from({ length: totalSteps }).map((_, i) => (
             <div key={i} style={{
               height: 4, flex: 1, maxWidth: 56, borderRadius: 2,
               background: i < progressIdx
-                ? "linear-gradient(90deg, #f59e0b, #d97706)"
+                ? "#BE4F28"
                 : i === progressIdx
-                  ? "linear-gradient(90deg, #fbbf24, #f59e0b)"
-                  : "rgba(0,0,0,0.07)",
+                  ? "#BE4F28"
+                  : "rgba(33,26,18,0.10)",
               transition: "all 0.4s",
-              boxShadow: i === progressIdx ? "0 0 12px rgba(251,191,36,0.5)" : "none",
             }} />
           ))}
         </div>
@@ -236,27 +231,26 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   // Style helpers
   const primaryBtn: React.CSSProperties = {
     width: "100%", padding: "14px 24px", borderRadius: 14, border: "none",
-    background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "white",
+    background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
     fontSize: 15, fontWeight: 800, cursor: "pointer",
-    fontFamily: "inherit", marginTop: 18, letterSpacing: "0.01em",
-    boxShadow: "0 8px 24px rgba(245,158,11,0.32)",
+    fontFamily: "var(--ed-disp)", marginTop: 18, letterSpacing: "0.01em",
+    boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
     transition: "transform 0.15s, box-shadow 0.2s",
   };
   const ghostBtn: React.CSSProperties = {
     width: "100%", padding: "12px 24px", borderRadius: 14,
     background: "transparent", border: "none",
-    color: "rgba(26,26,46,0.45)", fontFamily: "inherit",
+    color: "#9A7B4E", fontFamily: "var(--ed-body)",
     fontSize: 13, fontWeight: 600, cursor: "pointer",
     marginTop: 8,
   };
   const optionStyle = (on: boolean): React.CSSProperties => ({
     padding: "14px 16px", borderRadius: 14, cursor: "pointer",
     transition: "all 0.18s", textAlign: "left" as const,
-    border: on ? "2px solid #f59e0b" : "1.5px solid rgba(0,0,0,0.07)",
+    border: on ? "1px solid #BE4F28" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
     background: on
-      ? "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,191,36,0.06))"
-      : "white",
-    boxShadow: on ? "0 4px 14px rgba(245,158,11,0.14)" : "0 1px 3px rgba(0,0,0,0.03)",
+      ? "rgba(190,79,40,0.08)"
+      : "#F5EFE2",
     transform: on ? "scale(1.01)" : "scale(1)",
   });
 
@@ -265,9 +259,10 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
     <div style={{
       display: "inline-block",
       padding: "4px 10px", borderRadius: 999,
-      background: "rgba(245,158,11,0.12)",
-      color: "#b45309",
+      background: "rgba(190,79,40,0.10)",
+      color: "#9A4E1E",
       fontSize: 11, fontWeight: 700, letterSpacing: "0.12em",
+      fontFamily: "var(--ed-m)",
       textTransform: "uppercase", marginBottom: 10,
     }}>{text}</div>
   );
@@ -286,14 +281,14 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
         </div>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           {eyebrow("Welcome")}
-          <h2 style={{ fontSize: 32, fontWeight: 800, color: "#1a1a2e", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
+          <h2 style={{ fontSize: 32, fontWeight: 800, color: "#211A12", margin: "0 0 6px", letterSpacing: "-0.02em", fontFamily: "var(--ed-disp)" }}>
             Meet {pet.name}
           </h2>
           <div style={{
             display: "inline-flex", gap: 6, alignItems: "center",
             padding: "5px 12px", borderRadius: 999,
-            background: "rgba(0,0,0,0.04)",
-            fontSize: 12, color: "rgba(26,26,46,0.6)", fontWeight: 600,
+            background: "rgba(33,26,18,0.05)",
+            fontSize: 12, color: "#5C5140", fontWeight: 600,
             marginBottom: 14,
           }}>
             <span>Lv.{pet.level || 1}</span>
@@ -301,7 +296,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             <span style={{ textTransform: "capitalize" }}>{pet.personality_type || "playful"}</span>
             {pet.element && pet.element !== "normal" && (<><span>·</span><span style={{ textTransform: "capitalize" }}>{pet.element}</span></>)}
           </div>
-          <p style={{ color: "rgba(26,26,46,0.62)", fontSize: 15, lineHeight: 1.55, margin: 0, padding: "0 8px" }}>
+          <p style={{ color: "#5C5140", fontSize: 15, lineHeight: 1.55, margin: 0, padding: "0 8px" }}>
             A 1-minute setup so {pet.name} can match your tone and live wherever you do online.
           </p>
         </div>
@@ -314,23 +309,23 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             <div key={item.label} style={{
               display: "flex", alignItems: "center", gap: 14,
               padding: "12px 14px", borderRadius: 14,
-              background: "white",
-              border: "1px solid rgba(0,0,0,0.06)",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.03)",
+              background: "#F5EFE2",
+              border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
             }}>
               <div style={{
                 width: 38, height: 38, borderRadius: 11,
-                background: "linear-gradient(135deg, rgba(245,158,11,0.14), rgba(192,132,252,0.08))",
+                background: "rgba(190,79,40,0.10)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 19,
               }}><Icon name={item.icon} size={22} /></div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>{item.label}</div>
-                <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginTop: 1 }}>{item.desc}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#211A12", fontFamily: "var(--ed-disp)" }}>{item.label}</div>
+                <div style={{ fontSize: 12, color: "#7A6E5A", marginTop: 1 }}>{item.desc}</div>
               </div>
               <span style={{
                 fontSize: 11, padding: "3px 10px", borderRadius: 999,
-                background: "rgba(74,222,128,0.14)", color: "#16a34a", fontWeight: 700,
+                background: "rgba(92,138,78,0.14)", color: "#5C8A4E", fontWeight: 700,
+                fontFamily: "var(--ed-m)",
               }}>{item.pts}</span>
             </div>
           ))}
@@ -359,10 +354,10 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
       <Shell>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
           {eyebrow(`Step 1 of 2 · Q${quizIndex + 1}/${QUIZ_QUESTIONS.length}`)}
-          <h3 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
+          <h3 style={{ fontSize: 22, fontWeight: 800, color: "#211A12", margin: "0 0 4px", letterSpacing: "-0.02em", fontFamily: "var(--ed-disp)" }}>
             {q.question}
           </h3>
-          {isMulti && <p style={{ color: "rgba(26,26,46,0.5)", fontSize: 12, margin: 0 }}>Pick up to 3</p>}
+          {isMulti && <p style={{ color: "#7A6E5A", fontSize: 12, margin: 0 }}>Pick up to 3</p>}
         </div>
 
         <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
@@ -370,8 +365,8 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             const on = isMulti ? ((cur as string[]) || []).includes(opt.value) : cur === opt.value;
             return (
               <div key={opt.value} onClick={() => handleQuizAnswer(q.id, opt.value, isMulti)} style={optionStyle(on)}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: on ? "#b45309" : "#1a1a2e" }}>{opt.label}</div>
-                {"desc" in opt && <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginTop: 3 }}>{(opt as any).desc}</div>}
+                <div style={{ fontSize: 14, fontWeight: 700, color: on ? "#9A4E1E" : "#211A12", fontFamily: "var(--ed-disp)" }}>{opt.label}</div>
+                {"desc" in opt && <div style={{ fontSize: 12, color: "#7A6E5A", marginTop: 3 }}>{(opt as any).desc}</div>}
               </div>
             );
           })}
@@ -382,7 +377,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           {QUIZ_QUESTIONS.map((_, i) => (
             <div key={i} style={{
               width: i === quizIndex ? 18 : 6, height: 6, borderRadius: 3,
-              background: i <= quizIndex ? "#f59e0b" : "rgba(0,0,0,0.08)",
+              background: i <= quizIndex ? "#BE4F28" : "rgba(33,26,18,0.10)",
               transition: "all 0.3s",
             }} />
           ))}
@@ -391,7 +386,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
         <button
           onClick={() => { if (quizIndex < QUIZ_QUESTIONS.length - 1) setQuizIndex(quizIndex + 1); else { addPoints(30); setStep("social"); } }}
           disabled={!canNext}
-          style={{ ...primaryBtn, opacity: canNext ? 1 : 0.4, cursor: canNext ? "pointer" : "not-allowed", boxShadow: canNext ? "0 8px 24px rgba(245,158,11,0.32)" : "none" }}>
+          style={{ ...primaryBtn, opacity: canNext ? 1 : 0.4, cursor: canNext ? "pointer" : "not-allowed", boxShadow: canNext ? "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" : "none" }}>
           {quizIndex < QUIZ_QUESTIONS.length - 1 ? "Next →" : "Done (+30)"}
         </button>
         {quizIndex > 0 && (
@@ -409,10 +404,10 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
       <Shell>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
           {eyebrow("Step 2 of 2")}
-          <h3 style={{ fontSize: 24, fontWeight: 800, color: "#1a1a2e", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
+          <h3 style={{ fontSize: 24, fontWeight: 800, color: "#211A12", margin: "0 0 6px", letterSpacing: "-0.02em", fontFamily: "var(--ed-disp)" }}>
             Where should {pet.name} live?
           </h3>
-          <p style={{ color: "rgba(26,26,46,0.55)", fontSize: 14, margin: 0 }}>
+          <p style={{ color: "#5C5140", fontSize: 14, margin: 0 }}>
             Same memory, same personality, anywhere you are.
           </p>
         </div>
@@ -435,26 +430,26 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
               }} style={{
                 display: "flex", alignItems: "center", gap: 14,
                 padding: "13px 16px", borderRadius: 14, cursor: "pointer",
-                border: on ? `2px solid ${p.color}` : "1.5px solid rgba(0,0,0,0.07)",
-                background: on ? `${p.color}10` : "white",
+                border: on ? `1px solid ${p.color}` : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                background: on ? `${p.color}10` : "#F5EFE2",
                 transition: "all 0.18s",
-                boxShadow: on ? `0 6px 18px ${p.color}24` : "0 1px 3px rgba(0,0,0,0.03)",
                 transform: on ? "scale(1.01)" : "scale(1)",
               }}>
                 <div style={{
                   width: 42, height: 42, borderRadius: 12,
-                  background: p.color, color: "white",
+                  background: p.color, color: "#fff",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 18, fontWeight: 800, flexShrink: 0,
                 }}>{p.icon}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>{p.name}</div>
-                  <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginTop: 1 }}>{p.desc}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#211A12", fontFamily: "var(--ed-disp)" }}>{p.name}</div>
+                  <div style={{ fontSize: 12, color: "#7A6E5A", marginTop: 1 }}>{p.desc}</div>
                 </div>
                 <span style={{
                   fontSize: 11, padding: "4px 11px", borderRadius: 999, fontWeight: 700,
-                  background: on ? "rgba(74,222,128,0.16)" : "rgba(0,0,0,0.05)",
-                  color: on ? "#16a34a" : "rgba(26,26,46,0.45)",
+                  fontFamily: "var(--ed-m)",
+                  background: on ? "rgba(92,138,78,0.16)" : "rgba(33,26,18,0.06)",
+                  color: on ? "#5C8A4E" : "#9A7B4E",
                 }}>{on ? "✓ Connected" : "Connect"}</span>
               </div>
             );
@@ -480,10 +475,10 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             <PetAvatar pet={pet} size={72} />
           </div>
           {eyebrow("Say hi 👋")}
-          <h3 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a2e", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
+          <h3 style={{ fontSize: 22, fontWeight: 800, color: "#211A12", margin: "0 0 6px", letterSpacing: "-0.02em", fontFamily: "var(--ed-disp)" }}>
             {pet.name} just learned about you
           </h3>
-          <p style={{ color: "rgba(26,26,46,0.6)", fontSize: 13, margin: 0 }}>
+          <p style={{ color: "#5C5140", fontSize: 13, margin: 0 }}>
             Say something. They&apos;ll remember it.
           </p>
         </div>
@@ -491,8 +486,8 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
         {/* Chat window */}
         <div style={{
           height: 220, padding: 12, marginBottom: 10,
-          background: "rgba(0,0,0,0.025)", borderRadius: 14,
-          border: "1px solid rgba(0,0,0,0.05)",
+          background: "#ECE4D4", borderRadius: 14,
+          border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           overflowY: "auto", display: "flex", flexDirection: "column", gap: 8,
         }}>
           {tdMessages.map((m, i) => (
@@ -501,12 +496,11 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
               maxWidth: "82%",
               padding: "8px 12px", borderRadius: 14,
               background: m.role === "user"
-                ? "linear-gradient(135deg, #f59e0b, #d97706)"
-                : "white",
-              color: m.role === "user" ? "white" : "#1a1a2e",
+                ? "linear-gradient(180deg,#F49B2A,#E27D0C)"
+                : "#FBF6EC",
+              color: m.role === "user" ? "#FFF8EE" : "#211A12",
               fontSize: 13.5, lineHeight: 1.5,
-              border: m.role === "pet" ? "1px solid rgba(0,0,0,0.05)" : "none",
-              boxShadow: m.role === "pet" ? "0 1px 3px rgba(0,0,0,0.04)" : "0 4px 12px rgba(245,158,11,0.2)",
+              border: m.role === "pet" ? "1px solid var(--ed-hair, rgba(33,26,18,.13))" : "none",
               animation: "obSlideIn 0.25s ease-out",
             }}>
               {m.text}
@@ -515,8 +509,8 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           {tdLoading && (
             <div style={{
               alignSelf: "flex-start", padding: "8px 12px", borderRadius: 14,
-              background: "white", border: "1px solid rgba(0,0,0,0.05)",
-              fontSize: 14, color: "rgba(26,26,46,0.5)",
+              background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+              fontSize: 14, color: "#7A6E5A",
             }}>···</div>
           )}
         </div>
@@ -530,9 +524,9 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           ].map(s => (
             <button key={s} onClick={() => sendTestDrive(s)} disabled={tdLoading} style={{
               padding: "6px 12px", borderRadius: 999,
-              background: "white", border: "1px solid rgba(0,0,0,0.08)",
-              color: "rgba(26,26,46,0.7)", cursor: tdLoading ? "wait" : "pointer",
-              fontFamily: "inherit", fontSize: 12, fontWeight: 500,
+              background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+              color: "#5C5140", cursor: tdLoading ? "wait" : "pointer",
+              fontFamily: "var(--ed-body)", fontSize: 12, fontWeight: 500,
             }}>{s}</button>
           ))}
         </div>
@@ -548,16 +542,16 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             autoFocus
             style={{
               flex: 1, padding: "11px 14px", borderRadius: 12,
-              border: "1.5px solid rgba(0,0,0,0.08)", outline: "none",
-              fontFamily: "inherit", fontSize: 14, color: "#1a1a2e",
-              background: "white",
+              border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", outline: "none",
+              fontFamily: "var(--ed-body)", fontSize: 14, color: "#211A12",
+              background: "#F5EFE2",
             }}
           />
           <button onClick={() => sendTestDrive()} disabled={tdLoading || !tdInput.trim()} style={{
             padding: "11px 18px", borderRadius: 12, border: "none",
-            background: tdInput.trim() ? "linear-gradient(135deg, #f59e0b, #d97706)" : "rgba(0,0,0,0.05)",
-            color: tdInput.trim() ? "white" : "rgba(26,26,46,0.4)",
-            fontFamily: "inherit", fontSize: 14, fontWeight: 700,
+            background: tdInput.trim() ? "linear-gradient(180deg,#F49B2A,#E27D0C)" : "rgba(33,26,18,0.06)",
+            color: tdInput.trim() ? "#FFF8EE" : "#9A7B4E",
+            fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 700,
             cursor: tdLoading || !tdInput.trim() ? "default" : "pointer",
           }}>Send</button>
         </div>
@@ -575,28 +569,12 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   if (step === "done") {
     return (
       <Shell hideProgress>
-        {/* Confetti specks */}
-        {Array.from({ length: 18 }).map((_, i) => {
-          const colors = ["#f59e0b", "#fbbf24", "#c084fc", "#60a5fa", "#4ade80", "#f472b6"];
-          const left = (i * 73) % 100;
-          const delay = (i * 0.07).toFixed(2);
-          return (
-            <div key={i} style={{
-              position: "absolute", left: `${left}%`, top: -10,
-              width: 6, height: 12, borderRadius: 1,
-              background: colors[i % colors.length],
-              animation: `obConfettiFall 1.6s ${delay}s ease-out forwards`,
-              opacity: 0,
-            }} />
-          );
-        })}
-
         <div style={{ textAlign: "center", paddingTop: 12 }}>
           <div style={{ marginBottom: 18, animation: "obBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>
             <PetAvatar pet={pet} size={120} />
           </div>
           {eyebrow("All set ✨")}
-          <h2 style={{ fontSize: 28, fontWeight: 800, color: "#1a1a2e", margin: "0 0 8px", letterSpacing: "-0.02em" }}>
+          <h2 style={{ fontSize: 28, fontWeight: 800, color: "#211A12", margin: "0 0 8px", letterSpacing: "-0.02em", fontFamily: "var(--ed-disp)" }}>
             You & {pet.name} are ready
           </h2>
           <div style={{
@@ -604,14 +582,15 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             margin: "12px 0 6px",
             padding: "10px 22px",
             borderRadius: 999,
-            background: "linear-gradient(135deg, #f59e0b, #d97706)",
-            color: "white",
+            background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+            color: "#FFF8EE",
             fontSize: 22, fontWeight: 800, letterSpacing: "-0.01em",
-            boxShadow: "0 12px 30px rgba(245,158,11,0.32)",
+            fontFamily: "var(--ed-disp)",
+            boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
           }}>
             +{points} pts
           </div>
-          <p style={{ color: "rgba(26,26,46,0.55)", fontSize: 14, margin: "16px 0 18px", lineHeight: 1.55 }}>
+          <p style={{ color: "#5C5140", fontSize: 14, margin: "16px 0 18px", lineHeight: 1.55 }}>
             {pet.name} keeps learning every time you talk. Here's what's ahead:
           </p>
           {/* Capability welcome (VIGIL "what your companion can do") */}
@@ -621,16 +600,16 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
               ["compass", "Give it a goal", "it plans & acts"],
               ["lock", "Yours to own", "your data & model"],
             ] as const).map(([icon, t, s]) => (
-              <div key={t} style={{ padding: "12px 12px", borderRadius: 12, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.14)" }}>
+              <div key={t} style={{ padding: "12px 12px", borderRadius: 12, background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))" }}>
                 <div style={{ fontSize: 18 }}><Icon name={icon} size={20} /></div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginTop: 4 }}>{t}</div>
-                <div style={{ fontSize: 11.5, color: "rgba(26,26,46,0.5)", marginTop: 2 }}>{s}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#211A12", marginTop: 4, fontFamily: "var(--ed-disp)" }}>{t}</div>
+                <div style={{ fontSize: 11.5, color: "#7A6E5A", marginTop: 2 }}>{s}</div>
               </div>
             ))}
           </div>
           <button onClick={onComplete} style={primaryBtn}>Start chatting →</button>
           <div style={{ marginTop: 12 }}>
-            <a href="/sovereignty" style={{ fontSize: 12.5, color: "#b45309", textDecoration: "none", fontWeight: 600 }}>
+            <a href="/sovereignty" style={{ fontSize: 12.5, color: "#9A4E1E", textDecoration: "none", fontWeight: 600 }}>
               Bring your own AI model (Claude · GPT · Gemini) ▸ PetClaw
             </a>
           </div>
@@ -650,11 +629,6 @@ if (typeof document !== "undefined" && !document.getElementById("ob-anims")) {
     @keyframes obFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
     @keyframes obPulseRing { 0% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); } 100% { box-shadow: 0 0 0 22px rgba(220,38,38,0); } }
     @keyframes obBounce { 0% { transform: scale(0.7); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
-    @keyframes obConfettiFall {
-      0% { opacity: 0; transform: translateY(-20px) rotate(0deg); }
-      10% { opacity: 1; }
-      100% { opacity: 0; transform: translateY(540px) rotate(540deg); }
-    }
   `;
   document.head.appendChild(style);
 }

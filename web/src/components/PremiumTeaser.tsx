@@ -27,19 +27,19 @@ export default function PremiumTeaser() {
   return (
     <div className="mp-enter mp-enter-5" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
-        background: "white",
-        color: "#1a1a2e", borderRadius: 18, padding: "24px 26px",
-        border: "3px solid #1a1a22",
-        boxShadow: "0 6px 0 rgba(26,26,34,0.14)",
+        background: "#FBF6EC",
+        color: "#211A12", borderRadius: 18, padding: "24px 26px",
+        border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       }}>
         <div style={{
-          fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-          letterSpacing: "0.18em", color: "#b45309", marginBottom: 8, fontWeight: 700,
+          fontSize: 11, fontFamily: "var(--ed-m)",
+          letterSpacing: "0.14em", color: "#9A4E1E", marginBottom: 8, fontWeight: 700,
         }}>UNLIMITED · COMING SOON</div>
-        <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 4 }}>
+        <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 4, fontFamily: "var(--ed-disp)" }}>
           Pet Companion Premium
         </div>
-        <div style={{ fontSize: 13, color: "rgba(26,26,46,0.6)", marginBottom: 18, maxWidth: 540 }}>
+        <div style={{ fontSize: 13, color: "#5C5140", marginBottom: 18, maxWidth: 540, fontFamily: "var(--ed-body)" }}>
           Free covers daily missions and 1 shield/month. Pro & Studio remove the limits —
           unlimited shields, free repairs, priority Studio queue, monthly credit drops.
         </div>
@@ -85,30 +85,30 @@ function Tier({
   return (
     <div className="mp-lift" style={{
       padding: 18, borderRadius: 14,
-      background: highlight ? "#fbf6ec" : "#faf7f2",
-      border: "2px solid #1a1a22",
-      boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
+      background: highlight ? "#F5EFE2" : "#FBF6EC",
+      border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+      boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       cursor: disabled ? "default" : "pointer",
     }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 16, fontWeight: 800, color: "#1a1a2e" }}>{name}</span>
+        <span style={{ fontSize: 16, fontWeight: 800, color: "#211A12", fontFamily: "var(--ed-disp)" }}>{name}</span>
         {current && (
           <span style={{
             padding: "2px 7px", borderRadius: 999,
-            background: "#f59e0b", color: "#1a1a22", border: "2px solid #1a1a22",
-            fontSize: 9, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em",
+            background: "#BE4F28", color: "#fff", border: "none",
+            fontSize: 9, fontWeight: 800, fontFamily: "var(--ed-m)", letterSpacing: "0.06em",
           }}>CURRENT</span>
         )}
       </div>
       <div style={{
-        fontSize: 24, fontWeight: 800, marginBottom: 12, color: "#1a1a2e",
-        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 24, fontWeight: 800, marginBottom: 12, color: "#211A12",
+        fontFamily: "var(--ed-m)",
       }}>{price}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
         {features.map((f, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "rgba(26,26,46,0.7)" }}>
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#5C5140", fontFamily: "var(--ed-body)" }}>
             <svg width={13} height={13} viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-              <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="#d97706" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="#BE4F28" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             {f}
           </div>
@@ -116,12 +116,12 @@ function Tier({
       </div>
       <button disabled={disabled} style={{
         width: "100%", padding: "10px", borderRadius: 10,
-        border: highlight ? "2px solid #1a1a22" : "2px solid #1a1a22",
-        background: highlight ? "#f59e0b" : "white",
-        boxShadow: highlight ? "0 3px 0 rgba(26,26,34,0.2)" : "0 3px 0 rgba(26,26,34,0.12)",
-        color: highlight ? "#1a1a22" : "rgba(26,26,46,0.6)", fontWeight: 800, fontSize: 12,
+        border: highlight ? "none" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+        background: highlight ? "linear-gradient(180deg,#F49B2A,#E27D0C)" : "#F5EFE2",
+        boxShadow: "none",
+        color: highlight ? "#FFF8EE" : "#7A6E5A", fontWeight: 800, fontSize: 12,
         cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.75 : 1,
-        fontFamily: "'Space Grotesk', sans-serif",
+        fontFamily: "var(--ed-disp)",
       }}>{cta}</button>
     </div>
   );

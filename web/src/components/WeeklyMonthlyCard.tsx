@@ -7,7 +7,6 @@
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
-import { INK } from "@/components/Sticker";
 
 interface PeriodicView {
   id: string;
@@ -71,21 +70,21 @@ export default function WeeklyMonthlyCard() {
 function Block({ period, title, icon }: { period: PeriodicResponse; title: string; icon: string }) {
   return (
     <div style={{
-      background: "white", borderRadius: 16,
-      border: `2px solid ${INK}`,
-      boxShadow: "0 6px 0 rgba(26,26,34,0.14)",
+      background: "#FBF6EC", borderRadius: 16,
+      border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+      boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       padding: "18px 20px",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
         <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name={icon} size={22} /></span>
         <div style={{
-          fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-          letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)",
+          fontSize: 11, fontFamily: "var(--ed-m)",
+          letterSpacing: "0.14em", color: "#7A6E5A",
         }}>{title} · {period.period_key}</div>
         <div style={{ flex: 1 }} />
         <div style={{
-          fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-          color: "#b45309", fontWeight: 800,
+          fontSize: 12, fontFamily: "var(--ed-m)",
+          color: "#9A4E1E", fontWeight: 800,
         }}>
           +{period.earned}/{period.earned + period.remaining}pt
         </div>
@@ -100,23 +99,23 @@ function Block({ period, title, icon }: { period: PeriodicResponse; title: strin
                 <div style={{
                   fontSize: 13, fontWeight: 700, flex: 1,
                   textDecoration: done ? "line-through" : "none",
-                  color: done ? "rgba(26,26,46,0.5)" : "#1a1a2e",
+                  color: done ? "#9A7B4E" : "#211A12",
                 }}>{m.title}</div>
                 <div style={{
-                  fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-                  color: done ? "#b45309" : "rgba(26,26,46,0.55)",
+                  fontSize: 11, fontFamily: "var(--ed-m)",
+                  color: done ? "#9A4E1E" : "#7A6E5A",
                   fontWeight: 800,
                 }}>
                   {done ? `✓ +${m.points}` : `${m.progress}/${m.target} · +${m.points}`}
                 </div>
               </div>
               <div style={{
-                height: 8, borderRadius: 6, background: "#fff",
-                border: `2px solid ${INK}`, overflow: "hidden",
+                height: 8, borderRadius: 6, background: "#F5EFE2",
+                border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", overflow: "hidden",
               }}>
                 <div style={{
                   height: "100%", width: `${pct}%`,
-                  background: "#f59e0b",
+                  background: "#BE4F28",
                   transition: "width 280ms ease",
                 }} />
               </div>

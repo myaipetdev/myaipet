@@ -79,15 +79,6 @@ const REGION_GRADIENTS: Record<number, string> = {
   6: "linear-gradient(135deg, #713f12 0%, #3d1f00 100%)", // Dragon
 };
 
-const REGION_GLOW: Record<number, string> = {
-  1: "0 0 30px rgba(34,197,94,0.15)",
-  2: "0 0 30px rgba(249,115,22,0.15)",
-  3: "0 0 30px rgba(59,130,246,0.15)",
-  4: "0 0 30px rgba(234,179,8,0.15)",
-  5: "0 0 30px rgba(139,92,246,0.15)",
-  6: "0 0 30px rgba(234,179,8,0.2)",
-};
-
 // ── Floating damage type ──
 interface FloatingDmg { id: number; text: string; x: string; color: string; isCrit: boolean; }
 
@@ -143,7 +134,6 @@ const GLOBAL_STYLES = `
   @keyframes pve-fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
   @keyframes pve-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
   @keyframes pve-pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.08);opacity:0.9} }
-  @keyframes pve-glow { 0%,100%{box-shadow:0 0 8px rgba(255,215,0,0.3)} 50%{box-shadow:0 0 20px rgba(255,215,0,0.6)} }
   @keyframes pve-slideUp { from{opacity:0;transform:translateY(100%)} to{opacity:1;transform:translateY(0)} }
   @keyframes pve-slideDown { from{opacity:0;transform:translateY(-30px)} to{opacity:1;transform:translateY(0)} }
   @keyframes pve-screenDarken { from{background:transparent} to{background:rgba(0,0,0,0.6)} }
@@ -156,7 +146,6 @@ const GLOBAL_STYLES = `
   @keyframes pve-rewardSlide { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
   @keyframes pve-chestOpen { 0%{transform:scale(0.8) rotate(-5deg)} 50%{transform:scale(1.2) rotate(5deg)} 100%{transform:scale(1) rotate(0deg)} }
   @keyframes pve-expFill { from{width:0} }
-  @keyframes pve-nodePulse { 0%,100%{box-shadow:0 0 4px rgba(255,215,0,0.4)} 50%{box-shadow:0 0 16px rgba(255,215,0,0.8)} }
   @keyframes pve-pathDash { from{stroke-dashoffset:20} to{stroke-dashoffset:0} }
   @keyframes pve-bgFlow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
   @keyframes pve-attackFlash { 0%{filter:brightness(1)} 30%{filter:brightness(2.5)} 100%{filter:brightness(1)} }
@@ -467,7 +456,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
 
     // VFX
     triggerHitVfx("enemy", isCrit);
-    const dmgColor = isCrit ? "#fbbf24" : effectiveness >= 2 ? "#f87171" : "#fff";
+    const dmgColor = isCrit ? "#C8932F" : effectiveness >= 2 ? "#f87171" : "#fff";
     spawnFloatingDmg(`${damage}`, "right", dmgColor, isCrit);
     if (effectiveness >= 2) triggerSuperEffective("SUPER EFFECTIVE!");
     else if (effectiveness <= 0.5) triggerSuperEffective("Not very effective...");
@@ -530,7 +519,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
         });
 
         triggerHitVfx("player", isCrit);
-        const dmgColor = isCrit ? "#fbbf24" : effectiveness >= 2 ? "#f87171" : "#fff";
+        const dmgColor = isCrit ? "#C8932F" : effectiveness >= 2 ? "#f87171" : "#fff";
         spawnFloatingDmg(`${damage}`, "left", dmgColor, isCrit);
         if (effectiveness >= 2) triggerSuperEffective("SUPER EFFECTIVE!");
 
@@ -611,7 +600,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
   if (loading) return (
     <div style={{
       textAlign: "center", padding: 60, color: "#666",
-      fontFamily: "'Space Grotesk', sans-serif",
+      fontFamily: "var(--ed-disp)",
     }}>
       <style>{GLOBAL_STYLES}</style>
       <div style={{ fontSize: 40, marginBottom: 16, animation: "pve-pulse 1.5s ease infinite" }}><Icon name="sword" size={40} /></div>
@@ -630,25 +619,24 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
         {/* Header */}
         <div style={{
           textAlign: "center", marginBottom: 20, padding: "16px 0",
-          background: "linear-gradient(180deg, rgba(234,179,8,0.06) 0%, transparent 100%)",
+          background: "linear-gradient(180deg, rgba(190,79,40,0.06) 0%, transparent 100%)",
           borderRadius: 16,
         }}>
           <div style={{ fontSize: 28, marginBottom: 4 }}><Icon name="sword" size={28} /></div>
           <h3 style={{
             color: "#e0e0e0", fontSize: 20, fontWeight: 800, margin: 0,
-            fontFamily: "'Space Grotesk', sans-serif",
+            fontFamily: "var(--ed-disp)",
             letterSpacing: 3, textTransform: "uppercase",
-            textShadow: "0 0 20px rgba(234,179,8,0.3)",
           }}>
             STORY MODE
           </h3>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 6,
             marginTop: 8, padding: "4px 14px", borderRadius: 20,
-            background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.15)",
+            background: "rgba(190,79,40,0.08)", border: "1px solid rgba(190,79,40,0.15)",
           }}>
             <Icon name="star" size={16} />
-            <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: "#facc15" }}>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#C8932F" }}>
               {totalStars}
             </span>
             <span style={{ color: "#555", fontSize: 10 }}>/ 90</span>
@@ -661,33 +649,23 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
           const regionStars = region.stages.reduce((a, s) => a + s.stars, 0);
           const anyUnlocked = region.stages.some((s) => s.unlocked);
           const gradient = REGION_GRADIENTS[region.id] || REGION_GRADIENTS[1];
-          const glow = REGION_GLOW[region.id] || REGION_GLOW[1];
 
           return (
             <div key={region.id} style={{
               marginBottom: 16,
               background: anyUnlocked ? gradient : "linear-gradient(135deg, #0e0e14 0%, #111118 100%)",
               borderRadius: 16,
-              border: `1px solid ${anyUnlocked ? region.color + "40" : "#1a1a22"}`,
+              border: `1px solid ${anyUnlocked ? region.color + "40" : "var(--ed-hair, rgba(33,26,18,.13))"}`,
               padding: "16px 18px",
               opacity: anyUnlocked ? 1 : 0.35,
               transition: "all 0.4s ease",
-              boxShadow: anyUnlocked ? glow : "none",
+              boxShadow: anyUnlocked ? "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" : "none",
               position: "relative",
               overflow: "hidden",
               animation: anyUnlocked ? "pve-scrollReveal 0.5s ease" : "none",
               animationDelay: `${rIdx * 0.1}s`,
               animationFillMode: "both",
             }}>
-              {/* Ambient bg glow */}
-              {anyUnlocked && (
-                <div style={{
-                  position: "absolute", top: -40, right: -40, width: 120, height: 120,
-                  borderRadius: "50%", background: `radial-gradient(circle, ${region.color}15 0%, transparent 70%)`,
-                  pointerEvents: "none",
-                }} />
-              )}
-
               {/* Region header */}
               <div style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -705,7 +683,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                   <div>
                     <div style={{
                       color: "#f0f0f0", fontSize: 14, fontWeight: 800,
-                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontFamily: "var(--ed-disp)",
                       letterSpacing: 0.5,
                     }}>
                       {region.name}
@@ -719,7 +697,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                     padding: "2px 8px", borderRadius: 8, background: `${region.color}10`,
                   }}>
                     <Icon name="star" size={12} />
-                    <span style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, color: region.color }}>
+                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, fontWeight: 700, color: region.color }}>
                       {regionStars}/{region.stages.length * 3}
                     </span>
                   </div>
@@ -787,14 +765,9 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                           fontFamily: "inherit",
                           position: "relative",
                           overflow: "hidden",
-                          animation: isCurrent ? "pve-nodePulse 2s ease infinite" : "none",
                           filter: !stage.unlocked ? "grayscale(1)" : "none",
                           transform: stage.isBoss ? "scale(1.05)" : "none",
-                          boxShadow: isCurrent
-                            ? `0 0 12px ${el.color}40`
-                            : stage.isBoss && stage.unlocked
-                              ? `0 0 8px ${el.color}20`
-                              : "none",
+                          boxShadow: "none",
                         }}
                       >
                         {/* Lock overlay for locked stages */}
@@ -812,7 +785,6 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                         {stage.isBoss && stage.unlocked && (
                           <div style={{
                             position: "absolute", top: -2, right: -2,
-                            filter: "drop-shadow(0 0 4px rgba(234,179,8,0.5))",
                           }}>
                             <Icon name="crown" size={14} />
                           </div>
@@ -826,14 +798,14 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                         </div>
                         <div style={{
                           fontSize: 9, fontWeight: 800, color: stage.unlocked ? "#e8e8e8" : "#333",
-                          fontFamily: "'Space Grotesk', sans-serif",
+                          fontFamily: "var(--ed-disp)",
                           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                         }}>
                           {stage.name}
                         </div>
                         <div style={{
                           fontSize: 8, color: stage.unlocked ? "#777" : "#333",
-                          fontFamily: "monospace", marginTop: 1,
+                          fontFamily: "var(--ed-m)", marginTop: 1,
                         }}>
                           Lv.{stage.level}
                         </div>
@@ -843,9 +815,6 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                           <div style={{ display: "flex", justifyContent: "center", gap: 1, marginTop: 3 }}>
                             {[1, 2, 3].map(i => (
                               <span key={i} style={{
-                                filter: i <= stage.stars
-                                  ? "drop-shadow(0 0 3px rgba(250,204,21,0.6))"
-                                  : "none",
                                 opacity: i <= stage.stars ? 1 : 0.25,
                               }}>
                                 <Icon name="star" size={12} />
@@ -879,7 +848,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
         <button onClick={backToMap} style={{
           background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: 10, padding: "8px 16px", color: "#888", fontSize: 11, cursor: "pointer",
-          fontFamily: "'Space Grotesk', sans-serif", marginBottom: 16,
+          fontFamily: "var(--ed-disp)", marginBottom: 16,
           transition: "all 0.2s", backdropFilter: "blur(8px)", letterSpacing: 1,
         }}>
           ← BACK TO MAP
@@ -890,25 +859,12 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
           background: `linear-gradient(180deg, ${region?.color || "#333"}18 0%, #0a0a14 100%)`,
           borderRadius: 18, padding: "24px 20px", position: "relative", overflow: "hidden",
           border: `1px solid ${region?.color || "#333"}35`,
-          marginBottom: 20, boxShadow: `0 0 40px ${region?.color || "#333"}10`,
+          marginBottom: 20, boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
           backdropFilter: "blur(10px)",
         }}>
-          {/* Decorative bg circles */}
-          <div style={{
-            position: "absolute", top: -60, right: -60, width: 160, height: 160,
-            borderRadius: "50%", background: `radial-gradient(circle, ${bossEl.color}10 0%, transparent 70%)`,
-            pointerEvents: "none",
-          }} />
-          <div style={{
-            position: "absolute", bottom: -40, left: -40, width: 100, height: 100,
-            borderRadius: "50%", background: `radial-gradient(circle, ${bossEl.color}08 0%, transparent 70%)`,
-            pointerEvents: "none",
-          }} />
-
           <div style={{ textAlign: "center", position: "relative" }}>
             <div style={{
               fontSize: 56, marginBottom: 10,
-              filter: `drop-shadow(0 0 20px ${bossEl.color}60)`,
               animation: "pve-bounce 2.5s ease infinite",
             }}>
               {selectedStage.emoji}
@@ -916,14 +872,14 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
 
             <div style={{
               color: "#f0f0f0", fontSize: 20, fontWeight: 800,
-              fontFamily: "'Space Grotesk', sans-serif", letterSpacing: 1,
+              fontFamily: "var(--ed-disp)", letterSpacing: 1,
             }}>
               {selectedStage.name}
             </div>
 
             <div style={{
               color: region?.color || "#888", fontSize: 12, fontWeight: 700,
-              fontFamily: "'Space Grotesk', sans-serif",
+              fontFamily: "var(--ed-disp)",
               letterSpacing: 2, textTransform: "uppercase", marginTop: 2,
             }}>
               {selectedStage.title}
@@ -934,22 +890,22 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
               <span style={{
                 fontSize: 10, padding: "3px 10px", borderRadius: 20,
                 background: `${bossEl.color}15`, border: `1px solid ${bossEl.color}30`,
-                color: bossEl.color, fontFamily: "monospace", fontWeight: 700,
+                color: bossEl.color, fontFamily: "var(--ed-m)", fontWeight: 700,
               }}>
                 <Icon name={ELEMENT_ICONS[selectedStage.element] || "normal"} size={12} /> {selectedStage.element.toUpperCase()}
               </span>
               <span style={{
                 fontSize: 10, padding: "3px 10px", borderRadius: 20,
                 background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                color: "#aaa", fontFamily: "monospace", fontWeight: 700,
+                color: "#aaa", fontFamily: "var(--ed-m)", fontWeight: 700,
               }}>
                 LV.{selectedStage.level}
               </span>
               {selectedStage.isBoss && (
                 <span style={{
                   fontSize: 10, padding: "3px 10px", borderRadius: 20,
-                  background: "rgba(234,179,8,0.1)", border: "1px solid rgba(234,179,8,0.2)",
-                  color: "#facc15", fontFamily: "monospace", fontWeight: 700,
+                  background: "rgba(200,147,47,0.1)", border: "1px solid rgba(200,147,47,0.2)",
+                  color: "#C8932F", fontFamily: "var(--ed-m)", fontWeight: 700,
                   display: "inline-flex", alignItems: "center", gap: 3,
                 }}>
                   <Icon name="crown" size={12} /> BOSS
@@ -961,7 +917,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
             <div style={{
               marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             }}>
-              <span style={{ fontFamily: "monospace", fontSize: 9, color: "#555" }}>HP</span>
+              <span style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "#555" }}>HP</span>
               <div style={{
                 width: 120, height: 6, borderRadius: 3, overflow: "hidden",
                 background: "rgba(255,255,255,0.08)",
@@ -971,7 +927,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                   background: `linear-gradient(90deg, #4ade80, ${bossEl.color})`,
                 }} />
               </div>
-              <span style={{ fontFamily: "monospace", fontSize: 9, color: "#555" }}>FULL</span>
+              <span style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "#555" }}>FULL</span>
             </div>
 
             {/* Boss skills preview */}
@@ -984,7 +940,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                   <span key={i} style={{
                     fontSize: 9, padding: "3px 8px", borderRadius: 8,
                     background: `${sEl.color}10`, border: `1px solid ${sEl.color}20`,
-                    color: "#888", fontFamily: "monospace",
+                    color: "#888", fontFamily: "var(--ed-m)",
                   }}>
                     {sd.emoji} {sd.name}
                   </span>
@@ -997,7 +953,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
         {/* Pet selection header */}
         <div style={{
           color: "#888", fontSize: 12, textAlign: "center", marginBottom: 14, fontWeight: 700,
-          fontFamily: "'Space Grotesk', sans-serif", letterSpacing: 2, textTransform: "uppercase",
+          fontFamily: "var(--ed-disp)", letterSpacing: 2, textTransform: "uppercase",
         }}>
           Choose Your Fighter
           <span style={{
@@ -1021,7 +977,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                   background: meetsLevel
                     ? `linear-gradient(145deg, ${el.color}12, rgba(0,0,0,0.2))`
                     : "rgba(0,0,0,0.15)",
-                  border: `1px solid ${meetsLevel ? el.color + "40" : "#1a1a22"}`,
+                  border: `1px solid ${meetsLevel ? el.color + "40" : "var(--ed-hair, rgba(33,26,18,.13))"}`,
                   borderRadius: 14, padding: "16px 18px", cursor: meetsLevel ? "pointer" : "not-allowed",
                   textAlign: "center", opacity: meetsLevel ? 1 : 0.35, fontFamily: "inherit",
                   transition: "all 0.3s ease", minWidth: 110,
@@ -1035,7 +991,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                     position: "absolute", top: 4, right: 4,
                     fontSize: 8, padding: "1px 5px", borderRadius: 6,
                     background: "rgba(74,222,128,0.15)", color: "#4ade80",
-                    fontFamily: "monospace", fontWeight: 700,
+                    fontFamily: "var(--ed-m)", fontWeight: 700,
                   }}>OK</div>
                 )}
                 {meetsLevel && pet.level < selectedStage.level && (
@@ -1043,7 +999,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                     position: "absolute", top: 4, right: 4,
                     fontSize: 8, padding: "1px 5px", borderRadius: 6,
                     background: "rgba(248,113,113,0.15)", color: "#f87171",
-                    fontFamily: "monospace", fontWeight: 700,
+                    fontFamily: "var(--ed-m)", fontWeight: 700,
                   }}>RISK</div>
                 )}
 
@@ -1057,22 +1013,22 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                 </div>
                 <div style={{
                   color: "#e8e8e8", fontSize: 13, fontWeight: 700,
-                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontFamily: "var(--ed-disp)",
                 }}>
                   {pet.name}
                 </div>
                 <div style={{
-                  color: el.color, fontSize: 9, fontFamily: "monospace", fontWeight: 700, marginTop: 2,
+                  color: el.color, fontSize: 9, fontFamily: "var(--ed-m)", fontWeight: 700, marginTop: 2,
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 3,
                 }}>
                   <Icon name={ELEMENT_ICONS[(pet.element as Element) || SPECIES_ELEMENTS[pet.species] || "normal"] || "normal"} size={12} /> Lv.{pet.level}
                 </div>
                 {/* Mini stat bar */}
                 <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 6 }}>
-                  <span style={{ fontSize: 7, color: "#555", fontFamily: "monospace" }}>
+                  <span style={{ fontSize: 7, color: "#555", fontFamily: "var(--ed-m)" }}>
                     HP:{Math.floor((pet.level * 10 + pet.happiness) * getPersonalityMods(pet.personality_type).hp)}
                   </span>
-                  <span style={{ fontSize: 7, color: "#555", fontFamily: "monospace" }}>
+                  <span style={{ fontSize: 7, color: "#555", fontFamily: "var(--ed-m)" }}>
                     ATK:{Math.floor((10 + pet.level * 3) * getPersonalityMods(pet.personality_type).atk)}
                   </span>
                 </div>
@@ -1102,14 +1058,6 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
           background: `linear-gradient(180deg, #040410 0%, ${bossEl.color}08 40%, #0a0a1e 100%)`,
           padding: "50px 20px 40px", position: "relative",
         }}>
-          {/* Ambient glow */}
-          <div style={{
-            position: "absolute", top: "30%", left: "50%", transform: "translate(-50%, -50%)",
-            width: 200, height: 200, borderRadius: "50%",
-            background: `radial-gradient(circle, ${bossEl.color}15 0%, transparent 70%)`,
-            pointerEvents: "none",
-          }} />
-
           {/* Boss entrance */}
           <div style={{
             textAlign: "center", position: "relative",
@@ -1117,7 +1065,6 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
           }}>
             <div style={{
               fontSize: 80, marginBottom: 16,
-              filter: `drop-shadow(0 0 30px ${bossEl.color}80)`,
               animation: "pve-bounce 3s ease infinite",
             }}>
               {selectedStage.emoji}
@@ -1125,8 +1072,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
 
             <div style={{
               color: "#fff", fontSize: 24, fontWeight: 800,
-              fontFamily: "'Space Grotesk', sans-serif", letterSpacing: 2,
-              textShadow: `0 0 30px ${bossEl.color}60`,
+              fontFamily: "var(--ed-disp)", letterSpacing: 2,
               animation: "pve-fadeIn 0.8s ease 0.3s both",
             }}>
               {selectedStage.name}
@@ -1134,7 +1080,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
 
             <div style={{
               color: region?.color || bossEl.color, fontSize: 13, fontWeight: 700,
-              fontFamily: "'Space Grotesk', sans-serif",
+              fontFamily: "var(--ed-disp)",
               letterSpacing: 3, textTransform: "uppercase", marginTop: 4,
               animation: "pve-fadeIn 0.8s ease 0.5s both",
             }}>
@@ -1149,14 +1095,14 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
               <span style={{
                 fontSize: 11, padding: "4px 12px", borderRadius: 20,
                 background: `${bossEl.color}15`, border: `1px solid ${bossEl.color}30`,
-                color: bossEl.color, fontFamily: "monospace", fontWeight: 700,
+                color: bossEl.color, fontFamily: "var(--ed-m)", fontWeight: 700,
               }}>
                 <Icon name={ELEMENT_ICONS[selectedStage.element] || "normal"} size={14} /> {selectedStage.element.toUpperCase()}
               </span>
               <span style={{
                 fontSize: 11, padding: "4px 12px", borderRadius: 20,
                 background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-                color: "#aaa", fontFamily: "monospace", fontWeight: 700,
+                color: "#aaa", fontFamily: "var(--ed-m)", fontWeight: 700,
               }}>
                 LV.{selectedStage.level}
               </span>
@@ -1182,7 +1128,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                 <div style={{
                   color: "#c0c0c0", fontSize: 13, fontStyle: "italic",
                   lineHeight: 1.7, minHeight: 24,
-                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontFamily: "var(--ed-body)",
                 }}>
                   &ldquo;{typewriterText}&rdquo;
                   <span style={{
@@ -1207,12 +1153,10 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                 border: `2px solid ${preBattleReady ? bossEl.color + "60" : "rgba(255,255,255,0.05)"}`,
                 color: preBattleReady ? "#fff" : "#333",
                 fontSize: 16, fontWeight: 800, cursor: preBattleReady ? "pointer" : "not-allowed",
-                fontFamily: "'Space Grotesk', sans-serif",
+                fontFamily: "var(--ed-disp)",
                 letterSpacing: 4, textTransform: "uppercase",
                 transition: "all 0.3s ease",
                 animation: preBattleReady ? "pve-battlePulse 2s ease infinite" : "none",
-                boxShadow: preBattleReady ? `0 0 30px ${bossEl.color}30` : "none",
-                textShadow: preBattleReady ? `0 0 10px ${bossEl.color}60` : "none",
               }}
             >
               <Icon name="sword" size={18} /> BATTLE START
@@ -1235,7 +1179,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
 
     const hpGradient = (ratio: number) => {
       if (ratio > 0.5) return "linear-gradient(90deg, #22c55e, #4ade80)";
-      if (ratio > 0.25) return "linear-gradient(90deg, #eab308, #facc15)";
+      if (ratio > 0.25) return "linear-gradient(90deg, #C8932F, #E0B24A)";
       return "linear-gradient(90deg, #dc2626, #f87171)";
     };
 
@@ -1266,7 +1210,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
           borderRadius: 18, overflow: "hidden",
           border: `1px solid ${region?.color || "#333"}15`,
           position: "relative",
-          boxShadow: `inset 0 0 60px rgba(0,0,0,0.5), 0 0 20px ${region?.color || "#333"}08`,
+          boxShadow: "inset 0 0 60px rgba(0,0,0,0.5)",
         }}>
           {/* Floating damage numbers */}
           {floatingDmgs.map(d => (
@@ -1276,9 +1220,9 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
               animation: d.isCrit ? "pve-fadeUpCrit 1.2s ease forwards" : "pve-fadeUp 1s ease forwards",
             }}>
               <span style={{
-                fontFamily: "'Space Grotesk', monospace",
+                fontFamily: "var(--ed-m)",
                 fontSize: d.isCrit ? 28 : 20, fontWeight: 900, color: d.color,
-                textShadow: `0 0 10px ${d.color}, 0 2px 4px rgba(0,0,0,0.8)`,
+                textShadow: "0 2px 4px rgba(0,0,0,0.8)",
                 letterSpacing: d.isCrit ? 2 : 0,
               }}>
                 {d.text}
@@ -1294,12 +1238,9 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
               animation: "pve-superEffective 1.5s ease forwards",
             }}>
               <span style={{
-                fontFamily: "'Space Grotesk', sans-serif",
+                fontFamily: "var(--ed-disp)",
                 fontSize: 14, fontWeight: 900,
                 color: superEffText.includes("SUPER") ? "#f87171" : "#888",
-                textShadow: superEffText.includes("SUPER")
-                  ? "0 0 15px rgba(248,113,113,0.8), 0 0 30px rgba(248,113,113,0.4)"
-                  : "none",
                 letterSpacing: 2, textTransform: "uppercase",
                 padding: "4px 14px", borderRadius: 8,
                 background: superEffText.includes("SUPER")
@@ -1321,7 +1262,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
               <div style={{
                 width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
                 background: "linear-gradient(180deg, #0a0a18, #060614)", borderRadius: 14, color: "#444", fontSize: 11,
-                fontFamily: "'Space Grotesk', sans-serif",
+                fontFamily: "var(--ed-disp)",
               }}>Loading Battle Arena...</div>
             }>
               <BattleScene3D
@@ -1377,9 +1318,9 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                 animation: d.isCrit ? "pve-fadeUpCrit 1.2s ease forwards" : "pve-fadeUp 1s ease forwards",
               }}>
                 <span style={{
-                  fontFamily: "'Space Grotesk', monospace",
+                  fontFamily: "var(--ed-m)",
                   fontSize: d.isCrit ? 28 : 20, fontWeight: 900, color: d.color,
-                  textShadow: `0 0 10px ${d.color}, 0 2px 4px rgba(0,0,0,0.8)`,
+                  textShadow: "0 2px 4px rgba(0,0,0,0.8)",
                   letterSpacing: d.isCrit ? 2 : 0,
                 }}>
                   {d.text}
@@ -1395,12 +1336,9 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                 animation: "pve-superEffective 1.5s ease forwards",
               }}>
                 <span style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontFamily: "var(--ed-disp)",
                   fontSize: 14, fontWeight: 900,
                   color: superEffText.includes("SUPER") ? "#f87171" : "#888",
-                  textShadow: superEffText.includes("SUPER")
-                    ? "0 0 15px rgba(248,113,113,0.8), 0 0 30px rgba(248,113,113,0.4)"
-                    : "none",
                   letterSpacing: 2, textTransform: "uppercase",
                   padding: "4px 14px", borderRadius: 8,
                   background: superEffText.includes("SUPER")
@@ -1427,7 +1365,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
           }}>
             {battleLog.map((msg, i) => (
               <div key={i} style={{
-                fontFamily: "monospace", fontSize: 10,
+                fontFamily: "var(--ed-m)", fontSize: 10,
                 color: i === battleLog.length - 1 ? "#d0d0d0" : "#444",
                 lineHeight: 1.6,
                 animation: i === battleLog.length - 1 ? "pve-fadeIn 0.3s ease" : "none",
@@ -1475,7 +1413,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                     <div style={{ fontSize: 18, marginBottom: 3 }}>{s.emoji}</div>
                     <div style={{
                       fontSize: 9, fontWeight: 800, color: dis ? "#444" : "#e8e8e8",
-                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontFamily: "var(--ed-disp)",
                       whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                     }}>{s.name}</div>
 
@@ -1483,16 +1421,16 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                       <span style={{
                         fontSize: 7, padding: "1px 4px", borderRadius: 4,
                         background: `${el.color}15`, color: el.color,
-                        fontFamily: "monospace", fontWeight: 700,
+                        fontFamily: "var(--ed-m)", fontWeight: 700,
                       }}><Icon name={ELEMENT_ICONS[s.element] || "normal"} size={8} /></span>
-                      <span style={{ fontSize: 7, color: "#666", fontFamily: "monospace" }}>
+                      <span style={{ fontSize: 7, color: "#666", fontFamily: "var(--ed-m)" }}>
                         {s.power > 0 ? `PWR ${s.power}` : "STATUS"}
                       </span>
                     </div>
 
                     <div style={{
                       fontSize: 7, color: cantAfford ? "#f87171" : "#555",
-                      fontFamily: "monospace", fontWeight: 700, marginTop: 2,
+                      fontFamily: "var(--ed-m)", fontWeight: 700, marginTop: 2,
                     }}>EP:{s.energyCost}</div>
                   </button>
                 );
@@ -1504,7 +1442,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
           {phase === "battle" && !battleOver && (
             <div style={{ textAlign: "center", padding: "2px 0 14px" }}>
               <span style={{
-                fontFamily: "'Space Grotesk', monospace",
+                fontFamily: "var(--ed-m)",
                 fontSize: 10, fontWeight: 800, padding: "4px 16px", borderRadius: 20,
                 letterSpacing: 2,
                 background: isPlayerTurn
@@ -1512,9 +1450,6 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                   : "linear-gradient(135deg, rgba(248,113,113,0.12), rgba(248,113,113,0.05))",
                 color: isPlayerTurn ? "#4ade80" : "#f87171",
                 border: `1px solid ${isPlayerTurn ? "rgba(74,222,128,0.2)" : "rgba(248,113,113,0.2)"}`,
-                boxShadow: isPlayerTurn
-                  ? "0 0 12px rgba(74,222,128,0.1)"
-                  : "0 0 12px rgba(248,113,113,0.1)",
                 textTransform: "uppercase",
               }}>
                 {isPlayerTurn ? <><Icon name="sword" size={12} /> YOUR TURN</> : <><Icon name="fire" size={12} /> ENEMY TURN</>} — T{turn}
@@ -1544,7 +1479,6 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
               <div style={{
                 fontSize: 60, marginBottom: 12,
                 animation: won ? "pve-victoryBurst 0.8s cubic-bezier(0.16,1,0.3,1)" : "pve-fadeIn 1s ease",
-                filter: won ? "drop-shadow(0 0 20px rgba(234,179,8,0.5))" : "drop-shadow(0 0 10px rgba(248,113,113,0.3))",
               }}>
                 {won ? <Icon name="trophy" size={60} /> : <Icon name="skull" size={60} />}
               </div>
@@ -1552,11 +1486,8 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
               <div style={{
                 color: won ? "#4ade80" : "#f87171",
                 fontSize: 26, fontWeight: 900,
-                fontFamily: "'Space Grotesk', sans-serif",
+                fontFamily: "var(--ed-disp)",
                 letterSpacing: 4, marginBottom: 8,
-                textShadow: won
-                  ? "0 0 30px rgba(74,222,128,0.4)"
-                  : "0 0 30px rgba(248,113,113,0.4)",
                 animation: "pve-fadeIn 0.5s ease 0.3s both",
               }}>
                 {won ? "VICTORY!" : "DEFEATED"}
@@ -1572,7 +1503,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                       transform: i <= starsRevealed ? "none" : "scale(0.5)",
                       transition: "opacity 0.3s",
                       filter: i <= stars
-                        ? "drop-shadow(0 0 8px rgba(250,204,21,0.6))"
+                        ? "none"
                         : "grayscale(1) brightness(0.3)",
                     }}>
                       <Icon name="star" size={32} />
@@ -1590,7 +1521,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
               }}>
                 <div style={{
                   color: "#777", fontSize: 12, fontStyle: "italic",
-                  lineHeight: 1.6, fontFamily: "'Space Grotesk', sans-serif",
+                  lineHeight: 1.6, fontFamily: "var(--ed-body)",
                 }}>
                   &ldquo;{won ? selectedStage.dialogue.win : selectedStage.dialogue.lose}&rdquo;
                 </div>
@@ -1607,7 +1538,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                       padding: "6px 14px", borderRadius: 10,
                       background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)",
                     }}>
-                      <span style={{ fontFamily: "monospace", fontSize: 13, color: "#a78bfa", fontWeight: 800 }}>
+                      <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#a78bfa", fontWeight: 800 }}>
                         +{resultData.exp_gained} EXP
                       </span>
                     </div>
@@ -1616,9 +1547,9 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                     <div style={{
                       animation: "pve-rewardSlide 0.4s ease 1s both",
                       padding: "6px 14px", borderRadius: 10,
-                      background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)",
+                      background: "rgba(190,79,40,0.08)", border: "1px solid rgba(190,79,40,0.2)",
                     }}>
-                      <span style={{ fontFamily: "monospace", fontSize: 13, color: "#f59e0b", fontWeight: 800 }}>
+                      <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#BE4F28", fontWeight: 800 }}>
                         +{resultData.credits_gained} <Icon name="coin" size={14} />
                       </span>
                     </div>
@@ -1629,7 +1560,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                       padding: "6px 14px", borderRadius: 10,
                       background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)",
                     }}>
-                      <span style={{ fontFamily: "monospace", fontSize: 13, color: "#4ade80", fontWeight: 800 }}>
+                      <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#4ade80", fontWeight: 800 }}>
                         +{resultData.airdrop_gained} PTS
                       </span>
                     </div>
@@ -1638,9 +1569,9 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                     <div style={{
                       animation: "pve-rewardSlide 0.4s ease 1.4s both",
                       padding: "6px 14px", borderRadius: 10,
-                      background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)",
+                      background: "rgba(200,147,47,0.08)", border: "1px solid rgba(200,147,47,0.2)",
                     }}>
-                      <span style={{ fontFamily: "monospace", fontSize: 13, color: "#facc15", fontWeight: 800 }}>
+                      <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#C8932F", fontWeight: 800 }}>
                         LEVEL UP! Lv.{resultData.new_level}
                       </span>
                     </div>
@@ -1655,8 +1586,8 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                   animation: "pve-fadeIn 0.5s ease 1.5s both",
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontFamily: "monospace", fontSize: 8, color: "#555" }}>EXP</span>
-                    <span style={{ fontFamily: "monospace", fontSize: 8, color: "#a78bfa" }}>+{resultData.exp_gained}</span>
+                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 8, color: "#555" }}>EXP</span>
+                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 8, color: "#a78bfa" }}>+{resultData.exp_gained}</span>
                   </div>
                   <div style={{
                     width: "100%", height: 6, borderRadius: 3, overflow: "hidden",
@@ -1683,16 +1614,11 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                     background: "linear-gradient(135deg, rgba(167,139,250,0.15), rgba(167,139,250,0.05))",
                     border: "1px solid rgba(167,139,250,0.3)",
                     borderRadius: 16, padding: "16px 24px",
-                    boxShadow: "0 0 30px rgba(167,139,250,0.15)",
+                    boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
                     position: "relative", overflow: "hidden",
                   }}>
                     <div style={{
-                      position: "absolute", inset: 0,
-                      background: "radial-gradient(circle at 50% 50%, rgba(167,139,250,0.1) 0%, transparent 70%)",
-                      pointerEvents: "none",
-                    }} />
-                    <div style={{
-                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontFamily: "var(--ed-disp)",
                       fontSize: 10, fontWeight: 800, color: "#a78bfa",
                       letterSpacing: 3, textTransform: "uppercase", marginBottom: 6,
                     }}>NEW SKILL ACQUIRED!</div>
@@ -1701,12 +1627,12 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                     </div>
                     <div style={{
                       color: "#fff", fontSize: 14, fontWeight: 800,
-                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontFamily: "var(--ed-disp)",
                     }}>
                       {SKILL_MAP[resultData.skill_drop]?.name || resultData.skill_drop}
                     </div>
                     {SKILL_MAP[resultData.skill_drop] && (
-                      <div style={{ fontSize: 9, color: "#888", fontFamily: "monospace", marginTop: 4 }}>
+                      <div style={{ fontSize: 9, color: "#888", fontFamily: "var(--ed-m)", marginTop: 4 }}>
                         <Icon name={ELEMENT_ICONS[SKILL_MAP[resultData.skill_drop].element] || "normal"} size={10} />{" "}
                         PWR {SKILL_MAP[resultData.skill_drop].power || "STATUS"}
                       </div>
@@ -1726,17 +1652,17 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                     border: "1px solid rgba(74,222,128,0.3)",
                     borderRadius: 12, padding: "12px 24px", color: "#4ade80",
                     fontSize: 13, fontWeight: 800, cursor: "pointer",
-                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontFamily: "var(--ed-disp)",
                     letterSpacing: 1, transition: "all 0.3s",
                     boxShadow: "0 4px 20px rgba(74,222,128,0.1)",
                   }}>Next Stage →</button>
                 )}
                 <button onClick={() => startBattle(selectedPet!)} style={{
-                  background: "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.06))",
-                  border: "1px solid rgba(245,158,11,0.3)",
-                  borderRadius: 12, padding: "12px 24px", color: "#f59e0b",
+                  background: "linear-gradient(135deg, rgba(190,79,40,0.15), rgba(190,79,40,0.06))",
+                  border: "1px solid rgba(190,79,40,0.3)",
+                  borderRadius: 12, padding: "12px 24px", color: "#BE4F28",
                   fontSize: 13, fontWeight: 800, cursor: "pointer",
-                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontFamily: "var(--ed-disp)",
                   letterSpacing: 1, transition: "all 0.3s",
                 }}>Retry</button>
                 <button onClick={backToMap} style={{
@@ -1744,7 +1670,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                   border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: 12, padding: "12px 24px", color: "#666",
                   fontSize: 13, fontWeight: 800, cursor: "pointer",
-                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontFamily: "var(--ed-disp)",
                   letterSpacing: 1, transition: "all 0.3s", backdropFilter: "blur(4px)",
                 }}>Map</button>
               </div>

@@ -25,10 +25,10 @@ interface DateResult {
 }
 
 const VIBE_STYLE: Record<string, { bg: string; fg: string }> = {
-  playful:  { bg: "rgba(245,158,11,0.12)", fg: "#b45309" },
-  deep:     { bg: "rgba(245,158,11,0.08)", fg: "#1a1a22" },
-  rivalry:  { bg: "rgba(245,158,11,0.16)", fg: "#b45309" },
-  shy:      { bg: "rgba(26,26,34,0.06)",   fg: "#1a1a22" },
+  playful:  { bg: "rgba(190,79,40,0.12)", fg: "#9A4E1E" },
+  deep:     { bg: "rgba(190,79,40,0.08)", fg: "#211A12" },
+  rivalry:  { bg: "rgba(190,79,40,0.16)", fg: "#9A4E1E" },
+  shy:      { bg: "rgba(33,26,18,0.06)",  fg: "#211A12" },
 };
 
 export default function PetDateWidget() {
@@ -78,24 +78,24 @@ export default function PetDateWidget() {
   return (
     <div className="mp-enter mp-enter-4" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
-        background: "#fff", borderRadius: 16,
-        border: "3px solid #1a1a22", overflow: "hidden",
-        boxShadow: "0 6px 0 rgba(26,26,34,0.14)",
+        background: "#FBF6EC", borderRadius: 16,
+        border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", overflow: "hidden",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       }}>
         <div style={{
-          padding: "16px 22px", borderBottom: "2px solid rgba(26,26,46,0.45)",
+          padding: "16px 22px", borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           display: "flex", alignItems: "center", gap: 10,
         }}>
           <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="heart" size={22} /></span>
-          <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)" }}>
+          <div style={{ fontSize: 11, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#7A6E5A" }}>
             PET DATE · AI-WRITTEN MEETUP
           </div>
           <div style={{ flex: 1 }} />
           <span style={{
             padding: "3px 8px", borderRadius: 999,
-            background: "rgba(245,158,11,0.12)", border: "2px solid #1a1a22",
+            background: "rgba(190,79,40,0.12)", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
             fontSize: 10, fontWeight: 800,
-            fontFamily: "'JetBrains Mono', monospace", color: "#b45309",
+            fontFamily: "var(--ed-m)", color: "#9A4E1E",
           }}>20 cr</span>
         </div>
 
@@ -107,8 +107,8 @@ export default function PetDateWidget() {
               onChange={e => setMyPetId(Number(e.target.value))}
               style={{
                 flex: "1 1 200px", padding: "10px 12px", borderRadius: 10,
-                border: "2px solid #1a1a22", fontSize: 13,
-                fontFamily: "'Space Grotesk', sans-serif", background: "#fff",
+                border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", fontSize: 13,
+                fontFamily: "var(--ed-disp)", background: "#F5EFE2", color: "#211A12",
               }}
             >
               {pets.map(p => <option key={p.id} value={p.id}>🐾 {p.name}</option>)}
@@ -121,17 +121,17 @@ export default function PetDateWidget() {
               placeholder="Target pet ID (from leaderboard)"
               style={{
                 flex: "1 1 220px", padding: "10px 12px", borderRadius: 10,
-                border: "2px solid #1a1a22", fontSize: 13,
-                fontFamily: "'JetBrains Mono', monospace", background: "#fff",
+                border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", fontSize: 13,
+                fontFamily: "var(--ed-m)", background: "#F5EFE2", color: "#211A12",
               }}
             />
             <button onClick={go} disabled={busy || !myPetId || !validTarget} style={{
-              padding: "10px 16px", borderRadius: 10, border: "2px solid #1a1a22",
-              background: "#f59e0b",
-              color: "#1a1a22", fontWeight: 800, fontSize: 13,
-              cursor: "pointer", boxShadow: "0 3px 0 rgba(26,26,34,0.2)",
+              padding: "10px 16px", borderRadius: 10, border: "none",
+              background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+              color: "#FFF8EE", fontWeight: 800, fontSize: 13,
+              cursor: "pointer", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
               opacity: busy || !myPetId || !validTarget ? 0.5 : 1,
-              fontFamily: "'Space Grotesk', sans-serif",
+              fontFamily: "var(--ed-disp)",
             }}>{busy ? "Setting up date…" : "Start date"}</button>
           </div>
 
@@ -147,21 +147,21 @@ function DateLog({ result }: { result: DateResult }) {
   return (
     <div style={{
       marginTop: 6, padding: 16, borderRadius: 12,
-      background: "#faf7f2",
-      border: "2px solid #1a1a22",
-      boxShadow: "0 3px 0 rgba(26,26,34,0.12)",
+      background: "#F5EFE2",
+      border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+      boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
         <div style={{
           padding: "4px 10px", borderRadius: 999,
-          background: vibe.bg, color: vibe.fg, border: "2px solid #1a1a22",
+          background: vibe.bg, color: vibe.fg, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           fontSize: 11, fontWeight: 800,
-          fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.1em",
+          fontFamily: "var(--ed-m)", letterSpacing: "0.1em",
         }}>{result.vibe.toUpperCase()}</div>
         <div style={{ flex: 1 }} />
         <div style={{
-          fontSize: 12, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace",
-          color: result.friendship >= 0 ? "#b45309" : "rgba(26,26,46,0.55)",
+          fontSize: 12, fontWeight: 800, fontFamily: "var(--ed-m)",
+          color: result.friendship >= 0 ? "#9A4E1E" : "#7A6E5A",
         }}>
           friendship {result.friendship >= 0 ? `+${result.friendship}` : result.friendship}
         </div>
@@ -176,16 +176,16 @@ function DateLog({ result }: { result: DateResult }) {
               gap: 10,
             }}>
               {speaker.avatar_url
-                ? <img src={speaker.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, objectFit: "cover", border: "2px solid #1a1a22" }} />
-                : <img src="/mascot.jpg" alt="" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, objectFit: "cover", border: "2px solid #1a1a22" }} />}
+                ? <img src={speaker.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, objectFit: "cover", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))" }} />
+                : <img src="/mascot.jpg" alt="" style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, objectFit: "cover", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))" }} />}
               <div style={{
                 padding: "8px 12px", borderRadius: 12,
-                background: isA ? "rgba(245,158,11,0.12)" : "#fff",
-                border: "2px solid #1a1a22",
+                background: isA ? "rgba(190,79,40,0.12)" : "#FBF6EC",
+                border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 maxWidth: "70%",
                 borderTopLeftRadius: isA ? 4 : 12,
                 borderTopRightRadius: isA ? 12 : 4,
-                fontSize: 13, lineHeight: 1.5, color: "#1a1a2e",
+                fontSize: 13, lineHeight: 1.5, color: "#211A12",
               }}>{line.text}</div>
             </div>
           );

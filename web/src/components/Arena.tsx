@@ -193,10 +193,10 @@ function ElementBadge({ element }: { element: Element }) {
   const el = ELEMENTS[element] || ELEMENTS.normal;
   return (
     <span style={{
-      fontFamily: "monospace", fontSize: 10, fontWeight: 700,
+      fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700,
       padding: "2px 8px", borderRadius: 6,
-      background: `${el.color}20`, color: el.color,
-      border: `1px solid ${el.color}40`,
+      background: `${el.color}18`, color: el.color,
+      border: `1px solid ${el.color}33`,
     }}>
       <Icon name={ELEMENT_ICONS[element] || "normal"} size={12} /> {el.name}
     </span>
@@ -211,8 +211,8 @@ function GlassPanel({ children, style, glow }: { children: React.ReactNode; styl
       backdropFilter: "blur(16px)",
       WebkitBackdropFilter: "blur(16px)",
       borderRadius: 14,
-      border: "1px solid rgba(255,255,255,0.08)",
-      boxShadow: glow ? `0 0 20px ${glow}` : "0 4px 24px rgba(0,0,0,0.2)",
+      border: glow ? "1px solid rgba(190,79,40,0.28)" : "1px solid rgba(255,255,255,0.08)",
+      boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       ...style,
     }}>
       {children}
@@ -227,18 +227,18 @@ function HpBar({ current, max, label, level, name, element, isActive }: {
   const ratio = Math.max(0, current / max);
   return (
     <GlassPanel
-      glow={isActive ? "rgba(245,158,11,0.15)" : undefined}
+      glow={isActive ? "rgba(190,79,40,0.15)" : undefined}
       style={{
         padding: "12px 18px",
         minWidth: 240,
-        border: isActive ? "1.5px solid rgba(245,158,11,0.35)" : "1px solid rgba(255,255,255,0.08)",
+        border: isActive ? "1px solid rgba(190,79,40,0.35)" : "1px solid rgba(255,255,255,0.08)",
         transition: "border-color 0.5s ease, box-shadow 0.5s ease",
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{
-            fontFamily: "'Space Grotesk', sans-serif",
+            fontFamily: "var(--ed-disp)",
             fontSize: 15, fontWeight: 700, color: "#fff",
             letterSpacing: "-0.02em",
           }}>
@@ -247,9 +247,9 @@ function HpBar({ current, max, label, level, name, element, isActive }: {
           <ElementBadge element={element} />
         </div>
         <span style={{
-          fontFamily: "monospace", fontSize: 11, fontWeight: 600,
-          color: "rgba(245,158,11,0.9)",
-          background: "rgba(245,158,11,0.15)",
+          fontFamily: "var(--ed-m)", fontSize: 11, fontWeight: 600,
+          color: "#E7A15C",
+          background: "rgba(190,79,40,0.18)",
           padding: "2px 10px", borderRadius: 6,
         }}>
           Lv.{level}
@@ -258,7 +258,7 @@ function HpBar({ current, max, label, level, name, element, isActive }: {
       {/* HP bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{
-          fontFamily: "monospace", fontSize: 10, fontWeight: 700,
+          fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700,
           color: "rgba(255,255,255,0.5)", width: 20,
         }}>
           HP
@@ -273,7 +273,7 @@ function HpBar({ current, max, label, level, name, element, isActive }: {
             background: getHpBarGradient(ratio),
             borderRadius: 6,
             transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background 0.6s ease",
-            boxShadow: `0 0 10px ${getHpColor(ratio)}50, inset 0 1px 0 rgba(255,255,255,0.2)`,
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.2)",
             position: "relative",
           }}>
             {/* Shiny highlight on HP bar */}
@@ -286,7 +286,7 @@ function HpBar({ current, max, label, level, name, element, isActive }: {
         </div>
       </div>
       <div style={{
-        fontFamily: "monospace", fontSize: 10, color: getHpColor(ratio),
+        fontFamily: "var(--ed-m)", fontSize: 10, color: getHpColor(ratio),
         textAlign: "right", marginTop: 3, fontWeight: 600,
       }}>
         {Math.max(0, current)} / {max}
@@ -301,27 +301,26 @@ function EnergyBar({ current, max }: { current: number; max: number }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
       <span style={{
-        fontFamily: "monospace", fontSize: 9, fontWeight: 700,
-        color: "rgba(245,158,11,0.6)",
+        fontFamily: "var(--ed-m)", fontSize: 9, fontWeight: 700,
+        color: "rgba(190,79,40,0.7)",
       }}>EP</span>
       <div style={{
         width: 110, height: 7,
         background: "rgba(255,255,255,0.06)",
         borderRadius: 4, overflow: "hidden",
-        border: "1px solid rgba(245,158,11,0.1)",
+        border: "1px solid rgba(190,79,40,0.12)",
       }}>
         <div style={{
           height: "100%",
           width: `${ratio * 100}%`,
-          background: "linear-gradient(90deg, #f59e0b, #fbbf24)",
+          background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
           borderRadius: 4,
           transition: "width 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-          boxShadow: "0 0 6px rgba(245,158,11,0.3)",
           animation: current < 15 ? "energyPulse 1s ease infinite" : "none",
         }} />
       </div>
       <span style={{
-        fontFamily: "monospace", fontSize: 9,
+        fontFamily: "var(--ed-m)", fontSize: 9,
         color: ratio < 0.2 ? "#f87171" : "rgba(255,255,255,0.35)",
         fontWeight: ratio < 0.2 ? 700 : 400,
       }}>
@@ -361,7 +360,7 @@ function BattleLog({ entries }: { entries: BattleLogEntry[] }) {
       <div ref={logRef} style={{ maxHeight: 146, overflowY: "auto" }}>
         {entries.length === 0 && (
           <div style={{
-            fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.3)",
+            fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(255,255,255,0.3)",
             textAlign: "center", padding: 8,
           }}>
             Battle starting...
@@ -373,7 +372,7 @@ function BattleLog({ entries }: { entries: BattleLogEntry[] }) {
             <div
               key={i}
               style={{
-                fontFamily: "monospace",
+                fontFamily: "var(--ed-m)",
                 fontSize: 11,
                 lineHeight: 1.5,
                 color: logStyle.color,
@@ -428,10 +427,10 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
         cursor: isDisabled ? "not-allowed" : "pointer",
         background: isDisabled
           ? "rgba(255,255,255,0.02)"
-          : `linear-gradient(145deg, ${el.color}15 0%, rgba(15,15,35,0.95) 60%, ${el.color}08 100%)`,
+          : `linear-gradient(145deg, ${el.color}15 0%, rgba(30,23,16,0.95) 60%, ${el.color}08 100%)`,
         border: isDisabled
           ? "1px solid rgba(255,255,255,0.04)"
-          : `1.5px solid ${el.color}35`,
+          : `1px solid ${el.color}35`,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -446,7 +445,7 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
         if (!isDisabled) {
           (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.06) translateY(-2px)";
           (e.currentTarget as HTMLButtonElement).style.borderColor = el.color;
-          (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 4px 20px ${el.color}30, inset 0 0 20px ${el.color}08`;
+          (e.currentTarget as HTMLButtonElement).style.boxShadow = "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))";
         }
       }}
       onMouseLeave={(e) => {
@@ -465,7 +464,7 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
       )}
       <span style={{ fontSize: 20, filter: isDisabled ? "grayscale(1)" : "none" }}>{skill.emoji}</span>
       <span style={{
-        fontFamily: "'Space Grotesk', sans-serif",
+        fontFamily: "var(--ed-disp)",
         fontSize: 10, fontWeight: 700,
         color: isDisabled ? "rgba(255,255,255,0.2)" : "#fff",
         textAlign: "center", lineHeight: 1.2,
@@ -475,13 +474,13 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
       {/* Element + type tag */}
       <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
         <span style={{
-          fontFamily: "monospace", fontSize: 8,
+          fontFamily: "var(--ed-m)", fontSize: 8,
           color: el.color, fontWeight: 600,
         }}>
           <Icon name={ELEMENT_ICONS[skill.element] || "normal"} size={10} />
         </span>
         <span style={{
-          fontFamily: "monospace", fontSize: 8,
+          fontFamily: "var(--ed-m)", fontSize: 8,
           color: typeColor, fontWeight: 600, textTransform: "uppercase",
           padding: "1px 4px", borderRadius: 3,
           background: `${typeColor}12`,
@@ -493,7 +492,7 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         {skill.power > 0 && (
           <span style={{
-            fontFamily: "monospace", fontSize: 9,
+            fontFamily: "var(--ed-m)", fontSize: 9,
             color: typeColor, fontWeight: 700,
           }}>
             {skill.power + Math.floor(skill.power * (skillLevel - 1) * 0.1)}
@@ -501,8 +500,8 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
         )}
         {skill.energyCost > 0 && (
           <span style={{
-            fontFamily: "monospace", fontSize: 9,
-            color: cantAfford ? "#f87171" : "rgba(245,158,11,0.5)",
+            fontFamily: "var(--ed-m)", fontSize: 9,
+            color: cantAfford ? "#f87171" : "rgba(190,79,40,0.6)",
             fontWeight: cantAfford ? 700 : 400,
           }}>
             EP{skill.energyCost}
@@ -510,7 +509,7 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
         )}
         {skill.power === 0 && skill.energyCost === 0 && (
           <span style={{
-            fontFamily: "monospace", fontSize: 9,
+            fontFamily: "var(--ed-m)", fontSize: 9,
             color: "rgba(255,255,255,0.3)",
           }}>
             STATUS
@@ -518,7 +517,7 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
         )}
       </div>
       {/* Skill level stars */}
-      <div style={{ fontSize: 8, letterSpacing: 1, color: "#f59e0b" }}>
+      <div style={{ fontSize: 8, letterSpacing: 1, color: "#BE4F28" }}>
         {"★".repeat(skillLevel)}{"☆".repeat(Math.max(0, skill.maxLevel - skillLevel))}
       </div>
     </button>
@@ -533,27 +532,25 @@ function ResultOverlay({ won, points, expGained, skillDrop, onClose }: {
   return (
     <div style={{
       position: "absolute", inset: 0, zIndex: 30,
-      background: won
-        ? "radial-gradient(ellipse at center, rgba(245,158,11,0.12) 0%, rgba(74,222,128,0.08) 30%, rgba(0,0,0,0.92) 70%)"
-        : "radial-gradient(ellipse at center, rgba(248,113,113,0.12) 0%, rgba(139,92,246,0.05) 30%, rgba(0,0,0,0.92) 70%)",
+      background: "rgba(24,18,11,0.92)",
       display: "flex", alignItems: "center", justifyContent: "center",
       animation: "resultFadeIn 0.5s ease-out",
       borderRadius: 16,
       backdropFilter: "blur(4px)",
     }}>
-      {/* Victory golden burst rings */}
+      {/* Victory rings */}
       {won && (
         <>
           <div style={{
             position: "absolute", width: 300, height: 300,
             borderRadius: "50%",
-            border: "2px solid rgba(245,158,11,0.2)",
+            border: "1px solid rgba(190,79,40,0.2)",
             animation: "victoryRing 2s ease-out infinite",
           }} />
           <div style={{
             position: "absolute", width: 200, height: 200,
             borderRadius: "50%",
-            border: "1px solid rgba(245,158,11,0.15)",
+            border: "1px solid rgba(190,79,40,0.15)",
             animation: "victoryRing 2s ease-out 0.5s infinite",
           }} />
         </>
@@ -563,20 +560,15 @@ function ResultOverlay({ won, points, expGained, skillDrop, onClose }: {
         <div style={{
           fontSize: 72, marginBottom: 16,
           animation: "resultBounce 0.6s ease-out",
-          filter: won ? "drop-shadow(0 0 20px rgba(245,158,11,0.6))" : "drop-shadow(0 0 20px rgba(248,113,113,0.4))",
         }}>
           {won ? <Icon name="trophy" size={72} /> : <Icon name="skull" size={72} />}
         </div>
         <div style={{
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontFamily: "var(--ed-disp)",
           fontSize: 36, fontWeight: 800,
-          color: won ? "#f59e0b" : "#f87171",
+          color: won ? "#BE4F28" : "#f87171",
           marginBottom: 12,
           letterSpacing: "-0.03em",
-          textShadow: won
-            ? "0 0 40px rgba(245,158,11,0.6), 0 0 80px rgba(245,158,11,0.3)"
-            : "0 0 40px rgba(248,113,113,0.5)",
-          animation: won ? "victoryTextGlow 2s ease-in-out infinite" : undefined,
         }}>
           {won ? "VICTORY!" : "DEFEATED"}
         </div>
@@ -587,23 +579,23 @@ function ResultOverlay({ won, points, expGained, skillDrop, onClose }: {
         }}>
           <GlassPanel style={{ padding: "10px 20px" }}>
             <div style={{
-              fontFamily: "monospace", fontSize: 10, color: "rgba(255,255,255,0.4)",
+              fontFamily: "var(--ed-m)", fontSize: 10, color: "rgba(255,255,255,0.4)",
               marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.1em",
             }}>Points</div>
             <div style={{
-              fontFamily: "'Space Grotesk', sans-serif", fontSize: 22,
-              color: "#f59e0b", fontWeight: 800,
+              fontFamily: "var(--ed-disp)", fontSize: 22,
+              color: "#E7A15C", fontWeight: 800,
             }}>
               +{points}
             </div>
           </GlassPanel>
           <GlassPanel style={{ padding: "10px 20px" }}>
             <div style={{
-              fontFamily: "monospace", fontSize: 10, color: "rgba(255,255,255,0.4)",
+              fontFamily: "var(--ed-m)", fontSize: 10, color: "rgba(255,255,255,0.4)",
               marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.1em",
             }}>Experience</div>
             <div style={{
-              fontFamily: "'Space Grotesk', sans-serif", fontSize: 22,
+              fontFamily: "var(--ed-disp)", fontSize: 22,
               color: "#a78bfa", fontWeight: 800,
             }}>
               +{expGained}
@@ -620,7 +612,7 @@ function ResultOverlay({ won, points, expGained, skillDrop, onClose }: {
             animation: "resultBounce 0.8s ease-out 0.3s both",
           }}>
             <div style={{
-              fontFamily: "monospace", fontSize: 11,
+              fontFamily: "var(--ed-m)", fontSize: 11,
               color: "#a78bfa", fontWeight: 700, marginBottom: 4,
               textTransform: "uppercase", letterSpacing: "0.1em",
             }}>
@@ -628,13 +620,13 @@ function ResultOverlay({ won, points, expGained, skillDrop, onClose }: {
             </div>
             <div style={{ fontSize: 28, marginBottom: 4 }}>{dropSkill.emoji}</div>
             <div style={{
-              fontFamily: "'Space Grotesk', sans-serif",
+              fontFamily: "var(--ed-disp)",
               fontSize: 15, fontWeight: 700, color: "#fff",
             }}>
               {dropSkill.name}
             </div>
             <div style={{
-              fontFamily: "monospace", fontSize: 10,
+              fontFamily: "var(--ed-m)", fontSize: 10,
               color: "rgba(255,255,255,0.5)",
             }}>
               {"★".repeat(dropSkill.rarity)} <Icon name={ELEMENT_ICONS[dropSkill.element] || "normal"} size={12} /> {dropSkill.element}
@@ -645,25 +637,22 @@ function ResultOverlay({ won, points, expGained, skillDrop, onClose }: {
         <button
           onClick={onClose}
           style={{
-            background: "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.1))",
-            border: "1.5px solid rgba(245,158,11,0.4)",
+            background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+            border: "none",
             borderRadius: 14,
             padding: "14px 48px",
             cursor: "pointer",
-            fontFamily: "'Space Grotesk', sans-serif",
+            fontFamily: "var(--ed-disp)",
             fontSize: 15,
             fontWeight: 700,
-            color: "#f59e0b",
+            color: "#FFF8EE",
             transition: "all 0.3s",
-            backdropFilter: "blur(8px)",
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = "linear-gradient(135deg, rgba(245,158,11,0.35), rgba(245,158,11,0.2))";
             (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.05)";
-            (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 30px rgba(245,158,11,0.2)";
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))";
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.1))";
             (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
             (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
           }}
@@ -1236,7 +1225,7 @@ export default function Arena() {
       margin: "0 auto",
       paddingTop: 90,
       minHeight: "100vh",
-      background: "linear-gradient(180deg, #0a0a1a 0%, #0f0f2e 40%, #1a1a2e 100%)",
+      background: "#ECE4D4",
     }}>
       <style>{`
         @keyframes fadeUp { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
@@ -1249,48 +1238,41 @@ export default function Arena() {
         @keyframes resultBounce { 0% { transform:scale(0.3); opacity:0 } 50% { transform:scale(1.15) } 100% { transform:scale(1); opacity:1 } }
         @keyframes logSlideIn { from { opacity:0; transform:translateX(-12px) } to { opacity:1; transform:translateX(0) } }
         @keyframes scanline { 0% { transform:translateY(-100%) } 100% { transform:translateY(100%) } }
-        @keyframes matchmakingPulse { 0%,100% { box-shadow:0 0 20px rgba(245,158,11,0.2) } 50% { box-shadow:0 0 50px rgba(245,158,11,0.5) } }
+        @keyframes matchmakingPulse { 0%,100% { box-shadow:0 8px 20px -12px rgba(80,55,20,.5) } 50% { box-shadow:0 14px 30px -14px rgba(80,55,20,.6) } }
         @keyframes matchmakingSpin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
         @keyframes matchDots { 0% { content:"" } 33% { content:"." } 66% { content:".." } 100% { content:"..." } }
         @keyframes slideInLeft { from { opacity:0; transform:translateX(-40px) } to { opacity:1; transform:translateX(0) } }
         @keyframes slideInRight { from { opacity:0; transform:translateX(40px) } to { opacity:1; transform:translateX(0) } }
         @keyframes energyPulse { 0%,100% { opacity:0.7 } 50% { opacity:1 } }
         @keyframes victoryRing { 0% { transform:scale(0.5); opacity:0.8 } 100% { transform:scale(2); opacity:0 } }
-        @keyframes victoryTextGlow { 0%,100% { text-shadow: 0 0 40px rgba(245,158,11,0.6), 0 0 80px rgba(245,158,11,0.3) } 50% { text-shadow: 0 0 60px rgba(245,158,11,0.8), 0 0 120px rgba(245,158,11,0.4) } }
-        @keyframes turnGlow { 0%,100% { box-shadow: 0 0 15px rgba(245,158,11,0.15) } 50% { box-shadow: 0 0 30px rgba(245,158,11,0.35) } }
-        @keyframes gradientShift { 0% { background-position: 0% 50% } 50% { background-position: 100% 50% } 100% { background-position: 0% 50% } }
-        @keyframes avatarGlow { 0%,100% { box-shadow: 0 8px 24px rgba(0,0,0,0.3), 0 0 20px var(--el-glow) } 50% { box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 35px var(--el-glow) } }
         .arena-skill-btn:active:not(:disabled) { transform: scale(0.95) !important; }
       `}</style>
 
       {/* ── Header ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
         <h2 style={{
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontFamily: "var(--ed-disp)",
           fontSize: 24, fontWeight: 800,
           margin: 0,
           letterSpacing: "-0.03em",
-          background: "linear-gradient(135deg, #f59e0b, #d97706, #f59e0b)",
-          backgroundSize: "200% 100%",
-          animation: "gradientShift 3s ease infinite",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
+          color: "#BE4F28",
         }}>
           Pet Arena
         </h2>
         <span style={{
-          fontFamily: "monospace", fontSize: 9, padding: "4px 12px", borderRadius: 8,
-          background: "rgba(139,92,246,0.12)", color: "#a78bfa",
+          fontFamily: "var(--ed-m)", fontSize: 9, padding: "4px 12px", borderRadius: 8,
+          background: "rgba(139,92,246,0.12)", color: "#6B4FA0",
           border: "1px solid rgba(139,92,246,0.2)", fontWeight: 600,
-          letterSpacing: "0.05em",
+          letterSpacing: "0.12em", textTransform: "uppercase",
         }}>
           ELEMENT BATTLE
         </span>
         {phase === "battle" && (
           <span style={{
-            fontFamily: "monospace", fontSize: 9, padding: "4px 12px", borderRadius: 8,
+            fontFamily: "var(--ed-m)", fontSize: 9, padding: "4px 12px", borderRadius: 8,
             background: "rgba(239,68,68,0.12)", color: "#f87171",
             border: "1px solid rgba(239,68,68,0.2)", fontWeight: 600,
+            letterSpacing: "0.12em", textTransform: "uppercase",
             animation: "pulse2 1.5s ease infinite",
           }}>
             LIVE
@@ -1305,22 +1287,21 @@ export default function Arena() {
         <div style={{ animation: "fadeUp 0.4s ease-out" }}>
           <GlassPanel style={{
             padding: "36px",
-            background: "linear-gradient(135deg, rgba(15,15,35,0.95), rgba(20,20,60,0.9))",
-            border: "1px solid rgba(245,158,11,0.12)",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.4)",
+            background: "#FBF6EC",
+            border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+            boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
           }}>
             <div style={{
-              fontFamily: "'Space Grotesk', sans-serif",
+              fontFamily: "var(--ed-disp)",
               fontSize: 22, fontWeight: 800,
-              background: "linear-gradient(135deg, #f59e0b, #fbbf24)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              color: "#211A12",
               marginBottom: 6, textAlign: "center",
             }}>
               Choose Your Fighter
             </div>
             <div style={{
-              fontFamily: "monospace", fontSize: 12,
-              color: "rgba(255,255,255,0.35)", marginBottom: 32,
+              fontFamily: "var(--ed-m)", fontSize: 12,
+              color: "#7A6E5A", marginBottom: 32,
               textAlign: "center",
             }}>
               4-skill element battle -- type advantages matter!
@@ -1331,18 +1312,18 @@ export default function Arena() {
                 textAlign: "center", padding: 40,
               }}>
                 <div style={{
-                  width: 44, height: 44, border: "3px solid rgba(245,158,11,0.15)",
-                  borderTopColor: "#f59e0b", borderRadius: "50%",
+                  width: 44, height: 44, border: "3px solid rgba(190,79,40,0.15)",
+                  borderTopColor: "#BE4F28", borderRadius: "50%",
                   animation: "matchmakingSpin 0.8s linear infinite", margin: "0 auto 16px",
                 }} />
-                <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A" }}>
                   Loading your pets...
                 </div>
               </div>
             ) : myPets.length === 0 ? (
               <div style={{
                 textAlign: "center", padding: 40,
-                fontFamily: "monospace", fontSize: 14, color: "rgba(255,255,255,0.4)",
+                fontFamily: "var(--ed-m)", fontSize: 14, color: "#7A6E5A",
               }}>
                 No pets found. Adopt a pet first to enter the arena!
               </div>
@@ -1362,24 +1343,23 @@ export default function Arena() {
                       key={pet.id}
                       onClick={() => startBattle(pet)}
                       style={{
-                        background: `linear-gradient(145deg, ${el.color}0a 0%, rgba(255,255,255,0.03) 50%, ${el.color}05 100%)`,
-                        border: `1.5px solid ${el.color}25`,
+                        background: "#F5EFE2",
+                        border: `1px solid ${el.color}33`,
                         borderRadius: 16,
                         padding: "28px 22px",
                         cursor: "pointer",
                         transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
                         textAlign: "center",
-                        backdropFilter: "blur(8px)",
                       }}
                       onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background = `linear-gradient(145deg, ${el.color}18 0%, rgba(255,255,255,0.06) 50%, ${el.color}0d 100%)`;
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = `${el.color}50`;
+                        (e.currentTarget as HTMLButtonElement).style.background = `linear-gradient(145deg, ${el.color}12, #F5EFE2)`;
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = `${el.color}55`;
                         (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-6px) scale(1.02)";
-                        (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 12px 40px ${el.color}20, 0 0 20px ${el.color}10`;
+                        (e.currentTarget as HTMLButtonElement).style.boxShadow = "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))";
                       }}
                       onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.background = `linear-gradient(145deg, ${el.color}0a 0%, rgba(255,255,255,0.03) 50%, ${el.color}05 100%)`;
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = `${el.color}25`;
+                        (e.currentTarget as HTMLButtonElement).style.background = "#F5EFE2";
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = `${el.color}33`;
                         (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0) scale(1)";
                         (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
                       }}
@@ -1387,11 +1367,10 @@ export default function Arena() {
                       <div style={{
                         width: 80, height: 80, borderRadius: 18,
                         margin: "0 auto 16px",
-                        border: `2px solid ${el.color}35`,
+                        border: `1px solid ${el.color}35`,
                         overflow: "hidden",
                         background: `radial-gradient(circle at 50% 40%, ${el.color}15, ${el.color}05)`,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: `0 4px 16px ${el.color}15`,
                       }}>
                         {pet.avatar_url ? (
                           <img src={pet.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -1401,9 +1380,9 @@ export default function Arena() {
                       </div>
 
                       <div style={{
-                        fontFamily: "'Space Grotesk', sans-serif",
+                        fontFamily: "var(--ed-disp)",
                         fontSize: 18, fontWeight: 700,
-                        color: "#fff", marginBottom: 8,
+                        color: "#211A12", marginBottom: 8,
                       }}>
                         {pet.name}
                       </div>
@@ -1413,8 +1392,8 @@ export default function Arena() {
                       </div>
 
                       <div style={{
-                        fontFamily: "monospace", fontSize: 11,
-                        color: "rgba(255,255,255,0.35)", marginBottom: 16,
+                        fontFamily: "var(--ed-m)", fontSize: 11,
+                        color: "#7A6E5A", marginBottom: 16,
                       }}>
                         Lv.{pet.level} / {pet.personality_type}
                       </div>
@@ -1430,17 +1409,17 @@ export default function Arena() {
                           { label: "SPD", value: Math.floor((6 + pet.level * 2) * mods.spd), color: "#a78bfa" },
                         ].map((stat) => (
                           <div key={stat.label} style={{
-                            background: "rgba(255,255,255,0.04)",
+                            background: "#ECE4D4",
                             borderRadius: 8, padding: "5px 10px",
                             display: "flex", justifyContent: "space-between",
-                            border: "1px solid rgba(255,255,255,0.04)",
+                            border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                           }}>
                             <span style={{
-                              fontFamily: "monospace", fontSize: 10,
-                              color: "rgba(255,255,255,0.3)",
+                              fontFamily: "var(--ed-m)", fontSize: 10,
+                              color: "#9A7B4E",
                             }}>{stat.label}</span>
                             <span style={{
-                              fontFamily: "monospace", fontSize: 10,
+                              fontFamily: "var(--ed-m)", fontSize: 10,
                               fontWeight: 700, color: stat.color,
                             }}>{stat.value}</span>
                           </div>
@@ -1464,8 +1443,8 @@ export default function Arena() {
         }}>
           <GlassPanel style={{
             padding: "80px 32px",
-            background: "linear-gradient(180deg, rgba(10,10,30,0.97), rgba(15,15,50,0.97))",
-            border: "1px solid rgba(245,158,11,0.12)",
+            background: "#FBF6EC",
+            border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
             textAlign: "center",
           }}>
             {/* Spinning search ring */}
@@ -1478,8 +1457,8 @@ export default function Arena() {
               <div style={{
                 position: "absolute", inset: -10,
                 border: "3px solid transparent",
-                borderTopColor: "#f59e0b",
-                borderRightColor: "rgba(245,158,11,0.3)",
+                borderTopColor: "#BE4F28",
+                borderRightColor: "rgba(190,79,40,0.3)",
                 borderRadius: "50%",
                 animation: "matchmakingSpin 1.2s linear infinite",
               }} />
@@ -1487,8 +1466,8 @@ export default function Arena() {
               <div style={{
                 position: "absolute", inset: -4,
                 border: "2px solid transparent",
-                borderBottomColor: "#8b5cf6",
-                borderLeftColor: "rgba(139,92,246,0.3)",
+                borderBottomColor: "#6B4FA0",
+                borderLeftColor: "rgba(107,79,160,0.3)",
                 borderRadius: "50%",
                 animation: "matchmakingSpin 1.8s linear infinite reverse",
               }} />
@@ -1496,9 +1475,9 @@ export default function Arena() {
               <div style={{
                 width: 100, height: 100, borderRadius: 24,
                 margin: "10px auto 0",
-                border: "3px solid rgba(245,158,11,0.3)",
+                border: "1px solid rgba(190,79,40,0.3)",
                 overflow: "hidden",
-                background: "rgba(245,158,11,0.05)",
+                background: "rgba(190,79,40,0.06)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 animation: "matchmakingPulse 1.5s ease infinite",
               }}>
@@ -1511,17 +1490,16 @@ export default function Arena() {
             </div>
 
             <div style={{
-              fontFamily: "'Space Grotesk', sans-serif",
+              fontFamily: "var(--ed-disp)",
               fontSize: 24, fontWeight: 800,
-              background: "linear-gradient(135deg, #f59e0b, #fbbf24)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              color: "#BE4F28",
               marginBottom: 10,
             }}>
               Searching for opponent...
             </div>
             <div style={{
-              fontFamily: "monospace", fontSize: 13,
-              color: "rgba(255,255,255,0.3)",
+              fontFamily: "var(--ed-m)", fontSize: 13,
+              color: "#7A6E5A",
               animation: "pulse2 1s ease infinite",
             }}>
               Matching {selectedPet.name} (Lv.{selectedPet.level} <Icon name={ELEMENT_ICONS[(selectedPet.element as Element) || "normal"] || "normal"} size={14} />) with a worthy rival
@@ -1534,7 +1512,7 @@ export default function Arena() {
               {[0, 1, 2].map((i) => (
                 <div key={i} style={{
                   width: 8, height: 8, borderRadius: "50%",
-                  background: "#f59e0b",
+                  background: "#BE4F28",
                   animation: `pulse2 1s ease infinite ${i * 0.3}s`,
                 }} />
               ))}
@@ -1552,22 +1530,13 @@ export default function Arena() {
           animation: screenShake ? "screenShake 0.4s ease" : "fadeUp 0.3s ease-out",
         }}>
           <div style={{
-            background: "linear-gradient(180deg, #080818 0%, #0c0c28 30%, #101040 60%, #141450 100%)",
-            backgroundSize: "100% 200%",
-            animation: "gradientShift 8s ease infinite",
+            background: "linear-gradient(180deg, #211A12 0%, #1E1710 50%, #17110A 100%)",
             borderRadius: 18,
             overflow: "hidden",
-            border: "1px solid rgba(245,158,11,0.1)",
-            boxShadow: "0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03)",
+            border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+            boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
             position: "relative",
           }}>
-            {/* Subtle animated background gradient */}
-            <div style={{
-              position: "absolute", inset: 0,
-              background: "radial-gradient(ellipse at 30% 70%, rgba(139,92,246,0.04) 0%, transparent 50%), radial-gradient(ellipse at 70% 30%, rgba(245,158,11,0.04) 0%, transparent 50%)",
-              pointerEvents: "none",
-            }} />
-
             {/* Scanline effect */}
             <div style={{
               position: "absolute", inset: 0, pointerEvents: "none",
@@ -1585,8 +1554,8 @@ export default function Arena() {
               <Suspense fallback={
                 <div style={{
                   width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-                  background: "linear-gradient(180deg, #0a0a18, #060614)", borderRadius: 14, color: "#444", fontSize: 11,
-                  fontFamily: "'Space Grotesk', sans-serif",
+                  background: "linear-gradient(180deg, #211A12, #17110A)", borderRadius: 14, color: "#7A6E5A", fontSize: 11,
+                  fontFamily: "var(--ed-disp)",
                 }}>Loading Battle Arena...</div>
               }>
                 <BattleScene3D
@@ -1646,13 +1615,13 @@ export default function Arena() {
               {/* Turn indicator overlay */}
               <div style={{
                 position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
-                fontFamily: "monospace", fontSize: 10, fontWeight: 700,
-                color: battleOver ? "#f59e0b" : isPlayerTurn ? "#4ade80" : "#f87171",
-                background: battleOver ? "rgba(245,158,11,0.15)" : isPlayerTurn ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)",
+                fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700,
+                color: battleOver ? "#E7A15C" : isPlayerTurn ? "#4ade80" : "#f87171",
+                background: battleOver ? "rgba(190,79,40,0.18)" : isPlayerTurn ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)",
                 padding: "3px 14px", borderRadius: 8,
-                border: `1px solid ${battleOver ? "rgba(245,158,11,0.25)" : isPlayerTurn ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.25)"}`,
+                border: `1px solid ${battleOver ? "rgba(190,79,40,0.28)" : isPlayerTurn ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.25)"}`,
                 zIndex: 10, pointerEvents: "none",
-                letterSpacing: "0.1em", textTransform: "uppercase",
+                letterSpacing: "0.12em", textTransform: "uppercase",
                 backdropFilter: "blur(4px)",
               }}>
                 {battleOver ? "BATTLE OVER" : isPlayerTurn ? "YOUR TURN" : "OPPONENT'S TURN"}
@@ -1697,7 +1666,7 @@ export default function Arena() {
                   >
                     <span style={{ fontSize: 20 }}>+</span>
                     <span style={{
-                      fontFamily: "monospace", fontSize: 9,
+                      fontFamily: "var(--ed-m)", fontSize: 9,
                       color: "rgba(255,255,255,0.25)",
                     }}>
                       Empty Slot
@@ -1723,25 +1692,25 @@ export default function Arena() {
           <GlassPanel style={{
             display: "flex", justifyContent: "center", gap: 24,
             marginTop: 16, flexWrap: "wrap", padding: "12px 24px",
-            background: "rgba(255,255,255,0.03)",
+            background: "#FBF6EC",
           }}>
             {player && (
               <>
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#7A6E5A" }}>
                   ATK <span style={{ color: "#f97316", fontWeight: 700 }}>{player.atk}</span>
                 </div>
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#7A6E5A" }}>
                   DEF <span style={{ color: "#38bdf8", fontWeight: 700 }}>{player.def}</span>
                 </div>
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#7A6E5A" }}>
                   SPD <span style={{ color: "#a78bfa", fontWeight: 700 }}>{player.spd}</span>
                 </div>
-                <div style={{ width: 1, height: 14, background: "rgba(255,255,255,0.08)" }} />
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
-                  Turn <span style={{ color: "#f59e0b", fontWeight: 700 }}>{turn}</span>
+                <div style={{ width: 1, height: 14, background: "var(--ed-hair, rgba(33,26,18,.13))" }} />
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#7A6E5A" }}>
+                  Turn <span style={{ color: "#BE4F28", fontWeight: 700 }}>{turn}</span>
                 </div>
-                <div style={{ width: 1, height: 14, background: "rgba(255,255,255,0.08)" }} />
-                <div style={{ fontFamily: "monospace", fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                <div style={{ width: 1, height: 14, background: "var(--ed-hair, rgba(33,26,18,.13))" }} />
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#7A6E5A" }}>
                   <Icon name={ELEMENT_ICONS[player.element] || "normal"} size={14} /> vs <Icon name={ELEMENT_ICONS[opponent.element] || "normal"} size={14} />
                   {" "}
                   <span style={{
@@ -1750,7 +1719,7 @@ export default function Arena() {
                       ? "#4ade80"
                       : TYPE_CHART[player.element]?.[opponent.element] <= 0.5
                         ? "#f87171"
-                        : "rgba(255,255,255,0.35)",
+                        : "#7A6E5A",
                   }}>
                     {TYPE_CHART[player.element]?.[opponent.element] >= 2
                       ? "ADVANTAGE"

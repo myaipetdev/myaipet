@@ -62,13 +62,13 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
         @keyframes dpPop { 0%{opacity:0;transform:translateY(8px) scale(0.7);} 25%{opacity:1;transform:translateY(-4px) scale(1.1);} 100%{opacity:0;transform:translateY(-40px) scale(0.9);} }
       `}</style>
 
-      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.18em", color: "#b45309", fontWeight: 700, marginBottom: 6 }}>
+      <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, letterSpacing: "0.14em", color: "#9A4E1E", fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>
         TRY IT — NO WALLET NEEDED
       </div>
-      <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 26, fontWeight: 800, color: "#1a1a2e", letterSpacing: "-0.02em", margin: "0 0 4px" }}>
+      <h2 style={{ fontFamily: "var(--ed-disp)", fontSize: 26, fontWeight: 800, color: "#211A12", letterSpacing: "-0.02em", margin: "0 0 4px" }}>
         Meet {NAME} 👋
       </h2>
-      <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14, color: "rgba(26,26,46,0.55)", margin: "0 0 22px" }}>
+      <p style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#7A6E5A", margin: "0 0 22px" }}>
         Care for them and watch them respond. This one&apos;s a demo — adopt to start your own.
       </p>
 
@@ -78,7 +78,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
         {pops.map((p, i) => (
           <div key={p.id} style={{
             position: "absolute", top: -10, left: "50%", transform: "translateX(-50%)",
-            fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 20, color: p.color,
+            fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 20, color: p.color,
             zIndex: 11, pointerEvents: "none", textShadow: "0 2px 8px rgba(0,0,0,0.18)",
             animation: "dpPop 1.5s ease-out forwards", marginLeft: i * 4,
           }}>{p.text}</div>
@@ -100,10 +100,10 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
           title="boop"
           style={{
             width: 150, height: 150, borderRadius: 44, overflow: "hidden", cursor: "pointer",
-            border: "2px solid rgba(245,158,11,0.3)",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.10), 0 0 60px rgba(245,158,11,0.12)",
+            border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+            boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
             animation: react ? `${react.anim} 0.85s ease-in-out` : "dpFloat 6s ease-in-out infinite",
-            display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.02)",
+            display: "flex", alignItems: "center", justifyContent: "center", background: "#F5EFE2",
           }}
         >
           <img src="/mascot.jpg" alt={NAME} style={{ width: "100%", height: "100%", objectFit: "cover", animation: "dpBreathe 3.4s ease-in-out infinite" }} />
@@ -118,10 +118,10 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
           { k: "bond", label: "Bond", icon: "paw", color: "#c084fc" },
         ] as const).map((row) => (
           <div key={row.k}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(26,26,46,0.5)", marginBottom: 3 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A", marginBottom: 3 }}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name={row.icon} size={13} /> {row.label}</span><span>{Math.round((stats as any)[row.k])}</span>
             </div>
-            <div style={{ height: 7, background: "rgba(0,0,0,0.05)", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ height: 7, background: "#ECE4D4", borderRadius: 4, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${(stats as any)[row.k]}%`, background: row.color, borderRadius: 4, transition: "width 0.4s ease" }} />
             </div>
           </div>
@@ -132,8 +132,8 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
       <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 14 }}>
         {(Object.keys(CARE) as CareType[]).map((k) => (
           <button key={k} onClick={() => care(k)} className="mp-lift" style={{
-            padding: "10px 18px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.08)", background: "white",
-            cursor: "pointer", fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14, color: "#1a1a2e",
+            padding: "10px 18px", borderRadius: 12, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", background: "#FBF6EC",
+            cursor: "pointer", fontFamily: "var(--ed-disp)", fontWeight: 700, fontSize: 14, color: "#211A12",
             display: "flex", alignItems: "center", gap: 6,
           }}>
             <span style={{ fontSize: 16, display: "inline-flex" }}>{CARE[k].icon}</span>{CARE[k].label}
@@ -144,30 +144,30 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
       {/* Memory ticker — hint at the "it remembers" moat */}
       <div style={{
         maxWidth: 320, margin: "0 auto 24px", minHeight: 34, padding: "8px 12px", borderRadius: 10,
-        background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.18)", textAlign: "left",
+        background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", textAlign: "left",
       }}>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "rgba(180,83,9,0.7)", letterSpacing: "0.1em", marginBottom: memory.length ? 4 : 0 }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "#9A4E1E", letterSpacing: "0.12em", marginBottom: memory.length ? 4 : 0, textTransform: "uppercase" }}>
           {NAME.toUpperCase()} REMEMBERS
         </div>
         {memory.length === 0 ? (
-          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, color: "rgba(26,26,46,0.4)", fontStyle: "italic" }}>
+          <div style={{ fontFamily: "var(--ed-body)", fontSize: 12, color: "#9A7B4E", fontStyle: "italic" }}>
             Care for {NAME} and they&apos;ll remember it…
           </div>
         ) : memory.map((m, i) => (
-          <div key={i} style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12.5, color: "rgba(26,26,46,0.7)", opacity: 1 - i * 0.3 }}>· {m}</div>
+          <div key={i} style={{ fontFamily: "var(--ed-body)", fontSize: 12.5, color: "#5C5140", opacity: 1 - i * 0.3 }}>· {m}</div>
         ))}
       </div>
 
       {/* Adopt CTA */}
       <div style={{
         position: "sticky", bottom: 0, padding: "16px 18px", borderRadius: 16,
-        background: "linear-gradient(135deg, #14142a, #2d1b69)", color: "#fff",
-        boxShadow: "0 8px 28px rgba(20,20,42,0.28)",
+        background: "linear-gradient(135deg, #211A12, #1E1710)", color: "#FFF8EE",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       }}>
-        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 4 }}>
+        <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 16, marginBottom: 4 }}>
           {cares >= 2 ? `Adopt to keep ${NAME} growing 🌱` : `Adopt your own pet`}
         </div>
-        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12.5, color: "rgba(255,255,255,0.7)", marginBottom: 14 }}>
+        <div style={{ fontFamily: "var(--ed-body)", fontSize: 12.5, color: "rgba(255,248,238,0.7)", marginBottom: 14 }}>
           {ctaNote || "Sign in with your wallet — no gas, identity only. Your pet remembers you across every session."}
         </div>
         <div style={{ display: "inline-block" }}>{cta}</div>
