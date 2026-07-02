@@ -78,7 +78,7 @@ function Block({ period, title, icon }: { period: PeriodicResponse; title: strin
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
         <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name={icon} size={22} /></span>
         <div style={{
-          fontSize: 11, fontFamily: "var(--ed-m)",
+          fontSize: 12, fontFamily: "var(--ed-m)",
           letterSpacing: "0.14em", color: "#7A6E5A",
         }}>{title} · {period.period_key}</div>
         <div style={{ flex: 1 }} />
@@ -102,7 +102,7 @@ function Block({ period, title, icon }: { period: PeriodicResponse; title: strin
                   color: done ? "#9A7B4E" : "#211A12",
                 }}>{m.title}</div>
                 <div style={{
-                  fontSize: 11, fontFamily: "var(--ed-m)",
+                  fontSize: 12, fontFamily: "var(--ed-m)",
                   color: done ? "#9A4E1E" : "#7A6E5A",
                   fontWeight: 800,
                 }}>

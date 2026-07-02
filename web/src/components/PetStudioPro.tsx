@@ -989,7 +989,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             {/* Variations grid — each tile swaps into the main result on click */}
             {view === "done" && (varRunning || variations.length > 0 || error) && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 11, fontFamily: T.m, letterSpacing: "0.14em", color: T.mono, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ fontSize: 12, fontFamily: T.m, letterSpacing: "0.14em", color: T.mono, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
                   <SparkGlyph size={11} /> VARIATIONS{varRunning ? ` · ${variations.length}/4…` : ""}
                 </div>
                 {/* Item #11-1: a mid-run failure used to be swallowed (view stays
@@ -1035,7 +1035,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             {view === "idle" && (
               <div style={{ marginTop: 12 }}>
                 <div style={{
-                  fontSize: 11, fontFamily: T.m,
+                  fontSize: 12, fontFamily: T.m,
                   letterSpacing: "0.14em", color: T.mono, fontWeight: 700, marginBottom: 8, textTransform: "uppercase",
                   display: "flex", alignItems: "center", gap: 5,
                 }}><Icon name="sparkling" size={12} /> WHAT YOU CAN MAKE</div>
@@ -1078,12 +1078,12 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       <span style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700 }}>{p.name}</span>
                       {selected ? (
                         <span style={{
-                          fontSize: 11, color: T.studio, fontWeight: 700, letterSpacing: "0.08em",
+                          fontSize: 12, color: T.studio, fontWeight: 700, letterSpacing: "0.08em",
                           fontFamily: T.m,
                         }}>✓ LOCKED</span>
                       ) : (
                         <span style={{
-                          fontSize: 11, color: T.muted2,
+                          fontSize: 12, color: T.muted2,
                           fontFamily: T.m,
                         }}>Lv{p.level}</span>
                       )}
@@ -1238,7 +1238,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                             <strong style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700, color: sel ? T.studio : T.ink }}>{m.displayName}</strong>
                             {locked && <span style={{
                               padding: "2px 7px", borderRadius: 999,
-                              fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
+                              fontSize: 12, fontWeight: 700, letterSpacing: "0.08em",
                               fontFamily: T.m,
                               background: T.inset, color: T.muted2,
                               display: "inline-flex", alignItems: "center", gap: 4,
@@ -1251,7 +1251,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                             {!locked && <ModelBadges model={m} compact />}
                           </div>
                           <div style={{
-                            fontSize: 11.5, color: T.muted2, marginTop: 4,
+                            fontSize: 12, color: T.muted2, marginTop: 4,
                             fontFamily: T.m,
                           }}>
                             {m.kind === "video" ? `${m.maxDurationSec}s · ` : ""}{m.maxResolution} · {m.creditsPerRun} cr
@@ -1303,7 +1303,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               prompt is the first thing they see — not buried under templates. */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
             <span style={{
-              fontSize: 11, fontFamily: T.m, fontWeight: 700,
+              fontSize: 12, fontFamily: T.m, fontWeight: 700,
               color: T.mono, letterSpacing: "0.1em",
               alignSelf: "center", marginRight: 4,
             }}>TRY:</span>
@@ -1322,7 +1322,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
             }}>
               <div style={{
-                fontSize: 11, fontFamily: T.m,
+                fontSize: 12, fontFamily: T.m,
                 color: T.studio, letterSpacing: "0.1em", fontWeight: 700, marginBottom: 8,
                 display: "flex", alignItems: "center", gap: 6,
               }}><svg width={14} height={14} viewBox="0 0 24 24" fill="none"
@@ -1402,13 +1402,13 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                         <span style={{ ...emojiChip, position: "absolute", left: 9, bottom: 7 }}>{t.emoji}</span>
                         <span style={{
                           position: "absolute", top: 7, right: 8,
-                          fontSize: 10, fontFamily: T.m,
+                          fontSize: 12, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
                         }}>▸ MOTION</span>
                         <span style={{
                           position: "absolute", right: 9, bottom: 8,
-                          fontSize: 10, fontFamily: T.m,
+                          fontSize: 12, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
                         }}>{t.category}</span>
@@ -1421,7 +1421,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       }}>
                         <span style={emojiChip}>{t.emoji}</span>
                         <span style={{
-                          fontSize: 10, fontFamily: T.m,
+                          fontSize: 12, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
                         }}>{t.category}</span>
@@ -1436,7 +1436,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                         <span style={{ ...emojiChip, fontSize: 20, padding: "4px 8px" }}>{t.emoji}</span>
                         <span style={{
                           position: "absolute", top: 7, right: 8,
-                          fontSize: 10, fontFamily: T.m,
+                          fontSize: 12, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: T.studio,
                         }}>{t.category}</span>
@@ -1507,7 +1507,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             }}><PencilGlyph size={17} /></span>
             <span style={{ minWidth: 0 }}>
               <span style={{
-                display: "block", fontFamily: T.m, fontSize: 11, fontWeight: 700,
+                display: "block", fontFamily: T.m, fontSize: 12, fontWeight: 700,
                 letterSpacing: "0.16em", color: T.studio, textTransform: "uppercase",
                 marginBottom: 3,
               }}>START HERE</span>
@@ -1557,7 +1557,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               {!isDemo && (
                 <button onClick={openGallery} style={{
                   background: "none", border: "none", cursor: "pointer", padding: 0,
-                  fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em",
+                  fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em",
                   color: T.studio, textTransform: "uppercase",
                 }}>VIEW ALL →</button>
               )}
@@ -1592,7 +1592,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                               <path d="M17 3c0 4-3.5 6-5 9 1.5 3 5 5 5 9" />
                             </svg>
                           : g.status === "failed"
-                          ? <span style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: T.terra }}>FAILED</span>
+                          ? <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", color: T.terra }}>FAILED</span>
                           : "?"}</div>}
                   </button>
                   {g.prompt && (
@@ -1648,7 +1648,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           boxShadow: "var(--ed-shadow-card)",
         }}>
           <div style={{
-            fontSize: 11, fontFamily: T.m,
+            fontSize: 12, fontFamily: T.m,
             letterSpacing: "0.14em", color: T.studio, marginBottom: 10, fontWeight: 700, textTransform: "uppercase",
           }}>EXPLORING</div>
           <div style={{ fontSize: 22, fontFamily: T.disp, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 6 }}>
@@ -1758,7 +1758,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       {failed ? (
                         // Honest failure: real error_message + a retry path.
                         <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 7, minHeight: 120 }}>
-                          <span style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: T.terra, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                          <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: T.terra, display: "inline-flex", alignItems: "center", gap: 5 }}>
                             <span aria-hidden style={{ width: 7, height: 7, borderRadius: 2, background: T.terra, display: "inline-block" }} />FAILED
                           </span>
                           <span style={{ fontSize: 12, color: T.ink70, lineHeight: 1.45 }}>
@@ -1769,13 +1769,13 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                               alignSelf: "flex-start", marginTop: "auto",
                               padding: "6px 11px", borderRadius: 8, cursor: "pointer",
                               border: `1px solid ${T.hair}`, background: T.paper,
-                              color: T.ink70, fontSize: 11, fontWeight: 700, fontFamily: T.body,
+                              color: T.ink70, fontSize: 12, fontWeight: 700, fontFamily: T.body,
                             }}>Retry prompt</button>
                           )}
                         </div>
                       ) : inFlight ? (
                         <div className="ed-skeleton" style={{ height: 130, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <span style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", color: T.muted2 }}>RENDERING…</span>
+                          <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: T.muted2 }}>RENDERING…</span>
                         </div>
                       ) : media ? (
                         isVid
@@ -1794,10 +1794,10 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                           }}>{g.prompt}</div>
                         )}
                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <span style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: T.muted2, textTransform: "uppercase" }}>{dateStr}</span>
+                          <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", color: T.muted2, textTransform: "uppercase" }}>{dateStr}</span>
                           {typeof g.credits_charged === "number" && g.credits_charged > 0 && (
                             <span style={{
-                              fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
+                              fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em",
                               padding: "1px 6px", borderRadius: 999,
                               background: T.paper, border: `1px solid ${T.hair}`, color: T.muted2,
                             }}>{g.credits_charged} cr</span>
@@ -1988,7 +1988,7 @@ function RoadmapItem({ icon, title, body }: { icon: string; title: string; body:
         <span style={{ display: "inline-flex" }}><Icon name={icon} size={20} /></span>
         <span style={{
           padding: "2px 7px", borderRadius: 999,
-          fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+          fontSize: 12, fontWeight: 700, letterSpacing: "0.1em",
           fontFamily: T.m,
           background: "rgba(107,79,160,0.12)", color: T.studio,
         }}>RESEARCH</span>
@@ -2071,7 +2071,7 @@ function ModelBadges({ model, compact }: { model: StudioModel; compact?: boolean
       {badges.slice(0, compact ? 3 : 5).map((b, i) => (
         <span key={i} style={{
           padding: "2px 7px", borderRadius: 999,
-          fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
+          fontSize: 12, fontWeight: 700, letterSpacing: "0.06em",
           fontFamily: T.m,
           background: b.bg, color: b.fg,
           display: "inline-flex", alignItems: "center", gap: 3,
@@ -2101,7 +2101,7 @@ function Pill({ label, value, valueColor }: { label: string; value: string; valu
       display: "flex", alignItems: "baseline", gap: 8,
     }}>
       <span style={{
-        fontSize: 11, fontFamily: T.m,
+        fontSize: 12, fontFamily: T.m,
         color: T.mono, letterSpacing: "0.1em", fontWeight: 700,
       }}>{label}</span>
       <span style={{
@@ -2117,12 +2117,12 @@ function Pill({ label, value, valueColor }: { label: string; value: string; valu
 const tag: React.CSSProperties = {
   padding: "3px 9px", borderRadius: 999,
   background: "rgba(107,79,160,0.12)", color: T.studio,
-  fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+  fontSize: 12, fontWeight: 700, letterSpacing: "0.1em",
   fontFamily: T.m,
 };
 
 const panelLabel: React.CSSProperties = {
-  fontSize: 11, fontWeight: 700, letterSpacing: "0.14em",
+  fontSize: 12, fontWeight: 700, letterSpacing: "0.14em",
   textTransform: "uppercase", color: T.mono,
   fontFamily: T.m,
 };
@@ -2173,7 +2173,7 @@ const btnGhostOnDark: React.CSSProperties = {
 const galleryActionBtn: React.CSSProperties = {
   padding: "5px 9px", borderRadius: 8,
   border: `1px solid ${T.hair}`, background: T.paper,
-  color: T.ink70, fontWeight: 700, fontSize: 11, cursor: "pointer",
+  color: T.ink70, fontWeight: 700, fontSize: 12, cursor: "pointer",
   fontFamily: T.body, textDecoration: "none", lineHeight: 1.2,
 };
 

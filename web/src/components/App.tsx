@@ -61,7 +61,7 @@ function Loader() {
       }} />
       <div style={{
         marginTop: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-        color: "#9A7B4E", fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700,
+        color: "#9A7B4E", fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
         letterSpacing: "0.14em", textTransform: "uppercase",
       }}>
         LOADING
@@ -129,18 +129,18 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
         boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
         display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
           <span style={{
             width: 26, height: 26, borderRadius: 8, flexShrink: 0,
             background: "#BE4F28", border: "none",
             display: "inline-flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 11, color: "#FFF8EE",
+            fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 12, color: "#FFF8EE",
           }}>1</span>
           <div>
             <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 700, fontSize: 14, color: "#211A12" }}>
               Daily Check-in
             </div>
-            <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A7B4E" }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A" }}>
               {checkedIn ? `Day ${streak} streak active 🔥` : "Check in to earn Season Rewards points"}
             </div>
           </div>
@@ -166,17 +166,17 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
                 {stamped && awarded != null && (
                   <div style={{
                     position: "absolute", top: -16, left: 0, right: 0, textAlign: "center",
-                    fontFamily: "var(--ed-m)", fontSize: 9, fontWeight: 700, color: "#BE4F28",
+                    fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#BE4F28",
                     whiteSpace: "nowrap", pointerEvents: "none",
                     animation: "mpEnter 420ms cubic-bezier(0.2,0.8,0.2,1) both",
                   }}>
                     +{awarded}
                   </div>
                 )}
-                <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: done ? "#FFF8EE" : isToday ? "#BE4F28" : "#9A7B4E", fontWeight: 700 }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: done ? "#FFF8EE" : isToday ? "#BE4F28" : "#9A7B4E", fontWeight: 700 }}>
                   {done ? "✓" : `D${day}`}
                 </div>
-                <div style={{ fontFamily: "var(--ed-m)", fontSize: 8, color: done ? "#FCE9CF" : "#9A7B4E" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: done ? "#FCE9CF" : "#9A7B4E" }}>
                   +{r}
                 </div>
               </div>
@@ -184,7 +184,7 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
           })}
         </div>
 
-        {msg && <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#BE4F28", fontWeight: 700, animation: "slideIn .25s ease both" }}>{msg}</span>}
+        {msg && <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#BE4F28", fontWeight: 700, animation: "slideIn .25s ease both" }}>{msg}</span>}
 
         {isAuthenticated ? (
           <button
@@ -204,7 +204,7 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
             {loading ? "..." : checkedIn ? "Done ✓" : "Check In"}
           </button>
         ) : (
-          <span style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A7B4E" }}>Connect wallet to earn</span>
+          <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E" }}>Connect wallet to earn</span>
         )}
       </div>
     </div>
@@ -286,7 +286,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
               Season 1 Rewards
             </div>
             <div style={{
-              fontFamily: "var(--ed-m)", fontSize: 11, color: "rgba(252,233,207,0.85)",
+              fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(252,233,207,0.85)",
               marginTop: 2, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 5,
             }}>
               <span style={{ fontWeight: 700, color: "#FFF8EE" }}>{tier.name}</span>
@@ -306,7 +306,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
         ) : (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
           {notStarted && (
-            <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 10.5, color: "#FFF8EE", whiteSpace: "nowrap", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 12, color: "#FFF8EE", whiteSpace: "nowrap", letterSpacing: "0.1em", textTransform: "uppercase" }}>
               STARTS JUL 1 — GET READY
             </div>
           )}
@@ -326,7 +326,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
               }}>
                 {t.val}
               </div>
-              <div style={{ fontFamily: "var(--ed-m)", fontSize: 8, color: "rgba(252,233,207,0.8)", marginTop: 3 }}>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "rgba(252,233,207,0.8)", marginTop: 3 }}>
                 {t.label}
               </div>
             </div>
@@ -337,7 +337,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
 
         {/* Right: points + progress */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, minWidth: 120 }}>
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "rgba(252,233,207,0.85)", whiteSpace: "nowrap" }}>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(252,233,207,0.85)", whiteSpace: "nowrap" }}>
             {seasonPoints > 0
               ? <>
                   {/* Change-flash uses a cream pulse here — the spec's terracotta
@@ -360,7 +360,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
               transition: "width 0.6s ease",
             }} />
           </div>
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 8, color: "rgba(252,233,207,0.8)" }}>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "rgba(252,233,207,0.8)" }}>
             {next ? `${toNext.toLocaleString()} pts to ${next.name}` : "Top tier reached"}
           </div>
         </div>
@@ -673,7 +673,7 @@ export default function App() {
             MY AI PET
           </span>
           <span style={{
-            fontSize: 10.5, padding: "4px 11px", borderRadius: 999,
+            fontSize: 12, padding: "4px 11px", borderRadius: 999,
             background: "transparent",
             color: "#9A4E1E", fontFamily: "var(--ed-m)", fontWeight: 700,
             border: "1px solid rgba(154,78,30,0.4)",
@@ -754,7 +754,7 @@ export default function App() {
             { href: "/architecture", label: "Architecture" },
           ].map(l => (
             <a key={l.href} href={l.href} style={{
-              fontFamily: "var(--ed-m)", fontSize: 11.5, fontWeight: 700,
+              fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
               letterSpacing: "0.08em", textTransform: "uppercase",
               color: "#9A7B4E", textDecoration: "none",
             }}>{l.label}</a>
@@ -771,7 +771,7 @@ export default function App() {
         {/* Disclaimer */}
         <div style={{
           maxWidth: 680, margin: "0 auto",
-          fontFamily: "var(--ed-body)", fontSize: 11.5,
+          fontFamily: "var(--ed-body)", fontSize: 12,
           color: "#8A7E68", lineHeight: 1.6, fontWeight: 400,
         }}>
           Engagement points are non-financial loyalty credits, not securities. No token is issued —

@@ -639,7 +639,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
             <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#C8932F" }}>
               {totalStars}
             </span>
-            <span style={{ color: "#555", fontSize: 10 }}>/ 90</span>
+            <span style={{ color: "#555", fontSize: 12 }}>/ 90</span>
           </div>
         </div>
 
@@ -688,7 +688,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                     }}>
                       {region.name}
                     </div>
-                    <div style={{ color: "#666", fontSize: 10, marginTop: 1 }}>{region.description}</div>
+                    <div style={{ color: "#666", fontSize: 12, marginTop: 1 }}>{region.description}</div>
                   </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
@@ -697,7 +697,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                     padding: "2px 8px", borderRadius: 8, background: `${region.color}10`,
                   }}>
                     <Icon name="star" size={12} />
-                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, fontWeight: 700, color: region.color }}>
+                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: region.color }}>
                       {regionStars}/{region.stages.length * 3}
                     </span>
                   </div>
@@ -797,14 +797,14 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                           {stage.emoji}
                         </div>
                         <div style={{
-                          fontSize: 9, fontWeight: 800, color: stage.unlocked ? "#e8e8e8" : "#333",
+                          fontSize: 12, fontWeight: 800, color: stage.unlocked ? "#e8e8e8" : "#333",
                           fontFamily: "var(--ed-disp)",
                           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                         }}>
                           {stage.name}
                         </div>
                         <div style={{
-                          fontSize: 8, color: stage.unlocked ? "#777" : "#333",
+                          fontSize: 10, color: stage.unlocked ? "#777" : "#333",
                           fontFamily: "var(--ed-m)", marginTop: 1,
                         }}>
                           Lv.{stage.level}
@@ -847,7 +847,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
 
         <button onClick={backToMap} style={{
           background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 10, padding: "8px 16px", color: "#888", fontSize: 11, cursor: "pointer",
+          borderRadius: 10, padding: "8px 16px", color: "#888", fontSize: 12, cursor: "pointer",
           fontFamily: "var(--ed-disp)", marginBottom: 16,
           transition: "all 0.2s", backdropFilter: "blur(8px)", letterSpacing: 1,
         }}>
@@ -888,14 +888,14 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
             {/* Element + level badges */}
             <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 10 }}>
               <span style={{
-                fontSize: 10, padding: "3px 10px", borderRadius: 20,
+                fontSize: 12, padding: "3px 10px", borderRadius: 20,
                 background: `${bossEl.color}15`, border: `1px solid ${bossEl.color}30`,
                 color: bossEl.color, fontFamily: "var(--ed-m)", fontWeight: 700,
               }}>
                 <Icon name={ELEMENT_ICONS[selectedStage.element] || "normal"} size={12} /> {selectedStage.element.toUpperCase()}
               </span>
               <span style={{
-                fontSize: 10, padding: "3px 10px", borderRadius: 20,
+                fontSize: 12, padding: "3px 10px", borderRadius: 20,
                 background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
                 color: "#aaa", fontFamily: "var(--ed-m)", fontWeight: 700,
               }}>
@@ -903,7 +903,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
               </span>
               {selectedStage.isBoss && (
                 <span style={{
-                  fontSize: 10, padding: "3px 10px", borderRadius: 20,
+                  fontSize: 12, padding: "3px 10px", borderRadius: 20,
                   background: "rgba(200,147,47,0.1)", border: "1px solid rgba(200,147,47,0.2)",
                   color: "#C8932F", fontFamily: "var(--ed-m)", fontWeight: 700,
                   display: "inline-flex", alignItems: "center", gap: 3,
@@ -917,7 +917,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
             <div style={{
               marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             }}>
-              <span style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "#555" }}>HP</span>
+              <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#555" }}>HP</span>
               <div style={{
                 width: 120, height: 6, borderRadius: 3, overflow: "hidden",
                 background: "rgba(255,255,255,0.08)",
@@ -927,7 +927,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                   background: `linear-gradient(90deg, #4ade80, ${bossEl.color})`,
                 }} />
               </div>
-              <span style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "#555" }}>FULL</span>
+              <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#555" }}>FULL</span>
             </div>
 
             {/* Boss skills preview */}
@@ -938,7 +938,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                 const sEl = ELEMENTS[sd.element] || ELEMENTS.normal;
                 return (
                   <span key={i} style={{
-                    fontSize: 9, padding: "3px 8px", borderRadius: 8,
+                    fontSize: 12, padding: "3px 8px", borderRadius: 8,
                     background: `${sEl.color}10`, border: `1px solid ${sEl.color}20`,
                     color: "#888", fontFamily: "var(--ed-m)",
                   }}>
@@ -957,7 +957,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
         }}>
           Choose Your Fighter
           <span style={{
-            display: "block", fontSize: 9, color: "#555", fontWeight: 400, marginTop: 2, letterSpacing: 0,
+            display: "block", fontSize: 12, color: "#555", fontWeight: 400, marginTop: 2, letterSpacing: 0,
           }}>
             Min Lv.{Math.max(1, selectedStage.level - 3)}
           </span>
@@ -989,7 +989,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                 {meetsLevel && pet.level >= selectedStage.level && (
                   <div style={{
                     position: "absolute", top: 4, right: 4,
-                    fontSize: 8, padding: "1px 5px", borderRadius: 6,
+                    fontSize: 10, padding: "1px 5px", borderRadius: 6,
                     background: "rgba(74,222,128,0.15)", color: "#4ade80",
                     fontFamily: "var(--ed-m)", fontWeight: 700,
                   }}>OK</div>
@@ -997,7 +997,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                 {meetsLevel && pet.level < selectedStage.level && (
                   <div style={{
                     position: "absolute", top: 4, right: 4,
-                    fontSize: 8, padding: "1px 5px", borderRadius: 6,
+                    fontSize: 10, padding: "1px 5px", borderRadius: 6,
                     background: "rgba(248,113,113,0.15)", color: "#f87171",
                     fontFamily: "var(--ed-m)", fontWeight: 700,
                   }}>RISK</div>
@@ -1018,17 +1018,17 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                   {pet.name}
                 </div>
                 <div style={{
-                  color: el.color, fontSize: 9, fontFamily: "var(--ed-m)", fontWeight: 700, marginTop: 2,
+                  color: el.color, fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700, marginTop: 2,
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 3,
                 }}>
                   <Icon name={ELEMENT_ICONS[(pet.element as Element) || SPECIES_ELEMENTS[pet.species] || "normal"] || "normal"} size={12} /> Lv.{pet.level}
                 </div>
                 {/* Mini stat bar */}
                 <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 6 }}>
-                  <span style={{ fontSize: 7, color: "#555", fontFamily: "var(--ed-m)" }}>
+                  <span style={{ fontSize: 10, color: "#555", fontFamily: "var(--ed-m)" }}>
                     HP:{Math.floor((pet.level * 10 + pet.happiness) * getPersonalityMods(pet.personality_type).hp)}
                   </span>
-                  <span style={{ fontSize: 7, color: "#555", fontFamily: "var(--ed-m)" }}>
+                  <span style={{ fontSize: 10, color: "#555", fontFamily: "var(--ed-m)" }}>
                     ATK:{Math.floor((10 + pet.level * 3) * getPersonalityMods(pet.personality_type).atk)}
                   </span>
                 </div>
@@ -1093,14 +1093,14 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
               animation: "pve-fadeIn 0.8s ease 0.7s both",
             }}>
               <span style={{
-                fontSize: 11, padding: "4px 12px", borderRadius: 20,
+                fontSize: 12, padding: "4px 12px", borderRadius: 20,
                 background: `${bossEl.color}15`, border: `1px solid ${bossEl.color}30`,
                 color: bossEl.color, fontFamily: "var(--ed-m)", fontWeight: 700,
               }}>
                 <Icon name={ELEMENT_ICONS[selectedStage.element] || "normal"} size={14} /> {selectedStage.element.toUpperCase()}
               </span>
               <span style={{
-                fontSize: 11, padding: "4px 12px", borderRadius: 20,
+                fontSize: 12, padding: "4px 12px", borderRadius: 20,
                 background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
                 color: "#aaa", fontFamily: "var(--ed-m)", fontWeight: 700,
               }}>
@@ -1261,7 +1261,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
             <Suspense fallback={
               <div style={{
                 width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-                background: "linear-gradient(180deg, #0a0a18, #060614)", borderRadius: 14, color: "#444", fontSize: 11,
+                background: "linear-gradient(180deg, #0a0a18, #060614)", borderRadius: 14, color: "#444", fontSize: 12,
                 fontFamily: "var(--ed-disp)",
               }}>Loading Battle Arena...</div>
             }>
@@ -1365,12 +1365,12 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
           }}>
             {battleLog.map((msg, i) => (
               <div key={i} style={{
-                fontFamily: "var(--ed-m)", fontSize: 10,
+                fontFamily: "var(--ed-m)", fontSize: 12,
                 color: i === battleLog.length - 1 ? "#d0d0d0" : "#444",
                 lineHeight: 1.6,
                 animation: i === battleLog.length - 1 ? "pve-fadeIn 0.3s ease" : "none",
               }}>
-                <span style={{ color: "#333", fontSize: 8, marginRight: 6 }}>
+                <span style={{ color: "#333", fontSize: 10, marginRight: 6 }}>
                   {i === 0 ? ">" : `T${Math.ceil(i / 2)}`}
                 </span>
                 {msg}
@@ -1412,24 +1412,24 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
 
                     <div style={{ fontSize: 18, marginBottom: 3 }}>{s.emoji}</div>
                     <div style={{
-                      fontSize: 9, fontWeight: 800, color: dis ? "#444" : "#e8e8e8",
+                      fontSize: 12, fontWeight: 800, color: dis ? "#444" : "#e8e8e8",
                       fontFamily: "var(--ed-disp)",
                       whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                     }}>{s.name}</div>
 
                     <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 3 }}>
                       <span style={{
-                        fontSize: 7, padding: "1px 4px", borderRadius: 4,
+                        fontSize: 10, padding: "1px 4px", borderRadius: 4,
                         background: `${el.color}15`, color: el.color,
                         fontFamily: "var(--ed-m)", fontWeight: 700,
                       }}><Icon name={ELEMENT_ICONS[s.element] || "normal"} size={8} /></span>
-                      <span style={{ fontSize: 7, color: "#666", fontFamily: "var(--ed-m)" }}>
+                      <span style={{ fontSize: 10, color: "#666", fontFamily: "var(--ed-m)" }}>
                         {s.power > 0 ? `PWR ${s.power}` : "STATUS"}
                       </span>
                     </div>
 
                     <div style={{
-                      fontSize: 7, color: cantAfford ? "#f87171" : "#555",
+                      fontSize: 10, color: cantAfford ? "#f87171" : "#555",
                       fontFamily: "var(--ed-m)", fontWeight: 700, marginTop: 2,
                     }}>EP:{s.energyCost}</div>
                   </button>
@@ -1443,7 +1443,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
             <div style={{ textAlign: "center", padding: "2px 0 14px" }}>
               <span style={{
                 fontFamily: "var(--ed-m)",
-                fontSize: 10, fontWeight: 800, padding: "4px 16px", borderRadius: 20,
+                fontSize: 12, fontWeight: 800, padding: "4px 16px", borderRadius: 20,
                 letterSpacing: 2,
                 background: isPlayerTurn
                   ? "linear-gradient(135deg, rgba(74,222,128,0.12), rgba(74,222,128,0.05))"
@@ -1586,8 +1586,8 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                   animation: "pve-fadeIn 0.5s ease 1.5s both",
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 8, color: "#555" }}>EXP</span>
-                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 8, color: "#a78bfa" }}>+{resultData.exp_gained}</span>
+                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#555" }}>EXP</span>
+                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#a78bfa" }}>+{resultData.exp_gained}</span>
                   </div>
                   <div style={{
                     width: "100%", height: 6, borderRadius: 3, overflow: "hidden",
@@ -1619,7 +1619,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                   }}>
                     <div style={{
                       fontFamily: "var(--ed-disp)",
-                      fontSize: 10, fontWeight: 800, color: "#a78bfa",
+                      fontSize: 12, fontWeight: 800, color: "#a78bfa",
                       letterSpacing: 3, textTransform: "uppercase", marginBottom: 6,
                     }}>NEW SKILL ACQUIRED!</div>
                     <div style={{ fontSize: 28, marginBottom: 4 }}>
@@ -1632,7 +1632,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                       {SKILL_MAP[resultData.skill_drop]?.name || resultData.skill_drop}
                     </div>
                     {SKILL_MAP[resultData.skill_drop] && (
-                      <div style={{ fontSize: 9, color: "#888", fontFamily: "var(--ed-m)", marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: "#888", fontFamily: "var(--ed-m)", marginTop: 4 }}>
                         <Icon name={ELEMENT_ICONS[SKILL_MAP[resultData.skill_drop].element] || "normal"} size={10} />{" "}
                         PWR {SKILL_MAP[resultData.skill_drop].power || "STATUS"}
                       </div>

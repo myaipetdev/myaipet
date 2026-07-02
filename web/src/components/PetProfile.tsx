@@ -135,12 +135,12 @@ function AnimatedStatBar({ label, value, color, max = 100, icon }: any) {
   return (
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, alignItems: "center" }}>
-        <span style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A", display: "flex", alignItems: "center", gap: 4 }}>
-          {icon && <span style={{ fontSize: 11 }}>{icon}</span>}
+        <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A", display: "flex", alignItems: "center", gap: 4 }}>
+          {icon && <span style={{ fontSize: 12 }}>{icon}</span>}
           {label}
         </span>
         <span style={{
-          fontFamily: "var(--ed-m)", fontSize: 10, color,
+          fontFamily: "var(--ed-m)", fontSize: 12, color,
           animation: isLow ? "pulse 1.5s ease-in-out infinite" : "none",
         }}>
           {displayValue}/{max}
@@ -551,7 +551,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
                   <div style={{ fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 600, color: "#211A12" }}>
                     Tap to upload your pet's photo
                   </div>
-                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#9A7B4E", marginTop: 4 }}>
+                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", marginTop: 4 }}>
                     JPG, PNG up to 10MB
                   </div>
                 </>
@@ -573,7 +573,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
 
             {/* Name */}
             <div>
-              <label style={{ fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 600, color: "#7A6E5A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
+              <label style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 600, color: "#7A6E5A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
                 Pet Name *
               </label>
               <input value={uploadName} onChange={e => setUploadName(e.target.value)} placeholder="What's your pet's name?"
@@ -588,7 +588,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
 
             {/* Species */}
             <div>
-              <label style={{ fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 600, color: "#7A6E5A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
+              <label style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 600, color: "#7A6E5A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
                 Species
               </label>
               <input value={uploadSpecies} onChange={e => setUploadSpecies(e.target.value)} placeholder="e.g. Golden Retriever, Persian Cat, Dragon..."
@@ -603,7 +603,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
 
             {/* Personality */}
             <div>
-              <label style={{ fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 600, color: "#7A6E5A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
+              <label style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 600, color: "#7A6E5A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
                 Personality
               </label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
@@ -685,7 +685,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
           }}>←</button>
           <div style={{ flex: 1 }}>
             <div style={{
-              fontSize: 11, fontFamily: "var(--ed-m)",
+              fontSize: 12, fontFamily: "var(--ed-m)",
               letterSpacing: "0.14em", color: "#6B4FA0", marginBottom: 2,
               fontWeight: 800, textTransform: "uppercase",
             }}>ADOPTION · CHAT WITH AI</div>
@@ -766,7 +766,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
               border: "1px solid rgba(107,79,160,0.2)",
               animation: "slideIn 0.3s ease-out",
             }}>
-              <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.14em", color: "#6B4FA0", marginBottom: 10 }}>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.14em", color: "#6B4FA0", marginBottom: 10 }}>
                 ✨ YOUR NEW COMPANION
               </div>
               <div style={{ fontFamily: "var(--ed-disp)", fontSize: 24, fontWeight: 800, color: "#211A12", marginBottom: 4, letterSpacing: "-0.02em" }}>
@@ -776,7 +776,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
                 {petData.species_name}
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
-                <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: "var(--ed-m)", background: "rgba(107,79,160,0.12)", color: "#6B4FA0", fontWeight: 600 }}>
+                <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 12, fontFamily: "var(--ed-m)", background: "rgba(107,79,160,0.12)", color: "#6B4FA0", fontWeight: 600 }}>
                   {petData.personality}
                 </span>
               </div>
@@ -810,7 +810,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
             }}>
               {creating ? "Creating…" : "✨ Just create my pet"}
             </button>
-            <div style={{ textAlign: "center", fontSize: 11, color: "#9A7B4E", marginTop: 5, fontFamily: "var(--ed-body)" }}>
+            <div style={{ textAlign: "center", fontSize: 12, color: "#9A7B4E", marginTop: 5, fontFamily: "var(--ed-body)" }}>
               We'll use what you've told us so far — you can refine details anytime.
             </div>
             {adoptError && <div style={{ color: "#ef4444", fontSize: 12.5, marginTop: 6, textAlign: "center", fontWeight: 600 }}>{adoptError}</div>}
@@ -824,7 +824,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
               <button key={i} onClick={() => sendMessage(s)} style={{
                 padding: "6px 12px", borderRadius: 20, border: "1px solid rgba(107,79,160,0.2)",
                 background: "rgba(107,79,160,0.06)", cursor: "pointer",
-                fontFamily: "var(--ed-m)", fontSize: 11, color: "#6B4FA0",
+                fontFamily: "var(--ed-m)", fontSize: 12, color: "#6B4FA0",
                 transition: "all 0.2s", whiteSpace: "nowrap",
               }}>{s}</button>
             ))}
@@ -893,7 +893,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     <div style={{
       marginTop: 24, marginBottom: 4, paddingTop: 14,
       borderTop: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-      fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700,
+      fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
       letterSpacing: "0.14em", textTransform: "uppercase", color: "#7A6E5A",
     }}>{children}</div>
   );
@@ -1011,7 +1011,7 @@ function PetAvatar({ pet, mood, size = 80, reaction, equipped, moodPortraits }: 
         <div style={{
           position: "absolute", top: -28, left: "50%", transform: "translateX(-50%)",
           background: "#FBF6EC", borderRadius: 8, padding: "3px 8px",
-          fontFamily: "var(--ed-m)", fontSize: 9, color: "#5C5140",
+          fontFamily: "var(--ed-m)", fontSize: 12, color: "#5C5140",
           boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           whiteSpace: "nowrap", zIndex: 10, pointerEvents: "none",
           animation: "bubbleFade 3s ease-in-out forwards",
@@ -1542,7 +1542,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
         <p style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#5C5140", marginBottom: 8, lineHeight: 1.8 }}>
           Adopt your first AI pet! They&apos;ll grow, learn your patterns, and develop a unique personality over time.
         </p>
-        <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#9A7B4E", marginBottom: 32, lineHeight: 1.7 }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", marginBottom: 32, lineHeight: 1.7 }}>
           Feed them, play with them, talk to them — every interaction matters.
         </div>
         <button onClick={() => setShowCreate(true)} style={{
@@ -1666,7 +1666,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
           minWidth: 280,
         }}>
           <div style={{ fontSize: 36, marginBottom: 4 }}>{comboToast.emoji}</div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.85, marginBottom: 4 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.85, marginBottom: 4 }}>
             ✦ Combo Activated ✦
           </div>
           <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 6 }}>
@@ -1744,7 +1744,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
               }}>
                 {p.name}
               </div>
-              <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "#9A7B4E" }}>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E" }}>
                 Lv.{p.level} {getSpeciesName(p)}
               </div>
             </div>
@@ -1754,25 +1754,25 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
         {pets.length < petSlots ? (
           <button onClick={() => setShowCreate(true)} style={{
             background: "rgba(33,26,18,0.03)", border: "1px dashed var(--ed-hair, rgba(33,26,18,.13))",
-            borderRadius: 10, padding: "10px 18px", cursor: "pointer", fontFamily: "var(--ed-m)", fontSize: 11,
+            borderRadius: 10, padding: "10px 18px", cursor: "pointer", fontFamily: "var(--ed-m)", fontSize: 12,
             color: "#9A7B4E", transition: "all 0.2s",
           }}>+ Adopt New</button>
         ) : petSlots < 5 ? (
           <button onClick={handleUnlockSlot} disabled={unlockingSlot} style={{
             background: "rgba(190,79,40,0.08)", border: "1px dashed rgba(190,79,40,0.3)",
             borderRadius: 10, padding: "10px 18px", cursor: unlockingSlot ? "wait" : "pointer",
-            fontFamily: "var(--ed-m)", fontSize: 11, color: "#9A4E1E", transition: "all 0.2s",
+            fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A4E1E", transition: "all 0.2s",
             display: "inline-flex", alignItems: "center", gap: 6,
           }}>
             <Icon name="lock" size={13} /> Unlock Slot ({slotPrices[petSlots] || 500} credits)
           </button>
         ) : null}
-        <span style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "#9A7B4E" }}>
+        <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E" }}>
           {pets.length}/{petSlots} slots
         </span>
         {balance !== null && (<>
           <div style={{
-            fontFamily: "var(--ed-m)", fontSize: 11, padding: "6px 14px", borderRadius: 10,
+            fontFamily: "var(--ed-m)", fontSize: 12, padding: "6px 14px", borderRadius: 10,
             background: "rgba(190,79,40,0.06)",
             border: "1px solid rgba(190,79,40,0.2)",
             color: "#9A4E1E", fontWeight: 600,
@@ -1898,21 +1898,21 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
             </h2>
             <div style={{ display: "flex", gap: 6, justifyContent: "center", alignItems: "center", flexWrap: "wrap" }}>
               <span style={{
-                fontFamily: "var(--ed-m)", fontSize: 10, padding: "3px 10px", borderRadius: 10,
+                fontFamily: "var(--ed-m)", fontSize: 12, padding: "3px 10px", borderRadius: 10,
                 background: "rgba(190,79,40,0.1)", color: "#9A4E1E",
                 border: "1px solid rgba(190,79,40,0.2)",
               }}>
                 Lv.{pet.level}
               </span>
               <span style={{
-                fontFamily: "var(--ed-m)", fontSize: 10, padding: "3px 10px", borderRadius: 10,
+                fontFamily: "var(--ed-m)", fontSize: 12, padding: "3px 10px", borderRadius: 10,
                 background: "rgba(107,79,160,0.08)", color: "#6B4FA0",
                 border: "1px solid rgba(107,79,160,0.15)",
               }}>
                 {pet.personality_type}
               </span>
               <span style={{
-                fontFamily: "var(--ed-m)", fontSize: 10, padding: "3px 10px", borderRadius: 10,
+                fontFamily: "var(--ed-m)", fontSize: 12, padding: "3px 10px", borderRadius: 10,
                 background: `${moodCfg.color}12`, color: moodCfg.color,
                 border: `1px solid ${moodCfg.color}25`,
               }}>
@@ -1921,11 +1921,11 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
             </div>
             {/* Progression + mood context */}
             <div style={{ marginTop: 9, display: "flex", flexDirection: "column", gap: 4, alignItems: "center" }}>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", fontFamily: "var(--ed-m)", fontSize: 10, color: "#5C5140" }}>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", fontFamily: "var(--ed-m)", fontSize: 12, color: "#5C5140" }}>
                 <span>✨ {pet.experience % 100}/100 XP → Lv.{pet.level + 1}</span>
                 <span>🤝 {bondTier(pet.bond_level)} · {pet.bond_level}/100</span>
               </div>
-              <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: moodCfg.color, opacity: 0.85 }}>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: moodCfg.color, opacity: 0.85 }}>
                 {moodCfg.label} — {moodReason(pet)}
               </div>
             </div>
@@ -1966,7 +1966,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                     style={{
                       width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                       background: "#F5EFE2", color: "#211A12",
-                      fontFamily: "var(--ed-m)", fontSize: 10, outline: "none", boxSizing: "border-box", marginBottom: 6,
+                      fontFamily: "var(--ed-m)", fontSize: 12, outline: "none", boxSizing: "border-box", marginBottom: 6,
                     }}
                   />
                   <div style={{ display: "flex", gap: 4 }}>
@@ -1979,21 +1979,21 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                       } catch (e: any) { showError(e.message); }
                     }} style={{
                       padding: "4px 12px", borderRadius: 6, border: "none",
-                      background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontFamily: "var(--ed-m)", fontSize: 10, cursor: "pointer",
+                      background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontFamily: "var(--ed-m)", fontSize: 12, cursor: "pointer",
                     }}>Save</button>
                     <button onClick={() => setEditingDesc(false)} style={{
                       padding: "4px 12px", borderRadius: 6, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-                      background: "#F5EFE2", color: "#5C5140", fontFamily: "var(--ed-m)", fontSize: 10, cursor: "pointer",
+                      background: "#F5EFE2", color: "#5C5140", fontFamily: "var(--ed-m)", fontSize: 12, cursor: "pointer",
                     }}>Cancel</button>
                   </div>
                 </div>
               ) : (
                 <div onClick={() => { setDescInput(pet.appearance_desc || ""); setEditingDesc(true); }}
                   style={{ cursor: "pointer" }}>
-                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "#9A7B4E", marginBottom: 2 }}>
+                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", marginBottom: 2 }}>
                     {pet.appearance_desc ? "APPEARANCE" : "⚠️ ADD APPEARANCE (required for AI generation)"}
                   </div>
-                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: pet.appearance_desc ? "#5C5140" : "#9A4E1E" }}>
+                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: pet.appearance_desc ? "#5C5140" : "#9A4E1E" }}>
                     {pet.appearance_desc || "Tap to describe your pet's look"}
                   </div>
                 </div>
@@ -2012,7 +2012,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                   flex: 1, padding: "6px 10px", borderRadius: 8,
                   background: statsView === v ? "#BE4F28" : "transparent",
                   border: "none", cursor: "pointer",
-                  fontFamily: "var(--ed-disp)", fontSize: 11, fontWeight: 700,
+                  fontFamily: "var(--ed-disp)", fontSize: 12, fontWeight: 700,
                   color: statsView === v ? "#FFF8EE" : "#7A6E5A",
                   letterSpacing: "0.06em", textTransform: "uppercase",
                   transition: "all 0.15s",
@@ -2055,13 +2055,13 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
               background: "rgba(190,79,40,0.05)",
               border: "1px solid rgba(190,79,40,0.15)",
             }}>
-              <div style={{ fontSize: 10, fontFamily: "var(--ed-m)", fontWeight: 700, color: "#7A6E5A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
+              <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700, color: "#7A6E5A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
                 ✨ Combos Discovered
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                 {combosUnlocked.map((c) => (
                   <span key={c} style={{
-                    fontSize: 10, padding: "3px 9px", borderRadius: 6,
+                    fontSize: 12, padding: "3px 9px", borderRadius: 6,
                     background: "rgba(190,79,40,0.12)", color: "#9A4E1E",
                     fontFamily: "var(--ed-disp)", fontWeight: 700,
                   }}>{c}</span>
@@ -2081,10 +2081,10 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                 background: "rgba(92,138,78,0.06)", border: "1px solid rgba(92,138,78,0.18)",
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <span style={{ fontSize: 10, fontFamily: "var(--ed-m)", fontWeight: 700, color: "#7A6E5A", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                  <span style={{ fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700, color: "#7A6E5A", letterSpacing: "0.12em", textTransform: "uppercase" }}>
                     ✅ Today&apos;s Care
                   </span>
-                  <span style={{ fontSize: 10, fontFamily: "var(--ed-m)", fontWeight: 700, color: allDone ? "#5C8A4E" : "#9A7B4E" }}>
+                  <span style={{ fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700, color: allDone ? "#5C8A4E" : "#9A7B4E" }}>
                     {doneCount}/{careActions.length}{allDone ? " · all done! 🎉" : ""}
                   </span>
                 </div>
@@ -2099,7 +2099,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                         opacity: done ? 1 : 0.65,
                       }}>
                         <span style={{ fontSize: 12 }}>{done ? "✓" : a.icon}</span>
-                        <span style={{ fontSize: 10, fontFamily: "var(--ed-m)", fontWeight: 600, color: done ? "#5C8A4E" : "#5C5140" }}>{a.label}</span>
+                        <span style={{ fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 600, color: done ? "#5C8A4E" : "#5C5140" }}>{a.label}</span>
                       </div>
                     );
                   })}
@@ -2115,10 +2115,10 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
             background: "rgba(33,26,18,0.03)", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
             display: "flex", justifyContent: "space-between",
           }}>
-            <span style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A7B4E" }}>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E" }}>
               Total Interactions
             </span>
-            <span style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A4E1E", fontWeight: 600 }}>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A4E1E", fontWeight: 600 }}>
               {pet.total_interactions}
             </span>
           </div>
@@ -2138,7 +2138,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                   <div style={{ fontSize: 12, fontWeight: 800, color: "#9A4E1E", letterSpacing: "-0.01em", fontFamily: "var(--ed-disp)" }}>
                     {(pet as any).care_streak}-day care streak
                   </div>
-                  <div style={{ fontSize: 10, fontFamily: "var(--ed-m)", color: "rgba(154,78,30,0.75)", marginTop: 1 }}>
+                  <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", color: "rgba(154,78,30,0.75)", marginTop: 1 }}>
                     {(pet as any).care_streak % 7 === 0
                       ? "Memory NFT earned ✨ (mints at go-live)"
                       : `Next Memory NFT at day ${Math.ceil((pet as any).care_streak / 7) * 7}`}
@@ -2146,7 +2146,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                 </div>
               </div>
               <div style={{
-                fontSize: 9, padding: "3px 8px", borderRadius: 999,
+                fontSize: 12, padding: "3px 8px", borderRadius: 999,
                 background: "rgba(154,78,30,0.12)", color: "#9A4E1E",
                 fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.08em",
               }}>EARN</div>
@@ -2175,14 +2175,14 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                 border: "1px solid rgba(107,79,160,0.15)",
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <span style={{ fontSize: 10, fontFamily: "var(--ed-m)", fontWeight: 700, color: "#7A6E5A", letterSpacing: "0.12em", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700, color: "#7A6E5A", letterSpacing: "0.12em", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 6 }}>
                     <Icon name="trophy" size={13} /> Achievements
                   </span>
-                  <span style={{ fontSize: 10, fontFamily: "var(--ed-m)", fontWeight: 700, color: "#6B4FA0" }}>
+                  <span style={{ fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700, color: "#6B4FA0" }}>
                     {earnedCount}/{ach.length}
                   </span>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))", gap: 6 }}>
                   {ach.map((a) => (
                     <div key={a.id} title={`${a.label} — ${a.desc}`} style={{
                       display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
@@ -2192,7 +2192,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                       filter: a.earned ? "none" : "grayscale(1)", opacity: a.earned ? 1 : 0.45,
                     }}>
                       <Icon name={a.icon} size={17} />
-                      <span style={{ fontSize: 7.5, fontFamily: "var(--ed-m)", fontWeight: 700, color: a.earned ? "#6B4FA0" : "#7A6E5A", letterSpacing: "-0.02em" }}>{a.label}</span>
+                      <span style={{ fontSize: 10, fontFamily: "var(--ed-m)", fontWeight: 700, color: a.earned ? "#6B4FA0" : "#7A6E5A", letterSpacing: "-0.02em", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.label}</span>
                     </div>
                   ))}
                 </div>
@@ -2220,7 +2220,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
             <button onClick={() => setShowRelease(true)} style={{
               marginTop: 10, width: "100%", padding: "8px", borderRadius: 8,
               background: "transparent", border: "1px solid rgba(220,38,38,0.1)",
-              fontFamily: "var(--ed-m)", fontSize: 10, color: "rgba(220,38,38,0.5)",
+              fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(220,38,38,0.5)",
               cursor: "pointer", transition: "all 0.2s",
             }}>
               Release {pet.name}
@@ -2230,21 +2230,21 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
               marginTop: 10, padding: 12, borderRadius: 10,
               background: "rgba(220,38,38,0.04)", border: "1px solid rgba(220,38,38,0.15)",
             }}>
-              <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#dc2626", marginBottom: 8 }}>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#dc2626", marginBottom: 8 }}>
                 Release {pet.name}? This cannot be undone.
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={handleRelease} disabled={releasing} style={{
                   flex: 1, padding: "8px", borderRadius: 8, border: "none",
                   background: "#dc2626", color: "#FFF8EE", fontFamily: "var(--ed-m)",
-                  fontSize: 11, fontWeight: 600, cursor: releasing ? "wait" : "pointer",
+                  fontSize: 12, fontWeight: 600, cursor: releasing ? "wait" : "pointer",
                 }}>
                   {releasing ? "..." : "Confirm"}
                 </button>
                 <button onClick={() => setShowRelease(false)} style={{
                   flex: 1, padding: "8px", borderRadius: 8,
                   border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", background: "#F5EFE2",
-                  color: "#211A12", fontFamily: "var(--ed-m)", fontSize: 11,
+                  color: "#211A12", fontFamily: "var(--ed-m)", fontSize: 12,
                   fontWeight: 600, cursor: "pointer",
                 }}>
                   Cancel
@@ -2266,7 +2266,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
             }}>
               <div style={{
                 position: "absolute", top: 8, right: 12,
-                fontSize: 9, fontFamily: "var(--ed-m)", fontWeight: 700,
+                fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700,
                 color: "#9A4E1E", letterSpacing: "0.12em", textTransform: "uppercase",
                 background: "rgba(190,79,40,0.15)", padding: "2px 8px", borderRadius: 6,
               }}>
@@ -2289,7 +2289,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                     "{petRequest.message}"
                   </div>
                   <div style={{
-                    fontSize: 11, fontFamily: "var(--ed-body)",
+                    fontSize: 12, fontFamily: "var(--ed-body)",
                     color: "#5C5140",
                   }}>
                     Fulfill within 30min for bonus +happy +bond +exp
@@ -2320,7 +2320,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
             boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
           }}>
             <div style={{
-              fontFamily: "var(--ed-m)", fontSize: 11, color: "#7A6E5A", marginBottom: 14,
+              fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A", marginBottom: 14,
               textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 600,
             }}>
               Interact with <span style={{ fontWeight: 700, color: "#211A12" }}>{pet.name}</span>
@@ -2357,7 +2357,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                       <div style={{
                         position: "absolute", top: -6, right: -6,
                         background: "#BE4F28", color: "#FFF8EE",
-                        fontSize: 10, padding: "2px 6px", borderRadius: 6,
+                        fontSize: 12, padding: "2px 6px", borderRadius: 6,
                         fontFamily: "var(--ed-disp)", fontWeight: 700,
                       }}>!</div>
                     )}
@@ -2365,7 +2365,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                     {!blocked && (i as any).purpose && (
                       <div style={{
                         position: "absolute", top: 4, left: 4,
-                        fontSize: 7, padding: "2px 5px", borderRadius: 4,
+                        fontSize: 10, padding: "2px 5px", borderRadius: 4,
                         background: "rgba(33,26,18,0.05)", color: "#7A6E5A",
                         fontFamily: "var(--ed-m)",
                         fontWeight: 700, letterSpacing: "0.06em",
@@ -2382,8 +2382,8 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                       animation: interacting === i.type ? "statPop 0.3s ease" : "none",
                       filter: blocked ? "grayscale(0.7)" : "none",
                     }}>{i.icon}</div>
-                    <div style={{ fontFamily: "var(--ed-disp)", fontSize: 12, color: blocked ? "#dc2626" : i.color, fontWeight: 700 }}>{i.label}</div>
-                    <div style={{ fontFamily: "var(--ed-body)", fontSize: 9, color: blocked ? "#dc2626" : "#7A6E5A", marginTop: 2, fontWeight: blocked ? 600 : 400 }}>
+                    <div style={{ fontFamily: "var(--ed-disp)", fontSize: 13, color: blocked ? "#dc2626" : i.color, fontWeight: 700 }}>{i.label}</div>
+                    <div style={{ fontFamily: "var(--ed-body)", fontSize: 12, color: blocked ? "#dc2626" : "#7A6E5A", marginTop: 2, fontWeight: blocked ? 600 : 400 }}>
                       {blocked ? blockReason : i.desc}
                     </div>
                   </button>
@@ -2437,7 +2437,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                       const display = k === "hunger" ? -v : v;
                       return (
                         <span key={k} style={{
-                          fontFamily: "var(--ed-m)", fontSize: 10, padding: "3px 8px", borderRadius: 8,
+                          fontFamily: "var(--ed-m)", fontSize: 12, padding: "3px 8px", borderRadius: 8,
                           background: good ? "rgba(92,138,78,0.12)" : "rgba(248,113,113,0.1)",
                           color: good ? "#5C8A4E" : "#dc2626",
                           border: good ? "1px solid rgba(92,138,78,0.24)" : "1px solid rgba(248,113,113,0.2)",
@@ -2450,10 +2450,10 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                   </div>
                   {lastResponse.memory_created && (
                     <div style={{
-                      marginTop: 8, fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A7B4E",
+                      marginTop: 8, fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E",
                       display: "flex", alignItems: "center", gap: 4,
                     }}>
-                      <span style={{ fontSize: 10 }}>💭</span>
+                      <span style={{ fontSize: 12 }}>💭</span>
                       {lastResponse.memory_created}
                     </div>
                   )}
@@ -2474,7 +2474,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                     <div style={{
                       marginTop: 10, padding: "6px 10px", borderRadius: 8,
                       background: "rgba(92,138,78,0.14)",
-                      fontFamily: "var(--ed-body)", fontSize: 11,
+                      fontFamily: "var(--ed-body)", fontSize: 12,
                       color: "#5C8A4E", fontWeight: 700,
                     }}>
                       ✓ Pet's request fulfilled — bonus stats applied!
@@ -2493,7 +2493,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
               boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
             }}>
               <div style={{
-                fontFamily: "var(--ed-m)", fontSize: 11, color: "#7A6E5A", marginBottom: 14,
+                fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A", marginBottom: 14,
                 textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 600,
               }}>
                 Evolution
@@ -2528,14 +2528,14 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                           {isPast ? "✓" : s.icon}
                         </div>
                         <div style={{
-                          fontFamily: "var(--ed-m)", fontSize: 8, marginTop: 4,
+                          fontFamily: "var(--ed-m)", fontSize: 10, marginTop: 4,
                           color: isCurrent ? "#9A4E1E" : isPast ? "#5C8A4E" : "#9A7B4E",
                           fontWeight: isCurrent ? 700 : 400,
                         }}>
                           {s.name}
                         </div>
                         <div style={{
-                          fontFamily: "var(--ed-m)", fontSize: 7,
+                          fontFamily: "var(--ed-m)", fontSize: 10,
                           color: "#9A7B4E",
                         }}>
                           Lv.{s.minLevel}
@@ -2564,7 +2564,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                     <div style={{ fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 600, color: "#211A12" }}>
                       {evoStatus.current_stage?.icon} {evoStatus.current_stage?.name} Stage
                     </div>
-                    <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A7B4E", marginTop: 2 }}>
+                    <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", marginTop: 2 }}>
                       Level {evoStatus.level}
                       {evoStatus.next_stage && ` · Need Lv.${evoStatus.next_stage.minLevel} for ${evoStatus.next_stage.name}`}
                       {!evoStatus.next_stage && " · Max Evolution Reached!"}
@@ -2572,7 +2572,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                   </div>
                   {evoStatus.next_stage && (
                     <div style={{
-                      fontFamily: "var(--ed-m)", fontSize: 10, padding: "4px 10px", borderRadius: 8,
+                      fontFamily: "var(--ed-m)", fontSize: 12, padding: "4px 10px", borderRadius: 8,
                       background: evoStatus.can_evolve ? "rgba(92,138,78,0.12)" : "rgba(33,26,18,0.04)",
                       color: evoStatus.can_evolve ? "#5C8A4E" : "#9A7B4E",
                       border: evoStatus.can_evolve ? "1px solid rgba(92,138,78,0.24)" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -2629,11 +2629,11 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                     {evoResult.new_stage?.icon} Evolved to {evoResult.new_stage?.name}!
                   </div>
                   {evoResult.skills_unlocked?.length > 0 && (
-                    <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#7A6E5A", marginBottom: 4 }}>
+                    <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A", marginBottom: 4 }}>
                       New skills: {evoResult.skills_unlocked.join(", ")}
                     </div>
                   )}
-                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#5C8A4E" }}>
+                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#5C8A4E" }}>
                     +{evoResult.credits_earned} credits earned!
                   </div>
                 </div>
@@ -2643,7 +2643,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
               {evoStatus.skills?.length > 0 && (
                 <div style={{ marginTop: 14 }}>
                   <div style={{
-                    fontFamily: "var(--ed-m)", fontSize: 9, color: "#9A7B4E", marginBottom: 8,
+                    fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", marginBottom: 8,
                     textTransform: "uppercase", letterSpacing: "0.12em",
                   }}>
                     Unlocked Skills
@@ -2651,7 +2651,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {evoStatus.skills.map((s: any) => (
                       <span key={s.skill_key} style={{
-                        fontFamily: "var(--ed-m)", fontSize: 11, padding: "5px 12px", borderRadius: 10,
+                        fontFamily: "var(--ed-m)", fontSize: 12, padding: "5px 12px", borderRadius: 10,
                         background: "rgba(107,79,160,0.08)", color: "#6B4FA0",
                         border: "1px solid rgba(107,79,160,0.15)",
                         fontWeight: 500,
@@ -2717,7 +2717,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
               boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
             }}>
               <div style={{
-                fontFamily: "var(--ed-m)", fontSize: 11, color: "#7A6E5A", marginBottom: 14,
+                fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A", marginBottom: 14,
                 textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 600,
               }}>
                 Memory Timeline
@@ -2745,7 +2745,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                       {m.content}
                     </div>
                     <div style={{
-                      fontFamily: "var(--ed-m)", fontSize: 9, color: "#9A7B4E", marginTop: 3,
+                      fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", marginTop: 3,
                       display: "flex", gap: 8,
                     }}>
                       <span>{m.emotion}</span>
@@ -2814,7 +2814,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                 <div style={{ fontFamily: "var(--ed-disp)", fontSize: 15, fontWeight: 600, color: "#211A12" }}>
                   Chat with {pet.name}
                 </div>
-                <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A7B4E" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E" }}>
                   {pet.personality_type} · {MOOD_CONFIG[pet.current_mood || "neutral"]?.emoji} {MOOD_CONFIG[pet.current_mood || "neutral"]?.label}
                 </div>
               </div>
@@ -2846,7 +2846,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                       <button key={q} onClick={() => handleChat(q)} style={{
                         background: "rgba(190,79,40,0.08)", border: "1px solid rgba(190,79,40,0.15)",
                         borderRadius: 20, padding: "5px 12px", cursor: "pointer",
-                        fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A4E1E",
+                        fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A4E1E",
                       }}>{q}</button>
                     ))}
                   </div>

@@ -84,8 +84,8 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
               `<div style="text-align:center;font-family:system-ui;min-width:120px">
                  <img src="${c.photo_path}" alt="" style="width:120px;height:90px;object-fit:cover;border-radius:8px;display:block;margin:0 auto 6px"/>
                  <div style="font-weight:800">${escapeHtml(c.name)}</div>
-                 <div style="font-size:11px;color:#666">${escapeHtml(c.breed)}</div>
-                 <div style="font-size:11px;font-weight:700;color:${c.rarityColor}">${escapeHtml(c.rarityLabel)}</div>
+                 <div style="font-size: 12px;color:#666">${escapeHtml(c.breed)}</div>
+                 <div style="font-size: 12px;font-weight:700;color:${c.rarityColor}">${escapeHtml(c.rarityLabel)}</div>
                </div>`,
             );
         }
@@ -112,9 +112,9 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
 
           const popupFor = (title: string, sub: string) =>
             `<div style="text-align:center;font-family:system-ui;min-width:140px">
-               <div style="font-size:10px;letter-spacing:.08em;color:#b45309;font-weight:800">WILD ENCOUNTER</div>
+               <div style="font-size: 12px;letter-spacing:.08em;color:#b45309;font-weight:800">WILD ENCOUNTER</div>
                <div style="font-weight:800;margin-top:2px">${title}</div>
-               <div style="font-size:11px;color:#666">${sub}</div>
+               <div style="font-size: 12px;color:#666">${sub}</div>
              </div>`;
 
           if (s.caught) {
@@ -170,7 +170,7 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
         <button onClick={() => setPhase("loading")} style={{ padding: "12px 24px", borderRadius: 999, border: `3px solid ${INK}`, background: "#f59e0b", color: INK, fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 0 rgba(26,26,34,0.25)" }}>
           {denied ? "Try again" : "Enable location"}
         </button>
-        <div style={{ fontSize: 11.5, color: MUTED, marginTop: 12 }}>Wild Encounters are game spawns (not real animals); they refresh hourly.</div>
+        <div style={{ fontSize: 12, color: MUTED, marginTop: 12 }}>Wild Encounters are game spawns (not real animals); they refresh hourly.</div>
       </div>
     );
   }
@@ -178,7 +178,7 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
   return (
     <div>
       {phase === "loading" && <div style={{ textAlign: "center", fontSize: 13, color: MUTED, marginBottom: 10 }}>Finding what&apos;s around you…</div>}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginBottom: 12, fontSize: 11.5, color: MUTED }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginBottom: 12, fontSize: 12, color: MUTED }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
           <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#a855f7", border: `2px solid ${INK}` }} /> Real camera catches
         </span>
@@ -192,7 +192,7 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
           <span style={{ display: "inline-block", background: "#f59e0b", color: INK, fontWeight: 800, fontSize: 13, padding: "7px 16px", borderRadius: 999, border: `2.5px solid ${INK}`, boxShadow: "0 3px 0 rgba(26,26,34,0.25)" }}>{toast}</span>
         </div>
       )}
-      <div style={{ textAlign: "center", fontSize: 11.5, color: MUTED, marginTop: 8, lineHeight: 1.5 }}>
+      <div style={{ textAlign: "center", fontSize: 12, color: MUTED, marginTop: 8, lineHeight: 1.5 }}>
         {count != null && <span>{count} real catches nearby. </span>}
         {spawnCount != null && <span>{spawnCount} wild encounters this hour — tap one to catch it (no camera needed).</span>}
         <br />

@@ -77,7 +77,7 @@ export default function AdminAnalyticsPage() {
             {[1, 7, 30, 90].map(d => (
               <button key={d} onClick={() => setDays(d)} style={{
                 padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer",
-                fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700,
+                fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700,
                 background: days === d ? "#1a1a2e" : "white",
                 color: days === d ? "white" : "#1a1a2e",
                 boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
@@ -110,7 +110,7 @@ export default function AdminAnalyticsPage() {
                   minHeight: 2,
                   position: "relative",
                 }}>
-                  <div style={{ position: "absolute", bottom: -16, left: 0, right: 0, textAlign: "center", fontSize: 9, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.5)" }}>
+                  <div style={{ position: "absolute", bottom: -16, left: 0, right: 0, textAlign: "center", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.5)" }}>
                     {d.day.slice(5)}
                   </div>
                 </div>
@@ -193,7 +193,7 @@ const backLinkStyle: React.CSSProperties = {
 const badgeStyle: React.CSSProperties = {
   display: "inline-block", padding: "5px 14px", borderRadius: 999,
   background: "rgba(220,38,38,0.10)", color: "#dc2626",
-  fontSize: 11, fontWeight: 700, letterSpacing: "0.16em",
+  fontSize: 12, fontWeight: 700, letterSpacing: "0.16em",
   textTransform: "uppercase", fontFamily: "'JetBrains Mono', monospace",
 };
 
@@ -204,7 +204,7 @@ function Tile({ label, value, accent }: { label: string; value: string | number;
       border: "1px solid rgba(0,0,0,0.06)",
     }}>
       <div style={{
-        fontSize: 9, color: "rgba(26,26,46,0.5)", letterSpacing: "0.1em",
+        fontSize: 12, color: "rgba(26,26,46,0.5)", letterSpacing: "0.1em",
         fontFamily: "'JetBrains Mono', monospace", marginBottom: 6,
       }}>{label.toUpperCase()}</div>
       <div style={{
@@ -222,7 +222,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       border: "1px solid rgba(0,0,0,0.06)", marginBottom: 18,
     }}>
       <h3 style={{
-        fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase",
+        fontSize: 12, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase",
         color: "rgba(26,26,46,0.6)", margin: "0 0 14px",
         fontFamily: "'JetBrains Mono', monospace",
       }}>{title}</h3>

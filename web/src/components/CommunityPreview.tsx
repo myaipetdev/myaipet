@@ -26,7 +26,7 @@ export default function CommunityPreview({ cta }: { cta?: ReactNode }) {
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto", padding: "8px 20px 56px" }}>
       <div style={{ textAlign: "center", marginBottom: 18 }}>
-        <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, letterSpacing: "0.13em", color: "#9A4E1E", fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.13em", color: "#9A4E1E", fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>
           FRESH FROM THE COMMUNITY
         </div>
         <h2 style={{ fontFamily: "var(--ed-disp)", fontSize: 26, fontWeight: 800, color: "#211A12", letterSpacing: "-0.02em", margin: "0 0 4px" }}>

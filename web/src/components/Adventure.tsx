@@ -367,7 +367,7 @@ function HpBar({ value, max, color, height = 6, showLabel = false }: {
     <div style={{ width: "100%", position: "relative" }}>
       {showLabel && (
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-          <span style={{ fontSize: 9, color: "#666", fontWeight: 600 }}>{Math.round(value)}/{max}</span>
+          <span style={{ fontSize: 12, color: "#666", fontWeight: 600 }}>{Math.round(value)}/{max}</span>
         </div>
       )}
       <div style={{
@@ -529,7 +529,7 @@ function RpgButton({ onClick, disabled, emoji, label, desc, color, index = 0 }: 
         position: "relative",
       }}>{label}</div>
       <div style={{
-        color: "#555", fontSize: 9, marginTop: 4, letterSpacing: 0.3,
+        color: "#555", fontSize: 12, marginTop: 4, letterSpacing: 0.3,
         position: "relative",
       }}>{desc}</div>
     </button>
@@ -623,7 +623,7 @@ function PetSelector({ pets, onSelect, accent, loading }: {
               display: "inline-block",
               background: `${accent}15`, border: `1px solid ${accent}25`,
               borderRadius: 6, padding: "1px 8px",
-              color: accent, fontSize: 10, fontWeight: 600, marginBottom: 8,
+              color: accent, fontSize: 12, fontWeight: 600, marginBottom: 8,
             }}>Lv.{pet.level}</div>
 
             {/* Mini stat bars */}
@@ -735,7 +735,7 @@ function WildEncounter({ onBack }: { onBack: () => void }) {
         }}>
           WILD ENCOUNTER
         </h3>
-        <p style={{ color: "#555", fontSize: 11, marginTop: 6, letterSpacing: 0.5 }}>
+        <p style={{ color: "#555", fontSize: 12, marginTop: 6, letterSpacing: 0.5 }}>
           {phase === "select" ? "Choose a pet to venture into the wild" : phase === "encounter" || phase === "flash" ? "A wild pet appeared!" : "Encounter complete"}
         </p>
       </div>
@@ -794,7 +794,7 @@ function WildEncounter({ onBack }: { onBack: () => void }) {
               <div style={{
                 display: "inline-block", background: "#60a5fa18",
                 border: "1px solid #60a5fa30", borderRadius: 6,
-                padding: "1px 8px", color: "#60a5fa", fontSize: 10, fontWeight: 600,
+                padding: "1px 8px", color: "#60a5fa", fontSize: 12, fontWeight: 600,
                 marginTop: 4, marginBottom: 6,
               }}>Lv.{selectedPet.level}</div>
               <HpBar value={selectedPet.energy} max={100} height={5} />
@@ -822,7 +822,7 @@ function WildEncounter({ onBack }: { onBack: () => void }) {
               <div style={{ color: "#e0e0e0", fontSize: 13, fontWeight: 700 }}>{wildPet.name}</div>
               <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 6 }}>
                 <span style={{
-                  fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 6,
+                  fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 6,
                   background: `${RARITY_COLORS[wildPet.rarity]}18`,
                   color: RARITY_COLORS[wildPet.rarity],
                   border: `1px solid ${RARITY_COLORS[wildPet.rarity]}35`,
@@ -831,7 +831,7 @@ function WildEncounter({ onBack }: { onBack: () => void }) {
                   {wildPet.rarity}
                 </span>
                 <span style={{
-                  fontSize: 9, fontWeight: 500, padding: "2px 8px", borderRadius: 6,
+                  fontSize: 12, fontWeight: 500, padding: "2px 8px", borderRadius: 6,
                   background: "rgba(255,255,255,0.05)",
                   color: "#777",
                 }}>
@@ -1043,7 +1043,7 @@ function Explore({ onBack }: { onBack: () => void }) {
         }}>
           EXPLORE
         </h3>
-        <p style={{ color: "#555", fontSize: 11, marginTop: 6, letterSpacing: 0.5 }}>
+        <p style={{ color: "#555", fontSize: 12, marginTop: 6, letterSpacing: 0.5 }}>
           {phase === "select" ? "Choose a pet to explore with" : "Tap locations to discover what lies within"}
         </p>
       </div>
@@ -1070,7 +1070,7 @@ function Explore({ onBack }: { onBack: () => void }) {
                 <img src={selectedPet.avatar_url} alt="" style={{ width: 24, height: 24, borderRadius: 6, objectFit: "cover" }} />
               ) : <Icon name={PET_ICON_NAMES[selectedPet.species] || "paw"} size={24} />}
             </span>
-            <span style={{ color: "#888", fontSize: 11, letterSpacing: 1 }}>
+            <span style={{ color: "#888", fontSize: 12, letterSpacing: 1 }}>
               {selectedPet.name} ventures into the unknown...
             </span>
           </div>
@@ -1078,8 +1078,8 @@ function Explore({ onBack }: { onBack: () => void }) {
           {/* Progress indicator */}
           <div style={{ maxWidth: 300, margin: "0 auto 20px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-              <span style={{ fontSize: 9, color: "#555", fontWeight: 600, letterSpacing: 1 }}>EXPLORATION</span>
-              <span style={{ fontSize: 9, color: accent, fontWeight: 600 }}>{revealedCount}/3</span>
+              <span style={{ fontSize: 12, color: "#555", fontWeight: 600, letterSpacing: 1 }}>EXPLORATION</span>
+              <span style={{ fontSize: 12, color: accent, fontWeight: 600 }}>{revealedCount}/3</span>
             </div>
             <div style={{
               width: "100%", height: 4, borderRadius: 4,
@@ -1161,7 +1161,7 @@ function Explore({ onBack }: { onBack: () => void }) {
                         )}
                       </div>
                       <div style={{ color: "#e0e0e0", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{loc.name}</div>
-                      <div style={{ color: "#666", fontSize: 10, marginBottom: 10, lineHeight: 1.3 }}>{loc.desc}</div>
+                      <div style={{ color: "#666", fontSize: 12, marginBottom: 10, lineHeight: 1.3 }}>{loc.desc}</div>
                       <div style={{
                         ...glassCard(lc.accent, {
                           padding: "6px 12px",
@@ -1169,7 +1169,7 @@ function Explore({ onBack }: { onBack: () => void }) {
                         background: `${lc.accent}12`,
                       }}>
                         <span style={{
-                          color: lc.accent, fontSize: 11, fontWeight: 600,
+                          color: lc.accent, fontSize: 12, fontWeight: 600,
                         }}>{rewards[i]}</span>
                       </div>
                     </>
@@ -1181,7 +1181,7 @@ function Explore({ onBack }: { onBack: () => void }) {
                         filter: "blur(2px)",
                       }}>{"?"}</div>
                       <div style={{ color: "#444", fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Unknown</div>
-                      <div style={{ color: "#333", fontSize: 10, marginTop: 6, letterSpacing: 0.5 }}>Tap to explore</div>
+                      <div style={{ color: "#333", fontSize: 12, marginTop: 6, letterSpacing: 0.5 }}>Tap to explore</div>
                       {/* Subtle shimmer overlay */}
                       <div style={{
                         position: "absolute", inset: 0, borderRadius: 16, pointerEvents: "none",
@@ -1372,7 +1372,7 @@ function GymChallenge({ onBack }: { onBack: () => void }) {
         }}>
           GYM CHALLENGE
         </h3>
-        <p style={{ color: "#555", fontSize: 11, marginTop: 6, letterSpacing: 0.5 }}>
+        <p style={{ color: "#555", fontSize: 12, marginTop: 6, letterSpacing: 0.5 }}>
           {phase === "select" ? "Choose a pet to train" :
            phase === "choose_stat" ? "Select a stat to train" :
            phase === "challenge" ? "Hit the target zone!" : "Training complete"}
@@ -1398,7 +1398,7 @@ function GymChallenge({ onBack }: { onBack: () => void }) {
             <span style={{ fontSize: 18, display: "inline-flex" }}>
               <Icon name={PET_ICON_NAMES[selectedPet.species] || "paw"} size={22} />
             </span>
-            <span style={{ color: "#888", fontSize: 11, letterSpacing: 1 }}>
+            <span style={{ color: "#888", fontSize: 12, letterSpacing: 1 }}>
               {selectedPet.name} enters the gym. Choose a training focus:
             </span>
           </div>
@@ -1439,7 +1439,7 @@ function GymChallenge({ onBack }: { onBack: () => void }) {
               <div style={{ color: accent, fontSize: 16, fontWeight: 800, letterSpacing: 1 }}>
                 Training: {stat}
               </div>
-              <div style={{ color: "#555", fontSize: 11 }}>
+              <div style={{ color: "#555", fontSize: 12 }}>
                 Click when the marker hits the target zone!
               </div>
             </div>
@@ -1777,7 +1777,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                 <span
                   style={{
                     color: "#444",
-                    fontSize: 9,
+                    fontSize: 12,
                     fontWeight: 700,
                     letterSpacing: 3,
                     marginLeft: 8,
@@ -1824,7 +1824,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                       left: `${c.x}%`,
                       top: 0,
                       color: "#50c87830",
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: 600,
                       animation: `matrixRain ${1.5 + Math.random()}s linear ${c.delay}s infinite`,
                       pointerEvents: "none",
@@ -1883,7 +1883,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                         background: "linear-gradient(135deg, #50c878, #4ade80)",
                         WebkitBackgroundClip: "text",
                         WebkitTextFillColor: "transparent",
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: 700,
                         letterSpacing: 5,
                         marginTop: 2,
@@ -1920,7 +1920,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                         </div>
                       </div>
                       <div style={{
-                        color: "#50c87880", fontSize: 8, marginTop: 6,
+                        color: "#50c87880", fontSize: 10, marginTop: 6,
                         letterSpacing: 2, textAlign: "center",
                       }}>
                         {bootProgress < 100 ? "LOADING..." : "READY"}
@@ -1943,7 +1943,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                   /* Loading pet check - skeleton */
                   <div style={{ textAlign: "center", padding: "40px 20px" }}>
                     <SkeletonCard count={4} />
-                    <div style={{ color: "#444", fontSize: 10, letterSpacing: 1, marginTop: 10 }}>Checking your pets...</div>
+                    <div style={{ color: "#444", fontSize: 12, letterSpacing: 1, marginTop: 10 }}>Checking your pets...</div>
                   </div>
                 ) : hasPets === false && !isInMode ? (
                   /* No pets -- prompt to adopt */
@@ -2115,7 +2115,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                               >
                                 <span
                                   style={{
-                                    fontSize: 9,
+                                    fontSize: 12,
                                     fontWeight: 700,
                                     letterSpacing: 1.5,
                                     color: "#555",
@@ -2172,7 +2172,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                             <div
                               style={{
                                 color: isActive ? "#777" : "#444",
-                                fontSize: 11,
+                                fontSize: 12,
                                 lineHeight: 1.4,
                                 position: "relative",
                               }}
@@ -2187,7 +2187,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                                   marginTop: 10,
                                   padding: "4px 12px",
                                   borderRadius: 8,
-                                  fontSize: 9,
+                                  fontSize: 12,
                                   fontWeight: 700,
                                   letterSpacing: 1,
                                   background: `${item.accent}12`,
@@ -2276,7 +2276,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                       background: "linear-gradient(180deg, #2a2a35, #1e1e28)",
                       border: "1px solid #333340", borderRadius: 4,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      color: "#555", fontSize: 10, cursor: "default",
+                      color: "#555", fontSize: 12, cursor: "default",
                       userSelect: "none" as const,
                     }}>
                       {d.label}
@@ -2291,7 +2291,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
 
                 {/* Center hint text */}
                 <div style={{
-                  fontFamily: "mono", fontSize: 9, color: "#444", textAlign: "center",
+                  fontFamily: "mono", fontSize: 12, color: "#444", textAlign: "center",
                   letterSpacing: 1,
                 }}>
                   {isInMode ? "B = BACK" : "A = SELECT"}
@@ -2311,7 +2311,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                         borderRadius: "50%",
                         background: `linear-gradient(180deg, ${b.color}33, ${b.color}15)`,
                         border: `1.5px solid ${b.color}55`,
-                        color: b.color, fontSize: 10, fontWeight: 700,
+                        color: b.color, fontSize: 12, fontWeight: 700,
                         display: "flex", alignItems: "center", justifyContent: "center",
                         cursor: b.action ? "pointer" : "default",
                         fontFamily: "inherit", outline: "none",
@@ -2346,7 +2346,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                     alignItems: "center",
                     gap: 14,
                     color: "#555",
-                    fontSize: 11,
+                    fontSize: 12,
                   }}
                 >
                   <span title="Settings" style={{ cursor: "default" }}>
@@ -2362,7 +2362,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                     alignItems: "center",
                     gap: 14,
                     color: "#555",
-                    fontSize: 11,
+                    fontSize: 12,
                     letterSpacing: 1,
                   }}
                 >
@@ -2376,9 +2376,9 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                     }}
                   >
                     {"\u{1F50B}"}
-                    <span style={{ fontSize: 9 }}>98%</span>
+                    <span style={{ fontSize: 12 }}>98%</span>
                   </span>
-                  <span style={{ fontWeight: 600, fontSize: 10 }}>
+                  <span style={{ fontWeight: 600, fontSize: 12 }}>
                     {now}
                   </span>
                 </div>

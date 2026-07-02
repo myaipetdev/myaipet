@@ -314,7 +314,7 @@ export default function AgentDashboard() {
                 textAlign: "center",
                 boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
               }}>
-                <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A4E1E", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.12em" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A4E1E", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.12em" }}>
                   {s.label}
                 </div>
                 <div style={{ fontFamily: "var(--ed-disp)", fontSize: 22, fontWeight: 800, color: "#211A12" }}>
@@ -370,7 +370,7 @@ export default function AgentDashboard() {
                             width: 7, height: 7, borderRadius: "50%",
                             background: isConnected ? "#5C8A4E" : "rgba(33,26,18,0.18)",
                           }} />
-                          <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: isConnected ? "#5C8A4E" : "#9A7B4E" }}>
+                          <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: isConnected ? "#5C8A4E" : "#9A7B4E" }}>
                             {isConnected ? "Connected" : "Not connected"}
                           </span>
                         </div>
@@ -380,7 +380,7 @@ export default function AgentDashboard() {
                     {/* Bot username */}
                     {isConnected && conn?.bot_username && (
                       <div style={{
-                        fontFamily: "var(--ed-m)", fontSize: 11, color: "#7A6E5A",
+                        fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A",
                         marginBottom: 14, padding: "6px 10px",
                         background: "#F5EFE2", borderRadius: 8,
                       }}>
@@ -397,7 +397,7 @@ export default function AgentDashboard() {
                           width: "100%", padding: "10px",
                           borderRadius: 10, border: "1px solid rgba(190,79,40,0.25)",
                           background: "rgba(190,79,40,0.06)",
-                          color: "#9A4E1E", fontFamily: "var(--ed-m)", fontSize: 11,
+                          color: "#9A4E1E", fontFamily: "var(--ed-m)", fontSize: 12,
                           fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
                         }}
                       >
@@ -465,7 +465,7 @@ export default function AgentDashboard() {
                       Persona Setup
                     </div>
                     <div style={{
-                      fontFamily: "var(--ed-body)", fontSize: 11,
+                      fontFamily: "var(--ed-body)", fontSize: 12,
                       color: "#7A6E5A", marginTop: 2,
                     }}>
                       Configure {selectedPet.name}&apos;s personality to reflect you
@@ -518,7 +518,7 @@ export default function AgentDashboard() {
                 <div style={{ fontFamily: "var(--ed-disp)", fontSize: 16, fontWeight: 700, color: "#211A12" }}>
                   Autonomous Mode
                 </div>
-                <div style={{ fontFamily: "var(--ed-body)", fontSize: 11, color: "#7A6E5A", marginTop: 3 }}>
+                <div style={{ fontFamily: "var(--ed-body)", fontSize: 12, color: "#7A6E5A", marginTop: 3 }}>
                   Let your pet post and interact on its own
                 </div>
               </div>
@@ -554,7 +554,7 @@ export default function AgentDashboard() {
             }}>
               {/* Credit Limit Slider */}
               <div>
-                <div style={{ fontFamily: "var(--ed-body)", fontSize: 11, color: "#7A6E5A", marginBottom: 8 }}>
+                <div style={{ fontFamily: "var(--ed-body)", fontSize: 12, color: "#7A6E5A", marginBottom: 8 }}>
                   Daily Credit Limit
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -585,7 +585,7 @@ export default function AgentDashboard() {
 
               {/* Posting Frequency */}
               <div>
-                <div style={{ fontFamily: "var(--ed-body)", fontSize: 11, color: "#7A6E5A", marginBottom: 8 }}>
+                <div style={{ fontFamily: "var(--ed-body)", fontSize: 12, color: "#7A6E5A", marginBottom: 8 }}>
                   Posting Frequency
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
@@ -602,12 +602,12 @@ export default function AgentDashboard() {
                           ? "1.5px solid rgba(190,79,40,0.35)"
                           : "1.5px solid var(--ed-hair, rgba(33,26,18,.13))",
                         color: config.posting_frequency === opt.value ? "#BE4F28" : "#7A6E5A",
-                        fontFamily: "var(--ed-disp)", fontSize: 12, fontWeight: 700,
+                        fontFamily: "var(--ed-disp)", fontSize: 13, fontWeight: 700,
                         cursor: "pointer", transition: "all 0.25s", textAlign: "center",
                       }}
                     >
                       {opt.label}
-                      <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, opacity: 0.7, marginTop: 2 }}>
+                      <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 400, opacity: 0.75, marginTop: 2 }}>
                         {opt.desc}
                       </div>
                     </button>
@@ -617,7 +617,7 @@ export default function AgentDashboard() {
 
               {/* Quiet Hours */}
               <div style={{ gridColumn: "1 / -1" }}>
-                <div style={{ fontFamily: "var(--ed-body)", fontSize: 11, color: "#7A6E5A", marginBottom: 8 }}>
+                <div style={{ fontFamily: "var(--ed-body)", fontSize: 12, color: "#7A6E5A", marginBottom: 8 }}>
                   Quiet Hours (no autonomous posts)
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -657,7 +657,7 @@ export default function AgentDashboard() {
                     ))}
                   </select>
                   {saving && (
-                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#BE4F28", animation: "pulse 1s infinite" }}>
+                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#BE4F28", animation: "pulse 1s infinite" }}>
                       Saving...
                     </span>
                   )}
@@ -705,7 +705,7 @@ export default function AgentDashboard() {
                         }}
                       >
                         {/* Timestamp */}
-                        <span style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A7B4E", minWidth: 55, flexShrink: 0 }}>
+                        <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", minWidth: 55, flexShrink: 0 }}>
                           {formatTime(msg.created_at)}
                         </span>
 
@@ -714,7 +714,7 @@ export default function AgentDashboard() {
                           width: 24, height: 24, borderRadius: 6,
                           background: `${plt?.color || "#9A7B4E"}1A`,
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          fontFamily: "var(--ed-disp)", fontSize: 11, fontWeight: 800,
+                          fontFamily: "var(--ed-disp)", fontSize: 12, fontWeight: 800,
                           color: plt?.color || "#9A7B4E", flexShrink: 0,
                         }}>
                           {plt?.icon || "?"}
@@ -751,7 +751,7 @@ export default function AgentDashboard() {
                       display: "block", margin: "16px auto 0", padding: "10px 28px",
                       borderRadius: 10, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                       background: "#F5EFE2",
-                      color: "#7A6E5A", fontFamily: "var(--ed-m)", fontSize: 11,
+                      color: "#7A6E5A", fontFamily: "var(--ed-m)", fontSize: 12,
                       fontWeight: 600, cursor: loadingMore ? "wait" : "pointer",
                       transition: "all 0.2s", opacity: loadingMore ? 0.5 : 1,
                     }}
@@ -803,7 +803,7 @@ export default function AgentDashboard() {
                 <div style={{ fontFamily: "var(--ed-disp)", fontSize: 18, fontWeight: 800, color: "#211A12" }}>
                   Connect {platformOf(connectModal)?.label}
                 </div>
-                <div style={{ fontFamily: "var(--ed-body)", fontSize: 11, color: "#7A6E5A" }}>
+                <div style={{ fontFamily: "var(--ed-body)", fontSize: 12, color: "#7A6E5A" }}>
                   Link your bot to {selectedPet?.name || "your pet"}
                 </div>
               </div>
@@ -841,7 +841,7 @@ export default function AgentDashboard() {
               <>
                 {/* Token Input */}
                 <div style={{ marginBottom: 16 }}>
-                  <label style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#9A7B4E", display: "block", marginBottom: 8 }}>
+                  <label style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", display: "block", marginBottom: 8 }}>
                     {platformOf(connectModal)?.tokenLabel}
                   </label>
                   <input
@@ -864,7 +864,7 @@ export default function AgentDashboard() {
                     onBlur={e => { if (connectStatus !== "error") e.target.style.borderColor = "rgba(33,26,18,0.13)"; }}
                   />
                   {connectStatus === "error" && (
-                    <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#9A4E1E", marginTop: 6 }}>
+                    <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A4E1E", marginTop: 6 }}>
                       {connectError}
                     </div>
                   )}
@@ -876,7 +876,7 @@ export default function AgentDashboard() {
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    display: "inline-block", fontFamily: "var(--ed-m)", fontSize: 11,
+                    display: "inline-block", fontFamily: "var(--ed-m)", fontSize: 12,
                     color: platformOf(connectModal)?.color || "#BE4F28",
                     textDecoration: "none", marginBottom: 24, opacity: 0.9,
                   }}

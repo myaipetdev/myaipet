@@ -75,7 +75,7 @@ export default function WardrobeCard({ petId, onChange }: { petId: number; onCha
           Wardrobe
         </span>
         {credits != null && (
-          <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.5)" }}>
+          <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.5)" }}>
             {credits.toLocaleString()} credits
           </span>
         )}
@@ -90,14 +90,14 @@ export default function WardrobeCard({ petId, onChange }: { petId: number; onCha
               border: `1px solid ${it.equipped ? "rgba(168,85,247,0.45)" : "rgba(0,0,0,0.06)"}`,
             }}>
               <div style={{ fontSize: 30, lineHeight: 1.1 }}>{it.icon}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#1a1a2e", marginTop: 3, letterSpacing: "-0.01em" }}>{it.name}</div>
-              <div style={{ fontSize: 8.5, fontFamily: "'JetBrains Mono', monospace", color: rc, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 1 }}>{it.rarity}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e", marginTop: 3, letterSpacing: "-0.01em" }}>{it.name}</div>
+              <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: rc, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 1 }}>{it.rarity}</div>
               <button
                 onClick={() => act(it)}
                 disabled={busy === it.key}
                 style={{
                   marginTop: 7, width: "100%", padding: "6px 4px", borderRadius: 8, cursor: busy === it.key ? "wait" : "pointer",
-                  border: "none", fontFamily: "'Space Grotesk',sans-serif", fontSize: 11, fontWeight: 700,
+                  border: "none", fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 700,
                   color: it.equipped ? "#7c3aed" : "white",
                   background: it.equipped
                     ? "rgba(168,85,247,0.16)"
@@ -111,7 +111,7 @@ export default function WardrobeCard({ petId, onChange }: { petId: number; onCha
           );
         })}
       </div>
-      <div style={{ fontSize: 9.5, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.4)", marginTop: 9, textAlign: "center" }}>
+      <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.4)", marginTop: 9, textAlign: "center" }}>
         Buy once with credits · wear &amp; swap any time
       </div>
     </div>

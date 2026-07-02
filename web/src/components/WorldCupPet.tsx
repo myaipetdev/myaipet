@@ -194,14 +194,14 @@ export default function WorldCupPet() {
 
       {/* ── National Pet path ── */}
       <div id="wc-national" className="wc-rise" style={{ scrollMarginTop: 90, borderTop: `1px solid ${T.hair}`, paddingTop: 22, marginBottom: 6, animationDelay: "70ms" }}>
-        <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".14em", color: T.terraSub, textTransform: "uppercase" }}>Pet World Cup · National Pet</div>
+        <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: T.terraSub, textTransform: "uppercase" }}>Pet World Cup · National Pet</div>
         <h2 style={{ fontFamily: T.disp, fontSize: "clamp(24px,6vw,30px)", fontWeight: 800, color: T.ink, margin: "6px 0 2px", letterSpacing: "-.02em" }}>Fly your colors</h2>
       </div>
 
       {/* Pet picker (only if >1) */}
       {pets.length > 1 && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 10, fontFamily: T.m, fontWeight: 700, letterSpacing: "0.14em", color: T.mono, textTransform: "uppercase" }}>Your pet</span>
+          <span style={{ fontSize: 12, fontFamily: T.m, fontWeight: 700, letterSpacing: "0.14em", color: T.mono, textTransform: "uppercase" }}>Your pet</span>
           {pets.map((p) => (
             <button key={p.id} onClick={() => setPetId(p.id)} style={{
               padding: "6px 14px", borderRadius: 999, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: T.body,
@@ -248,7 +248,7 @@ export default function WorldCupPet() {
                   Arabia" at ~69px in ~106px), so each label is the same height
                   with identical padding above/below → uniform gap on every card.
                   Ellipsis is just a safety net; it never triggers for this set. */}
-              <span style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: T.m, fontSize: 10.5, fontWeight: 700, letterSpacing: ".03em", color: on ? T.terra : T.ink70, textAlign: "center", lineHeight: 1.2, padding: "9px 6px", textTransform: "uppercase" }}>{c.name}</span>
+              <span style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".03em", color: on ? T.terra : T.ink70, textAlign: "center", lineHeight: 1.2, padding: "9px 6px", textTransform: "uppercase" }}>{c.name}</span>
             </button>
           );
         })}
@@ -273,7 +273,7 @@ export default function WorldCupPet() {
       {pendingJob !== null && !resultUrl && !err && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontFamily: T.body, background: T.inset, color: T.muted2, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "10px 14px", fontSize: 13.5, marginTop: 16 }}>
           <span>Still rendering — your national pet will appear here automatically.</span>
-          <a href="/studio" style={{ fontFamily: T.m, fontSize: 10.5, fontWeight: 700, letterSpacing: ".08em", color: T.terra, textDecoration: "none" }}>OPEN STUDIO HISTORY →</a>
+          <a href="/studio" style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: T.terra, textDecoration: "none" }}>OPEN STUDIO HISTORY →</a>
         </div>
       )}
 
@@ -283,7 +283,7 @@ export default function WorldCupPet() {
           <div style={{ position: "relative", borderRadius: 18, overflow: "hidden", background: T.field, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)" }}>
             <div className="ed-glow" /><div className="ed-vignette" />
             {country && (
-              <div style={{ position: "relative", zIndex: 2, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 18px 0", fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".12em", color: T.muted2, textTransform: "uppercase" }}>
+              <div style={{ position: "relative", zIndex: 2, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 18px 0", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: T.muted2, textTransform: "uppercase" }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={flagUrl(country, 80)} alt={`${country.name} flag`} style={{ width: 21, height: 14, objectFit: "cover", borderRadius: 2, border: "1px solid rgba(33,26,18,.2)", display: "block" }} />
@@ -298,7 +298,7 @@ export default function WorldCupPet() {
                 level={country ? country.code : "WC"}
                 sealLabel="TEAM"
                 speciesLabel={pet && country ? `${pet.name} · ${country.name.toUpperCase()}` : country ? country.name.toUpperCase() : pet?.name}
-                elementLabel={country ? country.animal.toUpperCase() : undefined}
+                elementLabel={country ? country.animal.split("(")[0].split("/")[0].trim().toUpperCase() : undefined}
                 width={330}
                 tilt={-2.4}
               />
@@ -310,7 +310,7 @@ export default function WorldCupPet() {
             <button onClick={setAsAvatar} className="wc-press" style={{ ...ghostBtn, display: "inline-flex", alignItems: "center", gap: 6, color: avatarSet ? T.teal : ghostBtn.color }}>{avatarSet ? <>Avatar updated <CheckIcon size={13} /></> : "Set as my pet's avatar"}</button>
             <button onClick={generate} disabled={busy} className="wc-press" style={{ ...ghostBtn, opacity: busy ? 0.6 : 1 }}>Regenerate</button>
           </div>
-          <div style={{ fontFamily: T.body, fontSize: 11.5, color: T.muted, marginTop: 10 }}>
+          <div style={{ fontFamily: T.body, fontSize: 12, color: T.muted, marginTop: 10 }}>
             Sharing opens X with your post pre-filled — nothing is posted until you press Post.
           </div>
         </div>
@@ -335,7 +335,7 @@ type WcRow = { code: string; name: string; flag: string; color: string; count: n
 function VotesBadge({ total }: { total: number }) {
   const v = useCountUp(total, 500);
   return (
-    <span style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: T.muted2, border: `1px solid ${T.hair}`, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase" }}>
+    <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: T.muted2, border: `1px solid ${T.hair}`, padding: "3px 9px", borderRadius: 999, textTransform: "uppercase" }}>
       {v} {total === 1 ? "vote" : "votes"}
     </span>
   );
@@ -410,7 +410,7 @@ function ChampionPrediction() {
       animationDelay: "140ms",
     }}>
       {/* +10 verified against /api/worldcup/predict (awardPointsCapped "worldcup", 10, daily cap 30). */}
-      <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 10, letterSpacing: ".14em", color: T.gold, textTransform: "uppercase", marginBottom: 6 }}>COMMUNITY POLL · +10 SEASON POINTS, DAILY-CAPPED</div>
+      <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: ".14em", color: T.gold, textTransform: "uppercase", marginBottom: 6 }}>COMMUNITY POLL · +10 SEASON POINTS, DAILY-CAPPED</div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <span style={{ fontFamily: T.disp, fontSize: "clamp(24px,6vw,30px)", fontWeight: 800, color: T.ink, letterSpacing: "-0.02em", display: "inline-flex", alignItems: "center", gap: 9 }}>Predict the Champion <Icon name="trophy" size={24} /></span>
         {loaded && <VotesBadge total={total} />}
@@ -421,16 +421,16 @@ function ChampionPrediction() {
       {/* Factual tournament reference — real, verifiable WC2026 format, framed as
           trivia and visually separated from the 31-nation ballot below. */}
       <div style={{ padding: "10px 12px", background: T.inset, border: `1px dashed ${T.hair}`, borderRadius: 10, marginBottom: 16 }}>
-        <div style={{ fontSize: 9.5, fontFamily: T.m, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", marginBottom: 7 }}>Real-tournament format</div>
+        <div style={{ fontSize: 12, fontFamily: T.m, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", marginBottom: 7 }}>Real-tournament format</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {["48 nations", "Hosts: USA · Canada · Mexico", "Group stage → knockout → final"].map((f) => (
-            <span key={f} style={{ fontSize: 10, fontFamily: T.m, fontWeight: 700, letterSpacing: ".04em", color: T.mono, background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 999, padding: "3px 10px", textTransform: "uppercase" }}>{f}</span>
+            <span key={f} style={{ fontSize: 12, fontFamily: T.m, fontWeight: 700, letterSpacing: ".04em", color: T.mono, background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 999, padding: "3px 10px", textTransform: "uppercase" }}>{f}</span>
           ))}
         </div>
       </div>
 
       {/* Picker */}
-      <div style={{ fontSize: 10, fontFamily: T.m, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", marginBottom: 8 }}>
+      <div style={{ fontSize: 12, fontFamily: T.m, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", marginBottom: 8 }}>
         {WORLD_CUP_COUNTRIES.length} nations on the ballot
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: rows.length ? 18 : 4 }}>
@@ -487,7 +487,7 @@ function ChampionPrediction() {
       {/* Community podium — top-3 most-predicted, styled like a tournament board */}
       {loaded && rows.length > 0 && (
         <div style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: 10, fontFamily: T.m, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", marginBottom: 12 }}>Community podium · who players back to win</div>
+          <div style={{ fontSize: 12, fontFamily: T.m, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", marginBottom: 12 }}>Community podium · who players back to win</div>
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 10 }}>
             {[{ r: rows[1], place: 2, h: 50, medal: "#B6A88C" }, { r: rows[0], place: 1, h: 72, medal: T.gold }, { r: rows[2], place: 3, h: 38, medal: "#C08A5A" }]
               .filter((x) => x.r)
@@ -496,7 +496,7 @@ function ChampionPrediction() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={r!.flag} alt={r!.name} style={{ width: 42, height: 29, objectFit: "cover", borderRadius: 4, border: `2px solid ${medal}`, margin: "0 auto 5px", display: "block", boxShadow: place === 1 ? "0 6px 14px -6px rgba(80,55,20,.5)" : "none" }} />
                   <div style={{ fontFamily: T.disp, fontSize: 13, fontWeight: 700, color: T.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r!.name}</div>
-                  <div style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, color: T.muted }}><CountPct value={r!.pct} /></div>
+                  <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, color: T.muted }}><CountPct value={r!.pct} /></div>
                   <div style={{ height: h, borderRadius: "8px 8px 0 0", background: `linear-gradient(${medal}, ${medal}cc)`, border: `1px solid ${T.ink}`, borderBottom: "none", marginTop: 6, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 5, fontFamily: T.disp, color: T.paper, fontWeight: 800, fontSize: 17 }}>{place}</div>
                 </div>
               ))}
@@ -512,7 +512,7 @@ function ChampionPrediction() {
               const mine = r.code === myPick;
               return (
                 <div key={r.code} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, color: T.mono, width: 18, textAlign: "right", flexShrink: 0 }}>{i + 1}</span>
+                  <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, color: T.mono, width: 18, textAlign: "right", flexShrink: 0 }}>{i + 1}</span>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={r.flag} alt={`${r.name} flag`} loading="lazy" style={{ width: 26, height: 18, objectFit: "cover", borderRadius: 3, flexShrink: 0, border: `1px solid ${T.hair}` }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -534,12 +534,12 @@ function ChampionPrediction() {
           <div style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, fontStyle: "italic" }}>No predictions yet — be the first to call it.</div>
         )
       ) : fetchErr ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: ".08em", color: T.muted2, textTransform: "uppercase" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: T.muted2, textTransform: "uppercase" }}>
           <span>Couldn&apos;t load the board</span>
-          <button onClick={load} className="wc-press" style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".08em", color: T.terra, background: "transparent", border: "1px solid rgba(190,79,40,.4)", borderRadius: 999, padding: "4px 12px", cursor: "pointer", textTransform: "uppercase" }}>Retry</button>
+          <button onClick={load} className="wc-press" style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: T.terra, background: "transparent", border: "1px solid rgba(190,79,40,.4)", borderRadius: 999, padding: "4px 12px", cursor: "pointer", textTransform: "uppercase" }}>Retry</button>
         </div>
       ) : (
-        <div style={{ fontFamily: T.m, fontSize: 10.5, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase" }}>Loading the board…</div>
+        <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase" }}>Loading the board…</div>
       )}
     </div>
   );
@@ -562,10 +562,10 @@ function CutenessCup({ pets, onEnter, activeStage }: { pets: Pet[]; onEnter: () 
     <div id="wc-cuteness" className="wc-rise" style={{ scrollMarginTop: 90, marginBottom: 26, animationDelay: "35ms" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
         <div>
-          <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".14em", color: T.gold, textTransform: "uppercase" }}>Pet World Cup · Cuteness Cup</div>
+          <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: T.gold, textTransform: "uppercase" }}>Pet World Cup · Cuteness Cup</div>
           <h2 style={{ fontFamily: T.disp, fontSize: "clamp(24px,6vw,30px)", fontWeight: 800, color: T.ink, margin: "6px 0 0", letterSpacing: "-.02em" }}>Pick the cutest</h2>
         </div>
-        <span style={{ alignSelf: "center", fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".12em", color: T.terraSub, textTransform: "uppercase", background: "rgba(190,79,40,.08)", border: `1px solid rgba(190,79,40,.22)`, borderRadius: 999, padding: "6px 12px" }}>Bracket opening soon — entries not live yet</span>
+        <span style={{ alignSelf: "center", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: T.terraSub, textTransform: "uppercase", background: "rgba(190,79,40,.08)", border: `1px solid rgba(190,79,40,.22)`, borderRadius: 999, padding: "6px 12px" }}>Bracket opening soon — entries not live yet</span>
       </div>
       <p style={{ fontFamily: T.body, fontSize: 14, color: T.muted2, margin: "0 0 16px", lineHeight: 1.55, maxWidth: 580 }}>
         Enter your pet into a head-to-head cuteness bracket — the community votes each matchup, winners climb R16 → Final, and one pet is crowned Champion. Real pets, real votes: no scores show until voting goes live.
@@ -598,7 +598,7 @@ function CutenessCup({ pets, onEnter, activeStage }: { pets: Pet[]; onEnter: () 
           return (
             <span key={s} style={{ display: "inline-flex", alignItems: "center" }}>
               <span className={isFinal ? "ed-foilstrip" : undefined} style={{
-                fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".08em",
+                fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em",
                 color: isFinal ? T.ink : isActive ? T.terra : T.mono,
                 border: `1px solid ${isFinal ? "rgba(184,130,44,.55)" : isActive ? "rgba(190,79,40,.4)" : T.hair}`,
                 background: isFinal ? undefined : isActive ? "rgba(190,79,40,.08)" : "transparent",
@@ -608,11 +608,11 @@ function CutenessCup({ pets, onEnter, activeStage }: { pets: Pet[]; onEnter: () 
             </span>
           );
         })}
-        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".1em", color: T.gold, textTransform: "uppercase" }}>
+        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: T.gold, textTransform: "uppercase" }}>
           <Icon name="trophy" size={13} /> Champion — crowned at the Final
         </span>
       </div>
-      <div style={{ fontFamily: T.m, fontSize: 9.5, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", marginTop: 8 }}>Rounds open with voting</div>
+      <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", marginTop: 8 }}>Rounds open with voting</div>
     </div>
   );
 }
@@ -634,7 +634,7 @@ function Slot({ side, pet, onEnter }: { side: "home" | "away"; pet?: Pet; onEnte
         <div className="ed-gloss" aria-hidden style={{ left: 0 }} />
       </div>
       <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 18, color: T.creamOn, marginTop: 12 }}>{pet?.name || (isHome ? "Your pet" : "A challenger")}</div>
-      <div style={{ fontFamily: T.m, fontSize: 9.5, fontWeight: 700, letterSpacing: ".1em", color: "rgba(252,233,207,.78)", marginTop: 4, textTransform: "uppercase" }}>
+      <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: "rgba(252,233,207,.78)", marginTop: 4, textTransform: "uppercase" }}>
         {pet ? "Entries open soon" : isHome ? "Slot reserved for a challenger" : "A community pet — matched when voting opens"}
       </div>
     </button>
@@ -645,7 +645,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const jump = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   const chipStyle: React.CSSProperties = {
     background: "transparent", border: "none", borderBottom: "1px dotted rgba(154,123,78,.55)",
-    padding: "0 0 1px", cursor: "pointer", fontFamily: T.m, fontSize: 10, fontWeight: 700,
+    padding: "0 0 1px", cursor: "pointer", fontFamily: T.m, fontSize: 12, fontWeight: 700,
     letterSpacing: ".1em", textTransform: "uppercase", color: T.mono,
   };
   return (
@@ -669,12 +669,12 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
         <div aria-hidden style={{ position: "absolute", right: -8, top: -16, opacity: 0.08, lineHeight: 1, zIndex: 1 }}><Icon name="trophy" size={130} /></div>
         <div style={{ position: "relative", zIndex: 2 }}>
-          <div style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: T.terraSub, textTransform: "uppercase" }}>Pet World Cup · 2026</div>
+          <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.18em", color: T.terraSub, textTransform: "uppercase" }}>Pet World Cup · 2026</div>
           <h1 style={{ fontFamily: T.disp, fontSize: "clamp(34px,8vw,50px)", fontWeight: 800, color: T.ink, margin: "10px 0 0", letterSpacing: "-0.03em", lineHeight: 0.96 }}>Three ways to play</h1>
           <p style={{ fontFamily: T.body, fontSize: 15.5, color: T.muted2, margin: "16px auto 0", lineHeight: 1.6, maxWidth: 580 }}>
             The 2026 World Cup is on. Enter your pet in the <strong style={{ color: T.terra, fontWeight: 600 }}>Cuteness Cup</strong> head-to-head bracket, or <strong style={{ color: T.ink, fontWeight: 600 }}>fly your colors</strong> — reimagine your pet as your country&apos;s national animal. Then predict who lifts the trophy.
           </p>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 12, margin: "18px 0 0", fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: T.mono, flexWrap: "wrap", justifyContent: "center" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 12, margin: "18px 0 0", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: T.mono, flexWrap: "wrap", justifyContent: "center" }}>
             <button onClick={() => jump("wc-cuteness")} className="wc-press" style={chipStyle}>Cuteness Cup</button>
             <span aria-hidden style={{ width: 4, height: 4, borderRadius: "50%", background: T.hair }} />
             <button onClick={() => jump("wc-national")} className="wc-press" style={chipStyle}>National Pet</button>

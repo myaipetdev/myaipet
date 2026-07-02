@@ -79,7 +79,7 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
       <div style={{
-        fontFamily: T.m, fontSize: 9, color: T.mono,
+        fontFamily: T.m, fontSize: 12, color: T.mono,
         textTransform: "uppercase", letterSpacing: "0.13em", marginBottom: 8, fontWeight: 700,
       }}>
         Comments · {comments.length}
@@ -88,10 +88,10 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
       {/* Comment list */}
       <div style={{ flex: 1, overflowY: "auto", marginBottom: 10, maxHeight: 200 }}>
         {loading ? (
-          <div style={{ fontFamily: T.m, fontSize: 11, color: T.mono, padding: 8, letterSpacing: "0.04em" }}>Loading…</div>
+          <div style={{ fontFamily: T.m, fontSize: 12, color: T.mono, padding: 8, letterSpacing: "0.04em" }}>Loading…</div>
         ) : comments.length === 0 ? (
           <div style={{
-            fontFamily: T.m, fontSize: 11, color: T.mono,
+            fontFamily: T.m, fontSize: 12, color: T.mono,
             textAlign: "center", padding: "16px 0", letterSpacing: "0.04em",
           }}>
             No comments yet. Be the first!
@@ -128,19 +128,19 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
                   <span style={{
-                    fontFamily: T.body, fontSize: 11, fontWeight: 600,
+                    fontFamily: T.body, fontSize: 12, fontWeight: 600,
                     color: c.is_agent ? T.rareLegend : T.ink,
                   }}>
                     {c.is_agent ? (c.pet?.name || "Pet Agent") : (c.display_name || c.wallet_address?.slice(0, 8) || "User")}
                   </span>
                   {c.is_agent && (
                     <span style={{
-                      fontSize: 7, padding: "1px 5px", borderRadius: 4,
+                      fontSize: 10, padding: "1px 5px", borderRadius: 4,
                       background: "rgba(200,147,47,0.14)", color: T.rareLegend,
                       fontFamily: T.m, fontWeight: 700, letterSpacing: "0.1em",
                     }}>PET</span>
                   )}
-                  <span style={{ fontFamily: T.m, fontSize: 9, color: T.mono }}>
+                  <span style={{ fontFamily: T.m, fontSize: 12, color: T.mono }}>
                     {c.created_at ? timeAgo(c.created_at) : ""}
                   </span>
                 </div>
@@ -174,7 +174,7 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
           padding: "9px 14px", borderRadius: 8, border: "none", cursor: "pointer",
           background: newComment.trim() ? `linear-gradient(135deg,${T.cta1},${T.cta2})` : T.inset,
           color: newComment.trim() ? "#fff" : T.mono,
-          fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
+          fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em",
           boxShadow: newComment.trim() ? "var(--ed-shadow-card)" : "none",
         }}>
           {submitting ? "…" : "Post"}
@@ -260,7 +260,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
               boxShadow: "var(--ed-shadow-card)", display: "flex", alignItems: "center", gap: 6,
             }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.rareCommon }} />
-              <span style={{ fontFamily: T.m, fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: T.ink70, textTransform: "uppercase" }}>Video · {item.duration}s</span>
+              <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: T.ink70, textTransform: "uppercase" }}>Video · {item.duration}s</span>
             </div>
           )}
         </div>
@@ -281,7 +281,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
                 <div style={{ fontFamily: T.body, fontSize: 14, color: T.ink, fontWeight: 600 }}>
                   {item.display_name || item.wallet_address || "Anonymous"}
                 </div>
-                <div style={{ fontFamily: T.m, fontSize: 10, color: T.mono, letterSpacing: "0.06em" }}>
+                <div style={{ fontFamily: T.m, fontSize: 12, color: T.mono, letterSpacing: "0.06em" }}>
                   {item.created_at ? timeAgo(item.created_at) : ""}
                 </div>
               </div>
@@ -400,7 +400,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
 
           {/* Comments */}
           {item.__mock
-            ? <div style={{ fontFamily: T.m, fontSize: 11, color: T.mono, padding: "12px 2px", letterSpacing: "0.04em" }}>Sample post — comments open up on real creations.</div>
+            ? <div style={{ fontFamily: T.m, fontSize: 12, color: T.mono, padding: "12px 2px", letterSpacing: "0.04em" }}>Sample post — comments open up on real creations.</div>
             : <CommentSection generationId={item.generation_id || item.id} onAdded={onCommentAdded} />}
         </div>
       </div>
@@ -563,7 +563,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
             background: hovered ? T.rareCommon : T.cta2,
             transition: "all 0.3s",
           }} />
-          <span style={{ fontFamily: T.m, fontSize: 9, color: T.ink70, fontWeight: 700, letterSpacing: "0.08em" }}>
+          <span style={{ fontFamily: T.m, fontSize: 12, color: T.ink70, fontWeight: 700, letterSpacing: "0.08em" }}>
             {item.duration || 5}s
           </span>
         </div>
@@ -594,14 +594,14 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
                 width: 20, height: 20, borderRadius: 6,
                 background: T.inset,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 9, animation: "fadeUp 0.15s ease-out",
+                fontSize: 12, animation: "fadeUp 0.15s ease-out",
                 boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.7)", overflow: "hidden",
               }}>
                 <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", borderRadius: 5, objectFit: "cover" }} />
               </div>
             )}
             <span style={{
-              fontFamily: T.body, fontSize: 11, fontWeight: 600,
+              fontFamily: T.body, fontSize: 12, fontWeight: 600,
               color: "rgba(255,255,255,0.92)",
               textShadow: "0 1px 3px rgba(0,0,0,0.5)",
               maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -630,7 +630,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
                 {item.is_liked ? "♥" : "♡"}
               </span>
               <span style={{
-                fontFamily: T.m, fontSize: 10, fontWeight: 700,
+                fontFamily: T.m, fontSize: 12, fontWeight: 700,
                 color: "rgba(255,255,255,0.7)",
                 textShadow: "0 1px 2px rgba(0,0,0,0.5)",
               }}>
@@ -640,7 +640,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
 
             {(hovered || (item.comments_count || 0) > 0) && (
               <span style={{
-                fontFamily: T.m, fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.55)",
+                fontFamily: T.m, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.55)",
                 textShadow: "0 1px 2px rgba(0,0,0,0.5)",
                 display: "inline-flex", alignItems: "center", gap: 3,
               }}>
@@ -667,7 +667,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
                 title={copied ? "Copied!" : "Copy link"}
                 aria-label="Copy link"
               >
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.85)", fontWeight: 700, lineHeight: 1, display: "inline-flex" }}>{copied ? "✓" : (
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", fontWeight: 700, lineHeight: 1, display: "inline-flex" }}>{copied ? "✓" : (
                   <svg width={11} height={11} viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M9.5 14.5a4 4 0 0 0 5.66 0l3-3a4 4 0 1 0-5.66-5.66l-1.2 1.2" />
@@ -693,7 +693,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
                 }}
                 title="Share on X"
               >
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", fontWeight: 700, lineHeight: 1 }}>𝕏</span>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 700, lineHeight: 1 }}>𝕏</span>
               </button>
             )}
           </div>
@@ -911,7 +911,7 @@ export default function SocialGallery() {
       {/* Header — Collectible Editorial masthead */}
       <div style={{ marginBottom: 18 }}>
         <div style={{
-          fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.14em",
+          fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.14em",
           textTransform: "uppercase", color: T.terra, marginBottom: 8,
         }}>
           Community · {filteredItems.length} Creations Today
@@ -928,7 +928,7 @@ export default function SocialGallery() {
               The remix wall
             </h2>
             <span style={{
-              fontFamily: T.m, fontSize: 10, color: T.mono, fontWeight: 700, letterSpacing: "0.08em",
+              fontFamily: T.m, fontSize: 12, color: T.mono, fontWeight: 700, letterSpacing: "0.08em",
             }}>
               {filteredItems.length} works
             </span>
@@ -948,7 +948,7 @@ export default function SocialGallery() {
                     background: on ? f.color : T.paper,
                     border: `1px solid ${on ? f.color : T.hair}`,
                     borderRadius: 6, padding: "5px 13px",
-                    fontFamily: T.m, fontSize: 10, cursor: "pointer",
+                    fontFamily: T.m, fontSize: 12, cursor: "pointer",
                     letterSpacing: "0.08em", textTransform: "uppercase",
                     color: on ? T.creamOn : T.muted,
                     transition: "all 0.2s", fontWeight: 700,
@@ -994,7 +994,7 @@ export default function SocialGallery() {
           {TABS.map(t => (
             <button className="sort-tab" key={t.key} onClick={() => setSort(t.key)} style={{
               background: "transparent", border: "none", padding: "8px 16px",
-              fontFamily: T.m, fontSize: 11, cursor: "pointer",
+              fontFamily: T.m, fontSize: 12, cursor: "pointer",
               letterSpacing: "0.1em", textTransform: "uppercase",
               color: sort === t.key ? T.ink : T.mono,
               fontWeight: 700,
@@ -1059,7 +1059,7 @@ export default function SocialGallery() {
           }}>
             {search ? "No results found" : feedFailed ? "Couldn't load the feed" : "No creations yet"}
           </h3>
-          <p style={{ fontFamily: T.m, fontSize: 11, color: T.mono, letterSpacing: "0.06em" }}>
+          <p style={{ fontFamily: T.m, fontSize: 12, color: T.mono, letterSpacing: "0.06em" }}>
             {search ? "Try different keywords" : feedFailed ? "Check your connection and try again" : "Be the first to create something"}
           </p>
           {feedFailed && !search && (

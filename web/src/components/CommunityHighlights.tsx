@@ -39,7 +39,7 @@ export default function CommunityHighlights() {
         marginBottom: 14,
       }}>
         <div style={{
-          fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
           letterSpacing: "0.18em", color: "#fbbf24", marginBottom: 8,
         }}>THE PACK</div>
         <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: h.stats.pets >= 50 ? 16 : 0 }}>
@@ -63,7 +63,7 @@ export default function CommunityHighlights() {
           border: "1px solid rgba(0,0,0,0.06)", padding: "16px 18px",
         }}>
           <div style={{
-            fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
             letterSpacing: "0.14em", color: "rgba(26,26,46,0.55)", marginBottom: 12,
             fontWeight: 800,
             display: "flex", alignItems: "center", gap: 6,
@@ -80,7 +80,7 @@ export default function CommunityHighlights() {
                   ? <img src={p.avatar_url} alt={p.name} style={{ width: 56, height: 56, borderRadius: 14, objectFit: "cover", marginBottom: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }} />
                   : <img src="/mascot.jpg" alt={p.name} style={{ width: 56, height: 56, borderRadius: 14, objectFit: "cover", marginBottom: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.10)" }} />}
                 <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1a2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-                <div style={{ fontSize: 10, color: "rgba(26,26,46,0.5)", fontFamily: "'JetBrains Mono', monospace", marginTop: 1 }}>Lv.{p.level}</div>
+                <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", fontFamily: "'JetBrains Mono', monospace", marginTop: 1 }}>Lv.{p.level}</div>
               </div>
             ))}
           </div>
@@ -97,7 +97,7 @@ function Stat({ label, value, accent }: { label: string; value: string; accent: 
       background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
       minWidth: 96,
     }}>
-      <div style={{ fontSize: 9, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "rgba(255,255,255,0.5)" }}>{label}</div>
+      <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em", color: "rgba(255,255,255,0.5)" }}>{label}</div>
       <div style={{ fontSize: 24, fontWeight: 800, color: accent, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.1, marginTop: 2 }}>{value}</div>
     </div>
   );

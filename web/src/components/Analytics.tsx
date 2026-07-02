@@ -65,7 +65,7 @@ export default function Analytics({ stats, activities }: any) {
           boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
         }}>
           <div style={{
-            fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.45)",
+            fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.45)",
             marginBottom: 18, textTransform: "uppercase", letterSpacing: "0.08em",
           }}>
             Daily Generations (20d)
@@ -88,7 +88,7 @@ export default function Analytics({ stats, activities }: any) {
           </div>
           <div style={{
             display: "flex", justifyContent: "space-between", marginTop: 6,
-            fontFamily: "mono", fontSize: 9, color: "rgba(26,26,46,0.3)",
+            fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.3)",
           }}>
             <span>20d ago</span><span>Today</span>
           </div>
@@ -114,7 +114,7 @@ export default function Analytics({ stats, activities }: any) {
                 <span style={{ fontFamily: "mono", fontSize: 12, color: "#1a1a2e", fontWeight: 600 }}>
                   {displayName}
                 </span>
-                <span style={{ fontFamily: "mono", fontSize: 11, color }}>
+                <span style={{ fontFamily: "mono", fontSize: 12, color }}>
                   {c.percentage}%
                 </span>
               </div>
@@ -124,7 +124,7 @@ export default function Analytics({ stats, activities }: any) {
                   width: `${c.percentage}%`, boxShadow: `0 0 6px ${color}30`,
                 }} />
               </div>
-              <div style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.4)", marginTop: 6 }}>
+              <div style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.4)", marginTop: 6 }}>
                 {c.count.toLocaleString()} transactions
               </div>
             </div>

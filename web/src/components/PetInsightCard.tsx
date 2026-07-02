@@ -73,7 +73,7 @@ export default function PetInsightCard({ petId, petName }: { petId: number; petN
         <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="crystal-ball" size={22} /></span>
         <div style={{ flex: 1 }}>
           <div style={{
-            fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
             letterSpacing: "0.14em", color: "#6d28d9", fontWeight: 800,
           }}>DAYDREAMS · DEFAULT MODE NETWORK</div>
           <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em", color: "#1a1a2e" }}>
@@ -134,7 +134,7 @@ export default function PetInsightCard({ petId, petName }: { petId: number; petN
                     {ins.insight}
                   </div>
                   <div style={{
-                    marginTop: 4, fontSize: 11,
+                    marginTop: 4, fontSize: 12,
                     fontFamily: "'JetBrains Mono', monospace",
                     color: m.fg, letterSpacing: "0.06em",
                   }}>

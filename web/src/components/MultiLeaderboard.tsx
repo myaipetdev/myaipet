@@ -132,7 +132,7 @@ export default function MultiLeaderboard() {
                 boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
               }}>
                 <div style={{
-                  fontSize: 11, fontFamily: "var(--ed-m)",
+                  fontSize: 12, fontFamily: "var(--ed-m)",
                   letterSpacing: "0.12em", color: "#7A6E5A",
                 }}>YOUR RANK</div>
                 <div style={{
@@ -230,7 +230,7 @@ export default function MultiLeaderboard() {
                     lineHeight: 1,
                   }}>
                     {e.value}
-                    <span style={{ fontSize: 10, color: isFirst ? "rgba(255,248,238,0.75)" : "#9A7B4E", marginLeft: 4 }}>
+                    <span style={{ fontSize: 12, color: isFirst ? "rgba(255,248,238,0.75)" : "#9A7B4E", marginLeft: 4 }}>
                       {data?.meta.unit}
                     </span>
                   </div>
@@ -261,7 +261,7 @@ export default function MultiLeaderboard() {
                 : <img src="/mascot.jpg" alt={e.pet?.name || ""} style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))" }} />}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--ed-disp)", color: "#211A12" }}>{e.pet?.name || "—"}</div>
-                <div style={{ fontSize: 11, fontFamily: "var(--ed-m)", color: "#9A7B4E" }}>
+                <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", color: "#9A7B4E" }}>
                   {e.wallet}{e.isMe ? " (you)" : ""}
                 </div>
               </div>

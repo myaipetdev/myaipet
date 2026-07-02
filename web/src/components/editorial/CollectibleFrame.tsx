@@ -115,7 +115,7 @@ export default function CollectibleFrame({
             <div className="ed-gloss" aria-hidden style={{ left: 0 }} />
           </div>
           {(speciesLabel || elementLabel) && (
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 9, fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: INK70 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 9, fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", color: INK70 }}>
               <span>{speciesLabel}</span>
               {elementLabel && <span>★ {elementLabel}</span>}
             </div>

@@ -94,7 +94,7 @@ export default function HourlyDropBanner() {
         >{live ? drop.emoji : <Icon name="crystal-ball" size={32} />}</div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{
-            fontSize: 11, fontFamily: "var(--ed-m)",
+            fontSize: 12, fontFamily: "var(--ed-m)",
             letterSpacing: "0.14em", color: live ? "#FFF8EE" : "#9A4E1E",
             fontWeight: 800,
           }}>
@@ -136,7 +136,7 @@ export default function HourlyDropBanner() {
             gap: 12, flexWrap: "wrap",
           }}>
             <div style={{
-              fontSize: 11, fontFamily: "var(--ed-m)",
+              fontSize: 12, fontFamily: "var(--ed-m)",
               letterSpacing: "0.12em", color: "#9A4E1E", fontWeight: 800,
               whiteSpace: "nowrap",
               display: "inline-flex", alignItems: "center", gap: 5,
@@ -161,7 +161,7 @@ export default function HourlyDropBanner() {
                   {u.label}
                 </span>
                 <span style={{
-                  fontSize: 11, fontFamily: "var(--ed-m)",
+                  fontSize: 12, fontFamily: "var(--ed-m)",
                   color: u.is_live ? "#FFF8EE" : "#9A7B4E", fontWeight: 700,
                 }}>
                   {u.is_live ? "LIVE" : (i === arr.findIndex((x: any) => !x.is_live) ? "next" : clockLabel(u.starts_at))} · {u.multiplier_x}×

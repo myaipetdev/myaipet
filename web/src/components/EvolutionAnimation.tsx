@@ -58,7 +58,7 @@ export default function EvolutionAnimation({
         {phase === "charge" && (
           <>
             <div style={{
-              fontSize: 11, fontFamily: "var(--ed-m)", fontWeight: 700,
+              fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700,
               color: "#F49B2A", letterSpacing: "0.14em", marginBottom: 28,
               textTransform: "uppercase",
               animation: "evoTextPulse 1.5s ease infinite",

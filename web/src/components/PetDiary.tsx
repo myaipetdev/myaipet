@@ -62,7 +62,7 @@ export default function PetDiary({
         </div>
         {week && (
           <span style={{
-            fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
             color: "rgba(26,26,46,0.4)",
           }}>
             week of {week}

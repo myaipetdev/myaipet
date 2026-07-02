@@ -71,7 +71,7 @@ export default function ContractsPage() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
                 <span style={{
-                  fontSize: 10, padding: "3px 10px", borderRadius: 999,
+                  fontSize: 12, padding: "3px 10px", borderRadius: 999,
                   background: c.status.startsWith("Deployed") ? "rgba(245,158,11,0.12)" : "rgba(0,0,0,0.06)",
                   color: c.status.startsWith("Deployed") ? "#92400e" : "rgba(26,26,46,0.65)",
                   fontWeight: 700, letterSpacing: "0.06em",
@@ -81,7 +81,7 @@ export default function ContractsPage() {
                     href={`https://bscscan.com/address/${c.addr}`}
                     target="_blank" rel="noopener noreferrer"
                     style={{
-                      fontSize: 11, padding: "5px 12px", borderRadius: 8,
+                      fontSize: 12, padding: "5px 12px", borderRadius: 8,
                       background: "rgba(0,0,0,0.04)", color: "#1a1a2e",
                       textDecoration: "none", fontWeight: 600,
                       border: "1px solid rgba(0,0,0,0.08)",

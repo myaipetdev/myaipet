@@ -55,7 +55,7 @@ function SectionIntro({ pillar }: { pillar: Pillar }) {
   return (
     <div style={{ maxWidth: 1060, margin: "18px auto 2px", padding: "0 24px" }}>
       <div style={{
-        fontSize: 11, fontFamily: "var(--ed-m)",
+        fontSize: 12, fontFamily: "var(--ed-m)",
         letterSpacing: "0.14em", color: "#9A4E1E", fontWeight: 700,
       }}>
         {eyebrow}

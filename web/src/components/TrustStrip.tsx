@@ -24,7 +24,7 @@ export default function TrustStrip() {
         cursor: "default",
       }}>
         <div style={{
-          fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
           letterSpacing: "0.18em", color: "rgba(26,26,46,0.55)",
           textAlign: "center", marginBottom: 22,
         }}>

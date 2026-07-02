@@ -85,7 +85,7 @@ function StatRow({ label, value, pct, color, warning, pop }: {
         <div style={{ height: "100%", borderRadius: 2, width: `${Math.max(0, Math.min(100, pct))}%`, background: color, transition: "width .6s ease" }} />
       </div>
       {warning && (
-        <div style={{ marginTop: 5, fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".06em", color: T.terra }}>{warning}</div>
+        <div style={{ marginTop: 5, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: T.terra }}>{warning}</div>
       )}
     </div>
   );
@@ -369,16 +369,16 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                   backgroundSize: "1px 11px,11px 1px", backgroundPosition: "center,center", backgroundRepeat: "no-repeat" }} />
               ))}
               <div style={{ position: "absolute", top: 26, left: 28, right: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start", zIndex: 3 }}>
-                <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".12em", color: T.creamOn }}>COMPANION PROTOCOL</div>
-                <div style={{ textAlign: "right", fontFamily: T.m, fontSize: 9, fontWeight: 700, letterSpacing: ".1em", color: T.creamOn }}>
+                <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: T.creamOn, whiteSpace: "nowrap" }}>COMPANION PROTOCOL</div>
+                <div style={{ textAlign: "right", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: T.creamOn }}>
                   FILE № {String(active.id).padStart(4, "0")}
-                  <div style={{ height: 22, width: 120, margin: "5px 0 4px auto", background: "repeating-linear-gradient(90deg,#FCE9CF 0 1px,transparent 1px 3px,#FCE9CF 3px 5px,transparent 5px 6px,#FCE9CF 6px 9px,transparent 9px 11px)" }} />
+                  <div style={{ height: 22, width: 96, margin: "5px 0 4px auto", background: "repeating-linear-gradient(90deg,#FCE9CF 0 1px,transparent 1px 3px,#FCE9CF 3px 5px,transparent 5px 6px,#FCE9CF 6px 9px,transparent 9px 11px)" }} />
                   {estYear !== null && (
                     <span title={new Date(active.created_at as string).toLocaleDateString()}>EST. {estYear}</span>
                   )}
                 </div>
               </div>
-              <div style={{ position: "absolute", left: -2, top: "50%", transform: "rotate(-90deg) translateX(50%)", transformOrigin: "left center", fontFamily: T.m, fontSize: 9, fontWeight: 700, letterSpacing: ".18em", color: "rgba(252,233,207,.55)", whiteSpace: "nowrap" }}>
+              <div style={{ position: "absolute", left: -2, top: "50%", transform: "rotate(-90deg) translateX(50%)", transformOrigin: "left center", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".18em", color: "rgba(252,233,207,.55)", whiteSpace: "nowrap" }}>
                 ★ {element} · LV.{String(active.level).padStart(2, "0")}
               </div>
               <div aria-hidden style={{ position: "absolute", top: -40, right: 6, fontFamily: T.disp, fontWeight: 800, fontSize: 210, lineHeight: 1, color: "rgba(255,255,255,.08)", zIndex: 1, pointerEvents: "none" }}>{active.level}</div>
@@ -391,11 +391,11 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                 </div>
               </div>
 
-              <div style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: ".34em", color: T.creamOn, marginTop: 38, zIndex: 2 }}>MEET</div>
+              <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".34em", color: T.creamOn, marginTop: 38, zIndex: 2 }}>MEET</div>
               <div className="ed-foil-text" style={{ fontFamily: T.disp, fontWeight: 800, fontSize: "clamp(64px,9vw,118px)", lineHeight: 0.82, letterSpacing: "-.04em", zIndex: 2, maxWidth: "92%", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{active.name}</div>
 
               <div style={{ position: "absolute", bottom: 16, left: 0, right: 0, overflow: "hidden", zIndex: 2, WebkitMaskImage: "linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)" }}>
-                <div style={{ display: "inline-flex", whiteSpace: "nowrap", animation: "edTickerSlide 18s linear infinite", fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: ".18em", color: "rgba(252,233,207,.45)" }}>
+                <div style={{ display: "inline-flex", whiteSpace: "nowrap", animation: "edTickerSlide 18s linear infinite", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".18em", color: "rgba(252,233,207,.45)" }}>
                   {Array.from({ length: 4 }).map((_, i) => <span key={i} style={{ padding: "0 14px" }}>ADOPT · REMEMBER · OWN ·</span>)}
                 </div>
               </div>
@@ -407,7 +407,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
             {/* pet switcher — above the fold, beside the identity chips */}
             {(pets.length > 1 || pets.length < petSlots) && (
               <div className="ed-rise" style={{ ...rise(1), display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap" }}>
-                <span style={{ fontFamily: T.m, fontSize: 10, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase" }}>Your pets</span>
+                <span style={{ fontFamily: T.m, fontSize: 12, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase" }}>Your pets</span>
                 {pets.map((p) => (
                   <button key={p.id} onClick={() => switchPet(p)} style={{
                     fontFamily: T.body, fontWeight: 600, fontSize: 13, padding: "6px 14px", borderRadius: 999, cursor: "pointer",
@@ -427,7 +427,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
             {/* identity chips */}
             <div className="ed-rise" style={{ ...rise(2), display: "flex", gap: 7, flexWrap: "wrap" }}>
               {[`LV.${String(active.level).padStart(2, "0")}`, species.toUpperCase(), element.toUpperCase()].map((t) => (
-                <span key={t} style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".1em", color: "#9A4E1E", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 9, padding: "5px 11px" }}>{t}</span>
+                <span key={t} style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: "#9A4E1E", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 9, padding: "5px 11px" }}>{t}</span>
               ))}
             </div>
 
@@ -440,7 +440,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                     color: T.thrive, animation: "mpDeltaRise .8s ease-out both", pointerEvents: "none",
                   }}>+{pops.experience.delta}</span>
                 )}
-                <div style={{ display: "flex", justifyContent: "space-between", fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".1em", color: T.mono }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: T.mono }}>
                   <span>LV.{active.level} · {xp % 100}/100 XP</span>
                   <span>NEXT: LV.{active.level + 1}</span>
                 </div>
@@ -452,7 +452,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
 
             {/* status */}
             <div className="ed-rise" style={{ ...rise(4), background: T.paper, borderRadius: 22, padding: 20, boxShadow: "var(--ed-shadow-card)" }}>
-              <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 10, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Status</div>
+              <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Status</div>
               <div style={{ display: "flex", alignItems: "center", gap: 7, fontFamily: T.disp, fontWeight: 700, fontSize: 15, marginTop: 6, color: statusMeta.color }}>
                 <span style={{ width: 8, height: 8, borderRadius: "50%", background: statusMeta.color }} />{status}
               </div>
@@ -468,7 +468,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
 
             {/* care */}
             <div className="ed-rise" style={{ ...rise(5), background: T.paper, borderRadius: 22, padding: 20, boxShadow: "var(--ed-shadow-card)" }}>
-              <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 10, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Care</div>
+              <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Care</div>
               <div style={{ display: "flex", gap: 9, marginTop: 14 }}>
                 <CareTile label="Feed" busy={!!busy} onClick={() => care("feed")} icon={<CareIcon d="M5 3v8a3 3 0 0 0 6 0V3M8 3v18M19 3c-1.5 0-3 2-3 5s1.5 4 3 4v9" />} />
                 <CareTile label="Play" busy={!!busy} onClick={() => care("play")} icon={<CareIcon d="M6 12h4M8 10v4M15 11h.01M18 13h.01M7 7h10a4 4 0 0 1 4 4v1a4 4 0 0 1-7 2.8 3 3 0 0 1-4 0A4 4 0 0 1 3 12v-1a4 4 0 0 1 4-4Z" />} />
@@ -478,19 +478,19 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                 <div key={flash.id} style={{ marginTop: 12, display: "flex", alignItems: "flex-start", gap: 8, flexWrap: "wrap", animation: "edRiseIn .3s cubic-bezier(.22,.9,.3,1) both" }}>
                   <span style={{ flex: "1 1 auto", minWidth: 0, fontSize: 12, color: flash.error ? T.terra : T.muted2, fontStyle: "italic", lineHeight: 1.4 }}>{flash.text}</span>
                   {flash.pts !== undefined && (
-                    <span style={{ flexShrink: 0, fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".08em", color: "#9A7B4E", border: "1px solid rgba(154,123,78,.35)", borderRadius: 8, padding: "3px 8px" }}>+{flash.pts} PTS</span>
+                    <span style={{ flexShrink: 0, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: "#9A7B4E", border: "1px solid rgba(154,123,78,.35)", borderRadius: 8, padding: "3px 8px" }}>+{flash.pts} PTS</span>
                   )}
                   {flash.fulfilled && (
-                    <span style={{ flexShrink: 0, fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".08em", color: "#FFF8EE", background: T.terra, borderRadius: 8, padding: "3px 8px" }}>REQUEST FULFILLED</span>
+                    <span style={{ flexShrink: 0, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: "#FFF8EE", background: T.terra, borderRadius: 8, padding: "3px 8px" }}>REQUEST FULFILLED</span>
                   )}
                   {flash.levelUp && (
-                    <span style={{ flexShrink: 0, fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".08em", color: "#5C3504", background: "linear-gradient(100deg,#FFF7E6,#F2CD86 50%,#E8B257)", borderRadius: 8, padding: "3px 8px" }}>LEVEL UP → LV.{active.level}</span>
+                    <span style={{ flexShrink: 0, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: "#5C3504", background: "linear-gradient(100deg,#FFF7E6,#F2CD86 50%,#E8B257)", borderRadius: 8, padding: "3px 8px" }}>LEVEL UP → LV.{active.level}</span>
                   )}
                 </div>
               )}
               {streakMint && (
                 <div key={streakMint.id} style={{ marginTop: 10, border: "1.5px solid rgba(200,147,47,.6)", background: "rgba(200,147,47,.08)", borderRadius: 12, padding: "10px 12px", animation: "edRiseIn .35s cubic-bezier(.22,.9,.3,1) both" }}>
-                  <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".12em", color: "#A9712B" }}>CARE STREAK · {streakMint.days} DAYS</div>
+                  <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: "#A9712B" }}>CARE STREAK · {streakMint.days} DAYS</div>
                   <div style={{ fontSize: 12, color: T.muted2, marginTop: 3, lineHeight: 1.45 }}>Streak NFT minted — {active.name}&apos;s consistent care, kept on-chain.</div>
                 </div>
               )}
@@ -504,7 +504,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               }}>
                 {request?.type && (
                   <div style={{ marginBottom: memoryLoaded ? 12 : 0 }}>
-                    <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".12em", color: "#A9712B" }}>
+                    <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: "#A9712B" }}>
                       {active.name.toUpperCase()} ASKS: {String(request.type).toUpperCase()}{reqBonus ? ` · BONUS ${reqBonus}` : ""}
                     </div>
                     {request.message && (
@@ -514,11 +514,11 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                 )}
                 {memoryLoaded && (
                   <div>
-                    <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".12em", color: "#A9712B" }}>{active.name.toUpperCase()} REMEMBERS</div>
+                    <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: "#A9712B" }}>{active.name.toUpperCase()} REMEMBERS</div>
                     {memory ? (
                       <div key={memory.id ?? memory.created_at} className="ed-rise">
                         <p style={{ fontStyle: "italic", fontSize: 13, color: T.muted2, marginTop: 6, lineHeight: 1.5 }}>&ldquo;{memory.content}&rdquo;</p>
-                        <div style={{ fontFamily: T.m, fontSize: 9, fontWeight: 700, letterSpacing: ".12em", color: T.mono, marginTop: 6 }}>{relTime(memory.created_at)}</div>
+                        <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: T.mono, marginTop: 6 }}>{relTime(memory.created_at)}</div>
                       </div>
                     ) : (
                       <p style={{ fontStyle: "italic", fontSize: 13, color: T.muted2, marginTop: 6, lineHeight: 1.5 }}>Care for {active.name} and they&apos;ll remember it — your habits, your mood, the little things.</p>
@@ -539,18 +539,18 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
 
             {/* studio teaser — warm-dark panel, studio-purple accent, foil-gold headline */}
             <button onClick={() => onNavigate?.("create")} className="ed-rise" style={{ ...rise(8), textAlign: "left", cursor: "pointer", background: "#1E1710", border: "1px solid rgba(107,79,160,.5)", borderRadius: 18, padding: 18, color: "rgba(251,246,236,.8)", boxShadow: "var(--ed-shadow-dark)" }}>
-              <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".14em", color: "#6B4FA0" }}>PRO PET STUDIO</div>
+              <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: "#6B4FA0" }}>PRO PET STUDIO</div>
               <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 19, margin: "5px 0 12px", color: "#E8C77E" }}>Make {active.name} a star ✦</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {["Cinematic", "Anime", "3D Pixar", "Pixel"].map((s) => (
-                  <span key={s} style={{ fontSize: 11, fontWeight: 600, border: "1px solid rgba(232,199,126,.3)", borderRadius: 8, padding: "4px 9px", color: "#E8C77E" }}>{s}</span>
+                  <span key={s} style={{ fontSize: 12, fontWeight: 600, border: "1px solid rgba(232,199,126,.3)", borderRadius: 8, padding: "4px 9px", color: "#E8C77E" }}>{s}</span>
                 ))}
               </div>
             </button>
 
             {/* catch — warm-dark panel, catch-teal accent */}
             <button onClick={() => onNavigate?.("catch")} className="ed-rise" style={{ ...rise(9), textAlign: "left", cursor: "pointer", background: "#1E1710", border: "1px solid rgba(26,126,104,.5)", borderRadius: 18, padding: 18, color: "rgba(251,246,236,.8)", boxShadow: "var(--ed-shadow-dark)" }}>
-              <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".14em", color: "#1A7E68" }}>FIELD ALBUM</div>
+              <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: "#1A7E68" }}>FIELD ALBUM</div>
               <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 18, marginTop: 5, color: "#E8C77E" }}>Catch in the wild</div>
               <p style={{ fontSize: 12.5, color: "rgba(251,246,236,.8)", margin: "7px 0 12px", lineHeight: 1.5 }}>Find real animals out there and turn them into collectibles for {active.name}&apos;s field album.</p>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "rgba(26,126,104,.25)", color: T.creamOn, fontFamily: T.disp, fontWeight: 700, fontSize: 13.5, borderRadius: 11, padding: "9px 15px" }}>Open camera →</span>
@@ -564,7 +564,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
             header/stats/care row) so two care loops never share one page. */}
         <div style={{ marginTop: 24, paddingTop: 18, borderTop: `1px solid ${T.hair}`, textAlign: "center" }}>
           <button onClick={() => setShowClassic("tools")} style={{
-            fontFamily: T.m, fontSize: 11, letterSpacing: ".1em", textTransform: "uppercase",
+            fontFamily: T.m, fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase",
             color: T.mono, background: "transparent", border: "none", cursor: "pointer",
           }}>
             Wardrobe · Memories · Evolution ↗
@@ -580,7 +580,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
           boxShadow: "var(--ed-shadow-card)", textAlign: "center", maxWidth: 340,
           animation: "edPanelIn .26s cubic-bezier(.2,.8,.2,1) both",
         }}>
-          <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".14em", color: T.mono }}>COMBO{combo.emoji ? ` · ${combo.emoji}` : ""}</div>
+          <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: T.mono }}>COMBO{combo.emoji ? ` · ${combo.emoji}` : ""}</div>
           <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 17, color: T.ink, marginTop: 3 }}>{combo.name}</div>
           <div style={{ fontSize: 12, color: T.muted2, marginTop: 3, lineHeight: 1.45 }}>{combo.description}</div>
         </div>
@@ -601,12 +601,12 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               position: "sticky", top: 0, zIndex: 5, display: "flex", justifyContent: "space-between", alignItems: "center",
               gap: 10, padding: "14px 18px 11px", background: T.paper, borderBottom: `1px solid ${T.hair}`, borderRadius: "22px 22px 0 0",
             }}>
-              <span style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".14em", color: T.mono }}>
+              <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: T.mono }}>
                 {showClassic === "create" ? "ADOPT A NEW PET" : "CLASSIC TOOLS — WARDROBE · MEMORIES · EVOLUTION"}
               </span>
               <button onClick={closeClassic} style={{
                 border: `1px solid ${T.hair}`, background: T.field, borderRadius: 9, padding: "5px 12px",
-                fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".08em", color: T.muted2, cursor: "pointer",
+                fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: T.muted2, cursor: "pointer",
               }}>CLOSE ✕</button>
             </div>
             <Suspense fallback={<div style={{ padding: 60, textAlign: "center", fontFamily: T.m, color: T.muted }}>Loading tools…</div>}>

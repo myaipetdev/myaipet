@@ -98,7 +98,7 @@ export default function PetLoraPanel({ petId, petName }: { petId: number; petNam
     border: "1px solid rgba(33,26,18,.13)",
   };
   const eyebrow: React.CSSProperties = {
-    fontSize: 11, fontFamily: "var(--ed-m), 'Space Mono', ui-monospace, monospace",
+    fontSize: 12, fontFamily: "var(--ed-m), 'Space Mono', ui-monospace, monospace",
     color: "#5C8A4E", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 6,
     textTransform: "uppercase",
   };

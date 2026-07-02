@@ -1855,13 +1855,13 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, padding: "0 2px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 14 }}>{regionEmoji}</span>
-          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 10, fontWeight: 700, color: "#e0e0e0", letterSpacing: 1, textShadow: "1px 1px 0 #000" }}>{regionName}</span>
+          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 12, fontWeight: 700, color: "#e0e0e0", letterSpacing: 1, textShadow: "1px 1px 0 #000" }}>{regionName}</span>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button onClick={() => setShowMinimap(v => !v)} style={{ background: "none", border: "1px solid #555", borderRadius: 3, color: "#aaa", fontSize: 9, fontFamily: "monospace", cursor: "pointer", padding: "2px 5px" }}>
+          <button onClick={() => setShowMinimap(v => !v)} style={{ background: "none", border: "1px solid #555", borderRadius: 3, color: "#aaa", fontSize: 12, fontFamily: "monospace", cursor: "pointer", padding: "2px 5px" }}>
             {showMinimap ? "MAP ON" : "MAP OFF"} (M)
           </button>
-          <span style={{ fontFamily: "monospace", fontSize: 8, color: "#555" }}>WASD move / SPACE interact</span>
+          <span style={{ fontFamily: "monospace", fontSize: 10, color: "#555" }}>WASD move / SPACE interact</span>
         </div>
       </div>
 
@@ -1901,7 +1901,7 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
               borderRadius: "0 0 8px 8px",
               padding: "8px 20px",
               fontFamily: "'Press Start 2P', monospace",
-              fontSize: 11,
+              fontSize: 12,
               color: "#fff",
               textShadow: "1px 1px 2px #000",
               letterSpacing: 1,
@@ -1924,7 +1924,7 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
               borderRadius: 6,
               padding: "8px 16px",
               fontFamily: "monospace",
-              fontSize: 11,
+              fontSize: 12,
               color: "#fff",
               whiteSpace: "nowrap",
             }}>
@@ -1969,7 +1969,7 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
                       background: dialogue.npc.type === "boss" ? "#cc0000" : dialogue.npc.type === "trainer" ? "#0066aa" : "#446688",
                       color: "#fff",
                       fontFamily: "'Press Start 2P', monospace",
-                      fontSize: 8,
+                      fontSize: 10,
                       padding: "3px 8px",
                       borderRadius: 4,
                       border: "2px solid #111",
@@ -1981,7 +1981,7 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
                   {/* Typewriter text */}
                   <div style={{
                     fontFamily: "'Press Start 2P', monospace",
-                    fontSize: 10,
+                    fontSize: 12,
                     color: "#222",
                     lineHeight: 2,
                     whiteSpace: "pre-line",
@@ -1993,7 +1993,7 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
                   {/* Action hint */}
                   <div style={{
                     fontFamily: "monospace",
-                    fontSize: 9,
+                    fontSize: 12,
                     color: "#888",
                     marginTop: 8,
                     textAlign: "right",
@@ -2009,7 +2009,7 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
                   {/* Blinking advance indicator */}
                   <div style={{
                     position: "absolute", bottom: 8, right: 12,
-                    fontSize: 10, color: "#333",
+                    fontSize: 12, color: "#333",
                     animation: "blink 0.8s step-end infinite",
                   }}>{"\u25bc"}</div>
                 </div>
@@ -2041,7 +2041,7 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
                 width: 30, height: 30, borderRadius: 5,
                 background: "linear-gradient(180deg, #3a3a4a, #2a2a3a)",
                 border: "2px solid #555",
-                color: "#bbb", fontSize: 11,
+                color: "#bbb", fontSize: 12,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: "pointer", touchAction: "none",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)",

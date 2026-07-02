@@ -82,17 +82,17 @@ function HeroShowcase({ txToday }: { txToday?: number }) {
         <div style={{ position: "relative", zIndex: 2, width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4, padding: "0 2px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#FCE9CF", boxShadow: "0 0 0 3px rgba(252,233,207,.22)", animation: "pulse 2s ease-in-out infinite" }} />
-            <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, fontWeight: 700, letterSpacing: ".12em", color: "#FCE9CF", textTransform: "uppercase" }}>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: "#FCE9CF", textTransform: "uppercase" }}>
               {txToday && txToday >= 20 ? `${txToday} creations this week` : "Meet your companion"}
             </span>
           </div>
-          <span style={{ fontFamily: "var(--ed-m)", fontSize: 9.5, fontWeight: 700, letterSpacing: ".14em", color: "rgba(252,233,207,.7)" }}>FILE №0742</span>
+          <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: "rgba(252,233,207,.7)" }}>FILE №0742</span>
         </div>
         <div style={{ position: "relative", zIndex: 2, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "6px 0" }}>
           <CollectibleFrame photoUrl={LOGO_SRC} level={5} speciesLabel="POMERANIAN" elementLabel="GRASS" width={280} tilt={-2.4} />
         </div>
         <div className="ed-foil-text" style={{ position: "relative", zIndex: 2, fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 40, lineHeight: 0.9, letterSpacing: "-0.03em" }}>Mochi</div>
-        <div style={{ position: "relative", zIndex: 2, fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700, letterSpacing: ".22em", color: "rgba(252,233,207,.7)", marginTop: 6, textTransform: "uppercase" }}>Adopt · Remember · Own</div>
+        <div style={{ position: "relative", zIndex: 2, fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: ".22em", color: "rgba(252,233,207,.7)", marginTop: 6, textTransform: "uppercase" }}>Adopt · Remember · Own</div>
       </div>
     </div>
   );
@@ -158,15 +158,15 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", marginBottom: 22,
           }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#1A7E68", animation: "pulse 2s ease-in-out infinite" }} />
-            <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#9A4E1E", fontWeight: 500 }}>Adopt free · no gas to start</span>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A4E1E", fontWeight: 500 }}>Adopt free · no gas to start</span>
           </div>
 
           {/* Eyebrow + honest Beta tag */}
           <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 14, flexWrap: "wrap" }}>
-            <span style={{ fontFamily: "var(--ed-m)", fontSize: 11.5, letterSpacing: "0.18em", color: "#9A4E1E", fontWeight: 700, textTransform: "uppercase" }}>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.18em", color: "#9A4E1E", fontWeight: 700, textTransform: "uppercase" }}>
               The open infrastructure for AI companions
             </span>
-            <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.14em", padding: "3px 8px", borderRadius: 7, background: "rgba(107,79,160,0.12)", color: "#6B4FA0", fontFamily: "var(--ed-m)", border: "1px solid rgba(107,79,160,0.25)" }}>
+            <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.14em", padding: "3px 8px", borderRadius: 7, background: "rgba(107,79,160,0.12)", color: "#6B4FA0", fontFamily: "var(--ed-m)", border: "1px solid rgba(107,79,160,0.25)" }}>
               BETA
             </span>
           </div>
@@ -238,6 +238,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             background: #FBF6EC;
             border: 1px solid var(--ed-hair, rgba(33,26,18,.13));
             border-radius: 12px; padding: 10px 16px; cursor: pointer;
+            flex: 1 1 0; min-width: 220px; max-width: 300px;
             transition: all 0.3s ease; min-width: 150px;
             opacity: 1; filter: saturate(1);
           }
@@ -274,12 +275,12 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           >
             <div className="pillar-icon" style={{ fontSize: 18, marginBottom: 4, transition: "transform 0.3s ease" }}>{f.icon}</div>
             <div className="pillar-label" style={{
-              fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 600,
+              fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
               color: activePillar === i ? "#9A4E1E" : "#5C5140",
               marginBottom: 2, transition: "color 0.3s",
             }}>{f.label}</div>
             <div className="pillar-desc" style={{
-              fontFamily: "var(--ed-m)", fontSize: 9,
+              fontFamily: "var(--ed-m)", fontSize: 12,
               color: activePillar === i ? "#7A6E5A" : "#9A7B4E",
               transition: "color 0.3s",
             }}>{f.desc}</div>
@@ -362,7 +363,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           </div>
           <div style={{
             background: "#F5EFE2", padding: "10px 16px",
-            fontFamily: "var(--ed-m)", fontSize: 11, color: "#5C5140",
+            fontFamily: "var(--ed-m)", fontSize: 12, color: "#5C5140",
             textAlign: "left",
           }}>
             Open protocol · MCP server · 18 skills · build on the pet layer ·{" "}
@@ -372,7 +373,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
 
         {/* The experience on top */}
         <div style={{
-          fontFamily: "var(--ed-m)", fontSize: 10, letterSpacing: "0.18em",
+          fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.18em",
           color: "#9A7B4E", textTransform: "uppercase", marginBottom: 14, fontWeight: 700,
         }}>
           And the experience on top
@@ -449,7 +450,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
 
         {/* Lead Investor */}
         <div style={{
-          fontFamily: "var(--ed-m)", fontSize: 9, fontWeight: 700, color: "#9A4E1E",
+          fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#9A4E1E",
           textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12,
           textAlign: "center", marginTop: 28,
         }}>

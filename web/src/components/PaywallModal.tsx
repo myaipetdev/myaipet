@@ -109,11 +109,11 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
           background: "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.04))",
           border: "1px solid rgba(245,158,11,0.2)",
         }}>
-          <div style={{ fontSize: 11, color: "rgba(26,26,46,0.55)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Price</div>
+          <div style={{ fontSize: 12, color: "rgba(26,26,46,0.55)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Price</div>
           <div style={{ fontSize: 28, fontWeight: 800, color: "#b45309", marginTop: 4 }}>
             {info.priceUsd.toFixed(2)} USDT
           </div>
-          <div style={{ fontSize: 11, color: "rgba(26,26,46,0.5)", marginTop: 4, fontFamily: "mono" }}>
+          <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginTop: 4, fontFamily: "mono" }}>
             BSC (BEP-20) USDT · payment goes to project treasury
           </div>
         </div>

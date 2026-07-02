@@ -146,7 +146,7 @@ export default async function CreationPage(
   const eyebrow: React.CSSProperties = {
     fontFamily: ED.m,
     fontWeight: 700,
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: "0.14em",
     textTransform: "uppercase",
     color: ED.mono,
@@ -238,7 +238,7 @@ export default async function CreationPage(
               “{g.prompt}”
             </p>
           ) : null}
-          <p style={{ fontFamily: ED.m, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: ED.muted, margin: 0 }}>
+          <p style={{ fontFamily: ED.m, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", color: ED.muted, margin: 0 }}>
             {likes > 0 ? `${likes} ${likes === 1 ? "like" : "likes"} · ` : ""}{creator ? `by ${creator} · ` : ""}made on MY AI PET · {isVideo ? "film" : "print"}
           </p>
         </div>

@@ -133,7 +133,7 @@ function Layer({ n, title, tag, desc }: { n: number; title: string; tag: string;
       <div>
         <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{title}</div>
         <div style={{
-          display: "inline-block", fontSize: 11, padding: "2px 8px", borderRadius: 6,
+          display: "inline-block", fontSize: 12, padding: "2px 8px", borderRadius: 6,
           background: "rgba(245,158,11,0.1)", color: "#92400e",
           fontFamily: "monospace", marginBottom: 8,
         }}>{tag}</div>

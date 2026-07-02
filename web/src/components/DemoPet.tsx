@@ -62,7 +62,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
         @keyframes dpPop { 0%{opacity:0;transform:translateY(8px) scale(0.7);} 25%{opacity:1;transform:translateY(-4px) scale(1.1);} 100%{opacity:0;transform:translateY(-40px) scale(0.9);} }
       `}</style>
 
-      <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, letterSpacing: "0.14em", color: "#9A4E1E", fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>
+      <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.14em", color: "#9A4E1E", fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>
         TRY IT — NO WALLET NEEDED
       </div>
       <h2 style={{ fontFamily: "var(--ed-disp)", fontSize: 26, fontWeight: 800, color: "#211A12", letterSpacing: "-0.02em", margin: "0 0 4px" }}>
@@ -118,7 +118,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
           { k: "bond", label: "Bond", icon: "paw", color: "#c084fc" },
         ] as const).map((row) => (
           <div key={row.k}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A", marginBottom: 3 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A", marginBottom: 3 }}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name={row.icon} size={13} /> {row.label}</span><span>{Math.round((stats as any)[row.k])}</span>
             </div>
             <div style={{ height: 7, background: "#ECE4D4", borderRadius: 4, overflow: "hidden" }}>
@@ -146,7 +146,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
         maxWidth: 320, margin: "0 auto 24px", minHeight: 34, padding: "8px 12px", borderRadius: 10,
         background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", textAlign: "left",
       }}>
-        <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "#9A4E1E", letterSpacing: "0.12em", marginBottom: memory.length ? 4 : 0, textTransform: "uppercase" }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A4E1E", letterSpacing: "0.12em", marginBottom: memory.length ? 4 : 0, textTransform: "uppercase" }}>
           {NAME.toUpperCase()} REMEMBERS
         </div>
         {memory.length === 0 ? (

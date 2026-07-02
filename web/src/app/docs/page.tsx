@@ -237,7 +237,7 @@ function TableOfContents() {
       padding: "20px 0", minWidth: 200,
     }}>
       <div style={{
-        fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.35)",
+        fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.35)",
         textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14,
         fontWeight: 600,
       }}>
@@ -357,7 +357,7 @@ export default function DocsPage() {
             </span>
           </a>
           <span style={{
-            fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.4)",
+            fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.4)",
             padding: "3px 10px", borderRadius: 6,
             background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)",
           }}>
@@ -414,7 +414,7 @@ export default function DocsPage() {
         borderTop: "1px solid rgba(0,0,0,0.06)",
       }}>
         <div style={{
-          fontFamily: "mono", fontSize: 11, color: "rgba(26,26,46,0.35)",
+          fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.35)",
         }}>
           &copy; 2026 My AI PET Protocol &middot; Raise &middot; Bond &middot; Earn
         </div>

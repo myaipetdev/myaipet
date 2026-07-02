@@ -230,23 +230,23 @@ function PetCard({ side, pet, hpNow, isWinner }: { side: "player" | "opponent"; 
       </div>
       <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{pet.name}</div>
       {pet.level != null && (
-        <div style={{ fontSize: 10, fontFamily: "mono", color: "rgba(26,26,46,0.5)" }}>
+        <div style={{ fontSize: 12, fontFamily: "mono", color: "rgba(26,26,46,0.5)" }}>
           Lv.{pet.level}
           {pet.ownerWallet && <span> · {pet.ownerWallet}</span>}
         </div>
       )}
       {pet.stats && (
-        <div style={{ fontSize: 10, fontFamily: "mono", color: "rgba(26,26,46,0.6)", display: "flex", gap: 8, marginTop: 2 }}>
+        <div style={{ fontSize: 12, fontFamily: "mono", color: "rgba(26,26,46,0.6)", display: "flex", gap: 8, marginTop: 2 }}>
           <span>ATK {pet.stats.atk}</span>
           <span>DEF {pet.stats.def}</span>
           <span>SPD {pet.stats.spd}</span>
         </div>
       )}
       <div style={{ marginTop: 6 }}>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: side === "player" ? "#34d399" : "#f87171", letterSpacing: "0.05em" }}>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: side === "player" ? "#34d399" : "#f87171", letterSpacing: "0.05em" }}>
           {hpBar(hpNow, pet.hpMax, 14)}
         </div>
-        <div style={{ fontSize: 10, fontFamily: "mono", color: "rgba(26,26,46,0.55)", marginTop: 2 }}>
+        <div style={{ fontSize: 12, fontFamily: "mono", color: "rgba(26,26,46,0.55)", marginTop: 2 }}>
           HP {hpNow} / {pet.hpMax}
         </div>
       </div>

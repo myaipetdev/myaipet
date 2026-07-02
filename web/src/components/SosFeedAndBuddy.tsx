@@ -94,7 +94,7 @@ export default function SosFeedAndBuddy() {
                 <path d="M12 3v3.5M12 17.5V21M3 12h3.5M17.5 12H21" stroke="#BE4F28" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </span>
-            <div style={{ fontSize: 11, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E" }}>
+            <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E" }}>
               SOS · SAVE OUR STREAKS
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function SosFeedAndBuddy() {
                       {item.sender_streak}d</span>
                   </div>
                   {item.message && (
-                    <div style={{ fontSize: 11, color: "#7A6E5A", marginTop: 1, fontFamily: "var(--ed-body)" }}>{item.message}</div>
+                    <div style={{ fontSize: 12, color: "#7A6E5A", marginTop: 1, fontFamily: "var(--ed-body)" }}>{item.message}</div>
                   )}
                 </div>
                 <button onClick={() => help(item.id)} disabled={busy === item.id} style={{
@@ -158,7 +158,7 @@ export default function SosFeedAndBuddy() {
                 <circle cx="15.5" cy="12" r="5" stroke="#BE4F28" strokeWidth="2" />
               </svg>
             </span>
-            <div style={{ fontSize: 11, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E" }}>
+            <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E" }}>
               BUDDY LOCK · SHARED STREAK
             </div>
           </div>
@@ -210,7 +210,7 @@ export default function SosFeedAndBuddy() {
                   : <img src="/mascot.jpg" alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover" }} />}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "var(--ed-disp)" }}>{b.partner.pet?.name || b.partner.wallet}</div>
-                  <div style={{ fontSize: 11, color: "#7A6E5A", fontFamily: "var(--ed-m)", display: "flex", alignItems: "center", gap: 4 }}>
+                  <div style={{ fontSize: 12, color: "#7A6E5A", fontFamily: "var(--ed-m)", display: "flex", alignItems: "center", gap: 4 }}>
                     <svg width={11} height={11} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "inline-block" }}>
                       <path d="M12 3c1 3 4 4 4 8a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5C10 8 11 6 12 3Z" stroke="#BE4F28" strokeWidth="1.8" strokeLinejoin="round" />
                     </svg>

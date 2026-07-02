@@ -33,7 +33,7 @@ export default function PremiumTeaser() {
         boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       }}>
         <div style={{
-          fontSize: 11, fontFamily: "var(--ed-m)",
+          fontSize: 12, fontFamily: "var(--ed-m)",
           letterSpacing: "0.14em", color: "#9A4E1E", marginBottom: 8, fontWeight: 700,
         }}>UNLIMITED · COMING SOON</div>
         <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 4, fontFamily: "var(--ed-disp)" }}>
@@ -96,7 +96,7 @@ function Tier({
           <span style={{
             padding: "2px 7px", borderRadius: 999,
             background: "#BE4F28", color: "#fff", border: "none",
-            fontSize: 9, fontWeight: 800, fontFamily: "var(--ed-m)", letterSpacing: "0.06em",
+            fontSize: 12, fontWeight: 800, fontFamily: "var(--ed-m)", letterSpacing: "0.06em",
           }}>CURRENT</span>
         )}
       </div>

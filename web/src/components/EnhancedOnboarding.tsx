@@ -261,7 +261,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
       padding: "4px 10px", borderRadius: 999,
       background: "rgba(190,79,40,0.10)",
       color: "#9A4E1E",
-      fontSize: 11, fontWeight: 700, letterSpacing: "0.12em",
+      fontSize: 12, fontWeight: 700, letterSpacing: "0.12em",
       fontFamily: "var(--ed-m)",
       textTransform: "uppercase", marginBottom: 10,
     }}>{text}</div>
@@ -323,7 +323,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
                 <div style={{ fontSize: 12, color: "#7A6E5A", marginTop: 1 }}>{item.desc}</div>
               </div>
               <span style={{
-                fontSize: 11, padding: "3px 10px", borderRadius: 999,
+                fontSize: 12, padding: "3px 10px", borderRadius: 999,
                 background: "rgba(92,138,78,0.14)", color: "#5C8A4E", fontWeight: 700,
                 fontFamily: "var(--ed-m)",
               }}>{item.pts}</span>
@@ -446,7 +446,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
                   <div style={{ fontSize: 12, color: "#7A6E5A", marginTop: 1 }}>{p.desc}</div>
                 </div>
                 <span style={{
-                  fontSize: 11, padding: "4px 11px", borderRadius: 999, fontWeight: 700,
+                  fontSize: 12, padding: "4px 11px", borderRadius: 999, fontWeight: 700,
                   fontFamily: "var(--ed-m)",
                   background: on ? "rgba(92,138,78,0.16)" : "rgba(33,26,18,0.06)",
                   color: on ? "#5C8A4E" : "#9A7B4E",
@@ -603,7 +603,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
               <div key={t} style={{ padding: "12px 12px", borderRadius: 12, background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))" }}>
                 <div style={{ fontSize: 18 }}><Icon name={icon} size={20} /></div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#211A12", marginTop: 4, fontFamily: "var(--ed-disp)" }}>{t}</div>
-                <div style={{ fontSize: 11.5, color: "#7A6E5A", marginTop: 2 }}>{s}</div>
+                <div style={{ fontSize: 12, color: "#7A6E5A", marginTop: 2 }}>{s}</div>
               </div>
             ))}
           </div>

@@ -51,7 +51,7 @@ export default function MyCard() {
             ? <img src={me.pet.avatar_url} alt={me.pet.name} style={{ width: 52, height: 52, borderRadius: 14, objectFit: "cover", border: "1px solid rgba(255,248,238,0.18)" }} />
             : <img src="/mascot.jpg" alt="" style={{ width: 52, height: 52, borderRadius: 14, objectFit: "cover", opacity: 0.9, border: "1px solid rgba(255,248,238,0.18)" }} />}
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 11, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "rgba(255,248,238,0.55)" }}>
+            <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "rgba(255,248,238,0.55)" }}>
               YOUR SEASON
             </div>
             <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", fontFamily: "var(--ed-disp)" }}>
@@ -91,13 +91,13 @@ function Tile({ label, value, accent, sub }: { label: string; value: React.React
       border: "1px solid rgba(255,248,238,0.12)",
       minWidth: 88,
     }}>
-      <div style={{ fontSize: 11, fontFamily: "var(--ed-m)", letterSpacing: "0.12em", color: "rgba(255,248,238,0.6)" }}>
+      <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", letterSpacing: "0.12em", color: "rgba(255,248,238,0.6)" }}>
         {label}
       </div>
       <div style={{ fontSize: 22, fontWeight: 800, color: accent, fontFamily: "var(--ed-m)", lineHeight: 1.1, marginTop: 2 }}>
         {value}
       </div>
-      {sub && <div style={{ fontSize: 11.5, color: "rgba(255,248,238,0.6)", marginTop: 1 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 12, color: "rgba(255,248,238,0.6)", marginTop: 1 }}>{sub}</div>}
     </div>
   );
 }

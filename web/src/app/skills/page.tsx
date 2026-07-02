@@ -41,7 +41,7 @@ export default function SkillsPage() {
           <span style={{
             display: "inline-block", padding: "5px 14px", borderRadius: 999,
             background: "rgba(245,158,11,0.12)", color: "#b45309",
-            fontSize: 11, fontWeight: 700, letterSpacing: "0.16em",
+            fontSize: 12, fontWeight: 700, letterSpacing: "0.16em",
             textTransform: "uppercase", marginBottom: 14,
           }}>PetClaw Skill Registry · v1</span>
           <h1 style={{
@@ -68,7 +68,7 @@ export default function SkillsPage() {
           fontFamily: "monospace", fontSize: 13, lineHeight: 1.8,
           overflowX: "auto",
         }}>
-          <div style={{ color: "#fbbf24", marginBottom: 6, fontSize: 11, letterSpacing: "0.1em" }}>$ ONE-LINE INSTALL</div>
+          <div style={{ color: "#fbbf24", marginBottom: 6, fontSize: 12, letterSpacing: "0.1em" }}>$ ONE-LINE INSTALL</div>
           <div><span style={{ color: "#4ade80" }}>npx</span> @myaipet/petclaw-sdk install <span style={{ color: "#fbbf24" }}>&lt;skill-id&gt;</span></div>
           <div style={{ color: "rgba(255,255,255,0.5)", marginTop: 6, fontSize: 12 }}>
             # or via API: POST /api/petclaw/skills {"{"} action:"install", petId, skillId {"}"}
@@ -87,7 +87,7 @@ export default function SkillsPage() {
               Pets grow new skills on their own
             </h2>
             <span style={{
-              fontSize: 9, padding: "3px 10px", borderRadius: 999,
+              fontSize: 12, padding: "3px 10px", borderRadius: 999,
               background: "rgba(168,85,247,0.12)", color: "#a855f7",
               fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.08em",
             }}>VIGIL</span>
@@ -140,7 +140,7 @@ export default function SkillsPage() {
                         {s.name}
                       </h3>
                       <span style={{
-                        fontSize: 10, padding: "3px 8px", borderRadius: 6,
+                        fontSize: 12, padding: "3px 8px", borderRadius: 6,
                         background: s.price === 0 ? "rgba(74,222,128,0.15)" : "rgba(245,158,11,0.15)",
                         color: s.price === 0 ? "#16a34a" : "#b45309",
                         fontWeight: 700, letterSpacing: "0.06em", flexShrink: 0,
@@ -157,7 +157,7 @@ export default function SkillsPage() {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                       {s.tags.slice(0, 4).map(t => (
                         <span key={t} style={{
-                          fontSize: 10, padding: "2px 8px", borderRadius: 999,
+                          fontSize: 12, padding: "2px 8px", borderRadius: 999,
                           background: "rgba(0,0,0,0.05)", color: "rgba(26,26,46,0.6)",
                           fontFamily: "monospace",
                         }}>{t}</span>
@@ -168,7 +168,7 @@ export default function SkillsPage() {
                       paddingTop: 10, marginTop: 4,
                       borderTop: "1px dashed rgba(0,0,0,0.07)",
                       display: "flex", alignItems: "center", justifyContent: "space-between",
-                      fontFamily: "monospace", fontSize: 11,
+                      fontFamily: "monospace", fontSize: 12,
                     }}>
                       <code style={{ color: "#b45309" }}>{s.id}</code>
                       {s.requires?.minLevel && (
@@ -180,7 +180,7 @@ export default function SkillsPage() {
 
                     <div style={{ display: "flex", gap: 6 }}>
                       <code style={{
-                        flex: 1, fontSize: 11, padding: "6px 10px", borderRadius: 8,
+                        flex: 1, fontSize: 12, padding: "6px 10px", borderRadius: 8,
                         background: "#0f0f1a", color: "#f8f8f8",
                         whiteSpace: "normal", wordBreak: "break-all", lineHeight: 1.45,
                       }}>
@@ -192,7 +192,7 @@ export default function SkillsPage() {
                         style={{
                           padding: "6px 11px", borderRadius: 8,
                           background: "rgba(0,0,0,0.04)", color: "#1a1a2e",
-                          fontSize: 11, fontWeight: 600, textDecoration: "none",
+                          fontSize: 12, fontWeight: 600, textDecoration: "none",
                           flexShrink: 0,
                         }}
                       >SKILL.md ↗</a>

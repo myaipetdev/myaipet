@@ -84,7 +84,7 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
             <div className="chat-rail" style={{ position: "relative", background: T.terra, borderRadius: 22, padding: "22px 22px 24px", overflow: "hidden", boxShadow: "var(--ed-shadow-float, 0 54px 84px -28px rgba(38,12,2,.72),0 14px 28px -12px rgba(38,12,2,.45))", minHeight: 520 }}>
               <div className="ed-grain" />
               <div style={{ position: "relative", zIndex: 2 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".14em", color: T.creamOn, textTransform: "uppercase" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: T.creamOn, textTransform: "uppercase" }}>
                   <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#8FE6B0", boxShadow: "0 0 0 3px rgba(143,230,176,.25)", animation: "pulse 2s ease-in-out infinite" }} />
                   Online · Remembers you
                 </div>
@@ -92,13 +92,13 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
                   <img src={photo} alt={active?.name || "pet"} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                 </div>
                 <div className="ed-foil-text" style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 34, lineHeight: 0.95, letterSpacing: "-.02em", marginTop: 16 }}>{active?.name || "…"}</div>
-                <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".14em", color: "rgba(252,233,207,.75)", marginTop: 5, textTransform: "uppercase" }}>
+                <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: "rgba(252,233,207,.75)", marginTop: 5, textTransform: "uppercase" }}>
                   LV.{String(active?.level ?? 1).padStart(2, "0")} · {species}{element ? ` · ${element}` : ""}
                 </div>
 
                 {/* bond */}
                 <div style={{ marginTop: 18 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".12em", color: "rgba(252,233,207,.8)", textTransform: "uppercase" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: "rgba(252,233,207,.8)", textTransform: "uppercase" }}>
                     <span>Bond</span><span>{bond} → {bond + 1}</span>
                   </div>
                   <div style={{ marginTop: 6, height: 7, borderRadius: 999, background: "rgba(252,233,207,.25)", overflow: "hidden" }}>
@@ -127,7 +127,7 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
             <div style={{ background: T.paper, borderRadius: 22, boxShadow: "var(--ed-shadow-card)", border: `1px solid ${T.hair}`, display: "flex", flexDirection: "column", height: "min(72vh, 620px)", overflow: "hidden" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${T.hair}` }}>
                 <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 17, color: T.ink }}>Chat with {active?.name || "your pet"}</div>
-                <div style={{ fontFamily: T.m, fontSize: 9.5, fontWeight: 700, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Direct line · end-to-end yours</div>
+                <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Direct line · end-to-end yours</div>
               </div>
 
               <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
@@ -138,7 +138,7 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
                     <div key={i} style={{ alignSelf: "flex-start", display: "flex", gap: 10, maxWidth: "82%" }}>
                       <img src={photo} alt="" style={{ width: 30, height: 30, borderRadius: 9, objectFit: "cover", flexShrink: 0, border: `1px solid ${T.hair}` }} />
                       <div>
-                        <div style={{ fontFamily: T.m, fontSize: 9.5, fontWeight: 700, letterSpacing: ".1em", color: T.mono, marginBottom: 4, textTransform: "uppercase" }}>{active?.name}</div>
+                        <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: T.mono, marginBottom: 4, textTransform: "uppercase" }}>{active?.name}</div>
                         <div style={{ background: T.inset, color: T.ink70, fontFamily: T.body, fontSize: 14, lineHeight: 1.55, padding: "11px 15px", borderRadius: "4px 16px 16px 16px", border: `1px solid ${T.hair}` }}>{m.text}</div>
                       </div>
                     </div>

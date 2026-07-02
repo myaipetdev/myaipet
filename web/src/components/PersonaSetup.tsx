@@ -323,7 +323,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
 
   const labelStyle: React.CSSProperties = {
     fontFamily: "var(--ed-m)",
-    fontSize: 11,
+    fontSize: 12,
     color: "#7A6E5A",
     marginBottom: 8,
     textTransform: "uppercase" as const,
@@ -332,7 +332,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
 
   const helpStyle: React.CSSProperties = {
     fontFamily: "var(--ed-m)",
-    fontSize: 10,
+    fontSize: 12,
     color: "#9A7B4E",
     marginTop: 6,
     lineHeight: 1.5,
@@ -391,7 +391,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
           </span>
           Persona Setup
           <span style={{
-            fontFamily: "var(--ed-m)", fontSize: 10,
+            fontFamily: "var(--ed-m)", fontSize: 12,
             color: "#9A4E1E", background: "rgba(190,79,40,0.1)",
             padding: "2px 8px", borderRadius: 6,
           }}>
@@ -399,7 +399,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
           </span>
         </div>
         <div style={{
-          fontFamily: "var(--ed-m)", fontSize: 11,
+          fontFamily: "var(--ed-m)", fontSize: 12,
           color: "#7A6E5A", marginTop: 6, marginLeft: 42,
         }}>
           Configure your pet&apos;s personality to reflect you
@@ -446,7 +446,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
               {tab.label}
             </div>
             <div style={{
-              fontFamily: "var(--ed-m)", fontSize: 9,
+              fontFamily: "var(--ed-m)", fontSize: 12,
               color: activeTab === tab.key ? "#9A4E1E" : "#9A7B4E",
               marginTop: 2,
             }}>
@@ -619,7 +619,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                     border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                     background: "#F5EFE2",
                     color: "#9A7B4E",
-                    fontFamily: "var(--ed-m)", fontSize: 11,
+                    fontFamily: "var(--ed-m)", fontSize: 12,
                     cursor: "pointer", transition: "all 0.2s",
                   }}
                 >
@@ -761,7 +761,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                 }}>
                   <div style={helpStyle}>Paste chat history from any platform for AI analysis</div>
                   <div style={{
-                    fontFamily: "var(--ed-m)", fontSize: 10,
+                    fontFamily: "var(--ed-m)", fontSize: 12,
                     color: chatText.length > 5000 ? "#BE4F28" : "#9A7B4E",
                   }}>
                     {chatText.length.toLocaleString()} chars
@@ -794,7 +794,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                 </button>
                 {chatText && (
                   <div style={{
-                    fontFamily: "var(--ed-m)", fontSize: 11,
+                    fontFamily: "var(--ed-m)", fontSize: 12,
                     color: "#5C8A4E", marginTop: 12,
                   }}>
                     File loaded ({chatText.length.toLocaleString()} chars)
@@ -863,7 +863,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   background: "#F5EFE2",
                   border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 }}>
-                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 6 }}>
+                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 6 }}>
                     DETECTED STYLE / \uac10\uc9c0\ub41c \ub9d0\ud22c
                   </div>
                   <div style={{ fontFamily: "var(--ed-disp)", fontSize: 14, color: "#BE4F28", fontWeight: 600 }}>
@@ -877,7 +877,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   background: "#F5EFE2",
                   border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 }}>
-                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 8 }}>
+                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 8 }}>
                     KEY EXPRESSIONS / \uc8fc\uc694 \ud45c\ud604
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -901,7 +901,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   background: "#F5EFE2",
                   border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 }}>
-                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 8 }}>
+                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 8 }}>
                     INTEREST TOPICS / \uad00\uc2ec \uc8fc\uc81c
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -925,7 +925,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   background: "#F5EFE2",
                   border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 }}>
-                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 8 }}>
+                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 8 }}>
                     SAMPLE MESSAGES / \ub300\ud45c \uba54\uc2dc\uc9c0 5\uac1c
                   </div>
                   <div style={{ display: "grid", gap: 6 }}>
@@ -1064,7 +1064,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                         background: p.connected && liveLearning ? "#5C8A4E" : "rgba(33,26,18,0.15)",
                       }} />
                       <span style={{
-                        fontFamily: "var(--ed-m)", fontSize: 11,
+                        fontFamily: "var(--ed-m)", fontSize: 12,
                         color: p.connected && liveLearning ? "#5C8A4E" : "#9A7B4E",
                       }}>
                         {p.connected && liveLearning ? "\ud559\uc2b5 \uc911" : "\ubbf8\uc5f0\uacb0"}
@@ -1099,7 +1099,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                       border: `1px solid rgba(107,79,160,${0.15 + opacity * 0.15})`,
                       color: `rgba(107,79,160,${opacity})`,
                       fontFamily: "var(--ed-disp)",
-                      fontSize: 11 + Math.floor(opacity * 3), fontWeight: 600,
+                      fontSize: 12 + Math.floor(opacity * 3), fontWeight: 600,
                     }}>
                       {topic}
                     </span>
@@ -1114,7 +1114,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
           {lastUpdated && (
             <div style={{
               textAlign: "center",
-              fontFamily: "var(--ed-m)", fontSize: 10,
+              fontFamily: "var(--ed-m)", fontSize: 12,
               color: "#9A7B4E",
               marginTop: 8,
             }}>

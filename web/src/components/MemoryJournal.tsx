@@ -86,7 +86,7 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
 
       {profile.length > 0 && (
         <div style={{ marginBottom: memories.length > 0 ? 16 : 0 }}>
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 9.5, letterSpacing: "0.12em", color: "#9A4E1E", fontWeight: 700, marginBottom: 8 }}>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.12em", color: "#9A4E1E", fontWeight: 700, marginBottom: 8 }}>
             WHAT {petName.toUpperCase()} KNOWS ABOUT YOU
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -105,7 +105,7 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
 
       {memories.length > 0 && (
         <div>
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 9.5, letterSpacing: "0.12em", color: "#6B4FA0", fontWeight: 700, marginBottom: 8 }}>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.12em", color: "#6B4FA0", fontWeight: 700, marginBottom: 8 }}>
             MOMENTS {petName.toUpperCase()} REMEMBERS
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -117,12 +117,12 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
                     {m.content}
                   </div>
                   {m.createdAt && (
-                    <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "#9A7B4E", marginTop: 1 }}>
+                    <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", marginTop: 1 }}>
                       {timeAgo(m.createdAt)}
                     </div>
                   )}
                 </div>
-                {m.importance >= 4 && <span title="core memory" style={{ fontSize: 11, flexShrink: 0, display: "inline-flex" }}><Icon name="crown" size={13} alt="core memory" /></span>}
+                {m.importance >= 4 && <span title="core memory" style={{ fontSize: 12, flexShrink: 0, display: "inline-flex" }}><Icon name="crown" size={13} alt="core memory" /></span>}
               </div>
             ))}
           </div>
@@ -136,10 +136,10 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
           the topics the pet has adapted to, not invented bond text. */}
       {!empty && (
         <div style={{ marginTop: memories.length > 0 || profile.length > 0 ? 16 : 0 }}>
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 9.5, letterSpacing: "0.12em", color: "#1A7E68", fontWeight: 700, marginBottom: 8 }}>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.12em", color: "#1A7E68", fontWeight: 700, marginBottom: 8 }}>
             HOW {petName.toUpperCase()} IS LEARNING TO TREAT YOU
           </div>
-          <div style={{ fontFamily: "var(--ed-body)", fontSize: 11.5, color: "#7A6E5A", lineHeight: 1.55, marginBottom: 10 }}>
+          <div style={{ fontFamily: "var(--ed-body)", fontSize: 12, color: "#7A6E5A", lineHeight: 1.55, marginBottom: 10 }}>
             Every few chats, {petName} quietly reflects on the relationship — what helps, what to avoid — and folds it into how it talks to you next time. Here&apos;s what it has noted so far.
           </div>
           {bondNotes.length > 0 && (
@@ -157,7 +157,7 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
           )}
           {learned.length > 0 ? (
             <>
-              <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, letterSpacing: "0.1em", color: "#9A7B4E", fontWeight: 700, margin: "2px 0 6px" }}>TOPICS IT&apos;S TUNED TO</div>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.1em", color: "#9A7B4E", fontWeight: 700, margin: "2px 0 6px" }}>TOPICS IT&apos;S TUNED TO</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {[...learned]
                   .sort((a, b) => (b.frequency || 0) - (a.frequency || 0))

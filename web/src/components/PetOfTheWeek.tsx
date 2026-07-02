@@ -52,7 +52,7 @@ export default function PetOfTheWeek() {
         <div style={{ padding: "26px 28px", position: "relative", zIndex: 1 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 7,
-            fontSize: 10, fontFamily: "var(--ed-m)",
+            fontSize: 12, fontFamily: "var(--ed-m)",
             letterSpacing: "0.14em", color: "#F49B2A", fontWeight: 800, textTransform: "uppercase",
             padding: "5px 11px", borderRadius: 999,
             background: "rgba(190,79,40,0.16)", border: "1px solid rgba(190,79,40,0.4)",
