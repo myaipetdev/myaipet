@@ -1,0 +1,10 @@
+/* design-sync CSS entry (tail) — bridges next/font's body-scoped variables.
+   Without these every --ed-* font token is guaranteed-invalid (they reference
+   var(--font-*); see the body block in globals.css). Also pins the editorial
+   field as the page ground instead of globals' plain --background white. */
+body {
+  --font-display: 'Bricolage Grotesque';
+  --font-body: 'Hanken Grotesk';
+  --font-mono-ed: 'Space Mono';
+  background: var(--ed-field, #ECE4D4);
+}

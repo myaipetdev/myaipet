@@ -1,0 +1,22 @@
+{
+  "projectId": "53f95bea-3417-4c10-adb8-cbb49712894c",
+  "pkg": "web",
+  "globalName": "CollectibleEditorial",
+  "shape": "package",
+  "srcDir": "src",
+  "tsconfig": "tsconfig.json",
+  "componentSrcMap": {
+    "CollectibleFrame": "src/components/editorial/CollectibleFrame.tsx",
+    "GoldSeal": "src/components/editorial/CollectibleFrame.tsx",
+    "Motes": "src/components/editorial/CollectibleFrame.tsx",
+    "PetCard": "src/components/PetCard.tsx"
+  },
+  "cssEntry": ".ds-css-entry.css",
+  "buildCmd": "cat web/ds-sync-head.css web/src/app/globals.css web/ds-sync-tail.css > web/.ds-css-entry.css",
+  "overrides": {
+    "CollectibleFrame": {
+      "cardMode": "column"
+    }
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}

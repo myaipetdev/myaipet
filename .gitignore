@@ -23,3 +23,11 @@ __pycache__/
 # Public-repo staging area — has its own git history; pushed to a separate
 # org, not this private dev repo. Do NOT track from here.
 /public-repo/
+
+# design-sync (claude.ai/design) — staged scripts + regenerated output + machine state
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+web/.ds-css-entry.css
