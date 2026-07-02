@@ -33,9 +33,9 @@
  * existing battle resolver server-side.
  */
 
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
-import PetCard from "@/components/PetCard";
+import PetCard, { TOPO_MASK } from "@/components/PetCard";
 import Icon from "@/components/Icon";
 import useCountUp from "@/hooks/useCountUp";
 import { computeRarity, rarityColor, RARITY_ORDER, RARITY_THRESHOLD, rarityTier, type Rarity } from "@/lib/tcg/theme";
@@ -564,6 +564,10 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
             <div style={{ animation: "cdBinderFlip 480ms cubic-bezier(.2,.8,.2,1) 120ms both" }}>
               <PetCard key={`detail-${openPet.id}-${bust[openPet.id] || 0}`} petId={openPet.id} maxWidth={320} placeholder={{ name: openPet.name, rarity: openPet.rarity }} />
             </div>
+            {/* Holographic-ticket stub — grab the glowing dot and rip along the
+                perforation to share (the reference interaction). The buttons
+                below remain the accessible path to every action. */}
+            <RipStub petId={openPet.id} rarity={openPet.rarity} onRip={() => shareCard(openPet.id, openPet.name)} />
             <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 14, flexWrap: "wrap" }}>
               <button onClick={() => shareCard(openPet.id, openPet.name)} style={btn}>𝕏 Share</button>
               <button
@@ -618,6 +622,111 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
         </Overlay>
       )}
     </Shell>
+  );
+}
+
+/** Holographic ticket stub under the detail card. A glowing dot rides the
+ *  perforation — drag it across (≥85%) and the stub rips off, firing onRip
+ *  (the X share). Real die-cut notches: transparent radial cutouts let the
+ *  scrim show through. Touch + pointer, resets if released early. */
+function RipStub({ petId, rarity, onRip }: { petId: number; rarity: Rarity; onRip: () => void }) {
+  const [prog, setProg] = useState(0);
+  const [ripped, setRipped] = useState(false);
+  const stripRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+  const progRef = useRef(0);
+  const firedRef = useRef(false);
+  const HOLO_LINEAR = "linear-gradient(118deg,#ff5e8a,#ffd36e,#54ffc8,#5e8aff,#ff5eef,#ff5e8a)";
+
+  const moveTo = (clientX: number) => {
+    const el = stripRef.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    const p = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+    progRef.current = p;
+    setProg(p);
+  };
+  const done = () => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    if (progRef.current >= 0.85 && !firedRef.current) {
+      firedRef.current = true;
+      setRipped(true);
+      setProg(1);
+      setTimeout(onRip, 480);
+    } else if (!firedRef.current) {
+      progRef.current = 0;
+      setProg(0);
+    }
+  };
+
+  return (
+    <div aria-hidden={false} style={{ marginTop: 2, userSelect: "none" }}>
+      {/* Perforation strip — dashed tear line + the glowing grab dot */}
+      <div
+        ref={stripRef}
+        onPointerDown={(e) => { if (ripped) return; dragging.current = true; (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId); moveTo(e.clientX); }}
+        onPointerMove={(e) => { if (dragging.current) moveTo(e.clientX); }}
+        onPointerUp={done}
+        onPointerCancel={done}
+        role="button"
+        aria-label="Rip the ticket stub to share this card"
+        style={{ position: "relative", height: 30, cursor: ripped ? "default" : "grab", touchAction: "none" }}
+      >
+        {/* uncut dashed perforation (remaining right segment) */}
+        <div style={{ position: "absolute", top: "50%", left: `${prog * 100}%`, right: 0, borderTop: `2px dashed ${ripped ? "transparent" : "rgba(252,233,207,.55)"}`, transition: dragging.current ? "none" : "left .25s ease" }} />
+        {/* cut edge left of the dot — a faint frayed trail */}
+        {prog > 0.02 && !ripped && (
+          <div style={{ position: "absolute", top: "50%", left: 0, width: `${prog * 100}%`, borderTop: "2px solid rgba(252,233,207,.18)" }} />
+        )}
+        {!ripped && (
+          <div
+            className={prog === 0 ? "mp-live-pulse" : undefined}
+            style={{
+              position: "absolute", top: "50%", left: `calc(${prog * 100}% - 12px)`, transform: "translateY(-50%)",
+              width: 24, height: 24, borderRadius: "50%",
+              background: "linear-gradient(180deg, #F49B2A, #E27D0C)", border: "2px solid #FFF8EE",
+              boxShadow: "0 0 0 4px rgba(244,155,42,.22)",
+              transition: dragging.current ? "none" : "left .25s ease",
+            }}
+          />
+        )}
+      </div>
+
+      {/* The stub itself — rips off with a paper-tear rotation */}
+      <div style={{
+        position: "relative",
+        background: `radial-gradient(circle 10px at 0 0, transparent 9.5px, ${T.paper} 10px) left top / 51% 100% no-repeat, radial-gradient(circle 10px at 100% 0, transparent 9.5px, ${T.paper} 10px) right top / 51% 100% no-repeat`,
+        borderRadius: "0 0 14px 14px",
+        padding: "12px 18px",
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+        boxShadow: "var(--ed-shadow-card)",
+        transform: ripped ? "rotate(7deg) translate(20px, 46px)" : "none",
+        opacity: ripped ? 0 : 1,
+        transition: "transform .5s cubic-bezier(.3,.7,.4,1), opacity .5s ease",
+        pointerEvents: "none",
+      }}>
+        <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: T.muted2, whiteSpace: "nowrap" }}>
+          № {String(petId).padStart(4, "0")} · {rarity.toUpperCase()}
+        </span>
+        <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: T.mono, textAlign: "center", flex: 1 }}>
+          RIP TO SHARE
+        </span>
+        {/* mini holographic topo patch — same foil as the card */}
+        <span aria-hidden style={{
+          width: 40, height: 26, borderRadius: 6, flexShrink: 0,
+          background: `${HOLO_LINEAR} 50% 50% / 300% 300%`,
+          WebkitMaskImage: TOPO_MASK, maskImage: TOPO_MASK,
+          WebkitMaskSize: "70px 70px", maskSize: "70px 70px",
+          boxShadow: `inset 0 0 0 1px ${T.hair}`,
+        }} />
+      </div>
+
+      {ripped && (
+        <div className="mp-enter" style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: T.creamOn, textAlign: "center", marginTop: 8 }}>
+          TICKET RIPPED ✦ OPENING SHARE…
+        </div>
+      )}
+    </div>
   );
 }
 

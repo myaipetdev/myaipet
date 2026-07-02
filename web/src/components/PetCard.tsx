@@ -22,15 +22,22 @@ const HOLO = "conic-gradient(from 210deg, #FFE08A, #FF9FB0, #C0A6FF, #8FE6D8, #F
 const FOIL_GOLD = "linear-gradient(100deg,#FFF7E6,#F2CD86 32%,#FFFBF0 50%,#E8B257 68%,#FFF7E6)";
 const FOIL_EPIC = "linear-gradient(100deg,#EFE6FA,#B99BE8 32%,#F6F0FD 50%,#9E72E8 68%,#EFE6FA)";
 
+/* Topographic contour tile — masks the holo gradient into foil-stamped
+ * contour lines over the photo (the "holographic ticket" texture). Pure
+ * SVG data-URI, tiled; the holo underneath follows the pointer via --holo-x. */
+export const TOPO_MASK = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cg fill='none' stroke='%23fff' stroke-width='1.4'%3E%3Cpath d='M30 110c0-52 34-74 80-74s80 26 80 74-34 74-80 74-80-22-80-74z'/%3E%3Cpath d='M48 110c0-42 26-58 62-58s62 20 62 58-26 58-62 58-62-16-62-58z'/%3E%3Cpath d='M66 110c0-30 18-44 44-44s44 16 44 44-18 44-44 44-44-14-44-44z'/%3E%3Cpath d='M84 110c0-19 11-28 26-28s26 10 26 28-11 28-26 28-26-9-26-28z'/%3E%3Cpath d='M100 110c0-9 5-13 10-13s10 5 10 13-5 13-10 13-10-4-10-13z'/%3E%3Cpath d='M-10 30c30-18 62-20 92-6M230 196c-32 16-66 16-96 4M-8 180c22 22 52 30 84 26M226 34c-24-20-56-26-88-20'/%3E%3C/g%3E%3Cpath fill='%23fff' d='M110 100l3.2 6.8 6.8 3.2-6.8 3.2-3.2 6.8-3.2-6.8-6.8-3.2 6.8-3.2z'/%3E%3C/svg%3E")`;
+const HOLO_LINEAR = "linear-gradient(118deg,#ff5e8a,#ffd36e,#54ffc8,#5e8aff,#ff5eef,#ff5e8a)";
+
 /* Rarity-tiered material finish — pulling a Legendary must FEEL different from
  * a Common. Declarative record on the card's REAL computed rarity; commons skip
- * the sheen layer entirely (fewer perpetually-animating layers on big grids). */
-const RARITY_FINISH: Record<Rarity, { pad: number; ring: string; sheen: number; gloss: number; foilName: boolean }> = {
-  Common:    { pad: 2, ring: "#E4D9C4", sheen: 0,    gloss: 0.5, foilName: false },
-  Uncommon:  { pad: 2, ring: "#E4D9C4", sheen: 0,    gloss: 0.5, foilName: false },
-  Rare:      { pad: 3, ring: FOIL_GOLD, sheen: 0.14, gloss: 0.6, foilName: false },
-  Epic:      { pad: 3, ring: FOIL_EPIC, sheen: 0.2,  gloss: 0.6, foilName: false },
-  Legendary: { pad: 3, ring: HOLO,      sheen: 0.38, gloss: 0.7, foilName: true },
+ * the sheen layer entirely (fewer perpetually-animating layers on big grids).
+ * `topo` = opacity of the contour-line holo foil over the photo. */
+const RARITY_FINISH: Record<Rarity, { pad: number; ring: string; sheen: number; gloss: number; foilName: boolean; topo: number }> = {
+  Common:    { pad: 2, ring: "#E4D9C4", sheen: 0,    gloss: 0.5, foilName: false, topo: 0 },
+  Uncommon:  { pad: 2, ring: "#E4D9C4", sheen: 0,    gloss: 0.5, foilName: false, topo: 0 },
+  Rare:      { pad: 3, ring: FOIL_GOLD, sheen: 0.14, gloss: 0.6, foilName: false, topo: 0.3 },
+  Epic:      { pad: 3, ring: FOIL_EPIC, sheen: 0.2,  gloss: 0.6, foilName: false, topo: 0.42 },
+  Legendary: { pad: 3, ring: HOLO,      sheen: 0.38, gloss: 0.7, foilName: true,  topo: 0.6 },
 };
 
 export default function PetCard({ card: cardProp, petId, maxWidth = 320, placeholder }: {
@@ -184,6 +191,18 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320, placeho
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--ed-disp)", fontSize: 30, fontWeight: 800, color: "rgba(33,26,18,.3)" }}>{card.speciesName}</div>
               )}
               {fin.sheen > 0 && <div className="ed-holo-sheen" aria-hidden style={{ opacity: fin.sheen }} />}
+              {/* Foil-stamped topographic contours — iridescence shows only
+                  through the contour lines and trails the pointer (--holo-x). */}
+              {fin.topo > 0 && (
+                <div aria-hidden style={{
+                  position: "absolute", inset: 0, pointerEvents: "none",
+                  background: HOLO_LINEAR, backgroundSize: "300% 300%",
+                  backgroundPosition: "var(--holo-x, 50%) var(--holo-y, 50%)",
+                  WebkitMaskImage: TOPO_MASK, maskImage: TOPO_MASK,
+                  WebkitMaskSize: "220px 220px", maskSize: "220px 220px",
+                  mixBlendMode: "screen", opacity: fin.topo,
+                }} />
+              )}
               <div className="ed-gloss" aria-hidden style={{ left: 0, opacity: fin.gloss }} />
             </div>
             {/* Circular rarity seal */}
