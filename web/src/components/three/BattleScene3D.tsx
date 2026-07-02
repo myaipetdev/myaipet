@@ -129,7 +129,7 @@ function SceneLoader() {
       display: "flex", alignItems: "center", justifyContent: "center",
       background: "linear-gradient(180deg, #0a0a18 0%, #060614 100%)",
       borderRadius: 14,
-      color: "#444", fontSize: 12, fontFamily: "'Space Grotesk', sans-serif",
+      color: "#444", fontSize: 13, fontFamily: "'Space Grotesk', sans-serif",
     }}>
       Loading Battle Arena...
     </div>

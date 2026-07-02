@@ -196,7 +196,7 @@ export default function MissionsCard() {
         }}>
           <div style={{ fontSize: 22 }}><Icon name="compass" size={22} /></div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E", textTransform: "uppercase" }}>
+            <div style={{ fontSize: 13, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E", textTransform: "uppercase" }}>
               TODAY · {today.date}
             </div>
             <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", fontFamily: "var(--ed-disp)", color: "#211A12" }}>
@@ -242,7 +242,7 @@ export default function MissionsCard() {
             <a href="/?section=my pet" style={{
               padding: "5px 12px", borderRadius: 8,
               background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-              color: "#211A12", fontWeight: 700, fontSize: 12,
+              color: "#211A12", fontWeight: 700, fontSize: 13,
               textDecoration: "none", fontFamily: "var(--ed-m)",
             }}>Open chat →</a>
           </div>
@@ -266,7 +266,7 @@ export default function MissionsCard() {
               padding: "6px 14px", borderRadius: 8,
               background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
               border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-              color: "#FFF8EE", fontWeight: 800, fontSize: 12,
+              color: "#FFF8EE", fontWeight: 800, fontSize: 13,
               cursor: "pointer", fontFamily: "var(--ed-disp)",
             }}>Restore →</button>
           </div>
@@ -334,7 +334,7 @@ export default function MissionsCard() {
         }}>
           <div>
             <div style={{
-              fontSize: 12, fontFamily: "var(--ed-m)",
+              fontSize: 13, fontFamily: "var(--ed-m)",
               letterSpacing: "0.14em", color: "#9A4E1E", textTransform: "uppercase",
             }}>EARNED TODAY</div>
             <div style={{
@@ -347,7 +347,7 @@ export default function MissionsCard() {
           <div style={{ width: 1, alignSelf: "stretch", background: "var(--ed-hair, rgba(33,26,18,.13))" }} />
           <div>
             <div style={{
-              fontSize: 12, fontFamily: "var(--ed-m)",
+              fontSize: 13, fontFamily: "var(--ed-m)",
               letterSpacing: "0.14em", color: "#9A4E1E", textTransform: "uppercase",
             }}>STILL ON THE TABLE</div>
             <div style={{
@@ -401,7 +401,7 @@ export default function MissionsCard() {
                 <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "var(--ed-m)", color: "#211A12" }}>
                   {streak.shield.credits} cr
                 </div>
-                <div style={{ fontSize: 12, color: "#9A7B4E", fontFamily: "var(--ed-m)" }}>
+                <div style={{ fontSize: 13, color: "#9A7B4E", fontFamily: "var(--ed-m)" }}>
                   ≈ ${streak.shield.usd.toFixed(2)}
                 </div>
               </div>
@@ -441,7 +441,7 @@ export default function MissionsCard() {
                 <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "var(--ed-m)", color: "#211A12" }}>
                   {streak.repair.credits} cr
                 </div>
-                <div style={{ fontSize: 12, color: "#9A7B4E", fontFamily: "var(--ed-m)" }}>
+                <div style={{ fontSize: 13, color: "#9A7B4E", fontFamily: "var(--ed-m)" }}>
                   ≈ ${streak.repair.usd.toFixed(2)}
                 </div>
               </div>
@@ -478,7 +478,7 @@ function UnauthTeaser() {
       }}>
         <div style={{ fontSize: 36 }}><Icon name="compass" size={36} /></div>
         <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E", marginBottom: 4, textTransform: "uppercase" }}>
+          <div style={{ fontSize: 13, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E", marginBottom: 4, textTransform: "uppercase" }}>
             DAILY MISSIONS · STREAK · LEADERBOARD
           </div>
           <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", marginBottom: 4, fontFamily: "var(--ed-disp)", color: "#211A12" }}>
@@ -576,7 +576,7 @@ const ctaBtnPrimary: React.CSSProperties = {
   display: "inline-block",
   padding: "8px 14px", borderRadius: 10,
   background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
-  color: "#FFF8EE", fontWeight: 700, fontSize: 12,
+  color: "#FFF8EE", fontWeight: 700, fontSize: 13,
   textDecoration: "none",
   fontFamily: "var(--ed-disp)",
   border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -585,7 +585,7 @@ const ctaBtnPrimary: React.CSSProperties = {
 const ctaBtnGhost: React.CSSProperties = {
   padding: "8px 14px", borderRadius: 10,
   background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-  color: "#211A12", fontWeight: 700, fontSize: 12,
+  color: "#211A12", fontWeight: 700, fontSize: 13,
   cursor: "pointer", fontFamily: "var(--ed-disp)",
   whiteSpace: "nowrap",
 };
@@ -603,6 +603,6 @@ const purchaseBtn: React.CSSProperties = {
   fontFamily: "var(--ed-disp)",
 };
 const mini: React.CSSProperties = {
-  fontSize: 12, fontFamily: "var(--ed-m)",
+  fontSize: 13, fontFamily: "var(--ed-m)",
   color: "#9A4E1E", letterSpacing: "0.12em", textTransform: "uppercase",
 };

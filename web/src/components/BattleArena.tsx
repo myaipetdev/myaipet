@@ -115,7 +115,7 @@ export default function BattleArena({ data, autoPlay = true }: { data: BattleDat
       <div style={{
         padding: "14px 18px", borderRadius: 12, marginBottom: 18,
         background: "white", border: "1px solid rgba(245,158,11,0.18)",
-        fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
+        fontFamily: "'JetBrains Mono', monospace", fontSize: 13,
         color: "rgba(26,26,46,0.7)", lineHeight: 1.65,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -157,7 +157,7 @@ export default function BattleArena({ data, autoPlay = true }: { data: BattleDat
       <div style={{
         padding: "16px 18px", borderRadius: 12, marginBottom: 18,
         background: "#0f0f1a", color: "#f8f8f8",
-        fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: 1.8,
+        fontFamily: "'JetBrains Mono', monospace", fontSize: 13, lineHeight: 1.8,
         maxHeight: 320, overflowY: "auto",
       }}>
         {data.log.slice(0, revealed).map((entry, i) => (
@@ -230,23 +230,23 @@ function PetCard({ side, pet, hpNow, isWinner }: { side: "player" | "opponent"; 
       </div>
       <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{pet.name}</div>
       {pet.level != null && (
-        <div style={{ fontSize: 12, fontFamily: "mono", color: "rgba(26,26,46,0.5)" }}>
+        <div style={{ fontSize: 13, fontFamily: "mono", color: "rgba(26,26,46,0.5)" }}>
           Lv.{pet.level}
           {pet.ownerWallet && <span> · {pet.ownerWallet}</span>}
         </div>
       )}
       {pet.stats && (
-        <div style={{ fontSize: 12, fontFamily: "mono", color: "rgba(26,26,46,0.6)", display: "flex", gap: 8, marginTop: 2 }}>
+        <div style={{ fontSize: 13, fontFamily: "mono", color: "rgba(26,26,46,0.6)", display: "flex", gap: 8, marginTop: 2 }}>
           <span>ATK {pet.stats.atk}</span>
           <span>DEF {pet.stats.def}</span>
           <span>SPD {pet.stats.spd}</span>
         </div>
       )}
       <div style={{ marginTop: 6 }}>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: side === "player" ? "#34d399" : "#f87171", letterSpacing: "0.05em" }}>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: side === "player" ? "#34d399" : "#f87171", letterSpacing: "0.05em" }}>
           {hpBar(hpNow, pet.hpMax, 14)}
         </div>
-        <div style={{ fontSize: 12, fontFamily: "mono", color: "rgba(26,26,46,0.55)", marginTop: 2 }}>
+        <div style={{ fontSize: 13, fontFamily: "mono", color: "rgba(26,26,46,0.55)", marginTop: 2 }}>
           HP {hpNow} / {pet.hpMax}
         </div>
       </div>

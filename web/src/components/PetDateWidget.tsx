@@ -87,14 +87,14 @@ export default function PetDateWidget() {
           display: "flex", alignItems: "center", gap: 10,
         }}>
           <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="heart" size={22} /></span>
-          <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#7A6E5A" }}>
+          <div style={{ fontSize: 13, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#7A6E5A" }}>
             PET DATE · AI-WRITTEN MEETUP
           </div>
           <div style={{ flex: 1 }} />
           <span style={{
             padding: "3px 8px", borderRadius: 999,
             background: "rgba(190,79,40,0.12)", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-            fontSize: 12, fontWeight: 800,
+            fontSize: 13, fontWeight: 800,
             fontFamily: "var(--ed-m)", color: "#9A4E1E",
           }}>20 cr</span>
         </div>
@@ -155,12 +155,12 @@ function DateLog({ result }: { result: DateResult }) {
         <div style={{
           padding: "4px 10px", borderRadius: 999,
           background: vibe.bg, color: vibe.fg, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-          fontSize: 12, fontWeight: 800,
+          fontSize: 13, fontWeight: 800,
           fontFamily: "var(--ed-m)", letterSpacing: "0.1em",
         }}>{result.vibe.toUpperCase()}</div>
         <div style={{ flex: 1 }} />
         <div style={{
-          fontSize: 12, fontWeight: 800, fontFamily: "var(--ed-m)",
+          fontSize: 13, fontWeight: 800, fontFamily: "var(--ed-m)",
           color: result.friendship >= 0 ? "#9A4E1E" : "#7A6E5A",
         }}>
           friendship {result.friendship >= 0 ? `+${result.friendship}` : result.friendship}

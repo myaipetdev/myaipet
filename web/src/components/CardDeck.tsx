@@ -282,7 +282,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
       {(["collection", "catch", "battle"] as const).map((t) => (
         <button key={t} onClick={() => switchTab(t)} style={{
           padding: "9px 18px", borderRadius: 999, cursor: "pointer",
-          fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase",
+          fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase",
           border: `1px solid ${tab === t ? T.ink : T.hair}`, background: tab === t ? T.ink : T.paper,
           color: tab === t ? T.creamOn : T.muted, boxShadow: tab === t ? "var(--ed-shadow-card)" : "none",
           transition: "all .15s ease",
@@ -386,7 +386,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                   <button key={f.key} onClick={() => setFilter(f.key)} style={{
                     display: "inline-flex", alignItems: "center", gap: 7,
                     padding: "8px 14px", borderRadius: 999, cursor: "pointer",
-                    fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase",
+                    fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase",
                     border: `1px solid ${active ? T.ink : T.hair}`, background: active ? T.ink : T.paper,
                     color: active ? T.creamOn : T.muted, transition: "all .15s ease",
                   }}>
@@ -399,7 +399,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
               })}
             </div>
             <button onClick={() => setSort((s) => (s === "rarity" ? "name" : "rarity"))} style={{
-              fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
+              fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
               color: T.mono, background: "none", border: "none", cursor: "pointer", padding: "6px 2px",
             }}>
               Sort: {sort === "rarity" ? "Rarity ↓" : "A → Z"}
@@ -430,17 +430,17 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
             {visible.length === 0 && filter !== "All" && (
               <div className="mp-enter" style={{ gridColumn: "1 / -1" }}>
                 <div style={{ borderRadius: 18, border: `1px dashed ${T.hair}`, background: T.inset, padding: "30px 22px", textAlign: "center", maxWidth: 460, margin: "0 auto" }}>
-                  <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.mono, marginBottom: 8 }}>No {filter} cards yet</div>
+                  <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.mono, marginBottom: 8 }}>No {filter} cards yet</div>
                   <p style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted2, margin: 0, lineHeight: 1.55 }}>
                     Rarity grows from real care — level, bond and care streak raise a card&apos;s grade.
                   </p>
                   {closestToFilter && (
-                    <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.terraSub, marginTop: 10, fontVariantNumeric: "tabular-nums" }}>
+                    <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.terraSub, marginTop: 10, fontVariantNumeric: "tabular-nums" }}>
                       Closest: {closestToFilter.name} — {closestToFilter.score}/{closestToFilter.threshold} to {filter}
                     </div>
                   )}
                   {filter === "Common" && (
-                    <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.terraSub, marginTop: 10 }}>
+                    <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.terraSub, marginTop: 10 }}>
                       Every card you own has graded above Common
                     </div>
                   )}
@@ -500,7 +500,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
           {battle && (
             <div className="mp-enter" style={{ borderRadius: 22, border: `1px solid ${T.hair}`, padding: 22, background: T.paper, boxShadow: "var(--ed-shadow-card)" }}>
               <div style={{ textAlign: "center", marginBottom: 18 }}>
-                <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.mono, marginBottom: 7 }}>Duel result</div>
+                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.mono, marginBottom: 7 }}>Duel result</div>
                 {/* Headline holds space during the neutral beat, then reveals */}
                 <div style={{ fontFamily: T.disp, fontSize: 26, fontWeight: 800, color: battle.winner === "you" ? T.win : T.terra, opacity: reveal ? 1 : 0, transition: "opacity .35s ease" }}>
                   {battle.winner === "you" ? (
@@ -508,7 +508,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                   ) : `${battle.opponent.name} wins`}
                 </div>
                 {/* Real figures tick up over ~600ms (already tabular) */}
-                <div style={{ fontFamily: T.m, fontSize: 12, color: T.muted, fontWeight: 700, letterSpacing: "0.06em", marginTop: 7, fontVariantNumeric: "tabular-nums" }}>
+                <div style={{ fontFamily: T.m, fontSize: 13, color: T.muted, fontWeight: 700, letterSpacing: "0.06em", marginTop: 7, fontVariantNumeric: "tabular-nums" }}>
                   <Num n={battle.result.turns} /> turns · your HP <Num n={battle.result.yourHp} />/<Num n={battle.result.yourHpMax} /> · their HP <Num n={battle.result.oppHp} />/<Num n={battle.result.oppHpMax} />
                 </div>
               </div>
@@ -529,7 +529,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                       <div style={{ textAlign: "center", marginTop: 9, height: 26 }}>
                         {reveal && isWinner && (
                           <span style={{
-                            display: "inline-block", fontFamily: T.m, fontSize: 12, fontWeight: 700,
+                            display: "inline-block", fontFamily: T.m, fontSize: 13, fontWeight: 700,
                             letterSpacing: "0.18em", textTransform: "uppercase", color: T.win,
                             border: `2px solid ${T.win}`, borderRadius: 6, padding: "3px 10px",
                             animation: "sealPress 380ms 100ms both",
@@ -581,9 +581,9 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
             </div>
             {/* Errors surface INSIDE the overlay — a 402 must never hide under the scrim */}
             {err && (
-              <div style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "9px 12px", fontFamily: T.body, fontSize: 12.5, marginTop: 12, textAlign: "center" }}>{err}</div>
+              <div style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "9px 12px", fontFamily: T.body, fontSize: 13, marginTop: 12, textAlign: "center" }}>{err}</div>
             )}
-            <p style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, textAlign: "center", margin: "12px auto 0", maxWidth: 260, lineHeight: 1.5 }}>
+            <p style={{ fontFamily: T.body, fontSize: 13, color: T.muted, textAlign: "center", margin: "12px auto 0", maxWidth: 260, lineHeight: 1.5 }}>
               Illustrate paints a new stylized portrait — you preview & confirm before it replaces the card. Your original photo is kept until then. Costs 5 credits.
             </p>
           </div>
@@ -594,7 +594,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
       {preview && (
         <Overlay onClose={() => { if (!illustrating) { setPreview(null); setErr(null); } }}>
           <div style={{ maxWidth: 520, margin: "0 auto", textAlign: "center" }}>
-            <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.terra, marginBottom: 6 }}>Preview · not saved yet</div>
+            <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.terra, marginBottom: 6 }}>Preview · not saved yet</div>
             <h3 style={{ fontFamily: T.disp, fontSize: 24, fontWeight: 800, color: T.ink, margin: "0 0 4px", letterSpacing: "-0.02em" }}>Use this as {preview.name}&apos;s card art?</h3>
             <p style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted2, margin: "0 auto 18px", maxWidth: 400, lineHeight: 1.5 }}>
               Your original photo is untouched. Confirm to set the new art on the card, or keep the original. The generated art is also saved in Studio history either way.
@@ -616,7 +616,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
             </div>
             {/* confirmIllustrate PATCH failures surface here, above the scrim */}
             {err && (
-              <div style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "9px 12px", fontFamily: T.body, fontSize: 12.5, marginTop: 14 }}>{err}</div>
+              <div style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "9px 12px", fontFamily: T.body, fontSize: 13, marginTop: 14 }}>{err}</div>
             )}
           </div>
         </Overlay>
@@ -705,10 +705,10 @@ function RipStub({ petId, rarity, onRip }: { petId: number; rarity: Rarity; onRi
         transition: "transform .5s cubic-bezier(.3,.7,.4,1), opacity .5s ease",
         pointerEvents: "none",
       }}>
-        <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: T.muted2, whiteSpace: "nowrap" }}>
+        <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", color: T.muted2, whiteSpace: "nowrap" }}>
           № {String(petId).padStart(4, "0")} · {rarity.toUpperCase()}
         </span>
-        <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: T.mono, textAlign: "center", flex: 1 }}>
+        <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", color: T.mono, textAlign: "center", flex: 1 }}>
           RIP TO SHARE
         </span>
         {/* mini holographic topo patch — same foil as the card */}
@@ -722,7 +722,7 @@ function RipStub({ petId, rarity, onRip }: { petId: number; rarity: Rarity; onRi
       </div>
 
       {ripped && (
-        <div className="mp-enter" style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: T.creamOn, textAlign: "center", marginTop: 8 }}>
+        <div className="mp-enter" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", color: T.creamOn, textAlign: "center", marginTop: 8 }}>
           TICKET RIPPED ✦ OPENING SHARE…
         </div>
       )}
@@ -731,8 +731,8 @@ function RipStub({ petId, rarity, onRip }: { petId: number; rarity: Rarity; onRi
 }
 
 // Primary action — ink fill, mono label, soft floating shadow (never a hard offset)
-const btn: React.CSSProperties = { padding: "9px 15px", borderRadius: 999, border: `1px solid ${T.ink}`, background: T.ink, color: T.creamOn, fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", boxShadow: "var(--ed-shadow-card)" };
-const ghost: React.CSSProperties = { padding: "9px 15px", borderRadius: 999, border: `1px solid ${T.hair}`, background: T.paper, color: T.ink70, fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" };
+const btn: React.CSSProperties = { padding: "9px 15px", borderRadius: 999, border: `1px solid ${T.ink}`, background: T.ink, color: T.creamOn, fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", boxShadow: "var(--ed-shadow-card)" };
+const ghost: React.CSSProperties = { padding: "9px 15px", borderRadius: 999, border: `1px solid ${T.hair}`, background: T.paper, color: T.ink70, fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" };
 const select: React.CSSProperties = { padding: "9px 13px", borderRadius: 12, border: `1px solid ${T.hair}`, fontFamily: T.body, fontSize: 14, color: T.ink, background: T.paper, minWidth: 180 };
 
 /** Outline camera glyph in currentColor — legible on both the active ink pill
@@ -749,7 +749,7 @@ function CameraGlyph({ size = 15 }: { size?: number }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", color: T.mono, textTransform: "uppercase" }}>{label}</span>
+      <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: T.mono, textTransform: "uppercase" }}>{label}</span>
       {children}
     </div>
   );
@@ -765,7 +765,7 @@ function PreviewCol({ label, accent, delay = 0, children }: { label: string; acc
   return (
     <div className="mp-enter" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, animationDelay: `${delay}ms` }}>
       {children}
-      <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: accent ? T.terra : T.muted }}>{label}</span>
+      <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: accent ? T.terra : T.muted }}>{label}</span>
     </div>
   );
 }
@@ -780,8 +780,8 @@ function SlotTile() {
       alignItems: "center", justifyContent: "center", gap: 10, textAlign: "center", padding: 14,
     }}>
       <Icon name="paw" size={30} style={{ opacity: 0.32 }} />
-      <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted }}>Empty slot</div>
-      <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: T.mono }}>Adopt ▸</div>
+      <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted }}>Empty slot</div>
+      <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: T.mono }}>Adopt ▸</div>
     </div>
   );
 }
@@ -803,7 +803,7 @@ function CatchTile({ onClick, delay = 0 }: { onClick?: () => void; delay?: numbe
       <span style={{
         marginTop: 4, padding: "8px 16px", borderRadius: 999,
         background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
-        fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase",
+        fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase",
       }}>Open camera</span>
     </button>
   );
@@ -841,7 +841,7 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
 function RarityCount({ rarity, n }: { rarity: Rarity; n: number }) {
   const v = useCountUp(n, 600);
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.m, fontSize: 12, fontWeight: 700, color: T.muted2, fontVariantNumeric: "tabular-nums" }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted2, fontVariantNumeric: "tabular-nums" }}>
       <span style={{ width: 8, height: 8, borderRadius: "50%", background: rarityColor(rarity), display: "inline-block" }} />{v}
     </span>
   );
@@ -854,14 +854,14 @@ function Shell({ children, owned, rarityCounts }: { children: React.ReactNode; o
       <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
       <div style={{ position: "relative", zIndex: 2, maxWidth: 1060, margin: "0 auto", padding: "8px 0 48px" }}>
         <div style={{ marginBottom: 22 }}>
-          <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", color: T.terra, textTransform: "uppercase" }}>Field Album · Gotta Catch The Real Ones</div>
+          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: T.terra, textTransform: "uppercase" }}>Field Album · Gotta Catch The Real Ones</div>
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginTop: 8 }}>
             <h1 style={{ fontFamily: T.disp, fontSize: 46, fontWeight: 800, color: T.ink, margin: 0, letterSpacing: "-0.02em", lineHeight: 1.02 }}>Your collection</h1>
             {/* HONEST progress — the REAL owned count. No fabricated denominator,
                 because a card is minted from a pet you own (no fixed universe). */}
             <div style={{ minWidth: 220, textAlign: "right" }}>
               <div style={{ fontFamily: T.disp, fontSize: 20, fontWeight: 800, color: T.ink, fontVariantNumeric: "tabular-nums" }}>
-                {ownedC} <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: T.muted, textTransform: "uppercase" }}>{owned === 1 ? "card collected" : "cards collected"}</span>
+                {ownedC} <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", color: T.muted, textTransform: "uppercase" }}>{owned === 1 ? "card collected" : "cards collected"}</span>
               </div>
               {owned > 0 && rarityCounts && (
                 <div style={{ display: "inline-flex", gap: 12, marginTop: 8, justifyContent: "flex-end" }}>

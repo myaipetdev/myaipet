@@ -64,11 +64,11 @@ function ProductMockupWithAvatar({ shape, avatar, color }: { shape: string; avat
         padding: "4px 10px", borderRadius: 20,
         background: "rgba(255,255,255,0.25)",
         backdropFilter: "blur(4px)",
-        fontSize: 12, color: "rgba(255,255,255,0.9)",
+        fontSize: 13, color: "rgba(255,255,255,0.9)",
         fontFamily: "var(--ed-m)", fontWeight: 600, letterSpacing: "0.05em",
       }}>
         {productIcons[shape]
-          ? <span style={{ fontSize: 12 }}>{productIcons[shape]}</span>
+          ? <span style={{ fontSize: 13 }}>{productIcons[shape]}</span>
           : <Icon name="paw" size={13} />}
         MY AI PET
       </div>
@@ -132,7 +132,7 @@ function ProductMockup({ item, isLocked, petAvatar, mockupImage }: { item: Rewar
               <Icon name="paw" size={28} />
             </div>
             <span style={{
-              fontSize: 12, color: "rgba(255,255,255,0.7)",
+              fontSize: 13, color: "rgba(255,255,255,0.7)",
               fontFamily: "var(--ed-m)", fontWeight: 600,
             }}>
               MY AI PET
@@ -146,7 +146,7 @@ function ProductMockup({ item, isLocked, petAvatar, mockupImage }: { item: Rewar
         <div style={{
           position: "absolute", top: 12, right: 12,
           padding: "4px 10px", borderRadius: 6,
-          fontSize: 12, fontWeight: 800, letterSpacing: "0.08em",
+          fontSize: 13, fontWeight: 800, letterSpacing: "0.08em",
           background: isLocked
             ? "rgba(33,26,18,0.1)"
             : item.badge === "LIMITED"
@@ -238,7 +238,7 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
                 <Icon name="paw" size={28} />
               </div>
               <span style={{
-                fontSize: 12, color: "rgba(255,255,255,0.7)",
+                fontSize: 13, color: "rgba(255,255,255,0.7)",
                 fontFamily: "var(--ed-m)", fontWeight: 600,
               }}>
                 MY AI PET
@@ -262,7 +262,7 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
               <span style={{
                 padding: "3px 8px",
                 borderRadius: 5,
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: 800,
                 letterSpacing: "0.08em",
                 background: item.badge === "LIMITED" ? "#211A12" : "#BE4F28",
@@ -755,7 +755,7 @@ export default function Rewards() {
                     {completed ? "\u2713" : `D${dayNum}`}
                   </span>
                   <span style={{
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: 600,
                     color: completed ? "rgba(255,248,238,0.85)" : isToday ? "#9A4E1E" : "#5C5140",
                   }}>
@@ -858,7 +858,7 @@ export default function Rewards() {
         </div>
         <div style={{ flex: 1, minWidth: 160 }}>
           <div style={{
-            fontFamily: "var(--ed-m)", fontSize: 12,
+            fontFamily: "var(--ed-m)", fontSize: 13,
             fontWeight: 700, color: userTier ? userTier.color : "#7A6E5A",
             textTransform: "uppercase" as const, letterSpacing: "0.12em", marginBottom: 4,
           }}>
@@ -898,7 +898,7 @@ export default function Rewards() {
               padding: "6px 12px", borderRadius: 10,
               background: userTier?.tier === t.tier ? `${t.color}20` : "rgba(33,26,18,0.03)",
               border: userTier?.tier === t.tier ? `1.5px solid ${t.color}40` : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-              fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+              fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
               color: userTier?.tier === t.tier ? t.color : "rgba(33,26,18,0.45)",
               transition: "all 0.2s",
               display: "flex", alignItems: "center", gap: 4,
@@ -1202,7 +1202,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 32,
   },
   pointsLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 500,
     color: "#9A4E1E",
     textTransform: "uppercase" as const,
@@ -1303,13 +1303,13 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#9A4E1E",
   },
   costUnit: {
-    fontSize: 12,
+    fontSize: 13,
     color: "#9A7B4E",
     fontWeight: 500,
     marginLeft: 2,
   },
   levelReq: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 600,
     padding: "3px 10px",
     borderRadius: 12,
@@ -1428,7 +1428,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   milestoneLv: {
     fontFamily: "var(--ed-m)",
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 600,
     color: "#9A4E1E",
   },

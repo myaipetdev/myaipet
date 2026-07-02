@@ -118,7 +118,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
           // ── SIGNED IN: personal Season Rewards standing (by loyalty points) ──
           <div style={{ position: "relative" }}>
             <div style={{
-              fontFamily: "var(--ed-m)", fontSize: 12,
+              fontFamily: "var(--ed-m)", fontSize: 13,
               color: "rgba(255,255,255,0.5)", letterSpacing: "0.16em", marginBottom: 6,
             }}>
               {me.petName.toUpperCase()} · RANK #{me.rank} · LV.{me.petLevel}
@@ -173,7 +173,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
                 </div>
                 <button onClick={() => onNavigate?.("my pet")} style={{
                   padding: "6px 14px", borderRadius: 8, border: "none",
-                  background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontWeight: 700, fontSize: 12, cursor: "pointer",
+                  background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontWeight: 700, fontSize: 13, cursor: "pointer",
                   fontFamily: "var(--ed-disp)",
                 }}>Raise →</button>
               </div>
@@ -236,7 +236,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
             <div style={{ display: "grid", gap: 6 }}>
               {ticker.slice(0, 5).map((e, i) => (
                 <div key={i} style={{
-                  display: "flex", alignItems: "center", gap: 10, fontSize: 12,
+                  display: "flex", alignItems: "center", gap: 10, fontSize: 13,
                   fontFamily: "var(--ed-body)", color: "#211A12",
                 }}>
                   <span style={{
@@ -246,7 +246,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
                   <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {e.text}
                   </span>
-                  <span style={{ fontSize: 12, color: "#9A7B4E", fontFamily: "var(--ed-m)" }}>
+                  <span style={{ fontSize: 13, color: "#9A7B4E", fontFamily: "var(--ed-m)" }}>
                     {timeAgo(e.at, now)}
                   </span>
                 </div>
@@ -275,7 +275,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
               <button onClick={() => onNavigate?.("my pet")} style={{
                 marginTop: 12, padding: "6px 12px", borderRadius: 8,
                 border: "1px solid rgba(190,79,40,0.3)", background: "#FBF6EC",
-                color: "#9A4E1E", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                color: "#9A4E1E", fontSize: 13, fontWeight: 700, cursor: "pointer",
                 fontFamily: "var(--ed-disp)",
               }}>Reply →</button>
             </>
@@ -361,7 +361,7 @@ function PathCard({ step, icon, title, body, earn, cta, onClick, accent }: {
       onClick={onClick}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#9A7B4E", letterSpacing: "0.08em" }}>{step}</span>
+        <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "#9A7B4E", letterSpacing: "0.08em" }}>{step}</span>
         <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name={icon} size={22} /></span>
       </div>
       <div style={{ fontSize: 17, fontWeight: 800, color: "#211A12", letterSpacing: "-0.02em", fontFamily: "var(--ed-disp)" }}>{title}</div>
@@ -369,11 +369,11 @@ function PathCard({ step, icon, title, body, earn, cta, onClick, accent }: {
       <div style={{
         marginTop: 4, padding: "4px 10px", borderRadius: 6,
         background: `${accent}10`, color: accent,
-        fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700,
+        fontSize: 13, fontFamily: "var(--ed-m)", fontWeight: 700,
         alignSelf: "flex-start", letterSpacing: "0.04em",
       }}>{earn}</div>
       {onClick && (
-        <div style={{ marginTop: 6, fontSize: 12, fontWeight: 700, color: accent, display: "flex", alignItems: "center", gap: 4 }}>
+        <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700, color: accent, display: "flex", alignItems: "center", gap: 4 }}>
           {cta} →
         </div>
       )}
@@ -385,7 +385,7 @@ function PathCard({ step, icon, title, body, earn, cta, onClick, accent }: {
 const pill: React.CSSProperties = {
   display: "inline-block", padding: "5px 14px", borderRadius: 999,
   background: "rgba(190,79,40,0.10)", color: "#9A4E1E",
-  fontSize: 12, fontWeight: 700, letterSpacing: "0.16em",
+  fontSize: 13, fontWeight: 700, letterSpacing: "0.16em",
   textTransform: "uppercase", marginBottom: 14,
   fontFamily: "var(--ed-m)",
 };
@@ -400,12 +400,12 @@ const sub: React.CSSProperties = {
   fontFamily: "var(--ed-body)",
 };
 const miniLabel: React.CSSProperties = {
-  fontFamily: "var(--ed-m)", fontSize: 12,
+  fontFamily: "var(--ed-m)", fontSize: 13,
   color: "rgba(255,255,255,0.55)", letterSpacing: "0.16em",
   marginBottom: 6, fontWeight: 700,
 };
 const mini: React.CSSProperties = {
-  fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 6,
+  fontSize: 13, color: "rgba(255,255,255,0.5)", marginTop: 6,
   fontFamily: "var(--ed-m)",
 };
 const bigNumber: React.CSSProperties = {

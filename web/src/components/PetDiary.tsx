@@ -55,14 +55,14 @@ export default function PetDiary({
       }}>
         <div style={{
           display: "flex", alignItems: "center", gap: 8,
-          fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
           letterSpacing: "0.12em", color: accent, fontWeight: 800, textTransform: "uppercase",
         }}>
           <Icon name="scroll" size={14} /> {petName}&rsquo;s week
         </div>
         {week && (
           <span style={{
-            fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
             color: "rgba(26,26,46,0.4)",
           }}>
             week of {week}

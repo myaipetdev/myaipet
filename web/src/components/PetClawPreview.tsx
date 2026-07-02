@@ -42,7 +42,7 @@ export default function PetClawPreview({ cta }: { cta?: ReactNode }) {
         boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       }}>
         <div style={{ position: "relative" }}>
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.14em", color: "#9A7B4E", marginBottom: 12 }}>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, letterSpacing: "0.14em", color: "#9A7B4E", marginBottom: 12 }}>
             PETCLAW · DATA SOVEREIGNTY
           </div>
           <h1 style={{ fontFamily: "var(--ed-disp)", fontSize: 32, fontWeight: 800, letterSpacing: "-0.03em", margin: "0 0 12px", lineHeight: 1.12 }}>
@@ -73,9 +73,9 @@ export default function PetClawPreview({ cta }: { cta?: ReactNode }) {
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
           <span style={{ fontSize: 20 }}><Icon name="world-map" size={20} /></span>
           <span style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 18, color: "#211A12" }}>Pet Network</span>
-          <span style={{ fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.08em", padding: "3px 10px", borderRadius: 999, background: "rgba(26,126,104,0.12)", color: "#1A7E68" }}>LIVE · PUBLIC</span>
+          <span style={{ fontSize: 13, fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.08em", padding: "3px 10px", borderRadius: 999, background: "rgba(26,126,104,0.12)", color: "#1A7E68" }}>LIVE · PUBLIC</span>
           <div style={{ flex: 1 }} />
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--ed-m)", fontSize: 12, color: "#1A7E68", fontWeight: 700 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--ed-m)", fontSize: 13, color: "#1A7E68", fontWeight: 700 }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#1A7E68" }} />
             {onlineAll.length} online
           </span>
@@ -93,11 +93,11 @@ export default function PetClawPreview({ cta }: { cta?: ReactNode }) {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 700, fontSize: 14, color: "#211A12", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.name}</div>
-                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A", marginTop: 1 }}>
+                  <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A", marginTop: 1 }}>
                     {[n.personality, n.element, n.level != null ? `Lv.${n.level}` : null].filter(Boolean).join(" · ")}
                   </div>
                 </div>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, padding: "4px 10px", borderRadius: 999, background: "rgba(26,126,104,0.1)", border: "1px solid rgba(26,126,104,0.25)", color: "#1A7E68", fontFamily: "var(--ed-m)", fontWeight: 700 }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, padding: "4px 10px", borderRadius: 999, background: "rgba(26,126,104,0.1)", border: "1px solid rgba(26,126,104,0.25)", color: "#1A7E68", fontFamily: "var(--ed-m)", fontWeight: 700 }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z" />
                   </svg>

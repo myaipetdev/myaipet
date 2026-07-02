@@ -49,7 +49,7 @@ export default function StatsPage() {
           padding: "16px 20px", borderRadius: 10,
           background: "rgba(245,158,11,0.06)",
           border: "1px solid rgba(245,158,11,0.18)",
-          fontSize: 12, color: "rgba(26,26,46,0.7)", lineHeight: 1.6,
+          fontSize: 13, color: "rgba(26,26,46,0.7)", lineHeight: 1.6,
           fontFamily: "'JetBrains Mono', monospace",
         }}>
           What's publicly verifiable today: deployed contracts at{" "}
@@ -63,7 +63,7 @@ export default function StatsPage() {
         <div style={{
           marginTop: 22, padding: 14, borderRadius: 10,
           background: "white", border: "1px solid rgba(0,0,0,0.06)",
-          fontSize: 12, color: "rgba(26,26,46,0.5)",
+          fontSize: 13, color: "rgba(26,26,46,0.5)",
         }}>
           Admin / backer access:{" "}
           <a href="/admin/analytics" style={{ color: "#b45309", fontWeight: 700, textDecoration: "underline" }}>

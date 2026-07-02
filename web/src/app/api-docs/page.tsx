@@ -180,7 +180,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
 
         <div style={{
           marginTop: 60, paddingTop: 24, borderTop: "1px solid rgba(0,0,0,0.06)",
-          fontSize: 12, color: "rgba(26,26,46,0.65)", lineHeight: 1.6,
+          fontSize: 13, color: "rgba(26,26,46,0.65)", lineHeight: 1.6,
         }}>
           Source files: <a href="/api-docs/QUICKSTART.md" style={{ color: "#b45309" }}>QUICKSTART.md</a> ·{" "}
           <a href="/api-docs/API.md" style={{ color: "#b45309" }}>API.md</a> ·{" "}

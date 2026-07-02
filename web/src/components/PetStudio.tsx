@@ -217,7 +217,7 @@ export default function PetStudio() {
           <span style={tag}>BETA</span>
         </div>
         <div style={{ width: 1, height: 22, background: "rgba(0,0,0,0.08)" }} />
-        <div style={{ color: "rgba(26,26,46,0.55)", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
+        <div style={{ color: "rgba(26,26,46,0.55)", fontFamily: "'JetBrains Mono', monospace", fontSize: 13 }}>
           Project: <strong style={{ color: "#1a1a2e" }}>Untitled · {pet?.name || "no pet"}</strong>
         </div>
         <div style={{ flex: 1 }} />
@@ -248,7 +248,7 @@ export default function PetStudio() {
             {(["templates", "pets", "music", "history"] as LibraryTab[]).map(t => (
               <button key={t} onClick={() => setLibTab(t)} style={{
                 padding: "10px 0", border: "none", cursor: "pointer", background: "white",
-                fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
                 fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
                 color: libTab === t ? "#b45309" : "rgba(26,26,46,0.45)",
                 borderBottom: libTab === t ? "2px solid #f59e0b" : "2px solid transparent",
@@ -274,7 +274,7 @@ export default function PetStudio() {
               pets.length === 0 ? (
                 <div style={emptyState}>
                   <div style={{ fontSize: 24, marginBottom: 6 }}><Icon name="paw" size={28} /></div>
-                  <div style={{ fontSize: 12, color: "rgba(26,26,46,0.55)", marginBottom: 10 }}>No pet yet. Adopt one to use as a character.</div>
+                  <div style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", marginBottom: 10 }}>No pet yet. Adopt one to use as a character.</div>
                   <a href="/?section=my pet" style={btnPrimarySmall}>Adopt →</a>
                 </div>
               ) : (
@@ -312,7 +312,7 @@ export default function PetStudio() {
             {libTab === "history" && (
               history.length === 0 ? (
                 <div style={emptyState}>
-                  <div style={{ fontSize: 12, color: "rgba(26,26,46,0.55)" }}>No generations yet.</div>
+                  <div style={{ fontSize: 13, color: "rgba(26,26,46,0.55)" }}>No generations yet.</div>
                 </div>
               ) : (
                 <div style={{ display: "grid", gap: 8 }}>
@@ -367,7 +367,7 @@ export default function PetStudio() {
                     <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.01em" }}>
                       {pet.name} {chosenTemplate ? `— ${chosenTemplate.title}` : ""}
                     </div>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>
                       Preview will appear here after Generate.
                     </div>
                   </div>
@@ -388,7 +388,7 @@ export default function PetStudio() {
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
               <span style={mini}>TIMELINE</span>
-              <span style={{ fontSize: 12, color: "rgba(26,26,46,0.4)", fontFamily: "'JetBrains Mono', monospace" }}>
+              <span style={{ fontSize: 13, color: "rgba(26,26,46,0.4)", fontFamily: "'JetBrains Mono', monospace" }}>
                 {chosenModel ? `${chosenModel.maxDurationSec}s · ${chosenModel.maxResolution}` : ""}
               </span>
               <div style={{ flex: 1 }} />
@@ -430,7 +430,7 @@ export default function PetStudio() {
                     <button onClick={() => setChosenTemplate(null)} style={{
                       marginLeft: "auto", padding: "3px 8px", borderRadius: 6,
                       border: "1px solid rgba(0,0,0,0.08)", background: "white",
-                      fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#1a1a2e",
+                      fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#1a1a2e",
                     }}>✕</button>
                   </div>
                 </Field>
@@ -439,7 +439,7 @@ export default function PetStudio() {
                   <div style={{
                     padding: 10, borderRadius: 8,
                     background: "rgba(0,0,0,0.03)",
-                    fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
+                    fontFamily: "'JetBrains Mono', monospace", fontSize: 13,
                     color: "rgba(26,26,46,0.7)", lineHeight: 1.5,
                     border: "1px solid rgba(0,0,0,0.05)",
                   }}>{chosenTemplate.previewPrompt}</div>
@@ -469,7 +469,7 @@ export default function PetStudio() {
                   style={{
                     width: "100%", padding: 8, borderRadius: 8,
                     border: "1px solid rgba(0,0,0,0.12)",
-                    fontSize: 12, fontFamily: "'Space Grotesk',sans-serif",
+                    fontSize: 13, fontFamily: "'Space Grotesk',sans-serif",
                   }} />
               </Field>
             )}
@@ -477,7 +477,7 @@ export default function PetStudio() {
             <Field label="MODEL">
               <select value={chosenModelId} onChange={e => setChosenModelId(e.target.value)} style={{
                 width: "100%", padding: 8, borderRadius: 8,
-                border: "1px solid rgba(0,0,0,0.12)", fontSize: 12, background: "white",
+                border: "1px solid rgba(0,0,0,0.12)", fontSize: 13, background: "white",
                 fontFamily: "'Space Grotesk',sans-serif",
               }}>
                 {videoModels.map(m => (
@@ -487,10 +487,10 @@ export default function PetStudio() {
                 ))}
               </select>
               {chosenModel && (
-                <div style={{ marginTop: 6, fontSize: 12, color: "rgba(26,26,46,0.55)", lineHeight: 1.5 }}>
+                <div style={{ marginTop: 6, fontSize: 13, color: "rgba(26,26,46,0.55)", lineHeight: 1.5 }}>
                   {chosenModel.description}
                   {chosenModel.supportsImageRef && pet?.avatar_url && (
-                    <div style={{ marginTop: 4, color: "#16a34a", fontWeight: 700, fontSize: 12, fontFamily: "'JetBrains Mono', monospace" }}>
+                    <div style={{ marginTop: 4, color: "#16a34a", fontWeight: 700, fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}>
                       ✓ Using {pet.name}'s photo as character anchor
                     </div>
                   )}
@@ -508,7 +508,7 @@ export default function PetStudio() {
 
             {statusMsg && (
               <div style={{
-                padding: "8px 12px", borderRadius: 8, fontSize: 12,
+                padding: "8px 12px", borderRadius: 8, fontSize: 13,
                 background: previewUrl ? "rgba(22,163,74,0.08)" : "rgba(245,158,11,0.08)",
                 border: `1px solid ${previewUrl ? "rgba(22,163,74,0.2)" : "rgba(245,158,11,0.2)"}`,
                 color: previewUrl ? "#16a34a" : "#b45309", fontWeight: 600,
@@ -620,9 +620,9 @@ function LibraryRow({ leading, title, subtitle, selected, onClick }: {
         background: "rgba(0,0,0,0.04)", flexShrink: 0,
       }}>{leading}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
+        <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
         {subtitle && (
-          <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.5)", marginTop: 1 }}>{subtitle}</div>
+          <div style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.5)", marginTop: 1 }}>{subtitle}</div>
         )}
       </div>
     </button>
@@ -640,7 +640,7 @@ function TimelineStrip({ videoClip, imageClip, templateTitle, duration }: {
       {/* Ruler */}
       <div style={{
         display: "flex", alignItems: "center", height: 14,
-        fontSize: 12, color: "rgba(26,26,46,0.4)",
+        fontSize: 13, color: "rgba(26,26,46,0.4)",
         fontFamily: "'JetBrains Mono', monospace",
       }}>
         {Array.from({ length: Math.max(5, duration) }).map((_, i) => (
@@ -662,7 +662,7 @@ function TimelineStrip({ videoClip, imageClip, templateTitle, duration }: {
             background: "linear-gradient(90deg, rgba(245,158,11,0.4), rgba(251,191,36,0.3))",
             border: "1px solid rgba(245,158,11,0.5)",
             display: "flex", alignItems: "center", padding: "0 10px",
-            fontSize: 12, fontWeight: 700, color: "#1a1a2e",
+            fontSize: 13, fontWeight: 700, color: "#1a1a2e",
             gap: 6,
           }}>
             {videoClip ? <ClapperboardIcon size={13} /> : <ImageIcon size={13} />} {templateTitle || "Clip"}
@@ -674,7 +674,7 @@ function TimelineStrip({ videoClip, imageClip, templateTitle, duration }: {
         height: 22, borderRadius: 6,
         background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.06)",
         display: "flex", alignItems: "center", gap: 6, padding: "0 8px",
-        fontSize: 12, color: "rgba(26,26,46,0.4)",
+        fontSize: 13, color: "rgba(26,26,46,0.4)",
         fontFamily: "'JetBrains Mono', monospace",
       }}>
         <MusicNoteIcon size={11} /> (no music selected — add inside the editor)
@@ -717,7 +717,7 @@ function Pill({ label, value, accent }: { label: string; value: string; accent?:
       display: "flex", alignItems: "baseline", gap: 6,
     }}>
       <span style={{
-        fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
         color: "rgba(26,26,46,0.5)", letterSpacing: "0.1em",
       }}>{label}</span>
       <span style={{
@@ -739,7 +739,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const mini: React.CSSProperties = {
-  fontSize: 12, fontWeight: 800, letterSpacing: "0.14em",
+  fontSize: 13, fontWeight: 800, letterSpacing: "0.14em",
   textTransform: "uppercase", color: "rgba(26,26,46,0.5)",
   fontFamily: "'JetBrains Mono', monospace",
 };
@@ -747,7 +747,7 @@ const mini: React.CSSProperties = {
 const tag: React.CSSProperties = {
   padding: "2px 8px", borderRadius: 999,
   background: "rgba(245,158,11,0.12)", color: "#b45309",
-  fontSize: 12, fontWeight: 800, letterSpacing: "0.08em",
+  fontSize: 13, fontWeight: 800, letterSpacing: "0.08em",
   fontFamily: "'JetBrains Mono', monospace",
 };
 
@@ -764,7 +764,7 @@ const btnPrimarySmall: React.CSSProperties = {
   display: "inline-block",
   padding: "6px 14px", borderRadius: 8, border: "none",
   background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
-  color: "white", fontWeight: 700, fontSize: 12, cursor: "pointer",
+  color: "white", fontWeight: 700, fontSize: 13, cursor: "pointer",
   fontFamily: "'Space Grotesk',sans-serif", textDecoration: "none",
 };
 
@@ -772,7 +772,7 @@ const btnGhost: React.CSSProperties = {
   display: "inline-block",
   padding: "6px 12px", borderRadius: 8,
   border: "1px solid rgba(0,0,0,0.08)", background: "white",
-  color: "#1a1a2e", fontWeight: 700, fontSize: 12, cursor: "pointer",
+  color: "#1a1a2e", fontWeight: 700, fontSize: 13, cursor: "pointer",
   fontFamily: "'Space Grotesk',sans-serif", textDecoration: "none",
 };
 

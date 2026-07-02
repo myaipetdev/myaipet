@@ -144,7 +144,7 @@ export default function Marketplace() {
           animation: "spin 0.8s linear infinite", margin: "0 auto 16px",
         }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-        <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Loading marketplace...</div>
+        <div style={{ fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.3)" }}>Loading marketplace...</div>
       </div>
     );
   }
@@ -179,7 +179,7 @@ export default function Marketplace() {
           }}>
             Marketplace
           </h2>
-          <p style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+          <p style={{ fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.3)" }}>
             Equip your pet with items, boosts, and cosmetics
           </p>
         </div>
@@ -192,7 +192,7 @@ export default function Marketplace() {
               style={{
                 padding: "8px 14px", borderRadius: 10,
                 border: "1px solid rgba(255,255,255,0.08)",
-                fontFamily: "monospace", fontSize: 12, color: "#fff",
+                fontFamily: "monospace", fontSize: 13, color: "#fff",
                 background: "rgba(255,255,255,0.05)",
                 backdropFilter: "blur(8px)",
                 cursor: "pointer",
@@ -230,7 +230,7 @@ export default function Marketplace() {
             ? "linear-gradient(135deg, rgba(74,222,128,0.1), rgba(74,222,128,0.03))"
             : "linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.03))",
           border: message.type === "success" ? "1px solid rgba(74,222,128,0.2)" : "1px solid rgba(239,68,68,0.2)",
-          fontFamily: "monospace", fontSize: 12,
+          fontFamily: "monospace", fontSize: 13,
           color: message.type === "success" ? "#4ade80" : "#f87171",
           animation: "slideIn 0.3s ease-out",
           backdropFilter: "blur(8px)",
@@ -251,7 +251,7 @@ export default function Marketplace() {
             background: category === c.key ? "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05))" : "transparent",
             border: category === c.key ? "1px solid rgba(245,158,11,0.2)" : "1px solid transparent",
             borderRadius: 10, padding: "8px 16px", cursor: "pointer",
-            fontFamily: "monospace", fontSize: 12, fontWeight: category === c.key ? 700 : 500,
+            fontFamily: "monospace", fontSize: 13, fontWeight: category === c.key ? 700 : 500,
             color: category === c.key ? "#f59e0b" : "rgba(255,255,255,0.3)",
             transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
             position: "relative",
@@ -278,7 +278,7 @@ export default function Marketplace() {
               marginBottom: 16, padding: "12px 18px", borderRadius: 12,
               background: "linear-gradient(135deg, rgba(167,139,250,0.1), rgba(167,139,250,0.03))",
               border: "1px solid rgba(167,139,250,0.2)",
-              fontFamily: "monospace", fontSize: 12, color: "#a78bfa",
+              fontFamily: "monospace", fontSize: 13, color: "#a78bfa",
               animation: "slideIn 0.3s ease-out",
               backdropFilter: "blur(8px)",
             }}>
@@ -289,7 +289,7 @@ export default function Marketplace() {
           {/* Equipped Skills (4 RPG-style slots) */}
           <div style={{ marginBottom: 24 }}>
             <div style={{
-              fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.4)",
+              fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.4)",
               marginBottom: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em",
             }}>
               EQUIPPED SKILLS ({petSkills.filter((s: any) => s.slot !== null).length}/4)
@@ -317,14 +317,14 @@ export default function Marketplace() {
                     {def ? (
                       <>
                         <div style={{ fontSize: 28, marginBottom: 6, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))" }}><Icon name={ELEMENT_ICONS[def.element] || "normal"} size={28} /></div>
-                        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 700, color: "#fff" }}>
+                        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#fff" }}>
                           {def.name}
                         </div>
-                        <div style={{ fontFamily: "monospace", fontSize: 12, color: el!.color, marginBottom: 6, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <div style={{ fontFamily: "monospace", fontSize: 13, color: el!.color, marginBottom: 6, display: "inline-flex", alignItems: "center", gap: 4 }}>
                           <Icon name={ELEMENT_ICONS[def.element] || "normal"} size={10} /> {def.element} | {"★".repeat(equipped.level)}
                         </div>
                         <button onClick={() => handleUnequipSkill(equipped.skill_key)} style={{
-                          fontFamily: "monospace", fontSize: 12, color: "#f87171",
+                          fontFamily: "monospace", fontSize: 13, color: "#f87171",
                           background: "rgba(248,113,113,0.08)",
                           border: "1px solid rgba(248,113,113,0.2)", borderRadius: 6,
                           padding: "3px 10px", cursor: "pointer",
@@ -347,7 +347,7 @@ export default function Marketplace() {
                         }}>
                           <span style={{ fontSize: 18, color: "rgba(255,255,255,0.12)" }}>+</span>
                         </div>
-                        <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.15)" }}>
+                        <div style={{ fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.15)" }}>
                           Slot {slot + 1}
                         </div>
                       </div>
@@ -362,7 +362,7 @@ export default function Marketplace() {
           {petSkills.filter((s: any) => s.slot === null).length > 0 && (
             <div style={{ marginBottom: 24 }}>
               <div style={{
-                fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.4)",
+                fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.4)",
                 marginBottom: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em",
               }}>
                 LEARNED SKILLS (not equipped)
@@ -395,7 +395,7 @@ export default function Marketplace() {
                           <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#fff" }}>
                             {def.name}
                           </div>
-                          <div style={{ fontFamily: "monospace", fontSize: 12, color: el.color, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <div style={{ fontFamily: "monospace", fontSize: 13, color: el.color, display: "inline-flex", alignItems: "center", gap: 4 }}>
                             <Icon name={ELEMENT_ICONS[def.element] || "normal"} size={10} /> {"★".repeat(s.level)}{"☆".repeat(def.maxLevel - s.level)} | PWR {def.power}
                           </div>
                         </div>
@@ -404,7 +404,7 @@ export default function Marketplace() {
                         <button onClick={() => handleEquipSkill(s.skill_key)} style={{
                           flex: 1, padding: "7px", borderRadius: 8, border: "none", cursor: "pointer",
                           background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#fff",
-                          fontFamily: "monospace", fontSize: 12, fontWeight: 700,
+                          fontFamily: "monospace", fontSize: 13, fontWeight: 700,
                           boxShadow: "0 2px 10px rgba(245,158,11,0.2)",
                           transition: "all 0.2s",
                         }}>
@@ -414,7 +414,7 @@ export default function Marketplace() {
                           <button onClick={() => handleUpgradeSkill(s.skill_key)} style={{
                             flex: 1, padding: "7px", borderRadius: 8, cursor: "pointer",
                             background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.25)",
-                            color: "#a78bfa", fontFamily: "monospace", fontSize: 12, fontWeight: 700,
+                            color: "#a78bfa", fontFamily: "monospace", fontSize: 13, fontWeight: 700,
                             transition: "all 0.2s",
                           }}>
                             Lv.{s.level + 1} ({upgradeCost}<Icon name="coin" size={10} />)
@@ -431,7 +431,7 @@ export default function Marketplace() {
           {/* Available to learn */}
           <div>
             <div style={{
-              fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.4)",
+              fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.4)",
               marginBottom: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em",
             }}>
               SKILL SHOP -- Buy new skills for {selectedPet.name}
@@ -482,14 +482,14 @@ export default function Marketplace() {
                             <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#fff" }}>
                               {s.name}
                             </div>
-                            <div style={{ fontFamily: "monospace", fontSize: 12, color: el.color, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            <div style={{ fontFamily: "monospace", fontSize: 13, color: el.color, display: "inline-flex", alignItems: "center", gap: 4 }}>
                               <Icon name={ELEMENT_ICONS[s.element] || "normal"} size={10} /> {s.element} | {"★".repeat(s.rarity)} | PWR {s.power}
                             </div>
                           </div>
                         </div>
                       </div>
                       <div style={{
-                        fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.35)",
+                        fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.35)",
                         marginBottom: 10, lineHeight: 1.5,
                       }}>
                         {s.description}
@@ -505,7 +505,7 @@ export default function Marketplace() {
                             ? `linear-gradient(135deg, ${el.color}, ${el.color}cc)`
                             : "rgba(255,255,255,0.03)",
                           color: canAfford && meetsLevel ? "#fff" : "rgba(255,255,255,0.2)",
-                          fontFamily: "monospace", fontSize: 12, fontWeight: 700,
+                          fontFamily: "monospace", fontSize: 13, fontWeight: 700,
                           boxShadow: canAfford && meetsLevel ? `0 2px 12px ${el.color}30` : "none",
                           transition: "all 0.2s",
                         }}
@@ -593,7 +593,7 @@ export default function Marketplace() {
                 {item.name}
               </div>
               <div style={{
-                fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.35)",
+                fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.35)",
                 marginBottom: 12, lineHeight: 1.6,
               }}>
                 {item.description}
@@ -604,7 +604,7 @@ export default function Marketplace() {
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 14 }}>
                   {Object.entries(item.stat_bonus as Record<string, number>).map(([k, v]) => (
                     <span key={k} style={{
-                      fontFamily: "monospace", fontSize: 12, padding: "3px 8px", borderRadius: 6,
+                      fontFamily: "monospace", fontSize: 13, padding: "3px 8px", borderRadius: 6,
                       background: Number(v) > 0 ? "rgba(74,222,128,0.08)" : "rgba(248,113,113,0.08)",
                       color: Number(v) > 0 ? "#4ade80" : "#f87171",
                       border: Number(v) > 0 ? "1px solid rgba(74,222,128,0.15)" : "1px solid rgba(248,113,113,0.15)",
@@ -618,7 +618,7 @@ export default function Marketplace() {
               {/* Category + Price */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{
-                  fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.2)",
+                  fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.2)",
                   textTransform: "uppercase", letterSpacing: "0.05em",
                 }}>
                   {item.category}
@@ -642,7 +642,7 @@ export default function Marketplace() {
                   color: balance !== null && balance < item.price
                     ? "rgba(255,255,255,0.2)"
                     : "white",
-                  fontFamily: "monospace", fontSize: 12, fontWeight: 700,
+                  fontFamily: "monospace", fontSize: 13, fontWeight: 700,
                   transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
                   boxShadow: balance !== null && balance >= item.price
                     ? "0 2px 16px rgba(245,158,11,0.25)"

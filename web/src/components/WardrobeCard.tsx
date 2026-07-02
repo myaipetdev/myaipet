@@ -66,7 +66,7 @@ export default function WardrobeCard({ petId, onChange }: { petId: number; onCha
   return (
     <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 14, background: "linear-gradient(135deg, rgba(168,85,247,0.06), rgba(245,158,11,0.04))", border: "1px solid rgba(168,85,247,0.16)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, color: "#7c3aed", letterSpacing: "0.04em" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, color: "#7c3aed", letterSpacing: "0.04em" }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
             <path d="M12 2.5a2 2 0 0 0-2 2c0 1 1 1.6 1.4 2.4" />
             <path d="M11.4 6.9 4.5 11a1 1 0 0 0-.5.9V20a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 20v-8.1a1 1 0 0 0-.5-.9l-6.9-4.1" />
@@ -75,7 +75,7 @@ export default function WardrobeCard({ petId, onChange }: { petId: number; onCha
           Wardrobe
         </span>
         {credits != null && (
-          <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.5)" }}>
+          <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.5)" }}>
             {credits.toLocaleString()} credits
           </span>
         )}
@@ -90,14 +90,14 @@ export default function WardrobeCard({ petId, onChange }: { petId: number; onCha
               border: `1px solid ${it.equipped ? "rgba(168,85,247,0.45)" : "rgba(0,0,0,0.06)"}`,
             }}>
               <div style={{ fontSize: 30, lineHeight: 1.1 }}>{it.icon}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a2e", marginTop: 3, letterSpacing: "-0.01em" }}>{it.name}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginTop: 3, letterSpacing: "-0.01em" }}>{it.name}</div>
               <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: rc, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 1 }}>{it.rarity}</div>
               <button
                 onClick={() => act(it)}
                 disabled={busy === it.key}
                 style={{
                   marginTop: 7, width: "100%", padding: "6px 4px", borderRadius: 8, cursor: busy === it.key ? "wait" : "pointer",
-                  border: "none", fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 700,
+                  border: "none", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
                   color: it.equipped ? "#7c3aed" : "white",
                   background: it.equipped
                     ? "rgba(168,85,247,0.16)"
@@ -111,7 +111,7 @@ export default function WardrobeCard({ petId, onChange }: { petId: number; onCha
           );
         })}
       </div>
-      <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.4)", marginTop: 9, textAlign: "center" }}>
+      <div style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.4)", marginTop: 9, textAlign: "center" }}>
         Buy once with credits · wear &amp; swap any time
       </div>
     </div>

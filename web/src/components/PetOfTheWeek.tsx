@@ -52,7 +52,7 @@ export default function PetOfTheWeek() {
         <div style={{ padding: "26px 28px", position: "relative", zIndex: 1 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 7,
-            fontSize: 12, fontFamily: "var(--ed-m)",
+            fontSize: 13, fontFamily: "var(--ed-m)",
             letterSpacing: "0.14em", color: "#F49B2A", fontWeight: 800, textTransform: "uppercase",
             padding: "5px 11px", borderRadius: 999,
             background: "rgba(190,79,40,0.16)", border: "1px solid rgba(190,79,40,0.4)",
@@ -80,7 +80,7 @@ export default function PetOfTheWeek() {
                 {pet.name}
               </div>
               <div style={{
-                fontSize: 12, color: "rgba(255,248,238,0.6)", marginTop: 4,
+                fontSize: 13, color: "rgba(255,248,238,0.6)", marginTop: 4,
                 fontFamily: "var(--ed-m)",
               }}>
                 {pet.personality} · raised by {pet.ownerWallet}
@@ -91,7 +91,7 @@ export default function PetOfTheWeek() {
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 18 }}>
             {pet.reasons.map((r, i) => (
               <span key={i} style={{
-                fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 999,
+                fontSize: 13, fontWeight: 700, padding: "6px 12px", borderRadius: 999,
                 background: "rgba(255,248,238,0.07)", color: "rgba(255,248,238,0.85)",
                 border: "1px solid rgba(255,248,238,0.12)",
                 fontFamily: "var(--ed-disp)",

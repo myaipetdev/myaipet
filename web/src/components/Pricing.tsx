@@ -139,7 +139,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         .pricing-earn-grid > div { padding: 12px 10px !important; }
         .pricing-earn-grid > div span:first-child { font-size: 16px !important; }
         .pricing-earn-grid > div div > div:first-child { font-size: 13px !important; }
-        .pricing-earn-grid > div div > div:nth-child(2) { font-size: 12px !important; }
+        .pricing-earn-grid > div div > div:nth-child(2) { font-size: 13px !important; }
           .pricing-cards-grid { grid-template-columns: 1fr !important; max-width: 400px !important; margin-left: auto !important; margin-right: auto !important; }
         }
         @media (max-width: 480px) {
@@ -154,7 +154,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           borderRadius: 999, background: "#F5EFE2",
           border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", marginBottom: 16,
         }}>
-          <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A4E1E", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase" }}>
+          <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A4E1E", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase" }}>
             COMPANIONSHIP · OWNED
           </span>
         </div>
@@ -212,7 +212,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
                 {m.desc}
               </div>
               <span style={{
-                fontFamily: "var(--ed-m)", fontSize: 12, color: "#5C8A4E", fontWeight: 600,
+                fontFamily: "var(--ed-m)", fontSize: 13, color: "#5C8A4E", fontWeight: 600,
                 padding: "2px 8px", borderRadius: 6,
                 background: "rgba(92,138,78,0.08)", border: "1px solid rgba(92,138,78,0.20)",
               }}>
@@ -312,7 +312,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
                 position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)",
                 background: "#BE4F28",
                 padding: "3px 14px", borderRadius: 16,
-                fontFamily: "var(--ed-m)", fontSize: 12, color: "#FFF8EE", fontWeight: 600,
+                fontFamily: "var(--ed-m)", fontSize: 13, color: "#FFF8EE", fontWeight: 600,
               }}>
                 MOST POPULAR
               </div>
@@ -388,7 +388,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
                     </svg>
                   </span> Buy with Card
                 </span>
-                <span style={{ fontSize: 12, opacity: 0.7, fontWeight: 500 }}>
+                <span style={{ fontSize: 13, opacity: 0.7, fontWeight: 500 }}>
                   Powered by Coinbase
                 </span>
               </button>

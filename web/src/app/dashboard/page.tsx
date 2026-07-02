@@ -116,7 +116,7 @@ export default async function DashboardPage() {
           <span style={{
             display: "inline-block", padding: "5px 14px", borderRadius: 999,
             background: "rgba(245,158,11,0.12)", color: "#b45309",
-            fontSize: 12, fontWeight: 700, letterSpacing: "0.16em",
+            fontSize: 13, fontWeight: 700, letterSpacing: "0.16em",
             textTransform: "uppercase", marginBottom: 12,
             fontFamily: "'JetBrains Mono', monospace",
           }}>POWER LEADERBOARD · SEASON REWARDS</span>
@@ -137,7 +137,7 @@ export default async function DashboardPage() {
         }}>
           <div>
             <div style={{
-              fontSize: 12, color: "rgba(255,255,255,0.5)", letterSpacing: "0.12em",
+              fontSize: 13, color: "rgba(255,255,255,0.5)", letterSpacing: "0.12em",
               fontFamily: "'JetBrains Mono', monospace", marginBottom: 4,
             }}>WEEKLY SEASON REWARDS POOL</div>
             <div style={{
@@ -150,7 +150,7 @@ export default async function DashboardPage() {
           <div style={{ width: 1, height: 40, background: "rgba(255,255,255,0.15)" }} />
           <div>
             <div style={{
-              fontSize: 12, color: "rgba(255,255,255,0.5)", letterSpacing: "0.12em",
+              fontSize: 13, color: "rgba(255,255,255,0.5)", letterSpacing: "0.12em",
               fontFamily: "'JetBrains Mono', monospace", marginBottom: 4,
             }}>ENTRIES</div>
             <div style={{ fontSize: 24, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
@@ -160,7 +160,7 @@ export default async function DashboardPage() {
           <div style={{ width: 1, height: 40, background: "rgba(255,255,255,0.15)" }} />
           <div>
             <div style={{
-              fontSize: 12, color: "rgba(255,255,255,0.5)", letterSpacing: "0.12em",
+              fontSize: 13, color: "rgba(255,255,255,0.5)", letterSpacing: "0.12em",
               fontFamily: "'JetBrains Mono', monospace", marginBottom: 4,
             }}>CLOSES</div>
             <div style={{ fontSize: 14, fontFamily: "'JetBrains Mono', monospace", color: "rgba(255,255,255,0.85)" }}>
@@ -201,11 +201,11 @@ export default async function DashboardPage() {
                     )}
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 700, textAlign: "center" }}>{p.name}</div>
-                  <div style={{ fontSize: 12, fontFamily: "mono", color: "rgba(26,26,46,0.5)" }}>Lv.{p.level}</div>
+                  <div style={{ fontSize: 13, fontFamily: "mono", color: "rgba(26,26,46,0.5)" }}>Lv.{p.level}</div>
                   <div style={{ fontSize: 18, fontWeight: 800, color: "#b45309", fontFamily: "'JetBrains Mono', monospace" }}>
                     {p.combinedPower}
                   </div>
-                  <div style={{ fontSize: 12, color: "rgba(26,26,46,0.4)", letterSpacing: "0.1em" }}>POWER</div>
+                  <div style={{ fontSize: 13, color: "rgba(26,26,46,0.4)", letterSpacing: "0.1em" }}>POWER</div>
                 </a>
               );
             })}
@@ -219,7 +219,7 @@ export default async function DashboardPage() {
         <div style={{
           marginTop: 30, padding: 18, borderRadius: 12,
           background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)",
-          fontSize: 12, color: "rgba(26,26,46,0.7)", lineHeight: 1.65,
+          fontSize: 13, color: "rgba(26,26,46,0.7)", lineHeight: 1.65,
         }}>
           <strong style={{ fontFamily: "'JetBrains Mono', monospace", color: "#b45309" }}>HOW TO CLIMB ↑</strong><br />
           Season Rewards points are earned free — care <strong>+5</strong>, create <strong>+10</strong>, evolve <strong>+200</strong> —

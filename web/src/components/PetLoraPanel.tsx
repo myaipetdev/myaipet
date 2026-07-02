@@ -98,7 +98,7 @@ export default function PetLoraPanel({ petId, petName }: { petId: number; petNam
     border: "1px solid rgba(33,26,18,.13)",
   };
   const eyebrow: React.CSSProperties = {
-    fontSize: 12, fontFamily: "var(--ed-m), 'Space Mono', ui-monospace, monospace",
+    fontSize: 13, fontFamily: "var(--ed-m), 'Space Mono', ui-monospace, monospace",
     color: "#5C8A4E", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 6,
     textTransform: "uppercase",
   };
@@ -138,9 +138,9 @@ export default function PetLoraPanel({ petId, petName }: { petId: number; petNam
         face profile is saved to their pet file.
       </div>
       {status === "failed" && lora?.error && (
-        <div style={{ fontSize: 12, color: "#BE4F28", marginTop: 6 }}>Last run failed: {lora.error}</div>
+        <div style={{ fontSize: 13, color: "#BE4F28", marginTop: 6 }}>Last run failed: {lora.error}</div>
       )}
-      {msg && <div style={{ fontSize: 12, color: "#BE4F28", marginTop: 6 }}>{msg}</div>}
+      {msg && <div style={{ fontSize: 13, color: "#BE4F28", marginTop: 6 }}>{msg}</div>}
       <button onClick={() => train(false)} disabled={busy} style={primaryBtn}>
         {busy ? "Starting…" : status === "failed" ? `Retry training ${petName}` : `Train ${petName}'s identity`}
       </button>
@@ -171,6 +171,6 @@ const primaryBtn: React.CSSProperties = {
 const ghostBtn: React.CSSProperties = {
   marginTop: 8, padding: "6px 12px", borderRadius: 9,
   background: "transparent", border: "1px solid rgba(33,26,18,.13)",
-  color: "#3A3024", fontSize: 12, fontWeight: 700, cursor: "pointer",
+  color: "#3A3024", fontSize: 13, fontWeight: 700, cursor: "pointer",
   fontFamily: "var(--ed-body), 'Hanken Grotesk', system-ui, sans-serif",
 };

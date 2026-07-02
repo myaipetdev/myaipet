@@ -25,7 +25,7 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
   return (
     <section style={{ padding: "56px 24px", maxWidth: 1060, margin: "0 auto" }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.14em", color: "#9A4E1E", fontWeight: 700, textTransform: "uppercase", marginBottom: 10 }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, letterSpacing: "0.14em", color: "#9A4E1E", fontWeight: 700, textTransform: "uppercase", marginBottom: 10 }}>
           Agent infrastructure · powered by PetClaw
         </div>
         <h2 style={{ fontFamily: "var(--ed-disp)", fontSize: "clamp(26px,4vw,40px)", fontWeight: 800, color: "#211A12", letterSpacing: "-0.025em", margin: "0 0 12px", lineHeight: 1.12 }}>
@@ -41,13 +41,13 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
       {/* Problem → solution contrast */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, maxWidth: 760, margin: "0 auto 24px" }} className="orch-contrast">
         <div style={{ padding: "16px 18px", borderRadius: 14, background: "#ECE4D4", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))" }}>
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.12em", color: "#9A7B4E", fontWeight: 700, marginBottom: 8 }}>A SINGLE PROMPT</div>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, letterSpacing: "0.12em", color: "#9A7B4E", fontWeight: 700, marginBottom: 8 }}>A SINGLE PROMPT</div>
           {["Forgets you the moment the tab closes", "Answers in text — can't take action", "Works alone, no review", "Locked inside one app"].map((t) => (
             <div key={t} style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#7A6E5A", lineHeight: 1.5, display: "flex", gap: 7 }}><span style={{ color: "#9A4E1E" }}>✕</span>{t}</div>
           ))}
         </div>
         <div style={{ padding: "16px 18px", borderRadius: 14, background: "#FBF6EC", border: "1px solid rgba(190,79,40,0.28)" }}>
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.12em", color: "#9A4E1E", fontWeight: 700, marginBottom: 8 }}>PETCLAW</div>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, letterSpacing: "0.12em", color: "#9A4E1E", fontWeight: 700, marginBottom: 8 }}>PETCLAW</div>
           {["Remembers across every session — it's yours", "Plans + runs real skills, then observes", "Reflects on itself and improves (VIGIL)", "Calls other pets on the open network (A2A)"].map((t) => (
             <div key={t} style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#5C5140", lineHeight: 1.5, display: "flex", gap: 7 }}><span style={{ color: "#1A7E68" }}>✓</span>{t}</div>
           ))}
@@ -60,7 +60,7 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
           <div key={r.title} style={{ background: "#FBF6EC", borderRadius: 16, padding: "20px 20px", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <span style={{ fontSize: 24, lineHeight: 0 }}><Icon name={r.icon} size={24} /></span>
-              <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", padding: "2px 7px", borderRadius: 6, background: "rgba(190,79,40,0.1)", color: "#9A4E1E" }}>{r.tag}</span>
+              <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", padding: "2px 7px", borderRadius: 6, background: "rgba(190,79,40,0.1)", color: "#9A4E1E" }}>{r.tag}</span>
             </div>
             <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 16, color: "#211A12", marginBottom: 5, letterSpacing: "-0.01em" }}>{r.title}</div>
             <div style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#5C5140", lineHeight: 1.55 }}>{r.body}</div>
@@ -80,7 +80,7 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
         </div>
       )}
 
-      <div style={{ textAlign: "center", marginTop: 18, fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A" }}>
+      <div style={{ textAlign: "center", marginTop: 18, fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A" }}>
         18 skills · 6 MCP tools · 19 connectors · open SDK —{" "}
         <a href="/api-docs" style={{ color: "#9A4E1E", fontWeight: 700, textDecoration: "none" }}>build on it →</a>
       </div>

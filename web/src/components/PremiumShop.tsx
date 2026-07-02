@@ -148,7 +148,7 @@ export default function PremiumShop() {
               <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 20, fontWeight: 800, color: "#fff", marginBottom: 4 }}>
                 {confirmItem.name}
               </div>
-              <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 16 }}>
+              <div style={{ fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.35)", marginBottom: 16 }}>
                 {confirmItem.description}
               </div>
 
@@ -187,7 +187,7 @@ export default function PremiumShop() {
                 background: "rgba(255,255,255,0.04)",
                 border: "1px solid rgba(255,255,255,0.08)",
                 color: "rgba(255,255,255,0.4)",
-                fontFamily: "monospace", fontSize: 12, fontWeight: 600,
+                fontFamily: "monospace", fontSize: 13, fontWeight: 600,
                 cursor: "pointer", transition: "all 0.2s",
               }}>
                 Cancel
@@ -222,7 +222,7 @@ export default function PremiumShop() {
           }}>
             Premium Shop
           </h2>
-          <p style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+          <p style={{ fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.3)" }}>
             Power up your pet with USDT or credits
           </p>
         </div>
@@ -234,7 +234,7 @@ export default function PremiumShop() {
               style={{
                 padding: "8px 14px", borderRadius: 10,
                 border: "1px solid rgba(255,255,255,0.08)",
-                fontFamily: "monospace", fontSize: 12, color: "#fff",
+                fontFamily: "monospace", fontSize: 13, color: "#fff",
                 background: "rgba(255,255,255,0.05)",
                 backdropFilter: "blur(8px)",
                 cursor: "pointer",
@@ -346,7 +346,7 @@ export default function PremiumShop() {
                 {featured.name}
               </div>
               <div style={{
-                fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.4)",
+                fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.4)",
                 marginBottom: 12, lineHeight: 1.6,
               }}>
                 {featured.description}
@@ -357,11 +357,11 @@ export default function PremiumShop() {
                   color: "#f59e0b",
                 }}>
                   ${featured.priceUSD.toFixed(featured.priceUSD < 1 ? 2 : 0)}
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", fontWeight: 400, marginLeft: 4 }}>USDT</span>
+                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.25)", fontWeight: 400, marginLeft: 4 }}>USDT</span>
                 </div>
                 {featured.priceCredits && (
                   <span style={{
-                    fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.3)",
+                    fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.3)",
                   }}>
                     or <Icon name="coin" size={14} /> {featured.priceCredits.toLocaleString()}
                   </span>
@@ -425,7 +425,7 @@ export default function PremiumShop() {
               ? "1.5px solid rgba(245,158,11,0.3)"
               : "1.5px solid rgba(255,255,255,0.06)",
             borderRadius: 20, padding: "8px 18px", cursor: "pointer",
-            fontFamily: "monospace", fontSize: 12,
+            fontFamily: "monospace", fontSize: 13,
             fontWeight: category === key ? 700 : 500,
             color: category === key ? "#f59e0b" : "rgba(255,255,255,0.3)",
             transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -566,7 +566,7 @@ export default function PremiumShop() {
                     {item.name}
                   </div>
                   {item.duration && (
-                    <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+                    <div style={{ fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.3)" }}>
                       Duration: {item.duration}h
                     </div>
                   )}
@@ -575,7 +575,7 @@ export default function PremiumShop() {
 
               {/* Description */}
               <div style={{
-                fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.4)",
+                fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.4)",
                 lineHeight: 1.7, marginBottom: 16, position: "relative",
               }}>
                 {item.description}
@@ -589,10 +589,10 @@ export default function PremiumShop() {
                     color: "#fff",
                   }}>
                     ${item.priceUSD.toFixed(item.priceUSD < 1 ? 2 : 0)}
-                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", fontWeight: 400, marginLeft: 4 }}>USDT</span>
+                    <span style={{ fontSize: 13, color: "rgba(255,255,255,0.25)", fontWeight: 400, marginLeft: 4 }}>USDT</span>
                   </div>
                   {item.priceCredits && (
-                    <div style={{ fontFamily: "monospace", fontSize: 12, color: "rgba(255,255,255,0.25)" }}>
+                    <div style={{ fontFamily: "monospace", fontSize: 13, color: "rgba(255,255,255,0.25)" }}>
                       or <Icon name="coin" size={14} /> {item.priceCredits.toLocaleString()} credits
                     </div>
                   )}
@@ -610,7 +610,7 @@ export default function PremiumShop() {
                           ? "linear-gradient(135deg, #f59e0b, #d97706)"
                           : "rgba(255,255,255,0.03)",
                         color: balance !== null && balance >= (item.priceCredits || 0) ? "#fff" : "rgba(255,255,255,0.2)",
-                        fontFamily: "monospace", fontSize: 12, fontWeight: 700,
+                        fontFamily: "monospace", fontSize: 13, fontWeight: 700,
                         transition: "all 0.25s",
                         boxShadow: balance !== null && balance >= (item.priceCredits || 0)
                           ? "0 3px 16px rgba(245,158,11,0.25)"
@@ -630,7 +630,7 @@ export default function PremiumShop() {
                       padding: "9px 18px", borderRadius: 12,
                       border: `1.5px solid ${rc.text}30`,
                       background: `${rc.text}06`, cursor: "pointer",
-                      color: rc.text, fontFamily: "monospace", fontSize: 12, fontWeight: 700,
+                      color: rc.text, fontFamily: "monospace", fontSize: 13, fontWeight: 700,
                       transition: "all 0.25s",
                     }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${rc.text}12`; }}

@@ -65,7 +65,7 @@ export default async function CardPage(
 
   return (
     <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18, padding: "40px 20px", background: `radial-gradient(120% 85% at 50% -12%, ${t.grad[0]}, ${VAULT} 62%)`, fontFamily: BODY }}>
-      <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: "0.22em", color: rc, textTransform: "uppercase" }}>
+      <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.22em", color: rc, textTransform: "uppercase" }}>
         {card.rarity} · {t.label} card
       </div>
       <h1 style={{ fontFamily: DISP, fontSize: 34, fontWeight: 800, letterSpacing: "-0.02em", color: FOIL_GOLD, margin: 0, textAlign: "center" }}>{card.name}</h1>

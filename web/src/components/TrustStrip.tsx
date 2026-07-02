@@ -24,7 +24,7 @@ export default function TrustStrip() {
         cursor: "default",
       }}>
         <div style={{
-          fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
           letterSpacing: "0.18em", color: "rgba(26,26,46,0.55)",
           textAlign: "center", marginBottom: 22,
         }}>
@@ -82,7 +82,7 @@ function TrustColumn({
           <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.01em", color: "#1a1a2e" }}>
             {title}
           </div>
-          <div style={{ fontSize: 12, color: "rgba(26,26,46,0.55)", marginTop: 2 }}>
+          <div style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", marginTop: 2 }}>
             {sub}
           </div>
         </div>
@@ -102,11 +102,11 @@ function TrustColumn({
                background: "white", border: "1px solid rgba(0,0,0,0.05)",
                textDecoration: "none",
              }}>
-            <span style={{ fontSize: 12, color: "rgba(26,26,46,0.65)", fontWeight: 500 }}>
+            <span style={{ fontSize: 13, color: "rgba(26,26,46,0.65)", fontWeight: 500 }}>
               {r.label}
             </span>
             <span style={{
-              fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
               color: accent || "#b45309", fontWeight: 700,
             }}>{r.value}</span>
           </a>

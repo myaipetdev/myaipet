@@ -183,7 +183,7 @@ export default function AgentWorkbench() {
     <div style={{ maxWidth: 920, margin: "0 auto", padding: "96px 20px 80px" }}>
       {/* ── Header ── */}
       <div style={{ marginBottom: 26 }}>
-        <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.2em", color: PURPLE, fontWeight: 700, textTransform: "uppercase", marginBottom: 10 }}>
+        <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.2em", color: PURPLE, fontWeight: 700, textTransform: "uppercase", marginBottom: 10 }}>
           Agent Workbench · powered by PetClaw
         </div>
         <h1 style={{ fontFamily: SANS, fontSize: "clamp(26px,4vw,38px)", fontWeight: 800, color: INK, letterSpacing: "-0.025em", margin: "0 0 10px", lineHeight: 1.12 }}>
@@ -195,8 +195,8 @@ export default function AgentWorkbench() {
         </p>
 
         {/* Honest scope note: what the loop runs vs. what it can only point to. */}
-        <div style={{ marginTop: 14, padding: "10px 13px", borderRadius: 10, background: "rgba(26,26,46,0.035)", border: "1px solid rgba(0,0,0,0.07)", fontFamily: SANS, fontSize: 12.5, color: "rgba(26,26,46,0.6)", lineHeight: 1.55, maxWidth: 620 }}>
-          <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.1em", color: "rgba(26,26,46,0.45)", fontWeight: 700 }}>HOW IT CHAINS</span>
+        <div style={{ marginTop: 14, padding: "10px 13px", borderRadius: 10, background: "rgba(26,26,46,0.035)", border: "1px solid rgba(0,0,0,0.07)", fontFamily: SANS, fontSize: 13, color: "rgba(26,26,46,0.6)", lineHeight: 1.55, maxWidth: 620 }}>
+          <span style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.1em", color: "rgba(26,26,46,0.45)", fontWeight: 700 }}>HOW IT CHAINS</span>
           <div style={{ marginTop: 4 }}>
             The loop runs the <b>5 in-loop skills</b> end-to-end and reasons over their output.
             The other <b>13 skills run on their own REST endpoints</b> — the planner can <i>locate</i> and
@@ -208,7 +208,7 @@ export default function AgentWorkbench() {
       {/* ── Persistent-session strip ── */}
       {restored && result && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", borderRadius: 12, background: "rgba(124,58,237,0.05)", border: "1px solid rgba(124,58,237,0.18)", marginBottom: 18, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: MONO, fontSize: 12, color: "rgba(26,26,46,0.65)" }}>
+          <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(26,26,46,0.65)" }}>
             ⏎ Resumed your last run · {relTime(result.at)}
           </span>
           <button onClick={clearSession} style={ghostBtn}>Clear session</button>
@@ -258,12 +258,12 @@ export default function AgentWorkbench() {
             onChange={(e) => setMaxSteps(Number(e.target.value))}
             style={{ accentColor: PURPLE, flex: 1, minWidth: 120, maxWidth: 240 }} />
           <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: INK }}>{maxSteps}</span>
-          <span style={{ fontFamily: MONO, fontSize: 12, color: "rgba(26,26,46,0.45)" }}>max packages</span>
+          <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(26,26,46,0.45)" }}>max packages</span>
         </div>
 
         {/* Preflight gate */}
         <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.06)" }}>
-          <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.12em", color: "rgba(26,26,46,0.4)", fontWeight: 700, marginBottom: 8 }}>PREFLIGHT</div>
+          <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.12em", color: "rgba(26,26,46,0.4)", fontWeight: 700, marginBottom: 8 }}>PREFLIGHT</div>
           <Check ok={goalOk} label="Goal is at least 3 characters" />
           <Check ok={petId != null} label="A pet is selected to run it" />
           <Check ok neutral label={`Costs ${COST} credits · refunded if no real work runs`} />
@@ -308,12 +308,12 @@ export default function AgentWorkbench() {
                 {workPackages.length} work package{workPackages.length === 1 ? "" : "s"}
               </span>
               {stop && (
-                <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 7, color: TONE[stop.tone].fg, background: TONE[stop.tone].bg, border: `1px solid ${TONE[stop.tone].bd}` }}>
+                <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "3px 9px", borderRadius: 7, color: TONE[stop.tone].fg, background: TONE[stop.tone].bg, border: `1px solid ${TONE[stop.tone].bd}` }}>
                   {stop.label}
                 </span>
               )}
               {typeof result.creditsRemaining === "number" && (
-                <span style={{ fontFamily: MONO, fontSize: 12, color: "rgba(26,26,46,0.45)" }}>
+                <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(26,26,46,0.45)" }}>
                   {result.creditsRemaining} credits left
                 </span>
               )}
@@ -327,7 +327,7 @@ export default function AgentWorkbench() {
 
           {/* Goal echo */}
           <div style={{ ...card, padding: "12px 16px", marginBottom: 12, background: "rgba(124,58,237,0.04)", border: "1px solid rgba(124,58,237,0.16)" }}>
-            <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.12em", color: PURPLE, fontWeight: 700 }}>GOAL</span>
+            <span style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.12em", color: PURPLE, fontWeight: 700 }}>GOAL</span>
             <div style={{ fontFamily: SANS, fontSize: 14.5, color: INK, marginTop: 4 }}>{result.goal}</div>
           </div>
 
@@ -346,19 +346,19 @@ export default function AgentWorkbench() {
             return (
               <div key={i} style={{ ...card, padding: 0, marginBottom: 10, overflow: "hidden" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px" }}>
-                  <div style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 8, background: "rgba(124,58,237,0.1)", color: PURPLE, fontFamily: MONO, fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 8, background: "rgba(124,58,237,0.1)", color: PURPLE, fontFamily: MONO, fontSize: 13, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {i + 1}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 5 }}>
-                      <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: "rgba(0,0,0,0.05)", color: INK }}>
+                      <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: "rgba(0,0,0,0.05)", color: INK }}>
                         {s.skill}
                       </span>
-                      <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 6, color: tone.fg, background: tone.bg, border: `1px solid ${tone.bd}` }}>
+                      <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "2px 8px", borderRadius: 6, color: tone.fg, background: tone.bg, border: `1px solid ${tone.bd}` }}>
                         {s.ok ? (endpointOnly ? "→ located" : "✓ ran in-loop") : "✕ failed"}
                       </span>
                       {endpointOnly && (
-                        <span title="This skill runs on its own REST endpoint. The loop located it and returned a pointer — it did not execute it or chain its result." style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 6, color: "rgba(26,26,46,0.55)", background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.1)" }}>
+                        <span title="This skill runs on its own REST endpoint. The loop located it and returned a pointer — it did not execute it or chain its result." style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "2px 8px", borderRadius: 6, color: "rgba(26,26,46,0.55)", background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.1)" }}>
                         endpoint-only · pointer
                         </span>
                       )}
@@ -370,7 +370,7 @@ export default function AgentWorkbench() {
                       {isOpen ? "Hide observation" : "Show observation"}
                     </button>
                     {isOpen && (
-                      <pre style={{ marginTop: 8, padding: "10px 12px", borderRadius: 10, background: "#0f1021", color: "#d6d9f0", fontFamily: MONO, fontSize: 12, lineHeight: 1.5, overflow: "auto", maxHeight: 280, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                      <pre style={{ marginTop: 8, padding: "10px 12px", borderRadius: 10, background: "#0f1021", color: "#d6d9f0", fontFamily: MONO, fontSize: 13, lineHeight: 1.5, overflow: "auto", maxHeight: 280, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                         {pretty(s.output)}
                       </pre>
                     )}
@@ -383,7 +383,7 @@ export default function AgentWorkbench() {
           {/* Synthesis */}
           {result.answer && (
             <div style={{ ...card, marginTop: 14, background: "linear-gradient(135deg,rgba(245,158,11,0.06),rgba(124,58,237,0.05))", border: "1px solid rgba(245,158,11,0.22)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: MONO, fontSize: 12, letterSpacing: "0.12em", color: "#b45309", fontWeight: 700, marginBottom: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: MONO, fontSize: 13, letterSpacing: "0.12em", color: "#b45309", fontWeight: 700, marginBottom: 8 }}>
                 <Icon name="scroll" size={14} /> {petName.toUpperCase()} REPORTS BACK
               </div>
               <div style={{ fontFamily: SANS, fontSize: 15.5, color: INK, lineHeight: 1.62, whiteSpace: "pre-wrap" }}>
@@ -417,9 +417,9 @@ function Check({ ok, label, neutral }: { ok: boolean; label: string; neutral?: b
 
 // ── shared styles ──
 const card: React.CSSProperties = { background: "white", borderRadius: 16, padding: "20px", border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" };
-const fieldLabel: React.CSSProperties = { display: "block", fontFamily: MONO, fontSize: 12, letterSpacing: "0.08em", color: "rgba(26,26,46,0.5)", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" };
-const ghostBtn: React.CSSProperties = { background: "transparent", border: "none", color: PURPLE, fontFamily: MONO, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 };
+const fieldLabel: React.CSSProperties = { display: "block", fontFamily: MONO, fontSize: 13, letterSpacing: "0.08em", color: "rgba(26,26,46,0.5)", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" };
+const ghostBtn: React.CSSProperties = { background: "transparent", border: "none", color: PURPLE, fontFamily: MONO, fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0 };
 const chip: React.CSSProperties = { fontFamily: SANS, fontSize: 13, fontWeight: 600, padding: "6px 12px", borderRadius: 9, border: "1px solid rgba(0,0,0,0.1)", background: "white", color: "rgba(26,26,46,0.6)", cursor: "pointer" };
 const chipActive: React.CSSProperties = { background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.3)", color: PURPLE, fontWeight: 800 };
-const seedChip: React.CSSProperties = { fontFamily: SANS, fontSize: 12, padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", color: "rgba(26,26,46,0.55)", cursor: "pointer" };
+const seedChip: React.CSSProperties = { fontFamily: SANS, fontSize: 13, padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", color: "rgba(26,26,46,0.55)", cursor: "pointer" };
 const recoverBtn: React.CSSProperties = { fontFamily: SANS, fontSize: 13, fontWeight: 700, padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(245,158,11,0.35)", background: "rgba(245,158,11,0.1)", color: "#b45309", cursor: "pointer" };

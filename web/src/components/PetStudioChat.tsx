@@ -315,7 +315,7 @@ function StudioInner() {
           border: "1px solid rgba(255,255,255,0.06)",
         }}>
           <div style={{
-            fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
             letterSpacing: "0.18em", color: "#fbbf24", marginBottom: 8,
           }}>PET STUDIO · PRO VIDEO</div>
           <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.015em", lineHeight: 1.2, marginBottom: 6 }}>
@@ -376,7 +376,7 @@ function StudioInner() {
               </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-              <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.55)", letterSpacing: "0.1em" }}>CREDITS</div>
+              <div style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.55)", letterSpacing: "0.1em" }}>CREDITS</div>
               <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>{credits}</div>
             </div>
           </div>
@@ -404,7 +404,7 @@ function StudioInner() {
                       {done ? "✓" : i + 1}
                     </div>
                     <span style={{
-                      fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
                       letterSpacing: "0.1em", textTransform: "uppercase",
                       color: done || active ? "#1a1a2e" : "rgba(26,26,46,0.4)",
                       fontWeight: done || active ? 700 : 500,
@@ -434,7 +434,7 @@ function StudioInner() {
                 border: "1px solid rgba(0,0,0,0.06)",
               }}>
                 <span style={{
-                  fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
                   color: "rgba(26,26,46,0.5)", letterSpacing: "0.1em",
                   textTransform: "uppercase",
                 }}>{step}</span>
@@ -478,7 +478,7 @@ function StudioInner() {
             <a href="/" style={{
               padding: "6px 12px", borderRadius: 8,
               background: "white", border: "1px solid rgba(59,130,246,0.30)",
-              color: "#1e3a8a", fontWeight: 700, fontSize: 12,
+              color: "#1e3a8a", fontWeight: 700, fontSize: 13,
               textDecoration: "none", fontFamily: "'JetBrains Mono', monospace",
             }}>Sign in →</a>
           </div>
@@ -493,7 +493,7 @@ function StudioInner() {
               background: "linear-gradient(180deg, rgba(245,158,11,0.06) 0%, transparent 100%)",
               borderBottom: "1px solid rgba(0,0,0,0.05)",
             }}>
-              <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.55)", letterSpacing: "0.12em", marginBottom: 6 }}>
+              <div style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.55)", letterSpacing: "0.12em", marginBottom: 6 }}>
                 STEP {stepIdx + 1} / {STEPS.length} · {currentStep.toUpperCase()}
               </div>
               <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.4 }}>
@@ -578,7 +578,7 @@ function StudioInner() {
                           {m.description}
                         </div>
                         <div style={{
-                          fontSize: 12, marginTop: 6,
+                          fontSize: 13, marginTop: 6,
                           fontFamily: "'JetBrains Mono', monospace",
                           color: "rgba(26,26,46,0.55)", letterSpacing: "0.06em",
                         }}>
@@ -675,7 +675,7 @@ function StudioInner() {
             <div style={{ padding: 28 }}>
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 18,
-                color: "#1e3a8a", fontSize: 12, fontWeight: 800,
+                color: "#1e3a8a", fontSize: 13, fontWeight: 800,
                 fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.12em",
                 background: "rgba(59,130,246,0.10)", padding: "6px 12px", borderRadius: 999,
               }}>
@@ -698,7 +698,7 @@ function StudioInner() {
                 color: "white",
               }}>
                 <div style={{
-                  fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
                   color: "rgba(255,255,255,0.55)", letterSpacing: "0.14em", marginBottom: 10,
                 }}>PROMPT</div>
                 <div style={{
@@ -858,7 +858,7 @@ function ModelBadges({ model }: { model: StudioModel }) {
         <span key={i} style={{
           display: "inline-flex", alignItems: "center", gap: 4,
           padding: "3px 8px", borderRadius: 999,
-          fontSize: 12, fontWeight: 800, letterSpacing: "0.08em",
+          fontSize: 13, fontWeight: 800, letterSpacing: "0.08em",
           fontFamily: "'JetBrains Mono', monospace",
           background: b.bg, color: b.fg,
         }}>{b.icon}{b.label}</span>
@@ -874,7 +874,7 @@ function CapPill({ icon, label }: { icon: string; label: string }) {
       padding: "6px 12px", borderRadius: 999,
       background: "rgba(255,255,255,0.08)",
       border: "1px solid rgba(255,255,255,0.10)",
-      fontSize: 12, color: "rgba(255,255,255,0.92)",
+      fontSize: 13, color: "rgba(255,255,255,0.92)",
       fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600,
     }}>
       <Icon name={icon} size={16} />{label}
@@ -890,7 +890,7 @@ function SpecCell({ label, value }: { label: string; value: string }) {
       border: "1px solid rgba(0,0,0,0.06)",
     }}>
       <div style={{
-        fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+        fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
         color: "rgba(26,26,46,0.55)", letterSpacing: "0.12em",
       }}>{label}</div>
       <div style={{
@@ -934,7 +934,7 @@ const chipBig: React.CSSProperties = {
 };
 
 const miniLabel: React.CSSProperties = {
-  fontSize: 12, fontWeight: 800, letterSpacing: "0.14em",
+  fontSize: 13, fontWeight: 800, letterSpacing: "0.14em",
   textTransform: "uppercase", color: "rgba(26,26,46,0.55)",
   fontFamily: "'JetBrains Mono', monospace",
 };

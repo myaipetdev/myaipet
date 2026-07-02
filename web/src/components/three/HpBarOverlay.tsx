@@ -51,13 +51,13 @@ function BuffBadges({ buffs, type }: { buffs: BuffIcons; type: "player" | "enemy
   if (type === "player") {
     if (buffs.defUp) icons.push(<Icon key="def" name="shield" size={10} />);
     if (buffs.spAtkUp) icons.push(<Icon key="atk" name="sword" size={10} />);
-    if (buffs.dodging) icons.push(<span key="dodge" style={{ fontSize: 12 }}>💨</span>);
+    if (buffs.dodging) icons.push(<span key="dodge" style={{ fontSize: 13 }}>💨</span>);
     if (buffs.waterBoost) icons.push(<Icon key="water" name="water" size={10} />);
   } else {
     if (buffs.burn) icons.push(<Icon key="burn" name="fire" size={10} />);
     if (buffs.paralyze) icons.push(<Icon key="para" name="electric" size={10} />);
     if (buffs.drain) icons.push(<Icon key="drain" name="grass" size={10} />);
-    if (buffs.dodging) icons.push(<span key="dodge" style={{ fontSize: 12 }}>💨</span>);
+    if (buffs.dodging) icons.push(<span key="dodge" style={{ fontSize: 13 }}>💨</span>);
   }
   if (icons.length === 0) return null;
 
@@ -65,7 +65,7 @@ function BuffBadges({ buffs, type }: { buffs: BuffIcons; type: "player" | "enemy
     <div style={{ display: "flex", gap: 2 }}>
       {icons.map((icon, i) => (
         <span key={i} style={{
-          fontSize: 12, padding: "1px 3px", borderRadius: 4,
+          fontSize: 13, padding: "1px 3px", borderRadius: 4,
           background: type === "player" ? "rgba(74,222,128,0.15)" : "rgba(248,113,113,0.15)",
           border: `1px solid ${type === "player" ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.25)"}`,
         }}>{icon}</span>
@@ -92,7 +92,7 @@ function PetHpCard({ pet, buffs, side }: { pet: PetStatus; buffs: BuffIcons; sid
       <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
         {pet.isBoss && <Icon name="crown" size={11} />}
         <span style={{
-          color: "#f0f0f0", fontSize: 12, fontWeight: 800,
+          color: "#f0f0f0", fontSize: 13, fontWeight: 800,
           fontFamily: "'Space Grotesk', sans-serif",
         }}>{pet.name}</span>
         <span style={{

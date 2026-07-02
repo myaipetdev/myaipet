@@ -32,7 +32,7 @@ function SectionCard({ title, children }: { title: string; children: React.React
 function StatTable({ rows }: { rows: [string, string, string][] }) {
   return (
     <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "mono", fontSize: 12 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "mono", fontSize: 13 }}>
         <tbody>
           {rows.map((row, i) => (
             <tr key={i} style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
@@ -57,7 +57,7 @@ function Badge({ color, children }: { color: string; children: React.ReactNode }
     <span style={{
       display: "inline-block", padding: "3px 10px", borderRadius: 8,
       background: `${color}12`, color, border: `1px solid ${color}25`,
-      fontFamily: "mono", fontSize: 12, fontWeight: 600, marginRight: 6, marginBottom: 4,
+      fontFamily: "mono", fontSize: 13, fontWeight: 600, marginRight: 6, marginBottom: 4,
     }}>{children}</span>
   );
 }
@@ -87,7 +87,7 @@ function OverviewSection() {
             }}>
               <div style={{ marginBottom: 6 }}><Icon name={item.icon} size={28} /></div>
               <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginBottom: 4 }}>{item.title}</div>
-              <div style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.5)", lineHeight: 1.6 }}>{item.desc}</div>
+              <div style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.5)", lineHeight: 1.6 }}>{item.desc}</div>
             </div>
           ))}
         </div>
@@ -145,7 +145,7 @@ function RaisingSection() {
               <span style={{ flexShrink: 0 }}><Icon name={s.icon} size={20} /></span>
               <div>
                 <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: s.color }}>{s.name}</div>
-                <div style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.5)", lineHeight: 1.6 }}>{s.desc}</div>
+                <div style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.5)", lineHeight: 1.6 }}>{s.desc}</div>
               </div>
             </div>
           ))}
@@ -163,7 +163,7 @@ function RaisingSection() {
           ].map((tip, i) => (
             <div key={i} style={{
               display: "flex", gap: 8, alignItems: "flex-start",
-              fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.55)", lineHeight: 1.7,
+              fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.55)", lineHeight: 1.7,
             }}>
               <span style={{ color: "#f59e0b", fontWeight: 700, flexShrink: 0 }}>#{i + 1}</span>
               {tip}
@@ -195,8 +195,8 @@ function EvolutionSection() {
                 minWidth: 90,
               }}>
                 <div style={{ marginBottom: 4 }}><Icon name={stage.icon} size={28} /></div>
-                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, fontWeight: 700, color: "#1a1a2e" }}>{stage.name}</div>
-                <div style={{ fontFamily: "mono", fontSize: 12, color: "#b45309" }}>Lv.{stage.lv}+</div>
+                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>{stage.name}</div>
+                <div style={{ fontFamily: "mono", fontSize: 13, color: "#b45309" }}>Lv.{stage.lv}+</div>
                 <div style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.4)", marginTop: 4 }}>{stage.skills}</div>
               </div>
               {i < arr.length - 1 && <span style={{ fontSize: 16, color: "#d97706" }}>→</span>}
@@ -242,8 +242,8 @@ function ArenaSection() {
             }}>
               <span><Icon name={s.icon} size={18} /></span>
               <div>
-                <div style={{ fontFamily: "mono", fontSize: 12, fontWeight: 700, color: "#1a1a2e" }}>{s.label}</div>
-                <div style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.5)" }}>{s.desc}</div>
+                <div style={{ fontFamily: "mono", fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>{s.label}</div>
+                <div style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.5)" }}>{s.desc}</div>
               </div>
             </div>
           ))}
@@ -276,7 +276,7 @@ function ItemsSection() {
       <SectionCard title="🛒 Item Shop">
         <P>Buy items with pts credits to boost your pet&apos;s stats, speed up leveling, or equip cool gear.</P>
 
-        <div style={{ fontFamily: "mono", fontSize: 12, fontWeight: 600, color: "rgba(26,26,46,0.5)", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+        <div style={{ fontFamily: "mono", fontSize: 13, fontWeight: 600, color: "rgba(26,26,46,0.5)", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.1em" }}>
           Consumables — Use instantly
         </div>
         <StatTable rows={[
@@ -291,7 +291,7 @@ function ItemsSection() {
           ["💎 Full Restore", "300 pts", "All stats MAX (Epic)"],
         ]} />
 
-        <div style={{ fontFamily: "mono", fontSize: 12, fontWeight: 600, color: "rgba(26,26,46,0.5)", marginBottom: 10, marginTop: 20, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+        <div style={{ fontFamily: "mono", fontSize: 13, fontWeight: 600, color: "rgba(26,26,46,0.5)", marginBottom: 10, marginTop: 20, textTransform: "uppercase", letterSpacing: "0.1em" }}>
           Equipment & Accessories — Equip to pet
         </div>
         <StatTable rows={[
@@ -304,7 +304,7 @@ function ItemsSection() {
           ["👑 Royal Crown", "800 pts", "Ultimate flex (Legendary)"],
         ]} />
 
-        <div style={{ fontFamily: "mono", fontSize: 12, fontWeight: 600, color: "rgba(26,26,46,0.5)", marginBottom: 10, marginTop: 20, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+        <div style={{ fontFamily: "mono", fontSize: 13, fontWeight: 600, color: "rgba(26,26,46,0.5)", marginBottom: 10, marginTop: 20, textTransform: "uppercase", letterSpacing: "0.1em" }}>
           Furniture & Cosmetics
         </div>
         <StatTable rows={[
@@ -364,8 +364,8 @@ function RewardsSection() {
               background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)",
               display: "flex", justifyContent: "space-between", alignItems: "center",
             }}>
-              <span style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.6)" }}>{s.source}</span>
-              <span style={{ fontFamily: "mono", fontSize: 12, fontWeight: 700, color: "#16a34a" }}>{s.pts}</span>
+              <span style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.6)" }}>{s.source}</span>
+              <span style={{ fontFamily: "mono", fontSize: 13, fontWeight: 700, color: "#16a34a" }}>{s.pts}</span>
             </div>
           ))}
         </div>
@@ -386,20 +386,20 @@ function EconomySection() {
         </P>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
           <div style={{ padding: "14px", borderRadius: 12, background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)" }}>
-            <div style={{ fontFamily: "mono", fontSize: 12, color: "#16a34a", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Earn pts</div>
+            <div style={{ fontFamily: "mono", fontSize: 13, color: "#16a34a", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Earn pts</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {["Evolution rewards (+50 credits)", "Daily interactions", "Arena victories", "Achievement milestones"].map(item => (
-                <div key={item} style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.55)", display: "flex", gap: 4, alignItems: "center" }}>
+                <div key={item} style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.55)", display: "flex", gap: 4, alignItems: "center" }}>
                   <span style={{ color: "#16a34a" }}>+</span> {item}
                 </div>
               ))}
             </div>
           </div>
           <div style={{ padding: "14px", borderRadius: 12, background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)" }}>
-            <div style={{ fontFamily: "mono", fontSize: 12, color: "#dc2626", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Spend pts</div>
+            <div style={{ fontFamily: "mono", fontSize: 13, color: "#dc2626", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Spend pts</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {["Shop items & consumables", "Unlock pet slots", "Equipment & cosmetics", "Premium features"].map(item => (
-                <div key={item} style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.55)", display: "flex", gap: 4, alignItems: "center" }}>
+                <div key={item} style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.55)", display: "flex", gap: 4, alignItems: "center" }}>
                   <span style={{ color: "#dc2626" }}>-</span> {item}
                 </div>
               ))}
@@ -422,8 +422,8 @@ function EconomySection() {
             }}>
               <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700, color: "#1a1a2e", marginBottom: 4 }}>{plan.name}</div>
               <div style={{ fontFamily: "mono", fontSize: 22, fontWeight: 700, color: plan.color, marginBottom: 4 }}>{plan.price}</div>
-              <div style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.5)" }}>{plan.credits} credits</div>
-              <div style={{ fontFamily: "mono", fontSize: 12, color: "#b45309", marginTop: 2 }}>{plan.pet}</div>
+              <div style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.5)" }}>{plan.credits} credits</div>
+              <div style={{ fontFamily: "mono", fontSize: 13, color: "#b45309", marginTop: 2 }}>{plan.pet}</div>
             </div>
           ))}
         </div>
@@ -456,7 +456,7 @@ export default function Guide() {
         }}>
           <Icon name="scroll" size={28} /> Game Guide
         </h2>
-        <p style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.45)" }}>
+        <p style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.45)" }}>
           Everything you need to know about raising your AI pet
         </p>
       </div>
@@ -472,7 +472,7 @@ export default function Guide() {
             background: active === s.key ? "rgba(251,191,36,0.12)" : "transparent",
             border: active === s.key ? "1px solid rgba(251,191,36,0.2)" : "1px solid transparent",
             borderRadius: 10, padding: "8px 14px", cursor: "pointer",
-            fontFamily: "mono", fontSize: 12, fontWeight: active === s.key ? 600 : 400,
+            fontFamily: "mono", fontSize: 13, fontWeight: active === s.key ? 600 : 400,
             color: active === s.key ? "#b45309" : "rgba(26,26,46,0.45)",
             transition: "all 0.2s", whiteSpace: "nowrap",
             display: "flex", alignItems: "center", gap: 5,

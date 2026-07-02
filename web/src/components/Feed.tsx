@@ -17,13 +17,13 @@ export default function Feed({ activities }: any) {
             animation: "pulse 2s infinite",
           }} />
           <span style={{
-            fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A",
+            fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A",
             fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em",
           }}>
             Recent Activity
           </span>
         </div>
-        <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E" }}>
+        <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E" }}>
           Multi-chain
         </span>
       </div>
@@ -43,7 +43,7 @@ export default function Feed({ activities }: any) {
                 </span>
 {a.tx_hash && a.chain && (
                 <span style={{
-                  fontSize: 12, lineHeight: 1, padding: "2px 6px", borderRadius: 6,
+                  fontSize: 13, lineHeight: 1, padding: "2px 6px", borderRadius: 6,
                   background: a.chain === "Base" ? "rgba(62,143,224,0.10)" : "rgba(190,79,40,0.10)",
                   color: a.chain === "Base" ? "#3E8FE0" : "#9A4E1E",
                   fontFamily: "var(--ed-m)", fontWeight: 500,
@@ -52,12 +52,12 @@ export default function Feed({ activities }: any) {
                 </span>
                 )}
               </div>
-              <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#5C5140" }}>
+              <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#5C5140" }}>
                 {a.text}
               </span>
             </div>
             <span style={{
-              fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", whiteSpace: "nowrap",
+              fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E", whiteSpace: "nowrap",
             }}>
               {a.time}
             </span>

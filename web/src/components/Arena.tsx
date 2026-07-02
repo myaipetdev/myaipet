@@ -193,7 +193,7 @@ function ElementBadge({ element }: { element: Element }) {
   const el = ELEMENTS[element] || ELEMENTS.normal;
   return (
     <span style={{
-      fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+      fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
       padding: "2px 8px", borderRadius: 6,
       background: `${el.color}18`, color: el.color,
       border: `1px solid ${el.color}33`,
@@ -247,7 +247,7 @@ function HpBar({ current, max, label, level, name, element, isActive }: {
           <ElementBadge element={element} />
         </div>
         <span style={{
-          fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 600,
+          fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 600,
           color: "#E7A15C",
           background: "rgba(190,79,40,0.18)",
           padding: "2px 10px", borderRadius: 6,
@@ -258,7 +258,7 @@ function HpBar({ current, max, label, level, name, element, isActive }: {
       {/* HP bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{
-          fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+          fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
           color: "rgba(255,255,255,0.5)", width: 20,
         }}>
           HP
@@ -286,7 +286,7 @@ function HpBar({ current, max, label, level, name, element, isActive }: {
         </div>
       </div>
       <div style={{
-        fontFamily: "var(--ed-m)", fontSize: 12, color: getHpColor(ratio),
+        fontFamily: "var(--ed-m)", fontSize: 13, color: getHpColor(ratio),
         textAlign: "right", marginTop: 3, fontWeight: 600,
       }}>
         {Math.max(0, current)} / {max}
@@ -301,7 +301,7 @@ function EnergyBar({ current, max }: { current: number; max: number }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
       <span style={{
-        fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+        fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
         color: "rgba(190,79,40,0.7)",
       }}>EP</span>
       <div style={{
@@ -320,7 +320,7 @@ function EnergyBar({ current, max }: { current: number; max: number }) {
         }} />
       </div>
       <span style={{
-        fontFamily: "var(--ed-m)", fontSize: 12,
+        fontFamily: "var(--ed-m)", fontSize: 13,
         color: ratio < 0.2 ? "#f87171" : "rgba(255,255,255,0.35)",
         fontWeight: ratio < 0.2 ? 700 : 400,
       }}>
@@ -360,7 +360,7 @@ function BattleLog({ entries }: { entries: BattleLogEntry[] }) {
       <div ref={logRef} style={{ maxHeight: 146, overflowY: "auto" }}>
         {entries.length === 0 && (
           <div style={{
-            fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(255,255,255,0.3)",
+            fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(255,255,255,0.3)",
             textAlign: "center", padding: 8,
           }}>
             Battle starting...
@@ -373,7 +373,7 @@ function BattleLog({ entries }: { entries: BattleLogEntry[] }) {
               key={i}
               style={{
                 fontFamily: "var(--ed-m)",
-                fontSize: 12,
+                fontSize: 13,
                 lineHeight: 1.5,
                 color: logStyle.color,
                 padding: "3px 8px",
@@ -384,7 +384,7 @@ function BattleLog({ entries }: { entries: BattleLogEntry[] }) {
                 animation: i === entries.length - 1 ? "logSlideIn 0.3s ease-out" : undefined,
               }}
             >
-              <span style={{ color: "rgba(255,255,255,0.15)", marginRight: 6, fontSize: 12 }}>
+              <span style={{ color: "rgba(255,255,255,0.15)", marginRight: 6, fontSize: 13 }}>
                 T{entry.turn}
               </span>
               {entry.text}
@@ -465,7 +465,7 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
       <span style={{ fontSize: 20, filter: isDisabled ? "grayscale(1)" : "none" }}>{skill.emoji}</span>
       <span style={{
         fontFamily: "var(--ed-disp)",
-        fontSize: 12, fontWeight: 700,
+        fontSize: 13, fontWeight: 700,
         color: isDisabled ? "rgba(255,255,255,0.2)" : "#fff",
         textAlign: "center", lineHeight: 1.2,
       }}>
@@ -492,7 +492,7 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         {skill.power > 0 && (
           <span style={{
-            fontFamily: "var(--ed-m)", fontSize: 12,
+            fontFamily: "var(--ed-m)", fontSize: 13,
             color: typeColor, fontWeight: 700,
           }}>
             {skill.power + Math.floor(skill.power * (skillLevel - 1) * 0.1)}
@@ -500,7 +500,7 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
         )}
         {skill.energyCost > 0 && (
           <span style={{
-            fontFamily: "var(--ed-m)", fontSize: 12,
+            fontFamily: "var(--ed-m)", fontSize: 13,
             color: cantAfford ? "#f87171" : "rgba(190,79,40,0.6)",
             fontWeight: cantAfford ? 700 : 400,
           }}>
@@ -509,7 +509,7 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
         )}
         {skill.power === 0 && skill.energyCost === 0 && (
           <span style={{
-            fontFamily: "var(--ed-m)", fontSize: 12,
+            fontFamily: "var(--ed-m)", fontSize: 13,
             color: "rgba(255,255,255,0.3)",
           }}>
             STATUS
@@ -579,7 +579,7 @@ function ResultOverlay({ won, points, expGained, skillDrop, onClose }: {
         }}>
           <GlassPanel style={{ padding: "10px 20px" }}>
             <div style={{
-              fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(255,255,255,0.4)",
+              fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(255,255,255,0.4)",
               marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.1em",
             }}>Points</div>
             <div style={{
@@ -591,7 +591,7 @@ function ResultOverlay({ won, points, expGained, skillDrop, onClose }: {
           </GlassPanel>
           <GlassPanel style={{ padding: "10px 20px" }}>
             <div style={{
-              fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(255,255,255,0.4)",
+              fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(255,255,255,0.4)",
               marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.1em",
             }}>Experience</div>
             <div style={{
@@ -612,7 +612,7 @@ function ResultOverlay({ won, points, expGained, skillDrop, onClose }: {
             animation: "resultBounce 0.8s ease-out 0.3s both",
           }}>
             <div style={{
-              fontFamily: "var(--ed-m)", fontSize: 12,
+              fontFamily: "var(--ed-m)", fontSize: 13,
               color: "#a78bfa", fontWeight: 700, marginBottom: 4,
               textTransform: "uppercase", letterSpacing: "0.1em",
             }}>
@@ -626,7 +626,7 @@ function ResultOverlay({ won, points, expGained, skillDrop, onClose }: {
               {dropSkill.name}
             </div>
             <div style={{
-              fontFamily: "var(--ed-m)", fontSize: 12,
+              fontFamily: "var(--ed-m)", fontSize: 13,
               color: "rgba(255,255,255,0.5)",
             }}>
               {"★".repeat(dropSkill.rarity)} <Icon name={ELEMENT_ICONS[dropSkill.element] || "normal"} size={12} /> {dropSkill.element}
@@ -1260,7 +1260,7 @@ export default function Arena() {
           Pet Arena
         </h2>
         <span style={{
-          fontFamily: "var(--ed-m)", fontSize: 12, padding: "4px 12px", borderRadius: 8,
+          fontFamily: "var(--ed-m)", fontSize: 13, padding: "4px 12px", borderRadius: 8,
           background: "rgba(139,92,246,0.12)", color: "#6B4FA0",
           border: "1px solid rgba(139,92,246,0.2)", fontWeight: 600,
           letterSpacing: "0.12em", textTransform: "uppercase",
@@ -1269,7 +1269,7 @@ export default function Arena() {
         </span>
         {phase === "battle" && (
           <span style={{
-            fontFamily: "var(--ed-m)", fontSize: 12, padding: "4px 12px", borderRadius: 8,
+            fontFamily: "var(--ed-m)", fontSize: 13, padding: "4px 12px", borderRadius: 8,
             background: "rgba(239,68,68,0.12)", color: "#f87171",
             border: "1px solid rgba(239,68,68,0.2)", fontWeight: 600,
             letterSpacing: "0.12em", textTransform: "uppercase",
@@ -1300,7 +1300,7 @@ export default function Arena() {
               Choose Your Fighter
             </div>
             <div style={{
-              fontFamily: "var(--ed-m)", fontSize: 12,
+              fontFamily: "var(--ed-m)", fontSize: 13,
               color: "#7A6E5A", marginBottom: 32,
               textAlign: "center",
             }}>
@@ -1316,7 +1316,7 @@ export default function Arena() {
                   borderTopColor: "#BE4F28", borderRadius: "50%",
                   animation: "matchmakingSpin 0.8s linear infinite", margin: "0 auto 16px",
                 }} />
-                <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A" }}>
                   Loading your pets...
                 </div>
               </div>
@@ -1392,7 +1392,7 @@ export default function Arena() {
                       </div>
 
                       <div style={{
-                        fontFamily: "var(--ed-m)", fontSize: 12,
+                        fontFamily: "var(--ed-m)", fontSize: 13,
                         color: "#7A6E5A", marginBottom: 16,
                       }}>
                         Lv.{pet.level} / {pet.personality_type}
@@ -1415,11 +1415,11 @@ export default function Arena() {
                             border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                           }}>
                             <span style={{
-                              fontFamily: "var(--ed-m)", fontSize: 12,
+                              fontFamily: "var(--ed-m)", fontSize: 13,
                               color: "#9A7B4E",
                             }}>{stat.label}</span>
                             <span style={{
-                              fontFamily: "var(--ed-m)", fontSize: 12,
+                              fontFamily: "var(--ed-m)", fontSize: 13,
                               fontWeight: 700, color: stat.color,
                             }}>{stat.value}</span>
                           </div>
@@ -1554,7 +1554,7 @@ export default function Arena() {
               <Suspense fallback={
                 <div style={{
                   width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-                  background: "linear-gradient(180deg, #211A12, #17110A)", borderRadius: 14, color: "#7A6E5A", fontSize: 12,
+                  background: "linear-gradient(180deg, #211A12, #17110A)", borderRadius: 14, color: "#7A6E5A", fontSize: 13,
                   fontFamily: "var(--ed-disp)",
                 }}>Loading Battle Arena...</div>
               }>
@@ -1615,7 +1615,7 @@ export default function Arena() {
               {/* Turn indicator overlay */}
               <div style={{
                 position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)",
-                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+                fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
                 color: battleOver ? "#E7A15C" : isPlayerTurn ? "#4ade80" : "#f87171",
                 background: battleOver ? "rgba(190,79,40,0.18)" : isPlayerTurn ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)",
                 padding: "3px 14px", borderRadius: 8,
@@ -1666,7 +1666,7 @@ export default function Arena() {
                   >
                     <span style={{ fontSize: 20 }}>+</span>
                     <span style={{
-                      fontFamily: "var(--ed-m)", fontSize: 12,
+                      fontFamily: "var(--ed-m)", fontSize: 13,
                       color: "rgba(255,255,255,0.25)",
                     }}>
                       Empty Slot
@@ -1696,21 +1696,21 @@ export default function Arena() {
           }}>
             {player && (
               <>
-                <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A" }}>
                   ATK <span style={{ color: "#f97316", fontWeight: 700 }}>{player.atk}</span>
                 </div>
-                <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A" }}>
                   DEF <span style={{ color: "#38bdf8", fontWeight: 700 }}>{player.def}</span>
                 </div>
-                <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A" }}>
                   SPD <span style={{ color: "#a78bfa", fontWeight: 700 }}>{player.spd}</span>
                 </div>
                 <div style={{ width: 1, height: 14, background: "var(--ed-hair, rgba(33,26,18,.13))" }} />
-                <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A" }}>
                   Turn <span style={{ color: "#BE4F28", fontWeight: 700 }}>{turn}</span>
                 </div>
                 <div style={{ width: 1, height: 14, background: "var(--ed-hair, rgba(33,26,18,.13))" }} />
-                <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A" }}>
                   <Icon name={ELEMENT_ICONS[player.element] || "normal"} size={14} /> vs <Icon name={ELEMENT_ICONS[opponent.element] || "normal"} size={14} />
                   {" "}
                   <span style={{

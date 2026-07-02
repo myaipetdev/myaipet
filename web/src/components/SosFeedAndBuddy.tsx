@@ -94,7 +94,7 @@ export default function SosFeedAndBuddy() {
                 <path d="M12 3v3.5M12 17.5V21M3 12h3.5M17.5 12H21" stroke="#BE4F28" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </span>
-            <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E" }}>
+            <div style={{ fontSize: 13, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E" }}>
               SOS · SAVE OUR STREAKS
             </div>
           </div>
@@ -130,18 +130,18 @@ export default function SosFeedAndBuddy() {
                   : <img src="/mascot.jpg" alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, fontFamily: "var(--ed-disp)" }}>
-                    {item.sender.pet?.name || "—"} <span style={{ color: "#9A4E1E", fontFamily: "var(--ed-m)", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 4 }}>·
+                    {item.sender.pet?.name || "—"} <span style={{ color: "#9A4E1E", fontFamily: "var(--ed-m)", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 4 }}>·
                       <svg width={11} height={11} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "inline-block" }}>
                         <path d="M12 3c1 3 4 4 4 8a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5C10 8 11 6 12 3Z" stroke="#BE4F28" strokeWidth="1.8" strokeLinejoin="round" />
                       </svg>
                       {item.sender_streak}d</span>
                   </div>
                   {item.message && (
-                    <div style={{ fontSize: 12, color: "#7A6E5A", marginTop: 1, fontFamily: "var(--ed-body)" }}>{item.message}</div>
+                    <div style={{ fontSize: 13, color: "#7A6E5A", marginTop: 1, fontFamily: "var(--ed-body)" }}>{item.message}</div>
                   )}
                 </div>
                 <button onClick={() => help(item.id)} disabled={busy === item.id} style={{
-                  ...primaryBtn, padding: "7px 12px", fontSize: 12,
+                  ...primaryBtn, padding: "7px 12px", fontSize: 13,
                   opacity: busy === item.id ? 0.5 : 1,
                 }}>Help · 50cr</button>
               </div>
@@ -158,7 +158,7 @@ export default function SosFeedAndBuddy() {
                 <circle cx="15.5" cy="12" r="5" stroke="#BE4F28" strokeWidth="2" />
               </svg>
             </span>
-            <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E" }}>
+            <div style={{ fontSize: 13, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E" }}>
               BUDDY LOCK · SHARED STREAK
             </div>
           </div>
@@ -190,7 +190,7 @@ export default function SosFeedAndBuddy() {
                 <div style={{ fontSize: 14, color: "#211A12", lineHeight: 1.55, marginBottom: 6, fontWeight: 600, fontFamily: "var(--ed-disp)" }}>
                   Pair with one friend
                 </div>
-                <div style={{ fontSize: 12, color: "#7A6E5A", lineHeight: 1.55, fontFamily: "var(--ed-body)" }}>
+                <div style={{ fontSize: 13, color: "#7A6E5A", lineHeight: 1.55, fontFamily: "var(--ed-body)" }}>
                   Both of you have to complete a mission each day for the shared streak to tick.
                   Hardest accountability mechanism ever — that's the point.
                 </div>
@@ -210,7 +210,7 @@ export default function SosFeedAndBuddy() {
                   : <img src="/mascot.jpg" alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover" }} />}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "var(--ed-disp)" }}>{b.partner.pet?.name || b.partner.wallet}</div>
-                  <div style={{ fontSize: 12, color: "#7A6E5A", fontFamily: "var(--ed-m)", display: "flex", alignItems: "center", gap: 4 }}>
+                  <div style={{ fontSize: 13, color: "#7A6E5A", fontFamily: "var(--ed-m)", display: "flex", alignItems: "center", gap: 4 }}>
                     <svg width={11} height={11} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "inline-block" }}>
                       <path d="M12 3c1 3 4 4 4 8a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5C10 8 11 6 12 3Z" stroke="#BE4F28" strokeWidth="1.8" strokeLinejoin="round" />
                     </svg>
@@ -234,10 +234,10 @@ export default function SosFeedAndBuddy() {
                     <path d="M4 7.5l8 5.5 8-5.5" stroke="#BE4F28" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
-                <div style={{ fontSize: 12, flex: 1, fontFamily: "var(--ed-body)" }}>
+                <div style={{ fontSize: 13, flex: 1, fontFamily: "var(--ed-body)" }}>
                   Invite from <strong>{inv.sender.wallet}</strong>
                 </div>
-                <button onClick={() => acceptInvite(inv.id)} disabled={busy === inv.id} style={{ ...primaryBtn, padding: "6px 10px", fontSize: 12 }}>
+                <button onClick={() => acceptInvite(inv.id)} disabled={busy === inv.id} style={{ ...primaryBtn, padding: "6px 10px", fontSize: 13 }}>
                   Accept
                 </button>
               </div>
@@ -249,7 +249,7 @@ export default function SosFeedAndBuddy() {
                 background: "#FBF6EC",
                 border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
-                fontSize: 12, color: "#7A6E5A", fontFamily: "var(--ed-body)",
+                fontSize: 13, color: "#7A6E5A", fontFamily: "var(--ed-body)",
               }}>
                 Waiting for <strong>{inv.target.wallet}</strong> to accept…
               </div>
@@ -270,7 +270,7 @@ export default function SosFeedAndBuddy() {
                   }}
                 />
                 <button onClick={sendInvite} disabled={!inviteWallet.trim() || busy === -1} style={{
-                  ...primaryBtn, padding: "9px 14px", fontSize: 12,
+                  ...primaryBtn, padding: "9px 14px", fontSize: 13,
                   opacity: !inviteWallet.trim() ? 0.5 : 1,
                 }}>Invite</button>
               </div>

@@ -268,7 +268,7 @@ body {
   body .versus-row > div { padding: 10px !important; }
 
   /* Stat upgrade rows: button shrinks */
-  body .stat-upgrade-panel button { padding: 6px 10px !important; font-size: 12px !important; }
+  body .stat-upgrade-panel button { padding: 6px 10px !important; font-size: 13px !important; }
 
   /* Leaderboard rows: tighter on mobile */
   body .leader-row { grid-template-columns: 36px 36px 1fr auto auto !important; padding: 8px 10px !important; gap: 8px !important; }

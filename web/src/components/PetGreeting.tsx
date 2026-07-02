@@ -173,7 +173,7 @@ export default function PetGreeting({ petId, petName, mood, accent, lastInteract
         <div style={{ fontSize: 30, lineHeight: 1, marginTop: 2 }}><TodGlyph kind={tod.kind} color={accent} size={28} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
             letterSpacing: "0.14em", color: accent, fontWeight: 700, textTransform: "uppercase",
           }}>
             {tod.word}
@@ -209,7 +209,7 @@ export default function PetGreeting({ petId, petName, mood, accent, lastInteract
               <span style={{ fontSize: 15, lineHeight: 1.3, flexShrink: 0 }}><Icon name="chat" size={16} /></span>
               <div style={{ minWidth: 0 }}>
                 <div style={{
-                  fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
                   letterSpacing: "0.12em", color: "rgba(26,26,46,0.4)", fontWeight: 700,
                   marginBottom: 2,
                 }}>

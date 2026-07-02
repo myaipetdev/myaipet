@@ -243,7 +243,7 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
           Channel Subscriptions
         </h2>
         <span style={{
-          fontSize: 12, padding: "3px 10px", borderRadius: 999,
+          fontSize: 13, padding: "3px 10px", borderRadius: 999,
           background: "rgba(190,79,40,0.1)", color: TERRA_SUB,
           fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
         }}>OAUTH</span>
@@ -377,7 +377,7 @@ function PetSwitcher({ pets, selectedPet, onSelect }: { pets: any[]; selectedPet
   if (!pets.length) return null;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <span style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.14em", color: MONO_CLR, textTransform: "uppercase" }}>Active pet</span>
+      <span style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.14em", color: MONO_CLR, textTransform: "uppercase" }}>Active pet</span>
       <div ref={ref} style={{ position: "relative" }}>
         <button onClick={() => setOpen((o) => !o)} style={{
           display: "flex", alignItems: "center", gap: 8,
@@ -530,12 +530,12 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
           Memory Ledger
         </h2>
         <span style={{
-          fontSize: 12, padding: "3px 10px", borderRadius: 999,
+          fontSize: 13, padding: "3px 10px", borderRadius: 999,
           background: "rgba(190,79,40,0.1)", color: TERRA_SUB,
           fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
         }}>VIGIL</span>
         <span title="Each reply pulls the most relevant memories via reciprocal-rank fusion (lexical + recency + importance; plus semantic cosine when you connect an embedding key)." style={{
-          fontSize: 12, padding: "3px 10px", borderRadius: 999,
+          fontSize: 13, padding: "3px 10px", borderRadius: 999,
           background: INSET, color: MUTED2,
           fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em", cursor: "help",
         }}>RRF RECALL</span>
@@ -617,7 +617,7 @@ function Stat({ label, value }: { label: string; value: number }) {
       border: `1px solid ${HAIR}`, textAlign: "center",
     }}>
       <div style={{ fontFamily: DISP, fontSize: 24, fontWeight: 800, color: INK, fontVariantNumeric: "tabular-nums" }}>{value}</div>
-      <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>{label}</div>
+      <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>{label}</div>
     </div>
   );
 }
@@ -629,7 +629,7 @@ function Section({ title, children, onClear, disabled }: { title: string; childr
         <h3 style={{ fontFamily: DISP, fontSize: 16, fontWeight: 800, color: INK70, margin: 0, letterSpacing: "-0.01em" }}>{title}</h3>
         {onClear && (
           <button onClick={onClear} disabled={disabled} style={{
-            fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", padding: "3px 8px", borderRadius: 6,
+            fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", padding: "3px 8px", borderRadius: 6,
             border: `1px solid ${HAIR}`, background: PAPER,
             color: DANGER, cursor: disabled ? "wait" : "pointer",
             opacity: disabled ? 0.5 : 1,
@@ -651,21 +651,21 @@ function EntryRow({ primary, secondary, onEdit, onDelete, busy }: { primary: str
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: BODY, fontSize: 13, color: INK, overflowWrap: "anywhere", wordBreak: "break-word", lineHeight: 1.5 }}>{primary}</div>
-        <div style={{ fontFamily: MONO, fontSize: 12, color: MONO_CLR, marginTop: 2, overflowWrap: "anywhere" }}>{secondary}</div>
+        <div style={{ fontFamily: MONO, fontSize: 13, color: MONO_CLR, marginTop: 2, overflowWrap: "anywhere" }}>{secondary}</div>
       </div>
       {onEdit && (
         <button onClick={onEdit} disabled={busy} style={{
           flexShrink: 0,
           padding: "4px 10px", borderRadius: 6,
           border: `1px solid ${HAIR}`, background: PAPER,
-          fontFamily: BODY, fontSize: 12, fontWeight: 600, color: INK70, cursor: "pointer",
+          fontFamily: BODY, fontSize: 13, fontWeight: 600, color: INK70, cursor: "pointer",
         }}>Edit</button>
       )}
       <button onClick={onDelete} disabled={busy} style={{
         flexShrink: 0,
         padding: "4px 10px", borderRadius: 6,
         border: `1px solid ${HAIR}`, background: PAPER,
-        fontFamily: BODY, fontSize: 12, fontWeight: 600, color: DANGER, cursor: "pointer",
+        fontFamily: BODY, fontSize: 13, fontWeight: 600, color: DANGER, cursor: "pointer",
       }}>Delete</button>
     </div>
   );
@@ -800,7 +800,7 @@ function ChromeExtensionSection() {
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
           <span style={{ fontSize: 22, display: "inline-flex", color: TERRA }}><Icon name="extension-icon" size={22} /></span>
           <h2 style={{ fontFamily: DISP, fontSize: 24, fontWeight: 800, color: INK, letterSpacing: "-0.02em" }}>Desktop Companion Extension</h2>
-          <span style={{ fontSize: 12, padding: "3px 9px", borderRadius: 999, background: "rgba(190,79,40,0.1)", color: TERRA_SUB, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>v2.0 READY</span>
+          <span style={{ fontSize: 13, padding: "3px 9px", borderRadius: 999, background: "rgba(190,79,40,0.1)", color: TERRA_SUB, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>v2.0 READY</span>
         </div>
         <p style={{ fontFamily: BODY, fontSize: 14, color: MUTED2, lineHeight: 1.65, marginBottom: 14 }}>
           Your pet follows you across the web — a little companion in the corner of every page. Click it to chat,
@@ -843,12 +843,12 @@ function ChromeExtensionSection() {
 
           {/* Install steps — each with a "what you'll see" illustration */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: MONO_CLR, letterSpacing: "0.14em", marginBottom: 12 }}>DEVELOPER MODE INSTALL · ~2 MIN</div>
+            <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: MONO_CLR, letterSpacing: "0.14em", marginBottom: 12 }}>DEVELOPER MODE INSTALL · ~2 MIN</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(158px, 1fr))", gap: 10 }}>
               {steps.map((s) => (
                 <div key={s.n} className="mp-lift" style={{ background: PAPER, border: `1px solid ${HAIR}`, borderRadius: 12, boxShadow: CARD_SHADOW, overflow: "hidden" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderBottom: `1px solid ${HAIR}`, background: INSET }}>
-                    <span style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, background: TERRA, color: CREAM_ON, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, fontFamily: MONO }}>{s.n}</span>
+                    <span style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, background: TERRA, color: CREAM_ON, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, fontFamily: MONO }}>{s.n}</span>
                     <span style={{ fontFamily: DISP, fontSize: 14, fontWeight: 800, color: INK, letterSpacing: "-0.01em" }}>{s.title}</span>
                   </div>
                   <div style={{ padding: "10px 10px 2px", background: INSET, borderBottom: `1px solid ${HAIR}` }}>
@@ -879,21 +879,21 @@ function ChromeExtensionSection() {
             </svg>
             Download Extension
           </a>
-          <div style={{ marginTop: 8, fontFamily: MONO, fontSize: 12, color: MONO_CLR, letterSpacing: "0.1em" }}>
+          <div style={{ marginTop: 8, fontFamily: MONO, fontSize: 13, color: MONO_CLR, letterSpacing: "0.1em" }}>
             Developer-mode install
           </div>
         </div>
 
         {/* Right: popup mockup */}
         <div className="sov-split-aside" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "center", background: FIELD }}>
-          <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: MONO_CLR, letterSpacing: "0.14em", marginBottom: 12 }}>POPUP PREVIEW</div>
+          <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: MONO_CLR, letterSpacing: "0.14em", marginBottom: 12 }}>POPUP PREVIEW</div>
           {/* Extension popup mockup — a realistic dark device preview, framed
               softly on the warm field (no hard offset shadow, no purple glow). */}
           <div style={{
             width: 320, borderRadius: 16, overflow: "hidden",
             background: "#1f1b16", fontFamily: "'Segoe UI', -apple-system, sans-serif",
             boxShadow: CARD_SHADOW, border: `1px solid ${HAIR}`,
-            fontSize: 12,
+            fontSize: 13,
           }}>
             {/* Header */}
             <div style={{
@@ -990,7 +990,7 @@ function ChromeExtensionSection() {
               <span style={{ fontSize: 9, color: "#7CB36A", fontFamily: "monospace" }}>● connected</span>
             </div>
           </div>
-          <div style={{ marginTop: 10, fontFamily: MONO, fontSize: 12, color: MONO_CLR, textAlign: "center" }}>
+          <div style={{ marginTop: 10, fontFamily: MONO, fontSize: 13, color: MONO_CLR, textAlign: "center" }}>
             Actual extension popup (360×580px)
           </div>
         </div>
@@ -1244,9 +1244,9 @@ export default function SovereigntyDashboard() {
         .sov-card { animation: sovSlideIn 0.45s ease both; }
         .sov-hash:hover { opacity: 0.7; }
         .sov-copied { animation: copiedFade 0.2s ease both; }
-        .sov-tag { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; font-family:var(--ed-m); font-size: 12px; font-weight:700; letter-spacing:0.12em; }
+        .sov-tag { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; font-family:var(--ed-m); font-size: 13px; font-weight:700; letter-spacing:0.12em; }
         .sov-section-title { font-family:var(--ed-disp); font-size:24px; font-weight:800; color:#211A12; letter-spacing:-0.02em; margin:0 0 4px; }
-        .sov-section-sub { font-family:var(--ed-m); font-size: 12px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#9A4E1E; margin:0 0 24px; }
+        .sov-section-sub { font-family:var(--ed-m); font-size: 13px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#9A4E1E; margin:0 0 24px; }
         .sov-divider { width:100%; height:1px; background:rgba(33,26,18,.13); margin:32px 0; }
         .sov-2col { display:grid; grid-template-columns:1fr 1fr; }
         .sov-split { display:flex; }
@@ -1365,7 +1365,7 @@ export default function SovereigntyDashboard() {
               ].map(({ n, l }) => (
                 <div key={l} style={{ textAlign: "center" }}>
                   <div style={{ fontFamily: DISP, fontSize: 26, fontWeight: 800, color: INK, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{n}</div>
-                  <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>{l}</div>
+                  <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>{l}</div>
                 </div>
               ))}
             </div>
@@ -1399,11 +1399,11 @@ export default function SovereigntyDashboard() {
                   </div>
                   <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
                     {soul && (
-                      <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: CREAM_ON, background: "rgba(252,233,207,0.18)", padding: "2px 8px", borderRadius: 999 }}>
+                      <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: CREAM_ON, background: "rgba(252,233,207,0.18)", padding: "2px 8px", borderRadius: 999 }}>
                         v{soul.current_version ?? 1}
                       </span>
                     )}
-                    <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: "rgba(252,233,207,0.8)", padding: "2px 8px", background: "rgba(252,233,207,0.14)", borderRadius: 999 }}>
+                    <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: "rgba(252,233,207,0.8)", padding: "2px 8px", background: "rgba(252,233,207,0.14)", borderRadius: 999 }}>
                       Lv.{selectedPet.level ?? 1} · {selectedPet.personality_type}
                     </span>
                   </div>
@@ -1482,10 +1482,10 @@ export default function SovereigntyDashboard() {
                     border: `1px solid ${HAIR}`, boxShadow: CARD_SHADOW, cursor: click ? "pointer" : "default",
                     transition: "border-color 0.2s",
                   }}>
-                    <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: MONO_CLR, letterSpacing: "0.14em", marginBottom: 6, textTransform: "uppercase" }}>{label}</div>
+                    <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: MONO_CLR, letterSpacing: "0.14em", marginBottom: 6, textTransform: "uppercase" }}>{label}</div>
                     <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: accent }}>
                       {value}
-                      {isCopied && <span style={{ marginLeft: 6, fontSize: 12, color: GOOD }}>Copied!</span>}
+                      {isCopied && <span style={{ marginLeft: 6, fontSize: 13, color: GOOD }}>Copied!</span>}
                     </div>
                   </div>
                 ))}
@@ -1496,7 +1496,7 @@ export default function SovereigntyDashboard() {
                   display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14,
                   padding: "7px 14px", borderRadius: 999, background: INSET,
                   border: `1px solid ${HAIR}`, color: TERRA_SUB,
-                  fontSize: 12, fontFamily: MONO, fontWeight: 700, textDecoration: "none",
+                  fontSize: 13, fontFamily: MONO, fontWeight: 700, textDecoration: "none",
                 }}>
                   View on BscScan ↗
                 </a>
@@ -1548,7 +1548,7 @@ export default function SovereigntyDashboard() {
               <span
                 style={{
                   fontFamily: MONO,
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: 700,
                   letterSpacing: "0.1em",
                   color: MONO_CLR,
@@ -1620,7 +1620,7 @@ export default function SovereigntyDashboard() {
                             border: `1px solid ${HAIR}`,
                             color: TERRA_SUB,
                             fontFamily: MONO,
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: 700,
                             letterSpacing: "0.06em",
                           }}
@@ -1644,7 +1644,7 @@ export default function SovereigntyDashboard() {
                         <span
                           style={{
                             fontFamily: MONO,
-                            fontSize: 12,
+                            fontSize: 13,
                             color: MONO_CLR,
                           }}
                         >
@@ -1666,7 +1666,7 @@ export default function SovereigntyDashboard() {
                               border: `1px solid ${HAIR}`,
                               color: GOOD,
                               fontFamily: MONO,
-                              fontSize: 12,
+                              fontSize: 13,
                               fontWeight: 700,
                               textDecoration: "none",
                             }}
@@ -1737,7 +1737,7 @@ export default function SovereigntyDashboard() {
             <div style={{ marginBottom: 14 }}>
               <div
                 style={{
-                  fontSize: 12,
+                  fontSize: 13,
                   fontFamily: MONO,
                   fontWeight: 700,
                   color: MONO_CLR,
@@ -1831,7 +1831,7 @@ export default function SovereigntyDashboard() {
               }}
             >
               <div>
-                <div style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 6, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 6, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                   Inheritance Trigger
                 </div>
                 <div style={{ fontSize: 15, fontFamily: DISP, fontWeight: 700, color: INK }}>
@@ -1839,7 +1839,7 @@ export default function SovereigntyDashboard() {
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 6, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 6, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                   Last Active
                 </div>
                 <div style={{ fontSize: 15, color: GOOD, fontFamily: DISP, fontWeight: 700 }}>
@@ -1876,7 +1876,7 @@ export default function SovereigntyDashboard() {
               <span
                 style={{
                   fontFamily: MONO,
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: 700,
                   letterSpacing: "0.1em",
                   color: MONO_CLR,
@@ -1902,7 +1902,7 @@ export default function SovereigntyDashboard() {
               >
                 + Mint Memory
                 <span style={{
-                  fontFamily: MONO, fontSize: 12, padding: "2px 7px", borderRadius: 999,
+                  fontFamily: MONO, fontSize: 13, padding: "2px 7px", borderRadius: 999,
                   background: "rgba(190,79,40,0.1)", color: TERRA_SUB,
                   fontWeight: 700, letterSpacing: "0.12em",
                 }}>SOON</span>
@@ -1940,7 +1940,7 @@ export default function SovereigntyDashboard() {
                 >
                   Mint Your First Memory
                   <span style={{
-                    fontFamily: MONO, fontSize: 12, padding: "2px 7px", borderRadius: 999,
+                    fontFamily: MONO, fontSize: 13, padding: "2px 7px", borderRadius: 999,
                     background: "rgba(190,79,40,0.12)", color: TERRA_SUB,
                     fontWeight: 700, letterSpacing: "0.12em",
                   }}>SOON</span>
@@ -1981,7 +1981,7 @@ export default function SovereigntyDashboard() {
                       >
                         <Icon name={MEMORY_TYPE_ICONS[m.memory_type] || "sparkling"} size={18} />
                       </div>
-                      <div style={{ fontSize: 12, color: TERRA }}>
+                      <div style={{ fontSize: 13, color: TERRA }}>
                         {"★".repeat(Math.max(1, Math.min(5, m.importance || 1)))}
                       </div>
                     </div>
@@ -2013,7 +2013,7 @@ export default function SovereigntyDashboard() {
                       {m.description}
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontFamily: MONO, fontSize: 12, color: MONO_CLR }}>
+                      <span style={{ fontFamily: MONO, fontSize: 13, color: MONO_CLR }}>
                         {formatDate(m.minted_at)}
                       </span>
                       {m.tx_hash && (
@@ -2022,7 +2022,7 @@ export default function SovereigntyDashboard() {
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{
-                            fontSize: 12,
+                            fontSize: 13,
                             fontFamily: MONO,
                             color: TERRA_SUB,
                             textDecoration: "none",
@@ -2057,7 +2057,7 @@ export default function SovereigntyDashboard() {
                 What we hold about {selectedPet?.name || "your pet"}
               </h2>
               <span style={{
-                fontSize: 12, padding: "3px 10px", borderRadius: 999,
+                fontSize: 13, padding: "3px 10px", borderRadius: 999,
                 background: "rgba(92,138,78,0.14)", color: GOOD,
                 fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
               }}>FULL TRANSPARENCY</span>
@@ -2080,7 +2080,7 @@ export default function SovereigntyDashboard() {
               <Stat label="Memory NFTs" value={memoryNfts.length} />
             </div>
 
-            <div style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 8, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+            <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 8, letterSpacing: "0.12em", textTransform: "uppercase" }}>
               Consent state
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -2094,7 +2094,7 @@ export default function SovereigntyDashboard() {
                 return (
                   <span key={key} style={{
                     display: "inline-flex", alignItems: "center", gap: 6,
-                    fontSize: 12, padding: "5px 12px", borderRadius: 999,
+                    fontSize: 13, padding: "5px 12px", borderRadius: 999,
                     fontFamily: BODY, fontWeight: 600,
                     background: on ? "rgba(92,138,78,0.12)" : INSET,
                     border: `1px solid ${HAIR}`,
@@ -2160,7 +2160,7 @@ export default function SovereigntyDashboard() {
             <div style={{ padding: "22px 28px", display: "flex", flexDirection: "column", gap: 16 }}>
               {mintableMemories.length > 0 && (
                 <div>
-                  <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 12, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 6 }}>SOURCE MEMORY (optional)</label>
+                  <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 13, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 6 }}>SOURCE MEMORY (optional)</label>
                   <select
                     value={mintSelectedMemoryId}
                     onChange={(e) => {
@@ -2184,7 +2184,7 @@ export default function SovereigntyDashboard() {
               )}
 
               <div>
-                <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 12, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 6 }}>TITLE *</label>
+                <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 13, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 6 }}>TITLE *</label>
                 <input
                   value={mintTitle}
                   onChange={(e) => setMintTitle(e.target.value)}
@@ -2194,7 +2194,7 @@ export default function SovereigntyDashboard() {
               </div>
 
               <div>
-                <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 12, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 6 }}>DESCRIPTION *</label>
+                <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 13, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 6 }}>DESCRIPTION *</label>
                 <textarea
                   value={mintDesc}
                   onChange={(e) => setMintDesc(e.target.value)}
@@ -2206,7 +2206,7 @@ export default function SovereigntyDashboard() {
 
               {/* Type selector */}
               <div>
-                <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 12, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 8 }}>TYPE</label>
+                <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 13, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 8 }}>TYPE</label>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {[
                     { v: "conversation", icon: "chat", l: "Chat" },
@@ -2216,7 +2216,7 @@ export default function SovereigntyDashboard() {
                   ].map(({ v, icon, l }) => (
                     <button key={v} onClick={() => setMintType(v)} style={{
                       display: "inline-flex", alignItems: "center", gap: 6,
-                      padding: "6px 14px", borderRadius: 999, fontSize: 12, fontFamily: BODY,
+                      padding: "6px 14px", borderRadius: 999, fontSize: 13, fontFamily: BODY,
                       border: mintType === v ? `1.5px solid ${TERRA}` : `1px solid ${HAIR}`,
                       background: mintType === v ? "rgba(190,79,40,0.1)" : INSET,
                       color: mintType === v ? TERRA_SUB : MUTED,
@@ -2229,7 +2229,7 @@ export default function SovereigntyDashboard() {
 
               {/* Importance */}
               <div>
-                <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 12, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 8 }}>
+                <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 13, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 8 }}>
                   IMPORTANCE
                 </label>
                 <div style={{ display: "flex", gap: 8 }}>
@@ -2300,7 +2300,7 @@ export default function SovereigntyDashboard() {
                 Data Sovereignty
               </h2>
               <span style={{
-                fontSize: 12, padding: "3px 9px", borderRadius: 999,
+                fontSize: 13, padding: "3px 9px", borderRadius: 999,
                 background: "rgba(190,79,40,0.1)", color: TERRA_SUB,
                 fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
               }}>PetClaw v1</span>
@@ -2443,11 +2443,11 @@ export default function SovereigntyDashboard() {
                   <span style={{ fontSize: 16, display: "inline-flex", color: GOOD }}><Icon name="open-box" size={16} /></span>
                   <span style={{ fontSize: 15, fontWeight: 800, color: INK, fontFamily: DISP }}>Export proof receipt</span>
                   <span style={{
-                    fontSize: 12, padding: "2px 8px", borderRadius: 10,
+                    fontSize: 13, padding: "2px 8px", borderRadius: 10,
                     background: "rgba(92,138,78,0.14)", color: GOOD,
                     fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
                   }}>SHA-256</span>
-                  <span style={{ marginLeft: "auto", fontSize: 12, fontFamily: MONO, color: MONO_CLR }}>
+                  <span style={{ marginLeft: "auto", fontSize: 13, fontFamily: MONO, color: MONO_CLR }}>
                     {exportReceipt.exportedAt ? new Date(exportReceipt.exportedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "—"}
                   </span>
                 </div>
@@ -2459,7 +2459,7 @@ export default function SovereigntyDashboard() {
                   ].map(({ l, v }) => (
                     <div key={l}>
                       <div style={{ fontSize: 20, fontWeight: 800, color: GOOD, fontFamily: DISP, fontVariantNumeric: "tabular-nums" }}>{v}</div>
-                      <div style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>{l}</div>
+                      <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>{l}</div>
                     </div>
                   ))}
                 </div>
@@ -2490,11 +2490,11 @@ export default function SovereigntyDashboard() {
                   </span>
                   <span style={{ fontSize: 15, fontWeight: 800, color: INK, fontFamily: DISP }}>Deletion proof receipt</span>
                   <span style={{
-                    fontSize: 12, padding: "2px 8px", borderRadius: 10,
+                    fontSize: 13, padding: "2px 8px", borderRadius: 10,
                     background: "rgba(181,70,43,0.12)", color: DANGER,
                     fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
                   }}>SHA-256</span>
-                  <span style={{ marginLeft: "auto", fontSize: 12, fontFamily: MONO, color: MONO_CLR }}>
+                  <span style={{ marginLeft: "auto", fontSize: 13, fontFamily: MONO, color: MONO_CLR }}>
                     {deleteReceipt.deletedAt ? new Date(deleteReceipt.deletedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "—"}
                   </span>
                 </div>
@@ -2510,7 +2510,7 @@ export default function SovereigntyDashboard() {
 
             {/* Consent Management */}
             <div style={{ borderTop: `1px solid ${HAIR}`, paddingTop: 16 }}>
-              <div style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 6, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+              <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 6, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                 Data Consent
               </div>
               <div style={{ fontSize: 13.5, color: MUTED2, marginBottom: 14, lineHeight: 1.6, fontFamily: BODY }}>
@@ -2578,8 +2578,8 @@ export default function SovereigntyDashboard() {
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 22, display: "inline-flex", color: TERRA }}><Icon name="paw" size={22} /></span>
                 <h2 style={{ fontFamily: DISP, fontSize: 24, fontWeight: 800, color: INK, letterSpacing: "-0.02em" }}>PetClaw SDK</h2>
-                <span style={{ fontSize: 12, padding: "3px 9px", borderRadius: 999, background: "rgba(190,79,40,0.1)", color: TERRA_SUB, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>MEMORY · SESSION</span>
-                <span style={{ fontSize: 12, padding: "3px 9px", borderRadius: 999, background: "rgba(92,138,78,0.1)", color: GOOD, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>v1.3.0</span>
+                <span style={{ fontSize: 13, padding: "3px 9px", borderRadius: 999, background: "rgba(190,79,40,0.1)", color: TERRA_SUB, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>MEMORY · SESSION</span>
+                <span style={{ fontSize: 13, padding: "3px 9px", borderRadius: 999, background: "rgba(92,138,78,0.1)", color: GOOD, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>v1.3.0</span>
               </div>
               <p style={{ fontSize: 15, color: MUTED2, fontFamily: BODY, lineHeight: 1.7, marginBottom: 24 }}>
                 PetClaw is not a generic AI API wrapper — it is a <strong style={{ color: INK }}>memory &amp; session-specialized framework</strong>. Unlike stateless wrappers, Claw preserves full context across platform switches, restarts, and devices. Your pet remembers who you are, what you talked about, and what matters to you — everywhere.
@@ -2611,7 +2611,7 @@ export default function SovereigntyDashboard() {
               display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-start",
             }}>
               <div style={{ flex: "0 0 auto" }}>
-                <div style={{ fontSize: 12, fontFamily: MONO, color: TERRA_SUB, letterSpacing: "0.12em", marginBottom: 8, fontWeight: 700 }}>SOUL.md — A living definition of your pet</div>
+                <div style={{ fontSize: 13, fontFamily: MONO, color: TERRA_SUB, letterSpacing: "0.12em", marginBottom: 8, fontWeight: 700 }}>SOUL.md — A living definition of your pet</div>
                 <div style={{ background: "#211A12", borderRadius: 10, padding: "14px 18px", fontFamily: "monospace", fontSize: 13, color: "#F5EFE2", lineHeight: 1.85, minWidth: 280 }}>
                   <div style={{ color: "#F49B2A", fontWeight: 700 }}># SOUL — Sparky</div>
                   <div style={{ color: "rgba(251,246,236,0.65)", marginTop: 4 }}>{"> A living definition of who Sparky is."}</div>
@@ -2631,7 +2631,7 @@ export default function SovereigntyDashboard() {
                 </div>
                 <div style={{ marginTop: 12, display: "flex", gap: 6 }}>
                   {["petclaw-sdk soul init", "petclaw-sdk soul push"].map((cmd) => (
-                    <span key={cmd} style={{ fontSize: 12, padding: "3px 8px", borderRadius: 6, background: "#211A12", color: "#E8A86A", fontFamily: "monospace" }}>{cmd}</span>
+                    <span key={cmd} style={{ fontSize: 13, padding: "3px 8px", borderRadius: 6, background: "#211A12", color: "#E8A86A", fontFamily: "monospace" }}>{cmd}</span>
                   ))}
                 </div>
               </div>
@@ -2639,7 +2639,7 @@ export default function SovereigntyDashboard() {
 
             {/* CLI Onboarding */}
             <div style={{ padding: "24px 30px" }}>
-              <div style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 12, letterSpacing: "0.12em", textTransform: "uppercase" }}>CLI Onboarding — Up in 5 Minutes</div>
+              <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 12, letterSpacing: "0.12em", textTransform: "uppercase" }}>CLI Onboarding — Up in 5 Minutes</div>
               <div style={{ background: "#211A12", borderRadius: 14, padding: "18px 22px", fontFamily: "monospace", fontSize: 13, color: "#F5EFE2", lineHeight: 2.1, overflowX: "auto" }}>
                 {[
                   { prompt: "$", cmd: "npm install -g @myaipet/petclaw-sdk", comment: "" },
@@ -2655,14 +2655,14 @@ export default function SovereigntyDashboard() {
                     {comment && <span style={{ color: "rgba(251,246,236,0.65)", marginLeft: 4 }}>{comment}</span>}
                   </div>
                 ))}
-                <div style={{ marginTop: 10, color: "rgba(251,246,236,0.65)", fontSize: 12 }}>
+                <div style={{ marginTop: 10, color: "rgba(251,246,236,0.65)", fontSize: 13 }}>
                   petclaw-sdk talk &nbsp;→ interactive chat mode &nbsp;|&nbsp; petclaw-sdk mcp → start MCP server
                 </div>
               </div>
 
               {/* SDK quick setup */}
               <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 8, letterSpacing: "0.12em", textTransform: "uppercase" }}>SDK (TypeScript)</div>
+                <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 8, letterSpacing: "0.12em", textTransform: "uppercase" }}>SDK (TypeScript)</div>
                 <div style={{ background: "#211A12", borderRadius: 12, padding: "16px 20px", fontFamily: "monospace", fontSize: 13, color: "#F5EFE2", lineHeight: 2, overflowX: "auto" }}>
                   <div><span style={{ color: "#E8A86A" }}>import</span> {"{ PetClawClient }"} <span style={{ color: "#E8A86A" }}>from</span> <span style={{ color: "#7CB36A" }}>'petclaw-sdk'</span></div>
                   <div style={{ marginTop: 8 }}><span style={{ color: "#E8A86A" }}>const</span> claw = <span style={{ color: "#E8A86A" }}>new</span> <span style={{ color: "#F49B2A" }}>PetClawClient</span>{"({ baseUrl: process.env.PETCLAW_URL })"}</div>
@@ -2701,7 +2701,7 @@ export default function SovereigntyDashboard() {
                 Pet Network
               </h2>
               <span style={{
-                fontSize: 12, padding: "3px 10px", borderRadius: 999,
+                fontSize: 13, padding: "3px 10px", borderRadius: 999,
                 background: "rgba(190,79,40,0.1)", color: TERRA_SUB,
                 fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
               }}>OPEN · PUBLIC</span>
@@ -2720,7 +2720,7 @@ export default function SovereigntyDashboard() {
                 <div style={{ fontSize: 24, fontWeight: 800, color: INK, fontFamily: DISP, fontVariantNumeric: "tabular-nums" }}>
                   {networkStats?.totalNodes ?? 0}
                 </div>
-                <div style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>Total pets</div>
+                <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>Total pets</div>
               </div>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -2729,13 +2729,13 @@ export default function SovereigntyDashboard() {
                     {networkStats?.onlineNodes ?? 0}
                   </span>
                 </div>
-                <div style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>Online now</div>
+                <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>Online now</div>
               </div>
               <div>
                 <div style={{ fontSize: 24, fontWeight: 800, color: INK, fontFamily: DISP, fontVariantNumeric: "tabular-nums" }}>
                   {networkStats?.avgTrustScore ?? 0}
                 </div>
-                <div style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>Avg trust</div>
+                <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>Avg trust</div>
               </div>
             </div>
 
@@ -2776,12 +2776,12 @@ export default function SovereigntyDashboard() {
                         <div style={{ fontSize: 14, fontWeight: 700, color: INK, fontFamily: DISP, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {n.name}
                         </div>
-                        <div style={{ fontSize: 12, color: MUTED, fontFamily: MONO, marginTop: 2 }}>
+                        <div style={{ fontSize: 13, color: MUTED, fontFamily: MONO, marginTop: 2 }}>
                           {[n.personality, n.element, n.level != null ? `Lv.${n.level}` : null].filter(Boolean).join(" · ")}
                         </div>
                       </div>
                       <span style={{
-                        fontSize: 12, padding: "4px 10px", borderRadius: 999,
+                        fontSize: 13, padding: "4px 10px", borderRadius: 999,
                         background: "rgba(92,138,78,0.12)", border: `1px solid ${HAIR}`,
                         color: GOOD, fontFamily: MONO, fontWeight: 700,
                       }}>
@@ -2813,7 +2813,7 @@ export default function SovereigntyDashboard() {
                 PetClaw Ecosystem
               </h2>
               <span style={{
-                fontSize: 12, padding: "3px 9px", borderRadius: 999,
+                fontSize: 13, padding: "3px 9px", borderRadius: 999,
                 background: "rgba(190,79,40,0.1)", color: TERRA_SUB,
                 fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
               }}>COMING SOON</span>
@@ -2858,11 +2858,11 @@ export default function SovereigntyDashboard() {
                     width: 24, height: 24, borderRadius: 6,
                     background: c.color, color: "#fff",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 12, fontWeight: 800, flexShrink: 0,
+                    fontSize: 13, fontWeight: 800, flexShrink: 0,
                   }}>{c.icon}</div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, fontFamily: BODY, color: c.live ? INK : MUTED }}>{c.name}</div>
-                    <div style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.08em", color: c.live ? GOOD : MONO_CLR }}>
+                    <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.08em", color: c.live ? GOOD : MONO_CLR }}>
                       {c.live ? "● live" : "○ soon"}
                     </div>
                   </div>
@@ -2871,13 +2871,13 @@ export default function SovereigntyDashboard() {
             </div>
 
             <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <span style={{ fontFamily: BODY, fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 8, background: INSET, border: `1px solid ${HAIR}`, color: MUTED2 }}>
+              <span style={{ fontFamily: BODY, fontSize: 13, fontWeight: 600, padding: "5px 12px", borderRadius: 8, background: INSET, border: `1px solid ${HAIR}`, color: MUTED2 }}>
                 18 Skills
               </span>
-              <span style={{ fontFamily: BODY, fontSize: 12, fontWeight: 600, padding: "5px 12px", borderRadius: 8, background: INSET, border: `1px solid ${HAIR}`, color: MUTED2 }}>
+              <span style={{ fontFamily: BODY, fontSize: 13, fontWeight: 600, padding: "5px 12px", borderRadius: 8, background: INSET, border: `1px solid ${HAIR}`, color: MUTED2 }}>
                 6 MCP Clients
               </span>
-              <span style={{ fontFamily: MONO, fontSize: 12, padding: "5px 12px", borderRadius: 8, background: INSET, border: `1px solid ${HAIR}`, color: MUTED2 }}>
+              <span style={{ fontFamily: MONO, fontSize: 13, padding: "5px 12px", borderRadius: 8, background: INSET, border: `1px solid ${HAIR}`, color: MUTED2 }}>
                 @myaipet/petclaw-sdk
               </span>
             </div>
@@ -2890,7 +2890,7 @@ export default function SovereigntyDashboard() {
 // ── Shared styles for modal inputs ──
 const labelStyle: React.CSSProperties = {
   display: "block",
-  fontSize: 12,
+  fontSize: 13,
   fontFamily: MONO,
   fontWeight: 700,
   color: MONO_CLR,

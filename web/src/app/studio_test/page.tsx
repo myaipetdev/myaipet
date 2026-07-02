@@ -25,7 +25,7 @@ export default function StudioStagingPage() {
         background: "linear-gradient(90deg, #fbbf24, #f59e0b)",
         color: "#1a1a2e", fontWeight: 800,
         fontFamily: "'JetBrains Mono', monospace",
-        fontSize: 12, letterSpacing: "0.14em",
+        fontSize: 13, letterSpacing: "0.14em",
         textTransform: "uppercase", textAlign: "center",
       }}>
         ⚠ STAGING · NOT LIVE · feedback iteration only

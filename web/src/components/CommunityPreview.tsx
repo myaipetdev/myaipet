@@ -26,7 +26,7 @@ export default function CommunityPreview({ cta }: { cta?: ReactNode }) {
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto", padding: "8px 20px 56px" }}>
       <div style={{ textAlign: "center", marginBottom: 18 }}>
-        <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.13em", color: "#9A4E1E", fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, letterSpacing: "0.13em", color: "#9A4E1E", fontWeight: 700, marginBottom: 6, textTransform: "uppercase" }}>
           FRESH FROM THE COMMUNITY
         </div>
         <h2 style={{ fontFamily: "var(--ed-disp)", fontSize: 26, fontWeight: 800, color: "#211A12", letterSpacing: "-0.02em", margin: "0 0 4px" }}>
@@ -60,7 +60,7 @@ export default function CommunityPreview({ cta }: { cta?: ReactNode }) {
                   position: "absolute", bottom: 8, left: 8,
                   display: "inline-flex", alignItems: "center", gap: 4,
                   background: "rgba(0,0,0,0.55)", color: "#fff", borderRadius: 999, padding: "3px 9px",
-                  fontFamily: "var(--ed-disp)", fontSize: 12, fontWeight: 700, backdropFilter: "blur(4px)",
+                  fontFamily: "var(--ed-disp)", fontSize: 13, fontWeight: 700, backdropFilter: "blur(4px)",
                 }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="#f472b6" aria-hidden="true" style={{ display: "block" }}>
                     <path d="M12 20.7l-1.45-1.32C5.4 14.74 2 11.66 2 7.9 2 4.82 4.42 2.4 7.5 2.4c1.74 0 3.41.81 4.5 2.09 1.09-1.28 2.76-2.09 4.5-2.09 3.08 0 5.5 2.42 5.5 5.5 0 3.76-3.4 6.84-8.55 11.49L12 20.7z" />

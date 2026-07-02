@@ -60,7 +60,7 @@ export default function SeasonTierCard() {
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <WaxSeal seal={rungSeal(tier.name, "current")} size={42} />
             <div>
-              <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.14em", color: "#9A4E1E" }}>SEASON 1 STANDING</div>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, textTransform: "uppercase", letterSpacing: "0.14em", color: "#9A4E1E" }}>SEASON 1 STANDING</div>
               <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 26, letterSpacing: "-0.02em", color: "#211A12", marginTop: 2 }}>{tier.name}</div>
             </div>
           </div>
@@ -90,9 +90,9 @@ export default function SeasonTierCard() {
                 <WaxSeal seal={rungSeal(t.name, state)} size={30} style={state === "locked" ? { boxShadow: "none", borderStyle: "dashed" } : undefined} />
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   <span aria-hidden style={{ width: 5, height: 5, borderRadius: "50%", background: t.color, flexShrink: 0 }} />
-                  <span style={{ fontFamily: "var(--ed-disp)", fontSize: 12, fontWeight: 700, color: reached ? "#211A12" : "#9A7B4E", letterSpacing: "-0.01em" }}>{t.name}</span>
+                  <span style={{ fontFamily: "var(--ed-disp)", fontSize: 13, fontWeight: 700, color: reached ? "#211A12" : "#9A7B4E", letterSpacing: "-0.01em" }}>{t.name}</span>
                 </div>
-                <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E" }}>{t.min >= 1000 ? `${t.min / 1000}k` : t.min}</div>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E" }}>{t.min >= 1000 ? `${t.min / 1000}k` : t.min}</div>
               </div>
             );
           })}
@@ -111,7 +111,7 @@ export default function SeasonTierCard() {
             </svg>
           </span>
           <span>Your standing is <strong style={{ color: "#211A12" }}>snapshotted when Season 1 closes</strong> · {participants.toLocaleString()} raising now.</span>
-          <span style={{ marginLeft: "auto", fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E" }}>non-financial status</span>
+          <span style={{ marginLeft: "auto", fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E" }}>non-financial status</span>
         </div>
       </div>
     </div>

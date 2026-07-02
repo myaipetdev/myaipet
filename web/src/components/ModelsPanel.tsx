@@ -147,7 +147,7 @@ export default function ModelsPanel() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "8px 0 20px", fontFamily: BODY }}>
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase" }}>PetClaw protocol · bring your own model</div>
+        <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase" }}>PetClaw protocol · bring your own model</div>
         <h1 style={{ fontFamily: DISP, fontSize: 28, fontWeight: 800, color: INK, margin: "6px 0 0", letterSpacing: "-0.02em" }}>Your model, your pet</h1>
         <p style={{ fontFamily: BODY, fontSize: 14.5, color: MUTED, margin: "8px 0 0", lineHeight: 1.55 }}>
           A PetClaw-protocol (developer) feature — the intended path is the <strong style={{ color: INK, fontWeight: 600 }}>CLI / at install</strong>. Your pet then routes its chat replies, agent-loop reasoning, and best-of-N judging to your model; other background tasks use the platform default (Grok). Keys are encrypted at rest, never shown again.
@@ -227,7 +227,7 @@ export default function ModelsPanel() {
               const on = scopes.includes(t);
               return (
                 <button key={t} onClick={() => setScopes(on ? scopes.filter((x) => x !== t) : [...scopes, t])}
-                  style={{ fontFamily: BODY, padding: "5px 12px", borderRadius: 999, border: `1px solid ${on ? "#BE4F28" : LINE}`, background: on ? GOLD_SOFT : PAPER, color: on ? GOLD : MUTED, fontSize: 12.5, cursor: "pointer", fontWeight: on ? 600 : 400 }}>
+                  style={{ fontFamily: BODY, padding: "5px 12px", borderRadius: 999, border: `1px solid ${on ? "#BE4F28" : LINE}`, background: on ? GOLD_SOFT : PAPER, color: on ? GOLD : MUTED, fontSize: 13, cursor: "pointer", fontWeight: on ? 600 : 400 }}>
                   {t}
                 </button>
               );
@@ -244,7 +244,7 @@ export default function ModelsPanel() {
           <div key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderTop: `1px solid ${LINE}` }}>
             <div>
               <div style={{ fontWeight: 600, color: INK, fontSize: 14.5 }}>{c.label} <span style={{ color: MUTED, fontWeight: 400 }}>· {c.model}</span></div>
-              <div style={{ fontSize: 12.5, color: MUTED, marginTop: 2 }}>
+              <div style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>
                 {c.provider} · {c.task_scopes?.length ? c.task_scopes.join(", ") : "all tasks"} · key {c.keyMask || "••••••"}
               </div>
             </div>

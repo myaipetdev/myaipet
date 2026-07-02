@@ -33,7 +33,7 @@ export default function PremiumTeaser() {
         boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       }}>
         <div style={{
-          fontSize: 12, fontFamily: "var(--ed-m)",
+          fontSize: 13, fontFamily: "var(--ed-m)",
           letterSpacing: "0.14em", color: "#9A4E1E", marginBottom: 8, fontWeight: 700,
         }}>UNLIMITED · COMING SOON</div>
         <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 4, fontFamily: "var(--ed-disp)" }}>
@@ -96,7 +96,7 @@ function Tier({
           <span style={{
             padding: "2px 7px", borderRadius: 999,
             background: "#BE4F28", color: "#fff", border: "none",
-            fontSize: 12, fontWeight: 800, fontFamily: "var(--ed-m)", letterSpacing: "0.06em",
+            fontSize: 13, fontWeight: 800, fontFamily: "var(--ed-m)", letterSpacing: "0.06em",
           }}>CURRENT</span>
         )}
       </div>
@@ -106,7 +106,7 @@ function Tier({
       }}>{price}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
         {features.map((f, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#5C5140", fontFamily: "var(--ed-body)" }}>
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#5C5140", fontFamily: "var(--ed-body)" }}>
             <svg width={13} height={13} viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
               <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="#BE4F28" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -119,7 +119,7 @@ function Tier({
         border: highlight ? "none" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
         background: highlight ? "linear-gradient(180deg,#F49B2A,#E27D0C)" : "#F5EFE2",
         boxShadow: "none",
-        color: highlight ? "#FFF8EE" : "#7A6E5A", fontWeight: 800, fontSize: 12,
+        color: highlight ? "#FFF8EE" : "#7A6E5A", fontWeight: 800, fontSize: 13,
         cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.75 : 1,
         fontFamily: "var(--ed-disp)",
       }}>{cta}</button>

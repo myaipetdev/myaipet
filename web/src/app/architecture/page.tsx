@@ -106,10 +106,10 @@ export default function ArchitecturePage() {
           background: "rgba(26,26,46,0.04)", border: "1px solid rgba(26,26,46,0.08)",
           fontSize: 13, color: "rgba(26,26,46,0.6)", lineHeight: 1.65,
         }}>
-          Public API: <code style={{ fontSize: 12 }}>/api/petclaw/export</code>{" · "}
-          <code style={{ fontSize: 12 }}>/api/petclaw/import</code>{" · "}
-          <code style={{ fontSize: 12 }}>/api/petclaw/delete</code>{" · "}
-          <code style={{ fontSize: 12 }}>/api/petclaw/consent</code>{" · "}
+          Public API: <code style={{ fontSize: 13 }}>/api/petclaw/export</code>{" · "}
+          <code style={{ fontSize: 13 }}>/api/petclaw/import</code>{" · "}
+          <code style={{ fontSize: 13 }}>/api/petclaw/delete</code>{" · "}
+          <code style={{ fontSize: 13 }}>/api/petclaw/consent</code>{" · "}
           full reference at <a href="/api-docs" style={{ color: "#b45309" }}>/api-docs</a>.
         </div>
       </div>
@@ -133,7 +133,7 @@ function Layer({ n, title, tag, desc }: { n: number; title: string; tag: string;
       <div>
         <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{title}</div>
         <div style={{
-          display: "inline-block", fontSize: 12, padding: "2px 8px", borderRadius: 6,
+          display: "inline-block", fontSize: 13, padding: "2px 8px", borderRadius: 6,
           background: "rgba(245,158,11,0.1)", color: "#92400e",
           fontFamily: "monospace", marginBottom: 8,
         }}>{tag}</div>

@@ -109,11 +109,11 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
           background: "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.04))",
           border: "1px solid rgba(245,158,11,0.2)",
         }}>
-          <div style={{ fontSize: 12, color: "rgba(26,26,46,0.55)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Price</div>
+          <div style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Price</div>
           <div style={{ fontSize: 28, fontWeight: 800, color: "#b45309", marginTop: 4 }}>
             {info.priceUsd.toFixed(2)} USDT
           </div>
-          <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", marginTop: 4, fontFamily: "mono" }}>
+          <div style={{ fontSize: 13, color: "rgba(26,26,46,0.5)", marginTop: 4, fontFamily: "mono" }}>
             BSC (BEP-20) USDT · payment goes to project treasury
           </div>
         </div>
@@ -122,7 +122,7 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
           <div style={{
             padding: 10, borderRadius: 8, marginBottom: 12,
             background: "rgba(220,38,38,0.08)", color: "#dc2626",
-            fontSize: 12, fontFamily: "mono",
+            fontSize: 13, fontFamily: "mono",
             display: "flex", alignItems: "center", gap: 6,
           }}>
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
@@ -137,7 +137,7 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
         {errMsg && (
           <div style={{
             padding: 10, borderRadius: 8, marginBottom: 12,
-            background: "rgba(220,38,38,0.08)", color: "#dc2626", fontSize: 12,
+            background: "rgba(220,38,38,0.08)", color: "#dc2626", fontSize: 13,
           }}>{errMsg}</div>
         )}
 

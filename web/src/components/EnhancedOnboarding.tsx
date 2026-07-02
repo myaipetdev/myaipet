@@ -261,7 +261,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
       padding: "4px 10px", borderRadius: 999,
       background: "rgba(190,79,40,0.10)",
       color: "#9A4E1E",
-      fontSize: 12, fontWeight: 700, letterSpacing: "0.12em",
+      fontSize: 13, fontWeight: 700, letterSpacing: "0.12em",
       fontFamily: "var(--ed-m)",
       textTransform: "uppercase", marginBottom: 10,
     }}>{text}</div>
@@ -289,7 +289,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             display: "inline-flex", gap: 6, alignItems: "center",
             padding: "5px 12px", borderRadius: 999,
             background: "rgba(33,26,18,0.05)",
-            fontSize: 12, color: "#5C5140", fontWeight: 600,
+            fontSize: 13, color: "#5C5140", fontWeight: 600,
             marginBottom: 14,
           }}>
             <span>Lv.{pet.level || 1}</span>
@@ -321,10 +321,10 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
               }}><Icon name={item.icon} size={22} /></div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#211A12", fontFamily: "var(--ed-disp)" }}>{item.label}</div>
-                <div style={{ fontSize: 12, color: "#7A6E5A", marginTop: 1 }}>{item.desc}</div>
+                <div style={{ fontSize: 13, color: "#7A6E5A", marginTop: 1 }}>{item.desc}</div>
               </div>
               <span style={{
-                fontSize: 12, padding: "3px 10px", borderRadius: 999,
+                fontSize: 13, padding: "3px 10px", borderRadius: 999,
                 background: "rgba(92,138,78,0.14)", color: "#5C8A4E", fontWeight: 700,
                 fontFamily: "var(--ed-m)",
               }}>{item.pts}</span>
@@ -358,7 +358,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           <h3 style={{ fontSize: 22, fontWeight: 800, color: "#211A12", margin: "0 0 4px", letterSpacing: "-0.02em", fontFamily: "var(--ed-disp)" }}>
             {q.question}
           </h3>
-          {isMulti && <p style={{ color: "#7A6E5A", fontSize: 12, margin: 0 }}>Pick up to 3</p>}
+          {isMulti && <p style={{ color: "#7A6E5A", fontSize: 13, margin: 0 }}>Pick up to 3</p>}
         </div>
 
         <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
@@ -367,7 +367,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             return (
               <div key={opt.value} onClick={() => handleQuizAnswer(q.id, opt.value, isMulti)} style={optionStyle(on)}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: on ? "#9A4E1E" : "#211A12", fontFamily: "var(--ed-disp)" }}>{opt.label}</div>
-                {"desc" in opt && <div style={{ fontSize: 12, color: "#7A6E5A", marginTop: 3 }}>{(opt as any).desc}</div>}
+                {"desc" in opt && <div style={{ fontSize: 13, color: "#7A6E5A", marginTop: 3 }}>{(opt as any).desc}</div>}
               </div>
             );
           })}
@@ -444,10 +444,10 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
                 }}>{p.icon}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "#211A12", fontFamily: "var(--ed-disp)" }}>{p.name}</div>
-                  <div style={{ fontSize: 12, color: "#7A6E5A", marginTop: 1 }}>{p.desc}</div>
+                  <div style={{ fontSize: 13, color: "#7A6E5A", marginTop: 1 }}>{p.desc}</div>
                 </div>
                 <span style={{
-                  fontSize: 12, padding: "4px 11px", borderRadius: 999, fontWeight: 700,
+                  fontSize: 13, padding: "4px 11px", borderRadius: 999, fontWeight: 700,
                   fontFamily: "var(--ed-m)",
                   background: on ? "rgba(92,138,78,0.16)" : "rgba(33,26,18,0.06)",
                   color: on ? "#5C8A4E" : "#9A7B4E",
@@ -527,7 +527,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
               padding: "6px 12px", borderRadius: 999,
               background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
               color: "#5C5140", cursor: tdLoading ? "wait" : "pointer",
-              fontFamily: "var(--ed-body)", fontSize: 12, fontWeight: 500,
+              fontFamily: "var(--ed-body)", fontSize: 13, fontWeight: 500,
             }}>{s}</button>
           ))}
         </div>
@@ -604,13 +604,13 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
               <div key={t} style={{ padding: "12px 12px", borderRadius: 12, background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))" }}>
                 <div style={{ fontSize: 18 }}><Icon name={icon} size={20} /></div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#211A12", marginTop: 4, fontFamily: "var(--ed-disp)" }}>{t}</div>
-                <div style={{ fontSize: 12, color: "#7A6E5A", marginTop: 2 }}>{s}</div>
+                <div style={{ fontSize: 13, color: "#7A6E5A", marginTop: 2 }}>{s}</div>
               </div>
             ))}
           </div>
           <button onClick={onComplete} style={primaryBtn}>Start chatting →</button>
           <div style={{ marginTop: 12 }}>
-            <a href="/sovereignty" style={{ fontSize: 12.5, color: "#9A4E1E", textDecoration: "none", fontWeight: 600 }}>
+            <a href="/sovereignty" style={{ fontSize: 13, color: "#9A4E1E", textDecoration: "none", fontWeight: 600 }}>
               Bring your own AI model (Claude · GPT · Gemini) ▸ PetClaw
             </a>
           </div>

@@ -109,15 +109,15 @@ export default function DashboardList({ rows }: { rows: LeaderRow[] }) {
               <div style={{ fontSize: 13, fontWeight: 700 }}>
                 {p.name}
                 {p.careStreak >= 7 && (
-                  <span style={{ marginLeft: 6, fontSize: 12, color: "#b45309", display: "inline-flex", alignItems: "center", gap: 2 }}><Icon name="fire" size={11} />{p.careStreak}d</span>
+                  <span style={{ marginLeft: 6, fontSize: 13, color: "#b45309", display: "inline-flex", alignItems: "center", gap: 2 }}><Icon name="fire" size={11} />{p.careStreak}d</span>
                 )}
               </div>
-              <div style={{ fontSize: 12, fontFamily: "mono", color: "rgba(26,26,46,0.45)" }}>
+              <div style={{ fontSize: 13, fontFamily: "mono", color: "rgba(26,26,46,0.45)" }}>
                 Lv.{p.level} · {p.ownerWallet}
               </div>
             </div>
             <div className="leader-stats" style={{
-              fontSize: 12, fontFamily: "mono", color: "rgba(26,26,46,0.55)",
+              fontSize: 13, fontFamily: "mono", color: "rgba(26,26,46,0.55)",
               textAlign: "right", whiteSpace: "nowrap",
             }}>
               <div>A{p.atk} D{p.def} S{p.spd}</div>
@@ -167,14 +167,14 @@ export default function DashboardList({ rows }: { rows: LeaderRow[] }) {
                     textAlign: "left",
                   }}
                 >
-                  {myPet.name} <span style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.5)", fontWeight: 400 }}>· Lv.{myPet.level}</span>
+                  {myPet.name} <span style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.5)", fontWeight: 400 }}>· Lv.{myPet.level}</span>
                 </button>
               ))}
             </div>
             <button onClick={() => setPicker(null)} style={{
               marginTop: 14, width: "100%", padding: 10, borderRadius: 8,
               border: "1px solid rgba(0,0,0,0.1)", background: "white", color: "#1a1a2e",
-              fontWeight: 600, fontSize: 12, cursor: "pointer",
+              fontWeight: 600, fontSize: 13, cursor: "pointer",
             }}>Cancel</button>
           </div>
         </div>

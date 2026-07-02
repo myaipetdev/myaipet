@@ -195,7 +195,7 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
             }} />
             <div style={{ marginTop: 14 }}>
               <label style={miniLabel}>TRIM</label>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 6, fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 6, fontSize: 13, color: "rgba(255,255,255,0.7)" }}>
                 <span>Start {state.trimStart.toFixed(1)}s</span>
                 <input type="range" min={0} max={duration} step={0.1} value={state.trimStart}
                   onChange={e => setState(s => ({ ...s, trimStart: Math.min(parseFloat(e.target.value), s.trimEnd - 0.1) }))}
@@ -252,11 +252,11 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
               </div>
               {state.musicUrl && (
                 <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: "mono" }}>Volume</span>
+                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontFamily: "mono" }}>Volume</span>
                   <input type="range" min={0} max={1} step={0.05} value={state.musicVolume}
                     onChange={e => setState(s => ({ ...s, musicVolume: parseFloat(e.target.value) }))}
                     style={{ flex: 1 }} />
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: "mono", minWidth: 30 }}>
+                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontFamily: "mono", minWidth: 30 }}>
                     {Math.round(state.musicVolume * 100)}%
                   </span>
                 </div>
@@ -306,7 +306,7 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
 }
 
 const miniLabel: React.CSSProperties = {
-  fontSize: 12, fontWeight: 800, letterSpacing: "0.14em",
+  fontSize: 13, fontWeight: 800, letterSpacing: "0.14em",
   textTransform: "uppercase", color: "rgba(255,255,255,0.45)",
   fontFamily: "'JetBrains Mono', monospace",
 };
@@ -332,6 +332,6 @@ const btnSecondary: React.CSSProperties = {
 };
 const btnSmall: React.CSSProperties = {
   padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)",
-  fontSize: 12, fontWeight: 700, cursor: "pointer",
+  fontSize: 13, fontWeight: 700, cursor: "pointer",
   fontFamily: "'Space Grotesk',sans-serif",
 };

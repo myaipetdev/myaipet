@@ -58,7 +58,7 @@ export default function EvolutionAnimation({
         {phase === "charge" && (
           <>
             <div style={{
-              fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700,
+              fontSize: 13, fontFamily: "var(--ed-m)", fontWeight: 700,
               color: "#F49B2A", letterSpacing: "0.14em", marginBottom: 28,
               textTransform: "uppercase",
               animation: "evoTextPulse 1.5s ease infinite",
@@ -153,7 +153,7 @@ export default function EvolutionAnimation({
                 background: "#211A12",
                 color: "#F49B2A",
                 padding: "6px 18px", borderRadius: 999,
-                fontFamily: "var(--ed-disp)", fontSize: 12, fontWeight: 800,
+                fontFamily: "var(--ed-disp)", fontSize: 13, fontWeight: 800,
                 letterSpacing: "0.1em", textTransform: "uppercase",
                 border: "1px solid rgba(244,155,42,0.5)",
                 boxShadow: "0 20px 40px -26px rgba(80,55,20,.5)",

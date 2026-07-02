@@ -51,7 +51,7 @@ export default function BattleArchivedPage() {
           </svg>
         </div>
         <div style={{
-          fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
           letterSpacing: "0.18em", color: "rgba(26,26,46,0.55)",
           marginBottom: 10,
         }}>BATTLE · ARCHIVED</div>

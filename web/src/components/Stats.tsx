@@ -28,7 +28,7 @@ export default function Stats({ stats }: any) {
         onMouseLeave={e => (e.currentTarget.style.background = "#FBF6EC")}
         >
           <div style={{
-            fontFamily: "var(--ed-m)", fontSize: 12,
+            fontFamily: "var(--ed-m)", fontSize: 13,
             color: "#7A6E5A",
             textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 8,
             fontWeight: 700,
@@ -46,7 +46,7 @@ export default function Stats({ stats }: any) {
             </span>
             {s.change != null && s.change !== 0 && (
               <span style={{
-                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 500,
+                fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 500,
                 color: String(s.change).startsWith("+") || Number(s.change) > 0 ? "#5C8A4E" : "#C0492B",
               }}>
                 {typeof s.change === "number" ? (s.change > 0 ? `+${s.change}%` : `${s.change}%`) : s.change}
@@ -54,7 +54,7 @@ export default function Stats({ stats }: any) {
             )}
           </div>
           {s.sub && (
-            <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", marginTop: 3 }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E", marginTop: 3 }}>
               {s.sub}
             </div>
           )}

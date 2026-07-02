@@ -138,8 +138,8 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320, placeho
           }}
         >
           {placeholder?.name && <div style={{ fontFamily: "var(--ed-disp)", fontSize: 16, fontWeight: 800, color: INK, letterSpacing: "-0.02em" }}>{placeholder.name}</div>}
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED }}>Card unavailable</div>
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#BE4F28" }}>Retry ▸</div>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED }}>Card unavailable</div>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#BE4F28" }}>Retry ▸</div>
         </div>
       </div>
     );
@@ -173,11 +173,11 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320, placeho
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, padding: "11px 14px 9px", borderBottom: fin.foilName ? "1px solid rgba(184,130,44,.45)" : undefined, marginBottom: fin.foilName ? 7 : 0 }}>
             <div style={{ minWidth: 0 }}>
               <div className={fin.foilName ? "ed-foil-text" : undefined} style={{ fontFamily: "var(--ed-disp)", fontSize: 20, fontWeight: 800, color: INK, letterSpacing: "-0.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.05 }}>{card.name}</div>
-              <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: t.color, letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 3 }}>{t.label}</div>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: t.color, letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 3 }}>{t.label}</div>
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
               <div style={{ fontFamily: "var(--ed-disp)", fontSize: 15, fontWeight: 700, color: INK }}>Lv {card.level}</div>
-              {card.topPercent != null && card.topPercent <= 50 && <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: MUTED, marginTop: 2 }}>TOP {card.topPercent}%</div>}
+              {card.topPercent != null && card.topPercent <= 50 && <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: MUTED, marginTop: 2 }}>TOP {card.topPercent}%</div>}
             </div>
           </div>
 
@@ -216,7 +216,7 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320, placeho
           </div>
 
           {/* species · element caption */}
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", color: MUTED, padding: "9px 14px 4px", textTransform: "uppercase" }}>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: MUTED, padding: "9px 14px 4px", textTransform: "uppercase" }}>
             {(card.evolutionName || card.speciesName)} · {t.label}
           </div>
 
@@ -241,14 +241,14 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320, placeho
           {card.moves.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 5, padding: "4px 14px 8px" }}>
               {card.moves.map((m, i) => (
-                <span key={i} style={{ fontFamily: "var(--ed-body)", fontSize: 12, fontWeight: 600, color: INK, background: "#fff", borderRadius: 7, border: `1px solid ${HAIR}`, padding: "3px 9px" }}>{m}</span>
+                <span key={i} style={{ fontFamily: "var(--ed-body)", fontSize: 13, fontWeight: 600, color: INK, background: "#fff", borderRadius: 7, border: `1px solid ${HAIR}`, padding: "3px 9px" }}>{m}</span>
               ))}
             </div>
           )}
 
           {/* Footer */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: "auto", padding: "9px 14px", borderTop: `1px solid ${HAIR}` }}>
-            <span style={{ fontFamily: "var(--ed-disp)", fontSize: 12, fontWeight: 800, color: t.color, letterSpacing: "0.01em" }}>MY AI PET</span>
+            <span style={{ fontFamily: "var(--ed-disp)", fontSize: 13, fontWeight: 800, color: t.color, letterSpacing: "0.01em" }}>MY AI PET</span>
             <span style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: MUTED, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "60%" }}>№ {String(card.id).padStart(4, "0")} · {card.personality}</span>
           </div>
         </div>

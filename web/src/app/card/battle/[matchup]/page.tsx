@@ -50,7 +50,7 @@ export default async function BattleResultPage({ params }: { params: Promise<{ m
   return (
     <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 22, padding: "40px 20px", background: `radial-gradient(120% 85% at 50% -12%, #3A2414, ${VAULT} 62%)`, fontFamily: BODY }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: DISP, fontSize: 26, fontWeight: 800, letterSpacing: "-0.01em", color: FOIL_GOLD }}><Icon name="trophy" size={24} /> {winName} wins!</div>
-      <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(251,246,236,.55)" }}>{battle.result.turns} turns · card duel</div>
+      <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(251,246,236,.55)" }}>{battle.result.turns} turns · card duel</div>
 
       <div style={{ display: "flex", gap: 18, justifyContent: "center", flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ width: 240, opacity: youWin ? 1 : 0.7, transform: youWin ? "scale(1.04)" : "none" }}>

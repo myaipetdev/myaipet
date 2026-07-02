@@ -111,17 +111,17 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
           Power Training
         </h3>
         <span style={{
-          fontSize: 12, padding: "3px 9px", borderRadius: 999,
+          fontSize: 13, padding: "3px 9px", borderRadius: 999,
           background: "rgba(245,158,11,0.12)", color: "#b45309",
           fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, letterSpacing: "0.08em",
         }}>USDT</span>
         <div style={{ flex: 1 }} />
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 12, color: "rgba(26,26,46,0.5)", letterSpacing: "0.08em" }}>POWER</div>
+          <div style={{ fontSize: 13, color: "rgba(26,26,46,0.5)", letterSpacing: "0.08em" }}>POWER</div>
           <div style={{ fontSize: 20, fontWeight: 800, color: "#b45309" }}>{data.combinedPower}</div>
         </div>
       </div>
-      <p style={{ fontSize: 12, color: "rgba(26,26,46,0.6)", margin: "0 0 14px", lineHeight: 1.6 }}>
+      <p style={{ fontSize: 13, color: "rgba(26,26,46,0.6)", margin: "0 0 14px", lineHeight: 1.6 }}>
         Each +{data.increment} pushes you up the leaderboard. 50% of every USDT spent is burned.
       </p>
 
@@ -141,9 +141,9 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
               <span style={{ fontSize: 18, display: "inline-flex" }}><Icon name={meta.icon} size={18} /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: meta.color }}>{meta.label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: meta.color }}>{meta.label}</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>{value}</span>
-                  <span style={{ fontSize: 12, color: "rgba(26,26,46,0.4)", fontFamily: "mono" }}>
+                  <span style={{ fontSize: 13, color: "rgba(26,26,46,0.4)", fontFamily: "mono" }}>
                     / {data.ceiling}
                   </span>
                 </div>
@@ -167,7 +167,7 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
                     ? "rgba(0,0,0,0.06)"
                     : `linear-gradient(135deg, ${meta.color}, ${meta.color}dd)`,
                   color: atCap ? "rgba(26,26,46,0.4)" : "white",
-                  fontWeight: 700, fontSize: 12, cursor: atCap ? "default" : "pointer",
+                  fontWeight: 700, fontSize: 13, cursor: atCap ? "default" : "pointer",
                   fontFamily: "'Space Grotesk', sans-serif",
                   whiteSpace: "nowrap",
                   opacity: isBusy ? 0.5 : 1,

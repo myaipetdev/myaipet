@@ -94,13 +94,13 @@ export default function Nav({ section, setSection, credits }: any) {
           .nav-container { padding: 8px 12px !important; }
           .nav-items-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; mask-image: linear-gradient(to right, black 90%, transparent); -webkit-mask-image: linear-gradient(to right, black 90%, transparent); padding-right: 6px; }
           .nav-items-wrap::-webkit-scrollbar { display: none; }
-          .nav-btn { padding: 6px 10px !important; font-size: 12px !important; white-space: nowrap; flex-shrink: 0; }
-          .nav-credits { font-size: 12px !important; padding: 4px 8px !important; }
+          .nav-btn { padding: 6px 10px !important; font-size: 13px !important; white-space: nowrap; flex-shrink: 0; }
+          .nav-credits { font-size: 13px !important; padding: 4px 8px !important; }
         }
         @media (max-width: 480px) {
           .nav-container { padding: 6px 8px !important; gap: 6px !important; }
           .nav-logo-img { width: 30px !important; height: 30px !important; }
-          .nav-btn { padding: 5px 8px !important; font-size: 12px !important; }
+          .nav-btn { padding: 5px 8px !important; font-size: 13px !important; }
           .nav-wallet { transform: scale(0.8); transform-origin: right center; }
         }
       `}</style>
@@ -131,7 +131,7 @@ export default function Nav({ section, setSection, credits }: any) {
             MY AI PET
           </span>
           <span className="nav-desktop-badge" style={{
-            fontSize: 12, padding: "3px 9px", borderRadius: 20,
+            fontSize: 13, padding: "3px 9px", borderRadius: 20,
             color: "#9A4E1E",
             fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.12em",
             border: "1px solid rgba(154,78,30,0.4)",
@@ -197,7 +197,7 @@ export default function Nav({ section, setSection, credits }: any) {
                 aria-haspopup="true"
                 onClick={() => setBalanceOpen((v: boolean) => !v)}
                 style={{
-                  fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+                  fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
                   // One-shot change flash: real balance moved (spend or purchase).
                   color: creditsFlash ? "#BE4F28" : "#9A4E1E",
                   background: creditsFlash ? "rgba(190,79,40,.12)" : "transparent",
@@ -221,7 +221,7 @@ export default function Nav({ section, setSection, credits }: any) {
                   animation: "slideIn 0.2s ease",
                 }}>
                   <div style={{
-                    fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+                    fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
                     letterSpacing: "0.14em", textTransform: "uppercase",
                     color: "#9A7B4E", marginBottom: 8,
                   }}>
@@ -232,11 +232,11 @@ export default function Nav({ section, setSection, credits }: any) {
                     color: "#211A12", marginBottom: 4, letterSpacing: "-0.02em",
                     fontVariantNumeric: "tabular-nums",
                   }}>
-                    {credits.toLocaleString()} <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#9A4E1E", letterSpacing: "0.06em" }}>credits</span>
+                    {credits.toLocaleString()} <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "#9A4E1E", letterSpacing: "0.06em" }}>credits</span>
                   </div>
                   {/* SCRUM-99: this is the in-app credit balance, NOT the connected
                       wallet's on-chain balance — label it so users don't conflate them. */}
-                  <div style={{ fontFamily: "var(--ed-body)", fontSize: 12, color: "#7A6E5A", lineHeight: 1.45 }}>
+                  <div style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#7A6E5A", lineHeight: 1.45 }}>
                     In-app credits for AI generation — not your wallet balance.
                   </div>
                   <div style={{

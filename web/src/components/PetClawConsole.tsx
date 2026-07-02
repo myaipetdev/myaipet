@@ -334,7 +334,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
           {/* LIVE terminal */}
           {interactive && (
             <div style={{ marginTop: 16, border: `1px solid ${LINE}`, borderRadius: 12, overflow: "hidden", background: "#16110B" }}>
-              <div style={{ padding: "8px 14px", borderBottom: "1px solid rgba(236,224,206,0.06)", color: MUTED, fontSize: 12.5, letterSpacing: "0.08em" }}>
+              <div style={{ padding: "8px 14px", borderBottom: "1px solid rgba(236,224,206,0.06)", color: MUTED, fontSize: 13, letterSpacing: "0.08em" }}>
                 LIVE · petclaw_chat — {isSim ? `demo of ${petName} (connect to chat live)` : `talk to ${petName} right here`}
               </div>
               <div ref={scrollRef} style={{ maxHeight: 264, overflowY: "auto", padding: "12px 14px", fontSize: 13, lineHeight: 1.7 }}>
