@@ -277,6 +277,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           <PetClawConsole variant="compact" pet={{
             name: pet.name, level: pet.level,
             personality_type: pet.personality_type, element: pet.element,
+            avatar_url: pet.avatar_url,
           }} />
         </div>
         <div style={{ textAlign: "center", marginBottom: 24 }}>

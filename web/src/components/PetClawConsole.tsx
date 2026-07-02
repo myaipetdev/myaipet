@@ -20,6 +20,7 @@ interface PetLite {
   level?: number;
   personality_type?: string;
   element?: string;
+  avatar_url?: string | null;
 }
 
 interface Props {
@@ -85,14 +86,14 @@ const SOVEREIGNTY: { k: string; v: React.ReactNode }[] = [
 
 function Row({ k, v, kw = 132 }: { k: string; v: React.ReactNode; kw?: number }) {
   return (
-    <div style={{ display: "flex", gap: 10, fontSize: 13, lineHeight: 1.85 }}>
+    <div style={{ display: "flex", gap: 10, fontSize: 14, lineHeight: 1.85 }}>
       <span style={{ color: AMBER_DIM, minWidth: kw, flexShrink: 0 }}>{k}</span>
       <span style={{ color: TXT }}>{v}</span>
     </div>
   );
 }
 function SectionHead({ children }: { children: React.ReactNode }) {
-  return <div style={{ color: GOLD2, fontWeight: 700, fontSize: 14, margin: "16px 0 7px" }}>{children}</div>;
+  return <div style={{ color: GOLD2, fontWeight: 700, fontSize: 15, margin: "16px 0 7px" }}>{children}</div>;
 }
 const liveTag = <span style={{ color: GREEN }}>● live</span>;
 
@@ -257,7 +258,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff5f57" }} />
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#febc2e" }} />
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#28c840" }} />
-          <span style={{ marginLeft: 10, color: "#C2B49A", fontSize: 13 }}>
+          <span style={{ marginLeft: 10, color: "#C2B49A", fontSize: 13.5 }}>
             petclaw connect{pet?.name ? ` · ${pet.name.toLowerCase()}` : ""}
           </span>
         </div>
@@ -266,6 +267,22 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
           padding: compact ? "22px 26px 14px" : "26px 30px 16px",
           background: "radial-gradient(900px 360px at 50% -20%, #2C2114 0%, #1A140D 60%)",
         }}>
+          {/* The face of PetClaw is the user's OWN pet (mascot fallback in
+              demo) — a tilted paper-mat portrait with the gold level seal. */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: compact ? 8 : 12 }}>
+            <div style={{ position: "relative", width: compact ? 76 : 96, transform: "rotate(-3deg)", background: "#FBF6EC", borderRadius: 9, padding: 5, boxShadow: "0 18px 30px -14px rgba(0,0,0,.65)" }}>
+              <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", borderRadius: 6, overflow: "hidden", boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.55)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={pet?.avatar_url || "/mascot.jpg"} alt={petName} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                <div className="ed-gloss" aria-hidden style={{ left: 0, opacity: 0.5 }} />
+              </div>
+              {typeof pet?.level === "number" && (
+                <span aria-hidden style={{ position: "absolute", top: -9, right: -9, width: 27, height: 27, borderRadius: "50%", background: "radial-gradient(circle at 35% 30%, #FFF0C0, #EBB84E 48%, #B8822C)", border: "2px solid #FBF6EC", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: MONO, fontSize: 10.5, fontWeight: 700, color: "#5C3504" }}>
+                  {String(pet.level).padStart(2, "0")}
+                </span>
+              )}
+            </div>
+          </div>
           <div style={{
             fontFamily: "var(--ed-disp)", fontWeight: 800, letterSpacing: "-0.02em",
             textAlign: "center", fontSize: compact ? "clamp(34px,7vw,56px)" : "clamp(38px,8vw,76px)",
@@ -273,20 +290,20 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
             background: "linear-gradient(180deg,#FFE6A8 0%,#E8C77E 44%,#C8932F 100%)",
             WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
           }}>PETCLAW</div>
-          <div style={{ textAlign: "center", color: MUTED, fontSize: 13.5, marginBottom: 18 }}>
+          <div style={{ textAlign: "center", color: MUTED, fontSize: 14.5, marginBottom: 18 }}>
             your AI pet, sovereign &amp; portable — across every surface you use
           </div>
 
           {/* manifest */}
           <div style={{ border: `1px solid ${LINE}`, borderRadius: 12, padding: compact ? "18px 20px" : "20px 24px" }}>
-            <div style={{ color: GOLD, fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
+            <div style={{ color: GOLD, fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
               PetClaw Protocol v1 · SDK v1.6.0 <span style={{ color: MUTED, fontWeight: 400 }}>· npx petclaw-mcp · MIT</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: "0 40px" }}>
               <div>
                 <SectionHead>Connectors — 19 integrations</SectionHead>
                 {CONNECTORS.map((c) => <Row key={c.k} k={c.k} v={c.v} kw={112} />)}
-                <div style={{ display: "flex", gap: 10, fontSize: 13, lineHeight: 1.8, marginTop: 4 }}>
+                <div style={{ display: "flex", gap: 10, fontSize: 14, lineHeight: 1.8, marginTop: 4 }}>
                   <span style={{ color: AMBER_DIM, minWidth: 112, flexShrink: 0 }}>runs on</span>
                   <span style={{ color: MUTED }}>{RUNS_ON}</span>
                 </div>
@@ -303,7 +320,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   <SectionHead>MODELS — bring your own (BYOK)</SectionHead>
                   <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter — powers chat + agent reasoning + judging" kw={120} />
                   <Row k="agent-loop" v="give a goal → plans, calls skills, iterates → answers" kw={120} />
-                  <div style={{ fontSize: 13, marginTop: 4 }}>
+                  <div style={{ fontSize: 14, marginTop: 4 }}>
                     <span style={{ color: GREEN }}>connect your model ↓ below (or via the CLI)</span>
                   </div>
                   <SectionHead>Sovereignty</SectionHead>
@@ -311,7 +328,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                 </div>
               )}
             </div>
-            <div style={{ marginTop: 14, color: MUTED, fontSize: 13 }}>19 connectors · 18 skills · 5-stage harness · 6 MCP tools · BYO models · 100% your data</div>
+            <div style={{ marginTop: 14, color: MUTED, fontSize: 14 }}>19 connectors · 18 skills · 5-stage harness · 6 MCP tools · BYO models · 100% your data</div>
           </div>
 
           {/* LIVE terminal */}

@@ -1314,6 +1314,7 @@ export default function SovereigntyDashboard() {
               level: selectedPet.level,
               personality_type: selectedPet.personality_type,
               element: selectedPet.element,
+              avatar_url: selectedPet.avatar_url,
             } : null}
           />
         </div>
