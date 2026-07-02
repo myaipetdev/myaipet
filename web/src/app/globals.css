@@ -23,11 +23,12 @@
   --shadow-md: 0 2px 12px rgba(0,0,0,0.04);
   --shadow-lg: 0 8px 28px rgba(0,0,0,0.06);
 
-  --color-ink: #1a1a2e;
-  --color-ink-soft: rgba(26,26,46,0.65);
-  --color-ink-muted: rgba(26,26,46,0.45);
-  --color-cream: #faf7f2;
-  --color-amber: #f59e0b;
+  /* Legacy aliases — retokened onto the Collectible Editorial palette
+     (the old Printed-Stock navy-ink / cool-cream values are banned). */
+  --color-ink: #211A12;
+  --color-ink-soft: rgba(33,26,18,0.65);
+  --color-ink-muted: rgba(33,26,18,0.45);
+  --color-cream: #FBF6EC;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -46,7 +47,9 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Space Grotesk', Arial, Helvetica, sans-serif;
+  /* Base body font = editorial body (Hanken via --ed-body, declared on body
+     further down). The old 'Space Grotesk' base leaked into anything unstyled. */
+  font-family: var(--ed-body, 'Hanken Grotesk', Arial, Helvetica, sans-serif);
   font-size: var(--font-size-base);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
@@ -79,16 +82,13 @@ a {
 
 /* Animated typing-dots used by the AI chat surfaces (adoption flow, pet
    chat, pet date). Three staggered bouncing dots + visible label feel
-   far less "did this break?" than a single static "...". */
-@keyframes aiTypingBounce {
-  0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
-  40%           { transform: translateY(-4px); opacity: 1; }
-}
+   far less "did this break?" than a single static "...". Flat terracotta,
+   driven by the shared edTypingDot keyframe (declared further down). */
 .ai-typing-dot {
   width: 7px; height: 7px; border-radius: 50%;
-  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  background: var(--ed-terra, #BE4F28);
   display: inline-block;
-  animation: aiTypingBounce 1.1s ease-in-out infinite both;
+  animation: edTypingDot 1.1s ease-in-out infinite both;
 }
 
 /* ───────────────────────── Designer system ──────────────────────────
@@ -121,87 +121,55 @@ a {
   will-change: transform;
 }
 .mp-lift:hover:not(:disabled) {
-  transform: translateY(-1.5px);
-  box-shadow: 0 6px 0 rgba(26, 26, 34, 0.10);
+  transform: translateY(-2px);
+  box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80, 55, 20, .5));
 }
 .mp-lift:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translateY(0.5px);
+  box-shadow: 0 10px 20px -18px rgba(80, 55, 20, .45);
   transition-duration: 80ms;
 }
 
-/* Primary CTA — every gradient orange button on the site is moving
-   toward this look. Use directly or as an inspiration. */
+/* Primary CTA — the one system gradient (Collectible Editorial). Every
+   orange button on the site is moving toward this look. */
 .mp-btn-primary {
   display: inline-flex; align-items: center; justify-content: center;
   gap: 8px;
   padding: 14px 22px; border-radius: 14px; border: none;
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 60%, #ea580c 100%);
-  color: white; font-weight: 800; font-size: 15px;
-  font-family: 'Space Grotesk', sans-serif;
+  background: linear-gradient(180deg, #F49B2A, #E27D0C);
+  color: #FFF8EE; font-weight: 800; font-size: 15px;
+  font-family: var(--ed-body, 'Hanken Grotesk', sans-serif);
   cursor: pointer;
-  box-shadow:
-    0 8px 24px rgba(245, 158, 11, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.30),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 20px -12px rgba(226, 125, 12, .7);
   transition: transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1),
-              box-shadow 140ms ease, filter 140ms ease;
+              box-shadow 140ms ease;
 }
 .mp-btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  filter: brightness(1.04);
-  box-shadow:
-    0 12px 32px rgba(245, 158, 11, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.30),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.08);
+  box-shadow: 0 14px 28px -12px rgba(226, 125, 12, .8);
 }
 .mp-btn-primary:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.30),
-              inset 0 1px 4px rgba(0, 0, 0, 0.15);
+  transform: translateY(1px);
+  box-shadow: 0 6px 12px -10px rgba(226, 125, 12, .6);
 }
 .mp-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Subtle focus ring on all interactive elements. Old default was
    the ugly outline. */
 :where(button, a, input, textarea, select):focus-visible {
-  outline: 2px solid rgba(245, 158, 11, 0.55);
+  outline: 2px solid rgba(190, 79, 40, 0.55);
   outline-offset: 3px;
   border-radius: 4px;
 }
 
 /* A soft, organic "alive" pulse for things that are currently active
-   (HourlyDropBanner during the live window, streak fire icons, etc.) */
+   (HourlyDropBanner during the live window, streak fire icons, etc.)
+   Terracotta ring — spread only, never a blur/glow. */
 @keyframes mpPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.35); }
-  50%      { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(190, 79, 40, 0.3); }
+  50%      { box-shadow: 0 0 0 10px rgba(190, 79, 40, 0); }
 }
 .mp-live-pulse { animation: mpPulse 1.8s ease-in-out infinite; border-radius: 999px; }
-
-/* ─────────────── Printed Stock — Design System v2 ───────────────
-   The "die-cut sticker" depth model for Cards / Catch / Season / Studio.
-   Hard, zero-blur ink offset shadows (never glow), a corner-pivot PEEL on
-   hover and a physical PRESS on tap. Per-object shadows are passed in via
-   the --dc-rest/--dc-hover/--dc-press custom properties so each rarity can
-   carry its own offset depth while sharing one behavior. NO ambient motion. */
-.dc {
-  box-shadow: var(--dc-rest, 0 8px 0 rgba(26,26,34,0.16));
-  transform-origin: 88% 92%;
-  transition: transform 160ms cubic-bezier(0.2,0.8,0.3,1),
-              box-shadow 160ms cubic-bezier(0.2,0.8,0.3,1);
-  will-change: transform;
-}
-@media (hover: hover) {
-  .dc:hover {
-    transform: rotate(2.5deg) translateY(-1px);
-    box-shadow: var(--dc-hover, 0 12px 0 rgba(26,26,34,0.16));
-  }
-  .dc.dc-sm:hover { transform: rotate(1.5deg) translateY(-1px); }
-}
-.dc:active {
-  transform: rotate(1deg) translateY(2px);
-  box-shadow: var(--dc-press, 0 4px 0 rgba(26,26,34,0.16));
-  transition-duration: 120ms;
-}
 
 /* Wax seal stamping onto paper — single-shot, used at the reveal moment. */
 @keyframes sealPress {
@@ -222,16 +190,17 @@ a {
 }
 
 /* Polish the scrollbar so nested overflow areas (chat, history strips,
-   mission rows) don't show the ugly default. */
+   mission rows) don't show the ugly default. Single source of truth —
+   App.tsx's old conflicting 5px rule was folded in here. */
 @media (pointer: fine) {
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: rgba(26, 26, 46, 0.18);
+    background: rgba(33, 26, 18, 0.18);
     border-radius: 999px;
-    border: 2px solid #faf7f2;
+    border: 2px solid #FBF6EC;
   }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(26, 26, 46, 0.32); }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(33, 26, 18, 0.32); }
 }
 
 /* Sharper, more refined text rendering on retina. The old defaults
@@ -376,6 +345,33 @@ body {
 @keyframes edTypingDot{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-4px);opacity:1}}
 
 .ed-float{animation:edPetFloat 5.5s ease-in-out infinite}
+
+/* ── shared motion vocabulary ──
+   Entrances, hover verbs, skeletons and overlay choreography any screen can
+   opt into. The blanket prefers-reduced-motion rule above neutralizes all. */
+@keyframes edRiseIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.ed-rise{animation:edRiseIn .55s cubic-bezier(.22,.9,.3,1) both}
+@keyframes edSectionEnter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.ed-section-enter{animation:edSectionEnter 360ms cubic-bezier(.2,.8,.2,1) both}
+@keyframes edScrimIn{from{opacity:0}to{opacity:1}}
+@keyframes edPanelIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes edPopIn{from{opacity:0;transform:scale(.85)}70%{transform:scale(1.04)}to{opacity:1;transform:scale(1)}}
+@keyframes edUnderlineIn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+/* canonical dropdown/toast slide (Nav relies on it on /studio and /sovereignty,
+   where App.tsx's local copy never loads) */
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+/* canonical live-dot / status blink (Hero, Feed, PetProfile low-stat warnings,
+   agent logs, generate strips — was duplicated per component) */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.ed-card-hover{transition:transform 180ms cubic-bezier(.2,.8,.2,1),box-shadow 180ms cubic-bezier(.2,.8,.2,1)}
+@media (hover:hover){.ed-card-hover:hover{transform:translateY(-5px);box-shadow:var(--ed-shadow-float)}}
+.ed-card-hover:active{transform:translateY(-1px) scale(.985)}
+.ed-card-hover:focus-visible{outline:2px solid var(--ed-terra);outline-offset:3px}
+.ed-press:active{transform:translateY(1px)}
+.ed-skeleton{background-color:#F5EFE2;background-image:linear-gradient(100deg,transparent 30%,rgba(255,247,230,.9) 50%,transparent 70%);background-size:300% 100%;animation:edFoilShift 1.6s linear infinite}
+/* pointer-driven holo: a tilt handler adds .ed-holo-live and sets --holo-x/--holo-y
+   so the rainbow follows the pointer instead of the ambient timer loop */
+.ed-holo-live .ed-holo-sheen{animation:none;background-position:var(--holo-x,50%) var(--holo-y,50%)}
 
 @media (prefers-reduced-motion: reduce){
   .ed-foil-text,.ed-holo-sheen,.ed-gloss,.ed-foilstrip,.ed-float{animation:none!important}

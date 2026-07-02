@@ -5,6 +5,7 @@ import { useAccount } from "wagmi";
 
 import { api, getAuthHeaders } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import useCountUp from "@/hooks/useCountUp";
 
 import Nav from "@/components/Nav";
 import Icon from "@/components/Icon";
@@ -41,7 +42,7 @@ function Grid() {
       <svg width="100%" height="100%">
         <defs>
           <pattern id="g" width="50" height="50" patternUnits="userSpaceOnUse">
-            <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#1a1a2e" strokeWidth="0.5" />
+            <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#211A12" strokeWidth="0.5" />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#g)" />
@@ -55,12 +56,25 @@ function Loader() {
     <div style={{ paddingTop: 120, textAlign: "center" }}>
       <img src="/mascot.jpg" alt="" style={{
         width: 64, height: 64, borderRadius: "50%", objectFit: "cover",
-        border: "2px solid #1a1a22",
-        boxShadow: "0 3px 0 rgba(26,26,34,0.16)",
+        border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
         animation: "loaderFloat 2.4s ease-in-out infinite",
       }} />
-      <div style={{ marginTop: 14, color: "rgba(26,26,46,0.4)", fontFamily: "mono", fontSize: 12 }}>
-        Loading…
+      <div style={{
+        marginTop: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+        color: "#9A7B4E", fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700,
+        letterSpacing: "0.14em", textTransform: "uppercase",
+      }}>
+        LOADING
+        <span style={{ display: "inline-flex", gap: 3, alignItems: "center" }}>
+          {[0, 1, 2].map(i => (
+            <span key={i} style={{
+              width: 4, height: 4, borderRadius: "50%", background: "#9A7B4E",
+              display: "inline-block",
+              animation: `edTypingDot 1.1s ease-in-out ${i * 0.15}s infinite both`,
+            }} />
+          ))}
+        </span>
       </div>
       <style>{`@keyframes loaderFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}`}</style>
     </div>
@@ -72,6 +86,10 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  // Ceremony state — the day pill just stamped by THIS check-in (sealPress)
+  // and the real awarded amount from the API (rises above the pill).
+  const [justChecked, setJustChecked] = useState<number | null>(null);
+  const [awarded, setAwarded] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -89,13 +107,15 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
       const d = await res.json();
       if (d.streak) {
         setData(d);
+        setJustChecked(d.streak);
+        setAwarded(typeof d.awarded === "number" ? d.awarded : null);
         setMsg(`+${d.awarded} pts! Day ${d.streak} streak 🔥`);
         onPointsChanged?.(); // SCRUM-102: refresh header points immediately after the award
       }
       else setMsg(d.error || "Already checked in");
     } catch { setMsg("Failed"); }
     setLoading(false);
-    setTimeout(() => setMsg(null), 3000);
+    setTimeout(() => { setMsg(null); setAwarded(null); }, 3000);
   };
 
   const rewards = [5, 10, 15, 20, 25, 30, 50];
@@ -103,7 +123,7 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
   const checkedIn = data?.checkedInToday ?? false;
 
   return (
-    <div style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
+    <div className="mp-enter mp-enter-2" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
       <div style={{
         borderRadius: 16, padding: "14px 20px", marginBottom: 8,
         background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -133,14 +153,27 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
             const day = i + 1;
             const done = checkedIn ? streak >= day : streak > day;
             const isToday = checkedIn ? streak === day : streak + 1 === day;
+            // Stamped by this session's check-in — wax-seal press, one shot.
+            const stamped = justChecked === day;
             return (
               <div key={day} style={{
                 padding: "4px 8px", borderRadius: 9, textAlign: "center",
                 background: done ? "#BE4F28" : "#F5EFE2",
                 border: `1px solid ${isToday ? "#BE4F28" : "var(--ed-hair, rgba(33,26,18,.13))"}`,
                 boxShadow: isToday ? "0 0 0 2px rgba(190,79,40,0.18)" : "none",
-                minWidth: 36,
+                minWidth: 36, position: "relative",
+                animation: stamped ? "sealPress 400ms both" : "none",
               }}>
+                {stamped && awarded != null && (
+                  <div style={{
+                    position: "absolute", top: -16, left: 0, right: 0, textAlign: "center",
+                    fontFamily: "var(--ed-m)", fontSize: 9, fontWeight: 700, color: "#BE4F28",
+                    whiteSpace: "nowrap", pointerEvents: "none",
+                    animation: "mpEnter 420ms cubic-bezier(0.2,0.8,0.2,1) both",
+                  }}>
+                    +{awarded}
+                  </div>
+                )}
                 <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: done ? "#FFF8EE" : isToday ? "#BE4F28" : "#9A7B4E", fontWeight: 700 }}>
                   {done ? "✓" : `D${day}`}
                 </div>
@@ -152,10 +185,11 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
           })}
         </div>
 
-        {msg && <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#BE4F28", fontWeight: 700 }}>{msg}</span>}
+        {msg && <span style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "#BE4F28", fontWeight: 700, animation: "slideIn .25s ease both" }}>{msg}</span>}
 
         {isAuthenticated ? (
           <button
+            className="ed-press"
             onClick={doCheckin}
             disabled={checkedIn || loading}
             style={{
@@ -191,6 +225,21 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
     return () => clearInterval(id);
   }, []);
 
+  // Count the REAL points total up/down instead of hard-cutting, and flash the
+  // chip briefly when the value changes (check-in award, activity refresh).
+  const displayPoints = useCountUp(seasonPoints);
+  const [ptsFlash, setPtsFlash] = useState(false);
+  const prevPtsRef = useRef<number | null>(null);
+  useEffect(() => {
+    const prev = prevPtsRef.current;
+    prevPtsRef.current = seasonPoints;
+    if (prev !== null && prev !== seasonPoints) {
+      setPtsFlash(true);
+      const t = setTimeout(() => setPtsFlash(false), 500);
+      return () => clearTimeout(t);
+    }
+  }, [seasonPoints]);
+
   const notStarted = now < SEASON_START;
   const seasonOver = now >= SEASON_END;
   // Before the season opens, count down to the START; once running, to the END.
@@ -206,10 +255,11 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
   const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
-    <div className="mp-enter" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
+    <div className="mp-enter mp-enter-1" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
       {/* Terracotta foil ticket: brand fill, cream content, soft floating shadow,
           one perforated cream tear edge. Editorial — no hard keyline, no offset. */}
       <div
+        className="season-banner"
         style={{
           background: "#BE4F28",
           borderRadius: 18,
@@ -230,7 +280,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, paddingRight: 16, borderRight: "2px dashed rgba(252,233,207,0.4)" }}>
           <Icon name="trophy" size={26} />
           <div style={{ minWidth: 0 }}>
-            <div style={{
+            <div className="season-banner-title" style={{
               fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 18,
               color: "#FFF8EE", letterSpacing: "-0.02em", whiteSpace: "nowrap",
             }}>
@@ -261,7 +311,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
               STARTS JUL 1 — GET READY
             </div>
           )}
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div className="season-banner-countdown" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           {[
             { val: pad(days), label: "D" },
             { val: pad(hours), label: "H" },
@@ -290,7 +340,16 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, minWidth: 120 }}>
           <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "rgba(252,233,207,0.85)", whiteSpace: "nowrap" }}>
             {seasonPoints > 0
-              ? <><span style={{ fontWeight: 700, color: "#FFF8EE" }}>{seasonPoints.toLocaleString()}</span> pts</>
+              ? <>
+                  {/* Change-flash uses a cream pulse here — the spec's terracotta
+                      flash would vanish on this terracotta ticket. */}
+                  <span style={{
+                    fontWeight: 700, color: "#FFF8EE",
+                    padding: "1px 5px", margin: "-1px -5px", borderRadius: 6,
+                    background: ptsFlash ? "rgba(252,233,207,0.28)" : "transparent",
+                    transition: "background 250ms ease",
+                  }}>{displayPoints.toLocaleString()}</span> pts
+                </>
               : <>Your Points: <span style={{ fontWeight: 700, color: "#FFF8EE" }}>0</span></>
             }
           </div>
@@ -334,6 +393,35 @@ export default function App() {
     const next = params.toString();
     const url = next ? `/?${next}` : "/";
     window.history.replaceState({}, "", url);
+    // Section switches used to inherit the previous tab's scroll offset (users
+    // landed mid-page/at the footer). Reset to top; the Pricing deep-links
+    // below fire 100–150ms later, so they still win over this reset.
+    window.scrollTo({ top: 0 });
+  }, [section]);
+
+  // Landing on Pricing from /studio: Nav's "Get More Credits" and Studio's
+  // out-of-credits links navigate to /?section=home&scroll=pricing (or set the
+  // sessionStorage `scrollPricing` flag before the full-page hop). Honor it
+  // once the home section renders, then clear both so refreshes stay at top.
+  useEffect(() => {
+    if (typeof window === "undefined" || section !== "home") return;
+    const params = new URLSearchParams(window.location.search);
+    const fromParam = params.get("scroll") === "pricing";
+    let fromFlag = false;
+    try { fromFlag = !!sessionStorage.getItem("scrollPricing"); } catch { /* storage blocked */ }
+    if (!fromParam && !fromFlag) return;
+    try { sessionStorage.removeItem("scrollPricing"); } catch { /* storage blocked */ }
+    if (fromParam) {
+      params.delete("scroll");
+      const rest = params.toString();
+      window.history.replaceState({}, "", rest ? `/?${rest}` : "/");
+    }
+    // Wait a beat so the home section has rendered and the scroll-to-top
+    // from the [section] effect above has already fired.
+    const t = setTimeout(() => {
+      document.querySelector(".pricing-root")?.scrollIntoView({ behavior: "smooth" });
+    }, 150);
+    return () => clearTimeout(t);
   }, [section]);
   const [activities, setActivities] = useState<any[]>([]);
   const [platformStats, setPlatformStats] = useState<any>(null);
@@ -423,14 +511,8 @@ export default function App() {
     <div style={{ minHeight: "100vh", background: "#ECE4D4", color: "#211A12", position: "relative", overflow: "hidden" }}>
       <style>{`
         * { margin: 0; padding: 0; box-sizing: border-box }
-        ::selection { background: rgba(251,191,36,0.2) }
-        ::-webkit-scrollbar { width: 5px }
-        ::-webkit-scrollbar-track { background: transparent }
-        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 3px }
-        @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.3 } }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: translateY(0) } }
-        textarea::placeholder { color: rgba(26,26,46,0.2) }
-        button:hover { opacity: 0.92 }
+        ::selection { background: rgba(190,79,40,0.18) }
+        textarea::placeholder { color: rgba(33,26,18,0.25) }
         @media (max-width: 768px) {
           .desktop-grid { grid-template-columns: 1fr !important; }
           .desktop-two-col { grid-template-columns: 1fr !important; }
@@ -454,6 +536,8 @@ export default function App() {
             credits={isAuthenticated ? credits : null}
           />
 
+          {/* One shared entrance for every section switch — keyed remount re-runs it. */}
+          <div key={section} className="ed-section-enter">
           {section === "home" && (
             <>
               <Hero
@@ -463,11 +547,11 @@ export default function App() {
               />
               <SeasonBanner seasonPoints={seasonPoints} />
               <CheckinCard isAuthenticated={isAuthenticated} onPointsChanged={refreshUser} />
-              <div className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
+              <div className="home-section-pad mp-enter mp-enter-3" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
                 <Stats stats={stats} />
               </div>
               {activities.length > 0 && (
-                <div className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
+                <div className="home-section-pad mp-enter mp-enter-4" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
                   <Feed activities={activities} />
                 </div>
               )}
@@ -569,7 +653,7 @@ export default function App() {
         <div style={{ paddingTop: 96, paddingLeft: 20, paddingRight: 20 }}>
           <WalletGate section="cards">
             <Suspense fallback={<Loader />}>
-              <CardDeck />
+              <CardDeck onNavigate={setSection} />
             </Suspense>
           </WalletGate>
         </div>
@@ -584,6 +668,7 @@ export default function App() {
           </WalletGate>
         </div>
       )}
+      </div>
 
 
       {/* Footer — only show in app mode */}
@@ -636,9 +721,9 @@ export default function App() {
           <a href="https://github.com/PETCLAW-ORG/petclaw-sdk" target="_blank" rel="noopener noreferrer" style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "12px 22px", borderRadius: 12,
-            background: "white", color: "#1a1a2e",
-            border: "2px solid rgba(26,26,46,0.12)",
-            fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700,
+            background: "#FBF6EC", color: "#211A12",
+            border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+            fontFamily: "var(--ed-body)", fontSize: 15, fontWeight: 700,
             textDecoration: "none", transition: "all 0.2s",
           }}>
             <span style={{ fontSize: 16 }}>⌥</span>

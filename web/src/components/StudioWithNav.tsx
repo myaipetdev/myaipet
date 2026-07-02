@@ -6,20 +6,15 @@
  * single-page-app home; standalone routes have to bring their own.
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Nav from "@/components/Nav";
 import PetStudioPro from "@/components/PetStudioPro";
-import { getAuthHeaders } from "@/lib/api";
 
 export default function StudioWithNav() {
+  // Single source of truth: PetStudioPro owns the balance (it already fetches
+  // and updates it on every spend) and reports changes up via onCreditsChange,
+  // so the nav chip stays live instead of pinning a stale first fetch.
   const [credits, setCredits] = useState<number | null>(null);
-
-  useEffect(() => {
-    fetch("/api/studio/generate", { headers: getAuthHeaders() })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.credits != null) setCredits(d.credits); })
-      .catch(() => {});
-  }, []);
 
   // Non-studio nav items live on the home SPA. Route via ?section= so the
   // user actually lands on the section they tapped (Airdrop → /?section=airdrop,
@@ -34,7 +29,7 @@ export default function StudioWithNav() {
   return (
     <>
       <Nav section="studio" setSection={handleSection} credits={credits} />
-      <PetStudioPro />
+      <PetStudioPro onCreditsChange={setCredits} />
     </>
   );
 }

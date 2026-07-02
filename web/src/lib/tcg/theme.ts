@@ -13,24 +13,28 @@ export interface ElementTheme {
   grad: [string, string];
 }
 
+/* Collectible Editorial element accents — warm tones that read on both the
+ * cream paper card and the warm-dark (#1E1710) card-vault share pages. The
+ * grads are deep warm stops for dark backdrops (OG images, share pages). */
 export const ELEMENT_THEME: Record<string, ElementTheme> = {
-  fire:     { label: "Fire",     color: "#f97316", grad: ["#7c2d12", "#f97316"] },
-  water:    { label: "Water",    color: "#3b82f6", grad: ["#1e3a8a", "#3b82f6"] },
-  grass:    { label: "Grass",    color: "#22c55e", grad: ["#14532d", "#22c55e"] },
-  electric: { label: "Electric", color: "#eab308", grad: ["#713f12", "#eab308"] },
-  normal:   { label: "Normal",   color: "#9ca3af", grad: ["#374151", "#9ca3af"] },
+  fire:     { label: "Fire",     color: "#BE4F28", grad: ["#4A2A12", "#BE4F28"] },
+  water:    { label: "Water",    color: "#3E8FE0", grad: ["#1E3A54", "#3E8FE0"] },
+  grass:    { label: "Grass",    color: "#5C8A4E", grad: ["#26391E", "#5C8A4E"] },
+  electric: { label: "Electric", color: "#C8932F", grad: ["#4A3512", "#C8932F"] },
+  normal:   { label: "Normal",   color: "#7A6E5A", grad: ["#3A3024", "#7A6E5A"] },
 };
 
 export function elementTheme(element: string): ElementTheme {
   return ELEMENT_THEME[element] || ELEMENT_THEME.normal;
 }
 
+/* Locked Collectible Editorial rarity tokens (Uncommon rides with Common). */
 const RARITY_COLOR: Record<Rarity, string> = {
-  Common: "#9ca3af",
-  Uncommon: "#22c55e",
-  Rare: "#3b82f6",
-  Epic: "#a855f7",
-  Legendary: "#f59e0b",
+  Common: "#5C8A4E",
+  Uncommon: "#5C8A4E",
+  Rare: "#3E8FE0",
+  Epic: "#9E72E8",
+  Legendary: "#C8932F",
 };
 export function rarityColor(r: Rarity): string {
   return RARITY_COLOR[r];
@@ -49,6 +53,12 @@ export function rarityTier(r: Rarity): number {
  * `CardData.rarity` from the exact same function, so client and server agree.
  * No fabricated numbers: every input is a real Pet column.
  */
+/** Real score thresholds each rarity tier starts at — exported so UI progress
+ *  lines ("{score}/{threshold} to Epic") stay in lockstep with computeRarity. */
+export const RARITY_THRESHOLD: Record<Exclude<Rarity, "Common">, number> = {
+  Uncommon: 28, Rare: 55, Epic: 90, Legendary: 140,
+};
+
 export function computeRarity(p: {
   level: number; bond_level: number; care_streak: number;
   atk: number; def: number; spd: number; evolution_stage: number;
@@ -61,10 +71,10 @@ export function computeRarity(p: {
     Math.round(power / 3) +
     p.evolution_stage * 6;
   let rarity: Rarity = "Common";
-  if (score >= 140) rarity = "Legendary";
-  else if (score >= 90) rarity = "Epic";
-  else if (score >= 55) rarity = "Rare";
-  else if (score >= 28) rarity = "Uncommon";
+  if (score >= RARITY_THRESHOLD.Legendary) rarity = "Legendary";
+  else if (score >= RARITY_THRESHOLD.Epic) rarity = "Epic";
+  else if (score >= RARITY_THRESHOLD.Rare) rarity = "Rare";
+  else if (score >= RARITY_THRESHOLD.Uncommon) rarity = "Uncommon";
   return { rarity, score };
 }
 

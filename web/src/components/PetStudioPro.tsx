@@ -35,6 +35,7 @@ import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import PetLoraPanel from "@/components/PetLoraPanel";
+import useCountUp from "@/hooks/useCountUp";
 import { TEMPLATES, type StudioTemplate } from "@/lib/studio/templates";
 import { STYLE_EXAMPLES, TEMPLATE_EXAMPLES } from "@/lib/studio/example-assets";
 import { TEMPLATE_EXAMPLE_VIDEOS } from "@/lib/studio/example-videos";
@@ -51,7 +52,33 @@ interface Generation {
   id: number; status: string; prompt: string | null;
   photo_path: string | null; video_path: string | null;
   created_at: string;
+  error_message?: string | null;
+  credits_charged?: number | null;
 }
+
+// Item #12: a paid 1–2 min job must survive reload / SPA navigation. We persist
+// ONLY the pointer to an already-submitted job (its generationId) so a remount
+// can resume polling — never the request itself, so a restore can never
+// re-submit or double-charge.
+const JOB_STORE_KEY = "studio_active_job";
+interface StoredJob { jobId: number; prompt?: string; kind?: "image" | "video"; ts?: number }
+function saveActiveJob(job: StoredJob) {
+  try { sessionStorage.setItem(JOB_STORE_KEY, JSON.stringify({ ...job, ts: Date.now() })); } catch { /* private mode etc. */ }
+}
+function readActiveJob(): StoredJob | null {
+  try {
+    const j = JSON.parse(sessionStorage.getItem(JOB_STORE_KEY) || "null");
+    return j && typeof j.jobId === "number" ? j : null;
+  } catch { return null; }
+}
+function clearActiveJob() {
+  try { sessionStorage.removeItem(JOB_STORE_KEY); } catch { /* ignore */ }
+}
+
+// Server truth (lib/studio/subscription.ts gateModel): models above the user's
+// subscription tier are rejected with 403 tier_required — and no membership is
+// purchasable yet. Rank mirror so the picker can lock what the server locks.
+const TIER_RANK: Record<"free" | "pro" | "studio", number> = { free: 0, pro: 1, studio: 2 };
 
 
 // Collectible Editorial tokens. Studio's section signature is indigo-purple
@@ -130,13 +157,16 @@ const DEMO_PET: Pet = { id: -1, name: "Mochi", avatar_url: "/mascot.jpg", specie
 
 type View = "idle" | "generating" | "done" | "error";
 
-export default function PetStudioPro() {
+export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c: number | null) => void } = {}) {
   const [pets, setPets] = useState<Pet[] | null>(null);
   const [petId, setPetId] = useState<number | null>(null);
   const [models, setModels] = useState<StudioModel[]>([]);
   const [credits, setCredits] = useState<number | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   const [history, setHistory] = useState<Generation[]>([]);
+  // User's real subscription tier (server-enforced). Defaults to "free" — the
+  // honest fail-safe: everything the server would 403 stays locked in the UI.
+  const [userTier, setUserTier] = useState<"free" | "pro" | "studio">("free");
 
   const [styleId, setStyleId] = useState<string>("cinematic");
   const [prompt, setPrompt] = useState("");
@@ -160,10 +190,42 @@ export default function PetStudioPro() {
   // generationId of the current result — powers the public Share link (/c/<id>).
   const [lastGenId, setLastGenId] = useState<number | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
-  // ×N variations of the current image result (each its own paid generation).
-  const [variations, setVariations] = useState<string[]>([]);
+  // ×N variations of the current image result. Each entry keeps its OWN
+  // generationId so sharing a variation shares that exact artwork (item #11).
+  const [variations, setVariations] = useState<{ url: string; genId: number }[]>([]);
   const [varRunning, setVarRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The last error came from a 402 — offer the purchase path, not just "retry".
+  const [errorIs402, setErrorIs402] = useState(false);
+  // Real upstream progress (0..1) from the poll route when the provider reports
+  // it; null → the UI falls back to a clearly-labeled time estimate (item #25).
+  const [genProgress, setGenProgress] = useState<number | null>(null);
+  // "View all" history gallery overlay (item #19).
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [gallery, setGallery] = useState<Generation[] | null>(null);
+  const [galleryCopiedId, setGalleryCopiedId] = useState<number | null>(null);
+  const [galleryAvatarId, setGalleryAvatarId] = useState<number | null>(null);
+  // Terracotta flash when the balance drops (item #20).
+  const [creditFlash, setCreditFlash] = useState(false);
+  const prevCreditsRef = useRef<number | null>(null);
+
+  // Single write-path for the balance so the host page (StudioWithNav → Nav)
+  // stays in sync with every spend (item #20-6).
+  const updateCredits = (c: number | null) => {
+    setCredits(c);
+    onCreditsChange?.(c);
+  };
+
+  const creditAnim = useCountUp(credits ?? 0, 500);
+  useEffect(() => {
+    const prev = prevCreditsRef.current;
+    prevCreditsRef.current = credits;
+    if (prev != null && credits != null && credits < prev) {
+      setCreditFlash(true);
+      const t = setTimeout(() => setCreditFlash(false), 600);
+      return () => clearTimeout(t);
+    }
+  }, [credits]);
 
   const modelMenuRef = useRef<HTMLDivElement>(null);
   const pet = pets?.find(p => p.id === petId) || null;
@@ -196,6 +258,11 @@ export default function PetStudioPro() {
     [models, outputKind]
   );
 
+  // D3: the server 403s any model above the user's subscription tier and no
+  // membership is on sale yet — so those engines are locked in the picker,
+  // never dangled as selectable.
+  const tierLocked = (m: StudioModel) => TIER_RANK[m.tier] > TIER_RANK[userTier];
+
   // Fetch the selected pet's daydream insights as Memory→Video seeds.
   useEffect(() => {
     if (!petId || petId < 0) { setMemorySeeds([]); return; }
@@ -210,22 +277,23 @@ export default function PetStudioPro() {
     return () => { cancelled = true; };
   }, [petId]);
 
-  // If user flips output kind and the current model is wrong-kind, snap to a
-  // good default for the new kind.
+  // If user flips output kind and the current model is wrong-kind (or sits
+  // behind the membership tier gate), snap to a good default for the new kind.
   useEffect(() => {
     const current = models.find(m => m.id === chosenModelId);
     if (!current) return;
-    if (current.kind !== outputKind) {
+    if (current.kind !== outputKind || tierLocked(current)) {
       const defaultId = outputKind === "image" ? "grok-imagine" : "grok-imagine-video";
-      const exists = models.find(m => m.id === defaultId && !m.comingSoon);
+      const exists = models.find(m => m.id === defaultId && !m.comingSoon && !tierLocked(m));
       if (exists) setChosenModelId(defaultId);
       else {
-        // Fall back to the first non-comingSoon model in the new kind
-        const first = models.find(m => m.kind === outputKind && !m.comingSoon);
+        // Fall back to the first generatable model in the new kind
+        const first = models.find(m => m.kind === outputKind && !m.comingSoon && !tierLocked(m));
         if (first) setChosenModelId(first.id);
       }
     }
-  }, [outputKind, models, chosenModelId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [outputKind, models, chosenModelId, userTier]);
 
   // ── Load pets + models + credits + history ──
   useEffect(() => {
@@ -256,11 +324,29 @@ export default function PetStudioPro() {
     fetch("/api/studio/generate", { headers: getAuthHeaders() })
       .then(r => r.ok ? r.json() : null)
       .then(d => {
-        if (d?.credits != null) setCredits(d.credits);
+        if (d?.credits != null) updateCredits(d.credits);
         if (Array.isArray(d?.generations)) setHistory(d.generations.slice(0, 12));
       })
       .catch(() => {});
+
+    // D3: read the real subscription tier so the picker locks exactly what the
+    // server's gateModel would 403. Failure keeps the fail-safe "free".
+    fetch("/api/studio/subscription", { headers: getAuthHeaders() })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.tier === "pro" || d?.tier === "studio") setUserTier(d.tier); })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Item #12(1): while any history row is still in flight, re-poll history on
+  // an 8s interval so pending tiles resolve instead of pulsing forever.
+  const hasPendingHistory = history.some(g => g.status === "pending" || g.status === "running");
+  useEffect(() => {
+    if (!hasPendingHistory) return;
+    const t = setInterval(() => refreshHistory(), 8000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPendingHistory]);
 
   // ── Click outside model menu ──
   useEffect(() => {
@@ -290,7 +376,11 @@ export default function PetStudioPro() {
     return hasName ? `${base}${styleSuffix}` : `${subject}${base}${styleSuffix}`;
   };
 
-  const canGenerate = !!pet && prompt.trim().length > 0 && view !== "generating";
+  const canGenerate = !!pet && !!chosenModel && prompt.trim().length > 0 && view !== "generating";
+
+  // Item #8: out-of-credits is a purchase moment, not a dead end.
+  const runCost = chosenModel?.creditsPerRun ?? null;
+  const insufficient = !isDemo && credits != null && runCost != null && credits < runCost;
 
   // Per-generation sentinel + mount guard. Every async write in generate()
   // checks it's still the active job AND still mounted before applying, so
@@ -300,6 +390,33 @@ export default function PetStudioPro() {
   const mountedRef = useRef(true);
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
 
+  // Shared poll loop (generate + reload-restore). Only GETs an EXISTING
+  // generationId — polling can never re-submit or re-charge. Captures the real
+  // upstream progress for the preview when the provider reports one.
+  const pollJob = async (
+    jobId: number,
+    kind: "image" | "video",
+    isActive: () => boolean,
+  ): Promise<{ status: "completed"; url: string } | { status: "failed"; error: string } | { status: "timeout" } | null> => {
+    // Grok video can run past the stated "~30–90s"; poll longer for video so a
+    // slow-but-valid job isn't surfaced as a timeout failure while it actually
+    // finishes (and lands in History). Image stays at 180s — plenty.
+    const maxPolls = kind === "video" ? 120 : 60; // ×3s = 360s / 180s
+    for (let i = 0; i < maxPolls; i++) {
+      await new Promise(r => setTimeout(r, 3000));
+      if (!isActive()) return null; // pet/model switched or unmounted — stop polling
+      const r2 = await fetch(`/api/studio/generate/${jobId}`, { headers: getAuthHeaders() }).catch(() => null);
+      if (!r2?.ok) continue;
+      let d2: any;
+      try { d2 = await r2.json(); } catch { continue; } // tolerate one bad body, keep polling
+      if (!isActive()) return null;
+      if (typeof d2.progress === "number") setGenProgress(d2.progress);
+      if (d2.status === "completed") return { status: "completed", url: d2.url };
+      if (d2.status === "failed")    return { status: "failed", error: d2.error || "Generation failed" };
+    }
+    return { status: "timeout" };
+  };
+
   const generate = async () => {
     if (!canGenerate || !pet) return;
     const myJob = ++jobSeqRef.current;
@@ -307,14 +424,18 @@ export default function PetStudioPro() {
     // Snapshot the submitted model so the loop never reads later-changed state.
     const submittedModel = chosenModel;
     const submittedModelId = chosenModelId;
+    const submittedKind: "image" | "video" = submittedModel?.kind === "video" ? "video" : "image";
     const finalPrompt = buildFullPrompt();
 
     setView("generating");
     setError(null);
+    setErrorIs402(false);
+    setGenProgress(null);
     setResultUrl(null);
     setResultIsDemo(false);
     setLastGenId(null);
     setVariations([]);
+    setVarRunning(false);
 
     try {
       if (isDemo) {
@@ -333,10 +454,15 @@ export default function PetStudioPro() {
       });
       const data = await res.json().catch(() => ({}));
       if (!isActive()) return;
-      if (!res.ok) { setError(data?.error || "Generation failed"); setView("error"); return; }
-      // Functional + only when a number, so an out-of-order response can't stomp
-      // a newer (lower) balance with a stale (higher) one.
-      setCredits(c => (typeof data.creditsRemaining === "number" ? data.creditsRemaining : c));
+      if (!res.ok) {
+        if (res.status === 402) setErrorIs402(true);
+        setError(data?.error || "Generation failed");
+        setView("error");
+        return;
+      }
+      // Only when a number, so an out-of-order response can't stomp a newer
+      // (lower) balance with a stale (higher) one.
+      if (typeof data.creditsRemaining === "number") updateCredits(data.creditsRemaining);
 
       if (typeof data.generationId === "number") setLastGenId(data.generationId);
 
@@ -345,22 +471,18 @@ export default function PetStudioPro() {
       }
 
       const jobId = data.generationId;
-      // Grok video can run past the stated "~30–90s"; poll longer for video so a
-      // slow-but-valid job isn't surfaced as a timeout failure while it actually
-      // finishes (and lands in History). Image stays at 180s — plenty.
-      const maxPolls = submittedModel?.kind === "video" ? 120 : 60; // ×3s = 360s / 180s
-      for (let i = 0; i < maxPolls; i++) {
-        await new Promise(r => setTimeout(r, 3000));
-        if (!isActive()) return; // pet/model switched or unmounted — stop polling
-        const r2 = await fetch(`/api/studio/generate/${jobId}`, { headers: getAuthHeaders() }).catch(() => null);
-        if (!r2?.ok) continue;
-        let d2: any;
-        try { d2 = await r2.json(); } catch { continue; } // tolerate one bad body, keep polling
-        if (!isActive()) return;
-        if (d2.status === "completed") { setResultUrl(d2.url); setView("done"); refreshHistory(); return; }
-        if (d2.status === "failed")    { setError(d2.error || "Generation failed"); setView("error"); return; }
+      // Persist the pointer so a reload/section-switch can resume THIS job.
+      if (typeof jobId === "number") saveActiveJob({ jobId, prompt: finalPrompt, kind: submittedKind });
+      const out = await pollJob(jobId, submittedKind, isActive);
+      if (!out) return; // superseded/unmounted — entry stays stored for restore
+      if (out.status === "completed") {
+        clearActiveJob();
+        setResultUrl(out.url); setView("done"); refreshHistory(); return;
       }
-      if (!isActive()) return;
+      if (out.status === "failed") {
+        clearActiveJob();
+        setError(out.error); setView("error"); return;
+      }
       setError("Timed out waiting for result. Check History.");
       setView("error");
     } catch (e: any) {
@@ -368,6 +490,65 @@ export default function PetStudioPro() {
       setError(e?.message || "Generation failed"); setView("error");
     }
   };
+
+  // Item #12(2): on mount, if a stored job is still pending, restore the
+  // generating state and resume polling the SAME generationId (re-poll only —
+  // never re-submits, never double-charges).
+  useEffect(() => {
+    const stored = readActiveJob();
+    if (!stored) return;
+    // Entries older than 30 min are stale — history polling owns them now.
+    if (stored.ts && Date.now() - stored.ts > 30 * 60_000) { clearActiveJob(); return; }
+    const myJob = ++jobSeqRef.current;
+    const isActive = () => jobSeqRef.current === myJob && mountedRef.current;
+    const kind: "image" | "video" = stored.kind === "video" ? "video" : "image";
+    if (stored.prompt) { const p = stored.prompt; setPrompt(prev => prev || p); }
+    setOutputKind(kind);
+    setGenProgress(null);
+    setError(null);
+    setErrorIs402(false);
+    setLastGenId(stored.jobId);
+    setView("generating");
+    (async () => {
+      // Immediate pre-check: an already-finished job restores instantly, and a
+      // job we can no longer see (signed out / not ours / gone) drops back to
+      // idle instead of spinning through a doomed poll loop.
+      const r0 = await fetch(`/api/studio/generate/${stored.jobId}`, { headers: getAuthHeaders() }).catch(() => null);
+      if (!isActive()) return;
+      if (r0 && [401, 403, 404].includes(r0.status)) {
+        clearActiveJob();
+        setView("idle");
+        setLastGenId(null);
+        return;
+      }
+      if (r0?.ok) {
+        const d0: any = await r0.json().catch(() => null);
+        if (!isActive()) return;
+        if (d0?.status === "completed" && d0.url) {
+          clearActiveJob();
+          setResultUrl(d0.url); setView("done"); refreshHistory(); return;
+        }
+        if (d0?.status === "failed") {
+          clearActiveJob();
+          setError(d0.error || "Generation failed"); setView("error"); return;
+        }
+        if (typeof d0?.progress === "number") setGenProgress(d0.progress);
+      }
+      const out = await pollJob(stored.jobId, kind, isActive);
+      if (!out) return;
+      if (out.status === "completed") {
+        clearActiveJob();
+        setResultUrl(out.url); setView("done"); refreshHistory(); return;
+      }
+      if (out.status === "failed") {
+        clearActiveJob();
+        setError(out.error); setView("error"); return;
+      }
+      setError("Timed out waiting for result. Check History.");
+      setView("error");
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const refreshHistory = () => {
     fetch("/api/studio/generate", { headers: getAuthHeaders() })
@@ -383,8 +564,49 @@ export default function PetStudioPro() {
     if (g.video_path || g.photo_path) {
       setResultUrl(g.video_path || g.photo_path);
       setResultIsDemo(false);
+      setError(null);
+      setErrorIs402(false);
+      setVariations([]);
+      // g.id IS the generationId — without this, Share silently vanishes for
+      // anything reopened from the Recent strip (item #11-3).
+      setLastGenId(g.id);
       setView("done");
     }
+  };
+
+  // Set an image as the pet's avatar — which is ALSO the art the TCG card
+  // renders from (lib/tcg/card.ts reads pet.avatar_url). Shared by the result
+  // actions and the gallery overlay.
+  const setImageAsAvatar = async (url: string): Promise<boolean> => {
+    if (!pet || pet.id < 0) return false;
+    // PATCH accepts only an absolute, scheme-valid URL (safeUrlOrEmpty rejects
+    // bare /uploads paths), so resolve relative results first.
+    const abs = /^https?:\/\//i.test(url)
+      ? url
+      : `${window.location.origin}${url.startsWith("/") ? "" : "/"}${url}`;
+    try {
+      const res = await fetch(`/api/pets/${pet.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ avatar_url: abs }),
+      });
+      if (res.ok) {
+        setPets(ps => (ps ? ps.map(p => (p.id === pet.id ? { ...p, avatar_url: abs } : p)) : ps));
+        return true;
+      }
+    } catch { /* non-blocking */ }
+    return false;
+  };
+
+  // Item #19: full-history gallery from the existing endpoint (up to 50 rows,
+  // failed runs included with their real error_message).
+  const openGallery = () => {
+    setGalleryOpen(true);
+    setGallery(null);
+    fetch("/api/studio/generate?limit=50", { headers: getAuthHeaders() })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => setGallery(Array.isArray(d?.generations) ? d.generations : []))
+      .catch(() => setGallery([]));
   };
 
   // Remix: keep the subject/prompt, jump to a fresh style, and return to compose
@@ -427,10 +649,24 @@ export default function PetStudioPro() {
     if (!pet || isDemo || varRunning) return;
     const model = chosenModel;
     if (!model || model.kind !== "image") return;
+    // Item #11/#8-4: upfront balance check — never fire paid POSTs we already
+    // know will 402 partway through the run.
+    const needed = model.creditsPerRun * 4;
+    if (credits != null && credits < needed) {
+      setErrorIs402(true);
+      setError(`4 variations need ${needed} credits — you have ${credits}.`);
+      return;
+    }
+    // Same sentinel pattern as generate(): leaving Studio (or starting a new
+    // generation) mid-run stops all further paid POSTs and state writes.
+    const myJob = ++jobSeqRef.current;
+    const isActive = () => jobSeqRef.current === myJob && mountedRef.current;
     setVarRunning(true);
     setVariations([]);
+    setError(null);
+    setErrorIs402(false);
     const basePrompt = buildFullPrompt();
-    const got: string[] = [];
+    const got: { url: string; genId: number }[] = [];
     for (let i = 0; i < 4; i++) {
       // distinct per-take hint so each of the 4 charges yields a different image
       const finalPrompt = `${basePrompt} — variation ${i + 1}: ${VARIATION_HINTS[i]}`;
@@ -441,23 +677,34 @@ export default function PetStudioPro() {
           body: JSON.stringify({ modelId: model.id, petId: pet.id, prompt: finalPrompt, aspect }),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) { if (data?.error) setError(data.error); break; }
-        if (typeof data.creditsRemaining === "number") setCredits(data.creditsRemaining);
+        if (!isActive()) return;
+        if (!res.ok) {
+          if (res.status === 402) setErrorIs402(true);
+          setError(data?.error || "Variation run failed");
+          break;
+        }
+        if (typeof data.creditsRemaining === "number") updateCredits(data.creditsRemaining);
+        const genId: number | null = typeof data.generationId === "number" ? data.generationId : null;
         let url: string | null = null;
         if (data.status === "completed" && data.url) url = data.url;
         else if (data.generationId) {
           for (let p = 0; p < 40; p++) {
             await new Promise(r => setTimeout(r, 3000));
+            if (!isActive()) return;
             const r2 = await fetch(`/api/studio/generate/${data.generationId}`, { headers: getAuthHeaders() }).catch(() => null);
             if (!r2?.ok) continue;
             const d2 = await r2.json().catch(() => null);
+            if (!isActive()) return;
             if (d2?.status === "completed") { url = d2.url; break; }
             if (d2?.status === "failed") break;
           }
         }
-        if (url) { got.push(url); setVariations([...got]); }
+        // Keep each variation's own generationId so sharing a selected tile
+        // links to THAT artwork, not the original (item #11-2).
+        if (url && genId != null) { got.push({ url, genId }); setVariations([...got]); }
       } catch { break; }
     }
+    if (!isActive()) return;
     setVarRunning(false);
     refreshHistory();
   };
@@ -476,7 +723,7 @@ export default function PetStudioPro() {
       <div style={{ position: "relative", zIndex: 2, maxWidth: 1180, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
 
         {/* ── Header ── */}
-        <div style={{
+        <div className="mp-enter" style={{
           display: "flex", alignItems: "center", gap: 14, paddingBottom: 4,
           flexWrap: "wrap",
         }}>
@@ -526,7 +773,11 @@ export default function PetStudioPro() {
               )}</a>
             );
           })()}
-          <Pill label="CREDITS" value={credits == null ? "—" : String(credits)} />
+          <Pill
+            label="CREDITS"
+            value={credits == null ? "—" : String(creditAnim)}
+            valueColor={creditFlash ? T.terra : undefined}
+          />
         </div>
 
         {/* ── Two-column workspace ── */}
@@ -536,7 +787,7 @@ export default function PetStudioPro() {
         }}>
           {/* PREVIEW — the collectible plate: an indigo studio scene on a cream
               paper mount with a soft floating shadow (never a hard offset). */}
-          <div style={{
+          <div className="mp-enter-1" style={{
             position: "relative",
             background: T.paper, borderRadius: 18, padding: 13,
             border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
@@ -558,7 +809,7 @@ export default function PetStudioPro() {
               {view === "idle" && (
                 <PreviewIdle pet={pet} />
               )}
-              {view === "generating" && <PreviewGenerating kind={outputKind} />}
+              {view === "generating" && <PreviewGenerating kind={outputKind} progress={genProgress} />}
               {view === "done" && resultUrl && resultUrl !== "__demo__" && (
                 /\.(mp4|webm)$/i.test(resultUrl)
                   ? <video src={resultUrl} controls autoPlay loop playsInline style={{ width: "100%", height: "100%", objectFit: "contain", animation: "studioPop .5s cubic-bezier(.2,1.3,.4,1)" }} />
@@ -580,13 +831,24 @@ export default function PetStudioPro() {
                   </div>
                   <div style={{ fontSize: 16, fontFamily: T.disp, fontWeight: 700, marginBottom: 6 }}>Generation failed</div>
                   <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", maxWidth: 380, margin: "0 auto 16px" }}>{error}</div>
-                  <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                    <button onClick={() => generate()} style={{
+                  <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                    {/* Item #8-2: a 402 needs a purchase path — "Try again" alone
+                        just re-fails forever. */}
+                    {errorIs402 && (
+                      <a href="/?section=home&scroll=pricing" style={{
+                        padding: "9px 18px", borderRadius: 10, border: "none", cursor: "pointer",
+                        background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: "#FFF8EE",
+                        fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
+                        textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
+                      }}>Get credits →</a>
+                    )}
+                    <button onClick={() => generate()} style={errorIs402 ? btnGhostOnDark : {
                       padding: "9px 18px", borderRadius: 10, border: "none", cursor: "pointer",
-                      background: `linear-gradient(135deg,${T.cta1},${T.cta2})`, color: "#fff",
+                      background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: "#FFF8EE",
                       fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
-                    }}>⟳ Try again</button>
-                    <button onClick={() => setView("idle")} style={btnGhost}>✎ Edit prompt</button>
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                    }}><RetryGlyph size={13} /> Try again</button>
+                    <button onClick={() => setView("idle")} style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6 }}><PencilGlyph size={13} /> Edit prompt</button>
                   </div>
                 </div>
               )}
@@ -599,9 +861,10 @@ export default function PetStudioPro() {
                   onClick={() => remix()}
                   aria-label="Remix this in a new style"
                   title="Same pet, new style — tweak & generate again"
+                  className="mp-enter"
                   style={{
                     padding: "9px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                    background: `linear-gradient(135deg,${T.cta1},${T.cta2})`, color: "#fff",
+                    background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: "#FFF8EE",
                     fontFamily: T.body, fontSize: 13, fontWeight: 700,
                     boxShadow: "var(--ed-shadow-card)",
                     display: "inline-flex", alignItems: "center", gap: 7,
@@ -619,11 +882,13 @@ export default function PetStudioPro() {
                   <button
                     onClick={animateThis}
                     title="Generate a new short video from this same prompt (a fresh render anchored on your pet — not an animation of this exact still)"
+                    className="mp-enter"
                     style={{
                       padding: "9px 16px", borderRadius: 10, border: `1px solid ${T.studio}`, cursor: "pointer",
                       background: T.paper, color: T.studio, boxShadow: "var(--ed-shadow-card)",
                       fontFamily: T.body, fontSize: 13, fontWeight: 700,
                       display: "inline-flex", alignItems: "center", gap: 7,
+                      animationDelay: "50ms",
                     }}
                   ><svg width={15} height={15} viewBox="0 0 24 24" fill="none"
                       stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
@@ -632,39 +897,37 @@ export default function PetStudioPro() {
                       <path d="M15.5 10l6-3v10l-6-3z" />
                     </svg>Video from prompt</button>
                 )}
-                <button onClick={() => { setView("idle"); setResultUrl(null); }} style={btnGhost}>⟳ Start over</button>
+                <button onClick={() => { setView("idle"); setResultUrl(null); }} className="mp-enter" style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "100ms" }}><RetryGlyph size={13} /> Start over</button>
                 {!isDemo && pet && pet.id > 0 && !/\.(mp4|webm)$/i.test(resultUrl) && (
-                  <button
-                    onClick={async () => {
-                      // PATCH accepts only an absolute, scheme-valid URL (safeUrlOrEmpty
-                      // rejects bare /uploads paths), so resolve relative results first.
-                      const abs = /^https?:\/\//i.test(resultUrl)
-                        ? resultUrl
-                        : `${window.location.origin}${resultUrl.startsWith("/") ? "" : "/"}${resultUrl}`;
-                      try {
-                        const res = await fetch(`/api/pets/${pet.id}`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-                          body: JSON.stringify({ avatar_url: abs }),
-                        });
-                        if (res.ok) {
-                          setPets(ps => ps.map(p => (p.id === pet.id ? { ...p, avatar_url: abs } : p)));
+                  <>
+                    <button
+                      onClick={async () => {
+                        // The TCG card renders from pet.avatar_url, so this one
+                        // PATCH also updates the card art (item #25-6).
+                        const ok = await setImageAsAvatar(resultUrl);
+                        if (ok) {
                           setAvatarSaved(true);
-                          setTimeout(() => setAvatarSaved(false), 2200);
+                          setTimeout(() => setAvatarSaved(false), 4000);
                         }
-                      } catch { /* ignore — non-blocking */ }
-                    }}
-                    style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6 }}
-                    title="Use this image as your pet's profile picture (improves identity lock on future generations)"
-                  >{avatarSaved ? "✓ Avatar set" : (
-                    <>
-                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
-                        aria-hidden="true">
-                        <path d="M12 3.5l2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 16.9l-5.25 2.75 1-5.85L3.5 9.65l5.9-.85z" />
-                      </svg>Set as avatar
-                    </>
-                  )}</button>
+                      }}
+                      className="mp-enter"
+                      style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "150ms" }}
+                      title="Use this image as your pet's profile picture AND their trading-card art (improves identity lock on future generations)"
+                    >{avatarSaved ? "✓ Card art updated" : (
+                      <>
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+                          aria-hidden="true">
+                          <path d="M12 3.5l2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 16.9l-5.25 2.75 1-5.85L3.5 9.65l5.9-.85z" />
+                        </svg>Set as avatar &amp; card art
+                      </>
+                    )}</button>
+                    {avatarSaved && (
+                      <a href="/?section=cards" style={{ ...btnGhost, color: T.studio, borderColor: T.studio, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                        View card →
+                      </a>
+                    )}
+                  </>
                 )}
                 {!isDemo && lastGenId != null && (
                   <button
@@ -673,7 +936,8 @@ export default function PetStudioPro() {
                       try { await navigator.clipboard.writeText(link); setShareCopied(true); setTimeout(() => setShareCopied(false), 2200); }
                       catch { window.open(link, "_blank", "noreferrer"); }
                     }}
-                    style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6 }}
+                    className="mp-enter"
+                    style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "200ms" }}
                     title="Copy a public share link to this creation"
                   >{shareCopied ? "✓ Link copied" : (
                     <>
@@ -686,34 +950,69 @@ export default function PetStudioPro() {
                     </>
                   )}</button>
                 )}
-                {!isDemo && pet && pet.id > 0 && chosenModel?.kind === "image" && !/\.(mp4|webm)$/i.test(resultUrl) && (
-                  <button
-                    onClick={generateVariations}
-                    disabled={varRunning}
-                    style={{ ...btnGhost, cursor: varRunning ? "wait" : "pointer", opacity: varRunning ? 0.6 : 1 }}
-                    title={`Generate 4 fresh takes of this prompt (costs ${(chosenModel?.creditsPerRun ?? 0) * 4} credits)`}
-                  >{varRunning ? "✦ Generating…" : `✦ 4 variations · ${(chosenModel?.creditsPerRun ?? 0) * 4} cr`}</button>
-                )}
+                {!isDemo && pet && pet.id > 0 && chosenModel?.kind === "image" && !/\.(mp4|webm)$/i.test(resultUrl) && (() => {
+                  // Item #8-4/#25-2: chosenModel is guaranteed here — real cost,
+                  // never "0 cr"; disable honestly when the balance can't cover 4.
+                  const varCost = chosenModel.creditsPerRun * 4;
+                  const varInsufficient = credits != null && credits < varCost;
+                  return (
+                    <button
+                      onClick={generateVariations}
+                      disabled={varRunning || varInsufficient}
+                      className="mp-enter"
+                      style={{
+                        ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6,
+                        cursor: varRunning ? "wait" : varInsufficient ? "not-allowed" : "pointer",
+                        opacity: varRunning || varInsufficient ? 0.6 : 1,
+                        animationDelay: "250ms",
+                      }}
+                      title={varInsufficient
+                        ? `4 variations cost ${varCost} credits — you have ${credits}`
+                        : `Generate 4 fresh takes of this prompt (costs ${varCost} credits)`}
+                    ><SparkGlyph size={12} /> {varRunning
+                      ? "Generating…"
+                      : varInsufficient
+                      ? `4 variations — needs ${varCost} cr, you have ${credits}`
+                      : `4 variations · ${varCost} cr`}</button>
+                  );
+                })()}
                 <div style={{ flex: 1 }} />
-                <a href={resultUrl} download style={btnGhost}>↓ Download</a>
-                <a href={resultUrl} target="_blank" rel="noreferrer" style={btnGhost}>↗ Open</a>
+                <a href={resultUrl} download className="mp-enter" style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "300ms" }}><DownloadGlyph size={13} /> Download</a>
+                <a href={resultUrl} target="_blank" rel="noreferrer" className="mp-enter" style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "350ms" }}><ExternalGlyph size={13} /> Open</a>
               </div>
             )}
 
             {/* Variations grid — each tile swaps into the main result on click */}
-            {view === "done" && (varRunning || variations.length > 0) && (
+            {view === "done" && (varRunning || variations.length > 0 || error) && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 10, fontFamily: T.m, letterSpacing: "0.14em", color: T.mono, fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>
-                  ✦ VARIATIONS{varRunning ? ` · ${variations.length}/4…` : ""}
+                <div style={{ fontSize: 10, fontFamily: T.m, letterSpacing: "0.14em", color: T.mono, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
+                  <SparkGlyph size={11} /> VARIATIONS{varRunning ? ` · ${variations.length}/4…` : ""}
                 </div>
+                {/* Item #11-1: a mid-run failure used to be swallowed (view stays
+                    "done") — surface the server's real reason right here. */}
+                {error && !varRunning && (
+                  <div style={{
+                    marginBottom: 8, padding: "8px 11px", borderRadius: 9,
+                    background: T.inset, border: `1px solid ${T.hair}`,
+                    fontSize: 12, color: T.terra, fontWeight: 600, fontFamily: T.body,
+                    display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+                  }}>
+                    <span>{error}</span>
+                    {errorIs402 && (
+                      <a href="/?section=home&scroll=pricing" style={{ color: T.terra, fontWeight: 700, textDecoration: "underline" }}>Get credits →</a>
+                    )}
+                  </div>
+                )}
+                {(varRunning || variations.length > 0) && (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-                  {variations.map((u, i) => (
-                    <button key={i} onClick={() => { setResultUrl(u); setVariations([]); }} className="mp-lift" title="Use this variation" style={{
+                  {variations.map((v, i) => (
+                    <button key={i} onClick={() => { setResultUrl(v.url); setLastGenId(v.genId); setVariations([]); }} className="mp-lift" title="Use this variation" style={{
                       padding: 4, background: T.paper, borderRadius: 10, overflow: "hidden",
                       border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
                       cursor: "pointer", aspectRatio: "1 / 1",
+                      animation: "studioPop .4s cubic-bezier(.2,1.3,.4,1) both",
                     }}>
-                      <span style={{ display: "block", width: "100%", height: "100%", borderRadius: 7, boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)", background: `url(${u}) center/cover no-repeat` }} />
+                      <span style={{ display: "block", width: "100%", height: "100%", borderRadius: 7, boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)", background: `url(${v.url}) center/cover no-repeat` }} />
                     </button>
                   ))}
                   {varRunning && Array.from({ length: Math.max(0, 4 - variations.length) }).map((_, i) => (
@@ -724,6 +1023,7 @@ export default function PetStudioPro() {
                     }}>◌</div>
                   ))}
                 </div>
+                )}
               </div>
             )}
 
@@ -733,7 +1033,8 @@ export default function PetStudioPro() {
                 <div style={{
                   fontSize: 10, fontFamily: T.m,
                   letterSpacing: "0.14em", color: T.mono, fontWeight: 700, marginBottom: 8, textTransform: "uppercase",
-                }}>✨ WHAT YOU CAN MAKE</div>
+                  display: "flex", alignItems: "center", gap: 5,
+                }}><Icon name="sparkling" size={12} /> WHAT YOU CAN MAKE</div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
                   {TEMPLATES.slice(0, 4).map(t => {
                     const ex = TEMPLATE_EXAMPLES[t.id];
@@ -756,7 +1057,7 @@ export default function PetStudioPro() {
           {/* CONTROLS */}
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {/* Pet */}
-            <Panel label="SUBJECT">
+            <Panel label="SUBJECT" className="mp-enter-2">
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {(pets || []).map(p => {
                   const selected = p.id === petId;
@@ -789,7 +1090,7 @@ export default function PetStudioPro() {
             </Panel>
 
             {/* Style */}
-            <Panel label="STYLE">
+            <Panel label="STYLE" className="mp-enter-3">
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 {STYLES.map(s => {
                   const sel = s.id === styleId;
@@ -832,7 +1133,7 @@ export default function PetStudioPro() {
             </Panel>
 
             {/* Output type toggle */}
-            <Panel label="OUTPUT">
+            <Panel label="OUTPUT" className="mp-enter-4">
               <div style={{
                 display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6,
                 padding: 4, borderRadius: 12, background: T.inset, border: `1px solid ${T.hair}`,
@@ -861,7 +1162,7 @@ export default function PetStudioPro() {
             {/* Aspect ratio — only the fal engines (Kling/Seedance/Wan/FLUX) honor
                 aspect_ratio; Grok renders a fixed ratio, so don't show a dead control. */}
             {chosenModel?.backend === "fal" && (
-            <Panel label="ASPECT">
+            <Panel label="ASPECT" className="mp-enter-4">
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: 4, borderRadius: 12, background: T.inset, border: `1px solid ${T.hair}` }}>
                 {(["16:9", "9:16", "1:1"] as const).map(a => {
                   const sel = aspect === a;
@@ -881,7 +1182,7 @@ export default function PetStudioPro() {
             )}
 
             {/* Engine (model picker) */}
-            <Panel label="ENGINE">
+            <Panel label="ENGINE" className="mp-enter-5">
               <div style={{ position: "relative" }} ref={modelMenuRef}>
                 <button onClick={() => setModelOpen(o => !o)} style={engineBtn}>
                   <div style={{ textAlign: "left", flex: 1, minWidth: 0 }}>
@@ -905,7 +1206,12 @@ export default function PetStudioPro() {
                   }}>
                     {visibleModels.map(m => {
                       const sel = m.id === chosenModelId;
-                      const locked = !!m.comingSoon;
+                      // D3: two distinct locks, both matching server reality —
+                      // comingSoon (unfunded backend) and membership tier (the
+                      // generate route 403s these; no membership is purchasable
+                      // yet, so selling the selection would be a lie).
+                      const memberLocked = !m.comingSoon && tierLocked(m);
+                      const locked = !!m.comingSoon || memberLocked;
                       return (
                         <button key={m.id}
                           onClick={() => { if (locked) return; setChosenModelId(m.id); setModelOpen(false); }}
@@ -920,7 +1226,9 @@ export default function PetStudioPro() {
                             color: T.ink,
                             fontFamily: T.body,
                           }}
-                          title={locked ? `Coming ${m.comingSoonEta || "soon"}` : ""}
+                          title={memberLocked
+                            ? "Membership tier — memberships aren't available yet"
+                            : locked ? `Coming ${m.comingSoonEta || "soon"}` : ""}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                             <strong style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700, color: sel ? T.studio : T.ink }}>{m.displayName}</strong>
@@ -935,7 +1243,7 @@ export default function PetStudioPro() {
                                 aria-hidden="true">
                                 <rect x="5" y="11" width="14" height="10" rx="2" />
                                 <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-                              </svg>{m.comingSoonEta || "SOON"}</span>}
+                              </svg>{memberLocked ? "MEMBERSHIP — NOT YET AVAILABLE" : (m.comingSoonEta || "SOON")}</span>}
                             {!locked && <ModelBadges model={m} compact />}
                           </div>
                           <div style={{
@@ -966,7 +1274,7 @@ export default function PetStudioPro() {
         </div>
 
         {/* ── Prompt block (full width below) ── */}
-        <div style={{
+        <div className="mp-enter-3" style={{
           background: T.paper, borderRadius: 16, padding: 18,
           border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
         }}>
@@ -1042,7 +1350,8 @@ export default function PetStudioPro() {
               <span style={{
                 fontSize: 12, fontFamily: T.m,
                 letterSpacing: "0.14em", color: T.studio, fontWeight: 700, textTransform: "uppercase",
-              }}>✨ TEMPLATES</span>
+                display: "inline-flex", alignItems: "center", gap: 5,
+              }}><Icon name="sparkling" size={12} /> TEMPLATES</span>
               <span style={{ fontSize: 11, fontFamily: T.m, color: T.mono }}>
                 one tap → a full scene
               </span>
@@ -1050,13 +1359,28 @@ export default function PetStudioPro() {
             <div style={{
               display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10,
             }}>
-              {TEMPLATES.slice(0, 8).map(t => {
+              {TEMPLATES.map(t => {
                 const ex = TEMPLATE_EXAMPLES[t.id];
                 const vid = TEMPLATE_EXAMPLE_VIDEOS[t.id];
+                // Cream paper chip for the emoji mark — printed, not floating.
+                const emojiChip: React.CSSProperties = {
+                  fontSize: 13, lineHeight: 1, background: T.paper,
+                  border: `1px solid ${T.hair}`, borderRadius: 8, padding: "3px 6px",
+                };
                 return (
                   <button
                     key={t.id}
                     onClick={() => applyTemplate(t)}
+                    // Item #25-4: no autoplaying wall of videos — motion previews
+                    // on a fine-pointer hover only; touch keeps the poster.
+                    onPointerEnter={vid ? (e) => {
+                      if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
+                      e.currentTarget.querySelector("video")?.play().catch(() => {});
+                    } : undefined}
+                    onPointerLeave={vid ? (e) => {
+                      const v = e.currentTarget.querySelector("video");
+                      if (v) { v.pause(); v.currentTime = 0; }
+                    } : undefined}
                     style={{
                       textAlign: "left", padding: 0, borderRadius: 14, overflow: "hidden",
                       border: `1px solid ${T.hair}`, background: T.paper, cursor: "pointer",
@@ -1067,10 +1391,16 @@ export default function PetStudioPro() {
                     {vid ? (
                       <div style={{ position: "relative", height: 92, overflow: "hidden" }}>
                         <video
-                          src={vid} poster={ex} autoPlay loop muted playsInline preload="metadata"
+                          src={vid} poster={ex} loop muted playsInline preload="metadata"
                           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                         />
-                        <span style={{ position: "absolute", left: 9, bottom: 7, fontSize: 18, filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.65))" }}>{t.emoji}</span>
+                        <span style={{ ...emojiChip, position: "absolute", left: 9, bottom: 7 }}>{t.emoji}</span>
+                        <span style={{
+                          position: "absolute", top: 7, right: 8,
+                          fontSize: 8, fontFamily: T.m,
+                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
+                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
+                        }}>▸ MOTION</span>
                         <span style={{
                           position: "absolute", right: 9, bottom: 8,
                           fontSize: 8, fontFamily: T.m,
@@ -1084,7 +1414,7 @@ export default function PetStudioPro() {
                         display: "flex", alignItems: "flex-end", justifyContent: "space-between",
                         padding: "8px 9px",
                       }}>
-                        <span style={{ fontSize: 18, filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.65))" }}>{t.emoji}</span>
+                        <span style={emojiChip}>{t.emoji}</span>
                         <span style={{
                           fontSize: 8, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
@@ -1096,9 +1426,9 @@ export default function PetStudioPro() {
                         height: 62,
                         background: T.inset, borderBottom: `1px solid ${T.hair}`,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 30, position: "relative",
+                        position: "relative",
                       }}>
-                        <span>{t.emoji}</span>
+                        <span style={{ ...emojiChip, fontSize: 20, padding: "4px 8px" }}>{t.emoji}</span>
                         <span style={{
                           position: "absolute", top: 7, right: 8,
                           fontSize: 8, fontFamily: T.m,
@@ -1123,26 +1453,66 @@ export default function PetStudioPro() {
         </div>
 
         {/* ── Generate ── */}
-        <button onClick={generate} disabled={!canGenerate} style={{
+        {insufficient && runCost != null && view !== "generating" ? (
+          // Item #8-1: out of credits is a purchase moment, not a dead button.
+          // Links to the home Pricing section (App.tsx reads scroll=pricing).
+          <a
+            href="/?section=home&scroll=pricing"
+            className="mp-enter-4 studio-cta"
+            style={{
+              ...generateBtn,
+              display: "block", textAlign: "center", textDecoration: "none",
+              background: `linear-gradient(180deg,${T.cta1},${T.cta2})`,
+              color: "#FFF8EE",
+              boxShadow: "0 20px 40px -22px rgba(226,125,12,.8)",
+            }}
+          >
+            Not enough credits — get more →
+            <span style={{
+              display: "block", fontSize: 12, fontFamily: T.m, fontWeight: 700,
+              letterSpacing: "0.06em", opacity: 0.9, marginTop: 4,
+            }}>this run costs {runCost} cr, you have {credits}</span>
+          </a>
+        ) : (
+        <button onClick={generate} disabled={!canGenerate} className="mp-enter-4 studio-cta" style={{
           ...generateBtn,
           opacity: canGenerate ? 1 : 0.45,
           cursor: canGenerate ? "pointer" : "not-allowed",
         }}>
           {view === "generating"
             ? (outputKind === "image" ? "Generating…" : "Generating… ~1–2 min")
+            : !chosenModel
+            // Item #25-2: never advertise a 0-credit run while engines load.
+            ? "Loading engines…"
             : !prompt.trim()
             ? "Write a prompt or tap a template to start →"
-            : `▶  Generate · ${chosenModel?.creditsPerRun ?? 0} credits${
-                credits != null && credits >= (chosenModel?.creditsPerRun ?? 0)
-                  ? ` · you have ${credits} (≈${Math.floor(credits / Math.max(1, chosenModel?.creditsPerRun ?? 1))} more)`
-                  : ""
-              }`}
+            : (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
+                <PlayGlyph size={16} />
+                <span>
+                  Generate · {chosenModel.creditsPerRun} credits
+                  {credits != null && credits >= chosenModel.creditsPerRun
+                    ? ` · you have ${creditAnim} (enough for ${Math.floor(credits / Math.max(1, chosenModel.creditsPerRun))} run${Math.floor(credits / Math.max(1, chosenModel.creditsPerRun)) === 1 ? "" : "s"})`
+                    : ""}
+                </span>
+              </span>
+            )}
         </button>
+        )}
 
         {/* ── Recent history strip ── */}
         {history.length > 0 ? (
-          <div style={{ marginTop: 6 }}>
-            <div style={{ ...panelLabel, marginBottom: 10 }}>RECENT</div>
+          <div className="mp-enter-5" style={{ marginTop: 6 }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+              <div style={panelLabel}>RECENT</div>
+              {!isDemo && (
+                <button onClick={openGallery} style={{
+                  background: "none", border: "none", cursor: "pointer", padding: 0,
+                  fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em",
+                  color: T.studio, textTransform: "uppercase",
+                }}>VIEW ALL →</button>
+              )}
+            </div>
             <div style={{
               display: "flex", gap: 10, overflowX: "auto",
               paddingBottom: 8,
@@ -1164,7 +1534,7 @@ export default function PetStudioPro() {
                           background: T.inset,
                           display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: 18, color: T.mono,
-                        }}>{g.status === "pending"
+                        }}>{(g.status === "pending" || g.status === "running")
                           ? <svg width={20} height={20} viewBox="0 0 24 24" fill="none"
                               stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
                               className="studio-pulse" aria-label="Pending">
@@ -1172,6 +1542,8 @@ export default function PetStudioPro() {
                               <path d="M7 3c0 4 3.5 6 5 9-1.5 3-5 5-5 9" />
                               <path d="M17 3c0 4-3.5 6-5 9 1.5 3 5 5 5 9" />
                             </svg>
+                          : g.status === "failed"
+                          ? <span style={{ fontFamily: T.m, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: T.terra }}>FAILED</span>
                           : "?"}</div>}
                   </button>
                   {g.prompt && (
@@ -1199,7 +1571,7 @@ export default function PetStudioPro() {
             </div>
           </div>
         ) : (
-          <div style={{
+          <div className="mp-enter-5" style={{
             marginTop: 6, padding: "22px 24px",
             background: T.paper,
             border: `1px dashed ${T.hair}`,
@@ -1216,8 +1588,9 @@ export default function PetStudioPro() {
           </div>
         )}
 
-        {/* ── Roadmap: what's next for Studio (below the actionable flow so it
-            doesn't push the Generate CTA + recent work down on first load) ── */}
+        {/* ── Exploration notes: honest research directions — no dates, no
+            commitments (D5). Below the actionable flow so it doesn't push the
+            Generate CTA + recent work down on first load. ── */}
         <div style={{
           marginTop: 12,
           background: T.paper,
@@ -1228,13 +1601,14 @@ export default function PetStudioPro() {
           <div style={{
             fontSize: 11, fontFamily: T.m,
             letterSpacing: "0.14em", color: T.studio, marginBottom: 10, fontWeight: 700, textTransform: "uppercase",
-          }}>COMING TO STUDIO</div>
+          }}>EXPLORING</div>
           <div style={{ fontSize: 22, fontFamily: T.disp, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 6 }}>
-            Beyond prompts — features only we can build
+            Beyond prompts — what we&rsquo;re researching
           </div>
           <div style={{ fontSize: 14, color: T.muted, marginBottom: 18, maxWidth: 560 }}>
-            Stuff other AI tools can't do because they don't have your pet's
-            memory ledger, persona, or the rest of the PetClaw graph.
+            Directions we&rsquo;re exploring because Studio sits on your pet&rsquo;s
+            memory ledger and persona. Research notes, not commitments — no dates
+            attached; things ship only when they&rsquo;re real.
           </div>
           <div style={{
             display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
@@ -1242,42 +1616,189 @@ export default function PetStudioPro() {
           }}>
             <RoadmapItem
               icon="film-reel"
-              eta="Q3 2026"
               title="Auto Memory Recap"
-              body="Your pet's week → 30s video. Built from the memory ledger. No prompt needed."
+              body="Could your pet's week become a short video built straight from the memory ledger, no prompt needed? We're prototyping."
             />
             <RoadmapItem
               icon="rocket"
-              eta="Q3 2026"
               title="Daily Content Bot"
-              body="Wake up to a fresh pet photo every day. Auto-posted to your gallery."
+              body="A fresh pet photo waiting for you each morning, auto-posted to your gallery. Under exploration."
             />
             <RoadmapItem
               icon="extension-icon"
-              eta="Q4 2026"
               title="Pet Anchor API"
-              body="PuLID-based pet identity API for other pet-tech builders. B2B."
+              body="An identity-preserving pet API other pet-tech builders could use. Early B2B research."
             />
             <RoadmapItem
               icon="coins"
-              eta="Q4 2026"
-              title="NFT-Gated Premium"
-              body="Own a PETContent NFT → free access to premium engines. Exploring."
+              title="Collectible-linked perks"
+              body="Early research: could owned pet collectibles unlock engine perks? Nothing designed or promised yet."
             />
             <RoadmapItem
               icon="shopping-cart"
-              eta="2027"
-              title="Pet LoRA Marketplace"
-              body="Train a LoRA on your pet, list it as an NFT. Others use 'your' Sparky."
+              title="Shared identity models"
+              body="Studying whether owners could ever share or license their pet's trained identity model. Idea stage only."
             />
           </div>
         </div>
       </div>
 
+      {/* ── "View all" gallery overlay (item #19): the full 50-row history the
+          endpoint already returns, failed paid runs shown honestly. ── */}
+      {galleryOpen && (
+        <div
+          onClick={() => setGalleryOpen(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 80,
+            background: "rgba(0,0,0,.5)",
+            backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 18,
+            animation: "edScrimIn 160ms ease both",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: T.paper, borderRadius: 18, padding: 20,
+              border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-float)",
+              width: "min(980px, 100%)", maxHeight: "86vh", overflowY: "auto",
+              animation: "edPanelIn 260ms cubic-bezier(.2,.8,.2,1) both",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
+              <div style={panelLabel}>
+                ALL CREATIONS{gallery != null ? ` · ${gallery.length}` : ""}
+              </div>
+              <button onClick={() => setGalleryOpen(false)} aria-label="Close gallery" style={{
+                background: "none", border: "none", cursor: "pointer", padding: 4,
+                color: T.muted2, display: "inline-flex",
+              }}>
+                <svg width={16} height={16} viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
+                  <path d="M5 5l14 14M19 5 5 19" />
+                </svg>
+              </button>
+            </div>
+
+            {gallery == null ? (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 12 }}>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="ed-skeleton" style={{ height: 200, borderRadius: 12, border: `1px solid ${T.hair}` }} />
+                ))}
+              </div>
+            ) : gallery.length === 0 ? (
+              <div style={{ padding: "26px 8px", fontSize: 14, color: T.muted, fontFamily: T.body }}>
+                Nothing here yet — your generations will collect in this album.
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 12 }}>
+                {gallery.map((g, i) => {
+                  const media = g.video_path || g.photo_path;
+                  const isVid = !!g.video_path && /\.(mp4|webm)$/i.test(g.video_path);
+                  const failed = g.status === "failed";
+                  const inFlight = g.status === "pending" || g.status === "running";
+                  const dateStr = new Date(g.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+                  return (
+                    <div key={g.id} className="mp-enter" style={{
+                      background: T.inset, borderRadius: 12, overflow: "hidden",
+                      border: `1px solid ${T.hair}`,
+                      display: "flex", flexDirection: "column",
+                      animationDelay: `${Math.min(i, 12) * 40}ms`,
+                    }}>
+                      {failed ? (
+                        // Honest failure: real error_message + a retry path.
+                        <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 7, minHeight: 120 }}>
+                          <span style={{ fontFamily: T.m, fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: T.terra, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                            <span aria-hidden style={{ width: 7, height: 7, borderRadius: 2, background: T.terra, display: "inline-block" }} />FAILED
+                          </span>
+                          <span style={{ fontSize: 12, color: T.ink70, lineHeight: 1.45 }}>
+                            {g.error_message || "This run failed before producing a result."}
+                          </span>
+                          {g.prompt && (
+                            <button onClick={() => { reusePrompt(g); setGalleryOpen(false); }} style={{
+                              alignSelf: "flex-start", marginTop: "auto",
+                              padding: "6px 11px", borderRadius: 8, cursor: "pointer",
+                              border: `1px solid ${T.hair}`, background: T.paper,
+                              color: T.ink70, fontSize: 11, fontWeight: 700, fontFamily: T.body,
+                            }}>Retry prompt</button>
+                          )}
+                        </div>
+                      ) : inFlight ? (
+                        <div className="ed-skeleton" style={{ height: 130, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <span style={{ fontFamily: T.m, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: T.mono }}>RENDERING…</span>
+                        </div>
+                      ) : media ? (
+                        isVid
+                          ? <video src={g.video_path || ""} poster={g.photo_path || undefined} muted playsInline preload="metadata" style={{ width: "100%", height: 130, objectFit: "cover", display: "block" }} />
+                          : <img src={media} alt="" style={{ width: "100%", height: 130, objectFit: "cover", display: "block" }} />
+                      ) : (
+                        <div style={{ height: 130, display: "flex", alignItems: "center", justifyContent: "center", color: T.mono }}>?</div>
+                      )}
+
+                      <div style={{ padding: "9px 11px 11px", display: "flex", flexDirection: "column", gap: 7, flex: 1 }}>
+                        {g.prompt && (
+                          <div style={{
+                            fontSize: 12, color: T.ink70, lineHeight: 1.4,
+                            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const,
+                            overflow: "hidden",
+                          }}>{g.prompt}</div>
+                        )}
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <span style={{ fontFamily: T.m, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.08em", color: T.mono, textTransform: "uppercase" }}>{dateStr}</span>
+                          {typeof g.credits_charged === "number" && g.credits_charged > 0 && (
+                            <span style={{
+                              fontFamily: T.m, fontSize: 9, fontWeight: 700, letterSpacing: "0.06em",
+                              padding: "1px 6px", borderRadius: 999,
+                              background: T.paper, border: `1px solid ${T.hair}`, color: T.muted2,
+                            }}>{g.credits_charged} cr</span>
+                          )}
+                        </div>
+                        {!failed && !inFlight && media && (
+                          <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: "auto" }}>
+                            <button onClick={() => { reusePrompt(g); setGalleryOpen(false); }} style={galleryActionBtn}>Reuse</button>
+                            <button onClick={async () => {
+                              const link = `${window.location.origin}/c/${g.id}`;
+                              try { await navigator.clipboard.writeText(link); setGalleryCopiedId(g.id); setTimeout(() => setGalleryCopiedId(c => (c === g.id ? null : c)), 2200); }
+                              catch { window.open(link, "_blank", "noreferrer"); }
+                            }} style={galleryActionBtn}>{galleryCopiedId === g.id ? "✓ Copied" : "Share"}</button>
+                            <a href={media} download style={{ ...galleryActionBtn, textDecoration: "none" }}>Download</a>
+                            {!isDemo && pet && pet.id > 0 && !isVid && g.photo_path && (
+                              <button onClick={async () => {
+                                const ok = await setImageAsAvatar(g.photo_path!);
+                                if (ok) { setGalleryAvatarId(g.id); setTimeout(() => setGalleryAvatarId(c => (c === g.id ? null : c)), 2600); }
+                              }} style={galleryActionBtn}>{galleryAvatarId === g.id ? "✓ Card art" : "Set as avatar"}</button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes studioPulseKf { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
         .studio-pulse { animation: studioPulseKf 1.6s ease-in-out infinite; }
         @keyframes studioPop { 0%{transform:scale(.92);opacity:0} 60%{transform:scale(1.02)} 100%{transform:scale(1);opacity:1} }
+        .studio-cta { position: relative; overflow: hidden; }
+        .studio-cta:hover:not(:disabled) { transform: translateY(-1.5px); box-shadow: 0 26px 48px -24px rgba(62,52,112,.9); }
+        .studio-cta:active:not(:disabled) { transform: translateY(1px) scale(.995); transition-duration: 80ms; }
+        .studio-cta::after {
+          content: ""; position: absolute; inset: 0;
+          background: linear-gradient(100deg, transparent 30%, rgba(255,247,230,.18) 50%, transparent 70%);
+          background-size: 300% 100%;
+          animation: edFoilShift 6s linear infinite;
+          pointer-events: none;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .studio-cta::after { animation: none; }
+          .studio-cta:hover:not(:disabled), .studio-cta:active:not(:disabled) { transform: none; }
+        }
         @media (max-width: 880px) {
           .studio-pro-grid { grid-template-columns: 1fr !important; }
         }
@@ -1328,7 +1849,7 @@ function PreviewIdle({ pet }: { pet: Pet | null }) {
   );
 }
 
-function PreviewGenerating({ kind }: { kind: "image" | "video" }) {
+function PreviewGenerating({ kind, progress }: { kind: "image" | "video"; progress?: number | null }) {
   const [secs, setSecs] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setSecs((s) => s + 1), 1000);
@@ -1339,18 +1860,32 @@ function PreviewGenerating({ kind }: { kind: "image" | "video" }) {
     : ["Setting the scene…", "Rendering frames…", "Adding motion…", "Almost there…"];
   const line = lines[Math.min(Math.floor(secs / 6), lines.length - 1)];
   const total = kind === "image" ? 12 : 90;
-  const pct = Math.min(95, Math.round((secs / total) * 100));
+  // Item #25-1: prefer the REAL upstream progress (0..1 from the poll route)
+  // when the provider reports one; otherwise fall back to a wall-clock figure
+  // that is explicitly labeled as an estimate — never dressed up as telemetry.
+  const real = typeof progress === "number" && progress > 0
+    ? Math.max(1, Math.min(100, Math.round(progress * 100)))
+    : null;
+  const est = Math.min(95, Math.round((secs / total) * 100));
+  const pct = real ?? est;
   return (
     <div style={{ color: "#FCE9CF", textAlign: "center", padding: 28, width: "100%", maxWidth: 320 }}>
       <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 11, letterSpacing: "0.16em", color: "rgba(252,233,207,0.55)", textTransform: "uppercase" }}>Developing</div>
       <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 22, marginTop: 6, letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums" }}>Generating · {secs}s</div>
       <div style={{ fontFamily: "var(--ed-m)", fontSize: 12.5, color: "rgba(252,233,207,0.78)", marginTop: 6 }}>{line}</div>
-      {/* Honest determinate progress — a printed strip on the developing plate.
-          The ONLY motion: this bar advancing and the status line swapping. */}
+      {/* Determinate strip on the developing plate. The ONLY motion: this bar
+          advancing and the status line swapping. */}
       <div style={{ marginTop: 16, height: 12, borderRadius: 999, background: "rgba(252,233,207,0.14)", border: "1px solid rgba(252,233,207,0.4)", overflow: "hidden", maxWidth: 260, marginInline: "auto" }}>
         <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#F49B2A,#E27D0C)", transition: "width 1s linear" }} />
       </div>
-      <div style={{ fontFamily: "var(--ed-m)", fontSize: 9.5, color: "rgba(252,233,207,0.55)", marginTop: 8, fontVariantNumeric: "tabular-nums" }}>{pct}% · {kind === "video" ? "keep this page open" : "rendering"}</div>
+      <div style={{ fontFamily: "var(--ed-m)", fontSize: 9.5, color: "rgba(252,233,207,0.55)", marginTop: 8, fontVariantNumeric: "tabular-nums" }}>
+        {real != null ? `${pct}%` : `≈${pct}% · est.`} · {kind === "video" ? "keep this page open" : "rendering"}
+      </div>
+      {real == null && (
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "rgba(252,233,207,0.45)", marginTop: 3 }}>
+          time estimate, not job progress
+        </div>
+      )}
     </div>
   );
 }
@@ -1375,8 +1910,8 @@ function PreviewDemo({ pet, prompt }: { pet: Pet | null; prompt: string }) {
       <a href="/" style={{
         alignSelf: "flex-start",
         padding: "10px 18px", borderRadius: 10,
-        background: "linear-gradient(135deg,#F49B2A,#E27D0C)",
-        color: "#fff", fontWeight: 800, fontSize: 13,
+        background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+        color: "#FFF8EE", fontWeight: 800, fontSize: 13,
         textDecoration: "none",
         fontFamily: "var(--ed-disp)",
         boxShadow: "0 14px 26px -14px rgba(226,125,12,.8)",
@@ -1388,7 +1923,8 @@ function PreviewDemo({ pet, prompt }: { pet: Pet | null; prompt: string }) {
   );
 }
 
-function RoadmapItem({ icon, eta, title, body }: { icon: string; eta: string; title: string; body: string }) {
+// D5: research notes only — no ETAs, no quarter pills, no shipping promises.
+function RoadmapItem({ icon, title, body }: { icon: string; title: string; body: string }) {
   return (
     <div style={{
       background: T.inset,
@@ -1402,13 +1938,55 @@ function RoadmapItem({ icon, eta, title, body }: { icon: string; eta: string; ti
           fontSize: 9, fontWeight: 700, letterSpacing: "0.1em",
           fontFamily: T.m,
           background: "rgba(107,79,160,0.12)", color: T.studio,
-        }}>{eta}</span>
+        }}>RESEARCH</span>
       </div>
       <div style={{ fontSize: 14, fontFamily: T.disp, fontWeight: 700, marginBottom: 4, color: T.ink }}>{title}</div>
       <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.5 }}>{body}</div>
     </div>
   );
 }
+
+// Hand-drawn-style inline glyphs (currentColor) replacing the old dingbat
+// characters (⟳ ✎ ▶ ✦ ↓ ↗) so buttons match the rest of the icon set.
+const RetryGlyph = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth={2.1} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M21 3v5h-5" />
+    <path d="M21 12a9 9 0 0 1-15 6.7L3 16" /><path d="M3 21v-5h5" />
+  </svg>
+);
+const PencilGlyph = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M16.5 3.8a2.3 2.3 0 0 1 3.7 2.7l-.8 1L15 3.1l1.5.7Z" />
+    <path d="M15 3.1 4.6 13.5 3 21l7.5-1.6L20.9 9" />
+  </svg>
+);
+const PlayGlyph = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M7 4.8c0-1 1.1-1.7 2-1.2l11 6.4c.9.5.9 1.9 0 2.4L9 18.8c-.9.5-2-.2-2-1.2V4.8Z" />
+  </svg>
+);
+const SparkGlyph = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M12 2.5c.5 4.4 2 6.6 6.5 7.5-4.5 1.4-6 3.6-6.5 8-.5-4.4-2-6.6-6.5-8 4.5-.9 6-3.1 6.5-7.5Z" />
+    <path d="M19 15.5c.2 1.9.9 2.8 2.7 3.2-1.8.6-2.5 1.5-2.7 3.3-.2-1.8-.9-2.7-2.7-3.3 1.8-.4 2.5-1.3 2.7-3.2Z" />
+  </svg>
+);
+const DownloadGlyph = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 3.5V15" /><path d="m7.5 10.8 4.5 4.5 4.5-4.5" />
+    <path d="M4 16.5v2.5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2.5" />
+  </svg>
+);
+const ExternalGlyph = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M14 4.5h5.5V10" /><path d="M19.2 4.8 10.5 13.5" />
+    <path d="M19.5 14v4.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4.5" />
+  </svg>
+);
 
 // Small flat badge glyphs that match the mono pill style (currentColor, 9px).
 const AudioGlyph = () => (
@@ -1450,9 +2028,9 @@ function ModelBadges({ model, compact }: { model: StudioModel; compact?: boolean
   );
 }
 
-function Panel({ label, children }: { label: string; children: React.ReactNode }) {
+function Panel({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <div style={{
+    <div className={className} style={{
       background: T.paper, borderRadius: 16, padding: 14,
       border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
     }}>
@@ -1462,7 +2040,7 @@ function Panel({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Pill({ label, value }: { label: string; value: string }) {
+function Pill({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
   return (
     <div style={{
       padding: "6px 12px", borderRadius: 10,
@@ -1473,7 +2051,10 @@ function Pill({ label, value }: { label: string; value: string }) {
         fontSize: 10, fontFamily: T.m,
         color: T.mono, letterSpacing: "0.1em", fontWeight: 700,
       }}>{label}</span>
-      <span style={{ fontSize: 14, fontWeight: 700, fontFamily: T.m, fontVariantNumeric: "tabular-nums" }}>{value}</span>
+      <span style={{
+        fontSize: 14, fontWeight: 700, fontFamily: T.m, fontVariantNumeric: "tabular-nums",
+        color: valueColor, transition: "color 200ms ease",
+      }}>{value}</span>
     </div>
   );
 }
@@ -1523,6 +2104,24 @@ const btnGhost: React.CSSProperties = {
   border: `1px solid ${T.hair}`, background: T.paper,
   color: T.ink70, fontWeight: 700, fontSize: 12, cursor: "pointer",
   fontFamily: T.body, textDecoration: "none",
+};
+
+// Ghost variant readable on the dark error plate (used when the primary slot
+// is taken by the Get-credits purchase CTA).
+const btnGhostOnDark: React.CSSProperties = {
+  display: "inline-flex", alignItems: "center", gap: 6,
+  padding: "9px 18px", borderRadius: 10,
+  border: "1px solid rgba(252,233,207,0.4)", background: "transparent",
+  color: "#FCE9CF", fontWeight: 700, fontSize: 12, cursor: "pointer",
+  fontFamily: T.m, letterSpacing: "0.04em",
+};
+
+// Compact action chip used on gallery-overlay cards.
+const galleryActionBtn: React.CSSProperties = {
+  padding: "5px 9px", borderRadius: 8,
+  border: `1px solid ${T.hair}`, background: T.paper,
+  color: T.ink70, fontWeight: 700, fontSize: 10.5, cursor: "pointer",
+  fontFamily: T.body, textDecoration: "none", lineHeight: 1.2,
 };
 
 const generateBtn: React.CSSProperties = {

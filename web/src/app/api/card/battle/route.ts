@@ -5,6 +5,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import { resolveCardBattle, advantage } from "@/lib/tcg/battle";
 import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
@@ -32,6 +33,15 @@ export async function POST(req: NextRequest) {
   if (!petId || !opponentId || petId === opponentId) {
     return NextResponse.json({ error: "Pick two different pets" }, { status: 400 });
   }
+
+  // Airdrop-point integrity: the reward-bearing side of the duel must be a pet
+  // the caller actually owns. opponentId stays open on purpose — dueling
+  // AGAINST any public card is the feature.
+  const own = await prisma.pet.findFirst({
+    where: { id: petId, user_id: user.id, is_active: true },
+    select: { id: true },
+  });
+  if (!own) return NextResponse.json({ error: "You can only battle with your own pet" }, { status: 403 });
 
   const b = await resolveCardBattle(petId, opponentId);
   if (!b) return NextResponse.json({ error: "Card not found" }, { status: 404 });

@@ -34,7 +34,8 @@ import { useEffect, useMemo, useState } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import PetCard from "@/components/PetCard";
 import Icon from "@/components/Icon";
-import { computeRarity, RARITY_ORDER, rarityTier, type Rarity } from "@/lib/tcg/theme";
+import useCountUp from "@/hooks/useCountUp";
+import { computeRarity, rarityColor, RARITY_ORDER, RARITY_THRESHOLD, rarityTier, type Rarity } from "@/lib/tcg/theme";
 
 // ── Collectible Editorial tokens ──
 const T = {
@@ -49,25 +50,22 @@ const MUTED = T.muted;
 const LINE = T.hair;
 const GOLD = T.terra;
 
-// Locked rarity colors (Collectible Editorial). Uncommon rides with Common in
-// the album filter (the card seal already distinguishes them) so the tab row
-// matches the mockup's five stops.
-const RARITY_DOT: Record<Rarity, string> = {
-  Common: "#5C8A4E", Uncommon: "#5C8A4E", Rare: "#3E8FE0", Epic: "#9E72E8", Legendary: "#C8932F",
-};
-// The rarity tabs shown in the album (mockup: All / Common / Rare / Epic / Legendary).
+// Rarity colors come from the single locked source in lib/tcg/theme (Uncommon
+// rides with Common in the album filter — the card seal already distinguishes
+// them — so the tab row matches the mockup's five stops).
 const FILTER_TABS: Array<{ key: "All" | Rarity; label: string; dot?: string }> = [
   { key: "All", label: "All" },
-  { key: "Common", label: "Common", dot: RARITY_DOT.Common },
-  { key: "Rare", label: "Rare", dot: RARITY_DOT.Rare },
-  { key: "Epic", label: "Epic", dot: RARITY_DOT.Epic },
-  { key: "Legendary", label: "Legendary", dot: RARITY_DOT.Legendary },
+  { key: "Common", label: "Common", dot: rarityColor("Common") },
+  { key: "Rare", label: "Rare", dot: rarityColor("Rare") },
+  { key: "Epic", label: "Epic", dot: rarityColor("Epic") },
+  { key: "Legendary", label: "Legendary", dot: rarityColor("Legendary") },
 ];
 
 type Pet = {
   id: number; name: string; species?: number; avatar_url?: string | null;
-  // Real grind columns (returned by /api/pets) — drive the honest rarity label.
-  rarity: Rarity;
+  // Real grind columns (returned by /api/pets) — drive the honest rarity label
+  // and the real "{score}/{threshold} to {rarity}" progress line.
+  rarity: Rarity; score: number;
 };
 type Opp = { petId: number; name: string; element: string; level: number };
 type SortKey = "rarity" | "name";
@@ -85,14 +83,21 @@ function filterBucket(r: Rarity): "Common" | Rarity {
   return r === "Uncommon" ? "Common" : r;
 }
 
-export default function CardDeck() {
+export default function CardDeck({ onNavigate }: { onNavigate?: (section: string) => void }) {
   const [tab, setTab] = useState<"collection" | "battle">("collection");
   const [pets, setPets] = useState<Pet[]>([]);
   const [petSlots, setPetSlots] = useState<number>(0);
   const [notAuthed, setNotAuthed] = useState(false);
+  const [loaded, setLoaded] = useState(false);      // pets fetch settled (ok or not)
+  const [loadErr, setLoadErr] = useState(false);    // non-401 failure — retryable, never the adopt state
   const [bust, setBust] = useState<Record<number, number>>({});
   const [illustrating, setIllustrating] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  // SPA navigation for Adopt/Catch tiles: App passes onNavigate={setSection};
+  // without it (e.g. rendered outside the SPA shell) the href still works.
+  const navTo = (section: string) =>
+    onNavigate ? (e: React.MouseEvent) => { e.preventDefault(); onNavigate(section); } : undefined;
 
   // Album interaction state
   const [filter, setFilter] = useState<"All" | Rarity>("All");
@@ -109,29 +114,47 @@ export default function CardDeck() {
   const [oppId, setOppId] = useState<number | null>(null);
   const [battling, setBattling] = useState(false);
   const [battle, setBattle] = useState<any>(null);
+  const [reveal, setReveal] = useState(false); // battle result choreography step
 
-  useEffect(() => {
+  const loadPets = () => {
+    setLoadErr(false);
     api.pets.list().then((d: any) => {
-      const list: Pet[] = (d?.pets || []).map((p: any) => ({
-        id: p.id, name: p.name, species: p.species, avatar_url: p.avatar_url,
-        // Rarity from REAL grind columns via the shared deterministic function —
-        // identical to the server card lib, so the album label never lies.
-        rarity: computeRarity({
+      const list: Pet[] = (d?.pets || []).map((p: any) => {
+        // Rarity + score from REAL grind columns via the shared deterministic
+        // function — identical to the server card lib, so the album never lies.
+        const { rarity, score } = computeRarity({
           level: p.level ?? 0, bond_level: p.bond_level ?? 0, care_streak: p.care_streak ?? 0,
           atk: p.atk ?? 0, def: p.def ?? 0, spd: p.spd ?? 0, evolution_stage: p.evolution_stage ?? 0,
-        }).rarity,
-      }));
+        });
+        return { id: p.id, name: p.name, species: p.species, avatar_url: p.avatar_url, rarity, score };
+      });
       setPets(list);
       // Real slot count from the same payload (never inflated).
       if (typeof d?.pet_slots === "number") setPetSlots(d.pet_slots);
-      if (list[0]) setMyPetId(list[0].id);
-    }).catch((e: any) => { if (e?.status === 401) setNotAuthed(true); });
+      setMyPetId((cur) => cur ?? (list[0] ? list[0].id : null));
+    }).catch((e: any) => {
+      if (e?.status === 401) setNotAuthed(true);
+      else setLoadErr(true); // a network blip must NOT read as "adopt a pet first"
+    }).finally(() => setLoaded(true));
+  };
 
+  useEffect(() => {
+    loadPets();
     fetch("/api/petclaw/network/discover?limit=24", { headers: getAuthHeaders() })
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { if (d?.nodes) setOpps(d.nodes); })
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Battle reveal sequence: panel enters neutral → ~500ms later the winner
+  // styling flips (the card transition finally animates) + WINNER stamp presses.
+  useEffect(() => {
+    if (!battle) { setReveal(false); return; }
+    setReveal(false);
+    const t = setTimeout(() => setReveal(true), 500);
+    return () => clearTimeout(t);
+  }, [battle]);
 
   // ── SCRUM-100: Illustrate now GENERATES ONLY. It never patches the pet.
   // The result is staged in `preview`; the original card stays intact until the
@@ -166,7 +189,7 @@ export default function CardDeck() {
   const confirmIllustrate = async () => {
     if (!preview) return;
     const { petId, url } = preview;
-    setIllustrating(petId);
+    setIllustrating(petId); setErr(null);
     try {
       await fetch(`/api/pets/${petId}`, {
         method: "PATCH", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
@@ -218,10 +241,48 @@ export default function CardDeck() {
   // on the unfiltered "All" view so filtered counts stay exact.
   const emptySlots = Math.max(0, petSlots - pets.length);
 
+  // Closest pet toward the filtered rarity — REAL score vs the REAL threshold
+  // from computeRarity. Null when the line can't be honest (no pet below it).
+  const closestToFilter = useMemo(() => {
+    if (filter === "All" || filter === "Common") return null;
+    const threshold = RARITY_THRESHOLD[filter];
+    const below = pets.filter((p) => p.score < threshold).sort((a, b) => b.score - a.score);
+    return below[0] ? { name: below[0].name, score: below[0].score, threshold } : null;
+  }, [pets, filter]);
+
   const openPet = openId != null ? pets.find((p) => p.id === openId) || null : null;
 
   if (notAuthed) return <Shell owned={0}><Empty>Connect your wallet to see your cards.</Empty></Shell>;
-  if (pets.length === 0) return <Shell owned={0}><Empty>Adopt a pet first — then collect its card. <a href="/?section=my%20pet" style={{ color: GOLD, fontWeight: 700, textDecoration: "none" }}>Adopt ▸</a></Empty></Shell>;
+
+  // Loading — foil-shimmer skeleton grid in the exact card footprint. Never
+  // flash the adopt state at a collector whose cards are still on the wire.
+  if (!loaded) {
+    return (
+      <Shell owned={0}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(196px, 1fr))", gap: 18 }}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="mp-enter" style={{ animationDelay: `${i * 45}ms` }}>
+              <div className="ed-skeleton" style={{ width: "100%", aspectRatio: "5 / 7", borderRadius: 18, boxShadow: "var(--ed-shadow-card)" }} />
+            </div>
+          ))}
+        </div>
+      </Shell>
+    );
+  }
+
+  // Honest failure — retryable, distinct from both "empty" and "adopt first".
+  if (loadErr && pets.length === 0) {
+    return (
+      <Shell owned={0}>
+        <Empty>
+          Couldn&apos;t reach your collection.{" "}
+          <button onClick={loadPets} style={{ background: "none", border: "none", padding: 0, color: GOLD, fontWeight: 700, fontFamily: T.body, fontSize: 14.5, cursor: "pointer" }}>Retry ▸</button>
+        </Empty>
+      </Shell>
+    );
+  }
+
+  if (pets.length === 0) return <Shell owned={0}><Empty>Adopt a pet first — then collect its card. <a href="/?section=my%20pet" onClick={navTo("my pet")} style={{ color: GOLD, fontWeight: 700, textDecoration: "none" }}>Adopt ▸</a></Empty></Shell>;
 
   const oppList = opps.filter((o) => !pets.some((p) => p.id === o.petId));
 
@@ -242,7 +303,13 @@ export default function CardDeck() {
         ))}
       </div>
 
-      {err && <div style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "10px 14px", fontFamily: T.body, fontSize: 13.5, marginBottom: 16, boxShadow: "var(--ed-shadow-card)" }}>{err}</div>}
+      {/* Component-local keyframes (binder flip lives only here, not in globals).
+          The global prefers-reduced-motion rule neutralizes it like everything else. */}
+      <style>{`@keyframes cdBinderFlip{0%{opacity:0;transform:perspective(900px) rotateY(-72deg) translateY(8px)}70%{opacity:1;transform:perspective(900px) rotateY(6deg) translateY(0)}100%{opacity:1;transform:perspective(900px) rotateY(0deg)}}`}</style>
+
+      {/* Page-level banner only for errors with no overlay open (battle tab) —
+          overlay errors render INSIDE the overlay, above the scrim. */}
+      {err && !openPet && !preview && <div style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "10px 14px", fontFamily: T.body, fontSize: 13.5, marginBottom: 16, boxShadow: "var(--ed-shadow-card)" }}>{err}</div>}
 
       {tab === "collection" && (
         <div>
@@ -261,7 +328,7 @@ export default function CardDeck() {
                     color: active ? T.creamOn : T.muted, transition: "all .15s ease",
                   }}>
                     {f.dot && <span style={{ width: 8, height: 8, borderRadius: "50%", background: f.dot, display: "inline-block" }} />}
-                    {f.key === "Legendary" && <span style={{ color: active ? "#F6D488" : RARITY_DOT.Legendary, marginRight: -3 }}>★</span>}
+                    {f.key === "Legendary" && <span style={{ color: active ? "#F6D488" : rarityColor("Legendary"), marginRight: -3 }}>★</span>}
                     {f.label}
                     <span style={{ opacity: 0.65, fontVariantNumeric: "tabular-nums" }}>{n}</span>
                   </button>
@@ -276,29 +343,67 @@ export default function CardDeck() {
             </button>
           </div>
 
-          {/* Album grid */}
+          {/* Album grid — staggered entrance (capped at 12 steps), shared
+              lift-on-hover verb on every tile including slots + catch. */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(196px, 1fr))", gap: 18 }}>
-            {visible.map((p) => (
+            {visible.map((p, i) => (
               <button
                 key={`${p.id}-${bust[p.id] || 0}`}
                 onClick={() => setOpenId(p.id)}
-                style={{ all: "unset", cursor: "pointer", display: "block", width: "100%", borderRadius: 18 }}
+                className="mp-enter ed-card-hover"
+                style={{
+                  display: "block", width: "100%", padding: 0, margin: 0, border: "none",
+                  background: "none", font: "inherit", color: "inherit", textAlign: "inherit",
+                  cursor: "pointer", borderRadius: 18, animationDelay: `${Math.min(i, 12) * 45}ms`,
+                }}
                 aria-label={`Open ${p.name}'s card`}
               >
-                <PetCard key={`pc-${p.id}-${bust[p.id] || 0}`} petId={p.id} maxWidth={260} />
+                <PetCard petId={p.id} maxWidth={260} placeholder={{ name: p.name, rarity: p.rarity }} />
               </button>
             ))}
+
+            {/* Honest filter empty state — never a blank void. Progress line is
+                the pet's REAL computeRarity score vs the REAL tier threshold. */}
+            {visible.length === 0 && filter !== "All" && (
+              <div className="mp-enter" style={{ gridColumn: "1 / -1" }}>
+                <div style={{ borderRadius: 18, border: `1px dashed ${T.hair}`, background: T.inset, padding: "30px 22px", textAlign: "center", maxWidth: 460, margin: "0 auto" }}>
+                  <div style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.mono, marginBottom: 8 }}>No {filter} cards yet</div>
+                  <p style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted2, margin: 0, lineHeight: 1.55 }}>
+                    Rarity grows from real care — level, bond and care streak raise a card&apos;s grade.
+                  </p>
+                  {closestToFilter && (
+                    <div style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.terraSub, marginTop: 10, fontVariantNumeric: "tabular-nums" }}>
+                      Closest: {closestToFilter.name} — {closestToFilter.score}/{closestToFilter.threshold} to {filter}
+                    </div>
+                  )}
+                  {filter === "Common" && (
+                    <div style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: T.terraSub, marginTop: 10 }}>
+                      Every card you own has graded above Common
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Real remaining adoption slots — only on the unfiltered view, never
                 fake card numbers. Labelled honestly as an empty slot to adopt. */}
             {filter === "All" && Array.from({ length: emptySlots }).map((_, i) => (
-              <a key={`slot-${i}`} href="/?section=my%20pet" style={{ textDecoration: "none" }}>
+              <a
+                key={`slot-${i}`} href="/?section=my%20pet" onClick={navTo("my pet")}
+                className="mp-enter ed-card-hover"
+                style={{ textDecoration: "none", display: "block", borderRadius: 18, animationDelay: `${Math.min(visible.length + i, 12) * 45}ms` }}
+              >
                 <SlotTile />
               </a>
             ))}
 
             {/* Catch-more tile — opens the real Catch camera flow */}
-            {filter === "All" && <CatchTile />}
+            {filter === "All" && (
+              <CatchTile
+                onClick={navTo("catch")}
+                delay={Math.min(visible.length + emptySlots, 12) * 45}
+              />
+            )}
           </div>
         </div>
       )}
@@ -325,23 +430,44 @@ export default function CardDeck() {
           {oppList.length === 0 && <div style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted, marginBottom: 16 }}>No other pets to battle yet — invite a friend to adopt one.</div>}
 
           {battle && (
-            <div style={{ borderRadius: 22, border: `1px solid ${T.hair}`, padding: 22, background: T.paper, boxShadow: "var(--ed-shadow-card)" }}>
+            <div className="mp-enter" style={{ borderRadius: 22, border: `1px solid ${T.hair}`, padding: 22, background: T.paper, boxShadow: "var(--ed-shadow-card)" }}>
               <div style={{ textAlign: "center", marginBottom: 18 }}>
                 <div style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.mono, marginBottom: 7 }}>Duel result</div>
-                <div style={{ fontFamily: T.disp, fontSize: 26, fontWeight: 800, color: battle.winner === "you" ? T.win : T.terra }}>
+                {/* Headline holds space during the neutral beat, then reveals */}
+                <div style={{ fontFamily: T.disp, fontSize: 26, fontWeight: 800, color: battle.winner === "you" ? T.win : T.terra, opacity: reveal ? 1 : 0, transition: "opacity .35s ease" }}>
                   {battle.winner === "you" ? (
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><Icon name="trophy" size={24} /> {battle.you.name} wins!</span>
                   ) : `${battle.opponent.name} wins`}
                 </div>
-                <div style={{ fontFamily: T.m, fontSize: 11, color: T.muted, fontWeight: 700, letterSpacing: "0.06em", marginTop: 7 }}>{battle.result.turns} turns · your HP {battle.result.yourHp}/{battle.result.yourHpMax} · their HP {battle.result.oppHp}/{battle.result.oppHpMax}</div>
+                {/* Real figures tick up over ~600ms (already tabular) */}
+                <div style={{ fontFamily: T.m, fontSize: 11, color: T.muted, fontWeight: 700, letterSpacing: "0.06em", marginTop: 7, fontVariantNumeric: "tabular-nums" }}>
+                  <Num n={battle.result.turns} /> turns · your HP <Num n={battle.result.yourHp} />/<Num n={battle.result.yourHpMax} /> · their HP <Num n={battle.result.oppHp} />/<Num n={battle.result.oppHpMax} />
+                </div>
               </div>
               <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
                 {[battle.you, battle.opponent].map((c: any, i: number) => {
                   const isWinner = (i === 0 && battle.winner === "you") || (i === 1 && battle.winner === "opponent");
                   return (
-                    <div key={i} style={{ width: 220, opacity: isWinner ? 1 : 0.72, transform: isWinner ? "scale(1.03)" : "none", transition: "all .2s" }}>
+                    <div key={i} style={{
+                      width: 220,
+                      // Neutral until the reveal beat — flipping the styling ~500ms
+                      // in lets this transition actually animate (it was dead code
+                      // when the winner state was set on first render).
+                      opacity: reveal ? (isWinner ? 1 : 0.72) : 1,
+                      transform: reveal && isWinner ? "scale(1.03)" : "none",
+                      transition: "opacity .45s cubic-bezier(.2,.8,.2,1), transform .45s cubic-bezier(.2,.8,.2,1)",
+                    }}>
                       <PetCard petId={c.id} maxWidth={220} />
-                      <div style={{ textAlign: "center", marginTop: 9, fontFamily: T.m, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.14em", color: isWinner ? T.win : T.muted }}>{isWinner ? "WINNER" : ""}</div>
+                      <div style={{ textAlign: "center", marginTop: 9, height: 26 }}>
+                        {reveal && isWinner && (
+                          <span style={{
+                            display: "inline-block", fontFamily: T.m, fontSize: 10.5, fontWeight: 700,
+                            letterSpacing: "0.18em", textTransform: "uppercase", color: T.win,
+                            border: `2px solid ${T.win}`, borderRadius: 6, padding: "3px 10px",
+                            animation: "sealPress 380ms 100ms both",
+                          }}>Winner</span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -360,13 +486,16 @@ export default function CardDeck() {
         </div>
       )}
 
-      {/* ── Card detail overlay — Share + ✨ Illustrate reachable per card ── */}
+      {/* ── Card detail overlay — Share + ✨ Illustrate reachable per card.
+             The big card is NOT a link anymore: the holo tilt owns the inspect
+             gesture ("View card page ▸" below stays the sole external link). ── */}
       {openPet && (
-        <Overlay onClose={() => setOpenId(null)}>
+        <Overlay onClose={() => { setOpenId(null); setErr(null); }}>
           <div style={{ maxWidth: 320, margin: "0 auto" }}>
-            <a href={cardUrl(openPet.id)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-              <PetCard key={`detail-${openPet.id}-${bust[openPet.id] || 0}`} petId={openPet.id} maxWidth={320} />
-            </a>
+            {/* One-shot "drawn from the binder" flip */}
+            <div style={{ animation: "cdBinderFlip 480ms cubic-bezier(.2,.8,.2,1) 120ms both" }}>
+              <PetCard key={`detail-${openPet.id}-${bust[openPet.id] || 0}`} petId={openPet.id} maxWidth={320} placeholder={{ name: openPet.name, rarity: openPet.rarity }} />
+            </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 14, flexWrap: "wrap" }}>
               <button onClick={() => shareCard(openPet.id, openPet.name)} style={btn}>𝕏 Share</button>
               <button
@@ -374,12 +503,16 @@ export default function CardDeck() {
                 disabled={illustrating === openPet.id}
                 style={{ ...ghost, opacity: illustrating === openPet.id ? 0.6 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
               >
-                {illustrating === openPet.id ? "Illustrating…" : <><Icon name="sparkling" size={14} /> Illustrate</>}
+                {illustrating === openPet.id ? "Illustrating…" : <><Icon name="sparkling" size={14} /> Illustrate · 5 cr</>}
               </button>
               <a href={cardUrl(openPet.id)} target="_blank" rel="noopener noreferrer" style={{ ...ghost, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>View card page ▸</a>
             </div>
+            {/* Errors surface INSIDE the overlay — a 402 must never hide under the scrim */}
+            {err && (
+              <div style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "9px 12px", fontFamily: T.body, fontSize: 12.5, marginTop: 12, textAlign: "center" }}>{err}</div>
+            )}
             <p style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, textAlign: "center", margin: "12px auto 0", maxWidth: 260, lineHeight: 1.5 }}>
-              Illustrate paints a new stylized portrait — you preview & confirm before it replaces the card. Your original photo is kept until then.
+              Illustrate paints a new stylized portrait — you preview & confirm before it replaces the card. Your original photo is kept until then. Costs 5 credits.
             </p>
           </div>
         </Overlay>
@@ -387,7 +520,7 @@ export default function CardDeck() {
 
       {/* ── SCRUM-100: non-destructive Illustrate PREVIEW + confirm ── */}
       {preview && (
-        <Overlay onClose={() => !illustrating && setPreview(null)}>
+        <Overlay onClose={() => { if (!illustrating) { setPreview(null); setErr(null); } }}>
           <div style={{ maxWidth: 520, margin: "0 auto", textAlign: "center" }}>
             <div style={{ fontFamily: T.m, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.terra, marginBottom: 6 }}>Preview · not saved yet</div>
             <h3 style={{ fontFamily: T.disp, fontSize: 24, fontWeight: 800, color: T.ink, margin: "0 0 4px", letterSpacing: "-0.02em" }}>Use this as {preview.name}&apos;s card art?</h3>
@@ -395,8 +528,8 @@ export default function CardDeck() {
               Your original photo is untouched. Confirm to set the new art on the card, or keep the original. The generated art is also saved in Studio history either way.
             </p>
             <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginBottom: 20 }}>
-              <PreviewCol label="Original" ><PetCard key={`orig-${preview.petId}`} petId={preview.petId} maxWidth={220} /></PreviewCol>
-              <PreviewCol label="Illustrated" accent>
+              <PreviewCol label="Original"><PetCard key={`orig-${preview.petId}`} petId={preview.petId} maxWidth={220} placeholder={{ name: preview.name, rarity: pets.find((p) => p.id === preview.petId)?.rarity || "Common" }} /></PreviewCol>
+              <PreviewCol label="Illustrated" accent delay={90}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <div style={{ width: 220, aspectRatio: "1 / 1", borderRadius: 14, overflow: "hidden", border: `2px solid ${T.terra}`, background: "#fff", boxShadow: "var(--ed-shadow-card)" }}>
                   <img src={preview.url} alt={`${preview.name} illustrated`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
@@ -407,8 +540,12 @@ export default function CardDeck() {
               <button onClick={confirmIllustrate} disabled={illustrating != null} style={{ ...btn, padding: "11px 22px", opacity: illustrating != null ? 0.6 : 1 }}>
                 {illustrating != null ? "Saving…" : "Set as card art"}
               </button>
-              <button onClick={() => setPreview(null)} disabled={illustrating != null} style={{ ...ghost, padding: "11px 22px" }}>Keep original</button>
+              <button onClick={() => { setPreview(null); setErr(null); }} disabled={illustrating != null} style={{ ...ghost, padding: "11px 22px" }}>Keep original</button>
             </div>
+            {/* confirmIllustrate PATCH failures surface here, above the scrim */}
+            {err && (
+              <div style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "9px 12px", fontFamily: T.body, fontSize: 12.5, marginTop: 14 }}>{err}</div>
+            )}
           </div>
         </Overlay>
       )}
@@ -430,9 +567,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function PreviewCol({ label, accent, children }: { label: string; accent?: boolean; children: React.ReactNode }) {
+/** Count-up on a REAL figure (battle turns / HP) — presentation only. */
+function Num({ n }: { n: number }) {
+  const v = useCountUp(n, 600);
+  return <>{v}</>;
+}
+
+function PreviewCol({ label, accent, delay = 0, children }: { label: string; accent?: boolean; delay?: number; children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+    <div className="mp-enter" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, animationDelay: `${delay}ms` }}>
       {children}
       <span style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: accent ? T.terra : T.muted }}>{label}</span>
     </div>
@@ -455,20 +598,22 @@ function SlotTile() {
   );
 }
 
-// "Catch more in the wild" — dark tile that opens the real Catch camera flow.
-function CatchTile() {
+// "Catch more in the wild" — dark tile that opens the real Catch camera flow
+// (SPA-navigates via onClick when CardDeck got onNavigate; href is the fallback).
+function CatchTile({ onClick, delay = 0 }: { onClick?: (e: React.MouseEvent) => void; delay?: number }) {
   return (
-    <a href="/?section=catch" style={{
+    <a href="/?section=catch" onClick={onClick} className="mp-enter ed-card-hover" style={{
       textDecoration: "none", width: "100%", aspectRatio: "5 / 7", borderRadius: 18,
       background: "radial-gradient(120% 90% at 50% 120%, #4A2A12 0%, #241206 55%, #17100A 100%)",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       gap: 12, textAlign: "center", padding: 16, boxShadow: "var(--ed-shadow-card)",
+      animationDelay: `${delay}ms`,
     }}>
       <Icon name="paw" size={26} style={{ opacity: 0.9 }} />
       <div style={{ fontFamily: T.disp, fontSize: 17, fontWeight: 800, color: "#FBF6EC", lineHeight: 1.15 }}>Catch more<br />in the wild</div>
       <span style={{
         marginTop: 4, padding: "8px 16px", borderRadius: 999,
-        background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#2A1400",
+        background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
         fontFamily: T.m, fontWeight: 700, fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase",
       }}>Open camera</span>
     </a>
@@ -482,11 +627,15 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
       style={{
         position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center",
         background: "rgba(24,16,8,.44)", backdropFilter: "blur(3px)", padding: 20, overflowY: "auto",
+        animation: "edScrimIn 160ms ease both",
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ position: "relative", background: T.field, borderRadius: 24, border: `1px solid ${T.hair}`, padding: "34px 26px 28px", maxWidth: 600, width: "100%", boxShadow: "var(--ed-shadow-card)" }}
+        style={{
+          position: "relative", background: T.field, borderRadius: 24, border: `1px solid ${T.hair}`, padding: "34px 26px 28px", maxWidth: 600, width: "100%", boxShadow: "var(--ed-shadow-card)",
+          animation: "edPanelIn 260ms cubic-bezier(.2,.8,.2,1) both",
+        }}
       >
         <button onClick={onClose} aria-label="Close" style={{
           position: "absolute", top: 14, right: 14, width: 30, height: 30, borderRadius: "50%",
@@ -499,7 +648,18 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
   );
 }
 
+/** One rarity dot + count that ticks up to its REAL value (honesty-safe). */
+function RarityCount({ rarity, n }: { rarity: Rarity; n: number }) {
+  const v = useCountUp(n, 600);
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.m, fontSize: 10.5, fontWeight: 700, color: T.muted2, fontVariantNumeric: "tabular-nums" }}>
+      <span style={{ width: 8, height: 8, borderRadius: "50%", background: rarityColor(rarity), display: "inline-block" }} />{v}
+    </span>
+  );
+}
+
 function Shell({ children, owned, rarityCounts }: { children: React.ReactNode; owned: number; rarityCounts?: Record<string, number> }) {
+  const ownedC = useCountUp(owned, 600);
   return (
     <div style={{ position: "relative", fontFamily: T.body, color: T.ink }}>
       <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
@@ -511,19 +671,14 @@ function Shell({ children, owned, rarityCounts }: { children: React.ReactNode; o
             {/* HONEST progress — the REAL owned count. No fabricated denominator,
                 because a card is minted from a pet you own (no fixed universe). */}
             <div style={{ minWidth: 220, textAlign: "right" }}>
-              <div style={{ fontFamily: T.disp, fontSize: 20, fontWeight: 800, color: T.ink }}>
-                {owned} <span style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", color: T.muted, textTransform: "uppercase" }}>{owned === 1 ? "card collected" : "cards collected"}</span>
+              <div style={{ fontFamily: T.disp, fontSize: 20, fontWeight: 800, color: T.ink, fontVariantNumeric: "tabular-nums" }}>
+                {ownedC} <span style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", color: T.muted, textTransform: "uppercase" }}>{owned === 1 ? "card collected" : "cards collected"}</span>
               </div>
               {owned > 0 && rarityCounts && (
                 <div style={{ display: "inline-flex", gap: 12, marginTop: 8, justifyContent: "flex-end" }}>
-                  {RARITY_ORDER.filter((r) => r !== "Uncommon").map((r) => {
-                    const n = r === "Common" ? (rarityCounts.Common || 0) : (rarityCounts[r] || 0);
-                    return (
-                      <span key={r} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.m, fontSize: 10.5, fontWeight: 700, color: T.muted2, fontVariantNumeric: "tabular-nums" }}>
-                        <span style={{ width: 8, height: 8, borderRadius: "50%", background: RARITY_DOT[r], display: "inline-block" }} />{n}
-                      </span>
-                    );
-                  })}
+                  {RARITY_ORDER.filter((r) => r !== "Uncommon").map((r) => (
+                    <RarityCount key={r} rarity={r} n={r === "Common" ? (rarityCounts.Common || 0) : (rarityCounts[r] || 0)} />
+                  ))}
                 </div>
               )}
             </div>

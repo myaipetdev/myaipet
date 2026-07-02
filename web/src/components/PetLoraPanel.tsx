@@ -94,21 +94,21 @@ export default function PetLoraPanel({ petId, petName }: { petId: number; petNam
   const status = lora?.status;
   const wrap: React.CSSProperties = {
     marginTop: 12, padding: "13px 15px", borderRadius: 12,
-    background: "linear-gradient(135deg, rgba(16,185,129,0.06), rgba(139,92,246,0.05))",
-    border: "1px solid rgba(16,185,129,0.22)",
+    background: "#F5EFE2",
+    border: "1px solid rgba(33,26,18,.13)",
   };
   const eyebrow: React.CSSProperties = {
-    fontSize: 11, fontFamily: "'JetBrains Mono', monospace",
-    color: "#047857", letterSpacing: "0.1em", fontWeight: 800, marginBottom: 6,
+    fontSize: 11, fontFamily: "var(--ed-m), 'Space Mono', ui-monospace, monospace",
+    color: "#5C8A4E", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 6,
+    textTransform: "uppercase",
   };
 
   if (status === "ready") {
     return (
       <div style={wrap}>
-        <div style={eyebrow}><Icon name="test-tube" size={12} style={{ marginRight: 5 }} /> IDENTITY MODEL · LIVE</div>
-        <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.5 }}>
-          {petName}&rsquo;s face is locked. Every image you generate now renders
-          their <b>real</b> features — not a lookalike.
+        <div style={eyebrow}><Icon name="test-tube" size={12} style={{ marginRight: 5 }} /> IDENTITY MODEL · TRAINED</div>
+        <div style={{ fontSize: 13, color: "#211A12", lineHeight: 1.5 }}>
+          {petName}&rsquo;s face profile is trained and saved to their file.
         </div>
         <button onClick={() => train(true)} disabled={busy} style={ghostBtn}>
           {busy ? "Starting…" : "Retrain with newer photos"}
@@ -121,9 +121,9 @@ export default function PetLoraPanel({ petId, petName }: { petId: number; petNam
     return (
       <div style={wrap}>
         <div style={eyebrow}><Icon name="test-tube" size={12} style={{ marginRight: 5 }} /> TRAINING {petName.toUpperCase()}&rsquo;S IDENTITY</div>
-        <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.5, display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ fontSize: 13, color: "#211A12", lineHeight: 1.5, display: "flex", alignItems: "center", gap: 8 }}>
           <Spinner /> Learning their face from {lora?.imagesUsed || "your"} photos — a few minutes.
-          Keep creating; it&rsquo;ll switch on automatically.
+          You can keep creating in the meantime.
         </div>
       </div>
     );
@@ -132,15 +132,15 @@ export default function PetLoraPanel({ petId, petName }: { petId: number; petNam
   // none yet, or failed
   return (
     <div style={wrap}>
-      <div style={eyebrow}><Icon name="sparkling" size={12} style={{ marginRight: 5 }} /> LOCK {petName.toUpperCase()}&rsquo;S EXACT FACE</div>
-      <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.5 }}>
-        Train a one-time identity model from {petName}&rsquo;s photos. After that,
-        every generation keeps their exact face — consistent across any style.
+      <div style={eyebrow}><Icon name="sparkling" size={12} style={{ marginRight: 5 }} /> TRAIN {petName.toUpperCase()}&rsquo;S FACE PROFILE</div>
+      <div style={{ fontSize: 13, color: "#211A12", lineHeight: 1.5 }}>
+        Train a one-time identity model from {petName}&rsquo;s photos. Their
+        face profile is saved to their pet file.
       </div>
       {status === "failed" && lora?.error && (
-        <div style={{ fontSize: 12, color: "#b91c1c", marginTop: 6 }}>Last run failed: {lora.error}</div>
+        <div style={{ fontSize: 12, color: "#BE4F28", marginTop: 6 }}>Last run failed: {lora.error}</div>
       )}
-      {msg && <div style={{ fontSize: 12, color: "#b91c1c", marginTop: 6 }}>{msg}</div>}
+      {msg && <div style={{ fontSize: 12, color: "#BE4F28", marginTop: 6 }}>{msg}</div>}
       <button onClick={() => train(false)} disabled={busy} style={primaryBtn}>
         {busy ? "Starting…" : status === "failed" ? `Retry training ${petName}` : `Train ${petName}'s identity`}
       </button>
@@ -152,7 +152,7 @@ function Spinner() {
   return (
     <span style={{
       width: 13, height: 13, borderRadius: "50%", flexShrink: 0,
-      border: "2px solid rgba(16,185,129,0.25)", borderTopColor: "#047857",
+      border: "2px solid rgba(92,138,78,0.3)", borderTopColor: "#5C8A4E",
       display: "inline-block", animation: "mpspin 0.8s linear infinite",
     }}>
       <style>{`@keyframes mpspin{to{transform:rotate(360deg)}}`}</style>
@@ -162,15 +162,15 @@ function Spinner() {
 
 const primaryBtn: React.CSSProperties = {
   marginTop: 10, padding: "9px 16px", borderRadius: 10, border: "none",
-  background: "linear-gradient(135deg, #10b981, #059669)", color: "#fff",
-  fontSize: 13, fontWeight: 800, cursor: "pointer",
-  fontFamily: "'Space Grotesk', sans-serif",
-  boxShadow: "0 4px 12px rgba(16,185,129,0.25)",
+  background: "linear-gradient(180deg, #F49B2A, #E27D0C)", color: "#FFF8EE",
+  fontSize: 13, fontWeight: 700, cursor: "pointer",
+  fontFamily: "var(--ed-body), 'Hanken Grotesk', system-ui, sans-serif",
+  boxShadow: "0 10px 20px -12px rgba(226,125,12,.7)",
 };
 
 const ghostBtn: React.CSSProperties = {
   marginTop: 8, padding: "6px 12px", borderRadius: 9,
-  background: "transparent", border: "1px solid rgba(16,185,129,0.3)",
-  color: "#047857", fontSize: 12, fontWeight: 700, cursor: "pointer",
-  fontFamily: "'Space Grotesk', sans-serif",
+  background: "transparent", border: "1px solid rgba(33,26,18,.13)",
+  color: "#3A3024", fontSize: 12, fontWeight: 700, cursor: "pointer",
+  fontFamily: "var(--ed-body), 'Hanken Grotesk', system-ui, sans-serif",
 };

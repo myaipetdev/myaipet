@@ -97,7 +97,32 @@ export async function GET(
       });
       return NextResponse.json({ status: "completed", url: persistedUrl, generationId: gen.id });
     }
-    if (r.status === "failed") continue; // try next model — might be a poll URL mismatch
+    if (r.status === "failed") {
+      // Legacy untagged rows scan every model — a "failed" there may just be
+      // a poll URL mismatch, so keep trying the next candidate.
+      if (!taggedModel) continue;
+      // Tagged single-candidate job: the originating provider says it failed.
+      // Without this the row stays "running" forever and the paying user polls
+      // an eternal spinner. Mirror the POST route's submit-failure semantics:
+      // mark failed + store the reason + refund the charged credits. The
+      // status-guarded updateMany makes the transition (and refund) run exactly
+      // once even if two polls race.
+      const errMsg = r.error || "Generation failed upstream";
+      const refund = gen.credits_charged || 0;
+      await prisma.$transaction(async (tx) => {
+        const upd = await tx.generation.updateMany({
+          where: { id: gen.id, status: { notIn: ["failed", "completed"] } },
+          data: { status: "failed", error_message: errMsg },
+        });
+        if (upd.count > 0 && refund > 0) {
+          await tx.user.update({
+            where: { id: user.id },
+            data: { credits: { increment: refund } },
+          });
+        }
+      });
+      return NextResponse.json({ status: "failed", error: errMsg, generationId: gen.id });
+    }
     if (r.status === "running") {
       return NextResponse.json({ status: "running", progress: r.progress, generationId: gen.id });
     }

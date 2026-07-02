@@ -310,8 +310,8 @@ export default function PetGenerate() {
         </div>
       )}
       <style>{`
-        @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
-        @keyframes slideIn { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+        /* pulse + slideIn now come from globals.css (canonical copies) —
+           local duplicates used to shadow them page-wide while mounted. */
         @keyframes shimmer { 0% { background-position:-200% 0 } 100% { background-position:200% 0 } }
       `}</style>
 
@@ -406,9 +406,10 @@ export default function PetGenerate() {
                 border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", minHeight: 320,
                 position: "relative", overflow: "hidden",
               }}>
-                {/* Result */}
+                {/* Result — rises in from below (global edRiseIn; the old local
+                    slideIn copy had this shape, the canonical one drops from above) */}
                 {result ? (
-                  <div style={{ animation: "slideIn 0.4s ease-out" }}>
+                  <div style={{ animation: "edRiseIn 0.4s ease-out" }}>
                     {(result.video_url || result.video_path) ? (
                       <video src={result.video_url || result.video_path} controls autoPlay loop muted playsInline
                         style={{ width: "100%", borderRadius: "16px 16px 0 0", display: "block" }} />

@@ -9,7 +9,7 @@
  * prefers-reduced-motion via the .ed-* classes in globals.css.
  */
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const PAPER = "#FBF6EC";
 const INK70 = "#3A3024";
@@ -55,12 +55,38 @@ export function Motes({ count = 6 }: { count?: number }) {
 }
 
 export default function CollectibleFrame({
-  photoUrl, level, speciesLabel, elementLabel, width = 330, tilt = -2.4, holo = true, seal = true, float = true,
+  photoUrl, level, speciesLabel, elementLabel, width = 330, tilt = -2.4, holo = true, seal = true, float = true, sealLabel,
 }: {
   photoUrl: string; level: number | string; speciesLabel?: string; elementLabel?: string;
-  width?: number; tilt?: number; holo?: boolean; seal?: boolean; float?: boolean;
+  width?: number; tilt?: number; holo?: boolean; seal?: boolean; float?: boolean; sealLabel?: string;
 }) {
-  const well = width - 30; // mat pad 13 + inner
+  const well = width - 26; // mat pad 13 both sides
+  const matRef = useRef<HTMLDivElement>(null);
+  const [tiltOn, setTiltOn] = useState(false);
+  useEffect(() => {
+    // Pointer-reactive tilt only for fine hover pointers; touch keeps the
+    // passive float/sheen loop and reduced-motion kills everything globally.
+    if (typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches) setTiltOn(true);
+  }, []);
+  const onTiltMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = matRef.current;
+    if (!tiltOn || !el) return;
+    const r = el.getBoundingClientRect();
+    const nx = ((e.clientX - r.left) / r.width) * 2 - 1;
+    const ny = ((e.clientY - r.top) / r.height) * 2 - 1;
+    el.classList.add("ed-holo-live");
+    el.style.transition = "transform .18s ease-out";
+    el.style.transform = `rotateX(${(-ny * 5).toFixed(2)}deg) rotateY(${(nx * 5).toFixed(2)}deg)`;
+    el.style.setProperty("--holo-x", `${Math.round(50 + nx * 60)}%`);
+    el.style.setProperty("--holo-y", `${Math.round(50 + ny * 60)}%`);
+  };
+  const onTiltLeave = () => {
+    const el = matRef.current;
+    if (!el) return;
+    el.classList.remove("ed-holo-live");
+    el.style.transition = "transform .5s ease";
+    el.style.transform = "rotateX(0deg) rotateY(0deg)";
+  };
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
       {/* breathing contact shadow */}
@@ -73,13 +99,15 @@ export default function CollectibleFrame({
       )}
       <div
         className={float ? "ed-float" : undefined}
-        style={{ ["--ed-tilt" as any]: `${tilt}deg`, transform: float ? undefined : `rotate(${tilt}deg)` }}
+        style={{ ["--ed-tilt" as any]: `${tilt}deg`, transform: float ? undefined : `rotate(${tilt}deg)`, perspective: 700 }}
+        onPointerMove={onTiltMove}
+        onPointerLeave={onTiltLeave}
       >
-        <div style={{
+        <div ref={matRef} style={{
           position: "relative", width, padding: 13, background: PAPER, borderRadius: 8,
-          boxShadow: "var(--ed-shadow-float)",
+          boxShadow: "var(--ed-shadow-float)", willChange: tiltOn ? "transform" : undefined,
         }}>
-          <div className="ed-foilstrip" aria-hidden style={{ position: "absolute", top: 13, left: 13, right: 13, height: 4, borderRadius: 2 }} />
+          <div className="ed-foilstrip" aria-hidden style={{ position: "absolute", top: 5, left: 13, right: 13, height: 4, borderRadius: 2 }} />
           <div style={{ position: "relative", width: well, height: well, borderRadius: 6, overflow: "hidden", boxShadow: "inset 0 0 0 2px rgba(184,130,44,.55)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={photoUrl} alt={speciesLabel || "pet"} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
@@ -92,7 +120,7 @@ export default function CollectibleFrame({
               {elementLabel && <span>★ {elementLabel}</span>}
             </div>
           )}
-          {seal && <GoldSeal level={level} />}
+          {seal && <GoldSeal level={level} label={sealLabel ?? "LEVEL"} />}
         </div>
       </div>
     </div>

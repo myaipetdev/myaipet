@@ -1098,11 +1098,16 @@ function PetThumb({ pet, size = 28 }: { pet: any; size?: number }) {
   return <img src={src} alt={pet.name} style={{ width: size, height: size, borderRadius: size * 0.3, objectFit: "cover" }} />;
 }
 
-export default function PetProfile() {
+// `compact` hides the parts MyPetEditorial already renders (greeting header,
+// stat bars, care/interaction row) so the classic tools (wardrobe / memories /
+// evolution) can live inside the editorial modal without a duplicate care loop.
+// `initialShowCreate` opens the adopt flow immediately (the editorial "+ Adopt"
+// chip). Defaults preserve the existing full-page behavior exactly.
+export default function PetProfile({ compact = false, initialShowCreate = false }: { compact?: boolean; initialShowCreate?: boolean } = {}) {
   const [pets, setPets] = useState<any[]>([]);
   const [activePet, setActivePet] = useState<any>(null);
   const [petStatus, setPetStatus] = useState<any>(null);
-  const [showCreate, setShowCreate] = useState(false);
+  const [showCreate, setShowCreate] = useState(initialShowCreate);
   const [showOnboarding, setShowOnboarding] = useState<any>(null);
   const [chainToast, setChainToast] = useState<string | null>(null);
   const [errorToast, setErrorToast] = useState<string | null>(null);
@@ -1599,7 +1604,7 @@ export default function PetProfile() {
   const moodCfg = MOOD_CONFIG[mood] || MOOD_CONFIG.neutral;
 
   return (
-    <div style={{ padding: "16px", maxWidth: 960, margin: "0 auto", paddingTop: 80 }}>
+    <div style={{ padding: "16px", maxWidth: 960, margin: "0 auto", paddingTop: compact ? 12 : 80 }}>
       {/* On-chain recording overlay */}
       {chainToast && (
         <div style={{
@@ -1779,13 +1784,15 @@ export default function PetProfile() {
       </div>
 
       {/* Daily-rhythm greeting — time + mood aware, surfaces "while you were away". */}
-      <PetGreeting
-        petId={pet.id}
-        petName={pet.name}
-        mood={mood}
-        accent={moodCfg.color}
-        lastInteractionAt={pet.last_interaction_at}
-      />
+      {!compact && (
+        <PetGreeting
+          petId={pet.id}
+          petName={pet.name}
+          mood={mood}
+          accent={moodCfg.color}
+          lastInteractionAt={pet.last_interaction_at}
+        />
+      )}
 
       <div className="desktop-grid" style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 20 }}>
         {/* Left: Pet card */}
@@ -1994,7 +2001,8 @@ export default function PetProfile() {
             </div>
           )}
 
-          {/* View toggle */}
+          {/* View toggle — hidden in compact mode (MyPetEditorial owns the stat rows) */}
+          {!compact && (<>
           <div style={{ display: "flex", gap: 4, marginBottom: 14, padding: 3, borderRadius: 10, background: "rgba(33,26,18,0.05)" }}>
             {(["slots", "radar"] as const).map((v) => (
               <button
@@ -2038,6 +2046,7 @@ export default function PetProfile() {
               <StatSlotBar label="EXP" value={pet.experience % 100} max={100} color="#5C8A4E" icon="✨" />
             </div>
           )}
+          </>)}
 
           {/* Combo collection */}
           {combosUnlocked.length > 0 && (
@@ -2247,8 +2256,8 @@ export default function PetProfile() {
 
         {/* Right column */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Pet event request popup */}
-          {petRequest && petRequest.type && (
+          {/* Pet event request popup — hidden in compact mode (editorial REMEMBERS box owns it) */}
+          {!compact && petRequest && petRequest.type && (
             <div style={{
               background: "rgba(190,79,40,0.08)",
               borderRadius: 16, border: "1px solid rgba(190,79,40,0.3)",
@@ -2303,7 +2312,8 @@ export default function PetProfile() {
             </div>
           )}
 
-          {/* Interactions */}
+          {/* Interactions — hidden in compact mode (editorial care tiles own the loop) */}
+          {!compact && (
           <div style={{
             background: "#FBF6EC", borderRadius: 18,
             border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", padding: 22,
@@ -2381,6 +2391,7 @@ export default function PetProfile() {
               })}
             </div>
           </div>
+          )}
 
           {/* Response */}
           {lastResponse && (

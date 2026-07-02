@@ -232,7 +232,7 @@ export default function AgentDashboard() {
         @keyframes fadeUp { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
         @keyframes modalFadeIn { from { opacity:0 } to { opacity:1 } }
         @keyframes modalSlideUp { from { opacity:0; transform:translateY(20px) scale(0.95) } to { opacity:1; transform:translateY(0) scale(1) } }
-        @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
+        /* pulse comes from globals.css (canonical copy) */
         @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
         .agent-card:hover { border-color: rgba(190,79,40,0.35) !important; transform: translateY(-2px); }
         .agent-btn:hover { opacity: 0.85 !important; }

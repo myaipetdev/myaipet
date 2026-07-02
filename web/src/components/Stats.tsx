@@ -1,25 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import useCountUp from "@/hooks/useCountUp";
 
+// Animates from the value currently on screen to the new one (up OR down) so
+// a 15s stats refresh doesn't flash back to 0, and a shrink isn't left stale.
+// Tween itself lives in the shared useCountUp hook (Nav credits, SeasonBanner
+// points use the same one); this keeps the 2s duration + prefix/suffix render.
 function Counter({ end, duration = 2000, prefix = "", suffix = "" }: any) {
-  const [val, setVal] = useState(0);
-  const valRef = useRef(0);
-  valRef.current = val;
-  useEffect(() => {
-    // Animate from the value currently on screen to the new one (up OR down) so
-    // a 15s stats refresh doesn't flash back to 0, and a shrink isn't left stale.
-    let current = valRef.current;
-    const diff = end - current;
-    if (diff === 0) return;
-    const step = diff / Math.max(1, Math.floor(duration / 16));
-    const t = setInterval(() => {
-      current += step;
-      if ((step >= 0 && current >= end) || (step < 0 && current <= end)) { setVal(end); clearInterval(t); }
-      else setVal(Math.floor(current));
-    }, 16);
-    return () => clearInterval(t);
-  }, [end, duration]);
+  const val = useCountUp(end, duration);
   return <>{prefix}{val.toLocaleString()}{suffix}</>;
 }
 

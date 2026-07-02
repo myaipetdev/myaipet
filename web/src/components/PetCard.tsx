@@ -2,65 +2,179 @@
 
 /**
  * PetCard — a pet presented as a foil-stamped collectible in the "Collectible
- * Editorial" system: a holographic conic border ring around a warm cream card,
- * a gold-inset photo well with a holographic sheen + gloss, a circular rarity
- * seal, and editorial type (Bricolage / Hanken / Space Mono) on a soft floating
- * shadow. Pass `card` directly, or a `petId` to self-fetch /api/card/[petId].
+ * Editorial" system, with a RARITY-TIERED finish: Common/Uncommon are matte
+ * varnish, Rare wears a gold-foil border, Epic a purple-shifted foil, and only
+ * Legendary gets the full holographic conic ring + foil-text name. On fine
+ * pointers the card tilts in 3D and the holo sheen + a screen-blend highlight
+ * follow the pointer (touch keeps the passive loop; prefers-reduced-motion is
+ * neutralized globally). Pass `card` directly, or a `petId` to self-fetch
+ * /api/card/[petId] — while fetching it renders an .ed-skeleton placeholder
+ * (optionally pre-printed with the real name + rarity seal via `placeholder`),
+ * and a failed fetch renders an explicit retryable tile instead of null.
  */
 
-import { useEffect, useState } from "react";
-import { elementTheme } from "@/lib/tcg/theme";
+import { useEffect, useRef, useState } from "react";
+import { elementTheme, rarityColor, type Rarity } from "@/lib/tcg/theme";
 import type { CardData } from "@/lib/tcg/card";
 
-const INK = "#211A12", PAPER = "#FBF6EC", MUTED = "rgba(33,26,18,.5)", HAIR = "rgba(33,26,18,.13)", GOLD = "#C8932F";
-const RARITY: Record<string, { c: string; l: string }> = {
-  Common: { c: "#5C8A4E", l: "C" }, Uncommon: { c: "#5C8A4E", l: "U" },
-  Rare: { c: "#3E8FE0", l: "R" }, Epic: { c: "#9E72E8", l: "E" }, Legendary: { c: GOLD, l: "L" },
-};
+const INK = "#211A12", PAPER = "#FBF6EC", MUTED = "rgba(33,26,18,.5)", HAIR = "rgba(33,26,18,.13)";
 const HOLO = "conic-gradient(from 210deg, #FFE08A, #FF9FB0, #C0A6FF, #8FE6D8, #FFE08A)";
+const FOIL_GOLD = "linear-gradient(100deg,#FFF7E6,#F2CD86 32%,#FFFBF0 50%,#E8B257 68%,#FFF7E6)";
+const FOIL_EPIC = "linear-gradient(100deg,#EFE6FA,#B99BE8 32%,#F6F0FD 50%,#9E72E8 68%,#EFE6FA)";
 
-export default function PetCard({ card: cardProp, petId, maxWidth = 320 }: { card?: CardData; petId?: number; maxWidth?: number }) {
+/* Rarity-tiered material finish — pulling a Legendary must FEEL different from
+ * a Common. Declarative record on the card's REAL computed rarity; commons skip
+ * the sheen layer entirely (fewer perpetually-animating layers on big grids). */
+const RARITY_FINISH: Record<Rarity, { pad: number; ring: string; sheen: number; gloss: number; foilName: boolean }> = {
+  Common:    { pad: 2, ring: "#E4D9C4", sheen: 0,    gloss: 0.5, foilName: false },
+  Uncommon:  { pad: 2, ring: "#E4D9C4", sheen: 0,    gloss: 0.5, foilName: false },
+  Rare:      { pad: 3, ring: FOIL_GOLD, sheen: 0.14, gloss: 0.6, foilName: false },
+  Epic:      { pad: 3, ring: FOIL_EPIC, sheen: 0.2,  gloss: 0.6, foilName: false },
+  Legendary: { pad: 3, ring: HOLO,      sheen: 0.38, gloss: 0.7, foilName: true },
+};
+
+export default function PetCard({ card: cardProp, petId, maxWidth = 320, placeholder }: {
+  card?: CardData; petId?: number; maxWidth?: number;
+  /** Real name + rarity CardDeck already knows — printed on the skeleton/error tile. */
+  placeholder?: { name: string; rarity: Rarity };
+}) {
   const [card, setCard] = useState<CardData | null>(cardProp || null);
   const [loading, setLoading] = useState(!cardProp);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
+  // ── Pointer-reactive holo tilt (fine hover pointers only) ──
+  const tiltRef = useRef<HTMLDivElement>(null);
+  const [tiltOn, setTiltOn] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches) setTiltOn(true);
+  }, []);
+  const onTiltMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = tiltRef.current;
+    if (!tiltOn || !el) return;
+    const r = el.getBoundingClientRect();
+    const nx = ((e.clientX - r.left) / r.width) * 2 - 1;  // -1 … 1
+    const ny = ((e.clientY - r.top) / r.height) * 2 - 1;
+    el.classList.add("ed-holo-live");
+    el.style.transition = "transform 80ms linear";
+    el.style.setProperty("--rx", nx.toFixed(3));
+    el.style.setProperty("--ry", (-ny).toFixed(3));
+    el.style.setProperty("--px", `${(((nx + 1) / 2) * 100).toFixed(1)}%`);
+    el.style.setProperty("--py", `${(((ny + 1) / 2) * 100).toFixed(1)}%`);
+    el.style.setProperty("--hl", "1");
+    el.style.setProperty("--holo-x", `${Math.round(50 + nx * 60)}%`);
+    el.style.setProperty("--holo-y", `${Math.round(50 + ny * 60)}%`);
+  };
+  const onTiltLeave = () => {
+    const el = tiltRef.current;
+    if (!el) return;
+    el.classList.remove("ed-holo-live");
+    el.style.transition = "transform 450ms cubic-bezier(0.2,0.8,0.2,1)";
+    el.style.setProperty("--rx", "0");
+    el.style.setProperty("--ry", "0");
+    el.style.setProperty("--hl", "0");
+  };
 
   useEffect(() => {
     if (cardProp || !petId) return;
     let alive = true;
     setLoading(true);
+    setFailed(false);
     fetch(`/api/card/${petId}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (alive) { setCard(d?.card || null); setLoading(false); } })
-      .catch(() => { if (alive) setLoading(false); });
+      .then((d) => {
+        if (!alive) return;
+        const c = d?.card || null;
+        setCard(c);
+        setFailed(!c);
+        setLoading(false);
+      })
+      .catch(() => { if (alive) { setFailed(true); setLoading(false); } });
     return () => { alive = false; };
-  }, [petId, cardProp]);
+  }, [petId, cardProp, attempt]);
+
+  const pRarity = placeholder ? rarityColor(placeholder.rarity) : MUTED;
 
   if (loading) {
-    return <div style={{ width: "100%", maxWidth, aspectRatio: "5 / 7", borderRadius: 18, background: PAPER, margin: "0 auto", boxShadow: "var(--ed-shadow-card)" }} />;
+    // Foil-shimmer skeleton — same 5/7 footprint as the loaded card (no grid
+    // reflow), optionally pre-printed with the pet's REAL name + rarity seal.
+    return (
+      <div style={{ width: "100%", maxWidth, margin: "0 auto" }}>
+        <div className="ed-skeleton" style={{ position: "relative", width: "100%", aspectRatio: "5 / 7", borderRadius: 18, boxShadow: "var(--ed-shadow-card)", overflow: "hidden" }}>
+          {placeholder && (
+            <>
+              <div style={{ position: "absolute", top: 14, left: 16, right: 52, fontFamily: "var(--ed-disp)", fontSize: 18, fontWeight: 800, color: "rgba(33,26,18,.32)", letterSpacing: "-0.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{placeholder.name}</div>
+              <div aria-hidden style={{ position: "absolute", top: 12, right: 12, width: 30, height: 30, borderRadius: "50%", border: `2px solid ${pRarity}`, opacity: 0.55, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 13, color: pRarity }}>{placeholder.rarity[0]}</span>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
   }
+
+  if (failed) {
+    // Honest error tile — never an invisible null that desyncs the grid count.
+    // The tile itself retries (span/div, not <button> — it can sit inside the
+    // album's wrapper <button> without nesting interactive elements).
+    return (
+      <div style={{ width: "100%", maxWidth, margin: "0 auto" }}>
+        <div
+          role="button"
+          aria-label={`Retry loading ${placeholder?.name ? `${placeholder.name}'s` : "this"} card`}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setAttempt((a) => a + 1); }}
+          style={{
+            width: "100%", aspectRatio: "5 / 7", borderRadius: 18, background: "#F5EFE2",
+            border: `1px dashed ${HAIR}`, display: "flex", flexDirection: "column", alignItems: "center",
+            justifyContent: "center", gap: 8, textAlign: "center", padding: 14, cursor: "pointer",
+          }}
+        >
+          {placeholder?.name && <div style={{ fontFamily: "var(--ed-disp)", fontSize: 16, fontWeight: 800, color: INK, letterSpacing: "-0.02em" }}>{placeholder.name}</div>}
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED }}>Card unavailable</div>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#BE4F28" }}>Retry ▸</div>
+        </div>
+      </div>
+    );
+  }
+
   if (!card) return null;
 
   const t = elementTheme(card.element);
-  const r = RARITY[card.rarity] || RARITY.Common;
+  const rc = rarityColor(card.rarity);
+  const fin = RARITY_FINISH[card.rarity] || RARITY_FINISH.Common;
 
   return (
-    <div className="mp-enter" style={{ width: "100%", maxWidth, margin: "0 auto" }}>
-      {/* Holographic conic border ring */}
-      <div style={{ position: "relative", borderRadius: 18, padding: 3, background: HOLO, boxShadow: "var(--ed-shadow-card)" }}>
+    <div style={{ width: "100%", maxWidth, margin: "0 auto", perspective: 900 }}>
+      {/* Rarity-tiered border ring: matte → gold foil → epic foil → full holo.
+          Tilts in 3D under a fine pointer; --px/--py drive the highlight and
+          --holo-x/--holo-y steer the sheen (via .ed-holo-live in globals). */}
+      <div
+        ref={tiltRef}
+        onPointerMove={onTiltMove}
+        onPointerLeave={onTiltLeave}
+        style={{
+          position: "relative", borderRadius: 18, padding: fin.pad, background: fin.ring,
+          boxShadow: "var(--ed-shadow-card)",
+          transform: "rotateX(calc(var(--ry, 0) * 6deg)) rotateY(calc(var(--rx, 0) * 8deg))",
+          willChange: tiltOn ? "transform" : undefined,
+        }}
+      >
         {/* Inner card — warm cream paper */}
-        <div style={{ position: "relative", display: "flex", flexDirection: "column", overflow: "hidden", borderRadius: 15, background: PAPER }}>
-          {/* Header */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, padding: "11px 14px 9px" }}>
+        <div style={{ position: "relative", display: "flex", flexDirection: "column", overflow: "hidden", borderRadius: 18 - fin.pad, background: PAPER }}>
+          {/* Header — Legendary gets a gold keyline under the foil-text name */}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, padding: "11px 14px 9px", borderBottom: fin.foilName ? "1px solid rgba(184,130,44,.45)" : undefined, marginBottom: fin.foilName ? 7 : 0 }}>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontFamily: "var(--ed-disp)", fontSize: 20, fontWeight: 800, color: INK, letterSpacing: "-0.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.05 }}>{card.name}</div>
+              <div className={fin.foilName ? "ed-foil-text" : undefined} style={{ fontFamily: "var(--ed-disp)", fontSize: 20, fontWeight: 800, color: INK, letterSpacing: "-0.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.05 }}>{card.name}</div>
               <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700, color: t.color, letterSpacing: "0.1em", textTransform: "uppercase", marginTop: 3 }}>{t.label}</div>
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
               <div style={{ fontFamily: "var(--ed-disp)", fontSize: 15, fontWeight: 700, color: INK }}>Lv {card.level}</div>
-              {card.topPercent != null && <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, fontWeight: 700, color: MUTED, marginTop: 2 }}>TOP {card.topPercent}%</div>}
+              {card.topPercent != null && card.topPercent <= 50 && <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, fontWeight: 700, color: MUTED, marginTop: 2 }}>TOP {card.topPercent}%</div>}
             </div>
           </div>
 
-          {/* Photo well — gold inset keyline + holo sheen + gloss + circular rarity seal */}
+          {/* Photo well — gold inset keyline + (rarity-gated) holo sheen + gloss + circular rarity seal */}
           <div style={{ position: "relative", margin: "0 14px", borderRadius: 8, overflow: "hidden", boxShadow: "inset 0 0 0 2px rgba(184,130,44,.5)" }}>
             <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", background: "#fff" }}>
               {card.avatarUrl ? (
@@ -69,16 +183,16 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320 }: { car
               ) : (
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--ed-disp)", fontSize: 30, fontWeight: 800, color: "rgba(33,26,18,.3)" }}>{card.speciesName}</div>
               )}
-              <div className="ed-holo-sheen" aria-hidden style={{ opacity: 0.26 }} />
-              <div className="ed-gloss" aria-hidden style={{ left: 0 }} />
+              {fin.sheen > 0 && <div className="ed-holo-sheen" aria-hidden style={{ opacity: fin.sheen }} />}
+              <div className="ed-gloss" aria-hidden style={{ left: 0, opacity: fin.gloss }} />
             </div>
             {/* Circular rarity seal */}
             <div aria-hidden title={`${card.rarity} rarity`} style={{
               position: "absolute", top: 8, right: 8, width: 30, height: 30, borderRadius: "50%",
-              background: PAPER, border: `2px solid ${r.c}`, display: "flex", alignItems: "center", justifyContent: "center",
+              background: PAPER, border: `2px solid ${rc}`, display: "flex", alignItems: "center", justifyContent: "center",
               boxShadow: "0 2px 6px -1px rgba(40,20,0,.4)",
             }}>
-              <span style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 13, color: r.c }}>{r.l}</span>
+              <span style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 13, color: rc }}>{card.rarity[0]}</span>
             </div>
           </div>
 
@@ -119,6 +233,13 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320 }: { car
             <span style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: MUTED, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "60%" }}>№ {String(card.id).padStart(4, "0")} · {card.personality}</span>
           </div>
         </div>
+
+        {/* Pointer-following highlight — screen blend, fades in on hover only */}
+        <div aria-hidden style={{
+          position: "absolute", inset: 0, borderRadius: 18, pointerEvents: "none", mixBlendMode: "screen",
+          opacity: "var(--hl, 0)" as unknown as number, transition: "opacity .3s ease",
+          background: "radial-gradient(260px circle at var(--px, 50%) var(--py, 50%), rgba(255,246,220,.5), transparent 65%)",
+        }} />
       </div>
     </div>
   );

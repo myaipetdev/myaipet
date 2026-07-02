@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import useCountUp from "@/hooks/useCountUp";
 
 const LOGO_SRC = "/mascot.jpg";
 
@@ -28,6 +29,7 @@ const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
 export default function Nav({ section, setSection, credits }: any) {
   const [balanceOpen, setBalanceOpen] = useState(false);
   const balanceRef = useRef<HTMLDivElement>(null);
+  const navWrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -46,17 +48,42 @@ export default function Nav({ section, setSection, credits }: any) {
     }
   }, [balanceOpen]);
 
+  // Mobile: the tab strip scrolls horizontally — keep the active tab in view
+  // when the section changes (block:"nearest" so the page itself never moves).
+  useEffect(() => {
+    navWrapRef.current
+      ?.querySelector('[aria-current="page"]')
+      ?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }, [section]);
+
+  // Count the REAL credit balance toward its new value (up or down) and flash
+  // the chip once on change so spends/purchases are felt without a hard cut.
+  const displayCredits = useCountUp(typeof credits === "number" ? credits : 0);
+  const [creditsFlash, setCreditsFlash] = useState(false);
+  const prevCreditsRef = useRef<number | null>(null);
+  useEffect(() => {
+    const prev = prevCreditsRef.current;
+    prevCreditsRef.current = typeof credits === "number" ? credits : null;
+    if (typeof credits === "number" && prev !== null && prev !== credits) {
+      setCreditsFlash(true);
+      const t = setTimeout(() => setCreditsFlash(false), 500);
+      return () => clearTimeout(t);
+    }
+  }, [credits]);
+
   return (
     <>
       <style>{`
         /* DD report flagged header overlap at ~774px — earlier breakpoint
            wasn't dropping the ← Landing button or shrinking wallet, so
            the items+credits+landing+wallet collided. Cascaded breakpoints. */
+        .nav-btn:active { transform: translateY(1px); }
+        .nav-credits:hover { border-color: rgba(154,78,30,.5) !important; background: #F5EFE2 !important; }
         @media (max-width: 1024px) {
           .nav-landing-btn { display: none !important; }
         }
         @media (max-width: 1180px) {
-          .nav-items-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; justify-content: flex-start !important; mask-image: linear-gradient(to right, black 95%, transparent); -webkit-mask-image: linear-gradient(to right, black 95%, transparent); }
+          .nav-items-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; justify-content: flex-start !important; mask-image: linear-gradient(to right, black 88%, transparent); -webkit-mask-image: linear-gradient(to right, black 88%, transparent); }
           .nav-items-wrap::-webkit-scrollbar { display: none; }
         }
         @media (max-width: 1060px) {
@@ -65,7 +92,7 @@ export default function Nav({ section, setSection, credits }: any) {
         @media (max-width: 768px) {
           .nav-desktop-logo-text { display: none !important; }
           .nav-container { padding: 8px 12px !important; }
-          .nav-items-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; mask-image: linear-gradient(to right, black 97%, transparent); -webkit-mask-image: linear-gradient(to right, black 97%, transparent); padding-right: 6px; }
+          .nav-items-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; mask-image: linear-gradient(to right, black 90%, transparent); -webkit-mask-image: linear-gradient(to right, black 90%, transparent); padding-right: 6px; }
           .nav-items-wrap::-webkit-scrollbar { display: none; }
           .nav-btn { padding: 6px 10px !important; font-size: 11px !important; white-space: nowrap; flex-shrink: 0; }
           .nav-credits { font-size: 10px !important; padding: 4px 8px !important; }
@@ -114,7 +141,7 @@ export default function Nav({ section, setSection, credits }: any) {
         </div>
 
         {/* Nav items — scrollable on mobile */}
-        <div className="nav-items-wrap" style={{
+        <div ref={navWrapRef} className="nav-items-wrap" style={{
           display: "flex", gap: 17, alignItems: "center", justifyContent: "center",
           flex: 1, minWidth: 0,
         }}>
@@ -130,7 +157,7 @@ export default function Nav({ section, setSection, credits }: any) {
               fontFamily: "var(--ed-body)",
               fontSize: 14, fontWeight: isActive ? 600 : 500,
               color: isActive ? "#211A12" : "#7A6E5A",
-              transition: "color 180ms ease",
+              transition: "color 180ms ease, transform 120ms ease",
               position: "relative", whiteSpace: "nowrap", flexShrink: 0,
               textDecoration: "none",
               display: "inline-block",
@@ -142,6 +169,8 @@ export default function Nav({ section, setSection, credits }: any) {
                   <div style={{
                     position: "absolute", bottom: -1, left: 0, right: 0,
                     height: 2, background: "#211A12",
+                    transformOrigin: "left",
+                    animation: "edUnderlineIn 220ms cubic-bezier(.2,.8,.2,1) both",
                   }} />
                 )}
               </>
@@ -166,15 +195,19 @@ export default function Nav({ section, setSection, credits }: any) {
                 aria-haspopup="true"
                 onClick={() => setBalanceOpen((v: boolean) => !v)}
                 style={{
-                  fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A4E1E", fontWeight: 700,
+                  fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+                  // One-shot change flash: real balance moved (spend or purchase).
+                  color: creditsFlash ? "#BE4F28" : "#9A4E1E",
+                  background: creditsFlash ? "rgba(190,79,40,.12)" : "transparent",
                   padding: "5px 11px", borderRadius: 8,
-                  background: "transparent", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                  border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                   whiteSpace: "nowrap", cursor: "pointer",
                   display: "inline-block",
                   transition: "all 0.2s ease",
+                  fontVariantNumeric: "tabular-nums",
                 }}
               >
-                ◎ {credits}
+                ◎ {displayCredits.toLocaleString()}
               </button>
               {balanceOpen && (
                 <div style={{
@@ -208,6 +241,7 @@ export default function Nav({ section, setSection, credits }: any) {
                     height: 1, background: "var(--ed-hair, rgba(33,26,18,.13))", margin: "14px 0",
                   }} />
                   <button
+                    className="ed-press"
                     onClick={() => { setBalanceOpen(false); setSection("home"); setTimeout(() => { document.querySelector(".pricing-root")?.scrollIntoView({ behavior: "smooth" }); }, 100); }}
                     style={{
                       width: "100%", padding: "11px 14px", borderRadius: 12, border: "none",

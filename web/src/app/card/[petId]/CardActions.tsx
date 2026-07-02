@@ -34,8 +34,11 @@ export default function CardActions({ petId, name, imgUrl, appUrl }: { petId: nu
     } catch { /* non-fatal */ }
   };
 
-  const primary: React.CSSProperties = { padding: "11px 20px", borderRadius: 999, border: "none", background: "#fff", color: "#0f0f14", fontWeight: 800, fontSize: 14, cursor: "pointer" };
-  const ghost: React.CSSProperties = { padding: "11px 18px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.3)", background: "transparent", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer" };
+  // Collectible Editorial on the warm-dark vault: paper/ink primary (strong
+  // secondary next to the page's gradient CTA), foil-gold outline ghosts.
+  const FONT = "var(--ed-body, 'Hanken Grotesk'), 'Hanken Grotesk', system-ui, sans-serif";
+  const primary: React.CSSProperties = { padding: "11px 20px", borderRadius: 999, border: "none", background: "#FBF6EC", color: "#211A12", fontFamily: FONT, fontWeight: 800, fontSize: 14, cursor: "pointer", boxShadow: "0 12px 22px -14px rgba(0,0,0,.8)" };
+  const ghost: React.CSSProperties = { padding: "11px 18px", borderRadius: 999, border: "1px solid rgba(232,199,126,0.4)", background: "transparent", color: "#E8C77E", fontFamily: FONT, fontWeight: 700, fontSize: 14, cursor: "pointer" };
 
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
