@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 import PetClawConsole from "@/components/PetClawConsole";
+import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import ModelsPanel from "@/components/ModelsPanel";
 import { toast } from "@/components/Toast";
 import { confirmDialog, promptDialog } from "@/components/Dialog";
@@ -1063,10 +1064,19 @@ export default function SovereigntyDashboard() {
         setPets([demo]); setSelectedPet(demo); setIsDemo(true);
       }
     }).catch(() => {
-      const demo = { id: 1, name: "Sparky", species: 7, personality_type: "playful", level: 15, element: "fire" };
-      setPets([demo]);
-      setSelectedPet(demo);
-      setIsDemo(true);
+      // Transient failure ≠ no pets: retry once before demoing, so a network
+      // blip never casts a real owner's console as the sample pet.
+      setTimeout(() => {
+        api.pets.list().then((d: any) => {
+          const list = d.pets || d || [];
+          if (list.length > 0) { setPets(list); setSelectedPet(list[0]); setIsDemo(false); return; }
+          const demo = { id: 1, name: "Sparky", species: 7, personality_type: "playful", level: 15, element: "fire" };
+          setPets([demo]); setSelectedPet(demo); setIsDemo(true);
+        }).catch(() => {
+          const demo = { id: 1, name: "Sparky", species: 7, personality_type: "playful", level: 15, element: "fire" };
+          setPets([demo]); setSelectedPet(demo); setIsDemo(true);
+        });
+      }, 1500);
     });
   }, []);
 
@@ -1371,43 +1381,39 @@ export default function SovereigntyDashboard() {
             </div>
           </div>
 
-          {/* Right: pet avatar card — framed as a warm collectible poster */}
+          {/* Right: the pet as a foil collectible on a terracotta poster chip
+              (same artifact language as My Pet / World Cup). Demo pets are
+              LABELLED — never presented as the user's own. */}
           {selectedPet && (
             <div style={{ display: "flex", justifyContent: "center" }}>
               <div style={{
-                position: "relative", width: 260, height: 300,
-                borderRadius: 22, overflow: "hidden",
-                background: TERRA,
-                boxShadow: CARD_SHADOW, border: `1px solid ${HAIR}`,
+                position: "relative", background: TERRA, borderRadius: 22,
+                padding: "34px 36px 44px", boxShadow: CARD_SHADOW, overflow: "visible",
               }}>
-                {selectedPet.avatar_url ? (
-                  <img src={selectedPet.avatar_url} alt={selectedPet.name}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                ) : (
-                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: CREAM_ON }}>
-                    <Icon name="paw" size={80} />
+                <div aria-hidden style={{ position: "absolute", inset: 10, border: "1px solid rgba(252,233,207,.35)", borderRadius: 12, pointerEvents: "none" }} />
+                <div style={{ position: "absolute", top: 14, left: 18, right: 18, display: "flex", justifyContent: "space-between", fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: CREAM_ON, zIndex: 3 }}>
+                  <span>{isDemo ? "DEMO PET" : "SOUL-BOUND"}</span>
+                  {soul && <span>SOUL v{soul.current_version ?? 1}</span>}
+                </div>
+                <div style={{ marginTop: 16 }}>
+                  <CollectibleFrame
+                    photoUrl={selectedPet.avatar_url || "/mascot.jpg"}
+                    level={selectedPet.level ?? 1}
+                    speciesLabel={selectedPet.name?.toUpperCase()}
+                    elementLabel={(selectedPet.element || "normal").toUpperCase()}
+                    width={230}
+                    tilt={-2}
+                    float={false}
+                  />
+                </div>
+                <div style={{ textAlign: "center", marginTop: 18, fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: "rgba(252,233,207,.85)", textTransform: "uppercase" }}>
+                  Lv.{selectedPet.level ?? 1} · {selectedPet.personality_type}
+                </div>
+                {isDemo && (
+                  <div style={{ textAlign: "center", marginTop: 6, fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: "rgba(252,233,207,.65)", textTransform: "uppercase" }}>
+                    Sample — adopt to see your own pet here
                   </div>
                 )}
-                {/* Overlay info strip */}
-                <div style={{
-                  position: "absolute", bottom: 0, left: 0, right: 0,
-                  background: "linear-gradient(0deg, rgba(33,26,18,0.8) 0%, transparent 100%)",
-                  padding: "24px 18px 18px",
-                }}>
-                  <div style={{ fontFamily: DISP, fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>
-                    {selectedPet.name}
-                  </div>
-                  <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
-                    {soul && (
-                      <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: CREAM_ON, background: "rgba(252,233,207,0.18)", padding: "2px 8px", borderRadius: 999 }}>
-                        v{soul.current_version ?? 1}
-                      </span>
-                    )}
-                    <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: "rgba(252,233,207,0.8)", padding: "2px 8px", background: "rgba(252,233,207,0.14)", borderRadius: 999 }}>
-                      Lv.{selectedPet.level ?? 1} · {selectedPet.personality_type}
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
           )}
