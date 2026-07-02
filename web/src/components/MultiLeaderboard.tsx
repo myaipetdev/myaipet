@@ -121,8 +121,8 @@ export default function MultiLeaderboard() {
           }}>
             <div style={{ fontSize: 28 }}>{data.meta.emoji}</div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "var(--ed-disp)", color: "#211A12" }}>{data.meta.label}</div>
-              <div style={{ fontSize: 12, fontFamily: "var(--ed-body)", color: "#7A6E5A" }}>{data.meta.description}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "var(--ed-disp)", color: "#211A12" }}>{data.meta.label}</div>
+              <div style={{ fontSize: 13.5, fontFamily: "var(--ed-body)", color: "#5C5140" }}>{data.meta.description}</div>
             </div>
             {data.myRank && (
               <div style={{
@@ -132,7 +132,7 @@ export default function MultiLeaderboard() {
                 boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
               }}>
                 <div style={{
-                  fontSize: 9, fontFamily: "var(--ed-m)",
+                  fontSize: 11, fontFamily: "var(--ed-m)",
                   letterSpacing: "0.12em", color: "#7A6E5A",
                 }}>YOUR RANK</div>
                 <div style={{

@@ -32,8 +32,7 @@ const AgentWorkbench = lazy(() => import("@/components/AgentWorkbench"));
 const SovereigntyDashboard = lazy(() => import("@/components/SovereigntyDashboard"));
 const PetStudioPro = lazy(() => import("@/components/PetStudioPro"));
 const WorldCupPet = lazy(() => import("@/components/WorldCupPet")); // time-boxed World Cup 2026 event
-const CardDeck = lazy(() => import("@/components/CardDeck")); // TCG trading cards
-const CatCatch = lazy(() => import("@/components/CatCatch")); // catch real street cats
+const CardDeck = lazy(() => import("@/components/CardDeck")); // TCG trading cards (owns the Catch tab)
 
 // ── Grid Background ──
 function Grid() {
@@ -649,21 +648,14 @@ export default function App() {
         </div>
       )}
 
-      {section === "cards" && (
+      {/* Catch merged into Cards as a tab — "catch" stays a valid section key so
+          old /?section=catch deep links (and in-app onNavigate("catch") senders)
+          land on the Cards screen with the Catch tab pre-selected. */}
+      {(section === "cards" || section === "catch") && (
         <div style={{ paddingTop: 96, paddingLeft: 20, paddingRight: 20 }}>
           <WalletGate section="cards">
             <Suspense fallback={<Loader />}>
-              <CardDeck onNavigate={setSection} />
-            </Suspense>
-          </WalletGate>
-        </div>
-      )}
-
-      {section === "catch" && (
-        <div style={{ paddingTop: 96, paddingLeft: 20, paddingRight: 20 }}>
-          <WalletGate section="catch">
-            <Suspense fallback={<Loader />}>
-              <CatCatch />
+              <CardDeck onNavigate={setSection} initialTab={section === "catch" ? "catch" : undefined} />
             </Suspense>
           </WalletGate>
         </div>

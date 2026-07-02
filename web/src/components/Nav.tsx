@@ -9,8 +9,8 @@ const LOGO_SRC = "/mascot.jpg";
 const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
   { key: "home", label: "Home" },
   { key: "my pet", label: "My Pet" },
-  // Game features grouped right after My Pet.
-  { key: "catch", label: "Catch" },
+  // Game features grouped right after My Pet. (Catch lives inside Cards as a
+  // tab now — /?section=catch still aliases to the Cards screen's Catch tab.)
   { key: "cards", label: "Cards" },
   // Time-boxed World Cup 2026 event (remove this entry after ~2026-07-19).
   { key: "worldcup", label: "World Cup" },
@@ -147,9 +147,11 @@ export default function Nav({ section, setSection, credits }: any) {
         }}>
           {NAV_ITEMS.map((item) => {
             // URL items (e.g. /studio) navigate; otherwise set in-page section.
+            // "catch" survives only as a deep-link alias for the Cards screen
+            // (Catch tab) — highlight Cards for it.
             const isActive = item.url
               ? typeof window !== "undefined" && window.location.pathname === item.url
-              : section === item.key;
+              : section === item.key || (item.key === "cards" && section === "catch");
             const sharedStyle: React.CSSProperties = {
               background: "transparent",
               border: "none", cursor: "pointer",

@@ -35,7 +35,7 @@ const GOLD = "#E8C77E";        // warm foil gold (was #fbbf24)
 const GOLD2 = "#D98E3C";       // warm amber accent (was #f59e0b)
 const AMBER_DIM = "#B5894A";   // dim warm key
 const TXT = "#ECE0CE";         // warm cream
-const MUTED = "#8E7F68";       // warm muted
+const MUTED = "rgba(251,246,236,0.65)"; // warm muted — kept ≥.65 alpha for legibility on #1E1710
 const GREEN = "#9FC59A";       // warm sage (live)
 const LINE = "rgba(231,197,124,0.20)"; // warm gold hairline
 const MONO = "var(--ed-m)";    // Space Mono
@@ -85,14 +85,14 @@ const SOVEREIGNTY: { k: string; v: React.ReactNode }[] = [
 
 function Row({ k, v, kw = 132 }: { k: string; v: React.ReactNode; kw?: number }) {
   return (
-    <div style={{ display: "flex", gap: 10, fontSize: 12.5, lineHeight: 1.85 }}>
+    <div style={{ display: "flex", gap: 10, fontSize: 13, lineHeight: 1.85 }}>
       <span style={{ color: AMBER_DIM, minWidth: kw, flexShrink: 0 }}>{k}</span>
       <span style={{ color: TXT }}>{v}</span>
     </div>
   );
 }
 function SectionHead({ children }: { children: React.ReactNode }) {
-  return <div style={{ color: GOLD2, fontWeight: 700, fontSize: 13, margin: "16px 0 7px" }}>{children}</div>;
+  return <div style={{ color: GOLD2, fontWeight: 700, fontSize: 14, margin: "16px 0 7px" }}>{children}</div>;
 }
 const liveTag = <span style={{ color: GREEN }}>● live</span>;
 
@@ -257,7 +257,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff5f57" }} />
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#febc2e" }} />
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#28c840" }} />
-          <span style={{ marginLeft: 10, color: "#C2B49A", fontSize: 12.5 }}>
+          <span style={{ marginLeft: 10, color: "#C2B49A", fontSize: 13 }}>
             petclaw connect{pet?.name ? ` · ${pet.name.toLowerCase()}` : ""}
           </span>
         </div>
@@ -273,20 +273,20 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
             background: "linear-gradient(180deg,#FFE6A8 0%,#E8C77E 44%,#C8932F 100%)",
             WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
           }}>PETCLAW</div>
-          <div style={{ textAlign: "center", color: MUTED, fontSize: 12.5, marginBottom: 18 }}>
+          <div style={{ textAlign: "center", color: MUTED, fontSize: 13.5, marginBottom: 18 }}>
             your AI pet, sovereign &amp; portable — across every surface you use
           </div>
 
           {/* manifest */}
           <div style={{ border: `1px solid ${LINE}`, borderRadius: 12, padding: compact ? "18px 20px" : "20px 24px" }}>
-            <div style={{ color: GOLD, fontWeight: 700, fontSize: 13, marginBottom: 12 }}>
+            <div style={{ color: GOLD, fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
               PetClaw Protocol v1 · SDK v1.6.0 <span style={{ color: MUTED, fontWeight: 400 }}>· npx petclaw-mcp · MIT</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: "0 40px" }}>
               <div>
                 <SectionHead>Connectors — 19 integrations</SectionHead>
                 {CONNECTORS.map((c) => <Row key={c.k} k={c.k} v={c.v} kw={112} />)}
-                <div style={{ display: "flex", gap: 10, fontSize: 12, lineHeight: 1.8, marginTop: 4 }}>
+                <div style={{ display: "flex", gap: 10, fontSize: 13, lineHeight: 1.8, marginTop: 4 }}>
                   <span style={{ color: AMBER_DIM, minWidth: 112, flexShrink: 0 }}>runs on</span>
                   <span style={{ color: MUTED }}>{RUNS_ON}</span>
                 </div>
@@ -303,7 +303,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   <SectionHead>MODELS — bring your own (BYOK)</SectionHead>
                   <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter — powers chat + agent reasoning + judging" kw={120} />
                   <Row k="agent-loop" v="give a goal → plans, calls skills, iterates → answers" kw={120} />
-                  <div style={{ fontSize: 12, marginTop: 4 }}>
+                  <div style={{ fontSize: 13, marginTop: 4 }}>
                     <span style={{ color: GREEN }}>connect your model ↓ below (or via the CLI)</span>
                   </div>
                   <SectionHead>Sovereignty</SectionHead>
@@ -311,16 +311,16 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                 </div>
               )}
             </div>
-            <div style={{ marginTop: 14, color: MUTED, fontSize: 12.5 }}>19 connectors · 18 skills · 5-stage harness · 6 MCP tools · BYO models · 100% your data</div>
+            <div style={{ marginTop: 14, color: MUTED, fontSize: 13 }}>19 connectors · 18 skills · 5-stage harness · 6 MCP tools · BYO models · 100% your data</div>
           </div>
 
           {/* LIVE terminal */}
           {interactive && (
             <div style={{ marginTop: 16, border: `1px solid ${LINE}`, borderRadius: 12, overflow: "hidden", background: "#16110B" }}>
-              <div style={{ padding: "8px 14px", borderBottom: "1px solid rgba(236,224,206,0.06)", color: MUTED, fontSize: 11.5, letterSpacing: "0.08em" }}>
+              <div style={{ padding: "8px 14px", borderBottom: "1px solid rgba(236,224,206,0.06)", color: MUTED, fontSize: 12.5, letterSpacing: "0.08em" }}>
                 LIVE · petclaw_chat — {isSim ? `demo of ${petName} (connect to chat live)` : `talk to ${petName} right here`}
               </div>
-              <div ref={scrollRef} style={{ maxHeight: 240, overflowY: "auto", padding: "12px 14px", fontSize: 12.5, lineHeight: 1.7 }}>
+              <div ref={scrollRef} style={{ maxHeight: 264, overflowY: "auto", padding: "12px 14px", fontSize: 13, lineHeight: 1.7 }}>
                 {lines.map((l, i) => (
                   <div key={i} style={{ color: lineColor(l.role), whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                     <span style={{ color: l.role === "you" ? GOLD2 : l.role === "pet" ? AMBER_DIM : MUTED }}>{linePrefix(l.role)}</span>
@@ -338,12 +338,12 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   disabled={busy}
                   style={{
                     flex: 1, background: "transparent", border: "none", outline: "none",
-                    color: TXT, fontFamily: MONO, fontSize: 12.5,
+                    color: TXT, fontFamily: MONO, fontSize: 13,
                   }}
                 />
                 <button onClick={send} disabled={busy || !input.trim()} style={{
                   background: "transparent", border: `1px solid ${LINE}`, color: GOLD,
-                  borderRadius: 8, padding: "4px 12px", fontFamily: MONO, fontSize: 12, cursor: busy ? "default" : "pointer",
+                  borderRadius: 8, padding: "4px 12px", fontFamily: MONO, fontSize: 13, cursor: busy ? "default" : "pointer",
                   opacity: busy || !input.trim() ? 0.5 : 1,
                 }}>send</button>
               </div>
@@ -355,7 +355,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
         <div style={{
           display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
           padding: "11px 22px", background: "#1E1710", borderTop: "1px solid rgba(231,197,124,0.18)",
-          fontSize: 12.5, color: "#C2B49A",
+          fontSize: 13, color: "#C2B49A",
         }}>
           <span>⌁ <b style={{ color: GOLD }}>{petName}</b>
             {pet?.level ? ` · Lv.${pet.level}` : ""}

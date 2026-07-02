@@ -57,10 +57,10 @@ export default function MyCard() {
             <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", fontFamily: "var(--ed-disp)" }}>
               {me.pet?.name || "Your pet"}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, fontFamily: "var(--ed-m)", fontSize: 11 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, fontFamily: "var(--ed-m)", fontSize: 13, fontVariantNumeric: "tabular-nums" }}>
               <span style={{ width: 8, height: 8, borderRadius: 2, background: "#BE4F28", display: "inline-block" }} />
               <span style={{ fontWeight: 700, color: "#BE4F28" }}>{st.tier.name}</span>
-              <span style={{ color: "rgba(255,248,238,0.45)" }}>{st.next ? `· ${st.toNext.toLocaleString()} to ${st.next.name}` : "· max tier"}</span>
+              <span style={{ color: "rgba(255,248,238,0.75)" }}>{st.next ? `· ${st.toNext.toLocaleString()} to ${st.next.name}` : "· max tier"}</span>
             </div>
           </div>
         </div>
@@ -91,13 +91,13 @@ function Tile({ label, value, accent, sub }: { label: string; value: React.React
       border: "1px solid rgba(255,248,238,0.12)",
       minWidth: 88,
     }}>
-      <div style={{ fontSize: 9, fontFamily: "var(--ed-m)", letterSpacing: "0.12em", color: "rgba(255,248,238,0.5)" }}>
+      <div style={{ fontSize: 11, fontFamily: "var(--ed-m)", letterSpacing: "0.12em", color: "rgba(255,248,238,0.6)" }}>
         {label}
       </div>
       <div style={{ fontSize: 22, fontWeight: 800, color: accent, fontFamily: "var(--ed-m)", lineHeight: 1.1, marginTop: 2 }}>
         {value}
       </div>
-      {sub && <div style={{ fontSize: 10, color: "rgba(255,248,238,0.4)", marginTop: 1 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11.5, color: "rgba(255,248,238,0.6)", marginTop: 1 }}>{sub}</div>}
     </div>
   );
 }

@@ -6,9 +6,12 @@
  * Primary tab • Collection — a rarity-filterable album grid of every pet you've
  *   collected as a foil-stamped trading card (the /card/[id] data → <PetCard>),
  *   with a real "N collected" counter + rarity breakdown, real empty adoption
- *   slots, and a "Catch more in the wild" tile that opens the Catch camera.
+ *   slots, and a "Catch more in the wild" tile that opens the Catch tab.
  *   Clicking a card opens a detail overlay with Share + ✨ Illustrate.
- * Secondary tab • Battle — duel your card vs another pet's card via
+ * Tab • Catch — the full CatCatch camera flow (photograph real street animals),
+ *   merged in from the old standalone /?section=catch screen; that URL now
+ *   aliases here via App's routing + the `initialTab` prop.
+ * Tab • Battle — duel your card vs another pet's card via
  *   /api/card/battle (read-only, deterministic; no credits, no stat changes).
  *
  * SCRUM-100 (data-loss) fix: Illustrate is NON-DESTRUCTIVE. The generated art
@@ -30,12 +33,16 @@
  * existing battle resolver server-side.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import PetCard from "@/components/PetCard";
 import Icon from "@/components/Icon";
 import useCountUp from "@/hooks/useCountUp";
 import { computeRarity, rarityColor, RARITY_ORDER, RARITY_THRESHOLD, rarityTier, type Rarity } from "@/lib/tcg/theme";
+
+// Catch (photograph real street animals) now lives INSIDE Cards as its own tab —
+// the camera/leaflet bundle only loads when the Catch tab is actually opened.
+const CatCatch = lazy(() => import("@/components/CatCatch"));
 
 // ── Collectible Editorial tokens ──
 const T = {
@@ -83,8 +90,25 @@ function filterBucket(r: Rarity): "Common" | Rarity {
   return r === "Uncommon" ? "Common" : r;
 }
 
-export default function CardDeck({ onNavigate }: { onNavigate?: (section: string) => void }) {
-  const [tab, setTab] = useState<"collection" | "battle">("collection");
+type DeckTab = "collection" | "catch" | "battle";
+
+export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (section: string) => void; initialTab?: DeckTab }) {
+  const [tab, setTab] = useState<DeckTab>(initialTab ?? "collection");
+  // Old /?section=catch deep links alias to this screen. App currently
+  // remounts CardDeck per section (key={section} wrapper), so the seed lands
+  // via useState above; this effect is belt-and-braces for if that keying is
+  // ever removed.
+  useEffect(() => { if (initialTab) setTab(initialTab); }, [initialTab]);
+  // Keep the URL share/refresh-honest on tab flips without a section remount:
+  // cards↔catch are one screen, only the query param swaps.
+  const switchTab = (t: DeckTab) => {
+    setTab(t);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("section", t === "catch" ? "catch" : "cards");
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
   const [pets, setPets] = useState<Pet[]>([]);
   const [petSlots, setPetSlots] = useState<number>(0);
   const [notAuthed, setNotAuthed] = useState(false);
@@ -252,20 +276,60 @@ export default function CardDeck({ onNavigate }: { onNavigate?: (section: string
 
   const openPet = openId != null ? pets.find((p) => p.id === openId) || null : null;
 
-  if (notAuthed) return <Shell owned={0}><Empty>Connect your wallet to see your cards.</Empty></Shell>;
+  // Tabs — mono-labelled editorial pills, active = ink. Album · Catch · Battle.
+  const tabStrip = (
+    <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+      {(["collection", "catch", "battle"] as const).map((t) => (
+        <button key={t} onClick={() => switchTab(t)} style={{
+          padding: "9px 18px", borderRadius: 999, cursor: "pointer",
+          fontFamily: T.m, fontWeight: 700, fontSize: 11.5, letterSpacing: "0.12em", textTransform: "uppercase",
+          border: `1px solid ${tab === t ? T.ink : T.hair}`, background: tab === t ? T.ink : T.paper,
+          color: tab === t ? T.creamOn : T.muted, boxShadow: tab === t ? "var(--ed-shadow-card)" : "none",
+          transition: "all .15s ease",
+        }}>{t === "collection" ? "Album" : t === "catch" ? (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CameraGlyph size={15} /> Catch</span>
+        ) : (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="sword" size={15} /> Battle</span>
+        )}</button>
+      ))}
+    </div>
+  );
+
+  // Catch tab body — lazy CatCatch behind a skeleton in its own footprint.
+  const catchTab = (
+    <Suspense fallback={
+      <div className="ed-skeleton" style={{ width: "100%", maxWidth: 640, margin: "0 auto", aspectRatio: "3 / 4", maxHeight: 520, borderRadius: 18, boxShadow: "var(--ed-shadow-card)" }} />
+    }>
+      <CatCatch />
+    </Suspense>
+  );
+
+  // Every early return keeps the tab strip and the Catch tab reachable:
+  // catching has ZERO dependency on /api/pets (CatCatch fetches /api/catch),
+  // so a pets fetch that is pending, failed, or unauthenticated must never
+  // dead-end a /?section=catch deep link or the My Pet catch shortcut.
+  if (notAuthed) return (
+    <Shell owned={0}>
+      {tabStrip}
+      {tab === "catch" ? catchTab : <Empty>Connect your wallet to see your cards.</Empty>}
+    </Shell>
+  );
 
   // Loading — foil-shimmer skeleton grid in the exact card footprint. Never
   // flash the adopt state at a collector whose cards are still on the wire.
   if (!loaded) {
     return (
       <Shell owned={0}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(196px, 1fr))", gap: 18 }}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="mp-enter" style={{ animationDelay: `${i * 45}ms` }}>
-              <div className="ed-skeleton" style={{ width: "100%", aspectRatio: "5 / 7", borderRadius: 18, boxShadow: "var(--ed-shadow-card)" }} />
-            </div>
-          ))}
-        </div>
+        {tabStrip}
+        {tab === "catch" ? catchTab : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(196px, 1fr))", gap: 18 }}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="mp-enter" style={{ animationDelay: `${i * 45}ms` }}>
+                <div className="ed-skeleton" style={{ width: "100%", aspectRatio: "5 / 7", borderRadius: 18, boxShadow: "var(--ed-shadow-card)" }} />
+              </div>
+            ))}
+          </div>
+        )}
       </Shell>
     );
   }
@@ -274,34 +338,33 @@ export default function CardDeck({ onNavigate }: { onNavigate?: (section: string
   if (loadErr && pets.length === 0) {
     return (
       <Shell owned={0}>
-        <Empty>
-          Couldn&apos;t reach your collection.{" "}
-          <button onClick={loadPets} style={{ background: "none", border: "none", padding: 0, color: GOLD, fontWeight: 700, fontFamily: T.body, fontSize: 14.5, cursor: "pointer" }}>Retry ▸</button>
-        </Empty>
+        {tabStrip}
+        {tab === "catch" ? catchTab : (
+          <Empty>
+            Couldn&apos;t reach your collection.{" "}
+            <button onClick={loadPets} style={{ background: "none", border: "none", padding: 0, color: GOLD, fontWeight: 700, fontFamily: T.body, fontSize: 14.5, cursor: "pointer" }}>Retry ▸</button>
+          </Empty>
+        )}
       </Shell>
     );
   }
 
-  if (pets.length === 0) return <Shell owned={0}><Empty>Adopt a pet first — then collect its card. <a href="/?section=my%20pet" onClick={navTo("my pet")} style={{ color: GOLD, fontWeight: 700, textDecoration: "none" }}>Adopt ▸</a></Empty></Shell>;
+  // Zero pets: the album needs an adopted pet, but CATCHING never did — keep the
+  // Catch tab reachable so /?section=catch deep links still work pet-less.
+  if (pets.length === 0) return (
+    <Shell owned={0}>
+      {tabStrip}
+      {tab === "catch"
+        ? catchTab
+        : <Empty>Adopt a pet first — then collect its card. <a href="/?section=my%20pet" onClick={navTo("my pet")} style={{ color: GOLD, fontWeight: 700, textDecoration: "none" }}>Adopt ▸</a></Empty>}
+    </Shell>
+  );
 
   const oppList = opps.filter((o) => !pets.some((p) => p.id === o.petId));
 
   return (
     <Shell owned={pets.length} rarityCounts={rarityCounts}>
-      {/* Tabs — mono-labelled editorial pills, active = ink */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {(["collection", "battle"] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)} style={{
-            padding: "9px 18px", borderRadius: 999, cursor: "pointer",
-            fontFamily: T.m, fontWeight: 700, fontSize: 11.5, letterSpacing: "0.12em", textTransform: "uppercase",
-            border: `1px solid ${tab === t ? T.ink : T.hair}`, background: tab === t ? T.ink : T.paper,
-            color: tab === t ? T.creamOn : T.muted, boxShadow: tab === t ? "var(--ed-shadow-card)" : "none",
-            transition: "all .15s ease",
-          }}>{t === "collection" ? "Collection" : (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="sword" size={15} /> Battle</span>
-          )}</button>
-        ))}
-      </div>
+      {tabStrip}
 
       {/* Component-local keyframes (binder flip lives only here, not in globals).
           The global prefers-reduced-motion rule neutralizes it like everything else. */}
@@ -397,16 +460,21 @@ export default function CardDeck({ onNavigate }: { onNavigate?: (section: string
               </a>
             ))}
 
-            {/* Catch-more tile — opens the real Catch camera flow */}
+            {/* Catch-more tile — flips to this screen's own Catch tab (the old
+                /?section=catch destination now aliases right back here). */}
             {filter === "All" && (
               <CatchTile
-                onClick={navTo("catch")}
+                onClick={() => { switchTab("catch"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                 delay={Math.min(visible.length + emptySlots, 12) * 45}
               />
             )}
           </div>
         </div>
       )}
+
+      {/* Catch — the full camera → verify → collect flow, merged in from the
+          old standalone section (Nav's "Catch" entry now lives here). */}
+      {tab === "catch" && catchTab}
 
       {tab === "battle" && (
         <div>
@@ -558,6 +626,17 @@ const btn: React.CSSProperties = { padding: "9px 15px", borderRadius: 999, borde
 const ghost: React.CSSProperties = { padding: "9px 15px", borderRadius: 999, border: `1px solid ${T.hair}`, background: T.paper, color: T.ink70, fontFamily: T.m, fontWeight: 700, fontSize: 11.5, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" };
 const select: React.CSSProperties = { padding: "9px 13px", borderRadius: 12, border: `1px solid ${T.hair}`, fontFamily: T.body, fontSize: 14, color: T.ink, background: T.paper, minWidth: 180 };
 
+/** Outline camera glyph in currentColor — legible on both the active ink pill
+ *  (cream) and the resting paper pill (muted), unlike a fixed-fill icon. */
+function CameraGlyph({ size = 15 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden style={{ display: "block", flexShrink: 0 }}>
+      <path d="M3 8.5C3 7.4 3.9 6.5 5 6.5H7L8.2 4.6C8.4 4.2 8.8 4 9.2 4H14.8C15.2 4 15.6 4.2 15.8 4.6L17 6.5H19C20.1 6.5 21 7.4 21 8.5V17C21 18.1 20.1 19 19 19H5C3.9 19 3 18.1 3 17V8.5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <circle cx="12" cy="12.5" r="3.6" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -598,12 +677,13 @@ function SlotTile() {
   );
 }
 
-// "Catch more in the wild" — dark tile that opens the real Catch camera flow
-// (SPA-navigates via onClick when CardDeck got onNavigate; href is the fallback).
-function CatchTile({ onClick, delay = 0 }: { onClick?: (e: React.MouseEvent) => void; delay?: number }) {
+// "Catch more in the wild" — dark tile that flips to the Catch tab in-place
+// (Catch is a tab of this screen now, so no href / cross-section navigation).
+function CatchTile({ onClick, delay = 0 }: { onClick?: () => void; delay?: number }) {
   return (
-    <a href="/?section=catch" onClick={onClick} className="mp-enter ed-card-hover" style={{
-      textDecoration: "none", width: "100%", aspectRatio: "5 / 7", borderRadius: 18,
+    <button type="button" onClick={onClick} className="mp-enter ed-card-hover" style={{
+      border: "none", font: "inherit", cursor: "pointer",
+      width: "100%", aspectRatio: "5 / 7", borderRadius: 18,
       background: "radial-gradient(120% 90% at 50% 120%, #4A2A12 0%, #241206 55%, #17100A 100%)",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       gap: 12, textAlign: "center", padding: 16, boxShadow: "var(--ed-shadow-card)",
@@ -616,7 +696,7 @@ function CatchTile({ onClick, delay = 0 }: { onClick?: (e: React.MouseEvent) => 
         background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
         fontFamily: T.m, fontWeight: 700, fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase",
       }}>Open camera</span>
-    </a>
+    </button>
   );
 }
 

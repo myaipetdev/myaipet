@@ -94,7 +94,7 @@ export default function HourlyDropBanner() {
         >{live ? drop.emoji : <Icon name="crystal-ball" size={32} />}</div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{
-            fontSize: 10, fontFamily: "var(--ed-m)",
+            fontSize: 11, fontFamily: "var(--ed-m)",
             letterSpacing: "0.14em", color: live ? "#FFF8EE" : "#9A4E1E",
             fontWeight: 800,
           }}>
@@ -103,7 +103,7 @@ export default function HourlyDropBanner() {
           <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "var(--ed-disp)", color: live ? "#FFF8EE" : "#211A12", marginTop: 2 }}>
             {live ? drop.label : `${drop.next_emoji} ${drop.next_label}`}
           </div>
-          <div style={{ fontSize: 12, fontFamily: "var(--ed-body)", color: live ? "#FFF8EE" : "#5C5140", marginTop: 2 }}>
+          <div style={{ fontSize: 13.5, fontFamily: "var(--ed-body)", color: live ? "#FFF8EE" : "#5C5140", marginTop: 2 }}>
             {live ? drop.description : "starts at the top of next hour"}
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function HourlyDropBanner() {
             }}>
               <Icon name="electric" size={14} /> TODAY'S DROPS
             </div>
-            <div style={{ fontSize: 11, fontFamily: "var(--ed-body)", color: "#7A6E5A", fontWeight: 600 }}>
+            <div style={{ fontSize: 13.5, fontFamily: "var(--ed-body)", color: "#5C5140", fontWeight: 600 }}>
               New drop every hour — check back to catch more 2-3× windows.
             </div>
           </div>
@@ -157,11 +157,11 @@ export default function HourlyDropBanner() {
                 border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
               }}>
                 <span style={{ fontSize: 15 }}>{u.emoji}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "var(--ed-disp)", color: u.is_live ? "#FFF8EE" : "#211A12" }}>
+                <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "var(--ed-disp)", color: u.is_live ? "#FFF8EE" : "#211A12" }}>
                   {u.label}
                 </span>
                 <span style={{
-                  fontSize: 10, fontFamily: "var(--ed-m)",
+                  fontSize: 11, fontFamily: "var(--ed-m)",
                   color: u.is_live ? "#FFF8EE" : "#9A7B4E", fontWeight: 700,
                 }}>
                   {u.is_live ? "LIVE" : (i === arr.findIndex((x: any) => !x.is_live) ? "next" : clockLabel(u.starts_at))} · {u.multiplier_x}×

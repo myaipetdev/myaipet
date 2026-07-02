@@ -18,6 +18,7 @@ const GOLD = "#9A4E1E";          // terracotta-sub (eyebrows / accents)
 const GOLD_SOFT = "#FCE9CF";     // warm terracotta tint (active pill bg)
 const INK = "#211A12";           // editorial ink
 const MUTED = "#7A6E5A";         // editorial muted
+const MUTED2 = "#5C5140";        // darker muted — form labels / body on paper
 const LINE = "rgba(33,26,18,0.13)"; // hairline
 const PAPER = "#FBF6EC";         // card paper
 const INSET = "#F5EFE2";         // input inset
@@ -25,7 +26,7 @@ const CTA = "linear-gradient(180deg,#F49B2A,#E27D0C)"; // primary button
 const DANGER = "#9A3412";        // warm danger text
 const TERM_BG = "#1E1710";       // warm-dark terminal
 const TERM_CREAM = "#ECE0CE";
-const TERM_MUTED = "#8E7F68";
+const TERM_MUTED = "rgba(251,246,236,0.65)"; // dim-on-dark kept ≥.65 alpha for legibility
 const TERM_GREEN = "#9FC59A";
 const TERM_GOLD = "#E7C57C";
 const DISP = "var(--ed-disp)";
@@ -152,7 +153,7 @@ export default function ModelsPanel() {
           A PetClaw-protocol (developer) feature — the intended path is the <strong style={{ color: INK, fontWeight: 600 }}>CLI / at install</strong>. Your pet then routes its chat replies, agent-loop reasoning, and best-of-N judging to your model; other background tasks use the platform default (Grok). Keys are encrypted at rest, never shown again.
         </p>
         {/* Primary path: connect via the CLI / on install. */}
-        <div style={{ marginTop: 14, background: TERM_BG, borderRadius: 14, padding: "16px 18px", fontFamily: MONO, fontSize: 12.5, lineHeight: 1.7, color: TERM_CREAM, overflowX: "auto", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
+        <div style={{ marginTop: 14, background: TERM_BG, borderRadius: 14, padding: "16px 18px", fontFamily: MONO, fontSize: 13, lineHeight: 1.7, color: TERM_CREAM, overflowX: "auto", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
           <div style={{ color: TERM_MUTED, marginBottom: 6 }}># install, authenticate, then connect a model</div>
           <div><span style={{ color: TERM_GREEN }}>npx @myaipet/petclaw-sdk init</span><span style={{ color: TERM_MUTED }}>            # guided: server · token · pick your pet · model</span></div>
           <div><span style={{ color: TERM_GREEN }}>npx @myaipet/petclaw-sdk auth</span> <span style={{ color: TERM_GOLD }}>pck_…</span><span style={{ color: TERM_MUTED }}>        # the CLI token from "Connect your CLI" below</span></div>
@@ -171,8 +172,8 @@ export default function ModelsPanel() {
 
         {newToken && (
           <div style={{ marginTop: 16, background: TERM_BG, borderRadius: 14, padding: "14px 16px" }}>
-            <div style={{ fontFamily: BODY, color: TERM_GREEN, fontSize: 12, marginBottom: 8 }}>Copy this now — it won&apos;t be shown again.</div>
-            <div style={{ fontFamily: MONO, fontSize: 12.5, color: TERM_CREAM, wordBreak: "break-all", lineHeight: 1.6 }}>
+            <div style={{ fontFamily: BODY, color: TERM_GREEN, fontSize: 13, marginBottom: 8 }}>Copy this now — it won&apos;t be shown again.</div>
+            <div style={{ fontFamily: MONO, fontSize: 13, color: TERM_CREAM, wordBreak: "break-all", lineHeight: 1.6 }}>
               petclaw-sdk auth {newToken}
             </div>
             <button onClick={copyToken} style={{ marginTop: 10, padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(236,224,206,0.18)", background: "transparent", color: copied ? TERM_GREEN : TERM_GOLD, fontSize: 13, cursor: "pointer", fontFamily: MONO }}>
@@ -189,7 +190,7 @@ export default function ModelsPanel() {
                   <div style={{ fontWeight: 600, color: INK, fontSize: 14, opacity: t.revoked_at ? 0.5 : 1 }}>
                     {t.label} <span style={{ color: MUTED, fontWeight: 400 }}>· {t.prefix}…</span>
                   </div>
-                  <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
+                  <div style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>
                     {t.revoked_at ? "revoked" : t.last_used_at ? `last used ${new Date(t.last_used_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : "never used"}
                   </div>
                 </div>
@@ -205,22 +206,22 @@ export default function ModelsPanel() {
       <Card title="Or connect here (manual)" sub="Prefer the CLI above. This web form does the same thing — API-key providers (BYOK); OpenRouter reaches almost any model, including Gemini.">
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div>
-            <label style={{ fontSize: 12.5, color: MUTED }}>Provider</label>
+            <label style={{ fontSize: 13, fontWeight: 600, color: MUTED2 }}>Provider</label>
             <select value={provider} onChange={(e) => setProvider(e.target.value)} style={inputStyle}>
               {supported.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
           </div>
           <div>
-            <label style={{ fontSize: 12.5, color: MUTED }}>Model <span style={{ color: "#A99C84" }}>(optional)</span></label>
+            <label style={{ fontSize: 13, fontWeight: 600, color: MUTED2 }}>Model <span style={{ color: MUTED, fontWeight: 400 }}>(optional)</span></label>
             <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="default for provider" style={inputStyle} />
           </div>
         </div>
         <div style={{ marginTop: 12 }}>
-          <label style={{ fontSize: 12.5, color: MUTED }}>API key <span style={{ color: "#A99C84" }}>(stored encrypted, never shown again)</span></label>
+          <label style={{ fontSize: 13, fontWeight: 600, color: MUTED2 }}>API key <span style={{ color: MUTED, fontWeight: 400 }}>(stored encrypted, never shown again)</span></label>
           <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={supported.find((s) => s.id === provider)?.keyFormat || "sk-..."} style={inputStyle} autoComplete="off" />
         </div>
         <div style={{ marginTop: 14 }}>
-          <label style={{ fontSize: 12.5, color: MUTED }}>Use for <span style={{ color: "#A99C84" }}>(none = all supported tasks below)</span></label>
+          <label style={{ fontSize: 13, fontWeight: 600, color: MUTED2 }}>Use for <span style={{ color: MUTED, fontWeight: 400 }}>(none = all supported tasks below)</span></label>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
             {tasks.map((t) => {
               const on = scopes.includes(t);

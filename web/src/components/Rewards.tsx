@@ -146,7 +146,7 @@ function ProductMockup({ item, isLocked, petAvatar, mockupImage }: { item: Rewar
         <div style={{
           position: "absolute", top: 12, right: 12,
           padding: "4px 10px", borderRadius: 6,
-          fontSize: 10, fontWeight: 800, letterSpacing: "0.08em",
+          fontSize: 11, fontWeight: 800, letterSpacing: "0.08em",
           background: isLocked
             ? "rgba(33,26,18,0.1)"
             : item.badge === "LIMITED"
@@ -262,7 +262,7 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
               <span style={{
                 padding: "3px 8px",
                 borderRadius: 5,
-                fontSize: 9,
+                fontSize: 11,
                 fontWeight: 800,
                 letterSpacing: "0.08em",
                 background: item.badge === "LIMITED" ? "#211A12" : "#BE4F28",
@@ -286,10 +286,10 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
           }}>
             <Icon name="paw" size={28} />
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#9A4E1E" }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#9A4E1E" }}>
                 Your pet&apos;s image will be printed on this product
               </div>
-              <div style={{ fontSize: 12, color: "#9A4E1E", marginTop: 2 }}>
+              <div style={{ fontSize: 13.5, color: "#9A4E1E", marginTop: 2 }}>
                 AI-generated custom artwork based on your pet
               </div>
             </div>
@@ -303,7 +303,7 @@ function PreviewOverlay({ item, onClose }: { item: RewardItem; onClose: () => vo
                 </span>
                 <span style={{ fontSize: 13, color: "#5C5140", marginLeft: 4 }}>points</span>
               </div>
-              <div style={{ fontSize: 12, color: "#9A7B4E" }}>
+              <div style={{ fontSize: 13, color: "#5C5140" }}>
                 Est. delivery: {item.deliveryDays}
               </div>
             </div>
@@ -524,7 +524,7 @@ export default function Rewards() {
       <div style={{ padding: "140px 40px", textAlign: "center" }}>
         <div style={{ width: 40, height: 40, border: "2px solid rgba(190,79,40,0.2)", borderTopColor: "#BE4F28", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-        <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(33,26,18,0.35)" }}>Loading rewards...</div>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#5C5140" }}>Loading rewards...</div>
       </div>
     );
   }
@@ -695,8 +695,9 @@ export default function Rewards() {
       {/* Daily Check-In */}
       {streakData && (
         <div style={{
-          background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
-          border: "1px solid rgba(59,130,246,0.15)",
+          background: "#FBF6EC",
+          border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+          boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
           borderRadius: 20,
           padding: "18px 24px",
           marginBottom: 24,
@@ -706,10 +707,10 @@ export default function Rewards() {
           flexWrap: "wrap" as const,
         }}>
           <div style={{ display: "flex", flexDirection: "column" as const, gap: 4, minWidth: 100 }}>
-            <div style={{ fontFamily: "var(--ed-m)", fontSize: 14, fontWeight: 700, color: "#1e40af", textTransform: "uppercase" as const, letterSpacing: "0.12em" }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 14, fontWeight: 700, color: "#9A4E1E", textTransform: "uppercase" as const, letterSpacing: "0.12em" }}>
               Daily Check-In
             </div>
-            <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#3b82f6", fontWeight: 600 }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontVariantNumeric: "tabular-nums", color: "#5C5140", fontWeight: 600 }}>
               Streak: {streakData.streak} day{streakData.streak !== 1 ? "s" : ""}
             </div>
           </div>
@@ -733,30 +734,30 @@ export default function Rewards() {
                   justifyContent: "center",
                   gap: 2,
                   background: completed
-                    ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
+                    ? "#BE4F28"
                     : isToday
-                    ? "rgba(59,130,246,0.12)"
-                    : "rgba(255,255,255,0.6)",
+                    ? "rgba(190,79,40,0.10)"
+                    : "#F5EFE2",
                   border: isToday && !completed
-                    ? "2px solid #3b82f6"
+                    ? "2px solid #BE4F28"
                     : completed
                     ? "2px solid transparent"
-                    : "1px solid rgba(59,130,246,0.1)",
+                    : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                   boxShadow: "none",
                   transition: "all 0.3s ease",
                 }}>
                   <span style={{
                     fontSize: 14,
                     fontWeight: 700,
-                    color: completed ? "#fff" : isToday ? "#2563eb" : "#93c5fd",
+                    color: completed ? "#FFF8EE" : isToday ? "#BE4F28" : "#5C5140",
                     fontFamily: "var(--ed-m)",
                   }}>
                     {completed ? "\u2713" : `D${dayNum}`}
                   </span>
                   <span style={{
-                    fontSize: 9,
+                    fontSize: 11,
                     fontWeight: 600,
-                    color: completed ? "rgba(255,255,255,0.8)" : isToday ? "#3b82f6" : "#93c5fd",
+                    color: completed ? "rgba(255,248,238,0.85)" : isToday ? "#9A4E1E" : "#5C5140",
                   }}>
                     +{pts}
                   </span>
@@ -777,9 +778,9 @@ export default function Rewards() {
               fontFamily: "var(--ed-disp)",
               cursor: streakData.checkedInToday ? "default" : "pointer",
               background: streakData.checkedInToday
-                ? "rgba(59,130,246,0.1)"
-                : "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-              color: streakData.checkedInToday ? "#93c5fd" : "#fff",
+                ? "rgba(190,79,40,0.08)"
+                : "linear-gradient(180deg, #F49B2A, #E27D0C)",
+              color: streakData.checkedInToday ? "#9A4E1E" : "#FFF8EE",
               boxShadow: streakData.checkedInToday ? "none" : "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
               transition: "all 0.2s ease",
               whiteSpace: "nowrap" as const,
@@ -871,7 +872,7 @@ export default function Rewards() {
               }}>
                 {userTier.label} — Rank #{userRank}
               </div>
-              <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "rgba(33,26,18,0.5)", marginTop: 2 }}>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#5C5140", marginTop: 2 }}>
                 You can redeem {userTier.allowedItems.length} of {REWARDS_CATALOG.length} rewards
               </div>
             </>
@@ -883,7 +884,7 @@ export default function Rewards() {
               }}>
                 {userRank ? `Rank #${userRank} — Not in top tier yet` : "Unranked"}
               </div>
-              <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, color: "rgba(33,26,18,0.5)", marginTop: 2 }}>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#5C5140", marginTop: 2 }}>
                 Rewards are exclusive to top-ranked players. Keep earning Season Rewards points!
               </div>
             </>
@@ -897,8 +898,8 @@ export default function Rewards() {
               padding: "6px 12px", borderRadius: 10,
               background: userTier?.tier === t.tier ? `${t.color}20` : "rgba(33,26,18,0.03)",
               border: userTier?.tier === t.tier ? `1.5px solid ${t.color}40` : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-              fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700,
-              color: userTier?.tier === t.tier ? t.color : "rgba(33,26,18,0.3)",
+              fontFamily: "var(--ed-m)", fontSize: 11, fontWeight: 700,
+              color: userTier?.tier === t.tier ? t.color : "rgba(33,26,18,0.45)",
               transition: "all 0.2s",
               display: "flex", alignItems: "center", gap: 4,
             }}>
@@ -1168,8 +1169,8 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#211A12",
   },
   stepDesc: {
-    fontSize: 12,
-    color: "#7A6E5A",
+    fontSize: 13.5,
+    color: "#5C5140",
     marginTop: 1,
   },
   stepArrow: {
@@ -1230,7 +1231,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   pointsMeta: {
     fontSize: 13,
-    color: "#7A6E5A",
+    color: "#5C5140",
     fontWeight: 500,
   },
 
@@ -1323,8 +1324,8 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
   },
   deliveryInfo: {
-    fontSize: 11,
-    color: "#9A7B4E",
+    fontSize: 13,
+    color: "#5C5140",
     fontWeight: 500,
     letterSpacing: "0.02em",
   },

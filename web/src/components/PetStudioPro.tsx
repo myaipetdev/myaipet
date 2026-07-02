@@ -228,6 +228,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   }, [credits]);
 
   const modelMenuRef = useRef<HTMLDivElement>(null);
+  // Focus target for the "START HERE" guidance bar (empty-prompt state) —
+  // clicking it jumps the user straight into the prompt box.
+  const promptRef = useRef<HTMLTextAreaElement>(null);
   const pet = pets?.find(p => p.id === petId) || null;
   // An un-renamed pet still carries its species default name ("Cat", "Dog"…),
   // which reads as a hardcoded placeholder in the header — fall back to a
@@ -795,8 +798,8 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             {/* PREVIEW mono label, top-left on the mount */}
             <div style={{
               position: "absolute", top: 22, left: 26, zIndex: 5,
-              fontFamily: T.m, fontWeight: 700, fontSize: 10, letterSpacing: "0.14em",
-              color: "rgba(252,233,207,0.85)", textTransform: "uppercase",
+              fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: "0.14em",
+              color: "rgba(252,233,207,.85)", textTransform: "uppercase",
               pointerEvents: "none",
             }}>PREVIEW</div>
             <div style={{
@@ -830,7 +833,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                     </svg>
                   </div>
                   <div style={{ fontSize: 16, fontFamily: T.disp, fontWeight: 700, marginBottom: 6 }}>Generation failed</div>
-                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", maxWidth: 380, margin: "0 auto 16px" }}>{error}</div>
+                  <div style={{ fontSize: 13, color: "rgba(252,233,207,.95)", maxWidth: 380, margin: "0 auto 16px" }}>{error}</div>
                   <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
                     {/* Item #8-2: a 402 needs a purchase path — "Try again" alone
                         just re-fails forever. */}
@@ -963,7 +966,8 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       style={{
                         ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6,
                         cursor: varRunning ? "wait" : varInsufficient ? "not-allowed" : "pointer",
-                        opacity: varRunning || varInsufficient ? 0.6 : 1,
+                        // 0.8 keeps the label ≥4.5:1 on paper — 0.6 washed it out.
+                        opacity: varRunning || varInsufficient ? 0.8 : 1,
                         animationDelay: "250ms",
                       }}
                       title={varInsufficient
@@ -985,7 +989,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             {/* Variations grid — each tile swaps into the main result on click */}
             {view === "done" && (varRunning || variations.length > 0 || error) && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 10, fontFamily: T.m, letterSpacing: "0.14em", color: T.mono, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ fontSize: 11, fontFamily: T.m, letterSpacing: "0.14em", color: T.mono, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
                   <SparkGlyph size={11} /> VARIATIONS{varRunning ? ` · ${variations.length}/4…` : ""}
                 </div>
                 {/* Item #11-1: a mid-run failure used to be swallowed (view stays
@@ -1031,7 +1035,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             {view === "idle" && (
               <div style={{ marginTop: 12 }}>
                 <div style={{
-                  fontSize: 10, fontFamily: T.m,
+                  fontSize: 11, fontFamily: T.m,
                   letterSpacing: "0.14em", color: T.mono, fontWeight: 700, marginBottom: 8, textTransform: "uppercase",
                   display: "flex", alignItems: "center", gap: 5,
                 }}><Icon name="sparkling" size={12} /> WHAT YOU CAN MAKE</div>
@@ -1074,12 +1078,12 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       <span style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700 }}>{p.name}</span>
                       {selected ? (
                         <span style={{
-                          fontSize: 9, color: T.studio, fontWeight: 700, letterSpacing: "0.08em",
+                          fontSize: 11, color: T.studio, fontWeight: 700, letterSpacing: "0.08em",
                           fontFamily: T.m,
                         }}>✓ LOCKED</span>
                       ) : (
                         <span style={{
-                          fontSize: 10, color: T.mono,
+                          fontSize: 11, color: T.muted2,
                           fontFamily: T.m,
                         }}>Lv{p.level}</span>
                       )}
@@ -1234,9 +1238,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                             <strong style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700, color: sel ? T.studio : T.ink }}>{m.displayName}</strong>
                             {locked && <span style={{
                               padding: "2px 7px", borderRadius: 999,
-                              fontSize: 9, fontWeight: 700, letterSpacing: "0.08em",
+                              fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
                               fontFamily: T.m,
-                              background: T.inset, color: T.muted,
+                              background: T.inset, color: T.muted2,
                               display: "inline-flex", alignItems: "center", gap: 4,
                             }}><svg width={9} height={9} viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
@@ -1247,7 +1251,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                             {!locked && <ModelBadges model={m} compact />}
                           </div>
                           <div style={{
-                            fontSize: 11, color: T.mono, marginTop: 4,
+                            fontSize: 11.5, color: T.muted2, marginTop: 4,
                             fontFamily: T.m,
                           }}>
                             {m.kind === "video" ? `${m.maxDurationSec}s · ` : ""}{m.maxResolution} · {m.creditsPerRun} cr
@@ -1263,7 +1267,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   marginTop: 8, padding: "7px 10px", borderRadius: 8,
                   background: "rgba(92,138,78,0.08)",
                   border: "1px solid rgba(92,138,78,0.22)",
-                  fontSize: 11, color: T.thrive,
+                  fontSize: 12, color: T.thrive,
                   fontFamily: T.m, fontWeight: 700, letterSpacing: "0.04em",
                 }}>
                   ✓ {pet.name}'s photo locks character
@@ -1280,6 +1284,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
         }}>
           <div style={panelLabel}>WHAT TO MAKE</div>
           <textarea
+            ref={promptRef}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             aria-label="Prompt — what your pet should be doing"
@@ -1352,7 +1357,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                 letterSpacing: "0.14em", color: T.studio, fontWeight: 700, textTransform: "uppercase",
                 display: "inline-flex", alignItems: "center", gap: 5,
               }}><Icon name="sparkling" size={12} /> TEMPLATES</span>
-              <span style={{ fontSize: 11, fontFamily: T.m, color: T.mono }}>
+              <span style={{ fontSize: 12, fontFamily: T.m, color: T.muted2 }}>
                 one tap → a full scene
               </span>
             </div>
@@ -1397,13 +1402,13 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                         <span style={{ ...emojiChip, position: "absolute", left: 9, bottom: 7 }}>{t.emoji}</span>
                         <span style={{
                           position: "absolute", top: 7, right: 8,
-                          fontSize: 8, fontFamily: T.m,
+                          fontSize: 10, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
                         }}>▸ MOTION</span>
                         <span style={{
                           position: "absolute", right: 9, bottom: 8,
-                          fontSize: 8, fontFamily: T.m,
+                          fontSize: 10, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
                         }}>{t.category}</span>
@@ -1416,7 +1421,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       }}>
                         <span style={emojiChip}>{t.emoji}</span>
                         <span style={{
-                          fontSize: 8, fontFamily: T.m,
+                          fontSize: 10, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
                         }}>{t.category}</span>
@@ -1431,9 +1436,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                         <span style={{ ...emojiChip, fontSize: 20, padding: "4px 8px" }}>{t.emoji}</span>
                         <span style={{
                           position: "absolute", top: 7, right: 8,
-                          fontSize: 8, fontFamily: T.m,
+                          fontSize: 10, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
-                          color: T.studio, opacity: 0.9,
+                          color: T.studio,
                         }}>{t.category}</span>
                       </div>
                     )}
@@ -1441,7 +1446,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       <div style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700, color: T.ink, letterSpacing: "-0.01em" }}>
                         {t.title}
                       </div>
-                      <div style={{ fontSize: 11, color: T.muted, marginTop: 3, lineHeight: 1.4 }}>
+                      <div style={{ fontSize: 12, color: T.muted2, marginTop: 3, lineHeight: 1.45 }}>
                         {t.description}
                       </div>
                     </div>
@@ -1470,22 +1475,66 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             Not enough credits — get more →
             <span style={{
               display: "block", fontSize: 12, fontFamily: T.m, fontWeight: 700,
-              letterSpacing: "0.06em", opacity: 0.9, marginTop: 4,
+              letterSpacing: "0.06em", marginTop: 4,
             }}>this run costs {runCost} cr, you have {credits}</span>
           </a>
+        ) : !!pet && !!chosenModel && view !== "generating" && !prompt.trim() ? (
+          // The ONLY blocker is the empty prompt — that's guidance, not a
+          // disabled action. Full-opacity "start here" bar (never a washed
+          // 45%-opacity button); clicking it focuses the prompt box.
+          <button
+            onClick={() => {
+              const el = promptRef.current;
+              if (!el) return;
+              el.focus({ preventScroll: true });
+              el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }}
+            className="mp-enter-4 studio-start-here"
+            aria-label="Write a prompt to enable Generate"
+            style={{
+              width: "100%", padding: "16px 22px", borderRadius: 16,
+              background: T.paper, cursor: "pointer",
+              border: `1.5px dashed ${T.studio}`,
+              boxShadow: "var(--ed-shadow-card)",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 14,
+              textAlign: "left", fontFamily: T.body,
+            }}
+          >
+            <span aria-hidden style={{
+              width: 38, height: 38, borderRadius: 11, flexShrink: 0,
+              background: "rgba(107,79,160,0.12)", color: T.studio,
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+            }}><PencilGlyph size={17} /></span>
+            <span style={{ minWidth: 0 }}>
+              <span style={{
+                display: "block", fontFamily: T.m, fontSize: 11, fontWeight: 700,
+                letterSpacing: "0.16em", color: T.studio, textTransform: "uppercase",
+                marginBottom: 3,
+              }}>START HERE</span>
+              <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: T.ink, lineHeight: 1.4 }}>
+                Write what {petDisplayName} should be doing — or tap a template above
+              </span>
+            </span>
+          </button>
         ) : (
         <button onClick={generate} disabled={!canGenerate} className="mp-enter-4 studio-cta" style={{
           ...generateBtn,
-          opacity: canGenerate ? 1 : 0.45,
-          cursor: canGenerate ? "pointer" : "not-allowed",
+          cursor: canGenerate ? "pointer" : view === "generating" ? "progress" : "not-allowed",
+          // Never fade the whole button: a genuinely-disabled state keeps
+          // FULL-opacity text on a muted (deeper) surface so the label stays
+          // readable — no grey-on-grey wash.
+          ...(canGenerate || view === "generating" ? {} : {
+            background: T.studioDeep, color: "rgba(252,233,207,.95)",
+            boxShadow: "0 12px 24px -18px rgba(25,19,52,.5)",
+          }),
         }}>
           {view === "generating"
             ? (outputKind === "image" ? "Generating…" : "Generating… ~1–2 min")
             : !chosenModel
             // Item #25-2: never advertise a 0-credit run while engines load.
             ? "Loading engines…"
-            : !prompt.trim()
-            ? "Write a prompt or tap a template to start →"
+            : !pet
+            ? "Loading pets…"
             : (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
                 <PlayGlyph size={16} />
@@ -1543,7 +1592,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                               <path d="M17 3c0 4-3.5 6-5 9 1.5 3 5 5 5 9" />
                             </svg>
                           : g.status === "failed"
-                          ? <span style={{ fontFamily: T.m, fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", color: T.terra }}>FAILED</span>
+                          ? <span style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: T.terra }}>FAILED</span>
                           : "?"}</div>}
                   </button>
                   {g.prompt && (
@@ -1581,7 +1630,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             <div style={{ display: "flex" }}><Icon name="film-reel" size={28} /></div>
             <div style={{ flex: "1 1 200px" }}>
               <div style={{ ...panelLabel, marginBottom: 4 }}>RECENT</div>
-              <div style={{ fontSize: 14, color: T.muted, fontWeight: 500 }}>
+              <div style={{ fontSize: 14, color: T.muted2, fontWeight: 500 }}>
                 Your generations will appear here. Click any to reuse the prompt.
               </div>
             </div>
@@ -1605,7 +1654,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           <div style={{ fontSize: 22, fontFamily: T.disp, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 6 }}>
             Beyond prompts — what we&rsquo;re researching
           </div>
-          <div style={{ fontSize: 14, color: T.muted, marginBottom: 18, maxWidth: 560 }}>
+          <div style={{ fontSize: 14, color: T.muted2, marginBottom: 18, maxWidth: 560 }}>
             Directions we&rsquo;re exploring because Studio sits on your pet&rsquo;s
             memory ledger and persona. Research notes, not commitments — no dates
             attached; things ship only when they&rsquo;re real.
@@ -1688,7 +1737,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                 ))}
               </div>
             ) : gallery.length === 0 ? (
-              <div style={{ padding: "26px 8px", fontSize: 14, color: T.muted, fontFamily: T.body }}>
+              <div style={{ padding: "26px 8px", fontSize: 14, color: T.muted2, fontFamily: T.body }}>
                 Nothing here yet — your generations will collect in this album.
               </div>
             ) : (
@@ -1709,7 +1758,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       {failed ? (
                         // Honest failure: real error_message + a retry path.
                         <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 7, minHeight: 120 }}>
-                          <span style={{ fontFamily: T.m, fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: T.terra, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                          <span style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: T.terra, display: "inline-flex", alignItems: "center", gap: 5 }}>
                             <span aria-hidden style={{ width: 7, height: 7, borderRadius: 2, background: T.terra, display: "inline-block" }} />FAILED
                           </span>
                           <span style={{ fontSize: 12, color: T.ink70, lineHeight: 1.45 }}>
@@ -1726,7 +1775,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                         </div>
                       ) : inFlight ? (
                         <div className="ed-skeleton" style={{ height: 130, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <span style={{ fontFamily: T.m, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: T.mono }}>RENDERING…</span>
+                          <span style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", color: T.muted2 }}>RENDERING…</span>
                         </div>
                       ) : media ? (
                         isVid
@@ -1745,10 +1794,10 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                           }}>{g.prompt}</div>
                         )}
                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <span style={{ fontFamily: T.m, fontSize: 9.5, fontWeight: 700, letterSpacing: "0.08em", color: T.mono, textTransform: "uppercase" }}>{dateStr}</span>
+                          <span style={{ fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: T.muted2, textTransform: "uppercase" }}>{dateStr}</span>
                           {typeof g.credits_charged === "number" && g.credits_charged > 0 && (
                             <span style={{
-                              fontFamily: T.m, fontSize: 9, fontWeight: 700, letterSpacing: "0.06em",
+                              fontFamily: T.m, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
                               padding: "1px 6px", borderRadius: 999,
                               background: T.paper, border: `1px solid ${T.hair}`, color: T.muted2,
                             }}>{g.credits_charged} cr</span>
@@ -1786,6 +1835,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
         .studio-pulse { animation: studioPulseKf 1.6s ease-in-out infinite; }
         @keyframes studioPop { 0%{transform:scale(.92);opacity:0} 60%{transform:scale(1.02)} 100%{transform:scale(1);opacity:1} }
         .studio-cta { position: relative; overflow: hidden; }
+        .studio-start-here { transition: transform 140ms ease; }
+        .studio-start-here:hover { transform: translateY(-1.5px); }
+        .studio-start-here:active { transform: translateY(1px) scale(.995); }
         .studio-cta:hover:not(:disabled) { transform: translateY(-1.5px); box-shadow: 0 26px 48px -24px rgba(62,52,112,.9); }
         .studio-cta:active:not(:disabled) { transform: translateY(1px) scale(.995); transition-duration: 80ms; }
         .studio-cta::after {
@@ -1798,6 +1850,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
         @media (prefers-reduced-motion: reduce) {
           .studio-cta::after { animation: none; }
           .studio-cta:hover:not(:disabled), .studio-cta:active:not(:disabled) { transform: none; }
+          .studio-start-here:hover, .studio-start-here:active { transform: none; }
         }
         @media (max-width: 880px) {
           .studio-pro-grid { grid-template-columns: 1fr !important; }
@@ -1838,7 +1891,7 @@ function PreviewIdle({ pet }: { pet: Pet | null }) {
           {pet ? (named ? `${who} is ready` : "Ready to create") : "Pick a pet"}
         </div>
         <div style={{
-          fontSize: 14, color: "rgba(252,233,207,0.72)",
+          fontSize: 14, color: "rgba(252,233,207,0.92)",
           maxWidth: 320, margin: "0 auto", lineHeight: 1.55,
         }}>
           Pick a style, write a prompt, hit <strong>Generate</strong>{" "}
@@ -1870,19 +1923,19 @@ function PreviewGenerating({ kind, progress }: { kind: "image" | "video"; progre
   const pct = real ?? est;
   return (
     <div style={{ color: "#FCE9CF", textAlign: "center", padding: 28, width: "100%", maxWidth: 320 }}>
-      <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 11, letterSpacing: "0.16em", color: "rgba(252,233,207,0.55)", textTransform: "uppercase" }}>Developing</div>
+      <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 12, letterSpacing: "0.16em", color: "rgba(252,233,207,.85)", textTransform: "uppercase" }}>Developing</div>
       <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 22, marginTop: 6, letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums" }}>Generating · {secs}s</div>
-      <div style={{ fontFamily: "var(--ed-m)", fontSize: 12.5, color: "rgba(252,233,207,0.78)", marginTop: 6 }}>{line}</div>
+      <div style={{ fontFamily: "var(--ed-m)", fontSize: 12.5, color: "rgba(252,233,207,.95)", marginTop: 6 }}>{line}</div>
       {/* Determinate strip on the developing plate. The ONLY motion: this bar
           advancing and the status line swapping. */}
       <div style={{ marginTop: 16, height: 12, borderRadius: 999, background: "rgba(252,233,207,0.14)", border: "1px solid rgba(252,233,207,0.4)", overflow: "hidden", maxWidth: 260, marginInline: "auto" }}>
         <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#F49B2A,#E27D0C)", transition: "width 1s linear" }} />
       </div>
-      <div style={{ fontFamily: "var(--ed-m)", fontSize: 9.5, color: "rgba(252,233,207,0.55)", marginTop: 8, fontVariantNumeric: "tabular-nums" }}>
+      <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(252,233,207,.85)", marginTop: 8, fontVariantNumeric: "tabular-nums" }}>
         {real != null ? `${pct}%` : `≈${pct}% · est.`} · {kind === "video" ? "keep this page open" : "rendering"}
       </div>
       {real == null && (
-        <div style={{ fontFamily: "var(--ed-m)", fontSize: 9, color: "rgba(252,233,207,0.45)", marginTop: 3 }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(252,233,207,.85)", marginTop: 3 }}>
           time estimate, not job progress
         </div>
       )}
@@ -1897,14 +1950,14 @@ function PreviewDemo({ pet, prompt }: { pet: Pet | null; prompt: string }) {
       display: "flex", flexDirection: "column", justifyContent: "center", height: "100%",
     }}>
       <div style={{
-        fontSize: 11, fontFamily: "var(--ed-m)", fontWeight: 700,
-        letterSpacing: "0.14em", color: "rgba(252,233,207,0.7)", marginBottom: 12, textTransform: "uppercase",
+        fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700,
+        letterSpacing: "0.14em", color: "rgba(252,233,207,.85)", marginBottom: 12, textTransform: "uppercase",
       }}>DEMO · WOULD GENERATE</div>
       <div style={{ fontSize: 22, fontFamily: "var(--ed-disp)", fontWeight: 800, color: "#FCE9CF", marginBottom: 8, lineHeight: 1.3 }}>
         A scene starring {pet?.name || "your pet"}
       </div>
       <div style={{
-        fontSize: 14, color: "rgba(252,233,207,0.78)", fontFamily: "var(--ed-m)",
+        fontSize: 14, color: "rgba(252,233,207,0.92)", fontFamily: "var(--ed-m)",
         marginBottom: 18, lineHeight: 1.5,
       }}>"{prompt}"</div>
       <a href="/" style={{
@@ -1935,13 +1988,13 @@ function RoadmapItem({ icon, title, body }: { icon: string; title: string; body:
         <span style={{ display: "inline-flex" }}><Icon name={icon} size={20} /></span>
         <span style={{
           padding: "2px 7px", borderRadius: 999,
-          fontSize: 9, fontWeight: 700, letterSpacing: "0.1em",
+          fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
           fontFamily: T.m,
           background: "rgba(107,79,160,0.12)", color: T.studio,
         }}>RESEARCH</span>
       </div>
       <div style={{ fontSize: 14, fontFamily: T.disp, fontWeight: 700, marginBottom: 4, color: T.ink }}>{title}</div>
-      <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.5 }}>{body}</div>
+      <div style={{ fontSize: 12.5, color: T.muted2, lineHeight: 1.5 }}>{body}</div>
     </div>
   );
 }
@@ -2018,7 +2071,7 @@ function ModelBadges({ model, compact }: { model: StudioModel; compact?: boolean
       {badges.slice(0, compact ? 3 : 5).map((b, i) => (
         <span key={i} style={{
           padding: "2px 7px", borderRadius: 999,
-          fontSize: 9, fontWeight: 700, letterSpacing: "0.06em",
+          fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
           fontFamily: T.m,
           background: b.bg, color: b.fg,
           display: "inline-flex", alignItems: "center", gap: 3,
@@ -2048,7 +2101,7 @@ function Pill({ label, value, valueColor }: { label: string; value: string; valu
       display: "flex", alignItems: "baseline", gap: 8,
     }}>
       <span style={{
-        fontSize: 10, fontFamily: T.m,
+        fontSize: 11, fontFamily: T.m,
         color: T.mono, letterSpacing: "0.1em", fontWeight: 700,
       }}>{label}</span>
       <span style={{
@@ -2120,7 +2173,7 @@ const btnGhostOnDark: React.CSSProperties = {
 const galleryActionBtn: React.CSSProperties = {
   padding: "5px 9px", borderRadius: 8,
   border: `1px solid ${T.hair}`, background: T.paper,
-  color: T.ink70, fontWeight: 700, fontSize: 10.5, cursor: "pointer",
+  color: T.ink70, fontWeight: 700, fontSize: 11, cursor: "pointer",
   fontFamily: T.body, textDecoration: "none", lineHeight: 1.2,
 };
 

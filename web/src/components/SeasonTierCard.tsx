@@ -60,7 +60,7 @@ export default function SeasonTierCard() {
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <WaxSeal seal={rungSeal(tier.name, "current")} size={42} />
             <div>
-              <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.14em", color: "#9A4E1E" }}>SEASON 1 STANDING</div>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: "#9A4E1E" }}>SEASON 1 STANDING</div>
               <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 26, letterSpacing: "-0.02em", color: "#211A12", marginTop: 2 }}>{tier.name}</div>
             </div>
           </div>
@@ -68,7 +68,7 @@ export default function SeasonTierCard() {
             <div style={{ fontFamily: "var(--ed-m)", fontWeight: 800, fontSize: 26, color: "#211A12" }}>
               {signedIn ? points.toLocaleString() : "0"}<span style={{ fontSize: 13, color: "#7A6E5A", marginLeft: 5 }}>pts</span>
             </div>
-            <div style={{ fontFamily: "var(--ed-m)", fontSize: 10.5, color: "#9A4E1E", fontWeight: 700, marginTop: 2 }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontVariantNumeric: "tabular-nums", color: "#9A4E1E", fontWeight: 700, marginTop: 2 }}>
               {next ? `${toNext.toLocaleString()} to ${next.name}` : "Top tier reached"}
             </div>
           </div>
@@ -90,9 +90,9 @@ export default function SeasonTierCard() {
                 <WaxSeal seal={rungSeal(t.name, state)} size={30} style={state === "locked" ? { boxShadow: "none", borderStyle: "dashed" } : undefined} />
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   <span aria-hidden style={{ width: 5, height: 5, borderRadius: "50%", background: t.color, flexShrink: 0 }} />
-                  <span style={{ fontFamily: "var(--ed-disp)", fontSize: 9.5, fontWeight: 700, color: reached ? "#211A12" : "#9A7B4E", letterSpacing: "-0.01em" }}>{t.name}</span>
+                  <span style={{ fontFamily: "var(--ed-disp)", fontSize: 11, fontWeight: 700, color: reached ? "#211A12" : "#9A7B4E", letterSpacing: "-0.01em" }}>{t.name}</span>
                 </div>
-                <div style={{ fontFamily: "var(--ed-m)", fontSize: 8, color: "#9A7B4E" }}>{t.min >= 1000 ? `${t.min / 1000}k` : t.min}</div>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "#9A7B4E" }}>{t.min >= 1000 ? `${t.min / 1000}k` : t.min}</div>
               </div>
             );
           })}
@@ -102,7 +102,7 @@ export default function SeasonTierCard() {
         <div style={{
           position: "relative", marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
-          fontFamily: "var(--ed-body)", fontSize: 12, color: "#5C5140",
+          fontFamily: "var(--ed-body)", fontSize: 13.5, color: "#5C5140",
         }}>
           <span style={{ display: "inline-flex", flexShrink: 0 }} aria-hidden="true">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A6E5A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -111,7 +111,7 @@ export default function SeasonTierCard() {
             </svg>
           </span>
           <span>Your standing is <strong style={{ color: "#211A12" }}>snapshotted when Season 1 closes</strong> · {participants.toLocaleString()} raising now.</span>
-          <span style={{ marginLeft: "auto", fontFamily: "var(--ed-m)", fontSize: 9, color: "#9A7B4E" }}>non-financial status</span>
+          <span style={{ marginLeft: "auto", fontFamily: "var(--ed-m)", fontSize: 11, color: "#9A7B4E" }}>non-financial status</span>
         </div>
       </div>
     </div>

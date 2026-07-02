@@ -302,7 +302,7 @@ export default function MissionsCard() {
                     fontSize: 14, fontWeight: 700, fontFamily: "var(--ed-disp)", color: "#211A12",
                     textDecoration: completed ? "line-through" : "none",
                   }}>{m.title}</div>
-                  <div style={{ fontSize: 12, color: "#7A6E5A", marginTop: 1, fontFamily: "var(--ed-body)" }}>
+                  <div style={{ fontSize: 13.5, color: "#5C5140", marginTop: 1, fontFamily: "var(--ed-body)" }}>
                     {m.description}
                   </div>
                 </div>
@@ -366,7 +366,7 @@ export default function MissionsCard() {
               background: "#FBF6EC",
               border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
               color: "#211A12",
-              fontSize: 12, fontWeight: 700, fontFamily: "var(--ed-body)",
+              fontSize: 13, fontWeight: 700, fontFamily: "var(--ed-body)",
             }}>
               <Icon name="diamond" size={14} /> Complete all {today.missions.length} → <strong>+{today.bonusAllComplete}</strong> bonus
             </div>
@@ -603,6 +603,6 @@ const purchaseBtn: React.CSSProperties = {
   fontFamily: "var(--ed-disp)",
 };
 const mini: React.CSSProperties = {
-  fontSize: 10, fontFamily: "var(--ed-m)",
+  fontSize: 11, fontFamily: "var(--ed-m)",
   color: "#9A4E1E", letterSpacing: "0.12em", textTransform: "uppercase",
 };

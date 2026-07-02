@@ -55,7 +55,7 @@ function SectionIntro({ pillar }: { pillar: Pillar }) {
   return (
     <div style={{ maxWidth: 1060, margin: "18px auto 2px", padding: "0 24px" }}>
       <div style={{
-        fontSize: 10, fontFamily: "var(--ed-m)",
+        fontSize: 11, fontFamily: "var(--ed-m)",
         letterSpacing: "0.14em", color: "#9A4E1E", fontWeight: 700,
       }}>
         {eyebrow}
@@ -114,8 +114,8 @@ export default function SeasonRewardsHub({ banner }: { banner?: React.ReactNode 
                     {t.title}
                   </span>
                   <span style={{
-                    display: "block", fontSize: 11, marginTop: 1,
-                    color: sel ? "rgba(255,248,238,0.8)" : "#7A6E5A",
+                    display: "block", fontSize: 12.5, marginTop: 1,
+                    color: sel ? "rgba(252,233,207,0.92)" : "#5C5140",
                     fontFamily: "var(--ed-body)",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>
