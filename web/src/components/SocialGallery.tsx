@@ -704,6 +704,179 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
 }
 
 // ── Masonry Layout ──
+/** ALBUM view — community creations as standing record sleeves in a 3D
+ *  carousel (the "Album Carousel UI" reference). Center sleeve faces the
+ *  viewer; neighbours angle away like crate-dug vinyl. Wheel, drag, arrows
+ *  and clicking a side sleeve all navigate; the player bar below carries the
+ *  real creator/likes and opens the detail modal. */
+function AlbumCarousel({ items, onOpen, onLike }: { items: any[]; onOpen: (item: any, index: number) => void; onLike: (genId: number, index: number) => void }) {
+  const [idx, setIdx] = useState(0);
+  const n = items.length;
+  useEffect(() => { setIdx((i) => Math.min(i, Math.max(0, n - 1))); }, [n]);
+  const wheelLock = useRef(0);
+  const dragX = useRef<number | null>(null);
+  const go = (d: number) => setIdx((i) => Math.max(0, Math.min(n - 1, i + d)));
+  const cur = items[idx];
+  const curId = cur ? (cur.generation_id || cur.id) : null;
+
+  const media = (it: any) => it.photo_url || it.photo_path || null;
+  const isVideo = (it: any) => !!(it.video_url || it.video_path);
+
+  return (
+    <div
+      tabIndex={0}
+      role="listbox"
+      aria-label="Community creations carousel"
+      onKeyDown={(e) => { if (e.key === "ArrowRight") go(1); if (e.key === "ArrowLeft") go(-1); }}
+      onWheel={(e) => {
+        const now = Date.now();
+        if (now - wheelLock.current < 320) return;
+        wheelLock.current = now;
+        const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        if (Math.abs(d) > 8) go(d > 0 ? 1 : -1);
+      }}
+      onPointerDown={(e) => { dragX.current = e.clientX; }}
+      onPointerUp={(e) => {
+        if (dragX.current == null) return;
+        const dx = e.clientX - dragX.current;
+        dragX.current = null;
+        if (Math.abs(dx) > 60) go(dx < 0 ? 1 : -1);
+      }}
+      style={{ outline: "none" }}
+    >
+      <div style={{ position: "relative", height: 440, perspective: 1400, overflow: "hidden" }}>
+        {items.map((it, i) => {
+          const off = i - idx;
+          if (Math.abs(off) > 4) return null;
+          const center = off === 0;
+          const url = media(it);
+          return (
+            <div
+              key={it.generation_id || it.id}
+              onClick={() => (center ? onOpen(it, i) : setIdx(i))}
+              title={center ? "Open" : undefined}
+              style={{
+                position: "absolute", left: "50%", top: "50%", width: 300,
+                marginLeft: -150, marginTop: -195,
+                transform: `translateX(${off * 168}px) translateZ(${center ? 130 : -40 * Math.abs(off)}px) rotateY(${center ? 0 : -Math.sign(off) * 56}deg)`,
+                transformStyle: "preserve-3d",
+                zIndex: 100 - Math.abs(off),
+                transition: "transform .45s cubic-bezier(.22,.9,.3,1)",
+                cursor: "pointer",
+              }}
+            >
+              {/* printed sleeve: paper mat + gold keyline well + spine caption */}
+              <div style={{ position: "relative", background: T.paper, borderRadius: 6, padding: 9, boxShadow: center ? "var(--ed-shadow-float)" : "var(--ed-shadow-card)" }}>
+                <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", overflow: "hidden", borderRadius: 3, boxShadow: "inset 0 0 0 2px rgba(184,130,44,.5)", background: T.inset }}>
+                  {url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={url} alt={it.prompt || "creation"} draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  ) : isVideo(it) ? (
+                    <video src={it.video_url || it.video_path} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  ) : null}
+                  {center && <div className="ed-gloss" aria-hidden style={{ left: 0, opacity: 0.5 }} />}
+                  {isVideo(it) && (
+                    <span style={{ position: "absolute", right: 8, bottom: 8, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: T.creamOn, background: "rgba(33,26,18,.62)", borderRadius: 6, padding: "2px 8px" }}>▸ MOTION</span>
+                  )}
+                  {/* spine — vertical mono caption on the sleeve edge */}
+                  <div style={{
+                    position: "absolute", left: 0, top: 0, bottom: 0, width: 22,
+                    background: "linear-gradient(90deg, rgba(33,26,18,.28), rgba(33,26,18,0))",
+                    display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 8,
+                  }}>
+                    <span style={{
+                      writingMode: "vertical-rl", fontFamily: T.m, fontSize: 12, fontWeight: 700,
+                      letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(251,246,236,.92)",
+                      maxHeight: "92%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {(it.display_name || "Anonymous")} · {(it.prompt || "untitled").slice(0, 26)}
+                    </span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 7, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", color: T.muted, textTransform: "uppercase" }}>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "70%" }}>{it.display_name || "Anonymous"}</span>
+                  <span>♥ {it.likes_count || 0}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* player bar — the reference's bottom control strip, with REAL data */}
+      {cur && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12, maxWidth: 560, margin: "18px auto 0",
+          background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 999,
+          padding: "8px 10px 8px 16px", boxShadow: "var(--ed-shadow-card)",
+        }}>
+          <button onClick={() => go(-1)} disabled={idx === 0} aria-label="Previous" style={{ background: "transparent", border: "none", cursor: idx === 0 ? "default" : "pointer", fontSize: 18, color: idx === 0 ? T.hair : T.ink, padding: "0 2px" }}>‹</button>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", color: T.terraSub, textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {cur.display_name || "Anonymous"} · {idx + 1}/{n}
+            </div>
+            <div style={{ fontFamily: T.body, fontSize: 13, color: T.muted2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {cur.prompt || "untitled"}
+            </div>
+          </div>
+          <button
+            onClick={() => curId != null && onLike(curId, idx)}
+            aria-label="Like"
+            style={{ background: "transparent", border: `1px solid ${T.hair}`, borderRadius: 999, padding: "6px 12px", cursor: "pointer", fontFamily: T.m, fontSize: 12, fontWeight: 700, color: cur.is_liked ? T.terra : T.muted2 }}
+          >
+            {cur.is_liked ? "♥" : "♡"} {cur.likes_count || 0}
+          </button>
+          <button onClick={() => onOpen(cur, idx)} style={{ background: T.ink, border: "none", borderRadius: 999, padding: "7px 14px", cursor: "pointer", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", color: T.creamOn }}>
+            OPEN ▸
+          </button>
+          <button onClick={() => go(1)} disabled={idx >= n - 1} aria-label="Next" style={{ background: "transparent", border: "none", cursor: idx >= n - 1 ? "default" : "pointer", fontSize: 18, color: idx >= n - 1 ? T.hair : T.ink, padding: "0 2px" }}>›</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** LIBRARY view — the whole feed as a dense archive wall of small prints
+ *  (the "Ad Library" reference): uniform tiles, airy field behind, click
+ *  zooms into the existing detail modal. */
+function LibraryWall({ items, onOpen }: { items: any[]; onOpen: (item: any, index: number) => void }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 8 }}>
+      {items.map((it, i) => {
+        const url = it.photo_url || it.photo_path;
+        const vid = it.video_url || it.video_path;
+        return (
+          <button
+            key={it.generation_id || it.id}
+            onClick={() => onOpen(it, i)}
+            className="lib-tile mp-enter"
+            aria-label={it.prompt || "creation"}
+            style={{
+              position: "relative", padding: 3, background: T.paper, borderRadius: 8,
+              border: `1px solid ${T.hair}`, cursor: "zoom-in", overflow: "hidden",
+              boxShadow: "var(--ed-shadow-card)", animationDelay: `${Math.min(i, 20) * 22}ms`,
+            }}
+          >
+            <span style={{ display: "block", width: "100%", aspectRatio: "1 / 1", borderRadius: 5, overflow: "hidden", background: T.inset }}>
+              {url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={url} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              ) : vid ? (
+                <video src={vid} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              ) : null}
+            </span>
+            {vid && (
+              <span style={{ position: "absolute", right: 7, bottom: 7, width: 18, height: 18, borderRadius: "50%", background: "rgba(33,26,18,.62)", color: T.creamOn, fontSize: 12, lineHeight: "18px" }}>▸</span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// (Legacy masonry wall — superseded by the ALBUM/LIBRARY views above; kept
+// for reference while the new views bed in.)
 function MasonryGrid({ items, onLike, onCardClick, columnCount }: any) {
   const columns = useMemo(() => {
     const cols = Array.from({ length: columnCount }, () => ({ items: [] as any[], height: 0 }));
@@ -745,6 +918,9 @@ export default function SocialGallery() {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [columnCount, setColumnCount] = useState(4);
+  // ALBUM = 3D sleeve carousel (browse one at a time), LIBRARY = dense
+  // archive wall (survey everything, click to zoom). Owner-picked pair.
+  const [view, setView] = useState<"album" | "library">("album");
 
   useEffect(() => {
     const update = () => {
@@ -902,6 +1078,9 @@ export default function SocialGallery() {
         .gallery-search::placeholder { color: #9A7B4E }
         .gallery-search:focus { border-color: rgba(184,130,44,.55) !important; background: #FBF6EC !important }
         .sort-tab:hover { color: #211A12 !important }
+        .lib-tile { transition: transform .16s cubic-bezier(.2,.8,.2,1), box-shadow .16s ease; }
+        @media (hover: hover) { .lib-tile:hover { transform: scale(1.06); box-shadow: var(--ed-shadow-float); z-index: 3; } }
+        .lib-tile:active { transform: scale(1.0); }
       `}</style>
 
       {/* Real community stats + featured pets live in <CommunityHighlights>,
@@ -934,7 +1113,28 @@ export default function SocialGallery() {
             </span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            {/* View toggle — Album carousel vs Library wall */}
+            <div style={{ display: "flex", gap: 4, marginRight: 4 }}>
+              {([["album", "Album"], ["library", "Library"]] as const).map(([key, label]) => {
+                const on = view === key;
+                return (
+                  <button key={key} onClick={() => setView(key)} style={{
+                    background: on ? T.ink : T.paper,
+                    border: `1px solid ${on ? T.ink : T.hair}`,
+                    borderRadius: 999, padding: "6px 15px",
+                    fontFamily: T.m, fontSize: 12, cursor: "pointer",
+                    letterSpacing: "0.1em", textTransform: "uppercase",
+                    color: on ? T.creamOn : T.muted,
+                    transition: "all 0.2s", fontWeight: 700,
+                    boxShadow: on ? "var(--ed-shadow-card)" : "none",
+                  }}>
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
             {/* Type filters — inline with search */}
             <div style={{ display: "flex", gap: 4 }}>
               {[
@@ -1078,12 +1278,16 @@ export default function SocialGallery() {
             }}><Icon name="sparkling" size={15} style={{ marginRight: 4 }} /> Create the first one</button>
           )}
         </div>
-      ) : (
-        <MasonryGrid
+      ) : view === "album" ? (
+        <AlbumCarousel
           items={filteredItems}
-          columnCount={columnCount}
           onLike={handleLike}
-          onCardClick={(item: any, index: number) => { setSelectedItem(item); setSelectedIndex(index); }}
+          onOpen={(item: any, index: number) => { setSelectedItem(item); setSelectedIndex(index); }}
+        />
+      ) : (
+        <LibraryWall
+          items={filteredItems}
+          onOpen={(item: any, index: number) => { setSelectedItem(item); setSelectedIndex(index); }}
         />
       )}
 
