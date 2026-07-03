@@ -8,6 +8,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "@/lib/api";
+import Reveal from "@/components/Reveal";
 
 const T = {
   field: "#ECE4D4", paper: "#FBF6EC", inset: "#F5EFE2", ink: "#211A12", ink70: "#3A3024",
@@ -96,21 +97,23 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
                   LV.{String(active?.level ?? 1).padStart(2, "0")} · {species}{element ? ` · ${element}` : ""}
                 </div>
 
-                {/* bond */}
-                <div style={{ marginTop: 18 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: "rgba(252,233,207,.8)", textTransform: "uppercase" }}>
-                    <span>Bond</span><span>{bond} → {bond + 1}</span>
+                {/* bond — lower rail card, scroll-reveals from the left */}
+                <Reveal dir="left">
+                  <div style={{ marginTop: 18 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: "rgba(252,233,207,.8)", textTransform: "uppercase" }}>
+                      <span>Bond</span><span>{bond} → {bond + 1}</span>
+                    </div>
+                    <div style={{ marginTop: 6, height: 7, borderRadius: 999, background: "rgba(252,233,207,.25)", overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${Math.min(100, (bond % 10) * 10 + 8)}%`, background: "#FCE9CF", transition: "width .5s" }} />
+                    </div>
                   </div>
-                  <div style={{ marginTop: 6, height: 7, borderRadius: 999, background: "rgba(252,233,207,.25)", overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${Math.min(100, (bond % 10) * 10 + 8)}%`, background: "#FCE9CF", transition: "width .5s" }} />
-                  </div>
-                </div>
-                <p style={{ fontFamily: T.body, fontSize: 13, color: "rgba(252,233,207,.85)", marginTop: 12, lineHeight: 1.5 }}>
-                  Every chat grows your Bond — and {active?.name || "your pet"} remembers it all.
-                </p>
+                  <p style={{ fontFamily: T.body, fontSize: 13, color: "rgba(252,233,207,.85)", marginTop: 12, lineHeight: 1.5 }}>
+                    Every chat grows your Bond — and {active?.name || "your pet"} remembers it all.
+                  </p>
+                </Reveal>
 
                 {pets && pets.length > 1 && (
-                  <div style={{ display: "flex", gap: 6, marginTop: 16, flexWrap: "wrap" }}>
+                  <Reveal dir="left" delay={90} style={{ display: "flex", gap: 6, marginTop: 16, flexWrap: "wrap" }}>
                     {pets.map((p) => (
                       <button key={p.id} onClick={() => setActive(p)} style={{
                         fontFamily: T.body, fontWeight: 600, fontSize: 13, padding: "5px 11px", borderRadius: 999, cursor: "pointer",
@@ -118,7 +121,7 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
                         background: p.id === active?.id ? "rgba(252,233,207,.2)" : "transparent", color: "#FCE9CF",
                       }}>{p.name}</button>
                     ))}
-                  </div>
+                  </Reveal>
                 )}
               </div>
             </div>

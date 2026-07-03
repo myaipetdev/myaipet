@@ -14,6 +14,7 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
+import Reveal from "@/components/Reveal";
 import { kindIcon } from "@/lib/catch/game";
 import { rarityStock } from "@/components/Sticker";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
@@ -208,16 +209,26 @@ export default function CatCatch() {
         })}
       </div>
 
+      {/* Map panel slides in from the right as a whole — the leaflet map's
+          internals are untouched (Reveal only wraps the outer section block). */}
       {view === "map" && (
-        <Suspense fallback={<Empty>Loading map…</Empty>}>
-          <NearbyMap onCaught={(cat: Cat) => setCollection((c) => [cat, ...c])} />
-        </Suspense>
+        <Reveal dir="right">
+          <Suspense fallback={<Empty>Loading map…</Empty>}>
+            <NearbyMap onCaught={(cat: Cat) => setCollection((c) => [cat, ...c])} />
+          </Suspense>
+        </Reveal>
       )}
 
-      {view === "battle" && <AlleyClash collection={collection} />}
+      {view === "battle" && (
+        <Reveal dir="up">
+          <AlleyClash collection={collection} />
+        </Reveal>
+      )}
 
       {view === "catch" && (<>
-      {/* ── Viewfinder card ── */}
+      {/* ── Viewfinder card — pops in as one block; every phase (camera /
+             throw / reveal) lives inside untouched. ── */}
+      <Reveal dir="pop">
       <div style={{ position: "relative", borderRadius: 18, overflow: "hidden", border: `1px solid ${OUTLINE}`, background: INSET, aspectRatio: "3 / 4", maxHeight: 520, margin: "0 auto 18px", boxShadow: "var(--ed-shadow-card)" }}>
         {phase === "intro" && (
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 11, background: "linear-gradient(160deg,#123029,#1B5A4B)", padding: "24px 22px", textAlign: "center", overflow: "hidden" }}>
@@ -244,7 +255,7 @@ export default function CatCatch() {
               <CameraIcon size={20} /> Open camera
             </button>
             {camErr && <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: ".06em", color: "#F2B8A0", maxWidth: 300 }}>{camErr}</div>}
-            <label className="ed-press" style={{ padding: "10px 20px", borderRadius: 999, border: "1px solid rgba(252,233,207,.55)", background: "transparent", color: "#FCE9CF", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}>
+            <label className="ed-press ed-wipe" style={{ padding: "10px 20px", borderRadius: 999, border: "1px solid rgba(252,233,207,.55)", background: "transparent", color: "#FCE9CF", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}>
               <UploadIcon size={18} /> Upload a photo
               <input type="file" accept="image/*" onChange={onUpload} style={{ display: "none" }} />
             </label>
@@ -293,14 +304,17 @@ export default function CatCatch() {
               <div style={{ fontFamily: DISP, fontSize: 22, fontWeight: 700, color: INK, maxWidth: 320, lineHeight: 1.2 }}>{result.antiCheat ? "Nice try!" : "No catch"}</div>
               <div style={{ fontFamily: BODY, fontSize: 14, color: MUTED, maxWidth: 320, lineHeight: 1.5 }}>{result.reason}</div>
               <button onClick={again} style={bigBtn}>Try again</button>
-              <button onClick={done} style={{ ...ghostBtn, marginTop: 2 }}>Done</button>
+              <button onClick={done} className="ed-wipe" style={{ ...ghostBtn, marginTop: 2 }}>Done</button>
             </div>
           )
         )}
       </div>
+      </Reveal>
 
-      {/* ── Field Journal dashboard ── */}
-      <FieldJournal collection={collection} />
+      {/* ── Field Journal dashboard — rises in on scroll ── */}
+      <Reveal dir="up">
+        <FieldJournal collection={collection} />
+      </Reveal>
 
       {/* ── Album ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 26, marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${OUTLINE}` }}>
@@ -324,8 +338,14 @@ export default function CatCatch() {
       {collection.length === 0 ? (
         <Empty>No catches yet — go find an animal!</Empty>
       ) : (
+        // Collection cards fly up into the grid as they scroll into view
+        // (stagger capped at 8 steps; fires once per card).
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 14 }}>
-          {sortCollection(collection, sort).map((c) => <CatCard key={c.id} cat={c} compact />)}
+          {sortCollection(collection, sort).map((c, i) => (
+            <Reveal key={c.id} dir="up" delay={Math.min(i, 8) * 60}>
+              <CatCard cat={c} compact />
+            </Reveal>
+          ))}
         </div>
       )}
       </>)}
@@ -417,7 +437,7 @@ function RevealCard({ cat, points, onAgain, onDone }: { cat: Cat; points: number
       </div>
       <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
         <button onClick={onAgain} style={bigBtn}>Catch another</button>
-        <button onClick={onDone} style={{ ...ghostBtn, borderColor: "rgba(251,246,236,0.4)", color: "#FBF6EC" }}>Done</button>
+        <button onClick={onDone} className="ed-wipe" style={{ ...ghostBtn, borderColor: "rgba(251,246,236,0.4)", color: "#FBF6EC" }}>Done</button>
       </div>
     </div>
   );

@@ -37,6 +37,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import PetCard, { TOPO_MASK } from "@/components/PetCard";
 import Icon from "@/components/Icon";
+import Reveal from "@/components/Reveal";
 import useCountUp from "@/hooks/useCountUp";
 import { computeRarity, rarityColor, RARITY_ORDER, RARITY_THRESHOLD, rarityTier, type Rarity } from "@/lib/tcg/theme";
 
@@ -342,7 +343,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
         {tab === "catch" ? catchTab : (
           <Empty>
             Couldn&apos;t reach your collection.{" "}
-            <button onClick={loadPets} style={{ background: "none", border: "none", padding: 0, color: GOLD, fontWeight: 700, fontFamily: T.body, fontSize: 14.5, cursor: "pointer" }}>Retry ▸</button>
+            <button onClick={loadPets} className="ed-underline-slide" style={{ backgroundColor: "transparent", border: "none", padding: 0, color: GOLD, fontWeight: 700, fontFamily: T.body, fontSize: 14.5, cursor: "pointer" }}>Retry ▸</button>
           </Empty>
         )}
       </Shell>
@@ -356,7 +357,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
       {tabStrip}
       {tab === "catch"
         ? catchTab
-        : <Empty>Adopt a pet first — then collect its card. <a href="/?section=my%20pet" onClick={navTo("my pet")} style={{ color: GOLD, fontWeight: 700, textDecoration: "none" }}>Adopt ▸</a></Empty>}
+        : <Empty>Adopt a pet first — then collect its card. <a href="/?section=my%20pet" onClick={navTo("my pet")} className="ed-underline-slide" style={{ color: GOLD, fontWeight: 700, textDecoration: "none" }}>Adopt ▸</a></Empty>}
     </Shell>
   );
 
@@ -398,31 +399,33 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                 );
               })}
             </div>
-            <button onClick={() => setSort((s) => (s === "rarity" ? "name" : "rarity"))} style={{
+            <button onClick={() => setSort((s) => (s === "rarity" ? "name" : "rarity"))} className="ed-underline-slide" style={{
               fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-              color: T.mono, background: "none", border: "none", cursor: "pointer", padding: "6px 2px",
+              color: T.mono, backgroundColor: "transparent", border: "none", cursor: "pointer", padding: "6px 2px",
             }}>
               Sort: {sort === "rarity" ? "Rarity ↓" : "A → Z"}
             </button>
           </div>
 
-          {/* Album grid — staggered entrance (capped at 12 steps), shared
-              lift-on-hover verb on every tile including slots + catch. */}
+          {/* Album grid — cards FLY IN from below as they scroll into view
+              (viewport-triggered <Reveal>, stagger capped at 8 steps); the
+              shared lift-on-hover verb stays on the inner tile. */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(196px, 1fr))", gap: 18 }}>
             {visible.map((p, i) => (
-              <button
-                key={`${p.id}-${bust[p.id] || 0}`}
-                onClick={() => setOpenId(p.id)}
-                className="mp-enter ed-card-hover"
-                style={{
-                  display: "block", width: "100%", padding: 0, margin: 0, border: "none",
-                  background: "none", font: "inherit", color: "inherit", textAlign: "inherit",
-                  cursor: "pointer", borderRadius: 18, animationDelay: `${Math.min(i, 12) * 45}ms`,
-                }}
-                aria-label={`Open ${p.name}'s card`}
-              >
-                <PetCard petId={p.id} maxWidth={260} placeholder={{ name: p.name, rarity: p.rarity }} />
-              </button>
+              <Reveal key={`${p.id}-${bust[p.id] || 0}`} dir="up" delay={Math.min(i, 8) * 70}>
+                <button
+                  onClick={() => setOpenId(p.id)}
+                  className="ed-card-hover"
+                  style={{
+                    display: "block", width: "100%", padding: 0, margin: 0, border: "none",
+                    background: "none", font: "inherit", color: "inherit", textAlign: "inherit",
+                    cursor: "pointer", borderRadius: 18,
+                  }}
+                  aria-label={`Open ${p.name}'s card`}
+                >
+                  <PetCard petId={p.id} maxWidth={260} placeholder={{ name: p.name, rarity: p.rarity }} />
+                </button>
+              </Reveal>
             ))}
 
             {/* Honest filter empty state — never a blank void. Progress line is
@@ -451,22 +454,25 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
             {/* Real remaining adoption slots — only on the unfiltered view, never
                 fake card numbers. Labelled honestly as an empty slot to adopt. */}
             {filter === "All" && Array.from({ length: emptySlots }).map((_, i) => (
-              <a
-                key={`slot-${i}`} href="/?section=my%20pet" onClick={navTo("my pet")}
-                className="mp-enter ed-card-hover"
-                style={{ textDecoration: "none", display: "block", borderRadius: 18, animationDelay: `${Math.min(visible.length + i, 12) * 45}ms` }}
-              >
-                <SlotTile />
-              </a>
+              <Reveal key={`slot-${i}`} dir="up" delay={Math.min(visible.length + i, 8) * 70}>
+                <a
+                  href="/?section=my%20pet" onClick={navTo("my pet")}
+                  className="ed-card-hover"
+                  style={{ textDecoration: "none", display: "block", borderRadius: 18 }}
+                >
+                  <SlotTile />
+                </a>
+              </Reveal>
             ))}
 
             {/* Catch-more tile — flips to this screen's own Catch tab (the old
                 /?section=catch destination now aliases right back here). */}
             {filter === "All" && (
-              <CatchTile
-                onClick={() => { switchTab("catch"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                delay={Math.min(visible.length + emptySlots, 12) * 45}
-              />
+              <Reveal dir="up" delay={Math.min(visible.length + emptySlots, 8) * 70}>
+                <CatchTile
+                  onClick={() => { switchTab("catch"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                />
+              </Reveal>
             )}
           </div>
         </div>
@@ -478,22 +484,32 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
 
       {tab === "battle" && (
         <div>
+          {/* Matchup controls fly in from opposite wings — your corner from the
+              left, the opponent's from the right (alternating dir per side). */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "flex-end", marginBottom: 18 }}>
-            <Field label="Your pet">
-              <select value={myPetId ?? ""} onChange={(e) => setMyPetId(Number(e.target.value))} style={select}>
-                {pets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </Field>
-            <div style={{ fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.mono, paddingBottom: 10 }}>vs</div>
-            <Field label="Opponent">
-              <select value={oppId ?? ""} onChange={(e) => setOppId(Number(e.target.value))} style={select}>
-                <option value="">Pick an opponent…</option>
-                {oppList.map((o) => <option key={o.petId} value={o.petId}>{o.name} · Lv{o.level} · {o.element}</option>)}
-              </select>
-            </Field>
-            <button onClick={runBattle} disabled={!myPetId || !oppId || battling} style={{ ...btn, padding: "11px 22px", opacity: !myPetId || !oppId || battling ? 0.5 : 1 }}>
-              {battling ? "Battling…" : "Battle!"}
-            </button>
+            <Reveal dir="left">
+              <Field label="Your pet">
+                <select value={myPetId ?? ""} onChange={(e) => setMyPetId(Number(e.target.value))} style={select}>
+                  {pets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </Field>
+            </Reveal>
+            <Reveal dir="fade" delay={140}>
+              <div style={{ fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.mono, paddingBottom: 10 }}>vs</div>
+            </Reveal>
+            <Reveal dir="right" delay={90}>
+              <Field label="Opponent">
+                <select value={oppId ?? ""} onChange={(e) => setOppId(Number(e.target.value))} style={select}>
+                  <option value="">Pick an opponent…</option>
+                  {oppList.map((o) => <option key={o.petId} value={o.petId}>{o.name} · Lv{o.level} · {o.element}</option>)}
+                </select>
+              </Field>
+            </Reveal>
+            <Reveal dir="pop" delay={180}>
+              <button onClick={runBattle} disabled={!myPetId || !oppId || battling} style={{ ...btn, padding: "11px 22px", opacity: !myPetId || !oppId || battling ? 0.5 : 1 }}>
+                {battling ? "Battling…" : "Battle!"}
+              </button>
+            </Reveal>
           </div>
           {oppList.length === 0 && <div style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted, marginBottom: 16 }}>No other pets to battle yet — invite a friend to adopt one.</div>}
 
@@ -547,7 +563,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                   const text = `${wName} won the duel! ${battle.you.name} ⚔️ ${battle.opponent.name} 🃏`;
                   window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=MyAIPet`, "_blank", "width=600,height=420");
                 }} style={btn}>𝕏 Share result</button>
-                <a href={`/card/battle/${battle.matchup}`} target="_blank" rel="noopener noreferrer" style={{ ...ghost, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>View result page ▸</a>
+                <a href={`/card/battle/${battle.matchup}`} target="_blank" rel="noopener noreferrer" className="ed-wipe" style={{ ...ghost, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>View result page ▸</a>
               </div>
             </div>
           )}
@@ -573,11 +589,12 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
               <button
                 onClick={() => illustrate(openPet.id, openPet.name)}
                 disabled={illustrating === openPet.id}
+                className="ed-wipe"
                 style={{ ...ghost, opacity: illustrating === openPet.id ? 0.6 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
               >
                 {illustrating === openPet.id ? "Illustrating…" : <><Icon name="sparkling" size={14} /> Illustrate · 5 cr</>}
               </button>
-              <a href={cardUrl(openPet.id)} target="_blank" rel="noopener noreferrer" style={{ ...ghost, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>View card page ▸</a>
+              <a href={cardUrl(openPet.id)} target="_blank" rel="noopener noreferrer" className="ed-wipe" style={{ ...ghost, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>View card page ▸</a>
             </div>
             {/* Errors surface INSIDE the overlay — a 402 must never hide under the scrim */}
             {err && (
@@ -612,7 +629,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
               <button onClick={confirmIllustrate} disabled={illustrating != null} style={{ ...btn, padding: "11px 22px", opacity: illustrating != null ? 0.6 : 1 }}>
                 {illustrating != null ? "Saving…" : "Set as card art"}
               </button>
-              <button onClick={() => { setPreview(null); setErr(null); }} disabled={illustrating != null} style={{ ...ghost, padding: "11px 22px" }}>Keep original</button>
+              <button onClick={() => { setPreview(null); setErr(null); }} disabled={illustrating != null} className="ed-wipe" style={{ ...ghost, padding: "11px 22px" }}>Keep original</button>
             </div>
             {/* confirmIllustrate PATCH failures surface here, above the scrim */}
             {err && (
@@ -788,15 +805,15 @@ function SlotTile() {
 
 // "Catch more in the wild" — dark tile that flips to the Catch tab in-place
 // (Catch is a tab of this screen now, so no href / cross-section navigation).
-function CatchTile({ onClick, delay = 0 }: { onClick?: () => void; delay?: number }) {
+// Entrance now comes from the <Reveal> wrapper at the call site.
+function CatchTile({ onClick }: { onClick?: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="mp-enter ed-card-hover" style={{
+    <button type="button" onClick={onClick} className="ed-card-hover" style={{
       border: "none", font: "inherit", cursor: "pointer",
       width: "100%", aspectRatio: "5 / 7", borderRadius: 18,
       background: "radial-gradient(120% 90% at 50% 120%, #4A2A12 0%, #241206 55%, #17100A 100%)",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       gap: 12, textAlign: "center", padding: 16, boxShadow: "var(--ed-shadow-card)",
-      animationDelay: `${delay}ms`,
     }}>
       <Icon name="paw" size={26} style={{ opacity: 0.9 }} />
       <div style={{ fontFamily: T.disp, fontSize: 17, fontWeight: 800, color: "#FBF6EC", lineHeight: 1.15 }}>Catch more<br />in the wild</div>

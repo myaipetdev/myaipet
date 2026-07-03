@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { SEASON_TIERS } from "@/lib/season";
+import Reveal from "@/components/Reveal";
 
 const EVOLUTION_STAGES: Record<string, { name: string; color: string }> = {
   baby:      { name: "Baby",      color: "#a3e635" },
@@ -65,7 +66,6 @@ export default function Leaderboard() {
   return (
     <div style={{ padding: "0 16px 60px", maxWidth: 900, margin: "0 auto", paddingTop: 80 }}>
       <style>{`
-        @keyframes leaderFadeUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
         @keyframes crownBounce { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-3px) } }
         @keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
         @media (max-width: 768px) {
@@ -140,7 +140,7 @@ export default function Leaderboard() {
 
       {/* My Rank */}
       {myRank && !loading && (
-        <div style={{
+        <Reveal dir="up" style={{
           display: "flex", alignItems: "center", gap: 14,
           padding: "14px 20px", borderRadius: 14, marginBottom: 20,
           background: "#FBF6EC",
@@ -179,12 +179,12 @@ export default function Leaderboard() {
               {(myRank.points || 0).toLocaleString()}
             </div>
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Season Reward Tiers — single source of truth: lib/season.ts */}
       {!loading && !error && entries.length > 0 && (
-        <div style={{
+        <Reveal dir="right" style={{
           background: "#FBF6EC",
           border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           borderRadius: 20,
@@ -259,7 +259,7 @@ export default function Leaderboard() {
               unlock claimable merch with your AI pet&apos;s artwork printed on real products.
             </span>
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Loading State */}
@@ -292,7 +292,7 @@ export default function Leaderboard() {
         const podiumHeights = [0, 24, 0]; // 1st is elevated
 
         return (
-          <div className="lb-podium" style={{
+          <Reveal dir="pop" className="lb-podium" style={{
             display: "flex", gap: 14, marginBottom: 20,
             alignItems: "flex-end", justifyContent: "center",
           }}>
@@ -317,7 +317,6 @@ export default function Leaderboard() {
                   textAlign: "center",
                   position: "relative",
                   boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
-                  animation: `leaderFadeUp 0.4s ease-out ${rank * 0.1}s both`,
                   transform: isFirst ? "scale(1.04)" : "scale(1)",
                 }}>
                   {/* Crown / Medal */}
@@ -408,13 +407,13 @@ export default function Leaderboard() {
                 </div>
               );
             })}
-          </div>
+          </Reveal>
         );
       })()}
 
-      {/* Remaining Rankings */}
+      {/* Remaining Rankings — one Reveal on the table container, never per-row */}
       {!loading && !error && rest.length > 0 && (
-        <div style={{
+        <Reveal dir="up" style={{
           background: "#FBF6EC", borderRadius: 16,
           border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", overflow: "hidden",
           boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
@@ -447,7 +446,6 @@ export default function Leaderboard() {
                 padding: "12px 18px", alignItems: "center",
                 borderBottom: i < rest.length - 1 ? "1px solid var(--ed-hair, rgba(33,26,18,.13))" : "none",
                 background: entry.isMe ? "rgba(190,79,40,0.06)" : i % 2 === 0 ? "transparent" : "rgba(33,26,18,0.02)",
-                animation: `leaderFadeUp 0.3s ease-out ${(i + 3) * 0.04}s both`,
                 transition: "background 0.2s",
               }}>
                 {/* Rank */}
@@ -529,7 +527,7 @@ export default function Leaderboard() {
               </div>
             );
           })}
-        </div>
+        </Reveal>
       )}
 
       {/* Empty State */}
@@ -545,7 +543,7 @@ export default function Leaderboard() {
 
       {/* Evolution Legend */}
       {!loading && !error && entries.length > 0 && (
-        <div style={{
+        <Reveal dir="up" style={{
           marginTop: 24, padding: "16px 20px", borderRadius: 14,
           background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
         }}>
@@ -580,7 +578,7 @@ export default function Leaderboard() {
               </div>
             ))}
           </div>
-        </div>
+        </Reveal>
       )}
     </div>
   );

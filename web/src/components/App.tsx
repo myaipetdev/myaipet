@@ -10,6 +10,7 @@ import useCountUp from "@/hooks/useCountUp";
 import Nav from "@/components/Nav";
 import Icon from "@/components/Icon";
 import Hero from "@/components/Hero";
+import Reveal from "@/components/Reveal";
 import Stats from "@/components/Stats";
 import Feed from "@/components/Feed";
 import Pricing from "@/components/Pricing";
@@ -122,7 +123,9 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
   const checkedIn = data?.checkedInToday ?? false;
 
   return (
-    <div className="mp-enter mp-enter-2" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
+    // Scroll-revealed (was mount-time mp-enter-2). The check-in ceremony
+    // animations inside (sealPress, slideIn) are untouched.
+    <Reveal dir="up" delay={90} style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
       <div style={{
         borderRadius: 16, padding: "14px 20px", marginBottom: 8,
         background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -207,7 +210,7 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
           <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E" }}>Connect wallet to earn</span>
         )}
       </div>
-    </div>
+    </Reveal>
   );
 }
 
@@ -254,7 +257,9 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
   const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
-    <div className="mp-enter mp-enter-1" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
+    // Full-width terracotta ticket — scroll-revealed with the "pop" grammar
+    // (was mount-time mp-enter-1).
+    <Reveal dir="pop" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
       {/* Terracotta foil ticket: brand fill, cream content, soft floating shadow,
           one perforated cream tear edge. Editorial — no hard keyline, no offset. */}
       <div
@@ -365,7 +370,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
           </div>
         </div>
       </div>
-    </div>
+    </Reveal>
   );
 }
 
@@ -396,6 +401,20 @@ export default function App() {
     // landed mid-page/at the footer). Reset to top; the Pricing deep-links
     // below fire 100–150ms later, so they still win over this reset.
     window.scrollTo({ top: 0 });
+  }, [section]);
+
+  // Stuck-entrance safety: the section outlet enters via a CSS keyframe that
+  // STARTS at opacity 0. If the animation clock stalls (hidden/background tab,
+  // capture pipelines), the whole section could sit invisible — force any
+  // still-running entrance to its end state shortly after the switch.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const t = window.setTimeout(() => {
+      document.querySelectorAll<HTMLElement>(".ed-section-enter").forEach((el) => {
+        el.getAnimations?.().forEach((a) => { try { a.finish(); } catch { /* already done */ } });
+      });
+    }, 900);
+    return () => clearTimeout(t);
   }, [section]);
 
   // Landing on Pricing from /studio: Nav's "Get More Credits" and Studio's
@@ -546,13 +565,13 @@ export default function App() {
               />
               <SeasonBanner seasonPoints={seasonPoints} />
               <CheckinCard isAuthenticated={isAuthenticated} onPointsChanged={refreshUser} />
-              <div className="home-section-pad mp-enter mp-enter-3" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
+              <Reveal dir="up" delay={180} className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
                 <Stats stats={stats} />
-              </div>
+              </Reveal>
               {activities.length > 0 && (
-                <div className="home-section-pad mp-enter mp-enter-4" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
+                <Reveal dir="up" delay={270} className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
                   <Feed activities={activities} />
-                </div>
+                </Reveal>
               )}
               {/* Pitch: why raise + how to earn (closes the gap between Hero and Pricing) */}
               <RaisePitch onNavigate={setSection} />

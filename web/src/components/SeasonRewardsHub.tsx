@@ -17,6 +17,7 @@
 import { useState, type ReactNode } from "react";
 
 import Icon from "@/components/Icon";
+import Reveal from "@/components/Reveal";
 import MyCard from "@/components/MyCard";
 import SeasonTierCard from "@/components/SeasonTierCard";
 import HourlyDropBanner from "@/components/HourlyDropBanner";
@@ -53,7 +54,7 @@ const INTRO: Record<Pillar, { eyebrow: string; line: string }> = {
 function SectionIntro({ pillar }: { pillar: Pillar }) {
   const { eyebrow, line } = INTRO[pillar];
   return (
-    <div style={{ maxWidth: 1060, margin: "18px auto 2px", padding: "0 24px" }}>
+    <Reveal dir="fade" delay={80} style={{ maxWidth: 1060, margin: "18px auto 2px", padding: "0 24px" }}>
       <div style={{
         fontSize: 13, fontFamily: "var(--ed-m)",
         letterSpacing: "0.14em", color: "#9A4E1E", fontWeight: 700,
@@ -66,7 +67,7 @@ function SectionIntro({ pillar }: { pillar: Pillar }) {
       }}>
         {line}
       </div>
-    </div>
+    </Reveal>
   );
 }
 
@@ -81,7 +82,7 @@ export default function SeasonRewardsHub({ banner }: { banner?: React.ReactNode 
       <SeasonTierCard />
 
       {/* Pillar tabs — big, labelled, so each pillar's purpose reads instantly. */}
-      <div style={{ maxWidth: 1060, margin: "16px auto 0", padding: "0 24px", width: "100%" }}>
+      <Reveal dir="up" style={{ maxWidth: 1060, margin: "16px auto 0", padding: "0 24px", width: "100%" }}>
         <div style={{
           display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8,
         }}>
@@ -126,7 +127,7 @@ export default function SeasonRewardsHub({ banner }: { banner?: React.ReactNode 
             );
           })}
         </div>
-      </div>
+      </Reveal>
 
       {/* Pillar content */}
       <SectionIntro pillar={pillar} />

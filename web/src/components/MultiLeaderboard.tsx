@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
+import Reveal from "@/components/Reveal";
 
 const METRICS = [
   { key: "streak",   label: "Streak King",     icon: "fire" },
@@ -77,7 +78,7 @@ export default function MultiLeaderboard() {
   const rest = data?.entries.slice(3) || [];
 
   return (
-    <div className="mp-enter" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
+    <div style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
         background: "#FBF6EC", borderRadius: 18,
         border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -174,9 +175,9 @@ export default function MultiLeaderboard() {
           </div>
         )}
 
-        {/* Top-3 Podium */}
+        {/* Top-3 Podium — pops in as one ceremony block (rows stay unwrapped) */}
         {!loading && top3.length > 0 && (
-          <div style={{
+          <Reveal dir="pop" style={{
             padding: "20px 22px 16px",
             background: "#F5EFE2",
             borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -237,12 +238,13 @@ export default function MultiLeaderboard() {
                 </div>
               );
             })}
-          </div>
+          </Reveal>
         )}
 
-        {/* Remaining rows */}
-        <div style={{ padding: "6px 0" }}>
-          {!loading && rest.map(e => (
+        {/* Remaining rows — one Reveal around the whole table (long list) */}
+        {!loading && rest.length > 0 && (
+        <Reveal dir="up" style={{ padding: "6px 0" }}>
+          {rest.map(e => (
             <div key={e.rank + e.wallet} className="mp-lift" style={{
               display: "flex", alignItems: "center", gap: 14,
               padding: "12px 22px",
@@ -273,7 +275,8 @@ export default function MultiLeaderboard() {
               </div>
             </div>
           ))}
-        </div>
+        </Reveal>
+        )}
       </div>
     </div>
   );

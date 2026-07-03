@@ -6,6 +6,7 @@ import { useCoinbaseOnramp } from "@/hooks/useCoinbaseOnramp";
 import { useDirectUsdtPay } from "@/hooks/useDirectUsdtPay";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
+import Reveal, { MaskedTitle } from "@/components/Reveal";
 
 const EARN_METHODS = [
   { icon: "paw", label: "Daily check-in", desc: "Show up. Your pet remembers.", reward: "+10 pts" },
@@ -136,10 +137,11 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         @media (max-width: 768px) {
           .pricing-root { padding: 40px 16px !important; }
           .pricing-earn-grid { grid-template-columns: repeat(2, 1fr) !important; }
-        .pricing-earn-grid > div { padding: 12px 10px !important; }
-        .pricing-earn-grid > div span:first-child { font-size: 16px !important; }
-        .pricing-earn-grid > div div > div:first-child { font-size: 13px !important; }
-        .pricing-earn-grid > div div > div:nth-child(2) { font-size: 13px !important; }
+        /* (.earn-card, not > div — each card now sits inside a Reveal wrapper) */
+        .pricing-earn-grid .earn-card { padding: 12px 10px !important; }
+        .pricing-earn-grid .earn-card > span:first-child { font-size: 16px !important; }
+        .pricing-earn-grid .earn-card div > div:first-child { font-size: 13px !important; }
+        .pricing-earn-grid .earn-card div > div:nth-child(2) { font-size: 13px !important; }
           .pricing-cards-grid { grid-template-columns: 1fr !important; max-width: 400px !important; margin-left: auto !important; margin-right: auto !important; }
         }
         @media (max-width: 480px) {
@@ -147,8 +149,10 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           .pricing-earn-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
-      {/* Section: companionship-first economy (tone-aligned with landing) */}
-      <div className="mp-enter" style={{ textAlign: "center", marginBottom: 48 }}>
+      {/* Section: companionship-first economy (tone-aligned with landing) —
+          scroll-revealed: badge fades, headline rises out of its print line. */}
+      <div style={{ textAlign: "center", marginBottom: 48 }}>
+        <Reveal dir="fade">
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 16px",
           borderRadius: 999, background: "#F5EFE2",
@@ -158,20 +162,25 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
             COMPANIONSHIP · OWNED
           </span>
         </div>
-        <h2 style={{
-          fontFamily: "var(--ed-disp)", fontSize: 36, fontWeight: 800,
-          color: "#211A12", marginBottom: 12, letterSpacing: "-0.025em", lineHeight: 1.1,
-        }}>
-          Made with care, not hype.
-        </h2>
+        </Reveal>
+        <MaskedTitle
+          as="h2"
+          lines={["Made with care, not hype."]}
+          style={{
+            fontFamily: "var(--ed-disp)", fontSize: 36, fontWeight: 800,
+            color: "#211A12", marginBottom: 12, letterSpacing: "-0.025em", lineHeight: 1.1,
+          }}
+        />
+        <Reveal dir="fade" delay={120}>
         <p style={{
           fontFamily: "var(--ed-body)", fontSize: 17, color: "#5C5140",
           maxWidth: 600, margin: "0 auto", lineHeight: 1.65, fontWeight: 500,
         }}>
           Credits power AI image &amp; video creation with your pet — the same
           companion you raise, the same memory that travels with you. Spend on
-          what serves the bond. Points details in the <a href="/docs" style={{ color: "#9A4E1E", fontWeight: 700 }}>docs</a>.
+          what serves the bond. Points details in the <a href="/docs" className="ed-underline-slide" style={{ color: "#9A4E1E", fontWeight: 700, textDecoration: "none" }}>docs</a>.
         </p>
+        </Reveal>
       </div>
 
       {paused && (
@@ -193,15 +202,16 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         </div>
       )}
 
-      {/* Earn methods grid */}
+      {/* Earn methods grid — cards fly up with a 90ms stagger */}
       <div className="pricing-earn-grid" style={{
         display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 48,
       }}>
-        {EARN_METHODS.map((m) => (
-          <div key={m.label} style={{
+        {EARN_METHODS.map((m, i) => (
+          <Reveal key={m.label} dir="up" delay={Math.min(i, 8) * 90}>
+          <div className="earn-card" style={{
             background: "#FBF6EC", borderRadius: 14,
             border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", padding: "18px 16px",
-            display: "flex", alignItems: "flex-start", gap: 12,
+            display: "flex", alignItems: "flex-start", gap: 12, height: "100%",
           }}>
             <span style={{ flexShrink: 0, display: "inline-flex", lineHeight: 0 }}><Icon name={m.icon} size={22} /></span>
             <div>
@@ -220,10 +230,12 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
               </span>
             </div>
           </div>
+          </Reveal>
         ))}
       </div>
 
       {/* Purchase section */}
+      <Reveal dir="fade">
       <div style={{ textAlign: "center", marginBottom: 24 }}>
         <h3 style={{
           fontFamily: "var(--ed-disp)", fontSize: 22, fontWeight: 700,
@@ -237,6 +249,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
             : "Credits power AI image & video creation with your pet"}
         </p>
       </div>
+      </Reveal>
 
       {error && (
         <div style={{
@@ -305,8 +318,9 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         }
       `}</style>
       <div className="pricing-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, maxWidth: 860, margin: "0 auto" }}>
-        {plans.map((p) => (
-          <div key={p.name} className={`pricing-card${p.pop ? " popular" : ""}`}>
+        {plans.map((p, i) => (
+          <Reveal key={p.name} dir="up" delay={Math.min(i, 8) * 90}>
+          <div className={`pricing-card${p.pop ? " popular" : ""}`} style={{ height: "100%" }}>
             {p.pop && (
               <div style={{
                 position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)",
@@ -394,6 +408,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
               </button>
             )}
           </div>
+          </Reveal>
         ))}
       </div>
 

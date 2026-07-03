@@ -23,6 +23,20 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import { seasonTier } from "@/lib/season";
 import Icon from "@/components/Icon";
+import Reveal, { MaskedTitle, useInvert } from "@/components/Reveal";
+
+// Two stacked arrows in a 1em mask — parent button/link hover slides the
+// second one up (.ed-arrow-swap in globals.css). Presentation only.
+function ArrowSwap() {
+  return (
+    <span className="ed-arrow-swap" aria-hidden>
+      <span>
+        <span style={{ display: "block", height: "1em", lineHeight: 1 }}>→</span>
+        <span style={{ display: "block", height: "1em", lineHeight: 1 }}>→</span>
+      </span>
+    </span>
+  );
+}
 
 interface ProjectionData {
   signedIn: boolean;
@@ -95,19 +109,26 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
   const me = data?.me;
   const st = me ? seasonTier(me.points) : null;
 
+  // The page's ONE inversion (E06) — the closing adopt band flips field →
+  // terracotta at 60% visibility, and back on scroll-out.
+  const invertRef = useInvert();
+
   return (
     <section style={{ padding: "60px 40px", maxWidth: 1060, margin: "0 auto" }}>
       {/* Headline */}
       <div style={{ textAlign: "center", marginBottom: 30 }}>
-        <span style={pill}>RAISE TO EARN</span>
-        <h2 style={headline}>Your pet earns Season Rewards.</h2>
+        <Reveal dir="fade"><span style={pill}>RAISE TO EARN</span></Reveal>
+        <MaskedTitle as="h2" lines={["Your pet earns Season Rewards."]} style={headline} />
+        <Reveal dir="fade" delay={120}>
         <p style={sub}>
           Every interaction stacks loyalty points. Raise &amp; create to climb the
           Season 1 leaderboard before it closes.
         </p>
+        </Reveal>
       </div>
 
       {/* ── 1. PERSONAL PROJECTION (the punch) ── */}
+      <Reveal dir="pop">
       <div style={{
         background: "linear-gradient(135deg, #1A130C 0%, #211A12 100%)",
         borderRadius: 18, padding: "28px 32px", marginBottom: 18,
@@ -175,7 +196,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
                   padding: "6px 14px", borderRadius: 8, border: "none",
                   background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontWeight: 700, fontSize: 13, cursor: "pointer",
                   fontFamily: "var(--ed-disp)",
-                }}>Raise →</button>
+                }}>Raise <ArrowSwap /></button>
               </div>
             )}
           </div>
@@ -218,14 +239,16 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
           </div>
         )}
       </div>
+      </Reveal>
 
-      {/* ── 2. LIVE TICKER + 3. PET THOUGHT ── */}
+      {/* ── 2. LIVE TICKER + 3. PET THOUGHT — two-column row: left in from left, right in from right ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 14, marginBottom: 38 }} className="pitch-twin-row">
         {/* Ticker */}
+        <Reveal dir="left">
         <div style={{
           background: "#FBF6EC", borderRadius: 14, padding: "16px 18px",
           border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-          maxHeight: 180, overflow: "hidden", position: "relative",
+          maxHeight: 180, height: "100%", overflow: "hidden", position: "relative",
         }}>
           <div style={{ ...miniLabel, color: "#7A6E5A", marginBottom: 8 }}>LIVE · LAST 7 DAYS</div>
           {ticker.length === 0 ? (
@@ -254,11 +277,13 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
             </div>
           )}
         </div>
+        </Reveal>
 
         {/* Pet thought */}
+        <Reveal dir="right" delay={90}>
         <div style={{
           background: "#F5EFE2",
-          borderRadius: 14, padding: "16px 18px",
+          borderRadius: 14, padding: "16px 18px", height: "100%",
           border: "1px solid rgba(190,79,40,0.18)",
         }}>
           <div style={{ ...miniLabel, color: "#9A4E1E", marginBottom: 8 }}>
@@ -272,12 +297,12 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
               }}>
                 "{thought.text}"
               </div>
-              <button onClick={() => onNavigate?.("my pet")} style={{
+              <button className="ed-wipe" onClick={() => onNavigate?.("my pet")} style={{
                 marginTop: 12, padding: "6px 12px", borderRadius: 8,
                 border: "1px solid rgba(190,79,40,0.3)", background: "#FBF6EC",
                 color: "#9A4E1E", fontSize: 13, fontWeight: 700, cursor: "pointer",
                 fontFamily: "var(--ed-disp)",
-              }}>Reply →</button>
+              }}>Reply <ArrowSwap /></button>
             </>
           ) : (
             <div style={{ fontSize: 13, color: "#9A7B4E", fontStyle: "italic" }}>
@@ -285,32 +310,92 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
             </div>
           )}
         </div>
+        </Reveal>
       </div>
 
-      {/* ── HOW grid (unchanged, kept tight) ── */}
+      {/* ── HOW grid (content unchanged; cards fly up with a 90ms stagger) ── */}
+      <Reveal dir="fade">
       <div style={{ textAlign: "center", marginBottom: 14 }}>
         <span style={{ ...miniLabel, color: "#7A6E5A" }}>HOW TO CLIMB</span>
       </div>
+      </Reveal>
       <div style={{
         display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14,
       }} className="pitch-how-grid">
+        <Reveal dir="up" delay={0}>
         <PathCard step="01" icon="paw" title="Care daily"
           body="Feed, play, talk. 5 free / day. A 7-day streak earns a Memory NFT (mints at on-chain go-live)."
           earn="+5 pts per care" cta="Start raising"
           onClick={() => onNavigate?.("my pet")} accent="#5C8A4E" />
+        </Reveal>
+        <Reveal dir="up" delay={90}>
         <PathCard step="02" icon="fire" title="Keep your streak"
           body="Show up daily. A 7-day streak pays a bonus, 30 days pays more — and earns a Memory NFT at on-chain go-live."
           earn="+100 (7d) · +500 (30d)" cta="Check in"
           onClick={() => onNavigate?.("my pet")} accent="#A8432B" />
+        </Reveal>
+        <Reveal dir="up" delay={180}>
         <PathCard step="03" icon="film-reel" title="Create together"
           body="Generate AI images & videos starring your pet. Every creation stacks Season Rewards points."
           earn="+10 image · +25 video" cta="Create"
           onClick={() => onNavigate?.("create")} accent="#BE4F28" />
+        </Reveal>
+        <Reveal dir="up" delay={270}>
         <PathCard step="04" icon="trophy" title="Climb leaderboard"
           body="Rank by Season Rewards points. Top raisers earn rewards when Season 1 closes."
           earn="Top 100 = rewards" cta="See ranks"
           onClick={() => onNavigate?.("leaderboard")} accent="#9A4E1E" />
+        </Reveal>
       </div>
+
+      {/* ── CLOSING ADOPT PUSH — the page's ONE inversion (E06): field → terracotta
+          at 60% visibility, chips flip cream. Copy reuses the real earn values above. ── */}
+      <Reveal dir="pop">
+      <div
+        ref={invertRef}
+        className="ed-invert"
+        style={{
+          marginTop: 34, borderRadius: 22, padding: "46px 30px", textAlign: "center",
+          background: "#FBF6EC", color: "#211A12",
+          border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+          boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
+        }}
+      >
+        <div style={{
+          fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
+          letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.75, marginBottom: 12,
+        }}>
+          Season 1 · Raise to Earn
+        </div>
+        <div style={{
+          fontFamily: "var(--ed-disp)", fontSize: "clamp(30px,4.5vw,48px)", fontWeight: 800,
+          letterSpacing: "-0.03em", lineHeight: 1.05, marginBottom: 18,
+        }}>
+          Raise. Create. Climb.
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginBottom: 26 }}>
+          {["care +5", "create +10", "evolve +200"].map((c) => (
+            <span key={c} className="ed-invert-chip" style={{
+              fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
+              padding: "6px 14px", borderRadius: 999,
+              background: "rgba(190,79,40,0.10)", color: "#9A4E1E",
+              border: "1px solid rgba(190,79,40,0.2)",
+            }}>{c}</span>
+          ))}
+        </div>
+        <button
+          className="ed-invert-chip"
+          onClick={() => onNavigate?.("my pet")}
+          style={{
+            padding: "14px 34px", borderRadius: 12, border: "1px solid transparent", cursor: "pointer",
+            background: "#BE4F28", color: "#FCE9CF",
+            fontFamily: "var(--ed-disp)", fontSize: 15, fontWeight: 800, letterSpacing: "-0.01em",
+          }}
+        >
+          Adopt <ArrowSwap /> Start earning
+        </button>
+      </div>
+      </Reveal>
 
       <div style={{
         marginTop: 26, fontSize: 13, color: "#5C5140",
@@ -352,7 +437,7 @@ function PathCard({ step, icon, title, body, earn, cta, onClick, accent }: {
       padding: "20px 18px", borderRadius: 16, background: "#FBF6EC",
       border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
       boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
-      display: "flex", flexDirection: "column", gap: 8,
+      display: "flex", flexDirection: "column", gap: 8, height: "100%",
       transition: "transform 160ms ease, box-shadow 160ms ease",
       cursor: onClick ? "pointer" : "default",
     }}

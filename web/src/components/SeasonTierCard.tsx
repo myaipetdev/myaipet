@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import { SEASON_TIERS, seasonTier } from "@/lib/season";
 import { WaxSeal, type SealSpec } from "@/components/Sticker";
+import Reveal from "@/components/Reveal";
 
 const GOLD_FOIL = "repeating-linear-gradient(110deg,#f3e2bc 0 5px,#dcb45f 5px 10px,#f3e2bc 10px 15px)";
 /** A season-tier rung as a wax seal: foil for the current tier, terracotta for
@@ -45,7 +46,7 @@ export default function SeasonTierCard() {
   const { tier, next, toNext, progress } = seasonTier(points);
 
   return (
-    <div style={{ maxWidth: 1060, margin: "12px auto 0", padding: "0 24px", width: "100%" }}>
+    <Reveal dir="pop" style={{ maxWidth: 1060, margin: "12px auto 0", padding: "0 24px", width: "100%" }}>
       <div style={{
         position: "relative", overflow: "hidden",
         background: "#FBF6EC", borderRadius: 20, padding: "22px 24px", color: "#211A12",
@@ -114,6 +115,6 @@ export default function SeasonTierCard() {
           <span style={{ marginLeft: "auto", fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E" }}>non-financial status</span>
         </div>
       </div>
-    </div>
+    </Reveal>
   );
 }

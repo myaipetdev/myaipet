@@ -33,6 +33,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
+import Reveal from "@/components/Reveal";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import PetLoraPanel from "@/components/PetLoraPanel";
 import useCountUp from "@/hooks/useCountUp";
@@ -900,7 +901,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       <path d="M15.5 10l6-3v10l-6-3z" />
                     </svg>Video from prompt</button>
                 )}
-                <button onClick={() => { setView("idle"); setResultUrl(null); }} className="mp-enter" style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "100ms" }}><RetryGlyph size={13} /> Start over</button>
+                <button onClick={() => { setView("idle"); setResultUrl(null); }} className="mp-enter ed-wipe" style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "100ms" }}><RetryGlyph size={13} /> Start over</button>
                 {!isDemo && pet && pet.id > 0 && !/\.(mp4|webm)$/i.test(resultUrl) && (
                   <>
                     <button
@@ -981,8 +982,8 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   );
                 })()}
                 <div style={{ flex: 1 }} />
-                <a href={resultUrl} download className="mp-enter" style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "300ms" }}><DownloadGlyph size={13} /> Download</a>
-                <a href={resultUrl} target="_blank" rel="noreferrer" className="mp-enter" style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "350ms" }}><ExternalGlyph size={13} /> Open</a>
+                <a href={resultUrl} download className="mp-enter ed-wipe" style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "300ms" }}><DownloadGlyph size={13} /> Download</a>
+                <a href={resultUrl} target="_blank" rel="noreferrer" className="mp-enter ed-wipe" style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "350ms" }}><ExternalGlyph size={13} /> Open</a>
               </div>
             )}
 
@@ -1040,17 +1041,19 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   display: "flex", alignItems: "center", gap: 5,
                 }}><Icon name="sparkling" size={12} /> WHAT YOU CAN MAKE</div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-                  {TEMPLATES.slice(0, 4).map(t => {
+                  {TEMPLATES.slice(0, 4).map((t, i) => {
                     const ex = TEMPLATE_EXAMPLES[t.id];
                     if (!ex) return null;
                     return (
-                      <button key={t.id} onClick={() => applyTemplate(t)} className="mp-lift" title={t.title} aria-label={`Use template: ${t.title}`} style={{
-                        padding: 4, background: T.paper, borderRadius: 10, overflow: "hidden",
-                        border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
-                        cursor: "pointer", aspectRatio: "1 / 1",
-                      }}>
-                        <span style={{ display: "block", width: "100%", height: "100%", borderRadius: 7, boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)", background: `url(${ex}) center/cover no-repeat` }} />
-                      </button>
+                      <Reveal key={t.id} dir="up" delay={Math.min(i, 8) * 70}>
+                        <button onClick={() => applyTemplate(t)} className="mp-lift" title={t.title} aria-label={`Use template: ${t.title}`} style={{
+                          display: "block", width: "100%", padding: 4, background: T.paper, borderRadius: 10, overflow: "hidden",
+                          border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
+                          cursor: "pointer", aspectRatio: "1 / 1",
+                        }}>
+                          <span style={{ display: "block", width: "100%", height: "100%", borderRadius: 7, boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)", background: `url(${ex}) center/cover no-repeat` }} />
+                        </button>
+                      </Reveal>
                     );
                   })}
                 </div>
@@ -1346,7 +1349,11 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
 
           {/* Pet-LoRA: train this pet's exact face (renders only when the
               feature is enabled server-side and a real pet is selected). */}
-          {pet && !isDemo && <PetLoraPanel petId={pet.id} petName={pet.name} />}
+          {pet && !isDemo && (
+            <Reveal dir="left">
+              <PetLoraPanel petId={pet.id} petName={pet.name} />
+            </Reveal>
+          )}
 
           {/* Templates — one tap loads a full, pet-anchored scene + flips to
               video. The card art previews the vibe; tap, then hit Generate. */}
@@ -1364,7 +1371,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             <div style={{
               display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10,
             }}>
-              {TEMPLATES.map(t => {
+              {TEMPLATES.map((t, i) => {
                 const ex = TEMPLATE_EXAMPLES[t.id];
                 const vid = TEMPLATE_EXAMPLE_VIDEOS[t.id];
                 // Cream paper chip for the emoji mark — printed, not floating.
@@ -1373,8 +1380,8 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   border: `1px solid ${T.hair}`, borderRadius: 8, padding: "3px 6px",
                 };
                 return (
+                  <Reveal key={t.id} dir="up" delay={Math.min(i, 8) * 70}>
                   <button
-                    key={t.id}
                     onClick={() => applyTemplate(t)}
                     // Item #25-4: no autoplaying wall of videos — motion previews
                     // on a fine-pointer hover only; touch keeps the poster.
@@ -1387,6 +1394,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       if (v) { v.pause(); v.currentTime = 0; }
                     } : undefined}
                     style={{
+                      width: "100%", height: "100%",
                       textAlign: "left", padding: 0, borderRadius: 14, overflow: "hidden",
                       border: `1px solid ${T.hair}`, background: T.paper, cursor: "pointer",
                       boxShadow: "var(--ed-shadow-card)",
@@ -1451,6 +1459,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       </div>
                     </div>
                   </button>
+                  </Reveal>
                 );
               })}
             </div>
@@ -1549,13 +1558,13 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
         </button>
         )}
 
-        {/* ── Recent history strip ── */}
+        {/* ── Recent history strip — scroll-reveals from below ── */}
         {history.length > 0 ? (
-          <div className="mp-enter-5" style={{ marginTop: 6 }}>
+          <Reveal dir="up" style={{ marginTop: 6 }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
               <div style={panelLabel}>RECENT</div>
               {!isDemo && (
-                <button onClick={openGallery} style={{
+                <button onClick={openGallery} className="ed-underline-slide" style={{
                   background: "none", border: "none", cursor: "pointer", padding: 0,
                   fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
                   color: T.studio, textTransform: "uppercase",
@@ -1618,9 +1627,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                 </div>
               ))}
             </div>
-          </div>
+          </Reveal>
         ) : (
-          <div className="mp-enter-5" style={{
+          <Reveal dir="up" style={{
             marginTop: 6, padding: "22px 24px",
             background: T.paper,
             border: `1px dashed ${T.hair}`,
@@ -1634,13 +1643,13 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                 Your generations will appear here. Click any to reuse the prompt.
               </div>
             </div>
-          </div>
+          </Reveal>
         )}
 
         {/* ── Exploration notes: honest research directions — no dates, no
             commitments (D5). Below the actionable flow so it doesn't push the
-            Generate CTA + recent work down on first load. ── */}
-        <div style={{
+            Generate CTA + recent work down on first load. Pops in on scroll. ── */}
+        <Reveal dir="pop" style={{
           marginTop: 12,
           background: T.paper,
           color: T.ink, borderRadius: 18, padding: "22px 24px",
@@ -1689,7 +1698,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               body="Studying whether owners could ever share or license their pet's trained identity model. Idea stage only."
             />
           </div>
-        </div>
+        </Reveal>
       </div>
 
       {/* ── "View all" gallery overlay (item #19): the full 50-row history the

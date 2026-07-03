@@ -30,6 +30,7 @@ import { getAuthHeaders } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/Toast";
 import Icon from "@/components/Icon";
+import Reveal from "@/components/Reveal";
 
 interface MissionView {
   id: string;
@@ -182,7 +183,7 @@ export default function MissionsCard() {
   const totalPossible = today.earnedToday + today.remainingToday + (allComplete ? 0 : today.bonusAllComplete);
 
   return (
-    <div className="mp-enter mp-enter-1" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
+    <div style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
         background: "#FBF6EC", borderRadius: 18,
         border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", overflow: "hidden",
@@ -239,7 +240,7 @@ export default function MissionsCard() {
               {today.streak.pending_apology_days > 1 ? `(${today.streak.pending_apology_days} days)` : ""} —
               maybe say hi?
             </span>
-            <a href="/?section=my pet" style={{
+            <a href="/?section=my pet" className="ed-wipe" style={{
               padding: "5px 12px", borderRadius: 8,
               background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
               color: "#211A12", fontWeight: 700, fontSize: 13,
@@ -272,13 +273,14 @@ export default function MissionsCard() {
           </div>
         )}
 
-        {/* Mission rows */}
+        {/* Mission rows — fly up one after another as the list scrolls in */}
         <div style={{ padding: "10px 0" }}>
-          {today.missions.map(m => {
+          {today.missions.map((m, i) => {
             const completed = m.status === "completed";
             const busy = busyId === m.id;
             return (
-              <div key={m.id} style={{
+              <Reveal key={m.id} dir="up" delay={Math.min(i, 8) * 80}>
+              <div style={{
                 padding: "14px 24px",
                 display: "flex", alignItems: "center", gap: 14,
                 opacity: completed ? 0.62 : 1,
@@ -316,11 +318,12 @@ export default function MissionsCard() {
                   <a href={m.cta.href} className="mp-lift" style={ctaBtnPrimary}>{m.cta.label} →</a>
                 )}
                 {!completed && m.verifier === "manual" && (
-                  <button onClick={() => markDone(m.id)} disabled={busy} className="mp-lift" style={{
+                  <button onClick={() => markDone(m.id)} disabled={busy} className="mp-lift ed-wipe" style={{
                     ...ctaBtnGhost, opacity: busy ? 0.5 : 1,
                   }}>{busy ? "…" : "Done"}</button>
                 )}
               </div>
+              </Reveal>
             );
           })}
         </div>

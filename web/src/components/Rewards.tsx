@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import Icon from "@/components/Icon";
+import Reveal from "@/components/Reveal";
 
 interface RewardItem {
   id: number;
@@ -692,9 +693,9 @@ export default function Rewards() {
         </p>
       </div>
 
-      {/* Daily Check-In */}
+      {/* Daily Check-In — slides in from the left like the drop banner */}
       {streakData && (
-        <div style={{
+        <Reveal dir="left" style={{
           background: "#FBF6EC",
           border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
@@ -789,11 +790,11 @@ export default function Rewards() {
           >
             {checkingIn ? "..." : streakData.checkedInToday ? "Checked In \u2713" : "Check In"}
           </button>
-        </div>
+        </Reveal>
       )}
 
       {/* How It Works */}
-      <div style={styles.howItWorks}>
+      <Reveal dir="up" style={styles.howItWorks}>
         <h3 style={styles.howTitle}>How It Works</h3>
         <div style={styles.stepsRow}>
           <div style={styles.step}>
@@ -820,10 +821,10 @@ export default function Rewards() {
             </div>
           </div>
         </div>
-      </div>
+      </Reveal>
 
       {/* Points Bar */}
-      <div style={styles.pointsBar}>
+      <Reveal dir="up" style={styles.pointsBar}>
         <div style={styles.pointsLeft}>
           <Icon name="coin" size={32} />
           <div>
@@ -837,10 +838,10 @@ export default function Rewards() {
             {affordableCount} redeemable &middot; {unlockedCount} unlocked
           </div>
         </div>
-      </div>
+      </Reveal>
 
       {/* Your Ranking Tier */}
-      <div style={{
+      <Reveal dir="up" style={{
         background: userTier
           ? `linear-gradient(135deg, ${userTier.color}08, ${userTier.color}15)`
           : "linear-gradient(135deg, rgba(107,114,128,0.04), rgba(107,114,128,0.08))",
@@ -907,7 +908,7 @@ export default function Rewards() {
             </div>
           ))}
         </div>
-      </div>
+      </Reveal>
 
       {/* Status Message */}
       {message && (
@@ -924,18 +925,24 @@ export default function Rewards() {
         </div>
       )}
 
-      {/* Rewards Grid */}
+      {/* Rewards Grid — catalog cards fly up with a capped stagger */}
       <div style={styles.grid}>
-        {REWARDS_CATALOG.map((item) => {
+        {REWARDS_CATALOG.map((item, i) => {
           const state = getButtonState(item);
           const isLocked = state === "locked" || state === "no_rank" || state === "tier_locked";
           const isInsufficient = state === "insufficient";
 
           return (
-            <div
+            <Reveal
               key={item.id}
+              dir="up"
+              delay={Math.min(i, 8) * 80}
+              style={{ display: "flex", flexDirection: "column" }}
+            >
+            <div
               style={{
                 ...styles.card,
+                flex: 1,
                 ...(isLocked ? styles.cardLocked : {}),
               }}
               onMouseEnter={(e) => {
@@ -989,6 +996,7 @@ export default function Rewards() {
                 {/* Action Buttons */}
                 <div style={styles.buttonRow}>
                   <button
+                    className="ed-wipe"
                     style={styles.previewButton}
                     onClick={() => setPreviewItem(item)}
                   >
@@ -1032,12 +1040,13 @@ export default function Rewards() {
                 </div>
               </div>
             </div>
+            </Reveal>
           );
         })}
       </div>
 
       {/* Your Journey */}
-      <div style={styles.journey}>
+      <Reveal dir="up" style={styles.journey}>
         <h3 style={styles.journeyTitle}>Your Journey</h3>
         <div style={styles.progressOuter}>
           <div
@@ -1068,7 +1077,7 @@ export default function Rewards() {
             );
           })}
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }

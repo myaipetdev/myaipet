@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { api } from "@/lib/api";
 import Icon from "@/components/Icon";
+import Reveal from "@/components/Reveal";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 
 // ── Collectible Editorial tokens ──
@@ -1263,7 +1264,7 @@ export default function SocialGallery() {
             {search ? "Try different keywords" : feedFailed ? "Check your connection and try again" : "Be the first to create something"}
           </p>
           {feedFailed && !search && (
-            <button onClick={() => loadFeed()} style={{
+            <button onClick={() => loadFeed()} className="ed-wipe" style={{
               marginTop: 16, padding: "9px 22px", borderRadius: 8,
               border: `1px solid ${T.hair}`, background: T.paper, cursor: "pointer",
               fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em",
@@ -1279,16 +1280,24 @@ export default function SocialGallery() {
           )}
         </div>
       ) : view === "album" ? (
-        <AlbumCarousel
-          items={filteredItems}
-          onLike={handleLike}
-          onOpen={(item: any, index: number) => { setSelectedItem(item); setSelectedIndex(index); }}
-        />
+        /* One pop Reveal around the whole carousel block — sleeves inside keep
+           their own 3D transforms untouched. */
+        <Reveal dir="pop">
+          <AlbumCarousel
+            items={filteredItems}
+            onLike={handleLike}
+            onOpen={(item: any, index: number) => { setSelectedItem(item); setSelectedIndex(index); }}
+          />
+        </Reveal>
       ) : (
-        <LibraryWall
-          items={filteredItems}
-          onOpen={(item: any, index: number) => { setSelectedItem(item); setSelectedIndex(index); }}
-        />
+        /* One Reveal around the whole wall; tiles keep their existing
+           mp-enter mount stagger so above-the-fold tiles aren't scroll-gated. */
+        <Reveal dir="up">
+          <LibraryWall
+            items={filteredItems}
+            onOpen={(item: any, index: number) => { setSelectedItem(item); setSelectedIndex(index); }}
+          />
+        </Reveal>
       )}
 
       {!loading && hasMore && !search && filteredItems.length > 0 && (
@@ -1296,6 +1305,7 @@ export default function SocialGallery() {
           <button
             onClick={loadMore}
             disabled={loadingMore}
+            className="ed-wipe"
             style={{
               padding: "11px 32px", borderRadius: 8,
               border: `1px solid ${T.hair}`, background: T.paper,

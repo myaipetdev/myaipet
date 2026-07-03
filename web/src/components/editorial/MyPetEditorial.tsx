@@ -15,6 +15,7 @@
 
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
+import Reveal from "@/components/Reveal";
 import CollectibleFrame, { Motes } from "@/components/editorial/CollectibleFrame";
 import PaywallModal, { type PaywallInfo } from "@/components/PaywallModal";
 import useCountUp from "@/hooks/useCountUp";
@@ -336,8 +337,9 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
        request.reward.exp ? `+${request.reward.exp} XP` : null].filter(Boolean).join(" ")
     : "";
   const showMemoryBox = !!(request?.type || memoryLoaded);
-  // Fixed per-slot entrance delays (poster 0ms → catch tile). Static values so a
-  // late-mounting card (memory box after fetch) never shifts its siblings' delays.
+  // Fixed per-slot mount delays for the FIRST-VIEWPORT cards only (chips → care).
+  // Lower cards now scroll-reveal via <Reveal> with equally static delays, so a
+  // late-mounting card (memory box after fetch) never shifts its siblings.
   const rise = (slot: number) => ({ animationDelay: `${slot * 70}ms` });
 
   const closeClassic = () => { setShowClassic(null); load(); };
@@ -412,7 +414,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {/* pet switcher — above the fold, beside the identity chips */}
             {(pets.length > 1 || pets.length < petSlots) && (
-              <div className="ed-rise" style={{ ...rise(1), display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap" }}>
+              <Reveal dir="up" style={{ display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap" }}>
                 <span style={{ fontFamily: T.m, fontSize: 13, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase" }}>Your pets</span>
                 {pets.map((p) => (
                   <button key={p.id} onClick={() => switchPet(p)} style={{
@@ -422,12 +424,12 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                   }}>{p.name} · Lv {p.level}</button>
                 ))}
                 {pets.length < petSlots && (
-                  <button onClick={() => setShowClassic("create")} style={{
+                  <button onClick={() => setShowClassic("create")} className="ed-wipe" style={{
                     fontFamily: T.body, fontWeight: 600, fontSize: 13, padding: "6px 14px", borderRadius: 999, cursor: "pointer",
                     border: "1.5px dashed rgba(154,78,30,.45)", background: "transparent", color: "#9A4E1E",
                   }}>+ Adopt</button>
                 )}
-              </div>
+              </Reveal>
             )}
 
             {/* identity chips */}
@@ -502,10 +504,13 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               )}
             </div>
 
-            {/* memory / live request — the file-record box, wired to real endpoints */}
+            {/* memory / live request — the file-record box, wired to real endpoints.
+                Scroll-reveals from the right; the fulfill-pulse lives on the keyed
+                inner div so it re-fires without re-running the entrance. */}
             {showMemoryBox && (
-              <div key={`req-${reqGlow}`} className="ed-rise" style={{
-                ...rise(6), border: "1.5px dashed #E8C079", borderRadius: 16, padding: "15px 16px", background: "rgba(255,250,235,.5)",
+              <Reveal dir="right">
+              <div key={`req-${reqGlow}`} style={{
+                border: "1.5px dashed #E8C079", borderRadius: 16, padding: "15px 16px", background: "rgba(255,250,235,.5)",
                 animation: reqGlow > 0 ? `${reqGlow % 2 ? "mpReqPulseA" : "mpReqPulseB"} 1.4s ease-out both` : undefined,
               }}>
                 {request?.type && (
@@ -532,19 +537,23 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                   </div>
                 )}
               </div>
+              </Reveal>
             )}
 
-            {/* chat — primary companion action */}
-            <button onClick={() => onNavigate?.("chat")} className="ed-rise" style={{ ...rise(7), display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, textAlign: "left", border: "none", cursor: "pointer", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", borderRadius: 18, padding: "15px 18px", color: "#FFF8EE", boxShadow: "0 12px 24px -14px rgba(226,125,12,.7)" }}>
+            {/* chat — primary companion action (scroll-reveal, fixed 90ms slots) */}
+            <Reveal dir="right" delay={90}>
+            <button onClick={() => onNavigate?.("chat")} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, textAlign: "left", border: "none", cursor: "pointer", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", borderRadius: 18, padding: "15px 18px", color: "#FFF8EE", boxShadow: "0 12px 24px -14px rgba(226,125,12,.7)" }}>
               <span>
                 <span style={{ display: "block", fontFamily: T.disp, fontWeight: 800, fontSize: 17 }}>Chat with {active.name}</span>
                 <span style={{ display: "block", fontFamily: T.body, fontSize: 13, color: "#FCE9CF", marginTop: 2 }}>Talk live — every chat grows your Bond.</span>
               </span>
               <span style={{ fontSize: 20, flexShrink: 0 }}>→</span>
             </button>
+            </Reveal>
 
             {/* studio teaser — warm-dark panel, studio-purple accent, foil-gold headline */}
-            <button onClick={() => onNavigate?.("create")} className="ed-rise" style={{ ...rise(8), textAlign: "left", cursor: "pointer", background: "#1E1710", border: "1px solid rgba(107,79,160,.5)", borderRadius: 18, padding: 18, color: "rgba(251,246,236,.8)", boxShadow: "var(--ed-shadow-dark)" }}>
+            <Reveal dir="right" delay={180}>
+            <button onClick={() => onNavigate?.("create")} style={{ width: "100%", textAlign: "left", cursor: "pointer", background: "#1E1710", border: "1px solid rgba(107,79,160,.5)", borderRadius: 18, padding: 18, color: "rgba(251,246,236,.8)", boxShadow: "var(--ed-shadow-dark)" }}>
               <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: "#6B4FA0" }}>PRO PET STUDIO</div>
               <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 19, margin: "5px 0 12px", color: "#E8C77E" }}>Make {active.name} a star ✦</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -553,14 +562,17 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                 ))}
               </div>
             </button>
+            </Reveal>
 
             {/* catch — warm-dark panel, catch-teal accent */}
-            <button onClick={() => onNavigate?.("catch")} className="ed-rise" style={{ ...rise(9), textAlign: "left", cursor: "pointer", background: "#1E1710", border: "1px solid rgba(26,126,104,.5)", borderRadius: 18, padding: 18, color: "rgba(251,246,236,.8)", boxShadow: "var(--ed-shadow-dark)" }}>
+            <Reveal dir="right" delay={270}>
+            <button onClick={() => onNavigate?.("catch")} style={{ width: "100%", textAlign: "left", cursor: "pointer", background: "#1E1710", border: "1px solid rgba(26,126,104,.5)", borderRadius: 18, padding: 18, color: "rgba(251,246,236,.8)", boxShadow: "var(--ed-shadow-dark)" }}>
               <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: "#1A7E68" }}>FIELD ALBUM</div>
               <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 18, marginTop: 5, color: "#E8C77E" }}>Catch in the wild</div>
               <p style={{ fontSize: 13, color: "rgba(251,246,236,.8)", margin: "7px 0 12px", lineHeight: 1.5 }}>Find real animals out there and turn them into collectibles for {active.name}&apos;s field album.</p>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "rgba(26,126,104,.25)", color: T.creamOn, fontFamily: T.disp, fontWeight: 700, fontSize: 13.5, borderRadius: 11, padding: "9px 15px" }}>Open camera →</span>
             </button>
+            </Reveal>
           </div>
         </div>
 
@@ -568,14 +580,14 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
             PetProfile until each is re-homed into the editorial system. They open
             in a paper modal (compact mode hides PetProfile's duplicate
             header/stats/care row) so two care loops never share one page. */}
-        <div style={{ marginTop: 24, paddingTop: 18, borderTop: `1px solid ${T.hair}`, textAlign: "center" }}>
-          <button onClick={() => setShowClassic("tools")} style={{
+        <Reveal dir="up" style={{ marginTop: 24, paddingTop: 18, borderTop: `1px solid ${T.hair}`, textAlign: "center" }}>
+          <button onClick={() => setShowClassic("tools")} className="ed-underline-slide" style={{
             fontFamily: T.m, fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase",
             color: T.mono, background: "transparent", border: "none", cursor: "pointer",
           }}>
             Wardrobe · Memories · Evolution ↗
           </button>
-        </div>
+        </Reveal>
       </div>
 
       {/* combo toast — paper, hairline, card shadow */}
@@ -610,7 +622,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: T.mono }}>
                 {showClassic === "create" ? "ADOPT A NEW PET" : "CLASSIC TOOLS — WARDROBE · MEMORIES · EVOLUTION"}
               </span>
-              <button onClick={closeClassic} style={{
+              <button onClick={closeClassic} className="ed-wipe" style={{
                 border: `1px solid ${T.hair}`, background: T.field, borderRadius: 9, padding: "5px 12px",
                 fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.muted2, cursor: "pointer",
               }}>CLOSE ✕</button>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
+import Reveal, { MaskedTitle } from "@/components/Reveal";
 import PetClawConsole from "@/components/PetClawConsole";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import ModelsPanel from "@/components/ModelsPanel";
@@ -797,7 +798,7 @@ function ChromeExtensionSection() {
         boxShadow: CARD_SHADOW,
       }}
     >
-      <div style={{ padding: 30 }}>
+      <Reveal dir="up" style={{ padding: 30 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
           <span style={{ fontSize: 22, display: "inline-flex", color: TERRA }}><Icon name="extension-icon" size={22} /></span>
           <h2 style={{ fontFamily: DISP, fontSize: 24, fontWeight: 800, color: INK, letterSpacing: "-0.02em" }}>Desktop Companion Extension</h2>
@@ -819,12 +820,13 @@ function ChromeExtensionSection() {
             <strong> &ldquo;Connect your CLI&rdquo;</strong> above. Without it, the extension can&apos;t tell which pet is yours.
           </p>
         </div>
-      </div>
+      </Reveal>
 
-      {/* Two-column: features left, popup mockup right */}
+      {/* Two-column: features left, popup mockup right — split flies in from
+          opposite edges (left column ← , mockup aside → ). */}
       <div style={{ display: "flex", gap: 0, flexWrap: "wrap", borderTop: `1px solid ${HAIR}` }}>
         {/* Left: features + steps */}
-        <div style={{ flex: "1 1 280px", padding: "24px 30px", borderRight: `1px solid ${HAIR}` }}>
+        <Reveal dir="left" threshold={0.1} style={{ flex: "1 1 280px", padding: "24px 30px", borderRight: `1px solid ${HAIR}` }}>
           <div className="sov-2col" style={{ gap: 10, marginBottom: 24 }}>
             {[
               { icon: "paw", title: "Always Alive", desc: "Your pet runs in the background and sends push notifications." },
@@ -883,10 +885,10 @@ function ChromeExtensionSection() {
           <div style={{ marginTop: 8, fontFamily: MONO, fontSize: 13, color: MONO_CLR, letterSpacing: "0.1em" }}>
             Developer-mode install
           </div>
-        </div>
+        </Reveal>
 
         {/* Right: popup mockup */}
-        <div className="sov-split-aside" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "center", background: FIELD }}>
+        <Reveal dir="right" threshold={0.1} className="sov-split-aside" style={{ padding: "24px 20px", display: "flex", flexDirection: "column", alignItems: "center", background: FIELD }}>
           <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: MONO_CLR, letterSpacing: "0.14em", marginBottom: 12 }}>POPUP PREVIEW</div>
           {/* Extension popup mockup — a realistic dark device preview, framed
               softly on the warm field (no hard offset shadow, no purple glow). */}
@@ -994,7 +996,7 @@ function ChromeExtensionSection() {
           <div style={{ marginTop: 10, fontFamily: MONO, fontSize: 13, color: MONO_CLR, textAlign: "center" }}>
             Actual extension popup (360×580px)
           </div>
-        </div>
+        </Reveal>
       </div>
     </div>
   );
@@ -1331,9 +1333,9 @@ export default function SovereigntyDashboard() {
 
         {/* Bring your own model — merged into the PetClaw (developer) screen.
             Connection is a CLI/SDK action; the web form is a manual fallback. */}
-        <div style={{ marginBottom: 40 }}>
+        <Reveal dir="up" threshold={0.1} style={{ marginBottom: 40 }}>
           <ModelsPanel />
-        </div>
+        </Reveal>
 
         {/* Big two-column hero */}
         <div className="sov-2col sov-hero-grid" style={{ gap: 48, alignItems: "center" }}>
@@ -1360,10 +1362,11 @@ export default function SovereigntyDashboard() {
                 ON-CHAIN AT GO-LIVE
               </span>
             </div>
-            <h1 style={{ fontFamily: DISP, fontSize: 52, fontWeight: 800, letterSpacing: "-0.04em", color: INK, lineHeight: 1.0, margin: "0 0 16px" }}>
-              Your Pet.<br />
-              <span style={{ color: TERRA }}>Truly Yours.</span>
-            </h1>
+            <MaskedTitle
+              as="h1"
+              lines={["Your Pet.", <span style={{ color: TERRA }}>Truly Yours.</span>]}
+              style={{ fontFamily: DISP, fontSize: 52, fontWeight: 800, letterSpacing: "-0.04em", color: INK, lineHeight: 1.0, margin: "0 0 16px" }}
+            />
             <p style={{ fontFamily: BODY, fontSize: 16, color: MUTED2, lineHeight: 1.7, margin: "0 0 28px", maxWidth: 380 }}>
               Every memory, every conversation, every bond — owned by you. Not us. Export your pet&apos;s full soul anytime; its on-chain anchor and inheritance activate at go-live.
             </p>
@@ -1372,11 +1375,11 @@ export default function SovereigntyDashboard() {
                 { n: "4", l: "Channels" },
                 { n: "100%", l: "Data Ownership" },
                 { n: "∞", l: "Memory" },
-              ].map(({ n, l }) => (
-                <div key={l} style={{ textAlign: "center" }}>
+              ].map(({ n, l }, i) => (
+                <Reveal key={l} dir="up" delay={i * 90} style={{ textAlign: "center" }}>
                   <div style={{ fontFamily: DISP, fontSize: 26, fontWeight: 800, color: INK, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{n}</div>
                   <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>{l}</div>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -1385,7 +1388,7 @@ export default function SovereigntyDashboard() {
               (same artifact language as My Pet / World Cup). Demo pets are
               LABELLED — never presented as the user's own. */}
           {selectedPet && (
-            <div style={{ display: "flex", justifyContent: "center" }}>
+            <Reveal dir="right" style={{ display: "flex", justifyContent: "center" }}>
               <div style={{
                 position: "relative", background: TERRA, borderRadius: 22,
                 padding: "34px 36px 44px", boxShadow: CARD_SHADOW, overflow: "visible",
@@ -1415,7 +1418,7 @@ export default function SovereigntyDashboard() {
                   </div>
                 )}
               </div>
-            </div>
+            </Reveal>
           )}
         </div>
       </div>
@@ -1468,7 +1471,7 @@ export default function SovereigntyDashboard() {
         <>
           {soul ? (
             /* ── Soul Identity Card — warm editorial spec sheet ── */
-            <div className="sov-card" style={{ marginBottom: 28 }}>
+            <Reveal dir="up" style={{ marginBottom: 28 }}>
               <p className="sov-section-sub" style={{ marginBottom: 16 }}>Soul Identity</p>
               <div style={{
                 display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12,
@@ -1498,7 +1501,7 @@ export default function SovereigntyDashboard() {
               </div>
 
               {soul.on_chain && soul.genesis_hash && (
-                <a href={`${BSCSCAN}/tx/${soul.genesis_hash}`} target="_blank" rel="noopener noreferrer" style={{
+                <a href={`${BSCSCAN}/tx/${soul.genesis_hash}`} target="_blank" rel="noopener noreferrer" className="ed-wipe" style={{
                   display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14,
                   padding: "7px 14px", borderRadius: 999, background: INSET,
                   border: `1px solid ${HAIR}`, color: TERRA_SUB,
@@ -1507,11 +1510,11 @@ export default function SovereigntyDashboard() {
                   View on BscScan ↗
                 </a>
               )}
-            </div>
+            </Reveal>
           ) : (
             /* No on-chain soul yet — explain the holding-period state honestly
                instead of a fake "initializing" spinner that never resolves. */
-            <div className="sov-card" style={{
+            <Reveal dir="up" style={{
               padding: "24px 24px", borderRadius: 16, marginBottom: 28,
               background: PAPER, border: `1.5px dashed ${TERRA}`, boxShadow: CARD_SHADOW,
             }}>
@@ -1524,12 +1527,13 @@ export default function SovereigntyDashboard() {
                 unlocks inheritance) mints once the on-chain holding period ends. You can export your
                 complete memory ledger any time with <strong>Export SOUL Data</strong> below.
               </div>
-            </div>
+            </Reveal>
           )}
 
           {/* ───── Persona Evolution Timeline ───── */}
-          <div
-            className="sov-card"
+          <Reveal
+            dir="up"
+            threshold={0.1}
             style={{
               padding: 30,
               borderRadius: 20,
@@ -1708,11 +1712,11 @@ export default function SovereigntyDashboard() {
                 })}
               </div>
             )}
-          </div>
+          </Reveal>
 
           {/* ───── Inheritance Card ───── */}
-          <div
-            className="sov-card"
+          <Reveal
+            dir="up"
             style={{
               padding: 30,
               borderRadius: 20,
@@ -1853,11 +1857,12 @@ export default function SovereigntyDashboard() {
                 </div>
               </div>
             </div>
-          </div>
+          </Reveal>
 
           {/* ───── Memory NFT Collection ───── */}
-          <div
-            className="sov-card"
+          <Reveal
+            dir="up"
+            threshold={0.1}
             style={{
               padding: 30,
               borderRadius: 20,
@@ -2027,6 +2032,7 @@ export default function SovereigntyDashboard() {
                           href={`${BSCSCAN}/tx/${m.tx_hash}`}
                           target="_blank"
                           rel="noopener noreferrer"
+                          className="ed-underline-slide"
                           style={{
                             fontSize: 13,
                             fontFamily: MONO,
@@ -2043,11 +2049,11 @@ export default function SovereigntyDashboard() {
                 ))}
               </div>
             )}
-          </div>
+          </Reveal>
 
           {/* ───── "What we hold about you" transparency snapshot ───── */}
-          <div
-            className="sov-card"
+          <Reveal
+            dir="up"
             style={{
               padding: 30,
               borderRadius: 20,
@@ -2115,7 +2121,7 @@ export default function SovereigntyDashboard() {
                 );
               })}
             </div>
-          </div>
+          </Reveal>
         </>
       )}
 
@@ -2289,8 +2295,9 @@ export default function SovereigntyDashboard() {
       )}
 
           {/* ───── Data Sovereignty (PetClaw) ───── */}
-          <div
-            className="sov-card"
+          <Reveal
+            dir="up"
+            threshold={0.1}
             style={{
               padding: 30,
               borderRadius: 20,
@@ -2439,9 +2446,10 @@ export default function SovereigntyDashboard() {
               </div>
             )}
 
-            {/* ── Export proof receipt — cryptographic proof of exactly what left ── */}
+            {/* ── Export proof receipt — cryptographic proof of exactly what left.
+                Mounts after the action → pops in like a pressed seal. ── */}
             {exportReceipt && (
-              <div style={{
+              <Reveal dir="pop" style={{
                 marginBottom: 16, padding: "16px 18px", borderRadius: 14,
                 background: INSET, border: `1px solid ${HAIR}`,
               }}>
@@ -2476,12 +2484,12 @@ export default function SovereigntyDashboard() {
                   </span>
                   {" "}— verifies the bundle is exactly what left the system, unchanged.
                 </div>
-              </div>
+              </Reveal>
             )}
 
             {/* ── Delete proof receipt — proof of permanent erasure ── */}
             {deleteReceipt && (
-              <div style={{
+              <Reveal dir="pop" style={{
                 marginBottom: 16, padding: "16px 18px", borderRadius: 14,
                 background: INSET, border: `1px solid ${HAIR}`,
               }}>
@@ -2511,7 +2519,7 @@ export default function SovereigntyDashboard() {
                   </span>
                   {" "}— your pet&apos;s data has been <strong>permanently deleted</strong>. This cannot be undone.
                 </div>
-              </div>
+              </Reveal>
             )}
 
             {/* Consent Management */}
@@ -2569,11 +2577,12 @@ export default function SovereigntyDashboard() {
                 ))}
               </div>
             </div>
-          </div>
+          </Reveal>
 
           {/* ───── PetClaw SDK ───── */}
-          <div
-            className="sov-card"
+          <Reveal
+            dir="up"
+            threshold={0.1}
             style={{
               borderRadius: 20, marginBottom: 32, overflow: "hidden",
               background: PAPER,
@@ -2681,18 +2690,29 @@ export default function SovereigntyDashboard() {
                 </div>
               </div>
             </div>
-          </div>
+          </Reveal>
 
           {/* ───── Memory Ledger + Channel Connections ───── */}
           {/* Distinct key prefixes: these two are ADJACENT SIBLINGS, so sharing the
               bare selectedPet.id as key collided and made React duplicate the
-              ledger. Prefix per-component to keep remount-on-pet-switch behavior. */}
-          {selectedPet && <MemoryInspectorCard key={`mem-${selectedPet.id}`} petId={selectedPet.id} />}
-          {selectedPet && <ChannelConnectionsCard key={`chan-${selectedPet.id}`} petId={selectedPet.id} />}
+              ledger. Prefix per-component to keep remount-on-pet-switch behavior
+              (keys stay on the cards; the Reveal wrappers fire once and survive
+              pet switches without re-running the entrance). */}
+          {selectedPet && (
+            <Reveal dir="up" threshold={0.1}>
+              <MemoryInspectorCard key={`mem-${selectedPet.id}`} petId={selectedPet.id} />
+            </Reveal>
+          )}
+          {selectedPet && (
+            <Reveal dir="up" threshold={0.1}>
+              <ChannelConnectionsCard key={`chan-${selectedPet.id}`} petId={selectedPet.id} />
+            </Reveal>
+          )}
 
           {/* ───── Pet Network (public discovery) ───── */}
-          <div
-            className="sov-card"
+          <Reveal
+            dir="up"
+            threshold={0.1}
             style={{
               padding: 30,
               borderRadius: 20,
@@ -2798,13 +2818,15 @@ export default function SovereigntyDashboard() {
                 </div>
               );
             })()}
-          </div>
+          </Reveal>
 
           {/* ───── Chrome Extension ───── */}
           <ChromeExtensionSection />
 
           {/* ───── PetClaw Ecosystem (Coming Soon) ───── */}
-          <div
+          <Reveal
+            dir="up"
+            threshold={0.1}
             style={{
               padding: 30,
               borderRadius: 20,
@@ -2887,7 +2909,7 @@ export default function SovereigntyDashboard() {
                 @myaipet/petclaw-sdk
               </span>
             </div>
-          </div>
+          </Reveal>
       </div>
     </div>
   );

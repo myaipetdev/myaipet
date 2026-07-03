@@ -7,6 +7,7 @@
  */
 import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
+import Reveal from "@/components/Reveal";
 
 interface PotW {
   id: number;
@@ -38,7 +39,8 @@ export default function PetOfTheWeek() {
   if (!loaded || !pet) return null;
 
   return (
-    <div className="mp-enter" style={{ maxWidth: 1060, margin: "0 auto 18px", padding: "0 24px" }}>
+    // Full-width poster — scroll-revealed with the "pop" grammar (was mount-time mp-enter).
+    <Reveal dir="pop" style={{ maxWidth: 1060, margin: "0 auto 18px", padding: "0 24px" }}>
       <style>{`@media (max-width:640px){.potw-grid{grid-template-columns:1fr !important}.potw-hero{min-height:170px !important}}`}</style>
       <div className="potw-grid" style={{
         position: "relative", overflow: "hidden", borderRadius: 22,
@@ -139,6 +141,6 @@ export default function PetOfTheWeek() {
           }} />
         </div>
       </div>
-    </div>
+    </Reveal>
   );
 }

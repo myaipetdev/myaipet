@@ -12,8 +12,10 @@ function Counter({ end, duration = 2000, prefix = "", suffix = "" }: any) {
 }
 
 export default function Stats({ stats }: any) {
+  // Entrance is owned by the scroll-triggered <Reveal> wrapper in App.tsx —
+  // no mount-time mp-enter here anymore.
   return (
-    <div className="mp-enter" style={{
+    <div style={{
       display: "flex", gap: 1, background: "#FBF6EC",
       borderRadius: 18, overflow: "hidden", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
       boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",

@@ -4,6 +4,20 @@ import { useState, useEffect } from "react";
 import { LOGO_SRC } from "./Nav";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import Icon from "@/components/Icon";
+import Reveal, { MaskedTitle, useMagnet } from "@/components/Reveal";
+
+// Two stacked arrows in a 1em mask — hover (on the parent <a>/<button>) slides
+// the second one up. Pure presentation, styled by .ed-arrow-swap in globals.css.
+function ArrowSwap() {
+  return (
+    <span className="ed-arrow-swap" aria-hidden>
+      <span>
+        <span style={{ display: "block", height: "1em", lineHeight: 1 }}>→</span>
+        <span style={{ display: "block", height: "1em", lineHeight: 1 }}>→</span>
+      </span>
+    </span>
+  );
+}
 
 // ── Soft ambient glyphs (no 3D-icon match) — flat SVGs tuned to the hero's warm palette ──
 function BlossomGlyph({ size }: { size: number }) {
@@ -100,6 +114,8 @@ function HeroShowcase({ txToday }: { txToday?: number }) {
 
 export default function Hero({ onAdopt, onExplore, txToday }: any) {
   const [activePillar, setActivePillar] = useState(0);
+  // Primary CTA leans toward the pointer (fine pointers only).
+  const magnetRef = useMagnet();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -210,15 +226,18 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             .hero-cta-secondary {
               background: #FBF6EC; border: 1px solid var(--ed-hair, rgba(33,26,18,.13));
               border-radius: 12px; padding: 14px 36px;
-              font-family: var(--ed-disp); font-size: 14px; font-weight: 600; color: #5C5140; cursor: pointer; transition: all 0.3s;
+              font-family: var(--ed-disp); font-size: 14px; font-weight: 600; color: #5C5140; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s;
             }
-            .hero-cta-secondary:hover { transform: translateY(-2px); background: #F5EFE2; border-color: rgba(190,79,40,0.3); color: #9A4E1E; box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5)); }
+            /* Fill + text flip come from .ed-wipe (terracotta rises bottom-up, text → cream) */
+            .hero-cta-secondary:hover { transform: translateY(-2px); box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5)); }
           `}</style>
           <div className="hero-cta" style={{ display: "flex", gap: 14 }}>
-            <button onClick={onAdopt} className="hero-cta-primary">
-              <Icon name="paw" size={16} /> Adopt your pet
-            </button>
-            <button onClick={onExplore} className="hero-cta-secondary">
+            <div ref={magnetRef} style={{ display: "inline-flex" }}>
+              <button onClick={onAdopt} className="hero-cta-primary" style={{ flex: 1 }}>
+                <Icon name="paw" size={16} /> Adopt your pet
+              </button>
+            </div>
+            <button onClick={onExplore} className="hero-cta-secondary ed-wipe">
               Explore Community
             </button>
           </div>
@@ -228,7 +247,8 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         <HeroShowcase txToday={txToday} />
       </div>
 
-      {/* Ecosystem pillars — full width below the hero */}
+      {/* Ecosystem pillars — full width below the hero (scroll-revealed as one row) */}
+      <Reveal dir="up">
       <div className="hero-pillars" style={{
         display: "flex", justifyContent: "center", gap: 8, margin: "46px auto 0", maxWidth: 1180,
         position: "relative", zIndex: 2, flexWrap: "wrap",
@@ -287,6 +307,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           </button>
         ))}
       </div>
+      </Reveal>
 
       {/* (Style-showcase marquee removed per feedback — the hero pet is the star,
           not a row of sample images.) */}
@@ -301,6 +322,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         maxWidth: 960, marginLeft: "auto", marginRight: "auto",
       }}>
         {/* Season badge */}
+        <Reveal dir="fade">
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 8,
           padding: "6px 18px", borderRadius: 20,
@@ -319,15 +341,19 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             Season 1 · Starts Jul 1
           </span>
         </div>
+        </Reveal>
 
-        {/* Section heading */}
-        <h2 style={{
-          fontFamily: "var(--ed-disp)", fontSize: "clamp(28px,4vw,42px)",
-          fontWeight: 700, color: "#211A12", letterSpacing: "-0.02em",
-          marginBottom: 10, lineHeight: 1.15,
-        }}>
-          Built as infrastructure, not a walled garden.
-        </h2>
+        {/* Section heading — printed-line rise */}
+        <MaskedTitle
+          as="h2"
+          lines={["Built as infrastructure,", "not a walled garden."]}
+          style={{
+            fontFamily: "var(--ed-disp)", fontSize: "clamp(28px,4vw,42px)",
+            fontWeight: 700, color: "#211A12", letterSpacing: "-0.02em",
+            marginBottom: 10, lineHeight: 1.15,
+          }}
+        />
+        <Reveal dir="fade" delay={120}>
         <p style={{
           fontFamily: "var(--ed-body)", fontSize: 17, color: "#5C5140",
           maxWidth: 560, margin: "0 auto 24px", lineHeight: 1.7,
@@ -335,8 +361,10 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           Your pet&apos;s memory + identity live on <strong style={{ color: "#9A4E1E" }}>PetClaw</strong> — an
           open protocol, not our database. Exportable, MCP-callable, portable. Yours.
         </p>
+        </Reveal>
 
         {/* Infrastructure evidence chips */}
+        <Reveal dir="up" delay={180}>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, marginBottom: 18 }}>
           {["Open SDK", "MCP-native", "19 connectors", "Your data, portable"].map((c) => (
             <span key={c} style={{
@@ -346,8 +374,10 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             }}>{c}</span>
           ))}
         </div>
+        </Reveal>
 
         {/* Developer SDK strip (#4) — reads as serious infra, not a token */}
+        <Reveal dir="pop" delay={240}>
         <div style={{
           maxWidth: 540, margin: "0 auto 40px", borderRadius: 14, overflow: "hidden",
           border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
@@ -367,17 +397,20 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             textAlign: "left",
           }}>
             Open protocol · MCP server · 18 skills · build on the pet layer ·{" "}
-            <a href="/api-docs" style={{ color: "#9A4E1E", fontWeight: 700, textDecoration: "none" }}>docs →</a>
+            <a href="/api-docs" className="ed-underline-slide" style={{ color: "#9A4E1E", fontWeight: 700, textDecoration: "none" }}>docs <ArrowSwap /></a>
           </div>
         </div>
+        </Reveal>
 
         {/* The experience on top */}
+        <Reveal dir="fade">
         <div style={{
           fontFamily: "var(--ed-m)", fontSize: 13, letterSpacing: "0.18em",
           color: "#9A7B4E", textTransform: "uppercase", marginBottom: 14, fontWeight: 700,
         }}>
           And the experience on top
         </div>
+        </Reveal>
 
         {/* Feature cards grid */}
         <style>{`
@@ -409,8 +442,9 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             { icon: <Icon name="sparkling" size={28} />, title: "Create", desc: "Generate stunning AI images and videos of your pet in any scene or style." },
             { icon: <Icon name="diamond" size={28} />, title: "Earn", desc: "Climb the leaderboard, earn Season Rewards points, and unlock exclusive rewards." },
             { icon: <Icon name="trophy" size={28} />, title: "Collect", desc: "Real merchandise redemption — mugs, hoodies, figures & more — coming with the creator marketplace." },
-          ].map((card) => (
-            <div key={card.title} className="eco-card">
+          ].map((card, i) => (
+            <Reveal key={card.title} dir="up" delay={Math.min(i, 8) * 90}>
+            <div className="eco-card" style={{ height: "100%" }}>
               <div className="eco-icon" style={{
                 fontSize: 28, marginBottom: 14,
                 transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",
@@ -430,6 +464,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
                 {card.desc}
               </div>
             </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -440,15 +475,18 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         marginTop: 80, padding: "0 20px",
         maxWidth: 960, marginLeft: "auto", marginRight: "auto",
       }}>
-        <h2 style={{
-          fontFamily: "var(--ed-disp)", fontSize: "clamp(24px,3.5vw,36px)",
-          fontWeight: 700, color: "#211A12", letterSpacing: "-0.02em", margin: "0 0 8px",
-          textAlign: "center",
-        }}>
-          Investment
-        </h2>
+        <MaskedTitle
+          as="h2"
+          lines={["Investment"]}
+          style={{
+            fontFamily: "var(--ed-disp)", fontSize: "clamp(24px,3.5vw,36px)",
+            fontWeight: 700, color: "#211A12", letterSpacing: "-0.02em", margin: "0 0 8px",
+            textAlign: "center",
+          }}
+        />
 
         {/* Lead Investor */}
+        <Reveal dir="fade">
         <div style={{
           fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "#9A4E1E",
           textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12,
@@ -456,6 +494,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         }}>
           Lead Investor
         </div>
+        </Reveal>
         <div style={{
           display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12,
           marginBottom: 28, maxWidth: 500, marginLeft: "auto", marginRight: "auto",
@@ -463,10 +502,11 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           {[
             { name: "Amber", logo: "/partners/amber.png" },
             { name: "WAGMI Ventures", logo: "/partners/wagmi.png" },
-          ].map(p => (
-            <div key={p.name} style={{
+          ].map((p, i) => (
+            <Reveal key={p.name} dir="up" delay={Math.min(i, 8) * 90}>
+            <div style={{
               background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-              borderRadius: 14, padding: "16px 20px",
+              borderRadius: 14, padding: "16px 20px", height: "100%",
               display: "flex", alignItems: "center", gap: 12,
               transition: "all 0.3s ease",
             }}
@@ -484,8 +524,11 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
                 {p.name}
               </span>
             </div>
+            </Reveal>
           ))}
         </div>
+        {/* Backer chips are small — reveal the whole grid as one unit, not 8 tiny wraps */}
+        <Reveal dir="up" delay={90}>
         <div style={{
           display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10,
           maxWidth: 700, marginLeft: "auto", marginRight: "auto",
@@ -527,6 +570,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             </div>
           ))}
         </div>
+        </Reveal>
       </div>
 
       {/* ─── Footer CTA — X profile card ─── */}
@@ -535,6 +579,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
         marginTop: 80, padding: "0 20px",
         maxWidth: 540, marginLeft: "auto", marginRight: "auto",
       }}>
+        <Reveal dir="pop">
         <a
           href="https://x.com/MYAIPETS"
           target="_blank"
@@ -590,6 +635,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             </div>
           </div>
         </a>
+        </Reveal>
       </div>
     </div>
   );

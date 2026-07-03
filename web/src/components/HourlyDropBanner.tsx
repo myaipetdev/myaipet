@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/Icon";
+import Reveal from "@/components/Reveal";
 
 interface UpcomingDrop {
   kind: string;
@@ -74,7 +75,7 @@ export default function HourlyDropBanner() {
   const live = remaining > 0;
 
   return (
-    <div className="mp-enter" style={{ maxWidth: 1060, margin: "12px auto 0", padding: "0 24px" }}>
+    <Reveal dir="left" style={{ maxWidth: 1060, margin: "12px auto 0", padding: "0 24px" }}>
       <div style={{
         background: live ? "#BE4F28" : "#FBF6EC",
         border: `1px solid var(--ed-hair, rgba(33,26,18,.13))`,
@@ -171,6 +172,6 @@ export default function HourlyDropBanner() {
           </div>
         </div>
       )}
-    </div>
+    </Reveal>
   );
 }
