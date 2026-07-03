@@ -710,13 +710,38 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
  *  viewer; neighbours angle away like crate-dug vinyl. Wheel, drag, arrows
  *  and clicking a side sleeve all navigate; the player bar below carries the
  *  real creator/likes and opens the detail modal. */
-function AlbumCarousel({ items, onOpen, onLike }: { items: any[]; onOpen: (item: any, index: number) => void; onLike: (genId: number, index: number) => void }) {
+export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
+  items: any[];
+  onOpen: (item: any, index: number) => void;
+  /** Optional — when absent the ♥ button in the player bar is hidden (read-only surfaces). */
+  onLike?: (genId: number, index: number) => void;
+  /** Optional gentle auto-rotation interval (ms). Pauses on hover, skips under
+   *  prefers-reduced-motion, and any manual interaction resets the timer. */
+  autoAdvance?: number;
+}) {
   const [idx, setIdx] = useState(0);
   const n = items.length;
   useEffect(() => { setIdx((i) => Math.min(i, Math.max(0, n - 1))); }, [n]);
   const wheelLock = useRef(0);
   const dragX = useRef<number | null>(null);
-  const go = (d: number) => setIdx((i) => Math.max(0, Math.min(n - 1, i + d)));
+
+  // ── auto-advance ── an interval nudges idx forward (wrapping); hovering
+  // pauses it, manual interaction restarts it (autoKey bump re-creates the
+  // interval so the full delay elapses again), unmount clears it.
+  const hoverRef = useRef(false);
+  const [autoKey, setAutoKey] = useState(0);
+  useEffect(() => {
+    if (!autoAdvance || n < 2) return;
+    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setInterval(() => {
+      if (hoverRef.current) return;
+      setIdx((i) => (i + 1) % n);
+    }, autoAdvance);
+    return () => clearInterval(t);
+  }, [autoAdvance, n, autoKey]);
+  const resetAuto = () => { if (autoAdvance) setAutoKey((k) => k + 1); };
+
+  const go = (d: number) => { resetAuto(); setIdx((i) => Math.max(0, Math.min(n - 1, i + d))); };
   const cur = items[idx];
   const curId = cur ? (cur.generation_id || cur.id) : null;
 
@@ -736,6 +761,8 @@ function AlbumCarousel({ items, onOpen, onLike }: { items: any[]; onOpen: (item:
         const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
         if (Math.abs(d) > 8) go(d > 0 ? 1 : -1);
       }}
+      onPointerEnter={() => { hoverRef.current = true; }}
+      onPointerLeave={() => { hoverRef.current = false; }}
       onPointerDown={(e) => { dragX.current = e.clientX; }}
       onPointerUp={(e) => {
         if (dragX.current == null) return;
@@ -754,7 +781,7 @@ function AlbumCarousel({ items, onOpen, onLike }: { items: any[]; onOpen: (item:
           return (
             <div
               key={it.generation_id || it.id}
-              onClick={() => (center ? onOpen(it, i) : setIdx(i))}
+              onClick={() => { resetAuto(); if (center) onOpen(it, i); else setIdx(i); }}
               title={center ? "Open" : undefined}
               style={{
                 position: "absolute", left: "50%", top: "50%", width: 300,
@@ -820,13 +847,15 @@ function AlbumCarousel({ items, onOpen, onLike }: { items: any[]; onOpen: (item:
               {cur.prompt || "untitled"}
             </div>
           </div>
-          <button
-            onClick={() => curId != null && onLike(curId, idx)}
-            aria-label="Like"
-            style={{ background: "transparent", border: `1px solid ${T.hair}`, borderRadius: 999, padding: "6px 12px", cursor: "pointer", fontFamily: T.m, fontSize: 13, fontWeight: 700, color: cur.is_liked ? T.terra : T.muted2 }}
-          >
-            {cur.is_liked ? "♥" : "♡"} {cur.likes_count || 0}
-          </button>
+          {onLike && (
+            <button
+              onClick={() => curId != null && onLike(curId, idx)}
+              aria-label="Like"
+              style={{ background: "transparent", border: `1px solid ${T.hair}`, borderRadius: 999, padding: "6px 12px", cursor: "pointer", fontFamily: T.m, fontSize: 13, fontWeight: 700, color: cur.is_liked ? T.terra : T.muted2 }}
+            >
+              {cur.is_liked ? "♥" : "♡"} {cur.likes_count || 0}
+            </button>
+          )}
           <button onClick={() => onOpen(cur, idx)} style={{ background: T.ink, border: "none", borderRadius: 999, padding: "7px 14px", cursor: "pointer", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: T.creamOn }}>
             OPEN ▸
           </button>

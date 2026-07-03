@@ -5,6 +5,7 @@ import { LOGO_SRC } from "./Nav";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import Icon from "@/components/Icon";
 import Reveal, { MaskedTitle, useMagnet } from "@/components/Reveal";
+import PawField from "@/components/PawField";
 
 // Two stacked arrows in a 1em mask — hover (on the parent <a>/<button>) slides
 // the second one up. Pure presentation, styled by .ed-arrow-swap in globals.css.
@@ -130,11 +131,42 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
       minHeight: 580, overflow: "hidden",
       background: "#ECE4D4",
     }}>
+      {/* Living background — drifting paw glyph field (E01), behind everything.
+          Carves clean paper around the headline + CTA via [data-carve]. */}
+      <PawField opacity={0.09} cell={48} />
       <style>{`
         @keyframes petFloat {
           0%, 100% { transform: translateY(0) rotate(0deg); }
           25% { transform: translateY(-12px) rotate(3deg); }
           75% { transform: translateY(8px) rotate(-3deg); }
+        }
+        /* Backer marquee — track slides exactly one duplicated half (-50%).
+           Spacing is margin-right (flex gap would break the -50% math). */
+        @keyframes heroTicker {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+        .hero-backer-chip {
+          background: #FBF6EC;
+          border: 1px solid var(--ed-hair, rgba(33,26,18,.13));
+          border-radius: 12px; padding: 14px 16px; margin-right: 12px;
+          display: inline-flex; align-items: center; gap: 10px; white-space: nowrap;
+          opacity: .75; filter: grayscale(0.2);
+          transition: opacity 220ms ease, filter 220ms ease, background 220ms ease, border-color 220ms ease;
+        }
+        .hero-backer-chip:hover {
+          opacity: 1; filter: grayscale(0);
+          background: #F5EFE2; border-color: rgba(190,79,40,0.3);
+        }
+        /* Felt hover for lead-investor + eco cards — shadow steps card → float. */
+        .hero-invest-card {
+          box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5));
+          transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+        }
+        .hero-invest-card:hover {
+          transform: translateY(-3px);
+          border-color: rgba(190,79,40,.45);
+          box-shadow: var(--ed-shadow-float, 0 54px 84px -28px rgba(38,12,2,.72), 0 14px 28px -12px rgba(38,12,2,.45));
         }
         @media (max-width: 860px) {
           .hero-root { padding: 100px 16px 40px !important; min-height: auto !important; }
@@ -188,7 +220,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           </div>
 
           {/* Headline — stacked, three colors (시안) */}
-          <h1 className="mp-enter" style={{
+          <h1 className="mp-enter" data-carve style={{
             fontFamily: "var(--ed-disp)", fontSize: "clamp(40px,5vw,68px)",
             fontWeight: 800, color: "#211A12", lineHeight: 1.0, margin: "0 0 16px", letterSpacing: "-0.035em",
           }}>
@@ -231,7 +263,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             /* Fill + text flip come from .ed-wipe (terracotta rises bottom-up, text → cream) */
             .hero-cta-secondary:hover { transform: translateY(-2px); box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5)); }
           `}</style>
-          <div className="hero-cta" style={{ display: "flex", gap: 14 }}>
+          <div className="hero-cta" data-carve style={{ display: "flex", gap: 14 }}>
             <div ref={magnetRef} style={{ display: "inline-flex" }}>
               <button onClick={onAdopt} className="hero-cta-primary" style={{ flex: 1 }}>
                 <Icon name="paw" size={16} /> Adopt your pet
@@ -420,14 +452,9 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             border-radius: 16px;
             padding: 28px 22px;
             text-align: left;
-            transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
             cursor: default;
           }
-          .eco-card:hover {
-            transform: translateY(-6px);
-            border-color: rgba(190,79,40,0.3);
-            box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5));
-          }
+          /* Lift/border/shadow come from .hero-invest-card — only the icon flourish here. */
           .eco-card:hover .eco-icon {
             transform: scale(1.15);
           }
@@ -444,7 +471,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             { icon: <Icon name="trophy" size={28} />, title: "Collect", desc: "Real merchandise redemption — mugs, hoodies, figures & more — coming with the creator marketplace." },
           ].map((card, i) => (
             <Reveal key={card.title} dir="up" delay={Math.min(i, 8) * 90}>
-            <div className="eco-card" style={{ height: "100%" }}>
+            <div className="eco-card hero-invest-card" style={{ height: "100%" }}>
               <div className="eco-icon" style={{
                 fontSize: 28, marginBottom: 14,
                 transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",
@@ -504,21 +531,11 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             { name: "WAGMI Ventures", logo: "/partners/wagmi.png" },
           ].map((p, i) => (
             <Reveal key={p.name} dir="up" delay={Math.min(i, 8) * 90}>
-            <div style={{
+            <div className="hero-invest-card" style={{
               background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
               borderRadius: 14, padding: "16px 20px", height: "100%",
               display: "flex", alignItems: "center", gap: 12,
-              transition: "all 0.3s ease",
-            }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = "rgba(190,79,40,0.35)";
-                e.currentTarget.style.boxShadow = "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = "var(--ed-hair, rgba(33,26,18,.13))";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            >
+            }}>
               <img src={p.logo} alt={p.name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: "contain" }} />
               <span style={{ fontFamily: "var(--ed-disp)", fontSize: 15, fontWeight: 700, color: "#211A12" }}>
                 {p.name}
@@ -527,46 +544,52 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             </Reveal>
           ))}
         </div>
-        {/* Backer chips are small — reveal the whole grid as one unit, not 8 tiny wraps */}
+        {/* Backers rotate — two counter-flowing marquee rows (speed mismatch = depth).
+            Each row's item list is duplicated exactly x2 (aria-hidden dupe half) so
+            translateX(-50%) loops seamlessly; hover pauses via .ed-ticker-wrap. */}
         <Reveal dir="up" delay={90}>
-        <div style={{
-          display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10,
-          maxWidth: 700, marginLeft: "auto", marginRight: "auto",
-        }}>
+        <div style={{ maxWidth: 700, marginLeft: "auto", marginRight: "auto" }}>
           {[
-            { name: "Animoca Brands", logo: "/partners/animoca.png" },
-            { name: "Web3 Labs", logo: "/partners/web3labs.png" },
-            { name: "KuCoin Ventures", logo: "/partners/kucoin.png" },
-            { name: "ViaBTC", logo: "/partners/viabtc.png" },
-            { name: "Arkstream Capital", logo: "/partners/arkstream.png" },
-            { name: "ICC Ventures", logo: "/partners/icc.png" },
-            { name: "WaterDrip", logo: "/partners/waterdrip.png" },
-            { name: "CryptoSen", logo: "/partners/cryptosen.svg" },
-          ].map(p => (
-            <div key={p.name} style={{
-              background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-              borderRadius: 12, padding: "14px 16px",
-              display: "flex", alignItems: "center", gap: 10,
-              transition: "all 0.3s ease",
-            }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = "#F5EFE2";
-                e.currentTarget.style.borderColor = "rgba(190,79,40,0.2)";
-                e.currentTarget.style.boxShadow = "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = "#FBF6EC";
-                e.currentTarget.style.borderColor = "var(--ed-hair, rgba(33,26,18,.13))";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            >
-              <img src={p.logo} alt={p.name} style={{ width: 24, height: 24, borderRadius: 6, objectFit: "contain" }} />
-              <span style={{
-                fontFamily: "var(--ed-disp)", fontSize: 13, fontWeight: 600,
-                color: "#5C5140",
+            {
+              duration: "32s", reverse: false,
+              items: [
+                { name: "Animoca Brands", logo: "/partners/animoca.png" },
+                { name: "Web3 Labs", logo: "/partners/web3labs.png" },
+                { name: "KuCoin Ventures", logo: "/partners/kucoin.png" },
+                { name: "ViaBTC", logo: "/partners/viabtc.png" },
+              ],
+            },
+            {
+              duration: "40s", reverse: true,
+              items: [
+                { name: "Arkstream Capital", logo: "/partners/arkstream.png" },
+                { name: "ICC Ventures", logo: "/partners/icc.png" },
+                { name: "WaterDrip", logo: "/partners/waterdrip.png" },
+                { name: "CryptoSen", logo: "/partners/cryptosen.svg" },
+              ],
+            },
+          ].map((row, ri) => (
+            <div key={ri} className="ed-ticker-wrap" style={{ overflow: "hidden", marginTop: ri === 0 ? 0 : 10 }}>
+              <div style={{
+                display: "flex", width: "max-content",
+                animation: `heroTicker ${row.duration} linear infinite${row.reverse ? " reverse" : ""}`,
               }}>
-                {p.name}
-              </span>
+                {[false, true].map(dup => (
+                  <div key={dup ? "dup" : "orig"} aria-hidden={dup || undefined} style={{ display: "flex" }}>
+                    {row.items.map(p => (
+                      <div key={p.name} className="hero-backer-chip">
+                        <img src={p.logo} alt={dup ? "" : p.name} style={{ width: 24, height: 24, borderRadius: 6, objectFit: "contain" }} />
+                        <span style={{
+                          fontFamily: "var(--ed-disp)", fontSize: 13, fontWeight: 600,
+                          color: "#5C5140",
+                        }}>
+                          {p.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>

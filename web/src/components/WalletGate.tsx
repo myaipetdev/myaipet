@@ -50,6 +50,14 @@ export default function WalletGate({ children, section }: any) {
   // ── Preview-before-wall: cold visitors should experience the value (a living
   // demo pet; the PetClaw sovereignty showcase) BEFORE being asked for a wallet,
   // with the right next-step (Connect / Sign In) inline. ──
+  //
+  // Transient 401 / expired token (isConnected && error): we intentionally do
+  // NOT auto-retry authenticate() here. authenticate() calls signMessageAsync(),
+  // which OPENS the wallet's signature modal — a delayed automatic retry would
+  // pop an unsolicited signature prompt (the exact loop `autoAuthTriedFor`
+  // exists to prevent). Instead the section previews render with an explicit
+  // sign-in cta; PetClawPreview surfaces it in a top banner + friendly error
+  // note so a returning owner reads this as "signed out", not "console gone".
   if (section === "my pet" || section === "sovereignty" || section === "community") {
     const ctaBtnStyle: React.CSSProperties = {
       padding: "13px 30px", borderRadius: 13, border: "none",
@@ -78,7 +86,7 @@ export default function WalletGate({ children, section }: any) {
       );
       ctaNote = "Approve the signature in your wallet — no gas, identity only.";
     }
-    if (section === "sovereignty") return <PetClawPreview cta={cta} />;
+    if (section === "sovereignty") return <PetClawPreview cta={cta} ctaNote={ctaNote} />;
     if (section === "community") return <CommunityPreview cta={cta} />;
     return <DemoPet cta={cta} ctaNote={ctaNote} />;
   }

@@ -381,7 +381,10 @@ body {
 .ed-wipe{position:relative;isolation:isolate;transition:color .24s var(--ed-ease),border-color .24s var(--ed-ease)}
 .ed-wipe::after{content:"";position:absolute;inset:0;z-index:-1;background:var(--ed-terra,#BE4F28);transform:scaleY(0);transform-origin:bottom;transition:transform .26s var(--ed-ease);border-radius:inherit}
 @media (hover:hover){
-  .ed-wipe:hover{color:#FFF8EE!important;border-color:var(--ed-terra,#BE4F28)!important}
+  /* inner spans/icons often carry inline colors — flip the whole subtree so
+     the wipe reads on every button, not just plain-text ones */
+  .ed-wipe:hover,.ed-wipe:hover *{color:#FFF8EE!important}
+  .ed-wipe:hover{border-color:var(--ed-terra,#BE4F28)!important}
   .ed-wipe:hover::after{transform:scaleY(1)}
 }
 /* left-anchored gradient underline slide for inline links */
