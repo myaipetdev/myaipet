@@ -281,6 +281,10 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   {String(pet.level).padStart(2, "0")}
                 </span>
               )}
+              {/* Honesty: never present the sample pet as the user's own. */}
+              {demo && (
+                <span style={{ position: "absolute", bottom: 4, left: 4, right: 4, textAlign: "center", fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "#FCE9CF", background: "rgba(30,23,16,.78)", borderRadius: 4, padding: "1px 0" }}>DEMO</span>
+              )}
             </div>
           </div>
           <div style={{

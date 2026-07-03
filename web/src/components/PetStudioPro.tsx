@@ -1273,7 +1273,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   fontSize: 13, color: T.thrive,
                   fontFamily: T.m, fontWeight: 700, letterSpacing: "0.04em",
                 }}>
-                  ✓ {pet.name}'s photo locks character
+                  ✓ uses {pet.name}'s photo to guide the look
                 </div>
               )}
             </Panel>

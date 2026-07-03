@@ -265,11 +265,14 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
             ...j.paywall,
             onPaid: async (newTx: string) => {
               setPaywall(null);
+              setBusy(type);  // keep Feed/Play/Pet locked through the paid retry (no double-submit)
               try {
                 const retry = await callInteract(newTx);
                 if (retry) finishCare(retry);
               } catch (e: any) {
                 if (activeIdRef.current === petId) showFlash({ text: e?.message || "Try again in a moment.", error: true });
+              } finally {
+                setBusy(null);
               }
             },
           });
@@ -414,7 +417,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {/* pet switcher — above the fold, beside the identity chips */}
             {(pets.length > 1 || pets.length < petSlots) && (
-              <Reveal dir="up" style={{ display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap" }}>
+              <div className="ed-rise" style={{ ...rise(1), display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap" }}>
                 <span style={{ fontFamily: T.m, fontSize: 13, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase" }}>Your pets</span>
                 {pets.map((p) => (
                   <button key={p.id} onClick={() => switchPet(p)} style={{
@@ -429,7 +432,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                     border: "1.5px dashed rgba(154,78,30,.45)", background: "transparent", color: "#9A4E1E",
                   }}>+ Adopt</button>
                 )}
-              </Reveal>
+              </div>
             )}
 
             {/* identity chips */}
@@ -507,6 +510,9 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
             {/* memory / live request — the file-record box, wired to real endpoints.
                 Scroll-reveals from the right; the fulfill-pulse lives on the keyed
                 inner div so it re-fires without re-running the entrance. */}
+            {/* Reserve the box's collapsed footprint so the async request/memory
+                fetch resolving after first paint doesn't shove the lower cards. */}
+            <div style={{ minHeight: showMemoryBox ? undefined : 92 }}>
             {showMemoryBox && (
               <Reveal dir="right">
               <div key={`req-${reqGlow}`} style={{
@@ -539,6 +545,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               </div>
               </Reveal>
             )}
+            </div>
 
             {/* chat — primary companion action (scroll-reveal, fixed 90ms slots) */}
             <Reveal dir="right" delay={90}>

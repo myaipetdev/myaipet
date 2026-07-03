@@ -32,6 +32,9 @@ const HOLO_LINEAR = "linear-gradient(118deg,#ff5e8a,#ffd36e,#54ffc8,#5e8aff,#ff5
  * a Common. Declarative record on the card's REAL computed rarity; commons skip
  * the sheen layer entirely (fewer perpetually-animating layers on big grids).
  * `topo` = opacity of the contour-line holo foil over the photo. */
+/** Iridescent topo-foil strength per rarity — shared so the ticket stub
+ *  matches the card face (Common/Uncommon matte, Legendary full holo). */
+export function rarityTopo(r: Rarity): number { return (RARITY_FINISH[r] || RARITY_FINISH.Common).topo; }
 const RARITY_FINISH: Record<Rarity, { pad: number; ring: string; sheen: number; gloss: number; foilName: boolean; topo: number }> = {
   Common:    { pad: 2, ring: "#E4D9C4", sheen: 0,    gloss: 0.5, foilName: false, topo: 0 },
   Uncommon:  { pad: 2, ring: "#E4D9C4", sheen: 0,    gloss: 0.5, foilName: false, topo: 0 },

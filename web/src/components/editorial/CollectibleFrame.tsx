@@ -24,7 +24,14 @@ export function GoldSeal({ level, size = 62, label = "LEVEL" }: { level: number 
       boxShadow: "0 6px 14px -4px rgba(80,40,0,.5), inset 0 2px 3px rgba(255,255,255,.6), inset 0 -3px 4px rgba(120,70,10,.5)",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
     }}>
-      <span style={{ fontFamily: "var(--ed-m)", fontSize: size * 0.11, fontWeight: 700, letterSpacing: "0.1em", color: "#7A4708" }}>{label}</span>
+      {/* Wax-seal embossed lettering — decorative foil micro-type on the physical
+          collectible artifact (same sanctioned exemption family as PetCard's
+          printed №/personality micro-copy), so it sits below the 13px UI floor
+          by design. The redundant default "LEVEL" word is dropped (the numeral
+          says the level); custom labels like "TEAM" carry real info and stay. */}
+      {label !== "LEVEL" && (
+        <span style={{ fontFamily: "var(--ed-m)", fontSize: size * 0.13, fontWeight: 700, letterSpacing: "0.1em", color: "#7A4708" }}>{label}</span>
+      )}
       <span style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: size * 0.36, lineHeight: 0.9, color: "#5C3504" }}>
         {typeof level === "number" ? String(level).padStart(2, "0") : level}
       </span>

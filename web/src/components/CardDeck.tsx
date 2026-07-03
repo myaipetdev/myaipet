@@ -35,7 +35,7 @@
 
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
-import PetCard, { TOPO_MASK } from "@/components/PetCard";
+import PetCard, { TOPO_MASK, rarityTopo } from "@/components/PetCard";
 import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
 import useCountUp from "@/hooks/useCountUp";
@@ -654,6 +654,7 @@ function RipStub({ petId, rarity, onRip }: { petId: number; rarity: Rarity; onRi
   const progRef = useRef(0);
   const firedRef = useRef(false);
   const HOLO_LINEAR = "linear-gradient(118deg,#ff5e8a,#ffd36e,#54ffc8,#5e8aff,#ff5eef,#ff5e8a)";
+  const moved = useRef(false);
 
   const moveTo = (clientX: number) => {
     const el = stripRef.current; if (!el) return;
@@ -662,10 +663,12 @@ function RipStub({ petId, rarity, onRip }: { petId: number; rarity: Rarity; onRi
     progRef.current = p;
     setProg(p);
   };
+  // A real DRAG must cross the strip — a tap that merely lands past 85% must
+  // never fire the share, so require actual movement (moved flag) too.
   const done = () => {
     if (!dragging.current) return;
     dragging.current = false;
-    if (progRef.current >= 0.85 && !firedRef.current) {
+    if (moved.current && progRef.current >= 0.85 && !firedRef.current) {
       firedRef.current = true;
       setRipped(true);
       setProg(1);
@@ -674,15 +677,17 @@ function RipStub({ petId, rarity, onRip }: { petId: number; rarity: Rarity; onRi
       progRef.current = 0;
       setProg(0);
     }
+    moved.current = false;
   };
+  const topo = rarityTopo(rarity);
 
   return (
     <div aria-hidden={false} style={{ marginTop: 2, userSelect: "none" }}>
       {/* Perforation strip — dashed tear line + the glowing grab dot */}
       <div
         ref={stripRef}
-        onPointerDown={(e) => { if (ripped) return; dragging.current = true; (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId); moveTo(e.clientX); }}
-        onPointerMove={(e) => { if (dragging.current) moveTo(e.clientX); }}
+        onPointerDown={(e) => { if (ripped) return; dragging.current = true; moved.current = false; (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId); }}
+        onPointerMove={(e) => { if (dragging.current) { moved.current = true; moveTo(e.clientX); } }}
         onPointerUp={done}
         onPointerCancel={done}
         role="button"
@@ -728,12 +733,18 @@ function RipStub({ petId, rarity, onRip }: { petId: number; rarity: Rarity; onRi
         <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", color: T.mono, textAlign: "center", flex: 1 }}>
           RIP TO SHARE
         </span>
-        {/* mini holographic topo patch — same foil as the card */}
-        <span aria-hidden style={{
+        {/* mini foil patch — matches the card face: iridescent topo only for
+            Rare+ (topo>0), matte cream chip for Common/Uncommon. */}
+        <span aria-hidden style={topo > 0 ? {
           width: 40, height: 26, borderRadius: 6, flexShrink: 0,
           background: `${HOLO_LINEAR} 50% 50% / 300% 300%`,
           WebkitMaskImage: TOPO_MASK, maskImage: TOPO_MASK,
           WebkitMaskSize: "70px 70px", maskSize: "70px 70px",
+          opacity: 0.4 + topo * 0.6,
+          boxShadow: `inset 0 0 0 1px ${T.hair}`,
+        } : {
+          width: 40, height: 26, borderRadius: 6, flexShrink: 0,
+          background: "#E4D9C4",
           boxShadow: `inset 0 0 0 1px ${T.hair}`,
         }} />
       </div>

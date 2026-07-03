@@ -136,7 +136,7 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
                   </span>
                   {c.is_agent && (
                     <span style={{
-                      fontSize: 10, padding: "1px 5px", borderRadius: 4,
+                      fontSize: 13, padding: "1px 6px", borderRadius: 4,
                       background: "rgba(200,147,47,0.14)", color: T.rareLegend,
                       fontFamily: T.m, fontWeight: 700, letterSpacing: "0.1em",
                     }}>PET</span>
@@ -772,7 +772,7 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
       }}
       style={{ outline: "none" }}
     >
-      <div style={{ position: "relative", height: 440, perspective: 1400, overflow: "hidden" }}>
+      <div style={{ position: "relative", height: 470, perspective: 1400, overflow: "hidden" }}>
         {items.map((it, i) => {
           const off = i - idx;
           if (Math.abs(off) > 4) return null;
@@ -786,7 +786,7 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
               style={{
                 position: "absolute", left: "50%", top: "50%", width: 300,
                 marginLeft: -150, marginTop: -195,
-                transform: `translateX(${off * 168}px) translateZ(${center ? 130 : -40 * Math.abs(off)}px) rotateY(${center ? 0 : -Math.sign(off) * 56}deg)`,
+                transform: `translateX(${off * 168}px) translateZ(${center ? 96 : -40 * Math.abs(off)}px) rotateY(${center ? 0 : -Math.sign(off) * 56}deg)`,
                 transformStyle: "preserve-3d",
                 zIndex: 100 - Math.abs(off),
                 transition: "transform .45s cubic-bezier(.22,.9,.3,1)",

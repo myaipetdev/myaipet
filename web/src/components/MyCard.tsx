@@ -73,7 +73,7 @@ export default function MyCard() {
           <Tile label="POINTS" value={me.points.toLocaleString()} accent="#BE4F28" />
           <Tile label="STREAK" value={`${me.streak}d`} accent="#BE4F28" sub={`best ${me.longest}d`} />
           {me.streakRank != null && (
-            <Tile label="SEASON RANK" value={`#${me.streakRank}`} accent="#BE4F28" sub="by streak" />
+            <Tile label="STREAK RANK" value={`#${me.streakRank}`} accent="#BE4F28" sub="by streak" />
           )}
           <Tile label="CREDITS" value={me.credits.toLocaleString()} accent="#BE4F28" />
           {me.shields > 0 && <Tile label="SHIELDS" value={<><Icon name="shield" size={18} style={{ marginRight: 4 }} />{me.shields}</>} accent="#BE4F28" />}

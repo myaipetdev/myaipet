@@ -720,9 +720,9 @@ function StepArt({ n }: { n: number }) {
         <svg {...common}>
           <rect x="20" y="26" width="180" height="22" rx="11" fill={WHITE} {...S} />
           <circle cx="34" cy="37" r="4" {...S} /><path d="M37 40l4 4" {...S} />
-          <text x="52" y="41" fontSize="9.5" fontFamily="var(--ed-m)" fontWeight="700" fill={INK}>chrome://extensions</text>
+          <text x="52" y="42" fontSize="11" fontFamily="var(--ed-m)" fontWeight="700" fill={INK}>chrome://…</text>
           <rect x="20" y="64" width="180" height="44" rx="8" fill={CREAM} {...S} />
-          <text x="32" y="82" fontSize="9" fontFamily="var(--ed-disp)" fontWeight="700" fill={INK}>Developer mode</text>
+          <text x="32" y="83" fontSize="11" fontFamily="var(--ed-disp)" fontWeight="700" fill={INK}>Developer mode</text>
           <text x="32" y="96" fontSize="7.5" fontFamily="var(--ed-m)" fill="#7A6E5A">top-right toggle</text>
           <rect x="150" y="76" width="38" height="20" rx="10" fill={AMBER} {...S} />
           <circle cx="178" cy="86" r="7" fill={WHITE} {...S} />
@@ -734,7 +734,7 @@ function StepArt({ n }: { n: number }) {
           <rect x="20" y="26" width="180" height="76" rx="8" fill={WHITE} {...S} />
           <line x1="20" y1="50" x2="200" y2="50" {...S} />
           <rect x="30" y="34" width="58" height="10" rx="5" fill={AMBER} {...S} />
-          <text x="59" y="42" fontSize="6.5" fontFamily="var(--ed-disp)" fontWeight="800" fill={INK} textAnchor="middle">Load unpacked</text>
+          <text x="59" y="43" fontSize="11" fontFamily="var(--ed-disp)" fontWeight="800" fill={INK} textAnchor="middle">Load</text>
           <rect x="96" y="34" width="40" height="10" rx="5" fill={CREAM} {...S} />
           <rect x="144" y="34" width="40" height="10" rx="5" fill={CREAM} {...S} />
           <path d="M70 64h16l4 5h30a3 3 0 0 1 3 3v18a3 3 0 0 1-3 3H70a3 3 0 0 1-3-3V67a3 3 0 0 1 3-3Z" fill={AMBER} {...S} />
@@ -994,7 +994,7 @@ function ChromeExtensionSection() {
             </div>
           </div>
           <div style={{ marginTop: 10, fontFamily: MONO, fontSize: 13, color: MONO_CLR, textAlign: "center" }}>
-            Actual extension popup (360×580px)
+            Extension popup preview
           </div>
         </Reveal>
       </div>
@@ -2730,7 +2730,7 @@ export default function SovereigntyDashboard() {
                 fontSize: 13, padding: "3px 10px", borderRadius: 999,
                 background: "rgba(190,79,40,0.1)", color: TERRA_SUB,
                 fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
-              }}>OPEN · PUBLIC</span>
+              }}>LIVE · PUBLIC</span>
             </div>
             <p style={{
               fontSize: 14, color: MUTED2, lineHeight: 1.6, margin: "0 0 22px",

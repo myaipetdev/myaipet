@@ -411,7 +411,7 @@ export default function App() {
     if (typeof window === "undefined") return;
     const t = window.setTimeout(() => {
       document.querySelectorAll<HTMLElement>(".ed-section-enter").forEach((el) => {
-        el.getAnimations?.().forEach((a) => { try { a.finish(); } catch { /* already done */ } });
+        try { (el as any).getAnimations?.({ subtree: true }).forEach((a: Animation) => a.finish()); } catch { el.getAnimations?.().forEach((a) => { try { a.finish(); } catch { /* done */ } }); }
       });
     }, 900);
     return () => clearTimeout(t);

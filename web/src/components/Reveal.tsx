@@ -94,6 +94,10 @@ export function MaskedTitle({
     if (!root || typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (!("IntersectionObserver" in window)) return;
+    // Whole-effect bail if WAAPI is missing: [data-line] spans render visible
+    // by default, so skipping the observer leaves the static title untouched
+    // rather than firing once and stranding lines at translateY(118%).
+    if (typeof root.animate !== "function") return;
 
     let fired = false;
     const io = new IntersectionObserver((entries) => {

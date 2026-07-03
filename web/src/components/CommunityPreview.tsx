@@ -64,24 +64,15 @@ export default function CommunityPreview({ cta }: { cta?: ReactNode }) {
           The gallery is just getting started — be the first to create.
         </div>
       ) : (
+        // One decisive CTA (the orange card below) — the redundant ghost
+        // "Browse the whole crate" button was dropped so entering Community
+        // reads as an expansion, not a repeat of the same crate.
         <Reveal dir="pop">
           <AlbumCarousel
             items={albumItems}
             autoAdvance={3800}
             onOpen={() => { window.location.href = "/?section=community"; }}
           />
-          <div style={{ textAlign: "center", marginTop: 14 }}>
-            <button
-              onClick={() => { window.location.href = "/?section=community"; }}
-              style={{
-                background: "transparent", border: "1px solid rgba(33,26,18,.13)", borderRadius: 999,
-                padding: "8px 18px", cursor: "pointer", fontFamily: "var(--ed-m)", fontSize: 13,
-                fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#9A4E1E",
-              }}
-            >
-              Browse the whole crate ▸
-            </button>
-          </div>
         </Reveal>
       )}
 

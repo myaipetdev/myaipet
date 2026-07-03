@@ -52,17 +52,13 @@ const INTRO: Record<Pillar, { eyebrow: string; line: string }> = {
 };
 
 function SectionIntro({ pillar }: { pillar: Pillar }) {
-  const { eyebrow, line } = INTRO[pillar];
+  const { line } = INTRO[pillar];
+  // The selected tab chip already labels the section — the eyebrow just echoed
+  // it, so only the descriptive line remains, at the header's ~16px rhythm.
   return (
-    <Reveal dir="fade" delay={80} style={{ maxWidth: 1060, margin: "18px auto 2px", padding: "0 24px" }}>
+    <Reveal dir="fade" delay={80} style={{ maxWidth: 1060, margin: "16px auto 16px", padding: "0 24px" }}>
       <div style={{
-        fontSize: 13, fontFamily: "var(--ed-m)",
-        letterSpacing: "0.14em", color: "#9A4E1E", fontWeight: 700,
-      }}>
-        {eyebrow}
-      </div>
-      <div style={{
-        fontSize: 14, color: "#5C5140", marginTop: 4,
+        fontSize: 14, color: "#5C5140",
         fontFamily: "var(--ed-body)", lineHeight: 1.45, maxWidth: 640,
       }}>
         {line}
