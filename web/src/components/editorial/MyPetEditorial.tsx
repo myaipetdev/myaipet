@@ -365,7 +365,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                  new collectible in. Stretches to the right column's full height
                  (flex fill) so the left side never leaves a dead cream gap. ── */}
           <div style={{ display: "flex" }}>
-            <div key={active.id} className="ed-rise" style={{ position: "relative", flex: 1, background: T.terra, borderRadius: 18, minHeight: 660, overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div key={active.id} className="ed-rise" style={{ position: "relative", flex: 1, background: T.terra, borderRadius: 18, minHeight: 560, overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div aria-hidden style={{ position: "absolute", inset: 14, border: "1px solid rgba(252,233,207,.35)", borderRadius: 8, pointerEvents: "none" }} />
               {[["14px", "14px", "", ""], ["14px", "", "", "14px"], ["", "14px", "14px", ""], ["", "", "14px", "14px"]].map((c, i) => (
                 <span key={i} aria-hidden style={{ position: "absolute", top: c[0] || undefined, left: c[1] || undefined, bottom: c[2] || undefined, right: c[3] || undefined, width: 11, height: 11,
@@ -385,21 +385,21 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               <div style={{ position: "absolute", left: -2, top: "50%", transform: "rotate(-90deg) translateX(50%)", transformOrigin: "left center", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".18em", color: "rgba(252,233,207,.55)", whiteSpace: "nowrap" }}>
                 ★ {element} · LV.{String(active.level).padStart(2, "0")}
               </div>
-              <div aria-hidden style={{ position: "absolute", top: -40, right: 6, fontFamily: T.disp, fontWeight: 800, fontSize: 210, lineHeight: 1, color: "rgba(255,255,255,.08)", zIndex: 1, pointerEvents: "none" }}>{active.level}</div>
+              <div aria-hidden style={{ position: "absolute", top: -40, right: 6, fontFamily: T.disp, fontWeight: 800, fontSize: 170, lineHeight: 1, color: "rgba(255,255,255,.08)", zIndex: 1, pointerEvents: "none" }}>{active.level}</div>
 
               {/* flow content centers vertically in whatever height the right
                   column dictates — the frame + name always sit balanced. */}
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", zIndex: 2, paddingTop: 84, paddingBottom: 56 }}>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", zIndex: 2, paddingTop: 64, paddingBottom: 44 }}>
                 <div style={{ position: "relative", zIndex: 2 }}>
                   <Motes />
                   {/* level-up: one-shot scale pop on the framed collectible (carries the gold seal) */}
                   <div style={{ animation: lvPop > 0 ? `${lvPop % 2 ? "mpSealPopA" : "mpSealPopB"} .7s cubic-bezier(.2,.8,.2,1)` : undefined }}>
-                    <CollectibleFrame photoUrl={photo} level={active.level} speciesLabel={species.toUpperCase()} elementLabel={element} width={330} />
+                    <CollectibleFrame photoUrl={photo} level={active.level} speciesLabel={species.toUpperCase()} elementLabel={element} width={290} />
                   </div>
                 </div>
 
-                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".34em", color: T.creamOn, marginTop: 38, zIndex: 2 }}>MEET</div>
-                <div className="ed-foil-text" style={{ fontFamily: T.disp, fontWeight: 800, fontSize: "clamp(64px,9vw,118px)", lineHeight: 0.82, letterSpacing: "-.04em", zIndex: 2, maxWidth: "92%", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{active.name}</div>
+                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".34em", color: T.creamOn, marginTop: 28, zIndex: 2 }}>MEET</div>
+                <div className="ed-foil-text" style={{ fontFamily: T.disp, fontWeight: 800, fontSize: "clamp(46px,6.5vw,86px)", lineHeight: 0.82, letterSpacing: "-.04em", zIndex: 2, maxWidth: "92%", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{active.name}</div>
               </div>
 
               <div style={{ position: "absolute", bottom: 16, left: 0, right: 0, overflow: "hidden", zIndex: 2, WebkitMaskImage: "linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)" }}>

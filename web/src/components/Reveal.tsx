@@ -15,13 +15,14 @@
 
 import { useEffect, useRef } from "react";
 
-export type RevealDir = "up" | "left" | "right" | "pop" | "fade";
+export type RevealDir = "up" | "left" | "right" | "pop" | "fly" | "fade";
 
 const FROM: Record<RevealDir, string> = {
   up: "translateY(28px)",
   left: "translateX(-44px) rotate(-1.2deg)",
   right: "translateX(44px) rotate(1.2deg)",
   pop: "scale(.94) translateY(14px)",
+  fly: "translate(150px, -120px) rotate(9deg) scale(1.12)",
   fade: "none",
 };
 
@@ -48,13 +49,18 @@ export default function Reveal({
         if (!e.isIntersecting || fired) continue;
         fired = true;
         io.disconnect();
-        const anim = el.animate(
-          [
-            { opacity: 0, transform: FROM[dir] },
-            { opacity: 1, transform: "none" },
-          ],
-          { duration, delay, easing: ED_EASE, fill: "backwards" },
-        );
+        // "fly" gets a paper-settle overshoot mid-frame; the rest are two-frame.
+        const frames = dir === "fly"
+          ? [
+              { opacity: 0, transform: FROM.fly },
+              { opacity: 1, transform: "translate(-6px, 5px) rotate(-1deg) scale(.995)", offset: 0.72 },
+              { opacity: 1, transform: "none" },
+            ]
+          : [
+              { opacity: 0, transform: FROM[dir] },
+              { opacity: 1, transform: "none" },
+            ];
+        const anim = el.animate(frames, { duration, delay, easing: ED_EASE, fill: "backwards" });
         // Pending-animation safety (hidden tab / capture pipelines): content
         // must never be stuck invisible.
         window.setTimeout(() => { try { anim.finish(); } catch { /* already done */ } }, delay + duration + 1000);

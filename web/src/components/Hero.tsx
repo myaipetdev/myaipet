@@ -104,9 +104,12 @@ function HeroShowcase({ txToday }: { txToday?: number }) {
           <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: "rgba(252,233,207,.7)" }}>FILE №0742</span>
         </div>
         <div style={{ position: "relative", zIndex: 2, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "6px 0" }}>
-          <CollectibleFrame photoUrl={LOGO_SRC} level={5} speciesLabel="POMERANIAN" elementLabel="GRASS" width={280} tilt={-2.4} />
+          {/* The collectible FLIES IN and settles like a dealt card (owner ask). */}
+          <Reveal dir="fly" duration={950} threshold={0.1}>
+            <CollectibleFrame photoUrl={LOGO_SRC} level={5} speciesLabel="POMERANIAN" elementLabel="GRASS" width={245} tilt={-2.4} />
+          </Reveal>
         </div>
-        <div className="ed-foil-text" style={{ position: "relative", zIndex: 2, fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 40, lineHeight: 0.9, letterSpacing: "-0.03em" }}>Mochi</div>
+        <div className="ed-foil-text" style={{ position: "relative", zIndex: 2, fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 33, lineHeight: 0.9, letterSpacing: "-0.03em" }}>Mochi</div>
         <div style={{ position: "relative", zIndex: 2, fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: ".22em", color: "rgba(252,233,207,.7)", marginTop: 6, textTransform: "uppercase" }}>Adopt · Remember · Own</div>
       </div>
     </div>
@@ -221,7 +224,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
 
           {/* Headline — stacked, three colors (시안) */}
           <h1 className="mp-enter" data-carve style={{
-            fontFamily: "var(--ed-disp)", fontSize: "clamp(40px,5vw,68px)",
+            fontFamily: "var(--ed-disp)", fontSize: "clamp(34px,4.4vw,56px)",
             fontWeight: 800, color: "#211A12", lineHeight: 1.0, margin: "0 0 16px", letterSpacing: "-0.035em",
           }}>
             <span style={{ display: "block" }}>Your AI.</span>
