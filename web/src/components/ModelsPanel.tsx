@@ -3,8 +3,10 @@
 /**
  * ModelsPanel — the user-facing surface for BYO models + CLI token pairing.
  * Lets an owner connect their own provider key (xAI / OpenAI / Anthropic /
- * OpenRouter), scoped to tasks; the router then routes those tasks to their
- * model. Also mints CLI personal-access tokens for the SDK / browser extension.
+ * Google / OpenRouter / Nous-Hermes), scoped to tasks; the router then routes
+ * those tasks to their model. A "Popular models" quick-pick row pre-fills the
+ * form (incl. Hermes natively via Nous or via OpenRouter). Also mints CLI
+ * personal-access tokens for the SDK / browser extension.
  *
  * The API key the user types is THEIR OWN key for THEIR OWN usage; the server
  * stores it encrypted (AES-256-GCM) and never returns it. (api.petclaw.models)
@@ -44,9 +46,24 @@ interface Conn {
 }
 interface Supported { id: string; label: string; keyFormat: string }
 
-function Card({ children, title, sub }: { children: React.ReactNode; title: string; sub?: string }) {
+// ── Popular BYO models — one-click pre-fills the connect form (provider + model).
+// Hermes is offered TWICE, honestly: natively via the Nous Portal (needs a Nous
+// key) AND via OpenRouter (the guaranteed-wired path, one OpenRouter key). Each
+// pick only sets provider+model — the owner still supplies THEIR OWN key below.
+// Model ids are the current canonical slugs (verified against each provider).
+interface QuickPick { label: string; provider: string; model: string; note: string }
+const QUICK_PICKS: QuickPick[] = [
+  { label: "Hermes (Nous)", provider: "nous", model: "Hermes-4-405B", note: "native Nous Portal key" },
+  { label: "Hermes (via OpenRouter)", provider: "openrouter", model: "nousresearch/hermes-4-405b", note: "one OpenRouter key" },
+  { label: "Grok", provider: "xai", model: "grok-3-mini", note: "xAI key" },
+  { label: "Claude", provider: "anthropic", model: "claude-sonnet-4-6", note: "Anthropic key" },
+  { label: "GPT", provider: "openai", model: "gpt-4.1-mini", note: "OpenAI key" },
+  { label: "Gemini", provider: "google", model: "gemini-2.5-flash", note: "Google key" },
+];
+
+function Card({ children, title, sub, id }: { children: React.ReactNode; title: string; sub?: string; id?: string }) {
   return (
-    <div style={{ background: PAPER, border: `1px solid ${LINE}`, borderRadius: 18, padding: "22px 24px", marginBottom: 20, boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
+    <div id={id} style={{ scrollMarginTop: 88, background: PAPER, border: `1px solid ${LINE}`, borderRadius: 18, padding: "22px 24px", marginBottom: 20, boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
       <h2 style={{ fontFamily: DISP, fontSize: 20, fontWeight: 800, color: INK, margin: 0, letterSpacing: "-0.01em" }}>{title}</h2>
       {sub && <p style={{ fontFamily: BODY, fontSize: 13.5, color: MUTED, margin: "6px 0 16px", lineHeight: 1.5 }}>{sub}</p>}
       {children}
@@ -122,6 +139,13 @@ export default function ModelsPanel() {
     navigator.clipboard?.writeText(`petclaw-sdk auth ${newToken}`).then(() => setCopied(true)).catch(() => {});
   };
 
+  // Quick-pick: pre-fill provider + model. The owner still enters their own key.
+  const applyPick = (p: QuickPick) => {
+    setProvider(p.provider);
+    setModel(p.model);
+    setErr(null);
+  };
+
   const connect = async () => {
     if (!apiKey.trim()) { setErr("Enter your API key."); return; }
     setSaving(true);
@@ -165,7 +189,7 @@ export default function ModelsPanel() {
 
       <div style={{ height: 20 }} />
 
-      <Card title="Connect your CLI" sub="Generate a token, then run it once in your terminal. It replaces copy-pasting the web session, stays valid until you revoke it, and only works for your account.">
+      <Card id="connect-cli" title="Connect your CLI" sub="Generate a token, then run it once in your terminal. It replaces copy-pasting the web session, stays valid until you revoke it, and only works for your account.">
         <button onClick={genToken} disabled={genLoading} style={{ ...btn, opacity: genLoading ? 0.6 : 1 }}>
           {genLoading ? "Generating…" : "Generate CLI token"}
         </button>
@@ -203,11 +227,41 @@ export default function ModelsPanel() {
         )}
       </Card>
 
-      <Card title="Or connect here (manual)" sub="Prefer the CLI above. This web form does the same thing — API-key providers (BYOK); OpenRouter reaches almost any model, including Gemini.">
+      <Card title="Or connect here (manual)" sub="Prefer the CLI above. This web form does the same thing — API-key providers (BYOK); OpenRouter reaches almost any model, including Gemini and Hermes.">
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: GOLD, textTransform: "uppercase", marginBottom: 8 }}>Popular models</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {QUICK_PICKS.map((p) => {
+              const on = provider === p.provider && model === p.model;
+              return (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => applyPick(p)}
+                  title={`Sets provider to ${p.provider} · model ${p.model} — then add your ${p.note}`}
+                  style={{
+                    display: "inline-flex", alignItems: "baseline", gap: 7,
+                    fontFamily: BODY, fontSize: 13, fontWeight: on ? 700 : 500,
+                    padding: "7px 13px", borderRadius: 999,
+                    border: `1px solid ${on ? "#BE4F28" : LINE}`,
+                    background: on ? GOLD_SOFT : PAPER,
+                    color: on ? GOLD : INK, cursor: "pointer",
+                  }}
+                >
+                  {p.label}
+                  <span style={{ fontFamily: MONO, fontSize: 13, color: on ? GOLD : MUTED, fontWeight: 400 }}>{p.note}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p style={{ fontFamily: BODY, fontSize: 13, color: MUTED, margin: "9px 0 0", lineHeight: 1.5 }}>
+            One click fills the form below — you still add your own key. Hermes runs natively on the Nous Portal or via OpenRouter.
+          </p>
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div>
             <label style={{ fontSize: 13, fontWeight: 600, color: MUTED2 }}>Provider</label>
-            <select value={provider} onChange={(e) => setProvider(e.target.value)} style={inputStyle}>
+            <select value={provider} onChange={(e) => { setProvider(e.target.value); setModel(""); }} style={inputStyle}>
               {supported.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
           </div>

@@ -323,7 +323,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
       <Shell owned={0}>
         {tabStrip}
         {tab === "catch" ? catchTab : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(196px, 1fr))", gap: 18 }}>
+          <div className="cd-album-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(196px, 1fr))", gap: 18 }}>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="mp-enter" style={{ animationDelay: `${i * 45}ms` }}>
                 <div className="ed-skeleton" style={{ width: "100%", aspectRatio: "5 / 7", borderRadius: 18, boxShadow: "var(--ed-shadow-card)" }} />
@@ -410,7 +410,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
           {/* Album grid — cards FLY IN from below as they scroll into view
               (viewport-triggered <Reveal>, stagger capped at 8 steps); the
               shared lift-on-hover verb stays on the inner tile. */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(196px, 1fr))", gap: 18 }}>
+          <div className="cd-album-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(196px, 1fr))", gap: 18 }}>
             {visible.map((p, i) => (
               <Reveal key={`${p.id}-${bust[p.id] || 0}`} dir="up" delay={Math.min(i, 8) * 70}>
                 <button
@@ -879,6 +879,12 @@ function Shell({ children, owned, rarityCounts }: { children: React.ReactNode; o
   const ownedC = useCountUp(owned, 600);
   return (
     <div style={{ position: "relative", fontFamily: T.body, color: T.ink }}>
+      {/* Album grid columns on phones — applies to the skeleton state too
+          (this Shell wraps every early return). */}
+      <style>{`
+        @media (max-width: 560px){ .cd-album-grid{ grid-template-columns:repeat(auto-fill,minmax(150px,1fr)) !important; gap:12px !important; } }
+        @media (max-width: 340px){ .cd-album-grid{ grid-template-columns:1fr !important; } }
+      `}</style>
       <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
       <div style={{ position: "relative", zIndex: 2, maxWidth: 1060, margin: "0 auto", padding: "8px 0 48px" }}>
         <div style={{ marginBottom: 22 }}>

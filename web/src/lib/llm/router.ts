@@ -30,7 +30,7 @@ import { prisma } from "@/lib/prisma";
 import { decrypt } from "@/lib/crypto";
 
 export type LLMTask = "chat" | "reason" | "judge" | "summarize" | "extract" | "persona";
-export type ProviderId = "xai" | "openai" | "anthropic" | "openrouter" | "google";
+export type ProviderId = "xai" | "openai" | "anthropic" | "openrouter" | "google" | "nous";
 
 interface ProviderConfig {
   id: ProviderId;
@@ -45,6 +45,10 @@ const PROVIDERS: Record<ProviderId, ProviderConfig> = {
   anthropic: { id: "anthropic", baseUrl: "https://api.anthropic.com/v1", flavor: "anthropic" },
   openrouter: { id: "openrouter", baseUrl: "https://openrouter.ai/api/v1", flavor: "openai" },
   google: { id: "google", baseUrl: "https://generativelanguage.googleapis.com/v1beta", flavor: "google" },
+  // Nous Research Portal — OpenAI-compatible inference endpoint (Bearer Portal
+  // API key from portal.nousresearch.com). Verified base URL + Hermes-4 model
+  // ids; routes through the identical /chat/completions openai flavor.
+  nous: { id: "nous", baseUrl: "https://inference-api.nousresearch.com/v1", flavor: "openai" },
 };
 
 /**
@@ -252,6 +256,7 @@ export function supportedProviders(): { id: ProviderId; label: string; keyFormat
     { id: "anthropic", label: "Anthropic (Claude)", keyFormat: "sk-ant-..." },
     { id: "google", label: "Google (Gemini)", keyFormat: "AIza..." },
     { id: "openrouter", label: "OpenRouter (any model)", keyFormat: "sk-or-..." },
+    { id: "nous", label: "Nous Research (Hermes)", keyFormat: "Portal API key" },
   ];
 }
 

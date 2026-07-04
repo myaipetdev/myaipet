@@ -418,7 +418,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
         }}>
           <div style={{
-            background: "#0f0f1a", padding: "12px 16px",
+            background: "#1E1710", padding: "12px 16px",
             fontFamily: "var(--ed-m)", fontSize: 13, color: "#f8f8f8",
             display: "flex", alignItems: "center", gap: 8, textAlign: "left",
           }}>

@@ -113,6 +113,11 @@ const MONO = "var(--ed-m)";
 // ── Helpers ──
 const BSCSCAN = "https://bscscan.com";
 
+// Single source of truth for the shipped extension version — must match
+// desktop-pet/manifest.json "version". Keeping the dashboard honest: it
+// previously advertised "v2.0" while the packaged extension was 2.2.x.
+const EXT_VERSION = "2.2.2";
+
 const truncate = (s?: string | null, n = 4) => {
   if (!s) return "—";
   if (s.length <= n * 2 + 2) return s;
@@ -802,7 +807,7 @@ function ChromeExtensionSection() {
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
           <span style={{ fontSize: 22, display: "inline-flex", color: TERRA }}><Icon name="extension-icon" size={22} /></span>
           <h2 style={{ fontFamily: DISP, fontSize: 24, fontWeight: 800, color: INK, letterSpacing: "-0.02em" }}>Desktop Companion Extension</h2>
-          <span style={{ fontSize: 13, padding: "3px 9px", borderRadius: 999, background: "rgba(190,79,40,0.1)", color: TERRA_SUB, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>v2.0 READY</span>
+          <span style={{ fontSize: 13, padding: "3px 9px", borderRadius: 999, background: "rgba(190,79,40,0.1)", color: TERRA_SUB, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>v{EXT_VERSION} · CHROME</span>
         </div>
         <p style={{ fontFamily: BODY, fontSize: 14, color: MUTED2, lineHeight: 1.65, marginBottom: 14 }}>
           Your pet follows you across the web — a little companion in the corner of every page. Click it to chat,
@@ -816,8 +821,8 @@ function ChromeExtensionSection() {
           <span style={{ fontSize: 16, lineHeight: 1.4, display: "inline-flex", color: TERRA }}><Icon name="lock" size={16} /></span>
           <p style={{ fontFamily: BODY, fontSize: 13, color: INK70, lineHeight: 1.6, margin: 0 }}>
             <strong>To see YOUR pet</strong> (not a random one): after installing, open the extension&apos;s
-            <strong> Settings</strong> and paste your <strong>CLI token</strong> — generate one in
-            <strong> &ldquo;Connect your CLI&rdquo;</strong> above. Without it, the extension can&apos;t tell which pet is yours.
+            <strong> Settings</strong> and paste your <strong>CLI token</strong> — generate one in{" "}
+            <a href="#connect-cli" style={{ color: TERRA, fontWeight: 700, textDecoration: "underline" }}>&ldquo;Connect your CLI&rdquo;</a> above. Without it, the extension can&apos;t tell which pet is yours.
           </p>
         </div>
       </Reveal>
@@ -892,8 +897,8 @@ function ChromeExtensionSection() {
           <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: MONO_CLR, letterSpacing: "0.14em", marginBottom: 12 }}>POPUP PREVIEW</div>
           {/* Extension popup mockup — a realistic dark device preview, framed
               softly on the warm field (no hard offset shadow, no purple glow). */}
-          <div style={{
-            width: 320, borderRadius: 16, overflow: "hidden",
+          <div className="sov-popup-mock" style={{
+            width: 320, maxWidth: "100%", borderRadius: 16, overflow: "hidden",
             background: "#1f1b16", fontFamily: "'Segoe UI', -apple-system, sans-serif",
             boxShadow: CARD_SHADOW, border: `1px solid ${HAIR}`,
             fontSize: 13,
@@ -929,13 +934,15 @@ function ChromeExtensionSection() {
 
             {/* Tabs */}
             <div style={{ display: "flex", padding: "0 16px", gap: 2, background: "rgba(0,0,0,0.3)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-              {["Status", "Points", "Game", "Settings"].map((t, i) => (
+              {["Points", "Evolve", "Mood", "Game", "Badges", "Settings"].map((t) => {
+                const active = t === "Mood";
+                return (
                 <div key={t} style={{
                   flex: 1, padding: "8px 0", textAlign: "center", fontSize: 10, fontWeight: 600,
-                  color: i === 0 ? "#F49B2A" : "#6a635a", cursor: "pointer",
-                  borderBottom: i === 0 ? "2px solid #F49B2A" : "2px solid transparent",
+                  color: active ? "#F49B2A" : "#6a635a", cursor: "pointer",
+                  borderBottom: active ? "2px solid #F49B2A" : "2px solid transparent",
                 }}>{t}</div>
-              ))}
+              );})}
             </div>
 
             {/* Status tab body */}
@@ -967,8 +974,8 @@ function ChromeExtensionSection() {
               ))}
 
               {/* Action buttons */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 14 }}>
-                {["🍖 Feed", "🎮 Play", "💬 Chat", "🧠 Train"].map((a) => (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 14 }}>
+                {["🍖 Feed", "🎾 Play", "💬 Chat"].map((a) => (
                   <div key={a} style={{
                     padding: "8px 0", borderRadius: 8, textAlign: "center",
                     background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)",
@@ -989,7 +996,7 @@ function ChromeExtensionSection() {
 
             {/* Footer */}
             <div style={{ padding: "8px 16px 12px", borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 9, fontFamily: "monospace", color: "#5a544c" }}>v2.0.0 · PetClaw enabled</span>
+              <span style={{ fontSize: 9, fontFamily: "monospace", color: "#5a544c" }}>v{EXT_VERSION} · PetClaw enabled</span>
               <span style={{ fontSize: 9, color: "#7CB36A", fontFamily: "monospace" }}>● connected</span>
             </div>
           </div>
@@ -1269,6 +1276,14 @@ export default function SovereigntyDashboard() {
           .sov-split { flex-direction:column; }
           .sov-split-aside { flex:1 1 auto !important; }
         }
+        /* Phones: the fixed-width popup mockup (320) + SOUL.md block (280 min)
+           overflowed the card. Let them shrink to the viewport; the input's
+           280 min drops so it never pushes the save button off-screen. */
+        @media (max-width: 480px) {
+          .sov-popup-mock { width: 100% !important; }
+          .sov-soul-block { min-width: 0 !important; }
+          .sov-successor-input { min-width: 0 !important; flex: 1 1 100% !important; }
+        }
       `}</style>
 
       <div style={{ position: "relative", zIndex: 2, padding: "40px 24px", paddingTop: 100, maxWidth: 1100, margin: "0 auto" }}>
@@ -1293,12 +1308,13 @@ export default function SovereigntyDashboard() {
           <p style={{ fontFamily: BODY, fontSize: 14.5, lineHeight: 1.65, color: INK70, margin: "0 0 14px" }}>
             Think of your pet as a <strong>personal assistant that actually remembers you</strong>. It keeps a private
             memory of what matters to you, replies in its own voice, and can come with you across the apps you connect —
-            chat, X/Twitter, and your browser. Everything it learns is yours: inspectable, exportable, and deletable.
+            chat, X/Twitter, and your browser. <strong>Connecting</strong> is what makes the same pet — same memory, same
+            personality — follow you everywhere. Everything it learns is yours: inspectable, exportable, and deletable.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {[
               ["crystal-ball", "Remembers you", "Builds a private memory from every chat"],
-              ["chat", "Across your apps", "Connect channels + your browser extension"],
+              ["chat", "Across your apps", "Connect channels + the browser companion below"],
               ["lock", "Your data, yours", "Export or delete it anytime, on your terms"],
             ].map(([icon, title, sub]) => (
               <div key={title} style={{
@@ -1760,6 +1776,7 @@ export default function SovereigntyDashboard() {
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <input
+                  className="sov-successor-input"
                   value={successorInput}
                   onChange={(e) => setSuccessorInput(e.target.value)}
                   placeholder="0x..."
@@ -2625,9 +2642,9 @@ export default function SovereigntyDashboard() {
               background: INSET, padding: "18px 30px",
               display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-start",
             }}>
-              <div style={{ flex: "0 0 auto" }}>
+              <div style={{ flex: "0 1 auto", minWidth: 0, maxWidth: "100%" }}>
                 <div style={{ fontSize: 13, fontFamily: MONO, color: TERRA_SUB, letterSpacing: "0.12em", marginBottom: 8, fontWeight: 700 }}>SOUL.md — A living definition of your pet</div>
-                <div style={{ background: "#211A12", borderRadius: 10, padding: "14px 18px", fontFamily: "monospace", fontSize: 13, color: "#F5EFE2", lineHeight: 1.85, minWidth: 280 }}>
+                <div className="sov-soul-block" style={{ background: "#211A12", borderRadius: 10, padding: "14px 18px", fontFamily: "monospace", fontSize: 13, color: "#F5EFE2", lineHeight: 1.85, minWidth: 280, maxWidth: "100%", overflowX: "auto" }}>
                   <div style={{ color: "#F49B2A", fontWeight: 700 }}># SOUL — Sparky</div>
                   <div style={{ color: "rgba(251,246,236,0.65)", marginTop: 4 }}>{"> A living definition of who Sparky is."}</div>
                   <div style={{ marginTop: 10, color: "#E8A86A" }}>## Core Values</div>

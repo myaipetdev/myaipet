@@ -171,12 +171,15 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   const saveAndComplete = async () => {
     setSaving(true);
     try {
+      // The persona PUT handler (pets/[petId]/persona) reads UNPREFIXED keys
+      // (tone/speech_style/expressions/interests/bio) — sending owner_* keys
+      // silently saved nothing. Use the keys the handler actually accepts.
       const data: Record<string, any> = {};
-      if (quizAnswers.humor) data.owner_tone = quizAnswers.humor;
-      if (quizAnswers.communication) data.owner_speech_style = quizAnswers.communication;
-      if (quizAnswers.role) data.owner_expressions = quizAnswers.role;
-      if (quizAnswers.interests) data.owner_interests = Array.isArray(quizAnswers.interests) ? (quizAnswers.interests as string[]).join(", ") : quizAnswers.interests;
-      if (quizAnswers.frequency) data.owner_bio = `Prefers ${quizAnswers.frequency} interaction frequency`;
+      if (quizAnswers.humor) data.tone = quizAnswers.humor;
+      if (quizAnswers.communication) data.speech_style = quizAnswers.communication;
+      if (quizAnswers.role) data.expressions = quizAnswers.role;
+      if (quizAnswers.interests) data.interests = Array.isArray(quizAnswers.interests) ? (quizAnswers.interests as string[]).join(", ") : quizAnswers.interests;
+      if (quizAnswers.frequency) data.bio = `Prefers ${quizAnswers.frequency} interaction frequency`;
       if (Object.keys(data).length > 0) await api.persona.save(pet.id, data).catch(() => {});
     } catch {}
     setSaving(false);
@@ -298,38 +301,54 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             {pet.element && pet.element !== "normal" && (<><span>·</span><span style={{ textTransform: "capitalize" }}>{pet.element}</span></>)}
           </div>
           <p style={{ color: "#5C5140", fontSize: 15, lineHeight: 1.55, margin: 0, padding: "0 8px" }}>
-            A 1-minute setup so {pet.name} can match your tone and live wherever you do online.
+            {pet.name} is a companion that <strong>remembers you</strong> — a private memory that
+            grows every chat, in a voice you tune. Let&apos;s spend a minute setting it up.
           </p>
         </div>
 
-        <div style={{ display: "grid", gap: 8, marginBottom: 14 }}>
-          {[
-            { icon: "scroll", label: "Personality match", pts: "+30", desc: "5 quick questions" },
-            { icon: "extension-icon", label: "Connect platforms", pts: "+100", desc: "Same pet, everywhere" },
-          ].map((item) => (
-            <div key={item.label} style={{
-              display: "flex", alignItems: "center", gap: 14,
-              padding: "12px 14px", borderRadius: 14,
-              background: "#F5EFE2",
-              border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-            }}>
-              <div style={{
-                width: 38, height: 38, borderRadius: 11,
-                background: "rgba(190,79,40,0.10)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 19,
-              }}><Icon name={item.icon} size={22} /></div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#211A12", fontFamily: "var(--ed-disp)" }}>{item.label}</div>
-                <div style={{ fontSize: 13, color: "#7A6E5A", marginTop: 1 }}>{item.desc}</div>
+        {/* The honest path: what setup covers, and what's optional. Numbered so
+            the first-run flow reads as one clear route, not a pile of features. */}
+        <div style={{
+          padding: "6px 4px 2px", marginBottom: 14,
+        }}>
+          <div style={{
+            fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
+            letterSpacing: "0.12em", color: "#9A7B4E", textTransform: "uppercase",
+            padding: "0 10px", marginBottom: 8,
+          }}>Your setup path</div>
+          <div style={{ display: "grid", gap: 8 }}>
+            {[
+              { n: 1, icon: "scroll", label: "Tune the personality", desc: "5 quick questions — now", tag: "Now" },
+              { n: 2, icon: "chat", label: "Say hi", desc: "A first chat, so it starts learning you", tag: "Now" },
+              { n: 3, icon: "extension-icon", label: "Connect your apps", desc: "Discord, Telegram, X, GitHub — same pet everywhere", tag: "Optional" },
+              { n: 4, icon: "compass", label: "Bring your own model / browser companion", desc: "Connect a model or install the browser pet — from the PetClaw page", tag: "Later" },
+            ].map((item) => (
+              <div key={item.n} className="mp-lift" style={{
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "11px 14px", borderRadius: 14,
+                background: "#F5EFE2",
+                border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+              }}>
+                <div style={{
+                  width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
+                  background: "#BE4F28", color: "#FCE9CF",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 13, fontWeight: 700, fontFamily: "var(--ed-m)",
+                }}>{item.n}</div>
+                <div style={{ color: "#BE4F28", display: "inline-flex", flexShrink: 0 }}><Icon name={item.icon} size={18} /></div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: "#211A12", fontFamily: "var(--ed-disp)" }}>{item.label}</div>
+                  <div style={{ fontSize: 13, color: "#7A6E5A", marginTop: 1 }}>{item.desc}</div>
+                </div>
+                <span style={{
+                  fontSize: 12, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap",
+                  fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.04em",
+                  background: item.tag === "Now" ? "rgba(92,138,78,0.14)" : "rgba(33,26,18,0.06)",
+                  color: item.tag === "Now" ? "#5C8A4E" : "#9A7B4E",
+                }}>{item.tag}</span>
               </div>
-              <span style={{
-                fontSize: 13, padding: "3px 10px", borderRadius: 999,
-                background: "rgba(92,138,78,0.14)", color: "#5C8A4E", fontWeight: 700,
-                fontFamily: "var(--ed-m)",
-              }}>{item.pts}</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         <button onClick={() => setStep("quiz")} style={primaryBtn}
@@ -458,7 +477,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
         </div>
 
         <button onClick={saveAndComplete} disabled={saving} style={primaryBtn}>
-          {saving ? "Saving…" : `Finish (${points} pts) 🎉`}
+          {saving ? "Saving…" : "Finish — all set 🎉"}
         </button>
         <button onClick={saveAndComplete} style={ghostBtn}>Skip & finish</button>
       </Shell>
@@ -589,7 +608,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             fontFamily: "var(--ed-disp)",
             boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
           }}>
-            +{points} pts
+            Setup complete
           </div>
           <p style={{ color: "#5C5140", fontSize: 14, margin: "16px 0 18px", lineHeight: 1.55 }}>
             {pet.name} keeps learning every time you talk. Here's what's ahead:
@@ -609,9 +628,12 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             ))}
           </div>
           <button onClick={onComplete} style={primaryBtn}>Start chatting →</button>
-          <div style={{ marginTop: 12 }}>
-            <a href="/sovereignty" style={{ fontSize: 13, color: "#9A4E1E", textDecoration: "none", fontWeight: 600 }}>
-              Bring your own AI model (Claude · GPT · Gemini) ▸ PetClaw
+          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
+            <a href="/sovereignty" className="ed-underline-slide" style={{ fontSize: 13, color: "#9A4E1E", textDecoration: "none", fontWeight: 600 }}>
+              Connect your own AI model or CLI ▸ PetClaw
+            </a>
+            <a href="/sovereignty" className="ed-underline-slide" style={{ fontSize: 13, color: "#9A4E1E", textDecoration: "none", fontWeight: 600 }}>
+              Install the browser companion ▸ PetClaw
             </a>
           </div>
         </div>
@@ -628,7 +650,6 @@ if (typeof document !== "undefined" && !document.getElementById("ob-anims")) {
   style.textContent = `
     @keyframes obSlideIn { 0% { opacity: 0; transform: translateY(20px) scale(0.97); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
     @keyframes obFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-    @keyframes obPulseRing { 0% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); } 100% { box-shadow: 0 0 0 22px rgba(220,38,38,0); } }
     @keyframes obBounce { 0% { transform: scale(0.7); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
   `;
   document.head.appendChild(style);

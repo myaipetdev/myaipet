@@ -12,7 +12,7 @@ const DEFAULT_CONFIG = {
   authToken: "",        // optional JWT \u2014 paste from app to enable server sync
   syncEnabled: true,    // pull live pet stats from server when authToken is set
   petId: 1,
-  petName: "My Pet",
+  petName: "Demo Pet",   // reads as demo until a CLI token links the owner's real pet
   petEmoji: "\uD83D\uDC3E",
   avatarUrl: "",
   personality: "playful",
@@ -120,6 +120,21 @@ async function getEmotions() {
 async function saveEmotions(emotions) {
   emotions.lastUpdate = Date.now();
   await chrome.storage.local.set({ [EMOTIONS_KEY]: emotions });
+}
+
+// Track the set of distinct moods the pet has shown, so the "Mood Ring"
+// achievement (see 5+ different emotions) is actually reachable. Previously
+// _emotionsSeen was read but never written, so it could never unlock.
+async function recordEmotionSeen(name) {
+  if (!name) return;
+  const points = await getPoints();
+  const seen = Array.isArray(points._emotionSet) ? points._emotionSet : [];
+  if (!seen.includes(name)) {
+    seen.push(name);
+    points._emotionSet = seen;
+    points._emotionsSeen = seen.length;
+    await chrome.storage.local.set({ [POINTS_KEY]: points });
+  }
 }
 
 function getDominantEmotion(emotions) {
@@ -355,7 +370,7 @@ async function saveGameResult(score, points, game = "catcher") {
 
   if (points > 0) {
     await addPoints("game", points, `${game} score ${score}`);
-    await addNotification("🎮", `${game === "memory" ? "Memory" : "Catcher"}: ${score} pts, +${points} Season Rewards`);
+    await addNotification("🎮", `${game === "memory" ? "Memory" : "Catcher"}: ${score} pts, +${points} Play Points`);
   }
 
   await checkAchievements();
@@ -385,7 +400,7 @@ const ACHIEVEMENT_DEFS = [
   { id: "evo_teen",       icon: "⚡", name: "Growing Up",        desc: "Evolve to Teen",                 check: (_, __, e) => e.stage >= 3 },
   { id: "evo_legend",     icon: "👑", name: "Legendary",         desc: "Reach Legend stage",             check: (_, __, e) => e.stage >= 5 },
   { id: "browse_60",      icon: "🌐", name: "Web Surfer",        desc: "Browse 60+ minutes",             check: (p) => (p.heartbeatCount || 0) >= 12 },
-  { id: "feed_pet",       icon: "🍖", name: "Good Owner",        desc: "Feed your pet 5 times",          check: (p) => (p.skillCount || 0) >= 5 },
+  { id: "feed_pet",       icon: "🍖", name: "Good Owner",        desc: "Care for your pet 5 times",          check: (p) => (p.skillCount || 0) >= 5 },
   { id: "all_emotions",   icon: "🎭", name: "Mood Ring",         desc: "See 5+ different emotions",      check: (p) => (p._emotionsSeen || 0) >= 5 },
 ];
 
@@ -840,6 +855,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     // Broadcast emotion update to content scripts
     const emotions = await getEmotions();
     const dominant = getDominantEmotion(emotions);
+    await recordEmotionSeen(dominant.name);
     // Mood is shared pet state — update every tab, not just the focused one.
     const tabs = await chrome.tabs.query({});
     for (const tab of tabs) {

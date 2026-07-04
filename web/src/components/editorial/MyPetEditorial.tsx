@@ -353,7 +353,14 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
       <div style={{ position: "relative", zIndex: 2, maxWidth: 1200, margin: "0 auto", padding: "8px 24px 48px" }}>
         <div className="mp-grid" style={{ display: "grid", gridTemplateColumns: "1.02fr 1fr", gap: 24, alignItems: "start" }}>
           <style>{`
-            @media (max-width: 880px) { .mp-grid { grid-template-columns: 1fr !important; } }
+            @media (max-width: 880px) {
+              .mp-grid { grid-template-columns: 1fr !important; }
+              /* On 1-col mobile the poster must scroll normally above the stats —
+                 a sticky poster would pin at top:88 and cover the right column
+                 as it scrolls past. Drop sticky + the desktop max-height clamp. */
+              .mp-poster-wrap { position: static !important; }
+              .mp-poster-wrap > div { max-height: none !important; }
+            }
             @keyframes mpDeltaRise { 0% { opacity: 0; transform: translateY(3px); } 18% { opacity: 1; } 100% { opacity: 0; transform: translateY(-16px); } }
             @keyframes mpSealPopA { 0% { transform: scale(1); } 35% { transform: scale(1.045); } 100% { transform: scale(1); } }
             @keyframes mpSealPopB { 0% { transform: scale(1); } 35% { transform: scale(1.045); } 100% { transform: scale(1); } }
@@ -367,7 +374,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
           {/* ── poster (left, dominant) — keyed on the pet so switching rises the
                  new collectible in. Stretches to the right column's full height
                  (flex fill) so the left side never leaves a dead cream gap. ── */}
-          <div style={{ display: "flex", position: "sticky", top: 88, alignSelf: "start" }}>
+          <div className="mp-poster-wrap" style={{ display: "flex", position: "sticky", top: 88, alignSelf: "start" }}>
             <div key={active.id} className="ed-rise" style={{ position: "relative", flex: 1, background: T.terra, borderRadius: 18, minHeight: 440, maxHeight: "calc(100vh - 116px)", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div aria-hidden style={{ position: "absolute", inset: 14, border: "1px solid rgba(252,233,207,.35)", borderRadius: 8, pointerEvents: "none" }} />
               {[["14px", "14px", "", ""], ["14px", "", "", "14px"], ["", "14px", "14px", ""], ["", "", "14px", "14px"]].map((c, i) => (

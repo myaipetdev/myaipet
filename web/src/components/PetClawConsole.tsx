@@ -322,7 +322,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   <SectionHead>PACK — pet-to-pet (A2A)</SectionHead>
                   {PACK.map((p) => <Row key={p.k} k={p.k} v={p.v} kw={120} />)}
                   <SectionHead>MODELS — bring your own (BYOK)</SectionHead>
-                  <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter — powers chat + agent reasoning + judging" kw={120} />
+                  <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter · Nous (Hermes) — powers chat + agent reasoning + judging" kw={120} />
                   <Row k="agent-loop" v="give a goal → plans, calls skills, iterates → answers" kw={120} />
                   <div style={{ fontSize: 14, marginTop: 4 }}>
                     <span style={{ color: GREEN }}>connect your model ↓ below (or via the CLI)</span>

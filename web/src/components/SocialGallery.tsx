@@ -725,6 +725,24 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
   const wheelLock = useRef(0);
   const dragX = useRef<number | null>(null);
 
+  // ── Responsive sleeve sizing ── the 300px sleeve + 168px neighbour offset
+  // shot past a 375px phone (clipped by the stage, but the center sleeve nearly
+  // filled the screen and neighbours were cropped to slivers). Shrink both on
+  // mobile so the crate reads as a carousel, not one giant card. Desktop values
+  // are byte-identical.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 560px)");
+    const apply = () => setNarrow(mq.matches);
+    apply();
+    mq.addEventListener?.("change", apply);
+    return () => mq.removeEventListener?.("change", apply);
+  }, []);
+  const SLEEVE_W = narrow ? 220 : 300;
+  const SLEEVE_OFFSET = narrow ? 120 : 168;
+  const STAGE_H = narrow ? 360 : 470;
+
   // ── auto-advance ── an interval nudges idx forward (wrapping); hovering
   // pauses it, manual interaction restarts it (autoKey bump re-creates the
   // interval so the full delay elapses again), unmount clears it.
@@ -772,7 +790,7 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
       }}
       style={{ outline: "none" }}
     >
-      <div style={{ position: "relative", height: 470, perspective: 1400, overflow: "hidden" }}>
+      <div style={{ position: "relative", height: STAGE_H, perspective: 1400, overflow: "hidden" }}>
         {items.map((it, i) => {
           const off = i - idx;
           if (Math.abs(off) > 4) return null;
@@ -784,9 +802,9 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
               onClick={() => { resetAuto(); if (center) onOpen(it, i); else setIdx(i); }}
               title={center ? "Open" : undefined}
               style={{
-                position: "absolute", left: "50%", top: "50%", width: 300,
-                marginLeft: -150, marginTop: -195,
-                transform: `translateX(${off * 168}px) translateZ(${center ? 96 : -40 * Math.abs(off)}px) rotateY(${center ? 0 : -Math.sign(off) * 56}deg)`,
+                position: "absolute", left: "50%", top: "50%", width: SLEEVE_W,
+                marginLeft: -SLEEVE_W / 2, marginTop: -(SLEEVE_W / 2 + 45),
+                transform: `translateX(${off * SLEEVE_OFFSET}px) translateZ(${center ? 96 : -40 * Math.abs(off)}px) rotateY(${center ? 0 : -Math.sign(off) * 56}deg)`,
                 transformStyle: "preserve-3d",
                 zIndex: 100 - Math.abs(off),
                 transition: "transform .45s cubic-bezier(.22,.9,.3,1)",

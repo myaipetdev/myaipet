@@ -132,7 +132,7 @@ function loadQuests() {
           if (r?.success) {
             loadQuests();
             loadPoints();
-            showStatus(`✅ +${r.reward} Season Rewards points!`);
+            showStatus(`✅ +${r.reward} Play Points!`);
           }
         });
       });
@@ -409,7 +409,7 @@ function endGame() {
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#fff">
       <div style="font-size:36px;margin-bottom:8px">🎉</div>
       <div style="font-size:18px;font-weight:700">Score: ${gameScore}</div>
-      <div style="font-size:12px;color:#888;margin-top:4px">+${earned} Season Rewards points earned!</div>
+      <div style="font-size:12px;color:#888;margin-top:4px">+${earned} Play Points earned!</div>
     </div>
   `;
 }
@@ -567,7 +567,7 @@ function endMemoryGame() {
     <div style="grid-column:1/-1;text-align:center;padding:20px;color:#fff">
       <div style="font-size:36px;margin-bottom:8px">🧠</div>
       <div style="font-size:16px;font-weight:700">Completed in ${memoryMoves} moves!</div>
-      <div style="font-size:12px;color:#888;margin-top:4px">Score: ${score} | +${earned} Season Rewards points</div>
+      <div style="font-size:12px;color:#888;margin-top:4px">Score: ${score} | +${earned} Play Points</div>
     </div>
   `;
 }
@@ -644,7 +644,8 @@ chrome.runtime.sendMessage({ type: "getConfig" }, (res) => {
       : "Not linked yet. Paste your CLI token (pck_…) from 'Connect your CLI' in the app to show YOUR pet.";
     $("syncStatus").style.color = (c.authToken && !c.needsPairing) ? "#4ade80" : "#888";
   }
-  $("petName").textContent = c.petName || "My Pet";
+  $("petName").textContent = c.petName || "Demo Pet";
+  { const db = $("demoBadge"); if (db) db.style.display = c.authToken ? "none" : "inline-block"; }
   $("petLevel").textContent = `Lv.${c.level || 1}`;
   $("petPersonality").textContent = c.personality || "playful";
 

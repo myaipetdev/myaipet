@@ -95,6 +95,7 @@ function defaultModelFor(provider: ProviderId): string {
     case "anthropic": return "claude-sonnet-4-6";
     case "google": return "gemini-2.5-flash";
     case "openrouter": return "openrouter/auto";
+    case "nous": return "Hermes-4-405B";
     default: return "grok-3-mini";
   }
 }
