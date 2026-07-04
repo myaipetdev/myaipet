@@ -351,7 +351,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
     <div style={{ position: "relative", fontFamily: T.body, color: T.ink, paddingTop: 78 }}>
       <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
       <div style={{ position: "relative", zIndex: 2, maxWidth: 1200, margin: "0 auto", padding: "8px 24px 48px" }}>
-        <div className="mp-grid" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 24, alignItems: "stretch" }}>
+        <div className="mp-grid" style={{ display: "grid", gridTemplateColumns: "1.02fr 1fr", gap: 24, alignItems: "start" }}>
           <style>{`
             @media (max-width: 880px) { .mp-grid { grid-template-columns: 1fr !important; } }
             @keyframes mpDeltaRise { 0% { opacity: 0; transform: translateY(3px); } 18% { opacity: 1; } 100% { opacity: 0; transform: translateY(-16px); } }
@@ -367,8 +367,8 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
           {/* ── poster (left, dominant) — keyed on the pet so switching rises the
                  new collectible in. Stretches to the right column's full height
                  (flex fill) so the left side never leaves a dead cream gap. ── */}
-          <div style={{ display: "flex" }}>
-            <div key={active.id} className="ed-rise" style={{ position: "relative", flex: 1, background: T.terra, borderRadius: 18, minHeight: 560, overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div style={{ display: "flex", position: "sticky", top: 88, alignSelf: "start" }}>
+            <div key={active.id} className="ed-rise" style={{ position: "relative", flex: 1, background: T.terra, borderRadius: 18, minHeight: 440, maxHeight: "calc(100vh - 116px)", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div aria-hidden style={{ position: "absolute", inset: 14, border: "1px solid rgba(252,233,207,.35)", borderRadius: 8, pointerEvents: "none" }} />
               {[["14px", "14px", "", ""], ["14px", "", "", "14px"], ["", "14px", "14px", ""], ["", "", "14px", "14px"]].map((c, i) => (
                 <span key={i} aria-hidden style={{ position: "absolute", top: c[0] || undefined, left: c[1] || undefined, bottom: c[2] || undefined, right: c[3] || undefined, width: 11, height: 11,
@@ -388,21 +388,21 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               <div style={{ position: "absolute", left: -2, top: "50%", transform: "rotate(-90deg) translateX(50%)", transformOrigin: "left center", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".18em", color: "rgba(252,233,207,.55)", whiteSpace: "nowrap" }}>
                 ★ {element} · LV.{String(active.level).padStart(2, "0")}
               </div>
-              <div aria-hidden style={{ position: "absolute", top: -40, right: 6, fontFamily: T.disp, fontWeight: 800, fontSize: 170, lineHeight: 1, color: "rgba(255,255,255,.08)", zIndex: 1, pointerEvents: "none" }}>{active.level}</div>
+              <div aria-hidden style={{ position: "absolute", top: -40, right: 6, fontFamily: T.disp, fontWeight: 800, fontSize: 132, lineHeight: 1, color: "rgba(255,255,255,.08)", zIndex: 1, pointerEvents: "none" }}>{active.level}</div>
 
               {/* flow content centers vertically in whatever height the right
                   column dictates — the frame + name always sit balanced. */}
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", zIndex: 2, paddingTop: 64, paddingBottom: 44 }}>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", zIndex: 2, paddingTop: 48, paddingBottom: 34 }}>
                 <div style={{ position: "relative", zIndex: 2 }}>
                   <Motes />
                   {/* level-up: one-shot scale pop on the framed collectible (carries the gold seal) */}
                   <div style={{ animation: lvPop > 0 ? `${lvPop % 2 ? "mpSealPopA" : "mpSealPopB"} .7s cubic-bezier(.2,.8,.2,1)` : undefined }}>
-                    <CollectibleFrame photoUrl={photo} level={active.level} speciesLabel={species.toUpperCase()} elementLabel={element} width={290} />
+                    <CollectibleFrame photoUrl={photo} level={active.level} speciesLabel={species.toUpperCase()} elementLabel={element} width={230} />
                   </div>
                 </div>
 
-                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".34em", color: T.creamOn, marginTop: 28, zIndex: 2 }}>MEET</div>
-                <div className="ed-foil-text" style={{ fontFamily: T.disp, fontWeight: 800, fontSize: "clamp(46px,6.5vw,86px)", lineHeight: 0.82, letterSpacing: "-.04em", zIndex: 2, maxWidth: "92%", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{active.name}</div>
+                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".34em", color: T.creamOn, marginTop: 22, zIndex: 2 }}>MEET</div>
+                <div className="ed-foil-text" style={{ fontFamily: T.disp, fontWeight: 800, fontSize: "clamp(38px,4.6vw,64px)", lineHeight: 0.82, letterSpacing: "-.04em", zIndex: 2, maxWidth: "92%", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{active.name}</div>
               </div>
 
               <div style={{ position: "absolute", bottom: 16, left: 0, right: 0, overflow: "hidden", zIndex: 2, WebkitMaskImage: "linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)" }}>
