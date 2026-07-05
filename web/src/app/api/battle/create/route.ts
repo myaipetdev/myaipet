@@ -10,8 +10,8 @@
  *      itself paid entry within the same 1h window.
  *   3. Deterministic resolution: power + small randomness from a seed = block hash
  *      of payment tx (verifiable).
- *   4. Winner gets EXP + entry_fee * 1.7 credited as airdrop points (cash payout
- *      lands at week-end via the weekly distribution cron).
+ *   4. Winner gets EXP only. Season points do NOT accrue from a paid/competitive
+ *      battle (compliance: recognition points must not derive from paid actions).
  *   5. Battle goes into battle_history with tx_hash.
  *
  * Match queue: in-memory not enough — use battle_history with `won = NULL` as queue.
@@ -24,7 +24,6 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
 import { enforcePaywall } from "@/lib/paywall";
-import { awardPoints } from "@/lib/seasonRewards";
 import crypto from "crypto";
 
 const ENTRY_FEE_USD = 0.50;
@@ -230,12 +229,13 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Apply XP + airdrop points
+  // Apply XP only. Compliance: season/recognition points must NOT accrue from a
+  // paid/competitive battle (money → credits → action → points would make points
+  // look purchased). points_earned below is battle-history flavor, not a grant.
   await prisma.pet.update({
     where: { id: pet.id },
     data: { experience: { increment: expGained }, last_interaction_at: new Date() },
   });
-  if (result.won) await awardPoints(user.id, pet.id, "battle_win" as any);
 
   return NextResponse.json({
     ok: true,

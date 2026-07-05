@@ -4,12 +4,12 @@
  * Home pitch — "why raise, why create, why climb the Season Rewards board".
  *
  * Three live elements stacked:
- *   1. PERSONAL standing bar — current Season Rewards points + free ways to earn
+ *   1. PERSONAL standing bar — current Season Rewards points + free ways to climb
  *      this week. For signed-in users it shows their weekly standing; anonymous:
  *      show pool + top-3 preview to bait the sign-in. (Points are non-financial
- *      loyalty — no payout tied to spend.)
+ *      recognition — no token, no cash value, no payout tied to spend.)
  *
- *   2. LIVE TICKER — last few events (AI creations / NFT mints / pool closes).
+ *   2. LIVE TICKER — last few events (AI creations / milestones / community activity).
  *      Social proof of an active community.
  *
  *   3. PET THOUGHT — a 1-sentence current inner monologue from the user's
@@ -117,12 +117,12 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
     <section style={{ padding: "60px 40px", maxWidth: 1060, margin: "0 auto" }}>
       {/* Headline */}
       <div style={{ textAlign: "center", marginBottom: 30 }}>
-        <Reveal dir="fade"><span style={pill}>RAISE TO EARN</span></Reveal>
-        <MaskedTitle as="h2" lines={["Your pet earns Season Rewards."]} style={headline} />
+        <Reveal dir="fade"><span style={pill}>SEASON 1 · STANDING</span></Reveal>
+        <MaskedTitle as="h2" lines={["Your pet climbs the Season 1 board."]} style={headline} />
         <Reveal dir="fade" delay={120}>
         <p style={sub}>
-          Every interaction stacks loyalty points. Raise &amp; create to climb the
-          Season 1 leaderboard before it closes.
+          Every interaction stacks loyalty points — non-financial recognition. Raise &amp;
+          create to climb the Season 1 leaderboard before it closes.
         </p>
         </Reveal>
       </div>
@@ -160,9 +160,9 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
                 </div>
               </div>
 
-              {/* How to earn — free, no purchase */}
+              {/* How to climb — free, no purchase */}
               <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24 }}>
-                <div style={miniLabel}>EARN MORE</div>
+                <div style={miniLabel}>CLIMB FASTER</div>
                 <div style={{ ...bigNumber, color: "#7FB069", fontSize: 22 }}>
                   Free
                 </div>
@@ -216,7 +216,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
               ) : (
                 <>
                   <div style={{ ...bigNumber, color: "#F49B2A", fontSize: 30 }}>Get ready</div>
-                  <div style={mini}>Adopt now — every care &amp; creation banks points the moment Season 1 opens.</div>
+                  <div style={mini}>Adopt now — every care &amp; creation counts the moment Season 1 opens.</div>
                 </>
               )}
             </div>
@@ -234,7 +234,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
                 fontWeight: 700, fontSize: 14, cursor: "pointer",
                 fontFamily: "var(--ed-disp)",
                 boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
-              }}>Adopt → Start earning</button>
+              }}>Adopt → Start raising</button>
             </div>
           </div>
         )}
@@ -324,13 +324,13 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
       }} className="pitch-how-grid">
         <Reveal dir="up" delay={0}>
         <PathCard step="01" icon="paw" title="Care daily"
-          body="Feed, play, talk. 5 free / day. A 7-day streak earns a Memory NFT (mints at on-chain go-live)."
+          body="Feed, play, talk. 5 free / day. A 7-day streak marks a milestone in your pet's story."
           earn="+5 pts per care" cta="Start raising"
           onClick={() => onNavigate?.("my pet")} accent="#5C8A4E" />
         </Reveal>
         <Reveal dir="up" delay={90}>
         <PathCard step="02" icon="fire" title="Keep your streak"
-          body="Show up daily. A 7-day streak pays a bonus, 30 days pays more — and earns a Memory NFT at on-chain go-live."
+          body="Show up daily. A 7-day streak marks a milestone, 30 days a bigger one — recorded in your pet's history."
           earn="+100 (7d) · +500 (30d)" cta="Check in"
           onClick={() => onNavigate?.("my pet")} accent="#A8432B" />
         </Reveal>
@@ -342,8 +342,8 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
         </Reveal>
         <Reveal dir="up" delay={270}>
         <PathCard step="04" icon="trophy" title="Climb leaderboard"
-          body="Rank by Season Rewards points. Top raisers earn rewards when Season 1 closes."
-          earn="Top 100 = rewards" cta="See ranks"
+          body="Rank by Season 1 points. Top 100 unlock a profile badge when Season 1 closes — non-transferable, no cash value."
+          earn="Top 100 = badge" cta="See ranks"
           onClick={() => onNavigate?.("leaderboard")} accent="#9A4E1E" />
         </Reveal>
       </div>
@@ -365,7 +365,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
           fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
           letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.75, marginBottom: 12,
         }}>
-          Season 1 · Raise to Earn
+          Season 1 · Raise &amp; Climb
         </div>
         <div style={{
           fontFamily: "var(--ed-disp)", fontSize: "clamp(30px,4.5vw,48px)", fontWeight: 800,
@@ -392,7 +392,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
             fontFamily: "var(--ed-disp)", fontSize: 15, fontWeight: 800, letterSpacing: "-0.01em",
           }}
         >
-          Adopt <ArrowSwap /> Start earning
+          Adopt <ArrowSwap /> Start raising
         </button>
       </div>
       </Reveal>
@@ -401,7 +401,8 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
         marginTop: 26, fontSize: 13, color: "#5C5140",
         textAlign: "center", lineHeight: 1.65, fontFamily: "var(--ed-m)",
       }}>
-        Points are a non-financial loyalty currency — earned by raising &amp; creating, not bought.
+        Points are a non-financial loyalty score — gained by raising &amp; creating, never bought.
+        No token, no cash value, no redemption — recognition only.
       </div>
 
       <style>{`

@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * "My Card" — personal dashboard header for the merged Airdrop page. Turns the
- * Airdrop tab into a my-page: at-a-glance points, streak, season rank, credits,
+ * "My Card" — personal dashboard header for the merged Season Rewards page. Turns
+ * the Season Rewards tab into a my-page: at-a-glance points, streak, season rank, credits,
  * and the pet you're playing as. Signed-out users get a sign-in nudge.
  */
 import { useEffect, useState } from "react";

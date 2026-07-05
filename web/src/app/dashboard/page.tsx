@@ -222,8 +222,9 @@ export default async function DashboardPage() {
           fontSize: 13, color: "rgba(26,26,46,0.7)", lineHeight: 1.65,
         }}>
           <strong style={{ fontFamily: "'JetBrains Mono', monospace", color: "#b45309" }}>HOW TO CLIMB ↑</strong><br />
-          Season Rewards points are earned free — care <strong>+5</strong>, create <strong>+10</strong>, evolve <strong>+200</strong> —
-          and rank you for Season 1. Show up daily: a 7-day care streak earns a Memory NFT (mints at on-chain go-live).
+          Season Rewards points are gained free — care <strong>+5</strong>, create <strong>+10</strong>, evolve <strong>+200</strong> —
+          and rank you for Season 1. Show up daily: a 7-day care streak marks a milestone in your pet&apos;s story. Points are
+          non-financial recognition — no token, no cash value.
         </div>
       </div>
     </main>

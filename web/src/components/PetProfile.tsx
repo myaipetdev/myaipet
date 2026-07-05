@@ -2140,8 +2140,8 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                   </div>
                   <div style={{ fontSize: 13, fontFamily: "var(--ed-m)", color: "rgba(154,78,30,0.75)", marginTop: 1 }}>
                     {(pet as any).care_streak % 7 === 0
-                      ? "Memory NFT earned ✨ (mints at go-live)"
-                      : `Next Memory NFT at day ${Math.ceil((pet as any).care_streak / 7) * 7}`}
+                      ? "7-day milestone reached ✨"
+                      : `Next milestone at day ${Math.ceil((pet as any).care_streak / 7) * 7}`}
                   </div>
                 </div>
               </div>

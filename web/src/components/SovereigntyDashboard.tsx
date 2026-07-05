@@ -1950,7 +1950,7 @@ export default function SovereigntyDashboard() {
                   No memories minted yet
                 </div>
                 <div style={{ fontFamily: BODY, fontSize: 14, color: MUTED, marginBottom: 20 }}>
-                  Memory NFTs launch after on-chain go-live
+                  Memory preservation is coming soon — own your pet&apos;s history
                 </div>
                 <div
                   style={{

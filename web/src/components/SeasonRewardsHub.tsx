@@ -12,7 +12,7 @@
  *   🤝 Connect (소셜)       — SOS rescues, buddies, pet dates
  *
  * The premium upsell sits below the tabs on every pillar. `banner` is injected
- * by App (it owns the live airdrop-point count the season strip renders).
+ * by App (it owns the live season-point count the season strip renders).
  */
 import { useState, type ReactNode } from "react";
 

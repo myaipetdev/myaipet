@@ -12,23 +12,9 @@ const POINT_REWARDS: Record<string, number> = {
   streak_30: 500,     // 30-day streak bonus
 };
 
-/**
- * On-chain anchoring of season points — PREPARED, currently PAUSED.
- *
- * Every season-point grant in the app (catch, cards, studio, world cup,
- * community, petclaw, chat, …) flows through here, so the moment on-chain
- * recording is switched on (BLOCKCHAIN_ENABLED=true + the PETActivity recorder
- * deployed) ALL activity is anchored on-chain with no further wiring. It is a
- * fire-and-forget no-op today (on-chain is paused per /contracts), so it never
- * blocks or slows the in-app award and records nothing yet.
- */
-function anchorSeasonOnChain(userId: number, reason: string, points: number): void {
-  if (points <= 0 || process.env.BLOCKCHAIN_ENABLED !== "true") return; // paused — ready to flip on
-  // Ready to deploy: delegates to the relayer-backed PETActivity recorder.
-  import("./blockchain")
-    .then((m: any) => m.recordSeasonActivity?.(userId, reason, points))
-    .catch(() => {});
-}
+// Season points are a purely off-chain, non-financial recognition score. There is
+// deliberately NO on-chain anchoring / points-to-chain path — points confer no
+// token, no cash value, and no claim, so nothing about them is recorded on-chain.
 
 export async function awardPoints(
   userId: number,
@@ -44,7 +30,6 @@ export async function awardPoints(
       data: { season_points: { increment: points } },
     });
 
-    anchorSeasonOnChain(userId, reason, points); // prepared, paused
     return { points, reason };
   } catch (e) {
     console.error("Award points error:", e);
@@ -52,12 +37,12 @@ export async function awardPoints(
   }
 }
 
-// Per-user/day ceilings on "soft" (free, repeatable) airdrop earnings. Without
-// these, actions like `interact` can be scripted to mint the airdrop allocation
-// currency at near-zero cost (audit H5) and there is no bound on total emission
-// (audit M5). Hard-gated actions (purchases, evolutions) are not capped here.
+// Per-user/day ceilings on "soft" (free, repeatable) recognition points. Without
+// these, actions like `interact` can be scripted to inflate the non-financial
+// season score at near-zero cost (audit H5) and there is no bound on total
+// accrual (audit M5). Hard-gated actions (purchases, evolutions) are not capped here.
 export const DAILY_POINT_CAPS: Record<string, number> = {
-  interact: 150,    // ≈30 interactions/day count toward the airdrop
+  interact: 150,    // ≈30 interactions/day count toward season recognition
   catch: 300,       // Cat/dog catches (points scaled by rarity, capped/day)
   card_battle: 40,  // Card duels (small, anti-spam)
   studio_gen: 120,  // Studio generations (World Cup pet, card art, etc.)
@@ -102,7 +87,6 @@ export async function awardPointsCapped(
       await tx.user.update({ where: { id: userId }, data: { season_points: { increment: give } } });
       return give;
     });
-    if (granted > 0) anchorSeasonOnChain(userId, reason, granted); // prepared, paused
     return { points: granted, reason, capped: granted < perActionPoints };
   } catch (e) {
     console.error("Award capped points error:", e);

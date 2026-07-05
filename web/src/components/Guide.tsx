@@ -351,7 +351,7 @@ function RewardsSection() {
         ]} />
       </SectionCard>
 
-      <SectionCard title="📈 How to Earn Points">
+      <SectionCard title="📈 How Points Work">
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {[
             { source: "Each interaction", pts: "+1 pt" },
@@ -379,10 +379,10 @@ function EconomySection() {
     <>
       <SectionCard title="🪙 Points Economy">
         <P>
-          Points are the in-game reward currency — earned from interactions, evolutions,
-          and battles, and spent on items, slots, and premium actions. The current system
-          is loyalty-only (no token mint, no claim on equity). Future redemption paths are
-          on the roadmap.
+          Points are an in-game recognition score — gained from interactions, evolutions,
+          and battles, and spent on items, slots, and premium actions. They are
+          loyalty-only: no token, no cash value, and no redemption path — now or planned —
+          and confer no claim on equity.
         </P>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
           <div style={{ padding: "14px", borderRadius: 12, background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)" }}>

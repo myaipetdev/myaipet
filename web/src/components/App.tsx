@@ -144,7 +144,7 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
               Daily Check-in
             </div>
             <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A" }}>
-              {checkedIn ? `Day ${streak} streak active 🔥` : "Check in to earn Season Rewards points"}
+              {checkedIn ? `Day ${streak} streak active 🔥` : "Check in to collect Season Rewards points"}
             </div>
           </div>
         </div>
@@ -207,7 +207,7 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
             {loading ? "..." : checkedIn ? "Done ✓" : "Check In"}
           </button>
         ) : (
-          <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E" }}>Connect wallet to earn</span>
+          <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E" }}>Connect wallet to start</span>
         )}
       </div>
     </Reveal>

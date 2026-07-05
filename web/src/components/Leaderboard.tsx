@@ -537,7 +537,7 @@ export default function Leaderboard() {
           fontFamily: "var(--ed-body)", fontSize: 15, color: "#7A6E5A",
         }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>{"\uD83C\uDFC6"}</div>
-          No rankings yet. Be the first to earn Season Rewards points!
+          No rankings yet. Be the first to collect Season Rewards points!
         </div>
       )}
 

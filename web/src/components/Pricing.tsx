@@ -37,7 +37,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
     // Kept at the server's lower grants on purpose to stay margin-positive over
     // Grok generation costs.
     { name: "Explorer", key: "starter", cookies: 100, price: 5, usdtPrice: "5 USDT", pop: false, desc: "Try the ecosystem", emoji: "grass" },
-    { name: "Companion", key: "creator", cookies: 500, price: 20, usdtPrice: "20 USDT", pop: true, desc: "Full Raise-to-Earn", emoji: "paw" },
+    { name: "Companion", key: "creator", cookies: 500, price: 20, usdtPrice: "20 USDT", pop: true, desc: "Full raise & create", emoji: "paw" },
     { name: "Breeder", key: "pro", cookies: 2000, price: 50, usdtPrice: "50 USDT", pop: false, desc: "Power user tier", emoji: "crown" },
   ];
 

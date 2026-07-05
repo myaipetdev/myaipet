@@ -140,8 +140,8 @@ export default function SeasonTierCard() {
               <circle cx="12" cy="13" r="3.2" />
             </svg>
           </span>
-          <span>Your standing is <strong style={{ color: "#211A12" }}>snapshotted when Season 1 closes</strong> · {participants.toLocaleString()} raising now.</span>
-          <span style={{ marginLeft: "auto", fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E" }}>non-financial status</span>
+          <span>Your standing is <strong style={{ color: "#211A12" }}>recognized when Season 1 closes</strong> — non-transferable, no cash value · {participants.toLocaleString()} raising now.</span>
+          <span style={{ marginLeft: "auto", fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E" }}>recognition only</span>
         </div>
       </div>
     </Reveal>

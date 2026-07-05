@@ -1,6 +1,11 @@
 /**
  * Season-close snapshot store — freezes final standings at SEASON_END.
  *
+ * This freezes a RECOGNITION snapshot only — there is NO settlement, payout, or
+ * distribution of any kind. Final standings are non-financial: no token, no cash
+ * value, no claim. The column names below are LEGACY reuse of a retired battle
+ * table and do not imply any payout.
+ *
  * NO new table (migration-free): we persist the single global snapshot as a
  * JSON blob in the existing, otherwise-unused WeeklyBattlePool row, keyed by a
  * sentinel week_key === SEASON_KEY ("SEASON-1"). Battles were retired (see the
@@ -8,11 +13,11 @@
  * borrow its `payouts Json` column + `closed_at` to hold the snapshot.
  *
  *   week_key      = "SEASON-1"          (sentinel, not a real ISO week)
- *   closed_at     = settlement time
+ *   closed_at     = season close time   (NOT a settlement — nothing is paid out)
  *   total_entries = participant count
- *   pool_usd      = 0                    (no USD here; loyalty points only)
- *   payouts       = SeasonSnapshot JSON  (frozen final standings)
- *   paid_out      = true once written
+ *   pool_usd      = 0                    (no USD, ever; recognition points only)
+ *   payouts       = SeasonSnapshot JSON  (legacy column name; holds frozen standings)
+ *   paid_out      = true once written    (legacy flag; means "snapshot frozen")
  */
 
 import { prisma } from "@/lib/prisma";
