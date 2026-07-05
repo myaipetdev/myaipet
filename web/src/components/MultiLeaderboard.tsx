@@ -43,7 +43,7 @@ interface Resp {
 const MEDAL_PALETTE: Record<number, { ribbon: string; disc: string; rim: string; face: string }> = {
   1: { ribbon: "#9A4E1E", disc: "#BE4F28", rim: "#211A12", face: "#FFF8EE" },
   2: { ribbon: "#211A12", disc: "#ECE4D4", rim: "#211A12", face: "#211A12" },
-  3: { ribbon: "#9A4E1E", disc: "#cdb89a", rim: "#211A12", face: "#211A12" },
+  3: { ribbon: "#9A4E1E", disc: "#9A7B4E", rim: "#211A12", face: "#FFF8EE" },
 };
 function MedalIcon({ place, size }: { place: number; size: number }) {
   const c = MEDAL_PALETTE[place] || MEDAL_PALETTE[3];
@@ -85,8 +85,8 @@ export default function MultiLeaderboard() {
         boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
         overflow: "hidden",
       }}>
-        {/* Tabs */}
-        <div style={{
+        {/* Tabs — horizontally scrollable; a right-edge fade hints there's more. */}
+        <div className="ml-tabs" style={{
           padding: "10px 12px",
           borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           background: "#F5EFE2",
@@ -120,8 +120,10 @@ export default function MultiLeaderboard() {
             display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
             borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           }}>
-            <div style={{ fontSize: 28 }}>{data.meta.emoji}</div>
-            <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 28, display: "inline-flex", color: "#BE4F28" }}>
+              <Icon name={METRICS.find(m => m.key === metric)?.icon || "trophy"} size={28} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "var(--ed-disp)", color: "#211A12" }}>{data.meta.label}</div>
               <div style={{ fontSize: 13.5, fontFamily: "var(--ed-body)", color: "#5C5140" }}>{data.meta.description}</div>
             </div>
@@ -177,7 +179,7 @@ export default function MultiLeaderboard() {
 
         {/* Top-3 Podium — pops in as one ceremony block (rows stay unwrapped) */}
         {!loading && top3.length > 0 && (
-          <Reveal dir="pop" style={{
+          <Reveal className="ml-podium" dir="pop" style={{
             padding: "20px 22px 16px",
             background: "#F5EFE2",
             borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -278,6 +280,13 @@ export default function MultiLeaderboard() {
         </Reveal>
         )}
       </div>
+      <style>{`
+        .ml-tabs { -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+        @media (max-width: 480px) {
+          .ml-tabs { -webkit-mask-image: none; mask-image: none; }
+          .ml-podium { gap: 6px !important; padding: 16px 12px 12px !important; }
+        }
+      `}</style>
     </div>
   );
 }

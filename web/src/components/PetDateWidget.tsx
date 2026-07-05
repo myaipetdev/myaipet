@@ -3,9 +3,10 @@
 /**
  * Pet Date — one-click AI-generated conversation between two pets.
  *
- * Picks one of the user's pets + a target pet (any active pet across the
- * platform — for the v1 we just let them paste a petId; later we add a
- * picker that surfaces the buddy graph).
+ * Picks one of the user's pets + a target pet chosen from a real picker: the
+ * leaderboard's most-bonded pets (each carries a petId), minus your own. This
+ * replaces the old free-text "paste a petId" field, which was a dead end since
+ * the leaderboard never surfaced ids.
  *
  * No graphics; just a turn-based dialogue log + a vibe label + friendship
  * delta. Costs 20 credits.
@@ -16,6 +17,7 @@ import { toast } from "@/components/Toast";
 import Icon from "@/components/Icon";
 
 interface Pet { id: number; name: string; avatar_url: string | null; }
+interface TargetPet { id: number; name: string; avatar_url: string | null; }
 interface DateResult {
   pet_a: { name: string; avatar_url: string | null };
   pet_b: { name: string; avatar_url: string | null };
@@ -34,12 +36,14 @@ const VIBE_STYLE: Record<string, { bg: string; fg: string }> = {
 export default function PetDateWidget() {
   const [pets, setPets] = useState<Pet[]>([]);
   const [myPetId, setMyPetId] = useState<number | null>(null);
+  const [targets, setTargets] = useState<TargetPet[]>([]);
   const [targetPetId, setTargetPetId] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<DateResult | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
+    let mine: number[] = [];
     fetch("/api/pets", { headers: getAuthHeaders() })
       .then(r => {
         if (r.status === 401) { setAuthed(false); return null; }
@@ -50,9 +54,26 @@ export default function PetDateWidget() {
         if (!d) return;
         const list = (d?.pets || []) as Pet[];
         setPets(list);
+        mine = list.map(p => p.id);
         if (list.length) setMyPetId(list[0].id);
       })
-      .catch(() => {});
+      .catch(() => {})
+      // Real target picker: the most-bonded pets from the leaderboard (each
+      // carries a petId), minus the user's own pets and any without an id.
+      .finally(() => {
+        fetch("/api/leaderboards/bond?limit=40", { headers: getAuthHeaders() })
+          .then(r => (r.ok ? r.json() : null))
+          .then(d => {
+            const seen = new Set<number>();
+            const list: TargetPet[] = ((d?.entries || []) as any[])
+              .map(e => e.pet)
+              .filter((p: any) => p && typeof p.id === "number" && !mine.includes(p.id))
+              .filter((p: any) => (seen.has(p.id) ? false : (seen.add(p.id), true)))
+              .map((p: any) => ({ id: p.id, name: p.name, avatar_url: p.avatar_url ?? null }));
+            setTargets(list);
+          })
+          .catch(() => {});
+      });
   }, []);
 
   const validTarget = Number.isInteger(Number(targetPetId)) && Number(targetPetId) > 0;
@@ -111,20 +132,23 @@ export default function PetDateWidget() {
                 fontFamily: "var(--ed-disp)", background: "#F5EFE2", color: "#211A12",
               }}
             >
-              {pets.map(p => <option key={p.id} value={p.id}>🐾 {p.name}</option>)}
+              {pets.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
-            <input
-              type="number"
-              aria-label="Target pet ID from leaderboard"
+            <select
+              aria-label="Who to date"
               value={targetPetId}
               onChange={e => setTargetPetId(e.target.value)}
-              placeholder="Target pet ID (from leaderboard)"
+              disabled={targets.length === 0}
               style={{
-                flex: "1 1 220px", padding: "10px 12px", borderRadius: 10,
+                flex: "1 1 200px", padding: "10px 12px", borderRadius: 10,
                 border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", fontSize: 13,
-                fontFamily: "var(--ed-m)", background: "#F5EFE2", color: "#211A12",
+                fontFamily: "var(--ed-disp)", background: "#F5EFE2", color: "#211A12",
+                opacity: targets.length === 0 ? 0.6 : 1,
               }}
-            />
+            >
+              <option value="">{targets.length === 0 ? "No other pets to date yet" : "Pick who to date…"}</option>
+              {targets.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
             <button onClick={go} disabled={busy || !myPetId || !validTarget} style={{
               padding: "10px 16px", borderRadius: 10, border: "none",
               background: "linear-gradient(180deg,#F49B2A,#E27D0C)",

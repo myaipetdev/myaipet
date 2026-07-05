@@ -95,7 +95,7 @@ function Tier({
         {current && (
           <span style={{
             padding: "2px 7px", borderRadius: 999,
-            background: "#BE4F28", color: "#fff", border: "none",
+            background: "#BE4F28", color: "#FFF8EE", border: "none",
             fontSize: 13, fontWeight: 800, fontFamily: "var(--ed-m)", letterSpacing: "0.06em",
           }}>CURRENT</span>
         )}

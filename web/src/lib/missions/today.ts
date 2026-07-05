@@ -11,7 +11,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { getMission, MISSION_CATALOG, pickDailyMissionIds, type MissionTemplate } from "./catalog";
+import { getMission, MISSION_CATALOG, pickDailyMissionIds, seasonEffectivePoints, type MissionTemplate } from "./catalog";
 import { recordCompletionForStreakBookkeeping, todayUtcString, getOrCreateStreak, nextMilestone } from "./streak";
 
 export interface MissionView {
@@ -19,7 +19,11 @@ export interface MissionView {
   category: string;
   title: string;
   description: string;
+  /** Full base reward (accrues to the lifetime loyalty ledger). */
   points: number;
+  /** What actually credits to season_points — the balance/rank the whole page
+   *  shows. Equals `points` for auto missions, capped for self-report ones. */
+  seasonPoints: number;
   status: "pending" | "completed";
   cta: { label: string; href: string } | null;
   verifier: "auto" | "manual";
@@ -176,17 +180,23 @@ export async function getOrAssignToday(userId: number): Promise<TodayResponse> {
   const missions: MissionView[] = assigned.map(row => {
     const tpl = getMission(row.mission_id);
     const completed = row.status === "completed";
-    if (completed) earned += row.points;
-    else remaining += row.points;
+    const verifier = tpl?.verifier || "manual";
+    // The displayed/earnable totals must reflect what actually credits to
+    // season_points (the only balance the page shows), not the phantom full
+    // value for self-report missions.
+    const effective = seasonEffectivePoints(row.points, verifier);
+    if (completed) earned += effective;
+    else remaining += effective;
     return {
       id: row.mission_id,
       category: row.category,
       title: row.title,
       description: tpl?.description ?? "",
       points: row.points,
+      seasonPoints: effective,
       status: completed ? "completed" : "pending",
       cta: tpl?.cta || null,
-      verifier: tpl?.verifier || "manual",
+      verifier,
       completed_at: row.completed_at?.toISOString() || null,
     };
   });
@@ -207,7 +217,7 @@ export async function getOrAssignToday(userId: number): Promise<TodayResponse> {
       const ao = a.status === "pending" ? 0 : 1;
       const bo = b.status === "pending" ? 0 : 1;
       if (ao !== bo) return ao - bo;
-      return b.points - a.points;
+      return b.seasonPoints - a.seasonPoints;
     }),
     earnedToday: earned,
     remainingToday: remaining,

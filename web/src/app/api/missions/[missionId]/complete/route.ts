@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { getMission } from "@/lib/missions/catalog";
+import { getMission, seasonEffectivePoints } from "@/lib/missions/catalog";
 import { recordCompletionForStreakBookkeeping, todayUtcString } from "@/lib/missions/streak";
 import { tryGrantAllCompleteBonus } from "@/lib/missions/today";
 
@@ -54,9 +54,7 @@ export async function POST(
   //     still gets the FULL reward, so the user keeps their honest progress.
   //
   // Auto missions are server-verified, so they grant the full reward to rank.
-  const isManual = tpl.verifier === "manual";
-  const MANUAL_RANK_CAP = 2;
-  const rankPoints = isManual ? Math.min(row.points, MANUAL_RANK_CAP) : row.points;
+  const rankPoints = seasonEffectivePoints(row.points, tpl.verifier);
 
   // Flip is the atomic claim: updateMany only matches while status is not yet
   // "completed", so exactly one of two concurrent requests wins and grants the

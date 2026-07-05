@@ -1,13 +1,18 @@
 /**
- * Hourly Drops — global random 30-minute multipliers.
+ * Hourly Spotlight — a rotating "featured category" each hour.
  *
- * One drop is "live" at most. We don't pre-schedule a whole day; the
- * current drop is computed lazily based on the current UTC hour seed.
- * That keeps drops deterministic (every user sees the same drop at the
- * same time, like live community events) without a cron writer.
+ * One category is spotlighted at most. We don't pre-schedule a whole day; the
+ * current spotlight is computed lazily from the current UTC hour seed, so it's
+ * deterministic (every user sees the same one at the same time, like live
+ * community events) without a cron writer.
  *
- * Drop ends 30 min into the hour. The remaining 30 min there's no drop.
- * Window is shown in UI as a countdown.
+ * The spotlight ends 30 min into the hour; the remaining 30 min there's none.
+ * The window is shown in UI as a countdown.
+ *
+ * NOTE: `multiplier_x` is carried in the data model for a future boost feature
+ * but is NOT applied to point grants yet — the award paths credit the flat base
+ * amount, so the UI must not advertise a live multiplier. `activeMultiplierFor`
+ * below is intentionally not wired into any grant path.
  */
 
 export type DropKind = "snack" | "memory" | "studio" | "compliment" | "chat" | "care";
@@ -21,13 +26,15 @@ export interface DropDef {
   description: string;
 }
 
+// `multiplier_x` is retained for a future boost feature but is NOT applied to
+// grants today (see module note), so descriptions must not promise a multiplier.
 export const DROP_POOL: DropDef[] = [
-  { kind: "snack",      emoji: "🍖", label: "Snack Hour",        applies_to: "care",         multiplier_x: 2.0, description: "Feed/play care actions count 2×." },
-  { kind: "memory",     emoji: "💭", label: "Memory Minute",     applies_to: "memory",       multiplier_x: 2.0, description: "Memories formed now are worth 2×." },
-  { kind: "studio",     emoji: "🎬", label: "Studio Happy Hour", applies_to: "creation",     multiplier_x: 1.5, description: "Studio generations award 1.5× points." },
-  { kind: "compliment", emoji: "💌", label: "Compliment Hour",   applies_to: "social",       multiplier_x: 2.0, description: "Comments/likes count 2×." },
-  { kind: "chat",       emoji: "💬", label: "Chat Hour",         applies_to: "conversation", multiplier_x: 2.0, description: "Conversation missions 2×." },
-  { kind: "care",       emoji: "💝", label: "Care Frenzy",       applies_to: "care",         multiplier_x: 3.0, description: "All 4 care missions worth 3× if done this hour." },
+  { kind: "snack",      emoji: "🍖", label: "Snack Hour",        applies_to: "care",         multiplier_x: 1.0, description: "Feed & play care actions are featured this hour." },
+  { kind: "memory",     emoji: "💭", label: "Memory Minute",     applies_to: "memory",       multiplier_x: 1.0, description: "Making memories is featured this hour." },
+  { kind: "studio",     emoji: "🎬", label: "Studio Happy Hour", applies_to: "creation",     multiplier_x: 1.0, description: "Studio creations are featured this hour." },
+  { kind: "compliment", emoji: "💌", label: "Compliment Hour",   applies_to: "social",       multiplier_x: 1.0, description: "Comments & likes are featured this hour." },
+  { kind: "chat",       emoji: "💬", label: "Chat Hour",         applies_to: "conversation", multiplier_x: 1.0, description: "Conversations are featured this hour." },
+  { kind: "care",       emoji: "💝", label: "Care Frenzy",       applies_to: "care",         multiplier_x: 1.0, description: "All care actions are featured this hour." },
 ];
 
 export interface ActiveDrop {

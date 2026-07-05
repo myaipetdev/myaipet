@@ -93,13 +93,13 @@ export default function HourlyDropBanner() {
             borderRadius: 999,
           }}
         >{live ? drop.emoji : <Icon name="crystal-ball" size={32} />}</div>
-        <div style={{ flex: 1, minWidth: 200 }}>
+        <div style={{ flex: 1, minWidth: 140 }}>
           <div style={{
             fontSize: 13, fontFamily: "var(--ed-m)",
             letterSpacing: "0.14em", color: live ? "#FFF8EE" : "#9A4E1E",
             fontWeight: 800,
           }}>
-            {live ? `HOURLY DROP · ${drop.multiplier_x}× ${drop.applies_to.toUpperCase()}` : "NEXT DROP"}
+            {live ? `THIS HOUR · ${drop.applies_to.toUpperCase()}` : "NEXT SPOTLIGHT"}
           </div>
           <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "var(--ed-disp)", color: live ? "#FFF8EE" : "#211A12", marginTop: 2 }}>
             {live ? drop.label : `${drop.next_emoji} ${drop.next_label}`}
@@ -120,8 +120,8 @@ export default function HourlyDropBanner() {
         </div>
       </div>
 
-      {/* Upcoming drops runway — tells the user there's a fresh 2-3× window
-          every hour, so checking in more often = catching more of them. */}
+      {/* Upcoming spotlights runway — a fresh featured category every hour, so
+          checking in more often = a reason to come back. */}
       {drop.upcoming && drop.upcoming.length > 1 && (
         <div style={{
           marginTop: 8, padding: "12px 16px",
@@ -142,10 +142,10 @@ export default function HourlyDropBanner() {
               whiteSpace: "nowrap",
               display: "inline-flex", alignItems: "center", gap: 5,
             }}>
-              <Icon name="electric" size={14} /> TODAY'S DROPS
+              <Icon name="electric" size={14} /> TODAY'S SPOTLIGHTS
             </div>
             <div style={{ fontSize: 13.5, fontFamily: "var(--ed-body)", color: "#5C5140", fontWeight: 600 }}>
-              New drop every hour — check back to catch more 2-3× windows.
+              A new category is featured every hour — check back to see what's next.
             </div>
           </div>
           {/* Chips wrap so every drop stays fully visible (no edge clipping). */}
@@ -165,7 +165,7 @@ export default function HourlyDropBanner() {
                   fontSize: 13, fontFamily: "var(--ed-m)",
                   color: u.is_live ? "#FFF8EE" : "#9A7B4E", fontWeight: 700,
                 }}>
-                  {u.is_live ? "LIVE" : (i === arr.findIndex((x: any) => !x.is_live) ? "next" : clockLabel(u.starts_at))} · {u.multiplier_x}×
+                  {u.is_live ? "LIVE" : (i === arr.findIndex((x: any) => !x.is_live) ? "next" : clockLabel(u.starts_at))}
                 </span>
               </div>
             ))}

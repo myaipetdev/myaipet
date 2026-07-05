@@ -41,7 +41,7 @@ export async function GET(
   let currentUser: any = null;
   try { currentUser = await getUser(req); } catch {}
 
-  type Row = { user_id: number; wallet: string; value: number; pet_name: string | null; pet_avatar: string | null };
+  type Row = { user_id: number; wallet: string; value: number; pet_name: string | null; pet_avatar: string | null; pet_id: number | null };
   let rows: Row[] = [];
 
   if (m === "streak") {
@@ -56,6 +56,7 @@ export async function GET(
       value: s.current_streak,
       pet_name: s.user.pets[0]?.name || null,
       pet_avatar: s.user.pets[0]?.avatar_url || null,
+      pet_id: s.user.pets[0]?.id ?? null,
     }));
   } else if (m === "chats") {
     const raw: any[] = await prisma.$queryRawUnsafe(`
@@ -72,7 +73,7 @@ export async function GET(
        ORDER BY value DESC
        LIMIT $1
     `, limit);
-    rows = raw.map(r => ({ user_id: r.user_id, wallet: r.wallet, value: Number(r.value), pet_name: r.pet_name, pet_avatar: r.pet_avatar }));
+    rows = raw.map(r => ({ user_id: r.user_id, wallet: r.wallet, value: Number(r.value), pet_name: r.pet_name, pet_avatar: r.pet_avatar, pet_id: null }));
   } else if (m === "memories") {
     const raw: any[] = await prisma.$queryRawUnsafe(`
       SELECT u.id AS user_id, u.wallet_address AS wallet, COUNT(pm.id)::int AS value,
@@ -89,7 +90,7 @@ export async function GET(
        ORDER BY value DESC
        LIMIT $1
     `, limit);
-    rows = raw.map(r => ({ user_id: r.user_id, wallet: r.wallet, value: Number(r.value), pet_name: r.pet_name, pet_avatar: r.pet_avatar }));
+    rows = raw.map(r => ({ user_id: r.user_id, wallet: r.wallet, value: Number(r.value), pet_name: r.pet_name, pet_avatar: r.pet_avatar, pet_id: null }));
   } else if (m === "creator") {
     const data = await prisma.user.findMany({
       include: { _count: { select: { generations: true } }, pets: { where: { is_active: true }, orderBy: { level: "desc" }, take: 1 } },
@@ -99,6 +100,7 @@ export async function GET(
     rows = data.filter(u => u._count.generations > 0).map(u => ({
       user_id: u.id, wallet: u.wallet_address, value: u._count.generations,
       pet_name: u.pets[0]?.name || null, pet_avatar: u.pets[0]?.avatar_url || null,
+      pet_id: u.pets[0]?.id ?? null,
     }));
   } else if (m === "bond") {
     // SCRUM-103: bond_level caps at 100, so a raw bond sort ties everyone at the
@@ -113,7 +115,7 @@ export async function GET(
     });
     rows = pets.map(p => ({
       user_id: p.user_id, wallet: p.user.wallet_address, value: p.bond_level,
-      pet_name: p.name, pet_avatar: p.avatar_url,
+      pet_name: p.name, pet_avatar: p.avatar_url, pet_id: p.id,
     }));
   } else if (m === "oldest") {
     const pets = await prisma.pet.findMany({
@@ -126,7 +128,7 @@ export async function GET(
     rows = pets.map(p => ({
       user_id: p.user_id, wallet: p.user.wallet_address,
       value: Math.floor((now - p.created_at.getTime()) / 86400_000),
-      pet_name: p.name, pet_avatar: p.avatar_url,
+      pet_name: p.name, pet_avatar: p.avatar_url, pet_id: p.id,
     }));
   }
 
@@ -135,7 +137,7 @@ export async function GET(
     wallet: `${r.wallet.slice(0, 6)}...${r.wallet.slice(-4)}`,
     isMe: currentUser?.id === r.user_id,
     value: r.value,
-    pet: r.pet_name ? { name: r.pet_name, avatar_url: r.pet_avatar } : null,
+    pet: r.pet_name ? { id: r.pet_id, name: r.pet_name, avatar_url: r.pet_avatar } : null,
   }));
 
   let myRank: any = null;

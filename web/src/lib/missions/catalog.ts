@@ -30,6 +30,22 @@ export type MissionCategory =
 
 export type Verifier = "auto" | "manual";
 
+/**
+ * Anti-gaming: self-report ("manual") missions flip to completed on pure
+ * self-report, so they must NOT credit the Season RANK pool (season_points) at
+ * full weight or the leaderboard is trivially gameable. They credit a small
+ * capped amount to rank; the full reward still accrues to the (non-ranking)
+ * lifetime loyalty ledger.
+ *
+ * This cap is the single source of truth, shared by the /missions/today
+ * assembler, the /complete route, AND the UI — so the points a mission DISPLAYS
+ * always equal what actually credits to the balance the user sees.
+ */
+export const MANUAL_RANK_CAP = 2;
+export function seasonEffectivePoints(points: number, verifier: Verifier): number {
+  return verifier === "manual" ? Math.min(points, MANUAL_RANK_CAP) : points;
+}
+
 export interface MissionTemplate {
   id: string;
   category: MissionCategory;

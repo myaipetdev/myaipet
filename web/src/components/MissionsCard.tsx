@@ -38,6 +38,7 @@ interface MissionView {
   title: string;
   description: string;
   points: number;
+  seasonPoints: number;
   status: "pending" | "completed";
   cta: { label: string; href: string } | null;
   verifier: "auto" | "manual";
@@ -121,8 +122,11 @@ export default function MissionsCard() {
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       });
       const data = await r.json();
+      // Show what actually credits to the season balance (capped for
+      // self-report missions), not the phantom full value.
+      const credited = data?.rankPointsEarned ?? data?.pointsEarned;
       if (!r.ok && data?.hint) toast(`Not yet — ${data.hint}`, "warning");
-      else if (r.ok && data?.pointsEarned) toast(`+${data.pointsEarned} pts`, "success");
+      else if (r.ok && credited != null) toast(`+${credited} pts`, "success");
       await load();
     } catch { /* ignore */ }
     setBusyId(null);
@@ -190,13 +194,13 @@ export default function MissionsCard() {
         boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
       }}>
         {/* Header */}
-        <div style={{
+        <div className="mc-header" style={{
           padding: "18px 24px", display: "flex", alignItems: "center", gap: 16,
           borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           background: "#F5EFE2",
         }}>
           <div style={{ fontSize: 22 }}><Icon name="compass" size={22} /></div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 120 }}>
             <div style={{ fontSize: 13, fontFamily: "var(--ed-m)", letterSpacing: "0.14em", color: "#9A4E1E", textTransform: "uppercase" }}>
               TODAY · {today.date}
             </div>
@@ -280,7 +284,7 @@ export default function MissionsCard() {
             const busy = busyId === m.id;
             return (
               <Reveal key={m.id} dir="up" delay={Math.min(i, 8) * 80}>
-              <div style={{
+              <div className="mc-row" style={{
                 padding: "14px 24px",
                 display: "flex", alignItems: "center", gap: 14,
                 opacity: completed ? 0.62 : 1,
@@ -310,9 +314,12 @@ export default function MissionsCard() {
                 </div>
                 <div style={{
                   fontSize: 13, fontWeight: 800, color: completed ? "#9A7B4E" : "#9A4E1E",
-                  fontFamily: "var(--ed-m)", whiteSpace: "nowrap",
+                  fontFamily: "var(--ed-m)", whiteSpace: "nowrap", textAlign: "right",
                 }}>
-                  +{m.points} pts
+                  +{m.seasonPoints} pts
+                  {m.verifier === "manual" && m.points > m.seasonPoints && (
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#9A7B4E" }}>self-report</div>
+                  )}
                 </div>
                 {!completed && m.cta && (
                   <a href={m.cta.href} className="mp-lift" style={ctaBtnPrimary}>{m.cta.label} →</a>
@@ -328,8 +335,19 @@ export default function MissionsCard() {
           })}
         </div>
 
+        {/* Honesty note: self-report missions can't be server-verified, so they
+            credit a small capped amount to the season balance/rank shown here. */}
+        {today.missions.some(m => m.verifier === "manual" && m.points > m.seasonPoints) && (
+          <div style={{
+            padding: "0 24px 12px", fontSize: 13, color: "#7A6E5A",
+            fontFamily: "var(--ed-body)", lineHeight: 1.5,
+          }}>
+            Self-report missions grant a small capped amount toward your season points — the number shown is what actually credits.
+          </div>
+        )}
+
         {/* Totals */}
-        <div style={{
+        <div className="mc-totals" style={{
           padding: "16px 24px 18px",
           borderTop: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           background: "#F5EFE2",
@@ -424,6 +442,15 @@ export default function MissionsCard() {
         </Modal>
       )}
 
+      <style>{`
+        @media (max-width: 560px) {
+          .mc-header { flex-wrap: wrap; gap: 10px !important; }
+          .mc-row { flex-wrap: wrap; row-gap: 8px; }
+          .mc-row > div:nth-child(2) { flex: 1 1 100%; }
+          .mc-totals { gap: 14px !important; }
+        }
+      `}</style>
+
       {/* Repair modal */}
       {repairModal && streak?.repair && (
         <Modal onClose={() => setRepairModal(false)}>
@@ -487,7 +514,7 @@ function UnauthTeaser() {
           <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em", marginBottom: 4, fontFamily: "var(--ed-disp)", color: "#211A12" }}>
             {headline}
           </div>
-          <div style={{ fontSize: 13, color: error ? "#b91c1c" : "#5C5140", fontFamily: "var(--ed-body)" }}>
+          <div style={{ fontSize: 13, color: error ? "#BE4F28" : "#5C5140", fontFamily: "var(--ed-body)" }}>
             {subtitle}
           </div>
         </div>

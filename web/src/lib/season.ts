@@ -46,13 +46,15 @@ export interface SeasonTier {
   emoji: string;
 }
 
+// Tier accent colors are drawn from the LOCKED Collectible Editorial ramp only
+// (rarity common/rare/epic + terracotta + legend gold) — no Tailwind hexes.
 export const SEASON_TIERS: SeasonTier[] = [
-  { key: "sprout",  name: "Sprout",  min: 0,     color: "#22c55e", emoji: "🌱" },
-  { key: "bronze",  name: "Bronze",  min: 250,   color: "#c2843f", emoji: "🥉" },
-  { key: "silver",  name: "Silver",  min: 1000,  color: "#9aa3af", emoji: "🥈" },
-  { key: "gold",    name: "Gold",    min: 3000,  color: "#f5b301", emoji: "🥇" },
-  { key: "diamond", name: "Diamond", min: 8000,  color: "#38bdf8", emoji: "💎" },
-  { key: "legend",  name: "Legend",  min: 20000, color: "#a855f7", emoji: "👑" },
+  { key: "sprout",  name: "Sprout",  min: 0,     color: "#5C8A4E", emoji: "🌱" },
+  { key: "bronze",  name: "Bronze",  min: 250,   color: "#9A4E1E", emoji: "🥉" },
+  { key: "silver",  name: "Silver",  min: 1000,  color: "#7A6E5A", emoji: "🥈" },
+  { key: "gold",    name: "Gold",    min: 3000,  color: "#C8932F", emoji: "🥇" },
+  { key: "diamond", name: "Diamond", min: 8000,  color: "#3E8FE0", emoji: "💎" },
+  { key: "legend",  name: "Legend",  min: 20000, color: "#9E72E8", emoji: "👑" },
 ];
 
 export interface TierStanding {

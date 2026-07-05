@@ -40,10 +40,39 @@ export default function SeasonTierCard() {
     return () => { alive = false; };
   }, []);
 
+  const loading = data === null;
   const signedIn = !!data?.me;
   const points = data?.me?.points ?? 0;
   const participants = data?.pool?.participants ?? 0;
   const { tier, next, toNext, progress } = seasonTier(points);
+
+  // Until the projection resolves, show a quiet skeleton instead of flashing
+  // "Sprout / 0 pts / 0 raising now" at every user (incl. a Legend or a
+  // signed-out visitor) on first paint.
+  if (loading) {
+    return (
+      <Reveal dir="pop" style={{ maxWidth: 1060, margin: "12px auto 0", padding: "0 24px", width: "100%" }}>
+        <div className="mp-enter" style={{
+          background: "#FBF6EC", borderRadius: 20, padding: "22px 24px",
+          border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+          boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
+          display: "flex", flexDirection: "column", gap: 16,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div className="mp-skel" style={{ width: 42, height: 42, borderRadius: "50%" }} />
+              <div className="mp-skel" style={{ width: 160, height: 24, borderRadius: 6 }} />
+            </div>
+            <div className="mp-skel" style={{ width: 90, height: 24, borderRadius: 6 }} />
+          </div>
+          <div className="mp-skel" style={{ width: "100%", height: 12, borderRadius: 999 }} />
+          <div style={{ display: "flex", gap: 8 }}>
+            {[0, 1, 2, 3, 4, 5].map(i => <div key={i} className="mp-skel" style={{ flex: 1, height: 46, borderRadius: 10 }} />)}
+          </div>
+        </div>
+      </Reveal>
+    );
+  }
 
   return (
     <Reveal dir="pop" style={{ maxWidth: 1060, margin: "12px auto 0", padding: "0 24px", width: "100%" }}>
@@ -62,11 +91,11 @@ export default function SeasonTierCard() {
             <WaxSeal seal={rungSeal(tier.name, "current")} size={42} />
             <div>
               <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, textTransform: "uppercase", letterSpacing: "0.14em", color: "#9A4E1E" }}>SEASON 1 STANDING</div>
-              <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 26, letterSpacing: "-0.02em", color: "#211A12", marginTop: 2 }}>{tier.name}</div>
+              <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: "clamp(20px,5vw,26px)", letterSpacing: "-0.02em", color: "#211A12", marginTop: 2 }}>{tier.name}</div>
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontFamily: "var(--ed-m)", fontWeight: 800, fontSize: 26, color: "#211A12" }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontWeight: 800, fontSize: "clamp(20px,5vw,26px)", color: "#211A12" }}>
               {signedIn ? points.toLocaleString() : "0"}<span style={{ fontSize: 13, color: "#7A6E5A", marginLeft: 5 }}>pts</span>
             </div>
             <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontVariantNumeric: "tabular-nums", color: "#9A4E1E", fontWeight: 700, marginTop: 2 }}>

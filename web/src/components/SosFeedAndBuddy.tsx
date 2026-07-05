@@ -40,43 +40,61 @@ export default function SosFeedAndBuddy() {
   };
   useEffect(() => { load(); }, []);
 
+  // Each mutator wraps its fetch in try/catch with setBusy(null) in finally — a
+  // network reject or a non-JSON error page (e.g. 502) would otherwise skip the
+  // reset and leave the button spinning/disabled forever.
   const help = async (id: number) => {
     setBusy(id);
-    const r = await fetch(`/api/sos/${id}/help`, {
-      method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    });
-    const d = await r.json();
-    if (!r.ok) toast(d?.error || "Couldn't help — try again", "error");
-    else toast(`You saved their streak  ·  +${d.reward_pts} pts`, "success");
-    setBusy(null);
-    await load();
+    try {
+      const r = await fetch(`/api/sos/${id}/help`, {
+        method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) toast(d?.error || "Couldn't help — try again", "error");
+      else toast(`You saved their streak  ·  +${d.reward_pts} pts`, "success");
+      await load();
+    } catch {
+      toast("Something went wrong — try again.", "error");
+    } finally {
+      setBusy(null);
+    }
   };
 
   const sendInvite = async () => {
     if (!inviteWallet.trim()) return;
     setBusy(-1);
-    const r = await fetch("/api/buddy/invite", {
-      method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify({ partnerWallet: inviteWallet.trim() }),
-    });
-    const d = await r.json();
-    if (!r.ok) toast(d?.error || "Couldn't send invite", "error");
-    else { setInviteWallet(""); toast("Invite sent", "success"); }
-    setBusy(null);
-    await load();
+    try {
+      const r = await fetch("/api/buddy/invite", {
+        method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ partnerWallet: inviteWallet.trim() }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) toast(d?.error || "Couldn't send invite", "error");
+      else { setInviteWallet(""); toast("Invite sent", "success"); }
+      await load();
+    } catch {
+      toast("Something went wrong — try again.", "error");
+    } finally {
+      setBusy(null);
+    }
   };
 
   const acceptInvite = async (id: number) => {
     setBusy(id);
-    const r = await fetch("/api/buddy/accept", {
-      method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify({ buddyId: id }),
-    });
-    const d = await r.json();
-    if (!r.ok) toast(d?.error || "Couldn't accept", "error");
-    else toast("Buddy connected — shared streak starts now", "success");
-    setBusy(null);
-    await load();
+    try {
+      const r = await fetch("/api/buddy/accept", {
+        method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ buddyId: id }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) toast(d?.error || "Couldn't accept", "error");
+      else toast("Buddy connected — shared streak starts now", "success");
+      await load();
+    } catch {
+      toast("Something went wrong — try again.", "error");
+    } finally {
+      setBusy(null);
+    }
   };
 
   return (

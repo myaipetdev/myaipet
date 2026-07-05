@@ -19,7 +19,7 @@ import RaisePitch from "@/components/RaisePitch";
 import WalletGate from "@/components/WalletGate";
 import ToastHost from "@/components/Toast";
 import DialogHost from "@/components/Dialog";
-import { seasonTier } from "@/lib/season";
+import { seasonTier, SEASON_START_MS, SEASON_END_MS } from "@/lib/season";
 import SeasonRewardsHub from "@/components/SeasonRewardsHub";
 import PetOfTheWeek from "@/components/PetOfTheWeek";
 
@@ -216,8 +216,10 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
 
 // ── Season 1 Rewards Banner ──
 function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
-  const SEASON_START = new Date("2026-07-01T00:00:00Z").getTime();
-  const SEASON_END = new Date("2026-08-01T00:00:00Z").getTime();
+  // Single source of truth for the season window (shared with lib/season.ts),
+  // so the banner countdown can't drift from the tier/phase logic.
+  const SEASON_START = SEASON_START_MS;
+  const SEASON_END = SEASON_END_MS;
   const SEASON_TOTAL = SEASON_END - SEASON_START;
 
   const [now, setNow] = useState(Date.now());
@@ -259,7 +261,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
   return (
     // Full-width terracotta ticket — scroll-revealed with the "pop" grammar
     // (was mount-time mp-enter-1).
-    <Reveal dir="pop" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
+    <Reveal dir="pop" style={{ padding: "0 clamp(16px,4vw,40px)", maxWidth: 1060, margin: "0 auto 0" }}>
       {/* Terracotta foil ticket: brand fill, cream content, soft floating shadow,
           one perforated cream tear edge. Editorial — no hard keyline, no offset. */}
       <div
@@ -331,7 +333,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
               }}>
                 {t.val}
               </div>
-              <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "rgba(252,233,207,0.8)", marginTop: 3 }}>
+              <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,0.8)", marginTop: 3 }}>
                 {t.label}
               </div>
             </div>
@@ -365,7 +367,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
               transition: "width 0.6s ease",
             }} />
           </div>
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: "rgba(252,233,207,0.8)" }}>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,0.8)" }}>
             {next ? `${toNext.toLocaleString()} pts to ${next.name}` : "Top tier reached"}
           </div>
         </div>
