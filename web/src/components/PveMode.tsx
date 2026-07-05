@@ -1554,14 +1554,14 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                       </span>
                     </div>
                   )}
-                  {resultData.airdrop_gained > 0 && (
+                  {resultData.season_gained > 0 && (
                     <div style={{
                       animation: "pve-rewardSlide 0.4s ease 1.2s both",
                       padding: "6px 14px", borderRadius: 10,
                       background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)",
                     }}>
                       <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#4ade80", fontWeight: 800 }}>
-                        +{resultData.airdrop_gained} PTS
+                        +{resultData.season_gained} PTS
                       </span>
                     </div>
                   )}

@@ -59,7 +59,7 @@ function devMock(path: string, options: any = {}): any | null {
     return DEV_MOCK_SKILLS;
   }
   if (path.match(/\/api\/arena\/pve$/) && method === "GET") return { regions: [], currentStage: 1, totalStars: 0 };
-  if (path.match(/\/api\/arena\/pve$/) && method === "POST") return { success: true, exp_gained: 120, credits_gained: 25, airdrop_gained: 5, leveled_up: false, new_level: DEV_MOCK_PET.level };
+  if (path.match(/\/api\/arena\/pve$/) && method === "POST") return { success: true, exp_gained: 120, credits_gained: 25, season_gained: 5, leveled_up: false, new_level: DEV_MOCK_PET.level };
   if (path.match(/\/api\/arena\/opponent/)) return { opponent: { id: 99, name: "DevBot", species: 10, personality_type: "brave", level: 14, happiness: 80, energy: 80, element: "electric", avatar_url: null } };
   if (path.match(/\/api\/arena\/result/) && method === "POST") return { success: true, exp_gained: 80, credits_gained: 15, new_level: DEV_MOCK_PET.level, points: 10, skill_drop: null };
   if (path === "/api/playtime" && method === "GET") return { today_minutes: 30, rewards_claimed: 0, daily_cap: 120 };

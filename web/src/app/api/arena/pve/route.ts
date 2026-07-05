@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
     Math.max(0, DAILY_EXP_CAP - dailyLog.exp_earned)
   );
   const creditsGain = won ? stage.rewards.credits : 0;
-  const airdropGain = won ? stage.rewards.airdropPoints : Math.floor(stage.rewards.airdropPoints * 0.2);
+  const seasonGain = won ? stage.rewards.seasonPoints : Math.floor(stage.rewards.seasonPoints * 0.2);
 
   // First clear skill drop
   let skillDrop: string | null = null;
@@ -192,12 +192,12 @@ export async function POST(req: NextRequest) {
         ? { experience: { set: newExp - expNeeded }, level: { increment: 1 }, total_interactions: { increment: 1 } }
         : { experience: { increment: expGain }, total_interactions: { increment: 1 } },
     }),
-    // Credits + airdrop
+    // Credits + season points
     prisma.user.update({
       where: { id: user.id },
       data: {
         credits: { increment: creditsGain },
-        season_points: { increment: airdropGain },
+        season_points: { increment: seasonGain },
       },
     }),
     // Daily training log
@@ -232,7 +232,7 @@ export async function POST(req: NextRequest) {
         turns: turns || 0,
         player_hp_left: hp_left || 0,
         exp_gained: expGain,
-        points_earned: airdropGain,
+        points_earned: seasonGain,
         skill_drop_key: skillDrop,
         battle_type: "pve",
         stage_id,
@@ -259,7 +259,7 @@ export async function POST(req: NextRequest) {
     stars,
     exp_gained: expGain,
     credits_gained: creditsGain,
-    airdrop_gained: airdropGain,
+    season_gained: seasonGain,
     leveled_up: leveledUp,
     new_level: leveledUp ? pet.level + 1 : pet.level,
     skill_drop: skillDrop,

@@ -84,7 +84,7 @@ export interface PveBoss {
   rewards: {
     exp: number;
     credits: number;
-    airdropPoints: number;
+    seasonPoints: number;
     skillDrop?: string;      // guaranteed skill drop on first clear
     skillDropChance?: number; // repeat clear drop chance
   };
@@ -136,7 +136,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 60, baseAtk: 12, baseDef: 10, baseSpd: 8,
     skills: [{ key: "vine_whip", level: 1 }, { key: "scratch", level: 1 }],
     dialogue: { intro: "The meadow stirs... Thorn blocks your path!", win: "The sprout wilts. Path cleared!", lose: "Nature prevails..." },
-    rewards: { exp: 20, credits: 5, airdropPoints: 10 },
+    rewards: { exp: 20, credits: 5, seasonPoints: 10 },
     isBoss: true, region: 1,
   },
   {
@@ -145,7 +145,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 85, baseAtk: 16, baseDef: 12, baseSpd: 10,
     skills: [{ key: "vine_whip", level: 2 }, { key: "dodge", level: 1 }, { key: "scratch", level: 1 }],
     dialogue: { intro: "Trainer Briar: 'Show me what your pet can do!'", win: "Briar: 'Impressive technique!'", lose: "Briar: 'Train harder, young one.'" },
-    rewards: { exp: 30, credits: 10, airdropPoints: 15 },
+    rewards: { exp: 30, credits: 10, seasonPoints: 15 },
     isBoss: true, region: 1,
   },
   {
@@ -154,7 +154,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 100, baseAtk: 18, baseDef: 16, baseSpd: 10,
     skills: [{ key: "razor_leaf", level: 1 }, { key: "leech_seed", level: 1 }, { key: "vine_whip", level: 2 }],
     dialogue: { intro: "The ancient Mossheart awakens from slumber...", win: "The forest acknowledges your strength.", lose: "The vines drag you back to the entrance." },
-    rewards: { exp: 40, credits: 15, airdropPoints: 20 },
+    rewards: { exp: 40, credits: 15, seasonPoints: 20 },
     isBoss: true, region: 1,
   },
   {
@@ -163,7 +163,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 120, baseAtk: 20, baseDef: 18, baseSpd: 14,
     skills: [{ key: "razor_leaf", level: 2 }, { key: "leech_seed", level: 1 }, { key: "dodge", level: 2 }, { key: "cute_attack", level: 2 }],
     dialogue: { intro: "Fern dances through the tall grass!", win: "The meadow falls silent in respect.", lose: "The grass whispers your defeat." },
-    rewards: { exp: 50, credits: 20, airdropPoints: 25, skillDrop: "leech_seed" },
+    rewards: { exp: 50, credits: 20, seasonPoints: 25, skillDrop: "leech_seed" },
     isBoss: true, region: 1,
   },
   {
@@ -172,7 +172,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 160, baseAtk: 24, baseDef: 22, baseSpd: 12,
     skills: [{ key: "solar_bloom", level: 1 }, { key: "razor_leaf", level: 2 }, { key: "leech_seed", level: 2 }, { key: "iron_defense", level: 1 }],
     dialogue: { intro: "Gym Leader Elderoak: 'I am the root of all growth. Can you withstand my forest?'", win: "Elderoak: 'You've earned the Leaf Badge. The volcano awaits.'", lose: "Elderoak: 'Return when your roots grow deeper.'" },
-    rewards: { exp: 80, credits: 40, airdropPoints: 50, skillDrop: "razor_leaf" },
+    rewards: { exp: 80, credits: 40, seasonPoints: 50, skillDrop: "razor_leaf" },
     isBoss: true, region: 1,
   },
 
@@ -183,7 +183,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 130, baseAtk: 26, baseDef: 16, baseSpd: 18,
     skills: [{ key: "ember", level: 2 }, { key: "scratch", level: 2 }, { key: "fire_fang", level: 1 }],
     dialogue: { intro: "Cinder sparks to life from the lava!", win: "The flames die down.", lose: "You're sent back by the heat." },
-    rewards: { exp: 55, credits: 20, airdropPoints: 20 },
+    rewards: { exp: 55, credits: 20, seasonPoints: 20 },
     isBoss: true, region: 2,
   },
   {
@@ -192,7 +192,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 160, baseAtk: 30, baseDef: 18, baseSpd: 20,
     skills: [{ key: "flame_burst", level: 1 }, { key: "ember", level: 2 }, { key: "intimidate", level: 1 }],
     dialogue: { intro: "Trainer Scorcha: 'The volcano is my arena!'", win: "Scorcha: 'You survived the heat!'", lose: "Scorcha: 'Not hot enough.'" },
-    rewards: { exp: 65, credits: 25, airdropPoints: 25 },
+    rewards: { exp: 65, credits: 25, seasonPoints: 25 },
     isBoss: true, region: 2,
   },
   {
@@ -201,7 +201,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 200, baseAtk: 32, baseDef: 24, baseSpd: 12,
     skills: [{ key: "flame_burst", level: 2 }, { key: "fire_fang", level: 2 }, { key: "iron_defense", level: 1 }, { key: "body_slam", level: 2 }],
     dialogue: { intro: "The ground cracks open — Magmaw rises!", win: "Magmaw sinks back into the lava.", lose: "The eruption overwhelms you." },
-    rewards: { exp: 80, credits: 30, airdropPoints: 30, skillDrop: "fire_fang" },
+    rewards: { exp: 80, credits: 30, seasonPoints: 30, skillDrop: "fire_fang" },
     isBoss: true, region: 2,
   },
   {
@@ -210,7 +210,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 230, baseAtk: 36, baseDef: 22, baseSpd: 24,
     skills: [{ key: "flame_burst", level: 2 }, { key: "fire_fang", level: 2 }, { key: "fury_swipe", level: 2 }, { key: "intimidate", level: 2 }],
     dialogue: { intro: "Pyrex: 'Only the strong survive the ridge!'", win: "Pyrex bows in fiery respect.", lose: "The volcano erupts as you fall." },
-    rewards: { exp: 100, credits: 40, airdropPoints: 40, skillDrop: "flame_burst" },
+    rewards: { exp: 100, credits: 40, seasonPoints: 40, skillDrop: "flame_burst" },
     isBoss: true, region: 2,
   },
   {
@@ -219,7 +219,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 280, baseAtk: 40, baseDef: 26, baseSpd: 26,
     skills: [{ key: "inferno", level: 1 }, { key: "flame_burst", level: 3 }, { key: "fire_fang", level: 2 }, { key: "intimidate", level: 2 }],
     dialogue: { intro: "Gym Leader Infernox: 'I am the heart of the volcano. Burn or be burned!'", win: "Infernox: 'The Flame Badge is yours. Dive into the depths next.'", lose: "Infernox: 'Ashes to ashes.'" },
-    rewards: { exp: 150, credits: 60, airdropPoints: 70, skillDrop: "ember" },
+    rewards: { exp: 150, credits: 60, seasonPoints: 70, skillDrop: "ember" },
     isBoss: true, region: 2,
   },
 
@@ -230,7 +230,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 220, baseAtk: 30, baseDef: 28, baseSpd: 20,
     skills: [{ key: "water_gun", level: 3 }, { key: "aqua_jet", level: 1 }, { key: "dodge", level: 2 }],
     dialogue: { intro: "Ripple emerges from the coral!", win: "The tide recedes.", lose: "Washed away by the current." },
-    rewards: { exp: 90, credits: 30, airdropPoints: 30 },
+    rewards: { exp: 90, credits: 30, seasonPoints: 30 },
     isBoss: true, region: 3,
   },
   {
@@ -239,7 +239,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 260, baseAtk: 32, baseDef: 32, baseSpd: 22,
     skills: [{ key: "aqua_jet", level: 2 }, { key: "water_gun", level: 3 }, { key: "rain_dance", level: 1 }, { key: "iron_defense", level: 1 }],
     dialogue: { intro: "Trainer Coraline: 'The reef protects its own.'", win: "Coraline: 'You swim with the current!'", lose: "Coraline: 'The depths consume you.'" },
-    rewards: { exp: 100, credits: 35, airdropPoints: 35 },
+    rewards: { exp: 100, credits: 35, seasonPoints: 35 },
     isBoss: true, region: 3,
   },
   {
@@ -248,7 +248,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 300, baseAtk: 38, baseDef: 30, baseSpd: 16,
     skills: [{ key: "tidal_wave", level: 1 }, { key: "aqua_jet", level: 2 }, { key: "intimidate", level: 2 }, { key: "body_slam", level: 3 }],
     dialogue: { intro: "Something massive stirs in the darkness...", win: "The Abyssal retreats to deeper waters.", lose: "Crushed by the ocean pressure." },
-    rewards: { exp: 120, credits: 45, airdropPoints: 45, skillDrop: "aqua_jet" },
+    rewards: { exp: 120, credits: 45, seasonPoints: 45, skillDrop: "aqua_jet" },
     isBoss: true, region: 3,
   },
   {
@@ -257,7 +257,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 340, baseAtk: 42, baseDef: 32, baseSpd: 28,
     skills: [{ key: "tidal_wave", level: 2 }, { key: "rain_dance", level: 2 }, { key: "aqua_jet", level: 3 }, { key: "fury_swipe", level: 2 }],
     dialogue: { intro: "Tsunami: 'I am the ocean's fury!'", win: "The waves calm as Tsunami concedes.", lose: "Swept away by the tsunami." },
-    rewards: { exp: 140, credits: 50, airdropPoints: 50, skillDrop: "rain_dance" },
+    rewards: { exp: 140, credits: 50, seasonPoints: 50, skillDrop: "rain_dance" },
     isBoss: true, region: 3,
   },
   {
@@ -266,7 +266,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 400, baseAtk: 44, baseDef: 38, baseSpd: 24,
     skills: [{ key: "tidal_wave", level: 3 }, { key: "rain_dance", level: 2 }, { key: "aqua_jet", level: 3 }, { key: "iron_defense", level: 2 }],
     dialogue: { intro: "Gym Leader Leviathan: 'The deep knows all. Show me your courage.'", win: "Leviathan: 'The Tide Badge is yours. The storm calls.'", lose: "Leviathan: 'Return when you can breathe underwater.'" },
-    rewards: { exp: 200, credits: 80, airdropPoints: 80, skillDrop: "tidal_wave" },
+    rewards: { exp: 200, credits: 80, seasonPoints: 80, skillDrop: "tidal_wave" },
     isBoss: true, region: 3,
   },
 
@@ -277,7 +277,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 300, baseAtk: 40, baseDef: 28, baseSpd: 36,
     skills: [{ key: "spark", level: 3 }, { key: "thunder_bolt", level: 1 }, { key: "charge_up", level: 1 }],
     dialogue: { intro: "Zapper crackles with static!", win: "The static fades.", lose: "Shocked unconscious." },
-    rewards: { exp: 130, credits: 40, airdropPoints: 40 },
+    rewards: { exp: 130, credits: 40, seasonPoints: 40 },
     isBoss: true, region: 4,
   },
   {
@@ -286,7 +286,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 340, baseAtk: 44, baseDef: 30, baseSpd: 38,
     skills: [{ key: "thunder_bolt", level: 2 }, { key: "spark", level: 3 }, { key: "charge_up", level: 2 }, { key: "dodge", level: 2 }],
     dialogue: { intro: "Trainer Voltara: 'Speed is everything up here!'", win: "Voltara: 'Fast! You're faster!'", lose: "Voltara: 'Too slow for the storm.'" },
-    rewards: { exp: 150, credits: 50, airdropPoints: 50 },
+    rewards: { exp: 150, credits: 50, seasonPoints: 50 },
     isBoss: true, region: 4,
   },
   {
@@ -295,7 +295,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 380, baseAtk: 48, baseDef: 32, baseSpd: 34,
     skills: [{ key: "thunder_bolt", level: 3 }, { key: "charge_up", level: 2 }, { key: "fury_swipe", level: 3 }, { key: "intimidate", level: 2 }],
     dialogue: { intro: "The clouds converge — Tempest descends!", win: "The storm breaks.", lose: "Lost in the cyclone." },
-    rewards: { exp: 170, credits: 55, airdropPoints: 55, skillDrop: "charge_up" },
+    rewards: { exp: 170, credits: 55, seasonPoints: 55, skillDrop: "charge_up" },
     isBoss: true, region: 4,
   },
   {
@@ -304,7 +304,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 420, baseAtk: 52, baseDef: 34, baseSpd: 40,
     skills: [{ key: "lightning_storm", level: 1 }, { key: "thunder_bolt", level: 3 }, { key: "charge_up", level: 2 }, { key: "dodge", level: 3 }],
     dialogue: { intro: "Raijin: 'I am the thunder god of this peak!'", win: "Raijin kneels in defeat.", lose: "Raijin: 'Not worthy of the summit.'" },
-    rewards: { exp: 200, credits: 65, airdropPoints: 65, skillDrop: "thunder_bolt" },
+    rewards: { exp: 200, credits: 65, seasonPoints: 65, skillDrop: "thunder_bolt" },
     isBoss: true, region: 4,
   },
   {
@@ -313,7 +313,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 480, baseAtk: 56, baseDef: 38, baseSpd: 42,
     skills: [{ key: "lightning_storm", level: 2 }, { key: "thunder_bolt", level: 3 }, { key: "charge_up", level: 3 }, { key: "iron_defense", level: 2 }],
     dialogue: { intro: "Gym Leader Zeus: 'I command the skies. Every bolt answers to me.'", win: "Zeus: 'The Thunder Badge is yours. Darkness awaits.'", lose: "Zeus: 'Even lightning cannot strike the same place twice... but I can.'" },
-    rewards: { exp: 280, credits: 100, airdropPoints: 100, skillDrop: "lightning_storm" },
+    rewards: { exp: 280, credits: 100, seasonPoints: 100, skillDrop: "lightning_storm" },
     isBoss: true, region: 4,
   },
 
@@ -324,7 +324,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 400, baseAtk: 50, baseDef: 40, baseSpd: 38,
     skills: [{ key: "ultimate_charm", level: 1 }, { key: "intimidate", level: 3 }, { key: "dodge", level: 3 }, { key: "scratch", level: 4 }],
     dialogue: { intro: "A shadow materializes before you...", win: "The phantom fades.", lose: "Lost in the shadows." },
-    rewards: { exp: 200, credits: 60, airdropPoints: 60 },
+    rewards: { exp: 200, credits: 60, seasonPoints: 60 },
     isBoss: true, region: 5,
   },
   {
@@ -333,7 +333,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 440, baseAtk: 54, baseDef: 42, baseSpd: 36,
     skills: [{ key: "inferno", level: 1 }, { key: "flame_burst", level: 3 }, { key: "intimidate", level: 2 }, { key: "iron_defense", level: 2 }],
     dialogue: { intro: "Trainer Eclipse: 'In the shadow, fire burns brightest!'", win: "Eclipse: 'Light pierces even my darkness.'", lose: "Eclipse: 'Consumed by the void.'" },
-    rewards: { exp: 230, credits: 70, airdropPoints: 70 },
+    rewards: { exp: 230, credits: 70, seasonPoints: 70 },
     isBoss: true, region: 5,
   },
   {
@@ -342,7 +342,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 480, baseAtk: 50, baseDef: 48, baseSpd: 30,
     skills: [{ key: "tidal_wave", level: 2 }, { key: "rain_dance", level: 2 }, { key: "leech_seed", level: 3 }, { key: "iron_defense", level: 3 }],
     dialogue: { intro: "The Abyss opens its maw...", win: "The void closes. Light returns.", lose: "Swallowed by the abyss." },
-    rewards: { exp: 260, credits: 80, airdropPoints: 80, skillDrop: "ultimate_charm" },
+    rewards: { exp: 260, credits: 80, seasonPoints: 80, skillDrop: "ultimate_charm" },
     isBoss: true, region: 5,
   },
   {
@@ -351,7 +351,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 520, baseAtk: 58, baseDef: 44, baseSpd: 44,
     skills: [{ key: "lightning_storm", level: 2 }, { key: "thunder_bolt", level: 3 }, { key: "charge_up", level: 3 }, { key: "fury_swipe", level: 4 }],
     dialogue: { intro: "Chaos: 'Order is an illusion. I am the truth!'", win: "Chaos disperses into fragments.", lose: "Chaos: 'All returns to entropy.'" },
-    rewards: { exp: 300, credits: 100, airdropPoints: 100, skillDrop: "iron_defense" },
+    rewards: { exp: 300, credits: 100, seasonPoints: 100, skillDrop: "iron_defense" },
     isBoss: true, region: 5,
   },
   {
@@ -360,7 +360,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 600, baseAtk: 62, baseDef: 50, baseSpd: 42,
     skills: [{ key: "ultimate_charm", level: 3 }, { key: "inferno", level: 2 }, { key: "lightning_storm", level: 1 }, { key: "iron_defense", level: 3 }],
     dialogue: { intro: "Gym Leader Oblivion: 'I have seen the end of all things. You cannot surprise me.'", win: "Oblivion: 'The Shadow Badge is yours. Only dragons remain.'", lose: "Oblivion: 'Your story ends here... for now.'" },
-    rewards: { exp: 400, credits: 150, airdropPoints: 150, skillDrop: "inferno" },
+    rewards: { exp: 400, credits: 150, seasonPoints: 150, skillDrop: "inferno" },
     isBoss: true, region: 5,
   },
 
@@ -371,7 +371,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 550, baseAtk: 60, baseDef: 48, baseSpd: 40,
     skills: [{ key: "inferno", level: 2 }, { key: "flame_burst", level: 3 }, { key: "body_slam", level: 4 }, { key: "intimidate", level: 3 }],
     dialogue: { intro: "A young dragon descends from the cliffs!", win: "The drakeling retreats to its nest.", lose: "Dragon fire scorches everything." },
-    rewards: { exp: 350, credits: 100, airdropPoints: 100 },
+    rewards: { exp: 350, credits: 100, seasonPoints: 100 },
     isBoss: true, region: 6,
   },
   {
@@ -380,7 +380,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 600, baseAtk: 64, baseDef: 50, baseSpd: 50,
     skills: [{ key: "lightning_storm", level: 2 }, { key: "thunder_bolt", level: 4 }, { key: "charge_up", level: 3 }, { key: "dodge", level: 3 }],
     dialogue: { intro: "Stormwing: 'My wings carry the thunder itself!'", win: "The thunder dragon lands, humbled.", lose: "Struck down by lightning from above." },
-    rewards: { exp: 400, credits: 120, airdropPoints: 120, skillDrop: "solar_bloom" },
+    rewards: { exp: 400, credits: 120, seasonPoints: 120, skillDrop: "solar_bloom" },
     isBoss: true, region: 6,
   },
   {
@@ -389,7 +389,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 680, baseAtk: 60, baseDef: 58, baseSpd: 42,
     skills: [{ key: "tidal_wave", level: 3 }, { key: "rain_dance", level: 3 }, { key: "aqua_jet", level: 4 }, { key: "iron_defense", level: 3 }],
     dialogue: { intro: "The sea parts — Tidecaller emerges!", win: "Tidecaller: 'The ocean salutes you.'", lose: "Tidecaller: 'The deep reclaims all.'" },
-    rewards: { exp: 450, credits: 140, airdropPoints: 140, skillDrop: "tidal_wave" },
+    rewards: { exp: 450, credits: 140, seasonPoints: 140, skillDrop: "tidal_wave" },
     isBoss: true, region: 6,
   },
   {
@@ -398,7 +398,7 @@ export const PVE_STAGES: PveBoss[] = [
     baseHp: 750, baseAtk: 66, baseDef: 60, baseSpd: 38,
     skills: [{ key: "solar_bloom", level: 3 }, { key: "razor_leaf", level: 4 }, { key: "leech_seed", level: 3 }, { key: "iron_defense", level: 3 }],
     dialogue: { intro: "Ancient Dragon Verdanthos: 'I am older than the forests themselves.'", win: "Verdanthos: 'A thousand years, and finally... a worthy challenger.'", lose: "Verdanthos: 'Come back in another century.'" },
-    rewards: { exp: 500, credits: 200, airdropPoints: 200, skillDrop: "solar_bloom" },
+    rewards: { exp: 500, credits: 200, seasonPoints: 200, skillDrop: "solar_bloom" },
     isBoss: true, region: 6,
   },
   {
@@ -411,7 +411,7 @@ export const PVE_STAGES: PveBoss[] = [
       win: "Bahamut: 'At last... a soul worthy of the Dragon Crown. You have conquered all 30 stages. LEGENDARY.'",
       lose: "Bahamut: 'Close... but the Dragon King does not fall easily. Return stronger.'",
     },
-    rewards: { exp: 1000, credits: 500, airdropPoints: 500, skillDrop: "inferno" },
+    rewards: { exp: 1000, credits: 500, seasonPoints: 500, skillDrop: "inferno" },
     isBoss: true, region: 6,
   },
 ];
@@ -454,7 +454,7 @@ export function generateMinion(stageId: number): PveBoss {
     baseSpd: minionLevel * 1.5 + 6,
     skills: starterSkills,
     dialogue: { intro: `A wild ${template.names[nameIdx]} appeared!`, win: "You defeated it!", lose: "It was too strong..." },
-    rewards: { exp: Math.floor(minionLevel * 3), credits: Math.floor(minionLevel * 0.5), airdropPoints: 5 },
+    rewards: { exp: Math.floor(minionLevel * 3), credits: Math.floor(minionLevel * 0.5), seasonPoints: 5 },
     isBoss: false,
     region: region.id,
   };

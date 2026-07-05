@@ -73,19 +73,11 @@ export const PREMIUM_ITEMS: PremiumItem[] = [
     effect: "type_shield", rarity: "rare", stackable: true,
   },
 
-  // ── Gacha ──
-  {
-    key: "legendary_egg", name: "Legendary Egg", emoji: "🥚",
-    description: "Hatch a Legendary pet OR a ★5 skill. 10% Legendary, 90% Epic.",
-    category: "gacha", priceUSD: 5, priceCredits: 3000,
-    effect: "gacha_legendary", rarity: "legendary", stackable: true,
-  },
-  {
-    key: "mystery_box", name: "Mystery Box", emoji: "🎁",
-    description: "Random reward: Credits, Skill Scroll, Element Stone, or Legendary Egg.",
-    category: "gacha", priceUSD: 2, priceCredits: 1000,
-    effect: "gacha_mystery", rarity: "epic", stackable: true,
-  },
+  // ── Gacha (REMOVED) ──
+  // The randomized paid pulls (legendary_egg 90/10, mystery_box) were removed —
+  // a purchasable RNG "egg" is gambling-adjacent and contradicts the de-gambling
+  // posture (battle-gambling was already retired). Collectibles are EARNED
+  // deterministically (chatting/creating → TCG cards), never bought as a random pull.
 ];
 
 export const PREMIUM_MAP = Object.fromEntries(PREMIUM_ITEMS.map(i => [i.key, i]));
@@ -103,5 +95,4 @@ export const CATEGORY_LABELS: Record<string, { label: string; emoji: string }> =
   skill:     { label: "Skills", emoji: "📜" },
   evolution: { label: "Evolution", emoji: "🔮" },
   battle:    { label: "Battle", emoji: "⚔️" },
-  gacha:     { label: "Gacha", emoji: "🎰" },
 };

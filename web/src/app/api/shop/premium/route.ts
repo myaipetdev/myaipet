@@ -174,80 +174,9 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      case "gacha_legendary": {
-        const isLegendary = Math.random() < 0.10;
-        if (isLegendary) {
-          const legendarySkills = SKILL_DB.filter(s => s.rarity >= 5);
-          const skill = legendarySkills[Math.floor(Math.random() * legendarySkills.length)];
-          if (pet && skill) {
-            const exists = pet.skills.find(s => s.skill_key === skill.key);
-            if (!exists) {
-              await tx.petSkill.create({ data: { pet_id: pet.id, skill_key: skill.key, level: 1, slot: null } });
-            } else {
-              // BUG 3 FIX: Duplicate skill — upgrade existing skill level instead of wasting credits
-              const def = SKILL_MAP[skill.key];
-              if (def && exists.level < def.maxLevel) {
-                await tx.petSkill.update({ where: { id: exists.id }, data: { level: { increment: 1 } } });
-                res.duplicate_fallback = { action: "skill_level_up", key: skill.key, new_level: exists.level + 1 };
-              } else {
-                // Already max level — refund 50% credits
-                const refund = Math.floor(creditPrice * 0.5);
-                if (refund > 0) {
-                  await tx.user.update({ where: { id: user.id }, data: { credits: { increment: refund } } });
-                }
-                res.duplicate_fallback = { action: "credits_refund", amount: refund };
-              }
-            }
-          }
-          res.gacha_result = "legendary";
-          res.reward = skill ? { type: "skill", key: skill.key, name: skill.name, emoji: skill.emoji, rarity: 5 } : { type: "credits", amount: 2000 };
-        } else {
-          const epicSkills = SKILL_DB.filter(s => s.rarity >= 3 && s.rarity <= 4);
-          const skill = epicSkills[Math.floor(Math.random() * epicSkills.length)];
-          if (pet && skill) {
-            const exists = pet.skills.find(s => s.skill_key === skill.key);
-            if (!exists) {
-              await tx.petSkill.create({ data: { pet_id: pet.id, skill_key: skill.key, level: 1, slot: null } });
-            } else {
-              // BUG 3 FIX: Duplicate skill — upgrade existing skill level instead of wasting credits
-              const def = SKILL_MAP[skill.key];
-              if (def && exists.level < def.maxLevel) {
-                await tx.petSkill.update({ where: { id: exists.id }, data: { level: { increment: 1 } } });
-                res.duplicate_fallback = { action: "skill_level_up", key: skill.key, new_level: exists.level + 1 };
-              } else {
-                const refund = Math.floor(creditPrice * 0.5);
-                if (refund > 0) {
-                  await tx.user.update({ where: { id: user.id }, data: { credits: { increment: refund } } });
-                }
-                res.duplicate_fallback = { action: "credits_refund", amount: refund };
-              }
-            }
-          }
-          res.gacha_result = "epic";
-          res.reward = skill ? { type: "skill", key: skill.key, name: skill.name, emoji: skill.emoji, rarity: skill.rarity } : { type: "credits", amount: 500 };
-        }
-        break;
-      }
-
-      case "gacha_mystery": {
-        const roll = Math.random();
-        if (roll < 0.4) {
-          const credits = 100 + Math.floor(Math.random() * 400);
-          await tx.user.update({ where: { id: user.id }, data: { credits: { increment: credits } } });
-          res.gacha_result = "credits";
-          res.reward = { type: "credits", amount: credits };
-        } else if (roll < 0.7) {
-          res.gacha_result = "skill_scroll";
-          res.reward = { type: "item", key: "skill_scroll", name: "Skill Scroll" };
-        } else if (roll < 0.9) {
-          res.gacha_result = "element_stone";
-          res.reward = { type: "item", key: "element_stone", name: "Element Stone" };
-        } else {
-          res.gacha_result = "legendary_egg";
-          res.reward = { type: "item", key: "legendary_egg", name: "Legendary Egg!" };
-        }
-        break;
-      }
+      // Gacha effects (gacha_legendary / gacha_mystery) were removed — the
+      // randomized paid pulls are gambling-adjacent and no longer sold (see
+      // lib/premium.ts). No item maps to these effects anymore.
     }
 
     return res;
