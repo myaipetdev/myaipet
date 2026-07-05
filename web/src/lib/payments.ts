@@ -25,7 +25,7 @@ export class PaymentAlreadyConsumed extends Error {
 
 // Minimal structural type for the interactive Prisma tx client (avoids coupling
 // to the generated client's exported namespace).
-type ConsumeTxClient = {
+export type ConsumeTxClient = {
   consumedPayment: { create: (args: { data: Record<string, unknown> }) => Promise<unknown> };
 };
 
