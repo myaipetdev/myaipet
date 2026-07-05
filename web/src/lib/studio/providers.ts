@@ -30,7 +30,7 @@ export interface StudioModel {
   maxDurationSec: number;
   maxResolution: string;        // "720p" | "1080p" | "4K"
   tier: ModelTier;
-  creditsPerRun: number;        // user-facing cost (1 credit ≈ $0.01)
+  creditsPerRun: number;        // user-facing cost (retail credit = $0.05; 100 cr = $5 starter pack)
   usdPerRun: number;            // our wholesale cost
   description: string;
   // comingSoon = teaser only. Don't submit to backend; UI shows a lock + ETA.

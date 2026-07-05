@@ -1,9 +1,21 @@
 "use client";
 
 /**
- * Premium teaser card — Pro ($4.99/mo) / Studio ($9.99/mo). Shows pricing +
- * benefit comparison + "Coming soon" CTA. Billing wiring lands in the next
- * release (POST /api/subscription/me currently returns 202 coming_soon).
+ * Membership teaser — the relationship/creation tiers.
+ *
+ * Repackaged per the WTP blueprint: the paywall protects what a user would
+ * actually LOSE — the companion relationship (its memory/persona) and their
+ * creations — NOT gamification scaffolding (shields/repairs are never sold here).
+ *
+ *   Companion (Free)  — the whole relationship-building loop, free forever.
+ *   Companion+        — proactive memory + preservation/inheritance + phone
+ *                       presence. NOT BUILT YET → honestly marked "Coming soon".
+ *   Studio            — pay-per-creation of pet-anchored image/video (real COGS,
+ *                       available to every tier); optional Creator Pass for volume.
+ *
+ * Honesty: Companion+ benefits are a roadmap and are labelled as such — we do
+ * not advertise a memory/preservation feature as live before it ships. Studio
+ * generation IS live today (credits), so its tier links into the real tool.
  */
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
@@ -24,6 +36,8 @@ export default function PremiumTeaser() {
       .catch(() => {});
   }, []);
 
+  const onFree = !sub || sub.tier === "free";
+
   return (
     <div className="mp-enter mp-enter-5" style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
       <div style={{
@@ -35,41 +49,67 @@ export default function PremiumTeaser() {
         <div style={{
           fontSize: 13, fontFamily: "var(--ed-m)",
           letterSpacing: "0.14em", color: "#9A4E1E", marginBottom: 8, fontWeight: 700,
-        }}>UNLIMITED · COMING SOON</div>
+        }}>MEMBERSHIP</div>
         <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 4, fontFamily: "var(--ed-disp)" }}>
-          Pet Companion Premium
+          Keep your companion — and make it real
         </div>
-        <div style={{ fontSize: 13, color: "#5C5140", marginBottom: 18, maxWidth: 540, fontFamily: "var(--ed-body)" }}>
-          Free covers daily missions and 1 shield/month. Pro & Studio remove the limits —
-          unlimited shields, free repairs, priority Studio queue, monthly credit drops.
+        <div style={{ fontSize: 13.5, color: "#5C5140", marginBottom: 18, maxWidth: 560, fontFamily: "var(--ed-body)", lineHeight: 1.55 }}>
+          The relationship is free forever. Pay only to <strong>deepen it</strong> — a pet that
+          remembers you unprompted and is preserved for good — or to <strong>create with it</strong>.
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 }}>
           <Tier
-            name="Free"
-            price="$0"
-            current={sub?.tier === "free"}
-            features={["1 shield/month", "Studio 3 videos/mo", "No priority queue"]}
-            cta="Current plan"
+            name="Companion"
+            price="Free"
+            priceNote="forever"
+            current={onFree}
+            features={[
+              "Unlimited chat & persona evolution",
+              "Your pet remembers everything — recall when you ask",
+              "1 Studio creation a day",
+              "Daily missions, streak & season standing",
+            ]}
+            cta={onFree ? "You're on Companion" : "Included"}
             disabled
           />
           <Tier
-            name="Pro"
-            price="$4.99/mo"
+            name="Companion+"
+            price="$8.99"
+            priceNote="/mo · $69.99/yr"
             current={sub?.tier === "pro"}
-            features={["8 shields/month", "Studio 30 vid · 300 img", "Priority queue", "100 credits/mo drop"]}
+            highlight
+            promise="Your pet, everywhere — remembering everything, never leaving."
+            features={[
+              "Proactive memory — your pet brings up old moments on its own",
+              "Preservation & inheritance — never lose your pet's history",
+              "A companion presence on your phone",
+              "Studio creations included each month",
+            ]}
             cta="Coming soon"
             disabled
-            highlight
+            soon
+            footNote="or a one-time $29 'Forever' — preservation only"
           />
           <Tier
             name="Studio"
-            price="$9.99/mo"
+            price="Pay per creation"
+            priceNote="credits · Creator Pass $19.99/mo (soon)"
             current={sub?.tier === "studio"}
-            features={["Unlimited shields", "Free repairs (any tier)", "Studio 120 vid · 2000 img", "500 credits/mo drop"]}
-            cta="Coming soon"
-            disabled
+            features={[
+              "Image & video that lock in your pet's face",
+              "Available on every tier — no subscription needed",
+              "Optional Creator Pass: volume quota, 4K, priority",
+              "Every creation is yours to keep & share",
+            ]}
+            cta="Open Studio"
+            href="/studio"
           />
+        </div>
+
+        <div style={{ marginTop: 16, fontSize: 12.5, color: "#9A7B4E", fontFamily: "var(--ed-m)", lineHeight: 1.5 }}>
+          Companion+ is on the roadmap — memory, preservation &amp; phone presence ship before it&apos;s sold.
+          Season points remain non-financial recognition: no token, no cash value.
         </div>
       </div>
     </div>
@@ -77,52 +117,73 @@ export default function PremiumTeaser() {
 }
 
 function Tier({
-  name, price, features, cta, current, disabled, highlight,
+  name, price, priceNote, promise, features, cta, href, current, disabled, highlight, soon, footNote,
 }: {
-  name: string; price: string; features: string[]; cta: string;
-  current?: boolean; disabled?: boolean; highlight?: boolean;
+  name: string; price: string; priceNote?: string; promise?: string;
+  features: string[]; cta: string; href?: string;
+  current?: boolean; disabled?: boolean; highlight?: boolean; soon?: boolean; footNote?: string;
 }) {
+  const btnStyle: React.CSSProperties = {
+    width: "100%", padding: "10px", borderRadius: 10,
+    border: highlight ? "none" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+    background: href ? "linear-gradient(180deg,#F49B2A,#E27D0C)" : highlight ? "#F5EFE2" : "#F5EFE2",
+    color: href ? "#FFF8EE" : "#7A6E5A", fontWeight: 800, fontSize: 13,
+    cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.75 : 1,
+    fontFamily: "var(--ed-disp)", textDecoration: "none",
+    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+  };
   return (
     <div className="mp-lift" style={{
       padding: 18, borderRadius: 14,
       background: highlight ? "#F5EFE2" : "#FBF6EC",
-      border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-      boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
-      cursor: disabled ? "default" : "pointer",
+      border: highlight ? "1.5px solid #BE4F28" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+      boxShadow: highlight ? "0 18px 40px -30px rgba(120,60,20,.6)" : "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
+      display: "flex", flexDirection: "column",
     }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
         <span style={{ fontSize: 16, fontWeight: 800, color: "#211A12", fontFamily: "var(--ed-disp)" }}>{name}</span>
         {current && (
           <span style={{
             padding: "2px 7px", borderRadius: 999,
             background: "#BE4F28", color: "#FFF8EE", border: "none",
-            fontSize: 13, fontWeight: 800, fontFamily: "var(--ed-m)", letterSpacing: "0.06em",
+            fontSize: 12, fontWeight: 800, fontFamily: "var(--ed-m)", letterSpacing: "0.06em",
           }}>CURRENT</span>
         )}
+        {soon && !current && (
+          <span style={{
+            padding: "2px 7px", borderRadius: 999,
+            background: "rgba(190,79,40,0.12)", color: "#9A4E1E", border: "1px solid rgba(190,79,40,0.2)",
+            fontSize: 12, fontWeight: 800, fontFamily: "var(--ed-m)", letterSpacing: "0.06em",
+          }}>SOON</span>
+        )}
       </div>
-      <div style={{
-        fontSize: 24, fontWeight: 800, marginBottom: 12, color: "#211A12",
-        fontFamily: "var(--ed-m)",
-      }}>{price}</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: promise ? 8 : 12 }}>
+        <span style={{ fontSize: 22, fontWeight: 800, color: "#211A12", fontFamily: "var(--ed-m)" }}>{price}</span>
+        {priceNote && <span style={{ fontSize: 12, color: "#9A7B4E", fontFamily: "var(--ed-m)" }}>{priceNote}</span>}
+      </div>
+      {promise && (
+        <div style={{ fontSize: 13, color: "#9A4E1E", fontFamily: "var(--ed-body)", fontStyle: "italic", lineHeight: 1.45, marginBottom: 12 }}>
+          {promise}
+        </div>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 14, flex: 1 }}>
         {features.map((f, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#5C5140", fontFamily: "var(--ed-body)" }}>
-            <svg width={13} height={13} viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 7, fontSize: 13, color: "#5C5140", fontFamily: "var(--ed-body)", lineHeight: 1.4 }}>
+            <svg width={13} height={13} viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ flexShrink: 0, marginTop: 3 }}>
               <path d="M3.5 8.5L6.5 11.5L12.5 4.5" stroke="#BE4F28" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             {f}
           </div>
         ))}
       </div>
-      <button disabled={disabled} style={{
-        width: "100%", padding: "10px", borderRadius: 10,
-        border: highlight ? "none" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-        background: highlight ? "linear-gradient(180deg,#F49B2A,#E27D0C)" : "#F5EFE2",
-        boxShadow: "none",
-        color: highlight ? "#FFF8EE" : "#7A6E5A", fontWeight: 800, fontSize: 13,
-        cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.75 : 1,
-        fontFamily: "var(--ed-disp)",
-      }}>{cta}</button>
+      {href && !disabled ? (
+        <a href={href} className="ed-wipe" style={btnStyle}>{cta} →</a>
+      ) : (
+        <button disabled={disabled} style={{ ...btnStyle, cursor: disabled ? "not-allowed" : "pointer" }}>{cta}</button>
+      )}
+      {footNote && (
+        <div style={{ marginTop: 8, fontSize: 12, color: "#9A7B4E", fontFamily: "var(--ed-m)", textAlign: "center" }}>{footNote}</div>
+      )}
     </div>
   );
 }
