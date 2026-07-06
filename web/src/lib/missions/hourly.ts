@@ -7,7 +7,7 @@
  * community events) without a cron writer.
  *
  * The spotlight ends 30 min into the hour; the remaining 30 min there's none.
- * The window is shown in UI as a countdown.
+ * The UI shows it as a calm featured-category banner (no countdown).
  *
  * NOTE: `multiplier_x` is carried in the data model for a future boost feature
  * but is NOT applied to point grants yet — the award paths credit the flat base

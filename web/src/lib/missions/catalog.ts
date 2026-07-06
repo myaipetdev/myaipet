@@ -160,7 +160,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Ask your pet about their dream",
     description: "Open today's chat by asking about last night's dream.",
     points: 10, verifier: "manual",
-    cta: { label: "Ask about dream", href: "/?section=my pet&prompt=dream" },
+    cta: { label: "Ask about dream", href: "/?section=my pet" },
   },
   {
     id: "share_day",
@@ -236,7 +236,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Review last week's memories",
     description: "Visit your pet's memory ledger.",
     points: 10, verifier: "manual",
-    cta: { label: "Open memories", href: "/?section=my pet&tab=memory" },
+    cta: { label: "Open memories", href: "/?section=my pet" },
   },
   {
     id: "export_soul",
@@ -252,7 +252,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Read your pet's dream journal",
     description: "Pet dreams while you sleep. Catch up on what they imagined.",
     points: 10, verifier: "manual",
-    cta: { label: "Open dreams", href: "/?section=my pet&tab=dreams" },
+    cta: { label: "Open dreams", href: "/?section=my pet" },
   },
 
   // ── CREATION (Studio) (6) ──────────────────────────────────────────
@@ -298,14 +298,6 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     points: 10, verifier: "manual",
     cta: { label: "Open gallery", href: "/?section=community" },
   },
-  {
-    id: "vote_tournament",
-    category: "creation",
-    title: "Vote in this week's theme tournament",
-    description: "(When live) Pick your favourite community entry.",
-    points: 5, verifier: "manual",
-    cta: { label: "See entries", href: "/?section=community" },
-  },
 
   // ── SOCIAL (5) ─────────────────────────────────────────────────────
   {
@@ -341,15 +333,15 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Compliment a top creator",
     description: "Find this week's top creator and leave kindness.",
     points: 10, verifier: "manual",
-    cta: { label: "See leaderboard", href: "/?section=leaderboard" },
+    cta: { label: "See leaderboard", href: "/?section=airdrop&pillar=compete" },
   },
   {
     id: "send_friend",
     category: "social",
-    title: "Send a friend request",
-    description: "(Coming) Buddy Lock makes streaks shared.",
+    title: "Buddy Lock is live — pair up for a shared streak",
+    description: "Send a buddy request from the Connect tab to link your streaks.",
     points: 10, verifier: "manual",
-    cta: { label: "Find friends", href: "/?section=community" },
+    cta: { label: "Open Connect", href: "/?section=airdrop&pillar=connect" },
   },
 
   // ── CARE (5) ───────────────────────────────────────────────────────
@@ -419,7 +411,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Check your leaderboard rank",
     description: "Where do you stand today?",
     points: 3, verifier: "manual",
-    cta: { label: "Leaderboard", href: "/?section=leaderboard" },
+    cta: { label: "Leaderboard", href: "/?section=airdrop&pillar=compete" },
   },
   {
     id: "view_stats",
@@ -428,14 +420,6 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     description: "Quick health check on Sparky.",
     points: 3, verifier: "manual",
     cta: { label: "Pet stats", href: "/?section=my pet" },
-  },
-  {
-    id: "view_badges",
-    category: "reflection",
-    title: "Look at your achievement progress",
-    description: "How close are you to the next milestone?",
-    points: 3, verifier: "manual",
-    cta: { label: "View badges", href: "/?section=home" },
   },
 
   // ── EXPLORATION (4) ────────────────────────────────────────────────

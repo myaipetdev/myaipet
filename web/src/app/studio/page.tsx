@@ -5,7 +5,7 @@ export const revalidate = 0;
 
 export const metadata = {
   title: "Studio — MY AI PET",
-  description: "Pro AI video generation for your pet — multi-model, pet anchor, audio.",
+  description: "Pro AI video generation for your pet — multi-model, pet anchor.",
 };
 
 export default function StudioPage() {

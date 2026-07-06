@@ -41,6 +41,10 @@ const GREEN = "#9FC59A";       // warm sage (live)
 const LINE = "rgba(231,197,124,0.20)"; // warm gold hairline
 const MONO = "var(--ed-m)";    // Space Mono
 
+// Single source of truth for the SDK version shown across surfaces
+// (console boot line, manifest header, SovereigntyDashboard SDK card).
+export const SDK_VERSION = "1.6.1";
+
 // Always-on surfaces + the 19-connector registry (lib/petclaw/connectors).
 const RUNS_ON = "web · chrome-extension · mcp clients (Claude · Cursor · any)";
 const CONNECTORS = [
@@ -100,14 +104,14 @@ const liveTag = <span style={{ color: GREEN }}>● live</span>;
 interface Line { role: "sys" | "you" | "pet"; text: string }
 
 const BOOT: Line[] = [
-  { role: "sys", text: "initializing petclaw-mcp · protocol v1 · SDK 1.6.0" },
+  { role: "sys", text: `initializing petclaw-mcp · protocol v1 · SDK ${SDK_VERSION}` },
   { role: "sys", text: "connectors ▸ 19   tools ▸ 6 ready   skills ▸ 18 loaded   VIGIL ▸ 5 · PACK ▸ A2A" },
   { role: "sys", text: "soul ▸ portable · consent ▸ enforced · on-chain ▸ holding (go-live)" },
 ];
 
 const DEMO_REPLIES = [
   "hehe hi! i'm a *demo* of how your pet sounds — adopt one and i'll remember everything about you.",
-  "*wags* connect your wallet and give me a name — then this chat becomes really yours, across every channel.",
+  "*wags* adopt me and give me a name — then this chat becomes really yours, across every channel.",
   "ooh you typed something! once you adopt, i reply from real memory (the petclaw_chat tool). want to try?",
 ];
 
@@ -158,7 +162,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
         pushLine(l);
         if (idx === BOOT.length - 1) {
           const ready = isSim
-            ? `petclaw_chat ready — demo of ${petName}; connect to chat live (or /help)`
+            ? `petclaw_chat ready — demo of ${petName}; adopt a pet to chat live (or /help)`
             : `petclaw_chat ready — say hi to ${petName} (or /help)`;
           const t2 = setTimeout(() => pushLine({ role: "sys", text: ready }), 280);
           timers.current.push(t2);
@@ -178,7 +182,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
   const runGoal = async (goalText: string) => {
     const g = goalText.trim();
     if (!g) { pushLine({ role: "sys", text: "usage: /goal <what you want your pet to do>" }); return; }
-    if (isSim || !petId) { pushLine({ role: "sys", text: "agent loop needs your own pet — connect your wallet & adopt one" }); return; }
+    if (isSim || !petId) { pushLine({ role: "sys", text: "agent loop needs your own pet — adopt one to unlock it" }); return; }
     pushLine({ role: "sys", text: `agent ▸ planning · "${g}"` });
     setBusy(true);
     try {
@@ -223,7 +227,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
     if (isSim) {
       if (!simHinted.current) {
         simHinted.current = true;
-        pushLine({ role: "sys", text: "demo mode — connect your wallet & adopt a pet to chat live" });
+        pushLine({ role: "sys", text: "demo mode — adopt a pet to chat live" });
       }
       const reply = DEMO_REPLIES[simIdx.current % DEMO_REPLIES.length];
       simIdx.current += 1;
@@ -301,7 +305,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
           {/* manifest */}
           <div style={{ border: `1px solid ${LINE}`, borderRadius: 12, padding: compact ? "18px 20px" : "20px 24px" }}>
             <div style={{ color: GOLD, fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
-              PetClaw Protocol v1 · SDK v1.6.0 <span style={{ color: MUTED, fontWeight: 400 }}>· npx petclaw-mcp · MIT</span>
+              PetClaw Protocol v1 · SDK v{SDK_VERSION} <span style={{ color: MUTED, fontWeight: 400 }}>· npx petclaw-mcp · MIT</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: "0 40px" }}>
               <div>
@@ -338,14 +342,14 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
               )}
             </div>
             {/* closing rule so the panel finishes crisp instead of trailing into dark */}
-            <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${LINE}`, color: MUTED, fontSize: 14 }}>19 connectors · 18 skills · 5-stage harness · 6 MCP tools · BYO models · 100% your data</div>
+            <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${LINE}`, color: MUTED, fontSize: 14 }}>100% your data — export or delete any time below.</div>
           </div>
 
           {/* LIVE terminal */}
           {interactive && (
             <div style={{ marginTop: 16, border: `1px solid ${LINE}`, borderRadius: 12, overflow: "hidden", background: "#16110B" }}>
               <div style={{ padding: "8px 14px", borderBottom: "1px solid rgba(236,224,206,0.06)", color: MUTED, fontSize: 13, letterSpacing: "0.08em" }}>
-                LIVE · petclaw_chat — {isSim ? `demo of ${petName} (connect to chat live)` : `talk to ${petName} right here`}
+                LIVE · petclaw_chat — {isSim ? `demo of ${petName} (adopt a pet to chat live)` : `talk to ${petName} right here`}
               </div>
               <div ref={scrollRef} style={{ maxHeight: 264, overflowY: "auto", padding: "12px 14px", fontSize: 13, lineHeight: 1.7 }}>
                 {lines.map((l, i) => (

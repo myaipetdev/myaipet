@@ -37,7 +37,7 @@ export default function MyCard() {
 
   return (
     <div className="mp-enter" style={{ maxWidth: 1060, margin: "0 auto", padding: "0 24px" }}>
-      <div className="mp-lift" style={{
+      <div style={{
         background: "#211A12",
         color: "#FFF8EE", borderRadius: 18, padding: "20px 24px",
         border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",

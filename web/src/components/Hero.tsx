@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { LOGO_SRC } from "./Nav";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import Icon from "@/components/Icon";
+import { seasonPhase } from "@/lib/season";
 import Reveal, { MaskedTitle, useMagnet } from "@/components/Reveal";
 import PawField from "@/components/PawField";
 
@@ -116,7 +117,11 @@ function HeroShowcase({ txToday }: { txToday?: number }) {
   );
 }
 
-export default function Hero({ onAdopt, onExplore, txToday }: any) {
+// Each pillar navigates to its real surface — a button whose only effect was
+// briefly highlighting itself (wiped by the 3s auto-rotate) did nothing real.
+const PILLAR_TARGETS = ["studio", "my pet", "community", "sovereignty"];
+
+export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
   const [activePillar, setActivePillar] = useState(0);
   // Primary CTA leans toward the pointer (fine pointers only).
   const magnetRef = useMagnet();
@@ -325,8 +330,9 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           }
         `}</style>
         {PILLARS.map((f, i) => (
-          <button key={i} onClick={() => setActivePillar(i)}
+          <button key={i} onClick={() => { setActivePillar(i); onNavigate?.(PILLAR_TARGETS[i]); }}
             className={`hero-pillar-btn${activePillar === i ? " active" : ""}`}
+            aria-label={`Open ${f.label}`}
           >
             <div className="pillar-icon" style={{ fontSize: 18, marginBottom: 4, transition: "transform 0.3s ease" }}>{f.icon}</div>
             <div className="pillar-label" style={{
@@ -373,7 +379,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
             fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
             color: "#9A4E1E", letterSpacing: "0.08em", textTransform: "uppercase",
           }}>
-            Season 1 · Live
+            {seasonPhase() === "live" ? "Season 1 · Live" : seasonPhase() === "upcoming" ? "Season 1 · Starts Jul 1" : "Season 1 · Ended"}
           </span>
         </div>
         </Reveal>
@@ -507,7 +513,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
       }}>
         <MaskedTitle
           as="h2"
-          lines={["Investment"]}
+          lines={["Backed by"]}
           style={{
             fontFamily: "var(--ed-disp)", fontSize: "clamp(24px,3.5vw,36px)",
             fontWeight: 700, color: "#211A12", letterSpacing: "-0.02em", margin: "0 0 8px",
@@ -522,7 +528,7 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12,
           textAlign: "center", marginTop: 28,
         }}>
-          Lead Investor
+          Lead Investors
         </div>
         </Reveal>
         <div style={{

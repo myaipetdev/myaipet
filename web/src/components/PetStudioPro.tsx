@@ -342,6 +342,21 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // "Make one like this" handoff (Community → Studio): read the stashed prompt
+  // once on mount, then clear it so a refresh doesn't re-apply it.
+  // (Same key/shape as PetGenerate's studio_prefill reader.)
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("studio_prefill");
+      if (raw) {
+        const seed = JSON.parse(raw);
+        if (seed?.prompt) setPrompt(String(seed.prompt));
+        if (seed?.genType === "image" || seed?.genType === "video") setOutputKind(seed.genType);
+        sessionStorage.removeItem("studio_prefill");
+      }
+    } catch {}
+  }, []);
+
   // Item #12(1): while any history row is still in flight, re-poll history on
   // an 8s interval so pending tiles resolve instead of pulsing forever.
   const hasPendingHistory = history.some(g => g.status === "pending" || g.status === "running");
@@ -1032,33 +1047,6 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               </div>
             )}
 
-            {/* Inspiration — fills the idle space with real example art; tap to load it. */}
-            {view === "idle" && (
-              <div style={{ marginTop: 12 }}>
-                <div style={{
-                  fontSize: 13, fontFamily: T.m,
-                  letterSpacing: "0.14em", color: T.mono, fontWeight: 700, marginBottom: 8, textTransform: "uppercase",
-                  display: "flex", alignItems: "center", gap: 5,
-                }}><Icon name="sparkling" size={12} /> WHAT YOU CAN MAKE</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-                  {TEMPLATES.slice(0, 4).map((t, i) => {
-                    const ex = TEMPLATE_EXAMPLES[t.id];
-                    if (!ex) return null;
-                    return (
-                      <Reveal key={t.id} dir="up" delay={Math.min(i, 8) * 70}>
-                        <button onClick={() => applyTemplate(t)} className="mp-lift" title={t.title} aria-label={`Use template: ${t.title}`} style={{
-                          display: "block", width: "100%", padding: 4, background: T.paper, borderRadius: 10, overflow: "hidden",
-                          border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
-                          cursor: "pointer", aspectRatio: "1 / 1",
-                        }}>
-                          <span style={{ display: "block", width: "100%", height: "100%", borderRadius: 7, boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)", background: `url(${ex}) center/cover no-repeat` }} />
-                        </button>
-                      </Reveal>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* CONTROLS */}
@@ -1083,7 +1071,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                         <span style={{
                           fontSize: 13, color: T.studio, fontWeight: 700, letterSpacing: "0.08em",
                           fontFamily: T.m,
-                        }}>✓ LOCKED</span>
+                        }}>✓ SELECTED</span>
                       ) : (
                         <span style={{
                           fontSize: 13, color: T.muted2,
@@ -1544,6 +1532,8 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             ? "Loading engines…"
             : !pet
             ? "Loading pets…"
+            : isDemo
+            ? "Preview a demo (free) →"
             : (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
                 <PlayGlyph size={16} />

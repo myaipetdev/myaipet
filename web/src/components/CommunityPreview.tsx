@@ -17,7 +17,7 @@ import Reveal from "@/components/Reveal";
 
 interface Item { id: number; url: string; isVideo: boolean; likes: number; }
 
-export default function CommunityPreview({ cta }: { cta?: ReactNode }) {
+export default function CommunityPreview({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: string }) {
   const [items, setItems] = useState<Item[] | null>(null);
 
   useEffect(() => {
@@ -71,18 +71,23 @@ export default function CommunityPreview({ cta }: { cta?: ReactNode }) {
           <AlbumCarousel
             items={albumItems}
             autoAdvance={3800}
-            onOpen={() => { window.location.href = "/?section=community"; }}
+            // Anon users clicking an album used to hard-navigate to the same
+            // gated screen (a self-reload). Point them at the sign-in CTA below.
+            onOpen={() => { document.getElementById("community-preview-cta")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}
           />
         </Reveal>
       )}
 
       {/* CTA */}
-      <div style={{ marginTop: 22, padding: "20px 22px", borderRadius: 18, textAlign: "center", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
+      <div id="community-preview-cta" style={{ marginTop: 22, padding: "20px 22px", borderRadius: 18, textAlign: "center", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))", scrollMarginTop: 88 }}>
         <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 18, marginBottom: 6 }}>Like, comment &amp; post your own</div>
         <div style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "rgba(255,248,238,0.85)", marginBottom: 16 }}>
           Connect your wallet — no gas, identity only. Join the pets.
         </div>
         <div style={{ display: "inline-block" }}>{cta}</div>
+        {ctaNote && (
+          <div style={{ marginTop: 10, fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(255,248,238,0.8)" }}>{ctaNote}</div>
+        )}
       </div>
     </div>
   );

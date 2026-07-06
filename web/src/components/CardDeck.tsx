@@ -136,6 +136,8 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
   // battle state
   const [myPetId, setMyPetId] = useState<number | null>(null);
   const [opps, setOpps] = useState<Opp[]>([]);
+  const [oppsLoaded, setOppsLoaded] = useState(false); // discover fetch settled ok
+  const [oppsErr, setOppsErr] = useState(false);       // non-ok/network — retryable, never "no opponents"
   const [oppId, setOppId] = useState<number | null>(null);
   const [battling, setBattling] = useState(false);
   const [battle, setBattle] = useState<any>(null);
@@ -163,12 +165,17 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
     }).finally(() => setLoaded(true));
   };
 
+  const loadOpps = () => {
+    setOppsErr(false);
+    fetch("/api/petclaw/network/discover?limit=24", { headers: getAuthHeaders() })
+      .then((r) => r.ok ? r.json() : Promise.reject(new Error(`status ${r.status}`)))
+      .then((d) => { if (d?.nodes) setOpps(d.nodes); setOppsLoaded(true); })
+      .catch(() => setOppsErr(true));
+  };
+
   useEffect(() => {
     loadPets();
-    fetch("/api/petclaw/network/discover?limit=24", { headers: getAuthHeaders() })
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d?.nodes) setOpps(d.nodes); })
-      .catch(() => {});
+    loadOpps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -511,7 +518,20 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
               </button>
             </Reveal>
           </div>
-          {oppList.length === 0 && <div style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted, marginBottom: 16 }}>No other pets to battle yet — invite a friend to adopt one.</div>}
+          {/* Honest opponent states: pending / retryable error / real empty —
+              a failed discover fetch must never read as "no opponents exist". */}
+          {oppList.length === 0 && (
+            oppsLoaded ? (
+              <div style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted, marginBottom: 16 }}>No other pets to battle yet.</div>
+            ) : oppsErr ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontFamily: T.body, fontSize: 13.5, color: T.muted, marginBottom: 16 }}>
+                <span>Couldn&apos;t find opponents.</span>
+                <button onClick={loadOpps} className="ed-wipe" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: GOLD, background: "transparent", border: `1px solid ${T.hair}`, borderRadius: 999, padding: "4px 12px", cursor: "pointer" }}>Retry</button>
+              </div>
+            ) : (
+              <div style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted, marginBottom: 16 }}>Finding opponents…</div>
+            )
+          )}
 
           {battle && (
             <div className="mp-enter" style={{ borderRadius: 22, border: `1px solid ${T.hair}`, padding: 22, background: T.paper, boxShadow: "var(--ed-shadow-card)" }}>
@@ -527,6 +547,11 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                 <div style={{ fontFamily: T.m, fontSize: 13, color: T.muted, fontWeight: 700, letterSpacing: "0.06em", marginTop: 7, fontVariantNumeric: "tabular-nums" }}>
                   <Num n={battle.result.turns} /> turns · your HP <Num n={battle.result.yourHp} />/<Num n={battle.result.yourHpMax} /> · their HP <Num n={battle.result.oppHp} />/<Num n={battle.result.oppHpMax} />
                 </div>
+                {/* Real awarded points from /api/card/battle (awardPointsCapped) —
+                    mirrors the CatCatch reveal chip; never shown when capped to 0. */}
+                {typeof battle.pointsAwarded === "number" && battle.pointsAwarded > 0 && (
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 12, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".06em", borderRadius: 999, padding: "6px 14px", fontVariantNumeric: "tabular-nums" }}>+{battle.pointsAwarded} season points <Icon name="coin" size={14} /></div>
+                )}
               </div>
               <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
                 {[battle.you, battle.opponent].map((c: any, i: number) => {
@@ -914,7 +939,7 @@ function Shell({ children, owned, rarityCounts }: { children: React.ReactNode; o
             <style>{`@media (max-width: 640px){ .cd-explain-row{ grid-template-columns: 1fr !important; } }`}</style>
             {[
               { n: "01", title: "Collect", body: "Every pet you raise is minted as a trading card — real stats, real rarity." },
-              { n: "02", title: "Catch", body: "Point your camera at real animals outside — they join the album as cards." },
+              { n: "02", title: "Catch", body: "Point your camera at real animals outside — they fill the Catch tab's field album." },
               { n: "03", title: "Battle & share", body: "Duel any card, illustrate it in Studio, or share it with friends." },
             ].map((s) => (
               <div key={s.n} style={{ display: "flex", gap: 10, alignItems: "flex-start", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "11px 13px" }}>

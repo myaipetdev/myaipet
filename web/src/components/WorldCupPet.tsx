@@ -66,18 +66,26 @@ export default function WorldCupPet() {
   const [copied, setCopied] = useState(false);
   const [avatarSet, setAvatarSet] = useState(false);
   const [notAuthed, setNotAuthed] = useState(false);
+  // Honest loading: never flash "adopt a pet first" at an owner whose pets are
+  // still on the wire (or whose fetch failed) — mirrors CardDeck's pattern.
+  const [petsLoaded, setPetsLoaded] = useState(false);
+  const [petsErr, setPetsErr] = useState(false);
 
   const pet = pets.find((p) => p.id === petId) || null;
 
-  useEffect(() => {
+  const loadPets = () => {
+    setPetsErr(false);
     api.pets.list().then((d: any) => {
       const list: Pet[] = (d?.pets || []).map((p: any) => ({ id: p.id, name: p.name, avatar_url: p.avatar_url }));
       setPets(list);
-      if (list[0]) setPetId(list[0].id);
+      if (list[0]) setPetId((cur) => cur ?? list[0].id);
+      setPetsLoaded(true);
     }).catch((e: any) => {
       if (e?.status === 401) setNotAuthed(true);
+      else setPetsErr(true);
     });
-  }, []);
+  };
+  useEffect(loadPets, []);
 
   const generate = async () => {
     if (!pet || !country || busy) return;
@@ -177,6 +185,22 @@ export default function WorldCupPet() {
   // ── states ──
   if (notAuthed) {
     return <Shell><Empty>Connect your wallet to make your World Cup pet.</Empty></Shell>;
+  }
+  if (!petsLoaded) {
+    return (
+      <Shell>
+        {petsErr ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "14px 16px", boxShadow: "var(--ed-shadow-card)", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.muted2, textTransform: "uppercase" }}>
+            <span>Couldn&apos;t load your pets</span>
+            <button onClick={loadPets} className="wc-press ed-wipe" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.terra, background: "transparent", border: "1px solid rgba(190,79,40,.4)", borderRadius: 999, padding: "4px 12px", cursor: "pointer", textTransform: "uppercase" }}>Retry</button>
+          </div>
+        ) : (
+          <div style={{ background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "14px 16px", boxShadow: "var(--ed-shadow-card)", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase" }}>
+            Loading your pets…
+          </div>
+        )}
+      </Shell>
+    );
   }
   if (pets.length === 0) {
     return (
@@ -315,7 +339,7 @@ export default function WorldCupPet() {
             <button onClick={shareToX} className="wc-press" style={{ ...primaryBtn, display: "inline-flex", alignItems: "center", gap: 8 }}><XLogo size={14} /> Share on X</button>
             <button onClick={copyLink} className="wc-press ed-wipe" style={{ ...ghostBtn, display: "inline-flex", alignItems: "center", gap: 6 }}>{copied ? <>Link copied <CheckIcon size={13} /></> : "Copy link"}</button>
             <button onClick={setAsAvatar} className="wc-press ed-wipe" style={{ ...ghostBtn, display: "inline-flex", alignItems: "center", gap: 6, color: avatarSet ? T.teal : ghostBtn.color }}>{avatarSet ? <>Avatar updated <CheckIcon size={13} /></> : "Set as my pet's avatar"}</button>
-            <button onClick={generate} disabled={busy} className="wc-press ed-wipe" style={{ ...ghostBtn, opacity: busy ? 0.6 : 1 }}>Regenerate</button>
+            <button onClick={generate} disabled={busy} className="wc-press ed-wipe" style={{ ...ghostBtn, opacity: busy ? 0.6 : 1 }}>{`Regenerate · ${GEN_COST} credits`}</button>
           </div>
           <div style={{ fontFamily: T.body, fontSize: 13, color: T.muted, marginTop: 10 }}>
             Sharing opens X with your post pre-filled — nothing is posted until you press Post.
@@ -362,6 +386,7 @@ function ChampionPrediction() {
   const [saving, setSaving] = useState(false);
   const [pts, setPts] = useState<number | null>(null);
   const [authed, setAuthed] = useState(true);
+  const [submitErr, setSubmitErr] = useState(false); // non-401 submit failure — never swallowed
   // Honest loading: never assert "0 votes"/"be the first" before real data.
   const [loaded, setLoaded] = useState(false);
   const [fetchErr, setFetchErr] = useState(false);
@@ -392,7 +417,7 @@ function ChampionPrediction() {
 
   const submit = async () => {
     if (!sel || saving) return;
-    setSaving(true); setPts(null);
+    setSaving(true); setPts(null); setSubmitErr(false);
     try {
       const res = await fetch("/api/worldcup/predict", {
         method: "POST",
@@ -402,6 +427,9 @@ function ChampionPrediction() {
       const d = await res.json().catch(() => ({}));
       if (res.status === 401) { setAuthed(false); return; }
       if (res.ok) { apply(d); setLoaded(true); setFetchErr(false); if (typeof d.pointsAwarded === "number" && d.pointsAwarded > 0) setPts(d.pointsAwarded); }
+      else setSubmitErr(true);
+    } catch {
+      setSubmitErr(true);
     } finally {
       setSaving(false);
     }
@@ -476,6 +504,11 @@ function ChampionPrediction() {
         </button>
       </div>
 
+      {submitErr && (
+        <div style={{ fontFamily: T.body, fontSize: 13, color: T.terraSub, background: "rgba(190,79,40,.08)", border: `1px solid rgba(190,79,40,.22)`, borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
+          Couldn&apos;t submit — try again.
+        </div>
+      )}
       {!authed && (
         <div style={{ fontFamily: T.body, fontSize: 13, color: T.terraSub, background: "rgba(190,79,40,.08)", border: `1px solid rgba(190,79,40,.22)`, borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
           Connect your wallet to cast your prediction.
@@ -674,7 +707,9 @@ function Slot({ side, pet }: { side: "home" | "away"; pet?: Pet }) {
       </div>
       <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 18, color: T.creamOn, marginTop: 12 }}>{pet?.name || (isHome ? "Your pet" : "A challenger")}</div>
       <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: "rgba(252,233,207,.78)", marginTop: 4, textTransform: "uppercase" }}>
-        {pet ? "Entries open soon" : isHome ? "Slot reserved for a challenger" : "A community pet — matched when voting opens"}
+        {/* Home slot always receives pets[0] (pets.length > 0 guards this screen);
+            the away slot is always the mystery challenger — no third branch. */}
+        {pet ? "Entries open soon" : "A community pet — matched when voting opens"}
       </div>
     </div>
   );
@@ -709,9 +744,9 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div aria-hidden style={{ position: "absolute", right: -8, top: -16, opacity: 0.08, lineHeight: 1, zIndex: 1 }}><Icon name="trophy" size={130} /></div>
         <div style={{ position: "relative", zIndex: 2 }}>
           <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", color: T.terraSub, textTransform: "uppercase" }}>Pet World Cup · 2026</div>
-          <h1 style={{ fontFamily: T.disp, fontSize: "clamp(34px,8vw,50px)", fontWeight: 800, color: T.ink, margin: "10px 0 0", letterSpacing: "-0.03em", lineHeight: 0.96 }}>Three ways to play</h1>
+          <h1 style={{ fontFamily: T.disp, fontSize: "clamp(34px,8vw,50px)", fontWeight: 800, color: T.ink, margin: "10px 0 0", letterSpacing: "-0.03em", lineHeight: 0.96 }}>Two ways to play now</h1>
           <p style={{ fontFamily: T.body, fontSize: 15.5, color: T.muted2, margin: "16px auto 0", lineHeight: 1.6, maxWidth: 580 }}>
-            The 2026 World Cup is on. Enter your pet in the <strong style={{ color: T.terra, fontWeight: 600 }}>Cuteness Cup</strong> head-to-head bracket, or <strong style={{ color: T.ink, fontWeight: 600 }}>fly your colors</strong> — reimagine your pet as your country&apos;s national animal. Then predict who lifts the trophy.
+            The 2026 World Cup is on. <strong style={{ color: T.ink, fontWeight: 600 }}>Fly your colors</strong> — reimagine your pet as your country&apos;s national animal — and predict who lifts the trophy. The <strong style={{ color: T.terra, fontWeight: 600 }}>Cuteness Cup</strong> bracket is coming soon.
           </p>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 12, margin: "18px 0 0", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: T.mono, flexWrap: "wrap", justifyContent: "center" }}>
             <button onClick={() => jump("wc-cuteness")} className="wc-press" style={chipStyle}>Cuteness Cup</button>

@@ -24,6 +24,7 @@
 
 import { useState } from "react";
 import { useDirectUsdtPay } from "@/hooks/useDirectUsdtPay";
+import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 
 export interface PaywallInfo {
@@ -40,30 +41,21 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
   const { pay, isPending, isConfirming, treasuryConfigured } = useDirectUsdtPay();
   const [step, setStep] = useState<"idle" | "signing" | "confirming" | "registering" | "done" | "error">("idle");
   const [errMsg, setErrMsg] = useState<string | null>(null);
+  // Once the on-chain transfer succeeds, the tx hash is held here so an error
+  // retry re-runs RECEIPT REGISTRATION — it must NEVER re-sign a second
+  // transfer for money that already left the wallet.
+  const [paidTxHash, setPaidTxHash] = useState<string | null>(null);
 
   if (!info) return null;
 
-  const handlePay = async () => {
-    setErrMsg(null);
-    setStep("signing");
-    const result = await pay(info.priceUsd);
-    if ("error" in result) {
-      setStep("error");
-      setErrMsg(result.error);
-      return;
-    }
-    setStep("confirming");
-    const txHash = result.hash;
-
-    // Wait a few seconds for confirmation, then register receipt
-    // (BSC ~3s/block, 1 confirmation usually enough for our level of trust)
-    await new Promise(r => setTimeout(r, 4000));
-
+  const registerReceipt = async (txHash: string) => {
     setStep("registering");
     try {
+      // Auth is Bearer-token based (lib/auth reads the Authorization header) —
+      // cookies alone 401 here, which used to strand every paid receipt.
       const reg = await fetch("/api/payments/action-pay", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         credentials: "include",
         body: JSON.stringify({ actionKey: info.actionKey, txHash }),
       });
@@ -73,14 +65,36 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
       }
     } catch (e: any) {
       setStep("error");
-      setErrMsg(e.message);
-      return;
+      setErrMsg(`${e.message} — your payment is on-chain; tap "Retry registering receipt" (you will NOT be charged again).`);
+      return false;
     }
-
     // Receipt registered — trigger the original action
     setStep("done");
     await info.onPaid(txHash);
     onClose();
+    return true;
+  };
+
+  const handlePay = async () => {
+    setErrMsg(null);
+    // Money already sent → only retry the registration step.
+    if (paidTxHash) { await registerReceipt(paidTxHash); return; }
+
+    setStep("signing");
+    const result = await pay(info.priceUsd);
+    if ("error" in result) {
+      setStep("error");
+      setErrMsg(result.error);
+      return;
+    }
+    setStep("confirming");
+    const txHash = result.hash;
+    setPaidTxHash(txHash);
+
+    // Wait a few seconds for confirmation, then register receipt
+    // (BSC ~3s/block, 1 confirmation usually enough for our level of trust)
+    await new Promise(r => setTimeout(r, 4000));
+    await registerReceipt(txHash);
   };
 
   return (
@@ -148,7 +162,7 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
               background: treasuryConfigured ? "linear-gradient(180deg,#F49B2A,#E27D0C)" : "#ccc",
               color: "#FFF8EE", fontWeight: 700, fontSize: 14, cursor: treasuryConfigured ? "pointer" : "not-allowed",
             }}>
-              Pay {info.priceUsd.toFixed(2)} USDT
+              {paidTxHash ? "Retry registering receipt" : `Pay ${info.priceUsd.toFixed(2)} USDT`}
             </button>
             <button onClick={onClose} style={{
               flex: 1, padding: "12px", borderRadius: 12,

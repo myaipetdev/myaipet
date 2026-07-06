@@ -183,7 +183,6 @@ export default function MissionsCard() {
   if (!today) return null;
 
   const allComplete = today.missions.length > 0 && today.missions.every(m => m.status === "completed");
-  const canBuyShield = !!streak && streak.shield.owned < streak.shield.max_owned;
   const totalPossible = today.earnedToday + today.remainingToday + (allComplete ? 0 : today.bonusAllComplete);
 
   return (
@@ -208,20 +207,19 @@ export default function MissionsCard() {
               Daily Missions
             </div>
           </div>
-          {/* Streak pill */}
-          <button
-            aria-label={canBuyShield ? "Buy streak shield" : `Current streak: ${today.streak.current} days`}
-            onClick={canBuyShield ? () => setShieldModal(true) : undefined} style={{
+          {/* Streak pill — display only; the shield button next to it handles purchase */}
+          <div
+            aria-label={`Current streak: ${today.streak.current} days`}
+            style={{
             display: "flex", alignItems: "center", gap: 6,
             padding: "8px 14px", borderRadius: 12,
             background: "#BE4F28",
             border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
             color: "#FFF8EE", fontWeight: 800, fontSize: 14,
             fontFamily: "var(--ed-m)",
-            cursor: canBuyShield ? "pointer" : "default",
           }}>
             <Icon name="fire" size={16} /> {today.streak.current}d
-          </button>
+          </div>
           {streak && (
             <button aria-label={`Streak shields owned: ${streak.shield.owned} — buy more`} onClick={() => setShieldModal(true)} style={shieldBtn}>
               <Icon name="shield" size={15} /> {streak.shield.owned}

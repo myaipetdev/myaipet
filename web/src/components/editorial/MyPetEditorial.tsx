@@ -46,7 +46,7 @@ const T = {
 const STATUS_META: Record<string, { color: string; hint?: string }> = {
   "THRIVING": { color: "#5C8A4E" },
   "DOING WELL": { color: "#3E8FE0" },
-  "RESTING": { color: "#C8932F", hint: "low energy — let them rest" },
+  "RESTING": { color: "#C8932F", hint: "low energy — Feed and Pet restore it" },
   "WANTS YOU": { color: "#BE4F28", hint: "feed or play to cheer them up" },
 };
 
@@ -587,7 +587,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: "#1A7E68" }}>FIELD ALBUM</div>
               <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 18, marginTop: 5, color: "#E8C77E" }}>Catch in the wild</div>
               <p style={{ fontSize: 13, color: "rgba(251,246,236,.8)", margin: "7px 0 12px", lineHeight: 1.5 }}>Find real animals out there and turn them into collectibles for {active.name}&apos;s field album.</p>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "rgba(26,126,104,.25)", color: T.creamOn, fontFamily: T.disp, fontWeight: 700, fontSize: 13.5, borderRadius: 11, padding: "9px 15px" }}>Open camera →</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "rgba(26,126,104,.25)", color: T.creamOn, fontFamily: T.disp, fontWeight: 700, fontSize: 13.5, borderRadius: 11, padding: "9px 15px" }}>Go catching →</span>
             </button>
             </Reveal>
           </div>

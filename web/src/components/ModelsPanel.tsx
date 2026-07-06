@@ -91,6 +91,15 @@ export default function ModelsPanel() {
   const [scopes, setScopes] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
+  // Two-step inline confirm for irreversible actions (no modal): first click
+  // arms the button for 4s ("Confirm revoke?/remove?"), second click executes.
+  const [confirmRevokeId, setConfirmRevokeId] = useState<number | null>(null);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<number | null>(null);
+  const armConfirm = (id: number, set: React.Dispatch<React.SetStateAction<number | null>>) => {
+    set(id);
+    setTimeout(() => set((cur) => (cur === id ? null : cur)), 4000);
+  };
+
   const load = async () => {
     setLoading(true);
     try {
@@ -219,7 +228,13 @@ export default function ModelsPanel() {
                   </div>
                 </div>
                 {!t.revoked_at && (
-                  <button onClick={() => revokeToken(t.id)} style={{ background: "none", border: `1px solid ${LINE}`, borderRadius: 8, padding: "6px 12px", color: DANGER, fontSize: 13, cursor: "pointer" }}>Revoke</button>
+                  <button
+                    onClick={() => {
+                      if (confirmRevokeId === t.id) { setConfirmRevokeId(null); revokeToken(t.id); }
+                      else armConfirm(t.id, setConfirmRevokeId);
+                    }}
+                    style={{ background: "none", border: `1px solid ${confirmRevokeId === t.id ? DANGER : LINE}`, borderRadius: 8, padding: "6px 12px", color: DANGER, fontSize: 13, cursor: "pointer", fontWeight: confirmRevokeId === t.id ? 700 : 400 }}
+                  >{confirmRevokeId === t.id ? "Confirm revoke?" : "Revoke"}</button>
                 )}
               </div>
             ))}
@@ -227,7 +242,7 @@ export default function ModelsPanel() {
         )}
       </Card>
 
-      <Card title="Or connect here (manual)" sub="Prefer the CLI above. This web form does the same thing — API-key providers (BYOK); OpenRouter reaches almost any model, including Gemini and Hermes.">
+      <Card title="Or connect here (manual)" sub="This web form does the same thing as the CLI — API-key providers (BYOK); OpenRouter reaches almost any model, including Gemini and Hermes. Full CLI setup lives in the PetClaw SDK card below.">
         <div style={{ marginBottom: 18 }}>
           <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: GOLD, textTransform: "uppercase", marginBottom: 8 }}>Popular models</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -302,7 +317,13 @@ export default function ModelsPanel() {
                 {c.provider} · {c.task_scopes?.length ? c.task_scopes.join(", ") : "all tasks"} · key {c.keyMask || "••••••"}
               </div>
             </div>
-            <button onClick={() => remove(c.id)} style={{ background: "none", border: `1px solid ${LINE}`, borderRadius: 8, padding: "6px 12px", color: DANGER, fontSize: 13, cursor: "pointer" }}>Remove</button>
+            <button
+              onClick={() => {
+                if (confirmRemoveId === c.id) { setConfirmRemoveId(null); remove(c.id); }
+                else armConfirm(c.id, setConfirmRemoveId);
+              }}
+              style={{ background: "none", border: `1px solid ${confirmRemoveId === c.id ? DANGER : LINE}`, borderRadius: 8, padding: "6px 12px", color: DANGER, fontSize: 13, cursor: "pointer", fontWeight: confirmRemoveId === c.id ? 700 : 400 }}
+            >{confirmRemoveId === c.id ? "Confirm remove?" : "Remove"}</button>
           </div>
         ))}
         {loading && <div style={{ color: MUTED, fontSize: 13.5 }}>Loading…</div>}

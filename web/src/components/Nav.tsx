@@ -141,7 +141,7 @@ export default function Nav({ section, setSection, credits }: any) {
             fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.12em",
             border: "1px solid rgba(154,78,30,0.4)",
           }}>
-            COMPANIONFI
+            COMPANION PROTOCOL
           </span>
         </div>
 
@@ -156,7 +156,7 @@ export default function Nav({ section, setSection, credits }: any) {
             // (Catch tab) — highlight Cards for it.
             const isActive = item.url
               ? typeof window !== "undefined" && window.location.pathname === item.url
-              : section === item.key || (item.key === "cards" && section === "catch");
+              : section === item.key || (item.key === "cards" && section === "catch") || (item.key === "airdrop" && section === "leaderboard");
             const sharedStyle: React.CSSProperties = {
               background: "transparent",
               border: "none", cursor: "pointer",

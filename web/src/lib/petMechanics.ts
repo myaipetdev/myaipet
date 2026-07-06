@@ -170,7 +170,7 @@ export function gateInteraction(
   }
   // Need rest: energy < 15 means too tired
   if (pet.energy < 15 && (type === "play" || type === "walk" || type === "train")) {
-    return `Too tired — let me rest or take a walk after a meal.`;
+    return `Too tired — Feed and Pet me to restore my energy.`;
   }
   // Already full: cannot keep feeding
   if (pet.hunger <= 5 && type === "feed") {
@@ -280,7 +280,11 @@ const REQUEST_MESSAGES: Record<InteractionType, string[]> = {
 
 export function generateRequest(
   pet: { energy: number; hunger: number; happiness: number; bond_level: number; last_interaction_at?: Date | null },
-  personality: string
+  personality: string,
+  // Only ask for actions the requesting surface can actually fulfill — the My
+  // Pet screen has Feed / Play / Pet tiles, so asking for talk/walk/train left
+  // an advertised bonus no reachable button could ever complete.
+  allowedTypes: InteractionType[] = ["feed", "play", "pet"]
 ): EventRequest | null {
   // Don't spam requests — only generate if no recent interaction (>5min)
   const last = pet.last_interaction_at ? new Date(pet.last_interaction_at).getTime() : 0;
@@ -307,11 +311,12 @@ export function generateRequest(
   candidates.push({ type: "talk", weight: 8 });
   candidates.push({ type: "pet", weight: 6 });
 
-  if (candidates.length === 0) return null;
-  const total = candidates.reduce((s, c) => s + c.weight, 0);
+  const allowed = candidates.filter((c) => allowedTypes.includes(c.type));
+  if (allowed.length === 0) return null;
+  const total = allowed.reduce((s, c) => s + c.weight, 0);
   let roll = Math.random() * total;
-  let chosen: InteractionType = "talk";
-  for (const c of candidates) {
+  let chosen: InteractionType = allowed[0].type;
+  for (const c of allowed) {
     roll -= c.weight;
     if (roll <= 0) { chosen = c.type; break; }
   }

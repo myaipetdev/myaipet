@@ -31,7 +31,7 @@ import PremiumTeaser from "@/components/PremiumTeaser";
 type Pillar = "earn" | "compete" | "connect";
 
 const TABS: Array<{ key: Pillar; icon: string; title: string; sub: string }> = [
-  { key: "earn",    icon: "coins",  title: "Earn",    sub: "Missions · drops · streak" },
+  { key: "earn",    icon: "coins",  title: "Earn",    sub: "Missions · spotlights · streak" },
   { key: "compete", icon: "trophy", title: "Compete", sub: "Leaderboards" },
   { key: "connect", icon: "chat",   title: "Connect", sub: "SOS · buddies · dates" },
 ];
@@ -39,7 +39,7 @@ const TABS: Array<{ key: Pillar; icon: string; title: string; sub: string }> = [
 const INTRO: Record<Pillar, { eyebrow: string; line: string }> = {
   earn: {
     eyebrow: "EARN",
-    line: "Show up, clear missions, keep the streak alive. Every action banks loyalty points toward the season pool.",
+    line: "Show up, clear missions, keep the streak alive. Every action counts toward your season standing.",
   },
   compete: {
     eyebrow: "COMPETE",
@@ -68,7 +68,14 @@ function SectionIntro({ pillar }: { pillar: Pillar }) {
 }
 
 export default function SeasonRewardsHub({ banner }: { banner?: React.ReactNode }) {
-  const [pillar, setPillar] = useState<Pillar>("earn");
+  const [pillar, setPillar] = useState<Pillar>(() => {
+    // Deep-link support: /?section=airdrop&pillar=compete lands on that tab.
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search).get("pillar");
+      if (p === "earn" || p === "compete" || p === "connect") return p;
+    }
+    return "earn";
+  });
 
   return (
     <div style={{ paddingTop: 100, display: "flex", flexDirection: "column", gap: 4 }}>

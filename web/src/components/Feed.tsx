@@ -23,9 +23,6 @@ export default function Feed({ activities }: any) {
             Recent Activity
           </span>
         </div>
-        <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E" }}>
-          Multi-chain
-        </span>
       </div>
       <div style={{ maxHeight: 340, overflow: "hidden" }}>
         {activities.map((a: any, i: number) => (
@@ -41,16 +38,6 @@ export default function Feed({ activities }: any) {
                 <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A4E1E", fontWeight: 700 }}>
                   {a.wallet}
                 </span>
-{a.tx_hash && a.chain && (
-                <span style={{
-                  fontSize: 13, lineHeight: 1, padding: "2px 6px", borderRadius: 6,
-                  background: a.chain === "Base" ? "rgba(62,143,224,0.10)" : "rgba(190,79,40,0.10)",
-                  color: a.chain === "Base" ? "#3E8FE0" : "#9A4E1E",
-                  fontFamily: "var(--ed-m)", fontWeight: 500,
-                }}>
-                  {a.chain}
-                </span>
-                )}
               </div>
               <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#5C5140" }}>
                 {a.text}

@@ -227,14 +227,18 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
               </div>
               <div style={mini}>{cdWhen}</div>
             </div>
-            <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24, textAlign: "right" }}>
-              <button onClick={() => onNavigate?.("my pet")} style={{
-                padding: "12px 22px", borderRadius: 12, border: "none",
-                background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
-                fontWeight: 700, fontSize: 14, cursor: "pointer",
-                fontFamily: "var(--ed-disp)",
-                boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
-              }}>Adopt → Start raising</button>
+            <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24 }}>
+              <div style={miniLabel}>TOP RAISERS</div>
+              {(data?.topThree?.length ? data.topThree.slice(0, 3) : []).map((t) => (
+                <div key={t.rank} style={{ display: "flex", alignItems: "baseline", gap: 8, fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 4 }}>
+                  <span style={{ color: "#F49B2A", fontWeight: 700 }}>#{t.rank}</span>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 120 }}>{t.name}</span>
+                  <span style={{ marginLeft: "auto", color: "rgba(255,255,255,0.55)" }}>{t.points.toLocaleString()} pts</span>
+                </div>
+              ))}
+              {!data?.topThree?.length && (
+                <div style={mini}>Adopt below — the board is waiting for its first raisers.</div>
+              )}
             </div>
           </div>
         )}
@@ -332,7 +336,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
         <PathCard step="02" icon="fire" title="Keep your streak"
           body="Show up daily. A 7-day streak marks a milestone, 30 days a bigger one — recorded in your pet's history."
           earn="+5→+50 daily ladder" cta="Check in"
-          onClick={() => onNavigate?.("my pet")} accent="#A8432B" />
+          onClick={() => document.getElementById("daily-checkin")?.scrollIntoView({ behavior: "smooth", block: "center" })} accent="#A8432B" />
         </Reveal>
         <Reveal dir="up" delay={180}>
         <PathCard step="03" icon="film-reel" title="Create together"
@@ -342,8 +346,8 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
         </Reveal>
         <Reveal dir="up" delay={270}>
         <PathCard step="04" icon="trophy" title="Climb leaderboard"
-          body="Rank by Season 1 points. Top 100 unlock a profile badge when Season 1 closes — non-transferable, no cash value."
-          earn="Top 100 = badge" cta="See ranks"
+          body="Rank by Season 1 points. Final standings are frozen when Season 1 closes — recognition only, no cash value."
+          earn="Top 100 = final standing" cta="See ranks"
           onClick={() => onNavigate?.("leaderboard")} accent="#9A4E1E" />
         </Reveal>
       </div>

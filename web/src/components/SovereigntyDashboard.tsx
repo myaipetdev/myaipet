@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 import Reveal, { MaskedTitle } from "@/components/Reveal";
-import PetClawConsole from "@/components/PetClawConsole";
+import PetClawConsole, { SDK_VERSION } from "@/components/PetClawConsole";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import ModelsPanel from "@/components/ModelsPanel";
 import { toast } from "@/components/Toast";
@@ -43,14 +43,6 @@ interface MemoryNft {
   importance: number;
   tx_hash?: string | null;
   minted_at?: string;
-}
-
-interface MintableMemory {
-  id: number | string;
-  content: string;
-  memory_type?: string;
-  importance?: number;
-  created_at?: string;
 }
 
 // Receipts surfaced from the export/delete responses (cryptographic proof of
@@ -161,8 +153,6 @@ const soulApi = {
 
 const memoryNftApi = {
   list: (petId: any) => api.memoryNfts.list(petId),
-  mintable: (petId: any) => api.memoryNfts.mintable(petId),
-  mint: (petId: any, data: any) => api.memoryNfts.mint(petId, data),
 };
 
 // ── Channel Connections (OAuth subscriptions) ──
@@ -1032,28 +1022,27 @@ export default function SovereigntyDashboard() {
   const [soul, setSoul] = useState<SoulState | null>(null);
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
   const [memoryNfts, setMemoryNfts] = useState<MemoryNft[]>([]);
-  const [mintableMemories, setMintableMemories] = useState<MintableMemory[]>([]);
   const [loading, setLoading] = useState(true);
   const [successorInput, setSuccessorInput] = useState("");
   const [successorSaving, setSuccessorSaving] = useState(false);
   const [successorMsg, setSuccessorMsg] = useState<string | null>(null);
-  const [mintModalOpen, setMintModalOpen] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-
-  // Mint modal form state
-  const [mintSelectedMemoryId, setMintSelectedMemoryId] = useState<string>("");
-  const [mintTitle, setMintTitle] = useState("");
-  const [mintDesc, setMintDesc] = useState("");
-  const [mintType, setMintType] = useState<string>("milestone");
-  const [mintImportance, setMintImportance] = useState(3);
-  const [minting, setMinting] = useState(false);
-  const [mintError, setMintError] = useState<string | null>(null);
 
   // Data Sovereignty state
   const [exporting, setExporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [sovMsg, setSovMsg] = useState<string | null>(null);
+  // Demo preview (authed-but-petless) arms NOTHING: every sovereignty control
+  // manages a real pet's data — against the fake petId=1 each click just errors.
+  const guardDemo = () => {
+    if (isDemo) {
+      setSovMsg("This is a demo preview — adopt a pet to unlock your sovereignty controls.");
+      setTimeout(() => setSovMsg(null), 3200);
+      return true;
+    }
+    return false;
+  };
   const [consent, setConsent] = useState({
     allowPublicProfile: true,
     allowDataSharing: false,
@@ -1115,11 +1104,10 @@ export default function SovereigntyDashboard() {
     const pid = selectedPet.id;
     setLoading(true);
     try {
-      const [soulRes, ckptRes, memsRes, mintableRes, consentRes, memStatsRes, connRes, skillsRes] = await Promise.all([
+      const [soulRes, ckptRes, memsRes, consentRes, memStatsRes, connRes, skillsRes] = await Promise.all([
         soulApi.get(pid).catch(() => null),
         soulApi.checkpoints(pid, 50, 0).catch(() => null),
         memoryNftApi.list(pid).catch(() => null),
-        memoryNftApi.mintable(pid).catch(() => null),
         fetch(`/api/petclaw/consent?petId=${pid}`, {
           headers: getAuthHeaders(),
         }).then(r => r.ok ? r.json() : null).catch(() => null),
@@ -1139,10 +1127,9 @@ export default function SovereigntyDashboard() {
       const toArr = (v: any) => Array.isArray(v) ? v : [];
       setSoul(soulRes?.soul || soulRes || null);
       setCheckpoints(toArr(ckptRes?.checkpoints ?? ckptRes));
-      // Both routes return { items } — reading .memories coerced the object to []
-      // via toArr, so minted/mintable NFTs would never render once they exist.
+      // Route returns { items } — reading .memories coerced the object to []
+      // via toArr, so minted NFTs would never render once they exist.
       setMemoryNfts(toArr(memsRes?.items ?? memsRes?.memories ?? memsRes?.memory_nfts ?? memsRes));
-      setMintableMemories(toArr(mintableRes?.items ?? mintableRes?.memories ?? mintableRes));
       setSuccessorInput((soulRes?.soul?.successor_wallet || soulRes?.successor_wallet) || "");
       if (consentRes?.consent) setConsent(consentRes.consent);
       setMemoryStats(memStatsRes?.stats ?? null);
@@ -1154,7 +1141,7 @@ export default function SovereigntyDashboard() {
 
   // Persist consent toggle (debounced via flag)
   const saveConsent = async (next: typeof consent) => {
-    if (!selectedPet) return;
+    if (!selectedPet || guardDemo()) return;
     try {
       await fetch("/api/petclaw/consent", {
         method: "POST",
@@ -1195,7 +1182,7 @@ export default function SovereigntyDashboard() {
 
   // ── Successor actions ──
   const handleSaveSuccessor = async () => {
-    if (!selectedPet || !successorInput.trim()) return;
+    if (!selectedPet || !successorInput.trim() || guardDemo()) return;
     if (!/^0x[a-fA-F0-9]{40}$/.test(successorInput.trim())) {
       setSuccessorMsg("Invalid wallet address");
       setTimeout(() => setSuccessorMsg(null), 2400);
@@ -1215,6 +1202,7 @@ export default function SovereigntyDashboard() {
   };
 
   const handleRemoveSuccessor = async () => {
+    if (guardDemo()) return;
     if (!selectedPet) return;
     setSuccessorSaving(true);
     try {
@@ -1223,40 +1211,6 @@ export default function SovereigntyDashboard() {
       fetchSovereigntyData();
     } catch {}
     setSuccessorSaving(false);
-  };
-
-  // ── Mint memory ──
-  const openMintModal = () => {
-    setMintSelectedMemoryId("");
-    setMintTitle("");
-    setMintDesc("");
-    setMintType("milestone");
-    setMintImportance(3);
-    setMintError(null);
-    setMintModalOpen(true);
-  };
-
-  const handleMint = async () => {
-    if (!selectedPet || !mintTitle.trim() || !mintDesc.trim()) {
-      setMintError("Title and description are required");
-      return;
-    }
-    setMinting(true);
-    setMintError(null);
-    try {
-      await memoryNftApi.mint(selectedPet.id, {
-        source_memory_id: mintSelectedMemoryId || undefined,
-        title: mintTitle.trim(),
-        description: mintDesc.trim(),
-        memory_type: mintType,
-        importance: mintImportance,
-      });
-      setMintModalOpen(false);
-      fetchSovereigntyData();
-    } catch (err: any) {
-      setMintError(err?.message || "Mint failed");
-    }
-    setMinting(false);
   };
 
   // ── Render ──
@@ -1604,7 +1558,7 @@ export default function SovereigntyDashboard() {
 
             {/* What this actually is — it's NOT the level/XP bar. */}
             <p style={{ fontFamily: BODY, fontSize: 13.5, lineHeight: 1.6, color: MUTED2, margin: "0 0 22px" }}>
-              <strong style={{ color: INK }}>Not your level.</strong> This is the versioned history of <em>who your pet is becoming</em> — each checkpoint is an immutable snapshot of its personality, voice, and memory at a turning point (adoption, a memory consolidation, a milestone). A SHA-256 hash fingerprints each version; you can anchor any of them on-chain, so your pet&apos;s identity is portable and provable — not locked to this app.
+              <strong style={{ color: INK }}>Not your level.</strong> This is the versioned history of <em>who your pet is becoming</em> — each checkpoint is an immutable snapshot of its personality, voice, and memory at a turning point (adoption, a memory consolidation, a milestone). A SHA-256 hash fingerprints each version; each version can be anchored on-chain at go-live, so your pet&apos;s identity is portable and provable — not locked to this app.
             </p>
 
             {checkpoints.length === 0 ? (
@@ -1929,29 +1883,14 @@ export default function SovereigntyDashboard() {
               >
                 {memoryNfts.length} preserved
               </span>
-              <div
-                title="On-chain minting is paused — memories are preserved off-chain with the pet (see /contracts)"
-                style={{
-                  marginLeft: "auto",
-                  padding: "9px 20px",
-                  borderRadius: 12,
-                  background: INSET,
-                  border: `1px solid ${HAIR}`,
-                  color: MUTED,
-                  fontFamily: BODY,
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: "not-allowed",
-                  display: "inline-flex", alignItems: "center", gap: 8,
-                }}
-              >
-                + Mint Memory
-                <span style={{
-                  fontFamily: MONO, fontSize: 13, padding: "2px 7px", borderRadius: 999,
-                  background: "rgba(190,79,40,0.1)", color: TERRA_SUB,
-                  fontWeight: 700, letterSpacing: "0.12em",
-                }}>SOON</span>
-              </div>
+              <span style={{
+                marginLeft: "auto",
+                fontFamily: BODY,
+                fontSize: 13,
+                color: MUTED,
+              }}>
+                Minting resumes at on-chain go-live — see <a href="/contracts" style={{ color: TERRA_SUB, fontWeight: 700, textDecoration: "none" }}>/contracts</a>.
+              </span>
             </div>
 
             {memoryNfts.length === 0 ? (
@@ -1963,32 +1902,8 @@ export default function SovereigntyDashboard() {
                   textAlign: "center",
                 }}
               >
-                <div style={{ fontFamily: DISP, fontSize: 18, color: INK70, marginBottom: 8, fontWeight: 700 }}>
+                <div style={{ fontFamily: DISP, fontSize: 18, color: INK70, fontWeight: 700 }}>
                   No memories preserved yet
-                </div>
-                <div style={{ fontFamily: BODY, fontSize: 14, color: MUTED, marginBottom: 20 }}>
-                  Memory preservation is coming soon — own your pet&apos;s history
-                </div>
-                <div
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 8,
-                    padding: "10px 22px",
-                    borderRadius: 12,
-                    background: INSET,
-                    border: `1px solid ${HAIR}`,
-                    color: TERRA_SUB,
-                    fontFamily: BODY,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: "not-allowed",
-                  }}
-                >
-                  Mint Your First Memory
-                  <span style={{
-                    fontFamily: MONO, fontSize: 13, padding: "2px 7px", borderRadius: 999,
-                    background: "rgba(190,79,40,0.12)", color: TERRA_SUB,
-                    fontWeight: 700, letterSpacing: "0.12em",
-                  }}>SOON</span>
                 </div>
               </div>
             ) : (
@@ -2159,175 +2074,6 @@ export default function SovereigntyDashboard() {
         </>
       )}
 
-      {/* ───── Mint Memory Modal ───── */}
-      {mintModalOpen && (
-        <div
-          onClick={() => !minting && setMintModalOpen(false)}
-          style={{
-            position: "fixed", inset: 0, zIndex: 1000,
-            background: "rgba(33,26,18,0.5)",
-            display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: "100%", maxWidth: 500,
-              borderRadius: 22, overflow: "hidden",
-              background: PAPER,
-              boxShadow: "var(--ed-shadow-float)", border: `1px solid ${HAIR}`,
-              animation: "sovSlideIn 0.25s ease-out",
-            }}
-          >
-            {/* Header */}
-            <div style={{
-              padding: "22px 28px 18px",
-              borderBottom: `1px solid ${HAIR}`,
-              background: INSET,
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                  <h3 style={{ fontFamily: DISP, fontSize: 20, fontWeight: 800, color: INK, margin: "0 0 4px", letterSpacing: "-0.02em" }}>
-                    Mint Memory NFT
-                  </h3>
-                  <p style={{ fontFamily: MONO, fontSize: 13, color: MONO_CLR, margin: 0, letterSpacing: "0.06em" }}>
-                    Preserve this moment forever on-chain
-                  </p>
-                </div>
-                <button onClick={() => !minting && setMintModalOpen(false)} style={{
-                  background: PAPER, border: `1px solid ${HAIR}`, borderRadius: 8,
-                  width: 30, height: 30, cursor: "pointer", fontSize: 14, color: MUTED,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>✕</button>
-              </div>
-            </div>
-
-            {/* Form */}
-            <div style={{ padding: "22px 28px", display: "flex", flexDirection: "column", gap: 16 }}>
-              {mintableMemories.length > 0 && (
-                <div>
-                  <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 13, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 6 }}>SOURCE MEMORY (optional)</label>
-                  <select
-                    value={mintSelectedMemoryId}
-                    onChange={(e) => {
-                      setMintSelectedMemoryId(e.target.value);
-                      const m = mintableMemories.find((x) => String(x.id) === e.target.value);
-                      if (m) {
-                        setMintTitle(m.content?.slice(0, 60) || "");
-                        setMintDesc(m.content || "");
-                        if (m.memory_type) setMintType(m.memory_type);
-                        if (m.importance) setMintImportance(m.importance);
-                      }
-                    }}
-                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: `1px solid ${HAIR}`, background: INSET, color: INK, fontFamily: BODY, fontSize: 13, outline: "none" }}
-                  >
-                    <option value="">— None —</option>
-                    {mintableMemories.map((m) => (
-                      <option key={m.id} value={m.id}>{(m.content || "").slice(0, 50)}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div>
-                <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 13, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 6 }}>TITLE *</label>
-                <input
-                  value={mintTitle}
-                  onChange={(e) => setMintTitle(e.target.value)}
-                  placeholder="A memory worth preserving"
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: `1px solid ${HAIR}`, background: INSET, color: INK, fontFamily: BODY, fontSize: 14, fontWeight: 600, outline: "none", boxSizing: "border-box" }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 13, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 6 }}>DESCRIPTION *</label>
-                <textarea
-                  value={mintDesc}
-                  onChange={(e) => setMintDesc(e.target.value)}
-                  placeholder="Describe this memory..."
-                  rows={3}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: `1px solid ${HAIR}`, background: INSET, color: INK, fontFamily: BODY, fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box" }}
-                />
-              </div>
-
-              {/* Type selector */}
-              <div>
-                <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 13, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 8 }}>TYPE</label>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {[
-                    { v: "conversation", icon: "chat", l: "Chat" },
-                    { v: "milestone", icon: "trophy", l: "Milestone" },
-                    { v: "dream", icon: "sparkling", l: "Dream" },
-                    { v: "achievement", icon: "medal", l: "Achievement" },
-                  ].map(({ v, icon, l }) => (
-                    <button key={v} onClick={() => setMintType(v)} style={{
-                      display: "inline-flex", alignItems: "center", gap: 6,
-                      padding: "6px 14px", borderRadius: 999, fontSize: 13, fontFamily: BODY,
-                      border: mintType === v ? `1.5px solid ${TERRA}` : `1px solid ${HAIR}`,
-                      background: mintType === v ? "rgba(190,79,40,0.1)" : INSET,
-                      color: mintType === v ? TERRA_SUB : MUTED,
-                      fontWeight: mintType === v ? 700 : 500,
-                      cursor: "pointer", transition: "all 0.15s",
-                    }}><Icon name={icon} size={14} /> {l}</button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Importance */}
-              <div>
-                <label style={{ display: "block", fontFamily: MONO, fontWeight: 700, fontSize: 13, color: MONO_CLR, letterSpacing: "0.12em", marginBottom: 8 }}>
-                  IMPORTANCE
-                </label>
-                <div style={{ display: "flex", gap: 8 }}>
-                  {[1,2,3,4,5].map(n => (
-                    <button key={n} onClick={() => setMintImportance(n)} style={{
-                      fontSize: 22, background: "none", border: "none", cursor: "pointer", padding: 0,
-                      color: n <= mintImportance ? TERRA : "rgba(33,26,18,0.15)",
-                      transition: "color 0.15s, transform 0.15s",
-                      transform: n <= mintImportance ? "scale(1.15)" : "scale(1)",
-                    }}>★</button>
-                  ))}
-                </div>
-              </div>
-
-              {mintError && (
-                <div style={{
-                  padding: "10px 14px", borderRadius: 10,
-                  background: "rgba(181,70,43,0.08)", border: `1px solid ${HAIR}`,
-                  color: DANGER, fontSize: 13, fontFamily: MONO,
-                }}>{mintError}</div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div style={{ padding: "0 28px 24px", display: "flex", gap: 10 }}>
-              <button
-                onClick={() => setMintModalOpen(false)}
-                disabled={minting}
-                style={{
-                  flex: 1, padding: "12px", borderRadius: 12,
-                  background: INSET, border: `1px solid ${HAIR}`,
-                  color: INK, fontFamily: BODY, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                }}
-              >Cancel</button>
-              <button
-                onClick={handleMint}
-                disabled={minting || !mintTitle.trim() || !mintDesc.trim()}
-                style={{
-                  flex: 2, padding: "12px", borderRadius: 12, border: "none",
-                  background: minting || !mintTitle.trim() || !mintDesc.trim()
-                    ? "rgba(33,26,18,0.06)"
-                    : CTA,
-                  color: minting || !mintTitle.trim() || !mintDesc.trim() ? MUTED : "#fff",
-                  fontFamily: DISP, fontSize: 14, fontWeight: 700,
-                  cursor: minting ? "not-allowed" : "pointer", transition: "all 0.2s",
-                }}
-              >{minting ? "Minting..." : "✦ Mint as NFT"}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
           {/* ───── Data Sovereignty (PetClaw) ───── */}
           <Reveal
             dir="up"
@@ -2367,6 +2113,7 @@ export default function SovereigntyDashboard() {
               <button
                 onClick={async () => {
                   if (!selectedPet) return;
+                  if (guardDemo()) return;
                   setExporting(true);
                   setSovMsg(null);
                   try {
@@ -2408,7 +2155,7 @@ export default function SovereigntyDashboard() {
 
               {!deleteConfirm ? (
                 <button
-                  onClick={() => setDeleteConfirm(true)}
+                  onClick={() => { if (guardDemo()) return; setDeleteConfirm(true); }}
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 8,
                     padding: "12px 24px", borderRadius: 12,
@@ -2429,7 +2176,7 @@ export default function SovereigntyDashboard() {
                 <div style={{ display: "flex", gap: 6 }}>
                   <button
                     onClick={async () => {
-                      if (!selectedPet) return;
+                      if (!selectedPet || guardDemo()) return;
                       setDeleting(true);
                       try {
                         const result = await api.petclaw.delete(selectedPet.id);
@@ -2628,7 +2375,7 @@ export default function SovereigntyDashboard() {
                 <span style={{ fontSize: 22, display: "inline-flex", color: TERRA }}><Icon name="paw" size={22} /></span>
                 <h2 style={{ fontFamily: DISP, fontSize: 24, fontWeight: 800, color: INK, letterSpacing: "-0.02em" }}>PetClaw SDK</h2>
                 <span style={{ fontSize: 13, padding: "3px 9px", borderRadius: 999, background: "rgba(190,79,40,0.1)", color: TERRA_SUB, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>MEMORY · SESSION</span>
-                <span style={{ fontSize: 13, padding: "3px 9px", borderRadius: 999, background: "rgba(92,138,78,0.1)", color: GOOD, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>v1.3.0</span>
+                <span style={{ fontSize: 13, padding: "3px 9px", borderRadius: 999, background: "rgba(92,138,78,0.1)", color: GOOD, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>v{SDK_VERSION}</span>
               </div>
               <p style={{ fontSize: 15, color: MUTED2, fontFamily: BODY, lineHeight: 1.7, marginBottom: 24 }}>
                 PetClaw is not a generic AI API wrapper — it is a <strong style={{ color: INK }}>memory &amp; session-specialized framework</strong>. Unlike stateless wrappers, Claw preserves full context across platform switches, restarts, and devices. Your pet remembers who you are, what you talked about, and what matters to you — everywhere.
@@ -2732,15 +2479,29 @@ export default function SovereigntyDashboard() {
               ledger. Prefix per-component to keep remount-on-pet-switch behavior
               (keys stay on the cards; the Reveal wrappers fire once and survive
               pet switches without re-running the entrance). */}
-          {selectedPet && (
+          {selectedPet && !isDemo && (
             <Reveal dir="up" threshold={0.1}>
               <MemoryInspectorCard key={`mem-${selectedPet.id}`} petId={selectedPet.id} />
             </Reveal>
           )}
-          {selectedPet && (
+          {selectedPet && !isDemo && (
             <Reveal dir="up" threshold={0.1}>
               <ChannelConnectionsCard key={`chan-${selectedPet.id}`} petId={selectedPet.id} />
             </Reveal>
+          )}
+          {isDemo && (
+            <div className="sov-card" style={{ padding: "28px 30px", borderRadius: 20, background: PAPER, border: `1px solid ${HAIR}`, boxShadow: CARD_SHADOW, textAlign: "center" }}>
+              <div style={{ fontFamily: DISP, fontSize: 18, fontWeight: 800, color: INK, marginBottom: 6 }}>
+                Adopt a pet to unlock your sovereignty controls
+              </div>
+              <div style={{ fontFamily: BODY, fontSize: 14, color: MUTED, lineHeight: 1.6, maxWidth: 460, margin: "0 auto" }}>
+                Memory ledger, channel connections, SOUL export &amp; delete all manage a real
+                pet&apos;s data — this page is showing a demo preview.
+              </div>
+              <a href="/?section=my+pet" style={{ display: "inline-block", marginTop: 14, padding: "11px 22px", borderRadius: 12, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontFamily: DISP, fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
+                Adopt your pet →
+              </a>
+            </div>
           )}
 
           {/* ───── Pet Network (public discovery) ───── */}
@@ -2774,28 +2535,15 @@ export default function SovereigntyDashboard() {
               each one owned by its person, reachable by its pet card.
             </p>
 
-            {/* Network stats */}
+            {/* Network stats — ONLY the real number. "Online now" (= every active
+                pet, no recency) and "Avg trust" (hardcoded 75) were fabricated
+                metrics under a LIVE badge and were removed. */}
             <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 22 }}>
               <div>
                 <div style={{ fontSize: 24, fontWeight: 800, color: INK, fontFamily: DISP, fontVariantNumeric: "tabular-nums" }}>
                   {networkStats?.totalNodes ?? 0}
                 </div>
                 <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>Total pets</div>
-              </div>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: GOOD }} />
-                  <span style={{ fontSize: 24, fontWeight: 800, color: GOOD, fontFamily: DISP, fontVariantNumeric: "tabular-nums" }}>
-                    {networkStats?.onlineNodes ?? 0}
-                  </span>
-                </div>
-                <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>Online now</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: INK, fontFamily: DISP, fontVariantNumeric: "tabular-nums" }}>
-                  {networkStats?.avgTrustScore ?? 0}
-                </div>
-                <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>Avg trust</div>
               </div>
             </div>
 
@@ -2878,7 +2626,7 @@ export default function SovereigntyDashboard() {
                 fontSize: 13, padding: "3px 9px", borderRadius: 999,
                 background: "rgba(190,79,40,0.1)", color: TERRA_SUB,
                 fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
-              }}>COMING SOON</span>
+              }}>19 CONNECTORS · 6 LIVE</span>
             </div>
             <p style={{
               fontSize: 15, color: MUTED2, marginBottom: 20,
@@ -2937,7 +2685,7 @@ export default function SovereigntyDashboard() {
                 18 Skills
               </span>
               <span style={{ fontFamily: BODY, fontSize: 13, fontWeight: 600, padding: "5px 12px", borderRadius: 8, background: INSET, border: `1px solid ${HAIR}`, color: MUTED2 }}>
-                6 MCP Clients
+                6 MCP Tools
               </span>
               <span style={{ fontFamily: MONO, fontSize: 13, padding: "5px 12px", borderRadius: 8, background: INSET, border: `1px solid ${HAIR}`, color: MUTED2 }}>
                 @myaipet/petclaw-sdk

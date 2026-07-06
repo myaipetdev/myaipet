@@ -87,7 +87,7 @@ export default function WalletGate({ children, section }: any) {
       ctaNote = "Approve the signature in your wallet — no gas, identity only.";
     }
     if (section === "sovereignty") return <PetClawPreview cta={cta} ctaNote={ctaNote} />;
-    if (section === "community") return <CommunityPreview cta={cta} />;
+    if (section === "community") return <CommunityPreview cta={cta} ctaNote={ctaNote} />;
     return <DemoPet cta={cta} ctaNote={ctaNote} />;
   }
 
@@ -151,10 +151,12 @@ export default function WalletGate({ children, section }: any) {
     "my pet": "My Pet",
     create: "Create",
     community: "Community",
-    arena: "Arena",
     workbench: "the Agent Workbench",
-    worldcup: "the World Cup event",
+    "world cup": "the World Cup event",
     cards: "your card deck",
+    agent: "the Agent dashboard",
+    chat: "Chat",
+    airdrop: "Season Rewards",
   };
 
   return (

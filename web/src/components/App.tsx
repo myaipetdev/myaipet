@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 import { api, getAuthHeaders } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -126,19 +127,20 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
     // Scroll-revealed (was mount-time mp-enter-2). The check-in ceremony
     // animations inside (sealPress, slideIn) are untouched.
     <Reveal dir="up" delay={90} className="home-section-pad" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
-      <div style={{
+      <div id="daily-checkin" style={{
         borderRadius: 16, padding: "14px 20px", marginBottom: 8,
         background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
         boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
         display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
+        scrollMarginTop: 88,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
           <span style={{
             width: 26, height: 26, borderRadius: 8, flexShrink: 0,
             background: "#BE4F28", border: "none",
             display: "inline-flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 13, color: "#FFF8EE",
-          }}>1</span>
+            color: "#FFF8EE",
+          }}><Icon name="paw" size={14} /></span>
           <div>
             <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 700, fontSize: 14, color: "#211A12" }}>
               Daily Check-in
@@ -207,7 +209,7 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
             {loading ? "..." : checkedIn ? "Done ✓" : "Check In"}
           </button>
         ) : (
-          <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E" }}>Connect wallet to start</span>
+          <ConnectButton chainStatus="none" showBalance={false} label="Connect wallet to start" />
         )}
       </div>
     </Reveal>
@@ -292,12 +294,14 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
             }}>
               Season 1 Rewards
             </div>
+            {/* Tier/points/progress were stripped: MyCard, the RaisePitch standing
+                bar and SeasonTierCard already show them — the banner's ONE job
+                is the countdown. */}
             <div style={{
               fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,0.85)",
-              marginTop: 2, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 5,
+              marginTop: 2, whiteSpace: "nowrap",
             }}>
-              <span style={{ fontWeight: 700, color: "#FFF8EE" }}>{tier.name}</span>
-              <span>{next ? `· ${toNext.toLocaleString()} to ${next.name}` : "· max tier"}</span>
+              Jul 1 – Aug 1 · recognition only
             </div>
           </div>
         </div>
@@ -342,35 +346,6 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
         </div>
         )}
 
-        {/* Right: points + progress */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, minWidth: 120 }}>
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,0.85)", whiteSpace: "nowrap" }}>
-            {seasonPoints > 0
-              ? <>
-                  {/* Change-flash uses a cream pulse here — the spec's terracotta
-                      flash would vanish on this terracotta ticket. */}
-                  <span style={{
-                    fontWeight: 700, color: "#FFF8EE",
-                    padding: "1px 5px", margin: "-1px -5px", borderRadius: 6,
-                    background: ptsFlash ? "rgba(252,233,207,0.28)" : "transparent",
-                    transition: "background 250ms ease",
-                  }}>{displayPoints.toLocaleString()}</span> pts
-                </>
-              : <>Your Points: <span style={{ fontWeight: 700, color: "#FFF8EE" }}>0</span></>
-            }
-          </div>
-          <div style={{ width: "100%", height: 8, background: "rgba(252,233,207,0.28)", borderRadius: 999, border: "none", overflow: "hidden" }}>
-            <div style={{
-              height: "100%",
-              background: "#FFF8EE",
-              width: `${(tierProgress * 100).toFixed(1)}%`,
-              transition: "width 0.6s ease",
-            }} />
-          </div>
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,0.8)" }}>
-            {next ? `${toNext.toLocaleString()} pts to ${next.name}` : "Top tier reached"}
-          </div>
-        </div>
       </div>
     </Reveal>
   );
@@ -388,7 +363,9 @@ export default function App() {
     // Leaderboard folded into the Season Rewards hub — normalize old links/tabs.
     // ("airdrop" stays the internal section/route key; the UI label is "Season Rewards".)
     if (fromUrl === "leaderboard") return "airdrop";
-    return fromUrl || "home";
+    // Unknown section values used to render nav + an empty body — fall back home.
+    const VALID = ["home", "my pet", "cards", "catch", "world cup", "studio", "create", "community", "sovereignty", "airdrop", "agent", "chat"];
+    return fromUrl && VALID.includes(fromUrl) ? fromUrl : "home";
   });
   // Keep the URL in sync when the user clicks nav inside the SPA.
   useEffect(() => {
@@ -563,6 +540,7 @@ export default function App() {
               <Hero
                 onAdopt={() => setSection("my pet")}
                 onExplore={() => setSection("community")}
+                onNavigate={(s: string) => setSection(s)}
                 txToday={platformStats?.tx_today || 0}
               />
               <SeasonBanner seasonPoints={seasonPoints} />
@@ -700,7 +678,7 @@ export default function App() {
             border: "1px solid rgba(154,78,30,0.4)",
             letterSpacing: "0.12em", textTransform: "uppercase",
           }}>
-            CompanionFi
+            Companion Protocol
           </span>
         </div>
         <p style={{

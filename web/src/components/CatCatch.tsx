@@ -251,6 +251,8 @@ export default function CatCatch() {
             <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: "rgba(252,233,207,.62)", textTransform: "uppercase" }}>Field camera · vision-verified</div>
             <div style={{ fontFamily: DISP, fontSize: "clamp(22px,4vw,30px)", fontWeight: 800, color: "#FCE9CF", maxWidth: 340, lineHeight: 1.16, letterSpacing: "-0.01em" }}>See an animal out in the world? Point your camera and catch it.</div>
             <div style={{ fontFamily: BODY, fontSize: 14, color: "rgba(252,233,207,.85)", maxWidth: 310, lineHeight: 1.5 }}>Mostly cats &amp; dogs — but any real animal counts. Screenshots and photos of screens won&apos;t work.</div>
+            {/* Geo disclosure BEFORE the photo is taken — matches /api/catch/nearby's ~110m rounding. */}
+            <div style={{ fontFamily: BODY, fontSize: 13, color: "rgba(252,233,207,.6)", maxWidth: 310, lineHeight: 1.5 }}>Camera catches appear on the shared map at an approximate location (~110 m).</div>
             <button onClick={startCamera} className="ed-press" style={{ padding: "13px 26px", borderRadius: 999, border: "none", background: "#FCE9CF", color: "#123029", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".12em", textTransform: "uppercase", cursor: "pointer", boxShadow: "var(--ed-shadow-card)", display: "inline-flex", alignItems: "center", gap: 8 }}>
               <CameraIcon size={20} /> Open camera
             </button>
@@ -259,7 +261,7 @@ export default function CatCatch() {
               <UploadIcon size={18} /> Upload a photo
               <input type="file" accept="image/*" onChange={onUpload} style={{ display: "none" }} />
             </label>
-            <div style={{ fontFamily: BODY, fontSize: 13, color: "rgba(252,233,207,.6)", maxWidth: 300 }}>No camera? Upload works too — but it&apos;s still checked, so screenshots won&apos;t pass.</div>
+            <div style={{ fontFamily: BODY, fontSize: 13, color: "rgba(252,233,207,.6)", maxWidth: 300 }}>Uploads are verified the same way.</div>
           </div>
         )}
 
@@ -432,7 +434,7 @@ function RevealCard({ cat, points, onAgain, onDone }: { cat: Cat; points: number
         ))}
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}>
-        {points > 0 && <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".06em", borderRadius: 999, padding: "5px 12px", fontVariantNumeric: "tabular-nums" }}>+{points} <Icon name="coin" size={14} /></span>}
+        {points > 0 && <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".06em", borderRadius: 999, padding: "5px 12px", fontVariantNumeric: "tabular-nums" }}>+{points} season points <Icon name="coin" size={14} /></span>}
         <span style={{ color: "rgba(251,246,236,0.55)", fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", fontVariantNumeric: "tabular-nums" }}>{`FILE № ${String(cat.id).padStart(6, "0")}`}</span>
       </div>
       <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
@@ -474,7 +476,7 @@ function AlleyClash({ collection }: { collection: Cat[] }) {
       <div style={{ textAlign: "center", marginBottom: 18 }}>
         <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: TEAL, textTransform: "uppercase" }}>Alley Clash · practice</div>
         <h2 style={{ fontFamily: DISP, fontSize: 28, fontWeight: 800, color: INK, margin: "4px 0 0", letterSpacing: "-0.01em" }}>Send a fighter to the alley</h2>
-        <p style={{ fontFamily: BODY, fontSize: 13, color: MUTED, margin: "8px auto 0", maxWidth: 380, lineHeight: 1.55 }}>Pick one of your caught animals to spar a street stray — a practice opponent, not another player. Win to gain season points.</p>
+        <p style={{ fontFamily: BODY, fontSize: 13, color: MUTED, margin: "8px auto 0", maxWidth: 380, lineHeight: 1.55 }}>Pick one of your caught animals to spar a street stray — a practice opponent, not another player. Win to gain season points (daily-capped).</p>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(94px, 1fr))", gap: 10, marginBottom: 18 }}>
         {collection.map((c) => {
@@ -642,8 +644,10 @@ function Shell({ children }: { children: React.ReactNode }) {
       <div style={{ marginBottom: 20, textAlign: "center" }}>
         <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: TEAL, textTransform: "uppercase" }}>Catch · real animals only</div>
         <h2 style={{ fontFamily: DISP, fontSize: 32, fontWeight: 800, color: INK, margin: "7px 0 0", letterSpacing: "-0.02em", lineHeight: 1 }}>Catch animals</h2>
+        {/* The anti-screenshot / cats-and-dogs rules are stated ONCE, in the
+            viewfinder intro next to the camera action — not repeated here. */}
         <p style={{ fontFamily: BODY, fontSize: 14.5, color: MUTED, margin: "10px auto 0", lineHeight: 1.55, maxWidth: 440 }}>
-          Spot an animal in the wild — mostly cats &amp; dogs, but anything counts — snap it, and it becomes a collectible with its own rarity, element and stats. No cheating: screenshots don&apos;t count.
+          Spot an animal in the wild, snap it, and it becomes a collectible with its own rarity, element and stats.
         </p>
       </div>
       {children}

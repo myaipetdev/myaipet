@@ -112,7 +112,6 @@ function PetAvatar({ pet, size = 96 }: { pet: Pet; size?: number }) {
 
 export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   const [step, setStep] = useState<Step>("intro");
-  const [points, setPoints] = useState(0);
 
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string | string[]>>({});
@@ -135,7 +134,6 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
     return () => { mounted = false; };
   }, [pet.id]);
 
-  const addPoints = (pts: number) => setPoints(p => p + pts);
 
   const handleQuizAnswer = (qId: string, val: string, isMulti?: boolean) => {
     if (isMulti) {
@@ -404,10 +402,10 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
         </div>
 
         <button
-          onClick={() => { if (quizIndex < QUIZ_QUESTIONS.length - 1) setQuizIndex(quizIndex + 1); else { addPoints(30); setStep("social"); } }}
+          onClick={() => { if (quizIndex < QUIZ_QUESTIONS.length - 1) setQuizIndex(quizIndex + 1); else setStep("social"); }}
           disabled={!canNext}
           style={{ ...primaryBtn, opacity: canNext ? 1 : 0.4, cursor: canNext ? "pointer" : "not-allowed", boxShadow: canNext ? "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" : "none" }}>
-          {quizIndex < QUIZ_QUESTIONS.length - 1 ? "Next →" : "Done (+30)"}
+          {quizIndex < QUIZ_QUESTIONS.length - 1 ? "Next →" : "Done →"}
         </button>
         {quizIndex > 0 && (
           <button onClick={() => setQuizIndex(quizIndex - 1)} style={ghostBtn}>← Back</button>
@@ -436,15 +434,21 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           {SOCIAL_PLATFORMS.map(p => {
             const on = connectedPlatforms.includes(p.id);
             return (
-              <div key={p.id} onClick={() => {
-                if (on) {
-                  // Optimistic UI — actual disconnect via Sovereignty connections card
-                  setConnectedPlatforms(connectedPlatforms.filter(id => id !== p.id));
-                  return;
-                }
+              <div key={p.id} onClick={async () => {
+                if (on) return; // connected chip is informational — disconnect lives in Sovereignty
+                // Persist the persona quiz BEFORE the full-page OAuth redirect —
+                // otherwise every answer is silently destroyed mid-flow.
+                try {
+                  const data: Record<string, any> = {};
+                  if (quizAnswers.humor) data.tone = quizAnswers.humor;
+                  if (quizAnswers.communication) data.speech_style = quizAnswers.communication;
+                  if (quizAnswers.role) data.expressions = quizAnswers.role;
+                  if (quizAnswers.interests) data.interests = Array.isArray(quizAnswers.interests) ? (quizAnswers.interests as string[]).join(", ") : quizAnswers.interests;
+                  if (quizAnswers.frequency) data.bio = `Prefers ${quizAnswers.frequency} interaction frequency`;
+                  if (Object.keys(data).length > 0) await api.persona.save(pet.id, data).catch(() => {});
+                } catch {}
                 // OAuth redirect — server starts the flow, callback persists token,
                 // user is sent back to /sovereignty?connected={id}.
-                addPoints(33);
                 const url = `/api/auth/oauth/${p.id}?petId=${pet.id}&returnTo=${encodeURIComponent("/sovereignty?from=onboarding")}`;
                 window.location.href = url;
               }} style={{
@@ -479,7 +483,6 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
         <button onClick={saveAndComplete} disabled={saving} style={primaryBtn}>
           {saving ? "Saving…" : "Finish — all set 🎉"}
         </button>
-        <button onClick={saveAndComplete} style={ghostBtn}>Skip & finish</button>
       </Shell>
     );
   }
@@ -627,13 +630,10 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
               </div>
             ))}
           </div>
-          <button onClick={onComplete} style={primaryBtn}>Start chatting →</button>
+          <button onClick={onComplete} style={primaryBtn}>Done →</button>
           <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
             <a href="/sovereignty" className="ed-underline-slide" style={{ fontSize: 13, color: "#9A4E1E", textDecoration: "none", fontWeight: 600 }}>
-              Connect your own AI model or CLI ▸ PetClaw
-            </a>
-            <a href="/sovereignty" className="ed-underline-slide" style={{ fontSize: 13, color: "#9A4E1E", textDecoration: "none", fontWeight: 600 }}>
-              Install the browser companion ▸ PetClaw
+              Set up PetClaw — your own model, CLI &amp; browser companion ▸
             </a>
           </div>
         </div>

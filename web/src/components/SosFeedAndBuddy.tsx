@@ -50,7 +50,8 @@ export default function SosFeedAndBuddy() {
         method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       });
       const d = await r.json().catch(() => ({}));
-      if (!r.ok) toast(d?.error || "Couldn't help — try again", "error");
+      if (r.status === 401) toast("Sign in first to help", "error");
+      else if (!r.ok) toast(d?.error || "Couldn't help — try again", "error");
       else toast(`You saved their streak  ·  +${d.reward_pts} Savior pts (lifetime)`, "success");
       await load();
     } catch {
@@ -158,10 +159,17 @@ export default function SosFeedAndBuddy() {
                     <div style={{ fontSize: 13, color: "#7A6E5A", marginTop: 1, fontFamily: "var(--ed-body)" }}>{item.message}</div>
                   )}
                 </div>
-                <button onClick={() => help(item.id)} disabled={busy === item.id} style={{
-                  ...primaryBtn, padding: "7px 12px", fontSize: 13,
-                  opacity: busy === item.id ? 0.5 : 1,
-                }}>Help · 50cr</button>
+                {authed === false ? (
+                  <button disabled style={{
+                    ...primaryBtn, padding: "7px 12px", fontSize: 13,
+                    opacity: 0.5, cursor: "default",
+                  }}>Sign in to help</button>
+                ) : (
+                  <button onClick={() => help(item.id)} disabled={busy === item.id} style={{
+                    ...primaryBtn, padding: "7px 12px", fontSize: 13,
+                    opacity: busy === item.id ? 0.5 : 1,
+                  }}>Help · 50cr</button>
+                )}
               </div>
             ))}
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
 
@@ -29,13 +29,6 @@ interface ActiveDrop {
   upcoming?: UpcomingDrop[];
 }
 
-function fmt(sec: number) {
-  if (sec <= 0) return "ends soon";
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return m > 0 ? `${m}m ${s}s` : `${s}s`;
-}
-
 function clockLabel(iso: string) {
   const d = new Date(iso);
   let h = d.getHours();
@@ -46,10 +39,6 @@ function clockLabel(iso: string) {
 
 export default function HourlyDropBanner() {
   const [drop, setDrop] = useState<ActiveDrop | null>(null);
-  const [now, setNow] = useState(Date.now());
-  // When the current drop's ends_in_seconds was fetched — the countdown is
-  // measured against this, not against the per-second `now` tick.
-  const fetchedAt = useRef(Date.now());
 
   useEffect(() => {
     let cancelled = false;
@@ -58,21 +47,18 @@ export default function HourlyDropBanner() {
         const r = await fetch("/api/drops/current");
         if (!r.ok) return;
         const d = await r.json();
-        if (!cancelled) { fetchedAt.current = Date.now(); setDrop(d); }
+        if (!cancelled) setDrop(d);
       } catch { /* ignore */ }
     };
     fetchDrop();
     const refresh = setInterval(fetchDrop, 60_000); // refresh every minute
-    const tick = setInterval(() => setNow(Date.now()), 1000);
-    return () => { cancelled = true; clearInterval(refresh); clearInterval(tick); };
+    return () => { cancelled = true; clearInterval(refresh); };
   }, []);
 
   if (!drop) return null;
 
-  // Recompute remaining on the client tick so the countdown is smooth
-  const fetched = drop;
-  const remaining = Math.max(0, fetched.ends_in_seconds - Math.floor((now - fetchedAt.current) / 1000));
-  const live = remaining > 0;
+  // Calm spotlight — no countdown; liveness comes from the minutely fetch.
+  const live = drop.ends_in_seconds > 0;
 
   return (
     <Reveal dir="left" style={{ maxWidth: 1060, margin: "12px auto 0", padding: "0 24px" }}>
@@ -99,7 +85,7 @@ export default function HourlyDropBanner() {
             letterSpacing: "0.14em", color: live ? "#FFF8EE" : "#9A4E1E",
             fontWeight: 800,
           }}>
-            {live ? `THIS HOUR · ${drop.applies_to.toUpperCase()}` : "NEXT SPOTLIGHT"}
+            {live ? `THIS HOUR · ${drop.applies_to.toUpperCase()} IS FEATURED` : "NEXT SPOTLIGHT"}
           </div>
           <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "var(--ed-disp)", color: live ? "#FFF8EE" : "#211A12", marginTop: 2 }}>
             {live ? drop.label : `${drop.next_emoji} ${drop.next_label}`}
@@ -107,16 +93,6 @@ export default function HourlyDropBanner() {
           <div style={{ fontSize: 13.5, fontFamily: "var(--ed-body)", color: live ? "#FFF8EE" : "#5C5140", marginTop: 2 }}>
             {live ? drop.description : "starts at the top of next hour"}
           </div>
-        </div>
-        <div style={{
-          padding: "8px 14px", borderRadius: 10,
-          background: "#FBF6EC",
-          border: `1px solid var(--ed-hair, rgba(33,26,18,.13))`,
-          color: live ? "#9A4E1E" : "#7A6E5A",
-          fontFamily: "var(--ed-m)",
-          fontWeight: 800, fontSize: 14,
-        }}>
-          {live ? fmt(remaining) : "soon"}
         </div>
       </div>
 
@@ -165,7 +141,13 @@ export default function HourlyDropBanner() {
                   fontSize: 13, fontFamily: "var(--ed-m)",
                   color: u.is_live ? "#FFF8EE" : "#9A7B4E", fontWeight: 700,
                 }}>
-                  {u.is_live ? "LIVE" : (i === arr.findIndex((x: any) => !x.is_live) ? "next" : clockLabel(u.starts_at))}
+                  {u.is_live
+                    ? "LIVE"
+                    : u.starts_in_seconds <= 0
+                      ? "ended"
+                      : i === arr.findIndex((x) => x.starts_in_seconds > 0)
+                        ? "next"
+                        : clockLabel(u.starts_at)}
                 </span>
               </div>
             ))}

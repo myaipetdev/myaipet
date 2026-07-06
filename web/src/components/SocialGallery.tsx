@@ -274,9 +274,14 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
                 width: 34, height: 34, borderRadius: 9,
                 background: T.inset,
                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15,
-                overflow: "hidden", boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.55)",
+                overflow: "hidden", boxShadow: `inset 0 0 0 1px ${T.hair}`,
               }}>
-                <img src="/mascot.jpg" alt="" style={{ width: "100%", height: "100%", borderRadius: 8, objectFit: "cover" }} />
+                <svg width={17} height={17} viewBox="0 0 24 24" fill="none"
+                  stroke={T.muted} strokeWidth={1.8}
+                  strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx={12} cy={8} r={3.5} />
+                  <path d="M5.5 19.5a6.5 6.5 0 0 1 13 0" />
+                </svg>
               </div>
               <div>
                 <div style={{ fontFamily: T.body, fontSize: 14, color: T.ink, fontWeight: 600 }}>
@@ -1112,7 +1117,6 @@ export default function SocialGallery() {
   const TABS = [
     { key: "trending", label: "Trending" },
     { key: "recent", label: "Latest" },
-    { key: "most_liked", label: "Top" },
   ];
 
   return (
@@ -1141,7 +1145,7 @@ export default function SocialGallery() {
           fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em",
           textTransform: "uppercase", color: T.terra, marginBottom: 8,
         }}>
-          Community · {filteredItems.length} Creations Today
+          Community
         </div>
         <div style={{
           display: "flex", alignItems: "flex-end", justifyContent: "space-between",
@@ -1347,7 +1351,7 @@ export default function SocialGallery() {
         </Reveal>
       )}
 
-      {!loading && hasMore && !search && filteredItems.length > 0 && (
+      {!loading && hasMore && (filteredItems.length > 0 || search) && (
         <div style={{ display: "flex", justifyContent: "center", padding: "32px 0 48px" }}>
           <button
             onClick={loadMore}

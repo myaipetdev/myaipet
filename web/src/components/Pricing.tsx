@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useAccount, useSwitchChain } from "wagmi";
-import { useCoinbaseOnramp } from "@/hooks/useCoinbaseOnramp";
 import { useDirectUsdtPay } from "@/hooks/useDirectUsdtPay";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
@@ -16,7 +15,7 @@ const EARN_METHODS = [
   { icon: "chat", label: "Share moments", desc: "Like, comment, signal-boost", reward: "+1–3 pts" },
   { icon: "heart", label: "Build the bond", desc: "Talk, feed, walk, train", reward: "+5 pts" },
   { icon: "crystal-ball", label: "Level up", desc: "Raising well levels your pet", reward: "+50 pts" },
-  { icon: "trophy", label: "Play & compete", desc: "Card duels, catches, World Cup", reward: "+5–30 pts" },
+  { icon: "trophy", label: "Play & compete", desc: "Card duels, catches, World Cup", reward: "+5–80 pts" },
 ];
 
 const BSC_CHAIN_ID = 56;
@@ -28,7 +27,6 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [step, setStep] = useState<"idle" | "approve" | "purchase" | "confirm">("idle");
-  const { openOnramp, isAvailable: onrampAvailable } = useCoinbaseOnramp();
 
   // Note: legacy on-chain $PET purchase flow has been retired. The flow is now
   // strictly USDT → /api/credits/purchase → in-game credits (points-based).
@@ -370,45 +368,10 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
             >
               {getButtonLabel(p.key)}
             </button>
-            {onrampAvailable && isConnected && (
-              <button
-                onClick={() => openOnramp(p.price)}
-                style={{
-                  width: "100%",
-                  marginTop: 8,
-                  background: "linear-gradient(135deg, #0052FF, #1673FF)",
-                  border: "none",
-                  borderRadius: 12,
-                  padding: "12px 24px",
-                  fontFamily: "var(--ed-disp)",
-                  fontSize: 13,
-                  color: "#fff",
-                  cursor: "pointer",
-                  fontWeight: 700,
-                  transition: "all 0.3s ease",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  flexDirection: "column",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = "0.9"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ display: "inline-flex", lineHeight: 0 }} aria-hidden="true">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="5" width="20" height="14" rx="2.5" />
-                      <path d="M2 9.5h20" />
-                      <path d="M6 14.5h3" />
-                    </svg>
-                  </span> Buy with Card
-                </span>
-                <span style={{ fontSize: 13, opacity: 0.7, fontWeight: 500 }}>
-                  Powered by Coinbase
-                </span>
-              </button>
-            )}
+            {/* "Buy with Card" (Coinbase onramp) was REMOVED: it onramped
+                USDC-on-Base while the only purchase path verifies USDT-on-BSC —
+                fiat spent through it could never buy the plan. Card payments
+                return via the Paddle rail (feat/card-email-paddle-auth). */}
           </div>
           </Reveal>
         ))}

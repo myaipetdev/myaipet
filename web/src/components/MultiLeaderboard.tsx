@@ -192,7 +192,7 @@ export default function MultiLeaderboard() {
               const podiumH = place === 1 ? 130 : place === 2 ? 110 : 100;
               const isFirst = place === 1;
               return (
-                <div key={place} className="mp-lift" style={{
+                <div key={place} style={{
                   background: isFirst ? "linear-gradient(180deg,#F49B2A,#E27D0C)" : "#FBF6EC",
                   border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                   borderRadius: 14,
@@ -247,7 +247,7 @@ export default function MultiLeaderboard() {
         {!loading && rest.length > 0 && (
         <Reveal dir="up" style={{ padding: "6px 0" }}>
           {rest.map(e => (
-            <div key={e.rank + e.wallet} className="mp-lift" style={{
+            <div key={e.rank + e.wallet} style={{
               display: "flex", alignItems: "center", gap: 14,
               padding: "12px 22px",
               background: e.isMe ? "rgba(190,79,40,0.08)" : "transparent",
