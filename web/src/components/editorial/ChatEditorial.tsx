@@ -17,7 +17,7 @@ const T = {
   disp: "var(--ed-disp)", body: "var(--ed-body)", m: "var(--ed-m)",
 };
 
-interface Msg { role: "user" | "pet"; text: string }
+interface Msg { role: "user" | "pet"; text: string; proactive?: boolean }
 interface Pet { id: number; name: string; level?: number; species?: number; species_name?: string; element?: string; avatar_url?: string; bond_level?: number; evolution_name?: string }
 
 export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string) => void }) {
@@ -38,11 +38,22 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
 
   useEffect(() => {
     if (!active) return;
+    const pid = active.id;
+    let alive = true;
     setMsgs([]);
-    api.pets.chatHistory(active.id).then((d: any) => {
+    api.pets.chatHistory(pid).then((d: any) => {
+      if (!alive) return;
       const m = (d.messages || []) as Msg[];
       setMsgs(m.length ? m : [{ role: "pet", text: `Hi! I've been thinking about you. What's on your mind?` }]);
-    }).catch(() => setMsgs([{ role: "pet", text: `Hi! I've been thinking about you. What's on your mind?` }]));
+    }).catch(() => { if (alive) setMsgs([{ role: "pet", text: `Hi! I've been thinking about you. What's on your mind?` }]); })
+    // Proactive recall — if you've been away, the pet reaches out FIRST, weaving in
+    // a real memory. Appended as the newest message so it invites you to reply.
+    .finally(() => {
+      api.pets.greeting(pid).then((g: any) => {
+        if (alive && g?.greeting) setMsgs((cur) => [...cur, { role: "pet", text: g.greeting, proactive: true }]);
+      }).catch(() => {});
+    });
+    return () => { alive = false; };
   }, [active?.id]);
 
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [msgs, busy]);
@@ -141,8 +152,8 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
                     <div key={i} style={{ alignSelf: "flex-start", display: "flex", gap: 10, maxWidth: "82%" }}>
                       <img src={photo} alt="" style={{ width: 30, height: 30, borderRadius: 9, objectFit: "cover", flexShrink: 0, border: `1px solid ${T.hair}` }} />
                       <div>
-                        <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: T.mono, marginBottom: 4, textTransform: "uppercase" }}>{active?.name}</div>
-                        <div style={{ background: T.inset, color: T.ink70, fontFamily: T.body, fontSize: 14, lineHeight: 1.55, padding: "11px 15px", borderRadius: "4px 16px 16px 16px", border: `1px solid ${T.hair}` }}>{m.text}</div>
+                        <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: m.proactive ? "#9A4E1E" : T.mono, marginBottom: 4, textTransform: "uppercase" }}>{m.proactive ? `${active?.name} · reached out ✦` : active?.name}</div>
+                        <div style={{ background: T.inset, color: T.ink70, fontFamily: T.body, fontSize: 14, lineHeight: 1.55, padding: "11px 15px", borderRadius: "4px 16px 16px 16px", border: m.proactive ? "1px solid rgba(190,79,40,.35)" : `1px solid ${T.hair}` }}>{m.text}</div>
                       </div>
                     </div>
                   )
