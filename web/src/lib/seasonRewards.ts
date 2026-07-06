@@ -1,15 +1,13 @@
 import { prisma } from "./prisma";
 
 // Points for different actions
+// ONLY reasons with live callers. Dead entries (evolve/daily_login/streak_7/
+// streak_30/generate_video) were deleted — they had no award path and kept
+// drifting back into marketing copy as promises the server never paid.
 const POINT_REWARDS: Record<string, number> = {
   interact: 5,        // Feed, play, talk etc
-  generate_image: 10, // Create an image
-  generate_video: 25, // Create a video
+  generate_image: 10, // Create an image (video goes through awardPointsCapped studio_gen +20)
   level_up: 50,       // Pet levels up
-  evolve: 200,        // Pet evolves to next stage
-  daily_login: 10,    // First action of the day
-  streak_7: 100,      // 7-day streak bonus
-  streak_30: 500,     // 30-day streak bonus
 };
 
 // Season points are a purely off-chain, non-financial recognition score. There is

@@ -89,6 +89,25 @@ export interface UsdtVerifier {
   ): Promise<UsdtVerifyResult>;
 }
 
+type RpcLog = {
+  address?: string;
+  topics?: string[];
+  data?: string;
+};
+
+function topicToAddress(topic: string | undefined): string {
+  if (!topic || topic.length < 66) return "";
+  return `0x${topic.slice(-40)}`.toLowerCase();
+}
+
+function usdToTokenUnits(amountUsd: number, decimals: number): bigint {
+  const scale = BigInt(10) ** BigInt(decimals);
+  const normalized = amountUsd.toFixed(Math.min(decimals, 6)).replace(/\.?0+$/, "");
+  const [whole, frac = ""] = normalized.split(".");
+  const fracPadded = (frac + "0".repeat(decimals)).slice(0, decimals);
+  return BigInt(whole || "0") * scale + BigInt(fracPadded || "0");
+}
+
 /** Default verifier: reads the tx receipt over JSON-RPC and inspects the
  *  ERC-20 Transfer log to the configured treasury. */
 class RpcUsdtVerifier implements UsdtVerifier {
@@ -112,30 +131,32 @@ class RpcUsdtVerifier implements UsdtVerifier {
       if (!receipt) return { ok: false, error: "Transaction receipt not found — TX may be pending or invalid" };
       if (receipt.status !== "0x1") return { ok: false, error: "Transaction failed or was reverted on-chain" };
 
-      const transferLog = (receipt.logs || []).find((log: any) =>
-        log.address?.toLowerCase() === ONCHAIN.usdt.address.toLowerCase() &&
-        log.topics?.[0] === ERC20_TRANSFER_TOPIC
-      );
-      if (!transferLog) return { ok: false, error: "No USDT transfer found in transaction" };
+      const expectedFromLc = expectedFrom.toLowerCase();
+      const expectedToLc = ONCHAIN.treasuryWallet.toLowerCase();
+      const expectedUnits = usdToTokenUnits(expectedAmountUsd, ONCHAIN.usdt.decimals);
+      const transferLog = ((receipt.logs || []) as RpcLog[]).find((log) => {
+        if (log.address?.toLowerCase() !== ONCHAIN.usdt.address.toLowerCase()) return false;
+        if (log.topics?.[0] !== ERC20_TRANSFER_TOPIC) return false;
+        if (topicToAddress(log.topics[1]) !== expectedFromLc) return false;
+        if (expectedToLc && topicToAddress(log.topics[2]) !== expectedToLc) return false;
+        if (!log.data) return false;
+        return BigInt(log.data) === expectedUnits;
+      });
 
-      const from = "0x" + transferLog.topics[1].slice(26);
-      const to = "0x" + transferLog.topics[2].slice(26);
-      const amount = Number(BigInt(transferLog.data)) / 10 ** ONCHAIN.usdt.decimals;
+      if (!transferLog) {
+        return {
+          ok: false,
+          error: "No exact matching USDT payment transfer found for sender, treasury, and amount",
+        };
+      }
 
-      if (from.toLowerCase() !== expectedFrom.toLowerCase()) {
-        return { ok: false, error: "Transaction sender does not match your wallet" };
-      }
-      // audit H4: only skipped when there is genuinely no treasury — callers must
-      // gate on treasuryConfigured() and fail closed before reaching here.
-      if (ONCHAIN.treasuryWallet && to.toLowerCase() !== ONCHAIN.treasuryWallet.toLowerCase()) {
-        return { ok: false, error: "Payment was not sent to the configured treasury" };
-      }
-      if (amount < expectedAmountUsd * 0.99) {
-        return { ok: false, error: `Insufficient amount: sent ${amount.toFixed(4)} USDT, required ${expectedAmountUsd}` };
-      }
+      const from = topicToAddress(transferLog.topics?.[1]);
+      const to = topicToAddress(transferLog.topics?.[2]);
+      const amount = Number(BigInt(transferLog.data || "0x0")) / 10 ** ONCHAIN.usdt.decimals;
       return { ok: true, from, to, amount };
-    } catch (e: any) {
-      console.error("[onchain] USDT verification failed:", e?.message);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      console.error("[onchain] USDT verification failed:", message);
       return { ok: false, error: "Failed to verify transaction on-chain" };
     }
   }

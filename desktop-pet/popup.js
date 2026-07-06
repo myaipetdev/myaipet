@@ -680,6 +680,7 @@ $("saveBtn").addEventListener("click", () => {
         } else {
           $("avatar").textContent = res.config.petEmoji || "🐾";
         }
+        { const db = $("demoBadge"); if (db) db.style.display = "none"; }
         showStatus("✅ Linked! Your pet is loaded.");
       } else if (res?.config?.needsPairing) {
         showStatus("⚠️ Couldn't find your pet — paste a valid CLI token (pck_…)", true);

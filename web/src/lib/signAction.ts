@@ -6,7 +6,7 @@
  * Signatures are free (no gas) but provide cryptographic proof of user intent.
  */
 
-import { signMessage } from "@wagmi/core";
+import { getAccount, signMessage, type Config } from "@wagmi/core";
 
 /**
  * Build a human-readable message for the user to sign.
@@ -22,6 +22,20 @@ export function buildSignMessage(
   return `${action}\n${lines}Timestamp: ${Math.floor(Date.now() / 1000)}`;
 }
 
+function getWalletErrorMessage(err: unknown): string {
+  if (!err || typeof err !== "object") return "Wallet signature failed. Please try again.";
+  const e = err as { name?: string; code?: number; message?: string };
+  if (
+    e.name === "UserRejectedRequestError" ||
+    e.code === 4001 ||
+    e.message?.includes("rejected") ||
+    e.message?.includes("denied")
+  ) {
+    return "Signature required. Please sign the message to continue.";
+  }
+  return e.message || "Wallet signature failed. Please try again.";
+}
+
 /**
  * Request a wallet signature for an action.
  * Throws if the user rejects the signature request.
@@ -32,26 +46,21 @@ export function buildSignMessage(
  * @returns { message, signature } to send to the API
  */
 export async function signAction(
-  config: any,
+  config: Config,
   action: string,
   data: Record<string, string> = {}
 ): Promise<{ message: string; signature: string }> {
   const message = buildSignMessage(action, data);
 
   try {
-    const signature = await signMessage(config, { message });
-    return { message, signature };
-  } catch (err: any) {
-    // User rejected or wallet error
-    if (
-      err?.name === "UserRejectedRequestError" ||
-      err?.code === 4001 ||
-      err?.message?.includes("rejected") ||
-      err?.message?.includes("denied")
-    ) {
-      throw new Error("Signature required. Please sign the message to continue.");
+    const account = getAccount(config).address;
+    if (!account) {
+      throw new Error("Wallet is not connected. Connect your wallet and try again.");
     }
-    throw new Error(err?.message || "Wallet signature failed. Please try again.");
+    const signature = await signMessage(config, { account, message });
+    return { message, signature };
+  } catch (err: unknown) {
+    throw new Error(getWalletErrorMessage(err));
   }
 }
 

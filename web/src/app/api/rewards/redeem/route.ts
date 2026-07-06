@@ -65,16 +65,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Record the redemption WITHOUT touching season_points (rank is preserved).
-    const redemption = await prisma.rewardRedemption.create({
-      data: {
-        user_id: user.id,
-        reward_id: reward_id,
-        reward_name: reward.name,
-        points_spent: 0, // non-deductive: tier-gated claim, not a points purchase
-        status: "confirmed",
-      },
-    });
+    let redemption;
+    try {
+      // Record the redemption WITHOUT touching season_points (rank is preserved).
+      // One user can claim each reward at most once; the DB unique index is the
+      // authoritative concurrency guard.
+      redemption = await prisma.rewardRedemption.create({
+        data: {
+          user_id: user.id,
+          reward_id: reward_id,
+          reward_name: reward.name,
+          points_spent: 0, // non-deductive: tier-gated claim, not a points purchase
+          status: "confirmed",
+        },
+      });
+    } catch (e: unknown) {
+      if (e && typeof e === "object" && (e as { code?: string }).code === "P2002") {
+        return NextResponse.json({ error: "Reward already claimed" }, { status: 409 });
+      }
+      throw e;
+    }
 
     return NextResponse.json({
       success: true,

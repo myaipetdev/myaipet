@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
             pet_id: pet.id,
             user_id: user.id,
             interaction_type: "checkin",
-            response_text: `Day ${newStreak} check-in! Earned ${rewardPoints} airdrop points.`,
+            response_text: `Day ${newStreak} check-in! Collected ${rewardPoints} season points.`,
             happiness_change: 5,
             energy_change: 0,
             hunger_change: 0,

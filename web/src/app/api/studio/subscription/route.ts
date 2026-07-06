@@ -26,12 +26,25 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(sub);
 }
 
+// Memberships are NOT on sale yet — every membership surface (PremiumTeaser,
+// PetStudioPro) says "coming soon", so selling a tier here would contradict the
+// product's own copy AND charge for benefits that aren't all enforced yet.
+// Flip to true only when the canonical price is decided and the UI sells it.
+const SUBSCRIPTION_SALES_ENABLED = false;
+
 export async function POST(req: NextRequest) {
   const rl = rateLimit(req, { key: "studio-sub", limit: 10, windowMs: 60_000 });
   if (!rl.ok) return rl.response;
 
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!SUBSCRIPTION_SALES_ENABLED) {
+    return NextResponse.json(
+      { status: "coming_soon", message: "Memberships aren't on sale yet — Studio runs pay-per-creation on credits for now." },
+      { status: 202 },
+    );
+  }
 
   const body = await req.json().catch(() => ({}));
   const tier = body?.tier as "pro" | "studio";

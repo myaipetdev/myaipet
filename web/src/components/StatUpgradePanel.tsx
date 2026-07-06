@@ -29,9 +29,9 @@ interface PanelData {
 }
 
 const STAT_META: Record<keyof Stats, { label: string; icon: string; color: string }> = {
-  atk: { label: "ATK", icon: "sword", color: "#dc2626" },
-  def: { label: "DEF", icon: "shield", color: "#2563eb" },
-  spd: { label: "SPD", icon: "rocket", color: "#16a34a" },
+  atk: { label: "ATK", icon: "sword", color: "#BE4F28" },
+  def: { label: "DEF", icon: "shield", color: "#3E8FE0" },
+  spd: { label: "SPD", icon: "rocket", color: "#5C8A4E" },
 };
 
 export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: number; onStatsChanged?: (stats: Stats) => void }) {
@@ -101,8 +101,8 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
   return (
     <div className="stat-upgrade-panel" style={{
       padding: 20, borderRadius: 16, marginTop: 16,
-      background: "linear-gradient(135deg, rgba(245,158,11,0.04), rgba(220,38,38,0.04))",
-      border: "1px solid rgba(245,158,11,0.18)",
+      background: "linear-gradient(135deg, rgba(190,79,40,0.06), rgba(154,78,30,0.04))",
+      border: "1px solid rgba(190,79,40,0.18)",
     }}>
       {/* Header — combined power = ranking input */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
@@ -112,16 +112,16 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
         </h3>
         <span style={{
           fontSize: 13, padding: "3px 9px", borderRadius: 999,
-          background: "rgba(245,158,11,0.12)", color: "#b45309",
-          fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, letterSpacing: "0.08em",
+          background: "rgba(190,79,40,0.10)", color: "#9A4E1E",
+          fontFamily: "var(--ed-m, ui-monospace, monospace)", fontWeight: 700, letterSpacing: "0.08em",
         }}>USDT</span>
         <div style={{ flex: 1 }} />
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 13, color: "rgba(26,26,46,0.5)", letterSpacing: "0.08em" }}>POWER</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#b45309" }}>{data.combinedPower}</div>
+          <div style={{ fontSize: 13, color: "rgba(33,26,18,0.5)", letterSpacing: "0.08em" }}>POWER</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#9A4E1E" }}>{data.combinedPower}</div>
         </div>
       </div>
-      <p style={{ fontSize: 13, color: "rgba(26,26,46,0.6)", margin: "0 0 14px", lineHeight: 1.6 }}>
+      <p style={{ fontSize: 13, color: "rgba(33,26,18,0.6)", margin: "0 0 14px", lineHeight: 1.6 }}>
         Each +{data.increment} pushes you up the leaderboard. 50% of every USDT spent is burned.
       </p>
 
@@ -135,22 +135,22 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
           return (
             <div key={stat} style={{
               display: "flex", alignItems: "center", gap: 12,
-              padding: "10px 14px", borderRadius: 10, background: "white",
-              border: "1px solid rgba(0,0,0,0.05)",
+              padding: "10px 14px", borderRadius: 10, background: "#FBF6EC",
+              border: "1px solid rgba(33,26,18,0.13)",
             }}>
               <span style={{ fontSize: 18, display: "inline-flex" }}><Icon name={meta.icon} size={18} /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ fontSize: 13, fontWeight: 800, color: meta.color }}>{meta.label}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>{value}</span>
-                  <span style={{ fontSize: 13, color: "rgba(26,26,46,0.4)", fontFamily: "mono" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#211A12" }}>{value}</span>
+                  <span style={{ fontSize: 13, color: "rgba(33,26,18,0.4)", fontFamily: "var(--ed-m, ui-monospace, monospace)" }}>
                     / {data.ceiling}
                   </span>
                 </div>
                 {/* Progress bar */}
                 <div style={{
                   marginTop: 4, height: 4, borderRadius: 999,
-                  background: "rgba(0,0,0,0.06)", overflow: "hidden",
+                  background: "#F5EFE2", overflow: "hidden",
                 }}>
                   <div style={{
                     height: "100%", width: `${(value / data.ceiling) * 100}%`,
@@ -164,11 +164,11 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
                 style={{
                   padding: "8px 14px", borderRadius: 8, border: "none",
                   background: atCap
-                    ? "rgba(0,0,0,0.06)"
+                    ? "rgba(33,26,18,0.06)"
                     : `linear-gradient(135deg, ${meta.color}, ${meta.color}dd)`,
-                  color: atCap ? "rgba(26,26,46,0.4)" : "white",
+                  color: atCap ? "rgba(33,26,18,0.4)" : "#FFF8EE",
                   fontWeight: 700, fontSize: 13, cursor: atCap ? "default" : "pointer",
-                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontFamily: "var(--ed-disp, sans-serif)",
                   whiteSpace: "nowrap",
                   opacity: isBusy ? 0.5 : 1,
                 }}
@@ -189,17 +189,17 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           <div style={{
-            background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
-            color: "white", padding: "22px 32px", borderRadius: 20,
-            boxShadow: "0 24px 60px rgba(245,158,11,0.45)",
-            fontFamily: "'Space Grotesk',sans-serif", textAlign: "center",
+            background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
+            color: "#FFF8EE", padding: "22px 32px", borderRadius: 20,
+            boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
+            fontFamily: "var(--ed-disp, sans-serif)", textAlign: "center",
             animation: "celebPop 0.4s ease, celebFade 2.8s ease forwards",
           }}>
             <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
               <Icon name={STAT_META[celebrate.stat].icon} size={38} />
               <span>{celebrate.stat.toUpperCase()} {celebrate.from} → {celebrate.to}</span>
             </div>
-            <div style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", marginTop: 6, opacity: 0.9, letterSpacing: "0.08em" }}>
+            <div style={{ fontSize: 13, fontFamily: "var(--ed-m, ui-monospace, monospace)", marginTop: 6, opacity: 0.9, letterSpacing: "0.08em" }}>
               POWER {celebrate.combinedPower} · CLIMBING
             </div>
           </div>

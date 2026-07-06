@@ -20,9 +20,9 @@ interface Insight {
 
 const MOOD: Record<string, { icon: string; bg: string; fg: string; ring: string }> = {
   tender:    { icon: "heart",        bg: "rgba(244,114,182,0.08)", fg: "#be185d", ring: "rgba(244,114,182,0.25)" },
-  playful:   { icon: "sparkling",    bg: "rgba(245,158,11,0.08)",  fg: "#b45309", ring: "rgba(245,158,11,0.25)" },
-  concerned: { icon: "shield",       bg: "rgba(139,92,246,0.08)",  fg: "#6d28d9", ring: "rgba(139,92,246,0.25)" },
-  hopeful:   { icon: "grass",        bg: "rgba(34,197,94,0.08)",   fg: "#15803d", ring: "rgba(34,197,94,0.25)" },
+  playful:   { icon: "sparkling",    bg: "rgba(190,79,40,0.10)",   fg: "#9A4E1E", ring: "rgba(190,79,40,0.25)" },
+  concerned: { icon: "shield",       bg: "rgba(107,79,160,0.08)",  fg: "#6B4FA0", ring: "rgba(107,79,160,0.25)" },
+  hopeful:   { icon: "grass",        bg: "rgba(92,138,78,0.10)",   fg: "#5C8A4E", ring: "rgba(92,138,78,0.25)" },
 };
 
 export default function PetInsightCard({ petId, petName }: { petId: number; petName: string }) {
@@ -63,9 +63,9 @@ export default function PetInsightCard({ petId, petName }: { petId: number; petN
 
   return (
     <div className="mp-enter" style={{
-      background: "linear-gradient(135deg, rgba(139,92,246,0.05), rgba(245,158,11,0.03))",
+      background: "linear-gradient(135deg, rgba(107,79,160,0.05), rgba(190,79,40,0.03))",
       borderRadius: 18,
-      border: "1px solid rgba(139,92,246,0.15)",
+      border: "1px solid rgba(107,79,160,0.15)",
       padding: "20px 22px",
       marginTop: 16,
     }}>
@@ -73,10 +73,10 @@ export default function PetInsightCard({ petId, petName }: { petId: number; petN
         <span style={{ fontSize: 22, display: "inline-flex" }}><Icon name="crystal-ball" size={22} /></span>
         <div style={{ flex: 1 }}>
           <div style={{
-            fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
-            letterSpacing: "0.14em", color: "#6d28d9", fontWeight: 800,
+            fontSize: 13, fontFamily: "var(--ed-m, ui-monospace, monospace)",
+            letterSpacing: "0.14em", color: "#6B4FA0", fontWeight: 800,
           }}>DAYDREAMS · DEFAULT MODE NETWORK</div>
-          <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em", color: "#1a1a2e" }}>
+          <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em", color: "#211A12" }}>
             {petName} has been thinking about you
           </div>
         </div>
@@ -86,18 +86,18 @@ export default function PetInsightCard({ petId, petName }: { petId: number; petN
           className="mp-lift"
           style={{
             padding: "8px 14px", borderRadius: 10, border: "none",
-            background: thinking ? "rgba(139,92,246,0.5)" : "linear-gradient(135deg,#a855f7,#7c3aed)",
-            color: "white", fontWeight: 700, fontSize: 13, cursor: thinking ? "wait" : "pointer",
-            fontFamily: "'Space Grotesk', sans-serif",
-            boxShadow: "0 2px 8px rgba(124,58,237,0.25)",
+            background: thinking ? "rgba(107,79,160,0.5)" : "#6B4FA0",
+            color: "#FFF8EE", fontWeight: 700, fontSize: 13, cursor: thinking ? "wait" : "pointer",
+            fontFamily: "var(--ed-body, sans-serif)",
+            boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
           }}
         >{thinking ? "Thinking…" : "Daydream"}</button>
       </div>
 
       {note && (
         <div style={{
-          fontSize: 13, color: "#6d28d9", fontWeight: 600,
-          background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.18)",
+          fontSize: 13, color: "#6B4FA0", fontWeight: 600,
+          background: "rgba(107,79,160,0.08)", border: "1px solid rgba(107,79,160,0.18)",
           borderRadius: 10, padding: "8px 12px", marginBottom: 10,
         }}>
           {note}
@@ -106,7 +106,7 @@ export default function PetInsightCard({ petId, petName }: { petId: number; petN
 
       {insights.length === 0 ? (
         <div style={{
-          fontSize: 14, color: "rgba(26,26,46,0.6)", lineHeight: 1.55,
+          fontSize: 14, color: "rgba(33,26,18,0.6)", lineHeight: 1.55,
           padding: "8px 2px",
         }}>
           When {petName} has enough memories of you, they'll start connecting the
@@ -125,17 +125,17 @@ export default function PetInsightCard({ petId, petName }: { petId: number; petN
               }}>
                 <div style={{
                   width: 34, height: 34, borderRadius: "50%",
-                  background: "white", border: `1px solid ${m.ring}`,
+                  background: "#FBF6EC", border: `1px solid ${m.ring}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 17, flexShrink: 0,
                 }}><Icon name={m.icon} size={17} /></div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, lineHeight: 1.55, color: "#1a1a2e", fontWeight: 500 }}>
+                  <div style={{ fontSize: 15, lineHeight: 1.55, color: "#211A12", fontWeight: 500 }}>
                     {ins.insight}
                   </div>
                   <div style={{
                     marginTop: 4, fontSize: 13,
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "var(--ed-m, ui-monospace, monospace)",
                     color: m.fg, letterSpacing: "0.06em",
                   }}>
                     {ins.mood}{ins.wasNew ? " · new" : ""}

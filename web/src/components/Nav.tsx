@@ -244,7 +244,7 @@ export default function Nav({ section, setSection, credits }: any) {
                   }} />
                   <button
                     className="ed-press"
-                    onClick={() => { setBalanceOpen(false); setSection("home"); setTimeout(() => { document.querySelector(".pricing-root")?.scrollIntoView({ behavior: "smooth" }); }, 100); }}
+                    onClick={() => { setBalanceOpen(false); setSection("home"); setTimeout(() => { document.querySelector(".pricing-root")?.scrollIntoView({ behavior: "smooth" }); }, 600); }}
                     style={{
                       width: "100%", padding: "11px 14px", borderRadius: 12, border: "none",
                       background: "linear-gradient(180deg, #F49B2A, #E27D0C)",

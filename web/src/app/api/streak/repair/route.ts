@@ -40,19 +40,17 @@ export async function POST(req: NextRequest) {
   }
 
   const price = repairPriceForStreak(s.longest_streak);
-  const u = await prisma.user.findUnique({ where: { id: user.id }, select: { credits: true } });
-  if (!u || u.credits < price.credits) {
-    return NextResponse.json({ error: "Not enough credits", needed: price.credits }, { status: 402 });
-  }
-
   const newStreak = streakAfterRepair(0, s.longest_streak);
 
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: user.id },
+  // Guarded decrement (audit H17): balance check + debit in ONE atomic
+  // statement so concurrent repairs can't race the balance negative.
+  const after = await prisma.$transaction(async (tx) => {
+    const dec = await tx.user.updateMany({
+      where: { id: user.id, credits: { gte: price.credits } },
       data: { credits: { decrement: price.credits } },
-    }),
-    prisma.userStreak.update({
+    });
+    if (dec.count === 0) return null; // insufficient credits
+    await tx.userStreak.update({
       where: { user_id: user.id },
       data: {
         current_streak: newStreak,
@@ -60,8 +58,8 @@ export async function POST(req: NextRequest) {
         pending_apology: false,
         pending_apology_days: 0,
       },
-    }),
-    prisma.streakPurchase.create({
+    });
+    await tx.streakPurchase.create({
       data: {
         user_id: user.id,
         kind: price.kind,
@@ -71,13 +69,18 @@ export async function POST(req: NextRequest) {
         streak_before: s.current_streak,
         streak_after: newStreak,
       },
-    }),
-  ]);
+    });
+    const fresh = await tx.user.findUnique({ where: { id: user.id }, select: { credits: true } });
+    return fresh?.credits ?? 0;
+  });
+  if (after === null) {
+    return NextResponse.json({ error: "Not enough credits", needed: price.credits }, { status: 402 });
+  }
 
   return NextResponse.json({
     ok: true,
     streak: newStreak,
-    creditsRemaining: u.credits - price.credits,
+    creditsRemaining: after,
     price,
   });
 }

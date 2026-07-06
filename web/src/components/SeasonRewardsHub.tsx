@@ -79,7 +79,8 @@ export default function SeasonRewardsHub({ banner }: { banner?: React.ReactNode 
 
       {/* Pillar tabs — big, labelled, so each pillar's purpose reads instantly. */}
       <Reveal dir="up" style={{ maxWidth: 1060, margin: "16px auto 0", padding: "0 24px", width: "100%" }}>
-        <div style={{
+        <style>{`@media (max-width: 560px) { .srh-tabs { grid-template-columns: 1fr !important; } }`}</style>
+        <div className="srh-tabs" style={{
           display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8,
         }}>
           {TABS.map(t => {

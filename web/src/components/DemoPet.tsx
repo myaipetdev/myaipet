@@ -114,7 +114,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
       <div style={{ maxWidth: 320, margin: "0 auto 18px", display: "flex", flexDirection: "column", gap: 7 }}>
         {([
           { k: "happiness", label: "Happy", icon: "heart", color: "#f472b6" },
-          { k: "energy", label: "Energy", icon: "electric", color: "#60a5fa" },
+          { k: "energy", label: "Energy", icon: "electric", color: "#3E8FE0" },
           { k: "bond", label: "Bond", icon: "paw", color: "#c084fc" },
         ] as const).map((row) => (
           <div key={row.k}>

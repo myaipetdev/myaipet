@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   // Schema validation (zod) — covers types, lengths, ranges, allowed enums, regex,
   // forbidden control chars, and rejects unknown keys via .strict()
   const validation = validateSoulExport(raw);
-  if (!validation.ok) {
+  if (validation.ok === false) {
     return NextResponse.json({ error: validation.error }, { status: 400 });
   }
   const body = validation.data as unknown as SoulExport;

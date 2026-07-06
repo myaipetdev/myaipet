@@ -31,8 +31,6 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  typescript: { ignoreBuildErrors: true },
-  eslint: { ignoreDuringBuilds: true },
   poweredByHeader: false, // SCRUM-40: drop x-powered-by header
   serverExternalPackages: ["ws", "pg", "@neondatabase/serverless", "@prisma/adapter-neon", "@prisma/adapter-pg"],
   images: {

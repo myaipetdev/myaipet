@@ -32,34 +32,14 @@ export async function GET(req: NextRequest) {
   });
 }
 
+// HONESTY: only list benefits the server actually enforces. The old
+// monthly_shields / repair_free / priority_queue / no_ads / monthly_credits_drop
+// fields had NO granting or reading code anywhere — advertising them was a
+// promise without a handler. The Studio quotas are the two real enforced limits.
 export function benefitsFor(tier: string) {
-  if (tier === "studio") return {
-    monthly_shields: 999,            // effectively unlimited
-    repair_free: true,
-    studio_video_limit: 120,
-    studio_image_limit: 2000,
-    priority_queue: true,
-    no_ads: true,
-    monthly_credits_drop: 500,
-  };
-  if (tier === "pro") return {
-    monthly_shields: 8,
-    repair_free: false,
-    studio_video_limit: 30,
-    studio_image_limit: 300,
-    priority_queue: true,
-    no_ads: true,
-    monthly_credits_drop: 100,
-  };
-  return {
-    monthly_shields: 1,
-    repair_free: false,
-    studio_video_limit: 3,
-    studio_image_limit: 30,
-    priority_queue: false,
-    no_ads: false,
-    monthly_credits_drop: 0,
-  };
+  if (tier === "studio") return { studio_video_limit: 120, studio_image_limit: 2000 };
+  if (tier === "pro") return { studio_video_limit: 30, studio_image_limit: 300 };
+  return { studio_video_limit: 3, studio_image_limit: 30 };
 }
 
 export async function POST(req: NextRequest) {
@@ -71,6 +51,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     plan, price_usd: PRICE_USD[plan],
     status: "coming_soon",
-    note: "Subscription billing is coming in the next release. For now your free tier covers daily missions and 1 shield/month.",
+    note: "Membership billing isn't live yet — daily missions and Studio pay-per-creation are fully available on the free tier.",
   }, { status: 202 });
 }

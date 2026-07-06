@@ -17,6 +17,15 @@
 # cron so fresh insights from the same hour are eligible.
 15 */4 * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/daydream-to-video?cron=1" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-daydream-video.log 2>&1
 
+# Season close: daily check — freezes final standings once SEASON_END passes
+# (idempotent no-op before then). REQUIRED before Season 1 ends (2026-08-01):
+# without it, "recognized when Season 1 closes" never actually happens.
+10 0 * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/season-close" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-season-close.log 2>&1
+
+# Memory embeddings backfill: hourly — embeds recent pet_memories rows so
+# GBrain-style recall (and the proactive greeting) rank across the full corpus.
+40 * * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/embed-memories" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-embed.log 2>&1
+
 # Optional: nightly memory anchor checkpoint for pets with souls. Only meaningful
 # after BLOCKCHAIN_ENABLED=true + relayer is funded.
 # 30 3 * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/petclaw/memory/anchor-batch?cron=1" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-anchor.log 2>&1

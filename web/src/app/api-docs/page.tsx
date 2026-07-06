@@ -144,32 +144,32 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#faf7f2",
-      fontFamily: "'Space Grotesk', sans-serif", color: "#1a1a2e",
+      minHeight: "100vh", background: "#ECE4D4",
+      fontFamily: "var(--ed-body, sans-serif)", color: "#211A12",
       padding: "60px 24px",
     }}>
       <div style={{ maxWidth: 920, margin: "0 auto" }}>
         <a href="/" style={{
           display: "inline-block", marginBottom: 20,
-          fontSize: 13, color: "rgba(26,26,46,0.55)", textDecoration: "none",
+          fontSize: 13, color: "rgba(33,26,18,0.55)", textDecoration: "none",
         }}>← Back to landing</a>
 
         <h1 style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 8 }}>
           PetClaw API Docs
         </h1>
-        <p style={{ fontSize: 14, color: "rgba(26,26,46,0.6)", marginBottom: 28 }}>
+        <p style={{ fontSize: 14, color: "rgba(33,26,18,0.6)", marginBottom: 28 }}>
           SDK reference for the <code style={{ fontSize: 13 }}>@myaipet/petclaw-sdk</code> npm package and HTTP API.
           Default server: <code style={{ fontSize: 13 }}>https://app.myaipet.ai</code>
         </p>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 4, marginBottom: 28, borderBottom: "1px solid rgba(0,0,0,0.08)", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 4, marginBottom: 28, borderBottom: "1px solid rgba(33,26,18,0.13)", flexWrap: "wrap" }}>
           {TABS.map(t => (
             <a key={t.slug} href={`/api-docs?tab=${t.slug}`} style={{
               padding: "10px 18px",
               fontSize: 14, fontWeight: 600,
-              color: t.slug === activeSlug ? "#1a1a2e" : "rgba(26,26,46,0.65)",
-              borderBottom: t.slug === activeSlug ? "2px solid #f59e0b" : "2px solid transparent",
+              color: t.slug === activeSlug ? "#211A12" : "rgba(33,26,18,0.65)",
+              borderBottom: t.slug === activeSlug ? "2px solid #BE4F28" : "2px solid transparent",
               textDecoration: "none",
               marginBottom: -1,
             }}>{t.title}</a>
@@ -179,35 +179,35 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
         <div className="md-content" dangerouslySetInnerHTML={{ __html: html }} />
 
         <div style={{
-          marginTop: 60, paddingTop: 24, borderTop: "1px solid rgba(0,0,0,0.06)",
-          fontSize: 13, color: "rgba(26,26,46,0.65)", lineHeight: 1.6,
+          marginTop: 60, paddingTop: 24, borderTop: "1px solid rgba(33,26,18,0.13)",
+          fontSize: 13, color: "rgba(33,26,18,0.65)", lineHeight: 1.6,
         }}>
-          Source files: <a href="/api-docs/QUICKSTART.md" style={{ color: "#b45309" }}>QUICKSTART.md</a> ·{" "}
-          <a href="/api-docs/API.md" style={{ color: "#b45309" }}>API.md</a> ·{" "}
-          <a href="/api-docs/ECOSYSTEM.md" style={{ color: "#b45309" }}>ECOSYSTEM.md</a> ·{" "}
-          <a href="/api-docs/SKILL-AUTHORING.md" style={{ color: "#b45309" }}>SKILL-AUTHORING.md</a>
+          Source files: <a href="/api-docs/QUICKSTART.md" style={{ color: "#9A4E1E" }}>QUICKSTART.md</a> ·{" "}
+          <a href="/api-docs/API.md" style={{ color: "#9A4E1E" }}>API.md</a> ·{" "}
+          <a href="/api-docs/ECOSYSTEM.md" style={{ color: "#9A4E1E" }}>ECOSYSTEM.md</a> ·{" "}
+          <a href="/api-docs/SKILL-AUTHORING.md" style={{ color: "#9A4E1E" }}>SKILL-AUTHORING.md</a>
         </div>
       </div>
 
       <style>{`
-        .md-content { font-size: 15px; line-height: 1.7; color: #1a1a2e; }
+        .md-content { font-size: 15px; line-height: 1.7; color: #211A12; }
         .md-content h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin: 32px 0 12px; }
-        .md-content h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; margin: 28px 0 10px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.06); }
-        .md-content h3 { font-size: 17px; font-weight: 700; margin: 22px 0 8px; color: #b45309; }
+        .md-content h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; margin: 28px 0 10px; padding-top: 8px; border-top: 1px solid rgba(33,26,18,0.13); }
+        .md-content h3 { font-size: 17px; font-weight: 700; margin: 22px 0 8px; color: #9A4E1E; }
         .md-content h4 { font-size: 15px; font-weight: 700; margin: 16px 0 6px; }
         .md-content p { margin: 0 0 12px; }
         .md-content ul, .md-content ol { margin: 6px 0 14px; padding-left: 24px; }
         .md-content li { margin: 3px 0; }
-        .md-content code { font-family: 'SF Mono', Consolas, monospace; font-size: 13px; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; color: #b45309; }
-        .md-content pre { background: #0f0f1a; padding: 16px 18px; border-radius: 10px; overflow-x: auto; margin: 14px 0; }
-        .md-content pre code { background: none; color: #f8f8f8; padding: 0; font-size: 13px; line-height: 1.6; }
-        .md-content a { color: #b45309; text-decoration: underline; }
-        .md-content blockquote { border-left: 3px solid #f59e0b; padding: 4px 14px; margin: 14px 0; color: rgba(26,26,46,0.7); background: rgba(245,158,11,0.05); border-radius: 0 8px 8px 0; }
-        .md-content hr { border: none; border-top: 1px solid rgba(0,0,0,0.08); margin: 24px 0; }
+        .md-content code { font-family: var(--ed-m, ui-monospace, monospace); font-size: 13px; background: #F5EFE2; padding: 2px 6px; border-radius: 4px; color: #9A4E1E; }
+        .md-content pre { background: #1E1710; padding: 16px 18px; border-radius: 10px; overflow-x: auto; margin: 14px 0; }
+        .md-content pre code { background: none; color: #E8C77E; padding: 0; font-size: 13px; line-height: 1.6; }
+        .md-content a { color: #9A4E1E; text-decoration: underline; }
+        .md-content blockquote { border-left: 3px solid #BE4F28; padding: 4px 14px; margin: 14px 0; color: rgba(33,26,18,0.7); background: rgba(190,79,40,0.10); border-radius: 0 8px 8px 0; }
+        .md-content hr { border: none; border-top: 1px solid rgba(33,26,18,0.13); margin: 24px 0; }
         .md-content table { border-collapse: collapse; margin: 14px 0; font-size: 13px; width: 100%; }
-        .md-content th, .md-content td { padding: 8px 12px; border: 1px solid rgba(0,0,0,0.08); text-align: left; }
-        .md-content th { background: rgba(0,0,0,0.03); font-weight: 700; }
-        .md-content tr:nth-child(even) td { background: rgba(0,0,0,0.015); }
+        .md-content th, .md-content td { padding: 8px 12px; border: 1px solid rgba(33,26,18,0.13); text-align: left; }
+        .md-content th { background: #F5EFE2; font-weight: 700; }
+        .md-content tr:nth-child(even) td { background: rgba(33,26,18,0.02); }
       `}</style>
     </div>
   );

@@ -20,14 +20,14 @@ export const dynamic = "force-dynamic";
 export default function StatsPage() {
   return (
     <div style={{
-      minHeight: "100vh", background: "#faf7f2",
-      fontFamily: "'Space Grotesk', sans-serif", color: "#1a1a2e",
+      minHeight: "100vh", background: "#ECE4D4",
+      fontFamily: "var(--ed-body, sans-serif)", color: "#211A12",
       padding: "80px 24px",
     }}>
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
         <a href="/" style={{
           display: "inline-block", marginBottom: 24,
-          fontSize: 13, color: "rgba(26,26,46,0.55)", textDecoration: "none",
+          fontSize: 13, color: "rgba(33,26,18,0.55)", textDecoration: "none",
         }}>← Back</a>
 
         <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.02em", margin: "0 0 14px" }}>
@@ -36,8 +36,8 @@ export default function StatsPage() {
 
         <div style={{
           padding: "20px 24px", borderRadius: 14,
-          background: "white", border: "1px solid rgba(0,0,0,0.06)",
-          fontSize: 14, color: "rgba(26,26,46,0.75)", lineHeight: 1.7,
+          background: "#FBF6EC", border: "1px solid rgba(33,26,18,0.13)",
+          fontSize: 14, color: "rgba(33,26,18,0.75)", lineHeight: 1.7,
           marginBottom: 18,
         }}>
           Live metrics are available to verified team members and backers in the
@@ -47,26 +47,26 @@ export default function StatsPage() {
 
         <div style={{
           padding: "16px 20px", borderRadius: 10,
-          background: "rgba(245,158,11,0.06)",
-          border: "1px solid rgba(245,158,11,0.18)",
-          fontSize: 13, color: "rgba(26,26,46,0.7)", lineHeight: 1.6,
-          fontFamily: "'JetBrains Mono', monospace",
+          background: "rgba(190,79,40,0.10)",
+          border: "1px solid rgba(190,79,40,0.18)",
+          fontSize: 13, color: "rgba(33,26,18,0.7)", lineHeight: 1.6,
+          fontFamily: "var(--ed-m, ui-monospace, monospace)",
         }}>
           What's publicly verifiable today: deployed contracts at{" "}
-          <a href="/contracts" style={{ color: "#b45309", fontWeight: 700 }}>/contracts</a> (on-chain),
+          <a href="/contracts" style={{ color: "#9A4E1E", fontWeight: 700 }}>/contracts</a> (on-chain),
           the open{" "}
-          <a href="/.well-known/pet-card.json" style={{ color: "#b45309", fontWeight: 700 }}>petclaw protocol manifest</a>,
+          <a href="/.well-known/pet-card.json" style={{ color: "#9A4E1E", fontWeight: 700 }}>petclaw protocol manifest</a>,
           and the skill registry at{" "}
-          <a href="/skills" style={{ color: "#b45309", fontWeight: 700 }}>/skills</a>.
+          <a href="/skills" style={{ color: "#9A4E1E", fontWeight: 700 }}>/skills</a>.
         </div>
 
         <div style={{
           marginTop: 22, padding: 14, borderRadius: 10,
-          background: "white", border: "1px solid rgba(0,0,0,0.06)",
-          fontSize: 13, color: "rgba(26,26,46,0.5)",
+          background: "#FBF6EC", border: "1px solid rgba(33,26,18,0.13)",
+          fontSize: 13, color: "rgba(33,26,18,0.5)",
         }}>
           Admin / backer access:{" "}
-          <a href="/admin/analytics" style={{ color: "#b45309", fontWeight: 700, textDecoration: "underline" }}>
+          <a href="/admin/analytics" style={{ color: "#9A4E1E", fontWeight: 700, textDecoration: "underline" }}>
             /admin/analytics
           </a>{" "}
           (wallet-gated)

@@ -22,7 +22,7 @@ interface TickerEvent {
   accent: string;
 }
 
-const ACCENTS = { create: "#f59e0b", nft: "#a855f7", pool_close: "#16a34a" };
+const ACCENTS = { create: "#BE4F28", nft: "#6B4FA0", pool_close: "#1A7E68" };
 
 function shortenWallet(w?: string | null | unknown): string {
   if (typeof w !== "string" || !w) return "anon";
@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
       at: n.created_at.toISOString(),
       kind: "nft",
       accent: ACCENTS.nft,
-      text: `${petName} minted ${kind} NFT — ${n.title || "milestone"}`,
+      text: `${petName} recorded a ${kind} milestone — ${n.title || "memory"}`,
     });
   }
 

@@ -18,8 +18,8 @@ import "leaflet/dist/leaflet.css";
 import { getAuthHeaders } from "@/lib/api";
 import { kindIcon } from "@/lib/catch/game";
 
-const MUTED = "#6b6b73";
-const INK = "#1a1a22";
+const MUTED = "#7A6E5A";
+const INK = "#211A12";
 const CREAM = "#fbf6ec";
 
 type Spawn = { id: string; kind: string; species: string; name: string; rarity: string; rarityLabel: string; rarityColor: string; lat: number; lng: number; caught: boolean };
@@ -64,7 +64,7 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
       const map = L.map(boxRef.current, { zoomControl: true, attributionControl: true }).setView(center, 16);
       mapRef.current = map;
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
-      L.circleMarker(center, { radius: 7, color: "#2563eb", weight: 3, fillColor: "#3b82f6", fillOpacity: 0.9 }).addTo(map).bindPopup("You are here");
+      L.circleMarker(center, { radius: 7, color: "#211A12", weight: 3, fillColor: "#3E8FE0", fillOpacity: 0.9 }).addTo(map).bindPopup("You are here");
 
       const pts: [number, number][] = [];
 
@@ -84,7 +84,7 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
               `<div style="text-align:center;font-family:system-ui;min-width:120px">
                  <img src="${c.photo_path}" alt="" style="width:120px;height:90px;object-fit:cover;border-radius:8px;display:block;margin:0 auto 6px"/>
                  <div style="font-weight:800">${escapeHtml(c.name)}</div>
-                 <div style="font-size: 13px;color:#666">${escapeHtml(c.breed)}</div>
+                 <div style="font-size: 13px;color:#7A6E5A">${escapeHtml(c.breed)}</div>
                  <div style="font-size: 13px;font-weight:700;color:${c.rarityColor}">${escapeHtml(c.rarityLabel)}</div>
                </div>`,
             );
@@ -100,7 +100,7 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
         setSpawnCount(spawns.length);
 
         const spawnIconHtml = (s: Spawn, caught: boolean) =>
-          `<div style="width:40px;height:40px;border-radius:50%;border:3px solid ${caught ? "#9ca3af" : s.rarityColor};background:#fff;box-shadow:0 0 0 4px ${caught ? "rgba(156,163,175,0.25)" : s.rarityColor + "40"},0 2px 7px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;${caught ? "opacity:0.45" : ""}">
+          `<div style="width:40px;height:40px;border-radius:50%;border:3px solid ${caught ? "#7A6E5A" : s.rarityColor};background:#FBF6EC;box-shadow:0 0 0 4px ${caught ? "rgba(122,110,90,0.25)" : s.rarityColor + "40"},0 2px 7px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;${caught ? "opacity:0.45" : ""}">
              <img src="/icons/${kindIcon(s.kind)}.png" style="width:27px;height:27px;object-fit:contain"/>
            </div>`;
 
@@ -112,9 +112,9 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
 
           const popupFor = (title: string, sub: string) =>
             `<div style="text-align:center;font-family:system-ui;min-width:140px">
-               <div style="font-size: 13px;letter-spacing:.08em;color:#b45309;font-weight:800">WILD ENCOUNTER</div>
+               <div style="font-size: 13px;letter-spacing:.08em;color:#9A4E1E;font-weight:800">WILD ENCOUNTER</div>
                <div style="font-weight:800;margin-top:2px">${title}</div>
-               <div style="font-size: 13px;color:#666">${sub}</div>
+               <div style="font-size: 13px;color:#7A6E5A">${sub}</div>
              </div>`;
 
           if (s.caught) {
@@ -167,7 +167,7 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
             ? "We couldn't get your location. Allow location access (and try again) to see the Wild Encounters and catches around you."
             : "Enable location and we'll drop game spawns right around you to catch — plus any real catches nearby. We only use it to place the map; nothing is shared."}
         </p>
-        <button onClick={() => setPhase("loading")} style={{ padding: "12px 24px", borderRadius: 999, border: `3px solid ${INK}`, background: "#f59e0b", color: INK, fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 0 rgba(26,26,34,0.25)" }}>
+        <button onClick={() => setPhase("loading")} style={{ padding: "12px 24px", borderRadius: 999, border: `3px solid ${INK}`, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 0 rgba(33,26,18,0.25)" }}>
           {denied ? "Try again" : "Enable location"}
         </button>
         <div style={{ fontSize: 13, color: MUTED, marginTop: 12 }}>Wild Encounters are game spawns (not real animals); they refresh hourly.</div>
@@ -180,16 +180,16 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
       {phase === "loading" && <div style={{ textAlign: "center", fontSize: 13, color: MUTED, marginBottom: 10 }}>Finding what&apos;s around you…</div>}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginBottom: 12, fontSize: 13, color: MUTED }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#a855f7", border: `2px solid ${INK}` }} /> Real camera catches
+          <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#9E72E8", border: `2px solid ${INK}` }} /> Real camera catches
         </span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", border: "2px solid #f59e0b", boxShadow: "0 0 0 3px rgba(245,158,11,0.25)" }} /> Wild Encounters — tap to catch
+          <span style={{ width: 14, height: 14, borderRadius: "50%", background: "#FBF6EC", border: "2px solid #BE4F28", boxShadow: "0 0 0 3px rgba(190,79,40,0.25)" }} /> Wild Encounters — tap to catch
         </span>
       </div>
-      <div ref={boxRef} style={{ width: "100%", height: "60vh", minHeight: 360, borderRadius: 18, overflow: "hidden", border: `3px solid ${INK}`, boxShadow: "0 10px 0 rgba(26,26,34,0.12)", background: CREAM }} />
+      <div ref={boxRef} style={{ width: "100%", height: "60vh", minHeight: 360, borderRadius: 18, overflow: "hidden", border: `3px solid ${INK}`, boxShadow: "0 10px 0 rgba(33,26,18,0.12)", background: CREAM }} />
       {toast && (
         <div style={{ textAlign: "center", marginTop: 10 }}>
-          <span style={{ display: "inline-block", background: "#f59e0b", color: INK, fontWeight: 800, fontSize: 13, padding: "7px 16px", borderRadius: 999, border: `2.5px solid ${INK}`, boxShadow: "0 3px 0 rgba(26,26,34,0.25)" }}>{toast}</span>
+          <span style={{ display: "inline-block", background: "#BE4F28", color: "#FFF8EE", fontWeight: 800, fontSize: 13, padding: "7px 16px", borderRadius: 999, border: `2.5px solid ${INK}`, boxShadow: "0 3px 0 rgba(33,26,18,0.25)" }}>{toast}</span>
         </div>
       )}
       <div style={{ textAlign: "center", fontSize: 13, color: MUTED, marginTop: 8, lineHeight: 1.5 }}>

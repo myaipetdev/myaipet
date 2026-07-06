@@ -18,24 +18,27 @@ export async function POST(req: NextRequest) {
   const nextSlotIndex = user.pet_slots; // 0-indexed: slot 1 = index 0
   const price = SLOT_PRICES[nextSlotIndex] || 500;
 
-  if (user.credits < price) {
+  // Guarded decrement (audit H17): balance check + debit + slot cap re-check in
+  // ONE atomic statement — concurrent buys can't race the balance negative or
+  // exceed MAX_SLOTS.
+  const dec = await prisma.user.updateMany({
+    where: { id: user.id, credits: { gte: price }, pet_slots: { lt: MAX_SLOTS } },
+    data: { pet_slots: { increment: 1 }, credits: { decrement: price } },
+  });
+  if (dec.count === 0) {
     return NextResponse.json(
       { error: "Insufficient credits", required: price, available: user.credits },
       { status: 400 }
     );
   }
-
-  const updatedUser = await prisma.user.update({
+  const updatedUser = await prisma.user.findUnique({
     where: { id: user.id },
-    data: {
-      pet_slots: { increment: 1 },
-      credits: { decrement: price },
-    },
+    select: { pet_slots: true, credits: true },
   });
 
   return NextResponse.json({
-    pet_slots: updatedUser.pet_slots,
-    credits: updatedUser.credits,
+    pet_slots: updatedUser?.pet_slots ?? user.pet_slots + 1,
+    credits: updatedUser?.credits ?? 0,
     price_paid: price,
   });
 }

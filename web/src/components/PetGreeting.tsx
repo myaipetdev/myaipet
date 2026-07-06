@@ -157,7 +157,7 @@ export default function PetGreeting({ petId, petName, mood, accent, lastInteract
         padding: "20px 24px",
         position: "relative",
         overflow: "hidden",
-        background: `linear-gradient(135deg, ${accent}14 0%, ${accent}08 45%, rgba(255,255,255,0.6) 100%)`,
+        background: `linear-gradient(135deg, ${accent}14 0%, ${accent}08 45%, rgba(251,246,236,0.6) 100%)`,
         border: `1px solid ${accent}2e`,
         boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
       }}
@@ -173,26 +173,26 @@ export default function PetGreeting({ petId, petName, mood, accent, lastInteract
         <div style={{ fontSize: 30, lineHeight: 1, marginTop: 2 }}><TodGlyph kind={tod.kind} color={accent} size={28} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 13, fontFamily: "var(--ed-m, ui-monospace, monospace)",
             letterSpacing: "0.14em", color: accent, fontWeight: 700, textTransform: "uppercase",
           }}>
             {tod.word}
           </div>
           <div style={{
-            fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 17,
-            color: "#1a1a2e", marginTop: 4, lineHeight: 1.35, letterSpacing: "-0.01em",
+            fontFamily: "var(--ed-disp, sans-serif)", fontWeight: 700, fontSize: 17,
+            color: "#211A12", marginTop: 4, lineHeight: 1.35, letterSpacing: "-0.01em",
           }}>
             {welcomeLine(petName, tone, tod.word)}
           </div>
           {absence && (
-            <div style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", marginTop: 5, lineHeight: 1.4 }}>
+            <div style={{ fontSize: 13, color: "rgba(33,26,18,0.55)", marginTop: 5, lineHeight: 1.4 }}>
               {absence}
             </div>
           )}
 
           {/* Proactive recall — the pet brings up something specific it remembers. */}
           {recall && (
-            <div style={{ fontSize: 13, color: "rgba(26,26,46,0.62)", marginTop: 7, lineHeight: 1.45, display: "flex", gap: 7, alignItems: "flex-start" }}>
+            <div style={{ fontSize: 13, color: "rgba(33,26,18,0.62)", marginTop: 7, lineHeight: 1.45, display: "flex", gap: 7, alignItems: "flex-start" }}>
               <span style={{ flexShrink: 0, lineHeight: 1, marginTop: 1 }}><Icon name="chat" size={15} /></span>
               <span><span style={{ fontWeight: 700 }}>Still on my mind</span> — {recall}</span>
             </div>
@@ -202,21 +202,21 @@ export default function PetGreeting({ petId, petName, mood, accent, lastInteract
           {thought && (
             <div style={{
               marginTop: 12, padding: "11px 14px", borderRadius: 13,
-              background: "rgba(255,255,255,0.7)",
-              border: "1px solid rgba(0,0,0,0.05)",
+              background: "#FBF6EC",
+              border: "1px solid rgba(33,26,18,0.13)",
               display: "flex", gap: 9, alignItems: "flex-start",
             }}>
               <span style={{ fontSize: 15, lineHeight: 1.3, flexShrink: 0 }}><Icon name="chat" size={16} /></span>
               <div style={{ minWidth: 0 }}>
                 <div style={{
-                  fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
-                  letterSpacing: "0.12em", color: "rgba(26,26,46,0.4)", fontWeight: 700,
+                  fontSize: 13, fontFamily: "var(--ed-m, ui-monospace, monospace)",
+                  letterSpacing: "0.12em", color: "rgba(33,26,18,0.4)", fontWeight: 700,
                   marginBottom: 2,
                 }}>
                   WHILE YOU WERE AWAY
                 </div>
                 <div style={{
-                  fontSize: 14, color: "#1a1a2e", lineHeight: 1.45,
+                  fontSize: 14, color: "#211A12", lineHeight: 1.45,
                   fontStyle: "italic",
                 }}>
                   &ldquo;{thought}&rdquo;

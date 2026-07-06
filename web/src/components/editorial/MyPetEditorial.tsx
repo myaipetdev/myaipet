@@ -509,7 +509,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               {streakMint && (
                 <div key={streakMint.id} style={{ marginTop: 10, border: "1.5px solid rgba(200,147,47,.6)", background: "rgba(200,147,47,.08)", borderRadius: 12, padding: "10px 12px", animation: "edRiseIn .35s cubic-bezier(.22,.9,.3,1) both" }}>
                   <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: "#A9712B" }}>CARE STREAK · {streakMint.days} DAYS</div>
-                  <div style={{ fontSize: 13, color: T.muted2, marginTop: 3, lineHeight: 1.45 }}>Streak NFT minted — {active.name}&apos;s consistent care, kept on-chain.</div>
+                  <div style={{ fontSize: 13, color: T.muted2, marginTop: 3, lineHeight: 1.45 }}>Care-streak milestone recorded in {active.name}&apos;s history — preserved with the pet.</div>
                 </div>
               )}
             </div>

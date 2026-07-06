@@ -1,11 +1,13 @@
 "use client";
 
 import { useWriteContract, useAccount, useSwitchChain, useBalance } from "wagmi";
+import { base, bsc, mainnet } from "wagmi/chains";
 import { CONTRACTS, PETActivityABI } from "@/lib/contracts";
 
 // Single source of truth for the target chain (BSC today → Base via
 // NEXT_PUBLIC_CHAIN_ID). Mirrored server-side in lib/onchain.ts.
 const targetChainId = CONTRACTS.chainId;
+const targetChain = targetChainId === base.id ? base : targetChainId === mainnet.id ? mainnet : bsc;
 const NATIVE_SYMBOL = CONTRACTS.nativeSymbol; // BNB on BSC, ETH on Base
 const MIN_GAS = BigInt(5e13); // 0.00005 native token minimum for gas (~$0.03)
 
@@ -52,6 +54,7 @@ export function useRecordAdoption() {
 
   const recordAdoption = async (petName: string, species: string) => {
     if (!isPETActivityEnabled()) return;
+    if (!address) throw new Error("Wallet is not connected. Connect your wallet and try again.");
 
     checkBalance(balanceData?.value);
 
@@ -64,6 +67,8 @@ export function useRecordAdoption() {
       abi: PETActivityABI,
       functionName: "recordAdoption",
       args: [petName, species],
+      account: address,
+      chain: targetChain,
       chainId: targetChainId,
     });
   };
@@ -80,6 +85,7 @@ export function useRecordImageGeneration() {
 
   const recordImageGeneration = async (petId: number, style: number) => {
     if (!isPETActivityEnabled()) return;
+    if (!address) throw new Error("Wallet is not connected. Connect your wallet and try again.");
 
     checkBalance(balanceData?.value);
 
@@ -92,6 +98,8 @@ export function useRecordImageGeneration() {
       abi: PETActivityABI,
       functionName: "recordImageGeneration",
       args: [BigInt(petId), style],
+      account: address,
+      chain: targetChain,
       chainId: targetChainId,
     });
   };
@@ -108,6 +116,7 @@ export function useRecordVideoGeneration() {
 
   const recordVideoGeneration = async (petId: number, style: number, duration: number) => {
     if (!isPETActivityEnabled()) return;
+    if (!address) throw new Error("Wallet is not connected. Connect your wallet and try again.");
 
     checkBalance(balanceData?.value);
 
@@ -120,6 +129,8 @@ export function useRecordVideoGeneration() {
       abi: PETActivityABI,
       functionName: "recordVideoGeneration",
       args: [BigInt(petId), style, duration],
+      account: address,
+      chain: targetChain,
       chainId: targetChainId,
     });
   };

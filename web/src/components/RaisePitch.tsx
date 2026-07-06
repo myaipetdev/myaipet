@@ -167,7 +167,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
                   Free
                 </div>
                 <div style={mini}>
-                  care +5 · create +10 · evolve +200
+                  care +5 · create +10–20 · level up +50
                 </div>
               </div>
 
@@ -331,13 +331,13 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
         <Reveal dir="up" delay={90}>
         <PathCard step="02" icon="fire" title="Keep your streak"
           body="Show up daily. A 7-day streak marks a milestone, 30 days a bigger one — recorded in your pet's history."
-          earn="+100 (7d) · +500 (30d)" cta="Check in"
+          earn="+5→+50 daily ladder" cta="Check in"
           onClick={() => onNavigate?.("my pet")} accent="#A8432B" />
         </Reveal>
         <Reveal dir="up" delay={180}>
         <PathCard step="03" icon="film-reel" title="Create together"
           body="Generate AI images & videos starring your pet. Every creation stacks Season Rewards points."
-          earn="+10 image · +25 video" cta="Create"
+          earn="+10 image · +20 video" cta="Create"
           onClick={() => onNavigate?.("create")} accent="#BE4F28" />
         </Reveal>
         <Reveal dir="up" delay={270}>
@@ -374,7 +374,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
           Raise. Create. Climb.
         </div>
         <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginBottom: 26 }}>
-          {["care +5", "create +10", "evolve +200"].map((c) => (
+          {["care +5", "create +10–20", "level up +50"].map((c) => (
             <span key={c} className="ed-invert-chip" style={{
               fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
               padding: "6px 14px", borderRadius: 999,

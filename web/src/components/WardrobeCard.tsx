@@ -17,7 +17,7 @@ interface Wearable {
 }
 
 const RARITY_COLOR: Record<string, string> = {
-  common: "#94a3b8", uncommon: "#22c55e", rare: "#3b82f6", epic: "#a855f7", legendary: "#f59e0b",
+  common: "#5C8A4E", rare: "#3E8FE0", epic: "#9E72E8", legendary: "#C8932F",
 };
 
 export default function WardrobeCard({ petId, onChange }: { petId: number; onChange?: () => void }) {
@@ -64,10 +64,10 @@ export default function WardrobeCard({ petId, onChange }: { petId: number; onCha
   if (!items || items.length === 0) return null;
 
   return (
-    <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 14, background: "linear-gradient(135deg, rgba(168,85,247,0.06), rgba(245,158,11,0.04))", border: "1px solid rgba(168,85,247,0.16)" }}>
+    <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 14, background: "linear-gradient(135deg, rgba(107,79,160,0.06), rgba(190,79,40,0.04))", border: "1px solid rgba(107,79,160,0.16)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, color: "#7c3aed", letterSpacing: "0.04em" }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, fontFamily: "var(--ed-disp, sans-serif)", fontWeight: 800, color: "#6B4FA0", letterSpacing: "0.04em" }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B4FA0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
             <path d="M12 2.5a2 2 0 0 0-2 2c0 1 1 1.6 1.4 2.4" />
             <path d="M11.4 6.9 4.5 11a1 1 0 0 0-.5.9V20a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 20v-8.1a1 1 0 0 0-.5-.9l-6.9-4.1" />
             <path d="m9 12 3 2 3-2" />
@@ -75,33 +75,33 @@ export default function WardrobeCard({ petId, onChange }: { petId: number; onCha
           Wardrobe
         </span>
         {credits != null && (
-          <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.5)" }}>
+          <span style={{ fontSize: 13, fontFamily: "var(--ed-m, ui-monospace, monospace)", color: "rgba(33,26,18,0.5)" }}>
             {credits.toLocaleString()} credits
           </span>
         )}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: 8 }}>
         {items.map((it) => {
-          const rc = RARITY_COLOR[it.rarity] || "#94a3b8";
+          const rc = RARITY_COLOR[it.rarity] || "#7A6E5A";
           return (
             <div key={it.key} style={{
               padding: "10px 8px", borderRadius: 11, textAlign: "center",
-              background: it.equipped ? "rgba(168,85,247,0.12)" : "white",
-              border: `1px solid ${it.equipped ? "rgba(168,85,247,0.45)" : "rgba(0,0,0,0.06)"}`,
+              background: it.equipped ? "rgba(107,79,160,0.12)" : "#FBF6EC",
+              border: `1px solid ${it.equipped ? "rgba(107,79,160,0.45)" : "rgba(33,26,18,0.13)"}`,
             }}>
               <div style={{ fontSize: 30, lineHeight: 1.1 }}>{it.icon}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#1a1a2e", marginTop: 3, letterSpacing: "-0.01em" }}>{it.name}</div>
-              <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: rc, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 1 }}>{it.rarity}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#211A12", marginTop: 3, letterSpacing: "-0.01em" }}>{it.name}</div>
+              <div style={{ fontSize: 13, fontFamily: "var(--ed-m, ui-monospace, monospace)", color: rc, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 1 }}>{it.rarity}</div>
               <button
                 onClick={() => act(it)}
                 disabled={busy === it.key}
                 style={{
                   marginTop: 7, width: "100%", padding: "6px 4px", borderRadius: 8, cursor: busy === it.key ? "wait" : "pointer",
-                  border: "none", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
-                  color: it.equipped ? "#7c3aed" : "white",
+                  border: "none", fontFamily: "var(--ed-disp, sans-serif)", fontSize: 13, fontWeight: 700,
+                  color: it.equipped ? "#6B4FA0" : "#FFF8EE",
                   background: it.equipped
-                    ? "rgba(168,85,247,0.16)"
-                    : it.owned ? "linear-gradient(135deg,#a855f7,#7c3aed)" : "linear-gradient(135deg,#fbbf24,#f59e0b)",
+                    ? "rgba(107,79,160,0.16)"
+                    : it.owned ? "#6B4FA0" : "linear-gradient(180deg,#F49B2A,#E27D0C)",
                   opacity: busy === it.key ? 0.6 : 1,
                 }}
               >
@@ -111,7 +111,7 @@ export default function WardrobeCard({ petId, onChange }: { petId: number; onCha
           );
         })}
       </div>
-      <div style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.4)", marginTop: 9, textAlign: "center" }}>
+      <div style={{ fontSize: 13, fontFamily: "var(--ed-m, ui-monospace, monospace)", color: "rgba(33,26,18,0.4)", marginTop: 9, textAlign: "center" }}>
         Buy once with credits · wear &amp; swap any time
       </div>
     </div>

@@ -25,21 +25,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Shield inventory full (${SHIELD_MAX_OWNED})` }, { status: 400 });
   }
 
-  const u = await prisma.user.findUnique({ where: { id: user.id }, select: { credits: true } });
-  if (!u || u.credits < SHIELD_PRICE.credits) {
-    return NextResponse.json({ error: "Not enough credits" }, { status: 402 });
-  }
-
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: user.id },
+  // Guarded decrement (audit H17): the balance check and the debit are ONE
+  // atomic statement, so concurrent buys can't race a balance negative.
+  const after = await prisma.$transaction(async (tx) => {
+    const dec = await tx.user.updateMany({
+      where: { id: user.id, credits: { gte: SHIELD_PRICE.credits } },
       data: { credits: { decrement: SHIELD_PRICE.credits } },
-    }),
-    prisma.userStreak.update({
+    });
+    if (dec.count === 0) return null; // insufficient credits
+    await tx.userStreak.update({
       where: { user_id: user.id },
       data: { shields_owned: { increment: 1 } },
-    }),
-    prisma.streakPurchase.create({
+    });
+    await tx.streakPurchase.create({
       data: {
         user_id: user.id,
         kind: "shield",
@@ -49,12 +47,17 @@ export async function POST(req: NextRequest) {
         streak_before: s.current_streak,
         streak_after: s.current_streak,
       },
-    }),
-  ]);
+    });
+    const fresh = await tx.user.findUnique({ where: { id: user.id }, select: { credits: true } });
+    return fresh?.credits ?? 0;
+  });
+  if (after === null) {
+    return NextResponse.json({ error: "Not enough credits" }, { status: 402 });
+  }
 
   return NextResponse.json({
     ok: true,
     shieldsOwned: s.shields_owned + 1,
-    creditsRemaining: u.credits - SHIELD_PRICE.credits,
+    creditsRemaining: after,
   });
 }

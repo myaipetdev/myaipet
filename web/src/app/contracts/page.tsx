@@ -16,21 +16,21 @@ export default function ContractsPage() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#faf7f2",
-      fontFamily: "'Space Grotesk', sans-serif",
-      color: "#1a1a2e",
+      background: "#ECE4D4",
+      fontFamily: "var(--ed-body, sans-serif)",
+      color: "#211A12",
       padding: "80px 24px",
     }}>
       <div style={{ maxWidth: 880, margin: "0 auto" }}>
         <a href="/" style={{
           display: "inline-block", marginBottom: 24,
-          fontSize: 13, color: "rgba(26,26,46,0.55)", textDecoration: "none",
+          fontSize: 13, color: "rgba(33,26,18,0.55)", textDecoration: "none",
         }}>← Back to landing</a>
 
         <h1 style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 6 }}>
           Smart Contracts
         </h1>
-        <p style={{ fontSize: 15, color: "rgba(26,26,46,0.65)", marginBottom: 32, lineHeight: 1.6 }}>
+        <p style={{ fontSize: 15, color: "rgba(33,26,18,0.65)", marginBottom: 32, lineHeight: 1.6 }}>
           Two production contracts were deployed on <strong>BNB Smart Chain (chain id 56)</strong>{" "}
           during the build (BSCScan-verified at deploy time); the deployment is being migrated to{" "}
           <strong>Base</strong> ahead of go-live, and further contracts are prepared. On-chain
@@ -41,9 +41,9 @@ export default function ContractsPage() {
 
         <div style={{
           padding: "14px 18px", borderRadius: 12,
-          background: "rgba(245,158,11,0.08)",
-          border: "1px solid rgba(245,158,11,0.25)",
-          fontSize: 13, color: "#92400e", marginBottom: 32, lineHeight: 1.6,
+          background: "rgba(190,79,40,0.10)",
+          border: "1px solid rgba(190,79,40,0.25)",
+          fontSize: 13, color: "#9A4E1E", marginBottom: 32, lineHeight: 1.6,
         }}>
           <strong>Holding period notice (2026-Q2)</strong><br/>
           Server-side on-chain recording and NFT minting are temporarily paused while we
@@ -56,24 +56,24 @@ export default function ContractsPage() {
           {CONTRACTS.map((c) => (
             <div key={c.name} style={{
               padding: 16, borderRadius: 14,
-              background: "white", border: "1px solid rgba(0,0,0,0.06)",
+              background: "#FBF6EC", border: "1px solid rgba(33,26,18,0.13)",
               display: "grid", gridTemplateColumns: "1fr auto", gap: 16, alignItems: "center",
             }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{c.name}</div>
                 <div style={{
-                  fontFamily: "monospace", fontSize: 13, color: "rgba(26,26,46,0.55)",
+                  fontFamily: "var(--ed-m, ui-monospace, monospace)", fontSize: 13, color: "rgba(33,26,18,0.55)",
                   wordBreak: "break-all", marginBottom: 4,
                 }}>
                   {c.addr === "TBD" ? "— address pending —" : c.addr}
                 </div>
-                <div style={{ fontSize: 13, color: "rgba(26,26,46,0.65)" }}>{c.note}</div>
+                <div style={{ fontSize: 13, color: "rgba(33,26,18,0.65)" }}>{c.note}</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
                 <span style={{
                   fontSize: 13, padding: "3px 10px", borderRadius: 999,
-                  background: c.status.startsWith("Deployed") ? "rgba(245,158,11,0.12)" : "rgba(0,0,0,0.06)",
-                  color: c.status.startsWith("Deployed") ? "#92400e" : "rgba(26,26,46,0.65)",
+                  background: c.status.startsWith("Deployed") ? "rgba(190,79,40,0.12)" : "rgba(33,26,18,0.06)",
+                  color: c.status.startsWith("Deployed") ? "#9A4E1E" : "rgba(33,26,18,0.65)",
                   fontWeight: 700, letterSpacing: "0.06em",
                 }}>{c.status.toUpperCase()}</span>
                 {c.addr !== "TBD" && (
@@ -82,9 +82,9 @@ export default function ContractsPage() {
                     target="_blank" rel="noopener noreferrer"
                     style={{
                       fontSize: 13, padding: "5px 12px", borderRadius: 8,
-                      background: "rgba(0,0,0,0.04)", color: "#1a1a2e",
+                      background: "rgba(33,26,18,0.04)", color: "#211A12",
                       textDecoration: "none", fontWeight: 600,
-                      border: "1px solid rgba(0,0,0,0.08)",
+                      border: "1px solid rgba(33,26,18,0.13)",
                     }}
                   >BSCScan (build) ↗</a>
                 )}
@@ -96,9 +96,9 @@ export default function ContractsPage() {
         <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, marginTop: 32 }}>
           Audits
         </h2>
-        <div style={{ padding: 16, borderRadius: 14, background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
+        <div style={{ padding: 16, borderRadius: 14, background: "#FBF6EC", border: "1px solid rgba(33,26,18,0.13)" }}>
           <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Internal review — In progress</div>
-          <div style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", lineHeight: 1.55 }}>
+          <div style={{ fontSize: 13, color: "rgba(33,26,18,0.55)", lineHeight: 1.55 }}>
             Core team review of the two deployed contracts. External audit firm announcements
             will be published here once finalized — not before.
           </div>
@@ -107,10 +107,12 @@ export default function ContractsPage() {
         <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, marginTop: 32 }}>
           Ownership
         </h2>
-        <ul style={{ fontSize: 14, lineHeight: 1.8, color: "rgba(26,26,46,0.75)", paddingLeft: 18 }}>
+        <ul style={{ fontSize: 14, lineHeight: 1.8, color: "rgba(33,26,18,0.75)", paddingLeft: 18 }}>
           <li>Deployer wallet: <code style={{ fontSize: 13 }}>0x872d5f7F03894EE5c8b84D22868009B58b927357</code></li>
           <li>Upgradeability: deployed contracts are <strong>non-upgradeable</strong>.</li>
-          <li>Owner privileges: minimal — limited to administrative emergency pause (where applicable).</li>
+          <li>Current status: team-controlled owner / relayer operations while on-chain features are paused.</li>
+          <li>Owner privileges: pause/unpause where supported, relayer and admin operations for deployed provenance contracts.</li>
+          <li>Legacy PETToken/PETShop contracts are not part of the live user flow; their owner controls include minter management, tier changes, pause, and USDT withdrawal until formally deprecated or transferred to multisig.</li>
         </ul>
       </div>
     </div>

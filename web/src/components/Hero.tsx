@@ -470,8 +470,8 @@ export default function Hero({ onAdopt, onExplore, txToday }: any) {
           {[
             { icon: <Icon name="paw" size={28} />, title: "Raise", desc: "Feed, play, and train your AI pet. Watch them grow from Baby to Legendary." },
             { icon: <Icon name="sparkling" size={28} />, title: "Create", desc: "Generate stunning AI images and videos of your pet in any scene or style." },
-            { icon: <Icon name="diamond" size={28} />, title: "Earn", desc: "Climb the leaderboard, earn Season Rewards points, and unlock exclusive rewards." },
-            { icon: <Icon name="trophy" size={28} />, title: "Collect", desc: "Real merchandise redemption — mugs, hoodies, figures & more — coming with the creator marketplace." },
+            { icon: <Icon name="diamond" size={28} />, title: "Climb", desc: "Climb the leaderboard and build your Season standing — non-financial recognition for raising well." },
+            { icon: <Icon name="trophy" size={28} />, title: "Collect", desc: "Collect TCG cards of your pet — earned by raising and creating, yours to keep and share." },
           ].map((card, i) => (
             <Reveal key={card.title} dir="up" delay={Math.min(i, 8) * 90}>
             <div className="eco-card hero-invest-card" style={{ height: "100%" }}>

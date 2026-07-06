@@ -67,7 +67,7 @@ export default function PremiumTeaser() {
             features={[
               "Unlimited chat & persona evolution",
               "Your pet remembers everything — recall when you ask",
-              "1 Studio creation a day",
+              "Studio access — pay-per-creation (100 welcome credits included)",
               "Daily missions, streak & season standing",
             ]}
             cta={onFree ? "You're on Companion" : "Included"}
@@ -107,7 +107,7 @@ export default function PremiumTeaser() {
           />
         </div>
 
-        <div style={{ marginTop: 16, fontSize: 12.5, color: "#9A7B4E", fontFamily: "var(--ed-m)", lineHeight: 1.5 }}>
+        <div style={{ marginTop: 16, fontSize: 13, color: "#9A7B4E", fontFamily: "var(--ed-m)", lineHeight: 1.5 }}>
           Companion+ is on the roadmap — memory, preservation &amp; phone presence ship before it&apos;s sold.
           Season points remain non-financial recognition: no token, no cash value.
         </div>
@@ -146,20 +146,20 @@ function Tier({
           <span style={{
             padding: "2px 7px", borderRadius: 999,
             background: "#BE4F28", color: "#FFF8EE", border: "none",
-            fontSize: 12, fontWeight: 800, fontFamily: "var(--ed-m)", letterSpacing: "0.06em",
+            fontSize: 13, fontWeight: 800, fontFamily: "var(--ed-m)", letterSpacing: "0.06em",
           }}>CURRENT</span>
         )}
         {soon && !current && (
           <span style={{
             padding: "2px 7px", borderRadius: 999,
             background: "rgba(190,79,40,0.12)", color: "#9A4E1E", border: "1px solid rgba(190,79,40,0.2)",
-            fontSize: 12, fontWeight: 800, fontFamily: "var(--ed-m)", letterSpacing: "0.06em",
+            fontSize: 13, fontWeight: 800, fontFamily: "var(--ed-m)", letterSpacing: "0.06em",
           }}>SOON</span>
         )}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: promise ? 8 : 12 }}>
         <span style={{ fontSize: 22, fontWeight: 800, color: "#211A12", fontFamily: "var(--ed-m)" }}>{price}</span>
-        {priceNote && <span style={{ fontSize: 12, color: "#9A7B4E", fontFamily: "var(--ed-m)" }}>{priceNote}</span>}
+        {priceNote && <span style={{ fontSize: 13, color: "#9A7B4E", fontFamily: "var(--ed-m)" }}>{priceNote}</span>}
       </div>
       {promise && (
         <div style={{ fontSize: 13, color: "#9A4E1E", fontFamily: "var(--ed-body)", fontStyle: "italic", lineHeight: 1.45, marginBottom: 12 }}>
@@ -182,7 +182,7 @@ function Tier({
         <button disabled={disabled} style={{ ...btnStyle, cursor: disabled ? "not-allowed" : "pointer" }}>{cta}</button>
       )}
       {footNote && (
-        <div style={{ marginTop: 8, fontSize: 12, color: "#9A7B4E", fontFamily: "var(--ed-m)", textAlign: "center" }}>{footNote}</div>
+        <div style={{ marginTop: 8, fontSize: 13, color: "#9A7B4E", fontFamily: "var(--ed-m)", textAlign: "center" }}>{footNote}</div>
       )}
     </div>
   );

@@ -77,18 +77,17 @@ Generate animated videos of your pet with full motion and personality expression
     id: "pet-economy",
     title: "Points Economy",
     content: `**Two currencies — keep them straight**
-- **Season Rewards points** — what you EARN through gameplay (free, non-financial loyalty points). Drives the weekly leaderboard. Not a token, security, or transferable claim.
+- **Season Rewards points** — non-financial recognition gained through gameplay (free). Drives the Season 1 leaderboard. Not a token, security, or transferable claim — no redemption path.
 - **Credits** — what you BUY with USDT and SPEND on AI generation and premium features.
 
 The current system is loyalty-only — no token mint, no buyback-and-burn.
 
-**Earning points (free)**
-- Daily check-in: +10 points/day
-- AI creation: +10 points per image · +25 per video
-- Daily interactions (feed, play, talk): +5 points
-- Pet evolution: +50 points per level up · +200 per evolution
-- Streak bonus: +100 points (7-day) · +500 (30-day)
-- Referrals: +100 points per referred user
+**Gaining points (free)**
+- Daily check-in: +5 up to +50/day (grows with your streak, day 1–7)
+- AI creation: +10 per image · +20 per video
+- Daily interactions (feed, play, talk): +5 each (daily-capped)
+- Level up: +50
+- Chat with your pet: +2 · community likes/comments: +1–3
 
 **Spending credits (bought with USDT)**
 - Image generation: from 5 credits per styled image

@@ -55,8 +55,8 @@ export default function PetStatRadar({ stats, size = 280 }: Props) {
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <defs>
           <radialGradient id="radarFill" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(245,158,11,0.4)" />
-            <stop offset="100%" stopColor="rgba(192,132,252,0.18)" />
+            <stop offset="0%" stopColor="rgba(190,79,40,0.4)" />
+            <stop offset="100%" stopColor="rgba(158,114,232,0.18)" />
           </radialGradient>
         </defs>
 
@@ -66,7 +66,7 @@ export default function PetStatRadar({ stats, size = 280 }: Props) {
             key={idx}
             points={points}
             fill="none"
-            stroke="rgba(26,26,46,0.08)"
+            stroke="rgba(33,26,18,0.08)"
             strokeWidth={idx === 3 ? 1.5 : 1}
           />
         ))}
@@ -83,7 +83,7 @@ export default function PetStatRadar({ stats, size = 280 }: Props) {
               y1={center}
               x2={x}
               y2={y}
-              stroke="rgba(26,26,46,0.07)"
+              stroke="rgba(33,26,18,0.07)"
               strokeWidth={1}
             />
           );
@@ -93,7 +93,7 @@ export default function PetStatRadar({ stats, size = 280 }: Props) {
         <polygon
           points={valuePoints}
           fill="url(#radarFill)"
-          stroke="#f59e0b"
+          stroke="#BE4F28"
           strokeWidth={2}
           strokeLinejoin="round"
         />
@@ -115,11 +115,10 @@ export default function PetStatRadar({ stats, size = 280 }: Props) {
                 y={ly}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fontSize={11}
-                fontFamily="'Space Grotesk', sans-serif"
+                fontSize={13}
                 fontWeight={700}
-                fill="rgba(26,26,46,0.7)"
-                style={{ letterSpacing: "0.04em", textTransform: "uppercase" }}
+                fill="rgba(33,26,18,0.7)"
+                style={{ letterSpacing: "0.04em", textTransform: "uppercase", fontFamily: "var(--ed-body, sans-serif)" }}
               >
                 {s.label}
               </text>
@@ -128,10 +127,10 @@ export default function PetStatRadar({ stats, size = 280 }: Props) {
                 y={ly + 13}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fontSize={11}
-                fontFamily="'Space Grotesk', sans-serif"
+                fontSize={13}
                 fontWeight={600}
                 fill={s.color}
+                style={{ fontFamily: "var(--ed-body, sans-serif)" }}
               >
                 {Math.round(s.value)}
               </text>
@@ -165,9 +164,9 @@ export function StatSlotBar({ label, value, color, icon, max = 100, warning }: S
         <span style={{ fontSize: 16, lineHeight: 1 }}>{icon}</span>
         <span style={{
           fontSize: 13,
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontFamily: "var(--ed-body, sans-serif)",
           fontWeight: 700,
-          color: warning ? "#dc2626" : "#1a1a2e",
+          color: warning ? "#dc2626" : "#211A12",
           letterSpacing: "0.02em",
           flex: 1,
         }}>
@@ -175,13 +174,13 @@ export function StatSlotBar({ label, value, color, icon, max = 100, warning }: S
         </span>
         <span style={{
           fontSize: 13,
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: "var(--ed-m, ui-monospace, monospace)",
           fontWeight: 800,
-          color: warning ? "#dc2626" : "#1a1a2e",
+          color: warning ? "#dc2626" : "#211A12",
           letterSpacing: "-0.01em",
         }}>
           {Math.round(value)}
-          <span style={{ color: "rgba(26,26,46,0.35)", fontWeight: 500 }}>
+          <span style={{ color: "rgba(33,26,18,0.35)", fontWeight: 500 }}>
             {" "}/{" "}{max}
           </span>
         </span>
@@ -190,7 +189,7 @@ export function StatSlotBar({ label, value, color, icon, max = 100, warning }: S
       {/* Single smooth bar — easier to read than 10 little blocks */}
       <div style={{
         height: 8, borderRadius: 6,
-        background: "rgba(26,26,46,0.06)",
+        background: "rgba(33,26,18,0.06)",
         overflow: "hidden",
         boxShadow: "inset 0 1px 2px rgba(0,0,0,0.04)",
       }}>
@@ -198,7 +197,6 @@ export function StatSlotBar({ label, value, color, icon, max = 100, warning }: S
           height: "100%", width: `${pct}%`,
           borderRadius: 6,
           background: `linear-gradient(90deg, ${color} 0%, ${color}DD 100%)`,
-          boxShadow: `0 0 8px ${color}55`,
           transition: "width 320ms cubic-bezier(.2,.8,.2,1)",
         }} />
       </div>

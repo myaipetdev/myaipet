@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { privateAutoGenIds } from "@/lib/publicFeed";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -17,6 +18,9 @@ export async function GET(req: NextRequest) {
         { photo_path: { not: "" } },
         { video_path: { not: "" } },
       ],
+      // Privacy: daydream auto-gens embed the pet's private inner insight in
+      // their prompt — never list them publicly (see lib/publicFeed.ts).
+      id: { notIn: await privateAutoGenIds() },
     };
 
     if (pet_type) where.pet_type = pet_type;
@@ -47,9 +51,21 @@ export async function GET(req: NextRequest) {
         ? `0x${w.slice(2, 6)}...${w.slice(-4)}`
         : null;
 
+      // Explicit public whitelist — `...item` used to leak user_id,
+      // fal_request_id, error_message, tx_hash, and the raw prompt.
       return {
-        ...item,
-        user: undefined,
+        id: item.id,
+        pet_type: item.pet_type,
+        style: item.style,
+        duration: item.duration,
+        photo_path: item.photo_path,
+        video_path: item.video_path,
+        status: item.status,
+        created_at: item.created_at,
+        completed_at: item.completed_at,
+        likes: item.likes,
+        comments: item.comments,
+        _count: item._count,
         wallet_address: truncated_wallet,
       };
     });

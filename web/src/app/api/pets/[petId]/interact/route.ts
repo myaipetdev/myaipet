@@ -86,19 +86,9 @@ export async function POST(
     return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   }
 
-  // ── Paywall: feed/play have a daily free cap, paid overflow via USDT ──
-  // Other interaction types (talk/pet/walk/train) stay free — they're the
-  // emotional/companionship surface, charging for those would kill the product.
-  const paidActionKey = PAID_INTERACTION_MAP[interaction_type];
-  if (paidActionKey) {
-    const txHash = req.nextUrl.searchParams.get("tx_hash") || undefined;
-    const gate = await enforcePaywall(user.id, paidActionKey, txHash, pet.id);
-    if (gate.ok !== true) {
-      return NextResponse.json({ error: "Payment required", paywall: gate.paywall }, { status: 402 });
-    }
-  }
-
-  // SCRUM-59: enforce per-pet cooldown — prevents repeated calls farming points/exp
+  // SCRUM-59: enforce per-pet cooldown — prevents repeated calls farming points/exp.
+  // MUST run BEFORE the paywall: enforcePaywall irreversibly consumes a USDT
+  // receipt, so rejecting AFTER it would charge the user for a blocked action.
   if (pet.last_interaction_at) {
     const sinceMs = Date.now() - new Date(pet.last_interaction_at).getTime();
     if (sinceMs < INTERACT_COOLDOWN_MS) {
@@ -109,7 +99,7 @@ export async function POST(
     }
   }
 
-  // ── Gate check (energy/hunger) ──
+  // ── Gate check (energy/hunger) — also before the paywall, same reason ──
   const blocked = gateInteraction(interaction_type, {
     energy: pet.energy,
     hunger: pet.hunger,
@@ -120,6 +110,22 @@ export async function POST(
       { error: blocked, blocked: true, reason: blocked },
       { status: 400 }
     );
+  }
+
+  // ── Paywall: feed/play have a daily free cap, paid overflow via USDT ──
+  // Other interaction types (talk/pet/walk/train) stay free — they're the
+  // emotional/companionship surface, charging for those would kill the product.
+  // Track whether THIS action was paid: recognition points must never derive
+  // from a paid action (same rule as battle/create — points are "never bought").
+  let paidAction = false;
+  const paidActionKey = PAID_INTERACTION_MAP[interaction_type];
+  if (paidActionKey) {
+    const txHash = req.nextUrl.searchParams.get("tx_hash") || undefined;
+    const gate = await enforcePaywall(user.id, paidActionKey, txHash, pet.id);
+    if (gate.ok !== true) {
+      return NextResponse.json({ error: "Payment required", paywall: gate.paywall }, { status: 402 });
+    }
+    paidAction = gate.paid;
   }
 
   // ── Apply personality modifiers ──
@@ -238,12 +244,25 @@ export async function POST(
     },
   });
 
-  // Award airdrop points — interact is daily-capped (audit H5/M5) so it can't be
-  // scripted to mint unlimited airdrop allocation. level_up stays uncapped.
-  const interactCap = DAILY_POINT_CAPS.interact;
-  const pointsResult = await awardPointsCapped(user.id, "interact", 5, interactCap);
-  if (leveledUp) await awardPoints(user.id, pet.id, "level_up");
-  if (combo) await awardPointsCapped(user.id, "interact", 5, interactCap); // bonus (same daily pool)
+  // Award season points — interact is daily-capped (audit H5/M5) so it can't be
+  // scripted to farm unlimited points. COMPLIANCE: a PAID (USDT) interaction
+  // grants NO season points — points are non-financial recognition, "never
+  // bought" (RaisePitch disclaimer; same rule battle/create enforces).
+  // points_earned reports the ACTUAL granted sum, not advertised maximums.
+  let actualPoints = 0;
+  if (!paidAction) {
+    const interactCap = DAILY_POINT_CAPS.interact;
+    const pointsResult = await awardPointsCapped(user.id, "interact", 5, interactCap);
+    actualPoints += pointsResult.points || 0;
+    if (leveledUp) {
+      const lv = await awardPoints(user.id, pet.id, "level_up");
+      actualPoints += lv.points || 0;
+    }
+    if (combo) {
+      const cb = await awardPointsCapped(user.id, "interact", 5, interactCap); // bonus (same daily pool)
+      actualPoints += cb.points || 0;
+    }
+  }
 
   // Care Streak: only feed counts. Mints a NFT every 7-day consecutive streak.
   // Fire-and-forget — chain calls don't block the interaction response.
@@ -270,7 +289,7 @@ export async function POST(
         bond: bondGain + comboBonus.bond + reqBond,
       },
       leveled_up: leveledUp,
-      points_earned: pointsResult.points + (leveledUp ? 50 : 0) + (combo ? 30 : 0),
+      points_earned: actualPoints,
       combo: combo
         ? { name: combo.name, description: combo.description, emoji: combo.emoji }
         : null,

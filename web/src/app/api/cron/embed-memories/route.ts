@@ -15,7 +15,7 @@ const PER_PET_CAP = 300; // memories embedded per pet per run
 const BATCH = 64;
 
 export async function POST(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get("secret") || req.headers.get("x-cron-secret");
+  const secret = req.headers.get("x-cron-secret"); // header-only: query strings land in access logs
   if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

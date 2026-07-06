@@ -373,6 +373,11 @@ async function saveGameResult(score, points, game = "catcher") {
     await addNotification("🎮", `${game === "memory" ? "Memory" : "Catcher"}: ${score} pts, +${points} Play Points`);
   }
 
+  // Daily quests: playing a game counts toward game_1/game_2, and the score
+  // quest jumps straight to the best score this run (target e.g. 50).
+  await progressQuest("game");
+  if (score > 0) await progressQuest("score", score);
+
   await checkAchievements();
   return stats;
 }
@@ -501,7 +506,12 @@ async function progressQuest(category, amount = 1) {
 
   for (const q of data.quests) {
     if (q.claimed) continue;
-    if (q.category === category || (q.category === "combo" && ["chat", "feed", "play"].includes(category))) {
+    if (q.category === "combo" && ["chat", "feed", "play"].includes(category)) {
+      // Distinct-action combo: progress = how many DIFFERENT actions done today.
+      q.seen = Array.isArray(q.seen) ? q.seen : [];
+      if (!q.seen.includes(category)) q.seen.push(category);
+      q.progress = Math.min(q.target, q.seen.length);
+    } else if (q.category === category) {
       q.progress = Math.min(q.target, (q.progress || 0) + amount);
       if (q.progress >= q.target && !q.completed) {
         q.completed = true;
@@ -778,7 +788,10 @@ async function fetchPetInfo() {
 // ── HEARTBEAT ──
 // ══════════════════════════════════════
 
+// Persisted across MV3 service-worker restarts — an in-memory counter never
+// reached 10 minutes because the worker is killed every ~30s idle.
 let browsingMinutes = 0;
+const BROWSE_KEY = "petBrowseTicks";
 
 async function sendHeartbeat() {
   const config = await getConfig();
@@ -810,8 +823,11 @@ async function sendHeartbeat() {
 }
 
 async function trackBrowsing() {
-  browsingMinutes++;
-  if (browsingMinutes % 10 === 0) {
+  const st = await chrome.storage.local.get(BROWSE_KEY);
+  const ticks = ((st[BROWSE_KEY] || 0) + 1);
+  await chrome.storage.local.set({ [BROWSE_KEY]: ticks });
+  browsingMinutes = ticks;
+  if (ticks % 10 === 0) {
     await addPoints("browsing", 1, "10min active browsing");
   }
   await progressQuest("browse");

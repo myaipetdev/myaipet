@@ -23,9 +23,11 @@ import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
 import { callLLM } from "@/lib/llm/router";
 import { getPersona, buildPersonaContext } from "@/lib/services/persona";
+import { createMemoryManager } from "@/lib/petclaw/memory/persistent-memory";
 
 const GAP_MIN_MS = 45 * 60 * 1000;                 // don't interrupt an active session
 const CALLBACK_MIN_AGE_MS = 12 * 60 * 60 * 1000;   // a callback should be genuinely older, not "you just said this"
+const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;      // never reuse a stale "away about X" line for days
 
 function humanGap(ms: number): string {
   const h = Math.floor(ms / 3_600_000);
@@ -43,7 +45,8 @@ export async function GET(
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const rl = rateLimit(req, { key: "pet-greeting", limit: 20, windowMs: 60_000 });
+  // Tight limit: each cache-miss burns an LLM call; a returning owner needs ~1.
+  const rl = rateLimit(req, { key: "pet-greeting", limit: 6, windowMs: 60_000 });
   if (!rl.ok) return rl.response;
 
   const { petId } = await params;
@@ -67,11 +70,15 @@ export async function GET(
   }
 
   const pm = (pet.personality_modifiers as Record<string, any>) || {};
-  const cached = pm.proactive as { text?: string; at?: number } | undefined;
+  const cached = pm.proactive as { text?: string; at?: number; for?: number } | undefined;
   // Already greeted since the owner last interacted → reuse it (don't re-spend).
-  // Once they actually chat, last_interaction_at advances past `at`, so the next
-  // gap generates a fresh greeting.
-  if (cached?.text && typeof cached.at === "number" && cached.at > last) {
+  // Stamped with the `last` it was generated against + a 24h max age, so a
+  // reused line can't describe a stale "away about 1 hour" days later.
+  if (
+    cached?.text && typeof cached.at === "number" &&
+    cached.at > last && cached.for === last &&
+    now - cached.at < CACHE_MAX_AGE_MS
+  ) {
     return NextResponse.json({ greeting: cached.text, cached: true });
   }
 
@@ -118,11 +125,31 @@ Keep it to 1–2 short sentences. Sound genuinely glad they're back.`;
   }
   if (!text) return NextResponse.json({ greeting: null });
 
-  // Persist so re-opening before the owner replies reuses this line (cost guard).
-  await prisma.pet.update({
-    where: { id: pet.id },
-    data: { personality_modifiers: { ...pm, proactive: { text, at: now, memory: !!memory } } },
+  // Persist the cache TRANSACTIONALLY with a fresh in-transaction read of
+  // personality_modifiers, merging ONLY the `proactive` key. The snapshot read
+  // at the top of this handler is seconds stale after the LLM call — a whole-
+  // column overwrite from it could erase concurrently written memory-moat keys
+  // (persistent_memories / user_profile / learned_patterns). Mirrors the
+  // mood-portrait route's documented pattern.
+  await prisma.$transaction(async (tx) => {
+    const fresh = await tx.pet.findUnique({
+      where: { id: pet.id },
+      select: { personality_modifiers: true },
+    });
+    const mods = (fresh?.personality_modifiers as Record<string, any>) || {};
+    await tx.pet.update({
+      where: { id: pet.id },
+      data: { personality_modifiers: { ...mods, proactive: { text, at: now, for: last, memory: !!memory } } },
+    });
   }).catch(() => {});
+
+  // Log the outreach as a real pet-side turn in the conversation ledger — the
+  // flagship moment breaks if the user replies and the chat context has no
+  // record the pet ever said this (and the bubble would vanish on next load).
+  // Only on generation (never on cached reuse), so it can't double-log.
+  await createMemoryManager(pet.id)
+    .logMessage(text, "pet", "web", `web-${user.id}`)
+    .catch(() => {});
 
   return NextResponse.json({ greeting: text, basedOnMemory: !!memory });
 }

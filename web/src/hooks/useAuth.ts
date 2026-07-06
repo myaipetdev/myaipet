@@ -89,7 +89,7 @@ export function useAuth() {
       // users. Genuine on-chain-tx flows (e.g. adoption) keep their own
       // switch-to-chain logic where the gas is actually spent.
       const nonceRes = await api.auth.getNonce(address, SIWE_CHAIN_ID);
-      const signature = await signMessageAsync({ message: nonceRes.message });
+      const signature = await signMessageAsync({ account: address, message: nonceRes.message });
       const authRes = await api.auth.verify(nonceRes.message, signature);
 
       saveAuth(authRes.token, {

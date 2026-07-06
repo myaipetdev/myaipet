@@ -51,7 +51,7 @@ export default function SosFeedAndBuddy() {
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) toast(d?.error || "Couldn't help — try again", "error");
-      else toast(`You saved their streak  ·  +${d.reward_pts} pts`, "success");
+      else toast(`You saved their streak  ·  +${d.reward_pts} Savior pts (lifetime)`, "success");
       await load();
     } catch {
       toast("Something went wrong — try again.", "error");
@@ -137,7 +137,7 @@ export default function SosFeedAndBuddy() {
                   maxWidth: 280, margin: "0 auto", lineHeight: 1.5, fontFamily: "var(--ed-body)",
                 }}>
                   When someone's about to break a streak, their call for help shows up here.
-                  Help and earn <strong style={{ color: "#9A4E1E" }}>+20 pts</strong>.
+                  Help a stranger — earns <strong style={{ color: "#9A4E1E" }}>Streak Savior</strong> recognition (lifetime, not season rank).
                 </div>
               </div>
             )}

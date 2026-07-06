@@ -116,7 +116,7 @@ const BSCSCAN = "https://bscscan.com";
 // Single source of truth for the shipped extension version — must match
 // desktop-pet/manifest.json "version". Keeping the dashboard honest: it
 // previously advertised "v2.0" while the packaged extension was 2.2.x.
-const EXT_VERSION = "2.2.2";
+const EXT_VERSION = "2.2.3";
 
 const truncate = (s?: string | null, n = 4) => {
   if (!s) return "—";
@@ -835,8 +835,8 @@ function ChromeExtensionSection() {
           <div className="sov-2col" style={{ gap: 10, marginBottom: 24 }}>
             {[
               { icon: "paw", title: "Always Alive", desc: "Your pet runs in the background and sends push notifications." },
-              { icon: "medal", title: "Season Rewards", desc: "Earn loyalty points for browsing, chats, streaks, and evolution." },
-              { icon: "joystick", title: "Mini Games", desc: "Tap-to-feed, click-the-bug, and memory games built into the popup." },
+              { icon: "medal", title: "Play Points", desc: "Collect local play points for browsing, chats, streaks, and evolution — stored on your device, just for fun." },
+              { icon: "joystick", title: "Mini Games", desc: "Treat Catcher and Memory Match, built right into the popup." },
               { icon: "crystal-ball", title: "Context Aware", desc: "Pet reads the current page and reacts to what you're looking at." },
               { icon: "sparkling", title: "Evolution", desc: "6 stages from Baby → Legendary. Each stage unlocks new behaviors." },
               { icon: "heart", title: "Mood System", desc: "Pet gets hungry, tired, or excited based on your activity." },
@@ -928,7 +928,7 @@ function ChromeExtensionSection() {
               </div>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: 18, fontWeight: 800, color: "#F49B2A" }}>2,841</div>
-                <div style={{ fontSize: 9, color: "#9a8", fontFamily: "monospace" }}>Season pts</div>
+                <div style={{ fontSize: 9, color: "#9a8", fontFamily: "monospace" }}>Play pts (local)</div>
               </div>
             </div>
 
@@ -958,7 +958,7 @@ function ChromeExtensionSection() {
                 </div>
               </div>
               {[
-                { label: "Energy", val: 65, color: "#60a5fa" },
+                { label: "Energy", val: 65, color: "#3E8FE0" },
                 { label: "Hunger", val: 42, color: "#f0a062" },
                 { label: "Bond", val: 88, color: "#d4a24e" },
               ].map(({ label, val, color }) => (
@@ -1540,7 +1540,7 @@ export default function SovereigntyDashboard() {
               <div style={{ fontFamily: BODY, fontSize: 13, color: INK70, lineHeight: 1.7 }}>
                 Your pet&apos;s Soul — its 5-layer memory, persona, and identity — already lives in your
                 account and is fully yours today. The on-chain Soul NFT (which timestamps it to BSC and
-                unlocks inheritance) mints once the on-chain holding period ends. You can export your
+                unlocks inheritance) is paused until on-chain features resume — see /contracts. You can export your
                 complete memory ledger any time with <strong>Export SOUL Data</strong> below.
               </div>
             </Reveal>
@@ -1910,10 +1910,10 @@ export default function SovereigntyDashboard() {
                   color: MONO_CLR,
                 }}
               >
-                {memoryNfts.length} minted
+                {memoryNfts.length} preserved
               </span>
               <div
-                title="NFT minting launches on-chain at go-live"
+                title="On-chain minting is paused — memories are preserved off-chain with the pet (see /contracts)"
                 style={{
                   marginLeft: "auto",
                   padding: "9px 20px",
@@ -1947,7 +1947,7 @@ export default function SovereigntyDashboard() {
                 }}
               >
                 <div style={{ fontFamily: DISP, fontSize: 18, color: INK70, marginBottom: 8, fontWeight: 700 }}>
-                  No memories minted yet
+                  No memories preserved yet
                 </div>
                 <div style={{ fontFamily: BODY, fontSize: 14, color: MUTED, marginBottom: 20 }}>
                   Memory preservation is coming soon — own your pet&apos;s history

@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { base, bsc, mainnet } from "wagmi/chains";
 import { parseUnits } from "viem";
 import { CONTRACTS } from "@/lib/contracts";
 
 // Paid token address comes from the single on-chain config (CONTRACTS.usdt),
 // so a BSC→Base swap is an env change (NEXT_PUBLIC_USDT_CONTRACT), not a code edit.
 const USDT_ADDRESS = CONTRACTS.usdt as `0x${string}`;
+const targetChainId = CONTRACTS.chainId;
+const targetChain = targetChainId === base.id ? base : targetChainId === mainnet.id ? mainnet : bsc;
 const TRANSFER_ABI = [{
   name: "transfer",
   type: "function",
@@ -21,6 +24,7 @@ const TRANSFER_ABI = [{
 
 export function useDirectUsdtPay() {
   const { writeContractAsync, data: hash, isPending } = useWriteContract();
+  const { address } = useAccount();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
   const [error, setError] = useState<string | null>(null);
   const [treasury, setTreasury] = useState<`0x${string}` | "">(
@@ -47,6 +51,11 @@ export function useDirectUsdtPay() {
       setError(msg);
       return { error: msg };
     }
+    if (!address) {
+      const msg = "Wallet is not connected. Connect your wallet and try again.";
+      setError(msg);
+      return { error: msg };
+    }
     try {
       // BSC-USD / Base USDC both use the configured decimal count
       const amountWei = parseUnits(String(amountUsd), CONTRACTS.usdtDecimals);
@@ -55,6 +64,9 @@ export function useDirectUsdtPay() {
         abi: TRANSFER_ABI,
         functionName: "transfer",
         args: [treasury, amountWei],
+        account: address,
+        chain: targetChain,
+        chainId: targetChainId,
       });
       return { hash: tx };
     } catch (e: any) {

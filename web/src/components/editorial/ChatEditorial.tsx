@@ -48,9 +48,18 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
     }).catch(() => { if (alive) setMsgs([{ role: "pet", text: `Hi! I've been thinking about you. What's on your mind?` }]); })
     // Proactive recall — if you've been away, the pet reaches out FIRST, weaving in
     // a real memory. Appended as the newest message so it invites you to reply.
+    // Guards: skip if the user already sent something (their turn now), and
+    // REPLACE the canned placeholder instead of stacking two greetings.
     .finally(() => {
       api.pets.greeting(pid).then((g: any) => {
-        if (alive && g?.greeting) setMsgs((cur) => [...cur, { role: "pet", text: g.greeting, proactive: true }]);
+        if (!alive || !g?.greeting) return;
+        setMsgs((cur) => {
+          if (cur.some((m) => m.role === "user")) return cur; // user spoke first — don't interject
+          if (cur.length === 1 && cur[0].role === "pet" && !cur[0].proactive) {
+            return [{ role: "pet", text: g.greeting, proactive: true }]; // replace canned opener
+          }
+          return [...cur, { role: "pet", text: g.greeting, proactive: true }];
+        });
       }).catch(() => {});
     });
     return () => { alive = false; };
@@ -80,7 +89,7 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
   return (
     <div style={{ position: "relative", fontFamily: T.body, color: T.ink, paddingTop: 78, minHeight: "100vh" }}>
       <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
-      <style>{`@media (max-width: 880px) { .chat-grid { grid-template-columns: 1fr !important; } .chat-rail { order: -1; } }`}</style>
+      <style>{`@media (max-width: 880px) { .chat-grid { grid-template-columns: 1fr !important; } .chat-rail { order: -1; min-height: 0 !important; } .chat-rail img { max-height: 180px !important; width: auto !important; } }`}</style>
 
       <div style={{ position: "relative", zIndex: 2, maxWidth: 1120, margin: "0 auto", padding: "8px 24px 40px" }}>
         {pets && pets.length === 0 ? (
@@ -175,7 +184,7 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
                   onKeyDown={(e) => { if (e.key === "Enter") send(); }}
                   placeholder={busy ? `${active?.name || "…"} is thinking…` : `Message ${active?.name || "your pet"}…`}
                   disabled={busy || !active}
-                  style={{ flex: 1, background: T.inset, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "12px 15px", fontFamily: T.body, fontSize: 14, color: T.ink, outline: "none" }}
+                  style={{ flex: 1, background: T.inset, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "12px 15px", fontFamily: T.body, fontSize: 16, color: T.ink, outline: "none" }}
                 />
                 <button onClick={send} disabled={busy || !input.trim()} aria-label="Send" style={{
                   flexShrink: 0, width: 44, height: 44, borderRadius: 12, border: "none", cursor: busy || !input.trim() ? "default" : "pointer",

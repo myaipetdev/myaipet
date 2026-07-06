@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { awardPoints } from "@/lib/seasonRewards";
 import { SKILL_DB, DAILY_BATTLE_CAP, DAILY_EXP_CAP, getGrowthMultiplier } from "@/lib/skills";
 import { simulateBattle } from "@/lib/battleSim";
 import crypto from "crypto";
@@ -158,7 +157,14 @@ export async function POST(req: NextRequest) {
   ]);
 
   if (leveledUp) {
-    await awardPoints(user.id, pet.id, "level_up");
+    // COMPLIANCE: arena EXP is scaled by getGrowthMultiplier(USDT spent), so a
+    // level-up here can be spend-accelerated. Recognition points must not derive
+    // from paid actions ("never bought") — credit the NON-RANKING lifetime
+    // ledger instead of season_points.
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { total_points_earned: { increment: 50 } },
+    }).catch(() => {});
   }
 
   return NextResponse.json({

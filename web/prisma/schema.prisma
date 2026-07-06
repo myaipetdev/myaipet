@@ -614,6 +614,7 @@ model RewardRedemption {
   updated_at    DateTime @default(now()) @updatedAt
 
   @@index([user_id])
+  @@unique([user_id, reward_id])
   @@map("reward_redemptions")
 }
 

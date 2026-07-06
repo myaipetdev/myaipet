@@ -41,14 +41,14 @@ const STOP: Record<string, { label: string; tone: "ok" | "warn" | "err" }> = {
   planner_error: { label: "Planner failed", tone: "err" },
 };
 
-const INK = "#1a1a2e";
-const PURPLE = "#7c3aed";
-const SANS = "'Space Grotesk',sans-serif";
-const MONO = "'JetBrains Mono',monospace";
+const INK = "#211A12";
+const PURPLE = "#6B4FA0";
+const SANS = "var(--ed-body, sans-serif)";
+const MONO = "var(--ed-m, ui-monospace, monospace)";
 
 const TONE = {
-  ok: { fg: "#16a34a", bg: "rgba(22,163,74,0.1)", bd: "rgba(22,163,74,0.25)" },
-  warn: { fg: "#b45309", bg: "rgba(245,158,11,0.12)", bd: "rgba(245,158,11,0.3)" },
+  ok: { fg: "#5C8A4E", bg: "rgba(92,138,78,0.10)", bd: "rgba(92,138,78,0.25)" },
+  warn: { fg: "#9A4E1E", bg: "rgba(190,79,40,0.10)", bd: "rgba(190,79,40,0.3)" },
   err: { fg: "#dc2626", bg: "rgba(220,38,38,0.1)", bd: "rgba(220,38,38,0.25)" },
 } as const;
 
@@ -186,17 +186,17 @@ export default function AgentWorkbench() {
         <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.2em", color: PURPLE, fontWeight: 700, textTransform: "uppercase", marginBottom: 10 }}>
           Agent Workbench · powered by PetClaw
         </div>
-        <h1 style={{ fontFamily: SANS, fontSize: "clamp(26px,4vw,38px)", fontWeight: 800, color: INK, letterSpacing: "-0.025em", margin: "0 0 10px", lineHeight: 1.12 }}>
+        <h1 style={{ fontFamily: "var(--ed-disp, sans-serif)", fontSize: "clamp(26px,4vw,38px)", fontWeight: 800, color: INK, letterSpacing: "-0.025em", margin: "0 0 10px", lineHeight: 1.12 }}>
           Give your pet a goal. Watch it work.
         </h1>
-        <p style={{ fontFamily: SANS, fontSize: 16, color: "rgba(26,26,46,0.6)", maxWidth: 620, margin: 0, lineHeight: 1.6 }}>
+        <p style={{ fontFamily: SANS, fontSize: 16, color: "rgba(33,26,18,0.6)", maxWidth: 620, margin: 0, lineHeight: 1.6 }}>
           Not a single prompt — a real loop. Your pet <b>plans</b> each step, runs a real
           <b> skill</b>, <b>recalls</b> what it knows, <b>observes</b> the result, and reports back.
         </p>
 
         {/* Honest scope note: what the loop runs vs. what it can only point to. */}
-        <div style={{ marginTop: 14, padding: "10px 13px", borderRadius: 10, background: "rgba(26,26,46,0.035)", border: "1px solid rgba(0,0,0,0.07)", fontFamily: SANS, fontSize: 13, color: "rgba(26,26,46,0.6)", lineHeight: 1.55, maxWidth: 620 }}>
-          <span style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.1em", color: "rgba(26,26,46,0.45)", fontWeight: 700 }}>HOW IT CHAINS</span>
+        <div style={{ marginTop: 14, padding: "10px 13px", borderRadius: 10, background: "rgba(33,26,18,0.035)", border: "1px solid rgba(0,0,0,0.07)", fontFamily: SANS, fontSize: 13, color: "rgba(33,26,18,0.6)", lineHeight: 1.55, maxWidth: 620 }}>
+          <span style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.1em", color: "rgba(33,26,18,0.45)", fontWeight: 700 }}>HOW IT CHAINS</span>
           <div style={{ marginTop: 4 }}>
             The loop runs the <b>5 in-loop skills</b> end-to-end and reasons over their output.
             The other <b>13 skills run on their own REST endpoints</b> — the planner can <i>locate</i> and
@@ -207,8 +207,8 @@ export default function AgentWorkbench() {
 
       {/* ── Persistent-session strip ── */}
       {restored && result && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", borderRadius: 12, background: "rgba(124,58,237,0.05)", border: "1px solid rgba(124,58,237,0.18)", marginBottom: 18, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(26,26,46,0.65)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", borderRadius: 12, background: "rgba(107,79,160,0.05)", border: "1px solid rgba(107,79,160,0.18)", marginBottom: 18, flexWrap: "wrap" }}>
+          <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(33,26,18,0.65)" }}>
             ⏎ Resumed your last run · {relTime(result.at)}
           </span>
           <button onClick={clearSession} style={ghostBtn}>Clear session</button>
@@ -239,7 +239,7 @@ export default function AgentWorkbench() {
           placeholder="e.g. Check my mood from our recent chats and suggest one thing for today"
           rows={3}
           maxLength={600}
-          style={{ width: "100%", boxSizing: "border-box", fontFamily: SANS, fontSize: 15, lineHeight: 1.5, color: INK, padding: "12px 14px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.12)", outline: "none", resize: "vertical", background: "white" }}
+          style={{ width: "100%", boxSizing: "border-box", fontFamily: SANS, fontSize: 15, lineHeight: 1.5, color: INK, padding: "12px 14px", borderRadius: 12, border: "1px solid rgba(33,26,18,0.13)", outline: "none", resize: "vertical", background: "#FBF6EC" }}
         />
 
         {/* Example seeds */}
@@ -258,12 +258,12 @@ export default function AgentWorkbench() {
             onChange={(e) => setMaxSteps(Number(e.target.value))}
             style={{ accentColor: PURPLE, flex: 1, minWidth: 120, maxWidth: 240 }} />
           <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: INK }}>{maxSteps}</span>
-          <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(26,26,46,0.45)" }}>max packages</span>
+          <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(33,26,18,0.45)" }}>max packages</span>
         </div>
 
         {/* Preflight gate */}
         <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.06)" }}>
-          <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.12em", color: "rgba(26,26,46,0.4)", fontWeight: 700, marginBottom: 8 }}>PREFLIGHT</div>
+          <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.12em", color: "rgba(33,26,18,0.4)", fontWeight: 700, marginBottom: 8 }}>PREFLIGHT</div>
           <Check ok={goalOk} label="Goal is at least 3 characters" />
           <Check ok={petId != null} label="A pet is selected to run it" />
           <Check ok neutral label={`Costs ${COST} credits · refunded if no real work runs`} />
@@ -282,8 +282,8 @@ export default function AgentWorkbench() {
             marginTop: 16, width: "100%", padding: "13px 16px", borderRadius: 12, border: "none",
             fontFamily: SANS, fontSize: 15, fontWeight: 800, letterSpacing: "-0.01em",
             cursor: ready ? "pointer" : "not-allowed",
-            color: "white",
-            background: ready ? "linear-gradient(135deg,#7c3aed,#9333ea)" : "rgba(26,26,46,0.18)",
+            color: "#FFF8EE",
+            background: ready ? "linear-gradient(180deg,#F49B2A,#E27D0C)" : "rgba(33,26,18,0.18)",
             transition: "background 180ms ease, transform 120ms ease",
           }}
         >
@@ -293,7 +293,7 @@ export default function AgentWorkbench() {
 
       {/* ── Result: work packages ── */}
       {running && !result && (
-        <div style={{ ...card, marginTop: 18, textAlign: "center", color: "rgba(26,26,46,0.55)", fontFamily: SANS }}>
+        <div style={{ ...card, marginTop: 18, textAlign: "center", color: "rgba(33,26,18,0.55)", fontFamily: SANS }}>
           <div style={{ marginBottom: 8 }}><Icon name="compass" size={30} /></div>
           {petName} is planning the first step…
         </div>
@@ -313,7 +313,7 @@ export default function AgentWorkbench() {
                 </span>
               )}
               {typeof result.creditsRemaining === "number" && (
-                <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(26,26,46,0.45)" }}>
+                <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(33,26,18,0.45)" }}>
                   {result.creditsRemaining} credits left
                 </span>
               )}
@@ -326,14 +326,14 @@ export default function AgentWorkbench() {
           </div>
 
           {/* Goal echo */}
-          <div style={{ ...card, padding: "12px 16px", marginBottom: 12, background: "rgba(124,58,237,0.04)", border: "1px solid rgba(124,58,237,0.16)" }}>
+          <div style={{ ...card, padding: "12px 16px", marginBottom: 12, background: "rgba(107,79,160,0.04)", border: "1px solid rgba(107,79,160,0.16)" }}>
             <span style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.12em", color: PURPLE, fontWeight: 700 }}>GOAL</span>
             <div style={{ fontFamily: SANS, fontSize: 14.5, color: INK, marginTop: 4 }}>{result.goal}</div>
           </div>
 
           {/* Packages */}
           {workPackages.length === 0 && (
-            <div style={{ ...card, color: "rgba(26,26,46,0.55)", fontFamily: SANS, fontSize: 14 }}>
+            <div style={{ ...card, color: "rgba(33,26,18,0.55)", fontFamily: SANS, fontSize: 14 }}>
               The planner finished without running a skill — try a more action-oriented goal.
             </div>
           )}
@@ -346,7 +346,7 @@ export default function AgentWorkbench() {
             return (
               <div key={i} style={{ ...card, padding: 0, marginBottom: 10, overflow: "hidden" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px" }}>
-                  <div style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 8, background: "rgba(124,58,237,0.1)", color: PURPLE, fontFamily: MONO, fontSize: 13, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 8, background: "rgba(107,79,160,0.1)", color: PURPLE, fontFamily: MONO, fontSize: 13, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {i + 1}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -358,19 +358,19 @@ export default function AgentWorkbench() {
                         {s.ok ? (endpointOnly ? "→ located" : "✓ ran in-loop") : "✕ failed"}
                       </span>
                       {endpointOnly && (
-                        <span title="This skill runs on its own REST endpoint. The loop located it and returned a pointer — it did not execute it or chain its result." style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "2px 8px", borderRadius: 6, color: "rgba(26,26,46,0.55)", background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.1)" }}>
+                        <span title="This skill runs on its own REST endpoint. The loop located it and returned a pointer — it did not execute it or chain its result." style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "2px 8px", borderRadius: 6, color: "rgba(33,26,18,0.55)", background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.1)" }}>
                         endpoint-only · pointer
                         </span>
                       )}
                     </div>
-                    <div style={{ fontFamily: SANS, fontSize: 14, color: "rgba(26,26,46,0.78)", lineHeight: 1.5 }}>
+                    <div style={{ fontFamily: SANS, fontSize: 14, color: "rgba(33,26,18,0.78)", lineHeight: 1.5 }}>
                       {s.thought || "(no plan recorded)"}
                     </div>
                     <button onClick={() => setOpen((o) => ({ ...o, [i]: !o[i] }))} style={{ ...ghostBtn, marginTop: 8 }}>
                       {isOpen ? "Hide observation" : "Show observation"}
                     </button>
                     {isOpen && (
-                      <pre style={{ marginTop: 8, padding: "10px 12px", borderRadius: 10, background: "#0f1021", color: "#d6d9f0", fontFamily: MONO, fontSize: 13, lineHeight: 1.5, overflow: "auto", maxHeight: 280, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                      <pre style={{ marginTop: 8, padding: "10px 12px", borderRadius: 10, background: "#1E1710", color: "#E8C77E", fontFamily: MONO, fontSize: 13, lineHeight: 1.5, overflow: "auto", maxHeight: 280, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                         {pretty(s.output)}
                       </pre>
                     )}
@@ -382,8 +382,8 @@ export default function AgentWorkbench() {
 
           {/* Synthesis */}
           {result.answer && (
-            <div style={{ ...card, marginTop: 14, background: "linear-gradient(135deg,rgba(245,158,11,0.06),rgba(124,58,237,0.05))", border: "1px solid rgba(245,158,11,0.22)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: MONO, fontSize: 13, letterSpacing: "0.12em", color: "#b45309", fontWeight: 700, marginBottom: 8 }}>
+            <div style={{ ...card, marginTop: 14, background: "linear-gradient(135deg,rgba(190,79,40,0.06),rgba(107,79,160,0.05))", border: "1px solid rgba(190,79,40,0.22)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: MONO, fontSize: 13, letterSpacing: "0.12em", color: "#9A4E1E", fontWeight: 700, marginBottom: 8 }}>
                 <Icon name="scroll" size={14} /> {petName.toUpperCase()} REPORTS BACK
               </div>
               <div style={{ fontFamily: SANS, fontSize: 15.5, color: INK, lineHeight: 1.62, whiteSpace: "pre-wrap" }}>
@@ -396,7 +396,7 @@ export default function AgentWorkbench() {
 
       {/* Empty / no-pet state */}
       {!loadingPets && pets.length === 0 && (
-        <div style={{ ...card, marginTop: 18, textAlign: "center", color: "rgba(26,26,46,0.6)", fontFamily: SANS }}>
+        <div style={{ ...card, marginTop: 18, textAlign: "center", color: "rgba(33,26,18,0.6)", fontFamily: SANS }}>
           Adopt a pet first — then come back and give it a goal.
         </div>
       )}
@@ -406,9 +406,9 @@ export default function AgentWorkbench() {
 
 // ── Preflight check row ──
 function Check({ ok, label, neutral }: { ok: boolean; label: string; neutral?: boolean }) {
-  const color = neutral ? "rgba(26,26,46,0.5)" : ok ? "#16a34a" : "rgba(26,26,46,0.35)";
+  const color = neutral ? "rgba(33,26,18,0.5)" : ok ? "#5C8A4E" : "rgba(33,26,18,0.35)";
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: SANS, fontSize: 13, color: "rgba(26,26,46,0.7)", lineHeight: 1.7 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: SANS, fontSize: 13, color: "rgba(33,26,18,0.7)", lineHeight: 1.7 }}>
       <span style={{ color, fontWeight: 800, width: 14, textAlign: "center" }}>{neutral ? "•" : ok ? "✓" : "○"}</span>
       {label}
     </div>
@@ -416,10 +416,10 @@ function Check({ ok, label, neutral }: { ok: boolean; label: string; neutral?: b
 }
 
 // ── shared styles ──
-const card: React.CSSProperties = { background: "white", borderRadius: 16, padding: "20px", border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" };
-const fieldLabel: React.CSSProperties = { display: "block", fontFamily: MONO, fontSize: 13, letterSpacing: "0.08em", color: "rgba(26,26,46,0.5)", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" };
+const card: React.CSSProperties = { background: "#FBF6EC", borderRadius: 16, padding: "20px", border: "1px solid rgba(33,26,18,0.13)", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" };
+const fieldLabel: React.CSSProperties = { display: "block", fontFamily: MONO, fontSize: 13, letterSpacing: "0.08em", color: "rgba(33,26,18,0.5)", fontWeight: 700, marginBottom: 8, textTransform: "uppercase" };
 const ghostBtn: React.CSSProperties = { background: "transparent", border: "none", color: PURPLE, fontFamily: MONO, fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0 };
-const chip: React.CSSProperties = { fontFamily: SANS, fontSize: 13, fontWeight: 600, padding: "6px 12px", borderRadius: 9, border: "1px solid rgba(0,0,0,0.1)", background: "white", color: "rgba(26,26,46,0.6)", cursor: "pointer" };
-const chipActive: React.CSSProperties = { background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.3)", color: PURPLE, fontWeight: 800 };
-const seedChip: React.CSSProperties = { fontFamily: SANS, fontSize: 13, padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", color: "rgba(26,26,46,0.55)", cursor: "pointer" };
-const recoverBtn: React.CSSProperties = { fontFamily: SANS, fontSize: 13, fontWeight: 700, padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(245,158,11,0.35)", background: "rgba(245,158,11,0.1)", color: "#b45309", cursor: "pointer" };
+const chip: React.CSSProperties = { fontFamily: SANS, fontSize: 13, fontWeight: 600, padding: "6px 12px", borderRadius: 9, border: "1px solid rgba(33,26,18,0.13)", background: "#FBF6EC", color: "rgba(33,26,18,0.6)", cursor: "pointer" };
+const chipActive: React.CSSProperties = { background: "rgba(107,79,160,0.1)", border: "1px solid rgba(107,79,160,0.3)", color: PURPLE, fontWeight: 800 };
+const seedChip: React.CSSProperties = { fontFamily: SANS, fontSize: 13, padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", color: "rgba(33,26,18,0.55)", cursor: "pointer" };
+const recoverBtn: React.CSSProperties = { fontFamily: SANS, fontSize: 13, fontWeight: 700, padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(190,79,40,0.35)", background: "rgba(190,79,40,0.10)", color: "#9A4E1E", cursor: "pointer" };

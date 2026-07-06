@@ -69,18 +69,22 @@ export async function POST(req: NextRequest) {
       if (already) return NextResponse.json({ error: "Already learned" }, { status: 400 });
 
       const price = skillDef.price || 0;
-      if (price > 0 && user.credits < price) {
+      // Guarded decrement (audit H17): balance check + debit atomically so
+      // concurrent learns can't race the balance negative.
+      const learned = await prisma.$transaction(async (tx) => {
+        if (price > 0) {
+          const dec = await tx.user.updateMany({
+            where: { id: user.id, credits: { gte: price } },
+            data: { credits: { decrement: price } },
+          });
+          if (dec.count === 0) return false;
+        }
+        await tx.petSkill.create({ data: { pet_id, skill_key, level: 1, slot: null } });
+        return true;
+      });
+      if (!learned) {
         return NextResponse.json({ error: "Insufficient credits", required: price }, { status: 400 });
       }
-
-      await prisma.$transaction([
-        ...(price > 0
-          ? [prisma.user.update({ where: { id: user.id }, data: { credits: { decrement: price } } })]
-          : []),
-        prisma.petSkill.create({
-          data: { pet_id, skill_key, level: 1, slot: null },
-        }),
-      ]);
 
       return NextResponse.json({ learned: skill_key, credits_spent: price });
     }
@@ -121,14 +125,19 @@ export async function POST(req: NextRequest) {
       }
 
       const cost = getSkillUpgradeCost(skill.level, skillDef.rarity);
-      if (user.credits < cost) {
+      // Guarded decrement (audit H17) — same pattern as "learn".
+      const upgraded = await prisma.$transaction(async (tx) => {
+        const dec = await tx.user.updateMany({
+          where: { id: user.id, credits: { gte: cost } },
+          data: { credits: { decrement: cost } },
+        });
+        if (dec.count === 0) return false;
+        await tx.petSkill.update({ where: { id: skill.id }, data: { level: { increment: 1 } } });
+        return true;
+      });
+      if (!upgraded) {
         return NextResponse.json({ error: "Insufficient credits", required: cost }, { status: 400 });
       }
-
-      await prisma.$transaction([
-        prisma.user.update({ where: { id: user.id }, data: { credits: { decrement: cost } } }),
-        prisma.petSkill.update({ where: { id: skill.id }, data: { level: { increment: 1 } } }),
-      ]);
 
       return NextResponse.json({ upgraded: skill_key, new_level: skill.level + 1, credits_spent: cost });
     }

@@ -11,21 +11,21 @@ export default function TermsPage() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#faf7f2",
-      fontFamily: "'Space Grotesk', sans-serif",
-      color: "#1a1a2e",
+      background: "#ECE4D4",
+      fontFamily: "var(--ed-body, sans-serif)",
+      color: "#211A12",
       padding: "80px 24px",
     }}>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
         <a href="/" style={{
           display: "inline-block", marginBottom: 24,
-          fontSize: 13, color: "rgba(26,26,46,0.55)", textDecoration: "none",
+          fontSize: 13, color: "rgba(33,26,18,0.55)", textDecoration: "none",
         }}>← Back to landing</a>
 
         <h1 style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 6 }}>
           Terms of Service
         </h1>
-        <div style={{ fontSize: 13, color: "rgba(26,26,46,0.65)", marginBottom: 36 }}>
+        <div style={{ fontSize: 13, color: "rgba(33,26,18,0.65)", marginBottom: 36 }}>
           Last updated: {LAST_UPDATED}
         </div>
 
@@ -109,8 +109,8 @@ export default function TermsPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section style={{ marginBottom: 28 }}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: "#1a1a2e" }}>{title}</h2>
-      <p style={{ fontSize: 15, lineHeight: 1.65, color: "rgba(26,26,46,0.75)" }}>{children}</p>
+      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: "#211A12" }}>{title}</h2>
+      <p style={{ fontSize: 15, lineHeight: 1.65, color: "rgba(33,26,18,0.75)" }}>{children}</p>
     </section>
   );
 }

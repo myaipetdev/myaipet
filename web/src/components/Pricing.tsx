@@ -8,13 +8,15 @@ import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 import Reveal, { MaskedTitle } from "@/components/Reveal";
 
+// Matches the REAL server grant map (seasonRewards.ts + checkin ladder) — never
+// advertise a point value the server doesn't credit.
 const EARN_METHODS = [
-  { icon: "paw", label: "Daily check-in", desc: "Show up. Your pet remembers.", reward: "+10 pts" },
-  { icon: "film-reel", label: "Create together", desc: "AI image & video starring your pet", reward: "+5 pts" },
-  { icon: "chat", label: "Share moments", desc: "Like, comment, signal-boost", reward: "+2 pts" },
-  { icon: "heart", label: "Build the bond", desc: "Talk, feed, walk, train", reward: "+1–3 pts" },
-  { icon: "crystal-ball", label: "Evolution", desc: "Each stage unlocks new behavior", reward: "+200 pts/evolution" },
-  { icon: "gift", label: "Invite a friend", desc: "Bring someone into the ecosystem", reward: "+100 pts" },
+  { icon: "paw", label: "Daily check-in", desc: "Show up. Your pet remembers.", reward: "+5–50 pts" },
+  { icon: "film-reel", label: "Create together", desc: "AI image & video starring your pet", reward: "+10–20 pts" },
+  { icon: "chat", label: "Share moments", desc: "Like, comment, signal-boost", reward: "+1–3 pts" },
+  { icon: "heart", label: "Build the bond", desc: "Talk, feed, walk, train", reward: "+5 pts" },
+  { icon: "crystal-ball", label: "Level up", desc: "Raising well levels your pet", reward: "+50 pts" },
+  { icon: "trophy", label: "Play & compete", desc: "Card duels, catches, World Cup", reward: "+5–30 pts" },
 ];
 
 const BSC_CHAIN_ID = 56;
@@ -37,7 +39,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
     // Kept at the server's lower grants on purpose to stay margin-positive over
     // Grok generation costs.
     { name: "Explorer", key: "starter", cookies: 100, price: 5, usdtPrice: "5 USDT", pop: false, desc: "Try the ecosystem", emoji: "grass" },
-    { name: "Companion", key: "creator", cookies: 500, price: 20, usdtPrice: "20 USDT", pop: true, desc: "Full raise & create", emoji: "paw" },
+    { name: "Creator", key: "creator", cookies: 500, price: 20, usdtPrice: "20 USDT", pop: true, desc: "Full raise & create", emoji: "paw" },
     { name: "Breeder", key: "pro", cookies: 2000, price: 50, usdtPrice: "50 USDT", pop: false, desc: "Power user tier", emoji: "crown" },
   ];
 

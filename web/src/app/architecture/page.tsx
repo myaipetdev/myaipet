@@ -9,21 +9,21 @@ export default function ArchitecturePage() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#faf7f2",
-      fontFamily: "'Space Grotesk', sans-serif",
-      color: "#1a1a2e",
+      background: "#ECE4D4",
+      fontFamily: "var(--ed-body, sans-serif)",
+      color: "#211A12",
       padding: "80px 24px",
     }}>
       <div style={{ maxWidth: 880, margin: "0 auto" }}>
         <a href="/" style={{
           display: "inline-block", marginBottom: 24,
-          fontSize: 13, color: "rgba(26,26,46,0.55)", textDecoration: "none",
+          fontSize: 13, color: "rgba(33,26,18,0.55)", textDecoration: "none",
         }}>← Back to landing</a>
 
         <h1 style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 6 }}>
           Memory Architecture
         </h1>
-        <p style={{ fontSize: 15, color: "rgba(26,26,46,0.65)", marginBottom: 36, lineHeight: 1.6 }}>
+        <p style={{ fontSize: 15, color: "rgba(33,26,18,0.65)", marginBottom: 36, lineHeight: 1.6 }}>
           PetClaw memory is not a single vector store. It&apos;s a 5-layer system inspired by how
           modern coding agents organize context — agent-curated, human-readable,
           and exportable.
@@ -77,13 +77,13 @@ export default function ArchitecturePage() {
         <h2 style={{ fontSize: 22, fontWeight: 800, marginTop: 40, marginBottom: 14 }}>
           Why Not a Single Vector Store?
         </h2>
-        <ul style={{ fontSize: 14, lineHeight: 1.85, color: "rgba(26,26,46,0.75)", paddingLeft: 18 }}>
+        <ul style={{ fontSize: 14, lineHeight: 1.85, color: "rgba(33,26,18,0.75)", paddingLeft: 18 }}>
           <li><strong>Auditability.</strong> The owner can read MEMORY.md and see exactly what the pet remembers. Vector blobs are opaque.</li>
           <li><strong>Portability.</strong> SOUL Export ships the memory as a single JSON file the next runtime can load — no embedding format lock-in.</li>
           <li><strong>Sovereignty.</strong> &quot;Delete with proof&quot; means a SHA-256 of the deleted contents — that requires a deterministic textual representation.</li>
           <li><strong>Cross-platform consistency.</strong> The same MEMORY.md serves Chrome ext, Telegram, web — without re-embedding per surface.</li>
         </ul>
-        <p style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", marginTop: 14, lineHeight: 1.65 }}>
+        <p style={{ fontSize: 13, color: "rgba(33,26,18,0.55)", marginTop: 14, lineHeight: 1.65 }}>
           Embedding-based recall is on the roadmap as an <em>optional</em> layer 6 for very long
           histories — but never as the primary memory. The primary memory will always be readable
           markdown the owner can inspect.
@@ -103,14 +103,14 @@ export default function ArchitecturePage() {
 
         <div style={{
           marginTop: 32, padding: "16px 20px", borderRadius: 14,
-          background: "rgba(26,26,46,0.04)", border: "1px solid rgba(26,26,46,0.08)",
-          fontSize: 13, color: "rgba(26,26,46,0.6)", lineHeight: 1.65,
+          background: "rgba(33,26,18,0.04)", border: "1px solid rgba(33,26,18,0.08)",
+          fontSize: 13, color: "rgba(33,26,18,0.6)", lineHeight: 1.65,
         }}>
           Public API: <code style={{ fontSize: 13 }}>/api/petclaw/export</code>{" · "}
           <code style={{ fontSize: 13 }}>/api/petclaw/import</code>{" · "}
           <code style={{ fontSize: 13 }}>/api/petclaw/delete</code>{" · "}
           <code style={{ fontSize: 13 }}>/api/petclaw/consent</code>{" · "}
-          full reference at <a href="/api-docs" style={{ color: "#b45309" }}>/api-docs</a>.
+          full reference at <a href="/api-docs" style={{ color: "#9A4E1E" }}>/api-docs</a>.
         </div>
       </div>
     </div>
@@ -122,11 +122,11 @@ function Layer({ n, title, tag, desc }: { n: number; title: string; tag: string;
     <div style={{
       display: "grid", gridTemplateColumns: "44px 1fr", gap: 18,
       padding: 18, borderRadius: 14, marginBottom: 12,
-      background: "white", border: "1px solid rgba(0,0,0,0.06)",
+      background: "#FBF6EC", border: "1px solid rgba(33,26,18,0.13)",
     }}>
       <div style={{
         width: 44, height: 44, borderRadius: 10,
-        background: "linear-gradient(135deg, #fbbf24, #f59e0b)", color: "white",
+        background: "linear-gradient(135deg, #BE4F28, #9A4E1E)", color: "#FFF8EE",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 20, fontWeight: 800,
       }}>{n}</div>
@@ -134,10 +134,10 @@ function Layer({ n, title, tag, desc }: { n: number; title: string; tag: string;
         <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{title}</div>
         <div style={{
           display: "inline-block", fontSize: 13, padding: "2px 8px", borderRadius: 6,
-          background: "rgba(245,158,11,0.1)", color: "#92400e",
-          fontFamily: "monospace", marginBottom: 8,
+          background: "rgba(190,79,40,0.10)", color: "#9A4E1E",
+          fontFamily: "var(--ed-m, ui-monospace, monospace)", marginBottom: 8,
         }}>{tag}</div>
-        <div style={{ fontSize: 13, lineHeight: 1.65, color: "rgba(26,26,46,0.7)" }}>{desc}</div>
+        <div style={{ fontSize: 13, lineHeight: 1.65, color: "rgba(33,26,18,0.7)" }}>{desc}</div>
       </div>
     </div>
   );
@@ -145,9 +145,9 @@ function Layer({ n, title, tag, desc }: { n: number; title: string; tag: string;
 
 function Op({ title, desc }: { title: string; desc: string }) {
   return (
-    <div style={{ marginBottom: 10, padding: "12px 16px", borderRadius: 10, background: "white", border: "1px solid rgba(0,0,0,0.05)" }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: "#b45309", marginBottom: 3 }}>{title}</div>
-      <div style={{ fontSize: 13, color: "rgba(26,26,46,0.65)", lineHeight: 1.6 }}>{desc}</div>
+    <div style={{ marginBottom: 10, padding: "12px 16px", borderRadius: 10, background: "#FBF6EC", border: "1px solid rgba(33,26,18,0.13)" }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "#9A4E1E", marginBottom: 3 }}>{title}</div>
+      <div style={{ fontSize: 13, color: "rgba(33,26,18,0.65)", lineHeight: 1.6 }}>{desc}</div>
     </div>
   );
 }

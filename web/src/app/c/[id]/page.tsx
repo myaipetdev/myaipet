@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { isPrivateAutoGen } from "@/lib/publicFeed";
 
 // Public, wallet-gate-free share page for a single community creation.
 // Shares from the Community gallery deep-link here (app.myaipet.ai/c/<id>) so a
@@ -55,6 +56,9 @@ async function getCreation(idRaw: string) {
     });
     if (!g || g.status !== "completed") return null;
     if (!g.photo_path && !g.video_path) return null;
+    // Privacy: daydream auto-gens carry the pet's private insight in the
+    // prompt — not publicly shareable (see lib/publicFeed.ts).
+    if (await isPrivateAutoGen(g.id)) return null;
     return g;
   } catch {
     return null;

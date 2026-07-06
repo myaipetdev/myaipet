@@ -1,12 +1,14 @@
 "use client";
 
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { base, bsc, mainnet } from "wagmi/chains";
 import { parseEther, formatEther } from "viem";
 import { CONTRACTS, PETShopABI, PETTokenABI, PetaGenTrackerABI, ERC20_ABI } from "@/lib/contracts";
 
 // Single source of truth for the target chain (BSC today → Base via
 // NEXT_PUBLIC_CHAIN_ID). Mirrored server-side in lib/onchain.ts.
 const targetChainId = CONTRACTS.chainId;
+const targetChain = targetChainId === base.id ? base : targetChainId === mainnet.id ? mainnet : bsc;
 
 // ── Read $PET balance ──
 export function usePETBalance(address: `0x${string}` | undefined) {
@@ -58,14 +60,18 @@ export function useTrackerStats() {
 // ── Write: Approve USDT ──
 export function useApproveUSDT() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { address } = useAccount();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const approve = (amount: bigint) => {
+    if (!address) return;
     writeContract({
       address: CONTRACTS.usdt as `0x${string}`,
       abi: ERC20_ABI,
       functionName: "approve",
       args: [CONTRACTS.petShop as `0x${string}`, amount],
+      account: address,
+      chain: targetChain,
       chainId: targetChainId,
     });
   };
@@ -76,14 +82,18 @@ export function useApproveUSDT() {
 // ── Write: Purchase PET ──
 export function usePurchasePET() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { address } = useAccount();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const purchase = (tierKey: string, expectedPrice: bigint, expectedAmount: bigint) => {
+    if (!address) return;
     writeContract({
       address: CONTRACTS.petShop as `0x${string}`,
       abi: PETShopABI,
       functionName: "purchase",
       args: [tierKey, expectedPrice, expectedAmount],
+      account: address,
+      chain: targetChain,
       chainId: targetChainId,
     });
   };

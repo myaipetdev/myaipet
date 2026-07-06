@@ -93,13 +93,19 @@ RULES:
       return NextResponse.json({ error: "AI output too short" }, { status: 502 });
     }
 
-    // Debit + persist atomically
+    // Debit + persist atomically. Guarded decrement (audit H17): the early
+    // balance check above is advisory only — concurrent requests could both
+    // pass it, so the debit itself re-checks the balance atomically.
     const friendship = Math.max(-30, Math.min(50, Math.round(parsed.friendship || 0)));
     const vibe = String(parsed.vibe || "playful").slice(0, 40);
 
-    const [, row] = await prisma.$transaction([
-      prisma.user.update({ where: { id: user.id }, data: { credits: { decrement: COST_CREDITS } } }),
-      prisma.petDate.create({
+    const row = await prisma.$transaction(async (tx) => {
+      const dec = await tx.user.updateMany({
+        where: { id: user.id, credits: { gte: COST_CREDITS } },
+        data: { credits: { decrement: COST_CREDITS } },
+      });
+      if (dec.count === 0) return null;
+      return tx.petDate.create({
         data: {
           pet_a_id: mine.id,
           pet_b_id: theirs.id,
@@ -107,8 +113,11 @@ RULES:
           log: JSON.stringify(parsed.log),
           vibe, friendship,
         },
-      }),
-    ]);
+      });
+    });
+    if (!row) {
+      return NextResponse.json({ error: "Not enough credits", needed: COST_CREDITS }, { status: 402 });
+    }
 
     return NextResponse.json({
       ok: true, id: row.id,

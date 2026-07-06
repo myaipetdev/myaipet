@@ -77,21 +77,21 @@ export default function ExpressionPack({ pet, petId, moodPortraits, onChange }: 
   };
 
   return (
-    <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 14, background: "linear-gradient(135deg, rgba(96,165,250,0.06), rgba(168,85,247,0.05))", border: "1px solid rgba(96,165,250,0.18)" }}>
+    <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 14, background: "linear-gradient(135deg, rgba(62,143,224,0.06), rgba(158,114,232,0.05))", border: "1px solid rgba(62,143,224,0.18)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-        <span style={{ fontSize: 13, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, color: "#2563eb", letterSpacing: "0.02em", display: "inline-flex", alignItems: "center", gap: 5 }}>
+        <span style={{ fontSize: 13, fontFamily: "var(--ed-body, sans-serif)", fontWeight: 800, color: "#3E8FE0", letterSpacing: "0.02em", display: "inline-flex", alignItems: "center", gap: 5 }}>
           <Icon name="sparkling" size={14} /> Expression Pack
         </span>
-        <span style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.4)" }}>
+        <span style={{ fontSize: 13, fontFamily: "var(--ed-m, ui-monospace, monospace)", color: "rgba(33,26,18,0.4)" }}>
           {have.length}/{EXPRESSION_KEYS.length}
         </span>
       </div>
-      <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, color: "rgba(26,26,46,0.55)", marginBottom: 12 }}>
+      <div style={{ fontFamily: "var(--ed-body, sans-serif)", fontSize: 13, color: "rgba(33,26,18,0.55)", marginBottom: 12 }}>
         Generate real faces from {pet.name}&apos;s photo — the portrait then changes expression with their mood.
       </div>
 
       {!hasAvatar ? (
-        <div style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, color: "#b45309" }}>
+        <div style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(190,79,40,0.10)", border: "1px solid rgba(190,79,40,0.2)", fontFamily: "var(--ed-body, sans-serif)", fontSize: 13, color: "#9A4E1E" }}>
           Set {pet.name}&apos;s photo first (generate one in Studio, then ⭐ Set as avatar) — it&apos;s the anchor for every expression.
         </div>
       ) : (
@@ -105,7 +105,7 @@ export default function ExpressionPack({ pet, petId, moodPortraits, onChange }: 
                 <div key={k} style={{ textAlign: "center" }}>
                   <div className={thisBusy ? "studio-pulse" : undefined} style={{
                     aspectRatio: "1/1", borderRadius: 11, overflow: "hidden", position: "relative",
-                    border: `1px solid ${url ? "rgba(96,165,250,0.4)" : "rgba(0,0,0,0.07)"}`,
+                    border: `1px solid ${url ? "rgba(62,143,224,0.4)" : "rgba(0,0,0,0.07)"}`,
                     background: url ? `center/cover no-repeat url(${url})` : "rgba(0,0,0,0.03)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
@@ -119,7 +119,7 @@ export default function ExpressionPack({ pet, petId, moodPortraits, onChange }: 
                       }}>✕</button>
                     )}
                   </div>
-                  <div style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.55)", marginTop: 3 }}>{meta.emoji} {meta.label}</div>
+                  <div style={{ fontSize: 13, fontFamily: "var(--ed-m, ui-monospace, monospace)", color: "rgba(33,26,18,0.55)", marginTop: 3 }}>{meta.emoji} {meta.label}</div>
                 </div>
               );
             })}
@@ -129,22 +129,22 @@ export default function ExpressionPack({ pet, petId, moodPortraits, onChange }: 
             {missing.length > 0 && (
               <button onClick={() => generate(missing, "missing")} disabled={!!busyKey} style={{
                 flex: 1, padding: "10px", borderRadius: 11, border: "none", cursor: busyKey ? "wait" : "pointer",
-                background: "linear-gradient(135deg,#60a5fa,#7c3aed)", color: "white",
-                fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 13, opacity: busyKey ? 0.6 : 1,
+                background: "#6B4FA0", color: "#FFF8EE",
+                fontFamily: "var(--ed-body, sans-serif)", fontWeight: 800, fontSize: 13, opacity: busyKey ? 0.6 : 1,
               }}>
                 {busyKey ? "Generating…" : `Generate ${missing.length} face${missing.length > 1 ? "s" : ""} · ${missing.length * COST_EACH} cr`}
               </button>
             )}
             {have.length > 0 && missing.length === 0 && (
               <button onClick={() => generate(EXPRESSION_KEYS as unknown as ExpressionKey[], "all")} disabled={!!busyKey} style={{
-                flex: 1, padding: "10px", borderRadius: 11, border: "1px solid rgba(96,165,250,0.4)", cursor: busyKey ? "wait" : "pointer",
-                background: "white", color: "#2563eb", fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, opacity: busyKey ? 0.6 : 1,
+                flex: 1, padding: "10px", borderRadius: 11, border: "1px solid rgba(62,143,224,0.4)", cursor: busyKey ? "wait" : "pointer",
+                background: "#FBF6EC", color: "#3E8FE0", fontFamily: "var(--ed-body, sans-serif)", fontWeight: 700, fontSize: 13, opacity: busyKey ? 0.6 : 1,
               }}>
                 {busyKey ? "Generating…" : `↻ Regenerate all · ${EXPRESSION_KEYS.length * COST_EACH} cr`}
               </button>
             )}
           </div>
-          <div style={{ fontSize: 13, fontFamily: "'JetBrains Mono', monospace", color: "rgba(26,26,46,0.4)", marginTop: 8, textAlign: "center" }}>
+          <div style={{ fontSize: 13, fontFamily: "var(--ed-m, ui-monospace, monospace)", color: "rgba(33,26,18,0.4)", marginTop: 8, textAlign: "center" }}>
             {COST_EACH} credits each · anchored on {pet.name}&apos;s photo
           </div>
         </>

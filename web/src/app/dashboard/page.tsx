@@ -1,12 +1,11 @@
 /**
  * Power Leaderboard — public, server-rendered.
  *
- * Ranks pets by combined power. Top-100 earn weekly Season Rewards points
- * (off-chain loyalty — no token, no USDT payout). Owners come here to see
- * where they rank.
+ * Ranks pets by combined power. Recognition only — season points are a
+ * non-financial loyalty score (no token, no payout, no weekly distribution).
+ * Owners come here to see where they rank.
  *
- * Tone: PetClaw protocol — cream background, amber accents, monospace
- * for rank + power numbers. Matches /architecture, /skills.
+ * Tone: Collectible Editorial — paper/ink/terracotta, var(--ed-*) fonts.
  */
 
 import type { Metadata } from "next";
@@ -20,7 +19,7 @@ export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "Power Leaderboard — MY AI PET",
-  description: "Top pets ranked by combined ATK+DEF+SPD. Raise your pet to climb the ranks and earn weekly Season Rewards points.",
+  description: "Top pets ranked by combined ATK+DEF+SPD. Raise your pet to climb the ranks — recognition standing for Season 1.",
 };
 
 interface LeaderEntry {
@@ -69,45 +68,41 @@ async function loadLeaderboard(): Promise<LeaderEntry[]> {
   }));
 }
 
-// Weekly Season Rewards pool — a FIXED off-chain points allocation split among
-// the Top-100 by rank. Not proportional to anyone's USDT spend (avoids any
-// pay-to-share-the-pool framing) and not a token/USDT payout.
-const SEASON_POOL_POINTS = 100_000;
-
-async function loadWeeklyPool(): Promise<{ poolPoints: number; entries: number; closesAt: string }> {
+// Season standing strip — REAL numbers only: active-pet count from the DB and
+// the actual Season 1 close date. There is no prize pool and no weekly
+// distribution — standing is non-financial recognition, frozen at season close.
+async function loadSeasonStrip(): Promise<{ entries: number }> {
   const entries = await prisma.pet.count({ where: { is_active: true } });
-  // Pool closes at next Sunday 00:00 UTC
-  const closes = new Date();
-  closes.setUTCDate(closes.getUTCDate() + ((7 - closes.getUTCDay()) % 7));
-  closes.setUTCHours(0, 0, 0, 0);
-  return {
-    poolPoints: SEASON_POOL_POINTS,
-    entries,
-    closesAt: closes.toISOString(),
-  };
+  return { entries };
 }
 
 const PODIUM_COLOR: Record<number, string> = {
-  1: "#fbbf24",   // gold
-  2: "#9ca3af",   // silver
-  3: "#cd7f32",   // bronze
+  1: "#C8932F",   // legend gold (editorial rarity ramp)
+  2: "#7A6E5A",   // muted (silver)
+  3: "#9A4E1E",   // terracotta-deep (bronze)
 };
 
+const MONO = "var(--ed-m, ui-monospace, monospace)";
+const DISP = "var(--ed-disp, ui-sans-serif, sans-serif)";
+const BODY = "var(--ed-body, ui-sans-serif, sans-serif)";
+const INK = "#211A12";
+const HAIR = "rgba(33,26,18,.13)";
+
 export default async function DashboardPage() {
-  const [leaderboard, pool] = await Promise.all([
+  const [leaderboard, strip] = await Promise.all([
     loadLeaderboard(),
-    loadWeeklyPool(),
+    loadSeasonStrip(),
   ]);
 
   return (
     <main style={{
       minHeight: "100vh",
-      background: "linear-gradient(180deg, #faf7f2 0%, #fff8eb 50%, #faf7f2 100%)",
+      background: "#ECE4D4",
       paddingTop: 40, paddingBottom: 80,
-      fontFamily: "'Space Grotesk', sans-serif", color: "#1a1a2e",
+      fontFamily: BODY, color: INK,
     }}>
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 20px" }}>
-        <a href="/" style={{ display: "inline-block", marginBottom: 20, fontSize: 13, color: "rgba(26,26,46,0.55)", textDecoration: "none" }}>
+        <a href="/" style={{ display: "inline-block", marginBottom: 20, fontSize: 13, color: "#7A6E5A", textDecoration: "none", fontFamily: BODY }}>
           ← Back to MY AI PET
         </a>
 
@@ -115,57 +110,48 @@ export default async function DashboardPage() {
         <div style={{ marginBottom: 30 }}>
           <span style={{
             display: "inline-block", padding: "5px 14px", borderRadius: 999,
-            background: "rgba(245,158,11,0.12)", color: "#b45309",
+            background: "rgba(190,79,40,0.10)", color: "#9A4E1E",
             fontSize: 13, fontWeight: 700, letterSpacing: "0.16em",
             textTransform: "uppercase", marginBottom: 12,
-            fontFamily: "'JetBrains Mono', monospace",
-          }}>POWER LEADERBOARD · SEASON REWARDS</span>
-          <h1 style={{ fontSize: 40, fontWeight: 800, letterSpacing: "-0.03em", margin: "0 0 8px", lineHeight: 1.1 }}>
+            fontFamily: MONO,
+          }}>POWER LEADERBOARD · SEASON 1</span>
+          <h1 style={{ fontSize: 40, fontWeight: 800, letterSpacing: "-0.03em", margin: "0 0 8px", lineHeight: 1.1, fontFamily: DISP }}>
             Climb the ranks.
           </h1>
-          <p style={{ fontSize: 16, color: "rgba(26,26,46,0.65)", lineHeight: 1.6, maxWidth: 580 }}>
-            Raise your pet — combined power decides ranking.
-            Top-100 earn Season Rewards points every Sunday.
+          <p style={{ fontSize: 16, color: "#5C5140", lineHeight: 1.6, maxWidth: 580, fontFamily: BODY }}>
+            Raise your pet — combined power decides ranking. Standing is recognized
+            when Season 1 closes: non-transferable recognition, no cash value.
           </p>
         </div>
 
-        {/* Pool widget */}
+        {/* Season strip — real numbers only */}
         <div style={{
           padding: "18px 22px", borderRadius: 16, marginBottom: 28,
-          background: "#0f0f1a", color: "white",
+          background: "#1E1710", color: "#FBF6EC",
           display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap",
         }}>
           <div>
             <div style={{
-              fontSize: 13, color: "rgba(255,255,255,0.5)", letterSpacing: "0.12em",
-              fontFamily: "'JetBrains Mono', monospace", marginBottom: 4,
-            }}>WEEKLY SEASON REWARDS POOL</div>
-            <div style={{
-              fontSize: 32, fontWeight: 800, color: "#fbbf24",
-              fontFamily: "'JetBrains Mono', monospace",
-            }}>
-              {pool.poolPoints.toLocaleString()} <span style={{ fontSize: 16, color: "rgba(255,255,255,0.6)" }}>pts</span>
+              fontSize: 13, color: "rgba(251,246,236,0.55)", letterSpacing: "0.12em",
+              fontFamily: MONO, marginBottom: 4,
+            }}>RAISING NOW</div>
+            <div style={{ fontSize: 32, fontWeight: 800, color: "#E8C77E", fontFamily: MONO }}>
+              {strip.entries.toLocaleString()} <span style={{ fontSize: 16, color: "rgba(251,246,236,0.6)" }}>pets</span>
             </div>
           </div>
-          <div style={{ width: 1, height: 40, background: "rgba(255,255,255,0.15)" }} />
+          <div style={{ width: 1, height: 40, background: "rgba(251,246,236,0.15)" }} />
           <div>
             <div style={{
-              fontSize: 13, color: "rgba(255,255,255,0.5)", letterSpacing: "0.12em",
-              fontFamily: "'JetBrains Mono', monospace", marginBottom: 4,
-            }}>ENTRIES</div>
-            <div style={{ fontSize: 24, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
-              {pool.entries}
+              fontSize: 13, color: "rgba(251,246,236,0.55)", letterSpacing: "0.12em",
+              fontFamily: MONO, marginBottom: 4,
+            }}>SEASON 1 CLOSES</div>
+            <div style={{ fontSize: 24, fontWeight: 700, fontFamily: MONO }}>
+              Aug 1 · 00:00 UTC
             </div>
           </div>
-          <div style={{ width: 1, height: 40, background: "rgba(255,255,255,0.15)" }} />
-          <div>
-            <div style={{
-              fontSize: 13, color: "rgba(255,255,255,0.5)", letterSpacing: "0.12em",
-              fontFamily: "'JetBrains Mono', monospace", marginBottom: 4,
-            }}>CLOSES</div>
-            <div style={{ fontSize: 14, fontFamily: "'JetBrains Mono', monospace", color: "rgba(255,255,255,0.85)" }}>
-              {new Date(pool.closesAt).toUTCString().slice(0, 17)} UTC
-            </div>
+          <div style={{ width: 1, height: 40, background: "rgba(251,246,236,0.15)" }} />
+          <div style={{ fontSize: 13, fontFamily: MONO, color: "rgba(251,246,236,0.65)", maxWidth: 260, lineHeight: 1.5 }}>
+            Final standings are frozen at close — recognition only, no token, no payout.
           </div>
         </div>
 
@@ -182,17 +168,17 @@ export default async function DashboardPage() {
                 <a key={p.petId} href={`/p/${p.petId}`} style={{
                   marginTop: heightOffset,
                   padding: 18, borderRadius: 14,
-                  background: "white", border: `2px solid ${color}`,
-                  boxShadow: `0 0 30px ${color}40`,
+                  background: "#FBF6EC", border: `2px solid ${color}`,
+                  boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
                   display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                  textDecoration: "none", color: "#1a1a2e",
+                  textDecoration: "none", color: INK,
                 }}>
-                  <div style={{ fontSize: 26, fontFamily: "'JetBrains Mono', monospace", fontWeight: 800, color }}>
+                  <div style={{ fontSize: 26, fontFamily: MONO, fontWeight: 800, color }}>
                     #{visualRank}
                   </div>
                   <div style={{
                     width: 64, height: 64, borderRadius: 12, overflow: "hidden",
-                    background: "rgba(0,0,0,0.04)", marginBottom: 2,
+                    background: "#F5EFE2", marginBottom: 2,
                   }}>
                     {p.avatarUrl ? (
                       <img src={p.avatarUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -200,12 +186,12 @@ export default async function DashboardPage() {
                       <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}><Icon name="paw" size={32} /></div>
                     )}
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 700, textAlign: "center" }}>{p.name}</div>
-                  <div style={{ fontSize: 13, fontFamily: "mono", color: "rgba(26,26,46,0.5)" }}>Lv.{p.level}</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#b45309", fontFamily: "'JetBrains Mono', monospace" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, textAlign: "center", fontFamily: DISP }}>{p.name}</div>
+                  <div style={{ fontSize: 13, fontFamily: MONO, color: "#7A6E5A" }}>Lv.{p.level}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#9A4E1E", fontFamily: MONO }}>
                     {p.combinedPower}
                   </div>
-                  <div style={{ fontSize: 13, color: "rgba(26,26,46,0.4)", letterSpacing: "0.1em" }}>POWER</div>
+                  <div style={{ fontSize: 13, color: "#9A7B4E", letterSpacing: "0.1em", fontFamily: MONO }}>POWER</div>
                 </a>
               );
             })}
@@ -215,16 +201,16 @@ export default async function DashboardPage() {
         {/* Full list */}
         <DashboardList rows={leaderboard.slice(3)} />
 
-        {/* Help — what to spend to climb */}
+        {/* Help — how to climb (real grant values only) */}
         <div style={{
           marginTop: 30, padding: 18, borderRadius: 12,
-          background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)",
-          fontSize: 13, color: "rgba(26,26,46,0.7)", lineHeight: 1.65,
+          background: "#F5EFE2", border: `1px solid ${HAIR}`,
+          fontSize: 13, color: "#5C5140", lineHeight: 1.65, fontFamily: BODY,
         }}>
-          <strong style={{ fontFamily: "'JetBrains Mono', monospace", color: "#b45309" }}>HOW TO CLIMB ↑</strong><br />
-          Season Rewards points are gained free — care <strong>+5</strong>, create <strong>+10</strong>, evolve <strong>+200</strong> —
-          and rank you for Season 1. Show up daily: a 7-day care streak marks a milestone in your pet&apos;s story. Points are
-          non-financial recognition — no token, no cash value.
+          <strong style={{ fontFamily: MONO, color: "#9A4E1E" }}>HOW TO CLIMB ↑</strong><br />
+          Season points are gained free — care <strong>+5</strong>, image <strong>+10</strong>, video <strong>+20</strong>,
+          level-up <strong>+50</strong> — and rank you for Season 1. Show up daily: a 7-day care streak marks a milestone
+          in your pet&apos;s story. Points are non-financial recognition — no token, no cash value, no redemption.
         </div>
       </div>
     </main>

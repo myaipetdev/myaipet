@@ -7,6 +7,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { privateAutoGenIds } from "@/lib/publicFeed";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,8 @@ export async function GET(req: NextRequest) {
     where: {
       status: "completed",
       OR: [{ video_path: { not: null } }, { photo_path: { not: "" } }],
+      // Privacy: exclude daydream auto-gens (private memory in the prompt).
+      id: { notIn: await privateAutoGenIds() },
     },
     orderBy: { created_at: "desc" },
     take: limit,

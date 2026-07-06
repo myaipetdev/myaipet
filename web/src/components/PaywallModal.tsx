@@ -89,9 +89,9 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
       display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
     }}>
       <div onClick={(e) => e.stopPropagation()} style={{
-        maxWidth: 420, width: "100%", background: "white", borderRadius: 20,
-        padding: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
-        fontFamily: "'Space Grotesk',sans-serif", color: "#1a1a2e",
+        maxWidth: 420, width: "100%", background: "#FBF6EC", borderRadius: 20,
+        padding: 28, boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
+        fontFamily: "var(--ed-body, sans-serif)", color: "#211A12",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
           <span style={{ fontSize: 26 }}><Icon name="diamond" size={26} /></span>
@@ -100,20 +100,20 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
           </h2>
         </div>
 
-        <p style={{ fontSize: 14, color: "rgba(26,26,46,0.7)", lineHeight: 1.6, margin: "0 0 18px" }}>
+        <p style={{ fontSize: 14, color: "rgba(33,26,18,0.7)", lineHeight: 1.6, margin: "0 0 18px" }}>
           {info.description}
         </p>
 
         <div style={{
           padding: "14px 18px", borderRadius: 12, marginBottom: 16,
-          background: "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.04))",
-          border: "1px solid rgba(245,158,11,0.2)",
+          background: "linear-gradient(135deg, rgba(190,79,40,0.08), rgba(190,79,40,0.04))",
+          border: "1px solid rgba(190,79,40,0.2)",
         }}>
-          <div style={{ fontSize: 13, color: "rgba(26,26,46,0.55)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Price</div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: "#b45309", marginTop: 4 }}>
+          <div style={{ fontSize: 13, color: "rgba(33,26,18,0.55)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Price</div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: "#9A4E1E", marginTop: 4 }}>
             {info.priceUsd.toFixed(2)} USDT
           </div>
-          <div style={{ fontSize: 13, color: "rgba(26,26,46,0.5)", marginTop: 4, fontFamily: "mono" }}>
+          <div style={{ fontSize: 13, color: "rgba(33,26,18,0.5)", marginTop: 4, fontFamily: "var(--ed-m, ui-monospace, monospace)" }}>
             BSC (BEP-20) USDT · payment goes to project treasury
           </div>
         </div>
@@ -122,7 +122,7 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
           <div style={{
             padding: 10, borderRadius: 8, marginBottom: 12,
             background: "rgba(220,38,38,0.08)", color: "#dc2626",
-            fontSize: 13, fontFamily: "mono",
+            fontSize: 13, fontFamily: "var(--ed-m, ui-monospace, monospace)",
             display: "flex", alignItems: "center", gap: 6,
           }}>
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
@@ -145,15 +145,15 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={handlePay} disabled={!treasuryConfigured} style={{
               flex: 2, padding: "12px", borderRadius: 12, border: "none",
-              background: treasuryConfigured ? "linear-gradient(135deg,#fbbf24,#f59e0b)" : "#ccc",
-              color: "white", fontWeight: 700, fontSize: 14, cursor: treasuryConfigured ? "pointer" : "not-allowed",
+              background: treasuryConfigured ? "linear-gradient(180deg,#F49B2A,#E27D0C)" : "#ccc",
+              color: "#FFF8EE", fontWeight: 700, fontSize: 14, cursor: treasuryConfigured ? "pointer" : "not-allowed",
             }}>
               Pay {info.priceUsd.toFixed(2)} USDT
             </button>
             <button onClick={onClose} style={{
               flex: 1, padding: "12px", borderRadius: 12,
-              border: "1px solid rgba(0,0,0,0.12)", background: "white",
-              color: "#1a1a2e", fontWeight: 600, fontSize: 14, cursor: "pointer",
+              border: "1px solid rgba(33,26,18,0.13)", background: "#FBF6EC",
+              color: "#211A12", fontWeight: 600, fontSize: 14, cursor: "pointer",
             }}>
               Cancel
             </button>
@@ -161,7 +161,7 @@ export default function PaywallModal({ info, onClose }: { info: PaywallInfo | nu
         ) : (
           <div style={{
             padding: 14, borderRadius: 12, textAlign: "center",
-            background: "rgba(245,158,11,0.06)", fontSize: 13, color: "#92400e",
+            background: "rgba(190,79,40,0.06)", fontSize: 13, color: "#9A4E1E",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
           }}>
             {step === "signing" && "Sign the USDT transfer in your wallet…"}

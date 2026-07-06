@@ -1,5 +1,5 @@
 /**
- * MY AI PET v2.2.2 — Content Script
+ * MY AI PET v2.2.3 — Content Script
  * Pet on every webpage: walking, chatting, emotions, particles, evolution effects
  */
 

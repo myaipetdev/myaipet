@@ -46,8 +46,8 @@ const PERSONALITIES = [
 // minLevel gates a few interactions behind progression so leveling up matters.
 const INTERACTIONS = [
   { type: "feed",  label: "Feed",  icon: "🍖", color: "#4ade80",
-    desc: "5/day free · then 0.10 USDT · 7-day streak = NFT", minLevel: 1, purpose: "EARN" },
-  { type: "play",  label: "Play",  icon: "⚽", color: "#60a5fa",
+    desc: "5/day free · then 0.10 USDT · 7-day streak = milestone badge", minLevel: 1, purpose: "EARN" },
+  { type: "play",  label: "Play",  icon: "⚽", color: "#3E8FE0",
     desc: "5/day free · then 0.10 USDT · happiness ↑",        minLevel: 1, purpose: "EARN" },
   { type: "talk",  label: "Talk",  icon: "💬", color: "#9E72E8",
     desc: "Memory grows. Bond unlocks chat depth.",            minLevel: 1, purpose: "GROW" },
@@ -63,7 +63,7 @@ const MOOD_CONFIG: any = {
   ecstatic: { emoji: "🤩", color: "#C8932F", label: "Ecstatic" },
   happy: { emoji: "😊", color: "#4ade80", label: "Happy" },
   neutral: { emoji: "😐", color: "#94a3b8", label: "Neutral" },
-  sad: { emoji: "😢", color: "#60a5fa", label: "Sad" },
+  sad: { emoji: "😢", color: "#3E8FE0", label: "Sad" },
   exhausted: { emoji: "😴", color: "#9E72E8", label: "Exhausted" },
   starving: { emoji: "🤤", color: "#f97316", label: "Starving" },
   grumpy: { emoji: "😤", color: "#f87171", label: "Grumpy" },
@@ -1605,6 +1605,19 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
 
   return (
     <div style={{ padding: "16px", maxWidth: 960, margin: "0 auto", paddingTop: compact ? 12 : 80 }}>
+      {/* Post-adopt onboarding — MUST live in this always-rendered branch too:
+          onCreated batches setPets([pet]) with setShowOnboarding(pet), so the
+          re-render immediately leaves the empty-state branch. Without this copy
+          the persona quiz / setup path never runs for anyone. */}
+      {showOnboarding && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <EnhancedOnboarding
+            pet={showOnboarding}
+            onComplete={() => setShowOnboarding(null)}
+            onSkip={() => setShowOnboarding(null)}
+          />
+        </div>
+      )}
       {/* On-chain recording overlay */}
       {chainToast && (
         <div style={{

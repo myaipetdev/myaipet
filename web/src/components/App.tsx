@@ -125,7 +125,7 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
   return (
     // Scroll-revealed (was mount-time mp-enter-2). The check-in ceremony
     // animations inside (sealPress, slideIn) are untouched.
-    <Reveal dir="up" delay={90} style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
+    <Reveal dir="up" delay={90} className="home-section-pad" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
       <div style={{
         borderRadius: 16, padding: "14px 20px", marginBottom: 8,
         background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -179,7 +179,7 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
                 <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: done ? "#FFF8EE" : isToday ? "#BE4F28" : "#9A7B4E", fontWeight: 700 }}>
                   {done ? "✓" : `D${day}`}
                 </div>
-                <div style={{ fontFamily: "var(--ed-m)", fontSize: 10, color: done ? "#FCE9CF" : "#9A7B4E" }}>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: done ? "#FCE9CF" : "#9A7B4E" }}>
                   +{r}
                 </div>
               </div>
