@@ -364,7 +364,10 @@ export default function App() {
     // ("airdrop" stays the internal section/route key; the UI label is "Season Rewards".)
     if (fromUrl === "leaderboard") return "airdrop";
     // Unknown section values used to render nav + an empty body — fall back home.
-    const VALID = ["home", "my pet", "cards", "catch", "world cup", "studio", "create", "community", "sovereignty", "airdrop", "agent", "chat"];
+    // These are the EXACT in-SPA section keys that App renders below (note:
+    // "worldcup"/"workbench" are single words, and Studio is the "create" section
+    // — "studio" is only a header URL nav, never a section value).
+    const VALID = ["home", "my pet", "cards", "catch", "create", "community", "agent", "workbench", "sovereignty", "worldcup", "airdrop", "chat"];
     return fromUrl && VALID.includes(fromUrl) ? fromUrl : "home";
   });
   // Keep the URL in sync when the user clicks nav inside the SPA.

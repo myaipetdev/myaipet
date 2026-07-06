@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "MY AI PET - Documentation",
-  description: "Official documentation for MY AI PET — the CompanionFi protocol.",
+  description: "Official documentation for MY AI PET — the Companion Protocol.",
 };
 
 const SECTIONS = [
   {
     id: "overview",
     title: "Overview",
-    content: `MY AI PET is a CompanionFi protocol that combines AI-powered virtual pet companionship with Web3 economics. Users adopt, raise, and bond with unique AI pets that grow, evolve, and generate real economic value through AI content creation.
+    content: `MY AI PET is a Companion Protocol that combines AI-powered virtual pet companionship with a sovereign, portable identity. Users adopt, raise, and bond with unique AI pets that remember them, grow, evolve, and create shareable AI content.
 
 Every pet has a distinct personality shaped by user interactions. The platform uses state-of-the-art generative AI to create images and videos starring your pet — each piece of content is a unique creative asset.`,
   },
@@ -144,7 +144,7 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 **Wallet Support**
 - MetaMask, Rainbow, Coinbase Wallet
 - WalletConnect protocol for 300+ wallets
-- Multi-chain signing (Ethereum, Base, BSC)`,
+- SIWE wallet sign-in; USDT payments on BNB Smart Chain (BSC)`,
   },
   {
     id: "agent-infra",
@@ -388,7 +388,7 @@ export default function DocsPage() {
           fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.65)",
           maxWidth: 560, margin: "0 auto", lineHeight: 1.8,
         }}>
-          Everything you need to know about MY AI PET — the first CompanionFi protocol
+          Everything you need to know about MY AI PET — the Companion Protocol
           where AI companionship creates real value.
         </p>
       </div>

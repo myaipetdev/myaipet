@@ -117,9 +117,11 @@ function HeroShowcase({ txToday }: { txToday?: number }) {
   );
 }
 
-// Each pillar navigates to its real surface — a button whose only effect was
-// briefly highlighting itself (wiped by the 3s auto-rotate) did nothing real.
-const PILLAR_TARGETS = ["studio", "my pet", "community", "sovereignty"];
+// Each pillar navigates to its real in-SPA section — a button whose only effect
+// was briefly highlighting itself (wiped by the 3s auto-rotate) did nothing.
+// NOTE: the Studio surface is the "create" section in the SPA ("studio" is only
+// a URL nav in the header) — using "studio" here rendered a blank body.
+const PILLAR_TARGETS = ["create", "my pet", "community", "sovereignty"];
 
 export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
   const [activePillar, setActivePillar] = useState(0);
