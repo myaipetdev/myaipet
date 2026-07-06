@@ -109,8 +109,13 @@ export default function Nav({ section, setSection, credits }: any) {
         style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
           display: "flex", alignItems: "center", gap: 18,
-          padding: "11px 22px", background: "rgba(236,228,212,0.94)",
-          backdropFilter: "blur(8px)", borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+          // Paper chrome over the field page — the old field-on-field bg made
+          // the nav edge read as unfinished/empty. Crisp ink rule + faint drop
+          // keeps the bar reading as a printed masthead layer.
+          padding: "11px 22px", background: "rgba(251,246,236,0.97)",
+          backdropFilter: "blur(8px)",
+          borderBottom: "1px solid rgba(33,26,18,.18)",
+          boxShadow: "0 10px 24px -20px rgba(33,26,18,.35)",
         }}
       >
         {/* Logo */}

@@ -429,6 +429,8 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  // Session log collapse — 37 raw rows made the whole page scroll forever.
+  const [showAllSessions, setShowAllSessions] = useState(false);
   const [consolidating, setConsolidating] = useState(false);
 
   const load = useCallback(async () => {
@@ -604,14 +606,29 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
       </Section>
 
       <Section title={`Session log (recent ${sessions.length})`} onClear={sessions.length ? () => clearAll("session") : undefined} disabled={!!busy}>
-        {sessions.length === 0 ? <Empty msg="No session log." /> :
-          sessions.slice(0, 25).map((s) => (
-            <EntryRow key={s.id} primary={stripSpeakerTag(s.content)} secondary={`${s.platform} · ${new Date(s.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}`}
-              onDelete={() => del("session", s.id)}
-              busy={busy === `session_${s.id}`}
-            />
-          ))
-        }
+        {sessions.length === 0 ? <Empty msg="No session log." /> : (
+          <>
+            {sessions.slice(0, showAllSessions ? 25 : 8).map((s) => (
+              <EntryRow key={s.id} primary={stripSpeakerTag(s.content)} secondary={`${s.platform} · ${new Date(s.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}`}
+                onDelete={() => del("session", s.id)}
+                busy={busy === `session_${s.id}`}
+              />
+            ))}
+            {sessions.length > 8 && (
+              <button
+                onClick={() => setShowAllSessions(v => !v)}
+                style={{
+                  width: "100%", marginTop: 8, padding: "9px 0", borderRadius: 10, cursor: "pointer",
+                  border: `1px dashed ${HAIR}`, background: "transparent",
+                  fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
+                  color: TERRA_SUB, textTransform: "uppercase",
+                }}
+              >
+                {showAllSessions ? "Show fewer" : `Show all ${Math.min(sessions.length, 25)}`}
+              </button>
+            )}
+          </>
+        )}
       </Section>
     </div>
   );

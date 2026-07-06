@@ -311,7 +311,14 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   <span style={{ color: AMBER_DIM, minWidth: 112, flexShrink: 0 }}>runs on</span>
                   <span style={{ color: MUTED }}>{RUNS_ON}</span>
                 </div>
-                {!compact && (<><SectionHead>Skills (18)</SectionHead>{SKILLS.map((s) => <Row key={s.k} k={s.k} v={s.v} kw={100} />)}</>)}
+                {!compact && (<>
+                  <SectionHead>Skills (18)</SectionHead>{SKILLS.map((s) => <Row key={s.k} k={s.k} v={s.v} kw={100} />)}
+                  {/* Sovereignty lives in the LEFT column: the right column's
+                      long wrapping rows run taller, and ending the left early
+                      left a dead dark void under the skills list. */}
+                  <SectionHead>Sovereignty</SectionHead>
+                  {SOVEREIGNTY.map((s) => <Row key={s.k} k={s.k} v={s.v} kw={100} />)}
+                </>)}
               </div>
               {!compact && (
                 <div>
@@ -327,12 +334,11 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   <div style={{ fontSize: 14, marginTop: 4 }}>
                     <span style={{ color: GREEN }}>connect your model ↓ below (or via the CLI)</span>
                   </div>
-                  <SectionHead>Sovereignty</SectionHead>
-                  {SOVEREIGNTY.map((s) => <Row key={s.k} k={s.k} v={s.v} />)}
                 </div>
               )}
             </div>
-            <div style={{ marginTop: 14, color: MUTED, fontSize: 14 }}>19 connectors · 18 skills · 5-stage harness · 6 MCP tools · BYO models · 100% your data</div>
+            {/* closing rule so the panel finishes crisp instead of trailing into dark */}
+            <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${LINE}`, color: MUTED, fontSize: 14 }}>19 connectors · 18 skills · 5-stage harness · 6 MCP tools · BYO models · 100% your data</div>
           </div>
 
           {/* LIVE terminal */}

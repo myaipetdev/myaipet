@@ -908,9 +908,23 @@ function Shell({ children, owned, rarityCounts }: { children: React.ReactNode; o
           </div>
           {/* hairline rule under the title */}
           <div style={{ height: 1, background: T.hair, margin: "16px 0 0" }} />
-          <p style={{ fontFamily: T.body, fontSize: 14.5, color: T.muted2, margin: "14px 0 0", lineHeight: 1.55, maxWidth: 560 }}>
-            Every pet is a foil-stamped collectible — real stats, real rarity. Share it, illustrate it, or duel another pet&apos;s card.
-          </p>
+          {/* What this page IS — three verbs, one glance; they map 1:1 to the
+              ALBUM / CATCH / BATTLE tabs so a first visit self-explains. */}
+          <div className="cd-explain-row" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginTop: 14 }}>
+            <style>{`@media (max-width: 640px){ .cd-explain-row{ grid-template-columns: 1fr !important; } }`}</style>
+            {[
+              { n: "01", title: "Collect", body: "Every pet you raise is minted as a trading card — real stats, real rarity." },
+              { n: "02", title: "Catch", body: "Point your camera at real animals outside — they join the album as cards." },
+              { n: "03", title: "Battle & share", body: "Duel any card, illustrate it in Studio, or share it with friends." },
+            ].map((s) => (
+              <div key={s.n} style={{ display: "flex", gap: 10, alignItems: "flex-start", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "11px 13px" }}>
+                <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.terra, letterSpacing: ".08em", flexShrink: 0, marginTop: 1 }}>{s.n}</span>
+                <span style={{ fontFamily: T.body, fontSize: 13.5, lineHeight: 1.45, color: T.muted2 }}>
+                  <strong style={{ color: T.ink, fontFamily: T.disp }}>{s.title}</strong> — {s.body}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
         {children}
       </div>

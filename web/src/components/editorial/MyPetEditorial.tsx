@@ -358,7 +358,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               /* On 1-col mobile the poster must scroll normally above the stats —
                  a sticky poster would pin at top:88 and cover the right column
                  as it scrolls past. Drop sticky + the desktop max-height clamp. */
-              .mp-poster-wrap { position: static !important; }
+              .mp-poster-wrap { position: static !important; height: auto !important; }
               .mp-poster-wrap > div { max-height: none !important; }
             }
             @keyframes mpDeltaRise { 0% { opacity: 0; transform: translateY(3px); } 18% { opacity: 1; } 100% { opacity: 0; transform: translateY(-16px); } }
@@ -374,7 +374,10 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
           {/* ── poster (left, dominant) — keyed on the pet so switching rises the
                  new collectible in. Stretches to the right column's full height
                  (flex fill) so the left side never leaves a dead cream gap. ── */}
-          <div className="mp-poster-wrap" style={{ display: "flex", position: "sticky", top: 88, alignSelf: "start" }}>
+          {/* Sticky wrapper is sized to the viewport (not the content) so the
+              poster fills the visible left column at ANY window height — no
+              dead cream gap below it on tall screens; content stays centered. */}
+          <div className="mp-poster-wrap" style={{ display: "flex", position: "sticky", top: 88, alignSelf: "start", height: "calc(100vh - 116px)", minHeight: 440 }}>
             <div key={active.id} className="ed-rise" style={{ position: "relative", flex: 1, background: T.terra, borderRadius: 18, minHeight: 440, maxHeight: "calc(100vh - 116px)", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div aria-hidden style={{ position: "absolute", inset: 14, border: "1px solid rgba(252,233,207,.35)", borderRadius: 8, pointerEvents: "none" }} />
               {[["14px", "14px", "", ""], ["14px", "", "", "14px"], ["", "14px", "14px", ""], ["", "", "14px", "14px"]].map((c, i) => (
