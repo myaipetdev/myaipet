@@ -801,9 +801,13 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
 
         {/* ── Two-column workspace ── */}
         <div className="studio-pro-grid" style={{
-          display: "grid", gap: 16,
+          display: "grid", gap: 16, alignItems: "start",
           gridTemplateColumns: "minmax(0, 1fr) 340px",
         }}>
+          {/* LEFT column = preview + prompt (the two things you edit in sequence),
+              so the short preview no longer strands an empty gap beside the taller
+              controls column. */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
           {/* PREVIEW — the collectible plate: an indigo studio scene on a cream
               paper mount with a soft floating shadow (never a hard offset). */}
           <div className="mp-enter-1" style={{
@@ -1049,6 +1053,195 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
 
           </div>
 
+        {/* ── Prompt block — lives in the LEFT column under the preview, so the
+              two things you touch in order (see the pet → say what to make) stack
+              together and don't strand a gap beside the taller controls. ── */}
+        <div className="mp-enter-3" style={{
+          background: T.paper, borderRadius: 16, padding: 18,
+          border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
+        }}>
+          <div style={panelLabel}>WHAT TO MAKE</div>
+          <textarea
+            ref={promptRef}
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            aria-label="Prompt — what your pet should be doing"
+            placeholder={`What should ${petDisplayName} be doing? e.g. "running through cherry blossoms"`}
+            style={{
+              marginTop: 10, width: "100%", minHeight: 78, padding: "14px 16px",
+              borderRadius: 12, border: `1px solid ${T.hair}`,
+              fontSize: 16, fontFamily: T.body,
+              lineHeight: 1.5, resize: "vertical", background: T.inset,
+              color: T.ink,
+            }}
+          />
+
+          {/* Lowest-friction starting points (personality/element-aware), placed
+              right under the prompt so a new user's fastest path to a valid
+              prompt is the first thing they see — not buried under templates. */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
+            <span style={{
+              fontSize: 13, fontFamily: T.m, fontWeight: 700,
+              color: T.mono, letterSpacing: "0.1em",
+              alignSelf: "center", marginRight: 4,
+            }}>TRY:</span>
+            {promptIdeasFor(pet).map((idea, i) => (
+              <button key={i} onClick={() => setPrompt(idea)} style={suggestionChip}>
+                {idea}
+              </button>
+            ))}
+          </div>
+          {/* Memory → Video: scenes grounded in what the pet remembers about
+              you. Only shows when the pet has daydreamed something. */}
+          {memorySeeds.length > 0 && (
+            <div style={{
+              marginTop: 12, padding: "12px 14px", borderRadius: 12,
+              background: T.inset,
+              border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
+            }}>
+              <div style={{
+                fontSize: 13, fontFamily: T.m,
+                color: T.studio, letterSpacing: "0.1em", fontWeight: 700, marginBottom: 8,
+                display: "flex", alignItems: "center", gap: 6,
+              }}><svg width={14} height={14} viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+                  aria-hidden="true">
+                  <path d="M7.5 5A5.5 5.5 0 0 1 18 7.2 4 4 0 0 1 17 15H8A4.5 4.5 0 0 1 7.5 5Z" />
+                  <circle cx="5" cy="18.5" r="1.6" /><circle cx="8.5" cy="21.5" r="1" />
+                </svg>FROM {(pet?.name || "YOUR PET").toUpperCase()}'S MEMORY</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {memorySeeds.map((seed, i) => (
+                  <button key={i} onClick={() => setPrompt(seed)} style={{
+                    textAlign: "left", padding: "9px 12px", borderRadius: 10,
+                    background: T.paper, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
+                    fontSize: 13, color: T.ink, cursor: "pointer", lineHeight: 1.45,
+                    fontFamily: T.body,
+                  }}>{seed}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Pet-LoRA: train this pet's exact face (renders only when the
+              feature is enabled server-side and a real pet is selected). */}
+          {pet && !isDemo && (
+            <Reveal dir="left">
+              <PetLoraPanel petId={pet.id} petName={pet.name} />
+            </Reveal>
+          )}
+
+          {/* Templates — one tap loads a full, pet-anchored scene + flips to
+              video. The card art previews the vibe; tap, then hit Generate. */}
+          <div style={{ marginTop: 16 }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
+              <span style={{
+                fontSize: 13, fontFamily: T.m,
+                letterSpacing: "0.14em", color: T.studio, fontWeight: 700, textTransform: "uppercase",
+                display: "inline-flex", alignItems: "center", gap: 5,
+              }}><Icon name="sparkling" size={12} /> TEMPLATES</span>
+              <span style={{ fontSize: 13, fontFamily: T.m, color: T.muted2 }}>
+                one tap → a full scene
+              </span>
+            </div>
+            <div style={{
+              display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10,
+            }}>
+              {TEMPLATES.map((t, i) => {
+                const ex = TEMPLATE_EXAMPLES[t.id];
+                const vid = TEMPLATE_EXAMPLE_VIDEOS[t.id];
+                // Cream paper chip for the emoji mark — printed, not floating.
+                const emojiChip: React.CSSProperties = {
+                  fontSize: 13, lineHeight: 1, background: T.paper,
+                  border: `1px solid ${T.hair}`, borderRadius: 8, padding: "3px 6px",
+                };
+                return (
+                  <Reveal key={t.id} dir="up" delay={Math.min(i, 8) * 70}>
+                  <button
+                    onClick={() => applyTemplate(t)}
+                    // Item #25-4: no autoplaying wall of videos — motion previews
+                    // on a fine-pointer hover only; touch keeps the poster.
+                    onPointerEnter={vid ? (e) => {
+                      if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
+                      e.currentTarget.querySelector("video")?.play().catch(() => {});
+                    } : undefined}
+                    onPointerLeave={vid ? (e) => {
+                      const v = e.currentTarget.querySelector("video");
+                      if (v) { v.pause(); v.currentTime = 0; }
+                    } : undefined}
+                    style={{
+                      width: "100%", height: "100%",
+                      textAlign: "left", padding: 0, borderRadius: 14, overflow: "hidden",
+                      border: `1px solid ${T.hair}`, background: T.paper, cursor: "pointer",
+                      boxShadow: "var(--ed-shadow-card)",
+                      display: "flex", flexDirection: "column",
+                    }}
+                  >
+                    {vid ? (
+                      <div style={{ position: "relative", height: 92, overflow: "hidden" }}>
+                        <video
+                          src={vid} poster={ex} loop muted playsInline preload="metadata"
+                          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                        />
+                        <span style={{ ...emojiChip, position: "absolute", left: 9, bottom: 7 }}>{t.emoji}</span>
+                        <span style={{
+                          position: "absolute", top: 7, right: 8,
+                          fontSize: 13, fontFamily: T.m,
+                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
+                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
+                        }}>▸ MOTION</span>
+                        <span style={{
+                          position: "absolute", right: 9, bottom: 8,
+                          fontSize: 13, fontFamily: T.m,
+                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
+                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
+                        }}>{t.category}</span>
+                      </div>
+                    ) : ex ? (
+                      <div style={{
+                        height: 92, background: `url(${ex}) center/cover no-repeat`,
+                        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
+                        padding: "8px 9px",
+                      }}>
+                        <span style={emojiChip}>{t.emoji}</span>
+                        <span style={{
+                          fontSize: 13, fontFamily: T.m,
+                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
+                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
+                        }}>{t.category}</span>
+                      </div>
+                    ) : (
+                      <div style={{
+                        height: 62,
+                        background: T.inset, borderBottom: `1px solid ${T.hair}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        position: "relative",
+                      }}>
+                        <span style={{ ...emojiChip, fontSize: 20, padding: "4px 8px" }}>{t.emoji}</span>
+                        <span style={{
+                          position: "absolute", top: 7, right: 8,
+                          fontSize: 13, fontFamily: T.m,
+                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
+                          color: T.studio,
+                        }}>{t.category}</span>
+                      </div>
+                    )}
+                    <div style={{ padding: "9px 11px 11px" }}>
+                      <div style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700, color: T.ink, letterSpacing: "-0.01em" }}>
+                        {t.title}
+                      </div>
+                      <div style={{ fontSize: 13, color: T.muted2, marginTop: 3, lineHeight: 1.45 }}>
+                        {t.description}
+                      </div>
+                    </div>
+                  </button>
+                  </Reveal>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+          </div>{/* /studio-left */}
+
           {/* CONTROLS */}
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {/* Pet */}
@@ -1265,192 +1458,6 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                 </div>
               )}
             </Panel>
-          </div>
-        </div>
-
-        {/* ── Prompt block (full width below) ── */}
-        <div className="mp-enter-3" style={{
-          background: T.paper, borderRadius: 16, padding: 18,
-          border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
-        }}>
-          <div style={panelLabel}>WHAT TO MAKE</div>
-          <textarea
-            ref={promptRef}
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            aria-label="Prompt — what your pet should be doing"
-            placeholder={`What should ${petDisplayName} be doing? e.g. "running through cherry blossoms"`}
-            style={{
-              marginTop: 10, width: "100%", minHeight: 78, padding: "14px 16px",
-              borderRadius: 12, border: `1px solid ${T.hair}`,
-              fontSize: 16, fontFamily: T.body,
-              lineHeight: 1.5, resize: "vertical", background: T.inset,
-              color: T.ink,
-            }}
-          />
-
-          {/* Lowest-friction starting points (personality/element-aware), placed
-              right under the prompt so a new user's fastest path to a valid
-              prompt is the first thing they see — not buried under templates. */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
-            <span style={{
-              fontSize: 13, fontFamily: T.m, fontWeight: 700,
-              color: T.mono, letterSpacing: "0.1em",
-              alignSelf: "center", marginRight: 4,
-            }}>TRY:</span>
-            {promptIdeasFor(pet).map((idea, i) => (
-              <button key={i} onClick={() => setPrompt(idea)} style={suggestionChip}>
-                {idea}
-              </button>
-            ))}
-          </div>
-          {/* Memory → Video: scenes grounded in what the pet remembers about
-              you. Only shows when the pet has daydreamed something. */}
-          {memorySeeds.length > 0 && (
-            <div style={{
-              marginTop: 12, padding: "12px 14px", borderRadius: 12,
-              background: T.inset,
-              border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
-            }}>
-              <div style={{
-                fontSize: 13, fontFamily: T.m,
-                color: T.studio, letterSpacing: "0.1em", fontWeight: 700, marginBottom: 8,
-                display: "flex", alignItems: "center", gap: 6,
-              }}><svg width={14} height={14} viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
-                  aria-hidden="true">
-                  <path d="M7.5 5A5.5 5.5 0 0 1 18 7.2 4 4 0 0 1 17 15H8A4.5 4.5 0 0 1 7.5 5Z" />
-                  <circle cx="5" cy="18.5" r="1.6" /><circle cx="8.5" cy="21.5" r="1" />
-                </svg>FROM {(pet?.name || "YOUR PET").toUpperCase()}'S MEMORY</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {memorySeeds.map((seed, i) => (
-                  <button key={i} onClick={() => setPrompt(seed)} style={{
-                    textAlign: "left", padding: "9px 12px", borderRadius: 10,
-                    background: T.paper, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
-                    fontSize: 13, color: T.ink, cursor: "pointer", lineHeight: 1.45,
-                    fontFamily: T.body,
-                  }}>{seed}</button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Pet-LoRA: train this pet's exact face (renders only when the
-              feature is enabled server-side and a real pet is selected). */}
-          {pet && !isDemo && (
-            <Reveal dir="left">
-              <PetLoraPanel petId={pet.id} petName={pet.name} />
-            </Reveal>
-          )}
-
-          {/* Templates — one tap loads a full, pet-anchored scene + flips to
-              video. The card art previews the vibe; tap, then hit Generate. */}
-          <div style={{ marginTop: 16 }}>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
-              <span style={{
-                fontSize: 13, fontFamily: T.m,
-                letterSpacing: "0.14em", color: T.studio, fontWeight: 700, textTransform: "uppercase",
-                display: "inline-flex", alignItems: "center", gap: 5,
-              }}><Icon name="sparkling" size={12} /> TEMPLATES</span>
-              <span style={{ fontSize: 13, fontFamily: T.m, color: T.muted2 }}>
-                one tap → a full scene
-              </span>
-            </div>
-            <div style={{
-              display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10,
-            }}>
-              {TEMPLATES.map((t, i) => {
-                const ex = TEMPLATE_EXAMPLES[t.id];
-                const vid = TEMPLATE_EXAMPLE_VIDEOS[t.id];
-                // Cream paper chip for the emoji mark — printed, not floating.
-                const emojiChip: React.CSSProperties = {
-                  fontSize: 13, lineHeight: 1, background: T.paper,
-                  border: `1px solid ${T.hair}`, borderRadius: 8, padding: "3px 6px",
-                };
-                return (
-                  <Reveal key={t.id} dir="up" delay={Math.min(i, 8) * 70}>
-                  <button
-                    onClick={() => applyTemplate(t)}
-                    // Item #25-4: no autoplaying wall of videos — motion previews
-                    // on a fine-pointer hover only; touch keeps the poster.
-                    onPointerEnter={vid ? (e) => {
-                      if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
-                      e.currentTarget.querySelector("video")?.play().catch(() => {});
-                    } : undefined}
-                    onPointerLeave={vid ? (e) => {
-                      const v = e.currentTarget.querySelector("video");
-                      if (v) { v.pause(); v.currentTime = 0; }
-                    } : undefined}
-                    style={{
-                      width: "100%", height: "100%",
-                      textAlign: "left", padding: 0, borderRadius: 14, overflow: "hidden",
-                      border: `1px solid ${T.hair}`, background: T.paper, cursor: "pointer",
-                      boxShadow: "var(--ed-shadow-card)",
-                      display: "flex", flexDirection: "column",
-                    }}
-                  >
-                    {vid ? (
-                      <div style={{ position: "relative", height: 92, overflow: "hidden" }}>
-                        <video
-                          src={vid} poster={ex} loop muted playsInline preload="metadata"
-                          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                        />
-                        <span style={{ ...emojiChip, position: "absolute", left: 9, bottom: 7 }}>{t.emoji}</span>
-                        <span style={{
-                          position: "absolute", top: 7, right: 8,
-                          fontSize: 13, fontFamily: T.m,
-                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
-                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
-                        }}>▸ MOTION</span>
-                        <span style={{
-                          position: "absolute", right: 9, bottom: 8,
-                          fontSize: 13, fontFamily: T.m,
-                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
-                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
-                        }}>{t.category}</span>
-                      </div>
-                    ) : ex ? (
-                      <div style={{
-                        height: 92, background: `url(${ex}) center/cover no-repeat`,
-                        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-                        padding: "8px 9px",
-                      }}>
-                        <span style={emojiChip}>{t.emoji}</span>
-                        <span style={{
-                          fontSize: 13, fontFamily: T.m,
-                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
-                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
-                        }}>{t.category}</span>
-                      </div>
-                    ) : (
-                      <div style={{
-                        height: 62,
-                        background: T.inset, borderBottom: `1px solid ${T.hair}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        position: "relative",
-                      }}>
-                        <span style={{ ...emojiChip, fontSize: 20, padding: "4px 8px" }}>{t.emoji}</span>
-                        <span style={{
-                          position: "absolute", top: 7, right: 8,
-                          fontSize: 13, fontFamily: T.m,
-                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
-                          color: T.studio,
-                        }}>{t.category}</span>
-                      </div>
-                    )}
-                    <div style={{ padding: "9px 11px 11px" }}>
-                      <div style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700, color: T.ink, letterSpacing: "-0.01em" }}>
-                        {t.title}
-                      </div>
-                      <div style={{ fontSize: 13, color: T.muted2, marginTop: 3, lineHeight: 1.45 }}>
-                        {t.description}
-                      </div>
-                    </div>
-                  </button>
-                  </Reveal>
-                );
-              })}
-            </div>
           </div>
         </div>
 
