@@ -366,19 +366,28 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
             @keyframes mpSealPopB { 0% { transform: scale(1); } 35% { transform: scale(1.045); } 100% { transform: scale(1); } }
             @keyframes mpReqPulseA { 0% { background-color: rgba(190,79,40,.16); } 100% { background-color: rgba(255,250,235,.5); } }
             @keyframes mpReqPulseB { 0% { background-color: rgba(190,79,40,.16); } 100% { background-color: rgba(255,250,235,.5); } }
+            /* fly-in: the framed collectible drops onto the mat and settles once —
+               ONE clear move (600ms spring-out, 120ms lead so the terracotta mat's
+               .ed-rise lands first). Composes with the child .ed-float bob + lvPop
+               because it lives on its own wrapper element; blanket reduced-motion
+               rule neutralizes it. */
+            @keyframes mpCardFlyIn { 0% { opacity: 0; transform: translateY(-42px) scale(.92) rotate(-5deg); } 60% { opacity: 1; transform: translateY(5px) scale(1.015) rotate(.5deg); } 100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); } }
+            .mp-flyin { animation: mpCardFlyIn .6s cubic-bezier(.2,.85,.25,1) .12s both; will-change: transform, opacity; }
             .mp-caretile { box-shadow: 0 10px 22px -18px rgba(190,79,40,.55); transition: transform .16s cubic-bezier(.2,.8,.2,1), box-shadow .16s ease; }
             @media (hover: hover) { .mp-caretile:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--ed-shadow-float); } }
             .mp-caretile:active:not(:disabled) { transform: scale(.97); }
           `}</style>
 
-          {/* ── poster (left, dominant) — keyed on the pet so switching rises the
-                 new collectible in. Stretches to the right column's full height
-                 (flex fill) so the left side never leaves a dead cream gap. ── */}
-          {/* Sticky wrapper is sized to the viewport (not the content) so the
-              poster fills the visible left column at ANY window height — no
-              dead cream gap below it on tall screens; content stays centered. */}
-          <div className="mp-poster-wrap" style={{ display: "flex", position: "sticky", top: 88, alignSelf: "start", height: "calc(100vh - 116px)", minHeight: 440 }}>
-            <div key={active.id} className="ed-rise" style={{ position: "relative", flex: 1, background: T.terra, borderRadius: 18, minHeight: 440, maxHeight: "calc(100vh - 116px)", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
+          {/* ── poster (left) — a sticky, content-height sidebar. It is exactly as
+                 tall as card + MEET + name (no viewport stretch), so the collectible
+                 never floats in a sea of empty terracotta; it pins at top:88 and
+                 stays visible while the taller right column scrolls past — the
+                 canonical short-sticky-sidebar pattern. Keyed on the pet so both the
+                 mat (.ed-rise) and the collectible (.mp-flyin) replay on switch.
+                 maxHeight + overflow:hidden are a pure clamp for the rare very-tall
+                 case (long name / short viewport). Mobile (<=880px) drops sticky. ── */}
+          <div className="mp-poster-wrap" style={{ position: "sticky", top: 88, alignSelf: "start" }}>
+            <div key={active.id} className="ed-rise" style={{ position: "relative", background: T.terra, borderRadius: 18, maxHeight: "calc(100vh - 116px)", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div aria-hidden style={{ position: "absolute", inset: 14, border: "1px solid rgba(252,233,207,.35)", borderRadius: 8, pointerEvents: "none" }} />
               {[["14px", "14px", "", ""], ["14px", "", "", "14px"], ["", "14px", "14px", ""], ["", "", "14px", "14px"]].map((c, i) => (
                 <span key={i} aria-hidden style={{ position: "absolute", top: c[0] || undefined, left: c[1] || undefined, bottom: c[2] || undefined, right: c[3] || undefined, width: 11, height: 11,
@@ -400,14 +409,22 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               </div>
               <div aria-hidden style={{ position: "absolute", top: -40, right: 6, fontFamily: T.disp, fontWeight: 800, fontSize: 132, lineHeight: 1, color: "rgba(255,255,255,.08)", zIndex: 1, pointerEvents: "none" }}>{active.level}</div>
 
-              {/* flow content centers vertically in whatever height the right
-                  column dictates — the frame + name always sit balanced. */}
+              {/* flow content — the frame + MEET + name stack snugly inside the
+                  content-height poster, cleared from the absolute header (paddingTop)
+                  and bottom ticker (paddingBottom). */}
               <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", zIndex: 2, paddingTop: 48, paddingBottom: 34 }}>
                 <div style={{ position: "relative", zIndex: 2 }}>
                   <Motes />
-                  {/* level-up: one-shot scale pop on the framed collectible (carries the gold seal) */}
-                  <div style={{ animation: lvPop > 0 ? `${lvPop % 2 ? "mpSealPopA" : "mpSealPopB"} .7s cubic-bezier(.2,.8,.2,1)` : undefined }}>
-                    <CollectibleFrame photoUrl={photo} level={active.level} speciesLabel={species.toUpperCase()} elementLabel={element} width={230} />
+                  {/* fly-in entrance: keyed to active.id so it replays when My Pet
+                      opens AND on pet-switch remount. Nested OUTSIDE the lvPop pop so
+                      the two one-shots live on separate elements and never fight over
+                      the `animation` shorthand; it also composes with the child
+                      .ed-float bob (transforms multiply down the chain). */}
+                  <div key={active.id} className="mp-flyin">
+                    {/* level-up: one-shot scale pop on the framed collectible (carries the gold seal) */}
+                    <div style={{ animation: lvPop > 0 ? `${lvPop % 2 ? "mpSealPopA" : "mpSealPopB"} .7s cubic-bezier(.2,.8,.2,1)` : undefined }}>
+                      <CollectibleFrame photoUrl={photo} level={active.level} speciesLabel={species.toUpperCase()} elementLabel={element} width={230} />
+                    </div>
                   </div>
                 </div>
 
