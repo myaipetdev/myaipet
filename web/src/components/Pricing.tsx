@@ -350,7 +350,9 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
             <button
               onClick={() => handlePurchase(p)}
               disabled={!!purchasing || paused}
-              className={p.pop ? "" : "pricing-btn-default"}
+              /* every card's button gets the terracotta hover fill — the popular
+                 card was excluded before, so its button never lit up on hover */
+              className="pricing-btn-default"
               style={{
                 width: "100%",
                 background: paused ? "rgba(33,26,18,0.25)"

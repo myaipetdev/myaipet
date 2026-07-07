@@ -41,7 +41,10 @@
 html,
 body {
   max-width: 100vw;
-  overflow-x: hidden;
+  /* clip (not hidden) — stops horizontal scroll WITHOUT making html/body a scroll
+     container, which is what silently broke every position:sticky in the app
+     (My Pet poster scrolled away instead of pinning). */
+  overflow-x: clip;
 }
 
 body {

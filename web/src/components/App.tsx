@@ -507,8 +507,11 @@ export default function App() {
     else refreshUser();
   };
 
+  // overflowX:clip (not overflow:hidden) — still clips horizontal reveal-animation
+  // overflow, but does NOT create a scroll container, so position:sticky (My Pet
+  // poster, etc.) keeps working. `overflow:hidden` silently broke sticky.
   return (
-    <div style={{ minHeight: "100vh", background: "#ECE4D4", color: "#211A12", position: "relative", overflow: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "#ECE4D4", color: "#211A12", position: "relative", overflowX: "clip" }}>
       <style>{`
         * { margin: 0; padding: 0; box-sizing: border-box }
         ::selection { background: rgba(190,79,40,0.18) }

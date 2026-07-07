@@ -1157,6 +1157,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                 return (
                   <Reveal key={t.id} dir="up" delay={Math.min(i, 8) * 70}>
                   <button
+                    className="ed-card-hover"
                     onClick={() => applyTemplate(t)}
                     // Item #25-4: no autoplaying wall of videos — motion previews
                     // on a fine-pointer hover only; touch keeps the poster.
@@ -1985,7 +1986,7 @@ function PreviewDemo({ pet, prompt }: { pet: Pet | null; prompt: string }) {
 // D5: research notes only — no ETAs, no quarter pills, no shipping promises.
 function RoadmapItem({ icon, title, body }: { icon: string; title: string; body: string }) {
   return (
-    <div style={{
+    <div className="ed-card-hover" style={{
       background: T.inset,
       border: `1px solid ${T.hair}`,
       borderRadius: 12, padding: 14,

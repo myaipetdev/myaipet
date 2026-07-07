@@ -86,7 +86,10 @@ export default function Nav({ section, setSection, credits }: any) {
           .nav-items-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; justify-content: flex-start !important; mask-image: linear-gradient(to right, black 88%, transparent); -webkit-mask-image: linear-gradient(to right, black 88%, transparent); }
           .nav-items-wrap::-webkit-scrollbar { display: none; }
         }
-        @media (max-width: 1060px) {
+        /* Hide the COMPANION PROTOCOL badge BEFORE the item strip starts to
+           scroll (1180px) — otherwise the badge + cramped items overlap in the
+           1060–1180 window (the "COMPANION PROTOHome" collision). */
+        @media (max-width: 1240px) {
           .nav-desktop-badge { display: none !important; }
         }
         @media (max-width: 768px) {
