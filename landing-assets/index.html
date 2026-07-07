@@ -235,8 +235,9 @@
     transition: transform .2s ease, background .2s, box-shadow .2s;
   }
   .btn-primary {
-    background: var(--gold); color: var(--navy);
-    box-shadow: 0 10px 30px rgba(226,125,12,0.35), inset 0 0 0 1px rgba(255,255,255,0.2);
+    /* app CTA rail — warm gradient + cream text (ink-on-terracotta was only 3.66:1) */
+    background: linear-gradient(180deg, var(--cta1), var(--cta2)); color: #FFF8EE;
+    box-shadow: 0 10px 30px rgba(226,125,12,0.4), inset 0 0 0 1px rgba(255,255,255,0.22);
   }
   .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 34px rgba(226,125,12,0.45); }
   .btn-ghost {
@@ -806,6 +807,24 @@
 
   /* magnetic CTA leans toward the pointer (set by JS on fine pointers) */
   [data-magnet]{transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+
+  /* ═══ contrast + responsive fixes (design-verification pass) ═══ */
+  /* Hero: dark scrim over the lower third so the sub-copy, wallet line and ghost
+     button read against the pale-gold bottom of the sky/video (was ~1.6–3.7:1). */
+  .hero::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:52%; z-index:1; background:linear-gradient(180deg, transparent, rgba(20,15,10,0.62)); pointer-events:none; }
+  .hero-sub{ color:rgba(255,248,230,0.96) !important; }
+  /* Mobile nav: the inline link row overflowed the CTA off-screen ≤~760px.
+     Drop the links (page is a single scroll); keep brand + Launch App reachable. */
+  @media (max-width: 760px){
+    .nav-links{ display:none !important; }
+    .nav{ padding:14px 18px !important; }
+  }
+  /* Invert section: recolor the accents the base rule missed (were invisible on
+     terracotta once inverted). */
+  .fx-invert.is-inverted .num,
+  .fx-invert.is-inverted .tag,
+  .fx-invert.is-inverted .prompt,
+  .fx-invert.is-inverted .gold{ color:var(--cream-on) !important; }
 </style>
 </head>
 <body>
@@ -1392,7 +1411,7 @@
 </section>
 
 <!-- SECTION 8: FOOTER CTA -->
-<footer class="footer-cta" id="adopt" data-screen-label="09 Footer" style="background:linear-gradient(180deg, var(--cream) 0%, #1e1710 60%, #1e1710 100%); padding: 120px 32px 60px; text-align:center;">
+<footer class="footer-cta" id="adopt" data-screen-label="09 Footer" style="background:linear-gradient(180deg, #2A2118 0%, #1E1710 30%, #1E1710 100%); padding: 120px 32px 60px; text-align:center;">
   <h2 style="font-size:clamp(40px,6vw,72px); line-height:1.05; margin-bottom:40px; color:#fff;">Your AI companion<br/><span style="color:var(--gold-soft); font-style:italic;">is waiting.</span></h2>
   <a href="https://app.myaipet.ai" class="btn btn-primary" style="font-size:18px; padding:18px 40px; display:inline-flex;">Adopt your pet &nbsp;→</a>
 
