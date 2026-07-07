@@ -759,7 +759,7 @@ export default function App() {
             { href: "/architecture", label: "Architecture" },
           ].map(l => (
             <a key={l.href} href={l.href} className="ed-underline-slide" style={{
-              fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
+              fontFamily: "var(--ed-m)", fontSize: 14, fontWeight: 700,
               letterSpacing: "0.08em", textTransform: "uppercase",
               color: "#9A7B4E", textDecoration: "none",
             }}>{l.label}</a>
@@ -767,7 +767,7 @@ export default function App() {
         </div>
 
         <div style={{
-          fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E",
+          fontFamily: "var(--ed-m)", fontSize: 14, color: "#9A7B4E",
           fontWeight: 700, letterSpacing: "0.06em", marginBottom: 12,
         }}>
           © 2026 My AI Pet Protocol · Raise · Bond · Remember
@@ -776,7 +776,7 @@ export default function App() {
         {/* Disclaimer */}
         <div style={{
           maxWidth: 680, margin: "0 auto",
-          fontFamily: "var(--ed-body)", fontSize: 13,
+          fontFamily: "var(--ed-body)", fontSize: 14,
           color: "#8A7E68", lineHeight: 1.6, fontWeight: 400,
         }}>
           Engagement points are non-financial loyalty credits, not securities. No token is issued —
