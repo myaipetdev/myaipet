@@ -758,7 +758,7 @@ export default function App() {
             { href: "/contracts", label: "Contracts" },
             { href: "/architecture", label: "Architecture" },
           ].map(l => (
-            <a key={l.href} href={l.href} style={{
+            <a key={l.href} href={l.href} className="ed-underline-slide" style={{
               fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
               letterSpacing: "0.08em", textTransform: "uppercase",
               color: "#9A7B4E", textDecoration: "none",

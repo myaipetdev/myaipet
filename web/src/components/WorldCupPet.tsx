@@ -230,7 +230,7 @@ export default function WorldCupPet() {
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
           <span style={{ fontSize: 13, fontFamily: T.m, fontWeight: 700, letterSpacing: "0.14em", color: T.mono, textTransform: "uppercase" }}>Your pet</span>
           {pets.map((p) => (
-            <button key={p.id} onClick={() => setPetId(p.id)} style={{
+            <button key={p.id} onClick={() => setPetId(p.id)} className="ed-card-hover" style={{
               padding: "6px 14px", borderRadius: 999, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: T.body,
               border: p.id === petId ? `1.5px solid ${T.terra}` : `1px solid ${T.hair}`,
               background: p.id === petId ? T.terra : T.paper,
@@ -251,7 +251,7 @@ export default function WorldCupPet() {
           const on = country?.code === c.code;
           return (
             <Reveal key={c.code} dir="up" delay={Math.min(i, 10) * 45}>
-            <button onClick={() => setCountry(c)} title={`${c.name} — ${c.animal}`} style={{
+            <button onClick={() => setCountry(c)} title={`${c.name} — ${c.animal}`} className="ed-card-hover" style={{
               display: "flex", flexDirection: "column", alignItems: "stretch", gap: 0, width: "100%",
               padding: 0, borderRadius: 10, cursor: "pointer", overflow: "hidden",
               border: on ? `2px solid ${T.terra}` : `1px solid ${T.hair}`,

@@ -1028,7 +1028,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   </div>
                 )}
                 {(varRunning || variations.length > 0) && (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(66px, 1fr))", gap: 8 }}>
                   {variations.map((v, i) => (
                     <button key={i} onClick={() => { setResultUrl(v.url); setLastGenId(v.genId); setVariations([]); }} className="mp-lift" title="Use this variation" style={{
                       padding: 4, background: T.paper, borderRadius: 10, overflow: "hidden",
