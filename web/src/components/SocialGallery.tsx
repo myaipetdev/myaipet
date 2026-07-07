@@ -778,11 +778,15 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
       aria-label="Community creations carousel"
       onKeyDown={(e) => { if (e.key === "ArrowRight") go(1); if (e.key === "ArrowLeft") go(-1); }}
       onWheel={(e) => {
+        // Only HORIZONTAL intent steps the crate — a vertical wheel must scroll
+        // the page (previously deltaY hijacked the carousel, so scrolling down
+        // both jumped the cards AND moved the page). One step per lock window so
+        // a swipe "catches" a single sleeve at a time.
+        if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
         const now = Date.now();
         if (now - wheelLock.current < 320) return;
         wheelLock.current = now;
-        const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-        if (Math.abs(d) > 8) go(d > 0 ? 1 : -1);
+        if (Math.abs(e.deltaX) > 8) go(e.deltaX > 0 ? 1 : -1);
       }}
       onPointerEnter={() => { hoverRef.current = true; }}
       onPointerLeave={() => { hoverRef.current = false; }}
@@ -1238,6 +1242,21 @@ export default function SocialGallery() {
                 }}
               />
             </div>
+
+            {/* Create yours — primary CTA lives in the masthead (was a floating
+                fixed FAB bottom-right, which read as detached from the page). */}
+            <button
+              onClick={() => { window.location.href = "/?section=create"; }}
+              className="ed-card-hover"
+              aria-label="Create your own"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "7px 16px", borderRadius: 999, border: "none", cursor: "pointer",
+                background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: "#FFF8EE",
+                fontFamily: T.body, fontSize: 13, fontWeight: 700,
+                boxShadow: "0 10px 22px -12px rgba(226,125,12,.6)",
+              }}
+            ><Icon name="sparkling" size={14} /> Create yours</button>
           </div>
         </div>
 
@@ -1383,20 +1402,6 @@ export default function SocialGallery() {
         />
       )}
 
-      {/* Persistent create entry — a viewer inspired mid-scroll can jump straight
-          to Create without hunting the nav. The whole feed gates behind auth, so
-          everyone here can generate. */}
-      <button
-        onClick={() => { window.location.href = "/?section=create"; }}
-        aria-label="Create your own"
-        style={{
-          position: "fixed", bottom: 24, right: 24, zIndex: 100,
-          padding: "13px 22px", borderRadius: 12, border: "none", cursor: "pointer",
-          background: `linear-gradient(135deg,${T.cta1},${T.cta2})`, color: "white",
-          fontFamily: T.body, fontSize: 14, fontWeight: 700,
-          boxShadow: "0 20px 40px -16px rgba(226,125,12,.65), 0 6px 14px -8px rgba(38,12,2,.4)",
-        }}
-      ><Icon name="sparkling" size={15} style={{ marginRight: 4 }} /> Create yours</button>
       </div>
     </div>
   );

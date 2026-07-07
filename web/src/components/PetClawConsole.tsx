@@ -15,6 +15,37 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "@/lib/api";
 
+// Terminal typewriter — reveals a line char-by-char once on mount; a blinking
+// caret trails until done. prefers-reduced-motion shows it instantly (no shift).
+function useTypewriter(text: string, speed = 26, startDelay = 260) {
+  const [out, setOut] = useState("");
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setOut(text); setDone(true); return;
+    }
+    let i = 0; let t: ReturnType<typeof setTimeout>;
+    const start = setTimeout(function tick() {
+      i += 1; setOut(text.slice(0, i));
+      if (i < text.length) t = setTimeout(tick, speed); else setDone(true);
+    }, startDelay);
+    return () => { clearTimeout(start); clearTimeout(t); };
+  }, [text, speed, startDelay]);
+  return { out, done };
+}
+
+// Masthead tagline, typed out with a blinking block caret (terminal feel).
+function TaglineTyper({ text, color }: { text: string; color: string }) {
+  const { out } = useTypewriter(text);
+  return (
+    <div style={{ textAlign: "center", color, fontSize: 14.5, marginBottom: 18, minHeight: "1.5em", fontFamily: "var(--ed-m), ui-monospace, monospace" }}>
+      <style>{`@keyframes pcBlink{0%,49%{opacity:1}50%,100%{opacity:0}}`}</style>
+      {out}
+      <span aria-hidden style={{ display: "inline-block", width: "0.55ch", height: "1em", verticalAlign: "-0.12em", marginLeft: 2, background: color, animation: "pcBlink 1.05s steps(1) infinite" }} />
+    </div>
+  );
+}
+
 interface PetLite {
   name?: string;
   level?: number;
@@ -298,9 +329,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
             background: "linear-gradient(180deg,#FFE6A8 0%,#E8C77E 44%,#C8932F 100%)",
             WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
           }}>PETCLAW</div>
-          <div style={{ textAlign: "center", color: MUTED, fontSize: 14.5, marginBottom: 18 }}>
-            your AI pet, sovereign &amp; portable — across every surface you use
-          </div>
+          <TaglineTyper text="your AI pet, sovereign & portable — across every surface you use" color={MUTED} />
 
           {/* manifest */}
           <div style={{ border: `1px solid ${LINE}`, borderRadius: 12, padding: compact ? "18px 20px" : "20px 24px" }}>
