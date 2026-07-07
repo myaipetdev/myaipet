@@ -4,14 +4,14 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>MY AI PET — Your AI Companion, On-Chain</title>
-<meta name="description" content="Raise an AI pet companion that grows, evolves, and earns loyalty rewards (non-financial points). A sovereign AI companion you truly own. CompanionFi on BNB Smart Chain." />
-<meta name="theme-color" content="#f59e0b" />
+<meta name="description" content="Raise an AI companion that remembers you, grows with you, and is truly yours — a sovereign AI pet you own. Sign in with your wallet; no gas, USDT on BNB Smart Chain." />
+<meta name="theme-color" content="#BE4F28" />
 
 <!-- Open Graph -->
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="MY AI PET" />
 <meta property="og:title" content="MY AI PET — Your AI Companion, On-Chain" />
-<meta property="og:description" content="Raise an AI pet companion that grows, evolves, and earns. CompanionFi on BNB Smart Chain." />
+<meta property="og:description" content="Raise an AI companion that remembers you, grows with you, and is truly yours. Companion Protocol on BNB Smart Chain." />
 <meta property="og:url" content="https://myaipet.ai" />
 <meta property="og:image" content="https://myaipet.ai/hero-mascot.jpg" />
 <meta property="og:image:width" content="1200" />
@@ -21,7 +21,7 @@
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:site" content="@myaipets" />
 <meta name="twitter:title" content="MY AI PET — Your AI Companion, On-Chain" />
-<meta name="twitter:description" content="Raise an AI pet companion that grows, evolves, and earns. CompanionFi on BNB Smart Chain." />
+<meta name="twitter:description" content="Raise an AI companion that remembers you, grows with you, and is truly yours. Companion Protocol on BNB Smart Chain." />
 <meta name="twitter:image" content="https://myaipet.ai/hero-mascot.jpg" />
 
 <!-- Icons -->
@@ -31,24 +31,36 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
 <style>
   :root {
-    --gold: #f59e0b;
-    --gold-soft: #fbbf24;
-    --gold-deep: #b45309;
-    --navy: #0a0a14;
-    --navy-2: #14141f;
-    --navy-3: #1a1a2e;
-    --cream: #faf5ed;
-    --cream-2: #f2e9d8;
-    --ink: #12121c;
-    --muted: #6b6876;
-    --line: rgba(16,16,28,0.08);
-    --line-dk: rgba(255,255,255,0.08);
-    --serif: 'Space Grotesk', system-ui, sans-serif;
-    --sans: 'Inter', system-ui, sans-serif;
-    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    /* Collectible Editorial — synced with the app (app.myaipet.ai). Variable
+       names kept so every existing usage re-themes at once; "gold"→terracotta/foil,
+       "navy"→warm-dark ink, "cream"→paper, plus editorial CTA + foil tokens. */
+    --gold: #BE4F28;         /* primary accent = terracotta */
+    --gold-soft: #E8C77E;    /* foil-gold light */
+    --gold-deep: #9A4E1E;    /* deep terracotta (eyebrows / small caps) */
+    --foil: #E8C77E;
+    --foil-deep: #C8932F;
+    --terra: #BE4F28;
+    --terra-sub: #9A4E1E;
+    --cta1: #F49B2A;         /* warm CTA gradient */
+    --cta2: #E27D0C;
+    --cream-on: #FCE9CF;     /* cream text on warm-dark */
+    --navy: #1E1710;         /* warm-dark (was navy) */
+    --navy-2: #211A12;       /* ink */
+    --navy-3: #2A2118;       /* warm-dark step */
+    --cream: #FBF6EC;        /* paper */
+    --cream-2: #ECE4D4;      /* field */
+    --ink: #211A12;
+    --ink-70: #3A3024;
+    --muted: #7A6E5A;
+    --line: rgba(33,26,18,0.13);
+    --line-dk: rgba(252,233,207,0.14);
+    --serif: 'Bricolage Grotesque', system-ui, sans-serif;   /* display */
+    --sans: 'Hanken Grotesk', system-ui, sans-serif;          /* body */
+    --mono: 'Space Mono', ui-monospace, monospace;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);                    /* FLock expo-out */
   }
   * { box-sizing: border-box; }
   /* SCRUM-73 DD §4.4: visually-hidden helper for screen-reader-only labels */
@@ -84,7 +96,7 @@
   .nav-logo {
     width: 28px; height: 28px; border-radius: 8px;
     background: radial-gradient(circle at 30% 30%, var(--gold-soft), var(--gold) 60%, var(--gold-deep));
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3), 0 4px 14px rgba(245,158,11,0.35);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3), 0 4px 14px rgba(226,125,12,0.35);
     position: relative;
   }
   .nav-logo::after {
@@ -120,13 +132,13 @@
   .hero-sky {
     position: absolute; inset: 0; z-index: -5;
     background:
-      radial-gradient(ellipse at 50% 120%, rgba(245,158,11,0.55), transparent 55%),
-      linear-gradient(180deg, #1b1530 0%, #3d2a4a 30%, #8a4a3a 65%, #d88846 88%, #f2c27a 100%);
+      radial-gradient(ellipse at 50% 120%, rgba(226,125,12,0.55), transparent 55%),
+      linear-gradient(180deg, #1e1710 0%, #3a2a1e 30%, #8a4a3a 65%, #d88846 88%, #f2c27a 100%);
     transition: filter .6s ease;
   }
   .hero-sun {
     position: absolute; left: 50%; bottom: 22%; width: 280px; height: 280px; border-radius: 50%;
-    background: radial-gradient(circle, #fde68a 0%, #fbbf24 40%, rgba(251,191,36,0) 70%);
+    background: radial-gradient(circle, #fbe3b8 0%, #e8c77e 40%, rgba(232,199,126,0) 70%);
     transform: translateX(-50%);
     filter: blur(6px);
     z-index: -4;
@@ -154,19 +166,19 @@
     background:
       linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.12) 100%),
       repeating-linear-gradient(92deg, #7a5a1f 0px, #92681f 3px, #a0761d 6px, #835517 9px),
-      linear-gradient(180deg, #b3851f 0%, #8a5c18 100%);
+      linear-gradient(180deg, #9a7b2e 0%, #8a5c18 100%);
     z-index: -2;
     mask-image: linear-gradient(180deg, transparent 0%, #000 8%, #000 100%);
   }
   .hero-grass::before {
     content: ""; position: absolute; inset: 0;
     background-image:
-      radial-gradient(ellipse 2px 14px at 10% 90%, #d4a53c 0%, transparent 70%),
-      radial-gradient(ellipse 2px 12px at 25% 80%, #c99635 0%, transparent 70%),
-      radial-gradient(ellipse 2px 16px at 43% 95%, #d4a53c 0%, transparent 70%),
-      radial-gradient(ellipse 2px 10px at 61% 82%, #b8832b 0%, transparent 70%),
-      radial-gradient(ellipse 2px 14px at 78% 90%, #d4a53c 0%, transparent 70%),
-      radial-gradient(ellipse 2px 12px at 91% 78%, #c99635 0%, transparent 70%);
+      radial-gradient(ellipse 2px 14px at 10% 90%, #c8932f 0%, transparent 70%),
+      radial-gradient(ellipse 2px 12px at 25% 80%, #c8932f 0%, transparent 70%),
+      radial-gradient(ellipse 2px 16px at 43% 95%, #c8932f 0%, transparent 70%),
+      radial-gradient(ellipse 2px 10px at 61% 82%, #c8932f 0%, transparent 70%),
+      radial-gradient(ellipse 2px 14px at 78% 90%, #c8932f 0%, transparent 70%),
+      radial-gradient(ellipse 2px 12px at 91% 78%, #c8932f 0%, transparent 70%);
     background-size: 120px 100%;
     background-repeat: repeat-x;
     opacity: 0.6;
@@ -177,7 +189,7 @@
   .petal {
     position: absolute;
     width: 8px; height: 10px; border-radius: 60% 40% 50% 50% / 50% 40% 60% 50%;
-    background: linear-gradient(140deg, #fde68a, #f59e0b);
+    background: linear-gradient(140deg, #fbe3b8, #be4f28);
     opacity: 0.75;
     filter: blur(0.3px);
     animation: drift linear infinite;
@@ -198,9 +210,9 @@
     background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);
     backdrop-filter: blur(10px);
     font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
-    color: #fde68a;
+    color: #fbe3b8;
   }
-  .hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: #fbbf24; box-shadow: 0 0 10px #fbbf24; }
+  .hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: #e8c77e; box-shadow: 0 0 10px #e8c77e; }
   .hero h1 {
     margin-top: 26px;
     font-size: clamp(52px, 8vw, 104px);
@@ -224,9 +236,9 @@
   }
   .btn-primary {
     background: var(--gold); color: var(--navy);
-    box-shadow: 0 10px 30px rgba(245,158,11,0.35), inset 0 0 0 1px rgba(255,255,255,0.2);
+    box-shadow: 0 10px 30px rgba(226,125,12,0.35), inset 0 0 0 1px rgba(255,255,255,0.2);
   }
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 34px rgba(245,158,11,0.45); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 34px rgba(226,125,12,0.45); }
   .btn-ghost {
     background: rgba(255,255,255,0.08); color: var(--cream);
     border: 1px solid rgba(255,255,255,0.18); backdrop-filter: blur(10px);
@@ -285,8 +297,8 @@
   .diff-card:hover { transform: translateY(-4px); box-shadow: 0 40px 60px -30px rgba(16,16,28,0.18); }
   .diff-glyph {
     width: 72px; height: 72px; border-radius: 16px;
-    background: linear-gradient(160deg, rgba(245,158,11,0.14), rgba(245,158,11,0.03));
-    border: 1px solid rgba(245,158,11,0.25);
+    background: linear-gradient(160deg, rgba(226,125,12,0.14), rgba(226,125,12,0.03));
+    border: 1px solid rgba(226,125,12,0.25);
     display: flex; align-items: center; justify-content: center;
     margin-bottom: 22px; position: relative; overflow: hidden;
   }
@@ -296,7 +308,7 @@
     display: inline-flex; margin-top: 22px;
     font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
     color: var(--gold-deep); padding: 6px 10px; border-radius: 6px;
-    background: rgba(245,158,11,0.08);
+    background: rgba(226,125,12,0.08);
   }
   /* Glyphs */
   .gl-brain, .gl-lock, .gl-web { width: 34px; height: 34px; position: relative; }
@@ -308,7 +320,7 @@
   .gl-brain::after { width: 20px; height: 20px; right: 0; top: 7px; border-left: 0; }
   .gl-brain span {
     position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--gold);
-    left: 14px; top: 14px; box-shadow: 0 0 0 3px rgba(245,158,11,0.2);
+    left: 14px; top: 14px; box-shadow: 0 0 0 3px rgba(226,125,12,0.2);
   }
   .gl-lock {
     border: 2px solid var(--gold-deep); border-radius: 6px;
@@ -350,7 +362,7 @@
   }
   .chat-avatar {
     width: 40px; height: 40px; border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, #fde68a, var(--gold) 60%, var(--gold-deep));
+    background: radial-gradient(circle at 30% 30%, #fbe3b8, var(--gold) 60%, var(--gold-deep));
     position: relative;
   }
   .chat-avatar::after {
@@ -372,7 +384,7 @@
   .msg.pet {
     align-self: flex-start;
     background: #fff7e6; color: var(--ink); border-bottom-left-radius: 6px;
-    border: 1px solid rgba(245,158,11,0.2);
+    border: 1px solid rgba(226,125,12,0.2);
   }
   .msg .time { display:block; font-family: var(--mono); font-size: 10px; opacity: 0.55; margin-top: 4px; letter-spacing: 0.1em; }
   @keyframes msg-in {
@@ -381,7 +393,7 @@
   }
   .typing {
     align-self: flex-start; padding: 12px 16px; border-radius: 18px 18px 18px 6px;
-    background: #fff7e6; border: 1px solid rgba(245,158,11,0.2);
+    background: #fff7e6; border: 1px solid rgba(226,125,12,0.2);
     display: inline-flex; gap: 4px;
   }
   .typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); animation: typing 1.3s infinite; }
@@ -416,7 +428,7 @@
   }
   .pet-card::before {
     content: ""; position: absolute; right: -30%; top: -30%; width: 60%; height: 60%;
-    background: radial-gradient(circle, rgba(245,158,11,0.3), transparent 60%);
+    background: radial-gradient(circle, rgba(226,125,12,0.3), transparent 60%);
     pointer-events: none;
   }
   .pet-top { display: flex; justify-content: space-between; align-items: flex-start; }
@@ -424,16 +436,16 @@
   .pet-avatar {
     width: 60px; height: 60px; border-radius: 16px;
     background:
-      repeating-linear-gradient(45deg, rgba(245,158,11,0.25) 0 6px, rgba(245,158,11,0.45) 6px 12px);
-    border: 1px dashed rgba(245,158,11,0.5);
+      repeating-linear-gradient(45deg, rgba(226,125,12,0.25) 0 6px, rgba(226,125,12,0.45) 6px 12px);
+    border: 1px dashed rgba(226,125,12,0.5);
     display: flex; align-items: center; justify-content: center;
-    font-family: var(--mono); font-size: 8px; color: #fde68a; text-align: center; line-height: 1.2;
+    font-family: var(--mono); font-size: 8px; color: #fbe3b8; text-align: center; line-height: 1.2;
   }
   .pet-name { font-family: var(--serif); font-size: 22px; font-weight: 600; }
-  .pet-tag { font-family: var(--mono); font-size: 11px; color: #fbbf24; letter-spacing: 0.1em; }
+  .pet-tag { font-family: var(--mono); font-size: 11px; color: #e8c77e; letter-spacing: 0.1em; }
   .pet-level {
-    padding: 6px 10px; background: rgba(245,158,11,0.18);
-    border-radius: 8px; font-family: var(--mono); font-size: 11px; color: #fde68a; letter-spacing: 0.1em;
+    padding: 6px 10px; background: rgba(226,125,12,0.18);
+    border-radius: 8px; font-family: var(--mono); font-size: 11px; color: #fbe3b8; letter-spacing: 0.1em;
   }
   .pet-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .stat {
@@ -445,15 +457,15 @@
   .bond { padding: 14px; background: rgba(255,255,255,0.04); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); }
   .bond-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .bond-head .l { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,248,230,0.5); }
-  .bond-head .v { font-family: var(--mono); font-size: 12px; color: #fde68a; }
+  .bond-head .v { font-family: var(--mono); font-size: 12px; color: #fbe3b8; }
   .bond-bar { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
   .bond-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--gold-deep), var(--gold), var(--gold-soft)); border-radius: 999px; transition: width 1.4s cubic-bezier(.2,.7,.2,1); }
   .skills { display: flex; flex-wrap: wrap; gap: 6px; }
   .skill {
     font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
     padding: 5px 9px; border-radius: 999px;
-    background: rgba(245,158,11,0.14); color: #fde68a;
-    border: 1px solid rgba(245,158,11,0.3);
+    background: rgba(226,125,12,0.14); color: #fbe3b8;
+    border: 1px solid rgba(226,125,12,0.3);
   }
   .demo-foot { margin-top: 28px; font-family: var(--sans); font-size: 18px; font-weight: 500; line-height: 1.55; color: var(--ink); max-width: 680px; }
   .demo-foot .gold { color: var(--gold-deep); font-weight: 600; }
@@ -473,8 +485,8 @@
   .g-avatar {
     width: 100%; aspect-ratio: 1/1; border-radius: 12px;
     background:
-      repeating-linear-gradient(var(--a, 45deg), rgba(245,158,11,0.22) 0 6px, rgba(245,158,11,0.38) 6px 12px);
-    border: 1px dashed rgba(245,158,11,0.45);
+      repeating-linear-gradient(var(--a, 45deg), rgba(226,125,12,0.22) 0 6px, rgba(226,125,12,0.38) 6px 12px);
+    border: 1px dashed rgba(226,125,12,0.45);
     display: flex; align-items: center; justify-content: center; text-align: center;
     font-family: var(--mono); font-size: 9px; color: var(--gold-deep); padding: 10px;
     transition: transform .4s ease;
@@ -489,7 +501,7 @@
     display: inline-block; margin-top: 6px;
     font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
     padding: 3px 8px; border-radius: 6px;
-    background: rgba(245,158,11,0.1); color: var(--gold-deep);
+    background: rgba(226,125,12,0.1); color: var(--gold-deep);
   }
   .g-quote { margin-top: 10px; font-size: 13px; line-height: 1.45; color: var(--ink); font-style: italic; }
   .g-wallet { margin-top: 10px; font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
@@ -501,8 +513,8 @@
   .dark-section::before {
     content:""; position: absolute; inset: 0;
     background:
-      radial-gradient(ellipse at 10% 10%, rgba(245,158,11,0.1), transparent 50%),
-      radial-gradient(ellipse at 90% 90%, rgba(245,158,11,0.06), transparent 50%);
+      radial-gradient(ellipse at 10% 10%, rgba(226,125,12,0.1), transparent 50%),
+      radial-gradient(ellipse at 90% 90%, rgba(226,125,12,0.06), transparent 50%);
     pointer-events: none;
   }
   .dark-section .eyebrow { color: var(--gold-soft); }
@@ -519,10 +531,10 @@
     transition: background .3s;
   }
   .right:last-child { border-right: 0; }
-  .right:hover { background: rgba(245,158,11,0.04); }
+  .right:hover { background: rgba(226,125,12,0.04); }
   .right .icon {
     width: 44px; height: 44px; border-radius: 12px;
-    background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);
+    background: rgba(226,125,12,0.12); border: 1px solid rgba(226,125,12,0.25);
     display: flex; align-items: center; justify-content: center;
     color: var(--gold-soft); font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
   }
@@ -530,7 +542,7 @@
   .right p { font-size: 14px; line-height: 1.55; color: rgba(255,248,230,0.65); }
   .right .meta {
     margin-top: auto; font-family: var(--mono); font-size: 10px;
-    letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,158,11,0.7);
+    letter-spacing: 0.14em; text-transform: uppercase; color: rgba(226,125,12,0.7);
   }
 
   /* DATA FLOW */
@@ -566,8 +578,8 @@
   .flow-badge span {
     font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
     padding: 8px 14px; border-radius: 999px;
-    background: rgba(245,158,11,0.1); color: var(--gold-soft);
-    border: 1px solid rgba(245,158,11,0.25);
+    background: rgba(226,125,12,0.1); color: var(--gold-soft);
+    border: 1px solid rgba(226,125,12,0.25);
   }
 
   /* BROWSER SHOWCASE */
@@ -594,10 +606,10 @@
     font-family: var(--mono); font-size: 11px; color: var(--muted);
     display: flex; align-items: center; gap: 8px;
   }
-  .url::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--gold); display: inline-block; box-shadow: 0 0 0 2px rgba(245,158,11,0.2); }
+  .url::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--gold); display: inline-block; box-shadow: 0 0 0 2px rgba(226,125,12,0.2); }
   .browser-tab {
     padding: 4px 10px; font-family: var(--mono); font-size: 10px; color: var(--muted);
-    border-radius: 6px; background: rgba(245,158,11,0.1);
+    border-radius: 6px; background: rgba(226,125,12,0.1);
   }
   .browser-body {
     position: relative; height: 380px;
@@ -615,8 +627,8 @@
   }
   .pet-walker .mp {
     width: 100%; height: 100%; border-radius: 14px;
-    background: repeating-linear-gradient(45deg, rgba(245,158,11,0.25) 0 6px, rgba(245,158,11,0.45) 6px 12px);
-    border: 1px dashed rgba(245,158,11,0.55);
+    background: repeating-linear-gradient(45deg, rgba(226,125,12,0.25) 0 6px, rgba(226,125,12,0.45) 6px 12px);
+    border: 1px dashed rgba(226,125,12,0.55);
     font-family: var(--mono); font-size: 8px; color: var(--gold-deep);
     display: flex; align-items: center; justify-content: center; text-align: center; padding: 6px;
   }
@@ -677,14 +689,14 @@
   .proto-col:last-child { border-right: 0; }
   .proto-col .num {
     font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em;
-    color: rgba(245,158,11,0.7);
+    color: rgba(226,125,12,0.7);
   }
   .proto-col h4 { margin-top: 16px; font-size: 22px; }
   .proto-col p { margin-top: 10px; font-size: 14px; line-height: 1.55; color: rgba(255,248,230,0.65); }
   .proto-col .tag {
     display: inline-block; margin-top: 18px;
     font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
-    padding: 4px 8px; border-radius: 6px; background: rgba(245,158,11,0.1); color: var(--gold-soft);
+    padding: 4px 8px; border-radius: 6px; background: rgba(226,125,12,0.1); color: var(--gold-soft);
   }
   .badges {
     margin-top: 56px; display: flex; gap: 10px; flex-wrap: wrap;
@@ -701,7 +713,7 @@
   /* FOOTER CTA */
   .footer-cta {
     background:
-      radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.3), transparent 60%),
+      radial-gradient(ellipse at 50% 0%, rgba(226,125,12,0.3), transparent 60%),
       linear-gradient(180deg, #f2c27a 0%, #e09554 50%, #8a4a3a 100%);
     color: var(--cream); text-align: center;
     padding: 140px 32px 72px; position: relative; overflow: hidden;
@@ -709,7 +721,7 @@
   .footer-cta h2 {
     font-size: clamp(44px, 6vw, 84px); line-height: 0.95; letter-spacing: -0.035em;
   }
-  .footer-cta h2 .gold { color: #fde68a; font-style: italic; font-weight: 500; }
+  .footer-cta h2 .gold { color: #fbe3b8; font-style: italic; font-weight: 500; }
   .footer-cta .big-cta {
     display: inline-flex; align-items: center; gap: 10px; margin-top: 42px;
     padding: 22px 36px; border-radius: 999px;
@@ -764,6 +776,36 @@
     .proto-cols { grid-template-columns: 1fr; }
     .proto-col { border-right: 0; border-bottom: 1px solid var(--line-dk); }
   }
+
+  /* ═══════════ FLock motion vocabulary — synced from the app ═══════════
+     Scroll reveal (E02/E03), hover language (E04), section invert (E06),
+     magnetic CTA (E07). Content is visible without JS; the .js gate hides
+     reveal targets only when JS + WAAPI are present. Reduced-motion: static. */
+  .js [data-reveal]{opacity:0}
+  .js [data-reveal].reveal-done{opacity:1}
+  @media (prefers-reduced-motion: reduce){ .js [data-reveal]{opacity:1 !important; transform:none !important} }
+
+  /* hover — outline wipe fills terracotta bottom-up, text flips to cream */
+  .fx-wipe{position:relative; isolation:isolate; transition:color .24s var(--ease), border-color .24s var(--ease)}
+  .fx-wipe::after{content:""; position:absolute; inset:0; z-index:-1; background:var(--terra); transform:scaleY(0); transform-origin:bottom; transition:transform .26s var(--ease); border-radius:inherit}
+  @media(hover:hover){ .fx-wipe:hover,.fx-wipe:hover *{color:var(--cream-on)!important} .fx-wipe:hover::after{transform:scaleY(1)} }
+
+  /* hover — left-anchored gradient underline slide (links) */
+  .fx-underline{background-image:linear-gradient(90deg,var(--terra),var(--cta2)); background-size:0% 2px; background-repeat:no-repeat; background-position:left calc(100% - 1px); transition:background-size .28s var(--ease); padding-bottom:2px}
+  @media(hover:hover){ .fx-underline:hover{background-size:100% 2px; opacity:1} }
+
+  /* hover — CTA arrow nudge */
+  .fx-arrow{display:inline-block; transition:transform .3s var(--ease)}
+  @media(hover:hover){ a:hover .fx-arrow, button:hover .fx-arrow{transform:translateX(4px)} }
+
+  /* the page's ONE big move — a section inverts field → terracotta at 60% */
+  .fx-invert{transition:background-color .6s ease, color .6s ease}
+  .fx-invert.is-inverted{background:var(--terra)!important; color:var(--cream-on)!important}
+  .fx-invert.is-inverted .eyebrow,.fx-invert.is-inverted h2,.fx-invert.is-inverted h3,.fx-invert.is-inverted p{color:var(--cream-on)!important}
+  .fx-invert.is-inverted .eyebrow::before{background:var(--cream-on)!important}
+
+  /* magnetic CTA leans toward the pointer (set by JS on fine pointers) */
+  [data-magnet]{transition:transform .2s cubic-bezier(.2,.8,.2,1)}
 </style>
 </head>
 <body>
@@ -771,7 +813,7 @@
 <!-- NAV -->
 <nav class="nav" id="nav" data-screen-label="01 Nav">
   <div class="nav-brand">
-    <img src="hero-mascot.jpg" alt="MY AI PET" style="width:28px; height:28px; border-radius:8px; object-fit:cover; border:2px solid rgba(245,158,11,0.35); box-shadow:0 2px 10px rgba(245,158,11,0.25);" />
+    <img src="hero-mascot.jpg" alt="MY AI PET" style="width:28px; height:28px; border-radius:8px; object-fit:cover; border:2px solid rgba(226,125,12,0.35); box-shadow:0 2px 10px rgba(226,125,12,0.25);" />
     <span>MY AI PET</span>
   </div>
   <div class="nav-links">
@@ -898,7 +940,7 @@
         <img src="mascot-original.jpg" alt="PetClaw Mascot"
           style="width:280px; height:280px; object-fit:cover; border-radius:24px;
           box-shadow: 0 40px 80px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1);
-          border:3px solid rgba(245,158,11,0.3);" />
+          border:3px solid rgba(226,125,12,0.3);" />
         <div style="text-align:center; margin-top:16px;">
           <div style="font-family:var(--serif); font-size:22px; font-weight:700; color:var(--cream);">Sparky</div>
           <div style="font-family:var(--mono); font-size:11px; color:rgba(255,248,230,0.5); margin-top:4px;">Lv.15 · Playful · Fire</div>
@@ -941,7 +983,7 @@
         </div>
 
         <div style="margin-top:20px; display:flex; gap:8px; flex-wrap:wrap;">
-          <span style="font-family:var(--mono); font-size:9px; padding:4px 10px; border-radius:6px; background:rgba(245,158,11,0.12); color:var(--gold-soft); letter-spacing:0.1em;">PETCLAW v1</span>
+          <span style="font-family:var(--mono); font-size:9px; padding:4px 10px; border-radius:6px; background:rgba(226,125,12,0.12); color:var(--gold-soft); letter-spacing:0.1em;">PETCLAW v1</span>
           <span style="font-family:var(--mono); font-size:9px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">6 MCP TOOLS</span>
           <span style="font-family:var(--mono); font-size:9px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">21 CONNECTORS</span>
           <span style="font-family:var(--mono); font-size:9px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">BSC MAINNET</span>
@@ -1123,7 +1165,7 @@
         <h3>A quiet friend in the corner of every tab.</h3>
         <p>
           Install once. Your pet walks along the bottom of every page,
-          earning points for presence and rewarding streaks.
+          marking your presence and celebrating streaks — recognition only, non-financial.
         </p>
         <div class="points-list">
           <div class="row"><span class="k">Chat</span><span class="v">+3 pts</span></div>
@@ -1176,7 +1218,7 @@
     </div>
 
     <div style="margin-top:40px; padding:28px 28px 24px; border:1px solid var(--line-dk); border-radius:14px; background:rgba(255,255,255,0.03);">
-      <div style="font-family:var(--mono); font-size:10px; letter-spacing:0.2em; color:rgba(245,158,11,0.7);">AGENTIC HARNESS</div>
+      <div style="font-family:var(--mono); font-size:10px; letter-spacing:0.2em; color:rgba(226,125,12,0.7);">AGENTIC HARNESS</div>
       <h4 style="margin-top:12px; font-size:22px;">VIGIL — the loop that keeps getting better at you.</h4>
       <p style="margin-top:10px; font-size:14px; line-height:1.55; color:rgba(255,248,230,0.65); max-width:680px;">
         Every chat turn runs through VIGIL, an always-on self-improvement loop. Not features you toggle — they compound on their own, so your pet sharpens to <em>you</em> over time.
@@ -1248,7 +1290,7 @@
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:48px;">
-      <div style="padding:24px 20px;border-radius:16px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);">
+      <div style="padding:24px 20px;border-radius:16px;background:rgba(226,125,12,0.08);border:1px solid rgba(226,125,12,0.2);">
         <div style="font-family:var(--mono);font-size:10px;color:var(--gold-soft);letter-spacing:0.1em;margin-bottom:8px;">NOW · LIVE</div>
         <h4 style="font-size:15px;color:var(--cream);margin-bottom:8px;">Companion AI</h4>
         <ul style="font-size:12px;color:rgba(255,248,230,0.5);line-height:1.8;list-style:none;padding:0;">
@@ -1271,7 +1313,7 @@
       </div>
       <div style="padding:24px 20px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid var(--line-dk);">
         <div style="font-family:var(--mono);font-size:10px;color:rgba(255,248,230,0.4);letter-spacing:0.1em;margin-bottom:8px;">Q4 2026</div>
-        <h4 style="font-size:15px;color:var(--cream);margin-bottom:8px;">Earn & Grow</h4>
+        <h4 style="font-size:15px;color:var(--cream);margin-bottom:8px;">Create &amp; Grow</h4>
         <ul style="font-size:12px;color:rgba(255,248,230,0.4);line-height:1.8;list-style:none;padding:0;">
           <li>○ Creator marketplace</li>
           <li>○ Skill creator revenue share</li>
@@ -1311,7 +1353,7 @@
         border-bottom:none;
       ">
         <div style="display:flex; gap:10px; margin-bottom:16px;">
-          <img src="pet-sparky-card.jpg" alt="" style="width:36px;height:36px;border-radius:10px;object-fit:cover;border:2px solid rgba(245,158,11,0.3);flex-shrink:0;" />
+          <img src="pet-sparky-card.jpg" alt="" style="width:36px;height:36px;border-radius:10px;object-fit:cover;border:2px solid rgba(226,125,12,0.3);flex-shrink:0;" />
           <div style="background:rgba(255,255,255,0.06); padding:10px 14px; border-radius:4px 14px 14px 14px; max-width:80%;">
             <div style="font-size:13px; color:var(--cream); line-height:1.5;">Hey! I'm Sparky, a PetClaw companion. Ask me anything — I remember everything. 🐾</div>
           </div>
@@ -1326,7 +1368,7 @@
           style="flex:1; padding:12px 16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);
           background:rgba(255,255,255,0.04); color:var(--cream); font-size:14px; font-family:var(--sans);
           outline:none; transition:border-color .2s;"
-          onfocus="this.style.borderColor='rgba(245,158,11,0.4)'"
+          onfocus="this.style.borderColor='rgba(226,125,12,0.4)'"
           onblur="this.style.borderColor='rgba(255,255,255,0.08)'"
         />
         <button id="playgroundSend" style="
@@ -1350,16 +1392,16 @@
 </section>
 
 <!-- SECTION 8: FOOTER CTA -->
-<footer class="footer-cta" id="adopt" data-screen-label="09 Footer" style="background:linear-gradient(180deg, var(--cream) 0%, #1a1a2e 60%, #0a0a14 100%); padding: 120px 32px 60px; text-align:center;">
+<footer class="footer-cta" id="adopt" data-screen-label="09 Footer" style="background:linear-gradient(180deg, var(--cream) 0%, #1e1710 60%, #1e1710 100%); padding: 120px 32px 60px; text-align:center;">
   <h2 style="font-size:clamp(40px,6vw,72px); line-height:1.05; margin-bottom:40px; color:#fff;">Your AI companion<br/><span style="color:var(--gold-soft); font-style:italic;">is waiting.</span></h2>
   <a href="https://app.myaipet.ai" class="btn btn-primary" style="font-size:18px; padding:18px 40px; display:inline-flex;">Adopt your pet &nbsp;→</a>
 
   <div style="margin-top:60px; display:flex; justify-content:center; gap:32px; flex-wrap:wrap;">
-    <a href="https://www.npmjs.com/package/petclaw-sdk" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color=''">npm</a>
-    <a href="https://app.myaipet.ai/petclaw-extension.zip" download="myaipet-extension.zip" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color=''">Chrome Extension</a>
-    <a href="https://x.com/myaipets" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color=''">X / Twitter</a>
-    <a href="https://t.me/myaipets" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color=''">Telegram</a>
-    <a href="https://app.myaipet.ai/api-docs" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#fbbf24'" onmouseout="this.style.color=''">API Docs</a>
+    <a href="https://www.npmjs.com/package/petclaw-sdk" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">npm</a>
+    <a href="https://app.myaipet.ai/petclaw-extension.zip" download="myaipet-extension.zip" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">Chrome Extension</a>
+    <a href="https://x.com/myaipets" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">X / Twitter</a>
+    <a href="https://t.me/myaipets" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">Telegram</a>
+    <a href="https://app.myaipet.ai/api-docs" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">API Docs</a>
   </div>
 
   <!-- Legal & Protocol links -->
@@ -1391,7 +1433,7 @@
   <div style="margin-top:30px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; max-width:800px; margin-left:auto; margin-right:auto; flex-wrap:wrap; gap:16px;">
     <span style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.3);">PetClaw Protocol v1 · 2026</span>
     <div style="display:flex; align-items:center; gap:8px;">
-      <img src="hero-mascot.jpg" alt="" style="width:28px; height:28px; border-radius:8px; object-fit:cover; border:2px solid rgba(245,158,11,0.3);" />
+      <img src="hero-mascot.jpg" alt="" style="width:28px; height:28px; border-radius:8px; object-fit:cover; border:2px solid rgba(226,125,12,0.3);" />
       <span style="font-family:var(--serif); font-size:13px; font-weight:600; color:#fff;">MY AI PET</span>
     </div>
     <span style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.3); font-style:italic;">Made with care, not hype.</span>
@@ -1413,10 +1455,10 @@
   <div class="tw-row">
     <label>Accent palette</label>
     <div class="tw-swatches" id="swatches">
-      <div class="tw-sw on" data-palette="gold" style="background:#f59e0b"></div>
-      <div class="tw-sw" data-palette="emerald" style="background:#10b981"></div>
-      <div class="tw-sw" data-palette="rose" style="background:#f43f5e"></div>
-      <div class="tw-sw" data-palette="violet" style="background:#8b5cf6"></div>
+      <div class="tw-sw on" data-palette="gold" style="background:#be4f28"></div>
+      <div class="tw-sw" data-palette="emerald" style="background:#1a7e68"></div>
+      <div class="tw-sw" data-palette="rose" style="background:#f0589e"></div>
+      <div class="tw-sw" data-palette="violet" style="background:#6b4fa0"></div>
     </div>
   </div>
   <div class="tw-row">
@@ -1442,13 +1484,13 @@ function pgAddMsg(text, from) {
 
   if (from === 'pet') {
     wrap.innerHTML = `
-      <img src="pet-sparky-card.jpg" alt="" style="width:36px;height:36px;border-radius:10px;object-fit:cover;border:2px solid rgba(245,158,11,0.3);flex-shrink:0;" />
+      <img src="pet-sparky-card.jpg" alt="" style="width:36px;height:36px;border-radius:10px;object-fit:cover;border:2px solid rgba(226,125,12,0.3);flex-shrink:0;" />
       <div style="background:rgba(255,255,255,0.06);padding:10px 14px;border-radius:4px 14px 14px 14px;max-width:80%;">
         <div style="font-size:13px;color:#faf5ed;line-height:1.5;">${text}</div>
       </div>`;
   } else {
     wrap.innerHTML = `
-      <div style="background:rgba(245,158,11,0.15);padding:10px 14px;border-radius:14px 4px 14px 14px;max-width:80%;">
+      <div style="background:rgba(226,125,12,0.15);padding:10px 14px;border-radius:14px 4px 14px 14px;max-width:80%;">
         <div style="font-size:13px;color:#faf5ed;line-height:1.5;">${text}</div>
       </div>`;
   }
@@ -1461,9 +1503,9 @@ function pgAddTyping() {
   wrap.id = 'pgTyping';
   wrap.style.cssText = 'display:flex;gap:10px;margin-bottom:16px;';
   wrap.innerHTML = `
-    <img src="pet-sparky-card.jpg" alt="" style="width:36px;height:36px;border-radius:10px;object-fit:cover;border:2px solid rgba(245,158,11,0.3);flex-shrink:0;" />
+    <img src="pet-sparky-card.jpg" alt="" style="width:36px;height:36px;border-radius:10px;object-fit:cover;border:2px solid rgba(226,125,12,0.3);flex-shrink:0;" />
     <div style="background:rgba(255,255,255,0.06);padding:12px 16px;border-radius:4px 14px 14px 14px;">
-      <div class="aipet-typing" style="display:inline-flex;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:rgba(245,158,11,0.5);animation:aipet-dot 1.2s ease-in-out infinite;"></span><span style="width:6px;height:6px;border-radius:50%;background:rgba(245,158,11,0.5);animation:aipet-dot 1.2s ease-in-out infinite .2s;"></span><span style="width:6px;height:6px;border-radius:50%;background:rgba(245,158,11,0.5);animation:aipet-dot 1.2s ease-in-out infinite .4s;"></span></div>
+      <div class="aipet-typing" style="display:inline-flex;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:rgba(226,125,12,0.5);animation:aipet-dot 1.2s ease-in-out infinite;"></span><span style="width:6px;height:6px;border-radius:50%;background:rgba(226,125,12,0.5);animation:aipet-dot 1.2s ease-in-out infinite .2s;"></span><span style="width:6px;height:6px;border-radius:50%;background:rgba(226,125,12,0.5);animation:aipet-dot 1.2s ease-in-out infinite .4s;"></span></div>
     </div>`;
   pgMsgs.appendChild(wrap);
   pgMsgs.scrollTop = pgMsgs.scrollHeight;
@@ -1745,10 +1787,10 @@ pets.forEach(p => {
 function applyPalette(name) {
   const root = document.documentElement.style;
   const map = {
-    gold:    { a:'#f59e0b', b:'#fbbf24', c:'#b45309' },
-    emerald: { a:'#10b981', b:'#34d399', c:'#047857' },
-    rose:    { a:'#f43f5e', b:'#fb7185', c:'#be123c' },
-    violet:  { a:'#8b5cf6', b:'#a78bfa', c:'#6d28d9' },
+    gold:    { a:'#be4f28', b:'#e8c77e', c:'#9a4e1e' },
+    emerald: { a:'#1a7e68', b:'#1a7e68', c:'#047857' },
+    rose:    { a:'#f0589e', b:'#f0589e', c:'#9a4e1e' },
+    violet:  { a:'#6b4fa0', b:'#a78bfa', c:'#6d28d9' },
   };
   const p = map[name] || map.gold;
   root.setProperty('--gold', p.a);
@@ -1759,7 +1801,7 @@ function applySunset(on) {
   const sky = document.getElementById('heroSky');
   if (!sky) return;
   if (on) {
-    sky.style.background = 'radial-gradient(ellipse at 50% 0%, rgba(135, 206, 250, 0.6), transparent 55%), linear-gradient(180deg, #7fb8e6 0%, #a6cce8 40%, #d4e0d4 70%, #e8d4a0 100%)';
+    sky.style.background = 'radial-gradient(ellipse at 50% 0%, rgba(135, 206, 250, 0.6), transparent 55%), linear-gradient(180deg, #7fb8e6 0%, #a6cce8 40%, #d4e0d4 70%, #f0dca8 100%)';
   } else {
     sky.style.background = '';
   }
@@ -1818,7 +1860,7 @@ function persist() {
   const sprite = document.createElement('img');
   sprite.src = 'mascot-original.jpg';
   sprite.alt = 'Sparky';
-  sprite.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:50%;border:3px solid rgba(251,191,36,0.5);box-shadow:0 4px 16px rgba(251,191,36,0.25);transition:transform 0.15s;';
+  sprite.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:50%;border:3px solid rgba(232,199,126,0.5);box-shadow:0 4px 16px rgba(232,199,126,0.25);transition:transform 0.15s;';
   pet.appendChild(sprite);
 
   const nameTag = document.createElement('div');
@@ -1833,7 +1875,7 @@ function persist() {
 
   // Speech bubble
   const bubble = document.createElement('div');
-  bubble.style.cssText = 'position:fixed;bottom:105px;background:rgba(255,255,255,0.97);color:#1a1a2e;padding:10px 14px;border-radius:14px 14px 14px 4px;font-size:13px;max-width:220px;box-shadow:0 6px 24px rgba(0,0,0,0.12);display:none;z-index:9999;font-family:var(--sans);line-height:1.5;';
+  bubble.style.cssText = 'position:fixed;bottom:105px;background:rgba(255,255,255,0.97);color:#1e1710;padding:10px 14px;border-radius:14px 14px 14px 4px;font-size:13px;max-width:220px;box-shadow:0 6px 24px rgba(0,0,0,0.12);display:none;z-index:9999;font-family:var(--sans);line-height:1.5;';
   document.body.appendChild(bubble);
   document.body.appendChild(pet);
 
@@ -1924,7 +1966,7 @@ function persist() {
       if (stateTimer > 250 + Math.random() * 300) {
         const r = Math.random();
         if (r < 0.4) { state = 'idle'; sprite.style.border = '3px solid rgba(74,222,128,0.6)'; }
-        else { state = 'wave'; showBubble(pickPhrase(), 3500); sprite.style.border = '3px solid rgba(245,158,11,0.8)'; }
+        else { state = 'wave'; showBubble(pickPhrase(), 3500); sprite.style.border = '3px solid rgba(226,125,12,0.8)'; }
         stateTimer = 0;
       }
     } else {
@@ -1935,7 +1977,7 @@ function persist() {
       if (stateTimer > 80 + Math.random() * 80) {
         state = 'walk';
         dir = Math.random() > 0.5 ? 1 : -1;
-        sprite.style.border = '3px solid rgba(251,191,36,0.5)';
+        sprite.style.border = '3px solid rgba(232,199,126,0.5)';
         stateTimer = 0;
       }
     }
@@ -1963,15 +2005,104 @@ function persist() {
   // Hover reaction
   pet.addEventListener('mouseenter', () => {
     sprite.style.transform = 'scale(1.1)';
-    sprite.style.boxShadow = '0 4px 24px rgba(251,191,36,0.4)';
+    sprite.style.boxShadow = '0 4px 24px rgba(232,199,126,0.4)';
     if (state === 'walk') { state = 'wave'; stateTimer = 0; showBubble("Hey! 👋", 2000); }
   });
   pet.addEventListener('mouseleave', () => {
     sprite.style.transform = 'scale(1)';
-    sprite.style.boxShadow = '0 4px 16px rgba(251,191,36,0.25)';
+    sprite.style.boxShadow = '0 4px 16px rgba(232,199,126,0.25)';
   });
 })();
 
+</script>
+
+<!-- ═══════════ FLock motion — scroll reveal · hover · invert · magnet ═══════════ -->
+<script>
+(function(){
+  var root = document.documentElement;
+  if (!('IntersectionObserver' in window) || typeof Element.prototype.animate !== 'function') return;
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  root.classList.add('js');
+  var EASE = 'cubic-bezier(0.16,1,0.3,1)';
+  var FROM = {
+    up:'translateY(28px)', left:'translateX(-44px) rotate(-1.2deg)', right:'translateX(44px) rotate(1.2deg)',
+    pop:'scale(.94) translateY(14px)', fly:'translate(110px,-80px) rotate(8deg) scale(1.1)', fade:'none'
+  };
+
+  // 1) Auto-tag reveal targets. Curated selectors → directional entrance with
+  //    per-group stagger, so whole rows fly in on scroll (E02/E03).
+  function tag(sel, dir){
+    document.querySelectorAll(sel).forEach(function(el, i){
+      if (el.hasAttribute('data-reveal')) return;
+      // 'alt' = neighbours converge from opposite sides (a livelier row reveal)
+      var d = dir === 'alt' ? (i % 2 ? 'right' : 'left') : (dir || 'up');
+      el.setAttribute('data-reveal', d);
+      el.setAttribute('data-delay', String((i % 4) * 80));
+    });
+  }
+  tag('.section-head', 'up');
+  tag('.card, .feature, .proto-card, .proto-col, .right', 'alt');
+  tag('.stat, .browser-card', 'pop');
+  tag('.gallery-item', 'pop');
+  tag('.footer-cta', 'pop');
+
+  function reveal(el){
+    var dir = el.getAttribute('data-reveal') || 'up';
+    var delay = +(el.getAttribute('data-delay') || 0);
+    var done = function(){ el.style.opacity = '1'; el.classList.add('reveal-done'); };
+    if (reduce) { done(); return; }
+    var frames = dir === 'fly'
+      ? [{opacity:0,transform:FROM.fly},{opacity:1,transform:'translate(-6px,5px) rotate(-1deg)',offset:0.72},{opacity:1,transform:'none'}]
+      : [{opacity:0,transform:FROM[dir]||FROM.up},{opacity:1,transform:'none'}];
+    var anim = el.animate(frames, {duration:640, delay:delay, easing:EASE, fill:'backwards'});
+    done();
+    setTimeout(function(){ try{ anim.finish(); }catch(e){} }, delay + 640 + 1000);
+  }
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ io.unobserve(e.target); reveal(e.target); } });
+  }, {threshold:0.16});
+  document.querySelectorAll('[data-reveal]').forEach(function(el){ io.observe(el); });
+
+  // 2) Hover language — underline slide on nav + inline links, arrow nudge.
+  document.querySelectorAll('.nav-links a, .footer a, a.text-link').forEach(function(a){ a.classList.add('fx-underline'); });
+  document.querySelectorAll('a, button').forEach(function(el){
+    if (el.querySelector('.fx-arrow')) return;
+    // wrap a trailing → so it nudges on hover
+    if (/[→↗]\s*$/.test(el.textContent) && el.children.length === 0){
+      el.innerHTML = el.innerHTML.replace(/([→↗])(\s*)$/, '<span class="fx-arrow">$1</span>$2');
+    }
+  });
+
+  // 3) The one big move — invert a light section field → terracotta at 60%.
+  var invertTarget = Array.prototype.find
+    ? [].find.call(document.querySelectorAll('section'), function(s){ return /Interact\.?\s*Grow\.?\s*Own|Where we.re going|Built on an open standard/i.test(s.textContent); })
+    : null;
+  if (invertTarget){
+    invertTarget.classList.add('fx-invert');
+    var iv = new IntersectionObserver(function(es){
+      es.forEach(function(e){ e.target.classList.toggle('is-inverted', e.isIntersecting); });
+    }, {threshold:0.6});
+    iv.observe(invertTarget);
+  }
+
+  // 4) Magnetic primary CTAs (fine pointers only) — curated few, ONE shared
+  //    pointermove listener (never one-per-element) to avoid layout thrash.
+  if (matchMedia('(hover:hover) and (pointer:fine)').matches && !reduce){
+    var magnets = [];
+    document.querySelectorAll('.hero-ctas a:first-child, .nav-cta, .footer-cta a:first-of-type, [data-magnet]').forEach(function(el){
+      if (magnets.length < 4 && magnets.indexOf(el) === -1){ el.setAttribute('data-magnet',''); magnets.push(el); }
+    });
+    if (magnets.length){
+      window.addEventListener('pointermove', function(ev){
+        magnets.forEach(function(el){
+          var r = el.getBoundingClientRect(), dx = ev.clientX-(r.left+r.width/2), dy = ev.clientY-(r.top+r.height/2), d = Math.hypot(dx,dy);
+          el.style.transform = d < 130 ? 'translate('+(dx*0.22)+'px,'+(dy*0.22)+'px)' : '';
+        });
+      }, {passive:true});
+      window.addEventListener('pointerleave', function(){ magnets.forEach(function(el){ el.style.transform=''; }); });
+    }
+  }
+})();
 </script>
 </body>
 </html>
