@@ -9,6 +9,10 @@ export const metadata: Metadata = {
 
 const DOCS_DIR = path.join(process.cwd(), "public", "api-docs");
 
+// Kept in lockstep with PetClawConsole SDK_VERSION (hardcoded here to avoid
+// importing a "use client" module into this server component).
+const SDK_VER = "1.6.1";
+
 const TABS: { slug: string; title: string; file: string }[] = [
   { slug: "quickstart", title: "Quickstart", file: "QUICKSTART.md" },
   { slug: "api",        title: "API Reference", file: "API.md" },
@@ -135,62 +139,186 @@ function renderMarkdown(md: string): string {
   return out.join("\n");
 }
 
+// "On this page" — pull h2/h3 headings out of the markdown so the sidebar can
+// mirror the anchors renderMarkdown() emits (same slug algorithm).
+function extractToc(md: string): { level: number; text: string; slug: string }[] {
+  const out: { level: number; text: string; slug: string }[] = [];
+  let inCode = false;
+  for (const line of md.split("\n")) {
+    if (/^```/.test(line)) { inCode = !inCode; continue; }
+    if (inCode) continue;
+    const h = line.match(/^(#{2,3})\s+(.*)$/);
+    if (!h) continue;
+    const text = h[2].replace(/`/g, "").replace(/\*\*/g, "").trim();
+    const slug = h[2].toLowerCase().replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-");
+    out.push({ level: h[1].length, text, slug });
+  }
+  return out;
+}
+
+// Honest inventory — kept in lockstep with PetClawConsole (no inflation).
+const STAT_STRIP = [
+  { n: "18", l: "SDK skills" },
+  { n: "6", l: "MCP tools" },
+  { n: "19", l: "connectors" },
+  { n: "5", l: "VIGIL stages" },
+];
+
 export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?: string }> }) {
   const sp = (await props.searchParams) || {};
   const activeSlug = TABS.find(t => t.slug === sp.tab)?.slug || TABS[0].slug;
   const tab = TABS.find(t => t.slug === activeSlug)!;
   const md = readDoc(tab.file);
   const html = renderMarkdown(md);
+  const toc = extractToc(md);
 
   return (
     <div style={{
       minHeight: "100vh", background: "#ECE4D4",
       fontFamily: "var(--ed-body, sans-serif)", color: "#211A12",
-      padding: "60px 24px",
+      padding: "0 0 80px",
     }}>
-      <div style={{ maxWidth: 920, margin: "0 auto" }}>
-        <a href="/" style={{
-          display: "inline-block", marginBottom: 20,
-          fontSize: 13, color: "rgba(33,26,18,0.55)", textDecoration: "none",
-        }}>← Back to landing</a>
+      {/* ── Nameplate masthead (warm-dark, foil title) ── */}
+      <header style={{ background: "#1E1710", color: "#ECE0CE", padding: "28px 24px 26px", borderBottom: "3px solid #BE4F28" }}>
+        <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+            <a href="/" style={{ fontSize: 12.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(232,199,126,0.85)", textDecoration: "none", fontFamily: "var(--ed-m, monospace)" }}>
+              ← MY AI PET
+            </a>
+            <span style={{ fontSize: 12.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(236,224,206,0.55)", fontFamily: "var(--ed-m, monospace)" }}>
+              Developer Documentation · Protocol v1
+            </span>
+          </div>
 
-        <h1 style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 8 }}>
-          PetClaw API Docs
-        </h1>
-        <p style={{ fontSize: 14, color: "rgba(33,26,18,0.6)", marginBottom: 28 }}>
-          SDK reference for the <code style={{ fontSize: 13 }}>@myaipet/petclaw-sdk</code> npm package and HTTP API.
-          Default server: <code style={{ fontSize: 13 }}>https://app.myaipet.ai</code>
-        </p>
+          <div style={{ borderTop: "1px solid rgba(232,199,126,0.28)", margin: "16px 0 18px" }} />
 
-        {/* Tabs */}
-        <div style={{ display: "flex", gap: 4, marginBottom: 28, borderBottom: "1px solid rgba(33,26,18,0.13)", flexWrap: "wrap" }}>
-          {TABS.map(t => (
-            <a key={t.slug} href={`/api-docs?tab=${t.slug}`} style={{
-              padding: "10px 18px",
-              fontSize: 14, fontWeight: 600,
-              color: t.slug === activeSlug ? "#211A12" : "rgba(33,26,18,0.65)",
-              borderBottom: t.slug === activeSlug ? "2px solid #BE4F28" : "2px solid transparent",
-              textDecoration: "none",
-              marginBottom: -1,
-            }}>{t.title}</a>
-          ))}
+          <h1 className="apidocs-foil" style={{ fontSize: "clamp(34px, 6vw, 56px)", fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1.02, margin: 0 }}>
+            PetClaw&nbsp;API
+          </h1>
+          <p style={{ fontSize: 16, color: "rgba(236,224,206,0.72)", margin: "12px 0 0", maxWidth: 640, lineHeight: 1.55 }}>
+            Build on the same protocol your pet runs on. One SDK, one HTTP API — memory-aware chat,
+            skills, and portable SOUL across every surface.
+          </p>
+
+          {/* Stat strip — honest inventory */}
+          <div style={{ display: "flex", gap: 26, flexWrap: "wrap", marginTop: 20 }}>
+            {STAT_STRIP.map(s => (
+              <div key={s.l} style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
+                <span style={{ fontSize: 22, fontWeight: 800, color: "#E8C77E", fontFamily: "var(--ed-m, monospace)" }}>{s.n}</span>
+                <span style={{ fontSize: 12.5, color: "rgba(236,224,206,0.6)", letterSpacing: "0.02em" }}>{s.l}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Meta row — npm + server + version */}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20, fontSize: 12.5, fontFamily: "var(--ed-m, monospace)" }}>
+            <span style={{ background: "rgba(232,199,126,0.12)", border: "1px solid rgba(232,199,126,0.28)", borderRadius: 999, padding: "5px 12px", color: "#E8C77E" }}>
+              npm i @myaipet/petclaw-sdk
+            </span>
+            <span style={{ background: "rgba(236,224,206,0.06)", border: "1px solid rgba(236,224,206,0.16)", borderRadius: 999, padding: "5px 12px", color: "rgba(236,224,206,0.75)" }}>
+              server · https://app.myaipet.ai
+            </span>
+            <span style={{ background: "rgba(236,224,206,0.06)", border: "1px solid rgba(236,224,206,0.16)", borderRadius: 999, padding: "5px 12px", color: "rgba(236,224,206,0.75)" }}>
+              SDK v{SDK_VER}
+            </span>
+          </div>
         </div>
+      </header>
 
-        <div className="md-content" dangerouslySetInnerHTML={{ __html: html }} />
-
-        <div style={{
-          marginTop: 60, paddingTop: 24, borderTop: "1px solid rgba(33,26,18,0.13)",
-          fontSize: 13, color: "rgba(33,26,18,0.65)", lineHeight: 1.6,
-        }}>
-          Source files: <a href="/api-docs/QUICKSTART.md" style={{ color: "#9A4E1E" }}>QUICKSTART.md</a> ·{" "}
-          <a href="/api-docs/API.md" style={{ color: "#9A4E1E" }}>API.md</a> ·{" "}
-          <a href="/api-docs/ECOSYSTEM.md" style={{ color: "#9A4E1E" }}>ECOSYSTEM.md</a> ·{" "}
-          <a href="/api-docs/SKILL-AUTHORING.md" style={{ color: "#9A4E1E" }}>SKILL-AUTHORING.md</a>
+      {/* ── Pill tabs ── */}
+      <div style={{ background: "#ECE4D4", borderBottom: "1px solid rgba(33,26,18,0.10)", position: "sticky", top: 0, zIndex: 5 }}>
+        <div style={{ maxWidth: 1080, margin: "0 auto", padding: "14px 24px", display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {TABS.map(t => {
+            const on = t.slug === activeSlug;
+            return (
+              <a key={t.slug} href={`/api-docs?tab=${t.slug}`} className="apidocs-tab" style={{
+                padding: "9px 18px", fontSize: 14, fontWeight: 700, borderRadius: 999,
+                textDecoration: "none",
+                color: on ? "#FBF6EC" : "#5A4E3C",
+                background: on ? "#BE4F28" : "#FBF6EC",
+                border: on ? "1px solid #9A4E1E" : "1px solid rgba(33,26,18,0.16)",
+                boxShadow: on ? "2px 2px 0 rgba(33,26,18,0.18)" : "none",
+              }}>{t.title}</a>
+            );
+          })}
         </div>
       </div>
 
+      {/* ── Two-column: sticky index + paper content ── */}
+      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "34px 24px 0", display: "grid", gridTemplateColumns: "232px minmax(0,1fr)", gap: 40 }} className="apidocs-grid">
+        {/* Sidebar */}
+        <aside className="apidocs-aside" style={{ position: "sticky", top: 76, alignSelf: "start", maxHeight: "calc(100vh - 96px)", overflowY: "auto" }}>
+          <div style={{ fontSize: 11.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 10 }}>Documents</div>
+          <nav style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 26 }}>
+            {TABS.map(t => (
+              <a key={t.slug} href={`/api-docs?tab=${t.slug}`} style={{
+                fontSize: 14, fontWeight: t.slug === activeSlug ? 700 : 500,
+                padding: "6px 10px", borderRadius: 7, textDecoration: "none",
+                color: t.slug === activeSlug ? "#9A4E1E" : "rgba(33,26,18,0.7)",
+                background: t.slug === activeSlug ? "rgba(190,79,40,0.10)" : "transparent",
+                borderLeft: t.slug === activeSlug ? "2px solid #BE4F28" : "2px solid transparent",
+              }}>{t.title}</a>
+            ))}
+          </nav>
+
+          {toc.length > 0 && (
+            <>
+              <div style={{ fontSize: 11.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 10 }}>On this page</div>
+              <nav style={{ display: "flex", flexDirection: "column", gap: 1, borderLeft: "1px solid rgba(33,26,18,0.13)", paddingLeft: 12 }}>
+                {toc.map((h, idx) => (
+                  <a key={idx} href={`#${h.slug}`} style={{
+                    fontSize: h.level === 2 ? 13 : 12.5,
+                    fontWeight: h.level === 2 ? 600 : 400,
+                    padding: "3px 0", paddingLeft: h.level === 3 ? 12 : 0,
+                    textDecoration: "none",
+                    color: h.level === 2 ? "rgba(33,26,18,0.78)" : "rgba(33,26,18,0.55)",
+                  }}>{h.text}</a>
+                ))}
+              </nav>
+            </>
+          )}
+        </aside>
+
+        {/* Content — die-cut paper card */}
+        <main style={{ minWidth: 0 }}>
+          <div style={{
+            background: "#FBF6EC", border: "1px solid rgba(33,26,18,0.14)", borderRadius: 14,
+            boxShadow: "5px 6px 0 rgba(33,26,18,0.07)", padding: "clamp(22px, 4vw, 44px)",
+          }}>
+            <div className="md-content" dangerouslySetInnerHTML={{ __html: html }} />
+          </div>
+
+          <div style={{
+            marginTop: 28, fontSize: 13, color: "rgba(33,26,18,0.6)", lineHeight: 1.6,
+            fontFamily: "var(--ed-m, monospace)",
+          }}>
+            raw ·{" "}
+            {TABS.map((t, idx) => (
+              <span key={t.slug}>
+                <a href={`/api-docs/${t.file}`} style={{ color: "#9A4E1E" }}>{t.file}</a>
+                {idx < TABS.length - 1 ? " · " : ""}
+              </span>
+            ))}
+          </div>
+        </main>
+      </div>
+
       <style>{`
-        .md-content { font-size: 15px; line-height: 1.7; color: #211A12; }
+        .apidocs-foil {
+          background: linear-gradient(100deg,#8A5A1E 0%,#C8932F 24%,#FFF7E6 50%,#E8C77E 74%,#8A5A1E 100%);
+          -webkit-background-clip: text; background-clip: text;
+          -webkit-text-fill-color: transparent; color: transparent;
+          filter: drop-shadow(0 1px 0 rgba(40,14,4,.4));
+        }
+        .apidocs-tab { transition: transform .12s ease, box-shadow .12s ease; }
+        .apidocs-tab:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 rgba(33,26,18,0.16); }
+        .apidocs-aside::-webkit-scrollbar { width: 6px; }
+        .apidocs-aside::-webkit-scrollbar-thumb { background: rgba(33,26,18,0.16); border-radius: 3px; }
+        @media (max-width: 820px) {
+          .apidocs-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
+          .apidocs-aside { display: none !important; }
+        }
+        .md-content { font-size: 15.5px; line-height: 1.72; color: #211A12; }
         .md-content h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin: 32px 0 12px; }
         .md-content h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; margin: 28px 0 10px; padding-top: 8px; border-top: 1px solid rgba(33,26,18,0.13); }
         .md-content h3 { font-size: 17px; font-weight: 700; margin: 22px 0 8px; color: #9A4E1E; }
@@ -204,7 +332,8 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
         .md-content a { color: #9A4E1E; text-decoration: underline; }
         .md-content blockquote { border-left: 3px solid #BE4F28; padding: 4px 14px; margin: 14px 0; color: rgba(33,26,18,0.7); background: rgba(190,79,40,0.10); border-radius: 0 8px 8px 0; }
         .md-content hr { border: none; border-top: 1px solid rgba(33,26,18,0.13); margin: 24px 0; }
-        .md-content table { border-collapse: collapse; margin: 14px 0; font-size: 13px; width: 100%; }
+        .md-content table { border-collapse: collapse; margin: 14px 0; font-size: 13.5px; width: 100%; }
+        .md-content h2:first-of-type { border-top: none; padding-top: 0; }
         .md-content th, .md-content td { padding: 8px 12px; border: 1px solid rgba(33,26,18,0.13); text-align: left; }
         .md-content th { background: #F5EFE2; font-weight: 700; }
         .md-content tr:nth-child(even) td { background: rgba(33,26,18,0.02); }

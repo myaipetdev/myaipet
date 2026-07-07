@@ -932,6 +932,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
     getPoints: () => getPoints().then((points) => sendResponse({ points })),
 
+    // Petting the walking pet → a small, non-financial affection point. Rate-limit
+    // is enforced content-side (90s); this feeds the same XP / achievements /
+    // evolution loop as every other point, and rides the petServerSync push to the
+    // account when signed in. Points are recognition only — capped, no cash value.
+    affection: () => addPoints("care", 1, msg.reason || "pet_the_walker").then((points) => sendResponse({ points })),
+
     getActivity: () =>
       Promise.all([getPoints(), getConfig(), getNotifications()]).then(
         ([points, config, notifications]) => {

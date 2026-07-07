@@ -35,6 +35,8 @@
   let idleTimer = 0;
   let nextWalkDelay = randomBetween(1.0, 2.5); // shorter idle pauses
   let isDragging = false;
+  let isHovered = false;          // mouse is over the pet → freeze it so you can grab/pet it
+  let lastPatAt = 0;              // rate-limit affection so petting can't be farmed
   let dragOffsetX = 0;
   let bubbleTimeout = null;
   let particles = [];
@@ -628,6 +630,7 @@
     function onUp() {
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
+      patAffection();  // you caught/held the pet → happy + (capped) affection point
       setTimeout(() => { isDragging = false; }, 50);
     }
 
@@ -635,7 +638,39 @@
     document.addEventListener("mouseup", onUp);
   });
 
-  // Double-click = pet
+  // ── Hover = FREEZE so you can actually catch it (it used to walk away too fast
+  //    to grab). Cursor turns to a grab hand; a tiny scale says "catchable". ──
+  body.addEventListener("mouseenter", () => {
+    isHovered = true;
+    body.classList.add("grabbable");
+  });
+  body.addEventListener("mouseleave", () => {
+    isHovered = false;
+    body.classList.remove("grabbable");
+  });
+
+  // ── Catch it → earn affection: grabbing the pet (mousedown → release) pats it,
+  //    giving a happy reaction + a rate-limited affection point (anti-farm). Fired
+  //    from the drag's onUp so it never collides with single-click (=chat). ──
+  function patAffection() {
+    body.classList.add("jumping");
+    setTimeout(() => body.classList.remove("jumping"), 500);
+    const now = Date.now();
+    // one affection point at most every 90s — the cap keeps it non-farmable
+    if (now - lastPatAt > 90000) {
+      lastPatAt = now;
+      burstParticles(["❤️"], 3);
+      showBubble("❤️ +1", 1400);
+      // Local points + (when signed in) synced to the account's recognition
+      // ledger by the background worker — points are non-financial, capped.
+      chrome.runtime.sendMessage({ type: "affection", reason: "pet_the_walker" }, () => {});
+      chrome.runtime.sendMessage({ type: "emotionAction", action: "pet" }, () => {});
+    } else {
+      burstParticles(["❤️"], 1);
+    }
+  }
+
+  // Double-click = pet (full care action)
   body.addEventListener("dblclick", () => {
     handleMenuAction("pet");
   });
@@ -723,6 +758,8 @@
     }
 
     if (state === "walking") {
+      // Freeze while the cursor is over it (or you're holding it) so it's catchable.
+      if (isHovered || isDragging) { updatePosition(); return requestAnimationFrame(gameLoop); }
       posX += direction * walkSpeed;
 
       // Edge bounce — keeps pet on screen if window resized mid-walk

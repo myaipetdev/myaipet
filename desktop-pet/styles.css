@@ -432,3 +432,7 @@
   opacity: 0.6;
   filter: grayscale(0.3) !important;
 }
+
+/* Grab cursor when hovering/holding the walking pet (it freezes so you can catch it). */
+.grabbable{cursor:grab}
+.grabbable:active{cursor:grabbing}

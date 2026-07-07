@@ -121,7 +121,7 @@ const SOVEREIGNTY: { k: string; v: React.ReactNode }[] = [
 
 function Row({ k, v, kw = 132 }: { k: string; v: React.ReactNode; kw?: number }) {
   return (
-    <div style={{ display: "flex", gap: 10, fontSize: 14, lineHeight: 1.85 }}>
+    <div style={{ display: "flex", gap: 10, fontSize: 15, lineHeight: 1.85 }}>
       <span style={{ color: AMBER_DIM, minWidth: kw, flexShrink: 0 }}>{k}</span>
       <span style={{ color: TXT }}>{v}</span>
     </div>
@@ -340,7 +340,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
               <div>
                 <SectionHead>Connectors — 19 integrations</SectionHead>
                 {CONNECTORS.map((c) => <Row key={c.k} k={c.k} v={c.v} kw={112} />)}
-                <div style={{ display: "flex", gap: 10, fontSize: 14, lineHeight: 1.8, marginTop: 4 }}>
+                <div style={{ display: "flex", gap: 10, fontSize: 15, lineHeight: 1.8, marginTop: 4 }}>
                   <span style={{ color: AMBER_DIM, minWidth: 112, flexShrink: 0 }}>runs on</span>
                   <span style={{ color: MUTED }}>{RUNS_ON}</span>
                 </div>
@@ -364,14 +364,14 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   <SectionHead>MODELS — bring your own (BYOK)</SectionHead>
                   <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter · Nous (Hermes) — powers chat + agent reasoning + judging" kw={120} />
                   <Row k="agent-loop" v="give a goal → plans, calls skills, iterates → answers" kw={120} />
-                  <div style={{ fontSize: 14, marginTop: 4 }}>
+                  <div style={{ fontSize: 15, marginTop: 4 }}>
                     <span style={{ color: GREEN }}>connect your model ↓ below (or via the CLI)</span>
                   </div>
                 </div>
               )}
             </div>
             {/* closing rule so the panel finishes crisp instead of trailing into dark */}
-            <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${LINE}`, color: MUTED, fontSize: 14 }}>100% your data — export or delete any time below.</div>
+            <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${LINE}`, color: MUTED, fontSize: 15 }}>100% your data — export or delete any time below.</div>
           </div>
 
           {/* LIVE terminal */}
@@ -398,7 +398,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   disabled={busy}
                   style={{
                     flex: 1, background: "transparent", border: "none", outline: "none",
-                    color: TXT, fontFamily: MONO, fontSize: 13,
+                    color: TXT, fontFamily: MONO, fontSize: 13.5,
                   }}
                 />
                 <button onClick={send} disabled={busy || !input.trim()} style={{
