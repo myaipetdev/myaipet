@@ -383,7 +383,13 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
 
       {/* Component-local keyframes (binder flip lives only here, not in globals).
           The global prefers-reduced-motion rule neutralizes it like everything else. */}
-      <style>{`@keyframes cdBinderFlip{0%{opacity:0;transform:perspective(900px) rotateY(-72deg) translateY(8px)}70%{opacity:1;transform:perspective(900px) rotateY(6deg) translateY(0)}100%{opacity:1;transform:perspective(900px) rotateY(0deg)}}`}</style>
+      <style>{`
+        @keyframes cdBinderFlip{0%{opacity:0;transform:perspective(900px) rotateY(-72deg) translateY(8px)}70%{opacity:1;transform:perspective(900px) rotateY(6deg) translateY(0)}100%{opacity:1;transform:perspective(900px) rotateY(0deg)}}
+        /* Wax Press (design 1): the seal drops from above, overshoots, seats; the
+           card gives a tiny "thunk" recoil as it's stamped into the mat. */
+        @keyframes cdSealDrop{0%{opacity:0;transform:translateY(-40px) scale(1.55) rotate(-14deg)}58%{opacity:1;transform:translateY(3px) scale(.93) rotate(3deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(6deg)}}
+        @keyframes cdThunk{0%,100%{transform:translateY(0)}45%{transform:translateY(3px)}}
+      `}</style>
 
       {/* Page-level banner only for errors with no overlay open (battle tab) —
           overlay errors render INSIDE the overlay, above the scrim. */}
@@ -609,8 +615,22 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
         <Overlay onClose={() => { setOpenId(null); setErr(null); }}>
           <div style={{ maxWidth: 320, margin: "0 auto" }}>
             {/* One-shot "drawn from the binder" flip */}
-            <div style={{ animation: "cdBinderFlip 480ms cubic-bezier(.2,.8,.2,1) 120ms both" }}>
-              <PetCard key={`detail-${openPet.id}-${bust[openPet.id] || 0}`} petId={openPet.id} maxWidth={320} placeholder={{ name: openPet.name, rarity: openPet.rarity }} />
+            <div style={{ position: "relative", animation: "cdThunk .18s ease-out 640ms both" }}>
+              <div style={{ animation: "cdBinderFlip 480ms cubic-bezier(.2,.8,.2,1) 120ms both" }}>
+                <PetCard key={`detail-${openPet.id}-${bust[openPet.id] || 0}`} petId={openPet.id} maxWidth={320} placeholder={{ name: openPet.name, rarity: openPet.rarity }} />
+              </div>
+              {/* Wax Press (design 1): a terracotta ownership seal drops + stamps
+                  the card as it settles — the brand's ownership verb. */}
+              <div aria-hidden style={{
+                position: "absolute", top: -12, right: -6, width: 58, height: 58, zIndex: 6, borderRadius: "50%",
+                background: "radial-gradient(circle at 36% 30%, #E4703F, #BE4F28 46%, #8A3616)",
+                border: "2.5px solid #FBF6EC",
+                boxShadow: "0 8px 16px -5px rgba(80,30,6,.55), inset 0 2px 3px rgba(255,220,200,.5), inset 0 -3px 5px rgba(90,30,8,.6)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                animation: "cdSealDrop .5s cubic-bezier(.2,.85,.25,1) 560ms both",
+              }}>
+                <span style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".1em", color: "#FBE3D2", textShadow: "0 1px 1px rgba(80,20,0,.5)" }}>OWNED</span>
+              </div>
             </div>
             {/* Holographic-ticket stub — grab the glowing dot and rip along the
                 perforation to share (the reference interaction). The buttons
