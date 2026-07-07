@@ -477,7 +477,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                 </div>
 
                 <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".34em", color: T.creamOn, marginTop: 22, zIndex: 2 }}>MEET</div>
-                <div className="ed-foil-text" style={{ fontFamily: T.disp, fontWeight: 800, fontSize: "clamp(38px,4.6vw,64px)", lineHeight: 0.82, letterSpacing: "-.04em", zIndex: 2, maxWidth: "92%", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{active.name}</div>
+                <div className="ed-foil-text ed-foil-deboss" style={{ fontFamily: T.disp, fontWeight: 800, fontSize: "clamp(38px,4.6vw,64px)", lineHeight: 0.82, letterSpacing: "-.04em", zIndex: 2, maxWidth: "92%", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{active.name}</div>
               </div>
 
               <div style={{ position: "absolute", bottom: 16, left: 0, right: 0, overflow: "hidden", zIndex: 2, WebkitMaskImage: "linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)" }}>

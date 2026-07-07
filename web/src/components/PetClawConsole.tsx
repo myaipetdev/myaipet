@@ -331,8 +331,8 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
           }}>PETCLAW</div>
           <TaglineTyper text="your AI pet, sovereign & portable — across every surface you use" color={MUTED} />
 
-          {/* manifest */}
-          <div style={{ border: `1px solid ${LINE}`, borderRadius: 12, padding: compact ? "18px 20px" : "20px 24px" }}>
+          {/* manifest — prints out top→bottom like terminal output (pc-unroll) */}
+          <div className="pc-unroll" style={{ border: `1px solid ${LINE}`, borderRadius: 12, padding: compact ? "18px 20px" : "20px 24px" }}>
             <div style={{ color: GOLD, fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
               PetClaw Protocol v1 · SDK v{SDK_VERSION} <span style={{ color: MUTED, fontWeight: 400 }}>· npx petclaw-mcp · MIT</span>
             </div>

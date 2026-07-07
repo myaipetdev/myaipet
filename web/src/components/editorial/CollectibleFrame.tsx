@@ -86,6 +86,8 @@ export default function CollectibleFrame({
     el.style.transform = `rotateX(${(-ny * 5).toFixed(2)}deg) rotateY(${(nx * 5).toFixed(2)}deg)`;
     el.style.setProperty("--holo-x", `${Math.round(50 + nx * 60)}%`);
     el.style.setProperty("--holo-y", `${Math.round(50 + ny * 60)}%`);
+    // light-tracking foil: rake the warm specular band across the foil strip
+    el.style.setProperty("--foil-x", `${Math.round(50 + nx * 42)}%`);
   };
   const onTiltLeave = () => {
     const el = matRef.current;
@@ -114,7 +116,7 @@ export default function CollectibleFrame({
           position: "relative", width, padding: 13, background: PAPER, borderRadius: 8,
           boxShadow: "var(--ed-shadow-float)", willChange: tiltOn ? "transform" : undefined,
         }}>
-          <div className="ed-foilstrip" aria-hidden style={{ position: "absolute", top: 5, left: 13, right: 13, height: 4, borderRadius: 2 }} />
+          <div className="ed-foil-lit" aria-hidden style={{ position: "absolute", top: 5, left: 13, right: 13, height: 4, borderRadius: 2 }} />
           <div style={{ position: "relative", width: well, height: well, borderRadius: 6, overflow: "hidden", boxShadow: "inset 0 0 0 2px rgba(184,130,44,.55)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={photoUrl} alt={speciesLabel || "pet"} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
