@@ -253,7 +253,7 @@ export default function CatCatch() {
             <div style={{ fontFamily: BODY, fontSize: 14, color: "rgba(252,233,207,.85)", maxWidth: 310, lineHeight: 1.5 }}>Mostly cats &amp; dogs — but any real animal counts. Screenshots and photos of screens won&apos;t work.</div>
             {/* Geo disclosure BEFORE the photo is taken — matches /api/catch/nearby's ~110m rounding. */}
             <div style={{ fontFamily: BODY, fontSize: 13, color: "rgba(252,233,207,.6)", maxWidth: 310, lineHeight: 1.5 }}>Camera catches appear on the shared map at an approximate location (~110 m).</div>
-            <button onClick={startCamera} className="ed-press" style={{ padding: "13px 26px", borderRadius: 999, border: "none", background: "#FCE9CF", color: "#123029", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".12em", textTransform: "uppercase", cursor: "pointer", boxShadow: "var(--ed-shadow-card)", display: "inline-flex", alignItems: "center", gap: 8 }}>
+            <button onClick={startCamera} className="ed-press ed-card-hover" style={{ padding: "13px 26px", borderRadius: 999, border: "none", background: "#FCE9CF", color: "#123029", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".12em", textTransform: "uppercase", cursor: "pointer", boxShadow: "var(--ed-shadow-card)", display: "inline-flex", alignItems: "center", gap: 8 }}>
               <CameraIcon size={20} /> Open camera
             </button>
             {camErr && <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: ".06em", color: "#F2B8A0", maxWidth: 300 }}>{camErr}</div>}
@@ -305,7 +305,7 @@ export default function CatCatch() {
               <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: TEAL, textTransform: "uppercase" }}>{result.antiCheat ? "ANTI-CHEAT" : "NO CATCH"}</div>
               <div style={{ fontFamily: DISP, fontSize: 22, fontWeight: 700, color: INK, maxWidth: 320, lineHeight: 1.2 }}>{result.antiCheat ? "Nice try!" : "No catch"}</div>
               <div style={{ fontFamily: BODY, fontSize: 14, color: MUTED, maxWidth: 320, lineHeight: 1.5 }}>{result.reason}</div>
-              <button onClick={again} style={bigBtn}>Try again</button>
+              <button onClick={again} className="ed-card-hover" style={bigBtn}>Try again</button>
               <button onClick={done} className="ed-wipe" style={{ ...ghostBtn, marginTop: 2 }}>Done</button>
             </div>
           )
@@ -438,7 +438,7 @@ function RevealCard({ cat, points, onAgain, onDone }: { cat: Cat; points: number
         <span style={{ color: "rgba(251,246,236,0.55)", fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", fontVariantNumeric: "tabular-nums" }}>{`FILE № ${String(cat.id).padStart(6, "0")}`}</span>
       </div>
       <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
-        <button onClick={onAgain} style={bigBtn}>Catch another</button>
+        <button onClick={onAgain} className="ed-card-hover" style={bigBtn}>Catch another</button>
         <button onClick={onDone} className="ed-wipe" style={{ ...ghostBtn, borderColor: "rgba(251,246,236,0.4)", color: "#FBF6EC" }}>Done</button>
       </div>
     </div>
@@ -528,7 +528,7 @@ function BattleResult({ res, onAgain }: { res: any; onAgain: () => void }) {
         <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 18, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".06em", borderRadius: 999, padding: "6px 14px", fontVariantNumeric: "tabular-nums" }}>+{res.pointsAwarded} season points <Icon name="coin" size={14} /></div>
       )}
       <div style={{ marginTop: 20 }}>
-        <button onClick={onAgain} style={bigBtn}>Battle again</button>
+        <button onClick={onAgain} className="ed-card-hover" style={bigBtn}>Battle again</button>
       </div>
     </div>
   );

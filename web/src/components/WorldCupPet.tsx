@@ -617,7 +617,7 @@ function CutenessCup({ pets, onEnter, activeStage }: { pets: Pet[]; onEnter: () 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "0 0 18px" }}>
         {([["1", "ENTER", "Put your pet in the bracket — entries open soon"], ["2", "VOTE", "The community picks the cutest of each matchup"], ["3", "CROWN", "Winners climb R16 → Final; one pet lifts the trophy"]] as const).map(([n, k, d], i) => (
           <Reveal key={k} dir="up" delay={i * 90} style={{ flex: "1 1 180px" }}>
-          <div style={{ height: "100%", boxSizing: "border-box", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "10px 12px", display: "flex", gap: 9, alignItems: "flex-start", boxShadow: "var(--ed-shadow-card)" }}>
+          <div className="ed-card-hover" style={{ height: "100%", boxSizing: "border-box", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "10px 12px", display: "flex", gap: 9, alignItems: "flex-start", boxShadow: "var(--ed-shadow-card)" }}>
             <span style={{ width: 22, height: 22, borderRadius: 7, background: T.terra, color: "#FFF8EE", fontFamily: T.m, fontWeight: 700, fontSize: 13, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{n}</span>
             <span style={{ minWidth: 0 }}>
               <span style={{ display: "block", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: T.ink }}>{k}</span>

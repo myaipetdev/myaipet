@@ -435,7 +435,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                  maxHeight + overflow:hidden are a pure clamp for the rare very-tall
                  case (long name / short viewport). Mobile (<=880px) drops sticky. ── */}
           <div className="mp-poster-wrap" style={{ position: "sticky", top: 88, alignSelf: "start" }}>
-            <div key={active.id} className="ed-rise" style={{ position: "relative", background: T.terra, borderRadius: 18, maxHeight: "calc(100vh - 116px)", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div key={active.id} className="ed-rise" style={{ position: "relative", background: T.terra, borderRadius: 18, minHeight: "min(calc(100vh - 200px), 620px)", maxHeight: "calc(100vh - 116px)", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div aria-hidden style={{ position: "absolute", inset: 14, border: "1px solid rgba(252,233,207,.35)", borderRadius: 8, pointerEvents: "none" }} />
               {[["14px", "14px", "", ""], ["14px", "", "", "14px"], ["", "14px", "14px", ""], ["", "", "14px", "14px"]].map((c, i) => (
                 <span key={i} aria-hidden style={{ position: "absolute", top: c[0] || undefined, left: c[1] || undefined, bottom: c[2] || undefined, right: c[3] || undefined, width: 11, height: 11,
@@ -471,7 +471,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                   <div key={active.id} className="mp-flyin">
                     {/* level-up: one-shot scale pop on the framed collectible (carries the gold seal) */}
                     <div style={{ animation: lvPop > 0 ? `${lvPop % 2 ? "mpSealPopA" : "mpSealPopB"} .7s cubic-bezier(.2,.8,.2,1)` : undefined }}>
-                      <CollectibleFrame photoUrl={heroArt} level={active.level} speciesLabel={species.toUpperCase()} elementLabel={element} width={230} />
+                      <CollectibleFrame photoUrl={heroArt} level={active.level} speciesLabel={species.toUpperCase()} elementLabel={element} width={264} />
                     </div>
                   </div>
                 </div>
@@ -624,7 +624,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
 
             {/* chat — primary companion action (scroll-reveal, fixed 90ms slots) */}
             <Reveal dir="right" delay={90}>
-            <button onClick={() => onNavigate?.("chat")} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, textAlign: "left", border: "none", cursor: "pointer", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", borderRadius: 18, padding: "15px 18px", color: "#FFF8EE", boxShadow: "0 12px 24px -14px rgba(226,125,12,.7)" }}>
+            <button onClick={() => onNavigate?.("chat")} className="ed-card-hover" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, textAlign: "left", border: "none", cursor: "pointer", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", borderRadius: 18, padding: "15px 18px", color: "#FFF8EE", boxShadow: "0 12px 24px -14px rgba(226,125,12,.7)" }}>
               <span>
                 <span style={{ display: "block", fontFamily: T.disp, fontWeight: 800, fontSize: 17 }}>Chat with {active.name}</span>
                 <span style={{ display: "block", fontFamily: T.body, fontSize: 13, color: "#FCE9CF", marginTop: 2 }}>Talk live — every chat grows your Bond.</span>
@@ -679,7 +679,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               </div>
 
               <div style={{ display: "flex", gap: 9, flexWrap: "wrap", alignItems: "center" }}>
-                <button onClick={illustrateCodex} disabled={codexBusy} style={{
+                <button onClick={illustrateCodex} disabled={codexBusy} className="ed-card-hover" style={{
                   display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(180deg,#F0C868,#C8932F)", color: "#3A2A08", fontFamily: T.disp, fontWeight: 800, fontSize: 14, borderRadius: 12, padding: "10px 18px", border: "none", cursor: codexBusy ? "wait" : "pointer", boxShadow: "0 12px 24px -14px rgba(200,147,47,.7)",
                 }}>{codexBusy ? `Illustrating ${active.name}…` : `${codexUrl ? "Re-illustrate" : "Illustrate"} ${selVariant.label} · 5 credits`}</button>
                 {codexUrl && (
@@ -693,7 +693,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
 
             {/* studio teaser — warm-dark panel, studio-purple accent, foil-gold headline */}
             <Reveal dir="right" delay={180}>
-            <button onClick={() => onNavigate?.("create")} style={{ width: "100%", textAlign: "left", cursor: "pointer", background: "#1E1710", border: "1px solid rgba(107,79,160,.5)", borderRadius: 18, padding: 18, color: "rgba(251,246,236,.8)", boxShadow: "var(--ed-shadow-dark)" }}>
+            <button onClick={() => onNavigate?.("create")} className="ed-card-hover" style={{ width: "100%", textAlign: "left", cursor: "pointer", background: "#1E1710", border: "1px solid rgba(107,79,160,.5)", borderRadius: 18, padding: 18, color: "rgba(251,246,236,.8)", boxShadow: "var(--ed-shadow-dark)" }}>
               <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: "#6B4FA0" }}>PRO PET STUDIO</div>
               <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 19, margin: "5px 0 12px", color: "#E8C77E" }}>Make {active.name} a star ✦</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -706,7 +706,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
 
             {/* catch — warm-dark panel, catch-teal accent */}
             <Reveal dir="right" delay={270}>
-            <button onClick={() => onNavigate?.("catch")} style={{ width: "100%", textAlign: "left", cursor: "pointer", background: "#1E1710", border: "1px solid rgba(26,126,104,.5)", borderRadius: 18, padding: 18, color: "rgba(251,246,236,.8)", boxShadow: "var(--ed-shadow-dark)" }}>
+            <button onClick={() => onNavigate?.("catch")} className="ed-card-hover" style={{ width: "100%", textAlign: "left", cursor: "pointer", background: "#1E1710", border: "1px solid rgba(26,126,104,.5)", borderRadius: 18, padding: 18, color: "rgba(251,246,236,.8)", boxShadow: "var(--ed-shadow-dark)" }}>
               <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: "#1A7E68" }}>FIELD ALBUM</div>
               <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 18, marginTop: 5, color: "#E8C77E" }}>Catch in the wild</div>
               <p style={{ fontSize: 13, color: "rgba(251,246,236,.8)", margin: "7px 0 12px", lineHeight: 1.5 }}>Find real animals out there and turn them into collectibles for {active.name}&apos;s field album.</p>
