@@ -34,7 +34,7 @@ export const CODEX_VARIANTS: CodexVariant[] = [
     key: "retro",
     label: "Retro",
     blurb: "risograph print",
-    desc: "a vintage 1980s risograph collectible sticker: slightly offset CMYK halftone print, grainy limited retro palette, thick outline, simple flat shading, single creature in a dynamic pose, worn matte die-cut sticker with a white border on aged off-white paper",
+    desc: "a vintage 1980s risograph collectible sticker: two-color spot-ink riso print with visible offset misregistration and grainy paper texture, limited muted pink-and-teal palette, thick outline, flat matte shading, single creature in a dynamic pose, worn matte die-cut sticker with a white border on aged off-white paper",
   },
   {
     key: "pixel",
@@ -45,8 +45,8 @@ export const CODEX_VARIANTS: CodexVariant[] = [
   {
     key: "pop",
     label: "Pop",
-    blurb: "comic halftone",
-    desc: "a bold pop-art comic collectible sticker: ben-day halftone dots, thick black comic outline, high-contrast saturated primary colors, dramatic single creature in an action pose, glossy die-cut sticker with a white border on a punchy solid-color background",
+    blurb: "comic panel",
+    desc: "a bold 1960s pop-art comic-panel collectible sticker: heavy black comic-ink outline, flat high-contrast primary colors (bright red, yellow, blue), sparse ben-day dot accents, dramatic single creature in an explosive action pose, glossy die-cut sticker with a white border on a punchy solid-color background",
   },
 ];
 

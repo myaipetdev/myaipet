@@ -664,13 +664,13 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               </p>
 
               {/* 띠부씰 style picker — one asset, many looks */}
-              <div style={{ fontFamily: T.m, fontSize: 11.5, fontWeight: 700, letterSpacing: ".12em", color: "rgba(232,199,126,.75)", marginBottom: 7 }}>STICKER STYLE · {selVariant.blurb.toUpperCase()}</div>
+              <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: "rgba(232,199,126,.75)", marginBottom: 7 }}>STICKER STYLE · {selVariant.blurb.toUpperCase()}</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 13 }}>
                 {CODEX_VARIANTS.map((v) => {
                   const on = v.key === codexVariant;
                   return (
-                    <button key={v.key} type="button" onClick={() => setCodexVariant(v.key)} title={v.blurb} style={{
-                      fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".04em", padding: "5px 11px", borderRadius: 999, cursor: "pointer",
+                    <button key={v.key} type="button" onClick={() => setCodexVariant(v.key)} title={v.blurb} aria-pressed={on} style={{
+                      fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".04em", padding: "5px 11px", borderRadius: 999, cursor: "pointer",
                       border: on ? "1px solid #E8C77E" : "1px solid rgba(251,246,236,.18)",
                       background: on ? "#E8C77E" : "transparent", color: on ? "#3A2A08" : "rgba(251,246,236,.7)",
                     }}>{v.label}</button>

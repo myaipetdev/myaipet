@@ -621,8 +621,8 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
               {CODEX_VARIANTS.map((v) => {
                 const on = v.key === cardVariant;
                 return (
-                  <button key={v.key} type="button" onClick={() => setCardVariant(v.key)} title={v.blurb} style={{
-                    fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".04em", padding: "5px 11px", borderRadius: 999, cursor: "pointer",
+                  <button key={v.key} type="button" onClick={() => setCardVariant(v.key)} title={v.blurb} aria-pressed={on} style={{
+                    fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".04em", padding: "5px 11px", borderRadius: 999, cursor: "pointer",
                     border: on ? `1.5px solid ${T.ink}` : `1px solid ${T.hair}`, background: on ? T.ink : T.paper, color: on ? T.creamOn : T.muted,
                   }}>{v.label}</button>
                 );
@@ -645,7 +645,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
               <div style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "9px 12px", fontFamily: T.body, fontSize: 13, marginTop: 12, textAlign: "center" }}>{err}</div>
             )}
             <p style={{ fontFamily: T.body, fontSize: 13, color: T.muted, textAlign: "center", margin: "12px auto 0", maxWidth: 268, lineHeight: 1.5 }}>
-              Codex turns {openPet.name} into a collectible creature sticker — you preview &amp; confirm before it becomes the card art. Your photo is always kept. Costs 5 credits.
+              Codex turns {openPet.name}{" "}into a collectible creature sticker — you preview &amp; confirm before it becomes the card art. Your photo is always kept. Costs 5 credits.
             </p>
           </div>
         </Overlay>
