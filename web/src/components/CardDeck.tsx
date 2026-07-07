@@ -36,6 +36,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import PetCard, { TOPO_MASK, rarityTopo } from "@/components/PetCard";
+import { CODEX_VARIANTS, codexPrompt } from "@/lib/codex";
 import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
 import useCountUp from "@/hooks/useCountUp";
@@ -128,6 +129,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
   const [filter, setFilter] = useState<"All" | Rarity>("All");
   const [sort, setSort] = useState<SortKey>("rarity");
   const [openId, setOpenId] = useState<number | null>(null); // card detail overlay
+  const [cardVariant, setCardVariant] = useState(CODEX_VARIANTS[0].key); // 띠부씰 look for Illustrate
 
   // SCRUM-100 — non-destructive Illustrate preview. Holds the just-generated art
   // for a pet until the user explicitly confirms replacing the original.
@@ -194,10 +196,10 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
   const illustrate = async (petId: number, name: string) => {
     setIllustrating(petId); setErr(null);
     try {
-      // Codex sticker — our ©-free collectible-creature look (grok-imagine uses the
-      // pet's photo as reference for identity). The number/name badge is our UI's
-      // job, so the art itself stays text-free.
-      const prompt = `${name} as a 1990s collectible creature-sticker mascot: a single stylized cartoon of this exact animal in a lively dynamic action pose, keep its real fur colors and markings, bold thick uniform black outline, flat two-tone cel shading, bright saturated colors, clean vector-like finish, glossy die-cut sticker with a thin white cut border, plain solid soft-pastel background, cute and iconic, full body, no text or watermark`;
+      // Codex sticker — our ©-free collectible-creature look in the chosen 띠부씰
+      // variant (grok-imagine uses the pet's photo as reference for identity). The
+      // number/name badge is our UI's job, so the art itself stays text-free.
+      const prompt = codexPrompt(name, cardVariant);
       const res = await fetch("/api/studio/generate", {
         method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ modelId: "grok-imagine", petId, prompt, aspect: "1:1" }),
@@ -614,7 +616,19 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                 perforation to share (the reference interaction). The buttons
                 below remain the accessible path to every action. */}
             <RipStub petId={openPet.id} rarity={openPet.rarity} onRip={() => shareCard(openPet.id, openPet.name)} />
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 14, flexWrap: "wrap" }}>
+            {/* 띠부씰 style picker — the look Illustrate will generate */}
+            <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginTop: 14 }}>
+              {CODEX_VARIANTS.map((v) => {
+                const on = v.key === cardVariant;
+                return (
+                  <button key={v.key} type="button" onClick={() => setCardVariant(v.key)} title={v.blurb} style={{
+                    fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".04em", padding: "5px 11px", borderRadius: 999, cursor: "pointer",
+                    border: on ? `1.5px solid ${T.ink}` : `1px solid ${T.hair}`, background: on ? T.ink : T.paper, color: on ? T.creamOn : T.muted,
+                  }}>{v.label}</button>
+                );
+              })}
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 10, flexWrap: "wrap" }}>
               <button onClick={() => shareCard(openPet.id, openPet.name)} style={btn}>𝕏 Share</button>
               <button
                 onClick={() => illustrate(openPet.id, openPet.name)}

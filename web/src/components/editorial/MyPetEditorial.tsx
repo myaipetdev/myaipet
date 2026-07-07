@@ -19,6 +19,7 @@ import Reveal from "@/components/Reveal";
 import CollectibleFrame, { Motes } from "@/components/editorial/CollectibleFrame";
 import PaywallModal, { type PaywallInfo } from "@/components/PaywallModal";
 import useCountUp from "@/hooks/useCountUp";
+import { CODEX_VARIANTS } from "@/lib/codex";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
 
@@ -128,6 +129,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
   const [showClassic, setShowClassic] = useState<null | "tools" | "create">(null);
   const [codexBusy, setCodexBusy] = useState(false);
   const [showPhoto, setShowPhoto] = useState(false); // hero toggle: prefer codex, flip to raw photo
+  const [codexVariant, setCodexVariant] = useState(CODEX_VARIANTS[0].key); // which 띠부씰 look to generate
 
   const activeIdRef = useRef<number | null>(null);
   useEffect(() => { activeIdRef.current = active?.id ?? null; }, [active?.id]);
@@ -214,7 +216,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
       const res = await fetch(`/api/pets/${petId}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ type: "image", style: 6 }),
+        body: JSON.stringify({ type: "image", style: 6, codexVariant }),
       });
       if (res.status === 402) {
         if (activeIdRef.current === petId) showFlash({ text: `Not enough credits — ${petName}'s Codex needs 5. Add credits and try again.`, error: true });
@@ -374,6 +376,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
   // Hero prefers the Codex sticker illustration when it exists (the whole point),
   // with a photo/sticker toggle; falls back to the real photo otherwise.
   const heroArt = codexUrl && !showPhoto ? codexUrl : photo;
+  const selVariant = CODEX_VARIANTS.find((v) => v.key === codexVariant) ?? CODEX_VARIANTS[0];
   const species = active.evolution_name || active.species_name || "Companion";
   const element = (active.element || "normal").toUpperCase();
   const estYearRaw = active.created_at ? new Date(active.created_at).getFullYear() : null;
@@ -650,27 +653,41 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                 )}
               </div>
               {codexUrl ? (
-                <>
-                  <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 18, margin: "6px 0 4px", color: "#FBF6EC" }}>{active.name} is a collectible ✦</div>
-                  <p style={{ fontSize: 13, color: "rgba(251,246,236,.7)", margin: "0 0 12px", lineHeight: 1.5 }}>The Codex sticker is live on {active.name}&apos;s card and this hero. Re-illustrate for a fresh pose anytime.</p>
-                  <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
-                    <button onClick={() => onNavigate?.("cards")} className="ed-wipe" style={{
-                      display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(200,147,47,.22)", color: T.creamOn, fontFamily: T.disp, fontWeight: 700, fontSize: 13.5, borderRadius: 11, padding: "9px 15px", border: "none", cursor: "pointer",
-                    }}>See the card →</button>
-                    <button onClick={illustrateCodex} disabled={codexBusy} style={{
-                      background: "transparent", color: "rgba(251,246,236,.7)", fontFamily: T.m, fontSize: 12.5, fontWeight: 700, letterSpacing: ".04em", border: "1px solid rgba(251,246,236,.2)", borderRadius: 11, padding: "9px 14px", cursor: codexBusy ? "wait" : "pointer",
-                    }}>{codexBusy ? "Illustrating…" : "Re-illustrate · 5 credits"}</button>
-                  </div>
-                </>
+                <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 18, margin: "6px 0 4px", color: "#FBF6EC" }}>{active.name} is a collectible ✦</div>
               ) : (
-                <>
-                  <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 18, margin: "6px 0 4px", color: "#E8C77E" }}>Turn {active.name} into a collectible</div>
-                  <p style={{ fontSize: 13, color: "rgba(251,246,236,.8)", margin: "0 0 12px", lineHeight: 1.5 }}>A numbered, cel-shaded die-cut creature sticker — your own dex entry. It becomes {active.name}&apos;s card art and this hero portrait.</p>
-                  <button onClick={illustrateCodex} disabled={codexBusy} style={{
-                    display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(180deg,#F0C868,#C8932F)", color: "#3A2A08", fontFamily: T.disp, fontWeight: 800, fontSize: 14, borderRadius: 12, padding: "10px 18px", border: "none", cursor: codexBusy ? "wait" : "pointer", boxShadow: "0 12px 24px -14px rgba(200,147,47,.7)",
-                  }}>{codexBusy ? `Illustrating ${active.name}…` : "Illustrate · 5 credits"}</button>
-                </>
+                <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 18, margin: "6px 0 4px", color: "#E8C77E" }}>Turn {active.name} into a collectible</div>
               )}
+              <p style={{ fontSize: 13, color: "rgba(251,246,236,.75)", margin: "0 0 12px", lineHeight: 1.5 }}>
+                {codexUrl
+                  ? <>The Codex sticker is live on {active.name}&apos;s card and this hero. Re-illustrate in any style anytime.</>
+                  : <>A numbered die-cut creature sticker — your own dex entry. Pick a style; it becomes {active.name}&apos;s card art and this hero.</>}
+              </p>
+
+              {/* 띠부씰 style picker — one asset, many looks */}
+              <div style={{ fontFamily: T.m, fontSize: 11.5, fontWeight: 700, letterSpacing: ".12em", color: "rgba(232,199,126,.75)", marginBottom: 7 }}>STICKER STYLE · {selVariant.blurb.toUpperCase()}</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 13 }}>
+                {CODEX_VARIANTS.map((v) => {
+                  const on = v.key === codexVariant;
+                  return (
+                    <button key={v.key} type="button" onClick={() => setCodexVariant(v.key)} title={v.blurb} style={{
+                      fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".04em", padding: "5px 11px", borderRadius: 999, cursor: "pointer",
+                      border: on ? "1px solid #E8C77E" : "1px solid rgba(251,246,236,.18)",
+                      background: on ? "#E8C77E" : "transparent", color: on ? "#3A2A08" : "rgba(251,246,236,.7)",
+                    }}>{v.label}</button>
+                  );
+                })}
+              </div>
+
+              <div style={{ display: "flex", gap: 9, flexWrap: "wrap", alignItems: "center" }}>
+                <button onClick={illustrateCodex} disabled={codexBusy} style={{
+                  display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(180deg,#F0C868,#C8932F)", color: "#3A2A08", fontFamily: T.disp, fontWeight: 800, fontSize: 14, borderRadius: 12, padding: "10px 18px", border: "none", cursor: codexBusy ? "wait" : "pointer", boxShadow: "0 12px 24px -14px rgba(200,147,47,.7)",
+                }}>{codexBusy ? `Illustrating ${active.name}…` : `${codexUrl ? "Re-illustrate" : "Illustrate"} ${selVariant.label} · 5 credits`}</button>
+                {codexUrl && (
+                  <button onClick={() => onNavigate?.("cards")} className="ed-wipe" style={{
+                    background: "transparent", color: "rgba(251,246,236,.75)", fontFamily: T.m, fontSize: 12.5, fontWeight: 700, letterSpacing: ".04em", border: "1px solid rgba(251,246,236,.2)", borderRadius: 11, padding: "9px 14px", cursor: "pointer",
+                  }}>See the card →</button>
+                )}
+              </div>
             </div>
             </Reveal>
 

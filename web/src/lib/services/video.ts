@@ -96,9 +96,12 @@ export function buildPetPrompt(
   userPrompt?: string,
   avatarUrl?: string,
   appearanceDesc?: string,
+  styleDescOverride?: string,
 ): string {
   const personalityDesc = PERSONALITY_PROMPTS[personality] || PERSONALITY_PROMPTS.friendly;
-  const styleDesc = STYLE_DESCRIPTORS[style] || STYLE_DESCRIPTORS[0];
+  // styleDescOverride lets callers (e.g. Codex sticker variants) swap the style
+  // fragment without a fixed STYLE_DESCRIPTORS slot per variant.
+  const styleDesc = styleDescOverride || STYLE_DESCRIPTORS[style] || STYLE_DESCRIPTORS[0];
 
   // userPrompt is expected to be already translated to English (callers should run translatePromptIfNeeded)
   const cleanPrompt = userPrompt ? userPrompt.replace(/\s+/g, " ").trim() : undefined;

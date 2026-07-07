@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { verifySignature } from "@/lib/signAction";
 import { buildPetPrompt, generateGrokImage, generateGrokImageWithRef, describePetAvatar, submitGrokVideo, translatePromptIfNeeded } from "@/lib/services/video";
+import { isCodexVariant, codexVariantDesc } from "@/lib/codex";
 import { loraEnabled, getReadyPetLora, falLoraImage } from "@/lib/services/lora";
 import { moderateGeneration } from "@/lib/moderation";
 import { awardPoints } from "@/lib/seasonRewards";
@@ -27,7 +28,7 @@ export async function POST(
 
   const { petId } = await params;
   const body = await req.json();
-  const { style, duration, prompt, type, signedMessage, signature } = body;
+  const { style, duration, prompt, type, signedMessage, signature, codexVariant } = body;
 
   // Wallet signature optional during on-chain hold period.
   // If provided, still verify; if not, allow auth-only.
@@ -108,6 +109,9 @@ export async function POST(
     }
   }
 
+  // Codex sticker (style 6): a validated variant swaps the style fragment so one
+  // slot serves all 띠부씰 looks (classic/chibi/holo/retro/pixel/pop).
+  const codexOverride = style === 6 && isCodexVariant(codexVariant) ? codexVariantDesc(codexVariant) : undefined;
   const personalizedPrompt = buildPetPrompt(
     pet.name,
     pet.species,
@@ -115,7 +119,8 @@ export async function POST(
     style ?? 0,
     translatedPrompt,
     pet.avatar_url || undefined,
-    appearanceDesc || undefined
+    appearanceDesc || undefined,
+    codexOverride
   );
 
   // audit H13/H18: reserve credits with an atomic guarded decrement AFTER all
