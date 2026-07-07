@@ -26,7 +26,7 @@ type Pet = {
   id: number; name: string; level: number; element?: string; species?: number;
   happiness?: number; energy?: number; hunger?: number; bond_level?: number;
   experience?: number; created_at?: string;
-  avatar_url?: string | null; evolution_name?: string | null; species_name?: string | null;
+  avatar_url?: string | null; codex_url?: string | null; evolution_name?: string | null; species_name?: string | null;
 };
 
 type CareFlash = { id: number; text: string; error?: boolean; pts?: number; levelUp?: boolean; fulfilled?: boolean };
@@ -126,6 +126,8 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
   const [memoryLoaded, setMemoryLoaded] = useState(false);
   const [paywall, setPaywall] = useState<PaywallInfo | null>(null);
   const [showClassic, setShowClassic] = useState<null | "tools" | "create">(null);
+  const [codexBusy, setCodexBusy] = useState(false);
+  const [showPhoto, setShowPhoto] = useState(false); // hero toggle: prefer codex, flip to raw photo
 
   const activeIdRef = useRef<number | null>(null);
   useEffect(() => { activeIdRef.current = active?.id ?? null; }, [active?.id]);
@@ -197,7 +199,46 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
     if (active?.id === p.id) return;
     setActive(p);
     // clear per-pet transient UI so pet A's celebration never paints pet B
-    setFlash(null); setPops({}); setCombo(null); setStreakMint(null);
+    setFlash(null); setPops({}); setCombo(null); setStreakMint(null); setShowPhoto(false);
+  };
+
+  // ── Codex sticker: generate the pet's collectible-creature illustration
+  //    (Studio style 6). The server pins it to pet.codex_url, so the card + this
+  //    hero switch to it. Costs 5 credits; 402 = not enough credits (honest). ──
+  const illustrateCodex = async () => {
+    if (!active || codexBusy) return;
+    const petId = active.id;
+    const petName = active.name;
+    setCodexBusy(true);
+    try {
+      const res = await fetch(`/api/pets/${petId}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ type: "image", style: 6 }),
+      });
+      if (res.status === 402) {
+        if (activeIdRef.current === petId) showFlash({ text: `Not enough credits — ${petName}'s Codex needs 5. Add credits and try again.`, error: true });
+      } else if (!res.ok) {
+        const j = await res.json().catch(() => ({} as any));
+        throw new Error(j.error || j.details || `Couldn't illustrate (${res.status})`);
+      } else {
+        const j = await res.json();
+        if (j?.image_url && activeIdRef.current === petId) {
+          const url = j.image_url as string;
+          setActive((prev) => (prev && prev.id === petId ? { ...prev, codex_url: url } : prev));
+          setPets((prev) => (prev ? prev.map((p) => (p.id === petId ? { ...p, codex_url: url } : p)) : prev));
+          setShowPhoto(false);
+          showFlash({ text: `${petName}'s Codex sticker is ready — it's on your card now.` });
+        }
+      }
+    } catch (e: any) {
+      if (activeIdRef.current === petId) {
+        const msg = e?.message && !/failed to fetch|networkerror|load failed/i.test(e.message)
+          ? e.message : "Couldn't reach the server — try again in a moment.";
+        showFlash({ text: msg, error: true });
+      }
+    }
+    setCodexBusy(false);
   };
 
   const care = async (type: "feed" | "play" | "pet") => {
@@ -329,6 +370,10 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
   const status = happy >= 80 && energy >= 50 && hunger < 40 ? "THRIVING" : energy < 20 ? "RESTING" : happy < 30 ? "WANTS YOU" : "DOING WELL";
   const statusMeta = STATUS_META[status] || STATUS_META["DOING WELL"];
   const photo = active.avatar_url || "/mascot.jpg";
+  const codexUrl = active.codex_url || null;
+  // Hero prefers the Codex sticker illustration when it exists (the whole point),
+  // with a photo/sticker toggle; falls back to the real photo otherwise.
+  const heroArt = codexUrl && !showPhoto ? codexUrl : photo;
   const species = active.evolution_name || active.species_name || "Companion";
   const element = (active.element || "normal").toUpperCase();
   const estYearRaw = active.created_at ? new Date(active.created_at).getFullYear() : null;
@@ -423,7 +468,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                   <div key={active.id} className="mp-flyin">
                     {/* level-up: one-shot scale pop on the framed collectible (carries the gold seal) */}
                     <div style={{ animation: lvPop > 0 ? `${lvPop % 2 ? "mpSealPopA" : "mpSealPopB"} .7s cubic-bezier(.2,.8,.2,1)` : undefined }}>
-                      <CollectibleFrame photoUrl={photo} level={active.level} speciesLabel={species.toUpperCase()} elementLabel={element} width={230} />
+                      <CollectibleFrame photoUrl={heroArt} level={active.level} speciesLabel={species.toUpperCase()} elementLabel={element} width={230} />
                     </div>
                   </div>
                 </div>
@@ -583,6 +628,50 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               </span>
               <span style={{ fontSize: 20, flexShrink: 0 }}>→</span>
             </button>
+            </Reveal>
+
+            {/* codex sticker — turn the pet into a numbered collectible creature.
+                Warm-dark panel, foil-gold headline. Generate (5 credits) → server
+                pins pet.codex_url → hero + card switch to the illustration. When it
+                exists: photo/sticker toggle + a jump to the card. */}
+            <Reveal dir="right" delay={135}>
+            <div style={{ background: "#1E1710", border: "1px solid rgba(200,147,47,.5)", borderRadius: 18, padding: 18, color: "rgba(251,246,236,.8)", boxShadow: "var(--ed-shadow-dark)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: "#E8C77E" }}>PET CODEX № {String(active.id).padStart(4, "0")}</div>
+                {codexUrl && (
+                  <div style={{ display: "flex", gap: 4, background: "rgba(251,246,236,.08)", borderRadius: 999, padding: 3 }}>
+                    {([["Sticker", false], ["Photo", true]] as const).map(([lab, ph]) => (
+                      <button key={lab} onClick={() => setShowPhoto(ph)} style={{
+                        fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", padding: "4px 10px", borderRadius: 999, cursor: "pointer", border: "none",
+                        background: showPhoto === ph ? "#E8C77E" : "transparent", color: showPhoto === ph ? "#3A2A08" : "rgba(251,246,236,.7)",
+                      }}>{lab}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {codexUrl ? (
+                <>
+                  <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 18, margin: "6px 0 4px", color: "#FBF6EC" }}>{active.name} is a collectible ✦</div>
+                  <p style={{ fontSize: 13, color: "rgba(251,246,236,.7)", margin: "0 0 12px", lineHeight: 1.5 }}>The Codex sticker is live on {active.name}&apos;s card and this hero. Re-illustrate for a fresh pose anytime.</p>
+                  <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
+                    <button onClick={() => onNavigate?.("cards")} className="ed-wipe" style={{
+                      display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(200,147,47,.22)", color: T.creamOn, fontFamily: T.disp, fontWeight: 700, fontSize: 13.5, borderRadius: 11, padding: "9px 15px", border: "none", cursor: "pointer",
+                    }}>See the card →</button>
+                    <button onClick={illustrateCodex} disabled={codexBusy} style={{
+                      background: "transparent", color: "rgba(251,246,236,.7)", fontFamily: T.m, fontSize: 12.5, fontWeight: 700, letterSpacing: ".04em", border: "1px solid rgba(251,246,236,.2)", borderRadius: 11, padding: "9px 14px", cursor: codexBusy ? "wait" : "pointer",
+                    }}>{codexBusy ? "Illustrating…" : "Re-illustrate · 5 credits"}</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 18, margin: "6px 0 4px", color: "#E8C77E" }}>Turn {active.name} into a collectible</div>
+                  <p style={{ fontSize: 13, color: "rgba(251,246,236,.8)", margin: "0 0 12px", lineHeight: 1.5 }}>A numbered, cel-shaded die-cut creature sticker — your own dex entry. It becomes {active.name}&apos;s card art and this hero portrait.</p>
+                  <button onClick={illustrateCodex} disabled={codexBusy} style={{
+                    display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(180deg,#F0C868,#C8932F)", color: "#3A2A08", fontFamily: T.disp, fontWeight: 800, fontSize: 14, borderRadius: 12, padding: "10px 18px", border: "none", cursor: codexBusy ? "wait" : "pointer", boxShadow: "0 12px 24px -14px rgba(200,147,47,.7)",
+                  }}>{codexBusy ? `Illustrating ${active.name}…` : "Illustrate · 5 credits"}</button>
+                </>
+              )}
+            </div>
             </Reveal>
 
             {/* studio teaser — warm-dark panel, studio-purple accent, foil-gold headline */}

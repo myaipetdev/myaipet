@@ -40,6 +40,9 @@ export interface CardData {
   evolutionStage: number;
   personality: string;
   avatarUrl: string | null;
+  /** AI "codex sticker" illustration (Studio style 6). When present it's the
+   *  preferred card art; falls back to the photo (avatarUrl). */
+  codexUrl: string | null;
   rarity: Rarity;
   /** "Top N%" rarity rank across all active pets (real count). null if unknown. */
   topPercent: number | null;
@@ -63,7 +66,7 @@ export async function getCardData(petId: number): Promise<CardData | null> {
         id: true, name: true, species: true, element: true, level: true,
         atk: true, def: true, spd: true, bond_level: true, care_streak: true,
         evolution_name: true, evolution_stage: true, personality_type: true,
-        avatar_url: true, created_at: true,
+        avatar_url: true, codex_url: true, created_at: true,
         skills: {
           where: { slot: { not: null } },
           orderBy: { slot: "asc" },
@@ -114,6 +117,7 @@ export async function getCardData(petId: number): Promise<CardData | null> {
     evolutionStage: pet.evolution_stage,
     personality: pet.personality_type,
     avatarUrl: pet.avatar_url,
+    codexUrl: pet.codex_url,
     rarity,
     topPercent,
     moves: pet.skills.map((s) => humanizeSkill(s.skill_key)),

@@ -33,6 +33,11 @@ const STYLE_DESCRIPTORS: Record<number, string> = {
   3: "watercolor painting style, soft washes of color, delicate brushstrokes, artistic, dreamy",
   4: "3D rendered, Pixar-like quality, detailed fur textures, volumetric lighting",
   5: "pencil sketch style, hand-drawn line art, crosshatching, monochrome",
+  // Codex sticker — our own ©-free collectible-creature look. NO franchise refs.
+  // The UI stamps the dex number/name/badge as real text, so we ask for a clean
+  // die-cut illustration on a plain background (buildPetPrompt already appends a
+  // hard "no text/letters/watermarks" instruction, which is exactly what we want).
+  6: "1990s collectible creature-sticker illustration: a single stylized cartoon version of this animal in a lively dynamic action pose, bold thick uniform black outline, flat two-tone cel shading, bright saturated colors, clean crisp vector-like finish, glossy die-cut sticker with a thin white cut border, centered on a plain solid soft-pastel background, cute iconic mascot design, full body",
 };
 
 const SPECIES_NAMES: Record<number, string> = {

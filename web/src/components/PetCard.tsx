@@ -187,9 +187,10 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320, placeho
           {/* Photo well — gold inset keyline + (rarity-gated) holo sheen + gloss + circular rarity seal */}
           <div style={{ position: "relative", margin: "0 14px", borderRadius: 8, overflow: "hidden", boxShadow: "inset 0 0 0 2px rgba(184,130,44,.5)" }}>
             <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", background: "#fff" }}>
-              {card.avatarUrl ? (
+              {(card.codexUrl || card.avatarUrl) ? (
+                // Prefer the Codex sticker illustration when it exists; else the photo.
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={card.avatarUrl} alt={card.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                <img src={(card.codexUrl || card.avatarUrl) as string} alt={card.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
               ) : (
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--ed-disp)", fontSize: 30, fontWeight: 800, color: "rgba(33,26,18,.3)" }}>{card.speciesName}</div>
               )}

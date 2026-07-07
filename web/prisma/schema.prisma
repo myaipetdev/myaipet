@@ -133,6 +133,11 @@ model Pet {
   bond_level            Int                     @default(0)
   total_interactions    Int                     @default(0)
   avatar_url            String?                 @db.Text
+  // Codex art — the AI-illustrated "collectible creature sticker" of this pet
+  // (Studio style 6). Kept SEPARATE from avatar_url so the real photo identity
+  // and the photo-based card/OG are never overwritten; card + My Pet hero prefer
+  // codex_url when present and fall back to the photo.
+  codex_url             String?                 @db.Text
   appearance_desc       String?                 @db.Text
   is_active             Boolean                 @default(true)
   soul_version          Int                     @default(1)

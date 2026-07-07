@@ -159,6 +159,13 @@ export async function PATCH(
     const safeAvatar = safeUrlOrEmpty(body.avatar_url);
     if (safeAvatar) updateData.avatar_url = safeAvatar;
   }
+  // Codex art (the AI "collectible creature sticker"). Separate from avatar_url so
+  // the real photo is never overwritten. Empty string clears it (flip fully back
+  // to the photo everywhere).
+  if (body.codex_url !== undefined) {
+    updateData.codex_url = body.codex_url === "" ? null : safeUrlOrEmpty(body.codex_url) || undefined;
+    if (updateData.codex_url === undefined) delete updateData.codex_url;
+  }
 
   if (Object.keys(updateData).length === 0) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });

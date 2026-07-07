@@ -34,7 +34,8 @@ export default async function Image({ params }: { params: Promise<{ petId: strin
 
   const t = elementTheme(card.element);
   const rc = rarityColor(card.rarity);
-  const avatar = abs(card.avatarUrl);
+  // Prefer the Codex sticker illustration for the shareable card; else the photo.
+  const avatar = abs(card.codexUrl || card.avatarUrl);
   const stats: [string, number][] = [["ATK", card.atk], ["DEF", card.def], ["SPD", card.spd]];
 
   // Collectible Editorial literals (ImageResponse can't read CSS vars):

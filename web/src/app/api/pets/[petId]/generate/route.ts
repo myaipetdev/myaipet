@@ -196,6 +196,14 @@ export async function POST(
           },
         })
       );
+      // Codex sticker (style 6): also pin it as the pet's collectible art so the
+      // card + My Pet hero switch to the illustration. Never touches avatar_url
+      // (the real photo). Latest codex generation wins.
+      if (style === 6 && !isOriginal) {
+        txOps.push(
+          prisma.pet.update({ where: { id: pet.id }, data: { codex_url: imageUrl } })
+        );
+      }
 
       const txResults = await prisma.$transaction(txOps);
       const generation = txResults[0];

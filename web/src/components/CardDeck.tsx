@@ -194,7 +194,10 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
   const illustrate = async (petId: number, name: string) => {
     setIllustrating(petId); setErr(null);
     try {
-      const prompt = `${name}, epic collectible trading-card character portrait, dramatic rim lighting, vibrant colors, clean simple background, highly detailed, card game art`;
+      // Codex sticker — our ©-free collectible-creature look (grok-imagine uses the
+      // pet's photo as reference for identity). The number/name badge is our UI's
+      // job, so the art itself stays text-free.
+      const prompt = `${name} as a 1990s collectible creature-sticker mascot: a single stylized cartoon of this exact animal in a lively dynamic action pose, keep its real fur colors and markings, bold thick uniform black outline, flat two-tone cel shading, bright saturated colors, clean vector-like finish, glossy die-cut sticker with a thin white cut border, plain solid soft-pastel background, cute and iconic, full body, no text or watermark`;
       const res = await fetch("/api/studio/generate", {
         method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ modelId: "grok-imagine", petId, prompt, aspect: "1:1" }),
@@ -223,14 +226,16 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
     const { petId, url } = preview;
     setIllustrating(petId); setErr(null);
     try {
+      // Save to codex_url — NEVER avatar_url. The real photo is preserved; the
+      // card + My Pet hero prefer codex_url when present (toggle-able on My Pet).
       await fetch(`/api/pets/${petId}`, {
         method: "PATCH", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-        body: JSON.stringify({ avatar_url: url }),
+        body: JSON.stringify({ codex_url: url }),
       });
       setBust((b) => ({ ...b, [petId]: Date.now() }));
       setPreview(null);
     } catch (e: any) {
-      setErr(e?.message || "Couldn't set the new art.");
+      setErr(e?.message || "Couldn't set the Codex art.");
     } finally {
       setIllustrating(null);
     }
@@ -617,7 +622,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                 className="ed-wipe"
                 style={{ ...ghost, opacity: illustrating === openPet.id ? 0.6 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
               >
-                {illustrating === openPet.id ? "Illustrating…" : <><Icon name="sparkling" size={14} /> Illustrate · 5 cr</>}
+                {illustrating === openPet.id ? "Illustrating…" : <><Icon name="sparkling" size={14} /> Codex · 5 cr</>}
               </button>
               <a href={cardUrl(openPet.id)} target="_blank" rel="noopener noreferrer" className="ed-wipe" style={{ ...ghost, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>View card page ▸</a>
             </div>
@@ -625,8 +630,8 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
             {err && (
               <div style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "9px 12px", fontFamily: T.body, fontSize: 13, marginTop: 12, textAlign: "center" }}>{err}</div>
             )}
-            <p style={{ fontFamily: T.body, fontSize: 13, color: T.muted, textAlign: "center", margin: "12px auto 0", maxWidth: 260, lineHeight: 1.5 }}>
-              Illustrate paints a new stylized portrait — you preview & confirm before it replaces the card. Your original photo is kept until then. Costs 5 credits.
+            <p style={{ fontFamily: T.body, fontSize: 13, color: T.muted, textAlign: "center", margin: "12px auto 0", maxWidth: 268, lineHeight: 1.5 }}>
+              Codex turns {openPet.name} into a collectible creature sticker — you preview &amp; confirm before it becomes the card art. Your photo is always kept. Costs 5 credits.
             </p>
           </div>
         </Overlay>
@@ -637,13 +642,13 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
         <Overlay onClose={() => { if (!illustrating) { setPreview(null); setErr(null); } }}>
           <div style={{ maxWidth: 520, margin: "0 auto", textAlign: "center" }}>
             <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.terra, marginBottom: 6 }}>Preview · not saved yet</div>
-            <h3 style={{ fontFamily: T.disp, fontSize: 24, fontWeight: 800, color: T.ink, margin: "0 0 4px", letterSpacing: "-0.02em" }}>Use this as {preview.name}&apos;s card art?</h3>
+            <h3 style={{ fontFamily: T.disp, fontSize: 24, fontWeight: 800, color: T.ink, margin: "0 0 4px", letterSpacing: "-0.02em" }}>Make this {preview.name}&apos;s Codex sticker?</h3>
             <p style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted2, margin: "0 auto 18px", maxWidth: 400, lineHeight: 1.5 }}>
-              Your original photo is untouched. Confirm to set the new art on the card, or keep the original. The generated art is also saved in Studio history either way.
+              Your photo is always kept — the Codex is saved separately, and you can flip back to the photo on My Pet anytime. Confirm to set it as the card art.
             </p>
             <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginBottom: 20 }}>
-              <PreviewCol label="Original"><PetCard key={`orig-${preview.petId}`} petId={preview.petId} maxWidth={220} placeholder={{ name: preview.name, rarity: pets.find((p) => p.id === preview.petId)?.rarity || "Common" }} /></PreviewCol>
-              <PreviewCol label="Illustrated" accent delay={90}>
+              <PreviewCol label="Photo"><PetCard key={`orig-${preview.petId}`} petId={preview.petId} maxWidth={220} placeholder={{ name: preview.name, rarity: pets.find((p) => p.id === preview.petId)?.rarity || "Common" }} /></PreviewCol>
+              <PreviewCol label="Codex" accent delay={90}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <div style={{ width: 220, aspectRatio: "1 / 1", borderRadius: 14, overflow: "hidden", border: `2px solid ${T.terra}`, background: "#fff", boxShadow: "var(--ed-shadow-card)" }}>
                   <img src={preview.url} alt={`${preview.name} illustrated`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
@@ -652,9 +657,9 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
               <button onClick={confirmIllustrate} disabled={illustrating != null} style={{ ...btn, padding: "11px 22px", opacity: illustrating != null ? 0.6 : 1 }}>
-                {illustrating != null ? "Saving…" : "Set as card art"}
+                {illustrating != null ? "Saving…" : "Set as Codex"}
               </button>
-              <button onClick={() => { setPreview(null); setErr(null); }} disabled={illustrating != null} className="ed-wipe" style={{ ...ghost, padding: "11px 22px" }}>Keep original</button>
+              <button onClick={() => { setPreview(null); setErr(null); }} disabled={illustrating != null} className="ed-wipe" style={{ ...ghost, padding: "11px 22px" }}>Keep photo</button>
             </div>
             {/* confirmIllustrate PATCH failures surface here, above the scrim */}
             {err && (
