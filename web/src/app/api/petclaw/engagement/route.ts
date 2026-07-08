@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 import { rateLimit } from "@/lib/rateLimit";
+import { prisma } from "@/lib/prisma";
 
 // Chrome-extension ambient companionship → season recognition.
 //
@@ -63,5 +64,34 @@ export async function POST(req: NextRequest) {
     action,
     points: res.points,          // season points actually granted (0 if capped out)
     capped: (res as any).capped ?? false,
+  });
+}
+
+// Read-only: lets the extension popup SHOW that its care is linked to the account
+// — the owner's total season score + how much of it came from the extension today.
+// Nothing is granted here.
+export async function GET(req: NextRequest) {
+  const rl = rateLimit(req, { key: "petclaw-engagement", limit: 60, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
+  const user = await getUser(req);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const day = new Date().toISOString().slice(0, 10);
+  const rows = await prisma.dailyActionCount
+    .findMany({
+      where: { user_id: user.id, day, action_key: { in: ["ap:ext_care", "ap:ext_welcome"] } },
+      select: { action_key: true, count: true },
+    })
+    .catch(() => [] as { action_key: string; count: number }[]);
+
+  const byKey = Object.fromEntries(rows.map((r) => [r.action_key, r.count]));
+  const care = byKey["ap:ext_care"] || 0;
+  const welcome = byKey["ap:ext_welcome"] || 0;
+
+  return NextResponse.json({
+    seasonTotal: user.season_points || 0,
+    today: { care, welcome, total: care + welcome },
+    caps: { care: DAILY_POINT_CAPS.ext_care, welcome: DAILY_POINT_CAPS.ext_welcome },
   });
 }

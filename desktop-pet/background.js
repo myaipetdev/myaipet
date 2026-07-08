@@ -957,6 +957,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
     getPoints: () => getPoints().then((points) => sendResponse({ points })),
 
+    // Read the account's season score + how much of it came from the extension
+    // today, so the popup can show that ambient care is linked to your data.
+    getSeasonSync: () =>
+      getConfig().then((config) => {
+        if (!config.authToken) return sendResponse({ signedIn: false });
+        return callPetClawAPI("/api/petclaw/engagement").then((data) =>
+          sendResponse({ signedIn: true, data })
+        );
+      }),
+
     // Petting the walking pet → a small, non-financial affection point. Rate-limit
     // is enforced content-side (90s); this feeds the same XP / achievements /
     // evolution loop as every other local point. When signed in it ALSO syncs to

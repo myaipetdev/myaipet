@@ -69,6 +69,31 @@ function loadPoints() {
       renderNotifications(res.notifications);
     }
   });
+  loadSeasonSync();
+}
+
+// Account season sync — shows that the extension's ambient care is linked to the
+// signed-in account (real, non-financial season score), plus today's share.
+function loadSeasonSync() {
+  chrome.runtime.sendMessage({ type: "getSeasonSync" }, (res) => {
+    const panel = $("seasonSync");
+    const out = $("seasonSyncSignedOut");
+    if (!res || !res.signedIn || !res.data) {
+      if (panel) panel.style.display = "none";
+      if (out) out.style.display = "block";
+      return;
+    }
+    if (out) out.style.display = "none";
+    if (panel) panel.style.display = "block";
+    const d = res.data;
+    if ($("seasonTotal")) $("seasonTotal").textContent = (d.seasonTotal || 0).toLocaleString();
+    const today = d.today && d.today.total ? d.today.total : 0;
+    if ($("seasonToday")) {
+      $("seasonToday").textContent = today > 0
+        ? `+${today} today from your pet`
+        : "your pet's care adds here";
+    }
+  });
 }
 
 function escapeHtml(s) {

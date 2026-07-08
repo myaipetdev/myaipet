@@ -362,6 +362,27 @@
       <span>⏱️ <strong id="uptime">0</strong>m online</span>
     </div>
 
+    <!-- Account season sync — proof the extension's care counts toward your data.
+         Play Points above are local to this browser; THIS is your real account
+         season score (non-financial recognition), with today's extension share. -->
+    <div id="seasonSync" style="margin-top:12px; padding:11px 13px; border-radius:12px;
+         background:linear-gradient(135deg, rgba(232,199,126,0.13), rgba(190,79,40,0.10));
+         border:1px solid rgba(232,199,126,0.30); display:none;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+        <div style="font-size:11px; letter-spacing:0.05em; color:#c9b48a; text-transform:uppercase;">Season score · account</div>
+        <div id="seasonSyncBadge" style="font-size:10.5px; color:#4ade80; font-weight:700;">✓ synced</div>
+      </div>
+      <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px;">
+        <div id="seasonTotal" style="font-size:22px; font-weight:800; color:#E8C77E;">0</div>
+        <div id="seasonToday" style="font-size:11.5px; color:#9a8f78;"></div>
+      </div>
+    </div>
+    <div id="seasonSyncSignedOut" style="margin-top:12px; padding:10px 13px; border-radius:12px;
+         background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);
+         font-size:11px; color:#8a8a8a; display:none;">
+      Sign in on the <strong style="color:#aaa;">Connection</strong> tab to sync your pet's care to your account's season score.
+    </div>
+
     <!-- Daily Quests -->
     <div class="section-title" style="margin-top:12px">Daily Quests</div>
     <div id="questList" style="margin-bottom:12px">
