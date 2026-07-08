@@ -311,9 +311,10 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           border-color: rgba(190,79,40,0.30);
           background: #F5EFE2;
         }
-        .pricing-card:hover .pricing-btn-default {
-          background: linear-gradient(180deg,#F49B2A,#E27D0C) !important;
-          color: #FFF8EE !important;
+        .pricing-card:hover .pricing-btn-default,
+        .pricing-card.popular:hover .pricing-btn-default {
+          background: linear-gradient(180deg,#E68A2E,#BE4F28) !important;
+          color: #FCE9CF !important;
           border-color: transparent !important;
         }
       `}</style>
@@ -357,11 +358,11 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
                 width: "100%",
                 background: paused ? "rgba(33,26,18,0.25)"
                   : purchasing === p.key ? "rgba(190,79,40,0.5)"
-                  : p.pop ? "linear-gradient(180deg,#F49B2A,#E27D0C)" : "#211A12",
+                  : p.pop ? "linear-gradient(180deg,#E68A2E,#BE4F28)" : "#211A12",
                 border: "none",
                 borderRadius: 10, padding: "13px",
                 fontFamily: "var(--ed-disp)", fontSize: 14,
-                color: p.pop && !paused ? "#FFF8EE" : "#fff",
+                color: p.pop && !paused ? "#FCE9CF" : "#fff",
                 cursor: paused ? "not-allowed" : purchasing ? "wait" : "pointer", fontWeight: 700,
                 transition: "all 0.3s ease",
                 boxShadow: "none",

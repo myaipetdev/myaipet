@@ -114,7 +114,7 @@ export default function BattleArena({ data, autoPlay = true }: { data: BattleDat
       {/* ── 1. Protocol header ── */}
       <div style={{
         padding: "14px 18px", borderRadius: 12, marginBottom: 18,
-        background: "white", border: "1px solid rgba(245,158,11,0.18)",
+        background: "white", border: "1px solid rgba(200,147,47,0.18)",
         fontFamily: "'JetBrains Mono', monospace", fontSize: 13,
         color: "rgba(26,26,46,0.7)", lineHeight: 1.65,
       }}>
@@ -174,7 +174,7 @@ export default function BattleArena({ data, autoPlay = true }: { data: BattleDat
             <span style={{ color: data.won ? "#34d399" : "#f87171", fontWeight: 700 }}>
               {data.won ? "═══ VICTORY ═══" : "═══ DEFEAT ═══"}
             </span>
-            <span style={{ color: "#fbbf24" }}>+{exp} EXP</span>
+            <span style={{ color: "#E8C77E" }}>+{exp} EXP</span>
             <span style={{ color: "rgba(255,255,255,0.55)" }}>+{pts} pts</span>
           </div>
         )}
@@ -210,8 +210,8 @@ function PetCard({ side, pet, hpNow, isWinner }: { side: "player" | "opponent"; 
   return (
     <div style={{
       padding: 14, borderRadius: 14, background: "white",
-      border: isWinner ? "1.5px solid #fbbf24" : "1px solid rgba(0,0,0,0.06)",
-      boxShadow: isWinner ? "0 0 40px rgba(251,191,36,0.35)" : "0 2px 6px rgba(0,0,0,0.04)",
+      border: isWinner ? "1.5px solid #C8932F" : "1px solid rgba(0,0,0,0.06)",
+      boxShadow: isWinner ? "4px 5px 0 rgba(200,147,47,0.30)" : "0 2px 6px rgba(0,0,0,0.04)",
       transition: "box-shadow 240ms ease, border-color 240ms ease",
       display: "flex", flexDirection: "column", gap: 6,
     }}>
@@ -265,8 +265,8 @@ function LogLine({ entry, playerName, opponentName }: {
 
   let damageStr;
   if (entry.miss) damageStr = <span style={{ color: "rgba(255,255,255,0.45)" }}>──miss──</span>;
-  else if (entry.crit) damageStr = <span style={{ color: "#fbbf24", fontWeight: 700 }}>──CRIT {entry.dmg}▶</span>;
-  else damageStr = <span style={{ color: "#fbbf24" }}>──{entry.dmg}▶</span>;
+  else if (entry.crit) damageStr = <span style={{ color: "#E8C77E", fontWeight: 700 }}>──CRIT {entry.dmg}▶</span>;
+  else damageStr = <span style={{ color: "#E8C77E" }}>──{entry.dmg}▶</span>;
 
   return (
     <div style={{ whiteSpace: "pre", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -298,7 +298,7 @@ function ShareButton({ url, text }: { url: string; text: string }) {
 
 const btnPrimary: React.CSSProperties = {
   padding: "10px 18px", borderRadius: 10, border: "none",
-  background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
+  background: "linear-gradient(135deg,#E8C77E,#C8932F)",
   color: "white", fontWeight: 700, fontSize: 13, cursor: "pointer",
 };
 const btnSecondary: React.CSSProperties = {

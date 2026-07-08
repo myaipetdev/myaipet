@@ -224,7 +224,7 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
             <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, letterSpacing: "0.18em", color: "#9A4E1E", fontWeight: 700, textTransform: "uppercase" }}>
               The open infrastructure for AI companions
             </span>
-            <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.14em", padding: "3px 8px", borderRadius: 7, background: "rgba(107,79,160,0.12)", color: "#6B4FA0", fontFamily: "var(--ed-m)", border: "1px solid rgba(107,79,160,0.25)" }}>
+            <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.14em", padding: "3px 8px", borderRadius: 7, background: "#BE4F28", color: "#FCE9CF", fontFamily: "var(--ed-m)", border: "1px solid rgba(190,79,40,0.35)" }}>
               BETA
             </span>
           </div>
@@ -235,7 +235,7 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
             fontWeight: 800, color: "#211A12", lineHeight: 1.0, margin: "0 0 16px", letterSpacing: "-0.035em",
           }}>
             <span style={{ display: "block" }}>Your AI.</span>
-            <span style={{ display: "block", color: "rgba(33,26,18,0.35)" }}>Your data.</span>
+            <span style={{ display: "block", color: "rgba(33,26,18,0.55)" }}>Your data.</span>
             <span style={{ display: "block", color: "#BE4F28" }}>Your companion.</span>
           </h1>
 
@@ -412,8 +412,8 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
           {["Open SDK", "MCP-native", "19 connectors", "Your data, portable"].map((c) => (
             <span key={c} style={{
               fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
-              padding: "6px 14px", borderRadius: 999, color: "#6B4FA0",
-              background: "rgba(107,79,160,0.07)", border: "1px solid rgba(107,79,160,0.2)",
+              padding: "6px 14px", borderRadius: 999, color: "#7A6E5A",
+              background: "rgba(122,110,90,0.08)", border: "1px solid rgba(122,110,90,0.22)",
             }}>{c}</span>
           ))}
         </div>

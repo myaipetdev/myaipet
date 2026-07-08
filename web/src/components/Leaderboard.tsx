@@ -6,10 +6,10 @@ import { SEASON_TIERS } from "@/lib/season";
 import Reveal from "@/components/Reveal";
 
 const EVOLUTION_STAGES: Record<string, { name: string; color: string }> = {
-  baby:      { name: "Baby",      color: "#a3e635" },
-  young:     { name: "Young",     color: "#34d399" },
-  adult:     { name: "Adult",     color: "#818cf8" },
-  elder:     { name: "Elder",     color: "#c084fc" },
+  baby:      { name: "Baby",      color: "#9FC59A" },
+  young:     { name: "Young",     color: "#BE4F28" },
+  adult:     { name: "Adult",     color: "#7A6E5A" },
+  elder:     { name: "Elder",     color: "#C8932F" },
   legendary: { name: "Legendary", color: "#C8932F" },
 };
 
@@ -555,10 +555,10 @@ export default function Leaderboard() {
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {[
-              { name: "Baby", level: "Lv.1+", color: "#a3e635" },
-              { name: "Young", level: "Lv.5+", color: "#34d399" },
-              { name: "Adult", level: "Lv.10+", color: "#818cf8" },
-              { name: "Elder", level: "Lv.20+", color: "#c084fc" },
+              { name: "Baby", level: "Lv.1+", color: "#9FC59A" },
+              { name: "Young", level: "Lv.5+", color: "#BE4F28" },
+              { name: "Adult", level: "Lv.10+", color: "#7A6E5A" },
+              { name: "Elder", level: "Lv.20+", color: "#C8932F" },
               { name: "Legendary", level: "Lv.35+", color: "#C8932F" },
             ].map((s) => (
               <div key={s.name} style={{

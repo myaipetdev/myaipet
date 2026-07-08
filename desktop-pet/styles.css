@@ -322,39 +322,37 @@
   filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.4));
 }
 
-/* Teen — electric pulse */
+/* Teen — terracotta warmth (was neon violet) */
 #aipet-body.aipet-aura-teen {
-  filter: drop-shadow(0 0 15px rgba(139, 92, 246, 0.5));
-  animation: aipet-pulse-teen 2s ease-in-out infinite;
+  filter: drop-shadow(3px 4px 0 rgba(190, 79, 40, 0.28));
+  animation: aipet-pulse-teen 2.4s ease-in-out infinite;
 }
 
 @keyframes aipet-pulse-teen {
-  0%, 100% { filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.4)); }
-  50% { filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.7)); }
+  0%, 100% { filter: drop-shadow(3px 4px 0 rgba(190, 79, 40, 0.22)); }
+  50% { filter: drop-shadow(3px 4px 0 rgba(190, 79, 40, 0.34)); }
 }
 
-/* Adult — fire aura */
+/* Adult — deep terracotta + foil edge (was neon fire) */
 #aipet-body.aipet-aura-adult {
-  filter: drop-shadow(0 0 18px rgba(239, 68, 68, 0.5));
-  animation: aipet-pulse-adult 1.5s ease-in-out infinite;
+  filter: drop-shadow(3px 4px 0 rgba(190, 79, 40, 0.30));
+  animation: aipet-pulse-adult 2s ease-in-out infinite;
 }
 
 @keyframes aipet-pulse-adult {
-  0%, 100% { filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.4)) drop-shadow(0 0 30px rgba(251, 191, 36, 0.2)); }
-  50% { filter: drop-shadow(0 0 25px rgba(239, 68, 68, 0.7)) drop-shadow(0 0 40px rgba(251, 191, 36, 0.4)); }
+  0%, 100% { filter: drop-shadow(3px 4px 0 rgba(190, 79, 40, 0.26)) drop-shadow(0 0 10px rgba(232, 199, 126, 0.18)); }
+  50% { filter: drop-shadow(3px 4px 0 rgba(190, 79, 40, 0.38)) drop-shadow(0 0 14px rgba(232, 199, 126, 0.30)); }
 }
 
-/* Legend — rainbow aura */
+/* Legend — foil-gold shimmer (was rainbow neon) */
 #aipet-body.aipet-aura-legend {
-  animation: aipet-aura-legend 3s linear infinite;
+  animation: aipet-aura-legend 3.6s ease-in-out infinite;
 }
 
 @keyframes aipet-aura-legend {
-  0% { filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.6)) drop-shadow(0 0 40px rgba(251, 191, 36, 0.3)); }
-  25% { filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.6)) drop-shadow(0 0 40px rgba(74, 222, 128, 0.3)); }
-  50% { filter: drop-shadow(0 0 20px rgba(74, 222, 128, 0.6)) drop-shadow(0 0 40px rgba(96, 165, 250, 0.3)); }
-  75% { filter: drop-shadow(0 0 20px rgba(96, 165, 250, 0.6)) drop-shadow(0 0 40px rgba(167, 139, 250, 0.3)); }
-  100% { filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.6)) drop-shadow(0 0 40px rgba(251, 191, 36, 0.3)); }
+  0% { filter: drop-shadow(3px 4px 0 rgba(200, 147, 47, 0.30)) drop-shadow(0 0 12px rgba(232, 199, 126, 0.24)); }
+  50% { filter: drop-shadow(3px 4px 0 rgba(190, 79, 40, 0.30)) drop-shadow(0 0 16px rgba(232, 199, 126, 0.38)); }
+  100% { filter: drop-shadow(3px 4px 0 rgba(200, 147, 47, 0.30)) drop-shadow(0 0 12px rgba(232, 199, 126, 0.24)); }
 }
 
 /* ── Evolution animation ── */

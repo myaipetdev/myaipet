@@ -7,7 +7,7 @@ PetClaw is an open protocol for companion AI. SDK: **`@myaipet/petclaw-sdk`** (n
 ```
                     ┌─────────────────────┐
                     │   PetClaw Protocol   │
-                    │   v1 · SDK 1.6.0     │
+                    │   v1 · SDK 1.6.1     │
                     └──────────┬──────────┘
                                │
         ┌──────────────┬───────┼───────┬──────────────┐
@@ -55,7 +55,7 @@ petclaw-sdk models list
 
 Endpoints: `GET/POST/DELETE /api/petclaw/models` (owner-auth).
 
-## Connectors (21 across 5 categories — examples)
+## Connectors (19 across 5 categories — examples)
 
 | Platform | Type | Capabilities |
 |----------|------|-------------|

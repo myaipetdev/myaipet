@@ -25,7 +25,7 @@ import { prisma } from "@/lib/prisma";
 const EXTENSION_ACTIONS: Record<string, { reason: keyof typeof DAILY_POINT_CAPS; points: number }> = {
   pet:     { reason: "ext_care",    points: 1 }, // grab/hold the walking pet
   treat:   { reason: "ext_care",    points: 1 }, // collect a treat it found (shares ext_care)
-  welcome: { reason: "ext_welcome", points: 2 }, // daily "welcome back" greeting
+  welcome: { reason: "ext_welcome", points: 1 }, // daily "welcome back" greeting (matches the +1 shown in-extension)
 };
 
 export async function POST(req: NextRequest) {

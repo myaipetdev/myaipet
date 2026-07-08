@@ -56,7 +56,7 @@ export const DAILY_POINT_CAPS: Record<string, number> = {
   // amount. `ext_care` is a SHARED pool for petting + treat-finds so they can't be
   // stacked into double the ceiling.
   ext_care: 20,     // Pet the walker + collect a treat it finds (1 pt each, shared)
-  ext_welcome: 2,   // Daily "welcome back" greeting on tab return (≈once/day)
+  ext_welcome: 1,   // Daily "welcome back" greeting on tab return (once/day, matches the +1 shown)
 };
 
 function todayKey(): string {

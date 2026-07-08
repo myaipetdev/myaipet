@@ -16,7 +16,7 @@
     .header {
       display: flex; align-items: center; gap: 14px;
       padding: 16px 16px 14px;
-      background: linear-gradient(135deg, rgba(251,191,36,0.08), rgba(139,92,246,0.06));
+      background: linear-gradient(135deg, rgba(232,199,126,0.10), rgba(190,79,40,0.07));
       border-bottom: 1px solid rgba(255,255,255,0.04);
     }
 
@@ -70,7 +70,7 @@
     /* ── Points Dashboard ── */
     .points-hero {
       text-align: center; padding: 16px;
-      background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(139,92,246,0.08));
+      background: linear-gradient(135deg, rgba(232,199,126,0.10), rgba(190,79,40,0.07));
       border-radius: 14px; margin-bottom: 12px;
       border: 1px solid rgba(251,191,36,0.12);
     }
@@ -274,7 +274,7 @@
 
     .notif-item .icon { font-size: 16px; flex-shrink: 0; }
     .notif-item .text { color: #ccc; flex: 1; }
-    .notif-item .time { color: #555; font-size: 9px; flex-shrink: 0; }
+    .notif-item .time { color: #555; font-size: 13px; flex-shrink: 0; }
 
     /* ── Footer ── */
     .footer {
@@ -301,7 +301,7 @@
         <span class="evolution-badge" id="evoStage">Egg</span>
         <span class="mood-badge" id="petMood">😊 Happy</span>
         <span id="petPersonality">playful</span>
-        <span id="demoBadge" style="display:none;font-size:10px;font-weight:700;letter-spacing:.08em;padding:2px 7px;border-radius:999px;background:rgba(190,79,40,.18);color:#f0a062">DEMO</span>
+        <span id="demoBadge" style="display:none;font-size:13px;font-weight:700;letter-spacing:.08em;padding:2px 7px;border-radius:999px;background:rgba(190,79,40,.18);color:#f0a062">DEMO</span>
       </div>
     </div>
   </div>
@@ -330,12 +330,12 @@
       </div>
       <div class="point-card">
         <div class="icon">💓</div>
-        <div class="value" id="heartbeatPoints" style="color:#60a5fa">0</div>
+        <div class="value" id="heartbeatPoints" style="color:#7A6E5A">0</div>
         <div class="name">Heartbeat</div>
       </div>
       <div class="point-card">
         <div class="icon">⚡</div>
-        <div class="value" id="skillPoints" style="color:#a78bfa">0</div>
+        <div class="value" id="skillPoints" style="color:#E8C77E">0</div>
         <div class="name">Skills</div>
       </div>
       <div class="point-card">
@@ -369,24 +369,24 @@
          background:linear-gradient(135deg, rgba(232,199,126,0.13), rgba(190,79,40,0.10));
          border:1px solid rgba(232,199,126,0.30); display:none;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-        <div style="font-size:11px; letter-spacing:0.05em; color:#c9b48a; text-transform:uppercase;">Season score · account</div>
-        <div id="seasonSyncBadge" style="font-size:10.5px; color:#4ade80; font-weight:700;">✓ synced</div>
+        <div style="font-size:13px; letter-spacing:0.05em; color:#c9b48a; text-transform:uppercase;">Season score · account</div>
+        <div id="seasonSyncBadge" style="font-size:13px; color:#4ade80; font-weight:700;">✓ synced</div>
       </div>
       <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px;">
         <div id="seasonTotal" style="font-size:22px; font-weight:800; color:#E8C77E;">0</div>
-        <div id="seasonToday" style="font-size:11.5px; color:#9a8f78;"></div>
+        <div id="seasonToday" style="font-size:13px; color:#9a8f78;"></div>
       </div>
     </div>
     <div id="seasonSyncSignedOut" style="margin-top:12px; padding:10px 13px; border-radius:12px;
          background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);
-         font-size:11px; color:#8a8a8a; display:none;">
+         font-size:13px; color:#8a8a8a; display:none;">
       Sign in on the <strong style="color:#aaa;">Connection</strong> tab to sync your pet's care to your account's season score.
     </div>
 
     <!-- Daily Quests -->
     <div class="section-title" style="margin-top:12px">Daily Quests</div>
     <div id="questList" style="margin-bottom:12px">
-      <div style="font-size:11px;color:#666;padding:8px 0">Loading quests...</div>
+      <div style="font-size:13px;color:#666;padding:8px 0">Loading quests...</div>
     </div>
 
     <!-- Notifications -->
@@ -410,7 +410,7 @@
         <div class="evo-progress">
           <div class="evo-progress-fill" id="evoProgressBar" style="width:0%"></div>
         </div>
-        <p id="evoProgressText" style="font-size:9px;color:#888;margin-top:4px">0 / 100 XP to next stage</p>
+        <p id="evoProgressText" style="font-size:13px;color:#888;margin-top:4px">0 / 100 XP to next stage</p>
       </div>
     </div>
 
@@ -425,7 +425,7 @@
 
     <div class="section" style="margin-top:14px">
       <div class="section-title">Evolution Perks</div>
-      <div id="evoPerks" style="font-size:11px;color:#888">
+      <div id="evoPerks" style="font-size:13px;color:#888">
         Unlock perks by evolving your pet!
       </div>
     </div>
@@ -462,7 +462,7 @@
       </div>
       <div class="emotion-bar">
         <div class="label">🧠 Curiosity</div>
-        <div class="bar"><div class="bar-fill" id="barCuriosity" style="width:50%;background:#a78bfa"></div></div>
+        <div class="bar"><div class="bar-fill" id="barCuriosity" style="width:50%;background:#7A6E5A"></div></div>
         <div class="val" id="valCuriosity">50</div>
       </div>
     </div>
@@ -477,8 +477,8 @@
   <!-- Game Tab -->
   <div class="tab-content" id="tab-game">
     <div style="display:flex;gap:6px;margin-bottom:10px">
-      <button class="game-select active" data-game="catcher" style="flex:1;padding:6px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(251,191,36,0.15);color:#f59e0b;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">🎯 Catcher</button>
-      <button class="game-select" data-game="memory" style="flex:1;padding:6px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(255,255,255,0.03);color:#888;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">🧠 Memory</button>
+      <button class="game-select active" data-game="catcher" style="flex:1;padding:6px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(251,191,36,0.15);color:#f59e0b;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🎯 Catcher</button>
+      <button class="game-select" data-game="memory" style="flex:1;padding:6px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:rgba(255,255,255,0.03);color:#888;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🧠 Memory</button>
     </div>
 
     <div id="game-catcher" class="game-area">
@@ -506,7 +506,7 @@
   <!-- Achievements Tab -->
   <div class="tab-content" id="tab-achieve">
     <div style="text-align:center;margin-bottom:12px">
-      <div style="font-size:11px;color:#888">Unlocked</div>
+      <div style="font-size:13px;color:#888">Unlocked</div>
       <div id="achieveCount" style="font-size:24px;font-weight:800;color:#f59e0b">0 / 0</div>
     </div>
     <div id="achieveList"></div>

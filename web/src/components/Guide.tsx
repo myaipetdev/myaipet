@@ -9,7 +9,7 @@ const SECTIONS = [
   { key: "evolution", label: "Evolution", icon: "sparkling" },
   { key: "arena", label: "Arena", icon: "sword" },
   { key: "items", label: "Items & Shop", icon: "shopping-cart" },
-  { key: "rewards", label: "Rewards", icon: "gift" },
+  { key: "rewards", label: "Standing", icon: "trophy" },
   { key: "economy", label: "pts Economy", icon: "coin" },
 ];
 
@@ -158,7 +158,7 @@ function RaisingSection() {
             "Train is the fastest way to level up — use Energy Drinks to keep training!",
             "Feed before hunger hits 80 to prevent mood drops.",
             "Talk and Pet cost almost no energy — great for when energy is low.",
-            "Every interaction gives +1 Season Point. Consistency matters!",
+            "Caring for your pet earns Season Points, capped daily — consistency matters!",
             "Level-up grants a bonus +50 Season Points.",
           ].map((tip, i) => (
             <div key={i} style={{
@@ -333,39 +333,30 @@ function ItemsSection() {
 function RewardsSection() {
   return (
     <>
-      <SectionCard title="🎁 Real Merch Rewards">
+      <SectionCard title="🏅 Season Standing">
         <P>
-          Level up your pet and earn Season Points to redeem real physical merchandise —
-          custom printed with your pet&apos;s AI-generated artwork!
+          Season Points are a non-financial recognition score — earned by raising and
+          creating, capped daily, and frozen when the season closes. Higher tiers are your
+          felt status in the community. They carry <strong>no cash value, no token, and no
+          redemption path</strong> — now or planned — and confer no claim on equity.
         </P>
-        <StatTable rows={[
-          ["🏷️ Sticker Pack", "500 pts, Lv.5+", "Custom pet sticker set (5 sheets)"],
-          ["💇 Hair Clip", "1,000 pts, Lv.10+", "Pet-shaped hair accessory"],
-          ["📱 Phone Case", "2,000 pts, Lv.15+", "Custom printed pet phone case"],
-          ["☕ Mug", "3,000 pts, Lv.20+", "Ceramic mug with pet portrait"],
-          ["📓 Notebook", "3,500 pts, Lv.25+", "Hardcover notebook with pet art"],
-          ["🖊️ Pen Set", "4,000 pts, Lv.30+", "Premium pen set with pet charm"],
-          ["👜 Tote Bag", "5,000 pts, Lv.35+", "Canvas tote with AI pet print"],
-          ["🧥 Hoodie", "10,000 pts, Lv.40+", "Limited edition pet hoodie"],
-          ["🏆 Figure", "20,000 pts, Lv.50+", "3D printed pet figure (LIMITED)"],
-        ]} />
       </SectionCard>
 
       <SectionCard title="📈 How Points Work">
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {[
-            { source: "Each interaction", pts: "+1 pt" },
-            { source: "Level up bonus", pts: "+50 pts" },
-            { source: "Arena win", pts: "+30 pts" },
-            { source: "Arena loss", pts: "+10 pts" },
+            { source: "Care & create (free)", pts: "capped daily" },
+            { source: "Level-up bonus", pts: "+50 pts" },
+            { source: "Arena / battles", pts: "capped daily" },
+            { source: "Paid actions", pts: "no points" },
           ].map(s => (
             <div key={s.source} style={{
               padding: "10px 14px", borderRadius: 10,
-              background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)",
+              background: "rgba(190,79,40,0.06)", border: "1px solid rgba(190,79,40,0.15)",
               display: "flex", justifyContent: "space-between", alignItems: "center",
             }}>
-              <span style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.6)" }}>{s.source}</span>
-              <span style={{ fontFamily: "mono", fontSize: 13, fontWeight: 700, color: "#16a34a" }}>{s.pts}</span>
+              <span style={{ fontFamily: "mono", fontSize: 13, color: "rgba(33,26,18,0.6)" }}>{s.source}</span>
+              <span style={{ fontFamily: "mono", fontSize: 13, fontWeight: 700, color: "#9A4E1E" }}>{s.pts}</span>
             </div>
           ))}
         </div>

@@ -312,13 +312,13 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                 <div className="ed-gloss" aria-hidden style={{ left: 0, opacity: 0.5 }} />
               </div>
               {typeof pet?.level === "number" && (
-                <span aria-hidden style={{ position: "absolute", top: -9, right: -9, width: 27, height: 27, borderRadius: "50%", background: "radial-gradient(circle at 35% 30%, #FFF0C0, #EBB84E 48%, #B8822C)", border: "2px solid #FBF6EC", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: MONO, fontSize: 10.5, fontWeight: 700, color: "#5C3504" }}>
+                <span aria-hidden style={{ position: "absolute", top: -10, right: -10, width: 30, height: 30, borderRadius: "50%", background: "radial-gradient(circle at 35% 30%, #FFF0C0, #EBB84E 48%, #B8822C)", border: "2px solid #FBF6EC", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: MONO, fontSize: 13, fontWeight: 700, color: "#5C3504" }}>
                   {String(pet.level).padStart(2, "0")}
                 </span>
               )}
               {/* Honesty: never present the sample pet as the user's own. */}
               {demo && (
-                <span style={{ position: "absolute", bottom: 4, left: 4, right: 4, textAlign: "center", fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "#FCE9CF", background: "rgba(30,23,16,.78)", borderRadius: 4, padding: "1px 0" }}>DEMO</span>
+                <span style={{ position: "absolute", bottom: 4, left: 4, right: 4, textAlign: "center", fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", color: "#FCE9CF", background: "rgba(30,23,16,.78)", borderRadius: 4, padding: "1px 0" }}>DEMO</span>
               )}
             </div>
           </div>
