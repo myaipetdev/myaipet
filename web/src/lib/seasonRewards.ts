@@ -50,6 +50,13 @@ export const DAILY_POINT_CAPS: Record<string, number> = {
   pet_chat: 60,     // Talking to your pet (web + Chrome extension companion chat)
   community: 50,    // Social contributions: comment, your content liked, follow
   petclaw: 40,      // PetClaw protocol use: skill runs + soul export (sovereignty)
+  // Chrome-extension ambient companionship. Small ceilings — this is background
+  // presence (the desktop pet walking your tabs), NOT active play, so it must not
+  // rival real engagement. The server owns the grant; the extension never sends an
+  // amount. `ext_care` is a SHARED pool for petting + treat-finds so they can't be
+  // stacked into double the ceiling.
+  ext_care: 20,     // Pet the walker + collect a treat it finds (1 pt each, shared)
+  ext_welcome: 2,   // Daily "welcome back" greeting on tab return (≈once/day)
 };
 
 function todayKey(): string {

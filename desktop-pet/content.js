@@ -37,6 +37,8 @@
   let isDragging = false;
   let isHovered = false;          // mouse is over the pet → freeze it so you can grab/pet it
   let lastPatAt = 0;              // rate-limit affection so petting can't be farmed
+  let lastTreatDropAt = 0;        // gap between treat-finds (delight pacing, not anti-farm — season is server-capped)
+  let treatEl = null;             // the one on-screen treat, if any
   let dragOffsetX = 0;
   let bubbleTimeout = null;
   let particles = [];
@@ -265,6 +267,44 @@
     }
   }
 
+  // ── Treat find ──
+  // Every so often the walking pet notices a little treat on the ground and stops
+  // by it. Click it to collect: a warm reaction + a small ambient-care point that
+  // (when signed in) syncs to your season score — server-capped, so it can't be
+  // farmed by lingering. Low-frequency & optional (respects the particles pref).
+  function dropTreat() {
+    if (treatEl || !preferences.particles) return;   // one at a time; honor effects pref
+    const kind = Math.random() < 0.5 ? "🪙" : "🍪";
+    const el = document.createElement("div");
+    el.className = "aipet-treat";
+    el.textContent = kind;
+    el.style.left = Math.round(posX - 15) + "px";     // posX is the pet's centre
+    el.style.bottom = Math.max(4, Math.round(posY)) + "px";
+    const collect = (ev) => {
+      ev.stopPropagation();
+      if (treatEl !== el) return;
+      el.removeEventListener("mousedown", collect);
+      el.classList.add("aipet-treat-gone");
+      setTimeout(() => el.remove(), 260);
+      treatEl = null;
+      burstParticles(["✨", kind], 5);
+      showBubble("+1 — nice catch! 🐾", 2200);
+      chrome.runtime.sendMessage({ type: "treat", reason: "collect_treat" }, () => {});
+    };
+    el.addEventListener("mousedown", collect);
+    document.body.appendChild(el);
+    treatEl = el;
+    showBubble("ooh, a treat! 👀", 1800);
+    // Uncollected treats don't linger — fade after ~25s.
+    setTimeout(() => {
+      if (treatEl === el) {
+        el.classList.add("aipet-treat-gone");
+        setTimeout(() => el.remove(), 260);
+        treatEl = null;
+      }
+    }, 25000);
+  }
+
   // ── Speech Bubble ──
   function showBubble(text, duration = 5000) {
     if (bubbleTimeout) clearTimeout(bubbleTimeout);
@@ -348,9 +388,28 @@
   }, 30_000);
 
   // ── Tab visibility — pet acknowledges return ──
+  let __welcomeHiddenAt = 0;
   document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") { __welcomeHiddenAt = Date.now(); return; }
     if (document.visibilityState === "visible") {
       recordActivity();
+
+      // Daily "welcome back" — a genuine greeting the first time you come back each
+      // day, and only after a real absence (>2min) so quick tab-flips don't trigger
+      // it. The BACKGROUND worker is the single arbiter of "first return today"
+      // (prevents multi-tab double-fire); we celebrate only when it says welcomed.
+      // The season grant is server-capped (ext_welcome ≈ once/day) on top of that.
+      const awayMs = __welcomeHiddenAt ? Date.now() - __welcomeHiddenAt : 0;
+      if (awayMs > 2 * 60 * 1000) {
+        chrome.runtime.sendMessage({ type: "welcome", reason: "welcome_back_daily" }, (res) => {
+          if (!res || !res.welcomed) return;
+          body.classList.add("jumping");
+          setTimeout(() => body.classList.remove("jumping"), 600);
+          burstParticles([(dominant && dominant.emoji) ? dominant.emoji : "🐾", "❤️"], 5);
+          showBubble("welcome back 💕 +1", 2800);
+        });
+      }
+
       // Reset page-comment flag so a brand-new SPA navigation can trigger again
       const newKey = document.title;
       if (window.__lastPageKey !== newKey) {
@@ -659,11 +718,21 @@
     // one affection point at most every 90s — the cap keeps it non-farmable
     if (now - lastPatAt > 90000) {
       lastPatAt = now;
-      burstParticles(["❤️"], 3);
-      showBubble("❤️ +1", 1400);
-      // Local points + (when signed in) synced to the account's recognition
-      // ledger by the background worker — points are non-financial, capped.
-      chrome.runtime.sendMessage({ type: "affection", reason: "pet_the_walker" }, () => {});
+      // Mood-aware care: a down pet (Sad / Lonely / low happiness) especially
+      // needs you, so petting gives a warmer LOCAL reaction + point. The SEASON
+      // grant stays flat + server-capped — the bonus is a feeling, not farming.
+      const isDown =
+        (dominant && (dominant.name === "Sad" || dominant.name === "Lonely")) ||
+        (emotions && (
+          (typeof emotions.happiness === "number" && emotions.happiness < 30) ||
+          (typeof emotions.affection === "number" && emotions.affection < 25)
+        ));
+      const moodBonus = isDown ? 1.5 : 1;
+      burstParticles(["❤️"], isDown ? 6 : 3);
+      showBubble(isDown ? "❤️ thanks — I needed that" : "❤️ +1", 1500);
+      // Local points + (when signed in) synced to the account's season score by
+      // the background worker — points are non-financial, capped.
+      chrome.runtime.sendMessage({ type: "affection", reason: "pet_the_walker", moodBonus }, () => {});
       chrome.runtime.sendMessage({ type: "emotionAction", action: "pet" }, () => {});
     } else {
       burstParticles(["❤️"], 1);
@@ -769,6 +838,13 @@
       // Arrived at target → pick a new one and keep going (rather than stop)
       const arrived = (direction === 1 && posX >= targetX) || (direction === -1 && posX <= targetX);
       if (arrived) {
+        // Sometimes the pet spots a treat where it arrives. Paced for delight
+        // (≥12min gap, 14% per arrival) — season points from it are server-capped.
+        const tnow = Date.now();
+        if (!treatEl && Math.random() < 0.14 && (tnow - lastTreatDropAt) > 12 * 60 * 1000) {
+          lastTreatDropAt = tnow;
+          dropTreat();
+        }
         // 60% pick a new target and keep walking, 40% stop and rest
         if (Math.random() < 0.6) {
           targetX = pickTarget();

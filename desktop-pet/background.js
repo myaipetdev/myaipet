@@ -57,6 +57,21 @@ async function callPetClawAPI(endpoint, options = {}) {
   }
 }
 
+// Ambient-care engagement → the account's season recognition score. We send ONLY
+// the action name; the SERVER decides the grant and enforces the daily cap
+// (/api/petclaw/engagement). Never sends an amount → nothing to farm client-side.
+// Only signed-in owners feed the season; offline/local play still earns the
+// extension's own local points via addPoints(). Returns granted season pts or null.
+async function postEngagement(action) {
+  const config = await getConfig();
+  if (!config.authToken) return null;
+  const res = await callPetClawAPI("/api/petclaw/engagement", {
+    method: "POST",
+    body: JSON.stringify({ action }),
+  });
+  return res && typeof res.points === "number" ? res.points : null;
+}
+
 // ══════════════════════════════════════
 // ── SERVER SYNC ──
 // Map web app pet stats → extension emotion schema, when authenticated.
@@ -340,6 +355,7 @@ async function addPoints(category, amount, reason) {
   if (category === "chat") points.chatCount = (points.chatCount || 0) + 1;
   if (category === "skill") points.skillCount = (points.skillCount || 0) + 1;
   if (category === "heartbeat") points.heartbeatCount = (points.heartbeatCount || 0) + 1;
+  if (category === "care") points.careCount = (points.careCount || 0) + 1; // pet + treat + welcome
 
   await chrome.storage.local.set({ [POINTS_KEY]: points });
 
@@ -908,6 +924,15 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 // ── MESSAGE HANDLER ──
 // ══════════════════════════════════════
 
+// Single-arbiter guard for the daily "welcome back". The service worker is one
+// instance, so a synchronous check+set here (no await in between) makes the
+// greeting fire exactly once even when several tabs report a return at the same
+// moment. Persisted so a worker restart within the same day doesn't re-fire it.
+let __welcomeDate = null;
+chrome.storage.local.get("aipetWelcomeDate").then((r) => {
+  if (r && r.aipetWelcomeDate) __welcomeDate = r.aipetWelcomeDate;
+});
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   const handlers = {
     chat: () => chatWithPet(msg.message).then((reply) => sendResponse({ reply })),
@@ -934,9 +959,42 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
     // Petting the walking pet → a small, non-financial affection point. Rate-limit
     // is enforced content-side (90s); this feeds the same XP / achievements /
-    // evolution loop as every other point, and rides the petServerSync push to the
-    // account when signed in. Points are recognition only — capped, no cash value.
-    affection: () => addPoints("care", 1, msg.reason || "pet_the_walker").then((points) => sendResponse({ points })),
+    // evolution loop as every other local point. When signed in it ALSO syncs to
+    // the account's season score via /api/petclaw/engagement (server-capped).
+    // A sad pet gives a bigger LOCAL point (msg.moodBonus) as a care flourish —
+    // the SEASON grant stays flat + server-authoritative (never farmable).
+    affection: () => {
+      const localAmt = (msg.moodBonus && msg.moodBonus > 1) ? Math.max(1, Math.round(msg.moodBonus)) : 1;
+      return Promise.all([
+        addPoints("care", localAmt, msg.reason || "pet_the_walker"),
+        postEngagement("pet"),
+      ]).then(([points, season]) => sendResponse({ points, season }));
+    },
+
+    // Collected a treat the walking pet found → a small ambient-care point (local)
+    // + season sync (shares the ext_care daily cap with petting, server-side).
+    treat: () =>
+      Promise.all([
+        addPoints("care", 1, msg.reason || "collect_treat"),
+        postEngagement("treat"),
+      ]).then(([points, season]) => sendResponse({ points, season })),
+
+    // Daily "welcome back" when you return to the tab. The worker is the single
+    // arbiter (synchronous check+set below) so multiple tabs returning at once
+    // can't double-fire. Grants a once-a-day greeting point (local) + season sync
+    // (ext_welcome, also ≈once/day capped server-side). Responds welcomed:true
+    // only for the first return of the day — the content script celebrates only
+    // then, so no duplicate bubbles.
+    welcome: () => {
+      const today = new Date().toISOString().slice(0, 10);
+      if (__welcomeDate === today) { sendResponse({ welcomed: false }); return; }
+      __welcomeDate = today;
+      chrome.storage.local.set({ aipetWelcomeDate: today });
+      return Promise.all([
+        addPoints("care", 1, msg.reason || "welcome_back_daily"),
+        postEngagement("welcome"),
+      ]).then(([points, season]) => sendResponse({ welcomed: true, points, season }));
+    },
 
     getActivity: () =>
       Promise.all([getPoints(), getConfig(), getNotifications()]).then(
