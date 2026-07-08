@@ -123,7 +123,7 @@ export async function mintContentNFT(
     console.log(`[blockchain] PETContent mint tx sent: ${tx.hash}`);
 
     // Wait for receipt to extract tokenId from events
-    let tokenId = 0;
+    const tokenId = 0;
     tx.wait().then((receipt: ethers.TransactionReceipt) => {
       // Parse ContentMinted event to get tokenId
       for (const log of receipt.logs) {

@@ -255,7 +255,7 @@ export default function PetGenerate() {
     }
   };
 
-  const useSuggestion = (s: string) => {
+  const applySuggestion = (s: string) => {
     setPrompt(`${selectedPet?.name || "My pet"} ${s.toLowerCase()}`);
   };
 
@@ -655,7 +655,7 @@ export default function PetGenerate() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
                   <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                     {PROMPT_SUGGESTIONS.slice(0, 3).map(s => (
-                      <button key={s} onClick={() => useSuggestion(s)} style={{
+                      <button key={s} onClick={() => applySuggestion(s)} style={{
                         background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                         borderRadius: 6, padding: "3px 8px", cursor: "pointer",
                         fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A",

@@ -941,7 +941,7 @@ export default function Arena() {
   }, []);
 
   // ── Player Uses Skill ──
-  const useSkill = useCallback((eqSkill: EquippedSkill) => {
+  const activateSkill = useCallback((eqSkill: EquippedSkill) => {
     if (!player || !opponent || battleOver || !isPlayerTurn || animating) return;
 
     const skill = eqSkill.def;
@@ -1646,7 +1646,7 @@ export default function Arena() {
                     key={eqSkill.key}
                     skill={eqSkill.def}
                     skillLevel={eqSkill.level}
-                    onClick={() => useSkill(eqSkill)}
+                    onClick={() => activateSkill(eqSkill)}
                     disabled={!isPlayerTurn || animating || battleOver}
                     energyAvailable={player.energy}
                   />

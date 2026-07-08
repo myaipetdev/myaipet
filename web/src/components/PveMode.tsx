@@ -365,7 +365,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
   }, [selectedStage]);
 
   // ── Use skill ──
-  const useSkill = useCallback((eq: EquippedSkill) => {
+  const activateSkill = useCallback((eq: EquippedSkill) => {
     if (!player || !enemy || battleOver || !isPlayerTurn || animating) return;
     const skill = eq.def;
     if (player.energy < skill.energyCost) return;
@@ -1390,7 +1390,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                 const cantAfford = s.energyCost > player.energy;
                 const dis = !isPlayerTurn || animating || cantAfford;
                 return (
-                  <button key={eq.key} onClick={() => useSkill(eq)} disabled={dis} style={{
+                  <button key={eq.key} onClick={() => activateSkill(eq)} disabled={dis} style={{
                     padding: "10px 4px 8px", borderRadius: 12, textAlign: "center",
                     background: dis
                       ? "rgba(255,255,255,0.02)"

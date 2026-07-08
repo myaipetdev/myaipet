@@ -1351,7 +1351,7 @@ export default function SovereigntyDashboard() {
             </div>
             <MaskedTitle
               as="h1"
-              lines={["Your Pet.", <span style={{ color: TERRA }}>Truly Yours.</span>]}
+              lines={["Your Pet.", <span key="truly-yours" style={{ color: TERRA }}>Truly Yours.</span>]}
               style={{ fontFamily: DISP, fontSize: 52, fontWeight: 800, letterSpacing: "-0.04em", color: INK, lineHeight: 1.0, margin: "0 0 16px" }}
             />
             <p style={{ fontFamily: BODY, fontSize: 16, color: MUTED2, lineHeight: 1.7, margin: "0 0 28px", maxWidth: 380 }}>
