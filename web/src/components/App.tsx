@@ -31,6 +31,7 @@ const SocialGallery = lazy(() => import("@/components/SocialGallery"));
 const Leaderboard = lazy(() => import("@/components/Leaderboard"));
 const AgentDashboard = lazy(() => import("@/components/AgentDashboard"));
 const AgentWorkbench = lazy(() => import("@/components/AgentWorkbench"));
+const AgentOffice = lazy(() => import("@/components/AgentOffice"));
 const SovereigntyDashboard = lazy(() => import("@/components/SovereigntyDashboard"));
 const PetStudioPro = lazy(() => import("@/components/PetStudioPro"));
 const WorldCupPet = lazy(() => import("@/components/WorldCupPet")); // time-boxed World Cup 2026 event
@@ -367,7 +368,7 @@ export default function App() {
     // These are the EXACT in-SPA section keys that App renders below (note:
     // "worldcup"/"workbench" are single words, and Studio is the "create" section
     // — "studio" is only a header URL nav, never a section value).
-    const VALID = ["home", "my pet", "cards", "catch", "create", "community", "agent", "workbench", "sovereignty", "worldcup", "airdrop", "chat"];
+    const VALID = ["home", "my pet", "cards", "catch", "create", "community", "agent", "office", "workbench", "sovereignty", "worldcup", "airdrop", "chat"];
     return fromUrl && VALID.includes(fromUrl) ? fromUrl : "home";
   });
   // Keep the URL in sync when the user clicks nav inside the SPA.
@@ -621,6 +622,16 @@ export default function App() {
         <WalletGate section="agent">
           <Suspense fallback={<Loader />}>
             <AgentDashboard />
+          </Suspense>
+        </WalletGate>
+      )}
+
+      {/* Agent Office — the flagship Mission-Control dashboard: 5 pillars, kanban,
+          staff roster, cron schedules + a live dispatch bar. Owner-only-friendly. */}
+      {section === "office" && (
+        <WalletGate section="office">
+          <Suspense fallback={<Loader />}>
+            <AgentOffice />
           </Suspense>
         </WalletGate>
       )}

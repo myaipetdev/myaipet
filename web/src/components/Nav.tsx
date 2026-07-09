@@ -17,6 +17,8 @@ const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
   { key: "studio", label: "Studio", url: "/studio" },
   { key: "community", label: "Community" },
   { key: "sovereignty", label: "PetClaw" },
+  // Agent Office — the Mission-Control dashboard (5 pillars / kanban / staff / crons).
+  { key: "office", label: "Agent Office" },
   // (Agent — multi-platform autonomous presence — intentionally NOT a top-level
   // tab per owner. The AgentDashboard still renders via /?section=agent.)
   // Season hub: my-card + season + missions + leaderboards. Labelled
