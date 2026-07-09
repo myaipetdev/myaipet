@@ -29,6 +29,8 @@ export interface StudioTemplate {
   duration: number;
   aspect?: "16:9" | "9:16" | "1:1"; // trending short-form → 9:16 vertical
   thumbnail?: string;             // optional /studio_thumbs/X.jpg
+  beats?: string[];               // hover-tooltip breakdown — the shot list in plain words
+  swatch?: string;                // CSS gradient poster fallback for templates with no /studio_examples still or clip yet
 }
 
 const baseDescription = (pet: PetContext) => {
@@ -46,10 +48,17 @@ export const TEMPLATES: StudioTemplate[] = [
     category: "trending",
     title: "Cutie idol dance",
     emoji: "💗",
-    description: "The viral J-anime idol dance — 5-cam, crayon effects, straight to camera.",
+    description: "5s vertical idol dance · 5 camera angles cutting every 2s · crayon hearts & stars",
+    beats: [
+      "Bright pastel classroom set, original J-pop track",
+      "Easy-to-copy routine: heart hands → cheek peace-sign → spin → wink",
+      "5 cameras cut every ~2s (front / top / left / right / behind), always eye contact",
+      "Hand-drawn crayon hearts, stars & sparkles pop on the beats",
+    ],
     suggestedModelId: "kling-image-to-video",
     duration: 5,
     aspect: "9:16",
+    swatch: "linear-gradient(135deg,#FBF6EC 0%,#F3C6D6 45%,#6B4FA0 100%)",
     buildPrompt: (pet, custom) =>
       `${pet.name}, ${baseDescription(pet)}, as the SOLE star of a viral Japanese full-color anime idol dance short. Theatrical-quality cel animation, high frame count, bright and adorable. Keep ${pet.name}'s exact look from the reference — hairstyle/fur, colors, eyes, face, build, age feel, outfit and accessories; do NOT restyle into a different character or change the costume. Vertical 9:16 short-form loop, ~24fps feel.
 Setting: a bright, tidy pastel classroom/studio — simple but poppy and fresh so the pet stays the hero.
@@ -64,10 +73,17 @@ Constraints: no other characters; keep the pet's likeness and outfit; no realist
     category: "trending",
     title: "Glow-up reveal",
     emoji: "✨",
-    description: "Plain → epic hero on the beat-drop. Match-cut transformation.",
+    description: "5s vertical before/after — plain start, beat-drop sparkle wipe, epic hero pose",
+    beats: [
+      "Starts plain and dim, everyday look",
+      "Beat-drop: sparkle swirl + light-wipe sweeps across",
+      "Match-cut reveal into confident hero version, same face, rim light + wind",
+      "Ends on a slow-mo hero pose, eye contact with the lens",
+    ],
     suggestedModelId: "kling-image-to-video",
     duration: 5,
     aspect: "9:16",
+    swatch: "linear-gradient(135deg,#3A3024 0%,#C8932F 55%,#E8C77E 100%)",
     buildPrompt: (pet, custom) =>
       `${pet.name}, ${baseDescription(pet)}, in a viral "glow-up" transformation reveal. Starts in a plain, slightly dim everyday look; on a beat-drop a swirl of sparkles and a light-wipe sweeps across and reveals ${pet.name} as an epic, confident hero version — SAME face and likeness, upgraded styling, dramatic rim light, wind in the hair/fur. Vertical 9:16 short-form. Snappy match-cut on the beat, slow-mo hero pose at the end, eye contact with the lens. Hand-drawn crayon/oil-pastel 2D sparkle and star bursts on the reveal, pastel-to-vivid palette. No other characters; keep the pet's likeness; no text, logos or watermark. ${custom || ""}`.trim(),
   },
@@ -76,10 +92,17 @@ Constraints: no other characters; keep the pet's likeness and outfit; no realist
     category: "trending",
     title: "Runway model",
     emoji: "👑",
-    description: "Catwalk strut + cute outfit swaps on every beat.",
+    description: "5s vertical catwalk strut · outfit swap on every beat · pose-and-turn finish",
+    beats: [
+      "Confident catwalk straight toward camera, hip sway",
+      "Quick stylish outfit/accessory swap on each beat, face stays identical",
+      "Editorial studio lighting, seamless pastel backdrop, camera-flash bokeh",
+      "Ends on a pose-and-turn, eye contact with the lens",
+    ],
     suggestedModelId: "kling-image-to-video",
     duration: 5,
     aspect: "9:16",
+    swatch: "linear-gradient(135deg,#6B4FA0 0%,#9E72E8 45%,#E8C77E 100%)",
     buildPrompt: (pet, custom) =>
       `${pet.name}, ${baseDescription(pet)}, strutting a fashion runway like a superstar model. Confident catwalk toward the camera, hip sway, a pose-and-turn at the end. On each beat a quick stylish outfit/accessory swap while keeping the pet's face and body identical. Vertical 9:16 short-form. Editorial studio lighting, seamless pastel backdrop, flashing-camera sparkle bokeh. Flat 2D crayon sparkle and arrow accents on the beat. Always eye contact with the lens. No other characters; keep the pet's likeness; no text or watermark. ${custom || ""}`.trim(),
   },
@@ -88,10 +111,17 @@ Constraints: no other characters; keep the pet's likeness and outfit; no realist
     category: "trending",
     title: "POV: talks to you",
     emoji: "🗯",
-    description: "Front-camera selfie vibe — your pet 'talks' right to you.",
+    description: "5s vertical front-camera selfie · pet talks straight into the lens, cozy room behind",
+    beats: [
+      "Held close like a front-facing phone video",
+      "Animated 'talking': head tilts, blinks, little gestures",
+      "Cozy lifestyle room, softly blurred behind",
+      "Crayon-style speech bubbles & hearts pop in occasionally",
+    ],
     suggestedModelId: "wan-2.1",
     duration: 5,
     aspect: "9:16",
+    swatch: "linear-gradient(135deg,#F5EFE2 0%,#F49B2A 55%,#BE4F28 100%)",
     buildPrompt: (pet, custom) =>
       `${pet.name}, ${baseDescription(pet)}, in a relatable "POV: your pet talks to you" selfie-style short. Held close like a front-facing phone video, looking right into the lens and animatedly "talking" with expressive head tilts, blinks and little gestures, as if telling you something cute. Vertical 9:16, natural lifestyle lighting, cozy room slightly blurred behind. Occasional crayon-style speech-bubble and heart pop-ins. Keep the pet's likeness; no other characters; no text, subtitles or watermark. ${custom || ""}`.trim(),
   },
@@ -100,10 +130,17 @@ Constraints: no other characters; keep the pet's likeness and outfit; no realist
     category: "trending",
     title: "Tiny mukbang",
     emoji: "🍙",
-    description: "ASMR bite-size food, puffy cheeks, happy reactions.",
+    description: "5s vertical ASMR mini-feast · macro bites, puffy cheeks, happy reactions",
+    beats: [
+      "Miniature table set with cute bite-size food",
+      "Small happy bites, cheeks puffing, satisfied reactions to camera",
+      "Macro close-ups, shallow depth of field, warm kitchen ASMR light",
+      "Crayon hearts & sparkles pop on the best bites",
+    ],
     suggestedModelId: "wan-2.1",
     duration: 5,
     aspect: "9:16",
+    swatch: "linear-gradient(135deg,#FBF6EC 0%,#F49B2A 60%,#9A4E1E 100%)",
     buildPrompt: (pet, custom) =>
       `${pet.name}, ${baseDescription(pet)}, doing an adorable tiny-food ASMR mukbang. Sitting at a miniature table with cute bite-size food, taking small happy bites, cheeks puffing, satisfied little reactions to camera. Vertical 9:16, macro close-ups with shallow depth of field, soft warm kitchen light, cozy ASMR mood. Small crayon-style hearts and sparkles pop when it enjoys a bite. Keep the pet's likeness; no other characters; no text or watermark. ${custom || ""}`.trim(),
   },
@@ -112,10 +149,17 @@ Constraints: no other characters; keep the pet's likeness and outfit; no realist
     category: "trending",
     title: "90s anime OP",
     emoji: "📼",
-    description: "Retro anime opening — VHS grain, city-pop, hero pan.",
+    description: "5s vertical retro anime opening · VHS grain, city-pop sunset, hero pan",
+    beats: [
+      "Retro cel-shaded anime look, subtle VHS grain + chromatic bloom",
+      "Warm city-pop sunset palette, wind-blown hair/fur",
+      "Slow pan up to a determined look, quick beat-synced zoom cuts",
+      "Hand-drawn star & speed-line accents",
+    ],
     suggestedModelId: "kling-1.6-pro",
     duration: 5,
     aspect: "9:16",
+    swatch: "linear-gradient(135deg,#3A3024 0%,#BE4F28 45%,#6B4FA0 100%)",
     buildPrompt: (pet, custom) =>
       `${pet.name}, ${baseDescription(pet)}, as the protagonist of a nostalgic 1990s anime opening. Retro cel-shaded anime, subtle VHS grain and chromatic bloom, warm city-pop sunset palette. Hero shots: wind-blown hair/fur, dramatic backlight and sun flare, a slow pan up to a determined look straight at camera, quick beat-synced zoom cuts. Vertical 9:16 short-form. Hand-drawn 2D star and speed-line accents. Keep the pet's look and outfit; no other characters; no text, logos or watermark. ${custom || ""}`.trim(),
   },
@@ -124,10 +168,17 @@ Constraints: no other characters; keep the pet's likeness and outfit; no realist
     category: "trending",
     title: "Phonk flex edit",
     emoji: "🕶",
-    description: "Slow-mo swagger, teal-amber grade, beat-synced punch-ins.",
+    description: "5s vertical slow-mo flex · low hero angle, teal-amber grade, beat-synced punch-ins",
+    beats: [
+      "Slow-motion swagger from a low hero angle",
+      "High-contrast lighting, cool teal-and-amber cinematic grade",
+      "Speed-ramps + punch-in cuts synced to a hard phonk beat",
+      "Cute-cool confident look at the lens, small breeze in the fur",
+    ],
     suggestedModelId: "kling-image-to-video",
     duration: 5,
     aspect: "9:16",
+    swatch: "linear-gradient(135deg,#191334 0%,#3E3470 45%,#E8C77E 100%)",
     buildPrompt: (pet, custom) =>
       `${pet.name}, ${baseDescription(pet)}, in a high-energy phonk "flex" edit. Slow-motion swagger, low hero angle, dramatic high-contrast lighting with a cool teal-and-amber grade, subtle speed-ramps and punch-in cuts synced to a hard phonk beat. Confident look straight at the lens, a small breeze in the hair/fur. Vertical 9:16 short-form, punchy and cool (cute-cool, not scary). Minimal crayon-style star and arrow accents on the hits. Keep the pet's likeness; no other characters; no realistic smoke or fire, no text or watermark. ${custom || ""}`.trim(),
   },

@@ -3,6 +3,7 @@ import { getUser } from "@/lib/auth";
 import { describePetAvatar } from "@/lib/services/video";
 import { sanitizeName, sanitizeText, safeUrlOrEmpty } from "@/lib/sanitize";
 import { moderateText } from "@/lib/moderation";
+import { isHumanAvatar } from "@/lib/services/petAvatarGuard";
 import { NextRequest, NextResponse } from "next/server";
 
 const PERSONALITIES = ["friendly", "playful", "shy", "brave", "lazy", "curious", "mischievous", "gentle", "adventurous", "dramatic", "wise", "sassy"] as const;
@@ -74,6 +75,16 @@ export async function POST(req: NextRequest) {
   if (activePetCount >= user.pet_slots) {
     return NextResponse.json(
       { error: `You need to unlock more pet slots. Current: ${user.pet_slots}` },
+      { status: 400 }
+    );
+  }
+
+  // Pet avatars must be an animal/creature, not a human — this feeds the
+  // Community showcase (studio generations of pets), so a human photo
+  // shouldn't be able to slip in as a "pet".
+  if (avatar_url && (await isHumanAvatar(avatar_url))) {
+    return NextResponse.json(
+      { error: "Pet avatars must be an animal or creature, not a person" },
       { status: 400 }
     );
   }

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { applyDecay } from "@/lib/petMechanics";
+import { isHumanAvatar } from "@/lib/services/petAvatarGuard";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -157,7 +158,18 @@ export async function PATCH(
   }
   if (body.avatar_url !== undefined) {
     const safeAvatar = safeUrlOrEmpty(body.avatar_url);
-    if (safeAvatar) updateData.avatar_url = safeAvatar;
+    if (safeAvatar) {
+      // Pet avatars must be an animal/creature, not a human — this mirrors into
+      // the public Community showcase. Same guard as pet-create (fails open on
+      // a vision outage; only blocks a confident human portrait).
+      if (await isHumanAvatar(safeAvatar)) {
+        return NextResponse.json(
+          { error: "Pet avatars must be an animal or creature, not a person" },
+          { status: 400 },
+        );
+      }
+      updateData.avatar_url = safeAvatar;
+    }
   }
   // Codex art (the AI "collectible creature sticker"). Separate from avatar_url so
   // the real photo is never overwritten. Empty string clears it (flip fully back

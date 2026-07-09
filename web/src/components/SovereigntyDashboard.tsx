@@ -727,20 +727,31 @@ function StepArt({ n }: { n: number }) {
           <rect x="178" y="36" width="16" height="24" rx="2" fill={WHITE} {...S} />
         </svg>
       );
-    case 3: // Open Extensions — address bar + dev-mode toggle ON
+    case 3: // Open Extensions — address bar only
       return (
         <svg {...common}>
-          <rect x="20" y="26" width="180" height="22" rx="11" fill={WHITE} {...S} />
-          <circle cx="34" cy="37" r="4" {...S} /><path d="M37 40l4 4" {...S} />
-          <text x="52" y="42" fontSize="11" fontFamily="var(--ed-m)" fontWeight="700" fill={INK}>chrome://…</text>
-          <rect x="20" y="64" width="180" height="44" rx="8" fill={CREAM} {...S} />
-          <text x="32" y="83" fontSize="11" fontFamily="var(--ed-disp)" fontWeight="700" fill={INK}>Developer mode</text>
-          <text x="32" y="96" fontSize="7.5" fontFamily="var(--ed-m)" fill="#7A6E5A">top-right toggle</text>
-          <rect x="150" y="76" width="38" height="20" rx="10" fill={AMBER} {...S} />
-          <circle cx="178" cy="86" r="7" fill={WHITE} {...S} />
+          <rect x="20" y="36" width="180" height="26" rx="13" fill={WHITE} {...S} />
+          <circle cx="36" cy="49" r="4.5" {...S} /><path d="M39.2 52.2l4.2 4.2" {...S} />
+          <text x="55" y="55" fontSize="12" fontFamily="var(--ed-m)" fontWeight="700" fill={INK}>chrome://extensions</text>
+          <path d="M60 84l50 0M96 74l14 10-14 10" {...S} stroke={AMBER} strokeWidth="2.4" />
+          <rect x="120" y="70" width="70" height="28" rx="7" fill={CREAM} {...S} />
+          <text x="155" y="88" fontSize="9" fontFamily="var(--ed-disp)" fontWeight="700" fill={INK} textAnchor="middle">Extensions</text>
         </svg>
       );
-    case 4: // Load Unpacked — toolbar with amber "Load unpacked" + folder
+    case 4: // Enable Developer Mode — big toggle, ON
+      return (
+        <svg {...common}>
+          <rect x="20" y="24" width="180" height="80" rx="8" fill={WHITE} {...S} />
+          <line x1="20" y1="48" x2="200" y2="48" {...S} />
+          <text x="34" y="40" fontSize="10" fontFamily="var(--ed-m)" fontWeight="700" fill="#7A6E5A">chrome://extensions</text>
+          <text x="34" y="72" fontSize="13" fontFamily="var(--ed-disp)" fontWeight="800" fill={INK}>Developer mode</text>
+          <text x="34" y="88" fontSize="8" fontFamily="var(--ed-m)" fill="#7A6E5A">top-right toggle</text>
+          <rect x="140" y="60" width="50" height="26" rx="13" fill={AMBER} {...S} strokeWidth="2.4" />
+          <circle cx="177" cy="73" r="9" fill={WHITE} {...S} />
+          <path d="M132 62l6 6M132 68l6-6" stroke={AMBER} strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      );
+    case 5: // Load Unpacked — toolbar with amber "Load unpacked" + folder picker
       return (
         <svg {...common}>
           <rect x="20" y="26" width="180" height="76" rx="8" fill={WHITE} {...S} />
@@ -753,38 +764,22 @@ function StepArt({ n }: { n: number }) {
           <path d="M150 78l8 8 14-16" stroke={INK} strokeWidth="2.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
-    case 5: // Link your pet — settings field with pasted CLI token
-      return (
-        <svg {...common}>
-          <rect x="24" y="20" width="172" height="88" rx="9" fill={WHITE} {...S} />
-          <circle cx="40" cy="34" r="5" {...S} /><path d="M40 31v6M37 34h6" stroke={INK} strokeWidth="1.6" />
-          <text x="52" y="38" fontSize="8.5" fontFamily="var(--ed-disp)" fontWeight="700" fill={INK}>Settings</text>
-          <text x="40" y="60" fontSize="7.5" fontFamily="var(--ed-m)" fontWeight="700" fill="#7A6E5A">CLI TOKEN</text>
-          <rect x="40" y="66" width="116" height="22" rx="6" fill={CREAM} {...S} />
-          <text x="50" y="81" fontSize="10" fontFamily="var(--ed-m)" fontWeight="700" fill={INK}>pck_••••••••</text>
-          <rect x="160" y="66" width="22" height="22" rx="6" fill={AMBER} {...S} />
-          <path d="M166 77l4 4 6-8" stroke={INK} strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      );
-    default: // 6: Done — toolbar pet icon + the pet popping up + a stamped check
+    default: // 6: Pin & Sign In — pinned toolbar icon + Settings › Connection field
       return (
         <svg {...common}>
           {/* browser toolbar with the pinned pet icon */}
-          <rect x="20" y="22" width="180" height="20" rx="10" fill={WHITE} {...S} />
-          <circle cx="180" cy="32" r="9" fill={AMBER} {...S} />
-          <circle cx="177" cy="31" r="1.4" fill={INK} /><circle cx="183" cy="31" r="1.4" fill={INK} />
-          <path d="M177 35q3 2 6 0" stroke={INK} strokeWidth="1.4" fill="none" strokeLinecap="round" />
-          <path d="M180 44l-5 7h10Z" fill={AMBER} {...S} />
-          {/* the popped-open companion */}
-          <rect x="120" y="54" width="80" height="56" rx="9" fill={CREAM} {...S} />
-          <circle cx="160" cy="76" r="13" fill={WHITE} {...S} />
-          <circle cx="155" cy="74" r="1.8" fill={INK} /><circle cx="165" cy="74" r="1.8" fill={INK} />
-          <path d="M154 80q6 4 12 0" stroke={INK} strokeWidth="1.6" fill="none" strokeLinecap="round" />
-          <path d="M150 66l3-5 3 4M170 66l-3-5-3 4" {...S} strokeWidth="1.6" />
-          <text x="160" y="102" fontSize="8.5" fontFamily="var(--ed-disp)" fontWeight="800" fill={INK} textAnchor="middle">Hi!</text>
-          {/* success seal */}
-          <circle cx="44" cy="76" r="20" fill={AMBER} {...S} />
-          <path d="M35 76l6 6 13-15" stroke={INK} strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="20" y="18" width="180" height="20" rx="10" fill={WHITE} {...S} />
+          <circle cx="176" cy="28" r="8" fill={AMBER} {...S} />
+          <circle cx="173" cy="27" r="1.3" fill={INK} /><circle cx="179" cy="27" r="1.3" fill={INK} />
+          <path d="M173 31q3 2 6 0" stroke={INK} strokeWidth="1.3" fill="none" strokeLinecap="round" />
+          <path d="M176 39l-4.5 6h9Z" fill={AMBER} {...S} strokeWidth="1.6" />
+          {/* Settings > Connection panel with pasted CLI token */}
+          <rect x="24" y="52" width="172" height="56" rx="9" fill={CREAM} {...S} />
+          <text x="36" y="68" fontSize="8.5" fontFamily="var(--ed-m)" fontWeight="700" fill="#7A6E5A">SETTINGS › CONNECTION</text>
+          <rect x="36" y="76" width="116" height="20" rx="6" fill={WHITE} {...S} />
+          <text x="44" y="90" fontSize="9.5" fontFamily="var(--ed-m)" fontWeight="700" fill={INK}>pck_••••••••</text>
+          <rect x="158" y="76" width="22" height="20" rx="6" fill={AMBER} {...S} />
+          <path d="M164 86l4 4 6-8" stroke={INK} strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
   }
@@ -793,11 +788,11 @@ function StepArt({ n }: { n: number }) {
 function ChromeExtensionSection() {
   const steps = [
     { n: 1, title: "Download", desc: 'Click "Download Extension" below to get the ZIP file.' },
-    { n: 2, title: "Unzip", desc: "Extract the ZIP to any folder on your computer." },
-    { n: 3, title: "Open Extensions", desc: "Go to chrome://extensions and turn on Developer Mode (top-right)." },
-    { n: 4, title: "Load Unpacked", desc: 'Click "Load unpacked" and pick the extracted folder.' },
-    { n: 5, title: "Link your pet", desc: 'Toolbar icon → Settings, paste your CLI token (from "Connect your CLI" above) so it shows YOUR pet.' },
-    { n: 6, title: "Done!", desc: "Your pet lives in your toolbar — click it to chat, ask about a page, or play." },
+    { n: 2, title: "Unzip", desc: "Extract the ZIP to any folder on your computer — remember where you put it." },
+    { n: 3, title: "Open Extensions", desc: "In Chrome, go to chrome://extensions." },
+    { n: 4, title: "Developer Mode", desc: 'Flip the "Developer mode" toggle on, top-right of that page.' },
+    { n: 5, title: "Load Unpacked", desc: 'Click "Load unpacked" and select the unzipped folder.' },
+    { n: 6, title: "Pin & Sign In", desc: 'Pin the pet to your toolbar, then open it → Settings › Connection and paste your CLI token (from "Connect your CLI" above) so it shows YOUR pet.' },
   ];
 
   return (
@@ -897,6 +892,10 @@ function ChromeExtensionSection() {
           <div style={{ marginTop: 8, fontFamily: MONO, fontSize: 13, color: MONO_CLR, letterSpacing: "0.1em" }}>
             Developer-mode install
           </div>
+          <p style={{ marginTop: 10, fontFamily: BODY, fontSize: 13, color: MUTED2, lineHeight: 1.55, maxWidth: 460 }}>
+            Not yet on the Chrome Web Store — this is a developer / &ldquo;unpacked&rdquo; install straight from the ZIP,
+            using the 6 steps above. Takes about 2 minutes.
+          </p>
         </Reveal>
 
         {/* Right: popup mockup */}

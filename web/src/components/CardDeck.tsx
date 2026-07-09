@@ -369,9 +369,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
   if (pets.length === 0) return (
     <Shell owned={0}>
       {tabStrip}
-      {tab === "catch"
-        ? catchTab
-        : <Empty>Adopt a pet first — then collect its card. <a href="/?section=my%20pet" onClick={navTo("my pet")} className="ed-underline-slide" style={{ color: GOLD, fontWeight: 700, textDecoration: "none" }}>Adopt ▸</a></Empty>}
+      {tab === "catch" ? catchTab : <ZeroState onAdopt={navTo("my pet")} onCatch={() => switchTab("catch")} />}
     </Shell>
   );
 
@@ -862,6 +860,34 @@ function PreviewCol({ label, accent, delay = 0, children }: { label: string; acc
   );
 }
 
+// Richer zero-pets guidance — the album has literally nothing to show yet, so
+// this replaces the terse one-liner with the same dashed-panel language as the
+// filtered empty state, plus BOTH real paths off the page (adopt or catch).
+function ZeroState({ onAdopt, onCatch }: { onAdopt?: (e: React.MouseEvent) => void; onCatch: () => void }) {
+  return (
+    <Reveal dir="up">
+      <div style={{
+        borderRadius: 20, border: `1px dashed ${T.hair}`, background: T.inset,
+        padding: "40px 28px", textAlign: "center", maxWidth: 520, margin: "20px auto 0",
+      }}>
+        <Icon name="paw" size={34} style={{ opacity: 0.35 }} />
+        <h3 style={{ fontFamily: T.disp, fontSize: 22, fontWeight: 800, color: T.ink, margin: "12px 0 6px", letterSpacing: "-0.01em" }}>
+          No cards yet
+        </h3>
+        <p style={{ fontFamily: T.body, fontSize: 14, color: T.muted2, margin: "0 auto 20px", maxWidth: 380, lineHeight: 1.55 }}>
+          Cards are minted from pets you actually raise or catch — adopt one to start your album, or head into Catch to find one in the wild.
+        </p>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+          <a href="/?section=my%20pet" onClick={onAdopt} className="ed-wipe" style={{ ...btn, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>Adopt a pet ▸</a>
+          <button type="button" onClick={onCatch} className="ed-wipe" style={{ ...ghost, display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <CameraGlyph size={14} /> Catch in the wild
+          </button>
+        </div>
+      </div>
+    </Reveal>
+  );
+}
+
 // Empty adoption slot — a REAL remaining pet slot (paw silhouette), never a
 // fabricated "card number". Clicking it goes to the adopt flow.
 function SlotTile() {
@@ -959,8 +985,16 @@ function Shell({ children, owned, rarityCounts }: { children: React.ReactNode; o
       <div style={{ position: "relative", zIndex: 2, maxWidth: 1060, margin: "0 auto", padding: "8px 0 48px" }}>
         <div style={{ marginBottom: 22 }}>
           <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: T.terra, textTransform: "uppercase" }}>Field Album · Gotta Catch The Real Ones</div>
-          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginTop: 8 }}>
-            <h1 style={{ fontFamily: T.disp, fontSize: 46, fontWeight: 800, color: T.ink, margin: 0, letterSpacing: "-0.02em", lineHeight: 1.02 }}>Your collection</h1>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginTop: 8 }}>
+            <div>
+              <h1 style={{ fontFamily: T.disp, fontSize: 46, fontWeight: 800, color: T.ink, margin: 0, letterSpacing: "-0.02em", lineHeight: 1.02 }}>Your collection</h1>
+              {/* What this page IS, in one line — every pet you raise doubles as a
+                  real trading card, not a cosmetic skin. Answers "what am I looking
+                  at" for a first-time desktop visitor before the tri-step below. */}
+              <p style={{ fontFamily: T.body, fontSize: 15, color: T.muted2, margin: "8px 0 0", maxWidth: 560, lineHeight: 1.55 }}>
+                Every pet you raise is also a <strong style={{ color: T.ink }}>collectible trading card</strong> — real stats and rarity graded from actual care, not chance. Turn one into an illustrated Codex sticker, duel it against another collector&apos;s card, or share your best pulls.
+              </p>
+            </div>
             {/* HONEST progress — the REAL owned count. No fabricated denominator,
                 because a card is minted from a pet you own (no fixed universe). */}
             <div style={{ minWidth: 220, textAlign: "right" }}>

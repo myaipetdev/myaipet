@@ -1161,11 +1161,15 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   border: `1px solid ${T.hair}`, borderRadius: 8, padding: "3px 6px",
                 };
                 const catLabel = t.category === "trending" ? "🔥 trending" : t.category;
+                // Hover tooltip: the shot-by-shot beats when we have them, else
+                // fall back to the card's own concrete description.
+                const tooltip = t.beats?.length ? `${t.title} — ${t.beats.join(" → ")}` : t.description;
                 return (
                   <Reveal key={t.id} dir="up" delay={Math.min(i, 8) * 70}>
                   <button
                     className="ed-card-hover"
                     onClick={() => applyTemplate(t)}
+                    title={tooltip}
                     // Item #25-4: no autoplaying wall of videos — motion previews
                     // on a fine-pointer hover only; touch keeps the poster.
                     onPointerEnter={vid ? (e) => {
@@ -1215,6 +1219,29 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                           fontSize: 13, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
+                        }}>{catLabel}</span>
+                      </div>
+                    ) : t.swatch ? (
+                      // No captured example yet — a generated-look poster in the
+                      // template's own palette + a big glyph, so the card still
+                      // reads as "here's the vibe" instead of a blank tile.
+                      <div style={{
+                        height: 92, background: t.swatch,
+                        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
+                        padding: "8px 9px", position: "relative",
+                      }}>
+                        <span style={{ fontSize: 30, lineHeight: 1, filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.35))" }}>{t.emoji}</span>
+                        <span style={{
+                          position: "absolute", top: 7, left: 9,
+                          fontSize: 13, fontFamily: T.m,
+                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
+                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.55))",
+                        }}>PREVIEW</span>
+                        <span style={{
+                          position: "absolute", right: 9, bottom: 8,
+                          fontSize: 13, fontFamily: T.m,
+                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
+                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.55))",
                         }}>{catLabel}</span>
                       </div>
                     ) : (
