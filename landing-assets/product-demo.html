@@ -1,0 +1,996 @@
+<meta charset="utf-8">
+<title>MY AI PET — Launch Reel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ============================================================= *
+ *  MY AI PET — self-playing launch reel   (fixed 1280x720 stage) *
+ * ============================================================= */
+:root{
+  --cream:#FBF6EC; --cream2:#FFFDF7; --mist:#ECE6F4; --paper:#F1E9D6;
+  --ink:#241B12; --ink2:#6A5C48; --ink3:#9A8B72;
+  --g1:#FBEAB6; --g2:#E8C77E; --g3:#C8932F; --g4:#8A5A1E;
+  --violet:#8168CE; --violetD:#5B429E; --violetL:#B7A6EC;
+  --teal:#20A386; --tealD:#0F6E5A; --tealL:#59C6AC;
+  --terra:#C1502A;
+  --glass:rgba(255,255,255,.58); --glassLine:rgba(255,255,255,.72);
+  --hair:rgba(36,27,18,.12);
+  --accent:var(--violet);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  height:100%; overflow:hidden;
+  font-family:"Space Grotesk",ui-rounded,system-ui,-apple-system,"Segoe UI",sans-serif;
+  color:var(--ink);
+  background:radial-gradient(130% 100% at 50% -12%, #FFFDF7 0%, var(--cream) 42%, var(--mist) 100%);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.viewport{position:fixed; inset:0; display:grid; place-items:center; overflow:hidden}
+/* soft ambient orbs behind the reel */
+.viewport::before,.viewport::after{content:"";position:absolute;border-radius:50%;filter:blur(60px);opacity:.5;pointer-events:none}
+.viewport::before{width:46vmax;height:46vmax;left:-10vmax;top:-12vmax;background:radial-gradient(circle,rgba(129,104,206,.30),transparent 70%)}
+.viewport::after{width:44vmax;height:44vmax;right:-12vmax;bottom:-14vmax;background:radial-gradient(circle,rgba(32,163,134,.24),transparent 70%)}
+
+/* the fixed-size stage, scaled to fit */
+.stage{
+  position:relative; width:1280px; height:720px; border-radius:22px; overflow:hidden;
+  transform:scale(var(--s,1)); transform-origin:center center;
+  background:linear-gradient(180deg,#FCFAF4 0%,#F4EFF7 60%,#ECE6F4 100%);
+  box-shadow:0 50px 120px -50px rgba(60,40,90,.6), 0 2px 0 rgba(255,255,255,.7) inset, 0 0 0 1px var(--hair);
+}
+
+/* ---- global decorative layers ---- */
+.dust{position:absolute; inset:0; pointer-events:none; z-index:3; overflow:hidden}
+.dust i{position:absolute; border-radius:50%; background:radial-gradient(circle,#FBEAB6,rgba(232,199,126,0)); animation:rise linear infinite}
+@keyframes rise{0%{transform:translateY(30px) scale(.5);opacity:0}14%{opacity:.85}100%{transform:translateY(-220px) scale(1);opacity:0}}
+.foil{position:absolute; inset:0; pointer-events:none; z-index:8; mix-blend-mode:screen; opacity:.55;
+  background:linear-gradient(115deg,transparent 32%,rgba(129,104,206,.10) 44%,rgba(32,163,134,.10) 52%,rgba(232,199,126,.14) 60%,transparent 74%);
+  background-size:260% 100%; animation:sheen 11s ease-in-out infinite}
+@keyframes sheen{0%,100%{background-position:0 0}50%{background-position:100% 0}}
+.vignette{position:absolute; inset:0; pointer-events:none; z-index:4;
+  background:radial-gradient(120% 92% at 50% 44%, transparent 62%, rgba(36,27,18,.16) 100%)}
+.scrim{position:absolute; left:0; right:0; bottom:0; height:290px; pointer-events:none; z-index:4;
+  background:linear-gradient(180deg,transparent, rgba(30,22,40,.05) 40%, rgba(24,18,34,.34))}
+.grain{position:absolute; inset:0; pointer-events:none; z-index:4; opacity:.05; mix-blend-mode:multiply;
+  background-image:radial-gradient(rgba(35,26,16,.9) .6px, transparent .7px); background-size:4px 4px}
+
+/* ---- top bar / brand ---- */
+.topbar{position:absolute; top:22px; left:34px; right:34px; z-index:6; display:flex; align-items:center; justify-content:space-between}
+.brand{display:flex; align-items:center; gap:10px; font-weight:600; font-size:17px; letter-spacing:.02em; color:var(--ink)}
+.brand .paw{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:15px;
+  background:linear-gradient(160deg,#FFF6DE,#E8C77E); box-shadow:0 6px 16px -8px rgba(200,147,47,.9), inset 0 1px 0 rgba(255,255,255,.8); border:1px solid rgba(255,255,255,.6)}
+.brand b{background:linear-gradient(100deg,var(--violetD),var(--teal) 62%,var(--g3));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
+.brand small{margin-left:2px;font-weight:500;color:var(--ink3);letter-spacing:.16em;font-size:10px;text-transform:uppercase;font-family:ui-monospace,Menlo,monospace}
+.scenetag{display:flex; align-items:center; gap:9px; padding:7px 13px; border-radius:999px; font-family:ui-monospace,Menlo,monospace;
+  font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--ink2);
+  background:var(--glass); backdrop-filter:blur(9px); -webkit-backdrop-filter:blur(9px);
+  border:1px solid var(--glassLine); box-shadow:0 8px 20px -14px rgba(60,40,90,.6), inset 0 1px 0 rgba(255,255,255,.8)}
+.scenetag .d{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent);transition:background .5s}
+
+/* ---- scenes ---- */
+.scenes{position:absolute; inset:0; z-index:1}
+.scene{position:absolute; inset:0; display:none; will-change:transform,opacity}
+.scene.on,.scene.exit{display:block}
+.scene.on{z-index:2}
+.scene.exit{z-index:1}
+.scene svg.art{position:absolute; inset:0; width:100%; height:100%; display:block}
+.layer{position:absolute; inset:0}
+
+/* scene enter/exit transitions */
+.n-zoom{animation:enterZoom .82s cubic-bezier(.2,.8,.2,1) both}
+.x-zoom{animation:exitZoom .82s cubic-bezier(.4,0,.2,1) both}
+.n-fade{animation:enterFade .8s ease both}
+.x-fade{animation:exitFade .8s ease both}
+.n-slide{animation:enterSlide .82s cubic-bezier(.2,.8,.2,1) both}
+.x-slide{animation:exitSlide .82s cubic-bezier(.4,0,.2,1) both}
+.n-shim{animation:enterSoft .9s cubic-bezier(.2,.8,.2,1) both}
+.x-shim{animation:exitSoft .7s ease both}
+@keyframes enterZoom{from{opacity:0;transform:scale(.9);filter:blur(7px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
+@keyframes exitZoom{from{opacity:1;transform:scale(1);filter:blur(0)}to{opacity:0;transform:scale(1.15);filter:blur(9px)}}
+@keyframes enterFade{from{opacity:0}to{opacity:1}}
+@keyframes exitFade{from{opacity:1}to{opacity:0;transform:scale(.985)}}
+@keyframes enterSlide{from{opacity:0;transform:translateY(6%) scale(.98)}to{opacity:1;transform:none}}
+@keyframes exitSlide{from{opacity:1;transform:none}to{opacity:0;transform:translateY(-5%) scale(.99)}}
+@keyframes enterSoft{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:scale(1)}}
+@keyframes exitSoft{from{opacity:1}to{opacity:0}}
+
+/* shimmer wipe overlay */
+.wipe{position:absolute; inset:-20% -30%; z-index:7; pointer-events:none; opacity:0; mix-blend-mode:screen;
+  background:linear-gradient(105deg,transparent 40%,rgba(255,244,214,.55) 48%,rgba(232,199,126,.9) 50%,rgba(255,244,214,.55) 52%,transparent 60%);
+  transform:translateX(-120%)}
+.wipe.go{animation:wipe .9s cubic-bezier(.5,0,.3,1)}
+@keyframes wipe{0%{opacity:0;transform:translateX(-120%)}18%{opacity:1}82%{opacity:1}100%{opacity:0;transform:translateX(120%)}}
+
+/* ---- caption (global, updated per scene) ---- */
+.caption{position:absolute; left:56px; bottom:96px; z-index:6; max-width:660px}
+.caption.hide{display:none}
+.caption .num{font-size:150px; line-height:.8; font-weight:800; letter-spacing:-.04em;
+  background:linear-gradient(160deg,#FFF3CF 0%,var(--g2) 46%,var(--g3) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 10px 22px rgba(200,147,47,.28)); position:absolute; left:-8px; top:-158px; opacity:.9}
+.caption .kick{display:inline-flex;align-items:center;gap:8px;font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink2);margin-bottom:12px}
+.caption .kick .bar{width:26px;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--accent),transparent)}
+.caption h1{margin:0;font-size:52px;line-height:1.02;font-weight:800;letter-spacing:-.025em;color:var(--ink);text-shadow:0 2px 24px rgba(255,253,247,.6)}
+.caption h1 .hl{background:linear-gradient(100deg,var(--accent),color-mix(in srgb,var(--accent) 30%, var(--g3)));-webkit-background-clip:text;background-clip:text;color:transparent}
+.caption p{margin:14px 0 0;font-size:19px;line-height:1.45;color:var(--ink2);font-weight:500;max-width:520px}
+.caption.in .num{animation:capNum .9s cubic-bezier(.2,1,.3,1) both}
+.caption.in .kick{animation:capUp .7s .05s cubic-bezier(.2,.9,.3,1) both}
+.caption.in h1{animation:capUp .8s .14s cubic-bezier(.2,.9,.3,1) both}
+.caption.in p{animation:capUp .8s .26s cubic-bezier(.2,.9,.3,1) both}
+@keyframes capUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes capNum{from{opacity:0;transform:translateY(24px) scale(.86)}to{opacity:.9;transform:none}}
+
+/* ---- HUD: segmented progress + controls ---- */
+.hud{position:absolute; left:56px; right:56px; bottom:30px; z-index:6; display:flex; flex-direction:column; gap:14px}
+.segbar{display:flex; gap:7px}
+.seg{height:4px; flex:1; border-radius:3px; background:rgba(36,27,18,.14); overflow:hidden; cursor:pointer; position:relative}
+.seg .fill{position:absolute; inset:0; width:0; border-radius:3px; background:linear-gradient(90deg,var(--g2),var(--g3)); box-shadow:0 0 10px -2px rgba(200,147,47,.7)}
+.seg:hover{background:rgba(36,27,18,.22)}
+.controls{display:flex; align-items:center; gap:14px}
+.btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--glassLine);cursor:pointer;display:grid;place-items:center;
+  color:var(--ink);background:var(--glass);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  box-shadow:0 8px 20px -14px rgba(60,40,90,.6), inset 0 1px 0 rgba(255,255,255,.8); transition:transform .15s, background .2s}
+.btn:hover{transform:translateY(-1px) scale(1.05); background:rgba(255,255,255,.78)}
+.btn:active{transform:scale(.96)}
+.btn svg{width:15px;height:15px;fill:var(--ink)}
+.clock{margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.14em;color:var(--ink2)}
+.clock b{color:var(--ink);font-variant-numeric:tabular-nums}
+.hint{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--ink3);letter-spacing:.05em}
+
+/* generic pet motion wrappers */
+.pop{transform-box:fill-box;transform-origin:50% 62%}
+.on .pop{animation:pop 1s .05s cubic-bezier(.18,1.5,.4,1) both}
+.idle{transform-box:fill-box;transform-origin:50% 100%;animation:bob 3s ease-in-out infinite}
+@keyframes pop{0%{opacity:0;transform:scale(0) translateY(26px)}55%{opacity:1;transform:scale(1.14) translateY(-8px)}78%{transform:scale(.96) translateY(2px)}100%{transform:scale(1) translateY(0)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:.5;transform:scale(.94)}50%{opacity:.95;transform:scale(1.06)}}
+
+/* =================== SCENE 1 · ADOPT =================== */
+.s1 .portal{transform-box:fill-box;transform-origin:center;animation:spin 26s linear infinite}
+.s1 .portal2{transform-box:fill-box;transform-origin:center;animation:spin 18s linear infinite reverse}
+.s1 .glow{transform-box:fill-box;transform-origin:center;animation:pulse 4s ease-in-out infinite}
+.s1 .egg{transform-box:fill-box;transform-origin:50% 90%}
+.on.s1 .egg{animation:eggWobble .7s 3 ease-in-out, eggGone .5s 1.15s ease-in forwards}
+@keyframes eggWobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+@keyframes eggGone{to{opacity:0;transform:scale(.2) translateY(20px)}}
+.on.s1 .hatchpet{animation:none}
+.s1 .hatchpet{transform-box:fill-box;transform-origin:50% 100%}
+.on.s1 .hatchpet{animation:hatchPop 1s 1.05s cubic-bezier(.18,1.6,.4,1) both}
+@keyframes hatchPop{0%{opacity:0;transform:scale(0) translateY(40px)}55%{opacity:1;transform:scale(1.18) translateY(-14px)}100%{transform:scale(1) translateY(0)}}
+.s1 .shard{transform-box:fill-box;transform-origin:center;opacity:0}
+.on.s1 .shard{animation:shard .8s 1s ease-out forwards}
+@keyframes shard{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--dr))}}
+.s1 .ray,.s1 .bdot{transform-box:fill-box;transform-origin:center;opacity:0}
+.on.s1 .ray{animation:burst 1s 1.05s cubic-bezier(.2,.9,.3,1) forwards}
+.on.s1 .bdot{animation:burstD 1.1s 1.1s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes burst{0%{opacity:.95;transform:scale(.2)}70%{opacity:.9}100%{opacity:0;transform:scale(1.5)}}
+@keyframes burstD{0%{opacity:1;transform:scale(0) translate(0,0)}100%{opacity:0;transform:scale(1) translate(var(--dx),var(--dy))}}
+.s1 .flash{opacity:0}
+.on.s1 .flash{animation:flash .5s 1.02s ease-out}
+@keyframes flash{0%{opacity:0}30%{opacity:.9}100%{opacity:0}}
+
+/* =================== SCENE 2 · STUDIO =================== */
+.s2 .phone{transform-box:fill-box;transform-origin:center}
+.on.s2 .phone{animation:phoneIn 1s .1s cubic-bezier(.2,1,.3,1) both, phoneFloat 5s 1.1s ease-in-out infinite}
+@keyframes phoneIn{from{opacity:0;transform:translateY(40px) rotate(-6deg) scale(.9)}to{opacity:1;transform:translateY(0) rotate(-3deg) scale(1)}}
+@keyframes phoneFloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-10px) rotate(-1.5deg)}}
+.s2 .dancer{transform-box:fill-box;transform-origin:50% 100%;animation:dance 1.05s ease-in-out infinite}
+@keyframes dance{0%{transform:translateY(0) rotate(-7deg)}25%{transform:translateY(-11px) rotate(5deg) scale(1.03)}50%{transform:translateY(0) rotate(7deg)}75%{transform:translateY(-9px) rotate(-5deg) scale(1.03)}100%{transform:translateY(0) rotate(-7deg)}}
+.s2 .flyheart{position:absolute; z-index:3; font-size:22px; opacity:0; will-change:transform,opacity}
+.on.s2 .flyheart{animation:fly 2.4s ease-out infinite}
+@keyframes fly{0%{opacity:0;transform:translateY(0) scale(.6)}12%{opacity:1}100%{opacity:0;transform:translateY(-190px) translateX(var(--fx)) scale(1.15) rotate(var(--fr))}}
+.s2 .chip{position:absolute;z-index:4;display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:999px;font-weight:700;font-size:16px;color:#5A3A0C;
+  background:linear-gradient(160deg,#FFF3CF,#E8C77E);border:1px solid rgba(255,255,255,.7);box-shadow:0 14px 30px -14px rgba(200,147,47,.9), inset 0 1px 0 rgba(255,255,255,.85)}
+.on.s2 .chip{animation:chipIn .8s .6s cubic-bezier(.2,1.4,.4,1) both, chipPulse 1.8s 1.4s ease-in-out infinite}
+@keyframes chipIn{from{opacity:0;transform:translateY(16px) scale(.8)}to{opacity:1;transform:none}}
+@keyframes chipPulse{0%,100%{box-shadow:0 14px 30px -14px rgba(200,147,47,.9), inset 0 1px 0 rgba(255,255,255,.85)}50%{box-shadow:0 14px 40px -10px rgba(200,147,47,1), 0 0 0 6px rgba(232,199,126,.22), inset 0 1px 0 rgba(255,255,255,.85)}}
+.s2 .glasspill{position:absolute;z-index:4;display:flex;align-items:center;gap:7px;padding:8px 13px;border-radius:14px;font-weight:700;font-size:14px;color:var(--ink);
+  background:var(--glass);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);border:1px solid var(--glassLine);box-shadow:0 12px 26px -16px rgba(60,40,90,.6), inset 0 1px 0 rgba(255,255,255,.8)}
+.s2 .glasspill .ic{color:var(--terra)}
+.on.s2 .glasspill{animation:pillIn .8s cubic-bezier(.2,1.2,.4,1) both}
+.on.s2 .glasspill.p1{animation-delay:.9s}
+.on.s2 .glasspill.p2{animation-delay:1.15s}
+@keyframes pillIn{from{opacity:0;transform:translateX(-18px) scale(.85)}to{opacity:1;transform:none}}
+.s2 .rec{position:absolute;z-index:4;display:flex;align-items:center;gap:7px;font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:700;color:#fff;letter-spacing:.14em}
+.s2 .rec .dot{width:9px;height:9px;border-radius:50%;background:#F55;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.25}}
+
+/* =================== SCENE 3 · PETCLAW =================== */
+.s3 .win{transform-box:fill-box;transform-origin:center}
+.on.s3 .win{animation:winIn .9s .1s cubic-bezier(.2,1,.3,1) both}
+@keyframes winIn{from{opacity:0;transform:translateY(28px) scale(.94)}to{opacity:1;transform:none}}
+.s3 .puzzle{transform-box:fill-box;transform-origin:center}
+.on.s3 .puzzle{animation:puzzleSnap 1s 1.1s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes puzzleSnap{0%{opacity:0;transform:scale(2.4) rotate(-25deg) translateY(-40px)}60%{opacity:1;transform:scale(.85) rotate(6deg)}100%{transform:scale(1) rotate(0)}}
+.s3 .walker{transform-box:fill-box}
+.on.s3 .walker{animation:walkX 6s 1.4s linear infinite}
+@keyframes walkX{0%{transform:translateX(-120px)}100%{transform:translateX(1120px)}}
+.s3 .wbob{transform-box:fill-box;transform-origin:50% 100%;animation:wbob .42s ease-in-out infinite}
+@keyframes wbob{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-9px) scaleY(1.05)}}
+.s3 .toast{position:absolute;z-index:4;display:flex;align-items:center;gap:9px;padding:10px 16px;border-radius:14px;font-weight:700;font-size:14px;color:var(--ink);
+  background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--glassLine);box-shadow:0 16px 34px -16px rgba(60,40,90,.6), inset 0 1px 0 rgba(255,255,255,.85)}
+.s3 .toast .tick{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(160deg,var(--tealL),var(--tealD));color:#fff;font-size:13px}
+.on.s3 .toast{animation:toastIn .8s 1.7s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes toastIn{from{opacity:0;transform:translateY(-14px) scale(.9)}to{opacity:1;transform:none}}
+.s3 .paw{transform-box:fill-box;transform-origin:center;opacity:0}
+.on.s3 .paw{animation:pawFade 6s 1.4s linear infinite}
+@keyframes pawFade{0%{opacity:0}4%{opacity:.5}22%{opacity:0}100%{opacity:0}}
+
+/* =================== SCENE 4 · SOUL =================== */
+.s4 .soulorb{transform-box:fill-box;transform-origin:center;animation:pulse 3.6s ease-in-out infinite}
+.s4 .flowdot{position:absolute;z-index:3;width:12px;height:12px;border-radius:50%;
+  background:radial-gradient(circle,#FFF3CF,#E8C77E 60%,rgba(232,199,126,0));box-shadow:0 0 12px 3px rgba(232,199,126,.7);opacity:0}
+.on.s4 .flowdot{animation:soulFlow 1.9s linear infinite}
+@keyframes soulFlow{0%{opacity:0;transform:translate(0,0) scale(.5)}12%{opacity:1}60%{transform:translate(-200px,-30px) scale(1)}100%{opacity:0;transform:translate(-344px,26px) scale(.5)}}
+.s4 .ledger{position:absolute;z-index:4}
+.s4 .ledger .row{opacity:0}
+.on.s4 .ledger .row{animation:rowIn .55s cubic-bezier(.2,.9,.3,1) both}
+@keyframes rowIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+.s4 .caret{display:inline-block;width:8px;height:15px;background:var(--teal);margin-left:3px;vertical-align:-2px;animation:caret 1s steps(2) infinite}
+@keyframes caret{50%{opacity:0}}
+.s4 .heartbeat{transform-box:fill-box;transform-origin:center;animation:hb 1.7s ease-in-out infinite}
+@keyframes hb{0%,100%{transform:scale(1)}12%{transform:scale(1.14)}24%{transform:scale(1)}36%{transform:scale(1.1)}}
+
+/* =================== SCENE 5 · EVERYWHERE =================== */
+.s5 .tile{transform-box:fill-box;transform-origin:50% 100%}
+.on.s5 .tile{animation:tileIn .8s cubic-bezier(.2,1.1,.3,1) both}
+.on.s5 .t1{animation-delay:.15s}.on.s5 .t2{animation-delay:.3s}.on.s5 .t3{animation-delay:.45s}
+@keyframes tileIn{from{opacity:0;transform:translateY(30px) scale(.92)}to{opacity:1;transform:none}}
+.s5 .tglow{opacity:.15;transform-box:fill-box;transform-origin:center}
+.on.s5 .tg1{animation:tglow 4.5s 1.1s ease-in-out infinite}
+.on.s5 .tg2{animation:tglow 4.5s 2.6s ease-in-out infinite}
+.on.s5 .tg3{animation:tglow 4.5s 4.1s ease-in-out infinite}
+@keyframes tglow{0%,86%,100%{opacity:.12}12%{opacity:.6}}
+.s5 .hopper{transform-box:fill-box}
+.on.s5 .hopper{animation:hopX 4.5s 1s cubic-bezier(.5,0,.5,1) infinite}
+@keyframes hopX{0%{transform:translateX(0)}33%{transform:translateX(340px)}66%{transform:translateX(680px)}100%{transform:translateX(0)}}
+.s5 .hopy{transform-box:fill-box;transform-origin:50% 100%}
+.on.s5 .hopy{animation:hopY 1.5s 1s ease-in-out infinite}
+@keyframes hopY{0%{transform:translateY(0) scaleY(1)}18%{transform:translateY(0) scaleY(.82)}50%{transform:translateY(-96px) scaleY(1.08)}82%{transform:translateY(0) scaleY(.86)}100%{transform:translateY(0) scaleY(1)}}
+.s5 .net{stroke-dasharray:6 8;animation:dash 1.4s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-28}}
+
+/* =================== SCENE 6 · COMMUNITY =================== */
+.s6 .bldg{transform-box:fill-box;transform-origin:50% 100%;animation:bob 6s ease-in-out infinite}
+.s6 .lamp{transform-box:fill-box;transform-origin:center;animation:twinkle 2.6s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.6}50%{opacity:1}}
+.s6 .string{transform-box:fill-box;transform-origin:center;animation:sway 5s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:rotate(-.6deg)}50%{transform:rotate(.6deg)}}
+.s6 .bubble{position:absolute;z-index:4;padding:6px 11px;border-radius:14px 14px 14px 4px;font-size:15px;font-weight:600;color:var(--ink);
+  background:rgba(255,255,255,.86);border:1px solid var(--glassLine);box-shadow:0 10px 22px -14px rgba(60,40,90,.6)}
+.on.s6 .bubble{animation:bubbleUp 3.4s ease-in-out infinite}
+@keyframes bubbleUp{0%,100%{opacity:0;transform:translateY(8px) scale(.9)}18%,72%{opacity:1;transform:translateY(0) scale(1)}}
+.s6 .comheart{position:absolute;z-index:3;font-size:18px;opacity:0}
+.on.s6 .comheart{animation:fly 3.2s ease-out infinite}
+
+/* =================== SCENE 7 · BRACKET =================== */
+.s7 .card{transform-box:fill-box;transform-origin:center}
+.on.s7 .cardL{animation:cardL .9s .1s cubic-bezier(.2,1,.3,1) both, winGrow 1.1s 2.4s cubic-bezier(.2,1.3,.4,1) forwards}
+.on.s7 .cardR{animation:cardR .9s .1s cubic-bezier(.2,1,.3,1) both, loseFall 1s 2.4s cubic-bezier(.5,0,.7,1) forwards}
+@keyframes cardL{from{opacity:0;transform:translateX(-60px) rotate(-4deg)}to{opacity:1;transform:none}}
+@keyframes cardR{from{opacity:0;transform:translateX(60px) rotate(4deg)}to{opacity:1;transform:none}}
+@keyframes winGrow{to{transform:scale(1.1) translateX(112px)}}
+@keyframes loseFall{to{opacity:0;transform:translateY(120px) rotate(12deg) scale(.8)}}
+.s7 .vs{transform-box:fill-box;transform-origin:center}
+.on.s7 .vs{animation:vsPop .7s .5s cubic-bezier(.2,1.6,.4,1) both, vsGone .5s 2.3s ease forwards}
+@keyframes vsPop{from{opacity:0;transform:scale(0) rotate(-40deg)}to{opacity:1;transform:none}}
+@keyframes vsGone{to{opacity:0;transform:scale(.4)}}
+.s7 .cursor{transform-box:fill-box;transform-origin:center;opacity:0}
+.on.s7 .cursor{animation:tapMove 1.6s 1s ease-in-out forwards}
+@keyframes tapMove{0%{opacity:0;transform:translate(120px,140px) scale(1)}30%{opacity:1}70%{opacity:1;transform:translate(-40px,10px) scale(1)}80%{transform:translate(-40px,10px) scale(.8)}90%{transform:translate(-40px,10px) scale(1)}100%{opacity:1;transform:translate(-40px,10px) scale(1)}}
+.s7 .winring{transform-box:fill-box;transform-origin:center;opacity:0}
+.on.s7 .winring{animation:winring 1.4s 2.5s ease-out forwards}
+@keyframes winring{0%{opacity:.9;transform:scale(.5)}100%{opacity:0;transform:scale(1.5)}}
+.s7 .crown{transform-box:fill-box;transform-origin:50% 100%;opacity:0}
+.on.s7 .crown{animation:crownDrop 1s 2.7s cubic-bezier(.2,1.5,.4,1) forwards}
+@keyframes crownDrop{0%{opacity:0;transform:translateY(-140px) rotate(-20deg) scale(.6)}70%{opacity:1;transform:translateY(6px) rotate(4deg) scale(1)}100%{opacity:1;transform:translateY(0) rotate(0) scale(1)}}
+.s7 .ribbon{position:absolute;z-index:5;opacity:0;font-weight:800;letter-spacing:.28em;font-size:14px;color:#5A3A0C;padding:8px 18px;border-radius:999px;
+  background:linear-gradient(160deg,#FFF3CF,#E8C77E);border:1px solid rgba(255,255,255,.7);box-shadow:0 14px 30px -14px rgba(200,147,47,.9)}
+.on.s7 .ribbon{animation:chipIn .7s 3s cubic-bezier(.2,1.4,.4,1) forwards}
+
+/* confetti (bracket + outro) */
+.confetti{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
+.confetti i{position:absolute;top:-8%;width:9px;height:14px;border-radius:2px;opacity:0}
+.on .confetti i{animation:conf var(--cd,2.6s) linear infinite}
+.on.s7 .confetti i{animation-delay:calc(2.8s + var(--cdl,0s))}
+@keyframes conf{0%{opacity:0;transform:translateY(-20px) rotate(0)}8%{opacity:1}100%{opacity:0;transform:translateY(560px) rotate(540deg)}}
+
+/* =================== SCENE 8 · OUTRO =================== */
+.s8 .sunburst{transform-box:fill-box;transform-origin:center;animation:spin 60s linear infinite;opacity:.5}
+.s8 .wm{position:absolute;z-index:4;left:0;right:0;text-align:center;top:118px}
+.s8 .wm h1{margin:0;font-size:96px;font-weight:800;letter-spacing:-.03em;line-height:1;
+  background:linear-gradient(100deg,#5A3A0C 0%,#C8932F 22%,#FFF3CF 40%,#E8C77E 52%,#C8932F 66%,#5A3A0C 100%);
+  background-size:240% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 12px 30px rgba(200,147,47,.35));animation:foilrun 4s linear infinite}
+@keyframes foilrun{to{background-position:240% 0}}
+.s8 .wm .tag{margin-top:20px;font-size:22px;font-weight:600;color:var(--ink2);letter-spacing:.01em}
+.s8 .wm .url{margin-top:6px;font-family:ui-monospace,Menlo,monospace;font-size:15px;letter-spacing:.2em;color:var(--violetD);text-transform:uppercase}
+.s8 .cta{margin-top:26px;display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:999px;font-weight:800;font-size:18px;color:#5A3A0C;cursor:pointer;
+  background:linear-gradient(160deg,#FFF6DE,#E8C77E);border:1px solid rgba(255,255,255,.75);box-shadow:0 20px 44px -18px rgba(200,147,47,1), inset 0 1px 0 rgba(255,255,255,.9);animation:ctaPulse 2.2s ease-in-out infinite}
+@keyframes ctaPulse{0%,100%{transform:translateY(0);box-shadow:0 20px 44px -18px rgba(200,147,47,1), inset 0 1px 0 rgba(255,255,255,.9)}50%{transform:translateY(-3px);box-shadow:0 26px 54px -16px rgba(200,147,47,1), 0 0 0 8px rgba(232,199,126,.18), inset 0 1px 0 rgba(255,255,255,.9)}}
+.on.s8 .wm h1{animation:foilrun 4s linear infinite, capUp .9s .1s cubic-bezier(.2,.9,.3,1) both}
+.on.s8 .wm .tag{animation:capUp .8s .3s cubic-bezier(.2,.9,.3,1) both}
+.on.s8 .wm .url{animation:capUp .8s .42s cubic-bezier(.2,.9,.3,1) both}
+.on.s8 .wm .cta{animation:ctaPulse 2.2s ease-in-out infinite, capUp .8s .55s cubic-bezier(.2,.9,.3,1) both}
+.s8 .wave{transform-box:fill-box;transform-origin:70% 90%;animation:wave 1.1s ease-in-out infinite}
+@keyframes wave{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(14deg)}}
+
+/* reduced motion: keep it calm, auto-advance still runs */
+@media (prefers-reduced-motion:reduce){
+  .dust,.foil,.s1 .portal,.s1 .portal2,.s1 .glow,.idle,.s2 .phone,.s2 .dancer,.s2 .flyheart,.s2 .rec .dot,.s3 .walker,.s3 .wbob,.s3 .paw,
+  .s4 .flowdot,.s4 .soulorb,.s4 .heartbeat,.s4 .caret,.s5 .hopper,.s5 .hopy,.s5 .net,.s5 .tglow,
+  .s6 .bldg,.s6 .lamp,.s6 .string,.s6 .bubble,.s6 .comheart,.confetti i,.s8 .sunburst,.s8 .wm h1,.s8 .cta,.s8 .wave,
+  .s2 .chip,.s7 .cursor,.s7 .winring{animation:none!important}
+  .caption.in .num,.caption.in .kick,.caption.in h1,.caption.in p{animation-duration:.4s!important}
+}
+/* paused: freeze all css motion inside the stage */
+.stage.paused *{animation-play-state:paused!important}
+</style>
+
+<div class="viewport">
+<div class="stage" id="stage">
+
+  <!-- ===== global SVG defs (gradients + filters, shared across scenes) ===== -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBEAB6"/><stop offset="1" stop-color="#C8932F"/></linearGradient>
+    <linearGradient id="goldH" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF6DE"/><stop offset=".5" stop-color="#E8C77E"/><stop offset="1" stop-color="#B57A22"/></linearGradient>
+    <radialGradient id="orb" cx="42%" cy="34%" r="72%"><stop offset="0" stop-color="#FFF8E6"/><stop offset=".38" stop-color="#F4D98C"/><stop offset=".72" stop-color="#E8A93C"/><stop offset="1" stop-color="#8A5A1E"/></radialGradient>
+    <radialGradient id="orbGlow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="rgba(255,224,150,.9)"/><stop offset="1" stop-color="rgba(255,224,150,0)"/></radialGradient>
+    <radialGradient id="petBody" cx="42%" cy="30%" r="80%"><stop offset="0" stop-color="#FFF6DE"/><stop offset=".55" stop-color="#F3D79E"/><stop offset="1" stop-color="#E3AE5C"/></radialGradient>
+    <radialGradient id="petRose" cx="42%" cy="30%" r="80%"><stop offset="0" stop-color="#FFEDE4"/><stop offset=".6" stop-color="#F7C3AE"/><stop offset="1" stop-color="#EC9A7C"/></radialGradient>
+    <radialGradient id="petMint" cx="42%" cy="30%" r="80%"><stop offset="0" stop-color="#EFFAEE"/><stop offset=".6" stop-color="#BEE3BE"/><stop offset="1" stop-color="#8FCF9C"/></radialGradient>
+    <radialGradient id="petBlue" cx="42%" cy="30%" r="80%"><stop offset="0" stop-color="#EFF6FE"/><stop offset=".6" stop-color="#BFD6EF"/><stop offset="1" stop-color="#98BBE0"/></radialGradient>
+    <radialGradient id="petLilac" cx="42%" cy="30%" r="80%"><stop offset="0" stop-color="#F5EFFD"/><stop offset=".6" stop-color="#D4C0F0"/><stop offset="1" stop-color="#B295E4"/></radialGradient>
+    <linearGradient id="violetG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9C82E4"/><stop offset="1" stop-color="#5B429E"/></linearGradient>
+    <linearGradient id="tealG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3FBFA0"/><stop offset="1" stop-color="#0F6E5A"/></linearGradient>
+    <linearGradient id="glassG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,255,255,.9)"/><stop offset="1" stop-color="rgba(255,255,255,.35)"/></linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,255,255,.85)"/><stop offset=".55" stop-color="rgba(255,255,255,0)"/></linearGradient>
+    <linearGradient id="screenG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F6E9FB"/><stop offset=".5" stop-color="#EAF3FB"/><stop offset="1" stop-color="#E9F7F0"/></linearGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="200%"><feGaussianBlur in="SourceAlpha" stdDeviation="8"/><feOffset dy="10"/><feComponentTransfer><feFuncA type="linear" slope="0.26"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs></svg>
+
+  <div class="dust" id="dust" aria-hidden="true"></div>
+
+  <!-- ===================== SCENES ===================== -->
+  <div class="scenes" id="scenes">
+
+    <!-- ============ SCENE 1 · ADOPT ============ -->
+    <section class="scene s1" data-i="0">
+      <svg class="art" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <rect width="1280" height="720" fill="url(#screenG)" opacity=".55"/>
+        <!-- portal -->
+        <g transform="translate(640,352)">
+          <circle class="glow" r="230" fill="url(#orbGlow)"/>
+          <circle class="portal" r="196" fill="none" stroke="url(#violetG)" stroke-width="3" stroke-dasharray="2 20" opacity=".7"/>
+          <circle class="portal2" r="168" fill="none" stroke="url(#gold)" stroke-width="4" stroke-dasharray="26 22" opacity=".8"/>
+          <circle r="142" fill="none" stroke="rgba(129,104,206,.25)" stroke-width="1.5"/>
+        </g>
+        <!-- burst rays + dots -->
+        <g transform="translate(640,352)">
+          <g class="ray"><rect x="-4" y="-190" width="8" height="70" rx="4" fill="url(#gold)"/></g>
+          <g transform="rotate(45)"><g class="ray"><rect x="-3" y="-176" width="6" height="54" rx="3" fill="url(#gold)"/></g></g>
+          <g transform="rotate(90)"><g class="ray"><rect x="-4" y="-190" width="8" height="70" rx="4" fill="url(#gold)"/></g></g>
+          <g transform="rotate(135)"><g class="ray"><rect x="-3" y="-176" width="6" height="54" rx="3" fill="url(#gold)"/></g></g>
+          <g transform="rotate(180)"><g class="ray"><rect x="-4" y="-190" width="8" height="70" rx="4" fill="url(#gold)"/></g></g>
+          <g transform="rotate(225)"><g class="ray"><rect x="-3" y="-176" width="6" height="54" rx="3" fill="url(#gold)"/></g></g>
+          <g transform="rotate(270)"><g class="ray"><rect x="-4" y="-190" width="8" height="70" rx="4" fill="url(#gold)"/></g></g>
+          <g transform="rotate(315)"><g class="ray"><rect x="-3" y="-176" width="6" height="54" rx="3" fill="url(#gold)"/></g></g>
+          <circle class="bdot" style="--dx:150px;--dy:-90px" r="7" fill="#FBEAB6"/>
+          <circle class="bdot" style="--dx:-150px;--dy:-90px" r="6" fill="#F4D98C"/>
+          <circle class="bdot" style="--dx:190px;--dy:40px" r="5" fill="#FBEAB6"/>
+          <circle class="bdot" style="--dx:-190px;--dy:40px" r="7" fill="#E8C77E"/>
+          <circle class="bdot" style="--dx:70px;--dy:-180px" r="5" fill="#FBEAB6"/>
+          <circle class="bdot" style="--dx:-70px;--dy:-180px" r="6" fill="#F4D98C"/>
+        </g>
+        <!-- egg -->
+        <g class="egg" filter="url(#soft)">
+          <path d="M640 236 C 712 236 758 316 758 388 C 758 452 706 494 640 494 C 574 494 522 452 522 388 C 522 316 568 236 640 236 Z" fill="url(#goldH)"/>
+          <path d="M640 236 C 712 236 758 316 758 388 C 758 452 706 494 640 494 C 574 494 522 452 522 388 C 522 316 568 236 640 236 Z" fill="url(#gloss)" opacity=".7"/>
+          <ellipse cx="606" cy="300" rx="26" ry="16" fill="rgba(255,255,255,.6)"/>
+          <g fill="#B57A22" opacity=".5"><circle cx="600" cy="392" r="5"/><circle cx="672" cy="360" r="4"/><circle cx="656" cy="430" r="5"/><circle cx="590" cy="352" r="3"/><circle cx="690" cy="420" r="3.5"/></g>
+          <path d="M604 356 l14 -20 l6 26 l16 -14 l-4 26 l16 -8" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <!-- flying shell shards -->
+        <g fill="url(#goldH)">
+          <path class="shard" style="--dx:-120px;--dy:-70px;--dr:-120deg" d="M600 300 l30 6 l-14 24 Z"/>
+          <path class="shard" style="--dx:130px;--dy:-60px;--dr:140deg" d="M690 320 l26 12 l-20 20 Z"/>
+          <path class="shard" style="--dx:-90px;--dy:60px;--dr:-80deg" d="M596 430 l28 -6 l-6 26 Z"/>
+          <path class="shard" style="--dx:110px;--dy:70px;--dr:100deg" d="M684 440 l24 8 l-18 18 Z"/>
+        </g>
+        <!-- flash -->
+        <circle class="flash" cx="640" cy="360" r="150" fill="#FFF8E6"/>
+        <!-- the hatched pet -->
+        <g class="hatchpet"><g transform="translate(640,412) scale(1.55)"><g class="idle"><g data-pet data-happy="1"></g></g></g></g>
+        <!-- ground shadow -->
+        <ellipse cx="640" cy="512" rx="120" ry="20" fill="rgba(36,27,18,.10)"/>
+      </svg>
+    </section>
+
+    <!-- ============ SCENE 2 · STUDIO ============ -->
+    <section class="scene s2" data-i="1">
+      <svg class="art" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <rect width="1280" height="720" fill="url(#screenG)" opacity=".5"/>
+        <g class="phone" filter="url(#soft)">
+          <!-- bezel -->
+          <rect x="472" y="96" width="336" height="560" rx="52" fill="#241B12"/>
+          <rect x="472" y="96" width="336" height="560" rx="52" fill="url(#gloss)" opacity=".18"/>
+          <!-- screen -->
+          <clipPath id="screenClip"><rect x="486" y="110" width="308" height="532" rx="42"/></clipPath>
+          <g clip-path="url(#screenClip)">
+            <rect x="486" y="110" width="308" height="532" fill="url(#screenG)"/>
+            <rect x="486" y="110" width="308" height="532" fill="#F3ECFA"/>
+            <!-- soft stage bg inside clip -->
+            <ellipse cx="640" cy="470" rx="180" ry="120" fill="#EADBF7"/>
+            <ellipse cx="640" cy="540" rx="120" ry="26" fill="rgba(36,27,18,.10)"/>
+            <!-- dancing pet -->
+            <g class="dancer"><g transform="translate(640,470) scale(1.15)"><g data-pet data-happy="1" data-ear="#F2B3AD"></g></g></g>
+            <!-- crayon sparkles inside -->
+            <path d="M540 210 l6 14 l14 6 l-14 6 l-6 14 l-6 -14 l-14 -6 l14 -6 Z" fill="#E8C77E"/>
+            <path d="M742 250 l5 12 l12 5 l-12 5 l-5 12 l-5 -12 l-12 -5 l12 -5 Z" fill="#8168CE" opacity=".8"/>
+          </g>
+          <!-- notch -->
+          <rect x="602" y="120" width="76" height="16" rx="8" fill="#241B12"/>
+        </g>
+        <!-- REC label -->
+        <foreignObject x="508" y="140" width="160" height="30"><div xmlns="http://www.w3.org/1999/xhtml" class="rec"><span class="dot"></span>REC · 0:07</div></foreignObject>
+      </svg>
+      <div class="layer">
+        <!-- flying hearts out of the phone -->
+        <div class="flyheart" style="left:600px;bottom:220px;--fx:-40px;--fr:-18deg;animation-delay:.2s">❤</div>
+        <div class="flyheart" style="left:660px;bottom:240px;--fx:30px;--fr:14deg;animation-delay:.9s">💛</div>
+        <div class="flyheart" style="left:632px;bottom:210px;--fx:-10px;--fr:6deg;animation-delay:1.5s">⭐</div>
+        <div class="flyheart" style="left:690px;bottom:230px;--fx:44px;--fr:20deg;animation-delay:2s">❤</div>
+        <!-- one-tap chip -->
+        <div class="chip" style="left:520px;bottom:70px">🔥 one-tap viral</div>
+        <!-- engagement glass pills -->
+        <div class="glasspill p1" style="left:250px;top:210px"><span class="ic">❤</span> 84.2K likes</div>
+        <div class="glasspill p2" style="right:220px;top:270px"><span class="ic">▶</span> <b id="s2views">0</b> views</div>
+        <div class="glasspill p1" style="right:250px;bottom:210px" >↗ 12.4K shares</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 3 · PETCLAW ============ -->
+    <section class="scene s3" data-i="2">
+      <svg class="art" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <rect width="1280" height="720" fill="url(#screenG)" opacity=".5"/>
+        <!-- browser window -->
+        <g class="win" filter="url(#soft)">
+          <rect x="150" y="120" width="980" height="470" rx="22" fill="#FBF8F1"/>
+          <rect x="150" y="120" width="980" height="58" rx="22" fill="#EFE7DB"/>
+          <rect x="150" y="150" width="980" height="30" fill="#EFE7DB"/>
+          <circle cx="188" cy="149" r="8" fill="#E9857A"/><circle cx="216" cy="149" r="8" fill="#F0C264"/><circle cx="244" cy="149" r="8" fill="#8FCF9C"/>
+          <!-- address bar -->
+          <rect x="290" y="134" width="640" height="32" rx="16" fill="#FDFBF6" stroke="var(--hair)"/>
+          <circle cx="312" cy="150" r="6" fill="none" stroke="#8FCF9C" stroke-width="2"/>
+          <text x="330" y="155" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#6A5C48">yourfavoritesite.com</text>
+          <!-- toolbar extension slot + puzzle -->
+          <rect x="952" y="132" width="36" height="36" rx="10" fill="#FDFBF6" stroke="var(--hair)"/>
+          <rect x="996" y="132" width="36" height="36" rx="10" fill="#FDFBF6" stroke="var(--hair)"/>
+          <!-- page content -->
+          <rect x="186" y="210" width="300" height="20" rx="10" fill="#E7DECF"/>
+          <rect x="186" y="246" width="480" height="12" rx="6" fill="#EFE7DB"/>
+          <rect x="186" y="268" width="440" height="12" rx="6" fill="#EFE7DB"/>
+          <rect x="186" y="290" width="380" height="12" rx="6" fill="#EFE7DB"/>
+          <rect x="760" y="210" width="330" height="200" rx="16" fill="#F3ECFA"/>
+          <circle cx="820" cy="270" r="30" fill="#DDC9F3"/>
+          <rect x="770" y="330" width="220" height="12" rx="6" fill="#E4D8F5"/>
+          <rect x="770" y="352" width="180" height="12" rx="6" fill="#E4D8F5"/>
+          <!-- page ground line -->
+          <rect x="150" y="548" width="980" height="42" rx="0" fill="#EFE7DB"/>
+          <rect x="150" y="548" width="980" height="4" fill="#E0D4C1"/>
+        </g>
+        <!-- puzzle piece dropping into slot -->
+        <g transform="translate(1014,150)"><g class="puzzle">
+          <path d="M-15,-6 a6,6 0 0 1 12,0 a4,4 0 0 0 6,4 h5 v5 a4,4 0 0 0 4,6 a4,4 0 0 0 -4,6 v5 h-5 a4,4 0 0 0 -6,4 a6,6 0 0 1 -12,0 a4,4 0 0 0 -6,-4 h-5 v-5 a4,4 0 0 0 -4,-6 a4,4 0 0 0 4,-6 v-5 h5 a4,4 0 0 0 6,-4 Z" fill="url(#tealG)"/>
+        </g></g>
+        <!-- paw print trail on the page ground -->
+        <g fill="url(#gold)">
+          <g class="paw" style="animation-delay:1.4s" transform="translate(240,566)"><ellipse rx="5" ry="7"/></g>
+          <g class="paw" style="animation-delay:1.9s" transform="translate(380,566)"><ellipse rx="5" ry="7"/></g>
+          <g class="paw" style="animation-delay:2.4s" transform="translate(520,566)"><ellipse rx="5" ry="7"/></g>
+          <g class="paw" style="animation-delay:2.9s" transform="translate(660,566)"><ellipse rx="5" ry="7"/></g>
+          <g class="paw" style="animation-delay:3.4s" transform="translate(800,566)"><ellipse rx="5" ry="7"/></g>
+        </g>
+        <!-- the walker strolls along the page ground -->
+        <g class="walker"><g transform="translate(180,558) scale(.66)"><g class="wbob"><g data-pet data-happy="1"></g></g></g></g>
+      </svg>
+      <div class="layer">
+        <div class="toast" style="left:820px;top:210px"><span class="tick">✓</span> Added PetClaw to Chrome</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 4 · SOUL ============ -->
+    <section class="scene s4" data-i="3">
+      <svg class="art" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <rect width="1280" height="720" fill="url(#screenG)" opacity=".5"/>
+        <!-- soul orb (right) -->
+        <g transform="translate(980,340)">
+          <circle class="soulorb" r="130" fill="url(#orbGlow)"/>
+          <circle r="72" fill="url(#orb)"/>
+          <ellipse cx="-22" cy="-24" rx="24" ry="16" fill="rgba(255,255,255,.7)"/>
+          <text x="0" y="16" text-anchor="middle" font-size="46" font-family="ui-monospace,monospace" fill="#6B4A16" font-weight="700">✦</text>
+          <circle r="98" fill="none" stroke="url(#gold)" stroke-width="2" stroke-dasharray="3 12" opacity=".7"/>
+        </g>
+        <!-- the receiving pet (center) with heartbeat chest -->
+        <g transform="translate(600,372) scale(1.55)">
+          <g class="idle"><g data-pet data-happy="1"></g></g>
+        </g>
+        <g class="heartbeat" transform="translate(600,404)"><path d="M0,10 C -14,-8 -34,4 -34,20 C -34,38 0,54 0,54 C 0,54 34,38 34,20 C 34,4 14,-8 0,10 Z" fill="#EC7A7A" opacity=".9" transform="scale(.5)"/></g>
+        <ellipse cx="600" cy="476" rx="96" ry="16" fill="rgba(36,27,18,.10)"/>
+      </svg>
+      <div class="layer">
+        <!-- conduit of flowing soul particles orb -> pet chest -->
+        <div class="flowdot" style="left:944px;top:352px;animation-delay:0s"></div>
+        <div class="flowdot" style="left:944px;top:352px;animation-delay:.32s"></div>
+        <div class="flowdot" style="left:944px;top:352px;animation-delay:.64s"></div>
+        <div class="flowdot" style="left:944px;top:352px;animation-delay:.96s"></div>
+        <div class="flowdot" style="left:944px;top:352px;animation-delay:1.28s"></div>
+        <div class="flowdot" style="left:944px;top:352px;animation-delay:1.6s"></div>
+        <!-- MEMORY.md ledger -->
+        <div class="ledger" style="left:150px;top:150px;width:380px">
+          <div style="border-radius:16px;overflow:hidden;background:rgba(255,255,255,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--glassLine);box-shadow:0 24px 50px -26px rgba(60,40,90,.5)">
+            <div style="display:flex;align-items:center;gap:8px;padding:11px 15px;background:rgba(129,104,206,.12);border-bottom:1px solid var(--hair);font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.06em;color:var(--ink2)">
+              <span style="color:var(--violetD)">✦</span> MEMORY.md <span style="margin-left:auto;color:var(--ink3)">soul · v1</span>
+            </div>
+            <div style="padding:15px 17px;font-family:ui-monospace,Menlo,monospace;font-size:13.5px;line-height:1.95;color:var(--ink)">
+              <div class="row" style="animation-delay:.3s;color:var(--ink3)"># who you are to me</div>
+              <div class="row" style="animation-delay:.7s">- name · you call me <b>“Mochi”</b></div>
+              <div class="row" style="animation-delay:1.1s">- likes · matcha, late-night code</div>
+              <div class="row" style="animation-delay:1.5s">- remembers · <b style="color:var(--tealD)">142 moments</b></div>
+              <div class="row" style="animation-delay:1.9s">- persona · warm, a little cheeky</div>
+              <div class="row" style="animation-delay:2.3s;color:var(--tealD)">✓ synced · web · chrome · mcp<span class="caret"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 5 · EVERYWHERE ============ -->
+    <section class="scene s5" data-i="4">
+      <svg class="art" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <rect width="1280" height="720" fill="url(#screenG)" opacity=".5"/>
+        <!-- connective network -->
+        <path class="net" d="M300 360 H 640 H 980" fill="none" stroke="url(#gold)" stroke-width="3" opacity=".55"/>
+        <!-- three glass tiles -->
+        <!-- TILE 1 · WEB -->
+        <g transform="translate(300,360)"><g class="tile t1">
+          <rect class="tglow tg1" x="-118" y="-118" width="236" height="236" rx="34" fill="url(#orbGlow)"/>
+          <rect x="-100" y="-100" width="200" height="200" rx="30" fill="url(#glassG)" stroke="var(--glassLine)" filter="url(#soft)"/>
+          <circle cx="0" cy="-14" r="52" fill="none" stroke="url(#violetG)" stroke-width="4"/>
+          <ellipse cx="0" cy="-14" rx="22" ry="52" fill="none" stroke="url(#violetG)" stroke-width="3"/>
+          <path d="M-52 -14 H 52 M-44 -40 H 44 M-44 12 H 44" stroke="url(#violetG)" stroke-width="3"/>
+          <text x="0" y="78" text-anchor="middle" font-weight="800" font-size="24" fill="#241B12" font-family="system-ui">Web</text>
+        </g></g>
+        <!-- TILE 2 · CHROME -->
+        <g transform="translate(640,360)"><g class="tile t2">
+          <rect class="tglow tg2" x="-118" y="-118" width="236" height="236" rx="34" fill="url(#orbGlow)"/>
+          <rect x="-100" y="-100" width="200" height="200" rx="30" fill="url(#glassG)" stroke="var(--glassLine)" filter="url(#soft)"/>
+          <circle cx="0" cy="-14" r="46" fill="#FBF8F1" stroke="var(--hair)"/>
+          <circle cx="0" cy="-14" r="20" fill="url(#tealG)"/>
+          <path d="M0 -60 A 46 46 0 0 1 40 8" fill="none" stroke="#E9857A" stroke-width="12" stroke-linecap="round"/>
+          <path d="M40 8 A 46 46 0 0 1 -40 8" fill="none" stroke="#8FCF9C" stroke-width="12" stroke-linecap="round"/>
+          <path d="M-40 8 A 46 46 0 0 1 0 -60" fill="none" stroke="#F0C264" stroke-width="12" stroke-linecap="round"/>
+          <text x="0" y="78" text-anchor="middle" font-weight="800" font-size="24" fill="#241B12" font-family="system-ui">Chrome</text>
+        </g></g>
+        <!-- TILE 3 · MCP -->
+        <g transform="translate(980,360)"><g class="tile t3">
+          <rect class="tglow tg3" x="-118" y="-118" width="236" height="236" rx="34" fill="url(#orbGlow)"/>
+          <rect x="-100" y="-100" width="200" height="200" rx="30" fill="url(#glassG)" stroke="var(--glassLine)" filter="url(#soft)"/>
+          <!-- abstract MCP spark -->
+          <g stroke="url(#gold)" stroke-width="7" stroke-linecap="round"><path d="M0 -56 V 28"/><path d="M-48 -6 L 48 22"/><path d="M48 -6 L -48 22"/></g>
+          <circle cx="0" cy="-14" r="12" fill="#C8932F"/>
+          <text x="0" y="78" text-anchor="middle" font-weight="800" font-size="24" fill="#241B12" font-family="system-ui">MCP</text>
+          <text x="0" y="58" text-anchor="middle" font-weight="600" font-size="12" fill="#6A5C48" font-family="ui-monospace,monospace">Claude · Cursor</text>
+        </g></g>
+        <!-- hopping pet -->
+        <g transform="translate(300,360)"><g class="hopper">
+          <g class="hopy"><g transform="translate(0,-96) scale(1.05)"><g data-pet data-happy="1"></g></g></g>
+        </g></g>
+      </svg>
+    </section>
+
+    <!-- ============ SCENE 6 · COMMUNITY ============ -->
+    <section class="scene s6" data-i="5">
+      <svg class="art" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <!-- warm sky + ground -->
+        <rect width="1280" height="720" fill="url(#screenG)" opacity=".4"/>
+        <ellipse cx="640" cy="470" rx="620" ry="240" fill="#EFE3D0"/>
+        <ellipse cx="640" cy="470" rx="620" ry="240" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="3"/>
+        <path d="M640 470 C 560 560 520 600 500 660 L 780 660 C 760 600 720 560 640 470 Z" fill="#E6D8BF" opacity=".7"/>
+        <!-- string lights -->
+        <g class="string">
+          <path d="M120 150 Q 640 250 1160 150" fill="none" stroke="#C8B79A" stroke-width="3"/>
+          <g fill="url(#gold)">
+            <circle class="lamp" cx="260" cy="196" r="8" style="animation-delay:0s"/>
+            <circle class="lamp" cx="420" cy="222" r="8" style="animation-delay:.4s"/>
+            <circle class="lamp" cx="640" cy="232" r="8" style="animation-delay:.8s"/>
+            <circle class="lamp" cx="860" cy="222" r="8" style="animation-delay:1.2s"/>
+            <circle class="lamp" cx="1020" cy="196" r="8" style="animation-delay:1.6s"/>
+          </g>
+        </g>
+        <!-- cozy buildings -->
+        <g class="bldg" style="animation-delay:.2s" filter="url(#soft)">
+          <rect x="196" y="300" width="130" height="150" rx="12" fill="#F0EAFB"/>
+          <path d="M188 302 l73 -46 l73 46 Z" fill="url(#violetG)"/>
+          <rect x="230" y="360" width="60" height="90" rx="8" fill="#C9B7E0"/>
+          <rect x="196" y="440" width="130" height="8" rx="4" fill="url(#gold)"/>
+        </g>
+        <g class="bldg" style="animation-delay:.6s" filter="url(#soft)">
+          <rect x="954" y="312" width="120" height="138" rx="12" fill="#EAF6E8"/>
+          <path d="M946 314 l68 -42 l68 42 Z" fill="url(#tealG)"/>
+          <rect x="984" y="356" width="60" height="40" rx="8" fill="url(#gold)" opacity=".85"/>
+          <rect x="954" y="440" width="120" height="8" rx="4" fill="url(#gold)"/>
+        </g>
+        <!-- central lantern/fountain -->
+        <g filter="url(#soft)">
+          <ellipse cx="640" cy="486" rx="96" ry="34" fill="#CBE7DE"/>
+          <ellipse cx="640" cy="486" rx="96" ry="34" fill="none" stroke="url(#gold)" stroke-width="4"/>
+          <circle cx="640" cy="452" r="34" fill="url(#orb)"/>
+          <ellipse cx="630" cy="444" rx="11" ry="7" fill="rgba(255,255,255,.7)"/>
+        </g>
+        <!-- gathered chibi pets -->
+        <g transform="translate(360,470) scale(1.05)"><g class="idle" style="animation-duration:3.2s"><g data-pet data-happy="1"></g></g></g>
+        <g transform="translate(486,500) scale(.92)"><g class="idle" style="animation-duration:3.6s;animation-delay:.4s"><g data-pet data-body="petRose" data-ear="#EC9A7C" data-happy="1"></g></g></g>
+        <g transform="translate(792,500) scale(.92)"><g class="idle" style="animation-duration:3.4s;animation-delay:.7s"><g data-pet data-body="petBlue" data-ear="#98BBE0" data-happy="1"></g></g></g>
+        <g transform="translate(910,470) scale(1.05)"><g class="idle" style="animation-duration:3.8s;animation-delay:.2s"><g data-pet data-body="petMint" data-ear="#8FCF9C" data-happy="1"></g></g></g>
+        <g transform="translate(640,556) scale(.86)"><g class="idle" style="animation-duration:3s;animation-delay:.5s"><g data-pet data-body="petLilac" data-ear="#B295E4" data-happy="1"></g></g></g>
+      </svg>
+      <div class="layer">
+        <div class="bubble" style="left:340px;top:352px;animation-delay:.4s">hi! 👋</div>
+        <div class="bubble" style="left:880px;top:352px;animation-delay:1.4s">gm ☀️</div>
+        <div class="bubble" style="left:600px;top:430px;animation-delay:2.2s">✧ welcome ✧</div>
+        <div class="comheart" style="left:470px;top:460px;--fx:-10px;--fr:-12deg;animation-delay:.6s">❤</div>
+        <div class="comheart" style="left:800px;top:460px;--fx:14px;--fr:10deg;animation-delay:1.6s">💛</div>
+        <div class="comheart" style="left:640px;top:500px;--fx:0px;--fr:6deg;animation-delay:2.4s">💚</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 7 · BRACKET ============ -->
+    <section class="scene s7" data-i="6">
+      <svg class="art" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <rect width="1280" height="720" fill="url(#screenG)" opacity=".5"/>
+        <!-- mini bracket diagram (corner) -->
+        <g stroke="var(--hair)" stroke-width="2" fill="none" opacity=".8" transform="translate(150,150)">
+          <path d="M0 0 h30 v20 h30 M0 40 h30 v-20"/>
+          <path d="M60 20 h30 v30 h30 M60 100 h30 v-30"/>
+          <path d="M0 80 h30 v20 h30 M0 120 h30 v-20"/>
+        </g>
+        <text x="150" y="140" font-family="ui-monospace,Menlo,monospace" font-size="12" letter-spacing=".2em" fill="var(--ink3)">ROUND OF 16 · FINAL</text>
+
+        <!-- winner ring (anchored to winner's settled position) -->
+        <circle class="winring" cx="575" cy="360" r="150" fill="none" stroke="url(#gold)" stroke-width="6"/>
+
+        <!-- LEFT card -->
+        <g transform="translate(452,360)"><g class="card cardL">
+          <rect x="-150" y="-176" width="300" height="352" rx="26" fill="#FBF8F1" filter="url(#soft)" stroke="var(--glassLine)"/>
+          <rect x="-150" y="-176" width="300" height="90" rx="26" fill="url(#violetG)"/>
+          <rect x="-150" y="-120" width="300" height="34" fill="url(#violetG)"/>
+          <text x="0" y="-124" text-anchor="middle" font-weight="800" font-size="22" fill="#fff" font-family="system-ui">Mochi</text>
+          <text x="0" y="-100" text-anchor="middle" font-size="12" fill="rgba(255,255,255,.85)" font-family="ui-monospace,monospace">SEED · 01</text>
+          <ellipse cx="0" cy="120" rx="80" ry="16" fill="rgba(36,27,18,.10)"/>
+          <g transform="translate(0,60) scale(1.15)"><g data-pet data-happy="1"></g></g>
+          <g fill="var(--g3)" font-family="system-ui" font-weight="700" font-size="13"><text x="-120" y="150">⭐ 4.9</text><text x="86" y="150" text-anchor="end">1.2M ▲</text></g>
+        </g></g>
+
+        <!-- RIGHT card -->
+        <g transform="translate(828,360)"><g class="card cardR">
+          <rect x="-150" y="-176" width="300" height="352" rx="26" fill="#FBF8F1" filter="url(#soft)" stroke="var(--glassLine)"/>
+          <rect x="-150" y="-176" width="300" height="90" rx="26" fill="url(#tealG)"/>
+          <rect x="-150" y="-120" width="300" height="34" fill="url(#tealG)"/>
+          <text x="0" y="-124" text-anchor="middle" font-weight="800" font-size="22" fill="#fff" font-family="system-ui">Pico</text>
+          <text x="0" y="-100" text-anchor="middle" font-size="12" fill="rgba(255,255,255,.85)" font-family="ui-monospace,monospace">SEED · 04</text>
+          <ellipse cx="0" cy="120" rx="80" ry="16" fill="rgba(36,27,18,.10)"/>
+          <g transform="translate(0,60) scale(1.15)"><g data-pet data-body="petBlue" data-ear="#98BBE0" data-happy="1"></g></g>
+          <g fill="var(--tealD)" font-family="system-ui" font-weight="700" font-size="13"><text x="-120" y="150">⭐ 4.7</text><text x="86" y="150" text-anchor="end">980K ▲</text></g>
+        </g></g>
+
+        <!-- VS medallion -->
+        <g transform="translate(640,360)"><g class="vs">
+          <circle r="46" fill="url(#goldH)" filter="url(#soft)"/>
+          <circle r="46" fill="url(#gloss)" opacity=".6"/>
+          <text x="0" y="14" text-anchor="middle" font-weight="800" font-size="34" fill="#5A3A0C" font-family="system-ui">VS</text>
+        </g></g>
+
+        <!-- crown drops on winner -->
+        <g transform="translate(575,162)"><g class="crown">
+          <path d="M-46 20 L -46 -22 L -20 6 L 0 -30 L 20 6 L 46 -22 L 46 20 Z" fill="url(#goldH)" stroke="#B57A22" stroke-width="2"/>
+          <circle cx="-46" cy="-24" r="6" fill="#C8932F"/><circle cx="0" cy="-32" r="6" fill="#C8932F"/><circle cx="46" cy="-24" r="6" fill="#C8932F"/>
+          <rect x="-46" y="20" width="92" height="10" rx="4" fill="#B57A22"/>
+        </g></g>
+
+        <!-- tap cursor -->
+        <g transform="translate(452,360)"><g class="cursor">
+          <path d="M0 0 L 0 26 L 7 20 L 12 30 L 17 28 L 12 18 L 22 18 Z" fill="#241B12" stroke="#fff" stroke-width="1.5"/>
+        </g></g>
+      </svg>
+      <div class="confetti" data-confetti="26"></div>
+      <div class="layer">
+        <div class="ribbon" style="left:512px;top:84px">CHAMPION</div>
+      </div>
+    </section>
+
+    <!-- ============ SCENE 8 · OUTRO ============ -->
+    <section class="scene s8" data-i="7">
+      <svg class="art" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <rect width="1280" height="720" fill="url(#screenG)" opacity=".55"/>
+        <g transform="translate(640,300)"><g class="sunburst">
+          <g fill="url(#gold)" opacity=".35">
+            <path d="M0 0 L -18 -320 L 18 -320 Z"/><path d="M0 0 L -18 320 L 18 320 Z"/>
+            <path d="M0 0 L 320 -18 L 320 18 Z"/><path d="M0 0 L -320 -18 L -320 18 Z"/>
+            <g transform="rotate(45)"><path d="M0 0 L -14 -320 L 14 -320 Z"/><path d="M0 0 L -14 320 L 14 320 Z"/><path d="M0 0 L 320 -14 L 320 14 Z"/><path d="M0 0 L -320 -14 L -320 14 Z"/></g>
+            <g transform="rotate(22)"><path d="M0 0 L -10 -300 L 10 -300 Z"/><path d="M0 0 L -10 300 L 10 300 Z"/></g>
+            <g transform="rotate(67)"><path d="M0 0 L -10 -300 L 10 -300 Z"/><path d="M0 0 L -10 300 L 10 300 Z"/></g>
+          </g>
+        </g></g>
+        <!-- waving mascot -->
+        <g transform="translate(640,516)">
+          <ellipse cx="0" cy="104" rx="82" ry="15" fill="rgba(36,27,18,.10)"/>
+          <g class="idle"><g transform="scale(1.02)"><g data-pet data-happy="1"></g></g></g>
+          <g transform="translate(80,4)"><g class="wave"><ellipse rx="15" ry="19" fill="url(#petBody)"/></g></g>
+        </g>
+      </svg>
+      <div class="layer">
+        <div class="wm">
+          <h1>MY&nbsp;AI&nbsp;PET</h1>
+          <div class="tag">Your AI companion — truly yours.</div>
+          <div class="url">myaipet.ai</div>
+          <div class="cta">Adopt yours <span aria-hidden="true">→</span></div>
+        </div>
+      </div>
+      <div class="confetti" data-confetti="18" style="--cd:3.4s"></div>
+    </section>
+
+  </div><!-- /scenes -->
+
+  <!-- shimmer wipe overlay -->
+  <div class="wipe" id="wipe" aria-hidden="true"></div>
+
+  <!-- decorative overlays -->
+  <div class="scrim"></div>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+  <div class="foil"></div>
+
+  <!-- top bar -->
+  <div class="topbar">
+    <div class="brand"><span class="paw">🐾</span> MY <b>AI</b> PET <small>web3 companion</small></div>
+    <div class="scenetag"><span class="d" id="tagDot"></span><span id="tagText">01 · Adopt</span></div>
+  </div>
+
+  <!-- global caption -->
+  <div class="caption in" id="caption">
+    <div class="num" id="capNum">01</div>
+    <div class="kick"><span class="bar"></span><span id="capKick">Adopt</span></div>
+    <h1 id="capH">Adopt your AI pet.</h1>
+    <p id="capP">A companion that’s truly yours — on-chain, forever.</p>
+  </div>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="segbar" id="segbar"></div>
+    <div class="controls">
+      <button class="btn" id="playBtn" aria-label="Play / Pause"><svg id="playIcon" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+      <button class="btn" id="replayBtn" aria-label="Replay"><svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg></button>
+      <span class="hint">space · play/pause &nbsp;·&nbsp; ← → · scenes &nbsp;·&nbsp; R · replay</span>
+      <span class="clock"><b id="clockCur">01</b> / 08</span>
+    </div>
+  </div>
+
+</div><!-- /stage -->
+</div><!-- /viewport -->
+
+<script>
+(function(){
+  "use strict";
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- chibi pet builder (injected into every [data-pet]) ---- */
+  function petMarkup(body, ear, eye, happy){
+    body = body || 'petBody'; ear = ear || '#F2B3AD'; eye = eye || '#3A2A18';
+    var eyes = happy
+      ? '<path d="M-33 -7 q7 -11 15 -1" stroke="'+eye+'" stroke-width="5" fill="none" stroke-linecap="round"/>'+
+        '<path d="M18 -8 q8 -10 15 1" stroke="'+eye+'" stroke-width="5" fill="none" stroke-linecap="round"/>'
+      : '<ellipse cx="-25" cy="-6" rx="8.5" ry="11.5" fill="'+eye+'"/>'+
+        '<ellipse cx="25" cy="-6" rx="8.5" ry="11.5" fill="'+eye+'"/>'+
+        '<circle cx="-22" cy="-11" r="3.2" fill="#fff"/><circle cx="28" cy="-11" r="3.2" fill="#fff"/>'+
+        '<circle cx="-28" cy="-2" r="1.5" fill="#fff" opacity=".8"/><circle cx="22" cy="-2" r="1.5" fill="#fff" opacity=".8"/>';
+    return ''+
+    '<ellipse cx="0" cy="102" rx="56" ry="13" fill="rgba(36,27,18,.16)"/>'+
+    '<path d="M-42 -46 C -60 -88 -44 -102 -28 -94 C -24 -74 -30 -58 -36 -44 Z" fill="url(#'+body+')"/>'+
+    '<path d="M42 -46 C 60 -88 44 -102 28 -94 C 24 -74 30 -58 36 -44 Z" fill="url(#'+body+')"/>'+
+    '<path d="M-38 -52 C -50 -80 -40 -90 -30 -84 C -28 -70 -32 -60 -36 -50 Z" fill="'+ear+'" opacity=".55"/>'+
+    '<path d="M38 -52 C 50 -80 40 -90 30 -84 C 28 -70 32 -60 36 -50 Z" fill="'+ear+'" opacity=".55"/>'+
+    '<path d="M0 -64 C 48 -64 78 -20 74 26 C 70 72 42 96 0 96 C -42 96 -70 72 -74 26 C -78 -20 -48 -64 0 -64 Z" fill="url(#'+body+')"/>'+
+    '<ellipse cx="0" cy="46" rx="36" ry="30" fill="#FFF7E6" opacity=".55"/>'+
+    '<circle cx="-46" cy="18" r="10.5" fill="'+ear+'" opacity=".5"/>'+
+    '<circle cx="46" cy="18" r="10.5" fill="'+ear+'" opacity=".5"/>'+
+    eyes+
+    '<path d="M-9 24 q9 9 18 0" stroke="'+eye+'" stroke-width="3.4" fill="none" stroke-linecap="round"/>'+
+    '<path d="M0 -84 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4 l10 -4 Z" fill="url(#gold)"/>';
+  }
+  [].forEach.call(document.querySelectorAll('[data-pet]'), function(g){
+    g.innerHTML = petMarkup(g.getAttribute('data-body'), g.getAttribute('data-ear'), g.getAttribute('data-eye'), g.hasAttribute('data-happy'));
+  });
+
+  /* ---- ambient gold dust ---- */
+  (function(){
+    if(reduce) return;
+    var d = document.getElementById('dust'), n = 20;
+    for(var i=0;i<n;i++){
+      var s = document.createElement('i');
+      var sz = 3 + Math.random()*6;
+      s.style.width = s.style.height = sz+'px';
+      s.style.left = (5+Math.random()*90)+'%';
+      s.style.top = (55+Math.random()*40)+'%';
+      s.style.animationDuration = (6+Math.random()*7)+'s';
+      s.style.animationDelay = (-Math.random()*10)+'s';
+      d.appendChild(s);
+    }
+  })();
+
+  /* ---- confetti populate ---- */
+  var confCols = ['#E8C77E','#8168CE','#20A386','#EC7A7A','#F0C264','#C8932F'];
+  [].forEach.call(document.querySelectorAll('[data-confetti]'), function(box){
+    var n = +box.getAttribute('data-confetti');
+    for(var i=0;i<n;i++){
+      var c = document.createElement('i');
+      c.style.left = (Math.random()*100)+'%';
+      c.style.background = confCols[i%confCols.length];
+      c.style.setProperty('--cd', (2.2+Math.random()*1.8)+'s');
+      c.style.setProperty('--cdl', (Math.random()*1.2)+'s');
+      c.style.animationDelay = (Math.random()*2.4)+'s';
+      if(i%3===0){ c.style.borderRadius='50%'; c.style.width='9px'; c.style.height='9px'; }
+      box.appendChild(c);
+    }
+  });
+
+  /* ---- scene metadata ---- */
+  var SCENES = [
+    {tag:'Adopt',      kick:'Adopt',      num:'01', h:'Adopt your AI pet.',                  p:'A companion that’s truly yours — minted, on-chain, forever.', dur:4400, accent:'#8168CE'},
+    {tag:'Studio',     kick:'Studio',     num:'02', h:'Turn it into viral video.',           p:'One tap in Studio and your pet stars in a 9:16 hit.',        dur:3900, accent:'#C1502A'},
+    {tag:'PetClaw',    kick:'PetClaw',    num:'03', h:'It lives on every site.',             p:'Install PetClaw — your pet walks the whole web with you.',   dur:3900, accent:'#20A386'},
+    {tag:'Soul',       kick:'Soul',       num:'04', h:'Give it your Soul.',                  p:'Persistent memory & persona — it actually remembers you.',   dur:4400, accent:'#C8932F'},
+    {tag:'Everywhere', kick:'Everywhere', num:'05', h:'Across every surface you use.',       p:'Web · Chrome · MCP — Claude, Cursor, and beyond.',           dur:3900, accent:'#8168CE'},
+    {tag:'Community',  kick:'Community',  num:'06', h:'Meet the neighbors.',                 p:'A cozy square where your pets gather, chat and play.',        dur:3900, accent:'#20A386'},
+    {tag:'Bracket',    kick:'Bracket',    num:'07', h:'Crown your favorite.',               p:'이상형 월드컵 — vote the bracket, crown a champion.',          dur:4600, accent:'#C8932F'},
+    {tag:'Outro',      kick:'Adopt yours',num:'08', h:'Your AI companion — truly yours.',    p:'myaipet.ai',                                                 dur:5400, accent:'#8168CE'}
+  ];
+  var HEADLINES = SCENES.map(function(s){return s.h;});
+
+  /* per-boundary transition, keyed by target index */
+  var TRANS = ['fade','zoom','shim','slide','zoom','shim','zoom','shim'];
+  var TDUR = 900;
+
+  var els = [].slice.call(document.querySelectorAll('.scene'));
+  var stage = document.getElementById('stage');
+  var segbar = document.getElementById('segbar');
+  var wipe = document.getElementById('wipe');
+  var caption = document.getElementById('caption');
+  var playBtn = document.getElementById('playBtn');
+  var playIcon = document.getElementById('playIcon');
+
+  /* build segment bar */
+  var segs = [];
+  SCENES.forEach(function(s, i){
+    var seg = document.createElement('div'); seg.className='seg';
+    var fill = document.createElement('div'); fill.className='fill';
+    seg.appendChild(fill); segbar.appendChild(seg);
+    seg.addEventListener('click', function(){ jump(i); });
+    segs.push(fill);
+  });
+
+  var state = { i:0, start:performance.now(), paused:false, pauseAt:0, cleanupT:0 };
+
+  function setCaption(i){
+    var s = SCENES[i];
+    document.getElementById('capNum').textContent = s.num;
+    document.getElementById('capKick').textContent = s.kick;
+    document.getElementById('capH').textContent = s.h;
+    document.getElementById('capP').textContent = s.p;
+    document.documentElement.style.setProperty('--accent', s.accent);
+    document.getElementById('tagText').textContent = s.num+' · '+s.tag;
+    document.getElementById('clockCur').textContent = s.num;
+    // outro is a full-bleed brand end-card — hide the lower-third caption there
+    caption.classList.toggle('hide', i===7);
+    // restart caption entrance
+    caption.classList.remove('in'); void caption.offsetWidth; caption.classList.add('in');
+  }
+
+  function setSegs(i, prog){
+    for(var k=0;k<segs.length;k++){
+      segs[k].style.width = (k<i?100:(k===i?Math.min(100,prog*100):0)) + '%';
+    }
+  }
+
+  /* per-scene enter hooks (re-run each activation) */
+  var hooks = {
+    1: function(){ // studio view-count roll
+      var el = document.getElementById('s2views'); if(!el) return;
+      var target = 128000 + Math.floor(Math.random()*40000), t0 = performance.now(), D = 1800;
+      (function roll(now){
+        if(state.i!==1) { el.textContent='84.2K'; return; }
+        var p = Math.min(1,(now-t0)/D), v = Math.floor(target*(1-Math.pow(1-p,3)));
+        el.textContent = v>999 ? (v/1000).toFixed(1)+'K' : v;
+        if(p<1) requestAnimationFrame(roll);
+      })(t0);
+    }
+  };
+
+  function activate(i){ els[i].classList.add('on'); setCaption(i); if(hooks[i]) hooks[i](); }
+
+  var TCLASSES = ['on','exit','n-zoom','n-fade','n-slide','n-shim','x-zoom','x-fade','x-slide','x-shim'];
+  function transitionTo(j){
+    var from = state.i, t = TRANS[j] || 'fade';
+    if(j === from) return;
+    // hard-reset any straggler scene so at most two are ever rendered
+    els.forEach(function(el,k){ if(k!==from && k!==j) el.classList.remove.apply(el.classList, TCLASSES); });
+    var a = els[from], b = els[j];
+    // exit current
+    a.classList.remove('on','n-zoom','n-fade','n-slide','n-shim');
+    a.classList.add('exit','x-'+t);
+    // enter next
+    b.classList.remove('exit','x-zoom','x-fade','x-slide','x-shim');
+    b.classList.add('on','n-'+t);
+    if(t==='shim'){ wipe.classList.remove('go'); void wipe.offsetWidth; wipe.classList.add('go'); }
+    setCaption(j);
+    if(hooks[j]) hooks[j]();
+    state.i = j; state.start = performance.now();
+    if(state.paused) state.pauseAt = state.start; // re-baseline so resume() doesn't double-count paused time
+    // cleanup the outgoing scene once its exit finishes (guard: don't hide it if it became active again)
+    setTimeout(function(){
+      if(state.i !== from) a.classList.remove('exit','x-zoom','x-fade','x-slide','x-shim');
+      b.classList.remove('n-zoom','n-fade','n-slide','n-shim');
+    }, TDUR);
+  }
+
+  function next(){ transitionTo((state.i+1) % SCENES.length); }
+  function prev(){ transitionTo((state.i-1+SCENES.length) % SCENES.length); }
+  function jump(j){ if(j===state.i) return; transitionTo(j); if(state.paused) resume(); }
+
+  /* main loop */
+  function loop(now){
+    if(!state.paused){
+      var t = now - state.start, dur = SCENES[state.i].dur;
+      setSegs(state.i, t/dur);
+      if(t >= dur) next();
+    }
+    requestAnimationFrame(loop);
+  }
+
+  /* pause / resume */
+  function pause(){ if(state.paused) return; state.paused=true; state.pauseAt=performance.now(); stage.classList.add('paused'); swapIcon(true); }
+  function resume(){ if(!state.paused) return; state.start += performance.now()-state.pauseAt; state.paused=false; stage.classList.remove('paused'); swapIcon(false); }
+  function toggle(){ state.paused?resume():pause(); }
+  function swapIcon(paused){
+    playIcon.innerHTML = paused
+      ? '<path d="M7 4l13 8-13 8z"/>'
+      : '<rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/>';
+  }
+  function replay(){ transitionTo(0); resume(); }
+
+  playBtn.addEventListener('click', toggle);
+  document.getElementById('replayBtn').addEventListener('click', replay);
+  addEventListener('keydown', function(e){
+    if(e.code==='Space'){ e.preventDefault(); toggle(); }
+    else if(e.code==='ArrowRight'){ next(); }
+    else if(e.code==='ArrowLeft'){ prev(); }
+    else if(e.key==='r'||e.key==='R'){ replay(); }
+  });
+  document.querySelector('.s8 .cta') && document.querySelector('.s8 .cta').addEventListener('click', function(){ replay(); });
+
+  /* fit the 1280x720 stage into the viewport */
+  function fit(){
+    var s = Math.min(innerWidth/1280, innerHeight/720);
+    document.documentElement.style.setProperty('--s', s);
+  }
+  addEventListener('resize', fit); fit();
+
+  /* pause when tab hidden (perf) */
+  document.addEventListener('visibilitychange', function(){ if(document.hidden) pause(); });
+
+  /* go */
+  activate(0);
+  requestAnimationFrame(loop);
+})();
+</script>
