@@ -19,6 +19,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
+import PetVillage from "./PetVillage";
 
 // ── tokens (Collectible Editorial) ──
 const INK = "#211A12";
@@ -37,19 +38,20 @@ const SHADOW_CARD = "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))"
 const POLL_MS = 7000;
 const COST = 5;
 
-// ── types (mirror the route's response) ──
-interface Pillars {
+// ── types (mirror the route's response) — exported for PetVillage ──
+export interface Pillars {
   soul: { set: boolean; persona: string; checkpoints: number };
   memory: { count: number; cap: number; lastFact: string | null; updatedAt: string | null };
   user: { count: number; cap: number };
   skills: { installed: number; learned: number; total: number };
   crons: { routines: number; nextLabel: string };
 }
-interface KItem { id: number | string; title: string; kind?: string; skill?: string; detail?: string; reason?: string; at?: string; startedAt?: string; credits?: number; }
-interface Kanban { pending: KItem[]; working: KItem[]; blocked: KItem[]; done: KItem[]; }
-interface Staff { id: string; name: string; kind: "skill" | "vigil"; role: string; installed: boolean; status: "active" | "idle"; runs: number; successRate?: number; lastAt?: string | null; }
-interface Schedule { id: string; name: string; cadence: string; lastRun: string | null; nextRun: string | null; desc: string; }
-interface MC { pet: { id: number; name: string; level: number }; pillars: Pillars; kanban: Kanban; roster: Staff[]; schedules: Schedule[]; generatedAt: string; }
+export interface KItem { id: number | string; title: string; kind?: string; skill?: string; detail?: string; reason?: string; at?: string; startedAt?: string; credits?: number; }
+export interface Kanban { pending: KItem[]; working: KItem[]; blocked: KItem[]; done: KItem[]; }
+export interface Staff { id: string; name: string; kind: "skill" | "vigil"; role: string; installed: boolean; status: "active" | "idle"; runs: number; successRate?: number; lastAt?: string | null; }
+export interface Schedule { id: string; name: string; cadence: string; lastRun: string | null; nextRun: string | null; desc: string; }
+export interface MC { pet: { id: number; name: string; level: number }; pillars: Pillars; kanban: Kanban; roster: Staff[]; schedules: Schedule[]; generatedAt: string; }
+export interface LiveRun { title: string; steps: { skill: string; ok: boolean }[]; done: boolean; answer?: string; }
 
 function relTime(ts?: string | null): string {
   if (!ts) return "never";
@@ -69,7 +71,8 @@ export default function AgentOffice() {
 
   const [goal, setGoal] = useState("");
   const [running, setRunning] = useState(false);
-  const [liveRun, setLiveRun] = useState<{ title: string; steps: { skill: string; ok: boolean }[]; done: boolean; answer?: string } | null>(null);
+  const [liveRun, setLiveRun] = useState<LiveRun | null>(null);
+  const [view, setView] = useState<"village" | "classic">("village");
 
   // ── load pets ──
   useEffect(() => {
@@ -200,7 +203,7 @@ export default function AgentOffice() {
     <div style={wrap}>
       <style>{`@keyframes officePulse{0%,100%{box-shadow:0 0 0 0 rgba(107,79,160,0.0),${SHADOW_CARD}}50%{box-shadow:0 0 0 3px rgba(107,79,160,0.18),${SHADOW_CARD}}}`}</style>
 
-      <Header petName={petName} pets={pets} petId={petId} setPetId={setPetId} isWorking={isWorking} />
+      <Header petName={petName} pets={pets} petId={petId} setPetId={setPetId} isWorking={isWorking} view={view} setView={setView} />
 
       {err && (
         <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.22)", color: "#b91c1c", fontFamily: SANS, fontSize: 13.5 }}>
@@ -208,6 +211,18 @@ export default function AgentOffice() {
         </div>
       )}
 
+      {/* ══ VILLAGE VIEW — the flagship illustrated town over the same real data ══ */}
+      {view === "village" && (
+        mc ? (
+          <PetVillage mc={mc} liveRun={liveRun} running={running} isWorking={isWorking} petName={petName} />
+        ) : (
+          <div style={{ ...card, textAlign: "center", color: MUTED, fontFamily: SANS }}>Waking the village…</div>
+        )
+      )}
+
+      {/* ══ CLASSIC VIEW — the plain admin board (fallback) ══ */}
+      {view === "classic" && (
+      <>
       {/* ── 5-Pillar strip ── */}
       {mc && (
         <div style={pillarGrid}>
@@ -264,8 +279,10 @@ export default function AgentOffice() {
       ) : (
         <div style={{ ...card, textAlign: "center", color: MUTED, fontFamily: SANS }}>Loading the office…</div>
       )}
+      </>
+      )}
 
-      {/* ── Dispatch bar ── */}
+      {/* ── Dispatch bar (shared by both views) ── */}
       <div style={{ ...card, marginTop: 20, padding: "16px 18px" }}>
         <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.14em", color: PURPLE, fontWeight: 700, marginBottom: 10 }}>
           DISPATCH — GIVE {petName.toUpperCase()} A GOAL
@@ -298,11 +315,10 @@ export default function AgentOffice() {
         </div>
       </div>
 
-      {/* ── Office roster ── */}
-      {mc && <Roster roster={mc.roster} />}
+      {/* ── Office roster + schedules (classic only; the village shows its own) ── */}
+      {view === "classic" && mc && <Roster roster={mc.roster} />}
 
-      {/* ── Schedules ── */}
-      {mc && (
+      {view === "classic" && mc && (
         <div style={{ marginTop: 26 }}>
           <SectionTitle mono="SCHEDULES" title="Cron routines" />
           <div style={{ ...card, padding: 0, overflow: "hidden" }}>
@@ -329,11 +345,26 @@ export default function AgentOffice() {
 }
 
 // ── Header ──
-function Header({ petName, pets, petId, setPetId, isWorking }: { petName: string; pets: any[]; petId: number | null; setPetId: (n: number) => void; isWorking: boolean }) {
+function Header({ petName, pets, petId, setPetId, isWorking, view, setView }: { petName: string; pets: any[]; petId: number | null; setPetId: (n: number) => void; isWorking: boolean; view?: "village" | "classic"; setView?: (v: "village" | "classic") => void }) {
   return (
     <div style={{ marginBottom: 22 }}>
-      <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.2em", color: PURPLE, fontWeight: 700, textTransform: "uppercase", marginBottom: 8 }}>
-        Agent Office · powered by PetClaw
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
+        <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.2em", color: PURPLE, fontWeight: 700, textTransform: "uppercase" }}>
+          Agent Office · powered by PetClaw
+        </div>
+        {view && setView && (
+          <div style={{ display: "inline-flex", background: FIELD, borderRadius: 99, padding: 3, border: `1px solid ${HAIR}` }}>
+            {(["village", "classic"] as const).map((v) => (
+              <button key={v} onClick={() => setView(v)}
+                style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", padding: "5px 13px", borderRadius: 99, border: "none", cursor: "pointer",
+                  background: view === v ? PAPER : "transparent",
+                  color: view === v ? PURPLE : MUTED,
+                  boxShadow: view === v ? SHADOW_CARD : "none" }}>
+                {v === "village" ? "🏘 Village" : "☰ Classic"}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
         <h1 style={{ fontFamily: DISP, fontSize: "clamp(26px,4vw,38px)", fontWeight: 800, color: INK, letterSpacing: "-0.025em", margin: 0, lineHeight: 1.1 }}>
