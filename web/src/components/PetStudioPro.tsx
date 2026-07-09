@@ -36,6 +36,7 @@ import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import PetLoraPanel from "@/components/PetLoraPanel";
+import StudioEditor, { type EditorSourceClip } from "@/components/StudioEditor";
 import useCountUp from "@/hooks/useCountUp";
 import { TEMPLATES, type StudioTemplate } from "@/lib/studio/templates";
 import { STYLE_EXAMPLES, TEMPLATE_EXAMPLES } from "@/lib/studio/example-assets";
@@ -80,6 +81,12 @@ function clearActiveJob() {
 // subscription tier are rejected with 403 tier_required — and no membership is
 // purchasable yet. Rank mirror so the picker can lock what the server locks.
 const TIER_RANK: Record<"free" | "pro" | "studio", number> = { free: 0, pro: 1, studio: 2 };
+// Honest one-word quality read per tier, shown as the picker's group subtitle.
+const TIER_QUALITY: Record<"free" | "pro" | "studio", string> = {
+  free: "Fast · included",
+  pro: "Higher fidelity",
+  studio: "Flagship",
+};
 
 
 // Collectible Editorial tokens. Studio's section signature is indigo-purple
@@ -201,6 +208,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   // Real upstream progress (0..1) from the poll route when the provider reports
   // it; null → the UI falls back to a clearly-labeled time estimate (item #25).
   const [genProgress, setGenProgress] = useState<number | null>(null);
+  // Studio-Pro V1: the client-side reel editor (opens over the workspace, no
+  // route change). Gated on having ≥1 real generated clip to import.
+  const [editorOpen, setEditorOpen] = useState(false);
   // "View all" history gallery overlay (item #19).
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [gallery, setGallery] = useState<Generation[] | null>(null);
@@ -272,6 +282,27 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   // membership is on sale yet — so those engines are locked in the picker,
   // never dangled as selectable.
   const tierLocked = (m: StudioModel) => TIER_RANK[m.tier] > TIER_RANK[userTier];
+
+  // Real generated media the editor can import: the current result + every
+  // completed History row that has a file. Deduped by URL, current result first.
+  const editorClips: EditorSourceClip[] = useMemo(() => {
+    const out: EditorSourceClip[] = [];
+    const seen = new Set<string>();
+    const push = (url: string | null | undefined, kind: "video" | "image", id: string, label?: string) => {
+      if (!url || seen.has(url)) return;
+      seen.add(url);
+      out.push({ id, url, kind, label });
+    };
+    if (view === "done" && resultUrl && resultUrl !== "__demo__") {
+      push(resultUrl, /\.(mp4|webm)$/i.test(resultUrl) ? "video" : "image", `cur-${lastGenId ?? "0"}`, "Latest");
+    }
+    for (const g of history) {
+      if (g.video_path && /\.(mp4|webm)$/i.test(g.video_path)) push(g.video_path, "video", `g${g.id}`, g.prompt || undefined);
+      else if (g.photo_path) push(g.photo_path, "image", `g${g.id}`, g.prompt || undefined);
+    }
+    return out;
+  }, [view, resultUrl, lastGenId, history]);
+  const canOpenEditor = !isDemo && editorClips.length > 0;
 
   // Fetch the selected pet's daydream insights as Memory→Video seeds.
   useEffect(() => {
@@ -798,6 +829,26 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               )}</a>
             );
           })()}
+          {canOpenEditor && (
+            <button
+              onClick={() => setEditorOpen(true)}
+              title="Assemble your clips into a reel — trim, sequence, caption, music, export (all in your browser)"
+              className="mp-enter"
+              style={{
+                padding: "10px 16px", borderRadius: 12, fontSize: 13, cursor: "pointer",
+                background: T.paper, color: T.studio, border: `1px solid ${T.studio}`,
+                boxShadow: "var(--ed-shadow-card)", fontWeight: 700,
+                fontFamily: T.m, letterSpacing: "0.08em", textTransform: "uppercase",
+                display: "inline-flex", alignItems: "center", gap: 7,
+              }}
+            >
+              <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="2.5" y="5" width="19" height="14" rx="2" />
+                <path d="M2.5 9h19M8 5v14" /><path d="M5.2 7h.01M5.2 12h.01M5.2 17h.01" />
+              </svg>
+              Assemble
+            </button>
+          )}
           <Pill
             label="CREDITS"
             value={credits == null ? "—" : String(creditAnim)}
@@ -925,6 +976,21 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       <rect x="2.5" y="6" width="13" height="12" rx="2" />
                       <path d="M15.5 10l6-3v10l-6-3z" />
                     </svg>Video from prompt</button>
+                )}
+                {!isDemo && (
+                  <button
+                    onClick={() => setEditorOpen(true)}
+                    className="mp-enter"
+                    title="Open the client-side editor: trim, sequence, caption, add music, export a reel"
+                    style={{
+                      padding: "9px 16px", borderRadius: 10, border: `1px solid ${T.studio}`, cursor: "pointer",
+                      background: "rgba(107,79,160,0.08)", color: T.studio, boxShadow: "var(--ed-shadow-card)",
+                      fontFamily: T.body, fontSize: 13, fontWeight: 700,
+                      display: "inline-flex", alignItems: "center", gap: 7, animationDelay: "60ms",
+                    }}
+                  ><svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="2.5" y="5" width="19" height="14" rx="2" /><path d="M2.5 9h19M8 5v14" />
+                    </svg>Edit &amp; assemble</button>
                 )}
                 <button onClick={() => { setView("idle"); setResultUrl(null); }} className="mp-enter ed-wipe" style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "100ms" }}><RetryGlyph size={13} /> Start over</button>
                 {!isDemo && pet && pet.id > 0 && !/\.(mp4|webm)$/i.test(resultUrl) && (
@@ -1222,28 +1288,10 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                         }}>{catLabel}</span>
                       </div>
                     ) : t.swatch ? (
-                      // No captured example yet — a generated-look poster in the
-                      // template's own palette + a big glyph, so the card still
-                      // reads as "here's the vibe" instead of a blank tile.
-                      <div style={{
-                        height: 92, background: t.swatch,
-                        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-                        padding: "8px 9px", position: "relative",
-                      }}>
-                        <span style={{ fontSize: 30, lineHeight: 1, filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.35))" }}>{t.emoji}</span>
-                        <span style={{
-                          position: "absolute", top: 7, left: 9,
-                          fontSize: 13, fontFamily: T.m,
-                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
-                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.55))",
-                        }}>PREVIEW</span>
-                        <span style={{
-                          position: "absolute", right: 9, bottom: 8,
-                          fontSize: 13, fontFamily: T.m,
-                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
-                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.55))",
-                        }}>{catLabel}</span>
-                      </div>
+                      // No captured example yet — a looping motion-mnemonic in the
+                      // template's own palette, so the card previews the vibe as
+                      // MOTION instead of a dead poster.
+                      <TemplateMnemonic swatch={t.swatch} emoji={t.emoji} catLabel={catLabel} />
                     ) : (
                       <div style={{
                         height: 62,
@@ -1267,6 +1315,15 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       <div style={{ fontSize: 13, color: T.muted2, marginTop: 3, lineHeight: 1.45 }}>
                         {t.description}
                       </div>
+                      {t.beats && t.beats.length > 0 && (
+                        <div style={{
+                          fontSize: 13, color: T.studio, marginTop: 6, fontFamily: T.m, fontWeight: 700,
+                          letterSpacing: "0.02em",
+                          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                        }} title={t.beats.join(" → ")}>
+                          ▸ {t.beats.length} beats · {t.beats[0]}
+                        </div>
+                      )}
                     </div>
                   </button>
                   </Reveal>
@@ -1404,6 +1461,25 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             </Panel>
             )}
 
+            {/* Duration — honest: every current engine renders a FIXED native
+                clip length (the backend ignores a custom duration), so this is
+                surfaced as a locked spec, never a slider that lies. */}
+            {outputKind === "video" && chosenModel && (
+              <Panel label="CLIP LENGTH" className="mp-enter-5">
+                <div style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+                  padding: "10px 12px", borderRadius: 12, background: T.inset, border: `1px solid ${T.hair}`,
+                }}>
+                  <span style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 20, color: T.ink }}>
+                    {chosenModel.maxDurationSec}s
+                  </span>
+                  <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted2, textAlign: "right", lineHeight: 1.4 }}>
+                    fixed by {chosenModel.displayName}<br />sequence clips in Assemble for longer reels
+                  </span>
+                </div>
+              </Panel>
+            )}
+
             {/* Engine (model picker) */}
             <Panel label="ENGINE" className="mp-enter-5">
               <div style={{ position: "relative" }} ref={modelMenuRef}>
@@ -1427,7 +1503,20 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                     boxShadow: "var(--ed-shadow-card)",
                     zIndex: 20, maxHeight: 400, overflowY: "auto",
                   }}>
-                    {visibleModels.map(m => {
+                    {(["free", "pro", "studio"] as const).map(tierKey => {
+                      const group = visibleModels.filter(m => m.tier === tierKey);
+                      if (group.length === 0) return null;
+                      return (
+                        <div key={tierKey} style={{ marginBottom: 2 }}>
+                          <div style={{
+                            padding: "7px 8px 4px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8,
+                          }}>
+                            <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", color: T.mono, textTransform: "uppercase" }}>
+                              {tierKey === "free" ? "Free" : tierKey === "pro" ? "Pro tier" : "Studio tier"}
+                            </span>
+                            <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted2 }}>{TIER_QUALITY[tierKey]}</span>
+                          </div>
+                          {group.map(m => {
                       const sel = m.id === chosenModelId;
                       // D3: two distinct locks, both matching server reality —
                       // comingSoon (unfunded backend) and membership tier (the
@@ -1476,11 +1565,15 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                             {m.kind === "video" ? `${m.maxDurationSec}s · ` : ""}{m.maxResolution} · {m.creditsPerRun} cr
                           </div>
                         </button>
+                            );
+                          })}
+                        </div>
                       );
                     })}
                   </div>
                 )}
               </div>
+              {chosenModel && <ModelSpecStrip model={chosenModel} />}
               {chosenModel?.supportsImageRef && pet?.avatar_url && (
                 <div style={{
                   marginTop: 8, padding: "7px 10px", borderRadius: 8,
@@ -1588,6 +1681,17 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               </span>
             )}
         </button>
+        )}
+
+        {/* ── Render queue: live progress for the in-flight job + any pending
+            server jobs. Real backend state, never faked. ── */}
+        {!isDemo && (view === "generating" || history.some(g => g.status === "pending" || g.status === "running")) && (
+          <RenderQueue
+            generating={view === "generating"}
+            kind={outputKind}
+            progress={genProgress}
+            pending={history.filter(g => g.status === "pending" || g.status === "running")}
+          />
         )}
 
         {/* ── Recent history strip — scroll-reveals from below ── */}
@@ -1732,6 +1836,16 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           </div>
         </Reveal>
       </div>
+
+      {/* ── Studio-Pro V1 client-side reel editor (all rendering on-device;
+          server stays idle — see StudioEditor.tsx / editorEngine.ts). ── */}
+      <StudioEditor
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        clips={editorClips}
+        credits={credits}
+        userTier={userTier}
+      />
 
       {/* ── "View all" gallery overlay (item #19): the full 50-row history the
           endpoint already returns, failed paid runs shown honestly. ── */}
@@ -1888,10 +2002,15 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           animation: edFoilShift 6s linear infinite;
           pointer-events: none;
         }
+        @keyframes studioQueueIndet { 0% { transform: translateX(-60%); } 100% { transform: translateX(260%); } }
+        .studio-queue-indet { animation: studioQueueIndet 1.4s ease-in-out infinite; }
+        @keyframes studioMnemonicDrift { 0%,100% { transform: translate3d(0,0,0); } 50% { transform: translate3d(0,-6%,0); } }
         @media (prefers-reduced-motion: reduce) {
           .studio-cta::after { animation: none; }
           .studio-cta:hover:not(:disabled), .studio-cta:active:not(:disabled) { transform: none; }
           .studio-start-here:hover, .studio-start-here:active { transform: none; }
+          .studio-queue-indet { animation: none; }
+          .studio-mnemonic { animation: none !important; }
         }
         @media (max-width: 880px) {
           .studio-pro-grid { grid-template-columns: 1fr !important; }
@@ -1984,6 +2103,60 @@ function PreviewGenerating({ kind, progress }: { kind: "image" | "video"; progre
   );
 }
 
+// A real render queue: the in-flight job (live % when the provider reports it)
+// plus any History rows still pending/running on the backend. These are genuine
+// server jobs — nothing here is faked telemetry.
+function RenderQueue({ generating, kind, progress, pending }: {
+  generating: boolean; kind: "image" | "video"; progress: number | null; pending: Generation[];
+}) {
+  const pct = typeof progress === "number" && progress > 0 ? Math.max(2, Math.min(99, Math.round(progress * 100))) : null;
+  const rows: { label: string; sub: string; pct: number | null; active: boolean }[] = [];
+  if (generating) {
+    rows.push({
+      label: kind === "image" ? "Rendering image" : "Rendering video",
+      sub: pct != null ? `${pct}%` : (kind === "video" ? "~1–2 min · keep this page open" : "usually ~10s"),
+      pct, active: true,
+    });
+  }
+  for (const g of pending) {
+    rows.push({ label: g.prompt ? g.prompt.slice(0, 42) : "Queued generation", sub: g.status === "running" ? "rendering" : "in queue", pct: null, active: false });
+  }
+  if (rows.length === 0) return null;
+  return (
+    <div className="mp-enter" style={{
+      marginTop: 6, background: T.paper, borderRadius: 14, padding: 14,
+      border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <div style={panelLabel}>RENDER QUEUE</div>
+        <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.studio, letterSpacing: "0.08em" }}>{rows.length} ACTIVE</span>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {rows.map((r, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span aria-hidden style={{
+              width: 9, height: 9, borderRadius: 999, flexShrink: 0,
+              background: r.active ? T.cta2 : T.mono,
+            }} className={r.active ? "studio-pulse" : undefined} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: T.body, fontSize: 13, fontWeight: 600, color: T.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</div>
+              <div style={{ height: 6, borderRadius: 999, background: T.inset, border: `1px solid ${T.hair}`, overflow: "hidden", marginTop: 4 }}>
+                <div className={r.pct == null ? "studio-queue-indet" : undefined} style={{
+                  height: "100%",
+                  width: r.pct != null ? `${r.pct}%` : "40%",
+                  background: r.active ? "linear-gradient(90deg,#F49B2A,#E27D0C)" : T.mono,
+                  transition: "width 1s linear",
+                }} />
+              </div>
+            </div>
+            <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted2, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{r.sub}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PreviewDemo({ pet, prompt }: { pet: Pet | null; prompt: string }) {
   return (
     <div style={{
@@ -2036,6 +2209,49 @@ function RoadmapItem({ icon, title, body }: { icon: string; title: string; body:
       </div>
       <div style={{ fontSize: 14, fontFamily: T.disp, fontWeight: 700, marginBottom: 4, color: T.ink }}>{title}</div>
       <div style={{ fontSize: 13, color: T.muted2, lineHeight: 1.5 }}>{body}</div>
+    </div>
+  );
+}
+
+// A looping "what you get" motion-mnemonic for templates without a captured
+// example clip: the template's own gradient with the emoji drifting + a soft
+// travelling light sweep, so the card reads as motion (a preview of the vibe)
+// rather than a dead poster. Purely decorative CSS — killed under
+// prefers-reduced-motion via the .studio-mnemonic rule in the style block.
+function TemplateMnemonic({ swatch, emoji, catLabel }: { swatch: string; emoji: string; catLabel: string }) {
+  const drifters = [
+    { left: "18%", top: "24%", size: 16, delay: "0s", dur: "3.2s" },
+    { left: "66%", top: "18%", size: 12, delay: "0.5s", dur: "3.8s" },
+    { left: "44%", top: "52%", size: 30, delay: "0.2s", dur: "3.4s" },
+    { left: "80%", top: "58%", size: 14, delay: "0.9s", dur: "4.1s" },
+  ];
+  return (
+    <div style={{ position: "relative", height: 92, background: swatch, overflow: "hidden" }}>
+      {/* travelling light sweep */}
+      <span aria-hidden className="studio-mnemonic" style={{
+        position: "absolute", inset: "-20%",
+        background: "linear-gradient(115deg, transparent 38%, rgba(255,247,230,.28) 50%, transparent 62%)",
+        backgroundSize: "220% 100%",
+        animation: "edFoilShift 5.5s linear infinite",
+      }} />
+      {drifters.map((d, i) => (
+        <span key={i} aria-hidden className="studio-mnemonic" style={{
+          position: "absolute", left: d.left, top: d.top, fontSize: d.size, lineHeight: 1,
+          filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))",
+          animation: `studioMnemonicDrift ${d.dur} ease-in-out ${d.delay} infinite`,
+          opacity: i === 2 ? 1 : 0.85,
+        }}>{emoji}</span>
+      ))}
+      <span style={{
+        position: "absolute", top: 7, left: 9,
+        fontSize: 13, fontFamily: T.m, letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
+        color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.55))",
+      }}>▸ PREVIEW</span>
+      <span style={{
+        position: "absolute", right: 9, bottom: 8,
+        fontSize: 13, fontFamily: T.m, letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
+        color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.55))",
+      }}>{catLabel}</span>
     </div>
   );
 }
@@ -2119,6 +2335,30 @@ function ModelBadges({ model, compact }: { model: StudioModel; compact?: boolean
         }}>{b.icon}{b.label}</span>
       ))}
     </>
+  );
+}
+
+// Compact, honest spec read-out for the chosen engine — pulls straight from
+// providers.ts so quality/cost never drift from what the server actually charges.
+function ModelSpecStrip({ model }: { model: StudioModel }) {
+  const cells: { k: string; v: string }[] = [
+    { k: "Resolution", v: model.maxResolution },
+    { k: model.kind === "video" ? "Clip length" : "Output", v: model.kind === "video" ? `${model.maxDurationSec}s` : "Still image" },
+    { k: "Cost", v: `${model.creditsPerRun} cr` },
+  ];
+  return (
+    <div style={{
+      marginTop: 8, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6,
+    }}>
+      {cells.map(c => (
+        <div key={c.k} style={{
+          padding: "7px 9px", borderRadius: 9, background: T.inset, border: `1px solid ${T.hair}`,
+        }}>
+          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", color: T.mono, textTransform: "uppercase" }}>{c.k}</div>
+          <div style={{ fontFamily: T.disp, fontSize: 14, fontWeight: 700, color: T.ink, marginTop: 1 }}>{c.v}</div>
+        </div>
+      ))}
+    </div>
   );
 }
 

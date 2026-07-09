@@ -213,8 +213,12 @@ export const MODELS: StudioModel[] = [
     maxDurationSec: 8,
     maxResolution: "1080p",
     tier: "studio",
-    creditsPerRun: 250,
-    usdPerRun: 2.40,
+    // Repriced per docs/ECONOMY.md: real fal Veo-3-with-audio cost is ~$4–6/clip
+    // (not the old $2.40), so 250cr ($6.25 at bulk) was break-even-to-negative.
+    // 400cr keeps the ≥50% floor (credits ≈ ceil(vendorUSD/0.0125)). Still
+    // comingSoon — nothing bleeds today; the guard lands before unlock.
+    creditsPerRun: 400,
+    usdPerRun: 4.50,
     description: "Premium model. Native audio. Studio tier.",
     comingSoon: true,
     comingSoonEta: "Q4 2026",
