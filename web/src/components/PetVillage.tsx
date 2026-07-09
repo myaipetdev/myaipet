@@ -1,51 +1,49 @@
 "use client";
 
 /**
- * PetVillage — the flagship "wow" surface: a premium, cute 2.5D town rendered over the
- * SAME REAL mission-control data (GET /api/petclaw/mission-control) that the classic
- * Agent Office shows. Nothing is fabricated — every number, glow, and lit window maps
- * to a real pillar/roster/kanban signal, and every empty state stays honest.
+ * PetVillage — a FAITHFUL PORT of the approved "Pet Village — Premium v2" prototype.
  *
- * The scene reproduces the approved "Pet Village — Premium" prototype: soft 2.5D
- * buildings (front/top/side faces + gloss + foil-gold trim), a glowing central Soul
- * Fountain orb, glass stat chips (backdrop-blur), a slow holographic sheen, a faint
- * perspective grid horizon, chibi pet villagers (the ACTIVE one lifts + emits gold
- * wisps), and floating gold dust. Data → scene mapping:
- *   • Memory Library — lit window count ∝ memory count / cap.
- *   • Skills Forge   — forge fire glows when a skill is running (real installed count in chip).
- *   • Clock Spire    — hour/minute hands at real local time; routine count + next cron in chip/legend.
- *   • Soul Shrine    — gold heart emblem lit when the persona is set.
- *   • Soul Fountain  — the busy square; ripples when the office is working.
- *   • Villagers      — the real roster (skills + VIGIL crew); active ones lift + emit wisps.
- *   • Courier        — a spark runs from the dispatch up to the fountain while an SSE run streams.
+ * The rendered scene reproduces that prototype exactly — its dusk-sky frame, soft
+ * light rays + bokeh, the floating-island diorama (grass top, carved underside,
+ * little floating rocks, gold path + stepping stones), the four 2.5D buildings
+ * (Memory Library / Skills Forge / Soul Shrine / Clock Spire, each with left+right+
+ * top faces, gloss, foil-gold trim and glow windows), the central glowing Soul
+ * Fountain orb with its halo, the glass stat chips, the chibi pet villagers (the
+ * ACTIVE one lifting with gold wisps), and the floating gold dust.
  *
- * Pure inline SVG + CSS transforms (no external assets, no heavy per-frame loops). All
- * motion carries `data-anim` so `prefers-reduced-motion: reduce` silences it in one CSS
- * rule; SMIL (courier, second hand) is additionally gated by a JS reduced-motion flag.
+ * Only the DATA is swapped in — nothing is fabricated. Every number, lit window and
+ * glow maps to a real mission-control signal (GET /api/petclaw/mission-control):
+ *   • 4 glass chips  — Memory count/cap · Skills installed · Routines · Soul (v# ★ / not set)
+ *   • Memory Library — lit-window count ∝ real memory count / cap
+ *   • Skills Forge   — forge fire lit only while a skill is running
+ *   • Soul Shrine    — gold heart-flame emblem lit only when the persona is set
+ *   • Clock Spire    — hour/minute/second hands at real local time (routine count in chip)
+ *   • Villagers      — the real roster (skills + VIGIL crew); the active one lifts + emits wisps
+ *   • Soul Fountain  — ripples while the office is working
+ *   • Courier        — a gold spark runs up to the fountain while an SSE run streams
+ *
+ * All motion carries `data-anim`, so `prefers-reduced-motion: reduce` silences it in
+ * one CSS rule (a calm static frame — no bob/particle motion); the SMIL courier and
+ * second hand are additionally gated by a JS reduced-motion flag.
  */
 
 import { useEffect, useState } from "react";
 import type { MC, Staff, LiveRun } from "./AgentOffice";
 
 // ── tokens (Collectible Editorial) ──
-const INK = "#211A12";
-const MUTED = "#7A6E5A";
+const INK = "#241A12";
+const MUTED = "#6A5C48";
 const PURPLE = "#6B4FA0";
 const TERRA = "#9A4E1E";
 const TERRA2 = "#BE4F28";
 const SAGE = "#5C8A4E";
 const PAPER = "#FBF6EC";
-const FOIL = "#E8C77E";
-const FOIL_DK = "#C8932F";
-const FIELD = "#ECE4D4";
-const DISP = "var(--ed-disp, sans-serif)";
-const SANS = "var(--ed-body, sans-serif)";
-const MONO = "var(--ed-m, ui-monospace, monospace)";
-const HAIR = "rgba(33,26,18,0.13)";
+const DISP = "var(--ed-disp, \"Space Grotesk\", system-ui, sans-serif)";
+const SANS = "var(--ed-body, \"Space Grotesk\", system-ui, sans-serif)";
+const MONO = "var(--ed-m, ui-monospace, Menlo, monospace)";
+const HAIR = "rgba(36,26,18,0.12)";
 const SHADOW_CARD = "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))";
-
-// scene fills (chibi palette)
-const WALL = "#F3E7CE";
+const FIELD = "#ECE4D4";
 const WALL_DK = "#E3D3B2";
 
 function relTime(ts?: string | null): string {
@@ -57,35 +55,46 @@ function relTime(ts?: string | null): string {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
-// ── motion (data-anim = one-rule reduced-motion kill switch) ──
+// ── motion (prototype keyframes; data-anim = one-rule reduced-motion kill switch) ──
 const KF = `
-@keyframes vBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-@keyframes vBobL{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-@keyframes vWork{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
-@keyframes vPulse{0%,100%{opacity:.5;transform:scale(.94)}50%{opacity:.95;transform:scale(1.06)}}
-@keyframes vRise{0%{opacity:0;transform:translateY(6px)}30%{opacity:1}100%{opacity:0;transform:translateY(-22px)}}
-@keyframes vFlame{0%,100%{transform:scaleY(1) scaleX(1)}45%{transform:scaleY(.82) scaleX(1.08)}}
-@keyframes vRing{0%{opacity:.5;transform:scale(.6)}100%{opacity:0;transform:scale(1.5)}}
-@keyframes vSheen{0%,100%{background-position:0% 0}50%{background-position:100% 0}}
-@keyframes vDust{0%{transform:translateY(20px) scale(.6);opacity:0}15%{opacity:.9}100%{transform:translateY(-160px) scale(1);opacity:0}}
-.pv-sheen{position:absolute;inset:0;pointer-events:none;opacity:.5;mix-blend-mode:screen;z-index:3;background:linear-gradient(115deg,transparent 30%,rgba(129,104,206,.10) 44%,rgba(32,163,134,.10) 52%,rgba(232,199,126,.12) 60%,transparent 74%);background-size:250% 100%;animation:vSheen 9s ease-in-out infinite}
-.pv-grid{position:absolute;left:0;right:0;top:42%;bottom:0;pointer-events:none;opacity:.13;z-index:2;background-image:linear-gradient(rgba(91,66,158,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(91,66,158,.4) 1px,transparent 1px);background-size:52px 30px;transform:perspective(420px) rotateX(58deg);transform-origin:top;-webkit-mask-image:linear-gradient(transparent,#000 65%);mask-image:linear-gradient(transparent,#000 65%)}
-.pv-dust{position:absolute;border-radius:50%;background:radial-gradient(circle,#FBEAB6,rgba(232,199,126,0));pointer-events:none;animation:vDust linear infinite}
-@media (prefers-reduced-motion:reduce){[data-anim]{animation:none!important}}
+@keyframes pvRise{0%{transform:translateY(14px);opacity:0}18%{opacity:.9}100%{transform:translateY(-150px);opacity:0}}
+@keyframes pvDrift{0%,100%{transform:translate(0,0)}50%{transform:translate(14px,-16px)}}
+@keyframes pvBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes pvBobw{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes pvPulse{0%,100%{opacity:.45;transform:scale(.9)}50%{opacity:.95;transform:scale(1.08)}}
+@keyframes pvWisp{0%{opacity:0;transform:translateY(4px) scale(.7)}30%{opacity:1}100%{opacity:0;transform:translateY(-26px) scale(1)}}
+@keyframes pvRing{0%{opacity:.55;transform:scale(.6)}100%{opacity:0;transform:scale(1.6)}}
+@keyframes pvFlame{0%,100%{transform:scaleY(1) scaleX(1)}45%{transform:scaleY(.84) scaleX(1.08)}}
+.pv-rays{position:absolute;inset:0;pointer-events:none;opacity:.5;mix-blend-mode:screen;z-index:2;background:conic-gradient(from 210deg at 20% 0%, rgba(255,236,180,0) 0deg, rgba(255,236,180,.22) 12deg, rgba(255,236,180,0) 24deg, rgba(255,236,180,.16) 40deg, rgba(255,236,180,0) 60deg)}
+.pv-bokeh{position:absolute;border-radius:50%;filter:blur(2px);pointer-events:none;z-index:2;animation:pvDrift 14s ease-in-out infinite}
+.pv-dust{position:absolute;border-radius:50%;background:radial-gradient(circle,#FBEEC0,rgba(234,201,120,0));pointer-events:none;z-index:4;animation:pvRise linear infinite}
+@media (prefers-reduced-motion:reduce){[data-anim]{animation:none!important}.pv-dust,.pv-bokeh{animation:none!important}}
 `;
 
-// chibi villager palette
-const BODIES = ["#F6D9A6", "#CFE0EF", "#E7C9F0", "#CDE6C6", "#F3C9C0", "#D6CBF0", "#F7CBA0"];
-type Spot = { x: number; y: number; ear: "cat" | "round"; s: number };
-const SPOTS: Spot[] = [
-  { x: 336, y: 520, ear: "cat", s: 1.0 },
-  { x: 704, y: 528, ear: "round", s: 1.0 },
-  { x: 250, y: 552, ear: "cat", s: 0.92 },
-  { x: 792, y: 544, ear: "round", s: 0.9 },
-  { x: 420, y: 574, ear: "cat", s: 1.06 },
-  { x: 612, y: 580, ear: "round", s: 1.04 },
-  { x: 520, y: 606, ear: "cat", s: 1.1 },
+// chibi villager palettes (prototype's peach/blue/violet + cute extras) ──
+type Pal = { ear: string; head: string; face: string; eye: string };
+const PAL: Pal[] = [
+  { ear: "#E4C7F0", head: "#E7CBF2", face: "#F0DEF8", eye: "#472e5a" }, // violet (prototype C)
+  { ear: "#F4CE9A", head: "#F6D6A0", face: "#FADFB0", eye: "#3a2a18" }, // peach (prototype A)
+  { ear: "#BFD6EC", head: "#CFE0EF", face: "#DCEAF6", eye: "#2b3a52" }, // blue  (prototype B)
+  { ear: "#BFE6D2", head: "#CFEEDD", face: "#E0F5EA", eye: "#24503f" }, // mint
+  { ear: "#F3C9C7", head: "#F7D6D2", face: "#FBE6E2", eye: "#5a2e2e" }, // rose
+  { ear: "#F0D79A", head: "#F5E1AE", face: "#FBEFCC", eye: "#5a4620" }, // gold
+  { ear: "#D6CBF0", head: "#E0D6F5", face: "#EEE7FA", eye: "#3d3260" }, // lilac
 ];
+// scene villager plaza spots (spot[0] = central star spot for the active villager)
+type Spot = { cx: number; cy: number; s: number; ear: "cat" | "round" };
+const SPOTS: Spot[] = [
+  { cx: 500, cy: 504, s: 1.1, ear: "cat" },
+  { cx: 392, cy: 472, s: 1.0, ear: "cat" },
+  { cx: 656, cy: 482, s: 0.98, ear: "round" },
+  { cx: 300, cy: 500, s: 0.9, ear: "round" },
+  { cx: 742, cy: 512, s: 0.9, ear: "cat" },
+  { cx: 432, cy: 552, s: 1.0, ear: "round" },
+  { cx: 606, cy: 556, s: 1.0, ear: "cat" },
+];
+// roster-card body colors (used by the below-scene villager cards)
+const BODIES = ["#E7CBF2", "#F6D6A0", "#CFE0EF", "#CFEEDD", "#F7D6D2", "#F5E1AE", "#E0D6F5"];
 
 export default function PetVillage({
   mc,
@@ -111,10 +120,10 @@ export default function PetVillage({
         setDust([]);
       } else {
         setDust(
-          Array.from({ length: 16 }, () => ({
+          Array.from({ length: 18 }, () => ({
             w: 3 + Math.random() * 5,
-            l: 8 + Math.random() * 84,
-            t: 46 + Math.random() * 40,
+            l: 10 + Math.random() * 80,
+            t: 42 + Math.random() * 42,
             d: 5 + Math.random() * 6,
             delay: -Math.random() * 8,
           })),
@@ -135,231 +144,216 @@ export default function PetVillage({
   const busy = isWorking || running || kanban.working.length > 0;
   const forgeOn = skillActive || busy;
 
-  // ── clock hands from real local time ──
+  // ── Memory Library: light windows in proportion to real memory count/cap ──
+  const litWindows = memRatio > 0 ? Math.min(6, Math.max(1, Math.round(memRatio * 6))) : 0;
+
+  // ── Clock Spire: hour/minute hands at real local time ──
   const now = new Date();
   const minDeg = now.getMinutes() * 6 + now.getSeconds() * 0.1;
   const hrDeg = (now.getHours() % 12) * 30 + now.getMinutes() * 0.5;
 
-  // ── villagers = real roster, capped honestly to the plaza spots ──
-  const villagers = roster.slice(0, SPOTS.length);
-  const anyActive = villagers.some((r) => r.status === "active");
+  // ── Villagers = real roster, capped to the plaza; active one takes the center spot ──
+  const capped = roster.slice(0, SPOTS.length);
+  const activeIdx = capped.findIndex((r) => r.status === "active");
+  const busyFallback = busy && activeIdx === -1;
+  const ordered =
+    activeIdx > 0
+      ? [capped[activeIdx], ...capped.slice(0, activeIdx), ...capped.slice(activeIdx + 1)]
+      : capped;
+
+  const courierPath = "M540 680 C 520 618, 566 520, 540 456";
 
   return (
     <>
       <style>{KF}</style>
 
       {/* ══════════ THE PREMIUM VILLAGE CARD ══════════ */}
-      <div style={sceneCard}>
+      <div style={frame}>
+        <div className="pv-rays" aria-hidden />
+        <div className="pv-bokeh" data-anim aria-hidden style={{ width: 120, height: 120, left: "12%", top: "16%", background: "radial-gradient(circle,rgba(234,201,120,.5),transparent 70%)" }} />
+        <div className="pv-bokeh" data-anim aria-hidden style={{ width: 90, height: 90, left: "80%", top: "12%", background: "radial-gradient(circle,rgba(138,114,218,.4),transparent 70%)", animationDelay: "-5s" }} />
+        <div className="pv-bokeh" data-anim aria-hidden style={{ width: 70, height: 70, left: "64%", top: "8%", background: "radial-gradient(circle,rgba(40,179,154,.4),transparent 70%)", animationDelay: "-9s" }} />
+
+        {/* head — title + glass stat chips */}
+        <div style={headRow}>
+          <div style={{ minWidth: 0 }}>
+            <div style={titleStyle}>
+              The <b style={titleGrad}>Pet Village</b>
+            </div>
+            <div style={subStyle}>{petName}&rsquo;s town — your agent&rsquo;s living world</div>
+          </div>
+          <div style={chipBar}>
+            <Chip k="Memory" v={`${pillars.memory.count}`} small={`/${pillars.memory.cap}`} />
+            <Chip k="Skills" v={`${pillars.skills.installed}`} />
+            <Chip k="Routines" v={`${pillars.crons.routines}`} />
+            <Chip k="Soul" v={soulSet ? `v${pillars.soul.checkpoints} ★` : "not set"} gold={soulSet} />
+          </div>
+        </div>
+
         <svg
-          viewBox="0 0 1040 660"
+          viewBox="0 0 1080 680"
           preserveAspectRatio="xMidYMid slice"
           role="img"
           aria-label={`${petName}'s village — each building is one of your pet's agent pillars, rendered over live data`}
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }}
         >
           <defs>
-            <radialGradient id="pvGround" cx="50%" cy="34%" r="72%">
-              <stop offset="0%" stopColor="#F7F2E4" />
-              <stop offset="60%" stopColor="#E7E0D0" />
-              <stop offset="100%" stopColor="#D8D3E4" />
-            </radialGradient>
-            <linearGradient id="pvGrass" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#CFE1B0" />
-              <stop offset="100%" stopColor="#A9C88C" />
-            </linearGradient>
-            <linearGradient id="pvGold" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#FBEAB6" />
-              <stop offset="100%" stopColor="#C8932F" />
-            </linearGradient>
-            <radialGradient id="pvOrb" cx="42%" cy="36%" r="70%">
-              <stop offset="0%" stopColor="#FFF8E6" />
-              <stop offset="38%" stopColor="#F4D98C" />
-              <stop offset="72%" stopColor="#E8A93C" />
-              <stop offset="100%" stopColor="#8A5A1E" />
-            </radialGradient>
-            <radialGradient id="pvOrbGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="rgba(255,224,150,.9)" />
-              <stop offset="100%" stopColor="rgba(255,224,150,0)" />
-            </radialGradient>
-            <filter id="pvSoft" x="-40%" y="-40%" width="180%" height="200%">
-              <feGaussianBlur in="SourceAlpha" stdDeviation="7" />
-              <feOffset dy="9" />
-              <feComponentTransfer><feFuncA type="linear" slope="0.28" /></feComponentTransfer>
-              <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-            <linearGradient id="pvWallRose" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FBEEE4" /><stop offset="100%" stopColor="#F0D4C1" /></linearGradient>
-            <linearGradient id="pvWallLilac" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#F0EAFB" /><stop offset="100%" stopColor="#DCCFF2" /></linearGradient>
-            <linearGradient id="pvWallMint" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#EAF6E8" /><stop offset="100%" stopColor="#CDE6C6" /></linearGradient>
-            <linearGradient id="pvWallSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#EAF3FB" /><stop offset="100%" stopColor="#CFE2F2" /></linearGradient>
-            <linearGradient id="pvRoofV" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#9C82E4" /><stop offset="100%" stopColor="#5B429E" /></linearGradient>
-            <linearGradient id="pvRoofT" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#3FBFA0" /><stop offset="100%" stopColor="#0F6E5A" /></linearGradient>
-            <linearGradient id="pvWin" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FFF3CE" /><stop offset="100%" stopColor="#F4CE7B" /></linearGradient>
-            <linearGradient id="pvGloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="rgba(255,255,255,.85)" /><stop offset="55%" stopColor="rgba(255,255,255,0)" /></linearGradient>
+            <radialGradient id="pvIslTop" cx="46%" cy="30%" r="80%"><stop offset="0%" stopColor="#EAF6D8" /><stop offset="55%" stopColor="#CDE7B0" /><stop offset="100%" stopColor="#A9CE86" /></radialGradient>
+            <linearGradient id="pvIslSide" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#B8925E" /><stop offset="55%" stopColor="#8A6A44" /><stop offset="100%" stopColor="#6E5236" /></linearGradient>
+            <radialGradient id="pvOrbG" cx="40%" cy="34%" r="72%"><stop offset="0%" stopColor="#FFF7E4" /><stop offset="34%" stopColor="#F6DA92" /><stop offset="70%" stopColor="#EBAA3E" /><stop offset="100%" stopColor="#9A5E1C" /></radialGradient>
+            <radialGradient id="pvOrbHalo" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="rgba(255,226,150,.85)" /><stop offset="100%" stopColor="rgba(255,226,150,0)" /></radialGradient>
+            <linearGradient id="pvGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FBEEC0" /><stop offset="100%" stopColor="#C8932F" /></linearGradient>
+            <linearGradient id="pvWin" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FFF4CE" /><stop offset="100%" stopColor="#F3C766" /></linearGradient>
+            <linearGradient id="pvRoofTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#B49BEA" /><stop offset="100%" stopColor="#8A72DA" /></linearGradient>
+            <linearGradient id="pvRoofLeft" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#7C63C8" /><stop offset="100%" stopColor="#5B429E" /></linearGradient>
+            <linearGradient id="pvWTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FBF3E6" /><stop offset="100%" stopColor="#F1E3CE" /></linearGradient>
+            <linearGradient id="pvWLeft" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#E7D4B6" /><stop offset="100%" stopColor="#D3BC97" /></linearGradient>
+            <linearGradient id="pvWRight" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#D0B892" /><stop offset="100%" stopColor="#B89A6E" /></linearGradient>
+            <linearGradient id="pvTTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#4FD0B4" /><stop offset="100%" stopColor="#28B39A" /></linearGradient>
+            <linearGradient id="pvGloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="rgba(255,255,255,.9)" /><stop offset="60%" stopColor="rgba(255,255,255,0)" /></linearGradient>
+            <filter id="pvSoft" x="-60%" y="-60%" width="220%" height="240%"><feGaussianBlur in="SourceAlpha" stdDeviation="9" /><feOffset dy="12" /><feComponentTransfer><feFuncA type="linear" slope="0.30" /></feComponentTransfer><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+            <filter id="pvGlow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="10" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
           </defs>
 
-          {/* ── premium ground plate + plaza ── */}
-          <rect width="1040" height="660" fill="url(#pvGround)" />
-          <ellipse cx="520" cy="430" rx="560" ry="235" fill="url(#pvGrass)" />
-          <ellipse cx="520" cy="430" rx="560" ry="235" fill="none" stroke="rgba(255,255,255,.35)" strokeWidth="3" />
-          {/* gold cobble path (dispatch → fountain) */}
-          <path d="M520 452 C 470 520, 430 560, 400 622 L 640 622 C 610 560, 570 520, 520 452 Z" fill="#E9DFC2" opacity="0.8" />
-          <g opacity="0.7">
-            {[
-              [500, 520, 16, 7], [540, 520, 16, 7],
-              [486, 558, 18, 8], [554, 558, 18, 8],
-              [472, 596, 20, 8], [568, 596, 20, 8],
-            ].map(([cx, cy, rx, ry], i) => (
-              <ellipse key={i} cx={cx} cy={cy} rx={rx} ry={ry} fill="#D9CBA6" />
-            ))}
+          {/* ======== FLOATING ISLAND (premium diorama) ======== */}
+          <ellipse cx="540" cy="628" rx="420" ry="52" fill="rgba(70,40,110,.22)" filter="url(#pvGlow)" />
+          <path d="M170 440 Q 540 360 910 440 L 820 520 Q 620 585 540 592 Q 460 585 260 520 Z" fill="url(#pvIslSide)" />
+          <path d="M260 520 Q 460 585 540 592 Q 620 585 820 520 L 760 556 Q 600 604 540 610 Q 480 604 320 556 Z" fill="#5E4630" opacity=".55" />
+          <g opacity=".8"><path d="M300 596 l26 -14 l24 16 l-14 22 Z" fill="url(#pvIslSide)" /></g>
+          <g opacity=".8"><path d="M740 604 l22 -12 l20 14 l-12 18 Z" fill="url(#pvIslSide)" /></g>
+          <ellipse cx="540" cy="432" rx="372" ry="96" fill="url(#pvIslTop)" />
+          <ellipse cx="540" cy="432" rx="372" ry="96" fill="none" stroke="rgba(255,255,255,.4)" strokeWidth="3" />
+          <path d="M540 452 Q 512 512 500 560 L 580 560 Q 568 512 540 452 Z" fill="#E7DAB8" opacity=".8" />
+          <g fill="#D8C79A" opacity=".8"><ellipse cx="524" cy="500" rx="13" ry="5" /><ellipse cx="556" cy="500" rx="13" ry="5" /><ellipse cx="516" cy="528" rx="15" ry="6" /><ellipse cx="564" cy="528" rx="15" ry="6" /></g>
+
+          {/* ======== MEMORY LIBRARY (back-left, tall) — lit windows ∝ memory/cap ======== */}
+          <g filter="url(#pvSoft)" data-anim style={{ transformBox: "fill-box", transformOrigin: "bottom", animation: "pvBob 6.4s ease-in-out infinite" }}>
+            <path d="M232 258 l70 -34 l70 34 l0 150 l-70 20 l-70 -20 Z" fill="url(#pvWRight)" />
+            <path d="M232 258 l70 20 l0 150 l-70 -20 Z" fill="url(#pvWLeft)" />
+            <path d="M302 278 l70 -20 l0 150 l-70 20 Z" fill="url(#pvWRight)" opacity=".92" />
+            <path d="M232 258 l70 -34 l70 34 l-70 20 Z" fill="url(#pvWTop)" />
+            <path d="M232 258 l70 20 l0 46 l-70 -20 Z" fill="url(#pvGloss)" opacity=".5" />
+            <path d="M224 260 l78 -46 l78 46 l-78 22 Z" fill="url(#pvRoofTop)" />
+            <path d="M224 260 l78 22 l0 8 l-78 -22 Z" fill="url(#pvRoofLeft)" />
+            <rect x="296" y="196" width="12" height="20" rx="3" fill="url(#pvGold)" />
+            {/* glowing windows — the first `litWindows` are lit (real memory fraction) */}
+            <g filter="url(#pvGlow)">
+              {[
+                "M250 296 l16 5 l0 20 l-16 -5 Z",
+                "M272 302 l16 4 l0 20 l-16 -4 Z",
+                "M312 296 l16 -5 l0 20 l-16 5 Z",
+                "M334 290 l16 -5 l0 20 l-16 5 Z",
+                "M250 328 l16 5 l0 20 l-16 -5 Z",
+                "M312 328 l16 -5 l0 20 l-16 5 Z",
+              ].map((d, i) => (
+                <path key={i} d={d} fill={i < litWindows ? "url(#pvWin)" : "#C9B3E6"} />
+              ))}
+            </g>
+            <path d="M232 372 l70 20 l0 8 l-70 -20 Z" fill="url(#pvGold)" opacity=".9" />
           </g>
 
-          {/* ══ MEMORY LIBRARY (left, lilac) — lit windows ∝ memory/cap ══ */}
-          <g filter="url(#pvSoft)" data-anim style={{ transformBox: "fill-box", transformOrigin: "bottom", animation: "vBob 6s ease-in-out infinite" }}>
-            <path d="M150 250 h150 l34 -22 v168 l-34 22 h-150 Z" fill="#C9B7E0" />
-            <rect x="150" y="250" width="150" height="168" rx="10" fill="url(#pvWallLilac)" />
-            <rect x="150" y="250" width="150" height="60" rx="10" fill="url(#pvGloss)" opacity="0.5" />
-            <path d="M150 250 h150 l34 -22 h-150 Z" fill="#EBE0FA" />
-            <path d="M143 252 l82 -40 l82 40 Z" fill="url(#pvRoofV)" />
-            <rect x="205" y="200" width="14" height="20" rx="3" fill="url(#pvGold)" />
-            {/* book sign */}
-            <rect x="185" y="228" width="30" height="15" rx="3" fill={PAPER} stroke="#4A3A24" strokeWidth="1.6" />
-            <line x1="200" y1="228" x2="200" y2="243" stroke="#4A3A24" strokeWidth="1.4" />
-            {/* window shelf grid — lit count reflects real memory count/cap */}
-            {(() => {
-              const cols = 4, rows = 3, total = cols * rows;
-              const lit = Math.max(memRatio > 0 ? 1 : 0, Math.round(memRatio * total));
-              const out: React.ReactNode[] = [];
-              let n = 0;
-              for (let r = 0; r < rows; r++)
-                for (let c = 0; c < cols; c++) {
-                  const on = n < lit;
-                  const gx = 168 + c * 28;
-                  const gy = 282 + r * 30;
-                  out.push(
-                    <rect key={n} x={gx} y={gy} width="22" height="24" rx="4" fill={on ? "url(#pvWin)" : "#D8C6EE"} />,
-                  );
-                  n++;
-                }
-              return out;
-            })()}
-            <rect x="204" y="374" width="42" height="44" rx="7" fill="#8B6FBE" />
-            <rect x="150" y="410" width="150" height="8" rx="4" fill="url(#pvGold)" opacity="0.9" />
+          {/* ======== SKILLS FORGE (right, mint roof) — fire lit when a skill runs ======== */}
+          <g filter="url(#pvSoft)" data-anim style={{ transformBox: "fill-box", transformOrigin: "bottom", animation: "pvBob 7s ease-in-out .3s infinite" }}>
+            <path d="M690 322 l58 -28 l58 28 l0 108 l-58 18 l-58 -18 Z" fill="url(#pvWRight)" />
+            <path d="M690 322 l58 18 l0 108 l-58 -18 Z" fill="url(#pvWLeft)" />
+            <path d="M748 340 l58 -18 l0 108 l-58 18 Z" fill="url(#pvWRight)" opacity=".92" />
+            <path d="M690 322 l58 -28 l58 28 l-58 16 Z" fill="url(#pvWTop)" />
+            <path d="M682 324 l66 -34 l66 34 l-66 18 Z" fill="url(#pvTTop)" />
+            <path d="M682 324 l66 18 l0 8 l-66 -18 Z" fill="#178C74" />
+            <rect x="742" y="270" width="10" height="16" rx="3" fill="url(#pvGold)" />
+            <g filter="url(#pvGlow)">
+              <path d="M720 356 l40 12 l0 34 l-40 -12 Z" fill="url(#pvWin)" />
+              {forgeOn ? (
+                <g data-anim style={{ transformBox: "fill-box", transformOrigin: "742px 382px", animation: "pvFlame 1.5s ease-in-out infinite" }}>
+                  <circle cx="742" cy="382" r="11" fill="#E8853C" />
+                  <circle cx="742" cy="382" r="6" fill="#FFDD9E" />
+                </g>
+              ) : (
+                <circle cx="742" cy="382" r="9" fill="#C9A15E" opacity=".55" />
+              )}
+            </g>
+            <path d="M690 424 l58 18 l0 8 l-58 -18 Z" fill="url(#pvGold)" opacity=".9" />
           </g>
 
-          {/* ══ SKILLS FORGE (right, mint) — fire glows when a skill runs ══ */}
-          <g filter="url(#pvSoft)" data-anim style={{ transformBox: "fill-box", transformOrigin: "bottom", animation: "vBob 6.6s ease-in-out .4s infinite" }}>
-            <path d="M760 300 h120 l30 -20 v128 l-30 20 h-120 Z" fill="#B4D2AC" />
-            <rect x="760" y="300" width="120" height="128" rx="10" fill="url(#pvWallMint)" />
-            <rect x="760" y="300" width="120" height="46" rx="10" fill="url(#pvGloss)" opacity="0.5" />
-            <path d="M760 300 h120 l30 -20 h-120 Z" fill="#E6F4E2" />
-            <path d="M752 302 l68 -34 l68 34 Z" fill="url(#pvRoofT)" />
-            <rect x="812" y="258" width="12" height="18" rx="3" fill="url(#pvGold)" />
-            {/* forge window + fire */}
-            <rect x="784" y="336" width="72" height="46" rx="8" fill="url(#pvWin)" />
-            {forgeOn ? (
-              <g data-anim style={{ transformBox: "fill-box", transformOrigin: "820px 372px", animation: "vFlame 1.5s ease-in-out infinite" }}>
-                <circle cx="820" cy="359" r="14" fill="#E8853C" />
-                <circle cx="820" cy="359" r="7" fill="#FFDD9E" />
-              </g>
-            ) : (
-              <g opacity="0.5">
-                <circle cx="820" cy="359" r="12" fill="#C9A15E" />
-              </g>
-            )}
-            <rect x="760" y="420" width="120" height="8" rx="4" fill="url(#pvGold)" opacity="0.9" />
-          </g>
-
-          {/* ══ SOUL SHRINE (rose cottage) — gold heart lit when persona is set ══ */}
-          <g filter="url(#pvSoft)" data-anim style={{ transformBox: "fill-box", transformOrigin: "bottom", animation: "vBob 7.2s ease-in-out .2s infinite" }}>
-            <path d="M640 330 h96 l24 -16 v104 l-24 16 h-96 Z" fill="#E7C7B4" />
-            <rect x="640" y="330" width="96" height="104" rx="9" fill="url(#pvWallRose)" />
-            <rect x="640" y="330" width="96" height="38" rx="9" fill="url(#pvGloss)" opacity="0.5" />
-            <path d="M634 332 l54 -30 l54 30 Z" fill="url(#pvRoofV)" />
-            {/* heart emblem — gold + glow when the soul is set, muted otherwise */}
+          {/* ======== SOUL SHRINE (mid, rose) — gold flame emblem lit when persona is set ======== */}
+          <g filter="url(#pvSoft)" data-anim style={{ transformBox: "fill-box", transformOrigin: "bottom", animation: "pvBob 7.6s ease-in-out .15s infinite" }}>
+            <path d="M596 352 l46 -22 l46 22 l0 86 l-46 14 l-46 -14 Z" fill="url(#pvWRight)" />
+            <path d="M596 352 l46 14 l0 86 l-46 -14 Z" fill="url(#pvWLeft)" />
+            <path d="M642 366 l46 -14 l0 86 l-46 14 Z" fill="url(#pvWRight)" opacity=".92" />
+            <path d="M588 354 l54 -30 l54 30 l-54 16 Z" fill="url(#pvRoofTop)" />
+            <path d="M588 354 l54 16 l0 8 l-54 -16 Z" fill="url(#pvRoofLeft)" />
             {soulSet ? (
-              <>
-                <circle data-anim cx="688" cy="378" r="20" fill="url(#pvOrbGlow)" style={{ transformBox: "fill-box", transformOrigin: "688px 378px", animation: "vPulse 4s ease-in-out infinite" }} />
-                <path d="M688,388 c -6,-9 -19,-3 -12,7 l 12,11 l 12,-11 c 7,-10 -6,-16 -12,-7 Z" fill="url(#pvGold)" stroke="#8A5A1E" strokeWidth="1.4" />
-              </>
+              <path d="M632 372 h20 v16 l-10 8 l-10 -8 Z" fill="url(#pvGold)" filter="url(#pvGlow)" />
             ) : (
-              <path d="M676 380 h24" stroke={MUTED} strokeWidth="3" strokeLinecap="round" />
+              <path d="M634 384 h16" stroke={MUTED} strokeWidth="3" strokeLinecap="round" />
             )}
-            <rect x="672" y="400" width="32" height="34" rx="6" fill="#C79A82" />
-            <rect x="640" y="426" width="96" height="7" rx="3.5" fill="url(#pvGold)" opacity="0.9" />
+            <path d="M596 430 l46 14 l0 8 l-46 -14 Z" fill="url(#pvGold)" opacity=".9" />
           </g>
 
-          {/* ══ CLOCK SPIRE (far right) — hands at real local time ══ */}
-          <g filter="url(#pvSoft)" data-anim style={{ transformBox: "fill-box", transformOrigin: "bottom", animation: "vBob 8s ease-in-out infinite" }}>
-            <rect x="930" y="250" width="72" height="200" rx="12" fill="url(#pvWallSky)" />
-            <rect x="930" y="250" width="72" height="60" rx="12" fill="url(#pvGloss)" opacity="0.5" />
-            <path d="M922 252 l44 -40 l44 40 Z" fill="url(#pvRoofV)" />
-            <circle cx="966" cy="204" r="7" fill="url(#pvGold)" />
-            <circle cx="966" cy="300" r="30" fill="#FBF4E4" stroke="url(#pvGold)" strokeWidth="4" />
-            {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((a) => {
-              const rad = (a - 90) * (Math.PI / 180);
-              return <line key={a} x1={966 + Math.cos(rad) * 24} y1={300 + Math.sin(rad) * 24} x2={966 + Math.cos(rad) * 27} y2={300 + Math.sin(rad) * 27} stroke="#B39B6C" strokeWidth="1.4" />;
-            })}
-            {/* hour + minute hands (real local time) */}
-            <line x1="966" y1="300" x2="966" y2="282" stroke="#4A3A24" strokeWidth="3.4" strokeLinecap="round" transform={`rotate(${hrDeg} 966 300)`} />
-            <line x1="966" y1="300" x2="966" y2="276" stroke="#8A5A1E" strokeWidth="2.6" strokeLinecap="round" transform={`rotate(${minDeg} 966 300)`} />
-            {/* ticking second hand (SMIL, gated by reduced-motion) */}
-            <line x1="966" y1="308" x2="966" y2="273" stroke={PURPLE} strokeWidth="1.4" strokeLinecap="round">
-              {!reduce && <animateTransform attributeName="transform" type="rotate" from="0 966 300" to="360 966 300" dur="60s" repeatCount="indefinite" />}
+          {/* ======== CLOCK SPIRE (far right, sky) — hands at real local time ======== */}
+          <g filter="url(#pvSoft)" data-anim style={{ transformBox: "fill-box", transformOrigin: "bottom", animation: "pvBob 8.4s ease-in-out infinite" }}>
+            <path d="M838 270 l34 -16 l34 16 l0 160 l-34 12 l-34 -12 Z" fill="#CFE0EF" />
+            <path d="M838 270 l34 12 l0 160 l-34 -12 Z" fill="#B4CAE0" />
+            <path d="M872 282 l34 -12 l0 160 l-34 12 Z" fill="#A9C0D8" />
+            <path d="M832 272 l40 -22 l40 22 l-40 14 Z" fill="url(#pvRoofTop)" />
+            <circle cx="872" cy="228" r="6" fill="url(#pvGold)" />
+            <circle cx="872" cy="322" r="26" fill="#FBF4E4" stroke="url(#pvGold)" strokeWidth="4" />
+            <line x1="872" y1="322" x2="872" y2="307" stroke="#4A3A24" strokeWidth="3.2" strokeLinecap="round" transform={`rotate(${hrDeg} 872 322)`} />
+            <line x1="872" y1="322" x2="872" y2="300" stroke="#8A5A1E" strokeWidth="2.8" strokeLinecap="round" transform={`rotate(${minDeg} 872 322)`} />
+            <line x1="872" y1="326" x2="872" y2="298" stroke={PURPLE} strokeWidth="1.4" strokeLinecap="round">
+              {!reduce && <animateTransform attributeName="transform" type="rotate" from="0 872 322" to="360 872 322" dur="60s" repeatCount="indefinite" />}
             </line>
-            <circle cx="966" cy="300" r="3" fill="#4A3A24" />
-            <rect x="948" y="360" width="36" height="46" rx="7" fill="#B9CFE4" />
+            <circle cx="872" cy="322" r="3" fill="#4A3A24" />
           </g>
 
-          {/* ══ SOUL FOUNTAIN (center focal orb) — ripples when busy ══ */}
-          <ellipse cx="520" cy="470" rx="118" ry="46" fill="#CBE7DE" />
-          <ellipse cx="520" cy="470" rx="118" ry="46" fill="none" stroke="url(#pvGold)" strokeWidth="5" />
-          <ellipse cx="520" cy="466" rx="96" ry="36" fill="#1C9E82" opacity="0.55" />
+          {/* ======== SOUL FOUNTAIN (focal glowing orb + halo) — ripples when busy ======== */}
+          <g data-anim style={{ transformBox: "fill-box", transformOrigin: "540px 470px" }}>
+            <circle cx="540" cy="452" r="92" fill="url(#pvOrbHalo)" data-anim style={{ animation: "pvPulse 4s ease-in-out infinite" }} />
+          </g>
+          <ellipse cx="540" cy="486" rx="86" ry="30" fill="#BFE6DA" />
+          <ellipse cx="540" cy="486" rx="86" ry="30" fill="none" stroke="url(#pvGold)" strokeWidth="4" />
+          <ellipse cx="540" cy="482" rx="70" ry="22" fill="#28B39A" opacity=".5" />
           {busy && !reduce && (
-            <ellipse data-anim cx="520" cy="468" rx="70" ry="27" fill="none" stroke="rgba(129,104,206,.6)" strokeWidth="3" style={{ transformBox: "fill-box", transformOrigin: "520px 468px", animation: "vRing 2.4s ease-out infinite" }} />
+            <ellipse data-anim cx="540" cy="484" rx="60" ry="20" fill="none" stroke="rgba(138,114,218,.6)" strokeWidth="3" style={{ transformBox: "fill-box", transformOrigin: "540px 484px", animation: "pvRing 2.4s ease-out infinite" }} />
           )}
-          <circle cx="520" cy="432" r="82" fill="url(#pvOrbGlow)" data-anim style={{ transformBox: "fill-box", transformOrigin: "520px 432px", animation: "vPulse 4s ease-in-out infinite" }} />
-          <circle cx="520" cy="436" r="48" fill="url(#pvOrb)" />
-          <ellipse cx="504" cy="420" rx="18" ry="12" fill="rgba(255,255,255,.7)" />
-          <text x="520" y="447" textAnchor="middle" fontSize="30" fontFamily="ui-monospace,monospace" fill="#6B4A16" fontWeight="700">✦</text>
+          <circle cx="540" cy="454" r="42" fill="url(#pvOrbG)" filter="url(#pvGlow)" />
+          <ellipse cx="526" cy="440" rx="15" ry="10" fill="rgba(255,255,255,.75)" />
+          <text x="540" y="463" textAnchor="middle" fontSize="26" fill="#6B4A16" fontWeight="700">★</text>
 
-          {/* ══ CHIBI PET VILLAGERS = the real roster ══ */}
-          {villagers.map((r, i) => {
+          {/* ======== CHIBI PET VILLAGERS = the real roster ======== */}
+          {ordered.map((r, i) => {
             const spot = SPOTS[i];
-            const active = r.status === "active" || (busy && !anyActive && i === 0);
+            const active = r.status === "active" || (busyFallback && i === 0);
             return (
               <Chibi
                 key={r.id}
-                x={spot.x}
-                y={spot.y}
+                cx={spot.cx}
+                cy={spot.cy}
                 scale={spot.s}
                 ear={spot.ear}
-                body={BODIES[i % BODIES.length]}
+                pal={PAL[i % PAL.length]}
                 active={active}
                 delay={`${-(i * 0.5).toFixed(1)}s`}
               />
             );
           })}
 
-          {/* foliage for depth */}
-          <g filter="url(#pvSoft)"><ellipse cx="110" cy="470" rx="30" ry="34" fill="#8FB877" /><ellipse cx="126" cy="452" rx="20" ry="22" fill="#A6CC8A" /><rect x="104" y="486" width="10" height="18" fill="#8A6A46" /></g>
-          <g filter="url(#pvSoft)"><ellipse cx="940" cy="486" rx="26" ry="30" fill="#8FB877" /><rect x="935" y="500" width="9" height="16" fill="#8A6A46" /></g>
+          {/* foreground foliage */}
+          <g filter="url(#pvSoft)"><ellipse cx="196" cy="470" rx="30" ry="34" fill="#7FAE66" /><ellipse cx="212" cy="452" rx="20" ry="22" fill="#9AC57E" /><rect x="190" y="486" width="10" height="18" rx="3" fill="#7E5E3E" /></g>
+          <g filter="url(#pvSoft)"><ellipse cx="900" cy="484" rx="26" ry="30" fill="#7FAE66" /><rect x="895" y="498" width="9" height="16" rx="3" fill="#7E5E3E" /></g>
 
-          {/* ══ DISPATCH COURIER — a spark runs to the fountain while a run streams ══ */}
+          {/* ======== DISPATCH COURIER — a gold spark runs to the fountain while a run streams ======== */}
           {running && !reduce && (
             <g>
               <circle r="8" fill="url(#pvGold)" stroke="#8A5A1E" strokeWidth="1.4">
-                <animateMotion path="M520,648 C 500,590 545,530 520,452" dur="1.5s" repeatCount="indefinite" />
+                <animateMotion path={courierPath} dur="1.5s" repeatCount="indefinite" />
               </circle>
               <circle r="4" fill={TERRA2} opacity="0.7">
-                <animateMotion path="M520,648 C 500,590 545,530 520,452" dur="1.5s" begin="-0.28s" repeatCount="indefinite" />
+                <animateMotion path={courierPath} dur="1.5s" begin="-0.28s" repeatCount="indefinite" />
               </circle>
             </g>
           )}
         </svg>
-
-        {/* faint perspective grid + holographic sheen, over the scene */}
-        <div className="pv-grid" data-anim aria-hidden />
-        <div className="pv-sheen" data-anim aria-hidden />
 
         {/* floating gold dust */}
         <div style={{ position: "absolute", inset: 0, zIndex: 4, pointerEvents: "none", overflow: "hidden" }} aria-hidden>
@@ -372,31 +366,12 @@ export default function PetVillage({
           ))}
         </div>
 
-        {/* head overlay — title + glass stat chips */}
-        <div style={headRow}>
-          <div style={{ minWidth: 0 }}>
-            <div style={titleStyle}>
-              <span style={{ color: INK }}>{petName}&rsquo;s </span>
-              <span style={titleGrad}>Town</span>
-            </div>
-            <div style={subStyle}>
-              {busy ? "the square is busy — a goal is being worked." : "your agent's little world — dispatch a goal below."}
-            </div>
-          </div>
-          <div style={chipBar}>
-            <Chip k="Memory" v={`${pillars.memory.count}`} small={`/${pillars.memory.cap}`} />
-            <Chip k="Skills" v={`${pillars.skills.total}`} small={` · ${pillars.skills.installed} on`} />
-            <Chip k="Routines" v={`${pillars.crons.routines}`} />
-            <Chip k="Soul" v={soulSet ? `v${pillars.soul.checkpoints} ✦` : "—"} />
-          </div>
-        </div>
-
         {/* foot caption */}
         <div style={footStyle}>
           {busy ? (
             <>the village is <b style={{ color: "#5B429E" }}>alive</b> — a courier is running to the fountain</>
           ) : (
-            <>dispatch a goal &amp; watch a courier run to the <b style={{ color: "#5B429E" }}>Soul Fountain</b></>
+            <>the village is <b style={{ color: "#5B429E" }}>alive</b> — dispatch a goal &amp; watch a courier run to the fountain</>
           )}
         </div>
       </div>
@@ -470,52 +445,55 @@ export default function PetVillage({
   );
 }
 
-// ── a cute chibi pet villager (ears / big eyes / blush) ──
-function Chibi({ x, y, scale, ear, body, active, delay }: { x: number; y: number; scale: number; ear: "cat" | "round"; body: string; active: boolean; delay: string }) {
-  const eye = "#3A2A18";
+// ── a cute chibi pet villager (prototype's shapes/gradients; active one lifts + emits wisps) ──
+function Chibi({ cx, cy, scale, ear, pal, active, delay }: { cx: number; cy: number; scale: number; ear: "cat" | "round"; pal: Pal; active: boolean; delay: string }) {
+  const anim = active ? "pvBobw 1.7s" : "pvBob 3.4s";
   return (
-    <g transform={`translate(${x},${y}) scale(${scale})`}>
-      <ellipse cx="0" cy={active ? 30 : 26} rx="26" ry="8" fill="rgba(36,27,18,.17)" />
-      <g data-anim style={{ transformBox: "fill-box", transformOrigin: "bottom", animation: `${active ? "vWork 1.6s" : "vBob 3.4s"} ease-in-out infinite`, animationDelay: delay }}>
-        {/* wisps rise off the active villager */}
-        {active && (
-          <g data-anim style={{ transformBox: "fill-box", transformOrigin: "center", animation: "vRise 2.2s ease-out infinite", animationDelay: delay }}>
-            <circle cx="0" cy="-36" r="4" fill="url(#pvGold)" />
-            <circle cx="11" cy="-46" r="3" fill="url(#pvGold)" opacity="0.8" />
-            <circle cx="-9" cy="-50" r="2.4" fill="url(#pvGold)" opacity="0.6" />
-          </g>
-        )}
+    <g transform={`translate(${cx} ${cy}) scale(${scale})`}>
+      <ellipse cx="0" cy="30" rx="30" ry="9" fill="rgba(36,26,18,.18)" />
+      <g data-anim style={{ transformBox: "fill-box", transformOrigin: "bottom", animation: `${anim} ease-in-out infinite`, animationDelay: delay }}>
         {/* ears */}
         {ear === "cat" ? (
           <>
-            <path d="M-17,-18 l-5,-16 l16,8 Z" fill={body} />
-            <path d="M17,-18 l5,-16 l-16,8 Z" fill={body} />
+            <path d="M-22 -4 l-8 -20 l20 10 Z" fill={pal.ear} />
+            <path d="M22 -4 l8 -20 l-20 10 Z" fill={pal.ear} />
           </>
         ) : (
           <>
-            <ellipse cx="-13" cy="-22" rx="7" ry="10" fill={body} />
-            <ellipse cx="13" cy="-22" rx="7" ry="10" fill={body} />
+            <ellipse cx="-14" cy="-2" rx="9" ry="14" fill={pal.ear} />
+            <ellipse cx="14" cy="-2" rx="9" ry="14" fill={pal.ear} />
           </>
         )}
-        {/* body/head */}
-        <ellipse cx="0" cy="0" rx="24" ry="26" fill={body} />
-        {/* eyes + blush + smile */}
-        <circle cx="-8" cy="-2" r="3.4" fill={eye} />
-        <circle cx="8" cy="-2" r="3.4" fill={eye} />
-        <circle cx="-14" cy="5" r="4" fill="#F3A9A0" opacity="0.7" />
-        <circle cx="14" cy="5" r="4" fill="#F3A9A0" opacity="0.7" />
-        <path d="M-4,4 q4,4 8,0" stroke={eye} strokeWidth="2" fill="none" strokeLinecap="round" />
+        {/* head/face */}
+        <ellipse cx="0" cy="0" rx="30" ry="32" fill={pal.head} />
+        <ellipse cx="0" cy="-6" rx="26" ry="26" fill={pal.face} />
+        {/* eyes + highlights + blush + smile */}
+        <ellipse cx="-11" cy="-4" rx="4.6" ry="5.4" fill={pal.eye} />
+        <ellipse cx="11" cy="-4" rx="4.6" ry="5.4" fill={pal.eye} />
+        <circle cx="-12.5" cy="-5.5" r="1.6" fill="#fff" />
+        <circle cx="9.5" cy="-5.5" r="1.6" fill="#fff" />
+        <circle cx="-19" cy="6" r="5" fill="#F3A9A0" opacity=".75" />
+        <circle cx="19" cy="6" r="5" fill="#F3A9A0" opacity=".75" />
+        <path d="M-5 6 q5 5 10 0" stroke={pal.eye} strokeWidth="2.2" fill="none" strokeLinecap="round" />
+        {/* gold wisps rise off the active villager */}
+        {active && (
+          <g data-anim style={{ transformBox: "fill-box", transformOrigin: "center", animation: "pvWisp 2.1s ease-out infinite", animationDelay: delay }}>
+            <path d="M0 -38 l3 -6 l3 6 l6 3 l-6 3 l-3 6 l-3 -6 l-6 -3 Z" fill="url(#pvGold)" />
+            <circle cx="14" cy="-52" r="3" fill="url(#pvGold)" opacity=".8" />
+            <circle cx="-10" cy="-56" r="2.4" fill="url(#pvGold)" opacity=".6" />
+          </g>
+        )}
       </g>
     </g>
   );
 }
 
 // ── a glass stat chip (backdrop-blur) ──
-function Chip({ k, v, small }: { k: string; v: string; small?: string }) {
+function Chip({ k, v, small, gold }: { k: string; v: string; small?: string; gold?: boolean }) {
   return (
     <div style={chipStyle}>
-      <span style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: "0.14em", color: MUTED, textTransform: "uppercase" }}>{k}</span>
-      <span style={{ fontFamily: DISP, fontWeight: 800, fontSize: 15, letterSpacing: "-0.01em", color: INK }}>
+      <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.16em", color: MUTED, textTransform: "uppercase" }}>{k}</span>
+      <span style={gold ? { ...chipVal, ...chipGold } : chipVal}>
         {v}{small && <small style={{ fontWeight: 600, fontSize: 11, color: MUTED }}>{small}</small>}
       </span>
     </div>
@@ -637,27 +615,31 @@ function SectionHead({ mono, title }: { mono: string; title: string }) {
 
 // ── styles ──
 const card: React.CSSProperties = { background: PAPER, borderRadius: 16, padding: 20, border: `1px solid ${HAIR}`, boxShadow: SHADOW_CARD };
-const sceneCard: React.CSSProperties = {
+const frame: React.CSSProperties = {
   position: "relative",
   width: "100%",
-  aspectRatio: "1040 / 660",
-  borderRadius: 24,
+  aspectRatio: "1080 / 680",
+  borderRadius: 32,
   overflow: "hidden",
-  background: "linear-gradient(180deg,#FCFAF4 0%,#F3EEF7 62%,#ECE6F4 100%)",
-  border: `1px solid ${HAIR}`,
-  boxShadow: "0 40px 90px -50px rgba(60,40,90,.55), inset 0 1px 0 rgba(255,255,255,.7)",
+  background:
+    "radial-gradient(90% 70% at 22% 8%, #FFF6E4 0%, rgba(255,246,228,0) 46%)," +
+    "radial-gradient(80% 80% at 88% 20%, #F3E1F0 0%, rgba(243,225,240,0) 55%)," +
+    "linear-gradient(170deg,#FDF6EA 0%,#F6E7EF 40%,#ECE0F4 74%,#E4DAF2 100%)",
+  boxShadow: "0 50px 110px -50px rgba(60,40,110,.65), inset 0 1px 0 rgba(255,255,255,.6), 0 0 0 1px " + HAIR,
 };
-const headRow: React.CSSProperties = { position: "absolute", top: 20, left: 24, right: 24, zIndex: 6, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" };
-const titleStyle: React.CSSProperties = { fontFamily: DISP, fontWeight: 800, fontSize: "clamp(18px,2.4vw,23px)", letterSpacing: "-0.02em", lineHeight: 1.1 };
-const titleGrad: React.CSSProperties = { background: "linear-gradient(100deg,#8168CE,#20A386 60%,#C8932F)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" };
-const subStyle: React.CSSProperties = { marginTop: 3, fontFamily: SANS, fontSize: 12.5, color: MUTED, fontWeight: 500, maxWidth: 320 };
-const chipBar: React.CSSProperties = { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" };
+const headRow: React.CSSProperties = { position: "absolute", top: 26, left: 30, right: 30, zIndex: 8, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" };
+const titleStyle: React.CSSProperties = { fontFamily: DISP, fontWeight: 700, fontSize: "clamp(18px,2.3vw,23px)", letterSpacing: "-0.02em", lineHeight: 1.1, color: INK, textShadow: "0 1px 0 rgba(255,255,255,.5)" };
+const titleGrad: React.CSSProperties = { background: "linear-gradient(100deg,#8A72DA,#28B39A 55%,#C8932F)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" };
+const subStyle: React.CSSProperties = { marginTop: 4, fontFamily: SANS, fontSize: 12.5, color: MUTED, fontWeight: 500, maxWidth: 340 };
+const chipBar: React.CSSProperties = { display: "flex", gap: 9, flexWrap: "wrap", justifyContent: "flex-end" };
 const chipStyle: React.CSSProperties = {
-  display: "flex", flexDirection: "column", gap: 1, padding: "7px 11px", borderRadius: 14,
-  background: "rgba(255,255,255,.6)", backdropFilter: "blur(9px)", WebkitBackdropFilter: "blur(9px)",
-  border: "1px solid rgba(255,255,255,.7)", boxShadow: "0 8px 20px -12px rgba(60,40,90,.5), inset 0 1px 0 rgba(255,255,255,.8)",
+  display: "flex", flexDirection: "column", gap: 1, padding: "9px 13px", borderRadius: 15, textAlign: "center",
+  background: "rgba(255,255,255,.58)", backdropFilter: "blur(11px) saturate(1.2)", WebkitBackdropFilter: "blur(11px) saturate(1.2)",
+  border: "1px solid rgba(255,255,255,.75)", boxShadow: "0 10px 24px -14px rgba(70,40,110,.55), inset 0 1px 0 rgba(255,255,255,.9)",
 };
-const footStyle: React.CSSProperties = { position: "absolute", left: 24, bottom: 16, zIndex: 6, fontFamily: MONO, fontSize: 11, letterSpacing: "0.03em", color: MUTED };
+const chipVal: React.CSSProperties = { fontFamily: DISP, fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em", color: INK, marginTop: 1 };
+const chipGold: React.CSSProperties = { background: "linear-gradient(#EAC978,#C8932F)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" };
+const footStyle: React.CSSProperties = { position: "absolute", left: 30, bottom: 22, zIndex: 8, fontFamily: MONO, fontSize: 11.5, letterSpacing: "0.03em", color: MUTED };
 const legendRow: React.CSSProperties = { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 };
 const squareGrid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 };
 const villagerGrid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 12 };
