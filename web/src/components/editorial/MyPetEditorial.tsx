@@ -22,6 +22,7 @@ import useCountUp from "@/hooks/useCountUp";
 import { CODEX_VARIANTS } from "@/lib/codex";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
+const PetPond = lazy(() => import("@/components/PetPond"));
 
 type Pet = {
   id: number; name: string; level: number; element?: string; species?: number;
@@ -712,6 +713,28 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               <p style={{ fontSize: 13, color: "rgba(251,246,236,.8)", margin: "7px 0 12px", lineHeight: 1.5 }}>Find real animals out there and turn them into collectibles for {active.name}&apos;s field album.</p>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "rgba(26,126,104,.25)", color: T.creamOn, fontFamily: T.disp, fontWeight: 700, fontSize: 13.5, borderRadius: 11, padding: "9px 15px" }}>Go catching →</span>
             </button>
+            </Reveal>
+
+            {/* pet's pond — an AMBIENT lo-fi koi scene on pure canvas (zero
+                server/generation cost). Everything is driven by the real pet:
+                koi count scales with level, tempo with happiness, water tint
+                with element, palette with the client's time of day, the lily
+                pad carries the initial. A "just watch your pet" surface. */}
+            <Reveal dir="right" delay={315}>
+            <div style={{ background: T.paper, borderRadius: 22, padding: "18px 18px 20px", boxShadow: "var(--ed-shadow-card)" }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+                <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>{active.name}&apos;s Pond</div>
+                <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: T.muted }}>LO-FI · LIVE</div>
+              </div>
+              <div style={{ marginTop: 14 }}>
+                <Suspense fallback={<div style={{ width: "100%", maxWidth: 340, aspectRatio: "1 / 1", margin: "0 auto", borderRadius: "50%", background: "rgba(26,126,104,.14)" }} />}>
+                  <PetPond mood={happy} level={active.level} element={active.element} name={active.name} />
+                </Suspense>
+              </div>
+              <div style={{ marginTop: 13, textAlign: "center", fontFamily: T.m, fontSize: 12.5, color: T.muted, letterSpacing: ".04em" }}>
+                tap to feed · {active.name}&apos;s koi gather where you touch
+              </div>
+            </div>
             </Reveal>
           </div>
         </div>
