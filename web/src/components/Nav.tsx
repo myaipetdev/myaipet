@@ -86,14 +86,15 @@ export default function Nav({ section, setSection, credits }: any) {
         @media (max-width: 1024px) {
           .nav-landing-btn { display: none !important; }
         }
-        @media (max-width: 1180px) {
+        @media (max-width: 1360px) {
           .nav-items-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; justify-content: flex-start !important; mask-image: linear-gradient(to right, black 88%, transparent); -webkit-mask-image: linear-gradient(to right, black 88%, transparent); }
           .nav-items-wrap::-webkit-scrollbar { display: none; }
         }
-        /* Hide the COMPANION PROTOCOL badge BEFORE the item strip starts to
-           scroll (1180px) — otherwise the badge + cramped items overlap in the
-           1060–1180 window (the "COMPANION PROTOHome" collision). */
-        @media (max-width: 1240px) {
+        /* Hide the COMPANION PROTOCOL badge WELL BEFORE the item strip runs out
+           of room. The nav grew (Bracket, Agent Office, Season Rewards), so the
+           decorative badge must clear out by ~1520px or it collides with the
+           first item (the "COMPANION PROTOHome" overlap). */
+        @media (max-width: 1520px) {
           .nav-desktop-badge { display: none !important; }
         }
         @media (max-width: 768px) {
