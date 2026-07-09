@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
+import PetSquare from "@/components/PetSquare";
 
 // ── Collectible Editorial tokens ──
 const T = {
@@ -978,6 +979,9 @@ export default function SocialGallery() {
   // ALBUM = 3D sleeve carousel (browse one at a time), LIBRARY = dense
   // archive wall (survey everything, click to zoom). Owner-picked pair.
   const [view, setView] = useState<"album" | "library">("album");
+  // Top-level Community surface: FEED = the creations gallery (below), SQUARE =
+  // the walkable Pet Square neighborhood (real community pets as characters).
+  const [mode, setMode] = useState<"feed" | "square">("feed");
 
   useEffect(() => {
     const update = () => {
@@ -1160,18 +1164,40 @@ export default function SocialGallery() {
               fontFamily: T.disp, fontSize: 46, fontWeight: 800,
               color: T.ink, margin: 0, letterSpacing: "-0.035em", lineHeight: 0.95,
             }}>
-              The remix wall
+              {mode === "square" ? "The pet square" : "The remix wall"}
             </h2>
-            <span style={{
-              fontFamily: T.m, fontSize: 13, color: T.mono, fontWeight: 700, letterSpacing: "0.08em",
-            }}>
-              {filteredItems.length} works
-            </span>
+            {mode === "feed" && (
+              <span style={{
+                fontFamily: T.m, fontSize: 13, color: T.mono, fontWeight: 700, letterSpacing: "0.08em",
+              }}>
+                {filteredItems.length} works
+              </span>
+            )}
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            {/* Surface toggle — the creations Feed vs the walkable Pet Square */}
+            <div style={{ display: "flex", gap: 4, marginRight: 4, padding: 3, borderRadius: 999, background: T.inset, border: `1px solid ${T.hair}` }}>
+              {([["feed", "Feed"], ["square", "Square"]] as const).map(([key, label]) => {
+                const on = mode === key;
+                return (
+                  <button key={key} onClick={() => setMode(key)} style={{
+                    background: on ? T.terra : "transparent",
+                    border: "none", borderRadius: 999, padding: "6px 16px",
+                    fontFamily: T.m, fontSize: 13, cursor: "pointer",
+                    letterSpacing: "0.1em", textTransform: "uppercase",
+                    color: on ? T.creamOn : T.muted,
+                    transition: "all 0.2s", fontWeight: 700,
+                    boxShadow: on ? "var(--ed-shadow-card)" : "none",
+                  }}>
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
             {/* View toggle — Album carousel vs Library wall */}
-            <div style={{ display: "flex", gap: 4, marginRight: 4 }}>
+            {mode === "feed" && <div style={{ display: "flex", gap: 4, marginRight: 4 }}>
               {([["album", "Album"], ["library", "Library"]] as const).map(([key, label]) => {
                 const on = view === key;
                 return (
@@ -1189,10 +1215,10 @@ export default function SocialGallery() {
                   </button>
                 );
               })}
-            </div>
+            </div>}
 
-            {/* Type filters — inline with search */}
-            <div style={{ display: "flex", gap: 4 }}>
+            {/* Type filters — inline with search (feed only) */}
+            {mode === "feed" && <div style={{ display: "flex", gap: 4 }}>
               {[
                 { key: "all", label: "All", color: T.terra },
                 { key: "image", label: "Images", color: T.rareRare },
@@ -1214,10 +1240,10 @@ export default function SocialGallery() {
                   </button>
                 );
               })}
-            </div>
+            </div>}
 
-            {/* Search */}
-            <div style={{ position: "relative" }}>
+            {/* Search (feed only) */}
+            {mode === "feed" && <div style={{ position: "relative" }}>
               <span style={{
                 position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
                 fontSize: 13, color: T.mono, pointerEvents: "none",
@@ -1241,7 +1267,7 @@ export default function SocialGallery() {
                   outline: "none", boxSizing: "border-box",
                 }}
               />
-            </div>
+            </div>}
 
             {/* Create yours — primary CTA lives in the masthead (was a floating
                 fixed FAB bottom-right, which read as detached from the page). */}
@@ -1260,8 +1286,8 @@ export default function SocialGallery() {
           </div>
         </div>
 
-        {/* Sort tabs — ink underline on active */}
-        <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${T.hair}` }}>
+        {/* Sort tabs — ink underline on active (feed only) */}
+        {mode === "feed" && <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${T.hair}` }}>
           {TABS.map(t => (
             <button className="sort-tab" key={t.key} onClick={() => setSort(t.key)} style={{
               background: "transparent", border: "none", padding: "8px 16px",
@@ -1276,11 +1302,14 @@ export default function SocialGallery() {
               {t.label}
             </button>
           ))}
-        </div>
+        </div>}
       </div>
 
-      {/* Grid */}
-      {loading ? (
+      {/* ── SQUARE: the walkable Pet Square neighborhood ── */}
+      {mode === "square" ? (
+        <PetSquare />
+      ) : /* Grid */
+      loading ? (
         <div style={{ display: "flex", gap: 4 }}>
           {Array.from({ length: columnCount }, (_, ci) => (
             <div key={ci} style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
@@ -1370,7 +1399,7 @@ export default function SocialGallery() {
         </Reveal>
       )}
 
-      {!loading && hasMore && (filteredItems.length > 0 || search) && (
+      {mode === "feed" && !loading && hasMore && (filteredItems.length > 0 || search) && (
         <div style={{ display: "flex", justifyContent: "center", padding: "32px 0 48px" }}>
           <button
             onClick={loadMore}

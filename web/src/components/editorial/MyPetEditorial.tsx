@@ -23,6 +23,8 @@ import { CODEX_VARIANTS } from "@/lib/codex";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
 const PetPond = lazy(() => import("@/components/PetPond"));
+const DailyPetCard = lazy(() => import("@/components/DailyPetCard"));
+const FocusSession = lazy(() => import("@/components/FocusSession"));
 
 type Pet = {
   id: number; name: string; level: number; element?: string; species?: number;
@@ -735,6 +737,20 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                 tap to feed · {active.name}&apos;s koi gather where you touch
               </div>
             </div>
+            </Reveal>
+
+            {/* Daily dispatch — the pet's latest REAL daydream insight, shareable */}
+            <Reveal dir="right" delay={360}>
+              <Suspense fallback={null}>
+                <DailyPetCard petId={active.id} petName={active.name} />
+              </Suspense>
+            </Reveal>
+
+            {/* Focus with your pet — a calm pomodoro; minutes count toward playtime */}
+            <Reveal dir="right" delay={405}>
+              <Suspense fallback={null}>
+                <FocusSession />
+              </Suspense>
             </Reveal>
           </div>
         </div>

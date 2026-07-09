@@ -289,6 +289,8 @@ export const api = {
     chatHistory: (petId: number) => request(`/api/pets/${petId}/chat`),
     // Proactive recall: the pet reaches out first when you return (real memory callback).
     greeting: (petId: number) => request(`/api/pets/${petId}/greeting`),
+    // Recent surfaced daydream insights (grounded in real memories, never fabricated).
+    daydream: (petId: number) => request(`/api/pets/${petId}/daydream`),
     runAgent: (petId: number, goal: string, maxSteps?: number) =>
       request(`/api/pets/${petId}/agent`, {
         method: "POST",
