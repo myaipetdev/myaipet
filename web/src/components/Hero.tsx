@@ -523,38 +523,8 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
           }}
         />
 
-        {/* Lead Investor */}
-        <Reveal dir="fade">
-        <div style={{
-          fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "#9A4E1E",
-          textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12,
-          textAlign: "center", marginTop: 28,
-        }}>
-          Lead Investors
-        </div>
-        </Reveal>
-        <div style={{
-          display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12,
-          marginBottom: 28, maxWidth: 500, marginLeft: "auto", marginRight: "auto",
-        }}>
-          {[
-            { name: "Amber", logo: "/partners/amber.png" },
-            { name: "WAGMI Ventures", logo: "/partners/wagmi.png" },
-          ].map((p, i) => (
-            <Reveal key={p.name} dir="up" delay={Math.min(i, 8) * 90}>
-            <div className="hero-invest-card" style={{
-              background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-              borderRadius: 14, padding: "16px 20px", height: "100%",
-              display: "flex", alignItems: "center", gap: 12,
-            }}>
-              <img src={p.logo} alt={p.name} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: 32, height: 32, borderRadius: 8, objectFit: "contain" }} />
-              <span style={{ fontFamily: "var(--ed-disp)", fontSize: 15, fontWeight: 700, color: "#211A12" }}>
-                {p.name}
-              </span>
-            </div>
-            </Reveal>
-          ))}
-        </div>
+        {/* Lead-investor callout removed (founder decision) — no featured "lead"
+            claim. Backers marquee below only. */}
         {/* Backers rotate — two counter-flowing marquee rows (speed mismatch = depth).
             Each row's item list is duplicated exactly x2 (aria-hidden dupe half) so
             translateX(-50%) loops seamlessly; hover pauses via .ed-ticker-wrap. */}
