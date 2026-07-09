@@ -115,7 +115,7 @@
   /* UTIL */
   .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
   .eyebrow {
-    font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase;
     color: var(--gold-deep); display: inline-flex; align-items: center; gap: 8px;
   }
   .eyebrow::before { content: ""; width: 18px; height: 1px; background: currentColor; }
@@ -209,7 +209,7 @@
     padding: 6px 14px; border-radius: 999px;
     background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);
     backdrop-filter: blur(10px);
-    font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase;
     color: #fbe3b8;
   }
   .hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: #e8c77e; box-shadow: 0 0 10px #e8c77e; }
@@ -267,7 +267,7 @@
     position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%);
     display: flex; flex-direction: column; align-items: center; gap: 8px;
     color: rgba(255,248,230,0.7);
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase;
     z-index: 3;
   }
   .scroll-ind .arrow {
@@ -318,7 +318,7 @@
   .diff-card p { font-size: 15px; line-height: 1.6; color: var(--muted); }
   .diff-tag {
     display: inline-flex; margin-top: 22px;
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase;
     color: var(--gold-deep); padding: 6px 10px; border-radius: 6px;
     background: rgba(226,125,12,0.08);
   }
@@ -382,7 +382,7 @@
     border-radius: 50%; background: #22c55e; border: 2px solid var(--cream);
   }
   .chat-head h4 { font-size: 16px; }
-  .chat-head .sub { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .chat-head .sub { font-size: 13px; color: var(--muted); font-family: var(--mono); }
   .msgs { flex: 1; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
   .msg {
     max-width: 82%; padding: 12px 16px; border-radius: 18px;
@@ -398,7 +398,7 @@
     background: #fff7e6; color: var(--ink); border-bottom-left-radius: 6px;
     border: 1px solid rgba(226,125,12,0.2);
   }
-  .msg .time { display:block; font-family: var(--mono); font-size: 10px; opacity: 0.55; margin-top: 4px; letter-spacing: 0.1em; }
+  .msg .time { display:block; font-family: var(--mono); font-size: 13px; opacity: 0.55; margin-top: 4px; letter-spacing: 0.1em; }
   @keyframes msg-in {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
@@ -451,30 +451,30 @@
       repeating-linear-gradient(45deg, rgba(226,125,12,0.25) 0 6px, rgba(226,125,12,0.45) 6px 12px);
     border: 1px dashed rgba(226,125,12,0.5);
     display: flex; align-items: center; justify-content: center;
-    font-family: var(--mono); font-size: 8px; color: #fbe3b8; text-align: center; line-height: 1.2;
+    font-family: var(--mono); font-size: 13px; color: #fbe3b8; text-align: center; line-height: 1.2;
   }
   .pet-name { font-family: var(--serif); font-size: 22px; font-weight: 600; }
-  .pet-tag { font-family: var(--mono); font-size: 11px; color: #e8c77e; letter-spacing: 0.1em; }
+  .pet-tag { font-family: var(--mono); font-size: 13px; color: #e8c77e; letter-spacing: 0.1em; }
   .pet-level {
     padding: 6px 10px; background: rgba(226,125,12,0.18);
-    border-radius: 8px; font-family: var(--mono); font-size: 11px; color: #fbe3b8; letter-spacing: 0.1em;
+    border-radius: 8px; font-family: var(--mono); font-size: 13px; color: #fbe3b8; letter-spacing: 0.1em;
   }
   .pet-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .stat {
     padding: 12px; background: rgba(255,255,255,0.04); border-radius: 12px;
     border: 1px solid rgba(255,255,255,0.06);
   }
-  .stat-l { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,248,230,0.5); }
+  .stat-l { font-family: var(--mono); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,248,230,0.5); }
   .stat-v { font-family: var(--serif); font-size: 18px; margin-top: 4px; }
   .bond { padding: 14px; background: rgba(255,255,255,0.04); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); }
   .bond-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .bond-head .l { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,248,230,0.5); }
-  .bond-head .v { font-family: var(--mono); font-size: 12px; color: #fbe3b8; }
+  .bond-head .l { font-family: var(--mono); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,248,230,0.5); }
+  .bond-head .v { font-family: var(--mono); font-size: 13px; color: #fbe3b8; }
   .bond-bar { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
   .bond-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--gold-deep), var(--gold), var(--gold-soft)); border-radius: 999px; transition: width 1.4s cubic-bezier(.2,.7,.2,1); }
   .skills { display: flex; flex-wrap: wrap; gap: 6px; }
   .skill {
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em;
     padding: 5px 9px; border-radius: 999px;
     background: rgba(226,125,12,0.14); color: #fbe3b8;
     border: 1px solid rgba(226,125,12,0.3);
@@ -500,7 +500,7 @@
       repeating-linear-gradient(var(--a, 45deg), rgba(226,125,12,0.22) 0 6px, rgba(226,125,12,0.38) 6px 12px);
     border: 1px dashed rgba(226,125,12,0.45);
     display: flex; align-items: center; justify-content: center; text-align: center;
-    font-family: var(--mono); font-size: 9px; color: var(--gold-deep); padding: 10px;
+    font-family: var(--mono); font-size: 13px; color: var(--gold-deep); padding: 10px;
     transition: transform .4s ease;
   }
   .g-card:hover .g-avatar { transform: scale(1.03); }
@@ -508,15 +508,15 @@
   .g-card.t3 .g-avatar { aspect-ratio: 4/5; }
   .g-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
   .g-name { font-family: var(--serif); font-weight: 600; font-size: 16px; }
-  .g-lvl { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+  .g-lvl { font-family: var(--mono); font-size: 13px; color: var(--muted); }
   .g-bdg {
     display: inline-block; margin-top: 6px;
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
     padding: 3px 8px; border-radius: 6px;
     background: rgba(226,125,12,0.1); color: var(--gold-deep);
   }
   .g-quote { margin-top: 10px; font-size: 13px; line-height: 1.45; color: var(--ink); font-style: italic; }
-  .g-wallet { margin-top: 10px; font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
+  .g-wallet { margin-top: 10px; font-family: var(--mono); font-size: 13px; color: var(--muted); letter-spacing: 0.06em; }
 
   /* DATA SOVEREIGNTY (dark) */
   .dark-section {
@@ -548,12 +548,12 @@
     width: 44px; height: 44px; border-radius: 12px;
     background: rgba(226,125,12,0.12); border: 1px solid rgba(226,125,12,0.25);
     display: flex; align-items: center; justify-content: center;
-    color: var(--gold-soft); font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+    color: var(--gold-soft); font-family: var(--mono); font-size: 13px; letter-spacing: 0.1em;
   }
   .right h4 { font-size: 22px; font-weight: 600; }
   .right p { font-size: 14px; line-height: 1.55; color: rgba(255,248,230,0.65); }
   .right .meta {
-    margin-top: auto; font-family: var(--mono); font-size: 10px;
+    margin-top: auto; font-family: var(--mono); font-size: 13px;
     letter-spacing: 0.14em; text-transform: uppercase; color: rgba(226,125,12,0.7);
   }
 
@@ -568,7 +568,7 @@
     background: rgba(255,255,255,0.04); border: 1px solid var(--line-dk);
     display: flex; flex-direction: column; gap: 6px;
   }
-  .flow-node .l { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,248,230,0.5); }
+  .flow-node .l { font-family: var(--mono); font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,248,230,0.5); }
   .flow-node .v { font-family: var(--serif); font-size: 18px; }
   .flow-arrow {
     position: relative; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
@@ -588,7 +588,7 @@
     margin-top: 24px; grid-column: 1 / -1; display: flex; justify-content: center;
   }
   .flow-badge span {
-    font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.12em;
     padding: 8px 14px; border-radius: 999px;
     background: rgba(226,125,12,0.1); color: var(--gold-soft);
     border: 1px solid rgba(226,125,12,0.25);
@@ -615,12 +615,12 @@
   .url {
     flex: 1; padding: 6px 14px; border-radius: 8px;
     background: #fff; border: 1px solid var(--line);
-    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    font-family: var(--mono); font-size: 13px; color: var(--muted);
     display: flex; align-items: center; gap: 8px;
   }
   .url::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--gold); display: inline-block; box-shadow: 0 0 0 2px rgba(226,125,12,0.2); }
   .browser-tab {
-    padding: 4px 10px; font-family: var(--mono); font-size: 10px; color: var(--muted);
+    padding: 4px 10px; font-family: var(--mono); font-size: 13px; color: var(--muted);
     border-radius: 6px; background: rgba(226,125,12,0.1);
   }
   .browser-body {
@@ -641,27 +641,27 @@
     width: 100%; height: 100%; border-radius: 14px;
     background: repeating-linear-gradient(45deg, rgba(226,125,12,0.25) 0 6px, rgba(226,125,12,0.45) 6px 12px);
     border: 1px dashed rgba(226,125,12,0.55);
-    font-family: var(--mono); font-size: 8px; color: var(--gold-deep);
+    font-family: var(--mono); font-size: 13px; color: var(--gold-deep);
     display: flex; align-items: center; justify-content: center; text-align: center; padding: 6px;
   }
   .points-badge {
     position: absolute; top: 16px; right: 16px;
     padding: 8px 12px; border-radius: 999px;
     background: var(--navy); color: var(--gold-soft);
-    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em;
     display: flex; align-items: center; gap: 8px;
   }
   .points-badge::before { content:""; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold); }
   .callout {
     position: absolute; display: flex; align-items: center; gap: 10px;
-    font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.06em;
     color: var(--ink); background: #fff; padding: 6px 10px; border-radius: 8px;
     border: 1px solid var(--line); box-shadow: 0 6px 14px rgba(16,16,28,0.06);
     white-space: nowrap;
   }
   .callout .num {
     width: 18px; height: 18px; border-radius: 50%; background: var(--gold); color: var(--navy);
-    display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700;
   }
   .browser-side h3 { font-size: 38px; line-height: 1.05; letter-spacing: -0.02em; }
   .browser-side p { margin-top: 14px; font-size: 16px; line-height: 1.55; color: var(--muted); }
@@ -669,7 +669,7 @@
     margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
     padding: 18px; border-radius: 14px; background: #fff; border: 1px solid var(--line);
   }
-  .points-list .row { display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: 12px; }
+  .points-list .row { display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: 13px; }
   .points-list .row .k { color: var(--ink); }
   .points-list .row .v { color: var(--gold-deep); font-weight: 600; }
   .browser-side .btn { margin-top: 26px; }
@@ -688,7 +688,7 @@
   }
   .code-block .prompt { color: var(--gold-soft); }
   .code-block .copy {
-    margin-left: auto; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    margin-left: auto; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;
     color: rgba(255,248,230,0.5); cursor: pointer;
   }
   .proto-cols {
@@ -700,14 +700,14 @@
   }
   .proto-col:last-child { border-right: 0; }
   .proto-col .num {
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.2em;
     color: rgba(226,125,12,0.7);
   }
   .proto-col h4 { margin-top: 16px; font-size: 22px; }
   .proto-col p { margin-top: 10px; font-size: 14px; line-height: 1.55; color: rgba(255,248,230,0.65); }
   .proto-col .tag {
     display: inline-block; margin-top: 18px;
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;
     padding: 4px 8px; border-radius: 6px; background: rgba(226,125,12,0.1); color: var(--gold-soft);
   }
   .badges {
@@ -717,7 +717,7 @@
     display: inline-flex; align-items: center; gap: 8px;
     padding: 8px 14px; border-radius: 8px;
     background: rgba(255,255,255,0.04); border: 1px solid var(--line-dk);
-    font-family: var(--mono); font-size: 11px; color: rgba(255,248,230,0.8);
+    font-family: var(--mono); font-size: 13px; color: rgba(255,248,230,0.8);
   }
   .badge .k { color: rgba(255,248,230,0.5); }
   .badge .v { color: var(--gold-soft); }
@@ -746,14 +746,14 @@
   .footer-cta .big-cta::after { content: "→"; }
   .foot-links {
     margin-top: 72px; display: flex; justify-content: center; gap: 28px;
-    font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;
     color: rgba(255,248,230,0.75);
   }
   .foot-links a:hover { color: #fff; }
   .foot-mini {
     margin-top: 48px; display: flex; justify-content: space-between; align-items: center;
     max-width: 1200px; margin-left: auto; margin-right: auto;
-    font-family: var(--mono); font-size: 11px; color: rgba(255,248,230,0.6);
+    font-family: var(--mono); font-size: 13px; color: rgba(255,248,230,0.6);
     padding-top: 28px; border-top: 1px solid rgba(255,248,230,0.15);
   }
 
@@ -768,13 +768,13 @@
   }
   .tweaks.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
   .tweaks h5 { font-family: var(--serif); font-size: 14px; margin-bottom: 4px; }
-  .tweaks .tw-sub { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+  .tweaks .tw-sub { font-family: var(--mono); font-size: 13px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
   .tw-row { margin-bottom: 14px; }
-  .tw-row label { display: block; font-size: 11px; font-family: var(--mono); color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+  .tw-row label { display: block; font-size: 13px; font-family: var(--mono); color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
   .tw-swatches { display: flex; gap: 6px; }
   .tw-sw { width: 28px; height: 28px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; }
   .tw-sw.on { border-color: var(--ink); }
-  .tw-toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; }
+  .tw-toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
   .tw-toggle input { accent-color: var(--gold); }
 
   @media (max-width: 900px) {
@@ -893,7 +893,7 @@
       <a href="https://app.myaipet.ai" class="btn btn-primary">Get started</a>
       <a href="#companion" class="btn btn-ghost">▶ See how it works</a>
     </div>
-    <div style="margin-top:12px;font-family:var(--mono);font-size:10px;color:rgba(255,248,230,0.45);">
+    <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.45);">
       Connect wallet → adopt in 30 seconds · No gas required
     </div>
   </div>
@@ -973,7 +973,7 @@
           border:3px solid rgba(226,125,12,0.3);" />
         <div style="text-align:center; margin-top:16px;">
           <div style="font-family:var(--serif); font-size:22px; font-weight:700; color:var(--cream);">Sparky</div>
-          <div style="font-family:var(--mono); font-size:11px; color:rgba(255,248,230,0.5); margin-top:4px;">Lv.15 · Playful · Fire</div>
+          <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.5); margin-top:4px;">Lv.15 · Playful · Fire</div>
         </div>
       </div>
 
@@ -988,35 +988,35 @@
           <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
             <div style="font-size:20px; margin-bottom:6px;">💬</div>
             <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Companion Chat</div>
-            <div style="font-family:var(--mono); font-size:10px; color:rgba(255,248,230,0.4); margin-top:4px;">Personality-driven · Memory-aware</div>
+            <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Personality-driven · Memory-aware</div>
           </div>
           <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
             <div style="font-size:20px; margin-bottom:6px;">🪞</div>
             <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Persona Mirror</div>
-            <div style="font-family:var(--mono); font-size:10px; color:rgba(255,248,230,0.4); margin-top:4px;">Learns your tone · Talks like you</div>
+            <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Learns your tone · Talks like you</div>
           </div>
           <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
             <div style="font-size:20px; margin-bottom:6px;">🧠</div>
             <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Memory Recall</div>
-            <div style="font-family:var(--mono); font-size:10px; color:rgba(255,248,230,0.4); margin-top:4px;">Cross-platform · Never forgets</div>
+            <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Cross-platform · Never forgets</div>
           </div>
           <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
             <div style="font-size:20px; margin-bottom:6px;">📦</div>
             <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Soul Export</div>
-            <div style="font-family:var(--mono); font-size:10px; color:rgba(255,248,230,0.4); margin-top:4px;">Portable identity · Zero lock-in</div>
+            <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Portable identity · Zero lock-in</div>
           </div>
           <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
             <div style="font-size:20px; margin-bottom:6px;">🔗</div>
             <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">MCP Compatible</div>
-            <div style="font-family:var(--mono); font-size:10px; color:rgba(255,248,230,0.4); margin-top:4px;">Claude · OpenClaw · Any client</div>
+            <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Claude · OpenClaw · Any client</div>
           </div>
         </div>
 
         <div style="margin-top:20px; display:flex; gap:8px; flex-wrap:wrap;">
-          <span style="font-family:var(--mono); font-size:9px; padding:4px 10px; border-radius:6px; background:rgba(226,125,12,0.12); color:var(--gold-soft); letter-spacing:0.1em;">PETCLAW v1</span>
-          <span style="font-family:var(--mono); font-size:9px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">6 MCP TOOLS</span>
-          <span style="font-family:var(--mono); font-size:9px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">19 CONNECTORS</span>
-          <span style="font-family:var(--mono); font-size:9px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">BSC MAINNET</span>
+          <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(226,125,12,0.12); color:var(--gold-soft); letter-spacing:0.1em;">PETCLAW v1</span>
+          <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">6 MCP TOOLS</span>
+          <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">19 CONNECTORS</span>
+          <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">BSC MAINNET</span>
         </div>
       </div>
     </div>
@@ -1248,12 +1248,12 @@
     </div>
 
     <div style="margin-top:40px; padding:28px 28px 24px; border:1px solid var(--line-dk); border-radius:14px; background:rgba(255,255,255,0.03);">
-      <div style="font-family:var(--mono); font-size:10px; letter-spacing:0.2em; color:rgba(226,125,12,0.7);">AGENTIC HARNESS</div>
+      <div style="font-family:var(--mono); font-size:13px; letter-spacing:0.2em; color:rgba(226,125,12,0.7);">AGENTIC HARNESS</div>
       <h4 style="margin-top:12px; font-size:22px;">VIGIL — the loop that keeps getting better at you.</h4>
       <p style="margin-top:10px; font-size:14px; line-height:1.55; color:rgba(255,248,230,0.65); max-width:680px;">
         Every chat turn runs through VIGIL, an always-on self-improvement loop. Not features you toggle — they compound on their own, so your pet sharpens to <em>you</em> over time.
       </p>
-      <div style="margin-top:22px; display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px 18px; font-family:var(--mono); font-size:12px; line-height:1.5;">
+      <div style="margin-top:22px; display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px 18px; font-family:var(--mono); font-size:13px; line-height:1.5;">
         <div><span style="color:var(--gold-soft);">memory-ledger</span><br><span style="color:rgba(255,248,230,0.5);">facts → portable memory</span></div>
         <div><span style="color:var(--gold-soft);">self-reflect</span><br><span style="color:rgba(255,248,230,0.5);">how to be your companion</span></div>
         <div><span style="color:var(--gold-soft);">feedback</span><br><span style="color:rgba(255,248,230,0.5);">reads how replies land</span></div>
@@ -1285,19 +1285,19 @@
         <div style="font-size:36px;margin-bottom:12px;">💬</div>
         <h4 style="font-size:16px;margin-bottom:6px;">Chat</h4>
         <p style="font-size:13px;color:var(--muted);line-height:1.5;">Talk to your pet. Every conversation builds memory and shapes personality.</p>
-        <div style="margin-top:12px;font-family:var(--mono);font-size:10px;color:var(--gold-deep);">+3 pts per chat</div>
+        <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:var(--gold-deep);">+3 pts per chat</div>
       </div>
       <div style="padding:28px 16px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid var(--line);">
         <div style="font-size:36px;margin-bottom:12px;">🧠</div>
         <h4 style="font-size:16px;margin-bottom:6px;">Grow</h4>
         <p style="font-size:13px;color:var(--muted);line-height:1.5;">Your pet learns patterns, creates skills, and evolves its personality over time.</p>
-        <div style="margin-top:12px;font-family:var(--mono);font-size:10px;color:var(--gold-deep);">Self-learning AI</div>
+        <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:var(--gold-deep);">Self-learning AI</div>
       </div>
       <div style="padding:28px 16px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid var(--line);">
         <div style="font-size:36px;margin-bottom:12px;">🛡️</div>
         <h4 style="font-size:16px;margin-bottom:6px;">Own</h4>
         <p style="font-size:13px;color:var(--muted);line-height:1.5;">Export your pet's soul as portable JSON. Delete with cryptographic proof. Zero lock-in.</p>
-        <div style="margin-top:12px;font-family:var(--mono);font-size:10px;color:var(--gold-deep);">
+        <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:var(--gold-deep);">
           <a href="https://app.myaipet.ai/architecture" target="_blank" style="color:inherit;text-decoration:underline;" rel="noopener noreferrer">SOUL spec →</a>
         </div>
       </div>
@@ -1305,7 +1305,7 @@
         <div style="font-size:36px;margin-bottom:12px;">🌐</div>
         <h4 style="font-size:16px;margin-bottom:6px;">Everywhere</h4>
         <p style="font-size:13px;color:var(--muted);line-height:1.5;">Chrome Extension, Telegram, Discord — same pet, same memory, any platform.</p>
-        <div style="margin-top:12px;font-family:var(--mono);font-size:10px;color:var(--gold-deep);">Multi-channel</div>
+        <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:var(--gold-deep);">Multi-channel</div>
       </div>
     </div>
   </div>
@@ -1321,9 +1321,9 @@
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:48px;">
       <div style="padding:24px 20px;border-radius:16px;background:rgba(226,125,12,0.08);border:1px solid rgba(226,125,12,0.2);">
-        <div style="font-family:var(--mono);font-size:10px;color:var(--gold-soft);letter-spacing:0.1em;margin-bottom:8px;">NOW · LIVE</div>
+        <div style="font-family:var(--mono);font-size:13px;color:var(--gold-soft);letter-spacing:0.1em;margin-bottom:8px;">NOW · LIVE</div>
         <h4 style="font-size:15px;color:var(--cream);margin-bottom:8px;">Companion AI</h4>
-        <ul style="font-size:12px;color:rgba(255,248,230,0.5);line-height:1.8;list-style:none;padding:0;">
+        <ul style="font-size:13px;color:rgba(255,248,230,0.5);line-height:1.8;list-style:none;padding:0;">
           <li>✅ Persistent memory</li>
           <li>✅ PetClaw SDK + CLI</li>
           <li>✅ Chrome Extension</li>
@@ -1332,9 +1332,9 @@
         </ul>
       </div>
       <div style="padding:24px 20px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid var(--line-dk);">
-        <div style="font-family:var(--mono);font-size:10px;color:rgba(255,248,230,0.4);letter-spacing:0.1em;margin-bottom:8px;">Q3 2026</div>
+        <div style="font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.4);letter-spacing:0.1em;margin-bottom:8px;">Q3 2026</div>
         <h4 style="font-size:15px;color:var(--cream);margin-bottom:8px;">Multi-Agent</h4>
-        <ul style="font-size:12px;color:rgba(255,248,230,0.4);line-height:1.8;list-style:none;padding:0;">
+        <ul style="font-size:13px;color:rgba(255,248,230,0.4);line-height:1.8;list-style:none;padding:0;">
           <li>○ Autonomous Twitter/X posting</li>
           <li>○ Pet-to-Pet economy</li>
           <li>○ Community skill marketplace</li>
@@ -1342,9 +1342,9 @@
         </ul>
       </div>
       <div style="padding:24px 20px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid var(--line-dk);">
-        <div style="font-family:var(--mono);font-size:10px;color:rgba(255,248,230,0.4);letter-spacing:0.1em;margin-bottom:8px;">Q4 2026</div>
+        <div style="font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.4);letter-spacing:0.1em;margin-bottom:8px;">Q4 2026</div>
         <h4 style="font-size:15px;color:var(--cream);margin-bottom:8px;">Create &amp; Grow</h4>
-        <ul style="font-size:12px;color:rgba(255,248,230,0.4);line-height:1.8;list-style:none;padding:0;">
+        <ul style="font-size:13px;color:rgba(255,248,230,0.4);line-height:1.8;list-style:none;padding:0;">
           <li>○ Creator marketplace</li>
           <li>○ Skill creator revenue share</li>
           <li>○ Cross-platform AI identity</li>
@@ -1352,9 +1352,9 @@
         </ul>
       </div>
       <div style="padding:24px 20px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid var(--line-dk);">
-        <div style="font-family:var(--mono);font-size:10px;color:rgba(255,248,230,0.4);letter-spacing:0.1em;margin-bottom:8px;">2027+</div>
+        <div style="font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.4);letter-spacing:0.1em;margin-bottom:8px;">2027+</div>
         <h4 style="font-size:15px;color:var(--cream);margin-bottom:8px;">Open Standard</h4>
-        <ul style="font-size:12px;color:rgba(255,248,230,0.4);line-height:1.8;list-style:none;padding:0;">
+        <ul style="font-size:13px;color:rgba(255,248,230,0.4);line-height:1.8;list-style:none;padding:0;">
           <li>○ PetClaw as industry standard</li>
           <li>○ Interoperable AI identity</li>
           <li>○ Decentralized pet network</li>
@@ -1412,10 +1412,10 @@
 
       <!-- Quick prompts -->
       <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; justify-content:center;">
-        <button class="pg-prompt" onclick="pgSend('What can you do?')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:11px; font-family:var(--mono); cursor:pointer;">What can you do?</button>
-        <button class="pg-prompt" onclick="pgSend('Tell me about data sovereignty')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:11px; font-family:var(--mono); cursor:pointer;">Data sovereignty?</button>
-        <button class="pg-prompt" onclick="pgSend('How do you remember things?')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:11px; font-family:var(--mono); cursor:pointer;">How do you remember?</button>
-        <button class="pg-prompt" onclick="pgSend('Export my SOUL data')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:11px; font-family:var(--mono); cursor:pointer;">Export SOUL</button>
+        <button class="pg-prompt" onclick="pgSend('What can you do?')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:13px; font-family:var(--mono); cursor:pointer;">What can you do?</button>
+        <button class="pg-prompt" onclick="pgSend('Tell me about data sovereignty')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:13px; font-family:var(--mono); cursor:pointer;">Data sovereignty?</button>
+        <button class="pg-prompt" onclick="pgSend('How do you remember things?')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:13px; font-family:var(--mono); cursor:pointer;">How do you remember?</button>
+        <button class="pg-prompt" onclick="pgSend('Export my SOUL data')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:13px; font-family:var(--mono); cursor:pointer;">Export SOUL</button>
       </div>
     </div>
   </div>
@@ -1427,46 +1427,46 @@
   <a href="https://app.myaipet.ai" class="btn btn-primary" style="font-size:18px; padding:18px 40px; display:inline-flex;">Adopt your pet &nbsp;→</a>
 
   <div style="margin-top:60px; display:flex; justify-content:center; gap:32px; flex-wrap:wrap;">
-    <a href="https://www.npmjs.com/package/petclaw-sdk" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">npm</a>
-    <a href="https://app.myaipet.ai/petclaw-extension.zip" download="myaipet-extension.zip" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">Chrome Extension</a>
-    <a href="https://x.com/myaipets" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">X / Twitter</a>
-    <a href="https://t.me/myaipets" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">Telegram</a>
-    <a href="https://app.myaipet.ai/api-docs" style="font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">API Docs</a>
+    <a href="https://www.npmjs.com/package/petclaw-sdk" style="font-family:var(--mono); font-size:13px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">npm</a>
+    <a href="https://app.myaipet.ai/petclaw-extension.zip" download="myaipet-extension.zip" style="font-family:var(--mono); font-size:13px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">Chrome Extension</a>
+    <a href="https://x.com/myaipets" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:13px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">X / Twitter</a>
+    <a href="https://t.me/myaipets" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:13px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">Telegram</a>
+    <a href="https://app.myaipet.ai/api-docs" style="font-family:var(--mono); font-size:13px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">API Docs</a>
   </div>
 
   <!-- Legal & Protocol links -->
   <div style="margin-top:40px; display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
-    <a href="https://app.myaipet.ai/stats" style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.45); text-decoration:none;">Live Stats</a>
-    <a href="https://app.myaipet.ai/terms" style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.45); text-decoration:none;">Terms of Service</a>
-    <a href="https://app.myaipet.ai/privacy" style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.45); text-decoration:none;">Privacy Policy</a>
-    <a href="https://app.myaipet.ai/contracts" style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.45); text-decoration:none;">Contracts</a>
-    <a href="https://app.myaipet.ai/docs" style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.45); text-decoration:none;">Docs</a>
-    <a href="https://app.myaipet.ai/architecture" style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.45); text-decoration:none;">Architecture</a>
-    <a href="https://app.myaipet.ai/api-docs" style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.45); text-decoration:none;">API Docs</a>
-    <a href="https://app.myaipet.ai/.well-known/pet-card.json" style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.45); text-decoration:none;">Protocol Spec</a>
+    <a href="https://app.myaipet.ai/stats" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Live Stats</a>
+    <a href="https://app.myaipet.ai/terms" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Terms of Service</a>
+    <a href="https://app.myaipet.ai/privacy" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Privacy Policy</a>
+    <a href="https://app.myaipet.ai/contracts" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Contracts</a>
+    <a href="https://app.myaipet.ai/docs" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Docs</a>
+    <a href="https://app.myaipet.ai/architecture" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Architecture</a>
+    <a href="https://app.myaipet.ai/api-docs" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">API Docs</a>
+    <a href="https://app.myaipet.ai/.well-known/pet-card.json" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Protocol Spec</a>
   </div>
 
   <!-- On-chain info -->
   <div style="margin-top:20px; text-align:center;">
-    <span style="font-family:var(--mono); font-size:10px; color:rgba(255,255,255,0.3);">
+    <span style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.3);">
       BNB Smart Chain · 2 Deployed · 2 Paused · External audit planned · See <a href="https://app.myaipet.ai/contracts" style="color:rgba(255,255,255,0.4); text-decoration:underline;">/contracts</a> for status
     </span>
   </div>
 
   <!-- Token disclaimer -->
   <div style="margin-top:14px; max-width:680px; margin-left:auto; margin-right:auto; text-align:center;">
-    <span style="font-family:var(--mono); font-size:9px; color:rgba(255,255,255,0.22); line-height:1.6;">
+    <span style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.22); line-height:1.6;">
       Engagement points are non-financial recognition — no token is issued, points have no cash value and no redemption or conversion path, now or planned. Nothing on this site constitutes financial advice or an offer of securities.
     </span>
   </div>
 
   <div style="margin-top:30px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; max-width:800px; margin-left:auto; margin-right:auto; flex-wrap:wrap; gap:16px;">
-    <span style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.3);">PetClaw Protocol v1 · 2026</span>
+    <span style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.3);">PetClaw Protocol v1 · 2026</span>
     <div style="display:flex; align-items:center; gap:8px;">
       <img src="hero-mascot.jpg" alt="" style="width:28px; height:28px; border-radius:8px; object-fit:cover; border:2px solid rgba(226,125,12,0.3);" />
       <span style="font-family:var(--serif); font-size:13px; font-weight:600; color:#fff;">MY AI PET</span>
     </div>
-    <span style="font-family:var(--mono); font-size:11px; color:rgba(255,255,255,0.3); font-style:italic;">Made with care, not hype.</span>
+    <span style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.3); font-style:italic;">Made with care, not hype.</span>
   </div>
 </footer>
 
@@ -1895,7 +1895,7 @@ function persist() {
 
   const nameTag = document.createElement('div');
   nameTag.textContent = 'Sparky';
-  nameTag.style.cssText = 'position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:8px;color:rgba(0,0,0,0.5);white-space:nowrap;background:rgba(255,255,255,0.85);padding:1px 6px;border-radius:6px;backdrop-filter:blur(4px);';
+  nameTag.style.cssText = 'position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:13px;color:rgba(0,0,0,0.5);white-space:nowrap;background:rgba(255,255,255,0.85);padding:1px 6px;border-radius:6px;backdrop-filter:blur(4px);';
   pet.appendChild(nameTag);
 
   // Paw prints

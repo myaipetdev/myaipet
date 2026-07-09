@@ -218,6 +218,7 @@ export default function Nav({ section, setSection, credits }: any) {
                 }}
               >
                 ◎ {displayCredits.toLocaleString()}
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", opacity: 0.7, marginLeft: 4 }}>cr</span>
               </button>
               {balanceOpen && (
                 <div style={{

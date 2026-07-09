@@ -17,7 +17,7 @@ Every pet has a distinct personality shaped by user interactions. The platform u
     id: "getting-started",
     title: "Getting Started",
     content: `**1. Connect Your Wallet**
-Connect using MetaMask, Rainbow, Coinbase Wallet, or any WalletConnect-compatible wallet. Sign-in (SIWE) works with any EVM wallet — no gas, identity only. On-chain anchoring activates at go-live (migrating to Base). The economy is points-only loyalty — no token.
+Connect using MetaMask, Rainbow, Coinbase Wallet, or any WalletConnect-compatible wallet. Sign-in (SIWE) works with any EVM wallet — no gas, identity only. On-chain anchoring activates at go-live — currently BSC; Base migration is planned at go-live, not live yet. The economy is points-only loyalty — no token.
 
 **2. Sign In**
 Sign a message to verify wallet ownership (SIWE — Sign-In with Ethereum). No gas fees for signing.
@@ -135,7 +135,7 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 - Async video processing with status polling
 
 **On-Chain (at go-live)**
-- On-chain anchoring activates at go-live — migrating to Base; currently paused (holding period)
+- On-chain anchoring activates at go-live — currently BSC; Base migration is planned at go-live (not live yet); currently paused (holding period)
 - The economy is points-only loyalty — no token, no on-chain settlement of value
 - USDT credit purchases are currently paused — reopen at launch
 - PetaGenTracker contract for activity anchoring (deploys at go-live)
@@ -189,11 +189,11 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 - AI avatar generation for pets
 
 **Phase 2 — On-Chain Activity (In Progress · holding period)**
-- On-chain activity anchoring at go-live (migrating to Base)
+- On-chain activity anchoring at go-live — currently BSC; Base migration planned at go-live (not live yet)
 - USDT credit purchases (currently paused — reopen at launch)
 - Smart contract deployment (PetaGenTracker) at go-live
 - Contracts verified on the block explorer at go-live
-- Note: on-chain anchoring + USDT purchases are paused during the holding period (migrating BSC → Base) — see /contracts for status.
+- Note: on-chain anchoring + USDT purchases are paused during the holding period. Contracts are currently deployed + verified on BSC; the BSC → Base migration is planned at go-live (not in progress yet) — see /contracts for status.
 
 **Phase 3 — Evolution & Marketplace (Shipped)**
 - Pet evolution system with visual stage changes
