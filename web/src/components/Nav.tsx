@@ -12,8 +12,10 @@ const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
   // Game features grouped right after My Pet. (Catch lives inside Cards as a
   // tab now — /?section=catch still aliases to the Cards screen's Catch tab.)
   { key: "cards", label: "Cards" },
-  // Time-boxed World Cup 2026 event (remove this entry after ~2026-07-19).
-  { key: "worldcup", label: "World Cup" },
+  // Evergreen "Favorites Bracket" (이상형 월드컵) — pick-your-favorite pet
+  // tournament. Keeps the "worldcup" section key so old deep links still land;
+  // the seasonal national-flag World Cup is a small hideable module inside it.
+  { key: "worldcup", label: "Bracket" },
   { key: "studio", label: "Studio", url: "/studio" },
   { key: "community", label: "Community" },
   { key: "sovereignty", label: "PetClaw" },

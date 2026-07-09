@@ -1,17 +1,20 @@
 "use client";
 
 /**
- * WorldCupPet — time-boxed World Cup 2026 national-pet skin.
+ * WorldCupPet — evergreen "Favorites Bracket" (이상형 월드컵).
  *
- * Pick your country from a flag grid → your EXISTING pet is reimagined as that
- * nation's iconic animal in its flag colors, then one-tap (opt-in) share to X.
+ * PRIMARY experience: a single-elimination "ideal-type world cup" over REAL
+ * community pets. The player is shown two pets at a time and taps their
+ * favorite; the winner advances Round of 16 → QF → SF → Final → Champion. The
+ * pet pool is real (GET /api/worldcup/bracket → active, avatar-bearing pets
+ * ranked by a real signal) — no fabricated contestants, and if there aren't
+ * enough public pets yet the bracket shows an honest low-data state. The pick
+ * flow is client-managed and PERSONAL: we do not invent global vote tallies.
  *
- * Reuses the Studio pipeline unchanged: POST /api/studio/generate with
- * modelId "grok-imagine" (supportsImageRef → the pet's avatar is the reference,
- * so it stays YOUR pet) + a themed prompt. If the render doesn't complete
- * inline we poll GET /api/studio/generate/[jobId] and drop the result in
- * automatically. Sharing uses the existing /c/[id] public page whose
- * summary_large_image OG card X unfurls into the tweet.
+ * SECONDARY / seasonal: the old national-flag "World Cup 2026" content
+ * (reimagine your pet as a country's animal + community champion-prediction
+ * poll) is demoted to a compact, collapsible, clearly-ephemeral module that
+ * can be hidden once the real tournament is over.
  */
 
 import { useEffect, useState } from "react";
@@ -27,7 +30,7 @@ const T = {
   field: "#ECE4D4", paper: "#FBF6EC", inset: "#F5EFE2", ink: "#211A12", ink70: "#3A3024",
   muted: "#7A6E5A", muted2: "#5C5140", mono: "#9A7B4E", hair: "rgba(33,26,18,.13)",
   terra: "#BE4F28", terraSub: "#9A4E1E", teal: "#1A7E68", creamOn: "#FCE9CF",
-  gold: "#C8932F", disp: "var(--ed-disp)", body: "var(--ed-body)", m: "var(--ed-m)",
+  gold: "#C8932F", happy: "#F0589E", disp: "var(--ed-disp)", body: "var(--ed-body)", m: "var(--ed-m)",
 };
 const GEN_COST = 5; // grok-imagine, matches providers.ts
 // System CTA — the one gradient allowed on money/convert actions.
@@ -35,6 +38,7 @@ const CTA_GRAD = "linear-gradient(180deg,#F49B2A,#E27D0C)";
 const CTA_TEXT = "#FFF8EE";
 
 type Pet = { id: number; name: string; avatar_url?: string | null };
+type BracketPet = { id: number; name: string; avatar_url: string; level?: number | null };
 
 /** 14px X (Twitter) logo — the 𝕏 unicode glyph renders inconsistently. */
 function XLogo({ size = 14 }: { size?: number }) {
@@ -54,7 +58,408 @@ function CheckIcon({ size = 13, color = "currentColor" }: { size?: number; color
   );
 }
 
+/** Stroke refresh/reshuffle glyph (no refresh.png in /public/icons). */
+function RefreshIcon({ size = 14, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" />
+    </svg>
+  );
+}
+
 export default function WorldCupPet() {
+  return (
+    <Shell>
+      <FavoritesBracket />
+      <SeasonalWorldCup />
+    </Shell>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FAVORITES BRACKET (이상형 월드컵) — the evergreen primary experience.
+   Real community pets, personal client-managed picks, honest low-data state.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/** Largest power of two ≤ n, within [min..max]. 0 if below min. */
+function bracketSizeFor(n: number, max = 16, min = 4): number {
+  if (n < min) return 0;
+  let s = 1;
+  while (s * 2 <= n && s * 2 <= max) s *= 2;
+  return s;
+}
+
+/** Fisher–Yates — a fresh pairing every play (personal bracket, so shuffle is fine). */
+function shuffle<T>(arr: T[]): T[] {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/** Round name from how many pets remain in the round. */
+function roundName(fieldLen: number): string {
+  if (fieldLen >= 16) return "Round of 16";
+  if (fieldLen === 8) return "Quarterfinal";
+  if (fieldLen === 4) return "Semifinal";
+  return "Final";
+}
+
+/** The R16 → … → FINAL strip for a given starting size. */
+function stagesFor(size: number): string[] {
+  const s: string[] = [];
+  let n = size;
+  while (n >= 2) {
+    s.push(n >= 16 ? "R16" : n === 8 ? "QF" : n === 4 ? "SF" : "FINAL");
+    n /= 2;
+  }
+  return s;
+}
+function stageKey(fieldLen: number): string {
+  return fieldLen >= 16 ? "R16" : fieldLen === 8 ? "QF" : fieldLen === 4 ? "SF" : "FINAL";
+}
+
+function FavoritesBracket() {
+  const [pool, setPool] = useState<BracketPet[] | null>(null);
+  const [fetchErr, setFetchErr] = useState(false);
+
+  // Bracket state (personal / client-managed).
+  const [field, setField] = useState<BracketPet[]>([]); // contestants this round
+  const [winners, setWinners] = useState<BracketPet[]>([]); // picked so far this round
+  const [champion, setChampion] = useState<BracketPet | null>(null);
+  const [startSize, setStartSize] = useState(0);
+  const [pickedId, setPickedId] = useState<number | null>(null); // pop animation target
+  const [locking, setLocking] = useState(false);
+
+  const load = () => {
+    setFetchErr(false);
+    fetch("/api/worldcup/bracket?size=24", { headers: { ...getAuthHeaders() } })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`status ${r.status}`))))
+      .then((d) => {
+        const list: BracketPet[] = (Array.isArray(d?.pets) ? d.pets : [])
+          .filter((p: any) => p && typeof p.id === "number" && p.avatar_url)
+          .map((p: any) => ({ id: p.id, name: p.name || "Pet", avatar_url: p.avatar_url, level: p.level }));
+        setPool(list);
+      })
+      .catch(() => setFetchErr(true));
+  };
+  useEffect(load, []);
+
+  const seed = (list: BracketPet[]) => {
+    const size = bracketSizeFor(list.length);
+    if (size < 4) { setStartSize(size); setField([]); return; }
+    setStartSize(size);
+    setField(shuffle(list).slice(0, size));
+    setWinners([]);
+    setChampion(null);
+    setPickedId(null);
+  };
+
+  // Seed once the pool arrives (and on Play again).
+  useEffect(() => { if (pool) seed(pool); }, [pool]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const matchIdx = winners.length;
+  const home = field[matchIdx * 2];
+  const away = field[matchIdx * 2 + 1];
+  const matchesInRound = field.length / 2;
+
+  const pick = (winner: BracketPet) => {
+    if (locking || !home || !away || champion) return;
+    setLocking(true);
+    setPickedId(winner.id);
+    // Let the pop animation play, then advance.
+    setTimeout(() => {
+      const nextWinners = [...winners, winner];
+      if (nextWinners.length * 2 >= field.length) {
+        if (nextWinners.length === 1) {
+          setChampion(nextWinners[0]); // Final decided
+        } else {
+          setField(nextWinners); // next round
+          setWinners([]);
+        }
+      } else {
+        setWinners(nextWinners);
+      }
+      setPickedId(null);
+      setLocking(false);
+    }, 420);
+  };
+
+  const shareChampion = () => {
+    if (!champion) return;
+    const text = `${champion.name} is my Favorites Bracket champion! 🏆 Vote your own at My AI Pet`;
+    const url = "https://app.myaipet.ai/?section=worldcup";
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=MyAIPet`, "_blank", "width=600,height=420");
+  };
+
+  // ── states ──
+  if (pool === null) {
+    return (
+      <BracketFrame>
+        {fetchErr ? (
+          <RetryRow label="Couldn't load the pet pool" onRetry={load} />
+        ) : (
+          <div style={loadingPill}>Gathering contenders…</div>
+        )}
+      </BracketFrame>
+    );
+  }
+
+  // Honest low-data state: not enough public pets to fill a bracket.
+  if (startSize < 4) {
+    return (
+      <BracketFrame>
+        <div style={{ background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 14, padding: "22px 20px", boxShadow: "var(--ed-shadow-card)" }}>
+          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", marginBottom: 8 }}>Not enough pets yet</div>
+          <p style={{ fontFamily: T.body, fontSize: 14.5, color: T.muted2, margin: "0 0 14px", lineHeight: 1.55 }}>
+            The Favorites Bracket needs at least four public pets to run. We only ever seed it with real community pets — none are made up — so it opens for real as more players adopt and give their pet an avatar.
+          </p>
+          <a href="/?section=my%20pet" className="ed-underline-slide" style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".06em", color: T.terra, textDecoration: "none" }}>ADOPT A PET & MAKE YOURS ELIGIBLE ▸</a>
+        </div>
+      </BracketFrame>
+    );
+  }
+
+  // ── champion screen ──
+  if (champion) {
+    return (
+      <BracketFrame>
+        <Reveal dir="pop">
+          <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: T.field, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)", textAlign: "center", padding: "10px 18px 28px" }}>
+            <div className="ed-glow" /><div className="ed-vignette" />
+            <div style={{ position: "relative", zIndex: 2 }}>
+              <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".16em", color: T.gold, textTransform: "uppercase", margin: "16px 0 4px", display: "inline-flex", alignItems: "center", gap: 7 }}>
+                <Icon name="trophy" size={15} /> Your Champion
+              </div>
+              <h2 style={{ fontFamily: T.disp, fontSize: "clamp(26px,7vw,38px)", fontWeight: 800, color: T.ink, margin: "0 0 4px", letterSpacing: "-.02em" }}>{champion.name}</h2>
+              <div style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted2, marginBottom: 18 }}>Crowned by your picks across {startSize} pets.</div>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <CollectibleFrame
+                  photoUrl={champion.avatar_url}
+                  level={typeof champion.level === "number" ? champion.level : "★"}
+                  sealLabel="WINNER"
+                  speciesLabel={champion.name.toUpperCase()}
+                  elementLabel="FAVORITE"
+                  width={320}
+                  tilt={-2.4}
+                />
+              </div>
+            </div>
+          </div>
+        </Reveal>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 16, justifyContent: "center" }}>
+          <button onClick={shareChampion} className="wc-press" style={{ ...primaryBtn, display: "inline-flex", alignItems: "center", gap: 8 }}><XLogo size={14} /> Share the winner</button>
+          <button onClick={() => pool && seed(pool)} className="wc-press ed-wipe" style={{ ...ghostBtn, display: "inline-flex", alignItems: "center", gap: 7 }}><RefreshIcon size={14} /> Play again</button>
+        </div>
+        <div style={{ fontFamily: T.body, fontSize: 13, color: T.muted, marginTop: 10, textAlign: "center" }}>
+          This is your personal bracket — picks are yours, not a global vote tally.
+        </div>
+      </BracketFrame>
+    );
+  }
+
+  // ── active matchup ──
+  const stages = stagesFor(startSize);
+  const curKey = stageKey(field.length);
+  return (
+    <BracketFrame>
+      {/* Round + progress */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+        <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.terraSub, textTransform: "uppercase", background: "rgba(190,79,40,.08)", border: `1px solid rgba(190,79,40,.22)`, borderRadius: 999, padding: "5px 12px" }}>
+          {roundName(field.length)} · Match {matchIdx + 1} of {matchesInRound}
+        </span>
+        <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: T.mono, textTransform: "uppercase" }}>Tap your favorite</span>
+      </div>
+
+      {/* VS matchup */}
+      {home && away && (
+        <Reveal key={`${home.id}-${away.id}`} dir="pop">
+          <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "stretch", marginBottom: 18 }}>
+            <Contender pet={home} side="home" onPick={() => pick(home)} picked={pickedId === home.id} dimmed={pickedId !== null && pickedId !== home.id} disabled={locking} />
+            <div style={{ position: "relative", overflow: "hidden", alignSelf: "center", zIndex: 3, width: 54, height: 54, margin: "0 -14px", borderRadius: "50%", background: T.ink, border: `3px solid ${T.paper}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 0 2px ${T.ink}, 0 12px 22px -10px rgba(80,55,20,.6)` }}>
+              <span className="ed-foil-text" style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 15 }}>VS</span>
+              <div className="ed-gloss" aria-hidden style={{ left: 0 }} />
+            </div>
+            <Contender pet={away} side="away" onPick={() => pick(away)} picked={pickedId === away.id} dimmed={pickedId !== null && pickedId !== away.id} disabled={locking} />
+          </div>
+        </Reveal>
+      )}
+
+      {/* Bracket strip R16 → FINAL — current round highlighted (real progress). */}
+      <div style={{ display: "flex", alignItems: "center", gap: 0, flexWrap: "wrap", rowGap: 8 }}>
+        {stages.map((s, i) => {
+          const isFinal = s === "FINAL";
+          const isActive = s === curKey;
+          return (
+            <span key={s + i} style={{ display: "inline-flex", alignItems: "center" }}>
+              <span className={isFinal ? "ed-foilstrip" : undefined} style={{
+                fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em",
+                color: isFinal ? T.ink : isActive ? T.terra : T.mono,
+                border: `1px solid ${isFinal ? "rgba(184,130,44,.55)" : isActive ? "rgba(190,79,40,.4)" : T.hair}`,
+                background: isFinal ? undefined : isActive ? "rgba(190,79,40,.08)" : "transparent",
+                borderRadius: 999, padding: "5px 12px",
+              }}>{s}</span>
+              {i < stages.length - 1 && <span aria-hidden style={{ width: 16, borderTop: "1px dashed rgba(33,26,18,.3)" }} />}
+            </span>
+          );
+        })}
+        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: T.gold, textTransform: "uppercase" }}>
+          <Icon name="trophy" size={13} /> Champion at the Final
+        </span>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+        <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: T.mono, textTransform: "uppercase" }}>Real community pets · personal bracket</span>
+        <button onClick={() => pool && seed(pool)} className="wc-press ed-wipe" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.terra, background: "transparent", border: "1px solid rgba(190,79,40,.4)", borderRadius: 999, padding: "5px 14px", cursor: "pointer", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <RefreshIcon size={13} /> Reshuffle
+        </button>
+      </div>
+    </BracketFrame>
+  );
+}
+
+/** One tappable pet card in a matchup. Hard-shadow pop on pick (no neon). */
+function Contender({ pet, side, onPick, picked, dimmed, disabled }: {
+  pet: BracketPet; side: "home" | "away"; onPick: () => void; picked: boolean; dimmed: boolean; disabled: boolean;
+}) {
+  const isHome = side === "home";
+  const accent = isHome ? T.terra : T.teal;
+  return (
+    <button
+      onClick={onPick}
+      disabled={disabled}
+      className="wc-pick"
+      aria-label={`Pick ${pet.name}`}
+      style={{
+        position: "relative", textAlign: "center", cursor: disabled ? "default" : "pointer",
+        border: "none", appearance: "none",
+        background: accent, borderRadius: isHome ? "18px 10px 10px 18px" : "10px 18px 18px 10px",
+        padding: "18px 14px 16px", boxShadow: "var(--ed-shadow-card)", overflow: "hidden",
+        transform: picked ? "translateY(-6px) scale(1.035)" : dimmed ? "scale(.965)" : "none",
+        opacity: dimmed ? 0.55 : 1,
+        transition: "transform .34s cubic-bezier(.22,.9,.3,1), opacity .34s ease",
+        outline: picked ? `3px solid ${T.gold}` : "none", outlineOffset: 3,
+      }}
+    >
+      <div style={{ position: "relative", borderRadius: 12, overflow: "hidden", aspectRatio: "1 / 1", background: "rgba(252,233,207,.14)", border: "2px solid rgba(252,233,207,.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={pet.avatar_url} alt={pet.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <div className="ed-gloss" aria-hidden style={{ left: 0 }} />
+        {picked && (
+          <div style={{ position: "absolute", inset: 0, background: "rgba(200,147,47,.28)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 42, height: 42, borderRadius: "50%", background: T.gold, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 18px -8px rgba(80,55,20,.7)" }}>
+              <CheckIcon size={22} color="#FFF8EE" />
+            </div>
+          </div>
+        )}
+      </div>
+      <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 18, color: T.creamOn, marginTop: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{pet.name}</div>
+      <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: "rgba(252,233,207,.82)", marginTop: 3, textTransform: "uppercase" }}>
+        {typeof pet.level === "number" ? `Level ${pet.level}` : "Community pet"}
+      </div>
+    </button>
+  );
+}
+
+/** Section wrapper + header for the Favorites Bracket. */
+function BracketFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div id="wc-bracket" style={{ scrollMarginTop: 90, marginBottom: 30 }}>
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: T.terraSub, textTransform: "uppercase" }}>Favorites Bracket · 이상형 월드컵</div>
+        <h2 style={{ fontFamily: T.disp, fontSize: "clamp(24px,6vw,32px)", fontWeight: 800, color: T.ink, margin: "6px 0 4px", letterSpacing: "-.02em" }}>Pick your favorite</h2>
+        <p style={{ fontFamily: T.body, fontSize: 14, color: T.muted2, margin: 0, lineHeight: 1.55, maxWidth: 600 }}>
+          Two community pets, one choice. Your pick advances round by round until one pet is crowned Champion. Real pets, your call.
+        </p>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+const loadingPill: React.CSSProperties = {
+  background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "14px 16px",
+  boxShadow: "var(--ed-shadow-card)", fontFamily: T.m, fontSize: 13, fontWeight: 700,
+  letterSpacing: ".12em", color: T.mono, textTransform: "uppercase",
+};
+
+function RetryRow({ label, onRetry }: { label: string; onRetry: () => void }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "14px 16px", boxShadow: "var(--ed-shadow-card)", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.muted2, textTransform: "uppercase" }}>
+      <span>{label}</span>
+      <button onClick={onRetry} className="wc-press ed-wipe" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.terra, background: "transparent", border: "1px solid rgba(190,79,40,.4)", borderRadius: 999, padding: "4px 12px", cursor: "pointer", textTransform: "uppercase" }}>Retry</button>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SEASONAL — World Cup 2026 national pets + champion prediction.
+   Compact, collapsible, clearly ephemeral. Hideable once the event is over.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const SEASONAL_HIDE_KEY = "wc-seasonal-hidden";
+
+function SeasonalWorldCup() {
+  const [hidden, setHidden] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    try { if (localStorage.getItem(SEASONAL_HIDE_KEY) === "1") setHidden(true); } catch { /* ignore */ }
+  }, []);
+
+  const hide = () => {
+    setHidden(true);
+    try { localStorage.setItem(SEASONAL_HIDE_KEY, "1"); } catch { /* ignore */ }
+  };
+  const restore = () => {
+    setHidden(false);
+    try { localStorage.removeItem(SEASONAL_HIDE_KEY); } catch { /* ignore */ }
+  };
+
+  if (hidden) {
+    return (
+      <div style={{ borderTop: `1px solid ${T.hair}`, paddingTop: 18, marginTop: 4 }}>
+        <button onClick={restore} className="wc-press" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: T.mono, background: "transparent", border: "none", cursor: "pointer", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 6, padding: 0 }}>
+          <Icon name="trophy" size={13} /> Show seasonal World Cup module
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div id="wc-seasonal" style={{ scrollMarginTop: 90, borderTop: `1px solid ${T.hair}`, paddingTop: 22, marginTop: 6 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+        <button onClick={() => setOpen((v) => !v)} className="wc-press" aria-expanded={open} style={{ background: "transparent", border: "none", cursor: "pointer", textAlign: "left", padding: 0, flex: "1 1 260px" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: T.terraSub, textTransform: "uppercase" }}>
+            <span style={{ background: "rgba(190,79,40,.1)", border: `1px solid rgba(190,79,40,.24)`, borderRadius: 999, padding: "2px 9px", letterSpacing: ".1em" }}>Seasonal</span>
+            World Cup 2026 national pets
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+            <span aria-hidden style={{ display: "inline-block", transition: "transform .2s", transform: open ? "rotate(90deg)" : "none", color: T.mono, fontSize: 13 }}>▸</span>
+            <span style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted2 }}>
+              Reimagine your pet as a nation&apos;s animal &amp; predict the trophy — a for-fun event module, easy to hide when it&apos;s over.
+            </span>
+          </div>
+        </button>
+        <button onClick={hide} className="wc-press ed-wipe" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.mono, background: "transparent", border: `1px solid ${T.hair}`, borderRadius: 999, padding: "4px 12px", cursor: "pointer", textTransform: "uppercase", flexShrink: 0, alignSelf: "flex-start" }}>Hide</button>
+      </div>
+
+      {open && (
+        <Reveal dir="up" style={{ marginTop: 20 }}>
+          <NationalPetStudio />
+          <div id="wc-predict" style={{ scrollMarginTop: 90, borderTop: `1px solid ${T.hair}`, marginTop: 30, paddingTop: 24 }}>
+            <ChampionPrediction />
+          </div>
+        </Reveal>
+      )}
+    </div>
+  );
+}
+
+/* ── National Pet studio (unchanged pipeline; now inside the seasonal module) ── */
+function NationalPetStudio() {
   const [pets, setPets] = useState<Pet[]>([]);
   const [petId, setPetId] = useState<number | null>(null);
   const [country, setCountry] = useState<WorldCupCountry | null>(null);
@@ -66,8 +471,6 @@ export default function WorldCupPet() {
   const [copied, setCopied] = useState(false);
   const [avatarSet, setAvatarSet] = useState(false);
   const [notAuthed, setNotAuthed] = useState(false);
-  // Honest loading: never flash "adopt a pet first" at an owner whose pets are
-  // still on the wire (or whose fetch failed) — mirrors CardDeck's pattern.
   const [petsLoaded, setPetsLoaded] = useState(false);
   const [petsErr, setPetsErr] = useState(false);
 
@@ -110,8 +513,6 @@ export default function WorldCupPet() {
       if (data.status === "completed" && data.url) {
         setResultUrl(data.url);
       } else if (typeof data.generationId === "number") {
-        // grok-imagine is usually synchronous; if it didn't complete inline,
-        // poll the existing job endpoint and drop the result in when ready.
         setPendingJob(data.generationId);
       } else {
         setErr("Generation didn't return a result. Check Studio → History.");
@@ -123,8 +524,7 @@ export default function WorldCupPet() {
     }
   };
 
-  // Poll a still-rendering job until it completes/fails (~90s cap), swapping
-  // the result inline instead of dead-ending on "check Studio".
+  // Poll a still-rendering job until it completes/fails (~90s cap).
   useEffect(() => {
     if (pendingJob === null) return;
     let stop = false;
@@ -171,8 +571,6 @@ export default function WorldCupPet() {
       if (res.ok) {
         setErr(null);
         setAvatarSet(true);
-        // The bracket slot (and every other consumer of pets) immediately
-        // wears the national-pet look — connects the two modes.
         setPets((ps) => ps.map((p) => (p.id === pet.id ? { ...p, avatar_url: resultUrl } : p)));
       } else {
         setErr("Couldn't update the avatar — try again.");
@@ -184,46 +582,25 @@ export default function WorldCupPet() {
 
   // ── states ──
   if (notAuthed) {
-    return <Shell><Empty>Connect your wallet to make your World Cup pet.</Empty></Shell>;
+    return <Empty>Connect your wallet to make your World Cup national pet.</Empty>;
   }
   if (!petsLoaded) {
-    return (
-      <Shell>
-        {petsErr ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "14px 16px", boxShadow: "var(--ed-shadow-card)", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.muted2, textTransform: "uppercase" }}>
-            <span>Couldn&apos;t load your pets</span>
-            <button onClick={loadPets} className="wc-press ed-wipe" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.terra, background: "transparent", border: "1px solid rgba(190,79,40,.4)", borderRadius: 999, padding: "4px 12px", cursor: "pointer", textTransform: "uppercase" }}>Retry</button>
-          </div>
-        ) : (
-          <div style={{ background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "14px 16px", boxShadow: "var(--ed-shadow-card)", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase" }}>
-            Loading your pets…
-          </div>
-        )}
-      </Shell>
-    );
+    return petsErr
+      ? <RetryRow label="Couldn't load your pets" onRetry={loadPets} />
+      : <div style={loadingPill}>Loading your pets…</div>;
   }
   if (pets.length === 0) {
     return (
-      <Shell>
-        <Empty>
-          Adopt a pet first, then bring it to the World Cup.{" "}
-          <a href="/?section=my%20pet" className="ed-underline-slide" style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".06em", color: T.terra, textDecoration: "none" }}>ADOPT A PET ▸</a>
-        </Empty>
-      </Shell>
+      <Empty>
+        Adopt a pet first, then fly its colors.{" "}
+        <a href="/?section=my%20pet" className="ed-underline-slide" style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".06em", color: T.terra, textDecoration: "none" }}>ADOPT A PET ▸</a>
+      </Empty>
     );
   }
 
   return (
-    <Shell>
-      <CutenessCup pets={pets} onEnter={() => document.getElementById("wc-national")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
-
-      {/* ── National Pet path — below the fold, so it reveals on scroll ── */}
-      <Reveal dir="up">
-        <div id="wc-national" style={{ scrollMarginTop: 90, borderTop: `1px solid ${T.hair}`, paddingTop: 22, marginBottom: 6 }}>
-          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: T.terraSub, textTransform: "uppercase" }}>Pet World Cup · National Pet</div>
-          <h2 style={{ fontFamily: T.disp, fontSize: "clamp(24px,6vw,30px)", fontWeight: 800, color: T.ink, margin: "6px 0 2px", letterSpacing: "-.02em" }}>Fly your colors</h2>
-        </div>
-      </Reveal>
+    <div>
+      <div style={{ fontFamily: T.disp, fontSize: "clamp(20px,5vw,26px)", fontWeight: 800, color: T.ink, margin: "0 0 8px", letterSpacing: "-.02em" }}>Fly your colors</div>
 
       {/* Pet picker (only if >1) */}
       {pets.length > 1 && (
@@ -244,14 +621,11 @@ export default function WorldCupPet() {
       <div style={{ fontSize: 14, fontFamily: T.body, color: T.muted2, marginBottom: 12 }}>
         Pick a country — your pet becomes its iconic animal in the flag&apos;s colors.
       </div>
-      {/* Flag cells fly up into the grid as it scrolls into view (viewport
-          <Reveal> per cell, stagger capped at 10 steps; fires once). */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 10, marginBottom: 22 }}>
-        {WORLD_CUP_COUNTRIES.map((c, i) => {
+        {WORLD_CUP_COUNTRIES.map((c) => {
           const on = country?.code === c.code;
           return (
-            <Reveal key={c.code} dir="up" delay={Math.min(i, 10) * 45}>
-            <button onClick={() => setCountry(c)} title={`${c.name} — ${c.animal}`} className="ed-card-hover" style={{
+            <button key={c.code} onClick={() => setCountry(c)} title={`${c.name} — ${c.animal}`} className="ed-card-hover" style={{
               display: "flex", flexDirection: "column", alignItems: "stretch", gap: 0, width: "100%",
               padding: 0, borderRadius: 10, cursor: "pointer", overflow: "hidden",
               border: on ? `2px solid ${T.terra}` : `1px solid ${T.hair}`,
@@ -261,10 +635,6 @@ export default function WorldCupPet() {
               transition: "all .14s",
             }}>
               <div style={{ position: "relative", width: "100%", aspectRatio: "3 / 2", background: T.inset, flexShrink: 0 }}>
-                {/* Absolute so the img's intrinsic ratio (e.g. Switzerland is
-                    square 1:1, Denmark 37:28) can't override the box's 3:2 —
-                    otherwise odd-ratio flags make their card taller. cover crops
-                    every flag into the same uniform 3:2 frame. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={flagUrl(c, 160)} alt={`${c.name} flag`} loading="lazy" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block", boxShadow: "inset 0 0 0 1px rgba(33,26,18,.08)" }} />
                 {on && (
@@ -273,13 +643,8 @@ export default function WorldCupPet() {
                   </div>
                 )}
               </div>
-              {/* Single line for every name (all fit — longest is "Saudi
-                  Arabia" at ~69px in ~106px), so each label is the same height
-                  with identical padding above/below → uniform gap on every card.
-                  Ellipsis is just a safety net; it never triggers for this set. */}
               <span style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".03em", color: on ? T.terra : T.ink70, textAlign: "center", lineHeight: 1.2, padding: "9px 6px", textTransform: "uppercase" }}>{c.name}</span>
             </button>
-            </Reveal>
           );
         })}
       </div>
@@ -299,7 +664,6 @@ export default function WorldCupPet() {
 
       {err && <div style={{ fontFamily: T.body, background: "rgba(190,79,40,.08)", color: T.terraSub, border: `1px solid rgba(190,79,40,.22)`, borderRadius: 10, padding: "10px 14px", fontSize: 13.5, marginTop: 16 }}>{err}</div>}
 
-      {/* Still-rendering: honest status + polling; result swaps in automatically. */}
       {pendingJob !== null && !resultUrl && !err && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontFamily: T.body, background: T.inset, color: T.muted2, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "10px 14px", fontSize: 13.5, marginTop: 16 }}>
           <span>Still rendering — your national pet will appear here automatically.</span>
@@ -307,8 +671,6 @@ export default function WorldCupPet() {
         </div>
       )}
 
-      {/* Result — pops in as one block when the render lands (or when it's
-          scrolled back into view). */}
       {resultUrl && (
         <Reveal dir="pop" style={{ marginTop: 22 }}>
           <div style={{ position: "relative", borderRadius: 18, overflow: "hidden", background: T.field, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)" }}>
@@ -346,12 +708,7 @@ export default function WorldCupPet() {
           </div>
         </Reveal>
       )}
-
-      {/* ── Predict the Champion (real community poll) ── */}
-      <div id="wc-predict" style={{ scrollMarginTop: 90, borderTop: `1px solid ${T.hair}`, marginTop: 30, paddingTop: 24 }}>
-        <ChampionPrediction />
-      </div>
-    </Shell>
+    </div>
   );
 }
 
@@ -386,8 +743,7 @@ function ChampionPrediction() {
   const [saving, setSaving] = useState(false);
   const [pts, setPts] = useState<number | null>(null);
   const [authed, setAuthed] = useState(true);
-  const [submitErr, setSubmitErr] = useState(false); // non-401 submit failure — never swallowed
-  // Honest loading: never assert "0 votes"/"be the first" before real data.
+  const [submitErr, setSubmitErr] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [fetchErr, setFetchErr] = useState(false);
   const [barsIn, setBarsIn] = useState(false);
@@ -407,8 +763,6 @@ function ChampionPrediction() {
   };
   useEffect(load, []);
 
-  // Animate standings bars 0 → pct on first data arrival (width transition
-  // already exists; they used to mount at final width).
   useEffect(() => {
     if (!loaded || rows.length === 0 || barsIn) return;
     const t = setTimeout(() => setBarsIn(true), 60);
@@ -439,12 +793,10 @@ function ChampionPrediction() {
   const selCountry = sel ? WORLD_CUP_COUNTRIES.find((c) => c.code === sel) : null;
 
   return (
-    // Poll card rises in when scrolled to (was a mount-time wc-rise).
     <Reveal dir="up" style={{
       borderRadius: 22, border: `1px solid ${T.hair}`, background: T.paper,
       padding: "22px 22px 24px", marginBottom: 24, boxShadow: "var(--ed-shadow-card)",
     }}>
-      {/* +10 verified against /api/worldcup/predict (awardPointsCapped "worldcup", 10, daily cap 30). */}
       <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.gold, textTransform: "uppercase", marginBottom: 6 }}>COMMUNITY POLL · +10 SEASON POINTS, DAILY-CAPPED</div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <span style={{ fontFamily: T.disp, fontSize: "clamp(24px,6vw,30px)", fontWeight: 800, color: T.ink, letterSpacing: "-0.02em", display: "inline-flex", alignItems: "center", gap: 9 }}>Predict the Champion <Icon name="trophy" size={24} /></span>
@@ -453,8 +805,6 @@ function ChampionPrediction() {
       <div style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted2, margin: "8px 0 12px", lineHeight: 1.55 }}>
         Who lifts the 2026 trophy? Cast your pick — the board below is the live community count. (A prediction poll, not live match results.)
       </div>
-      {/* Factual tournament reference — real, verifiable WC2026 format, framed as
-          trivia and visually separated from the 31-nation ballot below. */}
       <div style={{ padding: "10px 12px", background: T.inset, border: `1px dashed ${T.hair}`, borderRadius: 10, marginBottom: 16 }}>
         <div style={{ fontSize: 13, fontFamily: T.m, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", marginBottom: 7 }}>Real-tournament format</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -464,7 +814,6 @@ function ChampionPrediction() {
         </div>
       </div>
 
-      {/* Picker */}
       <div style={{ fontSize: 13, fontFamily: T.m, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", marginBottom: 8 }}>
         {WORLD_CUP_COUNTRIES.length} nations on the ballot
       </div>
@@ -524,7 +873,6 @@ function ChampionPrediction() {
         </div>
       )}
 
-      {/* Community podium — top-3 most-predicted, styled like a tournament board */}
       {loaded && rows.length > 0 && (
         <div style={{ marginBottom: 18 }}>
           <div style={{ fontSize: 13, fontFamily: T.m, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", marginBottom: 12 }}>Community podium · who players back to win</div>
@@ -544,7 +892,6 @@ function ChampionPrediction() {
         </div>
       )}
 
-      {/* Full standings — honest states: loading / retryable error / real board / real empty */}
       {loaded ? (
         rows.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -588,133 +935,6 @@ function ChampionPrediction() {
 const primaryBtn: React.CSSProperties = { padding: "10px 18px", borderRadius: 10, border: "none", background: T.ink, color: T.creamOn, fontFamily: T.disp, fontWeight: 700, fontSize: 14, cursor: "pointer" };
 const ghostBtn: React.CSSProperties = { padding: "10px 16px", borderRadius: 10, border: `1px solid ${T.hair}`, background: T.paper, color: T.ink70, fontFamily: T.body, fontWeight: 600, fontSize: 14, cursor: "pointer" };
 
-/**
- * Cuteness Cup — the head-to-head bracket (design 시안 08/09). HONEST by design:
- * no bracket-entry API exists yet, so the slots promise nothing — copy says
- * entries are NOT live, the away slot is always the mystery challenger (never
- * the user's own second pet cast as a fake opponent), and no round is marked
- * active until a real bracket API drives `activeStage`. The gold Champion is
- * explicitly "crowned at the Final", never a made-up winner.
- */
-function CutenessCup({ pets, onEnter, activeStage }: { pets: Pet[]; onEnter: () => void; activeStage?: string }) {
-  const stages = ["R16", "QF", "SF", "FINAL"];
-  return (
-    <div id="wc-cuteness" style={{ scrollMarginTop: 90, marginBottom: 26 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
-        <div>
-          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: T.gold, textTransform: "uppercase" }}>Pet World Cup · Cuteness Cup</div>
-          <h2 style={{ fontFamily: T.disp, fontSize: "clamp(24px,6vw,30px)", fontWeight: 800, color: T.ink, margin: "6px 0 0", letterSpacing: "-.02em" }}>Pick the cutest</h2>
-        </div>
-        <span style={{ alignSelf: "center", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.terraSub, textTransform: "uppercase", background: "rgba(190,79,40,.08)", border: `1px solid rgba(190,79,40,.22)`, borderRadius: 999, padding: "6px 12px" }}>Bracket opening soon — entries not live yet</span>
-      </div>
-      <p style={{ fontFamily: T.body, fontSize: 14, color: T.muted2, margin: "0 0 16px", lineHeight: 1.55, maxWidth: 580 }}>
-        Enter your pet into a head-to-head cuteness bracket — the community votes each matchup, winners climb R16 → Final, and one pet is crowned Champion. Real pets, real votes: no scores show until voting goes live.
-      </p>
-
-      {/* HOW IT WORKS — three numbered steps so the bracket reads instantly
-          even before entries exist (owner: the bare VS block was confusing).
-          Each step rises in on scroll, 90ms apart. */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "0 0 18px" }}>
-        {([["1", "ENTER", "Put your pet in the bracket — entries open soon"], ["2", "VOTE", "The community picks the cutest of each matchup"], ["3", "CROWN", "Winners climb R16 → Final; one pet lifts the trophy"]] as const).map(([n, k, d], i) => (
-          <Reveal key={k} dir="up" delay={i * 90} style={{ flex: "1 1 180px" }}>
-          <div className="ed-card-hover" style={{ height: "100%", boxSizing: "border-box", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "10px 12px", display: "flex", gap: 9, alignItems: "flex-start", boxShadow: "var(--ed-shadow-card)" }}>
-            <span style={{ width: 22, height: 22, borderRadius: 7, background: T.terra, color: "#FFF8EE", fontFamily: T.m, fontWeight: 700, fontSize: 13, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{n}</span>
-            <span style={{ minWidth: 0 }}>
-              <span style={{ display: "block", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: T.ink }}>{k}</span>
-              <span style={{ display: "block", fontFamily: T.body, fontSize: 13, color: T.muted2, marginTop: 2, lineHeight: 1.45 }}>{d}</span>
-            </span>
-          </div>
-          </Reveal>
-        ))}
-      </div>
-
-      {/* VS card — an explicitly-labelled PREVIEW in a dashed frame with inert
-          slots (no decoy clicks). The away slot is ALWAYS the mystery challenger
-          (a real community pet is matched only when voting opens). Pops in as
-          one block on scroll. */}
-      <Reveal dir="pop">
-      <div style={{ position: "relative", border: "1.5px dashed rgba(33,26,18,.28)", borderRadius: 24, padding: 12, marginBottom: 14 }}>
-        <span style={{ position: "absolute", top: -9, left: 16, background: T.field, padding: "0 9px", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", zIndex: 4 }}>
-          Preview — how a matchup will look
-        </span>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "stretch" }}>
-          <Slot side="home" pet={pets[0]} />
-          <div style={{ position: "relative", overflow: "hidden", alignSelf: "center", zIndex: 3, width: 52, height: 52, margin: "0 -12px", borderRadius: "50%", background: T.ink, border: `3px solid ${T.paper}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 0 2px ${T.ink}, 0 12px 22px -10px rgba(80,55,20,.6)` }}>
-            <span className="ed-foil-text" style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 15 }}>VS</span>
-            <div className="ed-gloss" aria-hidden style={{ left: 0 }} />
-          </div>
-          <Slot side="away" pet={undefined} />
-        </div>
-      </div>
-      </Reveal>
-
-      {/* ONE explicit action while entries are closed: style the contender in
-          the National Pet studio below (this is what the old decoy slots did
-          silently — now it says so). */}
-      <div style={{ textAlign: "center", margin: "0 0 18px" }}>
-        <button onClick={onEnter} className="wc-press" style={{ border: "none", cursor: "pointer", borderRadius: 12, padding: "12px 24px", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontFamily: T.body, fontWeight: 700, fontSize: 14.5, boxShadow: "var(--ed-shadow-card)" }}>
-          Style your contender while entries open ▸
-        </button>
-        <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.mono, marginTop: 7, letterSpacing: ".1em", textTransform: "uppercase" }}>Uses the National Pet studio below</div>
-      </div>
-
-      {/* bracket strip R16 → Final: every round dormant until a real bracket
-          API passes activeStage; the strip terminates in the gold FINAL pill.
-          The whole strip (plus its caption) rises in on scroll as one row. */}
-      <Reveal dir="up">
-      <div style={{ display: "flex", alignItems: "center", gap: 0, flexWrap: "wrap", rowGap: 8 }}>
-        {stages.map((s, i) => {
-          const isFinal = s === "FINAL";
-          const isActive = activeStage === s;
-          return (
-            <span key={s} style={{ display: "inline-flex", alignItems: "center" }}>
-              <span className={isFinal ? "ed-foilstrip" : undefined} style={{
-                fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em",
-                color: isFinal ? T.ink : isActive ? T.terra : T.mono,
-                border: `1px solid ${isFinal ? "rgba(184,130,44,.55)" : isActive ? "rgba(190,79,40,.4)" : T.hair}`,
-                background: isFinal ? undefined : isActive ? "rgba(190,79,40,.08)" : "transparent",
-                borderRadius: 999, padding: "5px 12px",
-              }}>{s}</span>
-              {i < stages.length - 1 && <span aria-hidden style={{ width: 16, borderTop: "1px dashed rgba(33,26,18,.3)" }} />}
-            </span>
-          );
-        })}
-        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: T.gold, textTransform: "uppercase" }}>
-          <Icon name="trophy" size={13} /> Champion — crowned at the Final
-        </span>
-      </div>
-      <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", marginTop: 8 }}>Rounds open with voting</div>
-      </Reveal>
-    </div>
-  );
-}
-
-function Slot({ side, pet }: { side: "home" | "away"; pet?: Pet }) {
-  const isHome = side === "home";
-  const accent = isHome ? T.terra : T.teal;
-  return (
-    <div aria-hidden style={{
-      position: "relative", textAlign: "center",
-      background: accent, borderRadius: isHome ? "18px 10px 10px 18px" : "10px 18px 18px 10px",
-      padding: "20px 16px 18px", boxShadow: "var(--ed-shadow-card)", overflow: "hidden",
-    }}>
-      <div style={{ position: "relative", borderRadius: 12, overflow: "hidden", aspectRatio: "1 / 1", background: "rgba(252,233,207,.14)", border: "2px solid rgba(252,233,207,.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        {pet?.avatar_url
-          // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={pet.avatar_url} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          : <span style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 42, color: "rgba(252,233,207,.55)" }}>?</span>}
-        <div className="ed-gloss" aria-hidden style={{ left: 0 }} />
-      </div>
-      <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 18, color: T.creamOn, marginTop: 12 }}>{pet?.name || (isHome ? "Your pet" : "A challenger")}</div>
-      <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: "rgba(252,233,207,.78)", marginTop: 4, textTransform: "uppercase" }}>
-        {/* Home slot always receives pets[0] (pets.length > 0 guards this screen);
-            the away slot is always the mystery challenger — no third branch. */}
-        {pet ? "Entries open soon" : "A community pet — matched when voting opens"}
-      </div>
-    </div>
-  );
-}
-
 function Shell({ children }: { children: React.ReactNode }) {
   const jump = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   const chipStyle: React.CSSProperties = {
@@ -724,18 +944,19 @@ function Shell({ children }: { children: React.ReactNode }) {
   };
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "8px 0 40px", fontFamily: T.body, color: T.ink }}>
-      {/* Screen-local motion vocabulary (globals' reduced-motion blanket also applies). */}
       <style>{`
         @keyframes wcRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
         .wc-rise{animation:wcRise .5s cubic-bezier(.22,.9,.3,1) backwards}
         .wc-press{transition:transform .12s ease}
         .wc-press:active{transform:translateY(1px) scale(.985)}
+        .wc-pick:not(:disabled):hover{transform:translateY(-3px)}
         @media (prefers-reduced-motion: reduce){
           .wc-rise{animation:none}
           .wc-press:active{transform:none}
+          .wc-pick:not(:disabled):hover{transform:none}
         }
       `}</style>
-      {/* ── editorial hero: PET WORLD CUP — three ways to play ── */}
+      {/* ── editorial hero: FAVORITES BRACKET — evergreen ── */}
       <div className="wc-rise" style={{
         position: "relative", overflow: "hidden", borderRadius: 22, padding: "34px 28px 30px", marginBottom: 24,
         background: T.field, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)", textAlign: "center",
@@ -743,17 +964,15 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
         <div aria-hidden style={{ position: "absolute", right: -8, top: -16, opacity: 0.08, lineHeight: 1, zIndex: 1 }}><Icon name="trophy" size={130} /></div>
         <div style={{ position: "relative", zIndex: 2 }}>
-          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", color: T.terraSub, textTransform: "uppercase" }}>Pet World Cup · 2026</div>
-          <h1 style={{ fontFamily: T.disp, fontSize: "clamp(34px,8vw,50px)", fontWeight: 800, color: T.ink, margin: "10px 0 0", letterSpacing: "-0.03em", lineHeight: 0.96 }}>Two ways to play now</h1>
+          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", color: T.terraSub, textTransform: "uppercase" }}>Favorites Bracket · 이상형 월드컵</div>
+          <h1 style={{ fontFamily: T.disp, fontSize: "clamp(34px,8vw,50px)", fontWeight: 800, color: T.ink, margin: "10px 0 0", letterSpacing: "-0.03em", lineHeight: 0.96 }}>Pick your favorite pet</h1>
           <p style={{ fontFamily: T.body, fontSize: 15.5, color: T.muted2, margin: "16px auto 0", lineHeight: 1.6, maxWidth: 580 }}>
-            The 2026 World Cup is on. <strong style={{ color: T.ink, fontWeight: 600 }}>Fly your colors</strong> — reimagine your pet as your country&apos;s national animal — and predict who lifts the trophy. The <strong style={{ color: T.terra, fontWeight: 600 }}>Cuteness Cup</strong> bracket is coming soon.
+            Two community pets appear at a time — tap the one you love and it advances. Round of 16 → Final, until one pet is your <strong style={{ color: T.terra, fontWeight: 600 }}>Champion</strong>. Real pets, your personal bracket.
           </p>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 12, margin: "18px 0 0", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: T.mono, flexWrap: "wrap", justifyContent: "center" }}>
-            <button onClick={() => jump("wc-cuteness")} className="wc-press" style={chipStyle}>Cuteness Cup</button>
+            <button onClick={() => jump("wc-bracket")} className="wc-press" style={{ ...chipStyle, color: T.terraSub, borderBottomColor: "rgba(154,78,30,.55)" }}>Play the bracket</button>
             <span aria-hidden style={{ width: 4, height: 4, borderRadius: "50%", background: T.hair }} />
-            <button onClick={() => jump("wc-national")} className="wc-press" style={chipStyle}>National Pet</button>
-            <span aria-hidden style={{ width: 4, height: 4, borderRadius: "50%", background: T.hair }} />
-            <button onClick={() => jump("wc-predict")} className="wc-press" style={{ ...chipStyle, color: T.terraSub, borderBottomColor: "rgba(154,78,30,.55)" }}>Predict the Champion</button>
+            <button onClick={() => jump("wc-seasonal")} className="wc-press" style={chipStyle}>Seasonal: World Cup</button>
           </div>
         </div>
       </div>

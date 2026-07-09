@@ -34,7 +34,7 @@ const AgentWorkbench = lazy(() => import("@/components/AgentWorkbench"));
 const AgentOffice = lazy(() => import("@/components/AgentOffice"));
 const SovereigntyDashboard = lazy(() => import("@/components/SovereigntyDashboard"));
 const PetStudioPro = lazy(() => import("@/components/PetStudioPro"));
-const WorldCupPet = lazy(() => import("@/components/WorldCupPet")); // time-boxed World Cup 2026 event
+const WorldCupPet = lazy(() => import("@/components/WorldCupPet")); // evergreen Favorites Bracket (+ seasonal World Cup module)
 const CardDeck = lazy(() => import("@/components/CardDeck")); // TCG trading cards (owns the Catch tab)
 
 // ── Grid Background ──
