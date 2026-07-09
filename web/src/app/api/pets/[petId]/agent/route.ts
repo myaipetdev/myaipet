@@ -1,18 +1,22 @@
 /**
- * POST /api/pets/[petId]/agent  — run the plan-and-execute agent loop (FEATURE 2)
+ * POST /api/pets/[petId]/agent  — run the native tool-calling agent loop
  *
  * Body: { goal: string, maxSteps?: number }
- * Returns: { ok, answer, steps: [{thought, skill, input, output, ok}], stoppedReason, creditsRemaining }
+ * Returns (JSON, default): { ok, goal, answer, steps: [{thought, skill, input, output, ok}], stoppedReason, creditsRemaining }
+ * Returns (SSE, when Accept: text/event-stream OR ?stream=1): a stream of
+ *   `data: {type:"tool_call"|"tool_result"|"thought"|"error"|"final", ...}` events,
+ *   ending with `data: {type:"done", ok, answer, steps, stoppedReason, creditsRemaining}`.
  *
- * Owner-auth + step-budget + credit guard:
+ * Owner-auth + step-budget + credit guard (identical in both modes):
  *   - requirePetOwner (authz.ts) — only the pet's owner may run a loop (it burns
  *     paid LLM calls on a reasoning model and can invoke real skills).
  *   - maxSteps is clamped server-side (1..MAX_STEPS) regardless of client input.
- *   - A flat credit cost is charged up-front and refunded if the loop never made
- *     a real skill/LLM call (planner died before step 1).
+ *   - A flat credit cost is charged up-front (ONCE, not per event) and refunded if
+ *     the loop never executed a real skill call.
  *
- * Grounding: runAgentLoop lives in web/src/lib/petclaw/agent/plan-execute.ts and
- * calls the REAL executeSkill from pethub.ts over the 18 BUILTIN_SKILLS.
+ * Grounding: runToolAgent lives in web/src/lib/petclaw/agent/tool-agent.ts and
+ * calls the REAL executeSkill from pethub.ts over the runnable BUILTIN_SKILLS.
+ * The legacy runAgentLoop (plan-execute.ts) is retained as a fallback.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -20,7 +24,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePetOwner } from "@/lib/authz";
 import { rateLimit } from "@/lib/rateLimit";
 import { sanitizeText } from "@/lib/sanitize";
-import { runAgentLoop } from "@/lib/petclaw/agent/plan-execute";
+import { runToolAgent, type AgentEvent, type AgentStep } from "@/lib/petclaw/agent/tool-agent";
 
 // Server-enforced ceilings (client cannot exceed these).
 const MAX_STEPS = 6;
@@ -71,62 +75,114 @@ export async function POST(
     return NextResponse.json({ error: "Not enough credits", needed: COST_CREDITS }, { status: 402 });
   }
 
-  // Debit up-front (refunded below if the loop did literally no work).
+  // Debit up-front, ONCE (refunded below if the loop executed no real skill call).
   await prisma.user.update({
     where: { id: user.id },
     data: { credits: { decrement: COST_CREDITS } },
   });
+  const refund = () =>
+    prisma.user
+      .update({ where: { id: user.id }, data: { credits: { increment: COST_CREDITS } } })
+      .catch(() => {});
 
+  // Shared: settle credits + write the audit log once the run completes.
+  // `didRealWork` = at least one skill call was executed (trace non-empty).
+  const settle = async (trace: AgentStep[], answer: string): Promise<number> => {
+    const didRealWork = trace.length > 0;
+    let creditsRemaining = u.credits - COST_CREDITS;
+    if (!didRealWork) {
+      await refund();
+      creditsRemaining = u.credits;
+    }
+    await prisma.petAutonomousAction
+      .create({
+        data: {
+          pet_id: pet.id,
+          urge_type: "agent_loop",
+          action_taken: `tool_agent:${didRealWork ? "worked" : "noop"}`,
+          prompt_used: goal.trim().slice(0, 2000),
+          credits_used: didRealWork ? COST_CREDITS : 0,
+          result: {
+            stepCount: trace.length,
+            skills: trace.map((s) => s.skill),
+            answer: answer.slice(0, 1000),
+          } as any,
+        },
+      })
+      .catch((e) => console.error("[agent-loop] action log failed:", e?.message));
+    return creditsRemaining;
+  };
+
+  const cleanGoal = goal.trim();
+  const wantsStream =
+    (req.headers.get("accept") || "").includes("text/event-stream") ||
+    new URL(req.url).searchParams.get("stream") === "1";
+
+  // ── SSE streaming path ──
+  if (wantsStream) {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const send = (evt: unknown) => {
+          try {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(evt)}\n\n`));
+          } catch {
+            /* controller already closed */
+          }
+        };
+        try {
+          const result = await runToolAgent(pet.id, cleanGoal, {
+            maxSteps,
+            onEvent: (e: AgentEvent) => send(e),
+          });
+          const creditsRemaining = await settle(result.trace, result.answer);
+          send({
+            type: "done",
+            ok: true,
+            goal: cleanGoal,
+            answer: result.answer,
+            steps: result.trace,
+            stoppedReason: "finished",
+            creditsRemaining,
+          });
+        } catch (e: any) {
+          // Total failure — refund and surface an error event (no partial charge).
+          await refund();
+          console.error("[agent-loop] runToolAgent (stream) threw:", e?.message);
+          send({ type: "error", ok: false, error: "Agent loop failed", detail: e?.message });
+        } finally {
+          controller.close();
+        }
+      },
+    });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no",
+      },
+    });
+  }
+
+  // ── Non-streaming JSON path (back-compat with existing clients) ──
   let result;
   try {
-    result = await runAgentLoop({ petId: pet.id, goal: goal.trim(), maxSteps });
+    result = await runToolAgent(pet.id, cleanGoal, { maxSteps });
   } catch (e: any) {
-    // Loop transport blew up entirely — refund and report.
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { credits: { increment: COST_CREDITS } },
-    }).catch(() => {});
-    console.error("[agent-loop] runAgentLoop threw:", e?.message);
+    await refund();
+    console.error("[agent-loop] runToolAgent threw:", e?.message);
     return NextResponse.json({ error: "Agent loop failed", detail: e?.message }, { status: 502 });
   }
 
-  // Refund whenever the run did no real work — i.e. no step other than the
-  // terminal `finish` ran. A garbage planner reply is degraded to `finish`
-  // (stoppedReason "finished", not "planner_error"), so gating the refund on
-  // "planner_error" over-charged those degenerate runs the full credit cost.
-  const didRealWork = result.steps.some((s) => s.skill !== "finish");
-  let creditsRemaining = u.credits - COST_CREDITS;
-  if (!didRealWork) {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { credits: { increment: COST_CREDITS } },
-    }).catch(() => {});
-    creditsRemaining = u.credits;
-  }
-
-  // Audit log — reuse the PetAutonomousAction ledger (has a result Json? column).
-  await prisma.petAutonomousAction.create({
-    data: {
-      pet_id: pet.id,
-      urge_type: "agent_loop",
-      action_taken: `plan_execute:${result.stoppedReason}`,
-      prompt_used: goal.trim().slice(0, 2000),
-      credits_used: didRealWork ? COST_CREDITS : 0,
-      result: {
-        stoppedReason: result.stoppedReason,
-        stepCount: result.steps.length,
-        skills: result.steps.map((s) => s.skill),
-        answer: result.answer.slice(0, 1000),
-      } as any,
-    },
-  }).catch((e) => console.error("[agent-loop] action log failed:", e?.message));
+  const creditsRemaining = await settle(result.trace, result.answer);
 
   return NextResponse.json({
     ok: true,
-    goal: result.goal,
+    goal: cleanGoal,
     answer: result.answer,
-    steps: result.steps,
-    stoppedReason: result.stoppedReason,
+    steps: result.trace,
+    stoppedReason: "finished",
     creditsRemaining,
   });
 }

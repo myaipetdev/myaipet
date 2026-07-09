@@ -2,7 +2,8 @@
 
 /**
  * AgentWorkbench — a Trinity-style orchestration surface over the REAL
- * plan-execute loop (POST /api/pets/[petId]/agent → runAgentLoop).
+ * native function-calling loop (POST /api/pets/[petId]/agent → runToolAgent),
+ * streamed live over SSE so each tool call + result appears as it happens.
  *
  * It exposes the four orchestration affordances Trinity popularized, each mapped
  * to something the loop already produces (no fabrication):
@@ -36,6 +37,7 @@ const COST = 5;
 const MAX_STEPS = 6;
 
 const STOP: Record<string, { label: string; tone: "ok" | "warn" | "err" }> = {
+  running: { label: "Running…", tone: "warn" },
   finished: { label: "Completed", tone: "ok" },
   budget_exhausted: { label: "Reached step budget", tone: "warn" },
   planner_error: { label: "Planner failed", tone: "err" },
@@ -131,34 +133,80 @@ export default function AgentWorkbench() {
       setRunning(true);
       setError(null);
       setRestored(false);
+      setOpen({});
+
+      // Live streaming (SSE): tool calls + results appear as the loop works,
+      // instead of a blocking wait. Falls back to a clear error if the stream
+      // can't be opened. The final `done` event carries the settled totals.
+      const liveSteps: AgentStep[] = [];
+      const byId: Record<string, number> = {}; // tool_call id → step index
+      let liveThought = "";
+      setResult({
+        goal: goalText.trim(), answer: "", steps: [], stoppedReason: "running",
+        creditsRemaining: undefined, at: Date.now(), petId, petName,
+      });
+
       try {
-        const res = await fetch(`/api/pets/${petId}/agent`, {
+        const res = await fetch(`/api/pets/${petId}/agent?stream=1`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+          headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...getAuthHeaders() },
           body: JSON.stringify({ goal: goalText.trim(), maxSteps: steps }),
         });
-        const data = await res.json();
-        if (!res.ok) {
+        if (!res.ok || !res.body) {
+          const data = await res.json().catch(() => ({} as any));
           setError(
             data?.error === "Not enough credits"
               ? `Not enough credits — a run costs ${COST}.`
               : data?.error || "The run failed. Try again.",
           );
+          setResult(null);
           return;
         }
-        const rr: RunResult = {
-          goal: data.goal || goalText.trim(),
-          answer: data.answer || "",
-          steps: data.steps || [],
-          stoppedReason: data.stoppedReason || "finished",
-          creditsRemaining: data.creditsRemaining,
-          at: Date.now(),
-          petId,
-          petName,
-        };
-        setResult(rr);
-        setOpen({});
-        try { localStorage.setItem(LS_KEY, JSON.stringify(rr)); } catch { /* quota */ }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        const flush = () => setResult((r) => (r ? { ...r, steps: [...liveSteps] } : r));
+
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const chunks = buf.split("\n\n");
+          buf = chunks.pop() || "";
+          for (const chunk of chunks) {
+            const dataLine = chunk.split("\n").find((l) => l.startsWith("data:"));
+            if (!dataLine) continue;
+            let evt: any;
+            try { evt = JSON.parse(dataLine.slice(5).trim()); } catch { continue; }
+            if (evt.type === "thought") {
+              liveThought = evt.text || liveThought;
+            } else if (evt.type === "tool_call") {
+              byId[evt.id] = liveSteps.length;
+              liveSteps.push({ thought: liveThought, skill: evt.skill, input: evt.input, output: { status: "running…" }, ok: true });
+              liveThought = "";
+              flush();
+            } else if (evt.type === "tool_result") {
+              const idx = byId[evt.id];
+              if (idx != null) { liveSteps[idx] = { ...liveSteps[idx], output: evt.output, ok: !!evt.ok }; flush(); }
+            } else if (evt.type === "final") {
+              setResult((r) => (r ? { ...r, answer: evt.answer || "" } : r));
+            } else if (evt.type === "error" && evt.ok === false) {
+              setError(evt.error || "The run failed. Try again.");
+            } else if (evt.type === "done") {
+              const rr: RunResult = {
+                goal: evt.goal || goalText.trim(),
+                answer: evt.answer || "",
+                steps: evt.steps || liveSteps,
+                stoppedReason: evt.stoppedReason || "finished",
+                creditsRemaining: evt.creditsRemaining,
+                at: Date.now(), petId, petName,
+              };
+              setResult(rr);
+              try { localStorage.setItem(LS_KEY, JSON.stringify(rr)); } catch { /* quota */ }
+            }
+          }
+        }
       } catch {
         setError("Network error — the loop didn't run. Try again.");
       } finally {
@@ -198,9 +246,9 @@ export default function AgentWorkbench() {
         <div style={{ marginTop: 14, padding: "10px 13px", borderRadius: 10, background: "rgba(33,26,18,0.035)", border: "1px solid rgba(0,0,0,0.07)", fontFamily: SANS, fontSize: 13, color: "rgba(33,26,18,0.6)", lineHeight: 1.55, maxWidth: 620 }}>
           <span style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.1em", color: "rgba(33,26,18,0.45)", fontWeight: 700 }}>HOW IT CHAINS</span>
           <div style={{ marginTop: 4 }}>
-            The loop runs the <b>5 in-loop skills</b> end-to-end and reasons over their output.
-            The other <b>13 skills run on their own REST endpoints</b> — the planner can <i>locate</i> and
-            hand one off, but it returns a pointer (not a result), so the loop won&apos;t chain it.
+            Your pet calls its <b>in-loop skills</b> as native function tools and reasons over
+            each result — live, one call at a time, retrying on failure. Skills that run on their
+            own REST endpoints aren&apos;t offered here; invoke those via the SDK or MCP.
           </div>
         </div>
       </div>

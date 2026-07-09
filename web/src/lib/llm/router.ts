@@ -189,6 +189,255 @@ export async function callLLM(args: CallLLMArgs): Promise<LLMResult> {
   return { text, model: raw?.model || target.model, provider: target.provider.id, source: target.source, raw };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// NATIVE FUNCTION-CALLING (tools) — used by the tool-calling agent loop.
+//
+// callLLMWithTools() mirrors callLLM()'s provider resolution + key decrypt
+// (reuses the SAME private resolveTarget helper) but sends NATIVE tool
+// definitions in each provider's shape and returns a NORMALIZED tool-call
+// result. callLLM() is untouched — its signature and behavior are identical.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A native tool/function the model may call. `parameters` is a JSON Schema. */
+export interface ToolDef {
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+}
+
+/** A single tool call the model emitted, normalized across providers. */
+export interface ToolCall {
+  id: string;
+  name: string;
+  arguments: Record<string, unknown>;
+}
+
+/**
+ * Provider-neutral message that can carry tool calls (assistant) or a tool
+ * RESULT (role:"tool"). Translated to the correct wire shape at send time:
+ *   - OpenAI/xAI/OpenRouter/Nous: role:"tool" + tool_call_id; assistant.tool_calls[]
+ *   - Anthropic: assistant tool_use blocks; a user turn of tool_result blocks
+ */
+export interface ToolMessage {
+  role: "system" | "user" | "assistant" | "tool";
+  content: string | null;
+  /** assistant only — the calls it requested (normalized). */
+  tool_calls?: ToolCall[];
+  /** role:"tool" only — the call this result answers. */
+  tool_call_id?: string;
+  /** role:"tool" only — the tool/skill name (OpenAI includes it; helpful for logs). */
+  name?: string;
+}
+
+/** "auto" | "none" | "required", or force a specific function by name. */
+export type ToolChoice = "auto" | "none" | "required" | { name: string };
+
+export interface CallLLMWithToolsArgs {
+  task: LLMTask;
+  messages: ToolMessage[];
+  tools: ToolDef[];
+  toolChoice?: ToolChoice;
+  petId?: number;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export interface ToolCallResult {
+  content: string | null;
+  toolCalls: ToolCall[];
+  finishReason: string | null;
+  usage: any;
+  model: string;
+  provider: ProviderId;
+  source: "owner" | "platform";
+}
+
+/** JSON string → object, with a safe {} fallback (models sometimes emit junk). */
+function safeParseArgs(value: unknown): Record<string, unknown> {
+  if (value && typeof value === "object") return value as Record<string, unknown>;
+  if (typeof value !== "string" || !value.trim()) return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+// ── OpenAI-shape (xai / openai / openrouter / nous) translation ──
+
+function toOpenAIToolMessages(messages: ToolMessage[]): any[] {
+  return messages.map((m) => {
+    if (m.role === "assistant" && m.tool_calls && m.tool_calls.length) {
+      return {
+        role: "assistant",
+        content: m.content ?? "",
+        tool_calls: m.tool_calls.map((tc) => ({
+          id: tc.id,
+          type: "function",
+          function: { name: tc.name, arguments: JSON.stringify(tc.arguments ?? {}) },
+        })),
+      };
+    }
+    if (m.role === "tool") {
+      return { role: "tool", tool_call_id: m.tool_call_id, content: m.content ?? "" };
+    }
+    return { role: m.role, content: m.content ?? "" };
+  });
+}
+
+function toOpenAIToolChoice(tc?: ToolChoice): any {
+  if (!tc) return undefined;
+  if (tc === "auto" || tc === "none" || tc === "required") return tc;
+  return { type: "function", function: { name: tc.name } };
+}
+
+// ── Anthropic-shape translation (system hoisted; tool_result blocks grouped) ──
+
+function toAnthropicToolConversation(messages: ToolMessage[]): { system: string; turns: any[] } {
+  const system = messages
+    .filter((m) => m.role === "system")
+    .map((m) => m.content || "")
+    .join("\n\n");
+  const turns: any[] = [];
+  for (const m of messages) {
+    if (m.role === "system") continue;
+    if (m.role === "tool") {
+      // Consecutive tool results must collapse into ONE user turn of tool_result blocks.
+      const block = { type: "tool_result", tool_use_id: m.tool_call_id, content: m.content ?? "" };
+      const last = turns[turns.length - 1];
+      if (last && last._toolResults) {
+        last.content.push(block);
+      } else {
+        turns.push({ role: "user", content: [block], _toolResults: true });
+      }
+      continue;
+    }
+    if (m.role === "assistant" && m.tool_calls && m.tool_calls.length) {
+      const content: any[] = [];
+      if (m.content) content.push({ type: "text", text: m.content });
+      for (const tc of m.tool_calls) {
+        content.push({ type: "tool_use", id: tc.id, name: tc.name, input: tc.arguments ?? {} });
+      }
+      turns.push({ role: "assistant", content });
+      continue;
+    }
+    turns.push({ role: m.role, content: m.content ?? "" });
+  }
+  // Strip the internal grouping marker before sending.
+  return { system, turns: turns.map(({ _toolResults, ...rest }) => rest) };
+}
+
+function toAnthropicToolChoice(tc?: ToolChoice): any {
+  if (!tc || tc === "auto") return { type: "auto" };
+  if (tc === "required") return { type: "any" };
+  if (tc === "none") return undefined; // let the model answer without forcing a tool
+  return { type: "tool", name: tc.name };
+}
+
+/**
+ * Call an LLM with NATIVE tool/function definitions. Same routing/key resolution
+ * as callLLM (owner-connected model for the task, else platform Grok default).
+ * OpenAI-shape is the primary path (Grok supports tools + tool_choice + parallel
+ * calls). Google is rejected with a clear, actionable error.
+ */
+export async function callLLMWithTools(args: CallLLMWithToolsArgs): Promise<ToolCallResult> {
+  const { task, messages, tools, toolChoice, petId, temperature = 0.4, maxTokens = 800 } = args;
+  const target = await resolveTarget(task, petId);
+  if (!target.apiKey) throw new Error(`No API key available for task '${task}' (provider ${target.provider.id})`);
+
+  if (target.provider.flavor === "google") {
+    throw new Error(
+      "tool-calling not supported for provider 'google' — connect an OpenAI-compatible (xAI/OpenAI/OpenRouter/Nous) or Anthropic model at /api/petclaw/models",
+    );
+  }
+
+  if (target.provider.flavor === "anthropic") {
+    const { system, turns } = toAnthropicToolConversation(messages);
+    const res = await fetch(`${target.provider.baseUrl}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": target.apiKey, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({
+        model: target.model,
+        max_tokens: maxTokens,
+        temperature,
+        system: system || undefined,
+        messages: turns,
+        tools: tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.parameters })),
+        ...(toAnthropicToolChoice(toolChoice) ? { tool_choice: toAnthropicToolChoice(toolChoice) } : {}),
+      }),
+    });
+    if (!res.ok) throw new Error(`${target.provider.id} ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+    const raw = await res.json();
+    const blocks: any[] = Array.isArray(raw?.content) ? raw.content : [];
+    const content = blocks.filter((b) => b?.type === "text").map((b) => b.text).join("") || null;
+    const toolCalls: ToolCall[] = blocks
+      .filter((b) => b?.type === "tool_use")
+      .map((b) => ({ id: String(b.id), name: String(b.name), arguments: safeParseArgs(b.input) }));
+    return {
+      content,
+      toolCalls,
+      finishReason: raw?.stop_reason ?? null,
+      usage: raw?.usage ?? null,
+      model: raw?.model || target.model,
+      provider: target.provider.id,
+      source: target.source,
+    };
+  }
+
+  // OpenAI-shaped (xai / openai / openrouter / nous) — the primary path (Grok).
+  const res = await fetch(`${target.provider.baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${target.apiKey}` },
+    body: JSON.stringify({
+      model: target.model,
+      messages: toOpenAIToolMessages(messages),
+      max_tokens: maxTokens,
+      temperature,
+      tools: tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.parameters } })),
+      ...(toOpenAIToolChoice(toolChoice) ? { tool_choice: toOpenAIToolChoice(toolChoice) } : {}),
+    }),
+  });
+  if (!res.ok) throw new Error(`${target.provider.id} ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+  const raw = await res.json();
+  const msg = raw?.choices?.[0]?.message;
+  const content = (msg?.content ?? null) as string | null;
+  const toolCalls: ToolCall[] = (Array.isArray(msg?.tool_calls) ? msg.tool_calls : [])
+    .filter((tc: any) => tc?.function?.name)
+    .map((tc: any) => ({ id: String(tc.id ?? tc.function.name), name: String(tc.function.name), arguments: safeParseArgs(tc.function.arguments) }));
+  return {
+    content,
+    toolCalls,
+    finishReason: raw?.choices?.[0]?.finish_reason ?? null,
+    usage: raw?.usage ?? null,
+    model: raw?.model || target.model,
+    provider: target.provider.id,
+    source: target.source,
+  };
+}
+
+/**
+ * Append the assistant's tool-call turn to a running messages array, in the
+ * neutral shape (translated to provider wire form at the next send).
+ */
+export function appendAssistantToolCalls(messages: ToolMessage[], result: ToolCallResult): void {
+  messages.push({ role: "assistant", content: result.content, tool_calls: result.toolCalls });
+}
+
+/**
+ * Append tool RESULTS to a running messages array. Neutral role:"tool" entries
+ * (the OpenAI shape) — callLLMWithTools translates them to Anthropic tool_result
+ * blocks automatically when an Anthropic model is resolved.
+ */
+export function appendToolResults(
+  messages: ToolMessage[],
+  results: Array<{ tool_call_id: string; name?: string; content: string }>,
+): void {
+  for (const r of results) {
+    messages.push({ role: "tool", tool_call_id: r.tool_call_id, name: r.name, content: r.content });
+  }
+}
+
 const EMBEDDING_MODELS: Partial<Record<ProviderId, string>> = {
   openai: "text-embedding-3-small",
   google: "text-embedding-004",

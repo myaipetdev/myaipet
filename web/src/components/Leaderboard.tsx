@@ -256,7 +256,7 @@ export default function Leaderboard() {
               fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A4E1E", lineHeight: 1.5,
             }}>
               Tiers are non-financial standing — your felt status in the season. Higher tiers
-              unlock claimable merch with your AI pet&apos;s artwork printed on real products.
+              unlock recognition only: no cash value, no redemption.
             </span>
           </div>
         </Reveal>

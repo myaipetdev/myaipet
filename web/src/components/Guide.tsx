@@ -403,9 +403,9 @@ function EconomySection() {
         <P>Purchase credits with USDT to spend in-game. Credits convert to pts on use.</P>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
           {[
-            { name: "Starter", price: "$5", credits: "100", pet: "500 pts", color: "#4ade80" },
+            { name: "Explorer", price: "$5", credits: "100", pet: "500 pts", color: "#4ade80" },
             { name: "Creator", price: "$20", credits: "500", pet: "2,500 pts", color: "#60a5fa" },
-            { name: "Pro", price: "$50", credits: "2,000", pet: "10,000 pts", color: "#c084fc" },
+            { name: "Breeder", price: "$50", credits: "2,000", pet: "10,000 pts", color: "#c084fc" },
           ].map(plan => (
             <div key={plan.name} style={{
               padding: "18px", borderRadius: 14, textAlign: "center",
