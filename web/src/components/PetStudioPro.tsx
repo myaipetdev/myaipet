@@ -253,6 +253,12 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
     setPrompt(t.buildPrompt(ctx));
     setOutputKind("video");
     setStyleId("cinematic");
+    if (t.aspect) setAspect(t.aspect);
+    // Prefer the template's engine (e.g. image-to-video keeps the pet's exact
+    // likeness — "just swap the character") when it's available + unlocked. The
+    // outputKind effect leaves a valid same-kind model untouched.
+    const sm = models.find((m) => m.id === t.suggestedModelId);
+    if (sm && !sm.comingSoon && !tierLocked(sm)) setChosenModelId(sm.id);
   };
 
   const chosenModel = models.find(m => m.id === chosenModelId);
@@ -1140,7 +1146,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                 display: "inline-flex", alignItems: "center", gap: 5,
               }}><Icon name="sparkling" size={12} /> TEMPLATES</span>
               <span style={{ fontSize: 13, fontFamily: T.m, color: T.muted2 }}>
-                one tap → a full scene
+                one tap → a full scene · 🔥 trending up top
               </span>
             </div>
             <div style={{
@@ -1154,6 +1160,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   fontSize: 13, lineHeight: 1, background: T.paper,
                   border: `1px solid ${T.hair}`, borderRadius: 8, padding: "3px 6px",
                 };
+                const catLabel = t.category === "trending" ? "🔥 trending" : t.category;
                 return (
                   <Reveal key={t.id} dir="up" delay={Math.min(i, 8) * 70}>
                   <button
@@ -1195,7 +1202,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                           fontSize: 13, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
-                        }}>{t.category}</span>
+                        }}>{catLabel}</span>
                       </div>
                     ) : ex ? (
                       <div style={{
@@ -1208,7 +1215,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                           fontSize: 13, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
-                        }}>{t.category}</span>
+                        }}>{catLabel}</span>
                       </div>
                     ) : (
                       <div style={{
@@ -1223,7 +1230,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                           fontSize: 13, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: T.studio,
-                        }}>{t.category}</span>
+                        }}>{catLabel}</span>
                       </div>
                     )}
                     <div style={{ padding: "9px 11px 11px" }}>
