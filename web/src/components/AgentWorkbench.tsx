@@ -246,9 +246,10 @@ export default function AgentWorkbench() {
         <div style={{ marginTop: 14, padding: "10px 13px", borderRadius: 10, background: "rgba(33,26,18,0.035)", border: "1px solid rgba(0,0,0,0.07)", fontFamily: SANS, fontSize: 13, color: "rgba(33,26,18,0.6)", lineHeight: 1.55, maxWidth: 620 }}>
           <span style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.1em", color: "rgba(33,26,18,0.45)", fontWeight: 700 }}>HOW IT CHAINS</span>
           <div style={{ marginTop: 4 }}>
-            Your pet calls its <b>in-loop skills</b> as native function tools and reasons over
-            each result — live, one call at a time, retrying on failure. Skills that run on their
-            own REST endpoints aren&apos;t offered here; invoke those via the SDK or MCP.
+            Your pet calls its <b>in-loop skills</b> plus real keyless <b>look-up tools</b>
+            (web search, Wikipedia, crypto prices, its own memory) as native function tools and
+            reasons over each result — live, one call at a time, retrying on failure. Skills that
+            run on their own REST endpoints aren&apos;t offered here; invoke those via the SDK or MCP.
           </div>
         </div>
       </div>

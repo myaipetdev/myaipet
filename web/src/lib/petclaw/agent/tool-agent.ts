@@ -22,6 +22,8 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
 import {
   BUILTIN_SKILLS,
   executeSkill,
@@ -36,6 +38,11 @@ import {
   type ToolDef,
   type ToolMessage,
 } from "@/lib/llm/router";
+import type { ConnectorResult } from "../connectors";
+import { WebSearchConnector } from "../connectors/web-search";
+import { WikipediaConnector } from "../connectors/wikipedia";
+import { CoinGeckoConnector } from "../connectors/coingecko";
+import { MemoryConnector } from "../connectors/memory-enhanced";
 
 // ── Config ──
 
@@ -46,6 +53,7 @@ const WALLCLOCK_MS = 60_000; // hard wall-clock guard for the whole loop
 const PER_CALL_TIMEOUT_MS = 20_000; // per skill execution
 const SKILL_RETRIES = 2; // => up to 3 attempts total
 const RESULT_CLIP = 4000; // chars of skill output fed back to the model
+const CONNECTOR_TIMEOUT_MS = 10_000; // per connector (external API) call — single attempt, no retry
 
 // Only these handlers run in-process (real, chainable output). Mirrors the
 // allowlist in plan-execute.ts — fail closed so a new endpoint handler is never
@@ -62,10 +70,12 @@ export interface AgentStep {
   ok: boolean; // whether the skill call succeeded
 }
 
+export type ToolKind = "skill" | "connector";
+
 export type AgentEvent =
   | { type: "thought"; text: string }
-  | { type: "tool_call"; id: string; skill: string; input: Record<string, unknown> }
-  | { type: "tool_result"; id: string; skill: string; ok: boolean; output: unknown }
+  | { type: "tool_call"; id: string; skill: string; input: Record<string, unknown>; kind: ToolKind }
+  | { type: "tool_result"; id: string; skill: string; ok: boolean; output: unknown; kind: ToolKind }
   | { type: "error"; skill?: string; message: string }
   | { type: "final"; answer: string };
 
@@ -108,6 +118,220 @@ function buildTools(): ToolDef[] {
     description: s.description,
     parameters: toParameters(s.inputSchema),
   }));
+}
+
+// ── Connector tools: REAL, keyless, READ-ONLY external look-ups ──
+//
+// These are NOT pet skills — they are genuine read-only calls to public,
+// no-key APIs (DuckDuckGo Instant Answer, Wikipedia REST, CoinGecko free v3)
+// plus the pet's own persistent memory. Every tool below is backed by a real
+// working fetch/DB call — no stubs, no fabricated results. They are exposed to
+// the model ALONGSIDE the skill tools so the pet can actually look things up
+// in-loop, then feed real observations back to the synthesizer.
+
+type StringRecord = Record<string, unknown>;
+
+interface ConnectorTool {
+  def: ToolDef;
+  run: (petId: number, args: StringRecord) => Promise<ConnectorResult>;
+}
+
+function asStr(v: unknown): string {
+  return typeof v === "string" ? v : v == null ? "" : String(v);
+}
+
+// ── SSRF guard for web_read (model supplies the URL) ─────────────────────────
+// web_read fetches an arbitrary model-chosen URL server-side, so a prompt
+// injection could aim it at internal services / cloud metadata. Block non-
+// http(s) schemes, localhost, and any host that is (or resolves to) a private /
+// reserved / link-local IP. Residual: a redirect from a public host to a private
+// one isn't re-checked here (the connector's fetch follows redirects), so this
+// closes the direct-address vector, not redirect-based SSRF.
+function ipv4IsPrivate(ip: string): boolean {
+  const p = ip.split(".").map(Number);
+  if (p.length !== 4 || p.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return true;
+  const [a, b, c] = p;
+  if (a === 0 || a === 10 || a === 127) return true;        // this-net / private / loopback
+  if (a === 169 && b === 254) return true;                  // link-local (+ 169.254.169.254 metadata)
+  if (a === 172 && b >= 16 && b <= 31) return true;         // private
+  if (a === 192 && b === 168) return true;                  // private
+  if (a === 192 && b === 0 && c === 0) return true;         // IETF protocol assignments
+  if (a === 100 && b >= 64 && b <= 127) return true;        // CGNAT
+  if (a === 198 && (b === 18 || b === 19)) return true;     // benchmarking
+  if (a >= 224) return true;                                // multicast + reserved
+  return false;
+}
+function ipIsPrivate(ip: string): boolean {
+  const fam = isIP(ip);
+  if (fam === 4) return ipv4IsPrivate(ip);
+  if (fam === 6) {
+    const s = ip.toLowerCase();
+    if (s === "::1" || s === "::") return true;
+    if (/^fe[89ab]/.test(s)) return true;                   // fe80::/10 link-local
+    if (/^f[cd]/.test(s)) return true;                      // fc00::/7 ULA
+    const m = s.match(/::ffff:(\d+\.\d+\.\d+\.\d+)$/);       // IPv4-mapped
+    if (m) return ipv4IsPrivate(m[1]);
+    return false;
+  }
+  return true; // not a valid IP post-resolution → block
+}
+async function assertPublicHttpUrl(raw: string): Promise<void> {
+  let u: URL;
+  try { u = new URL(raw); } catch { throw new Error("invalid URL"); }
+  if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("only http(s) URLs are allowed");
+  const host = u.hostname.replace(/^\[|\]$/g, "");
+  const lower = host.toLowerCase();
+  if (!host) throw new Error("no host");
+  if (lower === "localhost" || lower.endsWith(".localhost") || lower === "metadata.google.internal") {
+    throw new Error("blocked host");
+  }
+  if (isIP(host)) {
+    if (ipIsPrivate(host)) throw new Error("blocked private/reserved address");
+    return;
+  }
+  const addrs = await lookup(host, { all: true }).catch(() => null);
+  if (!addrs || !addrs.length) throw new Error("dns resolution failed");
+  for (const a of addrs) if (ipIsPrivate(a.address)) throw new Error("blocked private/reserved address");
+}
+
+const CONNECTOR_TOOLS: ConnectorTool[] = [
+  {
+    def: {
+      name: "web_search",
+      description:
+        "Best-effort keyless web look-up via DuckDuckGo's Instant Answer API. Returns an abstract + related topics when one exists; can be empty for long-tail queries (it is an instant-answer box, not a full search index). Read-only.",
+      parameters: {
+        type: "object",
+        properties: { query: { type: "string", description: "What to look up" } },
+        required: ["query"],
+      },
+    },
+    run: (_petId, args) => new WebSearchConnector().search(asStr(args.query), 5),
+  },
+  {
+    def: {
+      name: "web_read",
+      description:
+        "Fetch ONE public http(s) URL and return its stripped page text (first ~2000 chars). Read-only. Use to read a page you already have a URL for.",
+      parameters: {
+        type: "object",
+        properties: { url: { type: "string", description: "The http(s) URL to read" } },
+        required: ["url"],
+      },
+    },
+    run: async (_petId, args) => {
+      const url = asStr(args.url);
+      await assertPublicHttpUrl(url); // SSRF guard — block internal/metadata targets
+      return new WebSearchConnector().summarize(url);
+    },
+  },
+  {
+    def: {
+      name: "wikipedia_lookup",
+      description:
+        "Look up a topic on Wikipedia (keyless). Finds the best-matching article and returns a short factual summary. Read-only.",
+      parameters: {
+        type: "object",
+        properties: { topic: { type: "string", description: "Topic or article title to look up" } },
+        required: ["topic"],
+      },
+    },
+    run: async (_petId, args) => {
+      const topic = asStr(args.topic);
+      const wiki = new WikipediaConnector();
+      const found = await wiki.search(topic, 3);
+      const hits = Array.isArray(found.data) ? (found.data as any[]) : [];
+      const title = hits[0]?.title || topic;
+      const summary = await wiki.getSummary(title);
+      if (summary.success) {
+        return {
+          success: true,
+          platform: "wikipedia",
+          data: {
+            title,
+            ...(summary.data as object),
+            alternatives: hits.slice(1, 3).map((h) => h?.title).filter(Boolean),
+          },
+        };
+      }
+      // Summary endpoint failed — fall back to the raw search hits (still real).
+      return found;
+    },
+  },
+  {
+    def: {
+      name: "crypto_price",
+      description:
+        "Get the current USD price + 24h change + market cap for a cryptocurrency by name or symbol (e.g. 'bitcoin', 'eth', 'solana'). Keyless CoinGecko. Read-only.",
+      parameters: {
+        type: "object",
+        properties: { coin: { type: "string", description: "Coin name or ticker symbol" } },
+        required: ["coin"],
+      },
+    },
+    run: async (_petId, args) => {
+      const coin = asStr(args.coin);
+      const cg = new CoinGeckoConnector();
+      // Resolve a free-text coin to a canonical CoinGecko id first (handles
+      // symbols like 'btc' that /simple/price won't accept directly).
+      const found = await cg.search(coin);
+      const coins = Array.isArray(found.data) ? (found.data as any[]) : [];
+      const id = coins[0]?.id || coin.toLowerCase();
+      const price = await cg.getPrice([id]);
+      if (price.success) {
+        const priceData = (price.data as any)?.[id] ?? null;
+        return {
+          success: true,
+          platform: "coingecko",
+          data: { id, name: coins[0]?.name || id, symbol: coins[0]?.symbol ?? null, usd: priceData },
+        };
+      }
+      return price;
+    },
+  },
+  {
+    def: {
+      name: "recall_memory",
+      description:
+        "Search THIS pet's own persistent memory of past conversations with its owner for anything relevant. Read-only.",
+      parameters: {
+        type: "object",
+        properties: { query: { type: "string", description: "What to recall from memory" } },
+        required: ["query"],
+      },
+    },
+    run: (petId, args) => new MemoryConnector(petId).search(asStr(args.query), 8),
+  },
+];
+
+const CONNECTOR_TOOL_MAP = new Map(CONNECTOR_TOOLS.map((t) => [t.def.name, t]));
+
+/**
+ * Execute a connector tool with a per-call timeout. SINGLE attempt (no retry —
+ * these hit rate-limited public APIs, and retrying would only make throttling
+ * worse). Never throws — returns a structured {ok, output} so the loop can feed
+ * a recoverable error back to the model.
+ */
+async function executeConnector(
+  petId: number,
+  name: string,
+  args: StringRecord,
+  deadline: number,
+): Promise<{ ok: boolean; output: unknown }> {
+  const tool = CONNECTOR_TOOL_MAP.get(name);
+  if (!tool) {
+    return { ok: false, output: { error: `Unknown connector '${name}'. Choose an offered tool.` } };
+  }
+  if (Date.now() > deadline) {
+    return { ok: false, output: { error: "time budget exhausted before execution" } };
+  }
+  try {
+    const result = await withTimeout(tool.run(petId, args), CONNECTOR_TIMEOUT_MS);
+    if (result.success) return { ok: true, output: result.data };
+    return { ok: false, output: { error: result.error || "connector call failed", platform: result.platform } };
+  } catch (e: any) {
+    return { ok: false, output: { error: e?.message || "connector call threw" } };
+  }
 }
 
 // ── Helpers ──
@@ -232,7 +456,8 @@ Rules:
 - Prefer calling a tool over guessing when a tool can get you real information.
 - Do NOT repeat the same tool with the same arguments.
 - Most goals need 1-3 tool calls. When you have enough to answer, reply with a short plain-text answer and NO tool calls — that ends the loop.
-- Only call the tools you were given. Never invent tool names or arguments.`;
+- Only call the tools you were given. Never invent tool names or arguments.
+- Some tools are LOOK-UP tools (web_search, web_read, wikipedia_lookup, crypto_price, recall_memory) that fetch REAL external or remembered facts — prefer them over guessing whenever the goal needs a fact you don't already know. If a look-up comes back empty or errors, try a different tool or answer with what you have.`;
 
 /**
  * Run the native tool-calling agent loop. Returns the final in-character answer,
@@ -247,7 +472,9 @@ export async function runToolAgent(
   const maxSteps = Math.max(MIN_STEPS, Math.min(HARD_MAX_STEPS, Math.floor(opts?.maxSteps ?? DEFAULT_MAX_STEPS)));
   const onEvent = opts?.onEvent ?? (() => {});
   const deadline = Date.now() + WALLCLOCK_MS;
-  const tools = buildTools();
+  // Skill tools + real keyless read-only connector tools (additive). Connector
+  // names are checked first at execution time, so they always win a collision.
+  const tools = [...buildTools(), ...CONNECTOR_TOOLS.map((t) => t.def)];
 
   const messages: ToolMessage[] = [
     { role: "system", content: AGENT_SYSTEM },
@@ -300,8 +527,12 @@ export async function runToolAgent(
 
     const results: Array<{ tool_call_id: string; name: string; content: string }> = [];
     for (const call of res.toolCalls) {
-      onEvent({ type: "tool_call", id: call.id, skill: call.name, input: call.arguments });
-      const exec = await executeWithRetry(petId, call.name, call.arguments, deadline);
+      const isConnector = CONNECTOR_TOOL_MAP.has(call.name);
+      const kind: ToolKind = isConnector ? "connector" : "skill";
+      onEvent({ type: "tool_call", id: call.id, skill: call.name, input: call.arguments, kind });
+      const exec = isConnector
+        ? await executeConnector(petId, call.name, call.arguments, deadline)
+        : await executeWithRetry(petId, call.name, call.arguments, deadline);
       trace.push({
         thought: res.content ?? undefined,
         skill: call.name,
@@ -309,7 +540,7 @@ export async function runToolAgent(
         output: exec.output,
         ok: exec.ok,
       });
-      onEvent({ type: "tool_result", id: call.id, skill: call.name, ok: exec.ok, output: exec.output });
+      onEvent({ type: "tool_result", id: call.id, skill: call.name, ok: exec.ok, output: exec.output, kind });
       if (!exec.ok) {
         onEvent({ type: "error", skill: call.name, message: clip((exec.output as any)?.error ?? exec.output, 200) });
       }
@@ -327,4 +558,9 @@ export async function runToolAgent(
 /** Exposed for the route + tests: which skills are offered as executable tools. */
 export function runnableToolIds(): string[] {
   return BUILTIN_SKILLS.filter(isRunnable).map((s) => s.id);
+}
+
+/** Exposed for the route + tests: the real keyless read-only connector tools. */
+export function connectorToolIds(): string[] {
+  return CONNECTOR_TOOLS.map((t) => t.def.name);
 }
