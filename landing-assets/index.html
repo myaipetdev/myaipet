@@ -840,9 +840,206 @@
   .fx-invert.is-inverted .tag,
   .fx-invert.is-inverted .prompt,
   .fx-invert.is-inverted .gold{ color:var(--cream-on) !important; }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     JOURNEY — the user-story spine. Numbered narrative on a drawn path,
+     framed explainer-video placeholder, foil medallions, paw-print motif.
+     Stays on Collectible-Editorial brand (paper/ink/terracotta/foil,
+     hard offset shadows). Reveal reuses the existing [data-reveal] IO.
+     ═══════════════════════════════════════════════════════════════════ */
+  .journey {
+    position: relative; overflow: hidden;
+    background:
+      radial-gradient(ellipse 60% 40% at 82% 8%, rgba(226,125,12,0.07), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 12% 92%, rgba(200,147,47,0.06), transparent 60%),
+      var(--cream);
+  }
+  /* faint paw-print watermark motif drifting behind the timeline */
+  .journey-paws {
+    position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0.5;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><g fill='%23BE4F28' opacity='0.05'><ellipse cx='60' cy='72' rx='15' ry='18'/><ellipse cx='38' cy='46' rx='7' ry='9'/><ellipse cx='60' cy='38' rx='7' ry='9'/><ellipse cx='82' cy='46' rx='7' ry='9'/><ellipse cx='96' cy='66' rx='6' ry='8'/></g></svg>");
+    background-size: 150px 150px;
+    animation: pawDrift 40s linear infinite;
+  }
+  @keyframes pawDrift { to { background-position: 150px 300px; } }
+  .journey .container { position: relative; z-index: 1; }
+
+  /* framed 16:9 explainer-video placeholder (poster + play affordance) */
+  .journey-video {
+    position: relative; margin: 56px auto 0; max-width: 860px;
+    aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden;
+    background:
+      radial-gradient(ellipse at 50% 40%, rgba(232,199,126,0.18), transparent 62%),
+      repeating-linear-gradient(135deg, #241a12 0 14px, #2a2018 14px 28px);
+    border: 1px solid rgba(226,125,12,0.35);
+    box-shadow: 12px 14px 0 rgba(33,26,18,0.14), 0 40px 70px -34px rgba(16,16,28,0.4);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    transition: transform .4s var(--ease), box-shadow .4s var(--ease);
+  }
+  .journey-video::before {
+    content: ""; position: absolute; inset: 0; z-index: 0;
+    background: linear-gradient(115deg, transparent 30%, rgba(255,247,230,0.1) 47%, rgba(255,247,230,0.22) 50%, rgba(255,247,230,0.1) 53%, transparent 70%);
+    background-size: 260% 100%; background-repeat: no-repeat;
+    animation: videoShimmer 5.5s ease-in-out infinite;
+  }
+  @keyframes videoShimmer { 0% { background-position: 180% 0; } 60%,100% { background-position: -80% 0; } }
+  .journey-video:hover { transform: translateY(-3px); box-shadow: 14px 18px 0 rgba(33,26,18,0.16), 0 48px 80px -34px rgba(16,16,28,0.46); }
+  .jv-play {
+    position: relative; z-index: 1;
+    width: 84px; height: 84px; border-radius: 50%;
+    background: radial-gradient(circle at 38% 34%, #FFF7E6, #F2CD86 42%, #C8932F);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.5);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .3s var(--ease);
+  }
+  .journey-video:hover .jv-play { transform: scale(1.06); }
+  .jv-play::after {
+    content: ""; margin-left: 6px;
+    border-style: solid; border-width: 15px 0 15px 24px;
+    border-color: transparent transparent transparent #1E1710;
+  }
+  .jv-play::before {
+    content: ""; position: absolute; inset: -10px; border-radius: 50%;
+    border: 1px solid rgba(232,199,126,0.5); animation: jvPulse 2.6s ease-out infinite;
+  }
+  @keyframes jvPulse { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(1.5); opacity: 0; } }
+  .jv-cap {
+    position: relative; z-index: 1;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--gold-soft);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .jv-cap .pill { padding: 4px 10px; border-radius: 999px; background: rgba(226,125,12,0.16); border: 1px solid rgba(226,125,12,0.35); color: #FBE3B8; }
+
+  /* the timeline + drawn spine */
+  .journey-timeline { position: relative; margin-top: 84px; }
+  .j-spine {
+    position: absolute; left: 50%; top: 6px; bottom: 6px; width: 3px; transform: translateX(-50%);
+    background: repeating-linear-gradient(180deg, rgba(226,125,12,0.22) 0 8px, transparent 8px 16px);
+    border-radius: 3px;
+  }
+  .j-fill {
+    position: absolute; left: 0; top: 0; width: 100%; height: 0%;
+    background: linear-gradient(180deg, var(--gold-soft), var(--gold), var(--gold-deep));
+    border-radius: 3px; box-shadow: 0 0 12px rgba(226,125,12,0.4);
+    transition: height .2s linear;
+  }
+  .j-step {
+    position: relative; display: flex; margin-bottom: 46px; min-height: 96px;
+  }
+  .j-step:last-child { margin-bottom: 0; }
+  .j-step:nth-child(odd)  { justify-content: flex-start; }
+  .j-step:nth-child(even) { justify-content: flex-end; }
+  .j-card {
+    width: calc(50% - 62px);
+    background: rgba(255,255,255,0.72); backdrop-filter: blur(10px);
+    border: 1px solid var(--line); border-radius: 18px;
+    padding: 24px 26px;
+    box-shadow: 6px 7px 0 rgba(33,26,18,0.05), 0 30px 50px -34px rgba(16,16,28,0.16);
+    transition: transform .35s var(--ease), box-shadow .35s var(--ease), border-color .35s;
+    display: flex; gap: 18px; align-items: flex-start;
+  }
+  .j-card:hover {
+    transform: translateY(-4px); border-color: rgba(226,125,12,0.4);
+    box-shadow: 10px 12px 0 rgba(33,26,18,0.08), 0 40px 64px -34px rgba(16,16,28,0.22);
+  }
+  .j-icon {
+    flex: 0 0 52px; width: 52px; height: 52px; border-radius: 14px;
+    background: linear-gradient(160deg, rgba(226,125,12,0.14), rgba(226,125,12,0.03));
+    border: 1px solid rgba(226,125,12,0.28);
+    display: flex; align-items: center; justify-content: center; color: var(--gold-deep);
+    transition: transform .35s var(--ease);
+  }
+  .j-card:hover .j-icon { transform: rotate(-6deg) scale(1.06); }
+  .j-icon svg { width: 26px; height: 26px; }
+  .j-eyebrow {
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--gold-deep); display: block; margin-bottom: 4px;
+  }
+  .j-card h3 { font-size: 21px; line-height: 1.15; letter-spacing: -0.01em; margin-bottom: 7px; }
+  .j-card p { font-size: 14px; line-height: 1.55; color: var(--muted); }
+  .j-card .j-tag {
+    display: inline-block; margin-top: 12px;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em;
+    padding: 4px 9px; border-radius: 6px;
+    background: rgba(226,125,12,0.09); color: var(--gold-deep);
+  }
+  /* foil wax-seal medallion pinned to the spine */
+  .j-node {
+    position: absolute; left: 50%; top: 8px; transform: translateX(-50%);
+    width: 52px; height: 52px; border-radius: 50%; z-index: 2;
+    background: radial-gradient(circle at 38% 34%, #FFF7E6, #F2CD86 44%, #C8932F 78%, #9A4E1E);
+    box-shadow: 0 6px 16px rgba(154,78,30,0.4), inset 0 0 0 1px rgba(255,255,255,0.45), inset 0 -3px 6px rgba(154,78,30,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-weight: 700; font-size: 20px; color: #3a1e0c;
+    background-size: 200% 200%; animation: nodeFoil 6s ease-in-out infinite;
+  }
+  @keyframes nodeFoil { 0%,100% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } }
+  .j-node::after {
+    content: ""; position: absolute; inset: -6px; border-radius: 50%;
+    border: 1px dashed rgba(226,125,12,0.4);
+  }
+  /* connector nub from card toward the spine */
+  .j-step:nth-child(odd) .j-card::after,
+  .j-step:nth-child(even) .j-card::before {
+    content: ""; position: absolute; top: 26px; width: 44px; height: 2px;
+    background: linear-gradient(90deg, rgba(226,125,12,0.5), transparent);
+  }
+  .j-step:nth-child(odd) .j-card { position: relative; }
+  .j-step:nth-child(odd)  .j-card::after  { right: -44px; background: linear-gradient(90deg, rgba(226,125,12,0.5), transparent); }
+  .j-step:nth-child(even) .j-card { position: relative; }
+  .j-step:nth-child(even) .j-card::before { left: -44px; background: linear-gradient(270deg, rgba(226,125,12,0.5), transparent); }
+
+  @media (max-width: 900px) {
+    .journey-timeline { margin-top: 56px; }
+    .j-spine { left: 26px; }
+    .j-node { left: 26px; }
+    .j-step:nth-child(odd), .j-step:nth-child(even) { justify-content: flex-start; }
+    .j-card { width: 100%; margin-left: 64px; }
+    .j-step:nth-child(odd) .j-card::after,
+    .j-step:nth-child(even) .j-card::before {
+      left: -40px; right: auto; top: 26px;
+      background: linear-gradient(270deg, rgba(226,125,12,0.5), transparent) !important;
+    }
+    .journey-video { margin-top: 40px; }
+    .jv-play { width: 66px; height: 66px; }
+    .jv-play::after { border-width: 12px 0 12px 19px; }
+  }
+
+  /* top scroll-progress bar — a thin foil ribbon that fills with the read */
+  .scroll-progress {
+    position: fixed; top: 0; left: 0; height: 3px; width: 0%; z-index: 60;
+    background: linear-gradient(90deg, var(--gold-deep), var(--gold), var(--gold-soft));
+    box-shadow: 0 0 10px rgba(226,125,12,0.5);
+    transition: width .1s linear; pointer-events: none;
+  }
+  /* floating step pill — appears only while the journey is in view */
+  .journey-pill {
+    position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 24px);
+    z-index: 55; opacity: 0; pointer-events: none;
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 9px 16px; border-radius: 999px;
+    background: rgba(30,23,16,0.9); color: var(--cream); backdrop-filter: blur(10px);
+    border: 1px solid rgba(232,199,126,0.35);
+    box-shadow: 0 14px 34px rgba(16,16,28,0.28);
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;
+    transition: opacity .35s var(--ease), transform .35s var(--ease);
+  }
+  .journey-pill.show { opacity: 1; transform: translate(-50%, 0); }
+  .journey-pill .jp-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold-soft); box-shadow: 0 0 10px var(--gold-soft); }
+  .journey-pill .jp-count { color: var(--gold-soft); font-weight: 700; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .journey-paws, .journey-video::before, .jv-play::before, .j-node { animation: none !important; }
+    .journey-pill { transition: opacity .2s linear; }
+  }
 </style>
 </head>
 <body>
+
+<!-- Page-wide read progress + journey step pill (page-wide effects) -->
+<div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+<div class="journey-pill" id="journeyPill" aria-hidden="true"><span class="jp-dot"></span>The journey · step <span class="jp-count" id="journeyPillCount">1</span> / 7</div>
 
 <!-- NAV -->
 <nav class="nav" id="nav" data-screen-label="01 Nav">
@@ -895,7 +1092,7 @@
     </p>
     <div class="hero-ctas">
       <a href="https://app.myaipet.ai" class="btn btn-primary">Get started</a>
-      <a href="#companion" class="btn btn-ghost">▶ See how it works</a>
+      <a href="#journey" class="btn btn-ghost">▶ See how it works</a>
     </div>
     <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.45);">
       Connect wallet → adopt in 30 seconds · No gas required
@@ -960,6 +1157,142 @@
         </p>
         <span class="diff-tag">Chrome · Telegram · Web</span>
       </article>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2.4: THE JOURNEY (user-story spine) -->
+<section class="pad journey" id="journey" data-screen-label="03b Journey">
+  <div class="journey-paws" aria-hidden="true"></div>
+  <div class="container">
+    <div class="section-head" style="margin:0 auto; text-align:center; align-items:center;">
+      <span class="eyebrow" style="justify-content:center;">How it works</span>
+      <h2>From adoption to your own little legend.</h2>
+      <p style="margin:0 auto;">Seven steps, one continuous thread. This is the life you build with a pet that
+        remembers you — from the day you adopt to the night you crown a favorite.</p>
+    </div>
+
+    <!-- Framed 16:9 explainer-video placeholder (poster + play affordance) -->
+    <div class="journey-video" role="img" aria-label="Explainer video — coming soon">
+      <div class="jv-play" aria-hidden="true"></div>
+      <div class="jv-cap"><span class="pill">Demo video</span> coming soon</div>
+    </div>
+
+    <!-- The timeline -->
+    <div class="journey-timeline" id="journeyTimeline">
+      <div class="j-spine" aria-hidden="true"><div class="j-fill" id="journeyFill"></div></div>
+
+      <!-- 1 -->
+      <div class="j-step" data-reveal="left" data-delay="0">
+        <div class="j-card">
+          <div class="j-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="16" rx="4.2" ry="3.4"/><ellipse cx="6.5" cy="10" rx="1.7" ry="2.2"/><ellipse cx="17.5" cy="10" rx="1.7" ry="2.2"/><ellipse cx="9.3" cy="6.5" rx="1.5" ry="2"/><ellipse cx="14.7" cy="6.5" rx="1.5" ry="2"/></svg>
+          </div>
+          <div class="j-body">
+            <span class="j-eyebrow">Step 01</span>
+            <h3>Adopt your AI pet</h3>
+            <p>Connect your wallet and adopt in about 30 seconds — no gas. A companion with its own name, personality and mood is yours from the first hello.</p>
+            <span class="j-tag">Sign in with wallet · No gas</span>
+          </div>
+        </div>
+        <div class="j-node" aria-hidden="true">1</div>
+      </div>
+
+      <!-- 2 -->
+      <div class="j-step" data-reveal="right" data-delay="0">
+        <div class="j-card">
+          <div class="j-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M10 9.5l4.5 2.5L10 14.5z" fill="currentColor" stroke="none"/><path d="M3 9.5h18"/></svg>
+          </div>
+          <div class="j-body">
+            <span class="j-eyebrow">Step 02</span>
+            <h3>Make videos of it in Studio</h3>
+            <p>Turn your pet into shareable clips with viral one-tap templates — the cutie dance and more. Pick a template, tap once, and out comes a video ready to post.</p>
+            <span class="j-tag">One-tap templates · Cutie dance</span>
+          </div>
+        </div>
+        <div class="j-node" aria-hidden="true">2</div>
+      </div>
+
+      <!-- 3 -->
+      <div class="j-step" data-reveal="left" data-delay="0">
+        <div class="j-card">
+          <div class="j-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4a2 2 0 1 1 4 0v2h3a1 1 0 0 1 1 1v3h2a2 2 0 1 1 0 4h-2v3a1 1 0 0 1-1 1h-3v-2a2 2 0 1 0-4 0v2H7a1 1 0 0 1-1-1v-3H4a2 2 0 1 1 0-4h2V7a1 1 0 0 1 1-1h3z"/></svg>
+          </div>
+          <div class="j-body">
+            <span class="j-eyebrow">Step 03</span>
+            <h3>Install the PetClaw extension</h3>
+            <p>Add the browser extension and your pet walks along the bottom of every tab — a quiet friend in the corner, marking your presence and celebrating streaks.</p>
+            <span class="j-tag">Chrome · Lives in every tab</span>
+          </div>
+        </div>
+        <div class="j-node" aria-hidden="true">3</div>
+      </div>
+
+      <!-- 4 -->
+      <div class="j-step" data-reveal="right" data-delay="0">
+        <div class="j-card">
+          <div class="j-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-6.5-4.2-6.5-9A3.7 3.7 0 0 1 12 8.3 3.7 3.7 0 0 1 18.5 11c0 4.8-6.5 9-6.5 9z"/><path d="M12 8.3V4.5"/><circle cx="12" cy="3.4" r="1.1" fill="currentColor" stroke="none"/></svg>
+          </div>
+          <div class="j-body">
+            <span class="j-eyebrow">Step 04</span>
+            <h3>Give your SOUL to the agent</h3>
+            <p>Hand over persistent memory and persona. Your pet keeps a single, growing throughline — it remembers you across every surface, not just this tab.</p>
+            <span class="j-tag">Persistent memory · Persona</span>
+          </div>
+        </div>
+        <div class="j-node" aria-hidden="true">4</div>
+      </div>
+
+      <!-- 5 -->
+      <div class="j-step" data-reveal="left" data-delay="0">
+        <div class="j-card">
+          <div class="j-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><ellipse cx="12" cy="12" rx="3.6" ry="8.5"/><path d="M3.7 9.5h16.6M3.7 14.5h16.6"/></svg>
+          </div>
+          <div class="j-body">
+            <span class="j-eyebrow">Step 05</span>
+            <h3>Use it everywhere</h3>
+            <p>Same pet, same memories — on the web, in Chrome, and in MCP clients like Claude and Cursor. Your companion is not locked to one model or one vendor.</p>
+            <span class="j-tag">Web · Chrome · MCP (Claude · Cursor)</span>
+          </div>
+        </div>
+        <div class="j-node" aria-hidden="true">5</div>
+      </div>
+
+      <!-- 6 -->
+      <div class="j-step" data-reveal="right" data-delay="0">
+        <div class="j-card">
+          <div class="j-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h11a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H9l-4 3v-3H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2z"/><path d="M19 9h1a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1v2.5L16 17"/></svg>
+          </div>
+          <div class="j-body">
+            <span class="j-eyebrow">Step 06</span>
+            <h3>Interact in the Community</h3>
+            <p>Show off your pet, meet other companions, and watch each one become a mirror of the person who raised it. Every pet has its own memories and voice.</p>
+            <span class="j-tag">Showcase · Meet other pets</span>
+          </div>
+        </div>
+        <div class="j-node" aria-hidden="true">6</div>
+      </div>
+
+      <!-- 7 -->
+      <div class="j-step" data-reveal="left" data-delay="0">
+        <div class="j-card">
+          <div class="j-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h4v6h4M4 19h4v-6"/><path d="M12 11h4a2 2 0 0 0 2-2V6m-2 3h2a2 2 0 0 1 2 2v2"/><circle cx="20" cy="13" r="1.4" fill="currentColor" stroke="none"/><path d="M6 5v0"/></svg>
+          </div>
+          <div class="j-body">
+            <span class="j-eyebrow">Step 07</span>
+            <h3>Play the Favorites Bracket</h3>
+            <p>Enter the ideal-type world cup (이상형 월드컵) — a head-to-head bracket where the community votes pets forward round by round until one favorite is crowned.</p>
+            <span class="j-tag">이상형 월드컵 · Head-to-head</span>
+          </div>
+        </div>
+        <div class="j-node" aria-hidden="true">7</div>
+      </div>
     </div>
   </div>
 </section>
@@ -2136,6 +2469,65 @@ function persist() {
       window.addEventListener('pointerleave', function(){ magnets.forEach(function(el){ el.style.transform=''; }); });
     }
   }
+})();
+</script>
+
+<!-- ═══════════ Journey — page-wide effects (progress · spine draw · pill · parallax) ═══════════ -->
+<script>
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var progress = document.getElementById('scrollProgress');
+  var timeline = document.getElementById('journeyTimeline');
+  var fill     = document.getElementById('journeyFill');
+  var pill     = document.getElementById('journeyPill');
+  var pillCount= document.getElementById('journeyPillCount');
+  var paws     = document.querySelector('.journey-paws');
+  var steps    = timeline ? [].slice.call(timeline.querySelectorAll('.j-step')) : [];
+  var ticking  = false;
+
+  function update(){
+    ticking = false;
+    var doc = document.documentElement;
+    var scrollTop = window.scrollY || doc.scrollTop;
+    var max = (doc.scrollHeight - window.innerHeight) || 1;
+
+    // 1) top read-progress ribbon
+    if (progress) progress.style.width = Math.min(100, Math.max(0, (scrollTop / max) * 100)) + '%';
+
+    if (!timeline) return;
+    var r = timeline.getBoundingClientRect();
+    var vh = window.innerHeight;
+    var inView = r.top < vh * 0.75 && r.bottom > vh * 0.25;
+
+    // 2) draw the spine as the timeline passes the viewport middle
+    if (fill){
+      var span = r.height + vh * 0.5;
+      var passed = (vh * 0.75) - r.top;
+      var pct = Math.min(1, Math.max(0, passed / span));
+      fill.style.height = (pct * 100) + '%';
+    }
+
+    // 3) step pill — show while journey in view, count the nearest passed node
+    if (pill){
+      pill.classList.toggle('show', inView);
+      pill.setAttribute('aria-hidden', inView ? 'false' : 'true');
+      var current = 1, mid = vh * 0.5;
+      for (var i = 0; i < steps.length; i++){
+        var sr = steps[i].getBoundingClientRect();
+        if (sr.top <= mid) current = i + 1;
+      }
+      if (pillCount) pillCount.textContent = current;
+    }
+
+    // 4) subtle parallax on the paw-print watermark (motion-gated)
+    if (paws && !reduce && inView){
+      paws.style.transform = 'translateY(' + (r.top * -0.06) + 'px)';
+    }
+  }
+  function onScrollJ(){ if (!ticking){ ticking = true; requestAnimationFrame(update); } }
+  window.addEventListener('scroll', onScrollJ, { passive: true });
+  window.addEventListener('resize', onScrollJ, { passive: true });
+  update();
 })();
 </script>
 </body>
