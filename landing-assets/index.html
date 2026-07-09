@@ -226,6 +226,10 @@
      INTO the paper — letterpress deboss (hard-edged valley/lip, no blur-glow). */
   .hero h1 .gold {
     font-style: italic; font-weight: 600;
+    /* inline-block + padding so the italic slant (right) and the descender of
+       "companion" aren't clipped by the background-clip:text box — a Windows/
+       Chrome clipping quirk with tight line-height. */
+    display: inline-block; padding: 0.04em 0.18em 0.2em 0.02em; line-height: 1.06;
     background: linear-gradient(100deg,#FFF7E6,#F2CD86 32%,#FFFBF0 50%,#E8B257 68%,#FFF7E6);
     background-size: 260% 100%;
     -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
