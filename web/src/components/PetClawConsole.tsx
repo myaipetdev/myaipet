@@ -14,6 +14,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "@/lib/api";
+import PetClawHeroIntro from "@/components/PetClawHeroIntro";
 
 // Terminal typewriter — reveals a line char-by-char once on mount; a blinking
 // caret trails until done. prefers-reduced-motion shows it instantly (no shift).
@@ -302,8 +303,16 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
           padding: compact ? "22px 26px 14px" : "26px 30px 16px",
           background: "radial-gradient(900px 360px at 50% -20%, #2C2114 0%, #1A140D 60%)",
         }}>
+          {/* Full variant: the cinematic intro — the pet's sticker flips into a
+              laptop that boots petclaw-mcp, then capability chips fly out.
+              (Compact keeps the simple portrait masthead below.) */}
+          {!compact && (
+            <PetClawHeroIntro petName={petName} avatarUrl={pet?.avatar_url} level={pet?.level} demo={isSim} />
+          )}
           {/* The face of PetClaw is the user's OWN pet (mascot fallback in
               demo) — a tilted paper-mat portrait with the gold level seal. */}
+          {compact && (
+          <>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: compact ? 8 : 12 }}>
             <div style={{ position: "relative", width: compact ? 76 : 96, transform: "rotate(-3deg)", background: "#FBF6EC", borderRadius: 9, padding: 5, boxShadow: "0 18px 30px -14px rgba(0,0,0,.65)" }}>
               <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", borderRadius: 6, overflow: "hidden", boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.55)" }}>
@@ -330,6 +339,8 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
             WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
           }}>PETCLAW</div>
           <TaglineTyper text="your AI pet, sovereign & portable — across every surface you use" color={MUTED} />
+          </>
+          )}
 
           {/* manifest — prints out top→bottom like terminal output (pc-unroll) */}
           <div className="pc-unroll" style={{ border: `1px solid ${LINE}`, borderRadius: 12, padding: compact ? "18px 20px" : "20px 24px" }}>
