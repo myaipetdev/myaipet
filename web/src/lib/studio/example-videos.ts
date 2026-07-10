@@ -8,5 +8,17 @@ export const TEMPLATE_EXAMPLE_VIDEOS: Record<string, string> = {
   "noir-detective": "/studio_examples/noir-detective.mp4",
   "anime-opening": "/studio_examples/anime-opening.mp4",
   "dance-loop": "/studio_examples/dance-loop.mp4",
-  "reaction-shock": "/studio_examples/reaction-shock.mp4"
+  "reaction-shock": "/studio_examples/reaction-shock.mp4",
+  "cutie-dance": "/studio_examples/cutie-dance.mp4",
+  "glow-up": "/studio_examples/glow-up.mp4",
+  "runway-fashion": "/studio_examples/runway-fashion.mp4",
+  "pov-talk": "/studio_examples/pov-talk.mp4",
+  "tiny-mukbang": "/studio_examples/tiny-mukbang.mp4",
+  "retro-anime-op": "/studio_examples/retro-anime-op.mp4",
+  "phonk-flex": "/studio_examples/phonk-flex.mp4",
+  "spooky-cute-costume": "/studio_examples/spooky-cute-costume.mp4",
+  "hanbok-harvest-moon": "/studio_examples/hanbok-harvest-moon.mp4",
+  "cozy-snow-day": "/studio_examples/cozy-snow-day.mp4",
+  "duet-dance": "/studio_examples/duet-dance.mp4",
+  "glow-up-timelapse": "/studio_examples/glow-up-timelapse.mp4",
 };
