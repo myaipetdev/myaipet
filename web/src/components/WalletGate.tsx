@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +8,8 @@ import Icon from "@/components/Icon";
 import DemoPet from "@/components/DemoPet";
 import PetClawPreview from "@/components/PetClawPreview";
 import CommunityPreview from "@/components/CommunityPreview";
+import TourMyPet from "@/components/TourMyPet";
+import { isTourActive, TOUR_ALLOWLIST } from "@/lib/tour";
 
 // Session-global guard: the address we've already auto-prompted for a signature.
 // Module scope (not a per-component ref) so it survives WalletGate remounts —
@@ -24,9 +26,38 @@ function friendlyError(raw: string): string {
   return "Authentication failed. Please try again.";
 }
 
+// Slim fixed DEMO-TOUR banner — shown over allowlisted sections in tour mode
+// while no wallet is connected. Editorial terracotta chip; the inline Connect
+// button is the "make it yours" exit. It vanishes the moment a wallet connects
+// (this whole branch only renders when !isConnected).
+function TourBanner() {
+  return (
+    <div style={{
+      position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 140,
+      display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap",
+      padding: "10px 18px", background: "rgba(190,79,40,.96)",
+      borderTop: "1px solid rgba(252,233,207,.35)", boxShadow: "0 -10px 30px -18px rgba(80,40,10,.7)",
+      backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+    }}>
+      <span style={{ display: "flex", alignItems: "center", gap: 9, fontFamily: "var(--ed-body)", fontSize: 13.5, color: "#FFF8EE", lineHeight: 1.35, textAlign: "center" }}>
+        <span style={{
+          fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: ".1em",
+          color: "#BE4F28", background: "#FCE9CF", borderRadius: 7, padding: "3px 8px", whiteSpace: "nowrap",
+        }}>DEMO TOUR</span>
+        <span>You&apos;re browsing a live sample — connect a wallet to make it yours.</span>
+      </span>
+      <ConnectButton chainStatus="none" showBalance={false} label="Connect wallet" />
+    </div>
+  );
+}
+
 export default function WalletGate({ children, section }: any) {
   const { isConnected, address } = useAccount();
   const { isAuthenticated, isAuthenticating, authenticate, error } = useAuth();
+
+  // Guest tour: sticky once ?tour=1 is seen (persisted in sessionStorage).
+  // Read once on mount so in-SPA navigation between sections keeps it on.
+  const [tourOn] = useState(() => isTourActive());
 
   // DEV ONLY: uncomment to bypass wallet gate for local testing
   const isDev = process.env.NODE_ENV === "development";
@@ -46,6 +77,24 @@ export default function WalletGate({ children, section }: any) {
 
   if (isDev) return children;
   if (isConnected && isAuthenticated) return children;
+
+  // ── Guest tour: with ?tour=1 and no wallet, allowlisted sections render a
+  // READ-ONLY, DEMO-badged preview + a slim fixed banner instead of the wall.
+  // "my pet" needs an owned pet, so it renders the purpose-built demo preview
+  // (TourMyPet) rather than the real MyPetEditorial (which would 401). The
+  // other allowlisted sections already fall back gracefully logged-out
+  // (community → Pet Square on public pets; worldcup → public bracket), so we
+  // hand them their real children. Non-allowlisted / owner-API sections keep
+  // the gate. Once a wallet connects, this branch stops matching and the banner
+  // disappears on its own. ──
+  if (!isConnected && tourOn && TOUR_ALLOWLIST.has(section)) {
+    return (
+      <>
+        {section === "my pet" ? <TourMyPet /> : children}
+        <TourBanner />
+      </>
+    );
+  }
 
   // ── Preview-before-wall: cold visitors should experience the value (a living
   // demo pet; the PetClaw sovereignty showcase) BEFORE being asked for a wallet,

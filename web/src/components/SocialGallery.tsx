@@ -6,6 +6,7 @@ import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import PetSquare from "@/components/PetSquare";
+import { isTourActive } from "@/lib/tour";
 
 // ── Collectible Editorial tokens ──
 const T = {
@@ -981,7 +982,10 @@ export default function SocialGallery() {
   const [view, setView] = useState<"album" | "library">("album");
   // Top-level Community surface: FEED = the creations gallery (below), SQUARE =
   // the walkable Pet Square neighborhood (real community pets as characters).
-  const [mode, setMode] = useState<"feed" | "square">("feed");
+  // Guest tour (no wallet) opens straight into SQUARE — it works on public pets
+  // + a generic walker even when the signed-in feed would 401/empty, so the
+  // tour always lands on something walkable. Still switchable to Feed.
+  const [mode, setMode] = useState<"feed" | "square">(() => (isTourActive() ? "square" : "feed"));
 
   useEffect(() => {
     const update = () => {
