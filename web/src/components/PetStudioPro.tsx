@@ -178,6 +178,10 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
 
   const [styleId, setStyleId] = useState<string>("cinematic");
   const [prompt, setPrompt] = useState("");
+  // Director — expands a rough one-line idea into a full cinematic video prompt.
+  const [directorIdea, setDirectorIdea] = useState("");
+  const [directorBusy, setDirectorBusy] = useState(false);
+  const [directorError, setDirectorError] = useState<string | null>(null);
   // Output type drives the default model + which models we surface.
   // Image-first by default: best margin (~10×) and instant feedback.
   const [outputKind, setOutputKind] = useState<"image" | "video">("image");
@@ -433,6 +437,43 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   };
 
   const canGenerate = !!pet && !!chosenModel && prompt.trim().length > 0 && view !== "generating";
+
+  // Director — POST a rough one-line idea, get back a full cinematic video
+  // prompt, drop it into the editable textarea, and gently switch to video.
+  const directIt = async () => {
+    const idea = directorIdea.trim();
+    if (!idea || directorBusy) return;
+    setDirectorBusy(true);
+    setDirectorError(null);
+    try {
+      const r = await fetch("/api/studio/prompt-director", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({
+          idea,
+          petId: pet && pet.id > 0 ? pet.id : undefined,
+          aspect,
+          durationSec: 12,
+        }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || !data?.prompt) {
+        setDirectorError(data?.error || "Couldn't reach the Director. Try again.");
+        return;
+      }
+      setPrompt(String(data.prompt));
+      // The Director writes VIDEO prompts — nudge the output to video so the
+      // detailed shot list actually gets used (the outputKind effect snaps the
+      // engine to a valid video model).
+      setOutputKind("video");
+      // Bring the now-filled prompt into view for editing.
+      promptRef.current?.focus();
+    } catch {
+      setDirectorError("Network error. Try again.");
+    } finally {
+      setDirectorBusy(false);
+    }
+  };
 
   // Item #8: out-of-credits is a purchase moment, not a dead end.
   const runCost = chosenModel?.creditsPerRun ?? null;
@@ -1147,6 +1188,62 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               color: T.ink,
             }}
           />
+
+          {/* ── Director ── Turn a rough one-liner into a full cinematic video
+              prompt. Sits right under the textarea: type an idea → "Direct it"
+              → the detailed, editable prompt lands in the box above. */}
+          <div style={{
+            marginTop: 12, padding: "12px 14px", borderRadius: 12,
+            background: T.inset, border: `1px solid ${T.hair}`,
+            boxShadow: "var(--ed-shadow-card)",
+          }}>
+            <div style={{
+              fontSize: 13, fontFamily: T.m, fontWeight: 700,
+              letterSpacing: "0.1em", color: T.studio, marginBottom: 8,
+              display: "flex", alignItems: "center", gap: 6,
+            }}>
+              <Icon name="film-reel" size={12} /> DIRECTOR
+              <span style={{
+                fontFamily: T.body, fontWeight: 500, letterSpacing: 0,
+                color: T.muted, textTransform: "none", fontSize: 13,
+              }}>— one line in, a full cinematic video prompt out</span>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <input
+                value={directorIdea}
+                onChange={(e) => { setDirectorIdea(e.target.value); if (directorError) setDirectorError(null); }}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); directIt(); } }}
+                aria-label="One-line idea for the Director"
+                placeholder={`One-line idea — e.g. "${petDisplayName} chasing fireflies at dusk"`}
+                disabled={directorBusy}
+                style={{
+                  flex: "1 1 220px", minWidth: 0, padding: "11px 14px",
+                  borderRadius: 10, border: `1px solid ${T.hair}`,
+                  fontSize: 15, fontFamily: T.body, background: T.paper,
+                  color: T.ink,
+                }}
+              />
+              <button
+                onClick={directIt}
+                disabled={directorBusy || directorIdea.trim().length === 0}
+                style={{
+                  padding: "11px 18px", borderRadius: 10, border: "none",
+                  background: directorBusy || directorIdea.trim().length === 0 ? T.hair : T.studio,
+                  color: directorBusy || directorIdea.trim().length === 0 ? T.muted : "#fff",
+                  fontWeight: 700, fontSize: 14, fontFamily: T.body,
+                  cursor: directorBusy || directorIdea.trim().length === 0 ? "default" : "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {directorBusy ? "Directing…" : "Direct it"}
+              </button>
+            </div>
+            {directorError && (
+              <div style={{ marginTop: 8, fontSize: 13, fontFamily: T.body, color: T.terra }}>
+                {directorError}
+              </div>
+            )}
+          </div>
 
           {/* Lowest-friction starting points (personality/element-aware), placed
               right under the prompt so a new user's fastest path to a valid
