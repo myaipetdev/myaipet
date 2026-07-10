@@ -16,5 +16,17 @@ export const TEMPLATE_EXAMPLES: Record<string, string> = {
   "noir-detective": "/studio_examples/noir-detective.jpg",
   "anime-opening": "/studio_examples/anime-opening.jpg",
   "dance-loop": "/studio_examples/dance-loop.jpg",
-  "reaction-shock": "/studio_examples/reaction-shock.jpg"
+  "reaction-shock": "/studio_examples/reaction-shock.jpg",
+  "cutie-dance": "/studio_examples/cutie-dance.jpg",
+  "glow-up": "/studio_examples/glow-up.jpg",
+  "runway-fashion": "/studio_examples/runway-fashion.jpg",
+  "pov-talk": "/studio_examples/pov-talk.jpg",
+  "tiny-mukbang": "/studio_examples/tiny-mukbang.jpg",
+  "retro-anime-op": "/studio_examples/retro-anime-op.jpg",
+  "phonk-flex": "/studio_examples/phonk-flex.jpg",
+  "spooky-cute-costume": "/studio_examples/spooky-cute-costume.jpg",
+  "hanbok-harvest-moon": "/studio_examples/hanbok-harvest-moon.jpg",
+  "cozy-snow-day": "/studio_examples/cozy-snow-day.jpg",
+  "duet-dance": "/studio_examples/duet-dance.jpg",
+  "glow-up-timelapse": "/studio_examples/glow-up-timelapse.jpg",
 };

@@ -1398,7 +1398,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               </span>
             </div>
             <div style={{
-              display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10,
+              display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(236px, 1fr))", gap: 14,
             }}>
               {TEMPLATES.map((t, i) => {
                 const ex = TEMPLATE_EXAMPLES[t.id];
@@ -1437,7 +1437,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                     }}
                   >
                     {vid ? (
-                      <div style={{ position: "relative", height: 92, overflow: "hidden" }}>
+                      <div style={{ position: "relative", height: 140, overflow: "hidden" }}>
                         <video
                           src={vid} poster={ex} loop muted playsInline preload="metadata"
                           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
@@ -1458,7 +1458,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       </div>
                     ) : ex ? (
                       <div style={{
-                        height: 92, background: `url(${ex}) center/cover no-repeat`,
+                        height: 140, background: `url(${ex}) center/cover no-repeat`,
                         display: "flex", alignItems: "flex-end", justifyContent: "space-between",
                         padding: "8px 9px",
                       }}>
@@ -2585,7 +2585,7 @@ function TemplateMnemonic({ swatch, emoji, catLabel }: { swatch: string; emoji: 
     { left: "80%", top: "58%", size: 14, delay: "0.9s", dur: "4.1s" },
   ];
   return (
-    <div style={{ position: "relative", height: 92, background: swatch, overflow: "hidden" }}>
+    <div style={{ position: "relative", height: 140, background: swatch, overflow: "hidden" }}>
       {/* travelling light sweep */}
       <span aria-hidden className="studio-mnemonic" style={{
         position: "absolute", inset: "-20%",
