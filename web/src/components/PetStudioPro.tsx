@@ -57,6 +57,11 @@ interface Generation {
   error_message?: string | null;
   credits_charged?: number | null;
 }
+// One creative decision the Director asks the user to make (phase:"questions").
+interface DirectorQuestion {
+  id: string; topic: string; question: string;
+  options: string[]; default: string; whyItMatters: string;
+}
 
 // Item #12: a paid 1–2 min job must survive reload / SPA navigation. We persist
 // ONLY the pointer to an already-submitted job (its generationId) so a remount
@@ -179,9 +184,18 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   const [styleId, setStyleId] = useState<string>("cinematic");
   const [prompt, setPrompt] = useState("");
   // Director — expands a rough one-line idea into a full cinematic video prompt.
+  // Interactive: "Direct it" first asks a sheet of creative questions
+  // (phase:"questions"), then compiles the answers into the final prompt
+  // (phase:"final").
   const [directorIdea, setDirectorIdea] = useState("");
-  const [directorBusy, setDirectorBusy] = useState(false);
+  const [directorBusy, setDirectorBusy] = useState(false);       // questions phase in flight
   const [directorError, setDirectorError] = useState<string | null>(null);
+  const [directorQuestions, setDirectorQuestions] = useState<DirectorQuestion[] | null>(null);
+  // Per-question state: the picked option + a free-text override. Effective
+  // answer = override.trim() || option (see effectiveAnswer below).
+  const [directorAnswers, setDirectorAnswers] = useState<Record<string, { option: string; override: string }>>({});
+  const [directorFinalBusy, setDirectorFinalBusy] = useState(false); // final phase in flight
+  const [directorSheetError, setDirectorSheetError] = useState<string | null>(null);
   // Output type drives the default model + which models we surface.
   // Image-first by default: best margin (~10×) and instant feedback.
   const [outputKind, setOutputKind] = useState<"image" | "video">("image");
@@ -425,6 +439,16 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
     };
   }, [modelOpen]);
 
+  // Esc closes the Director question sheet (unless a final compile is running).
+  useEffect(() => {
+    if (!directorQuestions) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !directorFinalBusy) { setDirectorQuestions(null); setDirectorSheetError(null); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [directorQuestions, directorFinalBusy]);
+
   const buildFullPrompt = (): string => {
     const base = prompt.trim();
     if (!base) return "";
@@ -438,8 +462,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
 
   const canGenerate = !!pet && !!chosenModel && prompt.trim().length > 0 && view !== "generating";
 
-  // Director — POST a rough one-line idea, get back a full cinematic video
-  // prompt, drop it into the editable textarea, and gently switch to video.
+  // Director phase 1 — POST the rough one-line idea, get back a sheet of
+  // creative decisions (mood, lighting, palette, camera, audio, ending, forbid…)
+  // and open the question sheet with each default pre-selected.
   const directIt = async () => {
     const idea = directorIdea.trim();
     if (!idea || directorBusy) return;
@@ -450,6 +475,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({
+          phase: "questions",
           idea,
           petId: pet && pet.id > 0 ? pet.id : undefined,
           aspect,
@@ -457,8 +483,66 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
         }),
       });
       const data = await r.json().catch(() => ({}));
-      if (!r.ok || !data?.prompt) {
+      if (!r.ok || !Array.isArray(data?.questions) || data.questions.length === 0) {
         setDirectorError(data?.error || "Couldn't reach the Director. Try again.");
+        return;
+      }
+      const qs: DirectorQuestion[] = data.questions;
+      // Seed each answer with the model's recommended default.
+      const seed: Record<string, { option: string; override: string }> = {};
+      for (const q of qs) seed[q.id] = { option: q.default || q.options[0] || "", override: "" };
+      setDirectorQuestions(qs);
+      setDirectorAnswers(seed);
+      setDirectorSheetError(null);
+    } catch {
+      setDirectorError("Network error. Try again.");
+    } finally {
+      setDirectorBusy(false);
+    }
+  };
+
+  const closeDirectorSheet = () => {
+    setDirectorQuestions(null);
+    setDirectorSheetError(null);
+  };
+
+  // The answer we'll actually send for a question: a free-text override wins,
+  // otherwise the picked option pill.
+  const effectiveAnswer = (id: string): string => {
+    const a = directorAnswers[id];
+    if (!a) return "";
+    return a.override.trim() || a.option;
+  };
+
+  // Director phase 2 — compile the answers into the ultra-detailed prompt.
+  // `decideEverything` skips the user's picks entirely and lets the LLM decide
+  // every craft decision (the "Ask me nothing" path).
+  const runDirectorFinal = async (decideEverything = false) => {
+    const idea = directorIdea.trim();
+    if (!idea || directorFinalBusy) return;
+    setDirectorFinalBusy(true);
+    setDirectorSheetError(null);
+    try {
+      const answers = decideEverything || !directorQuestions
+        ? []
+        : directorQuestions
+            .map((q) => ({ id: q.id, answer: effectiveAnswer(q.id) }))
+            .filter((a) => a.answer.trim().length > 0);
+      const r = await fetch("/api/studio/prompt-director", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({
+          phase: "final",
+          idea,
+          petId: pet && pet.id > 0 ? pet.id : undefined,
+          aspect,
+          durationSec: 12,
+          answers,
+        }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || !data?.prompt) {
+        setDirectorSheetError(data?.error || "Couldn't compile the prompt. Try again.");
         return;
       }
       setPrompt(String(data.prompt));
@@ -466,12 +550,13 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
       // detailed shot list actually gets used (the outputKind effect snaps the
       // engine to a valid video model).
       setOutputKind("video");
+      closeDirectorSheet();
       // Bring the now-filled prompt into view for editing.
       promptRef.current?.focus();
     } catch {
-      setDirectorError("Network error. Try again.");
+      setDirectorSheetError("Network error. Try again.");
     } finally {
-      setDirectorBusy(false);
+      setDirectorFinalBusy(false);
     }
   };
 
@@ -1206,7 +1291,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               <span style={{
                 fontFamily: T.body, fontWeight: 500, letterSpacing: 0,
                 color: T.muted, textTransform: "none", fontSize: 13,
-              }}>— one line in, a full cinematic video prompt out</span>
+              }}>— one line in → it asks what to decide → a full cinematic prompt out</span>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <input
@@ -1235,7 +1320,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   whiteSpace: "nowrap",
                 }}
               >
-                {directorBusy ? "Directing…" : "Direct it"}
+                {directorBusy ? "Thinking…" : "Direct it"}
               </button>
             </div>
             {directorError && (
@@ -1933,6 +2018,183 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           </div>
         </Reveal>
       </div>
+
+      {/* ── Director question sheet (phase:"questions" → phase:"final"): the
+          full list of creative decisions, each with option pills + a free-text
+          override. "Ask me nothing" hands every decision to the LLM. ── */}
+      {directorQuestions && (
+        <div
+          onClick={() => { if (!directorFinalBusy) closeDirectorSheet(); }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Director — decide the shots"
+          style={{
+            position: "fixed", inset: 0, zIndex: 85,
+            background: "rgba(0,0,0,.5)",
+            backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+            display: "flex", alignItems: "flex-start", justifyContent: "center",
+            padding: 18, overflowY: "auto",
+            animation: "edScrimIn 160ms ease both",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: T.paper, borderRadius: 18, padding: 22,
+              border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-float)",
+              width: "min(720px, 100%)", margin: "24px 0",
+              animation: "edPanelIn 260ms cubic-bezier(.2,.8,.2,1) both",
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{
+                  fontSize: 13, fontFamily: T.m, fontWeight: 700,
+                  letterSpacing: "0.14em", color: T.studio, textTransform: "uppercase", marginBottom: 6,
+                }}>DIRECTOR · DECIDE THE SHOTS</div>
+                <h2 style={{
+                  fontSize: 24, fontFamily: T.disp, fontWeight: 800, margin: 0,
+                  lineHeight: 1.1, color: T.ink, letterSpacing: "-0.02em",
+                }}>Here is everything to decide</h2>
+                <p style={{ fontSize: 13, color: T.muted, margin: "6px 0 0", fontFamily: T.body, lineHeight: 1.5 }}>
+                  Pick a suggestion or type your own. Anything you skip, the Director decides.
+                </p>
+              </div>
+              <button
+                onClick={closeDirectorSheet}
+                disabled={directorFinalBusy}
+                aria-label="Close"
+                style={{
+                  flexShrink: 0, width: 34, height: 34, borderRadius: 10,
+                  border: `1px solid ${T.hair}`, background: T.paper, color: T.ink70,
+                  cursor: directorFinalBusy ? "default" : "pointer", fontSize: 18, lineHeight: 1,
+                  fontFamily: T.body,
+                }}
+              >×</button>
+            </div>
+
+            {/* Top action: skip everything */}
+            <button
+              onClick={() => runDirectorFinal(true)}
+              disabled={directorFinalBusy}
+              style={{
+                width: "100%", marginTop: 14, marginBottom: 16,
+                padding: "12px 14px", borderRadius: 12,
+                border: `1px dashed ${T.studio}`, background: "rgba(107,79,160,0.06)",
+                color: T.studio, fontWeight: 700, fontSize: 14, fontFamily: T.body,
+                cursor: directorFinalBusy ? "default" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              }}
+            >
+              <Icon name="sparkling" size={14} /> Ask me nothing — decide everything
+            </button>
+
+            {/* Questions */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {directorQuestions.map((q, qi) => {
+                const a = directorAnswers[q.id] || { option: q.default, override: "" };
+                const overriding = a.override.trim().length > 0;
+                return (
+                  <div key={q.id} style={{
+                    padding: "14px 16px", borderRadius: 14,
+                    background: T.inset, border: `1px solid ${T.hair}`,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                      {q.topic && (
+                        <span style={{
+                          fontSize: 13, fontFamily: T.m, fontWeight: 700, letterSpacing: "0.08em",
+                          color: T.mono, textTransform: "uppercase",
+                        }}>{qi + 1}. {q.topic}</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 15, fontFamily: T.body, fontWeight: 700, color: T.ink, margin: "6px 0 2px", lineHeight: 1.4 }}>
+                      {q.question}
+                    </div>
+                    {q.whyItMatters && (
+                      <div style={{ fontSize: 13, color: T.muted, fontFamily: T.body, lineHeight: 1.45, marginBottom: 10 }}>
+                        {q.whyItMatters}
+                      </div>
+                    )}
+                    {/* Option pills */}
+                    {q.options.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+                        {q.options.map((opt, oi) => {
+                          const active = !overriding && a.option === opt;
+                          return (
+                            <button
+                              key={oi}
+                              onClick={() => setDirectorAnswers(prev => ({ ...prev, [q.id]: { option: opt, override: "" } }))}
+                              aria-pressed={active}
+                              style={{
+                                padding: "7px 12px", borderRadius: 999,
+                                border: `1px solid ${active ? T.studio : T.hair}`,
+                                background: active ? T.studio : T.paper,
+                                color: active ? "#fff" : T.ink70,
+                                fontSize: 13, fontWeight: 700, fontFamily: T.body,
+                                cursor: "pointer", lineHeight: 1.3,
+                              }}
+                            >{opt}</button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {/* Free-text override */}
+                    <input
+                      value={a.override}
+                      onChange={(e) => setDirectorAnswers(prev => ({
+                        ...prev,
+                        [q.id]: { option: (prev[q.id]?.option ?? q.default) || "", override: e.target.value },
+                      }))}
+                      aria-label={`Your own answer for: ${q.topic || q.question}`}
+                      placeholder="…or type your own"
+                      style={{
+                        width: "100%", padding: "9px 12px", borderRadius: 10,
+                        border: `1px solid ${overriding ? T.studio : T.hair}`,
+                        background: T.paper, color: T.ink, fontSize: 13, fontFamily: T.body,
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {directorSheetError && (
+              <div style={{ marginTop: 14, fontSize: 13, fontFamily: T.body, color: T.terra }}>
+                {directorSheetError}
+              </div>
+            )}
+
+            {/* Footer actions */}
+            <div style={{
+              display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap",
+              position: "sticky", bottom: -22, background: T.paper,
+              paddingTop: 12, borderTop: `1px solid ${T.hair}`,
+            }}>
+              <button
+                onClick={() => runDirectorFinal(false)}
+                disabled={directorFinalBusy}
+                style={{
+                  flex: "1 1 220px",
+                  padding: "13px 18px", borderRadius: 12, border: "none",
+                  background: directorFinalBusy ? T.hair : T.studio,
+                  color: directorFinalBusy ? T.muted : "#fff",
+                  fontWeight: 800, fontSize: 15, fontFamily: T.body,
+                  cursor: directorFinalBusy ? "default" : "pointer",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+                }}
+              >
+                {directorFinalBusy ? "Writing the prompt…" : "Build the cinematic prompt →"}
+              </button>
+              <button
+                onClick={closeDirectorSheet}
+                disabled={directorFinalBusy}
+                style={{ ...btnGhost, padding: "13px 18px", cursor: directorFinalBusy ? "default" : "pointer" }}
+              >Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Studio-Pro V1 client-side reel editor (all rendering on-device;
           server stays idle — see StudioEditor.tsx / editorEngine.ts). ── */}
