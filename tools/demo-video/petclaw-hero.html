@@ -1,0 +1,188 @@
+<meta charset="utf-8">
+<title>PetClaw Hero — sticker → laptop boot</title>
+<style>
+  :root{
+    --bg:#171009; --bg2:#231708; --panel:#1E1710;
+    --gold:#E8C77E; --gold2:#C8932F; --gold3:#8A5A1E; --cream:#FCE9CF;
+    --txt:#ECE0CE; --muted:rgba(251,246,236,.6); --green:#9FC59A;
+    --line:rgba(231,197,124,.22); --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(120% 90% at 50% 0%, var(--bg2) 0%, var(--bg) 55%, #100b06 100%);
+    font-family:var(--mono); color:var(--txt); overflow:hidden}
+  .stage{position:relative;width:min(94vw,980px);height:640px;perspective:1200px}
+
+  /* ─── gold dust ─── */
+  .dust{position:absolute;border-radius:50%;background:radial-gradient(circle,var(--gold),transparent 70%);
+    pointer-events:none;animation:rise linear infinite;opacity:0}
+  @keyframes rise{0%{transform:translateY(10px);opacity:0}15%{opacity:.7}100%{transform:translateY(-140px);opacity:0}}
+
+  /* ─── wordmark ─── */
+  .wm{position:absolute;top:34px;left:0;right:0;text-align:center;z-index:5}
+  .wm h1{margin:0;font-size:64px;letter-spacing:.06em;font-weight:800;
+    background:linear-gradient(100deg,#8A5A1E,#C8932F 30%,#FFF4DC 50%,#E8C77E 70%,#8A5A1E);
+    background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:shine 6s linear infinite;
+    filter:drop-shadow(0 2px 0 rgba(0,0,0,.55)) drop-shadow(0 8px 22px rgba(232,199,126,.14))}
+  @keyframes shine{to{background-position:220% 0}}
+  .wm p{margin:8px 0 0;font-size:13.5px;color:var(--muted);letter-spacing:.05em}
+
+  /* ─── the transformer: sticker → laptop ─── */
+  .rig{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);width:560px;height:400px;z-index:3}
+
+  /* sticker (front face) */
+  .sticker{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) rotateY(0deg);
+    width:210px;height:260px;border-radius:16px;background:#FBF6EC;padding:12px 12px 40px;
+    box-shadow:0 30px 60px -24px rgba(0,0,0,.8), 0 0 0 1px rgba(0,0,0,.3);
+    backface-visibility:hidden;transform-style:preserve-3d;
+    animation:stickerFlip 1.1s 1.2s cubic-bezier(.6,.05,.3,1) both}
+  .sticker .ph{width:100%;height:170px;border-radius:10px;overflow:hidden;
+    background:
+      radial-gradient(60% 55% at 50% 42%, #F6D6A0 0%, #E8B96F 70%, #C89452 100%);
+    position:relative}
+  /* cute pet face drawn in code */
+  .ph .ear{position:absolute;top:26px;width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:26px solid #E8B96F}
+  .ph .e1{left:44px;transform:rotate(-14deg)} .ph .e2{right:44px;transform:rotate(14deg)}
+  .ph .eye{position:absolute;top:78px;width:11px;height:13px;border-radius:50%;background:#3A2A18}
+  .ph .y1{left:64px} .ph .y2{right:64px}
+  .ph .blush{position:absolute;top:92px;width:13px;height:9px;border-radius:50%;background:rgba(240,110,110,.5)}
+  .ph .b1{left:46px} .ph .b2{right:46px}
+  .ph .smile{position:absolute;top:96px;left:50%;width:22px;height:11px;border:2.5px solid #3A2A18;border-top:none;border-radius:0 0 20px 20px;transform:translateX(-50%)}
+  .sticker .cap{margin-top:10px;text-align:center;color:#211A12;font-weight:700;font-size:14px;letter-spacing:.14em}
+  .sticker .seal{position:absolute;top:-12px;right:-12px;width:44px;height:44px;border-radius:50%;
+    background:radial-gradient(circle at 36% 32%,#F6DFA8,#C8932F 65%,#8A5A1E);display:grid;place-items:center;
+    color:#3d2708;font-weight:800;font-size:12px;box-shadow:0 6px 14px -6px rgba(0,0,0,.7)}
+  @keyframes stickerFlip{
+    0%{transform:translate(-50%,-50%) rotateY(0) scale(1)}
+    45%{transform:translate(-50%,-50%) rotateY(90deg) scale(.92)}
+    100%{transform:translate(-50%,-50%) rotateY(90deg) scale(.92);opacity:0}
+  }
+
+  /* laptop */
+  .laptop{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);width:520px;
+    transform-style:preserve-3d;opacity:0;animation:lapIn .9s 1.75s cubic-bezier(.2,.9,.3,1) both}
+  @keyframes lapIn{from{opacity:0;transform:translate(-50%,-46%) rotateY(-90deg) scale(.9)}to{opacity:1;transform:translate(-50%,-50%) rotateY(0) scale(1)}}
+  .lid{position:relative;width:100%;aspect-ratio:16/10.2;border-radius:18px 18px 4px 4px;
+    background:linear-gradient(180deg,#3A2F22,#241B10);padding:14px 14px 18px;
+    box-shadow:0 40px 80px -30px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,244,220,.12);
+    transform-origin:bottom;animation:lidOpen 1s 2.15s cubic-bezier(.2,.9,.3,1) both}
+  @keyframes lidOpen{from{transform:rotateX(-88deg)}to{transform:rotateX(0)}}
+  .screen{width:100%;height:100%;border-radius:10px;background:#0E0A05;border:1px solid rgba(232,199,126,.25);
+    overflow:hidden;position:relative;box-shadow:inset 0 0 34px rgba(0,0,0,.7)}
+  .screen .bar{height:26px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#191008;border-bottom:1px solid var(--line)}
+  .screen .bar i{width:9px;height:9px;border-radius:50%;display:block}
+  .screen .bar i:nth-child(1){background:#D66} .screen .bar i:nth-child(2){background:#DBA94E} .screen .bar i:nth-child(3){background:#8FBF7F}
+  .screen .bar b{margin-left:8px;font-size:10.5px;color:var(--muted);letter-spacing:.14em;font-weight:600}
+  .term{padding:14px 16px;font-size:12.8px;line-height:1.9;color:var(--gold)}
+  .term .ln{display:block;white-space:nowrap;overflow:hidden;width:0;opacity:0}
+  .term .ln.c{color:var(--txt)} .term .ln.g{color:var(--green)} .term .ln.m{color:var(--muted)}
+  .term .ln1{animation:type .5s 3.1s steps(28,end) forwards}
+  .term .ln2{animation:type .6s 3.7s steps(40,end) forwards}
+  .term .ln3{animation:type .55s 4.4s steps(34,end) forwards}
+  .term .ln4{animation:type .5s 5.0s steps(30,end) forwards}
+  .term .ln5{animation:type .45s 5.6s steps(22,end) forwards}
+  @keyframes type{from{width:0;opacity:1}to{width:100%;opacity:1}}
+  .caret{display:inline-block;width:8px;height:14px;background:var(--gold);vertical-align:-2px;
+    animation:blink 1s 6.1s steps(1) infinite;opacity:0}
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+  .base{width:118%;height:16px;margin:-2px 0 0 -9%;border-radius:4px 4px 14px 14px;
+    background:linear-gradient(180deg,#4A3B28,#241B10);box-shadow:0 24px 40px -18px rgba(0,0,0,.8);
+    animation:baseIn .5s 2.05s both}
+  .base::after{content:"";display:block;width:90px;height:5px;margin:0 auto;border-radius:0 0 8px 8px;background:#191008}
+  @keyframes baseIn{from{opacity:0}to{opacity:1}}
+  /* glow under laptop */
+  .glow{position:absolute;left:50%;bottom:-34px;transform:translateX(-50%);width:70%;height:60px;border-radius:50%;
+    background:radial-gradient(ellipse,rgba(232,199,126,.28),transparent 70%);filter:blur(8px);
+    animation:baseIn .8s 2.4s both}
+
+  /* ─── chips flying OUT of the screen ─── */
+  .chip{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) scale(.2);opacity:0;z-index:4;
+    font-size:12.5px;font-weight:700;letter-spacing:.08em;padding:8px 14px;border-radius:999px;
+    background:linear-gradient(180deg,rgba(252,233,207,.16),rgba(252,233,207,.06));
+    border:1px solid rgba(232,199,126,.5);color:var(--cream);backdrop-filter:blur(4px);
+    box-shadow:0 10px 26px -12px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,244,220,.25);
+    animation:fly 1s cubic-bezier(.18,.9,.3,1.2) forwards, hover 3.4s calc(var(--d) + 1s) ease-in-out infinite alternate}
+  .chip b{color:var(--gold)}
+  @keyframes fly{
+    0%{transform:translate(-50%,-50%) scale(.2);opacity:0}
+    60%{opacity:1}
+    100%{transform:translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1);opacity:1}
+  }
+  @keyframes hover{from{margin-top:0}to{margin-top:-10px}}
+
+  /* footline */
+  .foot{position:absolute;bottom:26px;left:0;right:0;text-align:center;font-size:12.5px;color:var(--muted);
+    letter-spacing:.08em;opacity:0;animation:baseIn .8s 6.4s both}
+  .foot b{color:var(--gold)}
+  .replay{position:absolute;top:18px;right:18px;z-index:9;background:none;border:1px solid var(--line);
+    color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:.1em;border-radius:8px;
+    padding:6px 10px;cursor:pointer}
+  .replay:hover{color:var(--gold);border-color:var(--gold)}
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.001s!important;animation-delay:0s!important}
+  }
+</style>
+
+<button class="replay" onclick="location.reload()">↻ REPLAY</button>
+<div class="stage" id="stage">
+  <div class="wm">
+    <h1>PETCLAW</h1>
+    <p>your AI pet, sovereign &amp; portable — across every surface you use</p>
+  </div>
+
+  <div class="rig">
+    <!-- 1) collectible sticker of the pet -->
+    <div class="sticker">
+      <span class="seal">01</span>
+      <div class="ph">
+        <span class="ear e1"></span><span class="ear e2"></span>
+        <span class="eye y1"></span><span class="eye y2"></span>
+        <span class="blush b1"></span><span class="blush b2"></span>
+        <span class="smile"></span>
+      </div>
+      <div class="cap">MOCHI</div>
+    </div>
+
+    <!-- 2) laptop that it becomes -->
+    <div class="laptop">
+      <div class="lid">
+        <div class="screen">
+          <div class="bar"><i></i><i></i><i></i><b>petclaw — mcp · v1</b></div>
+          <div class="term">
+            <span class="ln ln1 m">$ npx petclaw-mcp</span>
+            <span class="ln ln2">initializing petclaw-mcp · protocol v1 · SDK 1.6.1</span>
+            <span class="ln ln3 c">connectors ▸ 19 &nbsp; tools ▸ 6 &nbsp; skills ▸ 18</span>
+            <span class="ln ln4 c">soul ▸ portable · consent ▸ enforced</span>
+            <span class="ln ln5 g">● MOCHI is online<span class="caret"></span></span>
+          </div>
+        </div>
+      </div>
+      <div class="base"></div>
+      <div class="glow"></div>
+    </div>
+
+    <!-- 3) capability chips fly OUT of the screen -->
+    <div class="chip" style="--x:-300px;--y:-150px;--d:6.2s;animation-delay:6.2s"><b>◈</b> telegram</div>
+    <div class="chip" style="--x:300px;--y:-160px;--d:6.35s;animation-delay:6.35s"><b>◈</b> discord</div>
+    <div class="chip" style="--x:-350px;--y:-10px;--d:6.5s;animation-delay:6.5s"><b>◈</b> claude</div>
+    <div class="chip" style="--x:352px;--y:-20px;--d:6.65s;animation-delay:6.65s"><b>◈</b> cursor</div>
+    <div class="chip" style="--x:-268px;--y:120px;--d:6.8s;animation-delay:6.8s"><b>✦</b> memory_recall</div>
+    <div class="chip" style="--x:272px;--y:112px;--d:6.95s;animation-delay:6.95s"><b>✦</b> soul_export</div>
+    <div class="chip" style="--x:-368px;--y:-90px;--d:7.1s;animation-delay:7.1s"><b>✦</b> petclaw_chat</div>
+    <div class="chip" style="--x:196px;--y:186px;--d:7.25s;animation-delay:7.25s"><b>◈</b> chrome</div>
+  </div>
+
+  <div class="foot">the sticker is the pet · the laptop is everywhere it runs — <b>one soul, every surface</b></div>
+</div>
+
+<script>
+  const st=document.getElementById('stage');
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    for(let i=0;i<14;i++){const s=document.createElement('span');s.className='dust';
+      const z=2+Math.random()*4;s.style.width=s.style.height=z+'px';
+      s.style.left=(8+Math.random()*84)+'%';s.style.top=(55+Math.random()*35)+'%';
+      s.style.animationDuration=(5+Math.random()*5)+'s';s.style.animationDelay=(2+Math.random()*6)+'s';
+      st.appendChild(s);}
+  }
+</script>

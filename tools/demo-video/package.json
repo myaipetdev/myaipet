@@ -1,0 +1,9 @@
+{
+  "name": "myaipet-demo-video-kit",
+  "private": true,
+  "type": "module",
+  "description": "Self-contained kit for recording MY AI PET product demo videos (see HANDOFF.md)",
+  "dependencies": {
+    "playwright": "^1.61.1"
+  }
+}
