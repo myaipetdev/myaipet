@@ -1,0 +1,295 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>HEALTH SAVIORS — Launch Reel</title>
+<style>
+/* ============ HEALTH SAVIORS launch reel — fixed 1280x720 stage ============ */
+:root{
+  --bg:#050a12; --bg2:#0a1220; --panel:#0c1420;
+  --ink:#eaf2f9; --dim:rgba(234,242,249,.6); --dim2:rgba(234,242,249,.38);
+  --green:#34d399; --greenD:#0ea371; --greenL:#8af0cd;
+  --blue:#5fb7f8; --amber:#fbbf24; --rose:#fb7185;
+  --hair:rgba(255,255,255,.09);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#000}
+body{font-family:"Space Grotesk",ui-rounded,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.viewport{position:fixed;inset:0;display:grid;place-items:center;background:#000}
+.stage{position:relative;width:1280px;height:720px;overflow:hidden;zoom:var(--s,1);
+  background:radial-gradient(120% 90% at 70% -10%, #0d1b28 0%, var(--bg) 52%, #04070d 100%)}
+/* ambient glow orbs */
+.stage::before,.stage::after{content:"";position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0}
+.stage::before{width:640px;height:640px;left:-180px;top:-220px;background:radial-gradient(circle,rgba(52,211,153,.16),transparent 70%)}
+.stage::after{width:560px;height:560px;right:-160px;bottom:-200px;background:radial-gradient(circle,rgba(95,183,248,.10),transparent 70%)}
+.grain{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:.045;
+  background-image:radial-gradient(rgba(255,255,255,.8) .5px,transparent .6px);background-size:3px 3px;mix-blend-mode:overlay}
+.vig{position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(115% 90% at 50% 44%,transparent 60%,rgba(0,0,0,.5) 100%)}
+/* top brand bar */
+.topbar{position:absolute;top:24px;left:36px;right:36px;z-index:7;display:flex;justify-content:space-between;align-items:center}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;letter-spacing:.02em}
+.brand .mk{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:12px;font-weight:800;color:var(--green);
+  background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.45);box-shadow:0 0 18px -4px rgba(52,211,153,.5)}
+.brand small{margin-left:2px;font:600 9.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.22em;color:var(--dim2)}
+.tag{font:600 10.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.24em;color:var(--dim);padding:8px 14px;border-radius:999px;
+  background:rgba(255,255,255,.04);border:1px solid var(--hair);display:flex;align-items:center;gap:8px}
+.tag .d{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(52,211,153,.18)}
+/* progress */
+.hud{position:absolute;left:36px;right:36px;bottom:26px;z-index:7;display:flex;gap:6px}
+.seg{height:3px;flex:1;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
+.seg .fill{display:block;height:100%;width:0;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--greenL));box-shadow:0 0 8px -1px rgba(52,211,153,.8)}
+/* scene machinery */
+.scene{position:absolute;inset:0;display:none;z-index:1}
+.scene.on{display:block;z-index:2;animation:sceneIn .55s cubic-bezier(.2,.85,.25,1) both}
+.scene.exit{display:block;z-index:1;animation:sceneOut .45s ease both}
+@keyframes sceneIn{from{opacity:0;transform:scale(1.045);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes sceneOut{from{opacity:1}to{opacity:0;transform:scale(.985);filter:blur(4px)}}
+/* shared type system */
+.kick{display:inline-flex;align-items:center;gap:9px;font:700 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.26em;color:var(--green);text-transform:uppercase}
+.kick .bar{width:26px;height:2px;background:linear-gradient(90deg,var(--green),transparent)}
+h1{margin:12px 0 0;font-size:56px;line-height:1.02;font-weight:800;letter-spacing:-.026em}
+h1 .hl{color:var(--green);text-shadow:0 0 34px rgba(52,211,153,.4)}
+.sub{margin-top:14px;font-size:19px;line-height:1.5;color:var(--dim);font-weight:500;max-width:520px}
+.on .kick{animation:up .5s .08s cubic-bezier(.2,.9,.3,1) both}
+.on h1{animation:up .55s .16s cubic-bezier(.2,.9,.3,1) both}
+.on .sub{animation:up .55s .3s cubic-bezier(.2,.9,.3,1) both}
+@keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+/* glass chips */
+.chip{position:absolute;z-index:4;display:inline-flex;align-items:center;gap:8px;padding:11px 17px;border-radius:999px;
+  font-weight:700;font-size:14.5px;color:var(--ink);background:rgba(10,18,28,.72);backdrop-filter:blur(8px);
+  border:1px solid rgba(52,211,153,.35);box-shadow:0 16px 34px -16px rgba(0,0,0,.9),0 0 22px -8px rgba(52,211,153,.35)}
+.chip b{color:var(--green)}
+.chip.amber{border-color:rgba(251,191,36,.4)}.chip.amber b{color:var(--amber)}
+.chip.rose{border-color:rgba(251,113,133,.4)}.chip.rose b{color:var(--rose)}
+.on .chip{animation:chipIn .6s cubic-bezier(.2,1.35,.4,1) both}
+@keyframes chipIn{from{opacity:0;transform:translateY(18px) scale(.82)}to{opacity:1;transform:none}}
+/* screenshot frames */
+.frame{position:absolute;border-radius:16px;overflow:hidden;background:#060b12;
+  border:1px solid rgba(255,255,255,.12);box-shadow:0 60px 110px -40px rgba(0,0,0,.95),0 0 0 1px rgba(0,0,0,.6),0 0 60px -20px rgba(52,211,153,.18)}
+.frame .bar{height:30px;display:flex;align-items:center;gap:6px;padding:0 12px;background:#0b131d;border-bottom:1px solid var(--hair)}
+.frame .bar i{width:9px;height:9px;border-radius:50%;background:#2a3542}
+.frame .bar i:first-child{background:#fb7185aa}.frame .bar i:nth-child(2){background:#fbbf24aa}.frame .bar i:nth-child(3){background:#34d399aa}
+.frame .kb{overflow:hidden;height:calc(100% - 30px)}
+.frame .kb img{width:100%;display:block;transform-origin:50% 12%}
+.on .kb img{animation:kb 4.5s .15s ease-out both}
+@keyframes kb{from{transform:scale(1.02) translateY(0)}to{transform:scale(1.1) translateY(-4.5%)}}
+.polaroid{position:absolute;border-radius:12px;padding:9px 9px 12px;background:#0d1520;border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 40px 80px -30px rgba(0,0,0,.95);opacity:0}
+.polaroid img{width:100%;display:block;border-radius:7px}
+.polaroid .lb{margin-top:8px;text-align:center;font:600 10.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.18em;color:var(--dim2);text-transform:uppercase}
+.on .polaroid{animation:polIn .7s cubic-bezier(.2,1.1,.4,1) both}
+@keyframes polIn{from{opacity:0;transform:translateY(34px) scale(.86) rotate(0)}to{opacity:1;transform:translateY(0) scale(1) rotate(var(--r,0deg))}}
+
+/* ============ S1 · HOOK ============ */
+.s1 .wrap{position:absolute;inset:0;display:grid;place-items:center;z-index:2}
+.s1 .l1,.s1 .l2{position:absolute;left:0;right:0;text-align:center;font-weight:800;letter-spacing:-.03em}
+.s1 .l1{top:272px;font-size:58px;color:var(--dim);animation:l1 1.9s .2s cubic-bezier(.2,.8,.3,1) both}
+.s1 .l1 s{text-decoration-color:var(--rose);text-decoration-thickness:4px}
+@keyframes l1{0%{opacity:0;transform:translateY(20px)}14%,62%{opacity:1;transform:none}86%{opacity:.18;filter:blur(3px)}100%{opacity:.14;filter:blur(4px)}}
+.s1 .l2{top:330px;font-size:88px;color:var(--ink);opacity:0;animation:l2 .7s 1.95s cubic-bezier(.15,1.2,.3,1) both}
+.s1 .l2 .hl{color:var(--green);text-shadow:0 0 44px rgba(52,211,153,.55)}
+@keyframes l2{from{opacity:0;transform:translateY(34px) scale(.92)}to{opacity:1;transform:none}}
+.s1 .orb{position:absolute;left:50%;top:50%;width:420px;height:420px;margin:-210px 0 0 -210px;border-radius:50%;z-index:1;
+  background:radial-gradient(circle,rgba(52,211,153,.22),transparent 65%);animation:orbPulse 3s ease-in-out infinite}
+@keyframes orbPulse{0%,100%{transform:scale(.92);opacity:.7}50%{transform:scale(1.06);opacity:1}}
+.s1 .ring{position:absolute;left:50%;top:50%;border-radius:50%;border:1px dashed rgba(52,211,153,.4);animation:spin 22s linear infinite}
+.s1 .r1{width:520px;height:520px;margin:-260px 0 0 -260px}
+.s1 .r2{width:640px;height:640px;margin:-320px 0 0 -320px;animation-duration:34s;animation-direction:reverse;border-color:rgba(95,183,248,.25)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ============ S2 · COACH/MEMORY ============ */
+.s2 .frame{right:64px;top:104px;width:640px;height:452px;transform:rotate(1.6deg)}
+.s2 .copy{position:absolute;left:64px;top:200px;max-width:470px;z-index:3}
+.s2 .c1{left:598px;top:96px;animation-delay:.65s!important}
+.s2 .c2{left:640px;top:520px;animation-delay:.9s!important}
+.s2 .c3{left:940px;top:70px;animation-delay:1.15s!important}
+
+/* ============ S3 · CHECK-INS ============ */
+.s3 .frame{left:76px;top:96px;width:560px;height:500px;transform:rotate(-1.8deg)}
+.s3 .copy{position:absolute;right:70px;top:186px;max-width:480px;z-index:3;text-align:right}
+.s3 .copy .kick{flex-direction:row-reverse}
+.s3 .emojis{position:absolute;right:118px;top:420px;display:flex;gap:10px;z-index:4}
+.s3 .emojis span{width:56px;height:56px;border-radius:14px;display:grid;place-items:center;font-size:27px;
+  background:rgba(10,18,28,.8);border:1px solid var(--hair);opacity:0}
+.on.s3 .emojis span{animation:emojiIn .5s cubic-bezier(.2,1.4,.4,1) both}
+.on.s3 .emojis span:nth-child(1){animation-delay:.75s}.on.s3 .emojis span:nth-child(2){animation-delay:.85s}
+.on.s3 .emojis span:nth-child(3){animation-delay:.95s}.on.s3 .emojis span:nth-child(4){animation-delay:1.05s;border-color:rgba(52,211,153,.7);box-shadow:0 0 24px -6px rgba(52,211,153,.7)}
+.on.s3 .emojis span:nth-child(5){animation-delay:1.15s}
+@keyframes emojiIn{from{opacity:0;transform:translateY(16px) scale(.7)}to{opacity:1;transform:none}}
+.s3 .toast{position:absolute;left:150px;top:60px;z-index:4;display:flex;align-items:center;gap:10px;padding:13px 20px;border-radius:14px;
+  font-weight:800;font-size:16px;color:var(--ink);background:rgba(10,20,16,.9);border:1px solid rgba(52,211,153,.5);
+  box-shadow:0 20px 44px -18px rgba(0,0,0,.9),0 0 30px -8px rgba(52,211,153,.5);opacity:0}
+.s3 .toast b{color:var(--green)}
+.on.s3 .toast{animation:toastIn .55s 1.5s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes toastIn{from{opacity:0;transform:translateY(-16px) scale(.88)}to{opacity:1;transform:none}}
+
+/* ============ S4 · TRUST ============ */
+.s4 .frame{right:70px;top:120px;width:560px;height:430px;transform:rotate(1.4deg)}
+.s4 .copy{position:absolute;left:64px;top:150px;max-width:500px;z-index:3}
+.s4 .zero{margin-top:26px;display:flex;align-items:baseline;gap:16px}
+.s4 .zero .n{font-size:150px;line-height:.85;font-weight:800;letter-spacing:-.05em;color:var(--amber);
+  text-shadow:0 0 60px rgba(251,191,36,.35);opacity:0}
+.on.s4 .zero .n{animation:zeroIn .6s .6s cubic-bezier(.15,1.3,.3,1) both}
+@keyframes zeroIn{from{opacity:0;transform:translateY(30px) scale(.7)}to{opacity:1;transform:none}}
+.s4 .zero .lb{font:700 13px/1.5 ui-monospace,Menlo,monospace;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;opacity:0}
+.on.s4 .zero .lb{animation:up .45s .8s cubic-bezier(.2,.9,.3,1) both}
+
+/* ============ S5 · STACK ============ */
+.s5 .copy{position:absolute;left:0;right:0;top:92px;text-align:center;z-index:3}
+.s5 .copy .kick{justify-content:center}
+.s5 .pols{position:absolute;inset:0;z-index:2}
+.s5 .p1{left:120px;top:280px;width:330px;--r:-4deg;animation-delay:.25s!important}
+.s5 .p2{left:478px;top:262px;width:330px;--r:1.5deg;animation-delay:.4s!important;z-index:3}
+.s5 .p3{left:836px;top:284px;width:330px;--r:4deg;animation-delay:.55s!important}
+
+/* ============ S6 · ENTERPRISE ============ */
+.s6 .frame{left:72px;top:112px;width:600px;height:440px;transform:rotate(-1.4deg)}
+.s6 .copy{position:absolute;right:66px;top:150px;max-width:470px;z-index:3;text-align:right}
+.s6 .copy .kick{flex-direction:row-reverse}
+.s6 .c1{right:80px;top:388px;animation-delay:.7s!important}
+.s6 .c2{right:130px;top:452px;animation-delay:.95s!important}
+.s6 .c3{right:96px;top:516px;animation-delay:1.2s!important}
+
+/* ============ S7 · OUTRO ============ */
+.s7 .wrap{position:absolute;inset:0;display:grid;place-items:center;text-align:center;z-index:2}
+.s7 .wm h1{font-size:96px;letter-spacing:-.03em;margin:0;
+  background:linear-gradient(100deg,#0ea371 0%,#34d399 26%,#c9fbe7 46%,#34d399 62%,#0ea371 100%);
+  background-size:230% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 14px 40px rgba(52,211,153,.35));animation:foil 4s linear infinite}
+@keyframes foil{to{background-position:230% 0}}
+.s7 .wm .t{margin-top:18px;font-size:23px;font-weight:600;color:var(--dim)}
+.s7 .wm .u{margin-top:10px;font:700 15px/1 ui-monospace,Menlo,monospace;letter-spacing:.26em;color:var(--green);text-transform:uppercase}
+.s7 .cta{margin-top:30px;display:inline-flex;padding:16px 34px;border-radius:999px;font-weight:800;font-size:18px;color:#04120b;
+  background:linear-gradient(160deg,#7ff2c8,#34d399);box-shadow:0 22px 50px -16px rgba(52,211,153,.8);animation:cta 2.1s ease-in-out infinite}
+@keyframes cta{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.on.s7 .wm h1{animation:foil 4s linear infinite, up .6s .05s both}
+.on.s7 .wm .t{animation:up .5s .25s both}
+.on.s7 .wm .u{animation:up .5s .4s both}
+.on.s7 .cta{animation:cta 2.1s ease-in-out infinite, up .5s .55s both}
+.s7 .pledge{position:absolute;left:0;right:0;bottom:78px;text-align:center;font:600 11.5px/1.7 ui-monospace,Menlo,monospace;letter-spacing:.14em;color:var(--dim2);text-transform:uppercase;opacity:0}
+.on.s7 .pledge{animation:up .6s .8s both}
+</style>
+
+<div class="viewport"><div class="stage" id="stage">
+  <div class="topbar">
+    <div class="brand"><span class="mk">$H</span> HEALTH SAVIORS <small>PRODUCT FILM</small></div>
+    <div class="tag"><span class="d"></span><span id="scenetag">MEMORY</span></div>
+  </div>
+
+  <!-- S1 · HOOK -->
+  <section class="scene s1">
+    <div class="orb"></div><div class="ring r1"></div><div class="ring r2"></div>
+    <div class="wrap">
+      <div class="l1">Your health apps <s>forget you.</s></div>
+      <div class="l2">Ours <span class="hl">remembers.</span></div>
+    </div>
+  </section>
+
+  <!-- S2 · COACH / MEMORY -->
+  <section class="scene s2">
+    <div class="frame"><div class="bar"><i></i><i></i><i></i></div><div class="kb"><img src="./shots-hs/app-hub.jpg"></div></div>
+    <div class="copy">
+      <div class="kick"><span class="bar"></span>LONGITUDINAL MEMORY</div>
+      <h1>A coach that<br><span class="hl">knows your story.</span></h1>
+      <p class="sub">Every entry compounds. It recalls your past weeks, your patterns, your goals — and answers with cited, general-wellness guidance.</p>
+    </div>
+    <div class="chip c1">🧠 <b>remembers</b> your last 90 days</div>
+    <div class="chip c2">7-day mood <b>4.0/5</b> · stress <b>4.0/5</b></div>
+    <div class="chip c3">focus · <b>stress / sleep / energy</b></div>
+  </section>
+
+  <!-- S3 · CHECK-INS -->
+  <section class="scene s3">
+    <div class="frame"><div class="bar"><i></i><i></i><i></i></div><div class="kb"><img src="./shots-hs/runner.jpg"></div></div>
+    <div class="copy">
+      <div class="kick"><span class="bar"></span>30-SECOND CHECK-INS</div>
+      <h1>Tap. Slide.<br><span class="hl">It learns you.</span></h1>
+      <p class="sub" style="margin-left:auto">18 guided reflections — daily, weekly, themed. Each one personalizes your coach a little more.</p>
+    </div>
+    <div class="emojis"><span>😞</span><span>😕</span><span>😐</span><span>🙂</span><span>😄</span></div>
+    <div class="toast">✨ Saved — <b>+10 pts</b> · your coach just got smarter</div>
+  </section>
+
+  <!-- S4 · TRUST -->
+  <section class="scene s4">
+    <div class="frame"><div class="bar"><i></i><i></i><i></i></div><div class="kb"><img src="./shots-hs/consent-modal.jpg"></div></div>
+    <div class="copy">
+      <div class="kick"><span class="bar"></span>PRIVATE BY DESIGN</div>
+      <h1>Never sold.<br><span class="hl">Never shared.</span></h1>
+      <p class="sub">Explicit consent before anything is processed. Withdraw anytime — everything is erased.</p>
+      <div class="zero"><div class="n">0</div><div class="lb">health records<br>sold — ever</div></div>
+    </div>
+  </section>
+
+  <!-- S5 · STACK -->
+  <section class="scene s5">
+    <div class="copy">
+      <div class="kick"><span class="bar"></span>ONE HONEST STACK</div>
+      <h1>Coach · Knowledge · <span class="hl">Community</span></h1>
+    </div>
+    <div class="pols">
+      <div class="polaroid p1"><img src="./shots-hs/landing-hero.jpg"><div class="lb">the promise</div></div>
+      <div class="polaroid p2"><img src="./shots-hs/education.jpg"><div class="lb">learn-to-earn · cited</div></div>
+      <div class="polaroid p3"><img src="./shots-hs/predictions.jpg"><div class="lb">forecasts · no wagers</div></div>
+    </div>
+  </section>
+
+  <!-- S6 · ENTERPRISE -->
+  <section class="scene s6">
+    <div class="frame"><div class="bar"><i></i><i></i><i></i></div><div class="kb"><img src="./shots-hs/enterprise-hero.jpg"></div></div>
+    <div class="copy">
+      <div class="kick"><span class="bar"></span>FOR THE ENTERPRISE</div>
+      <h1>Agentic health<br><span class="hl">infrastructure.</span></h1>
+      <p class="sub" style="margin-left:auto">License the coach, memory, knowledge and survey stack — or consented, de-identified population insights.</p>
+    </div>
+    <div class="chip c1">🏗 <b>license</b> the stack</div>
+    <div class="chip amber c2">aggregate insights · <b>k ≥ 11</b></div>
+    <div class="chip rose c3">✕ <b>never</b> individual records</div>
+  </section>
+
+  <!-- S7 · OUTRO -->
+  <section class="scene s7">
+    <div class="wrap"><div class="wm">
+      <h1>HEALTH SAVIORS</h1>
+      <div class="t">The AI health coach that remembers you.</div>
+      <div class="u">saviorofhealth.app</div>
+      <div><span class="cta">Start your first check-in →</span></div>
+    </div></div>
+    <div class="pledge">general wellness · not medical advice &nbsp;•&nbsp; your data stays yours &nbsp;•&nbsp; token reads zero health data</div>
+  </section>
+
+  <div class="grain"></div><div class="vig"></div>
+  <div class="hud" id="hud"></div>
+</div></div>
+
+<script>
+// ── timeline driver ──
+const SCENES = [
+  { el: ".s1", tag: "HOOK",        d: 4200 },
+  { el: ".s2", tag: "MEMORY",      d: 5000 },
+  { el: ".s3", tag: "CHECK-INS",   d: 5000 },
+  { el: ".s4", tag: "TRUST",       d: 4600 },
+  { el: ".s5", tag: "THE STACK",   d: 4200 },
+  { el: ".s6", tag: "ENTERPRISE",  d: 5000 },
+  { el: ".s7", tag: "GET STARTED", d: 5600 },
+];
+const hud = document.getElementById("hud");
+SCENES.forEach(() => { const s = document.createElement("div"); s.className = "seg"; s.innerHTML = "<span class='fill'></span>"; hud.appendChild(s); });
+const tagEl = document.getElementById("scenetag");
+let i = -1;
+function show(n) {
+  if (n >= SCENES.length) return;
+  const prev = i >= 0 ? document.querySelector(SCENES[i].el) : null;
+  if (prev) { prev.classList.remove("on"); prev.classList.add("exit"); setTimeout(() => prev.classList.remove("exit"), 500); }
+  i = n;
+  const sc = SCENES[n];
+  const el = document.querySelector(sc.el);
+  el.classList.add("on");
+  tagEl.textContent = sc.tag;
+  const fill = hud.children[n].querySelector(".fill");
+  fill.style.transition = `width ${sc.d}ms linear`;
+  requestAnimationFrame(() => (fill.style.width = "100%"));
+  setTimeout(() => show(n + 1), sc.d);
+}
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);document.getElementById("stage").style.setProperty("--s",s)}
+addEventListener("resize",fit);fit();
+show(0);
+</script>

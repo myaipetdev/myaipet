@@ -5,10 +5,12 @@ Everything in this folder is durable and git-versioned; a fresh Claude session
 (or a human) can reproduce and extend the videos by following this document alone.
 
 **Reference outputs already delivered** (on `~/Desktop`):
-- `MY-AI-PET-fulldemo.mp4` — 83s one-take real-product walkthrough (canonical)
-- `MY-AI-PET-realdemo.mp4` — compact cut (current script yields ~60s; the
-  delivered file predates the fade-veils and is 50s)
-- `MY-AI-PET-promo-v2-bgm.mp4` — 38s cinematic sizzle reel (HTML animation)
+- `MY-AI-PET-fulldemo.mp4` — ~73s one-take real-product walkthrough (canonical,
+  v2 after a frame-audit rework: fake cursor, real Square play, real bracket vote)
+- `MY-AI-PET-promo-v2-bgm.mp4` — 34s cinematic sizzle reel (HTML animation,
+  record via `?record=1` to hide player chrome; trim the end before the deck loops)
+- `MY-AI-PET-realdemo.mp4` — LEGACY 50s compact cut; superseded by fulldemo and
+  its script predates the v2 helpers — copy record-fulldemo.mjs helpers for new cuts
 
 New deliverables follow the same naming: `~/Desktop/MY-AI-PET-<kebab-name>.mp4`.
 
@@ -162,6 +164,19 @@ holds ~4.2s (real mp4 plays in-card); typing via
 `page.keyboard.down/up("ArrowRight")` held 0.7–1.1s per leg. Total target:
 compact ≈60s, full ≈85s. When in doubt, pace FASTER — "조금 더 빨리" was
 explicit feedback.
+
+v2 helpers in record-fulldemo.mjs (frame-audit hard lessons — reuse them):
+- **Fake cursor + click ripple** injected in `arm()` (Playwright records no OS
+  cursor; without it clicks are invisible causality).
+- **`scene(url, {ready})`** keeps the dark veil up until a content selector is
+  visible — kills blank-paint flashes on page loads.
+- **`sceneNav(label, ready)`** switches app sections by clicking the real
+  `button.nav-btn` (client-side setSection) — zero reload, overlays survive.
+- **`punch(locator, on)`** camera punch-in: scale the template GRID (stable),
+  NOT the card — the card's inline styles get wiped when its hover video mounts.
+- Always `__setCap(null)` before raising the veil (else the caption floats over black).
+- Frame the interactive element (scrollIntoView + center) BEFORE its caption:
+  the audit's worst finding was captions narrating content still below the fold.
 
 ## 6. BGM: regenerate / retune
 
