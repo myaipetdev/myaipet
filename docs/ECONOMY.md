@@ -1,7 +1,10 @@
 # MY AI PET — Economy & Business-Model Analysis
 
 _Numbers-grounded pass. Every credit price and vendor cost below is read from the
-live code (not invented). Sources cited inline. Written 2026-07-09._
+live code (not invented). Sources cited inline. Written 2026-07-09.
+Updated: 2026-07-13 — the Veo 3 reprice recommended below has since landed in
+code (`providers.ts`: 250 → **400 cr**, `usdPerRun` $2.40 → **$4.50**, ETA Q4 2026);
+tables and the P0 section now reflect the repriced values._
 
 ---
 
@@ -19,8 +22,10 @@ your pet into video."** Video is the premium SKU (25–50 cr = $1.25–$2.50 a c
 at ~65–85% gross margin). Everything else (chat, care, streaks, cards) is
 free/cheap engagement whose job is to feed video demand.
 
-**No live paid action is sold below cost.** The only margin-negative risk sits in
-a _locked_ model (Veo 3), which is correctly `comingSoon`. See the P0 section.
+**No live paid action is sold below cost.** The one margin-negative risk this doc
+originally flagged — a _locked_ model (Veo 3) priced at 250 cr against a real
+~$4–6 vendor cost — has been **repriced in code to 400 cr / $4.50 `usdPerRun`**
+and remains correctly `comingSoon`. See the P0 section.
 
 ---
 
@@ -55,7 +60,7 @@ both the retail anchor (**$0.05**) and the worst case a user can realize
 | kling-image-to-video | video | 50 | $0.45 | ✅ |
 | kling-1.6-pro | video | 120 | $1.20 | 🔒 comingSoon |
 | minimax-hailuo | video | 90 | $0.85 | 🔒 comingSoon |
-| veo-3 | video | 250 | $2.40 | 🔒 comingSoon |
+| veo-3 | video | 400 | $4.50 | 🔒 comingSoon (Q4 2026) |
 
 ### Non-Studio per-action credit charges (Grok/LLM-backed)
 
@@ -90,7 +95,7 @@ unless noted) ranges used to sanity-check the coded `usdPerRun`:
 | **Wan 2.1 i2v** | ~$0.20–0.40 / 5s | **$0.18** | ⚠️ **may UNDERstate real cost** |
 | MiniMax Hailuo 02 pro | ~$0.48 / 6s | $0.85 | conservative |
 | Kling 1.6 pro | ~$1.00–1.40 / 10s 1080p | $1.20 | roughly right |
-| **Veo 3 (8s, native audio)** | ~$3.20–6.00 / clip | **$2.40** | ⚠️ **UNDERstates real cost badly** |
+| **Veo 3 (8s, native audio)** | ~$3.20–6.00 / clip | **$4.50** | mid-range (was $2.40 — fixed) |
 
 ---
 
@@ -131,25 +136,27 @@ worst live case is Kling i2v at 64% GM@bulk. Nothing to fix as P0 among live SKU
 |--------|----|---------|----------|----------------------|---------|--------------------------|
 | MiniMax Hailuo | 90 | $4.50 | $2.25 | $0.85 / ~$0.48 | 81% | 79% |
 | Kling 1.6 pro | 120 | $6.00 | $3.00 | $1.20 / ~$1.40 | 80% | **53%** |
-| **Veo 3** | 250 | $12.50 | $6.25 | $2.40 / **~$4–6** | 81% | **⚠️ 4% → NEGATIVE** |
+| **Veo 3** (repriced) | 400 | $20.00 | $10.00 | $4.50 / ~$4–6 | 78% | **40–60%** (55% at coded cost) |
 
 ---
 
 ## 3. P0 — margin-negative flag
 
-**No LIVE action is margin-negative.** One LOCKED action is:
+**No LIVE action is margin-negative.** The one LOCKED action that was —
 
-> **P0 (guardrail, not a live fire): Veo 3 at 250 cr is break-even-to-negative
-> at bulk-pack pricing under realistic fal Veo-3-with-audio cost.**
-> Coded `usdPerRun` = $2.40, but fal's Veo 3 (8s, native audio) is ~$4–6/clip.
-> A pro-pack buyer pays $6.25 for 250 credits → **as little as 4% gross, and
-> negative if fal is at the top of the range.** It is correctly `comingSoon:true`
-> today, so nothing is bleeding. **Before unlocking Veo 3, reprice to ≥ 350–400 cr**
-> (≥ $8.75 @bulk) or gate it behind the Studio subscription tier only.
+> **P0 — RESOLVED in code: Veo 3 was priced at 250 cr with `usdPerRun` $2.40,
+> which was break-even-to-negative at bulk-pack pricing** (a pro-pack buyer
+> would pay $6.25 against a realistic ~$4–6/clip fal Veo-3-with-audio cost —
+> as little as 4% gross, negative at the top of the range). Per this doc's
+> recommendation it has been **repriced to 400 cr with `usdPerRun` = $4.50**
+> (`providers.ts`, comment cites this doc), keeping ≥ 40% GM even at the bulk
+> floor and the top of the real cost range. It remains `comingSoon:true`
+> (ETA Q4 2026), so nothing bleeds today. Residual: if live fal cost lands at
+> the $6 top end, 400 cr is below the ≥50%-GM rule floor of 480 cr — confirm
+> live pricing before unlock.
 
-Two data-hygiene fixes (not money-losing today, but they make the ledger lie):
+One data-hygiene fix remains (not money-losing today, but it makes the ledger lie):
 - **Wan 2.1 `usdPerRun` = $0.18** likely understates fal. Refresh from live pricing.
-- **Veo 3 `usdPerRun` = $2.40** understates fal badly. Refresh before it goes live.
 
 ---
 
@@ -205,7 +212,9 @@ Sanity check vs current live prices (using coded costs, current $0.025 floor):
 - Kling std $0.35 → rule floor = 28 cr; charged **40** ✓ (comfortable)
 - Kling i2v $0.45 → rule floor = 36 cr; charged **50** ✓
 - Grok img $0.03 → rule floor = 3 cr; charged **5** ✓
-- Veo 3 $4–6 (real) → rule floor = **320–480 cr**; charged **250** ✗ → confirms the P0.
+- Veo 3 $4–6 (real) → rule floor = **320–480 cr**; charged **400** (was 250 ✗) →
+  ✓ at the coded $4.50 (floor 360) and mid-range real cost; still short of the
+  480-cr floor if fal lands at $6 — recheck before unlock.
 
 Adopt the rule as a code invariant (a unit test asserting
 `creditsPerRun ≥ ceil(usdPerRun / 0.0125)` for every non-locked model would catch
@@ -223,16 +232,19 @@ the next Veo-3-style mispricing at PR time).
    30-video quota = up to $9–13.50 of fal cost. **Recommend: keep credits-on-top;
    sell the subscription as "unlock the good models + higher caps," not as
    included generations.** Decide before flipping `SUBSCRIPTION_SALES_ENABLED`.
-3. **When to unlock Veo 3 / Kling Pro / Hailuo**, and at what reprice. Veo 3 needs
-   ≥ 350–400 cr (or subscription-gated) before it can go live without bleeding.
-4. **Refresh `usdPerRun` from live fal pricing** (Wan 2.1 and Veo 3 especially),
-   and add the margin-invariant test so the catalog can't drift negative silently.
+3. **When to unlock Veo 3 / Kling Pro / Hailuo.** The Veo 3 reprice (now 400 cr,
+   `usdPerRun` $4.50) is done in code; before unlocking, confirm live fal cost —
+   at the $6 top of the range, 400 cr is under the ≥50%-GM rule floor (480 cr).
+4. **Refresh `usdPerRun` from live fal pricing** (Wan 2.1 especially — Veo 3's
+   is now $4.50, mid-range), and add the margin-invariant test so the catalog
+   can't drift negative silently.
 5. **Failed-generation leakage.** Credits are correctly refunded on failure
    (`studio/generate` catch path), but confirm fal doesn't bill us for
    submitted-then-failed jobs; if it does, that's silent cost with no revenue.
 6. **Free-tier fal exposure.** `grok-imagine-video` (25 cr) and `wan-2.1` are
    `tier: "free"`/`"pro"` and generatable; with free monthly video quota = 3
-   (`TIER_LIMITS.free`), a free user can burn ~$0.45–0.54 of fal before paying.
+   (`TIER_LIMITS.free`), a free user can burn ~$0.45–0.54 of vendor cost
+   (grok-imagine-video is Grok-backend; Wan is fal but pro-tier) before paying.
    That's an acceptable CAC, but it IS real spend — keep the free video quota tight.
 
 ---
@@ -241,7 +253,7 @@ the next Veo-3-style mispricing at PR time).
 
 - Credit packs: `web/src/app/api/credits/purchase/route.ts:8`
 - Studio catalog (credits + usdPerRun): `web/src/lib/studio/providers.ts:47`
-- Subscription tiers + limits: `web/src/lib/studio/providers.ts:276`
+- Subscription tiers + limits: `web/src/lib/studio/providers.ts:280`
 - Subscription sales gate (OFF): `web/src/app/api/studio/subscription/route.ts:33`
 - Studio charge path (sub gate + credits both apply): `web/src/app/api/studio/generate/route.ts:93`
 - Agent loop cost (5 cr): `web/src/app/api/pets/[petId]/agent/route.ts:34`

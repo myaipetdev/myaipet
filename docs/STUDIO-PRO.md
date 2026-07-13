@@ -5,6 +5,10 @@ Seedance grade — a tool people **pay** for. Grounded in competitive research,
 the client-side-editing tech stack, the current Studio code, and
 `docs/ECONOMY.md`. Written 2026-07-09._
 
+_Updated: 2026-07-13 — **v1 has shipped** (`StudioEditor.tsx`). §0.1 tracks
+shipped-vs-planned; the v1 sections below are annotated with as-built reality
+where it diverged from the original spec._
+
 > **North star:** the wallet opens at concrete task-completion friction points
 > (hit a cap, ran out of credits, resolution too low to post, watermark on the
 > clip you want to share) — **not** at a vague "go premium" wall. Every paid
@@ -15,22 +19,52 @@ the client-side-editing tech stack, the current Studio code, and
 
 ## 0. Where we are today (grounding)
 
-Current Studio is a **generation-only** tool (`web/src/components/PetStudioPro.tsx`,
-~2,200 lines): pick pet → style → engine → prompt → one clip/image out. It has:
+Current Studio (`web/src/components/PetStudioPro.tsx`, ~2,800 lines) is now
+**generate → assemble**: pick pet → style → engine → prompt → clip/image out →
+optional "Assemble" into a reel. It has:
 
 - A clean provider catalog (`web/src/lib/studio/providers.ts`) — 12 models,
   fal + Grok backends, per-model `creditsPerRun` / `usdPerRun` / `tier`.
+  Flagship entries (`kling-1.6-pro`, `minimax-hailuo`, `veo-3`) are `comingSoon`
+  teasers; Veo 3 is priced at **400 cr** (usdPerRun 4.50) per the §5.2 rule.
 - A single charge+submit endpoint (`web/src/app/api/studio/generate/route.ts`)
   with atomic credit deduction, refund-on-failure, moderation, tier/quota gate,
   and permanent-storage persistence via `saveRemoteFile`.
-- 20+ pet-anchored prompt templates (`web/src/lib/studio/templates.ts`).
+- 22 pet-anchored prompt templates (`web/src/lib/studio/templates.ts`),
+  including a **12-template "trending" short-form set**; 20 templates carry
+  real example clips (`web/public/studio_examples/`) that **hover-play** in the
+  gallery (fine-pointer only; touch keeps the poster).
+- **Prompt Director v2** (`/api/studio/prompt-director`): two-phase interactive
+  prompt engineering — `phase:"questions"` returns an 8–12-item creative
+  decision sheet (mood, location, lighting, camera, pacing, …) in the user's
+  language; `phase:"final"` compiles the answers into an ultra-detailed,
+  pet-anchored English video prompt. Real LLM call via the task router.
+- **A shipped v1 client editor** (`web/src/components/StudioEditor.tsx` +
+  `web/src/lib/studio/editorEngine.ts`): trim, sequence up to 3 clips, caption
+  overlay, synthesised music, in-browser export — free export is 720p with a
+  corner watermark; 1080p watermark-free is the gated path (see §0.1).
 - Job persistence/resume, variations, share links, avatar/card-art handoff.
 
-**What it is missing to be a "pro tool people pay for":** there is no editor.
-You cannot trim, sequence multiple clips, add a music track, add captions, or
-control export resolution/watermark. Every "edit" is a re-generation (another
-paid fal call). That is the gap this doc closes — and it closes it **without
-adding server CPU load**, because all editing runs in the user's browser.
+**What is still missing to complete the "pro tool people pay for" loop:** the
+HD-export **server-side charge** (`POST /api/studio/export` token mint — the
+gate today is a client-side tier/balance check), transitions/stickers/speed,
+the AI-Finish fal passes, and project save/resume. Those are the v2/v3 gaps the
+rest of this doc closes — still **without adding server CPU load**, because all
+editing runs in the user's browser.
+
+### 0.1 Shipped vs. planned (as of 2026-07-13)
+
+| Piece | Status |
+|---|---|
+| 12 trending templates + hover-play example previews | ✅ Shipped (`templates.ts`, `example-videos.ts`, `public/studio_examples/`) |
+| Prompt Director v2 two-phase question sheet | ✅ Shipped (`/api/studio/prompt-director`) |
+| Client editor v1 — trim / sequence ≤3 clips / caption / music / export | ✅ Shipped (`StudioEditor.tsx`, opened from "Assemble" + result actions in `PetStudioPro.tsx`) |
+| Free-tier watermark on 720p export | ✅ Shipped (client-drawn `drawWatermark`) |
+| HD 1080p watermark-free gate — 10 cr, or included on `pro`/`studio` | ⚠️ **UI shipped, server charge NOT built.** No `/api/studio/export` route exists; the gate is a client-side tier/credit-balance check (see the `TODO(v1-paywall)` in `StudioEditor.tsx`). No credits are actually deducted yet. |
+| WebCodecs + `mp4-muxer` encode path | ⏳ Planned (v2). Shipped v1 encodes via `canvas.captureStream()` + `MediaRecorder`; WebCodecs is feature-detected and surfaced as a badge only. |
+| Transitions / stickers / speed ramp / multi-track audio | ⏳ Planned (v2) |
+| AI-Finish (fal upscale / interpolate / captions / bg-remove / soundtrack) | ⏳ Planned (v3) |
+| Project save/resume, S3/R2 storage migration | ⏳ Planned (v3) |
 
 ---
 
@@ -98,8 +132,8 @@ Three compute zones, and **the middle one (editing) never touches our server**:
  ┌───────────────────────── OUR EC2 BOX (near-idle) ───────────────────────┐
  │  • serve SPA + WASM/JS bundles (static, CDN-cacheable)                   │
  │  • /api/studio/generate      → thin proxy to fal/Grok (existing)         │
- │  • /api/studio/export        → charge credits, mint watermark-free token │
- │  • /api/studio/finish        → thin proxy to fal AI models (new)         │
+ │  • /api/studio/export        → charge credits, mint clean token (PLANNED)│
+ │  • /api/studio/finish        → thin proxy to fal AI models (v3, planned) │
  │  • /api/studio/project       → save/load project JSON (v3, tiny rows)    │
  │  • storage: accept final MP4 PUT → /uploads (later S3/R2)                │
  │  NO ffmpeg process. NO transcode. NO headless Chromium. NO Remotion.     │
@@ -130,6 +164,14 @@ the existing fal generation flow — no new server risk is introduced.
 
 ### 2.3 Editing engine choice (tech research verdict)
 
+> **As built (v1):** the shipped `editorEngine.ts` uses the dependency-free
+> path — canvas draw loop + `canvas.captureStream()` + `MediaRecorder` (MP4 on
+> Safari, WebM elsewhere), with music **synthesised live via WebAudio
+> oscillators** (three loops: Sunny / Dreamy / Playful — zero bytes fetched, no
+> upload). No `mp4-muxer`, `mp4box.js`, or `ffmpeg.wasm` dependency was added.
+> WebCodecs is feature-detected (`detectCaps()`) and shown as a badge; the
+> frame-accurate WebCodecs encode below is the **v2 upgrade**, not v1 reality.
+
 | Layer | Choice | Why |
 |---|---|---|
 | **Primary editor engine** | **WebCodecs** + thin canvas compositor + **`mp4-muxer`** | Hardware-accelerated decode/encode on the user's GPU; frame-accurate trim; ~50–100KB muxer (pure JS, not WASM). Covers ~90% of CapCut-grade editing client-side. |
@@ -145,12 +187,18 @@ committing to a codec config (mismatches fail silently).
 
 ---
 
-## 3. V1 BUILD SPEC — the smallest shippable "pro" slice
+## 3. V1 BUILD SPEC — the smallest shippable "pro" slice _(✅ SHIPPED, with deltas)_
 
 **Goal of v1:** turn the generation-only tool into a *generate-then-assemble*
 tool, and introduce the first real paywall (watermark → HD export). Ship a
 **minimal client editor**: trim + sequence 2–3 clips + one music track + one
-text/caption overlay + export MP4 (free = 720p watermarked, paid = 1080p clean).
+text/caption overlay + export (free = 720p watermarked, paid = 1080p clean).
+
+**Ship status:** the editor is live as `StudioEditor.tsx` (trim, ≤3 clips,
+caption with position/font presets, synthesised music, 720p-watermark vs
+1080p-clean export fork). **Two deltas from this spec:** (1) music is a
+synthesised WebAudio loop picker, not file upload; (2) the paid fork's
+**server-side credit charge is not built** — see §3.4.
 
 ### 3.1 Scope (in / out)
 
@@ -158,8 +206,9 @@ text/caption overlay + export MP4 (free = 720p watermarked, paid = 1080p clean).
 - Editor timeline holding **2–3 generated clips** (from History or fresh gens).
 - **Trim** each clip (in/out handles, frame-accurate).
 - **Sequence** clips end-to-end (drag reorder).
-- **One music track** (upload user file, or pick from a small royalty-free set),
-  trimmed to reel length, basic volume.
+- **One music track** — _as shipped:_ pick from a small synthesised set
+  (Sunny / Dreamy / Playful, WebAudio-generated, nothing fetched) with volume
+  control; file upload deferred to v2.
 - **One text/caption overlay** per clip (position + font from a small preset set;
   drawn on canvas, not burned server-side).
 - **Export MP4**: free path = 720p + corner watermark (client, WebCodecs);
@@ -168,32 +217,33 @@ text/caption overlay + export MP4 (free = 720p watermarked, paid = 1080p clean).
 **Out (deferred to v2/v3):** transitions, stickers, speed ramp, multi-track
 audio, AI-Finish effects, project save/resume. Keep v1 ruthlessly small.
 
-### 3.2 Files & components to add
+### 3.2 Files & components _(as shipped — consolidated from the original plan)_
+
+The v1 landed as **two files** instead of the originally planned 12-file tree
+(kept small deliberately; split when v2 grows the surface):
 
 ```
-web/src/lib/studio/editor/
-  engine.ts          # WebCodecs orchestration: decode ranges, composite, encode, mux
-  timeline.ts        # Project model: clips[], music, overlays[], durations, ordering
-  compositor.ts      # OffscreenCanvas draw loop: frame + text overlay + watermark
-  export.ts          # encode+mux pipeline; 720p-wm (free) vs 1080p-clean (paid) presets
-  caps.ts            # feature-detect WebCodecs / codec configs; decide fallback
-  ffmpegFallback.ts  # lazy import('@ffmpeg/ffmpeg'); audio mux + no-WebCodecs path
-  watermark.ts       # corner "MY AI PET" mark drawn onto canvas for free exports
-
-web/src/components/studio/
-  Editor.tsx         # timeline UI shell (rail of clips, playhead, transport)
-  ClipTrack.tsx      # per-clip trim handles + drag-reorder
-  MusicTrack.tsx     # audio upload/pick + trim + volume
-  OverlayLayer.tsx   # text/caption editor over the preview canvas
-  ExportBar.tsx      # resolution/watermark choice + "Export" (triggers export.ts)
+web/src/lib/studio/editorEngine.ts   # caps detection (detectCaps / pickMime),
+                                     # cover-draw helper, synthesised MUSIC_TRACKS
+                                     # + WebAudio scheduler (startMusic), fmt utils
+web/src/components/StudioEditor.tsx  # everything else: timeline state (≤3 clips,
+                                     # trimIn/trimOut, reorder), caption overlay
+                                     # (position + font presets), preview playhead,
+                                     # drawWatermark, MediaRecorder export pipeline,
+                                     # free-vs-HD export bar + credit gate UI
 ```
 
-**Wiring:** add an **"Edit / Assemble"** entry point in `PetStudioPro.tsx`
-result actions (next to Remix / Animate / Share) that pushes finished
-generations into `timeline.ts` and opens `Editor.tsx`. Reuse the existing
-Collectible-Editorial tokens (`T` object) for styling — no new design system.
+**Wiring (shipped):** an **"Assemble"** button plus an **"Edit & assemble"**
+result action in `PetStudioPro.tsx` open `StudioEditor` with the user's
+generated clips as import candidates. Styling reuses the existing
+Collectible-Editorial tokens (`T` object) — no new design system.
 
-### 3.3 Exact libraries / APIs
+### 3.3 Exact libraries / APIs _(v2 targets — v1 shipped with ZERO new deps)_
+
+> Shipped v1 needed none of the npm packages below: it encodes with built-in
+> `MediaRecorder` + `canvas.captureStream()` and mixes music via a
+> `MediaStreamAudioDestinationNode`. This table is the **v2 upgrade path**
+> (frame-accurate trim, faster-than-realtime encode, guaranteed-MP4 output).
 
 | Need | Library / API | Notes |
 |---|---|---|
@@ -209,31 +259,44 @@ Collectible-Editorial tokens (`T` object) for styling — no new design system.
 > then `ffmpeg -i video -i music -shortest` in WASM). It is the pragmatic path
 > for one track; move to native `AudioEncoder` in v2 when adding ducking.
 
-### 3.4 The v1 paywall (first real "pro" money moment)
+### 3.4 The v1 paywall (first real "pro" money moment) — ⚠️ server half PENDING
 
-Export dialog offers two buttons:
+Export bar offers two buttons (shipped in `StudioEditor.tsx`):
 
-- **"Export (free)"** → 720p, corner watermark, client-only, 0 credits.
-- **"Export HD · no watermark"** → calls `POST /api/studio/export`, charges
-  **HD-export credits** (see §5), server returns a signed token, client renders
-  the 1080p clean MP4 (same WebCodecs pipeline, higher target resolution, no
-  watermark layer). Subscription tiers (`pro`/`studio`) get this **included**
-  (skip the credit charge) per `TIER_LIMITS.editorAccess`.
+- **"Export (free)"** → 720p, corner watermark, client-only, 0 credits. ✅
+- **"Export HD · no watermark"** → 1080p, no watermark layer, gated on
+  `userTier === "pro"|"studio"` **or** a credit balance ≥ 10 cr
+  (`HD_EXPORT_COST = 10`). ⚠️ **The gate is client-side only today**: no
+  `POST /api/studio/export` route exists, no credits are deducted, and no
+  server token is minted (tracked as `TODO(v1-paywall)` in the component).
+  **Next build step:** the endpoint charges HD-export credits (see §5) inside
+  the same atomic-decrement transaction shape as `generate/route.ts` and
+  returns a short-lived token the client must hold to drop the watermark
+  layer; `pro`/`studio` subs skip the charge per `TIER_LIMITS.editorAccess`.
+  (Note: `SUBSCRIPTION_SALES_ENABLED` is currently `false` in
+  `/api/studio/subscription`, so in practice every user is `free` tier.)
 
 This is the highest-leverage lever in the research (resolution + watermark wall)
-and it has **zero vendor cost** — the credit charge is pure margin.
+and it has **zero vendor cost** — the credit charge is pure margin. Until the
+endpoint lands it is a *demonstrated* paywall, not a revenue-collecting one.
 
 ---
 
 ## 4. PHASED ROADMAP
 
-### v1 — Assemble & the watermark wall _(smallest shippable pro slice)_
-- Client editor: trim, sequence 2–3 clips, 1 music track, 1 text/caption overlay.
-- Export: free 720p+watermark vs paid 1080p clean (credits / subscription).
-- Entry point from generation results into the editor.
-- **Ships the first pay-to-finish moment.**
+### v1 — Assemble & the watermark wall _(✅ SHIPPED — `StudioEditor.tsx`)_
+- Client editor: trim, sequence up to 3 clips, 1 music track (synthesised
+  picker), 1 text/caption overlay. ✅
+- Export: free 720p+watermark vs gated 1080p clean. ✅ UI / ⚠️ server-side
+  credit charge (`POST /api/studio/export`) still to build — see §3.4.
+- Entry point from generation results into the editor ("Edit & assemble"). ✅
+- **Shows the first pay-to-finish moment; collecting on it needs the export
+  endpoint.**
 
 ### v2 — A real timeline
+- **Migrate the encode path to WebCodecs + `mp4-muxer`** (frame-accurate,
+  faster-than-realtime, guaranteed MP4) — v1 ships MediaRecorder real-time
+  capture (§2.3 as-built note).
 - Multi-clip timeline with a scrubbable playhead + snapping.
 - **Transitions** (crossfade / wipe — canvas blend during the frame loop).
 - **Stickers** (the existing Codex sticker set + emoji, drawn as overlays).
@@ -293,9 +356,10 @@ real vendor cost **or** a deliberate resolution/watermark lever.
 - **AI-Finish credits** = the "won't look obviously AI / finished shareable
   output" lever (upscale, interpolate, soundtrack), each metered to real fal cost.
 - **Flagship generation models** (`kling-1.6-pro`, `minimax-hailuo`, `veo-3`)
-  stay `tier: studio` + high credits (existing `providers.ts`), unchanged — the
-  quality-anxiety upsell. **Veo 3 must be repriced to ≥350–400 cr before unlock**
-  (see `docs/ECONOMY.md` P0 — it is break-even-to-negative at 250 cr).
+  stay `tier: studio` + high credits and are currently `comingSoon` teasers in
+  `providers.ts` — the quality-anxiety upsell. **Veo 3 repricing: DONE** — it
+  now sits at **400 cr** (usdPerRun 4.50) and stays `comingSoon` until unlock,
+  closing the `docs/ECONOMY.md` P0 (break-even-to-negative at the old 250 cr).
 - **Subscription (`pro`/`studio`)** = additive access gate only: includes
   watermark-free/HD export + editor + higher model tiers + monthly quota, but
   **credits are still charged on generation** (`generate/route.ts` already does
@@ -321,24 +385,27 @@ real vendor cost **or** a deliberate resolution/watermark lever.
 | **fal cost control** — AI-Finish + generation are real per-call spend; a mispriced model bleeds | Margin-negative actions | Enforce the `credits ≥ ceil(usdPerRun/0.0125)` invariant as a **unit test** over the model + finish catalog (catches the next Veo-3-style mispricing at PR time). Keep AI-Finish behind explicit credit charges. Refresh `usdPerRun` from live fal pricing (Wan 2.1, Veo 3 flagged in `docs/ECONOMY.md`). |
 | **fal bills for failed jobs** | Silent cost, no revenue | Existing generate path refunds credits on failure; confirm fal doesn't bill submitted-then-failed jobs, and apply the same refund pattern to `/api/studio/finish`. |
 | **Double-charge / stale poll** in editor async flows | User pays twice / UI stomps | Reuse the proven `jobSeqRef` + `mountedRef` sentinel pattern and sessionStorage job-pointer resume already in `PetStudioPro.tsx`; the export/finish endpoints charge inside the same atomic-decrement transaction shape as `generate/route.ts`. |
-| **Watermark bypass** — client controls the watermark layer | Free users get clean HD | HD-clean export requires a server-minted one-time token from `/api/studio/export` (credit charged there); without it the client pipeline always composites the watermark. Token is per-export, short-lived, tied to the project hash. |
+| **Watermark bypass** — client controls the watermark layer | Free users get clean HD | _Open today:_ the shipped v1 gate is client-side (tier/balance check in `StudioEditor.tsx`), so a motivated user can bypass it — acceptable only while no credits are charged. Before charging, HD-clean export must require a server-minted one-time token from `/api/studio/export` (credit charged there); without it the client pipeline always composites the watermark. Token is per-export, short-lived, tied to the project hash. |
 | **Editor scope creep** | v1 never ships | v1 is ruthlessly minimal (trim + 2–3 clips + 1 music + 1 caption + export). Transitions/stickers/speed/AI-Finish/save are explicitly v2/v3. |
 
 ---
 
-## 7. Build order (concrete next steps)
+## 7. Build order (updated for what shipped)
 
-1. `caps.ts` + `engine.ts` — prove a **decode→trim→re-encode→mux** round-trip of
-   one fal MP4 in the browser (WebCodecs + `mp4-muxer`), export a 720p file.
-2. `watermark.ts` + `compositor.ts` — add the corner watermark + one text overlay
-   to the frame loop.
-3. `timeline.ts` + `Editor.tsx` + `ClipTrack.tsx` — hold 2–3 clips, trim, reorder,
-   sequence-export.
-4. `MusicTrack.tsx` + ffmpeg.wasm audio mux — one music track under the reel.
-5. `ExportBar.tsx` + `POST /api/studio/export` — the free-720p-wm vs paid-1080p-clean
-   fork + credit charge / subscription bypass.
-6. Wire the "Edit / Assemble" entry point into `PetStudioPro.tsx` result actions.
-7. Add the `credits ≥ ceil(usdPerRun/0.0125)` invariant test over the catalog.
+1. ✅ Caps detection + client render round-trip — shipped in `editorEngine.ts`
+   (`detectCaps`, MediaRecorder capture instead of WebCodecs+`mp4-muxer`;
+   the WebCodecs migration moves to v2).
+2. ✅ Corner watermark + caption overlay in the frame loop — shipped
+   (`drawWatermark` / `drawCaption` in `StudioEditor.tsx`).
+3. ✅ Timeline: up to 3 clips, trim, reorder, sequence-export — shipped.
+4. ✅ Music track — shipped as the synthesised WebAudio picker
+   (`MUSIC_TRACKS` / `startMusic`); file upload + ducking deferred.
+5. ⚠️ **NEXT: `POST /api/studio/export`** — the credit charge + one-time
+   clean-export token behind the already-shipped HD button (§3.4). This is the
+   step that turns the demonstrated paywall into revenue.
+6. ✅ "Assemble" / "Edit & assemble" entry points wired into `PetStudioPro.tsx`.
+7. ⏳ Add the `credits ≥ ceil(usdPerRun/0.0125)` invariant test over the
+   catalog (not yet written — no test harness covers `providers.ts` today).
 
-Ship v1, watch where users hit the export wall, then build v2/v3 against real
-friction data.
+v1 is shipped; watch where users hit the export wall, land step 5, then build
+v2/v3 against real friction data.

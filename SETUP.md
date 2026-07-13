@@ -1,200 +1,205 @@
 # ═══════════════════════════════════════════
-#  PETAGEN (AI PET) - Full Setup Guide
+#  MY AI PET (PetClaw) - Full Setup Guide
 # ═══════════════════════════════════════════
 
-## 아키텍처
+Updated: 2026-07-13 — rewritten for the current codebase. The FastAPI backend +
+Vite frontend described in earlier versions of this file no longer exist;
+everything now lives in `web/` (a single Next.js app that serves both the UI
+and the API routes).
+
+## Architecture
 
 ```
-Frontend (React + wagmi)  ←→  Backend (FastAPI)  ←→  fal.ai (AI Video)
-                               ├── SQLite DB
-                               ├── File Storage (photos/videos)
-                               └── web3.py → PetaGenTracker.sol (Base + BNB)
+web/ — Next.js 16 (App Router): UI + /api routes in one app
+ ├── Prisma 7 → PostgreSQL        (prod: RDS via .env.production)
+ ├── LLM: Grok (xAI) via src/lib/llm/router.ts (+ BYOK model connections)
+ ├── Media: fal.ai (FLUX, Kling, …) + Grok Imagine  (src/lib/studio/providers.ts)
+ ├── Auth: SIWE wallet signature → JWT (jose)          — no email/password
+ └── Payments: USDT (BEP-20) on BSC, on-chain tx verification (src/lib/onchain.ts)
+
+desktop-pet/       — Chrome MV3 extension (desktop companion)
+packages/petclaw/  — PetClaw SDK submodule (@myaipet/petclaw-sdk on npm)
+contracts/         — Hardhat + Solidity (optional on-chain activity tracking)
 ```
 
 ---
 
-## 1. Smart Contract 배포
+## 1. Web app (the only required piece)
+
+```bash
+cd web
+npm install    # Node 20+ (dev machines run v24)
+
+# Environment: no .env.example is checked in — create web/.env by hand.
+# Required (the app/route will throw or 500 without these):
+#   DATABASE_URL    PostgreSQL connection string (prisma.config.ts loads it via dotenv)
+#   JWT_SECRET      random 32+ chars (src/lib/auth.ts throws at import if missing)
+#   GROK_API_KEY    xAI key — powers pet chat / agent / vision
+#   FAL_API_KEY     fal.ai key — image & video generation
+#   NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID   WalletConnect Cloud project id
+
+npx prisma generate
+npm run dev
+# http://localhost:3000
+```
+
+Optional env vars (feature-gated — the app boots without them):
+
+| Var | Purpose |
+|-----|---------|
+| `CRON_SECRET` | protects `/api/cron/*` routes |
+| `ADMIN_WALLETS` | comma-separated admin wallet addresses |
+| `TREASURY_WALLET`, `NEXT_PUBLIC_TREASURY_WALLET` | USDT payment recipient — `/api/credits/purchase` returns 503 if unset |
+| `USDT_CONTRACT`, `USDT_DECIMALS`, `RPC_URL` (or `BSC_RPC_URL`), `CHAIN_ID` | payment verification; defaults to BSC-USD on BSC mainnet (chainId 56) |
+| `BLOCKCHAIN_ENABLED`, `BACKEND_RELAYER_KEY`, `PET_*_ADDRESS` | optional on-chain activity writes (off by default) |
+| `STORAGE_PROVIDER`, `AWS_S3_BUCKET/REGION`, `AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY`, `LOCAL_UPLOAD_DIR/URL` | media storage (S3 or local disk) |
+| `AGENT_ENCRYPTION_KEY` | encrypts BYOK model keys stored via `/api/petclaw/models` |
+| `SIWE_ALLOWED_DOMAINS`, `SIWE_CHAIN_ID`, `NEXT_PUBLIC_APP_URL` | auth / domain config |
+| `TELEGRAM_BOT_TOKEN`, `DISCORD_PUBLIC_KEY` | bot connectors |
+
+## 2. Database (Prisma + PostgreSQL)
+
+- Schema: `web/prisma/schema.prisma` · migrations: `web/prisma/migrations/`
+- Fresh local DB: uncomment the `db` service in `docker-compose.yml`
+  (postgres:16-alpine), point `DATABASE_URL` at it, then:
+
+```bash
+cd web
+npx prisma migrate dev      # fresh/dev DB (creates + applies migrations)
+npx prisma migrate deploy   # existing DB (apply pending migrations only)
+```
+
+- Optional demo data: `web/prisma/seed.ts` (run manually).
+
+⚠️ Known local-dev gotcha: production runs against RDS (`.env.production`);
+the local `.env` often points at a stale DB missing newer tables/columns
+(cards, catch, etc.). Those API routes return 500 locally and the UIs catch
+it gracefully — full card/catch data only renders against a migrated DB.
+
+Naming note: the engagement-reward column is `season_points` and the logic
+lives in `lib/seasonRewards.ts`. Season points are a non-financial score —
+do not reintroduce the old `airdrop_*` names anywhere.
+
+Tip: guest tour mode `?tour=1` (see `web/src/lib/tour.ts`) gives read-only
+DEMO previews of community / world cup / my-pet without a wallet — handy when
+developing UI against an empty or stale local DB.
+
+## 3. Checks
+
+```bash
+cd web
+npm run lint
+npx tsc --noEmit
+```
+
+## 4. Chrome extension (optional)
+
+Load `desktop-pet/` unpacked at `chrome://extensions` (Developer mode →
+"Load unpacked"). Pet-care actions in the extension call the rate-capped
+`/api/petclaw/engagement` endpoint, which credits season points to the
+linked account.
+
+## 5. Smart contracts (optional)
+
+The web app runs fine without deploying anything — payment verification only
+*reads* the chain over RPC. If you do need the tracking contracts:
 
 ```bash
 cd contracts
-npm init -y
-npm install hardhat @nomicfoundation/hardhat-toolbox
-npx hardhat init  # "Create a JavaScript project" 선택
-
-# hardhat.config.js에 네트워크 추가:
-# networks: {
-#   base: { url: "https://mainnet.base.org", accounts: [process.env.DEPLOYER_KEY] },
-#   bnb: { url: "https://bsc-dataseed.binance.org/", accounts: [process.env.DEPLOYER_KEY] }
-# }
-
-npx hardhat run scripts/deploy.js --network base
-npx hardhat run scripts/deploy.js --network bnb
-
-# 배포 후: 백엔드 Relayer 주소 추가
-# npx hardhat console --network base
-# > const t = await ethers.getContractAt("PetaGenTracker", "0xCONTRACT_ADDR")
-# > await t.addRelayer("0xBACKEND_RELAYER_ADDR")
-```
-
-## 2. Backend 실행
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-pip install -r requirements.txt
-
-# 환경변수 설정
-cp .env.template .env
-# .env 파일에 필수 값 입력:
-#   - JWT_SECRET (랜덤 32자)
-#   - FAL_API_KEY (fal.ai에서 발급)
-#   - CONTRACT_BASE, CONTRACT_BNB (배포된 주소)
-#   - BACKEND_RELAYER_KEY (백엔드용 릴레이어 키)
-#   - RELAYER_KEY (시뮬레이터용 릴레이어 키)
-
-# 서버 시작
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# Swagger API 문서: http://localhost:8000/docs
-```
-
-## 3. 시뮬레이터 실행 (별도 프로세스)
-
-```bash
-cd backend
-python simulator.py
-# 시뮬레이터는 자체 RELAYER_KEY 사용 (백엔드와 별도!)
-```
-
-## 4. Frontend 실행
-
-```bash
-cd frontend
 npm install
-npm run dev
-# http://localhost:5173 접속
-# Vite가 /api 요청을 localhost:8000으로 프록시
+# set DEPLOYER_PRIVATE_KEY in contracts/.env
+npx hardhat run deploy.cjs --network bscTestnet   # or: bsc, base, baseSepolia
 ```
 
-## 5. 프로덕션 배포
+Networks are defined in `hardhat.config.cjs` (Solidity 0.8.28).
+
+## 6. Production deploy
+
+Prod is an EC2 git-pull flow, **not** Docker — see `docs/DEPLOYMENT.md` for the
+full guide. Short version (run on the EC2 box):
 
 ```bash
-# Frontend → Vercel
-cd frontend
-npx vercel --prod
-
-# Backend → Railway / Render
-# requirements.txt + Procfile 또는 Dockerfile
-# Procfile: web: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-
-# 시뮬레이터 → 별도 Railway 서비스
-# Procfile: worker: python simulator.py
+cd /opt/petclaw/aipet-project && bash deploy/ec2-pull.sh
+# fetch/reset main → npm ci → prisma generate + migrate deploy (.env.production)
+# → next build → pm2 reload petclaw-web → smoke curl
 ```
+
+The root `docker-compose.yml` is an optional local-container alternative
+(`docker compose up -d web`, requires `web/.env.production`) — handy for
+testing the production build locally, but it is not what prod runs. The
+marketing site (myaipet.ai) is a separate nginx-served copy of
+`landing-assets/` synced by hand (`sudo cp landing-assets/* /opt/petclaw/landing-assets/`).
 
 ---
 
-# API 엔드포인트 요약
+# API endpoint summary (selection)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/health` | - | 헬스체크 |
-| GET | `/api/auth/nonce?address=0x...` | - | SIWE 논스 발급 |
-| POST | `/api/auth/verify` | - | 서명 검증 + JWT 발급 |
-| GET | `/api/auth/me` | JWT | 유저 정보 |
-| POST | `/api/generate` | JWT | 영상 생성 (multipart) |
-| GET | `/api/generate/{id}/status` | JWT | 생성 상태 조회 |
-| GET | `/api/generate/history` | JWT | 생성 이력 |
-| GET | `/api/gallery` | - | 갤러리 (필터/페이지네이션) |
-| GET | `/api/analytics/stats` | - | 플랫폼 통계 |
-| GET | `/api/analytics/daily` | - | 일별 생성 차트 |
-| GET | `/api/analytics/chains` | - | 체인별 분포 |
-| GET | `/api/analytics/activity` | - | 실시간 활동 피드 |
-| GET | `/api/credits/balance` | JWT | 크레딧 잔액 |
-| POST | `/api/credits/purchase` | JWT | 크레딧 구매 |
+| GET | `/api/health` | - | health check |
+| GET | `/api/auth/nonce?address=0x...` | - | SIWE nonce (first call creates the user with 100 starter credits) |
+| POST | `/api/auth/verify` | - | verify SIWE signature → JWT |
+| GET | `/api/auth/me` | JWT | current user |
+| POST | `/api/pets` | JWT | create a pet |
+| POST | `/api/pets/[petId]/chat` | JWT | pet chat |
+| POST | `/api/pets/[petId]/agent` | JWT | agent loop with tool calling; SSE via `?stream=1` or `Accept: text/event-stream` |
+| POST | `/api/studio/generate` | JWT | Studio image/video generation |
+| GET | `/api/studio/templates` | - | trending Studio templates |
+| GET | `/api/generate/history`, `/api/generate/[id]/status` | JWT | generation history / status |
+| GET | `/api/gallery` | - | gallery (filters / pagination) |
+| GET | `/api/analytics/stats` · `daily` · `chains` · `activity` | - | analytics |
+| GET | `/api/credits/balance` | JWT | credit balance |
+| POST | `/api/credits/purchase` | JWT | verify USDT tx hash on-chain → grant credits |
+| GET | `/api/petclaw` | - | PetClaw protocol root (skills, MCP, export/delete) |
+
+Full protocol docs: `/api-docs` on the running app.
 
 ---
 
-# 기술 스택
+# Tech stack
 
 | Layer | Technology |
 |-------|-----------|
-| Smart Contract | Solidity 0.8.20 + Hardhat |
-| Backend | FastAPI + SQLAlchemy + aiosqlite |
-| Auth | SIWE + JWT |
-| AI Video | fal.ai (Kling 3.0) |
-| Frontend | Vite + React 18 + wagmi + RainbowKit |
-| Chains | Base (64%) + BNB Chain (36%) |
-| DB | SQLite (→ PostgreSQL 마이그레이션 가능) |
+| App | Next.js 16 (App Router) + React 19 + TypeScript |
+| DB | Prisma 7 + PostgreSQL |
+| Auth | SIWE + JWT (jose) — wallet-only, no email/password |
+| LLM | Grok (xAI) via `src/lib/llm/router.ts`; BYOK model connections (encrypted) |
+| Media gen | fal.ai (FLUX, Kling, …) + Grok Imagine — catalog in `src/lib/studio/providers.ts` |
+| Wallet | wagmi + RainbowKit + viem |
+| Payments | USDT (BEP-20) on BSC only — on-chain tx verification; no Stripe/card |
+| Contracts | Solidity 0.8.28 + Hardhat (optional) |
+| Extension | Chrome Manifest V3 (`desktop-pet/`) |
 
 ---
 
-# 비용 요약
+# Credits & pricing (from code, not projections)
 
-| 항목 | 월간 비용 |
-|------|----------|
-| Base 가스 (~10 TX/일) | ~$1.5 |
-| BNB 가스 (~6 TX/일) | ~$0.5 |
-| Vercel (프론트) | $0 (무료 티어) |
-| Railway (백엔드 + 시뮬레이터) | ~$10 |
-| fal.ai (AI 영상, 유저 수에 따라) | 변동 |
-| **인프라 합계 (AI 제외)** | **~$12/월** |
-
-AI 비용: 5초 영상 1건 당 ~$0.50 (Kling 3.0 via fal.ai)
-크레딧 가격: 5초=30크레딧, 100크레딧=$5 → 5초 영상 매출 $1.50 vs 비용 $0.50
+- 1 credit = $0.05. Packs (`POST /api/credits/purchase`, paid in USDT):
+  `starter` 100 cr / 5 USDT · `creator` 500 cr / 20 USDT · `pro` 2000 cr / 50 USDT.
+- Per-run credit costs are declared per model in `src/lib/studio/providers.ts`
+  (e.g. Grok Imagine image 5 cr, FLUX schnell 3 cr; Veo 3 is `comingSoon`
+  at 400 cr/run and cannot be submitted yet).
+- New wallets start with 100 credits (granted on first `/api/auth/nonce`).
 
 ---
 
-# 프로젝트 구조
+# Project structure
 
 ```
 aipet-project/
 ├── SETUP.md
-├── contracts/
-│   ├── PetaGenTracker.sol     # 온체인 활동 기록 컨트랙트
-│   └── deploy.js              # Hardhat 배포 스크립트
-├── backend/
-│   ├── .env.template          # 환경변수 템플릿
-│   ├── requirements.txt       # Python 의존성
-│   ├── simulator.py           # 온체인 활동 시뮬레이터
-│   └── app/
-│       ├── main.py            # FastAPI 앱 엔트리
-│       ├── config.py          # 설정 (Pydantic)
-│       ├── database.py        # SQLite 연결
-│       ├── models.py          # DB 모델
-│       ├── schemas.py         # API 스키마
-│       ├── auth.py            # SIWE + JWT 인증
-│       ├── routes/
-│       │   ├── auth.py        # 인증 API
-│       │   ├── generate.py    # 영상 생성 API
-│       │   ├── gallery.py     # 갤러리 API
-│       │   ├── analytics.py   # 분석 API
-│       │   └── credits.py     # 크레딧 API
-│       ├── services/
-│       │   ├── ai_video.py    # fal.ai 연동
-│       │   ├── blockchain.py  # 온체인 기록 (Relayer)
-│       │   └── storage.py     # 파일 저장
-│       └── tasks/
-│           └── generation.py  # 백그라운드 생성 태스크
-└── frontend/
-    ├── package.json
-    ├── vite.config.js         # API 프록시 설정
-    ├── index.html
-    └── src/
-        ├── main.jsx           # wagmi + RainbowKit 설정
-        ├── App.jsx            # 메인 앱
-        ├── api.js             # API 클라이언트
-        ├── hooks/
-        │   ├── useAuth.js     # SIWE 인증 훅
-        │   └── useWallet.js   # wagmi 체인 설정
-        └── components/
-            ├── Nav.jsx        # 네비게이션 + 지갑
-            ├── Hero.jsx       # 랜딩 히어로
-            ├── Stats.jsx      # 통계 카드
-            ├── Feed.jsx       # 실시간 활동 피드
-            ├── Generate.jsx   # 영상 생성 UI
-            ├── Gallery.jsx    # 갤러리
-            ├── Analytics.jsx  # 분석 대시보드
-            └── Pricing.jsx    # 크레딧 구매
+├── docker-compose.yml          # prod web container (+ commented local postgres)
+├── web/                        # the app (Next.js 16, App Router)
+│   ├── prisma/                 # schema.prisma, migrations/, seed.ts
+│   ├── src/app/                # pages + /api routes
+│   ├── src/components/         # UI (PetVillage, StudioEditor, TourMyPet, …)
+│   └── src/lib/                # auth, onchain, llm/router, petclaw/, studio/, seasonRewards
+├── packages/petclaw/           # PetClaw SDK (git submodule → @myaipet/petclaw-sdk)
+├── desktop-pet/                # Chrome MV3 extension
+├── contracts/                  # Hardhat + Solidity 0.8.28 (optional on-chain)
+├── landing-assets/             # marketing site (served separately by nginx)
+├── tools/demo-video/           # demo-video production kit (read its HANDOFF.md first)
+├── docs/
+├── deploy/
+└── scripts/
 ```

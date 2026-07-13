@@ -41,11 +41,12 @@ Under the cute pet is a real, coordinated agent loop. Every piece is open and gr
 | | Role | What it is |
 |---|---|---|
 | 🧭 | **Plan → Act** | A reasoning model plans each step; a real **skill** is invoked, the result observed, and it iterates until done — then a chat model synthesizes the answer. *(plan-execute)* |
+| 🔧 | **Use tools** | Native LLM tool-calling: `web_search`, `web_read` (SSRF-guarded), `wikipedia_lookup`, `crypto_price`, `recall_memory` — streamed live over SSE (`?stream=1` on the agent endpoint). |
 | 🧠 | **Recall** | Full-memory retrieval — **vector + BM25 + reciprocal-rank fusion** feeds every step. *(GBrain-style)* |
 | 🔁 | **Reflect** | The pet consolidates what it learned and reshapes future replies — self-evolution, not a frozen prompt. *(VIGIL)* |
 | 🌐 | **Agent-to-Agent** | Pets discover and call each other's skills across the open network. *(PACK — pet-to-pet A2A)* |
 
-`18 skills · 6 MCP tools · 21 connectors · open SDK`
+`18 skills · 6 MCP tools · 19 connectors · open SDK`
 
 ---
 
@@ -70,8 +71,9 @@ petclaw-sdk init
 # 3. Install a skill onto your pet
 petclaw-sdk install daily-mood
 
-# 4. Bring your own model (BYOK — encrypted)
-petclaw-sdk auth <your-jwt>
+# 4. Connect the CLI (paste the pck_… token from "Connect your CLI" in the app),
+#    then bring your own model (BYOK — encrypted)
+petclaw-sdk auth pck_...
 petclaw-sdk models connect openai sk-...
 
 # 5. Run it as an MCP server (Claude Desktop, Cursor, …)
@@ -102,7 +104,7 @@ console.log(res.output.reply);
  │  MY AI PET (consumer)   Home · My Pet · Studio · Community    │
  │                         · PetClaw · Season Rewards           │
  ├─────────────────────────────────────────────────────────────┤
- │  PetClaw Protocol v1    SDK · MCP server · 21 connectors      │
+ │  PetClaw Protocol v1    SDK · MCP server · 19 connectors      │
  │  ─ Agent loop           plan → act → observe → reflect       │
  │  ─ Memory               GBrain recall (vector + BM25 + RRF)  │
  │  ─ Sovereignty          export · delete-with-proof · inherit │
@@ -114,9 +116,24 @@ console.log(res.output.reply);
 ```
 
 - **Frontend** — Next.js 16 (App Router), React 19, RainbowKit + wagmi (SIWE auth, no gas — identity only).
-- **Backend** — Next.js API routes, PostgreSQL (self-hosted) + Prisma, JWT sessions.
-- **AI** — xAI **Grok** + **fal.ai**; LLM router with BYOK (owners connect their own models, encrypted).
-- **Protocol** — `@myaipet/petclaw-sdk` package: CLI + MCP server + skills registry + sovereignty exports.
+- **Backend** — Next.js API routes, PostgreSQL (AWS RDS) + Prisma, JWT sessions.
+- **AI** — xAI **Grok** + **fal.ai**; LLM router with BYOK (owners connect their own models, encrypted) and native tool-calling.
+- **Protocol** — `@myaipet/petclaw-sdk` package: CLI (auth via `pck_…` tokens) + MCP server + skills registry + sovereignty exports.
+
+---
+
+## 📁 Repo layout
+
+| Path | What lives there |
+|---|---|
+| `web/` | The Next.js app — consumer product + every `/api/*` route (PetClaw protocol endpoints included) |
+| `packages/petclaw` | `@myaipet/petclaw-sdk` — CLI, MCP server, client library, skill docs |
+| `desktop-pet/` | Chrome extension — your pet walks the page you're on; daily care actions feed capped season points via `/api/petclaw/engagement` |
+| `contracts/` | Hardhat contracts for on-chain anchoring (currently paused) |
+| `tools/demo-video/` | Repeatable product-video production kit |
+| `deploy/` | EC2 / RDS deploy scripts + env checklist |
+| `landing-assets/` | Static marketing site (myaipet.ai) — served separately from the app |
+| `docs/` | Architecture, economy, security-audit and DD docs |
 
 ---
 
@@ -126,11 +143,18 @@ This is early, and we say so honestly.
 
 | Area | State |
 |---|---|
-| Pet care loop · Studio (AI image/video) · PetClaw sovereignty · points/missions | ✅ Live |
-| Season 1 | 📅 Starts **Jul 1, 2026** |
+| Pet care loop · Studio (22 video templates, Prompt Director, in-browser editor) · World Cup · Community · PetClaw sovereignty · points/missions | ✅ Live |
+| Guest tour — append `?tour=1` for a read-only DEMO preview (community / world cup / my pet), no wallet needed | ✅ Live |
+| Season 1 | 🟢 **Live** — Jul 1 → Aug 1, 2026 |
 | On-chain anchoring + Memory-NFT minting | ⏸️ Paused (holding period · migrating **BSC → Base**, activates at go-live) |
 | USDT credit purchases | ⏸️ Paused — earn credits free by raising & creating |
 | Token | ❌ **None.** The economy is points-only, non-financial loyalty. No token, no TGE. |
+
+---
+
+## 🤝 Backed by
+
+Amber · WAGMI Ventures · Animoca Brands · KuCoin Ventures · ViaBTC · Web3 Labs · Arkstream Capital · ICC Ventures · WaterDrip · CryptoSen
 
 ---
 
