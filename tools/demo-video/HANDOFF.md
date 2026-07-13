@@ -181,6 +181,14 @@ v2 helpers in record-fulldemo.mjs (frame-audit hard lessons — reuse them):
 
 ## 6. BGM: regenerate / retune
 
+Two ready-made tracks — give different videos different music (founder
+feedback: every video sounding identical reads as lazy):
+- `bgm-cozy.m4a` — 42s loop, 72 BPM lo-fi rhodes (gen-bgm.mjs)
+- `bgm-adventure.m4a` — 90s through-composed (intro→A→B lift→A2→outro), 92 BPM
+  kalimba/music-box (gen-bgm2.mjs). No loop seam up to 90s videos; for short
+  cuts, mux from an offset (`-ss 31.3` before the audio `-i` = the B-section
+  lift) so two videos don't share an identical opening.
+
 `bgm-cozy.m4a` is ready to use. To change the mood, edit `gen-bgm.mjs` knobs —
 `BPM` (72), `CHORDS` (Fmaj7→Am7→Dm9→Cmaj7 midi arrays), `PENTA` melody pool,
 per-part volumes, deterministic `seed` — then:
