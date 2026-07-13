@@ -44,13 +44,14 @@ New deliverables follow the same naming: `~/Desktop/MY-AI-PET-<kebab-name>.mp4`.
 | `record-promo.mjs` | Records `product-demo.html` (the scripted 8-scene sizzle animation) | `/tmp/promo-rec/` (or `$OUT_DIR`) |
 | `capture-shots.mjs` | Refreshes ONLY the 4 product-UI stills in `shots/` (studio-top, studio-templates, home-hero, petclaw-hero) from prod + :8791. The template example jpg/mp4 assets in `shots/` come from `gen-trending-examples.mjs` on EC2 — see §7 | writes into `shots/` |
 
+| `product-demo.html` | The sizzle-reel animation page (references `./shots/*` relatively) | — |
+| `petclaw-hero.html` | Standalone PetClaw cinematic (sticker → laptop boot → connector chips); used as a scene by both recorders | — |
+| `gen-bgm.mjs` | Procedural cozy lo-fi BGM synth (we own the output; zero copyright) | writes `bgm-cozy.wav` here |
+| `bgm-cozy.m4a` | Ready-made 42s BGM, loudness-normalized to −21 LUFS | — |
+| `shots/` | Real product stills + template example mp4s used by the sizzle reel | — |
+
 Recording runtime ≈ the scripted wall-clock length (waits ARE the edit), so
-expect ~60s / ~83s / ~37s respectively per run, plus browser startup.
-| `product-demo.html` | The sizzle-reel animation page (references `./shots/*` relatively) |
-| `petclaw-hero.html` | Standalone PetClaw cinematic (sticker → laptop boot → connector chips); used as a scene by both recorders |
-| `gen-bgm.mjs` | Procedural cozy lo-fi BGM synth (we own the output; zero copyright) |
-| `bgm-cozy.m4a` | Ready-made 42s BGM, loudness-normalized to −21 LUFS |
-| `shots/` | Real product stills + template example mp4s used by the sizzle reel |
+expect ~73s (full) / ~60s (compact) / ~35s (promo) per run, plus browser startup.
 
 ## 2. One-time setup
 
