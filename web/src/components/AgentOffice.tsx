@@ -19,7 +19,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
-import PetVillage from "./PetVillage";
+import GrandPawOffice from "./GrandPawOffice";
 
 // ── tokens (Collectible Editorial) ──
 const INK = "#211A12";
@@ -38,7 +38,7 @@ const SHADOW_CARD = "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))"
 const POLL_MS = 7000;
 const COST = 5;
 
-// ── types (mirror the route's response) — exported for PetVillage ──
+// ── types (mirror the route's response) — exported for GrandPawOffice ──
 export interface Pillars {
   soul: { set: boolean; persona: string; checkpoints: number };
   memory: { count: number; cap: number; lastFact: string | null; updatedAt: string | null };
@@ -72,7 +72,7 @@ export default function AgentOffice() {
   const [goal, setGoal] = useState("");
   const [running, setRunning] = useState(false);
   const [liveRun, setLiveRun] = useState<LiveRun | null>(null);
-  const [view, setView] = useState<"village" | "classic">("village");
+  const [view, setView] = useState<"hotel" | "classic">("hotel");
 
   // ── load pets ──
   useEffect(() => {
@@ -96,17 +96,13 @@ export default function AgentOffice() {
   // ── poll mission-control (pause when hidden) ──
   const fetchMc = useCallback(async (pid: number) => {
     try {
-      const res = await fetch(`/api/petclaw/mission-control?petId=${pid}`, { headers: { ...getAuthHeaders() } });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({} as any));
-        setErr(d?.error || "Couldn't load the office.");
-        return;
-      }
-      const data = (await res.json()) as MC;
+      // routed through api.request so the dev-mock layer serves the office
+      // locally (the shared auth-header/error handling comes with it)
+      const data = (await api.missionControl(pid)) as MC;
       setMc(data);
       setErr(null);
-    } catch {
-      setErr("Network error loading the office.");
+    } catch (e: any) {
+      setErr(e?.message || "Couldn't load the office.");
     }
   }, []);
 
@@ -211,12 +207,13 @@ export default function AgentOffice() {
         </div>
       )}
 
-      {/* ══ VILLAGE VIEW — the flagship illustrated town over the same real data ══ */}
-      {view === "village" && (
+      {/* ══ HOTEL VIEW — "The Grand Paw" lobby diorama over the same real data ══ */}
+      {view === "hotel" && (
         mc ? (
-          <PetVillage mc={mc} liveRun={liveRun} running={running} isWorking={isWorking} petName={petName} />
+          <GrandPawOffice mc={mc} liveRun={liveRun} running={running} isWorking={isWorking} petName={petName}
+            pets={pets} goal={goal} setGoal={setGoal} onDispatch={dispatch} cost={COST} />
         ) : (
-          <div style={{ ...card, textAlign: "center", color: MUTED, fontFamily: SANS }}>Waking the village…</div>
+          <div style={{ ...card, textAlign: "center", color: MUTED, fontFamily: SANS }}>Opening the hotel…</div>
         )
       )}
 
@@ -282,7 +279,8 @@ export default function AgentOffice() {
       </>
       )}
 
-      {/* ── Dispatch bar (shared by both views) ── */}
+      {/* ── Dispatch bar (classic only — the hotel has its own front desk) ── */}
+      {view === "classic" && (
       <div style={{ ...card, marginTop: 20, padding: "16px 18px" }}>
         <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.14em", color: PURPLE, fontWeight: 700, marginBottom: 10 }}>
           DISPATCH — GIVE {petName.toUpperCase()} A GOAL
@@ -314,6 +312,7 @@ export default function AgentOffice() {
           Costs {COST} credits · refunded if the loop runs no real skill · appears live in Working ↑
         </div>
       </div>
+      )}
 
       {/* ── Office roster + schedules (classic only; the village shows its own) ── */}
       {view === "classic" && mc && <Roster roster={mc.roster} />}
@@ -345,7 +344,7 @@ export default function AgentOffice() {
 }
 
 // ── Header ──
-function Header({ petName, pets, petId, setPetId, isWorking, view, setView }: { petName: string; pets: any[]; petId: number | null; setPetId: (n: number) => void; isWorking: boolean; view?: "village" | "classic"; setView?: (v: "village" | "classic") => void }) {
+function Header({ petName, pets, petId, setPetId, isWorking, view, setView }: { petName: string; pets: any[]; petId: number | null; setPetId: (n: number) => void; isWorking: boolean; view?: "hotel" | "classic"; setView?: (v: "hotel" | "classic") => void }) {
   return (
     <div style={{ marginBottom: 22 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
@@ -354,13 +353,13 @@ function Header({ petName, pets, petId, setPetId, isWorking, view, setView }: { 
         </div>
         {view && setView && (
           <div style={{ display: "inline-flex", background: FIELD, borderRadius: 99, padding: 3, border: `1px solid ${HAIR}` }}>
-            {(["village", "classic"] as const).map((v) => (
+            {(["hotel", "classic"] as const).map((v) => (
               <button key={v} onClick={() => setView(v)}
                 style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", padding: "5px 13px", borderRadius: 99, border: "none", cursor: "pointer",
                   background: view === v ? PAPER : "transparent",
                   color: view === v ? PURPLE : MUTED,
                   boxShadow: view === v ? SHADOW_CARD : "none" }}>
-                {v === "village" ? "🏘 Village" : "☰ Classic"}
+                {v === "hotel" ? "🏨 Hotel" : "☰ Classic"}
               </button>
             ))}
           </div>

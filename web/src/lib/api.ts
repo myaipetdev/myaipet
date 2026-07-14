@@ -37,6 +37,39 @@ const DEV_MOCK_SKILLS = {
   learned: ["fire_fang", "ember", "flame_burst", "scratch", "body_slam", "dodge"],
 };
 
+// Dev fixture for the Agent Office (local DB is offline in dev) — mirrors the
+// mission-control route's response shape so the hotel renders locally.
+const DEV_MOCK_MC = {
+  pet: { id: 1, name: "Sparky", level: 5 },
+  pillars: {
+    soul: { set: true, persona: "warm, a little cheeky", checkpoints: 2 },
+    memory: { count: 18, cap: 40, lastFact: "owner codes late at night", updatedAt: new Date(Date.now() - 3600e3).toISOString() },
+    user: { count: 6, cap: 20 },
+    skills: { installed: 7, learned: 11, total: 18 },
+    crons: { routines: 2, nextLabel: "daily digest · 10:00" },
+  },
+  kanban: {
+    pending: [{ id: "p1", title: "Watch BNB price ±3%", kind: "watch" }],
+    working: [{ id: "w1", title: "Summarize today's inbox", skill: "recall_memory", detail: "3 steps in" }],
+    blocked: [],
+    done: [
+      { id: "d1", title: "Morning digest", skill: "web_search", at: new Date(Date.now() - 7200e3).toISOString(), credits: 5 },
+      { id: "d2", title: "Tidy notes", skill: "recall_memory", at: new Date(Date.now() - 10800e3).toISOString() },
+    ],
+  },
+  roster: [
+    { id: "s1", name: "web_search", kind: "skill", role: "Finds anything on the open web", installed: true, status: "active", runs: 12, successRate: 92, lastAt: new Date().toISOString() },
+    { id: "s2", name: "recall_memory", kind: "skill", role: "Recalls the owner's facts", installed: true, status: "active", runs: 31, successRate: 97, lastAt: new Date().toISOString() },
+    { id: "s3", name: "crypto_price", kind: "skill", role: "Live token prices", installed: true, status: "idle", runs: 4, successRate: 100, lastAt: null },
+    { id: "v1", name: "VIGIL scribe", kind: "vigil", role: "Writes new memories after every chat", installed: true, status: "active", runs: 58, lastAt: new Date().toISOString() },
+  ],
+  schedules: [
+    { id: "c1", name: "Daily digest", cadence: "daily 10:00", lastRun: new Date(Date.now() - 86400e3).toISOString(), nextRun: new Date(Date.now() + 3600e3).toISOString(), desc: "Morning summary of your day ahead" },
+    { id: "c2", name: "BNB price watch", cadence: "hourly", lastRun: null, nextRun: new Date(Date.now() + 1800e3).toISOString(), desc: "Alert on ±3% moves" },
+  ],
+  generatedAt: new Date().toISOString(),
+};
+
 const DEV_MOCK_SKILLS_WATER = {
   skills: [
     { pet_id: 2, skill_key: "water_gun", level: 3, slot: 0 },
@@ -53,6 +86,7 @@ function devMock(path: string, options: any = {}): any | null {
 
   if (path === "/api/auth/me") return { wallet_address: "0xDEV1234567890abcdef1234567890abcdef1234", credits: 9999, generation_count: 10, created_at: new Date().toISOString() };
   if (path === "/api/pets" && method === "GET") return { pets: [DEV_MOCK_PET, DEV_MOCK_PET2], pet_slots: 3, slot_prices: [0, 50, 100, 200, 500] };
+  if (path.startsWith("/api/petclaw/mission-control") && method === "GET") return { ...DEV_MOCK_MC, generatedAt: new Date().toISOString() };
   if (path.match(/\/api\/pets\/\d+$/) && method === "GET") return DEV_MOCK_PET;
   if (path.match(/\/api\/skills/) && method === "GET") {
     if (path.includes("pet_id=2")) return DEV_MOCK_SKILLS_WATER;
@@ -263,6 +297,8 @@ export const api = {
   },
 
   // ── Pets ──
+  missionControl: (petId: number) => request(`/api/petclaw/mission-control?petId=${petId}`),
+
   pets: {
     list: () => request("/api/pets"),
     create: (name: string, species: number, personality?: string, avatar_url?: string, species_name?: string, appearance_desc?: string, custom_traits?: string) =>
