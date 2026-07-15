@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LOGO_SRC } from "./Nav";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import Icon from "@/components/Icon";
@@ -17,6 +17,127 @@ function ArrowSwap() {
         <span style={{ display: "block", height: "1em", lineHeight: 1 }}>→</span>
         <span style={{ display: "block", height: "1em", lineHeight: 1 }}>→</span>
       </span>
+    </span>
+  );
+}
+
+// ── WOW beat: 3D tilt-on-pointer for the hero polaroid ──
+// rotateX/Y follow the pointer (fine pointers only; reduced-motion skips),
+// spring back on leave via the house reveal ease. A one-shot gold-foil sheen
+// sweeps the sticker edge on hover (.hero-tilt::after in the hero <style>
+// block). The idle float stays on CollectibleFrame (.ed-float) — untouched.
+function TiltCard({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = ref.current;
+    if (!el || typeof window === "undefined") return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const r = el.getBoundingClientRect();
+    const nx = ((e.clientX - r.left) / r.width) * 2 - 1;  // -1 … 1
+    const ny = ((e.clientY - r.top) / r.height) * 2 - 1;
+    el.style.transition = "transform 90ms linear";
+    el.style.transform = `perspective(800px) rotateX(${(-ny * 7).toFixed(2)}deg) rotateY(${(nx * 9).toFixed(2)}deg)`;
+  };
+  const onLeave = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.transition = "transform 650ms cubic-bezier(.22,.9,.3,1)"; // spring back
+    el.style.transform = "perspective(800px) rotateX(0deg) rotateY(0deg)";
+  };
+  return (
+    <div ref={ref} className="hero-tilt" onPointerMove={onMove} onPointerLeave={onLeave}
+      style={{ position: "relative", willChange: "transform" }}>
+      {children}
+    </div>
+  );
+}
+
+// ── Die-cut sticker chips — replace the 3D emoji-icon PNGs on the pillar and
+// eco cards. Inline duotone SVG marks: ink stroke, terracotta/foil fills, a
+// white die-cut edge + ink kiss-cut line, hard offset shadow, slight rotation
+// (Collectible Editorial). Decorative only — labels carry the meaning.
+const STICKER_INK = "#211A12";
+const STICKER_TERRA = "#BE4F28";
+const STICKER_FOIL = "#E8C77E";
+const STICKER_PAPER = "#FBF6EC";
+
+type StickerKind = "reel" | "sparkle" | "chat" | "export" | "paw" | "diamond" | "cards";
+
+function StickerMark({ kind, size = 20 }: { kind: StickerKind; size?: number }) {
+  const s = { stroke: STICKER_INK, strokeWidth: 1.5, strokeLinejoin: "round" as const, strokeLinecap: "round" as const };
+  const art: Record<StickerKind, React.ReactNode> = {
+    reel: (
+      <>
+        <circle cx="12" cy="12" r="8.2" fill={STICKER_TERRA} {...s} />
+        {[[12, 7.4], [12, 16.6], [7.4, 12], [16.6, 12]].map(([cx, cy]) => (
+          <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.7" fill={STICKER_PAPER} {...s} strokeWidth={1.1} />
+        ))}
+        <circle cx="12" cy="12" r="1.6" fill={STICKER_FOIL} {...s} strokeWidth={1.1} />
+      </>
+    ),
+    sparkle: (
+      <>
+        <path d="M12 3.2 14.1 9.9 20.8 12 14.1 14.1 12 20.8 9.9 14.1 3.2 12 9.9 9.9Z" fill={STICKER_FOIL} {...s} />
+        <circle cx="18.8" cy="5.2" r="1.5" fill={STICKER_TERRA} {...s} strokeWidth={1.1} />
+      </>
+    ),
+    chat: (
+      <>
+        <path d="M4.6 7a2.2 2.2 0 0 1 2.2-2.2h10.4A2.2 2.2 0 0 1 19.4 7v6.2a2.2 2.2 0 0 1-2.2 2.2h-6.4L7 18.6v-3.2h-.2a2.2 2.2 0 0 1-2.2-2.2z" fill={STICKER_TERRA} {...s} />
+        {[8.6, 12, 15.4].map((cx) => (
+          <circle key={cx} cx={cx} cy="10.1" r="1.05" fill={STICKER_FOIL} />
+        ))}
+      </>
+    ),
+    export: ( // Portable Legacy — the pet's soul leaves the box
+      <>
+        <path d="M5 11.5h14v7.3a1.2 1.2 0 0 1-1.2 1.2H6.2A1.2 1.2 0 0 1 5 18.8z" fill={STICKER_TERRA} {...s} />
+        <path d="M12 3.4l3.7 3.9h-2.3v5.2h-2.8V7.3H8.3z" fill={STICKER_FOIL} {...s} strokeWidth={1.3} />
+      </>
+    ),
+    paw: (
+      <>
+        {[[7, 8.6, -18], [12, 7.2, 0], [17, 8.6, 18]].map(([cx, cy, r]) => (
+          <ellipse key={cx} cx={cx} cy={cy} rx="1.9" ry="2.5" transform={`rotate(${r} ${cx} ${cy})`} fill={STICKER_TERRA} {...s} strokeWidth={1.2} />
+        ))}
+        <path d="M12 11.2c3 0 5.3 2 5.3 4.5 0 2-1.7 3.4-3.2 2.8-.9-.4-1.5-.4-2.2 0-1.5.6-3.2-.8-3.2-2.8 0-2.5 2.3-4.5 5.3-4.5z" fill={STICKER_TERRA} {...s} />
+      </>
+    ),
+    diamond: (
+      <>
+        <path d="M7.4 4.8h9.2l3.8 4.8L12 20.2 3.6 9.6z" fill={STICKER_FOIL} {...s} />
+        <path d="M7.4 4.8 3.6 9.6h5z" fill={STICKER_TERRA} {...s} strokeWidth={1.1} />
+        <path d="M3.6 9.6h16.8M7.4 4.8l1.2 4.8 3.4 10.6 3.4-10.6 1.2-4.8" fill="none" {...s} strokeWidth={1.1} />
+      </>
+    ),
+    cards: (
+      <>
+        <rect x="9.4" y="4.2" width="9.4" height="13.2" rx="1.4" transform="rotate(7 14.1 10.8)" fill={STICKER_TERRA} {...s} />
+        <rect x="4.8" y="6.4" width="9.4" height="13.2" rx="1.4" transform="rotate(-6 9.5 13)" fill={STICKER_PAPER} {...s} />
+        <circle cx="9.5" cy="13" r="2" transform="rotate(-6 9.5 13)" fill={STICKER_FOIL} {...s} strokeWidth={1.1} />
+      </>
+    ),
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      {art[kind]}
+    </svg>
+  );
+}
+
+function StickerChip({ kind, rotate = -3, size = 38 }: { kind: StickerKind; rotate?: number; size?: number }) {
+  return (
+    <span aria-hidden style={{
+      width: size, height: size, borderRadius: Math.round(size * 0.3),
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      background: STICKER_PAPER,
+      border: "2px solid #FFFFFF",               // die-cut white edge
+      outline: "1px solid rgba(33,26,18,.16)",   // ink kiss-cut line
+      boxShadow: "3px 4px 0 rgba(33,26,18,.12)", // hard offset shadow
+      transform: `rotate(${rotate}deg)`,
+    }}>
+      <StickerMark kind={kind} size={Math.round(size * 0.6)} />
     </span>
   );
 }
@@ -74,11 +195,11 @@ function FloatingPet({ icon, x, y, delay, size }: any) {
   );
 }
 
-const PILLARS = [
-  { icon: <Icon name="film-reel" size={20} />, label: "AI Video Engine", desc: "Personalized content for every moment" },
-  { icon: <Icon name="sparkling" size={20} />, label: "Evolve & Equip", desc: "Skills, skins & marketplace" },
-  { icon: <Icon name="chat" size={20} />, label: "Social Circle", desc: "Life sharing & network effects" },
-  { icon: <Icon name="trophy" size={20} />, label: "Portable Legacy", desc: "Export your pet's soul; on-chain anchor at go-live" },
+const PILLARS: { mark: StickerKind; label: string; desc: string }[] = [
+  { mark: "reel", label: "AI Video Engine", desc: "Personalized content for every moment" },
+  { mark: "sparkle", label: "Evolve & Equip", desc: "Skills, skins & marketplace" },
+  { mark: "chat", label: "Social Circle", desc: "Life sharing & network effects" },
+  { mark: "export", label: "Portable Legacy", desc: "Export your pet's soul; on-chain anchor at go-live" },
 ];
 
 // Right-rail hero — the PET as the star: a foil-stamped collectible poster of the
@@ -102,12 +223,15 @@ function HeroShowcase({ txToday }: { txToday?: number }) {
               {txToday && txToday >= 20 ? `${txToday} creations this week` : "Meet your companion"}
             </span>
           </div>
-          <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: "rgba(252,233,207,.7)" }}>FILE №0742</span>
+          <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", color: "rgba(252,233,207,.7)" }}>FILE № 0742</span>
         </div>
         <div style={{ position: "relative", zIndex: 2, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "6px 0" }}>
-          {/* The collectible FLIES IN and settles like a dealt card (owner ask). */}
+          {/* The collectible FLIES IN and settles like a dealt card (owner ask),
+              then lives on a pointer-following 3D tilt with a foil sheen sweep. */}
           <Reveal dir="fly" duration={950} delay={250} threshold={0.1}>
-            <CollectibleFrame photoUrl={LOGO_SRC} level={5} speciesLabel="POMERANIAN" elementLabel="GRASS" width={245} tilt={-2.4} />
+            <TiltCard>
+              <CollectibleFrame photoUrl={LOGO_SRC} level={5} speciesLabel="POMERANIAN" elementLabel="GRASS" width={245} tilt={-2.4} />
+            </TiltCard>
           </Reveal>
         </div>
         <div className="ed-foil-text" style={{ position: "relative", zIndex: 2, fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 33, lineHeight: 0.9, letterSpacing: "-0.03em" }}>Mochi</div>
@@ -167,6 +291,20 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
         .hero-backer-chip:hover {
           opacity: 1; filter: grayscale(0);
           background: #F5EFE2; border-color: rgba(190,79,40,0.3);
+        }
+        /* WOW beat — one-shot gold-foil sheen sweeping the polaroid's sticker
+           edge on hover (background-position slide; resets instantly off-hover).
+           The 3D tilt itself is driven per-pointer in TiltCard. */
+        .hero-tilt::after {
+          content: ""; position: absolute; inset: -2px; border-radius: 12px;
+          pointer-events: none; opacity: 0; z-index: 5;
+          background: linear-gradient(115deg, rgba(232,199,126,0) 42%, rgba(232,199,126,.55) 50%, rgba(200,147,47,.3) 55%, rgba(232,199,126,0) 62%);
+          background-size: 240% 100%;
+          background-position: 200% 0;
+        }
+        .hero-tilt:hover::after {
+          opacity: 1; background-position: -100% 0;
+          transition: background-position 1.1s cubic-bezier(.22,.9,.3,1), opacity 180ms ease;
         }
         /* Felt hover for lead-investor + eco cards — shadow steps card → float. */
         .hero-invest-card {
@@ -299,10 +437,11 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
           .hero-pillar-btn {
             background: #FBF6EC;
             border: 1px solid var(--ed-hair, rgba(33,26,18,.13));
-            border-radius: 12px; padding: 10px 16px; cursor: pointer;
+            border-radius: 12px; padding: 12px 16px; cursor: pointer;
             flex: 1 1 0; min-width: 220px; max-width: 300px;
             transition: all 0.3s ease; min-width: 150px;
             opacity: 1; filter: saturate(1);
+            text-align: left;
           }
           .hero-pillars:hover .hero-pillar-btn:not(:hover) {
             opacity: 0.45;
@@ -336,7 +475,9 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
             className={`hero-pillar-btn${activePillar === i ? " active" : ""}`}
             aria-label={`Open ${f.label}`}
           >
-            <div className="pillar-icon" style={{ fontSize: 18, marginBottom: 4, transition: "transform 0.3s ease" }}>{f.icon}</div>
+            <div className="pillar-icon" style={{ marginBottom: 8, lineHeight: 0, transition: "transform 0.3s ease", transformOrigin: "left bottom" }}>
+              <StickerChip kind={f.mark} size={34} rotate={i % 2 ? 2.5 : -3} />
+            </div>
             <div className="pillar-label" style={{
               fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
               color: activePillar === i ? "#9A4E1E" : "#5C5140",
@@ -475,19 +616,19 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
           gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
           gap: 16,
         }}>
-          {[
-            { icon: <Icon name="paw" size={28} />, title: "Raise", desc: "Feed, play, and train your AI pet. Watch them grow from Baby to Legendary." },
-            { icon: <Icon name="sparkling" size={28} />, title: "Create", desc: "Generate stunning AI images and videos of your pet in any scene or style." },
-            { icon: <Icon name="diamond" size={28} />, title: "Climb", desc: "Climb the leaderboard and build your Season standing — non-financial recognition for raising well." },
-            { icon: <Icon name="trophy" size={28} />, title: "Collect", desc: "Collect TCG cards of your pet — earned by raising and creating, yours to keep and share." },
-          ].map((card, i) => (
+          {([
+            { mark: "paw", title: "Raise", desc: "Feed, play, and train your AI pet. Watch them grow from Baby to Legendary." },
+            { mark: "sparkle", title: "Create", desc: "Generate stunning AI images and videos of your pet in any scene or style." },
+            { mark: "diamond", title: "Climb", desc: "Climb the leaderboard and build your Season standing — non-financial recognition for raising well." },
+            { mark: "cards", title: "Collect", desc: "Collect TCG cards of your pet — earned by raising and creating, yours to keep and share." },
+          ] as { mark: StickerKind; title: string; desc: string }[]).map((card, i) => (
             <Reveal key={card.title} dir="up" delay={Math.min(i, 8) * 90}>
             <div className="eco-card hero-invest-card" style={{ height: "100%" }}>
               <div className="eco-icon" style={{
-                fontSize: 28, marginBottom: 14,
+                marginBottom: 16, lineHeight: 0, transformOrigin: "left bottom",
                 transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",
               }}>
-                {card.icon}
+                <StickerChip kind={card.mark} size={44} rotate={[-3, 2.5, -2, 3][i % 4]} />
               </div>
               <div style={{
                 fontFamily: "var(--ed-disp)", fontSize: 20, fontWeight: 700,
@@ -599,7 +740,8 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
         </Reveal>
       </div>
 
-      {/* ─── Footer CTA — X profile card ─── */}
+      {/* ─── Footer CTA — field-notes postcard (on-system: paper, mono eyebrow,
+           postage-stamp paw; the whole card is the link, no faux close button) ─── */}
       <div style={{
         position: "relative", zIndex: 2,
         marginTop: 80, padding: "0 20px",
@@ -616,49 +758,55 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
             borderRadius: 22, overflow: "hidden", background: "#FBF6EC",
             border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
             boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
+            padding: "20px 22px 22px",
           }}
         >
-          {/* banner */}
-          <div style={{
-            height: 104, position: "relative",
-            background: "linear-gradient(120deg, #1E1710 0%, #3A2416 52%, #BE4F28 130%)",
-          }}>
-            <div style={{
-              position: "absolute", inset: 0, opacity: 0.16,
-              background: "radial-gradient(circle at 80% 30%, rgba(232,199,126,0.6) 0%, transparent 45%)",
-            }} />
+          {/* postcard header — mono eyebrow + postage stamp */}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
             <span style={{
-              position: "absolute", top: 14, right: 16, color: "rgba(255,255,255,0.85)",
-              fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 18,
-            }}>𝕏</span>
+              fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
+              letterSpacing: "0.18em", color: "#9A4E1E", textTransform: "uppercase", paddingTop: 8,
+            }}>
+              Field Notes — Built in Public
+            </span>
+            <span aria-hidden style={{
+              width: 44, height: 52, borderRadius: 4, flex: "0 0 auto",
+              background: "#F5EFE2", border: "1.5px dashed rgba(190,79,40,.5)",
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              transform: "rotate(3deg)", boxShadow: "2px 3px 0 rgba(33,26,18,.1)",
+            }}>
+              <StickerMark kind="paw" size={22} />
+            </span>
           </div>
-          <div style={{ padding: "0 22px 22px", position: "relative", zIndex: 1 }}>
-            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+          {/* address rule */}
+          <div aria-hidden style={{ height: 1, background: "var(--ed-hair, rgba(33,26,18,.13))", margin: "14px 0 16px" }} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <img src={LOGO_SRC} alt="MY AI PET" style={{
-                width: 78, height: 78, borderRadius: 20, objectFit: "cover",
-                border: "4px solid #FBF6EC", marginTop: -40, position: "relative", zIndex: 1,
-                boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
-                background: "#F5EFE2",
+                width: 58, height: 58, borderRadius: 14, objectFit: "cover",
+                border: "2px solid #FFFFFF", outline: "1px solid rgba(33,26,18,.16)",
+                boxShadow: "3px 4px 0 rgba(33,26,18,.12)", background: "#F5EFE2",
+                transform: "rotate(-2deg)",
               }} />
-              <span style={{
-                marginBottom: 4, padding: "9px 22px", borderRadius: 999,
-                background: "#211A12", color: "#fff",
-                fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 700,
-                display: "inline-flex", alignItems: "center", gap: 7,
-                boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
-              }}>𝕏 Follow</span>
-            </div>
-            <div style={{ marginTop: 10 }}>
-              <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 19, color: "#211A12", letterSpacing: "-0.01em" }}>
-                MY AI PET
-              </div>
-              <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A", marginTop: 1 }}>
-                @MYAIPETS
+              <div>
+                <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 19, color: "#211A12", letterSpacing: "-0.01em" }}>
+                  MY AI PET
+                </div>
+                <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A", marginTop: 1 }}>
+                  @MYAIPETS
+                </div>
               </div>
             </div>
-            <div style={{ fontFamily: "var(--ed-body)", fontSize: 14.5, color: "rgba(33,26,18,0.72)", marginTop: 12, lineHeight: 1.55 }}>
-              Building the first AI companion you actually own — it remembers you, you own the data, and it lives everywhere. Follow along, built in public. 🐾
-            </div>
+            <span style={{
+              padding: "10px 22px", borderRadius: 12,
+              background: "#211A12", color: "#FBF6EC",
+              fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 700,
+              display: "inline-flex", alignItems: "center", gap: 7,
+              boxShadow: "3px 4px 0 rgba(33,26,18,.18)",
+            }}>𝕏 Follow</span>
+          </div>
+          <div style={{ fontFamily: "var(--ed-body)", fontSize: 14.5, color: "rgba(33,26,18,0.72)", marginTop: 14, lineHeight: 1.55 }}>
+            Building the first AI companion you actually own — it remembers you, you own the data, and it lives everywhere. Follow along, built in public. 🐾
           </div>
         </a>
         </Reveal>

@@ -1033,6 +1033,67 @@
     .journey-paws, .journey-video::before, .jv-play::before, .j-node { animation: none !important; }
     .journey-pill { transition: opacity .2s linear; }
   }
+
+  /* ═══ design-audit fixes — sticker chips · demo seal · invert · nav on-dark · mobile ═══ */
+  /* die-cut duotone sticker chips: ink stroke + terracotta/foil fill, white
+     die-cut ring, hard offset ink shadow, slight per-chip rotation. */
+  .stk-chip {
+    width: 44px; height: 44px; border-radius: 13px; flex: 0 0 auto;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--cream);
+    box-shadow: 0 0 0 3px #FFFDF7, 3px 4px 0 3px rgba(33,26,18,0.3);
+  }
+  .stk-chip svg { width: 26px; height: 26px; display: block; }
+  .stk-chip.r-a { transform: rotate(-3deg); }
+  .stk-chip.r-b { transform: rotate(2deg); }
+  .stk-chip.r-c { transform: rotate(-1.5deg); }
+  .stk-chip.r-d { transform: rotate(3deg); }
+  .stk-chip.r-e { transform: rotate(-2deg); }
+
+  /* wax-seal DEMO chip — labels sample companion data honestly */
+  .demo-seal {
+    margin-left: auto; width: 46px; height: 46px; border-radius: 50%; flex: 0 0 auto;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 38% 34%, #FFF7E6, #F2CD86 44%, #C8932F 78%, #9A4E1E);
+    box-shadow: 0 3px 8px rgba(154,78,30,0.35), inset 0 0 0 1px rgba(255,255,255,0.45), inset 0 -3px 6px rgba(154,78,30,0.4);
+    font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: #3a1e0c;
+    transform: rotate(-6deg);
+  }
+
+  /* core-loop invert — cards restyle with the terracotta field */
+  .il-card { transition: background-color .6s ease, border-color .6s ease; }
+  .fx-invert.is-inverted h4 { color: var(--cream-on) !important; }
+  .fx-invert.is-inverted .il-card { background: rgba(33,26,18,0.22) !important; border-color: rgba(251,246,236,0.28) !important; }
+  .fx-invert.is-inverted .il-card p { color: rgba(252,233,207,0.85) !important; }
+  .fx-invert.is-inverted .il-card > div:last-child,
+  .fx-invert.is-inverted .il-card a { color: var(--foil) !important; }
+
+  /* nav over dark bands — solid ink + paper text, never muddy translucent */
+  .nav.on-dark, .nav.on-dark.scrolled {
+    background: var(--ink); color: var(--cream);
+    border-bottom: 1px solid var(--line-dk); backdrop-filter: none;
+  }
+  .nav.on-dark .nav-cta { background: var(--gold); color: var(--navy); }
+
+  /* mobile: journey pill docks as a slim full-width bottom bar */
+  @media (max-width: 640px) {
+    .journey-pill {
+      left: 0; right: 0; bottom: 0; transform: translate(0, 24px);
+      border-radius: 0; border-left: 0; border-right: 0; border-bottom: 0;
+      justify-content: center; padding: 8px 12px;
+    }
+    .journey-pill.show { transform: translate(0, 0); }
+    .j-step { padding-bottom: 44px; margin-bottom: 8px; }
+  }
+  /* sovereignty rights collapse to one column on small phones */
+  @media (max-width: 480px) {
+    .rights { grid-template-columns: 1fr; }
+  }
+  /* section rhythm: 140px desktop → 80px mobile */
+  @media (max-width: 700px) {
+    section.pad { padding: 80px 0; }
+    .footer-cta { padding-top: 80px !important; }
+  }
 </style>
 </head>
 <body>
@@ -1310,8 +1371,11 @@
   </div>
 </section>
 
-<!-- SECTION 2.5: MASCOT + SKILLS SHOWCASE -->
-<section class="pad" style="background: linear-gradient(180deg, var(--cream) 0%, var(--navy) 100%); overflow:hidden;">
+<!-- SECTION 2.5: MASCOT + SKILLS SHOWCASE
+     Hard sectional break: the journey section above ends the paper band; this
+     band is SOLID navy with a 1px foil-gold hairline at the seam (no long
+     cream→navy gradient — content never sits on a muddy mid-gradient). -->
+<section class="pad" id="skillsShowcase" style="background: var(--navy); border-top: 1px solid var(--foil-deep); box-shadow: inset 0 1px 0 rgba(232,199,126,0.28); overflow:hidden;">
   <div class="container">
     <div style="display:flex; align-items:center; gap:60px; flex-wrap:wrap; justify-content:center;">
 
@@ -1336,27 +1400,27 @@
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
           <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
-            <div style="font-size:20px; margin-bottom:6px;">💬</div>
+            <div class="stk-chip r-a" style="margin-bottom:12px;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 5h15A1.5 1.5 0 0 1 21 6.5v8a1.5 1.5 0 0 1-1.5 1.5H11l-4.5 3.5V16H4.5A1.5 1.5 0 0 1 3 14.5v-8A1.5 1.5 0 0 1 4.5 5z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><circle cx="8.2" cy="10.5" r="1.1" fill="#FBF6EC"/><circle cx="12" cy="10.5" r="1.1" fill="#FBF6EC"/><circle cx="15.8" cy="10.5" r="1.1" fill="#FBF6EC"/></svg></div>
             <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Companion Chat</div>
             <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Personality-driven · Memory-aware</div>
           </div>
           <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
-            <div style="font-size:20px; margin-bottom:6px;">🪞</div>
+            <div class="stk-chip r-b" style="margin-bottom:12px;" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="9.5" r="5.5" fill="#E8C77E" stroke="#211A12" stroke-width="2"/><path d="M12 15v4.5M9.5 19.5h5" fill="none" stroke="#211A12" stroke-width="2" stroke-linecap="round"/><path d="M9.6 8a3.2 3.2 0 0 1 2-1.6" fill="none" stroke="#FBF6EC" stroke-width="1.6" stroke-linecap="round"/></svg></div>
             <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Persona Mirror</div>
             <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Learns your tone · Talks like you</div>
           </div>
           <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
-            <div style="font-size:20px; margin-bottom:6px;">🧠</div>
+            <div class="stk-chip r-c" style="margin-bottom:12px;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M11.6 4.6c-1.9 0-3.4 1.4-3.5 3.2-1.4.4-2.4 1.7-2.4 3.1 0 .9.4 1.7 1 2.3-.4.5-.6 1.1-.6 1.8 0 1.9 1.6 3.4 3.5 3.4.6.8 1.5 1.3 2 1.3V4.6z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M12.4 4.6c1.9 0 3.4 1.4 3.5 3.2 1.4.4 2.4 1.7 2.4 3.1 0 .9-.4 1.7-1 2.3.4.5.6 1.1.6 1.8 0 1.9-1.6 3.4-3.5 3.4-.6.8-1.5 1.3-2 1.3V4.6z" fill="#E8C77E" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/></svg></div>
             <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Memory Recall</div>
             <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Cross-platform · Never forgets</div>
           </div>
           <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
-            <div style="font-size:20px; margin-bottom:6px;">📦</div>
+            <div class="stk-chip r-d" style="margin-bottom:12px;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8.2 12 4.4l8 3.8v7.6l-8 3.8-8-3.8z" fill="#E8C77E" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M4 8.2l8 3.8v7.6l-8-3.8z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M12 12l8-3.8" fill="none" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/></svg></div>
             <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Soul Export</div>
             <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Portable identity · Zero lock-in</div>
           </div>
           <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
-            <div style="font-size:20px; margin-bottom:6px;">🔗</div>
+            <div class="stk-chip r-e" style="margin-bottom:12px;" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="8.3" cy="15.7" rx="4.6" ry="3.3" transform="rotate(-45 8.3 15.7)" fill="#BE4F28" stroke="#211A12" stroke-width="2"/><ellipse cx="15.7" cy="8.3" rx="4.6" ry="3.3" transform="rotate(-45 15.7 8.3)" fill="#E8C77E" stroke="#211A12" stroke-width="2"/></svg></div>
             <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">MCP Compatible</div>
             <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Claude · OpenClaw · Any client</div>
           </div>
@@ -1379,7 +1443,7 @@
     <div class="section-head">
       <span class="eyebrow" style="color:var(--gold-soft);">Meet your companion</span>
       <h2 style="color:var(--cream);">A pet that actually picks up where you left off.</h2>
-      <p style="color:rgba(255,248,230,0.6);">This is Sparky. She was adopted eight weeks ago and has been quietly keeping track ever since.</p>
+      <p style="color:rgba(255,248,230,0.6);">Meet Sparky, our demo companion — sample data showing what a pet keeps track of as it grows with you.</p>
     </div>
 
     <div class="demo-wrap">
@@ -1390,6 +1454,7 @@
             <h4>Sparky</h4>
             <div class="sub">LVL 15 · online · last seen: just now</div>
           </div>
+          <span class="demo-seal" title="Demo companion — sample data">DEMO</span>
         </div>
         <div class="msgs" id="msgs"></div>
         <div class="chat-input">
@@ -1533,7 +1598,7 @@
           </div>
           <div class="points-badge">+47 pts today</div>
           <div class="pet-walker" id="petWalker">
-            <div class="mp">PET<br/>WALK<br/>ANIM</div>
+            <div class="mp"><span class="mp-txt" style="display:inline-block;">PET<br/>WALK<br/>ANIM</span></div>
           </div>
           <div class="callout" style="top: 70px; right: 30px;"><span class="num">1</span>Click to chat</div>
           <div class="callout" style="top: 180px; left: 30px;"><span class="num">2</span>Right-click for skills</div>
@@ -1622,8 +1687,8 @@
   </div>
 </section>
 
-<!-- SECTION 7.5: HOW IT WORKS (CORE LOOP) -->
-<section class="pad" style="background:var(--cream-2);">
+<!-- SECTION 7.5: HOW IT WORKS (CORE LOOP) — the page's ONE big invert move -->
+<section class="pad" id="coreloop" style="background:var(--cream-2);">
   <div class="container">
     <div class="section-head">
       <span class="eyebrow">How it works</span>
@@ -1631,28 +1696,28 @@
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-top:48px;text-align:center;">
-      <div style="padding:28px 16px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid var(--line);">
-        <div style="font-size:36px;margin-bottom:12px;">💬</div>
+      <div class="il-card" style="padding:28px 16px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid var(--line);">
+        <div class="stk-chip r-b" style="margin-bottom:14px;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 5h15A1.5 1.5 0 0 1 21 6.5v8a1.5 1.5 0 0 1-1.5 1.5H11l-4.5 3.5V16H4.5A1.5 1.5 0 0 1 3 14.5v-8A1.5 1.5 0 0 1 4.5 5z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><circle cx="8.2" cy="10.5" r="1.1" fill="#FBF6EC"/><circle cx="12" cy="10.5" r="1.1" fill="#FBF6EC"/><circle cx="15.8" cy="10.5" r="1.1" fill="#FBF6EC"/></svg></div>
         <h4 style="font-size:16px;margin-bottom:6px;">Chat</h4>
         <p style="font-size:13px;color:var(--muted);line-height:1.5;">Talk to your pet. Every conversation builds memory and shapes personality.</p>
         <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:var(--gold-deep);">+3 pts per chat</div>
       </div>
-      <div style="padding:28px 16px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid var(--line);">
-        <div style="font-size:36px;margin-bottom:12px;">🧠</div>
+      <div class="il-card" style="padding:28px 16px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid var(--line);">
+        <div class="stk-chip r-c" style="margin-bottom:14px;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M11.6 4.6c-1.9 0-3.4 1.4-3.5 3.2-1.4.4-2.4 1.7-2.4 3.1 0 .9.4 1.7 1 2.3-.4.5-.6 1.1-.6 1.8 0 1.9 1.6 3.4 3.5 3.4.6.8 1.5 1.3 2 1.3V4.6z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M12.4 4.6c1.9 0 3.4 1.4 3.5 3.2 1.4.4 2.4 1.7 2.4 3.1 0 .9-.4 1.7-1 2.3.4.5.6 1.1.6 1.8 0 1.9-1.6 3.4-3.5 3.4-.6.8-1.5 1.3-2 1.3V4.6z" fill="#E8C77E" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/></svg></div>
         <h4 style="font-size:16px;margin-bottom:6px;">Grow</h4>
         <p style="font-size:13px;color:var(--muted);line-height:1.5;">Your pet learns patterns, creates skills, and evolves its personality over time.</p>
         <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:var(--gold-deep);">Self-learning AI</div>
       </div>
-      <div style="padding:28px 16px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid var(--line);">
-        <div style="font-size:36px;margin-bottom:12px;">🛡️</div>
+      <div class="il-card" style="padding:28px 16px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid var(--line);">
+        <div class="stk-chip r-d" style="margin-bottom:14px;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.6l7 2.5v5.4c0 4.4-2.9 7.4-7 8.9-4.1-1.5-7-4.5-7-8.9V6.1z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M12 3.6l7 2.5v5.4c0 4.4-2.9 7.4-7 8.9z" fill="#E8C77E" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/></svg></div>
         <h4 style="font-size:16px;margin-bottom:6px;">Own</h4>
         <p style="font-size:13px;color:var(--muted);line-height:1.5;">Export your pet's soul as portable JSON. Delete with cryptographic proof. Zero lock-in.</p>
         <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:var(--gold-deep);">
           <a href="https://app.myaipet.ai/architecture" target="_blank" style="color:inherit;text-decoration:underline;" rel="noopener noreferrer">SOUL spec →</a>
         </div>
       </div>
-      <div style="padding:28px 16px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid var(--line);">
-        <div style="font-size:36px;margin-bottom:12px;">🌐</div>
+      <div class="il-card" style="padding:28px 16px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid var(--line);">
+        <div class="stk-chip r-a" style="margin-bottom:14px;" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4" fill="#E8C77E" stroke="#211A12" stroke-width="2"/><ellipse cx="12" cy="12" rx="3.6" ry="8.4" fill="#BE4F28" stroke="#211A12" stroke-width="2"/><path d="M4 9.4h16M4 14.6h16" fill="none" stroke="#211A12" stroke-width="2"/></svg></div>
         <h4 style="font-size:16px;margin-bottom:6px;">Everywhere</h4>
         <p style="font-size:13px;color:var(--muted);line-height:1.5;">Chrome Extension, Telegram, Discord — same pet, same memory, any platform.</p>
         <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:var(--gold-deep);">Multi-channel</div>
@@ -1662,7 +1727,7 @@
 </section>
 
 <!-- SECTION 7.6: ROADMAP -->
-<section class="pad" style="background:var(--navy);color:var(--cream);">
+<section class="pad" id="roadmap" style="background:var(--navy);color:var(--cream);">
   <div class="container">
     <div class="section-head">
       <span class="eyebrow" style="color:var(--gold-soft);">Roadmap</span>
@@ -1716,7 +1781,7 @@
 </section>
 
 <!-- SECTION 7.7: LIVE PLAYGROUND -->
-<section class="pad" style="background:var(--navy-2); border-top:1px solid var(--line-dk);">
+<section class="pad" id="playground" style="background:var(--navy-2); border-top:1px solid var(--line-dk);">
   <div class="container">
     <div class="section-head" style="margin-bottom:40px;">
       <span class="eyebrow" style="color:var(--gold-soft);">Try it now</span>
@@ -1727,7 +1792,7 @@
     <div style="max-width:600px; margin:0 auto;">
       <!-- Chat messages -->
       <div id="playgroundMsgs" style="
-        min-height:200px; max-height:360px; overflow-y:auto;
+        max-height:360px; overflow-y:auto;
         padding:20px; border-radius:16px 16px 0 0;
         background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06);
         border-bottom:none;
@@ -1774,7 +1839,7 @@
 <!-- SECTION 8: FOOTER CTA -->
 <footer class="footer-cta" id="adopt" data-screen-label="09 Footer" style="background:linear-gradient(180deg, #2A2118 0%, #1E1710 30%, #1E1710 100%); padding: 120px 32px 60px; text-align:center;">
   <h2 style="font-size:clamp(40px,6vw,72px); line-height:1.05; margin-bottom:40px; color:#fff;">Your AI companion<br/><span style="color:var(--gold-soft); font-style:italic;">is waiting.</span></h2>
-  <a href="https://app.myaipet.ai" class="btn btn-primary" style="font-size:18px; padding:18px 40px; display:inline-flex;">Adopt your pet &nbsp;→</a>
+  <a href="https://app.myaipet.ai" class="btn btn-primary" style="font-size:18px; padding:18px 40px; display:inline-flex; box-shadow:4px 5px 0 rgba(33,26,18,0.85); border:1px solid var(--foil-deep);">Adopt your pet &nbsp;→</a>
 
   <div style="margin-top:60px; display:flex; justify-content:center; gap:32px; flex-wrap:wrap;">
     <a href="https://www.npmjs.com/package/petclaw-sdk" style="font-family:var(--mono); font-size:13px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">npm</a>
@@ -2156,11 +2221,15 @@ pets.forEach(p => {
 (function walkerAnim(){
   const el = document.getElementById('petWalker');
   if (!el) return;
+  const label = el.querySelector('.mp-txt');
   let pos = 10, dir = 1;
   setInterval(() => {
     pos += dir * 0.8;
-    if (pos > 85) { dir = -1; el.style.transform = 'scaleX(-1)'; }
-    if (pos < 10) { dir = 1; el.style.transform = 'scaleX(1)'; }
+    if (pos > 85) dir = -1;
+    if (pos < 10) dir = 1;
+    // flip the sprite art only — counter-flip the label so text never mirrors
+    el.style.transform = dir === -1 ? 'scaleX(-1)' : 'scaleX(1)';
+    if (label) label.style.transform = dir === -1 ? 'scaleX(-1)' : '';
     el.style.left = pos + '%';
   }, 40);
 })();
@@ -2308,6 +2377,8 @@ function persist() {
   }
 
   function showBubble(text, dur) {
+    // hold every bubble until the hero has scrolled past — never cover hero microcopy
+    if (window.scrollY <= window.innerHeight) return;
     bubble.textContent = text;
     bubble.style.display = 'block';
     bubble.style.left = (posX - 40) + 'px';
@@ -2335,6 +2406,8 @@ function persist() {
       posX += dir * 0.8;
       pet.style.left = posX + 'px';
       pet.style.transform = dir === -1 ? 'scaleX(-1)' : 'scaleX(1)';
+      // counter-flip the name label so "Sparky" never renders mirrored
+      nameTag.style.transform = dir === -1 ? 'translateX(-50%) scaleX(-1)' : 'translateX(-50%)';
 
       // Paw prints
       pawTimer++;
@@ -2367,8 +2440,18 @@ function persist() {
     bubble.style.left = (posX - 40) + 'px';
   }, 33);
 
-  // Initial greeting
-  setTimeout(() => showBubble("Hey! I'm Sparky 🐾 Click me!", 5000), 2000);
+  // Initial greeting — fires once, only after the visitor scrolls past the hero
+  (function(){
+    let greeted = false;
+    function greet(){
+      if (greeted || window.scrollY <= window.innerHeight) return;
+      greeted = true;
+      window.removeEventListener('scroll', greet);
+      setTimeout(() => showBubble("Hey! I'm Sparky 🐾 Click me!", 5000), 400);
+    }
+    window.addEventListener('scroll', greet, { passive: true });
+    greet();
+  })();
 
   // Click → playground
   pet.addEventListener('click', () => {
@@ -2414,12 +2497,17 @@ function persist() {
   // 1) Auto-tag reveal targets. Curated selectors → directional entrance with
   //    per-group stagger, so whole rows fly in on scroll (E02/E03).
   function tag(sel, dir){
-    document.querySelectorAll(sel).forEach(function(el, i){
+    // full-group stagger: 70ms per sibling, index resets per parent so each
+    // grid reveals one by one instead of popping in near-simultaneously
+    var lastParent = null, k = 0;
+    document.querySelectorAll(sel).forEach(function(el){
       if (el.hasAttribute('data-reveal')) return;
+      if (el.parentElement !== lastParent){ lastParent = el.parentElement; k = 0; }
       // 'alt' = neighbours converge from opposite sides (a livelier row reveal)
-      var d = dir === 'alt' ? (i % 2 ? 'right' : 'left') : (dir || 'up');
+      var d = dir === 'alt' ? (k % 2 ? 'right' : 'left') : (dir || 'up');
       el.setAttribute('data-reveal', d);
-      el.setAttribute('data-delay', String((i % 4) * 80));
+      el.setAttribute('data-delay', String(k * 70));
+      k++;
     });
   }
   tag('.section-head', 'up');
@@ -2442,7 +2530,7 @@ function persist() {
   }
   var io = new IntersectionObserver(function(es){
     es.forEach(function(e){ if(e.isIntersecting){ io.unobserve(e.target); reveal(e.target); } });
-  }, {threshold:0.16});
+  }, {threshold:0.16, rootMargin:'0px 0px -15% 0px'});
   document.querySelectorAll('[data-reveal]').forEach(function(el){ io.observe(el); });
 
   // 2) Hover language — underline slide on nav + inline links, arrow nudge.
@@ -2455,15 +2543,16 @@ function persist() {
     }
   });
 
-  // 3) The one big move — invert a light section field → terracotta at 60%.
-  var invertTarget = Array.prototype.find
-    ? [].find.call(document.querySelectorAll('section'), function(s){ return /Interact\.?\s*Grow\.?\s*Own|Where we.re going|Built on an open standard/i.test(s.textContent); })
-    : null;
+  // 3) The one big move — the core-loop section ("Interact. Grow. Own.")
+  //    inverts field → terracotta. Targeted by id (the old textContent match
+  //    picked #protocol, which is taller than the viewport, so a 0.6 ratio
+  //    could never be reached and the invert never fired).
+  var invertTarget = document.getElementById('coreloop');
   if (invertTarget){
     invertTarget.classList.add('fx-invert');
     var iv = new IntersectionObserver(function(es){
       es.forEach(function(e){ e.target.classList.toggle('is-inverted', e.isIntersecting); });
-    }, {threshold:0.6});
+    }, {threshold:0.35});
     iv.observe(invertTarget);
   }
 
@@ -2543,6 +2632,24 @@ function persist() {
   window.addEventListener('scroll', onScrollJ, { passive: true });
   window.addEventListener('resize', onScrollJ, { passive: true });
   update();
+
+  // 5) nav on dark bands — IO watches the nav-height band (top ~8% of the
+  //    viewport); while any dark section crosses it, .on-dark flips the nav
+  //    to solid ink + paper so it never renders muddy translucent.
+  (function(){
+    if (!('IntersectionObserver' in window)) return;
+    var nav = document.getElementById('nav');
+    var darks = document.querySelectorAll('#skillsShowcase, #companion, #sovereignty, #protocol, #roadmap, #playground, #adopt');
+    if (!nav || !darks.length) return;
+    var states = new Map();
+    var navIo = new IntersectionObserver(function(es){
+      es.forEach(function(e){ states.set(e.target, e.isIntersecting); });
+      var on = false;
+      states.forEach(function(v){ on = on || v; });
+      nav.classList.toggle('on-dark', on);
+    }, { rootMargin: '0px 0px -92% 0px', threshold: 0 });
+    darks.forEach(function(el){ navIo.observe(el); });
+  })();
 })();
 </script>
 </body>

@@ -2,7 +2,7 @@
 
 import { WagmiProvider, http } from "wagmi";
 import { mainnet, base, bsc } from "wagmi/chains";
-import { RainbowKitProvider, getDefaultConfig } from "@rainbow-me/rainbowkit";
+import { RainbowKitProvider, getDefaultConfig, lightTheme } from "@rainbow-me/rainbowkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode, useState, useEffect } from "react";
 
@@ -28,6 +28,14 @@ try {
   console.warn("[Providers] Failed to init wagmi config:", e);
 }
 
+// Collectible Editorial house CTA — amber/terracotta ramp instead of RainbowKit default blue
+const rainbowTheme = lightTheme({
+  accentColor: "#E27D0C",
+  accentColorForeground: "#FFF8EE",
+  borderRadius: "medium",
+  fontStack: "system",
+});
+
 export default function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
   const [mounted, setMounted] = useState(false);
@@ -41,7 +49,7 @@ export default function Providers({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider locale="en">
+        <RainbowKitProvider locale="en" theme={rainbowTheme}>
           {mounted ? children : null}
         </RainbowKitProvider>
       </QueryClientProvider>

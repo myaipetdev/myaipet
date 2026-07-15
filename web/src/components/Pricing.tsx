@@ -20,6 +20,12 @@ const EARN_METHODS = [
 
 const BSC_CHAIN_ID = 56;
 
+// Purchases are paused platform-wide right now. Three grey "Coming soon" cards
+// read abandoned, so the checkout grid collapses into one spec-sheet strip.
+// Flip this to true to restore the full three-card USDT flow — the card markup
+// below is kept intact behind this flag.
+const SHOW_PURCHASE_CARDS: boolean = false;
+
 export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
   const { address, isConnected, chainId } = useAccount();
   const { switchChain } = useSwitchChain();
@@ -183,7 +189,9 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         </Reveal>
       </div>
 
-      {paused && (
+      {/* Duplicate pause banner only when the full cards show — the compact
+          strip below carries its own wax-seal pause badge. */}
+      {SHOW_PURCHASE_CARDS && paused && (
         <div style={{
           maxWidth: 620, margin: "0 auto 32px", padding: "14px 20px", borderRadius: 14,
           background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -244,7 +252,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           Get Credits
         </h3>
         <p style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#7A6E5A", marginBottom: 10 }}>
-          {paused
+          {SHOW_PURCHASE_CARDS && paused
             ? "Purchases are paused right now — earn credits free by raising & creating"
             : "Credits power AI image & video creation with your pet"}
         </p>
@@ -318,6 +326,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           border-color: transparent !important;
         }
       `}</style>
+      {SHOW_PURCHASE_CARDS ? (
       <div className="pricing-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, maxWidth: 860, margin: "0 auto" }}>
         {plans.map((p, i) => (
           <Reveal key={p.name} dir="up" delay={Math.min(i, 8) * 90}>
@@ -379,6 +388,75 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           </Reveal>
         ))}
       </div>
+      ) : (
+      /* Compact spec-sheet strip — same REAL rates the server grants
+         (100/500/2000 credits for 5/20/50 USDT), no dead buy buttons. */
+      <Reveal dir="up">
+      <div style={{
+        maxWidth: 620, margin: "0 auto", background: "#FBF6EC", borderRadius: 16,
+        border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+        boxShadow: "3px 4px 0 rgba(33,26,18,.12)", padding: "20px 22px 22px",
+      }}>
+        {/* Wax-seal pause badge */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <span aria-hidden="true" style={{
+            width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
+            background: "#BE4F28", border: "2px solid #E8C77E",
+            boxShadow: "2px 3px 0 rgba(33,26,18,.18), inset 0 0 0 3px #C8932F",
+            display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#FCE9CF",
+          }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <rect x="7" y="5" width="3.5" height="14" rx="1.2" />
+              <rect x="13.5" y="5" width="3.5" height="14" rx="1.2" />
+            </svg>
+          </span>
+          <div>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: "#BE4F28" }}>
+              Purchases paused
+            </div>
+            <div style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#7A6E5A", fontWeight: 500 }}>
+              Earn credits free by raising &amp; creating
+            </div>
+          </div>
+        </div>
+
+        {/* Rate sheet — mono table, kept on the record for when buying reopens */}
+        <div style={{ border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", borderRadius: 10, overflow: "hidden", marginBottom: 16 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--ed-m)", fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: "#ECE4D4" }}>
+                <th style={{ padding: "7px 14px", textAlign: "left", color: "#7A6E5A", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>Pack</th>
+                <th style={{ padding: "7px 14px", textAlign: "right", color: "#7A6E5A", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>Credits</th>
+                <th style={{ padding: "7px 14px", textAlign: "right", color: "#7A6E5A", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              {plans.map((p) => (
+                <tr key={p.key} style={{ borderTop: "1px solid var(--ed-hair, rgba(33,26,18,.13))" }}>
+                  <td style={{ padding: "9px 14px", color: "#211A12", fontWeight: 700 }}>{p.name}</td>
+                  <td style={{ padding: "9px 14px", textAlign: "right", color: "#9A4E1E", fontWeight: 600 }}>{p.cookies.toLocaleString()}</td>
+                  <td style={{ padding: "9px 14px", textAlign: "right", color: "#211A12" }}>{p.usdtPrice}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <a
+          href="/studio"
+          style={{
+            display: "block", textAlign: "center",
+            background: "linear-gradient(180deg,#E68A2E,#BE4F28)", color: "#FCE9CF",
+            fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 700,
+            padding: "13px", borderRadius: 10, textDecoration: "none",
+            boxShadow: "3px 4px 0 rgba(33,26,18,.12)",
+          }}
+        >
+          Open the Studio →
+        </a>
+      </div>
+      </Reveal>
+      )}
 
       {/* Spacer */}
       <div style={{ height: 20 }} />

@@ -13,7 +13,6 @@ import Icon from "@/components/Icon";
 import Hero from "@/components/Hero";
 import Reveal from "@/components/Reveal";
 import Stats from "@/components/Stats";
-import Feed from "@/components/Feed";
 import Pricing from "@/components/Pricing";
 import OrchestrationExplainer from "@/components/OrchestrationExplainer";
 import RaisePitch from "@/components/RaisePitch";
@@ -127,7 +126,7 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
   return (
     // Scroll-revealed (was mount-time mp-enter-2). The check-in ceremony
     // animations inside (sealPress, slideIn) are untouched.
-    <Reveal dir="up" delay={90} className="home-section-pad" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
+    <Reveal dir="up" delay={90} className="home-section-pad home-beat" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
       <div id="daily-checkin" style={{
         borderRadius: 16, padding: "14px 20px", marginBottom: 8,
         background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -152,8 +151,8 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
           </div>
         </div>
 
-        {/* Day pills */}
-        <div style={{ display: "flex", gap: 5, flex: 1, flexWrap: "wrap" }}>
+        {/* Day pills — on <480px this becomes ONE horizontal scroll row (.checkin-pills) */}
+        <div className="checkin-pills" style={{ display: "flex", gap: 5, flex: 1, flexWrap: "wrap" }}>
           {rewards.map((r, i) => {
             const day = i + 1;
             const done = checkedIn ? streak >= day : streak > day;
@@ -194,7 +193,7 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
 
         {isAuthenticated ? (
           <button
-            className="ed-press"
+            className="ed-press checkin-cta"
             onClick={doCheckin}
             disabled={checkedIn || loading}
             style={{
@@ -210,7 +209,9 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
             {loading ? "..." : checkedIn ? "Done ✓" : "Check In"}
           </button>
         ) : (
-          <ConnectButton chainStatus="none" showBalance={false} label="Connect wallet to start" />
+          <div className="checkin-cta">
+            <ConnectButton chainStatus="none" showBalance={false} label="Connect wallet to start" />
+          </div>
         )}
       </div>
     </Reveal>
@@ -424,7 +425,6 @@ export default function App() {
     }, 150);
     return () => clearTimeout(t);
   }, [section]);
-  const [activities, setActivities] = useState<any[]>([]);
   const [platformStats, setPlatformStats] = useState<any>(null);
   const [credits, setCredits] = useState(0);
   const [seasonPoints, setSeasonPoints] = useState(0);
@@ -442,9 +442,8 @@ export default function App() {
     }
   }, [user]);
 
-  // Request tokens so a slow poll response can't overwrite a newer one out of order.
+  // Request token so a slow poll response can't overwrite a newer one out of order.
   const statsReqRef = useRef(0);
-  const activityReqRef = useRef(0);
 
   const fetchStats = useCallback(async () => {
     const reqId = ++statsReqRef.current;
@@ -467,41 +466,24 @@ export default function App() {
     } catch { /* leave null → honest qualitative fallback */ }
   }, []);
 
-  const fetchActivity = useCallback(async () => {
-    const reqId = ++activityReqRef.current;
-    try {
-      // Public, REAL activity (no admin gate, no mock). The old
-      // api.analytics.activity is admin-only, so every visitor 401'd and the
-      // "Live On-Chain Activity" strip stayed empty for all real users.
-      const r = await fetch("/api/activity/recent?limit=12");
-      if (!r.ok) return;
-      const d = await r.json();
-      if (reqId !== activityReqRef.current) return; // superseded by a newer poll
-      if (Array.isArray(d?.items) && d.items.length > 0) setActivities(d.items);
-    } catch { /* no mock fallback — an empty feed is honest */ }
-  }, []);
-
   useEffect(() => {
-    // Stats/Feed only render on Home — don't poll (and write state) on other tabs.
+    // Stats only render on Home — don't poll (and write state) on other tabs.
     if (section !== "home") return;
     fetchStats();
-    fetchActivity();
     const s = setInterval(fetchStats, 15000);
-    const a = setInterval(fetchActivity, 6000);
-    return () => { clearInterval(s); clearInterval(a); };
-  }, [section, fetchStats, fetchActivity]);
+    return () => clearInterval(s);
+  }, [section, fetchStats]);
 
-  // Never show "0" in a social-proof slot — fall back to qualitative,
-  // always-true facts when stats are unavailable or still zero.
-  const stats = (platformStats && ((platformStats.total_users ?? 0) >= 100 || (platformStats.total_generations ?? 0) >= 100))
+  // Never show "0" in a social-proof slot — the big stat cards only render on
+  // REAL aggregates; otherwise the guest home shows two quiet mono footnote
+  // lines (always-true qualitative facts) instead of dressed-up stat cards.
+  const hasRealStats = !!(platformStats && ((platformStats.total_users ?? 0) >= 100 || (platformStats.total_generations ?? 0) >= 100));
+  const stats = hasRealStats
     ? [
         { label: "Pets Adopted", value: (platformStats.total_users ?? 0).toLocaleString(), raw: platformStats.total_users ?? 0, animated: true, sub: "Companions raised" },
         { label: "AI Content Created", value: (platformStats.total_generations ?? 0).toLocaleString(), raw: platformStats.total_generations ?? 0, animated: true, sub: "Videos & Images" },
       ]
-    : [
-        { label: "Protocol", value: "PetClaw v1", sub: "Open data standard" },
-        { label: "Your data", value: "Yours", sub: "Export & delete anytime" },
-      ];
+    : [];
 
   const handleCreditsChange = (newCredits: any) => {
     if (typeof newCredits === "number") setCredits(newCredits);
@@ -521,12 +503,39 @@ export default function App() {
           .desktop-grid { grid-template-columns: 1fr !important; }
           .desktop-two-col { grid-template-columns: 1fr !important; }
         }
+        /* ── Guest-home vertical rhythm ──
+           Home sections sit on one consistent beat — 140px desktop / 80px
+           mobile — instead of near-uniform 8-30px card stacking. RaisePitch,
+           OrchestrationExplainer and Pricing carry their own 56-60px vertical
+           padding, so their neighbors take the half/join classes to land every
+           visual gap in the same 120-160px band.
+           (!important beats the Reveal wrappers' inline margin: 0 auto.) */
+        .home-beat { margin-bottom: 140px !important; }
+        .home-beat-half { margin-bottom: 80px !important; }  /* + next section's ~60px own padding */
+        .home-beat-join { margin-bottom: 24px; }             /* between two self-padded sections */
         @media (max-width: 640px) {
           .home-section-pad { padding-left: 16px !important; padding-right: 16px !important; }
           .season-banner { padding: 10px 16px !important; }
           .season-banner-title { font-size: 13px !important; }
           .season-banner-countdown { gap: 4px !important; }
           .season-banner-countdown > div > div:first-child { font-size: 14px !important; }
+          .home-beat { margin-bottom: 80px !important; }
+          .home-beat-half { margin-bottom: 32px !important; }
+          .home-beat-join { margin-bottom: 0; }
+        }
+        @media (max-width: 480px) {
+          /* Daily Check-in: D1-D7 chips become ONE horizontal scroll row
+             (no wrap), and the CTA drops to a full-width row below. */
+          .checkin-pills {
+            flex-wrap: nowrap !important; overflow-x: auto; flex-basis: 100%;
+            -webkit-overflow-scrolling: touch; scrollbar-width: none;
+            /* room for the +N award float above a freshly stamped pill */
+            padding-top: 18px; margin-top: -10px;
+          }
+          .checkin-pills::-webkit-scrollbar { display: none; }
+          .checkin-pills > div { flex: 0 0 auto; }
+          .checkin-cta { flex-basis: 100% !important; width: 100%; }
+          .checkin-cta button { width: 100%; }
         }
       `}</style>
 
@@ -550,20 +559,44 @@ export default function App() {
                 onNavigate={(s: string) => setSection(s)}
                 txToday={platformStats?.tx_today || 0}
               />
-              <SeasonBanner seasonPoints={seasonPoints} />
+              {/* home-beat / home-beat-half wrappers: the guest home's shared
+                  vertical rhythm (see the CSS block above) — one consistent
+                  beat between sections instead of uniform card stacking. */}
+              <div className="home-beat">
+                <SeasonBanner seasonPoints={seasonPoints} />
+              </div>
               <CheckinCard isAuthenticated={isAuthenticated} onPointsChanged={refreshUser} />
-              <Reveal dir="up" delay={180} className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
-                <Stats stats={stats} />
+              <Reveal dir="up" delay={180} className="home-section-pad home-beat-half" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto" }}>
+                {hasRealStats ? (
+                  <Stats stats={stats} />
+                ) : (
+                  // The old PROTOCOL / YOUR DATA two-card Stats split, merged
+                  // into two quiet mono footnote lines (same always-true facts).
+                  <div style={{ display: "grid", gap: 6 }}>
+                    {[
+                      "Protocol — PetClaw v1 · open data standard",
+                      "Your data — yours · export & delete anytime",
+                    ].map((line) => (
+                      <div key={line} style={{
+                        fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A",
+                        fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
+                      }}>
+                        {line}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Reveal>
-              {activities.length > 0 && (
-                <Reveal dir="up" delay={270} className="home-section-pad" style={{ padding: "0 40px 30px", maxWidth: 1060, margin: "0 auto" }}>
-                  <Feed activities={activities} />
-                </Reveal>
-              )}
+              {/* (Recent Activity feed removed — RaisePitch's "LIVE · LAST 7 DAYS"
+                  ticker below is the ONE live activity strip on the home page.) */}
               {/* Pitch: why raise + how to earn (closes the gap between Hero and Pricing) */}
-              <RaisePitch onNavigate={setSection} />
+              <div className="home-beat-join">
+                <RaisePitch onNavigate={setSection} />
+              </div>
               {/* How the agent infrastructure orchestrates (Trinity-style explainer) */}
-              <OrchestrationExplainer onTry={() => setSection("workbench")} />
+              <div className="home-beat-join">
+                <OrchestrationExplainer onTry={() => setSection("workbench")} />
+              </div>
               <Pricing
                 isAuthenticated={isAuthenticated}
                 onCreditsChange={handleCreditsChange}

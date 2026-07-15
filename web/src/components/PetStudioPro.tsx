@@ -102,7 +102,26 @@ const T = {
   terra: "#BE4F28", creamOn: "#FCE9CF", cta1: "#F49B2A", cta2: "#E27D0C",
   studio: "#6B4FA0", studioDeep: "#3E3470", studioInk: "#191334",
   thrive: "#5C8A4E",
+  foil: "#E8C77E", foilDeep: "#C8932F",
   disp: "var(--ed-disp)", body: "var(--ed-body)", m: "var(--ed-m)",
+};
+
+// 🔥 badge is a scarcity cue — it only means anything on a few cards. Cap it
+// at the first 3 trending templates; the rest drop the category flag entirely.
+const TRENDING_BADGE_IDS = new Set(
+  TEMPLATES.filter(t => t.category === "trending").map(t => t.id).slice(0, 3)
+);
+
+// Printed color band for template cards with no captured example art — the
+// template's own swatch when it has one, else a category tone from the warm
+// editorial palette (never a gray void).
+const CATEGORY_BAND: Record<StudioTemplate["category"], string> = {
+  trending:    "linear-gradient(90deg,#BE4F28,#E8C77E)",
+  celebration: "linear-gradient(90deg,#F49B2A,#E8C77E)",
+  everyday:    "linear-gradient(90deg,#5C8A4E,#E8C77E)",
+  cinematic:   "linear-gradient(90deg,#211A12,#C8932F)",
+  social:      "linear-gradient(90deg,#E27D0C,#BE4F28)",
+  fantasy:     "linear-gradient(90deg,#3E3470,#C8932F)",
 };
 
 // Style swatches stay inside the warm editorial palette as printed sample chips
@@ -1408,7 +1427,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   fontSize: 13, lineHeight: 1, background: T.paper,
                   border: `1px solid ${T.hair}`, borderRadius: 8, padding: "3px 6px",
                 };
-                const catLabel = t.category === "trending" ? "🔥 trending" : t.category;
+                const catLabel = t.category === "trending"
+                  ? (TRENDING_BADGE_IDS.has(t.id) ? "🔥 trending" : "")
+                  : t.category;
                 // Hover tooltip: the shot-by-shot beats when we have them, else
                 // fall back to the card's own concrete description.
                 const tooltip = t.beats?.length ? `${t.title} — ${t.beats.join(" → ")}` : t.description;
@@ -1449,12 +1470,14 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
                         }}>▸ MOTION</span>
+                        {catLabel && (
                         <span style={{
                           position: "absolute", right: 9, bottom: 8,
                           fontSize: 13, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
                         }}>{catLabel}</span>
+                        )}
                       </div>
                     ) : ex ? (
                       <div style={{
@@ -1463,11 +1486,13 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                         padding: "8px 9px",
                       }}>
                         <span style={emojiChip}>{t.emoji}</span>
+                        {catLabel && (
                         <span style={{
                           fontSize: 13, fontFamily: T.m,
                           letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
                           color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
                         }}>{catLabel}</span>
+                        )}
                       </div>
                     ) : t.swatch ? (
                       // No captured example yet — a looping motion-mnemonic in the
@@ -1475,26 +1500,52 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       // MOTION instead of a dead poster.
                       <TemplateMnemonic swatch={t.swatch} emoji={t.emoji} catLabel={catLabel} />
                     ) : (
+                      // No example art yet — a designed paper fallback (never a
+                      // gray void): big die-cut duotone sticker glyph on cream
+                      // stock + the template's swatch as a printed color band.
                       <div style={{
-                        height: 62,
-                        background: T.inset, borderBottom: `1px solid ${T.hair}`,
+                        position: "relative", height: 140,
+                        background: T.paper, borderBottom: `1px solid ${T.hair}`,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        position: "relative",
                       }}>
-                        <span style={{ ...emojiChip, fontSize: 20, padding: "4px 8px" }}>{t.emoji}</span>
-                        <span style={{
-                          position: "absolute", top: 7, right: 8,
-                          fontSize: 13, fontFamily: T.m,
-                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
-                          color: T.studio,
-                        }}>{catLabel}</span>
+                        <span aria-hidden style={{
+                          display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          width: 66, height: 66, borderRadius: 18,
+                          background: "#FFFDF6", border: `1px solid ${T.hair}`,
+                          boxShadow: "3px 4px 0 rgba(33,26,18,.12)",
+                          transform: "rotate(-4deg)",
+                        }}>
+                          <span style={{
+                            fontSize: 32, lineHeight: 1,
+                            // duotone: strip the emoji's own palette, re-ink it warm
+                            filter: "grayscale(1) sepia(.6) saturate(2.4) hue-rotate(-16deg) opacity(.92)",
+                          }}>{t.emoji}</span>
+                        </span>
+                        {catLabel && (
+                          <span style={{
+                            position: "absolute", top: 7, right: 8,
+                            fontSize: 13, fontFamily: T.m,
+                            letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
+                            color: T.muted2,
+                          }}>{catLabel}</span>
+                        )}
+                        {/* printed swatch color band */}
+                        <span aria-hidden style={{
+                          position: "absolute", left: 0, right: 0, bottom: 0, height: 10,
+                          background: t.swatch || CATEGORY_BAND[t.category],
+                        }} />
                       </div>
                     )}
                     <div style={{ padding: "9px 11px 11px" }}>
                       <div style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700, color: T.ink, letterSpacing: "-0.01em" }}>
                         {t.title}
                       </div>
-                      <div style={{ fontSize: 13, color: T.muted2, marginTop: 3, lineHeight: 1.45 }}>
+                      <div style={{
+                        fontSize: 13, color: T.muted2, marginTop: 3, lineHeight: 1.45,
+                        // clamp to 2 clean lines — no mid-word truncation
+                        display: "-webkit-box", WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical", overflow: "hidden",
+                      }}>
                         {t.description}
                       </div>
                       {t.beats && t.beats.length > 0 && (
@@ -1526,9 +1577,10 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   return (
                     <button key={p.id} onClick={() => setPetId(p.id)} style={{
                       ...petChip,
-                      background: selected ? "rgba(107,79,160,0.08)" : T.paper,
-                      border: selected ? `1.5px solid ${T.studio}` : `1px solid ${T.hair}`,
-                      boxShadow: selected ? "0 0 0 3px rgba(107,79,160,0.12)" : "none",
+                      background: selected ? "rgba(200,147,47,0.10)" : T.paper,
+                      // gold-foil ring marks the selection
+                      border: selected ? `1.5px solid ${T.foilDeep}` : `1px solid ${T.hair}`,
+                      boxShadow: selected ? "0 0 0 3px rgba(200,147,47,0.18)" : "none",
                     }}>
                       {p.avatar_url
                         ? <img src={p.avatar_url} alt={p.name} style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover", boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)" }} />
@@ -1536,7 +1588,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       <span style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700 }}>{p.name}</span>
                       {selected ? (
                         <span style={{
-                          fontSize: 13, color: T.studio, fontWeight: 700, letterSpacing: "0.08em",
+                          fontSize: 13, color: T.terra, fontWeight: 700, letterSpacing: "0.08em",
                           fontFamily: T.m,
                         }}>✓ SELECTED</span>
                       ) : (
@@ -1565,8 +1617,8 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                         padding: 3, borderRadius: 12, cursor: "pointer",
                         background: T.paper,
                         border: `1px solid ${T.hair}`,
-                        // selected = purple ring (soft), never a hard offset shadow
-                        boxShadow: sel ? `0 0 0 2px ${T.studio}, var(--ed-shadow-card)` : "var(--ed-shadow-card)",
+                        // selected = gold-foil ring (soft), never a hard offset shadow
+                        boxShadow: sel ? `0 0 0 2px ${T.foilDeep}, var(--ed-shadow-card)` : "var(--ed-shadow-card)",
                         transition: "box-shadow 140ms ease",
                       }}>
                       {/* Real Grok example art (gradient fallback) framed as a
@@ -1586,7 +1638,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       <div style={{
                         padding: "6px 4px 2px", textAlign: "center",
                         fontSize: 13, fontFamily: T.disp, fontWeight: 700, lineHeight: 1.2,
-                        color: sel ? T.studio : T.ink,
+                        color: sel ? T.terra : T.ink,
                       }}>{s.label}</div>
                     </button>
                   );
@@ -1605,7 +1657,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   return (
                     <button key={k} onClick={() => setOutputKind(k)} style={{
                       padding: "9px 0", borderRadius: 9, border: "none",
-                      background: sel ? T.studio : "transparent",
+                      background: sel ? T.terra : "transparent",
                       color: sel ? T.creamOn : T.muted2,
                       fontWeight: 700, fontSize: 13, cursor: "pointer",
                       fontFamily: T.body,
@@ -1631,7 +1683,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   return (
                     <button key={a} onClick={() => setAspect(a)} style={{
                       padding: "9px 0", borderRadius: 9, border: "none",
-                      background: sel ? T.studio : "transparent",
+                      background: sel ? T.terra : "transparent",
                       color: sel ? T.creamOn : T.muted2,
                       fontWeight: 700, fontSize: 13, cursor: "pointer",
                       fontFamily: T.m, letterSpacing: "0.04em",
@@ -1713,7 +1765,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                           style={{
                             position: "relative",
                             width: "100%", textAlign: "left", padding: 10, borderRadius: 10,
-                            background: sel ? "rgba(107,79,160,0.10)" : "transparent",
+                            background: sel ? "rgba(200,147,47,0.12)" : "transparent",
+                            // gold-foil ring on the chosen engine
+                            boxShadow: sel ? `inset 0 0 0 1.5px ${T.foilDeep}` : "none",
                             border: "none",
                             cursor: locked ? "not-allowed" : "pointer",
                             opacity: locked ? 0.6 : 1,
@@ -1725,7 +1779,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                             : locked ? `Coming ${m.comingSoonEta || "soon"}` : ""}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                            <strong style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700, color: sel ? T.studio : T.ink }}>{m.displayName}</strong>
+                            <strong style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700, color: sel ? T.terra : T.ink }}>{m.displayName}</strong>
                             {locked && <span style={{
                               padding: "2px 7px", borderRadius: 999,
                               fontSize: 13, fontWeight: 700, letterSpacing: "0.08em",
@@ -2128,9 +2182,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                               aria-pressed={active}
                               style={{
                                 padding: "7px 12px", borderRadius: 999,
-                                border: `1px solid ${active ? T.studio : T.hair}`,
-                                background: active ? T.studio : T.paper,
-                                color: active ? "#fff" : T.ink70,
+                                border: `1px solid ${active ? T.terra : T.hair}`,
+                                background: active ? T.terra : T.paper,
+                                color: active ? T.creamOn : T.ink70,
                                 fontSize: 13, fontWeight: 700, fontFamily: T.body,
                                 cursor: "pointer", lineHeight: 1.3,
                               }}
@@ -2150,7 +2204,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       placeholder="…or type your own"
                       style={{
                         width: "100%", padding: "9px 12px", borderRadius: 10,
-                        border: `1px solid ${overriding ? T.studio : T.hair}`,
+                        border: `1px solid ${overriding ? T.terra : T.hair}`,
                         background: T.paper, color: T.ink, fontSize: 13, fontFamily: T.body,
                       }}
                     />
@@ -2384,34 +2438,51 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
 function PreviewIdle({ pet }: { pet: Pet | null }) {
   const named = !!pet?.name && !["Cat", "Dog", "Parrot", "Turtle", "Hamster", "Rabbit", "Fox", "Pomeranian"].includes(pet.name);
   const who = named ? pet!.name : "your pet";
+  // <480px the 16:9 plate is only ~170px tall — the full 210px collectible
+  // overflows the dark panel and covers the PREVIEW label. Compact mode lays
+  // a smaller frame beside the copy instead (padded below the label).
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 480px)");
+    const sync = () => setCompact(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
   return (
     <div style={{
       position: "relative", width: "100%", height: "100%",
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      gap: 22, overflow: "hidden", padding: 30,
+      display: "flex", flexDirection: compact ? "row" : "column",
+      alignItems: "center", justifyContent: "center",
+      gap: compact ? 14 : 22, overflow: "hidden",
+      padding: compact ? "38px 18px 16px" : 30,
     }}>
       {/* The pet, presented as a tilted foil-stamped collectible floating on the
           indigo studio scene (holo + gloss baked into CollectibleFrame). */}
       {pet?.avatar_url ? (
-        <CollectibleFrame
-          photoUrl={pet.avatar_url}
-          level={pet.level}
-          width={210}
-          tilt={-3}
-        />
-      ) : (
+        <div style={{ flexShrink: 0 }}>
+          <CollectibleFrame
+            photoUrl={pet.avatar_url}
+            level={pet.level}
+            width={compact ? 96 : 210}
+            tilt={-3}
+            seal={!compact}
+            float={!compact}
+          />
+        </div>
+      ) : !compact ? (
         <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><Icon name="film-reel" size={56} style={{ opacity: 0.6 }} /></div>
-      )}
-      <div style={{ position: "relative", textAlign: "center" }}>
+      ) : null}
+      <div style={{ position: "relative", textAlign: compact ? "left" : "center", minWidth: 0 }}>
         <div style={{
-          fontSize: 24, fontFamily: "var(--ed-disp)", fontWeight: 800, color: "#FCE9CF",
-          letterSpacing: "-0.02em", marginBottom: 8,
+          fontSize: compact ? 17 : 24, fontFamily: "var(--ed-disp)", fontWeight: 800, color: "#FCE9CF",
+          letterSpacing: "-0.02em", marginBottom: compact ? 5 : 8,
         }}>
           {pet ? (named ? `${who} is ready` : "Ready to create") : "Pick a pet"}
         </div>
         <div style={{
-          fontSize: 14, color: "rgba(252,233,207,0.92)",
-          maxWidth: 320, margin: "0 auto", lineHeight: 1.55,
+          fontSize: compact ? 13 : 14, color: "rgba(252,233,207,0.92)",
+          maxWidth: 320, margin: compact ? 0 : "0 auto", lineHeight: compact ? 1.45 : 1.55,
         }}>
           Pick a style, write a prompt, hit <strong>Generate</strong>{" "}
           — and put {who} in any scene you can imagine.
@@ -2563,7 +2634,7 @@ function RoadmapItem({ icon, title, body }: { icon: string; title: string; body:
           padding: "2px 7px", borderRadius: 999,
           fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
           fontFamily: T.m,
-          background: "rgba(107,79,160,0.12)", color: T.studio,
+          background: "rgba(200,147,47,0.16)", color: "#8A6420",
         }}>RESEARCH</span>
       </div>
       <div style={{ fontSize: 14, fontFamily: T.disp, fontWeight: 700, marginBottom: 4, color: T.ink }}>{title}</div>
@@ -2606,11 +2677,13 @@ function TemplateMnemonic({ swatch, emoji, catLabel }: { swatch: string; emoji: 
         fontSize: 13, fontFamily: T.m, letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
         color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.55))",
       }}>▸ PREVIEW</span>
+      {catLabel && (
       <span style={{
         position: "absolute", right: 9, bottom: 8,
         fontSize: 13, fontFamily: T.m, letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
         color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.55))",
       }}>{catLabel}</span>
+      )}
     </div>
   );
 }
@@ -2675,11 +2748,11 @@ const AnchorGlyph = () => (
 
 function ModelBadges({ model, compact }: { model: StudioModel; compact?: boolean }) {
   const badges: { label: string; bg: string; fg: string; icon?: React.ReactNode }[] = [];
-  if (model.id === "veo-3") badges.push({ label: "AUDIO", bg: "rgba(158,114,232,0.14)", fg: "#9E72E8", icon: <AudioGlyph /> });
-  if (model.supportsImageRef) badges.push({ label: "ANCHOR", bg: "rgba(107,79,160,0.12)", fg: T.studio, icon: <AnchorGlyph /> });
+  if (model.id === "veo-3") badges.push({ label: "AUDIO", bg: "rgba(200,147,47,0.16)", fg: "#8A6420", icon: <AudioGlyph /> });
+  if (model.supportsImageRef) badges.push({ label: "ANCHOR", bg: "rgba(190,79,40,0.10)", fg: T.terra, icon: <AnchorGlyph /> });
   if (model.maxResolution.includes("1080") || model.maxResolution === "4K")
     badges.push({ label: `${model.maxResolution}`, bg: "rgba(92,138,78,0.12)", fg: T.thrive });
-  if (model.maxDurationSec >= 8) badges.push({ label: `${model.maxDurationSec}s`, bg: "rgba(62,143,224,0.12)", fg: "#3E8FE0" });
+  if (model.maxDurationSec >= 8) badges.push({ label: `${model.maxDurationSec}s`, bg: "rgba(154,123,78,0.14)", fg: T.muted2 });
   if (model.tier !== "free") badges.push({ label: model.tier.toUpperCase(), bg: T.inset, fg: T.ink70 });
 
   return (
@@ -2756,7 +2829,7 @@ function Pill({ label, value, valueColor }: { label: string; value: string; valu
 
 const tag: React.CSSProperties = {
   padding: "3px 9px", borderRadius: 999,
-  background: "rgba(107,79,160,0.12)", color: T.studio,
+  background: "rgba(190,79,40,0.10)", color: T.terra,
   fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
   fontFamily: T.m,
 };
