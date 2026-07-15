@@ -75,7 +75,10 @@ export default function WalletGate({ children, section }: any) {
     }
   }, [isConnected, address, isAuthenticated, isAuthenticating, authenticate, isDev]);
 
-  if (isDev) return children;
+  // ?gate=1 lets dev preview the logged-out gate UIs (DemoPet etc.) that the
+  // NODE_ENV bypass below would otherwise make unreachable locally
+  const forceGate = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("gate") === "1";
+  if (isDev && !forceGate) return children;
   if (isConnected && isAuthenticated) return children;
 
   // ── Guest tour: with ?tour=1 and no wallet, allowlisted sections render a
