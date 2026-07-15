@@ -1060,19 +1060,19 @@
 <header class="hero" data-screen-label="02 Hero">
   <div class="hero-sky" id="heroSky" aria-hidden="true">
     <div id="heroVideoWrap" style="position:absolute;inset:0;z-index:-6;">
-      <video class="hero-vid active" autoplay muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.7;transition:opacity 1.5s ease;">
+      <video class="hero-vid active" autoplay muted playsinline preload="auto" poster="hero-poster.jpg" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.7;transition:opacity 1.5s ease;">
         <source src="hero-video.mp4" type="video/mp4" />
       </video>
-      <video class="hero-vid" muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.5s ease;">
+      <video class="hero-vid" muted playsinline preload="none" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.5s ease;">
         <source src="hero-video-night.mp4" type="video/mp4" />
       </video>
-      <video class="hero-vid" muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.5s ease;">
+      <video class="hero-vid" muted playsinline preload="none" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.5s ease;">
         <source src="hero-video-cherry.mp4" type="video/mp4" />
       </video>
-      <video class="hero-vid" muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.5s ease;">
+      <video class="hero-vid" muted playsinline preload="none" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.5s ease;">
         <source src="hero-video-beach.mp4" type="video/mp4" />
       </video>
-      <video class="hero-vid" muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.5s ease;">
+      <video class="hero-vid" muted playsinline preload="none" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.5s ease;">
         <source src="hero-video-community.mp4" type="video/mp4" />
       </video>
     </div>
@@ -1954,6 +1954,7 @@ function switchVideo(idx) {
   heroVideos[idx].currentTime = 0;
   heroVideos[idx].play().catch(() => {});
   setTimeout(() => { heroVideos[prev].pause(); }, 1600);
+  heroVideos[(idx + 1) % heroVideos.length].load(); // pre-warm the next clip
 
   // Update dots
   heroDots.forEach((d, i) => {
@@ -1969,6 +1970,7 @@ function switchVideo(idx) {
 // Init
 if (heroVideos.length > 0) {
   heroVideos[0].play().catch(() => {});
+  setTimeout(() => { if (heroVideos[1]) heroVideos[1].load(); }, 3500); // warm clip 2 after first paint
   heroInterval = setInterval(() => switchVideo((heroCurrentVideo + 1) % heroVideos.length), 8000);
 }
 
