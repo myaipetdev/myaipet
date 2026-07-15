@@ -7,7 +7,9 @@ import { mkdirSync } from "node:fs";
 const OUT = "/tmp/realdemo-rec";
 mkdirSync(OUT, { recursive: true });
 
-const browser = await chromium.launch();
+// GPU-backed headless: WebGL scenes (Grand Paw diorama) render black or
+// crash the default software-GL headless — Metal ANGLE fixes it on macOS
+const browser = await chromium.launch({ args: ['--enable-gpu', '--use-angle=metal', '--enable-webgl', '--ignore-gpu-blocklist'] });
 const ctx = await browser.newContext({
   viewport: { width: 1280, height: 720 },
   recordVideo: { dir: OUT, size: { width: 1280, height: 720 } },

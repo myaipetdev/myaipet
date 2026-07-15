@@ -5,10 +5,12 @@ Everything in this folder is durable and git-versioned; a fresh Claude session
 (or a human) can reproduce and extend the videos by following this document alone.
 
 **Reference outputs already delivered** (on `~/Desktop`):
-- `MY-AI-PET-fulldemo.mp4` — ~73s one-take real-product walkthrough (canonical,
-  v2 after a frame-audit rework: fake cursor, real Square play, real bracket vote)
-- `MY-AI-PET-promo-v2-bgm.mp4` — 34s cinematic sizzle reel (HTML animation,
-  record via `?record=1` to hide player chrome; trim the end before the deck loops)
+- `MY-AI-PET-fulldemo.mp4` — ~85s 1080p one-take walkthrough (canonical, v3):
+  home → My Pet tour → Pet Square → Bracket vote → **Grand Paw Agent Office
+  (3D hotel, shot on localhost dev — owner-gated on prod)** → Studio → PetClaw
+  cinematic → landing
+- `MY-AI-PET-promo-v2-bgm.mp4` — 34s 1080p sizzle reel (HTML animation; record
+  via `?record=1` to hide player chrome; trim the end before the deck loops)
 - `MY-AI-PET-realdemo.mp4` — LEGACY 50s compact cut; superseded by fulldemo and
   its script predates the v2 helpers — copy record-fulldemo.mjs helpers for new cuts
 
@@ -165,6 +167,16 @@ holds ~4.2s (real mp4 plays in-card); typing via
 `page.keyboard.down/up("ArrowRight")` held 0.7–1.1s per leg. Total target:
 compact ≈60s, full ≈85s. When in doubt, pace FASTER — "조금 더 빨리" was
 explicit feedback.
+
+v3 additions:
+- **1080p default** (viewport + recordVideo 1920×1080; promo stage auto-scales
+  via its `--s` transform).
+- **GPU flags are MANDATORY**: default headless software-GL renders the Grand
+  Paw WebGL diorama black and poisons every later frame. All recorders launch
+  with `--enable-gpu --use-angle=metal --enable-webgl --ignore-gpu-blocklist`.
+- Hotel scene shoots the REAL shipped Agent Office on localhost:3000 (dev
+  fixture data; prod keeps it wallet-gated) — dev server must be running, and
+  the Next dev-tools badge is hidden via `nextjs-portal{display:none}`.
 
 v2 helpers in record-fulldemo.mjs (frame-audit hard lessons — reuse them):
 - **Fake cursor + click ripple** injected in `arm()` (Playwright records no OS

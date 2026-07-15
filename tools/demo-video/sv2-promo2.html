@@ -1,0 +1,395 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>saviorofhealth — Cinematic Reel</title>
+<style>
+:root{
+  --bg:#050b07; --ink:#f4fbf6; --dim:rgba(244,251,246,.62);
+  --mint:#2ee6a0; --mintL:#b8ffe2; --mintD:#0d9463; --cyan:#59e6ff; --amber:#ffd166; --rose:#ff7a95;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#000}
+body{font-family:"Space Grotesk",ui-rounded,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.viewport{position:fixed;inset:0;display:grid;place-items:center;background:#000}
+.stage{position:relative;width:1280px;height:720px;overflow:hidden;zoom:var(--s,1);
+  background:radial-gradient(130% 100% at 50% -20%, #0e2417 0%, var(--bg) 50%, #020503 100%)}
+.plus{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.4;
+  background-image:radial-gradient(rgba(46,230,160,.16) 1px,transparent 1.5px);background-size:44px 44px}
+.vig{position:absolute;inset:0;z-index:6;pointer-events:none;background:radial-gradient(115% 92% at 50% 42%,transparent 55%,rgba(0,0,0,.6) 100%)}
+.grain{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:.05;background-image:radial-gradient(rgba(255,255,255,.9) .5px,transparent .6px);background-size:3px 3px;mix-blend-mode:overlay}
+/* cinematic light sweep across the whole stage on each scene start */
+.sweep{position:absolute;inset:-20% -40%;z-index:5;pointer-events:none;opacity:0;mix-blend-mode:screen;
+  background:linear-gradient(105deg,transparent 42%,rgba(184,255,226,.16) 49%,rgba(46,230,160,.34) 50%,rgba(184,255,226,.16) 51%,transparent 58%);transform:translateX(-130%)}
+.sweep.go{animation:sweep .9s cubic-bezier(.5,0,.3,1)}
+@keyframes sweep{0%{opacity:0;transform:translateX(-130%)}15%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translateX(130%)}}
+.ticker{position:absolute;top:0;left:0;right:0;z-index:7;height:30px;overflow:hidden;background:rgba(46,230,160,.08);border-bottom:1px solid rgba(46,230,160,.25)}
+.ticker .tk{display:flex;gap:46px;white-space:nowrap;font:700 11px/30px ui-monospace,Menlo,monospace;letter-spacing:.22em;color:var(--mint);animation:tick 16s linear infinite}
+@keyframes tick{to{transform:translateX(-50%)}}
+.topbar{position:absolute;top:44px;left:36px;right:36px;z-index:7;display:flex;justify-content:space-between;align-items:center}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px}
+.brand .mk{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:13px;color:var(--mint);
+  background:rgba(46,230,160,.1);border:1px solid rgba(46,230,160,.5);box-shadow:0 0 20px -4px rgba(46,230,160,.6)}
+.tag{font:600 10.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.24em;color:var(--dim);padding:8px 14px;border-radius:999px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:8px}
+.tag .d{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px rgba(46,230,160,.2)}
+.hud{position:absolute;left:36px;right:36px;bottom:22px;z-index:7;display:flex;gap:6px}
+.seg{height:3px;flex:1;border-radius:2px;background:rgba(255,255,255,.13);overflow:hidden}
+.seg .fill{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--mint),var(--mintL));box-shadow:0 0 10px -1px rgba(46,230,160,.9)}
+.scene{position:absolute;inset:0;display:none;z-index:1}
+.scene.on{display:block;z-index:2;animation:sceneIn .5s cubic-bezier(.2,.85,.25,1) both}
+.scene.exit{display:block;z-index:1;animation:sceneOut .45s ease both}
+@keyframes sceneIn{from{opacity:0;transform:scale(1.05);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+@keyframes sceneOut{from{opacity:1}to{opacity:0;transform:scale(.98);filter:blur(5px)}}
+/* ghost outline word behind scenes */
+.ghost{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:0;font-weight:800;font-size:300px;letter-spacing:-.04em;
+  color:transparent;-webkit-text-stroke:1.5px rgba(46,230,160,.13);white-space:nowrap;pointer-events:none;animation:ghostDrift 9s ease-in-out infinite alternate}
+@keyframes ghostDrift{from{transform:translate(-52%,-50%) }to{transform:translate(-48%,-50%)}}
+/* char-stagger headline */
+.mega{font-weight:800;letter-spacing:-.03em;line-height:.96;text-align:center}
+.mega .ch{display:inline-block;opacity:0;transform:translateY(70px) rotate(6deg) scale(.8);filter:blur(8px)}
+.on .mega .ch{animation:chIn .55s cubic-bezier(.15,1.1,.3,1) forwards}
+@keyframes chIn{to{opacity:1;transform:none;filter:none}}
+.mega .sp{display:inline-block;width:.24em}
+.glowline{color:var(--mint);text-shadow:0 0 18px rgba(46,230,160,.65),0 0 60px rgba(46,230,160,.4)}
+/* 3D deck card */
+.card3d{position:absolute;width:460px;border-radius:20px;padding:26px 28px;transform-style:preserve-3d;
+  background:linear-gradient(165deg,#0f2417,#0a1710 60%);border:1px solid rgba(46,230,160,.4);
+  box-shadow:0 60px 120px -40px rgba(0,0,0,.95),0 0 0 1px rgba(0,0,0,.5),0 0 80px -24px rgba(46,230,160,.45), inset 0 1px 0 rgba(255,255,255,.08)}
+.card3d .k{font:700 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.24em;color:var(--mint)}
+.card3d .hp{float:right;font:800 13px/1 ui-monospace,Menlo,monospace;color:var(--amber)}
+.card3d h3{margin:16px 0 18px;font-size:27px;line-height:1.15;font-weight:700;color:var(--ink)}
+.opt{position:relative;border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:13px 16px;margin-top:10px;font-size:16.5px;font-weight:600;color:var(--dim);background:rgba(255,255,255,.03)}
+.opt.pick{border-color:var(--mint);color:var(--ink);background:rgba(46,230,160,.1);box-shadow:0 0 26px -8px rgba(46,230,160,.7)}
+/* cursor dot that taps */
+.cursor{position:absolute;z-index:5;width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#b8ffe2 45%,rgba(46,230,160,.55));
+  box-shadow:0 6px 20px rgba(0,0,0,.55),0 0 22px rgba(46,230,160,.8);opacity:0}
+.ring{position:absolute;z-index:4;width:26px;height:26px;border-radius:50%;border:2px solid var(--mint);opacity:0}
+/* reveal bars */
+.bars{position:absolute;width:520px}
+.brow{display:flex;align-items:center;gap:14px;margin-top:16px;opacity:0}
+.brow .lb{width:86px;font:700 14px/1 ui-monospace,Menlo,monospace;color:var(--dim);text-align:right}
+.brow .tr{flex:1;height:34px;border-radius:9px;background:rgba(255,255,255,.06);overflow:hidden;position:relative}
+.brow .bar{height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,rgba(46,230,160,.35),var(--mint));box-shadow:0 0 24px -6px rgba(46,230,160,.8)}
+.brow.win .bar{background:linear-gradient(90deg,#ffe6a1,var(--amber));box-shadow:0 0 26px -6px rgba(255,209,102,.9)}
+.brow .pct{font:800 17px/1 ui-monospace,Menlo,monospace;color:var(--ink);width:64px}
+.on .brow{animation:up .45s forwards}
+/* +HP coin burst */
+.hpfly{position:absolute;z-index:6;font:800 40px/1 ui-monospace,Menlo,monospace;color:var(--amber);
+  text-shadow:0 0 26px rgba(255,209,102,.8);opacity:0}
+.spark{position:absolute;z-index:5;width:7px;height:7px;border-radius:50%;background:var(--amber);opacity:0;box-shadow:0 0 12px rgba(255,209,102,.9)}
+/* generic rise */
+@keyframes up{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+.kick{display:inline-flex;align-items:center;gap:9px;font:700 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.28em;color:var(--mint);text-transform:uppercase}
+.kick .bar{width:28px;height:2px;background:linear-gradient(90deg,var(--mint),transparent)}
+.sub{font-size:20px;line-height:1.5;color:var(--dim);font-weight:500}
+
+/* S1 */
+.s1 .wrap{position:absolute;inset:0;display:grid;place-items:center;z-index:2}
+.s1 .mega{font-size:104px}
+.s1 .tagline{margin-top:26px;text-align:center;opacity:0}
+.on.s1 .tagline{animation:up .6s 1.7s forwards}
+.s1 .tagline .t{font-size:26px;font-weight:700;color:var(--dim)}
+.s1 .pulse{position:absolute;left:50%;top:50%;width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;z-index:1;
+  background:radial-gradient(circle,rgba(46,230,160,.2),transparent 62%);animation:pulse 2.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(.9);opacity:.75}50%{transform:scale(1.08);opacity:1}}
+.s1 .ekg{position:absolute;left:0;right:0;bottom:120px;height:70px;z-index:2;opacity:.85}
+.s1 .ekg path{stroke:var(--mint);stroke-width:2.5;fill:none;filter:drop-shadow(0 0 8px rgba(46,230,160,.9));stroke-dasharray:1400;stroke-dashoffset:1400}
+.on.s1 .ekg path{animation:ekg 2.6s .4s linear forwards}
+@keyframes ekg{to{stroke-dashoffset:0}}
+
+/* S2 answer */
+.s2 .card3d{left:120px;top:170px;transform:rotateY(-14deg) rotateX(6deg);opacity:0}
+.on.s2 .card3d{animation:cardIn .8s .2s cubic-bezier(.15,1.15,.3,1) forwards}
+@keyframes cardIn{from{opacity:0;transform:rotateY(-70deg) rotateX(14deg) translateX(-220px) scale(.7)}to{opacity:1;transform:rotateY(-14deg) rotateX(6deg)}}
+.s2 .copy{position:absolute;right:80px;top:200px;max-width:430px;text-align:right;z-index:3}
+.s2 h1{font-size:64px;font-weight:800;letter-spacing:-.03em;line-height:1;margin:14px 0 0;opacity:0}
+.on.s2 h1{animation:up .55s .35s forwards}
+.s2 .sub{margin-top:14px;opacity:0}
+.on.s2 .sub{animation:up .5s .55s forwards}
+.on.s2 .opt.pick{animation:optPick .4s 2.4s forwards}
+.s2 .opt.pick{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.03);box-shadow:none;color:var(--dim)}
+@keyframes optPick{to{border-color:var(--mint);color:var(--ink);background:rgba(46,230,160,.12);box-shadow:0 0 26px -8px rgba(46,230,160,.75)}}
+.on.s2 .cursor{animation:cur2 2.2s .8s cubic-bezier(.3,.7,.3,1) forwards}
+@keyframes cur2{0%{opacity:0;transform:translate(300px,240px) scale(1)}30%{opacity:1}72%{opacity:1;transform:translate(0,0) scale(1)}80%{transform:translate(0,0) scale(.7)}92%{transform:translate(0,0) scale(1)}100%{opacity:1;transform:translate(0,0)}}
+.on.s2 .ring{animation:ring2 .7s 2.5s ease-out forwards}
+@keyframes ring2{0%{opacity:.9;transform:scale(.5)}100%{opacity:0;transform:scale(2.6)}}
+
+/* S3 predict */
+.s3 .card3d{left:410px;top:150px;transform:rotateY(10deg) rotateX(4deg);opacity:0}
+.on.s3 .card3d{animation:cardFlip .9s .15s cubic-bezier(.2,1,.3,1) forwards}
+@keyframes cardFlip{from{opacity:0;transform:rotateY(190deg) rotateX(8deg) scale(.8)}to{opacity:1;transform:rotateY(10deg) rotateX(4deg)}}
+.s3 .mega{position:absolute;left:0;right:0;top:78px;font-size:56px;z-index:3}
+.on.s3 .opt.pick{animation:optPick .4s 2.6s forwards}
+.s3 .opt.pick{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.03);box-shadow:none;color:var(--dim)}
+.on.s3 .cursor{animation:cur3 2.3s 1s cubic-bezier(.3,.7,.3,1) forwards}
+@keyframes cur3{0%{opacity:0;transform:translate(-260px,200px)}30%{opacity:1}72%{opacity:1;transform:translate(0,0)}80%{transform:translate(0,0) scale(.7)}92%{transform:scale(1)}100%{opacity:1}}
+.on.s3 .ring{animation:ring2 .7s 2.7s ease-out forwards}
+
+/* S4 reveal */
+.s4 .mega{position:absolute;left:0;right:0;top:86px;font-size:60px;z-index:3}
+.s4 .bars{left:150px;top:230px}
+.on.s4 .b1{animation-delay:.5s}.on.s4 .b2{animation-delay:.7s}.on.s4 .b3{animation-delay:.9s}
+.on.s4 .b1 .bar{animation:grow1 1s .7s cubic-bezier(.2,.9,.3,1) forwards}
+.on.s4 .b2 .bar{animation:grow2 1.1s .9s cubic-bezier(.2,.9,.3,1) forwards}
+.on.s4 .b3 .bar{animation:grow3 1s 1.1s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes grow1{to{width:18%}}
+@keyframes grow2{to{width:73%}}
+@keyframes grow3{to{width:9%}}
+.s4 .crowdchip{position:absolute;right:130px;top:250px;z-index:4;font:800 15px/1 ui-monospace,Menlo,monospace;color:var(--ink);
+  border:1.5px solid var(--mint);border-radius:12px;padding:14px 18px;background:rgba(46,230,160,.1);opacity:0;box-shadow:0 0 34px -8px rgba(46,230,160,.7)}
+.on.s4 .crowdchip{animation:up .5s 1.9s forwards}
+.s4 .hpfly{right:170px;top:330px}
+.on.s4 .hpfly{animation:hpfly 1.6s 2.4s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes hpfly{0%{opacity:0;transform:translateY(26px) scale(.7)}25%{opacity:1;transform:translateY(0) scale(1.15)}45%{transform:scale(1)}80%{opacity:1}100%{opacity:0;transform:translateY(-60px)}}
+.on.s4 .spark{animation:spark 1s 2.5s ease-out forwards}
+@keyframes spark{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
+.s4 .x2{position:absolute;right:128px;top:420px;font:800 15px/1 ui-monospace,Menlo,monospace;color:var(--amber);border:1.5px solid rgba(255,209,102,.6);
+  border-radius:999px;padding:12px 18px;background:rgba(255,209,102,.08);opacity:0}
+.on.s4 .x2{animation:up .5s 3.1s forwards}
+
+/* S5 four ways */
+.s5 .mega{position:absolute;left:0;right:0;top:92px;font-size:64px;z-index:3}
+.s5 .mini{position:absolute;width:250px;border-radius:18px;padding:24px 22px;background:linear-gradient(165deg,#0f2417,#0a1710);
+  border:1px solid rgba(46,230,160,.35);box-shadow:0 40px 90px -30px rgba(0,0,0,.9),0 0 50px -20px rgba(46,230,160,.35);opacity:0}
+.s5 .mini .ic{font-size:30px}
+.s5 .mini h4{margin:12px 0 4px;font-size:20px}
+.s5 .mini p{margin:0;font:600 12px/1.6 ui-monospace,Menlo,monospace;color:var(--dim)}
+.s5 .m1{left:66px;top:270px;transform:rotate(-3deg)}
+.s5 .m2{left:366px;top:242px;transform:rotate(1.5deg)}
+.s5 .m3{left:666px;top:264px;transform:rotate(-1.5deg)}
+.s5 .m4{left:966px;top:238px;transform:rotate(3deg)}
+.on.s5 .m1{animation:miniIn .6s .35s cubic-bezier(.15,1.2,.3,1) forwards}
+.on.s5 .m2{animation:miniIn .6s .5s cubic-bezier(.15,1.2,.3,1) forwards}
+.on.s5 .m3{animation:miniIn .6s .65s cubic-bezier(.15,1.2,.3,1) forwards}
+.on.s5 .m4{animation:miniIn .6s .8s cubic-bezier(.15,1.2,.3,1) forwards}
+@keyframes miniIn{from{opacity:0;transform:translateY(110px) rotate(8deg) scale(.75)}to{opacity:1}}
+.s5 .m3 h4 b{color:var(--amber)}
+
+/* S6 privacy */
+.s6 .dots{position:absolute;inset:0;z-index:1}
+.s6 .dot{position:absolute;width:9px;height:9px;border-radius:50%;background:var(--mint);opacity:0;box-shadow:0 0 10px rgba(46,230,160,.8)}
+.on.s6 .dot{animation:dotIn .5s forwards, dotMerge 1.2s 1.1s cubic-bezier(.5,0,.3,1) forwards}
+@keyframes dotIn{to{opacity:.9}}
+@keyframes dotMerge{to{transform:translate(var(--mx),var(--my)) scale(.4);opacity:0}}
+.s6 .aggbars{position:absolute;left:50%;top:330px;transform:translateX(-50%);display:flex;gap:12px;align-items:flex-end;height:110px;z-index:2}
+.s6 .ab{width:44px;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,var(--mint),rgba(46,230,160,.25));height:0;box-shadow:0 0 26px -6px rgba(46,230,160,.7)}
+.on.s6 .ab1{animation:ab .7s 1.9s forwards}.on.s6 .ab2{animation:ab2 .8s 2s forwards}
+.on.s6 .ab3{animation:ab3 .75s 2.1s forwards}.on.s6 .ab4{animation:ab4 .7s 2.2s forwards}
+@keyframes ab{to{height:52%}}@keyframes ab2{to{height:100%}}@keyframes ab3{to{height:72%}}@keyframes ab4{to{height:34%}}
+.s6 .mega{position:absolute;left:0;right:0;top:104px;font-size:74px;z-index:3}
+.s6 .zeroline{position:absolute;left:0;right:0;top:480px;text-align:center;z-index:3;opacity:0}
+.on.s6 .zeroline{animation:up .55s 2.7s forwards}
+.s6 .zeroline b{font-size:34px;font-weight:800;color:var(--amber);text-shadow:0 0 30px rgba(255,209,102,.5)}
+.s6 .zeroline span{font:700 13px/1 ui-monospace,Menlo,monospace;letter-spacing:.22em;color:var(--dim);margin-left:12px}
+.s6 .kchip{position:absolute;left:50%;transform:translateX(-50%);top:556px;font:700 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.16em;color:var(--mint);
+  border:1px solid rgba(46,230,160,.45);border-radius:999px;padding:10px 16px;background:rgba(46,230,160,.07);opacity:0;z-index:3}
+.on.s6 .kchip{animation:up .5s 3.1s forwards}
+
+/* S7 outro */
+.s7 .wrap{position:absolute;inset:0;display:grid;place-items:center;text-align:center;z-index:2}
+.s7 .funders{display:flex;gap:12px;justify-content:center;margin-bottom:26px}
+.s7 .fd{font:700 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.16em;color:var(--dim);border:1px solid rgba(255,255,255,.14);
+  border-radius:999px;padding:10px 16px;background:rgba(255,255,255,.04);opacity:0}
+.on.s7 .fd:nth-child(1){animation:up .45s .2s forwards}
+.on.s7 .fd:nth-child(2){animation:up .45s .35s forwards}
+.on.s7 .fd:nth-child(3){animation:up .45s .5s forwards}
+.s7 h1{font-size:100px;margin:0;font-weight:800;letter-spacing:-.03em;
+  background:linear-gradient(100deg,#0d9463 0%,#2ee6a0 24%,#e9fff4 46%,#2ee6a0 64%,#0d9463 100%);
+  background-size:240% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 16px 46px rgba(46,230,160,.4));animation:foil 3.6s linear infinite;opacity:0}
+.on.s7 h1{animation:foil 3.6s linear infinite, up .6s .6s forwards}
+@keyframes foil{to{background-position:240% 0}}
+.s7 .t{margin-top:16px;font-size:24px;font-weight:700;color:var(--dim);opacity:0}
+.on.s7 .t{animation:up .5s .85s forwards}
+.s7 .cta{margin-top:28px;display:inline-flex;padding:17px 36px;border-radius:999px;font-weight:800;font-size:19px;color:#03140b;
+  background:linear-gradient(160deg,#9df5cf,#2ee6a0);box-shadow:0 24px 60px -18px rgba(46,230,160,.9);opacity:0;animation:cta 2s ease-in-out infinite}
+.on.s7 .cta{animation:cta 2s ease-in-out infinite, up .5s 1.1s forwards}
+@keyframes cta{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.s7 .u{margin-top:16px;font:700 15px/1 ui-monospace,Menlo,monospace;letter-spacing:.3em;color:var(--mint);opacity:0}
+.on.s7 .u{animation:up .5s 1.3s forwards}
+</style>
+
+<div class="viewport"><div class="stage" id="stage">
+  <div class="plus"></div>
+  <div class="ticker"><div class="tk">
+    <span>+20HP PREDICT THE CROWD</span><span>+6HP SYMPTOM CHECK</span><span>+5HP DAILY CHECK-IN</span><span>READ THE CROWD</span><span>+8HP HEALTH QUIZ</span><span>ANONYMIZED · CONSENT-FIRST</span>
+    <span>+20HP PREDICT THE CROWD</span><span>+6HP SYMPTOM CHECK</span><span>+5HP DAILY CHECK-IN</span><span>READ THE CROWD</span><span>+8HP HEALTH QUIZ</span><span>ANONYMIZED · CONSENT-FIRST</span>
+  </div></div>
+  <div class="topbar">
+    <div class="brand"><span class="mk">✚</span> saviorofhealth</div>
+    <div class="tag"><span class="d"></span><span id="scenetag">SURVEY-TO-EARN</span></div>
+  </div>
+
+  <!-- S1 HOOK -->
+  <section class="scene s1">
+    <div class="pulse"></div>
+    <div class="ghost">CROWD</div>
+    <div class="wrap"><div>
+      <div class="mega" data-split="YOUR ANSWER|IS THE ASSET." data-hl="1"></div>
+      <div class="tagline"><span class="t">Read the crowd. <b class="glowline">Earn Heal Points.</b></span></div>
+    </div></div>
+    <svg class="ekg" viewBox="0 0 1280 70" preserveAspectRatio="none"><path d="M0,35 H400 L430,35 448,6 466,62 484,35 H800 L830,35 846,12 862,56 878,35 H1280"/></svg>
+  </section>
+
+  <!-- S2 ANSWER -->
+  <section class="scene s2">
+    <div class="ghost" style="font-size:260px">01</div>
+    <div class="card3d">
+      <span class="k">AI CHECK-IN</span><span class="hp">+5 HP</span>
+      <h3>How is your energy this morning?</h3>
+      <div class="opt">Running low</div>
+      <div class="opt pick">Pretty good</div>
+      <div class="opt">Full of it</div>
+    </div>
+    <div class="cursor" style="left:322px;top:404px"></div>
+    <div class="ring" style="left:322px;top:404px"></div>
+    <div class="copy">
+      <div class="kick"><span class="bar"></span>STEP 01</div>
+      <h1>Answer.<br><span class="glowline">One tap.</span></h1>
+      <p class="sub">Energy, sleep, a symptom, a survey — quick cards, freshly generated.</p>
+    </div>
+  </section>
+
+  <!-- S3 PREDICT -->
+  <section class="scene s3">
+    <div class="ghost" style="font-size:260px">02</div>
+    <div class="mega" data-split="NOW GUESS|THE CROWD." data-hl="1"></div>
+    <div class="card3d">
+      <span class="k" style="color:var(--cyan)">PREDICT THE CROWD</span><span class="hp">+20–40 HP</span>
+      <h3>How did most people answer?</h3>
+      <div class="opt">Running low</div>
+      <div class="opt pick">Pretty good</div>
+      <div class="opt">Full of it</div>
+    </div>
+    <div class="cursor" style="left:614px,;top:392px"></div>
+    <div class="cursor" style="left:614px;top:392px"></div>
+    <div class="ring" style="left:614px;top:392px"></div>
+  </section>
+
+  <!-- S4 REVEAL -->
+  <section class="scene s4">
+    <div class="ghost" style="font-size:230px">×2</div>
+    <div class="mega" data-split="ACCURACY|PAYS." data-hl="1"></div>
+    <div class="bars">
+      <div class="brow b1"><span class="lb">LOW</span><div class="tr"><div class="bar"></div></div><span class="pct" data-count="18">0%</span></div>
+      <div class="brow b2 win"><span class="lb">GOOD</span><div class="tr"><div class="bar"></div></div><span class="pct" data-count="73">0%</span></div>
+      <div class="brow b3"><span class="lb">FULL</span><div class="tr"><div class="bar"></div></div><span class="pct" data-count="9">0%</span></div>
+    </div>
+    <div class="crowdchip">🎯 YOU READ THE CROWD — 73% SAID “PRETTY GOOD”</div>
+    <div class="hpfly">+25 HP</div>
+    <div class="spark" style="right:210px;top:350px;--dx:-60px;--dy:-70px"></div>
+    <div class="spark" style="right:180px;top:346px;--dx:50px;--dy:-80px"></div>
+    <div class="spark" style="right:196px;top:360px;--dx:-30px;--dy:60px"></div>
+    <div class="spark" style="right:168px;top:356px;--dx:70px;--dy:30px"></div>
+    <div class="spark" style="right:224px;top:352px;--dx:20px;--dy:-100px"></div>
+    <div class="x2">PERFECT READ PAYS ×2</div>
+  </section>
+
+  <!-- S5 FOUR WAYS -->
+  <section class="scene s5">
+    <div class="ghost" style="font-size:250px">PLAY</div>
+    <div class="mega" data-split="FOUR WAYS|TO PLAY." data-hl="1"></div>
+    <div class="mini m1"><div class="ic">📋</div><h4>Surveys</h4><p>QUICK PANELS<br>+8 HP</p></div>
+    <div class="mini m2"><div class="ic">🃏</div><h4>The Deck</h4><p>ALWAYS A NEXT CARD<br>+5–40 HP</p></div>
+    <div class="mini m3"><div class="ic">🎯</div><h4>Goals</h4><p>STAKE ON YOURSELF<br>WIN <b>×1.8</b></p></div>
+    <div class="mini m4"><div class="ic">🩺</div><h4>Care team</h4><p>CLINICIAN CAMPAIGNS<br>+30 HP</p></div>
+  </section>
+
+  <!-- S6 PRIVACY -->
+  <section class="scene s6">
+    <div class="mega" data-split="AGGREGATES|ONLY." data-hl="1"></div>
+    <div class="dots" id="dots"></div>
+    <div class="aggbars"><div class="ab ab1"></div><div class="ab ab2"></div><div class="ab ab3"></div><div class="ab ab4"></div></div>
+    <div class="zeroline"><b>0</b><span>RAW DATA EVER SOLD</span></div>
+    <div class="kchip">K-ANONYMITY GATES EVERY RESULT · CONSENT-FIRST · OPT OUT ANYTIME</div>
+  </section>
+
+  <!-- S7 OUTRO -->
+  <section class="scene s7">
+    <div class="wrap"><div>
+      <div class="funders"><span class="fd">🏥 CLINICS</span><span class="fd">🎓 RESEARCH</span><span class="fd">🛍 BRANDS</span></div>
+      <h1>saviorofhealth</h1>
+      <div class="t">The survey-to-earn health panel.</div>
+      <div><span class="cta">Connect & start earning →</span></div>
+      <div class="u">SAVIOROFHEALTH.APP</div>
+    </div></div>
+  </section>
+
+  <div class="sweep" id="sweep"></div>
+  <div class="grain"></div><div class="vig"></div>
+  <div class="hud" id="hud"></div>
+</div></div>
+
+<script>
+// split data-split headlines into staggered chars (line break on |, second line highlighted)
+document.querySelectorAll("[data-split]").forEach((el) => {
+  const lines = el.dataset.split.split("|");
+  el.innerHTML = "";
+  lines.forEach((line, li) => {
+    const div = document.createElement("div");
+    if (li === 1 && el.dataset.hl) div.className = "glowline";
+    [...line].forEach((c, i) => {
+      if (c === " ") { const s = document.createElement("span"); s.className = "sp"; div.appendChild(s); return; }
+      const s = document.createElement("span");
+      s.className = "ch"; s.textContent = c;
+      s.style.animationDelay = (li * 0.34 + i * 0.035) + "s";
+      div.appendChild(s);
+    });
+    el.appendChild(div);
+  });
+});
+// privacy dots (deterministic spread → merge toward center bars)
+const dotsWrap = document.getElementById("dots");
+let sd = 7; const rnd = () => (sd = (sd * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+for (let i = 0; i < 46; i++) {
+  const d = document.createElement("div");
+  d.className = "dot";
+  const x = 90 + rnd() * 1100, y = 250 + rnd() * 330;
+  d.style.left = x + "px"; d.style.top = y + "px";
+  d.style.setProperty("--mx", (640 - x) + "px");
+  d.style.setProperty("--my", (400 - y) + "px");
+  d.style.animationDelay = (0.2 + rnd() * 0.7) + "s, " + (1.1 + rnd() * 0.3) + "s";
+  dotsWrap.appendChild(d);
+}
+// count-up percentages (fires when S4 turns on)
+function countUp(el, target, ms) {
+  const t0 = performance.now();
+  (function step(now) {
+    const p = Math.min(1, (now - t0) / ms);
+    el.textContent = Math.round(target * (p < .5 ? 2*p*p : 1 - Math.pow(-2*p+2,2)/2)) + "%";
+    if (p < 1) requestAnimationFrame(step);
+  })(t0);
+}
+const SCENES = [
+  { el: ".s1", tag: "SURVEY-TO-EARN", d: 5600 },
+  { el: ".s2", tag: "01 · ANSWER",    d: 5400 },
+  { el: ".s3", tag: "02 · PREDICT",   d: 5400 },
+  { el: ".s4", tag: "03 · GET PAID",  d: 6400 },
+  { el: ".s5", tag: "FOUR WAYS",      d: 4600 },
+  { el: ".s6", tag: "PRIVACY",        d: 6000 },
+  { el: ".s7", tag: "START EARNING",  d: 6000 },
+];
+const hud = document.getElementById("hud");
+SCENES.forEach(() => { const s = document.createElement("div"); s.className = "seg"; s.innerHTML = "<span class='fill'></span>"; hud.appendChild(s); });
+const tagEl = document.getElementById("scenetag"), sweep = document.getElementById("sweep");
+let i = -1;
+function show(n) {
+  if (n >= SCENES.length) return;
+  const prev = i >= 0 ? document.querySelector(SCENES[i].el) : null;
+  if (prev) { prev.classList.remove("on"); prev.classList.add("exit"); setTimeout(() => prev.classList.remove("exit"), 500); }
+  i = n;
+  const sc = SCENES[n];
+  document.querySelector(sc.el).classList.add("on");
+  tagEl.textContent = sc.tag;
+  sweep.classList.remove("go"); void sweep.offsetWidth; sweep.classList.add("go");
+  if (sc.el === ".s4") setTimeout(() => {
+    document.querySelectorAll(".s4 .pct").forEach((p, k) => countUp(p, +p.dataset.count, 900 + k * 120));
+  }, 700);
+  const fill = hud.children[n].querySelector(".fill");
+  fill.style.transition = `width ${sc.d}ms linear`;
+  requestAnimationFrame(() => (fill.style.width = "100%"));
+  setTimeout(() => show(n + 1), sc.d);
+}
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);document.getElementById("stage").style.setProperty("--s",s)}
+addEventListener("resize",fit);fit();
+show(0);
+</script>

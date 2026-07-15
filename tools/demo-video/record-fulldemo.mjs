@@ -10,10 +10,12 @@ import { mkdirSync } from "node:fs";
 const OUT = "/tmp/fulldemo-rec";
 mkdirSync(OUT, { recursive: true });
 
-const browser = await chromium.launch();
+// GPU-backed headless: WebGL scenes (Grand Paw diorama) render black or
+// crash the default software-GL headless — Metal ANGLE fixes it on macOS
+const browser = await chromium.launch({ args: ['--enable-gpu', '--use-angle=metal', '--enable-webgl', '--ignore-gpu-blocklist'] });
 const ctx = await browser.newContext({
-  viewport: { width: 1280, height: 720 },
-  recordVideo: { dir: OUT, size: { width: 1280, height: 720 } },
+  viewport: { width: 1920, height: 1080 },
+  recordVideo: { dir: OUT, size: { width: 1920, height: 1080 } },
 });
 const page = await ctx.newPage();
 const wait = (ms) => page.waitForTimeout(ms);
@@ -204,7 +206,27 @@ if (await predict.count()) {
   await wait(2000);
 }
 
-// ════ 5 · STUDIO (real client-side flow) ════
+// ════ 5 · AGENT OFFICE — The Grand Paw hotel (dev build; owner-gated on prod,
+// so we shoot the real shipped component on localhost with its dev fixture) ════
+await scene("http://localhost:3000/", { ready: "text=Your AI." });
+await page.addStyleTag({ content: "nextjs-portal{display:none!important}" }); // hide the dev-tools badge
+await page.evaluate(() => { window.__setCap(null); window.__veil(true); });
+await wait(420);
+await page.locator('button.nav-btn:has-text("Agent Office")').first().click();
+await page.locator("agent-cafe-3d canvas").first().waitFor({ state: "visible", timeout: 25000 }).catch(() => {});
+await wait(900); // let the diorama settle
+await page.evaluate(() => window.scrollTo(0, 220));
+await page.evaluate(() => window.__veil(false));
+await wait(400);
+await cap("The Agent Office — a grand hotel where your pet's staff works");
+const dio = page.locator("agent-cafe-3d").first();
+await dio.scrollIntoViewIfNeeded();
+await page.evaluate(() => window.scrollBy(0, -70));
+await wait(4400); // auto-rotate does the camera work
+await cap("Dispatch a goal — the right pet takes it, live");
+await wait(3200);
+
+// ════ 6 · STUDIO (real client-side flow) ════
 await scene("https://app.myaipet.ai/studio", { ready: "text=Make Mochi a star" });
 await wait(500);
 await cap("Studio — turn your pet into viral video");
@@ -240,14 +262,14 @@ await wait(900);
 await cap("Connect a wallet to shoot it for real"); // honest guest-mode close
 await wait(1300);
 
-// ════ 6 · PETCLAW cinematic ════
+// ════ 7 · PETCLAW cinematic ════
 await scene("http://localhost:8791/petclaw-hero.html", { waitUntil: "load" });
 await cap("PetClaw — your pet becomes an agent, everywhere you work");
 await wait(6800);
 await cap("Telegram · Discord · Claude · Cursor — one soul, every surface");
 await wait(2400);
 
-// ════ 7 · OUTRO ════
+// ════ 8 · OUTRO ════
 await scene("https://myaipet.ai/", { waitUntil: "domcontentloaded", ready: "text=Your AI." });
 await wait(400);
 await cap("Adopt yours — myaipet.ai");

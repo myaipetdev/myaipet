@@ -1,0 +1,278 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>saviorofhealth — Launch Reel</title>
+<style>
+:root{
+  --bg:#081009; --bg2:#0c1810; --panel:#0e1a12;
+  --ink:#eef7f0; --dim:rgba(238,247,240,.6); --dim2:rgba(238,247,240,.36);
+  --mint:#2ee6a0; --mintD:#0f9e69; --mintL:#a9f5d7;
+  --cyan:#4fd1e8; --amber:#f5c04a; --rose:#f2708a;
+  --hair:rgba(255,255,255,.09);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#000}
+body{font-family:"Space Grotesk",ui-rounded,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.viewport{position:fixed;inset:0;display:grid;place-items:center;background:#000}
+.stage{position:relative;width:1280px;height:720px;overflow:hidden;zoom:var(--s,1);
+  background:radial-gradient(120% 90% at 68% -8%, #10241a 0%, var(--bg) 55%, #050a06 100%)}
+/* plus-grid texture (brand motif) */
+.plusgrid{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background-image:radial-gradient(rgba(46,230,160,.13) 1px,transparent 1.4px);background-size:46px 46px}
+.stage::after{content:"";position:absolute;width:640px;height:640px;right:-180px;bottom:-240px;border-radius:50%;
+  filter:blur(90px);background:radial-gradient(circle,rgba(46,230,160,.14),transparent 70%);pointer-events:none;z-index:0}
+/* EKG heartbeat line (brand motif) */
+.ekg{position:absolute;left:0;right:0;bottom:64px;height:60px;z-index:1;opacity:.5;pointer-events:none}
+.ekg path{stroke:var(--mint);stroke-width:2;fill:none;filter:drop-shadow(0 0 6px rgba(46,230,160,.8));
+  stroke-dasharray:1200;stroke-dashoffset:1200;animation:ekgdraw 5.5s linear infinite}
+@keyframes ekgdraw{to{stroke-dashoffset:-1200}}
+.grain{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:.04;
+  background-image:radial-gradient(rgba(255,255,255,.8) .5px,transparent .6px);background-size:3px 3px;mix-blend-mode:overlay}
+.vig{position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(115% 90% at 50% 44%,transparent 60%,rgba(0,0,0,.52) 100%)}
+/* ticker (brand motif) */
+.ticker{position:absolute;top:0;left:0;right:0;z-index:7;height:30px;overflow:hidden;background:rgba(46,230,160,.09);border-bottom:1px solid rgba(46,230,160,.22)}
+.ticker .tk{display:flex;gap:44px;white-space:nowrap;font:700 11px/30px ui-monospace,Menlo,monospace;letter-spacing:.22em;color:var(--mint);animation:tick 18s linear infinite}
+@keyframes tick{to{transform:translateX(-50%)}}
+.topbar{position:absolute;top:46px;left:36px;right:36px;z-index:7;display:flex;justify-content:space-between;align-items:center}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px}
+.brand .mk{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:13px;color:var(--mint);
+  background:rgba(46,230,160,.1);border:1px solid rgba(46,230,160,.45);box-shadow:0 0 18px -4px rgba(46,230,160,.5)}
+.tag{font:600 10.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.24em;color:var(--dim);padding:8px 14px;border-radius:999px;
+  background:rgba(255,255,255,.04);border:1px solid var(--hair);display:flex;align-items:center;gap:8px}
+.tag .d{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px rgba(46,230,160,.18)}
+.hud{position:absolute;left:36px;right:36px;bottom:24px;z-index:7;display:flex;gap:6px}
+.seg{height:3px;flex:1;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
+.seg .fill{display:block;height:100%;width:0;border-radius:2px;background:linear-gradient(90deg,var(--mint),var(--mintL));box-shadow:0 0 8px -1px rgba(46,230,160,.8)}
+.scene{position:absolute;inset:0;display:none;z-index:1}
+.scene.on{display:block;z-index:2;animation:sceneIn .55s cubic-bezier(.2,.85,.25,1) both}
+.scene.exit{display:block;z-index:1;animation:sceneOut .45s ease both}
+@keyframes sceneIn{from{opacity:0;transform:scale(1.045);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes sceneOut{from{opacity:1}to{opacity:0;transform:scale(.985);filter:blur(4px)}}
+.kick{display:inline-flex;align-items:center;gap:9px;font:700 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.26em;color:var(--mint);text-transform:uppercase}
+.kick .bar{width:26px;height:2px;background:linear-gradient(90deg,var(--mint),transparent)}
+h1{margin:12px 0 0;font-size:56px;line-height:1.02;font-weight:800;letter-spacing:-.026em}
+h1 .hl{color:var(--mint);text-shadow:0 0 34px rgba(46,230,160,.4)}
+.sub{margin-top:14px;font-size:18.5px;line-height:1.5;color:var(--dim);font-weight:500;max-width:520px}
+.on .kick{animation:up .5s .08s cubic-bezier(.2,.9,.3,1) both}
+.on h1{animation:up .55s .16s cubic-bezier(.2,.9,.3,1) both}
+.on .sub{animation:up .55s .3s cubic-bezier(.2,.9,.3,1) both}
+@keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.chip{position:absolute;z-index:4;display:inline-flex;align-items:center;gap:8px;padding:11px 17px;border-radius:12px;
+  font-weight:700;font-size:14px;color:var(--ink);background:rgba(10,22,14,.78);backdrop-filter:blur(8px);
+  border:1px solid rgba(46,230,160,.35);box-shadow:0 16px 34px -16px rgba(0,0,0,.9),0 0 22px -8px rgba(46,230,160,.3)}
+.chip b{color:var(--mint)}
+.chip.cyan{border-color:rgba(79,209,232,.45)}.chip.cyan b{color:var(--cyan)}
+.chip.amber{border-color:rgba(245,192,74,.45)}.chip.amber b{color:var(--amber)}
+.chip.rose{border-color:rgba(242,112,138,.45)}.chip.rose b{color:var(--rose)}
+.on .chip{animation:chipIn .6s cubic-bezier(.2,1.35,.4,1) both}
+@keyframes chipIn{from{opacity:0;transform:translateY(18px) scale(.82)}to{opacity:1;transform:none}}
+.frame{position:absolute;border-radius:16px;overflow:hidden;background:#0a140d;
+  border:1px solid rgba(255,255,255,.12);box-shadow:0 60px 110px -40px rgba(0,0,0,.95),0 0 60px -20px rgba(46,230,160,.16)}
+.frame .bar{height:30px;display:flex;align-items:center;gap:6px;padding:0 12px;background:#0d1a11;border-bottom:1px solid var(--hair)}
+.frame .bar i{width:9px;height:9px;border-radius:50%;background:#23392c}
+.frame .bar i:first-child{background:#f2708aaa}.frame .bar i:nth-child(2){background:#f5c04aaa}.frame .bar i:nth-child(3){background:#2ee6a0aa}
+.frame .kb{overflow:hidden;height:calc(100% - 30px)}
+.frame .kb img{width:100%;display:block;transform-origin:50% 10%}
+.on .kb img{animation:kb 4.6s .15s ease-out both}
+@keyframes kb{from{transform:scale(1.02) translateY(0)}to{transform:scale(1.09) translateY(-4%)}}
+
+/* S1 HOOK */
+.s1 .wrap{position:absolute;inset:0;display:grid;place-items:center;z-index:2;text-align:center}
+.s1 .l1{font:700 15px/1 ui-monospace,Menlo,monospace;letter-spacing:.34em;color:var(--dim);text-transform:uppercase;opacity:0;animation:up .6s .25s both}
+.s1 h1{font-size:86px;margin-top:18px;opacity:0;animation:up .75s .8s cubic-bezier(.15,1.15,.3,1) both}
+.s1 .hp{display:inline-flex;gap:10px;margin-top:26px;opacity:0;animation:up .6s 1.7s both}
+.s1 .hp span{font:700 13px/1 ui-monospace,Menlo,monospace;color:var(--mint);border:1px solid rgba(46,230,160,.4);border-radius:999px;padding:9px 15px;background:rgba(46,230,160,.08)}
+
+/* S2 GAME */
+.s2 .frame{right:62px;top:104px;width:640px;height:452px;transform:rotate(1.5deg)}
+.s2 .copy{position:absolute;left:64px;top:150px;max-width:470px;z-index:3}
+.s2 .step{display:flex;gap:12px;margin-top:14px;font-size:16px;color:var(--dim);font-weight:600;opacity:0;align-items:baseline}
+.s2 .step .n{font:800 12px/1 ui-monospace,Menlo,monospace;color:var(--mint)}
+.s2 .step b{color:var(--ink)}
+.on.s2 .step:nth-of-type(1){animation:up .5s .7s both}
+.on.s2 .step:nth-of-type(2){animation:up .5s .95s both}
+.on.s2 .step:nth-of-type(3){animation:up .5s 1.2s both}
+.s2 .sci{left:600px;top:530px;animation-delay:1.6s!important}
+
+/* S3 DECK */
+.s3 .frame{left:70px;top:100px;width:620px;height:470px;transform:rotate(-1.6deg)}
+.s3 .copy{position:absolute;right:66px;top:170px;max-width:440px;z-index:3;text-align:right}
+.s3 .copy .kick{flex-direction:row-reverse}
+.s3 .toast{position:absolute;right:96px;top:420px;z-index:4;display:flex;align-items:center;gap:10px;padding:13px 20px;border-radius:12px;
+  font-weight:800;font-size:16px;background:rgba(10,24,15,.92);border:1px solid rgba(46,230,160,.5);opacity:0;
+  box-shadow:0 20px 44px -18px rgba(0,0,0,.9),0 0 30px -8px rgba(46,230,160,.5)}
+.s3 .toast b{color:var(--mint)}
+.on.s3 .toast{animation:toastIn .55s 1.5s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes toastIn{from{opacity:0;transform:translateY(-14px) scale(.88)}to{opacity:1;transform:none}}
+.s3 .c1{right:120px;top:508px;animation-delay:1.9s!important}
+
+/* S4 FOUR WAYS */
+.s4 .copy{position:absolute;left:0;right:0;top:96px;text-align:center;z-index:3}
+.s4 .copy .kick{justify-content:center}
+.s4 .frame{left:200px;top:300px;width:880px;height:360px}
+.s4 .c1{left:150px;top:270px;animation-delay:.8s!important}
+.s4 .c2{left:420px;top:250px;animation-delay:1s!important}
+.s4 .c3{right:400px;top:270px;animation-delay:1.2s!important}
+.s4 .c4{right:150px;top:250px;animation-delay:1.4s!important}
+
+/* S5 PRIVACY */
+.s5 .frame{right:70px;top:120px;width:560px;height:430px;transform:rotate(1.4deg)}
+.s5 .copy{position:absolute;left:64px;top:130px;max-width:500px;z-index:3}
+.s5 .zero{margin-top:22px;display:flex;align-items:baseline;gap:16px}
+.s5 .zero .n{font-size:140px;line-height:.85;font-weight:800;letter-spacing:-.05em;color:var(--amber);text-shadow:0 0 60px rgba(245,192,74,.35);opacity:0}
+.on.s5 .zero .n{animation:zeroIn .6s .7s cubic-bezier(.15,1.3,.3,1) both}
+@keyframes zeroIn{from{opacity:0;transform:translateY(30px) scale(.7)}to{opacity:1;transform:none}}
+.s5 .zero .lb{font:700 13px/1.5 ui-monospace,Menlo,monospace;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;opacity:0}
+.on.s5 .zero .lb{animation:up .45s .9s both}
+.s5 .c1{left:66px;top:520px;animation-delay:1.2s!important}
+.s5 .c2{left:250px;top:580px;animation-delay:1.4s!important}
+
+/* S6 DEMAND */
+.s6 .frame{left:72px;top:118px;width:600px;height:440px;transform:rotate(-1.3deg)}
+.s6 .copy{position:absolute;right:66px;top:160px;max-width:470px;z-index:3;text-align:right}
+.s6 .copy .kick{flex-direction:row-reverse}
+.s6 .c1{right:80px;top:420px;animation-delay:.9s!important}
+.s6 .c2{right:140px;top:484px;animation-delay:1.15s!important}
+.s6 .c3{right:100px;top:548px;animation-delay:1.4s!important}
+
+/* S7 OUTRO */
+.s7 .wrap{position:absolute;inset:0;display:grid;place-items:center;text-align:center;z-index:2}
+.s7 h1{font-size:92px;margin:0;background:linear-gradient(100deg,#0f9e69 0%,#2ee6a0 26%,#d9fbea 46%,#2ee6a0 62%,#0f9e69 100%);
+  background-size:230% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:foil 4s linear infinite;
+  filter:drop-shadow(0 14px 40px rgba(46,230,160,.3))}
+@keyframes foil{to{background-position:230% 0}}
+.s7 .t{margin-top:16px;font-size:22px;font-weight:600;color:var(--dim)}
+.s7 .u{margin-top:10px;font:700 15px/1 ui-monospace,Menlo,monospace;letter-spacing:.26em;color:var(--mint);text-transform:uppercase}
+.s7 .cta{margin-top:28px;display:inline-flex;padding:16px 34px;border-radius:999px;font-weight:800;font-size:18px;color:#03140b;
+  background:linear-gradient(160deg,#7ff0c4,#2ee6a0);box-shadow:0 22px 50px -16px rgba(46,230,160,.8);animation:cta 2.1s ease-in-out infinite}
+@keyframes cta{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.on.s7 h1{animation:foil 4s linear infinite, up .6s .05s both}
+.on.s7 .t{animation:up .5s .25s both}.on.s7 .u{animation:up .5s .4s both}
+.on.s7 .cta{animation:cta 2.1s ease-in-out infinite, up .5s .55s both}
+.s7 .pledge{position:absolute;left:0;right:0;bottom:70px;text-align:center;font:600 11.5px/1.7 ui-monospace,Menlo,monospace;letter-spacing:.14em;color:var(--dim2);text-transform:uppercase;opacity:0}
+.on.s7 .pledge{animation:up .6s .85s both}
+</style>
+
+<div class="viewport"><div class="stage" id="stage">
+  <div class="plusgrid"></div>
+  <div class="ticker"><div class="tk">
+    <span>+20HP PREDICT THE CROWD</span><span>+6HP SYMPTOM CHECK</span><span>+5HP DAILY CHECK-IN</span><span>READ THE CROWD</span><span>+8HP HEALTH QUIZ</span><span>ANONYMIZED · CONSENT-FIRST</span>
+    <span>+20HP PREDICT THE CROWD</span><span>+6HP SYMPTOM CHECK</span><span>+5HP DAILY CHECK-IN</span><span>READ THE CROWD</span><span>+8HP HEALTH QUIZ</span><span>ANONYMIZED · CONSENT-FIRST</span>
+  </div></div>
+  <div class="topbar">
+    <div class="brand"><span class="mk">✚</span> saviorofhealth</div>
+    <div class="tag"><span class="d"></span><span id="scenetag">SURVEY-TO-EARN</span></div>
+  </div>
+
+  <section class="scene s1">
+    <svg class="ekg" viewBox="0 0 1280 60" preserveAspectRatio="none"><path d="M0,30 H420 L450,30 465,8 480,52 495,30 H760 L790,30 805,12 820,48 835,30 H1280"/></svg>
+    <div class="wrap"><div>
+      <div class="l1">YOUR ANSWER IS THE ASSET</div>
+      <h1>Read the crowd.<br><span class="hl">Earn Heal Points.</span></h1>
+      <div class="hp"><span>+5 CHECK-IN</span><span>+6 SYMPTOM</span><span>+20 PREDICT</span><span>+8 QUIZ</span></div>
+    </div></div>
+  </section>
+
+  <section class="scene s2">
+    <div class="frame"><div class="bar"><i></i><i></i><i></i></div><div class="kb"><img src="./shots-sv2/crowd-game.jpg"></div></div>
+    <div class="copy">
+      <div class="kick"><span class="bar"></span>THE CROWD GAME</div>
+      <h1>Guess<br><span class="hl">the crowd.</span></h1>
+      <div class="step"><span class="n">01</span><span><b>Answer</b> a quick health question — one tap</span></div>
+      <div class="step"><span class="n">02</span><span><b>Predict</b> how everyone else answered</span></div>
+      <div class="step"><span class="n">03</span><span><b>Accuracy pays</b> — up to ×2 on a perfect read</span></div>
+    </div>
+    <div class="chip cyan sci">🔬 <b>Surprisingly Popular</b> · Nature 2017</div>
+  </section>
+
+  <section class="scene s3">
+    <div class="frame"><div class="bar"><i></i><i></i><i></i></div><div class="kb"><img src="./shots-sv2/demo-predict.jpg"></div></div>
+    <div class="copy">
+      <div class="kick"><span class="bar"></span>TRY IT LIVE</div>
+      <h1>Tap through<br><span class="hl">a live deck.</span></h1>
+      <p class="sub" style="margin-left:auto">Check-ins, symptom checks, clinician campaigns, micro-tasks — one deck, always a next card.</p>
+    </div>
+    <div class="toast">✚ <b>+25 HP</b> this demo</div>
+    <div class="chip c1">PREDICT · <b>+20–40 HP</b></div>
+  </section>
+
+  <section class="scene s4">
+    <div class="copy">
+      <div class="kick"><span class="bar"></span>THE MECHANICS</div>
+      <h1>Four ways <span class="hl">to play.</span></h1>
+    </div>
+    <div class="frame"><div class="bar"><i></i><i></i><i></i></div><div class="kb"><img src="./shots-sv2/mechanics.jpg"></div></div>
+    <div class="chip c1">📋 <b>Surveys</b></div>
+    <div class="chip cyan c2">🃏 <b>The Deck</b></div>
+    <div class="chip amber c3">🎯 <b>Goals</b> · stake, win ×1.8</div>
+    <div class="chip c4">🩺 <b>Care team</b></div>
+  </section>
+
+  <section class="scene s5">
+    <div class="frame"><div class="bar"><i></i><i></i><i></i></div><div class="kb"><img src="./shots-sv2/privacy.jpg"></div></div>
+    <div class="copy">
+      <div class="kick"><span class="bar"></span>PRIVACY & CONSENT</div>
+      <h1>Aggregates<br><span class="hl">only.</span></h1>
+      <div class="zero"><div class="n">0</div><div class="lb">raw data<br>ever sold</div></div>
+    </div>
+    <div class="chip c1">k-anonymity gates every result</div>
+    <div class="chip c2">consent-first · <b>opt out anytime</b></div>
+  </section>
+
+  <section class="scene s6">
+    <div class="frame"><div class="bar"><i></i><i></i><i></i></div><div class="kb"><img src="./shots-sv2/demand.jpg"></div></div>
+    <div class="copy">
+      <div class="kick"><span class="bar"></span>THE DEMAND SIDE</div>
+      <h1>Real demand<br><span class="hl">funds the rewards.</span></h1>
+      <p class="sub" style="margin-left:auto">Clinics, researchers and brands license the anonymized aggregate — never a person, never your identity.</p>
+    </div>
+    <div class="chip c1">🏥 <b>Clinics</b> commission questions</div>
+    <div class="chip cyan c2">🎓 <b>Research</b> cohort studies</div>
+    <div class="chip amber c3">🛍 <b>Brands</b> read the signal</div>
+  </section>
+
+  <section class="scene s7">
+    <svg class="ekg" viewBox="0 0 1280 60" preserveAspectRatio="none"><path d="M0,30 H420 L450,30 465,8 480,52 495,30 H760 L790,30 805,12 820,48 835,30 H1280"/></svg>
+    <div class="wrap"><div>
+      <h1>saviorofhealth</h1>
+      <div class="t">The survey-to-earn health panel.</div>
+      <div class="u">saviorofhealth.app</div>
+      <div><span class="cta">Connect & start earning →</span></div>
+    </div></div>
+    <div class="pledge">anonymized aggregates only &nbsp;•&nbsp; consent-first &nbsp;•&nbsp; your answer is the asset</div>
+  </section>
+
+  <div class="grain"></div><div class="vig"></div>
+  <div class="hud" id="hud"></div>
+</div></div>
+
+<script>
+const SCENES = [
+  { el: ".s1", tag: "SURVEY-TO-EARN", d: 5000 },
+  { el: ".s2", tag: "THE CROWD GAME", d: 5400 },
+  { el: ".s3", tag: "LIVE DECK",      d: 5200 },
+  { el: ".s4", tag: "FOUR WAYS",      d: 4800 },
+  { el: ".s5", tag: "PRIVACY",        d: 5200 },
+  { el: ".s6", tag: "DEMAND",         d: 5000 },
+  { el: ".s7", tag: "START EARNING",  d: 5800 },
+];
+const hud = document.getElementById("hud");
+SCENES.forEach(() => { const s = document.createElement("div"); s.className = "seg"; s.innerHTML = "<span class='fill'></span>"; hud.appendChild(s); });
+const tagEl = document.getElementById("scenetag");
+let i = -1;
+function show(n) {
+  if (n >= SCENES.length) return;
+  const prev = i >= 0 ? document.querySelector(SCENES[i].el) : null;
+  if (prev) { prev.classList.remove("on"); prev.classList.add("exit"); setTimeout(() => prev.classList.remove("exit"), 500); }
+  i = n;
+  const sc = SCENES[n];
+  document.querySelector(sc.el).classList.add("on");
+  tagEl.textContent = sc.tag;
+  const fill = hud.children[n].querySelector(".fill");
+  fill.style.transition = `width ${sc.d}ms linear`;
+  requestAnimationFrame(() => (fill.style.width = "100%"));
+  setTimeout(() => show(n + 1), sc.d);
+}
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);document.getElementById("stage").style.setProperty("--s",s)}
+addEventListener("resize",fit);fit();
+show(0);
+</script>
