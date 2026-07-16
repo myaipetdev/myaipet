@@ -209,6 +209,10 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   const [directorIdea, setDirectorIdea] = useState("");
   const [directorBusy, setDirectorBusy] = useState(false);       // questions phase in flight
   const [directorError, setDirectorError] = useState<string | null>(null);
+  // The Director endpoint is auth-only (401 for guests) and has no demo
+  // fallback like Generate does — so a signed-out click surfaces a sign-in
+  // prompt instead of a silent/generic failure.
+  const [directorNeedsAuth, setDirectorNeedsAuth] = useState(false);
   const [directorQuestions, setDirectorQuestions] = useState<DirectorQuestion[] | null>(null);
   // Per-question state: the picked option + a free-text override. Effective
   // answer = override.trim() || option (see effectiveAnswer below).
@@ -487,8 +491,12 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   const directIt = async () => {
     const idea = directorIdea.trim();
     if (!idea || directorBusy) return;
+    // Guests have no session: the Director endpoint 401s and there's no demo
+    // fallback, so prompt sign-in instead of firing a POST we know will fail.
+    if (isDemo) { setDirectorNeedsAuth(true); setDirectorError(null); return; }
     setDirectorBusy(true);
     setDirectorError(null);
+    setDirectorNeedsAuth(false);
     try {
       const r = await fetch("/api/studio/prompt-director", {
         method: "POST",
@@ -501,6 +509,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           durationSec: 12,
         }),
       });
+      // Session expired / not signed in mid-session — surface the sign-in path,
+      // not a generic error.
+      if (r.status === 401 || r.status === 403) { setDirectorNeedsAuth(true); return; }
       const data = await r.json().catch(() => ({}));
       if (!r.ok || !Array.isArray(data?.questions) || data.questions.length === 0) {
         setDirectorError(data?.error || "Couldn't reach the Director. Try again.");
@@ -1315,7 +1326,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <input
                 value={directorIdea}
-                onChange={(e) => { setDirectorIdea(e.target.value); if (directorError) setDirectorError(null); }}
+                onChange={(e) => { setDirectorIdea(e.target.value); if (directorError) setDirectorError(null); if (directorNeedsAuth) setDirectorNeedsAuth(false); }}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); directIt(); } }}
                 aria-label="One-line idea for the Director"
                 placeholder={`One-line idea — e.g. "${petDisplayName} chasing fireflies at dusk"`}
@@ -1345,6 +1356,30 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             {directorError && (
               <div style={{ marginTop: 8, fontSize: 13, fontFamily: T.body, color: T.terra }}>
                 {directorError}
+              </div>
+            )}
+            {directorNeedsAuth && (
+              <div style={{
+                marginTop: 8, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8,
+                fontSize: 13, fontFamily: T.body, color: T.terra,
+              }}>
+                <span>Sign in to use the Director.</span>
+                <a href="/" style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "6px 12px", borderRadius: 9,
+                  background: T.studio, color: "#fff", textDecoration: "none",
+                  fontFamily: T.m, fontWeight: 700, fontSize: 12,
+                  letterSpacing: "0.08em", textTransform: "uppercase",
+                  boxShadow: "var(--ed-shadow-card)",
+                }}>
+                  <svg width={13} height={13} viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"
+                    aria-hidden="true">
+                    <path d="M9 18h6" /><path d="M10 21h4" />
+                    <path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.4 1 2.5h6c0-1.1.3-1.8 1-2.5A6 6 0 0 0 12 3Z" />
+                  </svg>
+                  Sign in →
+                </a>
               </div>
             )}
           </div>

@@ -111,6 +111,18 @@
   }
   .nav.dark .nav-cta { background: var(--gold); color: var(--navy); }
   .nav-cta:hover { transform: translateY(-1px); }
+  .nav-burger {
+    display: none; width: 40px; height: 34px; padding: 8px 8px;
+    flex-direction: column; justify-content: space-between; align-items: stretch;
+    border-radius: 8px; color: inherit;
+  }
+  .nav-burger span {
+    display: block; height: 2px; border-radius: 2px; background: currentColor;
+    transition: transform .25s ease, opacity .2s ease;
+  }
+  .nav-burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav-burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+  .nav-burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
   /* UTIL */
   .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
@@ -677,6 +689,11 @@
     border-radius: 0 0 4px 4px;
   }
   .right-receipt .rr-prompt { color: var(--terra); font-weight: 700; }
+  .right-receipt.copy-cmd { cursor: pointer; transition: color .18s ease; }
+  .right-receipt.copy-cmd:hover .rr-cmd,
+  .right-receipt.copy-cmd:focus-visible .rr-cmd { color: var(--terra); }
+  .right-receipt.copy-cmd:focus-visible { outline: 2px solid var(--terra); outline-offset: 2px; }
+  .right-receipt.copy-cmd.is-copied .rr-cmd { color: var(--terra); font-weight: 700; }
   .right-receipt .rr-bar {
     margin-left: auto; width: 36px; height: 14px; opacity: 0.75; flex: 0 0 auto;
     background: repeating-linear-gradient(90deg, #211A12 0 2px, transparent 2px 4px, #211A12 4px 5px, transparent 5px 9px);
@@ -814,8 +831,11 @@
   .code-block .prompt { color: var(--gold-soft); }
   .code-block .copy {
     margin-left: auto; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;
-    color: rgba(255,248,230,0.5); cursor: pointer;
+    color: rgba(255,248,230,0.5); cursor: pointer; font-family: var(--mono);
+    padding: 2px 4px; transition: color .18s ease;
   }
+  .code-block .copy:hover { color: var(--gold-soft); }
+  .code-block .copy.is-copied { color: var(--gold-soft); }
   .proto-cols {
     margin-top: 72px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
     border-top: 1px solid var(--line-dk); border-bottom: 1px solid var(--line-dk);
@@ -948,8 +968,18 @@
   /* Mobile nav: the inline link row overflowed the CTA off-screen ≤~760px.
      Drop the links (page is a single scroll); keep brand + Launch App reachable. */
   @media (max-width: 760px){
-    .nav-links{ display:none !important; }
     .nav{ padding:14px 18px !important; }
+    .nav-burger{ display:flex; margin-left:auto; margin-right:12px; }
+    .nav-links{
+      display:none; position:absolute; top:calc(100% + 8px); right:18px;
+      flex-direction:column; align-items:stretch; gap:0; min-width:180px; padding:8px;
+      border-radius:12px; opacity:1;
+      background:var(--cream); color:var(--ink);
+      border:1.5px solid var(--ink); box-shadow:5px 6px 0 rgba(33,26,18,0.9);
+    }
+    .nav-links.open{ display:flex; }
+    .nav-links a{ display:block; width:100%; padding:10px 12px; border-radius:8px; opacity:0.92; }
+    .nav-links a:hover{ background:rgba(190,79,40,0.12); color:var(--terra); }
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -1329,12 +1359,15 @@
     <img src="hero-mascot.jpg" alt="MY AI PET" style="width:28px; height:28px; border-radius:8px; object-fit:cover; border:2px solid rgba(226,125,12,0.35); box-shadow:0 2px 10px rgba(226,125,12,0.25);" />
     <span>MY AI PET</span>
   </div>
-  <div class="nav-links">
+  <div class="nav-links" id="navLinks">
     <a href="#companion">Companion</a>
     <a href="#community">Community</a>
     <a href="#protocol">Protocol</a>
     <a href="https://app.myaipet.ai/api-docs" target="_blank" rel="noopener noreferrer">Docs</a>
   </div>
+  <button type="button" class="nav-burger" id="navBurger" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
+    <span></span><span></span><span></span>
+  </button>
   <a href="https://app.myaipet.ai" class="nav-cta">Launch App</a>
 </nav>
 
@@ -1765,28 +1798,28 @@
         <div class="doc-no">Right 01/04 · Passport</div>
         <h4>Export</h4>
         <p>Download your pet's entire identity as portable JSON — personality, memories, skills, history.</p>
-        <div class="right-receipt"><span class="rr-prompt">$</span><span>petclaw export</span><span class="rr-bar" aria-hidden="true"></span></div>
+        <div class="right-receipt copy-cmd" data-copy="petclaw export" role="button" tabindex="0" aria-label="Copy command: petclaw export"><span class="rr-prompt">$</span><span class="rr-cmd">petclaw export</span><span class="rr-bar" aria-hidden="true"></span></div>
       </article>
       <article class="right">
         <span class="right-seal" aria-hidden="true">IMP</span>
         <div class="doc-no">Right 02/04 · Passport</div>
         <h4>Import</h4>
         <p>Bring your pet from any PetClaw-compatible platform. Move homes; keep the friend.</p>
-        <div class="right-receipt"><span class="rr-prompt">$</span><span>petclaw import</span><span class="rr-bar" aria-hidden="true"></span></div>
+        <div class="right-receipt copy-cmd" data-copy="petclaw import" role="button" tabindex="0" aria-label="Copy command: petclaw import"><span class="rr-prompt">$</span><span class="rr-cmd">petclaw import</span><span class="rr-bar" aria-hidden="true"></span></div>
       </article>
       <article class="right">
         <span class="right-seal" aria-hidden="true">DEL</span>
         <div class="doc-no">Right 03/04 · Passport</div>
         <h4>Delete</h4>
         <p>Permanent erasure with SHA-256 cryptographic proof. When it's gone, it's gone — verifiably.</p>
-        <div class="right-receipt"><span class="rr-prompt">$</span><span>petclaw wipe --proof</span><span class="rr-bar" aria-hidden="true"></span></div>
+        <div class="right-receipt copy-cmd" data-copy="petclaw wipe --proof" role="button" tabindex="0" aria-label="Copy command: petclaw wipe --proof"><span class="rr-prompt">$</span><span class="rr-cmd">petclaw wipe --proof</span><span class="rr-bar" aria-hidden="true"></span></div>
       </article>
       <article class="right">
         <span class="right-seal" aria-hidden="true">ACK</span>
         <div class="doc-no">Right 04/04 · Passport</div>
         <h4>Consent</h4>
         <p>Granular control over data sharing, model training contributions, and public visibility.</p>
-        <div class="right-receipt"><span class="rr-prompt">$</span><span>petclaw consent</span><span class="rr-bar" aria-hidden="true"></span></div>
+        <div class="right-receipt copy-cmd" data-copy="petclaw consent" role="button" tabindex="0" aria-label="Copy command: petclaw consent"><span class="rr-prompt">$</span><span class="rr-cmd">petclaw consent</span><span class="rr-bar" aria-hidden="true"></span></div>
       </article>
     </div>
 
@@ -1872,7 +1905,7 @@
     <div class="code-block">
       <span class="prompt">$</span>
       <span>npm install petclaw-sdk</span>
-      <span class="copy">copy</span>
+      <button type="button" class="copy" id="sdkCopy" data-copy="npm install petclaw-sdk" aria-label="Copy: npm install petclaw-sdk">copy</button>
     </div>
 
     <div class="proto-cols">
@@ -2902,6 +2935,107 @@ function persist() {
     }, { rootMargin: '0px 0px -92% 0px', threshold: 0 });
     darks.forEach(function(el){ navIo.observe(el); });
   })();
+})();
+</script>
+
+<!-- ═══════════ Copy-to-clipboard chips + mobile nav toggle ═══════════ -->
+<script>
+(function(){
+  'use strict';
+
+  // Legacy execCommand copy — fallback for non-secure contexts / when the
+  // async Clipboard API rejects (e.g. document not focused).
+  function legacyCopy(text){
+    return new Promise(function(resolve, reject){
+      try{
+        var ta = document.createElement('textarea');
+        ta.value = text; ta.setAttribute('readonly','');
+        ta.style.position = 'absolute'; ta.style.left = '-9999px';
+        document.body.appendChild(ta); ta.select();
+        var ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        ok ? resolve() : reject(new Error('copy failed'));
+      } catch(e){ reject(e); }
+    });
+  }
+  function copyText(text){
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text).catch(function(){ return legacyCopy(text); });
+    }
+    return legacyCopy(text);
+  }
+
+  // 1) SDK install copy chip
+  var sdkBtn = document.getElementById('sdkCopy');
+  if (sdkBtn){
+    var sdkResetT = null;
+    sdkBtn.addEventListener('click', function(){
+      copyText(sdkBtn.getAttribute('data-copy') || '').then(function(){
+        sdkBtn.textContent = 'copied';
+        sdkBtn.classList.add('is-copied');
+        clearTimeout(sdkResetT);
+        sdkResetT = setTimeout(function(){
+          sdkBtn.textContent = 'copy';
+          sdkBtn.classList.remove('is-copied');
+        }, 1200);
+      }).catch(function(){});
+    });
+  }
+
+  // 2) Sovereignty command receipts — copy-to-clipboard chips
+  document.querySelectorAll('.right-receipt.copy-cmd').forEach(function(el){
+    var cmdEl = el.querySelector('.rr-cmd');
+    var cmd = el.getAttribute('data-copy') || (cmdEl ? cmdEl.textContent : '');
+    var resetT = null;
+    function fire(){
+      copyText(cmd).then(function(){
+        if (!cmdEl) return;
+        el.classList.add('is-copied');
+        cmdEl.textContent = 'copied ✓';
+        clearTimeout(resetT);
+        resetT = setTimeout(function(){
+          cmdEl.textContent = cmd;
+          el.classList.remove('is-copied');
+        }, 1200);
+      }).catch(function(){});
+    }
+    el.addEventListener('click', fire);
+    el.addEventListener('keydown', function(ev){
+      if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar'){
+        ev.preventDefault(); fire();
+      }
+    });
+  });
+
+  // 3) Mobile nav hamburger toggle
+  var burger = document.getElementById('navBurger');
+  var links = document.getElementById('navLinks');
+  if (burger && links){
+    function setOpen(open){
+      links.classList.toggle('open', open);
+      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    }
+    burger.addEventListener('click', function(){
+      setOpen(!links.classList.contains('open'));
+    });
+    // Close on link tap
+    links.querySelectorAll('a').forEach(function(a){
+      a.addEventListener('click', function(){ setOpen(false); });
+    });
+    // Close on outside tap
+    document.addEventListener('click', function(ev){
+      if (!links.classList.contains('open')) return;
+      if (ev.target === burger || burger.contains(ev.target)) return;
+      if (!links.contains(ev.target)) setOpen(false);
+    });
+    // Close on Escape
+    document.addEventListener('keydown', function(ev){
+      if (ev.key === 'Escape' && links.classList.contains('open')){
+        setOpen(false); burger.focus();
+      }
+    });
+  }
 })();
 </script>
 </body>

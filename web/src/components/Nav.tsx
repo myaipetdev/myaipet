@@ -60,6 +60,24 @@ export default function Nav({ section, setSection, credits }: any) {
       ?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
   }, [section]);
 
+  // Mobile: only 3–4 of 9 tabs fit, so surface a right-edge chevron hint while
+  // the strip can still scroll right — it fades out once the end is reached.
+  const [showScrollHint, setShowScrollHint] = useState(false);
+  useEffect(() => {
+    const el = navWrapRef.current;
+    if (!el) return;
+    const update = () => {
+      setShowScrollHint(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      el.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [section]);
+
   // Count the REAL credit balance toward its new value (up or down) and flash
   // the chip once on change so spends/purchases are felt without a hard cut.
   const displayCredits = useCountUp(typeof credits === "number" ? credits : 0);
@@ -97,18 +115,30 @@ export default function Nav({ section, setSection, credits }: any) {
         @media (max-width: 1520px) {
           .nav-desktop-badge { display: none !important; }
         }
+        /* Scroll affordance for the mobile tab strip — hidden on desktop, a
+           right-edge chevron hint appears only when the strip can scroll right. */
+        .nav-scroll-hint { display: none; }
+        @keyframes navHintNudge {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(3px); }
+        }
         @media (max-width: 768px) {
           .nav-desktop-logo-text { display: none !important; }
           .nav-container { padding: 8px 12px !important; }
-          .nav-items-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; mask-image: linear-gradient(to right, black 90%, transparent); -webkit-mask-image: linear-gradient(to right, black 90%, transparent); padding-right: 6px; }
+          /* Fixed-px right fade + reserved trailing padding so the active label
+             (esp. the last tab) can scroll clear of the fade and never sits
+             hidden under the Connect Wallet button. */
+          .nav-items-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; mask-image: linear-gradient(to right, black calc(100% - 32px), transparent); -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent); padding-right: 44px; scroll-padding-right: 44px; }
           .nav-items-wrap::-webkit-scrollbar { display: none; }
-          .nav-btn { padding: 6px 10px !important; font-size: 13px !important; white-space: nowrap; flex-shrink: 0; }
+          /* ~44px tap target (13px text + 2×14px vertical padding). */
+          .nav-btn { padding: 14px 10px !important; font-size: 13px !important; line-height: 1.15; white-space: nowrap; flex-shrink: 0; }
           .nav-credits { font-size: 13px !important; padding: 4px 8px !important; }
+          .nav-scroll-hint { display: flex !important; }
         }
         @media (max-width: 480px) {
           .nav-container { padding: 6px 8px !important; gap: 6px !important; }
           .nav-logo-img { width: 30px !important; height: 30px !important; }
-          .nav-btn { padding: 5px 8px !important; font-size: 13px !important; }
+          .nav-btn { padding: 14px 8px !important; font-size: 13px !important; }
           .nav-wallet { transform: scale(0.8); transform-origin: right center; }
         }
       `}</style>
@@ -153,7 +183,9 @@ export default function Nav({ section, setSection, credits }: any) {
           </span>
         </div>
 
-        {/* Nav items — scrollable on mobile */}
+        {/* Nav items — scrollable on mobile. Relative wrapper hosts the mobile
+            scroll-hint chevron; the inner div is the actual scroller (ref). */}
+        <div style={{ position: "relative", display: "flex", flex: 1, minWidth: 0 }}>
         <div ref={navWrapRef} className="nav-items-wrap" style={{
           display: "flex", gap: 17, alignItems: "center", justifyContent: "center",
           flex: 1, minWidth: 0,
@@ -274,6 +306,23 @@ export default function Nav({ section, setSection, credits }: any) {
               )}
             </div>
           )}
+        </div>
+          <span
+            className="nav-scroll-hint"
+            aria-hidden="true"
+            style={{
+              position: "absolute", top: 0, bottom: 0, right: 0,
+              alignItems: "center", paddingLeft: 16, paddingRight: 1,
+              pointerEvents: "none",
+              color: "#BE4F28",
+              fontFamily: "var(--ed-m)", fontSize: 17, fontWeight: 800,
+              opacity: showScrollHint ? 1 : 0,
+              transition: "opacity 200ms ease",
+              animation: showScrollHint ? "navHintNudge 1.4s ease-in-out infinite" : "none",
+            }}
+          >
+            ›
+          </span>
         </div>
 
         {/* "← Landing" button removed — /landing/ doesn't exist, the home itself is the landing. */}

@@ -77,12 +77,15 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
     return () => { clearInterval(refresh); clearInterval(id); };
   }, []);
 
-  // Once we know the user's primary pet, fetch its thought
+  // Once we know the user's primary pet, fetch its thought.
+  // Owner-only endpoint: only fetch for a signed-in user's own pet — guests
+  // (and the top-rank preview pet) would 403 + log a console error otherwise.
   useEffect(() => {
-    const petId = data?.me?.petId ?? data?.topThree?.[0]?.petId;
-    const petName = data?.me?.petName ?? data?.topThree?.[0]?.name;
+    if (!data?.signedIn) return;
+    const petId = data?.me?.petId;
+    const petName = data?.me?.petName;
     if (!petId || !petName) return;
-    fetch(`/api/pets/${petId}/thought`)
+    fetch(`/api/pets/${petId}/thought`, { headers: getAuthHeaders() })
       .then(r => r.ok ? r.json() : null)
       .then(d => d?.thought && setThought({ text: d.thought, emotion: d.emotion, petName }))
       .catch(() => {});
