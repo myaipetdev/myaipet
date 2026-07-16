@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { awardPoints } from "@/lib/seasonRewards";
+import { grantEarnedCredits, arenaCreditDailyCap } from "@/lib/economyGuards";
 import { SKILL_DB, SKILL_MAP, DAILY_BATTLE_CAP, DAILY_EXP_CAP, getGrowthMultiplier } from "@/lib/skills";
 import { PVE_STAGES, REGIONS, getStage, getRegionForStage, generateMinion, calculateStars, getStageMinLevel } from "@/lib/pve";
 import { simulateBattle } from "@/lib/battleSim";
@@ -145,7 +146,12 @@ export async function POST(req: NextRequest) {
     Math.floor(baseExp * growthMul),
     Math.max(0, DAILY_EXP_CAP - dailyLog.exp_earned)
   );
-  const creditsGain = won ? stage.rewards.credits : 0;
+  // POINTS-ECONOMY §2.2 knob #1 (the P0): arena credits are FIRST-CLEAR only and
+  // routed through the capped earned-credit helper (credits:arena ≤50/day + the
+  // global credits:earned ≤100/day). Replays still grant exp/season points but
+  // NO credits, killing the ≤6,000 cr/day replay-farm ($36/day/user vendor burn).
+  // Granted AFTER the transaction (the helper runs its own atomic tx).
+  let creditsGain = 0;
   const seasonGain = won ? stage.rewards.seasonPoints : Math.floor(stage.rewards.seasonPoints * 0.2);
 
   // First clear skill drop
@@ -192,11 +198,11 @@ export async function POST(req: NextRequest) {
         ? { experience: { set: newExp - expNeeded }, level: { increment: 1 }, total_interactions: { increment: 1 } }
         : { experience: { increment: expGain }, total_interactions: { increment: 1 } },
     }),
-    // Credits + season points
+    // Season points only — arena credits are granted separately (first-clear +
+    // capped) via grantEarnedCredits after this transaction.
     prisma.user.update({
       where: { id: user.id },
       data: {
-        credits: { increment: creditsGain },
         season_points: { increment: seasonGain },
       },
     }),
@@ -239,6 +245,13 @@ export async function POST(req: NextRequest) {
       },
     }),
   ]);
+
+  // Arena credits: first clear only, capped (credits:arena ≤50/day + global
+  // credits:earned ≤100/day). Never throws — a capped/errored grant yields 0.
+  if (isFirstClear && stage.rewards.credits > 0) {
+    const g = await grantEarnedCredits(user.id, "arena", stage.rewards.credits, arenaCreditDailyCap());
+    creditsGain = g.granted;
+  }
 
   if (leveledUp) {
     await awardPoints(user.id, pet.id, "level_up");

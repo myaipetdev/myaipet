@@ -6,6 +6,7 @@ import { isCodexVariant, codexVariantDesc } from "@/lib/codex";
 import { loraEnabled, getReadyPetLora, falLoraImage } from "@/lib/services/lora";
 import { moderateGeneration } from "@/lib/moderation";
 import { awardPoints } from "@/lib/seasonRewards";
+import { checkVideoAllowed } from "@/lib/economyGuards";
 import { triggerAgentReactions } from "@/lib/agents";
 import { recordGenerationOnChain, mintContentNFT } from "@/lib/blockchain";
 import { ethers } from "ethers";
@@ -70,6 +71,17 @@ export async function POST(
   const creditCost = type === "video"
     ? getVideoCreditCost(duration || 5)
     : (style === 0 ? 0 : 5);
+
+  // Free-origin video gate (POINTS-ECONOMY §2.2/§2.5, knobs #4/#10): a never-paid
+  // wallet can't generate video until day-2 of its lifetime, then it's metered by
+  // a per-wallet 2/day + a GLOBAL 300/day free-origin budget. Paying wallets
+  // bypass; images are never gated.
+  if (type === "video") {
+    const vg = await checkVideoAllowed(user);
+    if (!vg.ok) {
+      return NextResponse.json({ error: vg.error, videoGated: true }, { status: vg.status });
+    }
+  }
 
   // Auto-analyze appearance if not yet described
   let appearanceDesc = pet.appearance_desc;

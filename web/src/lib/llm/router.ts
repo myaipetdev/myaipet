@@ -153,6 +153,32 @@ function consumeLLMBudget(petId?: number): void {
   budget.total++;
 }
 
+// ── Catch-vision global budget (POINTS-ECONOMY §2.4/§2.5, knobs #2/#11) ──
+// A dedicated global daily cap for Grok-vision verify calls (POST /api/catch),
+// separate from the chat LLM_DAILY_CALL_CAP. Same in-memory/per-process posture.
+// VISION_DAILY_CAP default 5,000 ≈ $25/day absolute worst case. Throws the same
+// LLMBudgetError (429) so the catch route can degrade to a friendly "try again
+// tomorrow" instead of spending vendor money past the ceiling.
+const visionBudget = { date: "", total: 0 };
+
+/** Count one platform-funded vision call; throws LLMBudgetError when the global cap is hit. */
+export function consumeVisionBudget(): void {
+  const today = new Date().toISOString().slice(0, 10);
+  if (visionBudget.date !== today) {
+    visionBudget.date = today;
+    visionBudget.total = 0;
+  }
+  if (visionBudget.total >= envCap("VISION_DAILY_CAP", 5000)) throw new LLMBudgetError();
+  visionBudget.total++;
+}
+
+/** Read-only snapshot of today's global vision budget (admin/ops surfaces). */
+export function getVisionDailyCounters(): { date: string; visionCalls: number; cap: number } {
+  const today = new Date().toISOString().slice(0, 10);
+  const fresh = visionBudget.date !== today;
+  return { date: today, visionCalls: fresh ? 0 : visionBudget.total, cap: envCap("VISION_DAILY_CAP", 5000) };
+}
+
 /**
  * Read-only snapshot of today's in-memory platform-LLM budget counters, for the
  * admin ops dashboard (/api/admin/overview). Same per-process, resets-on-deploy

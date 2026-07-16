@@ -5,6 +5,7 @@ import {
 } from "@/lib/petclaw/pethub";
 import { getUser } from "@/lib/auth";
 import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
+import { consumeDailyQuota, llmSkillDailyCap } from "@/lib/economyGuards";
 import { prisma } from "@/lib/prisma";
 
 const PUBLIC_DEMO_PET_ID = 1; // Sparky — the landing-page playground pet
@@ -113,13 +114,29 @@ export async function POST(req: NextRequest) {
 
       case "execute": {
         if (!skillId) return NextResponse.json({ error: "skillId required" }, { status: 400 });
+
+        // POINTS-ECONOMY §2.3 knob #5: the authed skill-execute path was the one
+        // LLM-backed surface with NO rate limit — an owner could run llm-prompt
+        // skills as unbounded free Grok. Cap LLM-backed skill runs at
+        // LLM_SKILL_DAILY_CAP (default 50) per day per pet. The call itself
+        // already routes through callLLM (executeLLMSkill), so it also counts
+        // against the LLM_DAILY_CALL_CAP / LLM_USER_DAILY_CAP budget.
+        const owner = pid !== PUBLIC_DEMO_PET_ID ? await getUser(req).catch(() => null) : null;
+        const skillDef = getSkill(String(skillId));
+        if (owner && skillDef?.handler === "llm-prompt") {
+          const q = await consumeDailyQuota(owner.id, `llm:skill:${pid}`, llmSkillDailyCap());
+          if (!q.ok) {
+            return NextResponse.json(
+              { error: `Daily skill limit reached (${q.cap}/day for this pet) — try again tomorrow.` },
+              { status: 429 },
+            );
+          }
+        }
+
         const result = await executeSkill(pid, skillId, input || {});
         // Running a PetClaw skill as the owner feeds the season (capped; the
         // public demo pet doesn't earn).
-        if (pid !== PUBLIC_DEMO_PET_ID) {
-          const u = await getUser(req).catch(() => null);
-          if (u) await awardPointsCapped(u.id, "petclaw", 5, DAILY_POINT_CAPS.petclaw).catch(() => {});
-        }
+        if (owner) await awardPointsCapped(owner.id, "petclaw", 5, DAILY_POINT_CAPS.petclaw).catch(() => {});
         return NextResponse.json(result);
       }
 

@@ -155,12 +155,38 @@ export async function POST(req: NextRequest) {
       throw e;
     }
 
+    // POINTS-ECONOMY §2.2 knob #3: the second half of the starter grant — 50 cr
+    // released at the day-3 check-in (converts farmers into 3-day-retained users
+    // or filters them). Idempotent via a sentinel DailyActionCount row so the
+    // tranche pays exactly once. Amount tunable via SIGNUP_DAY3_CREDITS.
+    let bonusCredits = 0;
+    if (newStreak >= 3) {
+      const SIGNUP_DAY3_CREDITS = Number(process.env.SIGNUP_DAY3_CREDITS) || 50;
+      try {
+        await prisma.$transaction(async (tx) => {
+          await tx.dailyActionCount.create({
+            data: { user_id: user.id, action_key: "signup_day3_grant", day: "once", count: 1 },
+          });
+          await tx.user.update({
+            where: { id: user.id },
+            data: { credits: { increment: SIGNUP_DAY3_CREDITS } },
+          });
+        });
+        bonusCredits = SIGNUP_DAY3_CREDITS;
+      } catch (e: unknown) {
+        if (!(e && typeof e === "object" && (e as { code?: string }).code === "P2002")) {
+          console.error("Day-3 grant error:", e);
+        }
+      }
+    }
+
     return NextResponse.json({
       streak: newStreak,
       lastCheckin: todayDateString(),
       checkedInToday: true,
       rewards: STREAK_REWARDS,
       awarded: rewardPoints,
+      ...(bonusCredits > 0 ? { bonusCredits } : {}),
     });
   } catch (error) {
     console.error("Checkin POST error:", error);

@@ -9,6 +9,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { callLLM } from "@/lib/llm/router";
 import type { MemoryEntry } from "./persistent-memory";
 
 export interface LearnedPattern {
@@ -166,33 +167,24 @@ export class SelfLearner {
   }
 
   private async detectTopicWithLLM(message: string): Promise<string | null> {
-    const grokKey = process.env.GROK_API_KEY;
-    if (!grokKey) return null;
-
+    // POINTS-ECONOMY §2.3 knob #7: routed through callLLM (task:"extract") so this
+    // classification fan-out counts against the LLM daily budget instead of hitting
+    // api.x.ai raw. On a budget breach callLLM throws; we swallow it (best-effort).
     try {
-      const res = await fetch("https://api.x.ai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${grokKey}`,
-        },
-        body: JSON.stringify({
-          model: "grok-3-mini-fast",
-          messages: [
-            {
-              role: "system",
-              content: 'Classify this message into ONE topic. Reply with ONLY the topic slug (snake_case, max 3 words). Examples: emotional_support, daily_planning, creative_writing, tech_help, relationship_advice, health_wellness, career_guidance, learning_request',
-            },
-            { role: "user", content: message },
-          ],
-          max_tokens: 20,
-          temperature: 0,
-        }),
+      const out = await callLLM({
+        task: "extract",
+        petId: this.petId,
+        messages: [
+          {
+            role: "system",
+            content: 'Classify this message into ONE topic. Reply with ONLY the topic slug (snake_case, max 3 words). Examples: emotional_support, daily_planning, creative_writing, tech_help, relationship_advice, health_wellness, career_guidance, learning_request',
+          },
+          { role: "user", content: message },
+        ],
+        max_tokens: 20,
+        temperature: 0,
       });
-
-      if (!res.ok) return null;
-      const data = await res.json();
-      const topic = data.choices?.[0]?.message?.content?.trim().toLowerCase().replace(/[^a-z_]/g, "");
+      const topic = out.text?.trim().toLowerCase().replace(/[^a-z_]/g, "");
       return topic || null;
     } catch {
       return null;

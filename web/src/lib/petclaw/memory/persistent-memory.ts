@@ -15,6 +15,7 @@
 
 import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { callLLM } from "@/lib/llm/router";
 
 // ── Constants ──
 // SCRUM-74 §2-2: caps raised. 20-entry ledger risked "forgetting" for 6mo+
@@ -261,22 +262,18 @@ export class PetMemoryManager {
     userMessage: string,
     petResponse: string
   ): Promise<{ facts: MemoryEntry[]; userInfo: UserProfile[] }> {
-    const grokKey = process.env.GROK_API_KEY;
-    if (!grokKey) return { facts: [], userInfo: [] };
-
+    // POINTS-ECONOMY §2.3 knob #7: routed through callLLM (task:"extract") so this
+    // memory fan-out counts against the LLM daily budget (consumeLLMBudget) instead
+    // of hitting api.x.ai raw. On a budget breach callLLM throws LLMBudgetError,
+    // which we swallow to a no-op extraction — memory is best-effort, never fatal.
     try {
-      const res = await fetch("https://api.x.ai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${grokKey}`,
-        },
-        body: JSON.stringify({
-          model: "grok-3-mini-fast",
-          messages: [
-            {
-              role: "system",
-              content: `Extract useful information from this conversation to remember for future sessions. Return JSON only.
+      const out = await callLLM({
+        task: "extract",
+        petId: this.petId,
+        messages: [
+          {
+            role: "system",
+            content: `Extract useful information from this conversation to remember for future sessions. Return JSON only.
 
 Output format:
 {
@@ -295,21 +292,18 @@ Rules:
 - Use descriptive keys like "user_name", "favorite_food", "works_at"
 - If this fact contradicts/replaces an older one (e.g. user changed mind: "I love sushi" → "I hate sushi now"), set "replacesKey" to the old key so we drop the outdated entry
 - If nothing useful, return empty arrays`,
-            },
-            {
-              role: "user",
-              content: `User said: "${userMessage}"\nPet replied: "${petResponse}"`,
-            },
-          ],
-          max_tokens: 300,
-          temperature: 0.1,
-          response_format: { type: "json_object" },
-        }),
+          },
+          {
+            role: "user",
+            content: `User said: "${userMessage}"\nPet replied: "${petResponse}"`,
+          },
+        ],
+        max_tokens: 300,
+        temperature: 0.1,
+        response_format: { type: "json_object" },
       });
 
-      if (!res.ok) return { facts: [], userInfo: [] };
-      const data = await res.json();
-      const content = data.choices?.[0]?.message?.content || "{}";
+      const content = out.text || "{}";
       const parsed = JSON.parse(content);
 
       return {
@@ -323,6 +317,7 @@ Rules:
         })),
       };
     } catch {
+      // Any failure (incl. LLMBudgetError on a budget breach) → best-effort no-op.
       return { facts: [], userInfo: [] };
     }
   }

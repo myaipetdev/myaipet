@@ -33,6 +33,7 @@ import { submitToBackend } from "@/lib/studio/backend";
 import { getCurrentSubscription, gateModel, incrementUsage } from "@/lib/studio/subscription";
 import { moderateText } from "@/lib/moderation";
 import { saveRemoteFile } from "@/lib/storage";
+import { checkVideoAllowed } from "@/lib/economyGuards";
 
 export async function POST(req: NextRequest) {
   const rl = rateLimit(req, { key: "studio-generate", limit: 30, windowMs: 60_000 });
@@ -107,6 +108,18 @@ export async function POST(req: NextRequest) {
         error: `Monthly ${kind} limit reached (${limit}). Upgrade your tier to keep generating.`,
         upsell: { currentTier: gate.currentTier },
       }, { status: 403 });
+    }
+  }
+
+  // ── Free-origin video gate (POINTS-ECONOMY §2.2/§2.5, knobs #4/#10) ──
+  // Video-kind generation by a never-paid wallet is pacing-gated: unlocks on
+  // day-2 of the wallet's lifetime, then metered by a per-wallet 2/day + a
+  // GLOBAL 300/day free-origin budget. Paying wallets bypass entirely. Images
+  // are never gated here.
+  if (model.kind === "video") {
+    const vg = await checkVideoAllowed(user);
+    if (!vg.ok) {
+      return NextResponse.json({ error: vg.error, videoGated: true }, { status: vg.status });
     }
   }
 

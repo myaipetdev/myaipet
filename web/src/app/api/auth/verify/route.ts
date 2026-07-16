@@ -160,12 +160,36 @@ export async function POST(req: NextRequest) {
       data: { nonce: newNonce },
     });
 
+    // POINTS-ECONOMY §2.2 knob #3: the FIRST successful verify (proven key
+    // control) grants the 50 cr starter tranche. Idempotent via a sentinel
+    // DailyActionCount row (day "once", unique on user_id+action_key+day) so a
+    // re-verify never re-mints. Amount tunable via SIGNUP_VERIFY_CREDITS.
+    const SIGNUP_VERIFY_CREDITS = Number(process.env.SIGNUP_VERIFY_CREDITS) || 50;
+    let credits = user.credits;
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.dailyActionCount.create({
+          data: { user_id: user.id, action_key: "signup_grant", day: "once", count: 1 },
+        });
+        await tx.user.update({
+          where: { id: user.id },
+          data: { credits: { increment: SIGNUP_VERIFY_CREDITS } },
+        });
+      });
+      credits = user.credits + SIGNUP_VERIFY_CREDITS;
+    } catch (e: unknown) {
+      // P2002 = already granted on a prior verify — expected, not an error.
+      if (!(e && typeof e === "object" && (e as { code?: string }).code === "P2002")) {
+        console.error("Signup grant error:", e);
+      }
+    }
+
     const token = await createToken(user.id, user.wallet_address);
 
     return NextResponse.json({
       token,
       wallet_address: user.wallet_address,
-      credits: user.credits,
+      credits,
     });
   } catch (error: any) {
     // SCRUM-62: log internally, return generic message — never expose error.message

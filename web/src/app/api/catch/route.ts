@@ -17,6 +17,8 @@ import { uploadFile } from "@/lib/storage";
 import { verifyAndDescribeAnimal } from "@/lib/catch/vision";
 import { rollRarity, rollStats, pickElement, pickName, rarityMeta, CATCH_POINTS } from "@/lib/catch/game";
 import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
+import { consumeCatchVerify, refundCatchCredit } from "@/lib/economyGuards";
+import { consumeVisionBudget, isLLMBudgetError } from "@/lib/llm/router";
 
 export const runtime = "nodejs";
 
@@ -26,7 +28,9 @@ function withRarity(cat: any) {
 }
 
 export async function POST(req: NextRequest) {
-  const rl = rateLimit(req, { key: "cat-catch", limit: 20, windowMs: 60 * 60_000 });
+  // POINTS-ECONOMY §2.4: per-token rate is politeness only (6/hr) — the real wall
+  // is the per-wallet credit meter + the global VISION_DAILY_CAP below.
+  const rl = rateLimit(req, { key: "cat-catch", limit: 6, windowMs: 60 * 60_000 });
   if (!rl.ok) return rl.response;
 
   const user = await getUser(req);
@@ -43,6 +47,28 @@ export async function POST(req: NextRequest) {
 
   const lat = typeof body?.lat === "number" ? body.lat : null;
   const lng = typeof body?.lng === "number" ? body.lng : null;
+
+  // ── Metering (POINTS-ECONOMY §2.4, knob #2) ──
+  // We pay Grok on ATTEMPT, so we charge on attempt: 3 free verifies/day/wallet,
+  // then 1 credit each. Then a GLOBAL VISION_DAILY_CAP backstop. Order: bill
+  // first, then the global guard; refund the credit if the global budget trips
+  // so a paying user isn't charged for a call we refused to make.
+  const bill = await consumeCatchVerify(user.id);
+  if (!bill.ok) {
+    return NextResponse.json({ caught: false, error: bill.error, needsCredits: true }, { status: bill.status });
+  }
+  try {
+    consumeVisionBudget();
+  } catch (e) {
+    if (bill.mode === "credit") await refundCatchCredit(user.id);
+    if (isLLMBudgetError(e)) {
+      return NextResponse.json({
+        caught: false,
+        reason: "The wildlife scanner is resting for today — come back tomorrow and try again. 🐾",
+      });
+    }
+    throw e;
+  }
 
   // ── Anti-cheat: verify a real live animal BEFORE storing anything ──
   const verdict = await verifyAndDescribeAnimal(dataUrl);

@@ -16,10 +16,10 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { callLLM } from "@/lib/llm/router";
 
 const MAX_REFLECTIONS = 12;       // keep the most recent dozen
 const REFLECT_EVERY_TURNS = 8;    // generate one roughly every 8 exchanges
-const MODEL = "grok-3-mini";
 
 export interface BondReflection {
   date: string;       // YYYY-MM-DD
@@ -57,9 +57,6 @@ export async function maybeReflectOnBond(
   // Gate: only every Nth interaction.
   if ((pet.total_interactions || 0) % REFLECT_EVERY_TURNS !== 0) return;
 
-  const key = process.env.GROK_API_KEY;
-  if (!key) return;
-
   const mods = (pet.personality_modifiers as Record<string, unknown>) || {};
   const existing = (mods.bond_reflections as BondReflection[]) || [];
   const priorNotes = existing.slice(-4).map(r => `- ${r.note}`).join("\n") || "(none yet)";
@@ -75,22 +72,20 @@ export async function maybeReflectOnBond(
     `new about how to treat them, output exactly "SKIP". Otherwise output only the note.`;
 
   try {
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: `Owner: ${ownerMessage.slice(0, 300)}\n${pet.name}: ${petReply.slice(0, 300)}` },
-        ],
-        max_tokens: 80,
-        temperature: 0.7,
-      }),
+    // POINTS-ECONOMY §2.3 knob #7: routed through callLLM (task:"persona") so this
+    // bond-reflection fan-out counts against the LLM daily budget instead of hitting
+    // api.x.ai raw. On a budget breach callLLM throws; the catch below no-ops.
+    const out = await callLLM({
+      task: "persona",
+      petId,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: `Owner: ${ownerMessage.slice(0, 300)}\n${pet.name}: ${petReply.slice(0, 300)}` },
+      ],
+      max_tokens: 80,
+      temperature: 0.7,
     });
-    if (!res.ok) return;
-    const data = await res.json();
-    const note = (data?.choices?.[0]?.message?.content || "").trim();
+    const note = (out.text || "").trim();
     if (!note || note.toUpperCase().startsWith("SKIP") || note.length < 8) return;
 
     const next = [...existing, { date: ymd(), note: note.slice(0, 160) }].slice(-MAX_REFLECTIONS);

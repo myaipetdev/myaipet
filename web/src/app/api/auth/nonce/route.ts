@@ -20,9 +20,14 @@ export async function GET(req: NextRequest) {
     const address = rawAddress.toLowerCase();
     const nonce = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
 
+    // POINTS-ECONOMY §2.2 knob #3: NO credit mint here. `GET /nonce` is
+    // unauthenticated (no signature yet), so minting on it let anyone script
+    // free credits with zero key control (red-team Leak 3). The starter grant is
+    // now 50 cr at first successful `verify` (proven key control) + 50 cr at the
+    // day-3 check-in. New wallets start at 0 credits.
     await prisma.user.upsert({
       where: { wallet_address: address },
-      create: { wallet_address: address, nonce, credits: 100 },
+      create: { wallet_address: address, nonce, credits: 0 },
       update: { nonce },
     });
 
