@@ -486,43 +486,120 @@
   .demo-foot { margin-top: 28px; font-family: var(--sans); font-size: 18px; font-weight: 500; line-height: 1.55; color: var(--ink); max-width: 680px; }
   .demo-foot .gold { color: var(--gold-deep); font-weight: 600; }
 
-  /* GALLERY */
-  .gallery {
-    margin-top: 56px;
-    column-count: 4; column-gap: 18px;
-  }
-  .g-card {
-    break-inside: avoid; margin-bottom: 18px;
-    background: #fff; border: 1px solid var(--line); border-radius: 18px;
-    padding: 14px; position: relative; overflow: hidden;
-    transition: transform .3s ease, box-shadow .3s;
-  }
-  .g-card:hover { transform: translateY(-3px); box-shadow: 0 20px 40px -20px rgba(16,16,28,0.2); }
-  .g-avatar {
-    width: 100%; aspect-ratio: 1/1; border-radius: 12px;
+  /* GALLERY — salon-style exhibition wall. Textured plaster wall, spotlight
+     vignette; every pet hangs in a real frame (gold or thin ink) on a nail +
+     wire, brass plaque engraved name·level·species, curator label below.
+     Hang angles vary; hover = frame lifts straight + plaque glints. */
+  .gallery-wall {
+    position: relative; overflow: hidden;
     background:
-      repeating-linear-gradient(var(--a, 45deg), rgba(226,125,12,0.22) 0 6px, rgba(226,125,12,0.38) 6px 12px);
-    border: 1px dashed rgba(226,125,12,0.45);
-    display: flex; align-items: center; justify-content: center; text-align: center;
-    font-family: var(--mono); font-size: 13px; color: var(--gold-deep); padding: 10px;
-    transition: transform .4s ease;
+      radial-gradient(ellipse 90% 55% at 50% 0%, rgba(232,199,126,0.16), transparent 62%),
+      #F2E9D7;
   }
-  .g-card:hover .g-avatar { transform: scale(1.03); }
-  .g-card.t2 .g-avatar { aspect-ratio: 3/4; }
-  .g-card.t3 .g-avatar { aspect-ratio: 4/5; }
-  .g-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
-  .g-name { font-family: var(--serif); font-weight: 600; font-size: 16px; }
-  .g-lvl { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .gallery-wall::before { /* plaster grain */
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.55;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.13 0 0 0 0 0.10 0 0 0 0 0.07 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+  .gallery-wall::after { /* spotlight vignette — bright center, dim edges */
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 78% 68% at 50% 38%, transparent 52%, rgba(33,26,18,0.16) 100%);
+  }
+  .gallery-wall .container { position: relative; z-index: 1; }
+  .gallery { margin-top: 72px; column-count: 3; column-gap: 40px; }
+  .g-frame {
+    /* inline-block (not block): Chromium refuses to break a multicol flow of
+       block children that are all break-inside:avoid — inline-blocks distribute */
+    display: inline-block; width: 100%; vertical-align: top;
+    break-inside: avoid; margin: 0 0 52px; position: relative;
+    transition: transform .35s var(--ease);
+  }
+  .g-frame:hover { transform: translateY(-7px); }
+  .g-tilt { position: relative; width: var(--fw, 100%); margin: 0 auto; transform: rotate(var(--tilt, 0deg)); transition: transform .35s var(--ease); }
+  .g-frame.t2 { --fw: 90%; }   /* varied frame sizes — salon walls never repeat */
+  .g-frame.t3 { --fw: 96%; }
+  .g-frame:hover .g-tilt { transform: rotate(0deg); }
+  .g-frame:nth-child(5n+1) { --tilt: -1.3deg; }
+  .g-frame:nth-child(5n+2) { --tilt: 1.2deg; }
+  .g-frame:nth-child(5n+3) { --tilt: -0.7deg; }
+  .g-frame:nth-child(5n+4) { --tilt: 1.7deg; }
+  .g-frame:nth-child(5n)   { --tilt: -1.9deg; }
+  .g-tilt::before { /* warm spotlight pooled behind each frame */
+    content: ""; position: absolute; left: -14%; right: -14%; top: -10%; height: 118%;
+    background: radial-gradient(ellipse 62% 55% at 50% 20%, rgba(255,246,220,0.75), transparent 72%);
+    z-index: -1; pointer-events: none;
+  }
+  .g-nail {
+    position: absolute; top: -17px; left: 50%; transform: translateX(-50%);
+    width: 9px; height: 9px; border-radius: 50%; z-index: 1;
+    background: radial-gradient(circle at 35% 30%, #F6DC9C, #9A6A22 72%);
+    box-shadow: 0 1px 2px rgba(33,26,18,0.55);
+  }
+  .g-wire { position: absolute; top: -14px; left: 7%; width: 86%; height: 16px; pointer-events: none; }
+  .g-frame-outer {
+    position: relative;
+    background: linear-gradient(140deg, #EBD08F 0%, #C8932F 28%, #F2CD86 52%, #A8791F 78%, #E3BC6C 100%);
+    padding: 12px;
+    border: 1px solid rgba(33,26,18,0.5);
+    box-shadow:
+      inset 0 0 0 1px rgba(255,251,240,0.55),
+      6px 8px 0 rgba(33,26,18,0.2),
+      0 30px 46px -20px rgba(33,26,18,0.38);
+    transition: box-shadow .35s var(--ease);
+  }
+  .g-frame:hover .g-frame-outer {
+    box-shadow:
+      inset 0 0 0 1px rgba(255,251,240,0.55),
+      9px 13px 0 rgba(33,26,18,0.22),
+      0 42px 62px -22px rgba(33,26,18,0.48);
+  }
+  .g-frame.ink .g-frame-outer {
+    background: linear-gradient(160deg, #3A3024, #211A12 55%, #403526);
+    padding: 9px;
+    box-shadow:
+      inset 0 0 0 1px rgba(252,233,207,0.18),
+      6px 8px 0 rgba(33,26,18,0.2),
+      0 30px 46px -20px rgba(33,26,18,0.38);
+  }
+  .g-mat {
+    background: #FFFDF6; padding: 15px 15px 12px; text-align: center;
+    box-shadow: inset 0 0 0 1px rgba(33,26,18,0.15), inset 0 2px 5px rgba(33,26,18,0.08);
+  }
+  .g-art {
+    width: 100%; aspect-ratio: 1/1; display: block;
+    background-size: cover; background-position: center;
+    box-shadow: inset 0 0 0 1px rgba(33,26,18,0.45), inset 0 3px 12px rgba(0,0,0,0.3);
+  }
+  .g-frame.t2 .g-art { aspect-ratio: 3/4; }
+  .g-frame.t3 .g-art { aspect-ratio: 4/5; }
+  .g-plaque {
+    display: inline-block; margin: 12px auto 0; max-width: 100%;
+    padding: 5px 14px 4px; border-radius: 3px; position: relative; overflow: hidden;
+    background: linear-gradient(180deg, #F6DC9C, #D9A845 55%, #C8932F);
+    border: 1px solid #9A6A22;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.65), 0 1px 2px rgba(33,26,18,0.35);
+  }
+  .g-plaque .nm { display: block; font-family: var(--serif); font-weight: 700; font-size: 13.5px; color: #4A2E08; letter-spacing: 0.03em; text-shadow: 0 1px 0 rgba(255,255,255,0.35); }
+  .g-plaque .sb { display: block; margin-top: 1px; font-family: var(--mono); font-size: 10px; color: #6A4712; letter-spacing: 0.16em; text-transform: uppercase; }
+  .g-plaque::after { /* brass glint on hover */
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(115deg, transparent 32%, rgba(255,255,255,0.75) 50%, transparent 66%);
+    transform: translateX(-130%); transition: transform .1s;
+  }
+  .g-frame:hover .g-plaque::after { transform: translateX(130%); transition: transform .65s ease; }
+  .g-label { margin: 16px auto 0; max-width: 90%; text-align: center; }
   .g-bdg {
-    display: inline-block; margin-top: 6px;
-    font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 3px 8px; border-radius: 6px;
-    background: rgba(226,125,12,0.1); color: var(--gold-deep);
+    display: inline-block;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 3px 9px; border: 1.5px solid rgba(154,78,30,0.55); border-radius: 3px;
+    color: var(--gold-deep); transform: rotate(-1.5deg);
   }
-  .g-quote { margin-top: 10px; font-size: 13px; line-height: 1.45; color: var(--ink); font-style: italic; }
-  .g-wallet { margin-top: 10px; font-family: var(--mono); font-size: 13px; color: var(--muted); letter-spacing: 0.06em; }
+  .g-quote { margin-top: 9px; font-size: 13px; line-height: 1.5; color: var(--ink-70); font-style: italic; }
+  .g-wallet { margin-top: 7px; font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
 
-  /* DATA SOVEREIGNTY (dark) */
+  /* DATA SOVEREIGNTY (dark) — the four rights are STAMPED DOCUMENTS: paper
+     cards with a perforated (hole-punched) binding edge, an embossed foil wax
+     seal, and a printed receipt footer carrying the CLI command. Paper-grain
+     on the dark ground; staggered reveal via the shared [data-reveal] IO. */
   .dark-section {
     background: var(--navy); color: var(--cream); position: relative; overflow: hidden;
   }
@@ -533,32 +610,76 @@
       radial-gradient(ellipse at 90% 90%, rgba(226,125,12,0.06), transparent 50%);
     pointer-events: none;
   }
+  .dark-section::after { /* paper grain on the dark ground */
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.99 0 0 0 0 0.91 0 0 0 0 0.78 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .dark-section .container { position: relative; z-index: 1; }
   .dark-section .eyebrow { color: var(--gold-soft); }
   .dark-section .section-head p { color: rgba(255,248,230,0.6); }
   .rights {
-    margin-top: 72px;
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
-    border: 1px solid var(--line-dk); border-radius: 20px; overflow: hidden;
-    background: rgba(255,255,255,0.02);
+    margin-top: 84px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px;
+    align-items: stretch;
   }
   .right {
-    padding: 32px 26px; border-right: 1px solid var(--line-dk);
-    display: flex; flex-direction: column; gap: 14px;
-    transition: background .3s;
+    position: relative; padding: 26px 22px 0 30px; border-radius: 4px;
+    background: linear-gradient(180deg, #FFFDF6, #F5ECD8);
+    color: var(--ink);
+    border: 1px solid rgba(33,26,18,0.55);
+    box-shadow: 5px 6px 0 rgba(0,0,0,0.4), 0 34px 54px -30px rgba(0,0,0,0.6);
+    display: flex; flex-direction: column; gap: 12px;
+    transform: rotate(var(--tilt, 0deg));
+    transition: transform .3s var(--ease), box-shadow .3s var(--ease);
   }
-  .right:last-child { border-right: 0; }
-  .right:hover { background: rgba(226,125,12,0.04); }
-  .right .icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: rgba(226,125,12,0.12); border: 1px solid rgba(226,125,12,0.25);
+  .right:nth-child(1) { --tilt: -0.8deg; }
+  .right:nth-child(2) { --tilt: 0.6deg; }
+  .right:nth-child(3) { --tilt: -0.5deg; }
+  .right:nth-child(4) { --tilt: 0.9deg; }
+  .right:hover {
+    transform: rotate(0deg) translateY(-6px);
+    box-shadow: 8px 11px 0 rgba(0,0,0,0.45), 0 44px 66px -30px rgba(0,0,0,0.7);
+  }
+  .right::before { /* punched binding holes — dark ground shows through */
+    content: ""; position: absolute; left: 9px; top: 12px; bottom: 12px; width: 9px;
+    background-image: radial-gradient(circle 3.2px at 4.5px 9px, var(--navy) 3.1px, rgba(33,26,18,0.35) 3.6px, transparent 4.4px);
+    background-size: 9px 24px; background-repeat: repeat-y;
+  }
+  .right .doc-no {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--muted); padding: 0 44px 9px 0; /* clear the wax seal */
+    border-bottom: 1px solid rgba(33,26,18,0.18); white-space: nowrap;
+  }
+  .right-seal {
+    position: absolute; top: -16px; right: -11px; z-index: 2;
+    width: 56px; height: 56px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    color: var(--gold-soft); font-family: var(--mono); font-size: 13px; letter-spacing: 0.1em;
+    background: radial-gradient(circle at 38% 32%, #FFF7E6, #F2CD86 42%, #C8932F 75%, #9A4E1E);
+    font-family: var(--mono); font-weight: 700; font-size: 12.5px; letter-spacing: 0.1em; color: #3a1e0c;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5), 0 -1px 0 rgba(80,40,10,0.35); /* emboss */
+    box-shadow: 0 5px 12px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.5), inset 0 -4px 7px rgba(154,78,30,0.55);
+    transform: rotate(8deg);
+    transition: transform .3s var(--ease);
   }
-  .right h4 { font-size: 22px; font-weight: 600; }
-  .right p { font-size: 14px; line-height: 1.55; color: rgba(255,248,230,0.65); }
-  .right .meta {
-    margin-top: auto; font-family: var(--mono); font-size: 13px;
-    letter-spacing: 0.14em; text-transform: uppercase; color: rgba(226,125,12,0.7);
+  .right-seal::after {
+    content: ""; position: absolute; inset: 5px; border-radius: 50%;
+    border: 1px dashed rgba(58,30,12,0.5);
+  }
+  .right:hover .right-seal { transform: rotate(-4deg) scale(1.06); }
+  .right h4 { font-size: 22px; font-weight: 700; color: var(--ink); }
+  .right p { font-size: 14px; line-height: 1.55; color: var(--ink-70); }
+  .right-receipt {
+    margin: auto -22px 0 -30px; padding: 12px 18px 13px 30px; /* margin-top:auto pins to card bottom */
+    border-top: 1.5px dashed rgba(33,26,18,0.4);
+    display: flex; align-items: center; gap: 7px; white-space: nowrap; overflow: hidden;
+    font-family: var(--mono); font-size: 11px; color: var(--ink); letter-spacing: 0.02em;
+    background: repeating-linear-gradient(180deg, rgba(33,26,18,0.035) 0 2px, transparent 2px 5px);
+    border-radius: 0 0 4px 4px;
+  }
+  .right-receipt .rr-prompt { color: var(--terra); font-weight: 700; }
+  .right-receipt .rr-bar {
+    margin-left: auto; width: 36px; height: 14px; opacity: 0.75; flex: 0 0 auto;
+    background: repeating-linear-gradient(90deg, #211A12 0 2px, transparent 2px 4px, #211A12 4px 5px, transparent 5px 9px);
   }
 
   /* DATA FLOW */
@@ -784,9 +905,8 @@
   @media (max-width: 900px) {
     .diff-grid { grid-template-columns: 1fr; }
     .demo-wrap { grid-template-columns: 1fr; }
-    .gallery { column-count: 2; }
+    .gallery { column-count: 2; column-gap: 26px; }
     .rights { grid-template-columns: 1fr 1fr; }
-    .right { border-right: 0; border-bottom: 1px solid var(--line-dk); }
     .flow { grid-template-columns: 1fr; }
     .browser-wrap { grid-template-columns: 1fr; }
     .proto-cols { grid-template-columns: 1fr; }
@@ -814,11 +934,8 @@
   .fx-arrow{display:inline-block; transition:transform .3s var(--ease)}
   @media(hover:hover){ a:hover .fx-arrow, button:hover .fx-arrow{transform:translateX(4px)} }
 
-  /* the page's ONE big move — a section inverts field → terracotta at 60% */
-  .fx-invert{transition:background-color .6s ease, color .6s ease}
-  .fx-invert.is-inverted{background:var(--terra)!important; color:var(--cream-on)!important}
-  .fx-invert.is-inverted .eyebrow,.fx-invert.is-inverted h2,.fx-invert.is-inverted h3,.fx-invert.is-inverted p{color:var(--cream-on)!important}
-  .fx-invert.is-inverted .eyebrow::before{background:var(--cream-on)!important}
+  /* (removed) the full-terracotta section invert — rejected. Terracotta stays
+     an ACCENT; no section ever floods orange. */
 
   /* magnetic CTA leans toward the pointer (set by JS on fine pointers) */
   [data-magnet]{transition:transform .2s cubic-bezier(.2,.8,.2,1)}
@@ -834,12 +951,6 @@
     .nav-links{ display:none !important; }
     .nav{ padding:14px 18px !important; }
   }
-  /* Invert section: recolor the accents the base rule missed (were invisible on
-     terracotta once inverted). */
-  .fx-invert.is-inverted .num,
-  .fx-invert.is-inverted .tag,
-  .fx-invert.is-inverted .prompt,
-  .fx-invert.is-inverted .gold{ color:var(--cream-on) !important; }
 
   /* ═══════════════════════════════════════════════════════════════════
      JOURNEY — the user-story spine. Numbered narrative on a drawn path,
@@ -911,8 +1022,17 @@
   }
   .jv-cap .pill { padding: 4px 10px; border-radius: 999px; background: rgba(226,125,12,0.16); border: 1px solid rgba(226,125,12,0.35); color: #FBE3B8; }
 
-  /* the timeline + drawn spine */
-  .journey-timeline { position: relative; margin-top: 84px; }
+  /* the timeline + drawn spine — INTERLOCKING two-column grid: every step
+     spans two implicit rows, so opposite columns offset by half a card and
+     the composition stays dense + centered. No dead half-rows, nothing hangs
+     off-canvas at any width. (children: 1 = spine, 2..8 = steps 1..7) */
+  .journey-timeline {
+    position: relative; margin-top: 84px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 148px;
+    align-items: start;
+  }
   .j-spine {
     position: absolute; left: 50%; top: 6px; bottom: 6px; width: 3px; transform: translateX(-50%);
     background: repeating-linear-gradient(180deg, rgba(226,125,12,0.22) 0 8px, transparent 8px 16px);
@@ -924,14 +1044,16 @@
     border-radius: 3px; box-shadow: 0 0 12px rgba(226,125,12,0.4);
     transition: height .2s linear;
   }
-  .j-step {
-    position: relative; display: flex; margin-bottom: 46px; min-height: 96px;
-  }
-  .j-step:last-child { margin-bottom: 0; }
-  .j-step:nth-child(odd)  { justify-content: flex-start; }
-  .j-step:nth-child(even) { justify-content: flex-end; }
+  .j-step { position: relative; padding-bottom: 34px; }
+  .j-step:nth-child(2) { grid-column: 1; grid-row: 1 / span 2; }
+  .j-step:nth-child(3) { grid-column: 2; grid-row: 2 / span 2; }
+  .j-step:nth-child(4) { grid-column: 1; grid-row: 3 / span 2; }
+  .j-step:nth-child(5) { grid-column: 2; grid-row: 4 / span 2; }
+  .j-step:nth-child(6) { grid-column: 1; grid-row: 5 / span 2; }
+  .j-step:nth-child(7) { grid-column: 2; grid-row: 6 / span 2; }
+  .j-step:nth-child(8) { grid-column: 1; grid-row: 7 / span 2; padding-bottom: 0; }
   .j-card {
-    width: calc(50% - 62px);
+    position: relative;
     background: rgba(255,255,255,0.72); backdrop-filter: blur(10px);
     border: 1px solid var(--line); border-radius: 18px;
     padding: 24px 26px;
@@ -964,9 +1086,10 @@
     padding: 4px 9px; border-radius: 6px;
     background: rgba(226,125,12,0.09); color: var(--gold-deep);
   }
-  /* foil wax-seal medallion pinned to the spine */
+  /* foil wax-seal medallion pinned to the spine (column gap 148px → spine sits
+     74px past the card edge; node is 52px wide, so edge offset = 74+26 = 100px) */
   .j-node {
-    position: absolute; left: 50%; top: 8px; transform: translateX(-50%);
+    position: absolute; top: 8px;
     width: 52px; height: 52px; border-radius: 50%; z-index: 2;
     background: radial-gradient(circle at 38% 34%, #FFF7E6, #F2CD86 44%, #C8932F 78%, #9A4E1E);
     box-shadow: 0 6px 16px rgba(154,78,30,0.4), inset 0 0 0 1px rgba(255,255,255,0.45), inset 0 -3px 6px rgba(154,78,30,0.4);
@@ -979,26 +1102,28 @@
     content: ""; position: absolute; inset: -6px; border-radius: 50%;
     border: 1px dashed rgba(226,125,12,0.4);
   }
-  /* connector nub from card toward the spine */
-  .j-step:nth-child(odd) .j-card::after,
-  .j-step:nth-child(even) .j-card::before {
-    content: ""; position: absolute; top: 26px; width: 44px; height: 2px;
-    background: linear-gradient(90deg, rgba(226,125,12,0.5), transparent);
+  /* left-column steps (even children) pin the node to their right; right-column
+     steps (odd children) to their left. Connector nub bridges card → spine. */
+  .j-step:nth-child(even) .j-node { right: -100px; }
+  .j-step:nth-child(odd)  .j-node { left: -100px; }
+  .j-step:nth-child(even) .j-card::after,
+  .j-step:nth-child(odd)  .j-card::before {
+    content: ""; position: absolute; top: 26px; width: 74px; height: 2px;
   }
-  .j-step:nth-child(odd) .j-card { position: relative; }
-  .j-step:nth-child(odd)  .j-card::after  { right: -44px; background: linear-gradient(90deg, rgba(226,125,12,0.5), transparent); }
-  .j-step:nth-child(even) .j-card { position: relative; }
-  .j-step:nth-child(even) .j-card::before { left: -44px; background: linear-gradient(270deg, rgba(226,125,12,0.5), transparent); }
+  .j-step:nth-child(even) .j-card::after  { right: -74px; background: linear-gradient(90deg, rgba(226,125,12,0.5), transparent); }
+  .j-step:nth-child(odd)  .j-card::before { left: -74px; background: linear-gradient(270deg, rgba(226,125,12,0.5), transparent); }
 
   @media (max-width: 900px) {
-    .journey-timeline { margin-top: 56px; }
-    .j-spine { left: 26px; }
-    .j-node { left: 26px; }
-    .j-step:nth-child(odd), .j-step:nth-child(even) { justify-content: flex-start; }
-    .j-card { width: 100%; margin-left: 64px; }
-    .j-step:nth-child(odd) .j-card::after,
-    .j-step:nth-child(even) .j-card::before {
-      left: -40px; right: auto; top: 26px;
+    .journey-timeline { margin-top: 56px; grid-template-columns: 1fr; column-gap: 0; }
+    .j-step { grid-column: 1 !important; grid-row: auto !important; padding-bottom: 26px; }
+    .j-step:nth-child(8) { padding-bottom: 0; }
+    .j-spine { left: 26px; transform: none; }
+    .j-step:nth-child(odd) .j-node,
+    .j-step:nth-child(even) .j-node { left: 0; right: auto; }
+    .j-card { margin-left: 64px; }
+    .j-step:nth-child(odd) .j-card::before,
+    .j-step:nth-child(even) .j-card::after {
+      left: -40px; right: auto; top: 26px; width: 40px;
       background: linear-gradient(270deg, rgba(226,125,12,0.5), transparent) !important;
     }
     .journey-video { margin-top: 40px; }
@@ -1060,13 +1185,6 @@
     transform: rotate(-6deg);
   }
 
-  /* core-loop invert — cards restyle with the terracotta field */
-  .il-card { transition: background-color .6s ease, border-color .6s ease; }
-  .fx-invert.is-inverted h4 { color: var(--cream-on) !important; }
-  .fx-invert.is-inverted .il-card { background: rgba(33,26,18,0.22) !important; border-color: rgba(251,246,236,0.28) !important; }
-  .fx-invert.is-inverted .il-card p { color: rgba(252,233,207,0.85) !important; }
-  .fx-invert.is-inverted .il-card > div:last-child,
-  .fx-invert.is-inverted .il-card a { color: var(--foil) !important; }
 
   /* nav over dark bands — solid ink + paper text, never muddy translucent */
   .nav.on-dark, .nav.on-dark.scrolled {
@@ -1083,16 +1201,119 @@
       justify-content: center; padding: 8px 12px;
     }
     .journey-pill.show { transform: translate(0, 0); }
-    .j-step { padding-bottom: 44px; margin-bottom: 8px; }
+    .j-step { padding-bottom: 30px; }
   }
   /* sovereignty rights collapse to one column on small phones */
   @media (max-width: 480px) {
     .rights { grid-template-columns: 1fr; }
   }
+  /* gallery wall: one column on phones — each framed piece keeps presence */
+  @media (max-width: 560px) {
+    .gallery { column-count: 1; }
+    .g-frame { margin-bottom: 46px; }
+  }
   /* section rhythm: 140px desktop → 80px mobile */
   @media (max-width: 700px) {
     section.pad { padding: 80px 0; }
     .footer-cta { padding-top: 80px !important; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SKILLS SHOWCASE — solid navy band. Sparky = archival SPECIMEN POSTER
+     (paper file card, FILE eyebrow, stamped trait tags, wax DEMO seal,
+     tilt + foil sheen on hover). Skills = die-cut sticker-chip cards that
+     deal out with a stagger. Hard seam, zero mid-gradients.
+     ═══════════════════════════════════════════════════════════════════ */
+  #skillsShowcase { position: relative; }
+  #skillsShowcase::after { /* faint paper grain so the navy isn't a dead flat */
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.45;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.99 0 0 0 0 0.91 0 0 0 0 0.78 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  #skillsShowcase .container { position: relative; z-index: 1; }
+  .skills-wrap {
+    display: grid; grid-template-columns: 370px minmax(0, 1fr);
+    gap: 72px; align-items: center;
+  }
+  .specimen {
+    margin: 0; width: 100%; max-width: 370px; position: relative;
+    background: linear-gradient(180deg, #FFFDF6, #F4EBD7);
+    border: 1px solid rgba(33,26,18,0.6);
+    padding: 16px 16px 18px;
+    box-shadow: 8px 10px 0 rgba(0,0,0,0.4), 0 44px 80px -32px rgba(0,0,0,0.6);
+    transform: rotate(-1.4deg);
+    transition: transform .45s var(--ease), box-shadow .45s var(--ease);
+  }
+  .specimen:hover {
+    transform: perspective(900px) rotate(0deg) rotateX(2.5deg) rotateY(-4deg) translateY(-6px);
+    box-shadow: 12px 16px 0 rgba(0,0,0,0.42), 0 58px 96px -36px rgba(0,0,0,0.7);
+  }
+  .spec-head {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 2px 2px 11px; border-bottom: 1px solid rgba(33,26,18,0.22);
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink-70); white-space: nowrap;
+  }
+  .spec-head b { color: var(--terra); font-weight: 700; }
+  .specimen .demo-seal { position: absolute; top: -18px; right: -14px; margin: 0; z-index: 2; }
+  .spec-photo {
+    position: relative; margin-top: 14px; overflow: hidden;
+    border: 1px solid rgba(33,26,18,0.5);
+    box-shadow: inset 0 0 0 5px #FFFDF6, inset 0 0 0 6px rgba(33,26,18,0.3);
+  }
+  .spec-photo img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
+  .spec-sheen {
+    position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+    background: linear-gradient(115deg, transparent 34%, rgba(232,199,126,0.15) 46%, rgba(232,199,126,0.45) 50%, rgba(232,199,126,0.15) 54%, transparent 66%);
+    transform: translateX(-135%); transition: transform .1s;
+  }
+  .specimen:hover .spec-sheen { transform: translateX(135%); transition: transform .8s var(--ease); }
+  .spec-caption { padding: 15px 4px 0; }
+  .spec-name {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    font-family: var(--serif); font-size: 27px; font-weight: 700; color: var(--ink);
+  }
+  .spec-name .latin { font-family: var(--mono); font-size: 11px; font-weight: 400; font-style: italic; letter-spacing: 0.05em; color: var(--muted); }
+  .spec-tags { margin-top: 12px; display: flex; gap: 9px; flex-wrap: wrap; }
+  .spec-tag {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 4px 10px; border: 1.5px solid var(--terra); border-radius: 3px; color: var(--terra);
+    transform: rotate(-2deg); box-shadow: 1px 2px 0 rgba(33,26,18,0.25);
+  }
+  .spec-tag:nth-child(2) { transform: rotate(1.5deg); border-color: var(--foil-deep); color: #8A6314; }
+  .spec-tag:nth-child(3) { transform: rotate(-1deg); }
+  .spec-note {
+    margin-top: 14px; padding-top: 11px; border-top: 1px dashed rgba(33,26,18,0.28);
+    display: flex; justify-content: space-between; gap: 8px; white-space: nowrap;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; color: var(--muted);
+  }
+  .skills-copy > p { margin-top: 14px; font-size: 16px; line-height: 1.6; color: rgba(255,248,230,0.6); max-width: 520px; }
+  .skill-cards { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+  .skill-card {
+    display: flex; gap: 13px; align-items: flex-start;
+    padding: 15px 16px 14px; border-radius: 14px;
+    background: linear-gradient(180deg, #FFFDF6, #F6EEDC);
+    border: 1px solid rgba(33,26,18,0.6);
+    box-shadow: 4px 5px 0 rgba(0,0,0,0.45);
+    transform: rotate(var(--tilt, 0deg));
+    transition: transform .3s var(--ease), box-shadow .3s var(--ease);
+  }
+  .skill-card:nth-child(1) { --tilt: -0.7deg; }
+  .skill-card:nth-child(2) { --tilt: 0.6deg; }
+  .skill-card:nth-child(3) { --tilt: 0.5deg; }
+  .skill-card:nth-child(4) { --tilt: -0.6deg; }
+  .skill-card:nth-child(5) { --tilt: 0.4deg; grid-column: 1 / -1; }
+  .skill-card:hover { transform: rotate(0deg) translateY(-4px); box-shadow: 6px 9px 0 rgba(0,0,0,0.5); }
+  .skill-card .stk-chip { box-shadow: 0 0 0 3px #FFFDF7, 2px 3px 0 3px rgba(33,26,18,0.35); }
+  .skill-card .sk-t { font-family: var(--serif); font-size: 15px; font-weight: 700; color: var(--ink); }
+  .skill-card .sk-s { margin-top: 3px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--muted); line-height: 1.5; }
+  @media (max-width: 1020px) {
+    .skills-wrap { grid-template-columns: 1fr; gap: 56px; justify-items: center; }
+    .skills-copy { width: 100%; max-width: 560px; }
+  }
+  @media (max-width: 560px) {
+    .skill-cards { grid-template-columns: 1fr; }
+    .skill-card:nth-child(5) { grid-column: auto; }
+    .specimen { transform: rotate(-1deg); }
   }
 </style>
 </head>
@@ -1377,56 +1598,65 @@
      cream→navy gradient — content never sits on a muddy mid-gradient). -->
 <section class="pad" id="skillsShowcase" style="background: var(--navy); border-top: 1px solid var(--foil-deep); box-shadow: inset 0 1px 0 rgba(232,199,126,0.28); overflow:hidden;">
   <div class="container">
-    <div style="display:flex; align-items:center; gap:60px; flex-wrap:wrap; justify-content:center;">
+    <div class="skills-wrap">
 
-      <!-- Mascot Card -->
-      <div class="mascot-bob" style="flex:0 0 280px;">
-        <img src="mascot-original.jpg" alt="PetClaw Mascot"
-          style="width:280px; height:280px; object-fit:cover; border-radius:24px;
-          box-shadow: 0 40px 80px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1);
-          border:3px solid rgba(226,125,12,0.3);" />
-        <div style="text-align:center; margin-top:16px;">
-          <div style="font-family:var(--serif); font-size:22px; font-weight:700; color:var(--cream);">Sparky</div>
-          <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.5); margin-top:4px;">Lv.15 · Playful · Fire</div>
+      <!-- Specimen poster — Sparky's archival file card -->
+      <figure class="specimen" data-reveal="left">
+        <span class="demo-seal" title="Demo companion — sample data">DEMO</span>
+        <div class="spec-head">
+          <span><b>FILE Nº 001</b> · Specimen</span>
+          <span>Archive</span>
         </div>
-      </div>
+        <div class="spec-photo">
+          <img src="mascot-original.jpg" alt="Sparky — PetClaw demo companion" />
+          <span class="spec-sheen" aria-hidden="true"></span>
+        </div>
+        <figcaption class="spec-caption">
+          <div class="spec-name">Sparky <span class="latin">companio pomeranius</span></div>
+          <div class="spec-tags" aria-label="Traits">
+            <span class="spec-tag">LV. 15</span>
+            <span class="spec-tag">Playful</span>
+            <span class="spec-tag">Fire</span>
+          </div>
+          <div class="spec-note">
+            <span>Logged · myaipet.ai</span>
+            <span>Demo · sample data</span>
+          </div>
+        </figcaption>
+      </figure>
 
-      <!-- Skills Grid -->
-      <div style="flex:1; min-width:300px; max-width:520px;">
+      <!-- Skill sticker-chip cards -->
+      <div class="skills-copy">
         <span class="eyebrow" style="color:var(--gold-soft);">PetClaw Skills</span>
-        <h2 style="font-size:clamp(28px,3.5vw,42px); color:var(--cream); margin-top:12px; margin-bottom:24px;">
+        <h2 style="font-size:clamp(28px,3.5vw,42px); color:var(--cream); margin-top:12px;">
           Teach your pet.<br/>Watch it grow.
         </h2>
+        <p>Skills are collectible capabilities — install them like stickers on a field journal, and your companion carries them everywhere.</p>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-          <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
-            <div class="stk-chip r-a" style="margin-bottom:12px;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 5h15A1.5 1.5 0 0 1 21 6.5v8a1.5 1.5 0 0 1-1.5 1.5H11l-4.5 3.5V16H4.5A1.5 1.5 0 0 1 3 14.5v-8A1.5 1.5 0 0 1 4.5 5z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><circle cx="8.2" cy="10.5" r="1.1" fill="#FBF6EC"/><circle cx="12" cy="10.5" r="1.1" fill="#FBF6EC"/><circle cx="15.8" cy="10.5" r="1.1" fill="#FBF6EC"/></svg></div>
-            <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Companion Chat</div>
-            <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Personality-driven · Memory-aware</div>
+        <div class="skill-cards">
+          <div class="skill-card" data-reveal="pop" data-delay="0">
+            <div class="stk-chip r-a" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 5h15A1.5 1.5 0 0 1 21 6.5v8a1.5 1.5 0 0 1-1.5 1.5H11l-4.5 3.5V16H4.5A1.5 1.5 0 0 1 3 14.5v-8A1.5 1.5 0 0 1 4.5 5z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><circle cx="8.2" cy="10.5" r="1.1" fill="#FBF6EC"/><circle cx="12" cy="10.5" r="1.1" fill="#FBF6EC"/><circle cx="15.8" cy="10.5" r="1.1" fill="#FBF6EC"/></svg></div>
+            <div><div class="sk-t">Companion Chat</div><div class="sk-s">Personality-driven · Memory-aware</div></div>
           </div>
-          <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
-            <div class="stk-chip r-b" style="margin-bottom:12px;" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="9.5" r="5.5" fill="#E8C77E" stroke="#211A12" stroke-width="2"/><path d="M12 15v4.5M9.5 19.5h5" fill="none" stroke="#211A12" stroke-width="2" stroke-linecap="round"/><path d="M9.6 8a3.2 3.2 0 0 1 2-1.6" fill="none" stroke="#FBF6EC" stroke-width="1.6" stroke-linecap="round"/></svg></div>
-            <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Persona Mirror</div>
-            <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Learns your tone · Talks like you</div>
+          <div class="skill-card" data-reveal="pop" data-delay="80">
+            <div class="stk-chip r-b" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="9.5" r="5.5" fill="#E8C77E" stroke="#211A12" stroke-width="2"/><path d="M12 15v4.5M9.5 19.5h5" fill="none" stroke="#211A12" stroke-width="2" stroke-linecap="round"/><path d="M9.6 8a3.2 3.2 0 0 1 2-1.6" fill="none" stroke="#FBF6EC" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+            <div><div class="sk-t">Persona Mirror</div><div class="sk-s">Learns your tone · Talks like you</div></div>
           </div>
-          <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
-            <div class="stk-chip r-c" style="margin-bottom:12px;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M11.6 4.6c-1.9 0-3.4 1.4-3.5 3.2-1.4.4-2.4 1.7-2.4 3.1 0 .9.4 1.7 1 2.3-.4.5-.6 1.1-.6 1.8 0 1.9 1.6 3.4 3.5 3.4.6.8 1.5 1.3 2 1.3V4.6z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M12.4 4.6c1.9 0 3.4 1.4 3.5 3.2 1.4.4 2.4 1.7 2.4 3.1 0 .9-.4 1.7-1 2.3.4.5.6 1.1.6 1.8 0 1.9-1.6 3.4-3.5 3.4-.6.8-1.5 1.3-2 1.3V4.6z" fill="#E8C77E" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/></svg></div>
-            <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Memory Recall</div>
-            <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Cross-platform · Never forgets</div>
+          <div class="skill-card" data-reveal="pop" data-delay="160">
+            <div class="stk-chip r-c" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M11.6 4.6c-1.9 0-3.4 1.4-3.5 3.2-1.4.4-2.4 1.7-2.4 3.1 0 .9.4 1.7 1 2.3-.4.5-.6 1.1-.6 1.8 0 1.9 1.6 3.4 3.5 3.4.6.8 1.5 1.3 2 1.3V4.6z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M12.4 4.6c1.9 0 3.4 1.4 3.5 3.2 1.4.4 2.4 1.7 2.4 3.1 0 .9-.4 1.7-1 2.3.4.5.6 1.1.6 1.8 0 1.9-1.6 3.4-3.5 3.4-.6.8-1.5 1.3-2 1.3V4.6z" fill="#E8C77E" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/></svg></div>
+            <div><div class="sk-t">Memory Recall</div><div class="sk-s">Cross-platform · Never forgets</div></div>
           </div>
-          <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
-            <div class="stk-chip r-d" style="margin-bottom:12px;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8.2 12 4.4l8 3.8v7.6l-8 3.8-8-3.8z" fill="#E8C77E" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M4 8.2l8 3.8v7.6l-8-3.8z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M12 12l8-3.8" fill="none" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/></svg></div>
-            <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">Soul Export</div>
-            <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Portable identity · Zero lock-in</div>
+          <div class="skill-card" data-reveal="pop" data-delay="240">
+            <div class="stk-chip r-d" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8.2 12 4.4l8 3.8v7.6l-8 3.8-8-3.8z" fill="#E8C77E" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M4 8.2l8 3.8v7.6l-8-3.8z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M12 12l8-3.8" fill="none" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/></svg></div>
+            <div><div class="sk-t">Soul Export</div><div class="sk-s">Portable identity · Zero lock-in</div></div>
           </div>
-          <div style="padding:18px 16px; border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(8px);">
-            <div class="stk-chip r-e" style="margin-bottom:12px;" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="8.3" cy="15.7" rx="4.6" ry="3.3" transform="rotate(-45 8.3 15.7)" fill="#BE4F28" stroke="#211A12" stroke-width="2"/><ellipse cx="15.7" cy="8.3" rx="4.6" ry="3.3" transform="rotate(-45 15.7 8.3)" fill="#E8C77E" stroke="#211A12" stroke-width="2"/></svg></div>
-            <div style="font-family:var(--serif); font-size:14px; font-weight:600; color:var(--cream);">MCP Compatible</div>
-            <div style="font-family:var(--mono); font-size:13px; color:rgba(255,248,230,0.4); margin-top:4px;">Claude · OpenClaw · Any client</div>
+          <div class="skill-card" data-reveal="pop" data-delay="320">
+            <div class="stk-chip r-e" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="8.3" cy="15.7" rx="4.6" ry="3.3" transform="rotate(-45 8.3 15.7)" fill="#BE4F28" stroke="#211A12" stroke-width="2"/><ellipse cx="15.7" cy="8.3" rx="4.6" ry="3.3" transform="rotate(-45 15.7 8.3)" fill="#E8C77E" stroke="#211A12" stroke-width="2"/></svg></div>
+            <div><div class="sk-t">MCP Compatible</div><div class="sk-s">Claude · OpenClaw · Any client</div></div>
           </div>
         </div>
 
-        <div style="margin-top:20px; display:flex; gap:8px; flex-wrap:wrap;">
+        <div style="margin-top:22px; display:flex; gap:8px; flex-wrap:wrap;">
           <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(226,125,12,0.12); color:var(--gold-soft); letter-spacing:0.1em;">PETCLAW v1</span>
           <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">6 MCP TOOLS</span>
           <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">19 CONNECTORS</span>
@@ -1505,7 +1735,7 @@
 </section>
 
 <!-- SECTION 4: GALLERY -->
-<section class="pad" id="community" data-screen-label="05 Community">
+<section class="pad gallery-wall" id="community" data-screen-label="05 Community">
   <div class="container">
     <div class="section-head">
       <span class="eyebrow">Community showcase</span>
@@ -1530,30 +1760,34 @@
     </div>
 
     <div class="rights">
-      <div class="right">
-        <div class="icon">EXP</div>
+      <article class="right">
+        <span class="right-seal" aria-hidden="true">EXP</span>
+        <div class="doc-no">Right 01/04 · Passport</div>
         <h4>Export</h4>
         <p>Download your pet's entire identity as portable JSON — personality, memories, skills, history.</p>
-        <span class="meta">petclaw export</span>
-      </div>
-      <div class="right">
-        <div class="icon">IMP</div>
+        <div class="right-receipt"><span class="rr-prompt">$</span><span>petclaw export</span><span class="rr-bar" aria-hidden="true"></span></div>
+      </article>
+      <article class="right">
+        <span class="right-seal" aria-hidden="true">IMP</span>
+        <div class="doc-no">Right 02/04 · Passport</div>
         <h4>Import</h4>
         <p>Bring your pet from any PetClaw-compatible platform. Move homes; keep the friend.</p>
-        <span class="meta">petclaw import</span>
-      </div>
-      <div class="right">
-        <div class="icon">DEL</div>
+        <div class="right-receipt"><span class="rr-prompt">$</span><span>petclaw import</span><span class="rr-bar" aria-hidden="true"></span></div>
+      </article>
+      <article class="right">
+        <span class="right-seal" aria-hidden="true">DEL</span>
+        <div class="doc-no">Right 03/04 · Passport</div>
         <h4>Delete</h4>
         <p>Permanent erasure with SHA-256 cryptographic proof. When it's gone, it's gone — verifiably.</p>
-        <span class="meta">petclaw wipe --proof</span>
-      </div>
-      <div class="right">
-        <div class="icon">ACK</div>
+        <div class="right-receipt"><span class="rr-prompt">$</span><span>petclaw wipe --proof</span><span class="rr-bar" aria-hidden="true"></span></div>
+      </article>
+      <article class="right">
+        <span class="right-seal" aria-hidden="true">ACK</span>
+        <div class="doc-no">Right 04/04 · Passport</div>
         <h4>Consent</h4>
         <p>Granular control over data sharing, model training contributions, and public visibility.</p>
-        <span class="meta">petclaw consent</span>
-      </div>
+        <div class="right-receipt"><span class="rr-prompt">$</span><span>petclaw consent</span><span class="rr-bar" aria-hidden="true"></span></div>
+      </article>
     </div>
 
     <div class="flow">
@@ -1687,7 +1921,7 @@
   </div>
 </section>
 
-<!-- SECTION 7.5: HOW IT WORKS (CORE LOOP) — the page's ONE big invert move -->
+<!-- SECTION 7.5: HOW IT WORKS (CORE LOOP) -->
 <section class="pad" id="coreloop" style="background:var(--cream-2);">
   <div class="container">
     <div class="section-head">
@@ -2034,7 +2268,24 @@ function switchVideo(idx) {
 
 // Init
 if (heroVideos.length > 0) {
-  heroVideos[0].play().catch(() => {});
+  // Autoplay can be blocked on load (readyState stays 4 but paused at frame 0,
+  // so the poster shows forever). Retry the play() until it takes, and again on
+  // the first user gesture / when enough data is buffered.
+  const v0 = heroVideos[0];
+  let heroKicked = false;
+  const kickHero = () => {
+    if (heroKicked) return;
+    v0.play().then(() => {
+      if (!v0.paused) {
+        heroKicked = true;
+        ["pointerdown", "touchstart", "keydown", "scroll"].forEach((e) => window.removeEventListener(e, kickHero));
+      }
+    }).catch(() => {});
+  };
+  kickHero();
+  v0.addEventListener("canplay", kickHero);
+  ["pointerdown", "touchstart", "keydown", "scroll"].forEach((e) => window.addEventListener(e, kickHero, { passive: true }));
+  setTimeout(kickHero, 400);  // second attempt after first paint settles
   setTimeout(() => { if (heroVideos[1]) heroVideos[1].load(); }, 3500); // warm clip 2 after first paint
   heroInterval = setInterval(() => switchVideo((heroCurrentVideo + 1) % heroVideos.length), 8000);
 }
@@ -2197,22 +2448,33 @@ const pets = [
   { name: 'Echo', lvl: 21, species: 'Parrot', personality: 'Charming', wallet: '0x0044…d909', quote: 'Repeat after me: I deserve good things.', size: 't1' },
   { name: 'Rune', lvl: 33, species: 'Turtle', personality: 'Ancient', wallet: '0x19fc…b277', quote: 'I have seen seven spring patches. This one is okay.', size: 't2' },
 ];
+// Salon exhibition wall — each pet hangs in a real frame (gold, with every
+// third piece in a thin ink frame), on a nail + wire, brass plaque engraved
+// with name · level · species, curator label (personality stamp, quote,
+// wallet) beneath. Staggered reveal via the shared [data-reveal] observer.
 const gal = document.getElementById('gallery');
-pets.forEach(p => {
+pets.forEach((p, i) => {
   const c = document.createElement('div');
-  c.className = 'g-card ' + p.size;
+  c.className = 'g-frame ' + p.size + (i % 3 === 2 ? ' ink' : '');
+  c.setAttribute('data-reveal', 'pop');
+  c.setAttribute('data-delay', String((i % 4) * 90));
   const img = petImages[p.name] || '';
   c.innerHTML = `
-    <div class="g-avatar" style="background-image:url('${img}');background-size:cover;background-position:center;"></div>
-    <div class="g-meta">
-      <div>
-        <div class="g-name">${p.name}</div>
-        <span class="g-bdg">${p.personality}</span>
+    <div class="g-tilt">
+      <svg class="g-wire" viewBox="0 0 100 16" preserveAspectRatio="none" aria-hidden="true"><path d="M2 16 L50 2.5 L98 16" fill="none" stroke="rgba(33,26,18,0.42)" stroke-width="1"/></svg>
+      <span class="g-nail" aria-hidden="true"></span>
+      <div class="g-frame-outer">
+        <div class="g-mat">
+          <div class="g-art" style="background-image:url('${img}')" role="img" aria-label="${p.name}, AI-generated demo companion"></div>
+          <div class="g-plaque"><span class="nm">${p.name}</span><span class="sb">LVL ${p.lvl} · ${p.species}</span></div>
+        </div>
       </div>
-      <div class="g-lvl">LVL ${p.lvl}</div>
+      <div class="g-label">
+        <span class="g-bdg">${p.personality}</span>
+        <p class="g-quote">"${p.quote}"</p>
+        <div class="g-wallet">${p.wallet}</div>
+      </div>
     </div>
-    <p class="g-quote">"${p.quote}"</p>
-    <div class="g-wallet">${p.wallet} · ${p.species}</div>
   `;
   gal.appendChild(c);
 });
@@ -2543,18 +2805,8 @@ function persist() {
     }
   });
 
-  // 3) The one big move — the core-loop section ("Interact. Grow. Own.")
-  //    inverts field → terracotta. Targeted by id (the old textContent match
-  //    picked #protocol, which is taller than the viewport, so a 0.6 ratio
-  //    could never be reached and the invert never fired).
-  var invertTarget = document.getElementById('coreloop');
-  if (invertTarget){
-    invertTarget.classList.add('fx-invert');
-    var iv = new IntersectionObserver(function(es){
-      es.forEach(function(e){ e.target.classList.toggle('is-inverted', e.isIntersecting); });
-    }, {threshold:0.35});
-    iv.observe(invertTarget);
-  }
+  // 3) (removed) the full-terracotta section invert — founder-rejected.
+  //    Terracotta is an accent only; nothing floods orange.
 
   // 4) Magnetic primary CTAs (fine pointers only) — curated few, ONE shared
   //    pointermove listener (never one-per-element) to avoid layout thrash.
