@@ -10,11 +10,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rateLimit";
 
 const COST_CREDITS = 20;
 const MODEL = "grok-3-mini";
 
 export async function POST(req: NextRequest) {
+  // LLM call + credit spend — tight per-caller limit.
+  const rl = rateLimit(req, { key: "pet-date", limit: 10, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const grokKey = process.env.GROK_API_KEY;

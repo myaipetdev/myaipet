@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       appearanceDesc: pet.appearance_desc || undefined,
       avatarUrl: pet.avatar_url || undefined,
     } : { name: "the pet" };
-    finalPrompt = tpl.buildPrompt(ctx, String(customDirection || ""));
+    finalPrompt = tpl.buildPrompt(ctx, String(customDirection || "").slice(0, 500));
   } else if (rawPrompt) {
     finalPrompt = String(rawPrompt).slice(0, 2000);
   } else {

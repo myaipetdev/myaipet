@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rateLimit";
 
 const ELEMENT_VISUAL: Record<string, string> = {
   fire: "surrounded by swirling flames and embers, fiery orange-red aura, burning ground beneath",
@@ -69,6 +70,10 @@ function buildBattlePrompt(name: string, species: number, element: string, isBos
 }
 
 export async function POST(req: NextRequest) {
+  // Image generation on the platform key — tight per-caller limit.
+  const rl = rateLimit(req, { key: "battle-sprite", limit: 10, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
   const key = process.env.GROK_API_KEY;
   if (!key) return NextResponse.json({ error: "GROK_API_KEY not set" }, { status: 500 });
 

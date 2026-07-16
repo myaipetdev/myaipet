@@ -10,6 +10,7 @@ import { triggerAgentReactions } from "@/lib/agents";
 import { recordGenerationOnChain, mintContentNFT } from "@/lib/blockchain";
 import { ethers } from "ethers";
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rateLimit";
 
 function getVideoCreditCost(duration: number): number {
   if (duration <= 3) return 15;
@@ -21,6 +22,10 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ petId: string }> }
 ) {
+  // Image/video generation + credit spend — tight per-caller limit.
+  const rl = rateLimit(req, { key: "pet-generate", limit: 10, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
   const user = await getUser(req);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -28,7 +33,9 @@ export async function POST(
 
   const { petId } = await params;
   const body = await req.json();
-  const { style, duration, prompt, type, signedMessage, signature, codexVariant } = body;
+  const { style, duration, prompt: rawPrompt, type, signedMessage, signature, codexVariant } = body;
+  // Cap free-text prompt length before it reaches translation/moderation/providers.
+  const prompt = typeof rawPrompt === "string" ? rawPrompt.slice(0, 1000) : rawPrompt;
 
   // Wallet signature optional during on-chain hold period.
   // If provided, still verify; if not, allow auth-only.

@@ -96,6 +96,89 @@ interface ResolvedTarget {
   source: "owner" | "platform";
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DAILY LLM SPEND GUARD — in-memory, DB-free, per-process (matches the posture
+// of src/lib/rateLimit.ts: good enough for a single standalone instance).
+//
+// Counts PLATFORM-funded calls only (owner/BYOK calls burn the owner's own key,
+// not our Grok bill). Two caps, both env-tunable:
+//   LLM_DAILY_CALL_CAP  — total platform calls per UTC day (default 2000)
+//   LLM_USER_DAILY_CAP  — per-caller platform calls per UTC day (default 60);
+//                         keyed by petId (each pet belongs to one user, and
+//                         petId is what every call site already passes).
+// On breach we throw LLMBudgetError (status 429, friendly message). Every
+// existing call site already wraps callLLM in try/catch with a graceful
+// fallback, so a breach degrades politely instead of crashing routes.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export class LLMBudgetError extends Error {
+  readonly status = 429;
+  readonly code = "llm_daily_budget_exceeded";
+  constructor() {
+    super("The studio is busy today — please try again tomorrow.");
+    this.name = "LLMBudgetError";
+  }
+}
+
+export function isLLMBudgetError(err: unknown): err is LLMBudgetError {
+  return err instanceof LLMBudgetError;
+}
+
+function envCap(name: string, def: number): number {
+  const n = Number(process.env[name]);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : def;
+}
+
+const budget = {
+  date: "", // UTC YYYY-MM-DD the counters belong to
+  total: 0,
+  perUser: new Map<string, number>(),
+};
+
+/** Count one platform-funded call; throws LLMBudgetError when a cap is hit. */
+function consumeLLMBudget(petId?: number): void {
+  const today = new Date().toISOString().slice(0, 10);
+  if (budget.date !== today) {
+    budget.date = today;
+    budget.total = 0;
+    budget.perUser.clear();
+  }
+  if (budget.total >= envCap("LLM_DAILY_CALL_CAP", 2000)) throw new LLMBudgetError();
+  if (petId) {
+    const key = `pet:${petId}`;
+    const used = budget.perUser.get(key) ?? 0;
+    if (used >= envCap("LLM_USER_DAILY_CAP", 60)) throw new LLMBudgetError();
+    budget.perUser.set(key, used + 1);
+  }
+  budget.total++;
+}
+
+/**
+ * Read-only snapshot of today's in-memory platform-LLM budget counters, for the
+ * admin ops dashboard (/api/admin/overview). Same per-process, resets-on-deploy
+ * posture as the budget itself — HONEST but partial: it only sees calls handled
+ * by THIS process since the last restart, and only platform-funded calls
+ * (owner/BYOK calls never touch the budget). Zero means "none counted here",
+ * not necessarily "none happened".
+ */
+export function getLLMDailyCounters(): {
+  date: string;
+  platformCalls: number;
+  distinctCallers: number;
+  callCap: number;
+  perUserCap: number;
+} {
+  const today = new Date().toISOString().slice(0, 10);
+  const fresh = budget.date !== today; // counters not yet rolled for today
+  return {
+    date: today,
+    platformCalls: fresh ? 0 : budget.total,
+    distinctCallers: fresh ? 0 : budget.perUser.size,
+    callCap: envCap("LLM_DAILY_CALL_CAP", 2000),
+    perUserCap: envCap("LLM_USER_DAILY_CAP", 60),
+  };
+}
+
 /**
  * Resolve provider+model+key. Preference: the pet-owner's active ModelConnection
  * whose task_scopes include this task (most-recently-updated wins), else the
@@ -139,6 +222,7 @@ export async function callLLM(args: CallLLMArgs): Promise<LLMResult> {
   const { task, messages, petId, temperature = 0.7, max_tokens = 300, response_format } = args;
   const target = await resolveTarget(task, petId);
   if (!target.apiKey) throw new Error(`No API key available for task '${task}' (provider ${target.provider.id})`);
+  if (target.source === "platform") consumeLLMBudget(petId);
 
   if (target.provider.flavor === "anthropic") {
     // Anthropic: /messages, x-api-key + anthropic-version, system is top-level.
@@ -345,6 +429,7 @@ export async function callLLMWithTools(args: CallLLMWithToolsArgs): Promise<Tool
   const { task, messages, tools, toolChoice, petId, temperature = 0.4, maxTokens = 800 } = args;
   const target = await resolveTarget(task, petId);
   if (!target.apiKey) throw new Error(`No API key available for task '${task}' (provider ${target.provider.id})`);
+  if (target.source === "platform") consumeLLMBudget(petId);
 
   if (target.provider.flavor === "google") {
     throw new Error(

@@ -180,7 +180,9 @@ export async function POST(req: NextRequest) {
 
     const chatMessages = [
       { role: "system", content: SYSTEM_PROMPT },
-      ...messages.map((m: { role: string; content?: string; text?: string }) => ({
+      // Cap the history LENGTH too (each entry is already capped at 500 chars) so
+      // an oversized client payload can't balloon the upstream LLM request.
+      ...messages.slice(-30).map((m: { role: string; content?: string; text?: string }) => ({
         role: m.role === "ai" ? "assistant" : m.role,
         content: (m.content || m.text || "").slice(0, 500),
       })),
