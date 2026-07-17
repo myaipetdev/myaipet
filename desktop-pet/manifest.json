@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MY AI PET — Desktop Companion",
-  "version": "2.2.3",
+  "version": "2.3.0",
   "description": "Your AI pet lives in your browser — walks around every site, reads the page you're on and explains it in its own voice, talks to you, evolves, plays mini-games, and collects Play Points.",
   "permissions": ["storage", "alarms", "notifications"],
   "host_permissions": [

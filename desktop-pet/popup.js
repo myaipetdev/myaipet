@@ -132,18 +132,18 @@ function loadQuests() {
       const done = q.completed;
       const claimed = q.claimed;
       return `
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03)">
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-soft)">
           <div style="font-size:16px;flex-shrink:0">${q.icon}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:11px;color:${done ? "#4ade80" : "#ccc"};font-weight:600">${q.name}</div>
-            <div style="font-size:9px;color:#666">${q.desc}</div>
-            <div style="margin-top:3px;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">
-              <div style="width:${pct}%;height:100%;background:${done ? "#4ade80" : "#f59e0b"};border-radius:2px;transition:width 0.3s"></div>
+            <div style="font-size:11px;color:${done ? "var(--terracotta)" : "var(--ink)"};font-weight:700">${q.name}</div>
+            <div style="font-size:9px;color:var(--muted)">${q.desc}</div>
+            <div style="margin-top:3px;height:5px;background:var(--field);border:1px solid var(--line);border-radius:2px;overflow:hidden">
+              <div style="width:${pct}%;height:100%;background:${done ? "var(--terracotta)" : "var(--foil-deep)"};transition:width 0.3s"></div>
             </div>
           </div>
-          <div style="font-size:9px;color:#888;text-align:right;flex-shrink:0">
-            ${claimed ? '<span style="color:#4ade80">✅</span>' :
-              done ? `<button class="quest-claim" data-id="${q.id}" style="padding:3px 8px;border:none;border-radius:6px;background:#f59e0b;color:#fff;font-size:9px;font-weight:700;cursor:pointer;font-family:inherit">+${q.reward}</button>` :
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:right;flex-shrink:0">
+            ${claimed ? '<span style="color:var(--terracotta)">✅</span>' :
+              done ? `<button class="quest-claim" data-id="${q.id}" style="padding:3px 8px;border:1px solid var(--terracotta-ink);border-radius:6px;background:var(--terracotta);color:var(--paper);font-family:var(--mono);font-size:9px;font-weight:700;cursor:pointer">+${q.reward}</button>` :
               `${q.progress}/${q.target}`}
           </div>
         </div>
@@ -184,7 +184,7 @@ const EVO_PERKS = [
   "Egg: Basic chat",
   "Baby: Emoji reactions, mood system",
   "Junior: Particle effects, mini-game access",
-  "Teen: Auto-skills, selfie generation",
+  "Teen: Auto-skills, Selfie (coming soon)",
   "Adult: Advanced AI conversations, custom themes",
   "Legend: Exclusive aura, bonus points multiplier (2x)",
 ];
@@ -222,7 +222,7 @@ function loadEvolution() {
     // Perks
     $("evoPerks").innerHTML = EVO_PERKS.map((p, i) => {
       const unlocked = i <= evo.stage;
-      return `<div style="padding:4px 0;color:${unlocked ? "#4ade80" : "#555"}">${unlocked ? "✅" : "🔒"} ${p}</div>`;
+      return `<div style="padding:4px 0;color:${unlocked ? "var(--terracotta)" : "var(--muted-soft)"}">${unlocked ? "✅" : "🔒"} ${p}</div>`;
     }).join("");
   });
 }
@@ -311,14 +311,14 @@ function startGame() {
   // Score display
   const scoreEl = document.createElement("div");
   scoreEl.id = "gameScoreDisplay";
-  scoreEl.style.cssText = "position:absolute;top:6px;right:10px;font-size:14px;font-weight:700;color:#f59e0b";
+  scoreEl.style.cssText = "position:absolute;top:6px;right:10px;font-family:var(--mono);font-size:14px;font-weight:700;color:var(--terracotta)";
   scoreEl.textContent = "0";
   canvas.appendChild(scoreEl);
 
   // Timer
   const timerEl = document.createElement("div");
   timerEl.id = "gameTimer";
-  timerEl.style.cssText = "position:absolute;top:6px;left:10px;font-size:12px;color:#888";
+  timerEl.style.cssText = "position:absolute;top:6px;left:10px;font-family:var(--mono);font-size:12px;color:var(--muted)";
   canvas.appendChild(timerEl);
 
   let timeLeft = 30;
@@ -431,10 +431,10 @@ function endGame() {
 
   const canvas = $("gameCanvas");
   canvas.innerHTML = `
-    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#fff">
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--ink)">
       <div style="font-size:36px;margin-bottom:8px">🎉</div>
-      <div style="font-size:18px;font-weight:700">Score: ${gameScore}</div>
-      <div style="font-size:12px;color:#888;margin-top:4px">+${earned} Play Points earned!</div>
+      <div style="font-family:var(--mono);font-size:18px;font-weight:700">Score: ${gameScore}</div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px">+${earned} Play Points earned!</div>
     </div>
   `;
 }
@@ -464,12 +464,14 @@ chrome.runtime.sendMessage({ type: "getGameStats" }, (res) => {
 document.querySelectorAll(".game-select").forEach((btn) => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".game-select").forEach((b) => {
-      b.style.background = "rgba(255,255,255,0.03)";
-      b.style.color = "#888";
+      b.style.background = "var(--paper)";
+      b.style.color = "var(--muted)";
+      b.style.borderColor = "var(--line)";
       b.classList.remove("active");
     });
-    btn.style.background = "rgba(251,191,36,0.15)";
-    btn.style.color = "#f59e0b";
+    btn.style.background = "var(--terracotta)";
+    btn.style.color = "var(--paper)";
+    btn.style.borderColor = "var(--terracotta-ink)";
     btn.classList.add("active");
 
     $("game-catcher").style.display = btn.dataset.game === "catcher" ? "" : "none";
@@ -513,9 +515,9 @@ function startMemoryGame() {
   memoryCards.forEach((emoji, idx) => {
     const card = document.createElement("div");
     card.style.cssText = `
-      width:100%;aspect-ratio:1;background:rgba(255,255,255,0.06);border-radius:8px;
+      width:100%;aspect-ratio:1;background:var(--paper);border-radius:8px;
       display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;
-      border:1px solid rgba(255,255,255,0.08);transition:all 0.3s;user-select:none;
+      border:1px solid var(--line);box-shadow:2px 2px 0 rgba(33,26,18,0.10);transition:all 0.3s;user-select:none;
     `;
     card.textContent = "❓";
     card.dataset.idx = idx;
@@ -534,8 +536,8 @@ function flipCard(card) {
 
   card.dataset.state = "flipped";
   card.textContent = card.dataset.emoji;
-  card.style.background = "rgba(251,191,36,0.15)";
-  card.style.borderColor = "rgba(251,191,36,0.4)";
+  card.style.background = "var(--field)";
+  card.style.borderColor = "var(--foil-deep)";
   memoryFlipped.push(card);
 
   if (memoryFlipped.length === 2) {
@@ -547,10 +549,10 @@ function flipCard(card) {
       // Match!
       a.dataset.state = "matched";
       b.dataset.state = "matched";
-      a.style.background = "rgba(74,222,128,0.2)";
-      b.style.background = "rgba(74,222,128,0.2)";
-      a.style.borderColor = "rgba(74,222,128,0.4)";
-      b.style.borderColor = "rgba(74,222,128,0.4)";
+      a.style.background = "rgba(190,79,40,0.16)";
+      b.style.background = "rgba(190,79,40,0.16)";
+      a.style.borderColor = "var(--terracotta)";
+      b.style.borderColor = "var(--terracotta)";
       memoryFlipped = [];
       memoryMatched++;
 
@@ -564,10 +566,10 @@ function flipCard(card) {
         b.textContent = "❓";
         a.dataset.state = "hidden";
         b.dataset.state = "hidden";
-        a.style.background = "rgba(255,255,255,0.06)";
-        b.style.background = "rgba(255,255,255,0.06)";
-        a.style.borderColor = "rgba(255,255,255,0.08)";
-        b.style.borderColor = "rgba(255,255,255,0.08)";
+        a.style.background = "var(--paper)";
+        b.style.background = "var(--paper)";
+        a.style.borderColor = "var(--line)";
+        b.style.borderColor = "var(--line)";
         memoryFlipped = [];
       }, 600);
     }
@@ -589,10 +591,10 @@ function endMemoryGame() {
   });
 
   $("memoryGrid").innerHTML = `
-    <div style="grid-column:1/-1;text-align:center;padding:20px;color:#fff">
+    <div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--ink)">
       <div style="font-size:36px;margin-bottom:8px">🧠</div>
-      <div style="font-size:16px;font-weight:700">Completed in ${memoryMoves} moves!</div>
-      <div style="font-size:12px;color:#888;margin-top:4px">Score: ${score} | +${earned} Play Points</div>
+      <div style="font-family:var(--mono);font-size:16px;font-weight:700">Completed in ${memoryMoves} moves!</div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px">Score: ${score} | +${earned} Play Points</div>
     </div>
   `;
 }
@@ -614,13 +616,13 @@ function loadAchievements() {
     list.innerHTML = defs.map((d) => {
       const got = !!unlocked[d.id];
       return `
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);${got ? "" : "opacity:0.4"}">
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-soft);${got ? "" : "opacity:0.45"}">
           <div style="font-size:22px;width:32px;text-align:center;${got ? "" : "filter:grayscale(1)"}">${d.icon}</div>
           <div style="flex:1">
-            <div style="font-size:12px;font-weight:600;color:${got ? "#fff" : "#666"}">${d.name}</div>
-            <div style="font-size:10px;color:#888">${d.desc}</div>
+            <div style="font-size:12px;font-weight:700;color:${got ? "var(--ink)" : "var(--muted)"}">${d.name}</div>
+            <div style="font-size:10px;color:var(--muted)">${d.desc}</div>
           </div>
-          <div style="font-size:10px;color:${got ? "#4ade80" : "#555"}">${got ? "✅" : "🔒"}</div>
+          <div style="font-size:10px;color:${got ? "var(--terracotta)" : "var(--muted-soft)"}">${got ? "✅" : "🔒"}</div>
         </div>
       `;
     }).join("");
@@ -667,7 +669,7 @@ chrome.runtime.sendMessage({ type: "getConfig" }, (res) => {
           ? "Token saved, but no pet found — check the token in 'Connect your CLI' and try again."
           : "✓ Linked — shows your pet, pulls live stats every 3 min")
       : "Not linked yet. Paste your CLI token (pck_…) from 'Connect your CLI' in the app to show YOUR pet.";
-    $("syncStatus").style.color = (c.authToken && !c.needsPairing) ? "#4ade80" : "#888";
+    $("syncStatus").style.color = (c.authToken && !c.needsPairing) ? "var(--terracotta)" : "var(--muted)";
   }
   $("petName").textContent = c.petName || "Demo Pet";
   { const db = $("demoBadge"); if (db) db.style.display = c.authToken ? "none" : "inline-block"; }
@@ -681,7 +683,6 @@ chrome.runtime.sendMessage({ type: "getConfig" }, (res) => {
   if (prefs.notifications === false) $("toggleNotifs").classList.remove("on");
   if (prefs.particles === false) $("toggleParticles").classList.remove("on");
   if (prefs.autoTalk === false) $("toggleAutoTalk").classList.remove("on");
-  if (prefs.sound === true) $("toggleSound").classList.add("on");
 });
 
 // Save

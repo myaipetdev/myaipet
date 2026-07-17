@@ -164,9 +164,9 @@
     const avg = (emotions.happiness + emotions.energy + (100 - emotions.hunger) + emotions.affection) / 4;
     emotionBarFill.style.width = avg + "%";
 
-    if (avg > 70) emotionBarFill.style.background = "linear-gradient(90deg, #4ade80, #22c55e)";
-    else if (avg > 40) emotionBarFill.style.background = "linear-gradient(90deg, #fbbf24, #f59e0b)";
-    else emotionBarFill.style.background = "linear-gradient(90deg, #f87171, #ef4444)";
+    if (avg > 70) emotionBarFill.style.background = "linear-gradient(90deg, #E8C77E, #C8932F)";
+    else if (avg > 40) emotionBarFill.style.background = "linear-gradient(90deg, #C8932F, #BE4F28)";
+    else emotionBarFill.style.background = "linear-gradient(90deg, #BE4F28, #9A3E1E)";
   }
 
   updateEmotionBar();

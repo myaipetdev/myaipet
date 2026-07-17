@@ -854,10 +854,19 @@ async function trackBrowsing() {
 // ══════════════════════════════════════
 
 chrome.alarms.create("petHeartbeat", { periodInMinutes: 5 });
-chrome.alarms.create("petAutoTalk", { periodInMinutes: 2 });
 chrome.alarms.create("petBrowsing", { periodInMinutes: 1 });
 chrome.alarms.create("petEmotionDecay", { periodInMinutes: 10 });
 chrome.alarms.create("petServerSync", { periodInMinutes: 3 });
+
+// Auto-talk cadence is user-configurable (Settings → Behavior). Re-create the
+// alarm from the saved config.autoTalkInterval (clamped 30–600s) so the input
+// actually drives the timer instead of a hardcoded 2-minute period.
+async function applyAutoTalkAlarm() {
+  const config = await getConfig();
+  const secs = Math.max(30, Math.min(600, Number(config.autoTalkInterval) || 90));
+  await chrome.alarms.create("petAutoTalk", { periodInMinutes: secs / 60 });
+}
+applyAutoTalkAlarm();
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   const config = await getConfig();
@@ -942,7 +951,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
     getConfig: () => getConfig().then((config) => sendResponse({ config })),
 
-    saveConfig: () => saveConfig(msg.config).then(() => sendResponse({ success: true })),
+    saveConfig: () => saveConfig(msg.config)
+      .then(() => applyAutoTalkAlarm())
+      .then(() => sendResponse({ success: true })),
 
     fetchPetInfo: () => fetchPetInfo().then((config) => sendResponse({ config })),
 
