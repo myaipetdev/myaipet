@@ -134,7 +134,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
     tone: [],
     interests: [],
     expressions: "",
-    language: "ko",
+    language: "en",
     bio: "",
   });
   const [tagInput, setTagInput] = useState("");
@@ -175,7 +175,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
           tone: toArr(p.owner_tone),
           interests: toArr(p.owner_interests),
           expressions: p.owner_expressions || "",
-          language: p.owner_language || "ko",
+          language: p.owner_language || "en",
           bio: p.owner_bio || "",
         }));
         setLastUpdated(p.updated_at || null);
@@ -478,7 +478,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
 
           {/* Speech Style */}
           <div style={cardStyle}>
-            <div style={labelStyle}>Speech Style / \ub9d0\ud22c \uc2a4\ud0c0\uc77c</div>
+            <div style={labelStyle}>Speech Style</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
               {SPEECH_OPTIONS.map(opt => (
                 <button
@@ -506,7 +506,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
             </div>
             <input
               className="persona-input"
-              placeholder="\ucd94\uac00 \uc124\uba85 (\uc608: \uc904\uc784\ub9d0 \ub9ce\uc774 \uc4f0, \u314b\u314b \uc790\uc8fc \uc0ac\uc6a9)"
+              placeholder="Additional details (e.g. uses lots of abbreviations and internet slang)"
               value={persona.speech_detail}
               onChange={e => setPersona(prev => ({ ...prev, speech_detail: e.target.value }))}
               style={inputStyle}
@@ -516,7 +516,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
 
           {/* Tone */}
           <div style={cardStyle}>
-            <div style={labelStyle}>Tone / \ud1a4</div>
+            <div style={labelStyle}>Tone</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {TONE_OPTIONS.map(opt => {
                 const isSelected = persona.tone.includes(opt.value);
@@ -558,7 +558,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
 
           {/* Interests */}
           <div style={cardStyle}>
-            <div style={labelStyle}>Interests / \uad00\uc2ec\uc0ac</div>
+            <div style={labelStyle}>Interests</div>
             <div style={{
               display: "flex", flexWrap: "wrap", gap: 6,
               padding: "10px 14px", borderRadius: 12,
@@ -599,7 +599,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                 value={tagInput}
                 onChange={e => setTagInput(e.target.value)}
                 onKeyDown={handleTagKeyDown}
-                placeholder={persona.interests.length === 0 ? "\ud0a4\uc6cc\ub4dc \uc785\ub825 \ud6c4 Enter" : ""}
+                placeholder={persona.interests.length === 0 ? "Enter a keyword, then press Enter" : ""}
                 style={{
                   border: "none", background: "transparent",
                   color: "#211A12", fontFamily: "var(--ed-body)",
@@ -632,10 +632,10 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
 
           {/* Expressions */}
           <div style={cardStyle}>
-            <div style={labelStyle}>Frequent Expressions / \uc790\uc8fc \uc4f0\ub294 \ud45c\ud604</div>
+            <div style={labelStyle}>Frequent Expressions</div>
             <input
               className="persona-input"
-              placeholder="\u3139\u3147, \uc624\ud0a4, \u314b\u314b, \u3131\u3131, \uac1c\uc88b\uc544 \ub4f1"
+              placeholder="e.g. fr, okay, lol, let's go, love it"
               value={persona.expressions}
               onChange={e => setPersona(prev => ({ ...prev, expressions: e.target.value }))}
               style={inputStyle}
@@ -645,7 +645,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
 
           {/* Language */}
           <div style={cardStyle}>
-            <div style={labelStyle}>Language / \uc5b8\uc5b4</div>
+            <div style={labelStyle}>Language</div>
             <div style={{ display: "flex", gap: 8 }}>
               {LANGUAGE_OPTIONS.map(opt => (
                 <button
@@ -676,16 +676,16 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
 
           {/* Bio */}
           <div style={cardStyle}>
-            <div style={labelStyle}>About You / \uc790\uae30\uc18c\uac1c</div>
+            <div style={labelStyle}>About You</div>
             <textarea
               className="persona-input"
-              placeholder="\uc608: \ub098\ub294 26\uc0b4 \uac1c\ubc1c\uc790\uace0, \ud06c\ub9bd\ud1a0 \uc88b\uc544\ud558\uace0, \ubc24\uc5d0 \ucf54\ub529\ud558\ub294 \uac78 \uc88b\uc544\ud574. \uc720\uba38\ub7ec\uc2a4\ud55c \ud3b8\uc774\uace0..."
+              placeholder="e.g. I'm a 26-year-old developer who likes crypto and coding at night. I have a playful sense of humor..."
               value={persona.bio}
               onChange={e => setPersona(prev => ({ ...prev, bio: e.target.value }))}
               style={textareaStyle}
               rows={4}
             />
-            <div style={helpStyle}>AI\uac00 \ub108\ub97c \uc774\ud574\ud560 \uc218 \uc788\uac8c \uc790\uc720\ub86d\uac8c \uc368\uc918 - Tell your pet about yourself freely</div>
+            <div style={helpStyle}>Tell your pet about yourself freely</div>
           </div>
 
           {/* Save Button */}
@@ -740,7 +740,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                     textAlign: "center" as const,
                   }}
                 >
-                  {method === "paste" ? "\ud14d\uc2a4\ud2b8 \ubd99\uc5ec\ub123\uae30" : "\ud30c\uc77c \uc5c5\ub85c\ub4dc"}
+                  {method === "paste" ? "Paste text" : "Upload file"}
                 </button>
               ))}
             </div>
@@ -749,7 +749,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
               <>
                 <textarea
                   className="persona-input"
-                  placeholder="\uce74\uce74\uc624\ud1a1, \ud154\ub808\uadf8\ub7a8, \ub514\uc2a4\ucf54\ub4dc \ub4f1\uc758 \ub300\ud654 \ub0b4\uc5ed\uc744 \uc5ec\uae30\uc5d0 \ubd99\uc5ec\ub123\uc73c\uc138\uc694"
+                  placeholder="Paste chat history from KakaoTalk, Telegram, Discord, or another platform here"
                   value={chatText}
                   onChange={e => setChatText(e.target.value)}
                   style={{ ...textareaStyle, minHeight: 200 }}
@@ -834,7 +834,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
               marginBottom: 16,
             }}
           >
-            {analyzing ? "AI\uac00 \ub300\ud654 \ud328\ud134\uc744 \ubd84\uc11d\ud558\uace0 \uc788\uc5b4\uc694..." : "Analyze Chat History"}
+            {analyzing ? "AI is analyzing your chat patterns..." : "Analyze Chat History"}
           </button>
 
           {/* Analysis Results */}
@@ -864,7 +864,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 }}>
                   <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 6 }}>
-                    DETECTED STYLE / \uac10\uc9c0\ub41c \ub9d0\ud22c
+                    DETECTED STYLE
                   </div>
                   <div style={{ fontFamily: "var(--ed-disp)", fontSize: 14, color: "#BE4F28", fontWeight: 600 }}>
                     {analysisResult.detected_style}
@@ -878,7 +878,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 }}>
                   <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 8 }}>
-                    KEY EXPRESSIONS / \uc8fc\uc694 \ud45c\ud604
+                    KEY EXPRESSIONS
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {analysisResult.key_expressions.map((expr, i) => (
@@ -902,7 +902,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 }}>
                   <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 8 }}>
-                    INTEREST TOPICS / \uad00\uc2ec \uc8fc\uc81c
+                    INTEREST TOPICS
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {analysisResult.topics.map((topic, i) => (
@@ -926,7 +926,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 }}>
                   <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A", letterSpacing: "0.12em", marginBottom: 8 }}>
-                    SAMPLE MESSAGES / \ub300\ud45c \uba54\uc2dc\uc9c0 5\uac1c
+                    SAMPLE MESSAGES (5)
                   </div>
                   <div style={{ display: "grid", gap: 6 }}>
                     {analysisResult.sample_messages.map((msg, i) => (
@@ -962,7 +962,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   marginTop: 16, transition: "all 0.3s",
                 }}
               >
-                {applyingAnalysis ? "Applying..." : "\uc801\uc6a9\ud558\uae30 / Apply Results"}
+                {applyingAnalysis ? "Applying..." : "Apply Results"}
               </button>
             </div>
           )}
@@ -995,7 +995,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   fontSize: 14, fontWeight: 600,
                   color: liveLearning ? "#5C8A4E" : "#7A6E5A",
                 }}>
-                  {liveLearning ? "\uc5f0\uacb0\ub41c \ud50c\ub7ab\ud3fc\uc5d0\uc11c \uc2e4\uc2dc\uac04\uc73c\ub85c \ud559\uc2b5\ud569\ub2c8\ub2e4" : "\uc2e4\uc2dc\uac04 \ud559\uc2b5 \ube44\ud65c\uc131\ud654\ub428"}
+                  {liveLearning ? "Learning in real time from connected platforms" : "Live learning is off"}
                 </div>
               </div>
 
@@ -1023,7 +1023,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
               </button>
             </div>
             <div style={helpStyle}>
-              \uc2e4\uc2dc\uac04 \ud559\uc2b5 \ud65c\uc131\ud654 - When enabled, your pet learns from conversations on connected platforms
+              When enabled, your pet learns from conversations on connected platforms
             </div>
           </div>
 
@@ -1067,7 +1067,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                         fontFamily: "var(--ed-m)", fontSize: 13,
                         color: p.connected && liveLearning ? "#5C8A4E" : "#9A7B4E",
                       }}>
-                        {p.connected && liveLearning ? "\ud559\uc2b5 \uc911" : "\ubbf8\uc5f0\uacb0"}
+                        {p.connected && liveLearning ? "Learning" : "Not connected"}
                       </span>
                     </div>
                   </div>
@@ -1078,7 +1078,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
 
           {/* Observed Topics */}
           <div style={cardStyle}>
-            <div style={labelStyle}>Observed Topics / \uac10\uc9c0\ub41c \uad00\uc2ec\uc0ac</div>
+            <div style={labelStyle}>Observed Topics</div>
             {observedTopics.length === 0 ? (
               <div style={{
                 textAlign: "center", padding: "24px 0",

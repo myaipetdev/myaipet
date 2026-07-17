@@ -368,7 +368,7 @@ function BracketFrame({ children }: { children: React.ReactNode }) {
   return (
     <div id="wc-bracket" style={{ scrollMarginTop: 90, marginBottom: 30 }}>
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: T.terraSub, textTransform: "uppercase" }}>Favorites Bracket · 이상형 월드컵</div>
+        <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: T.terraSub, textTransform: "uppercase" }}>Favorites Bracket</div>
         <h2 style={{ fontFamily: T.disp, fontSize: "clamp(24px,6vw,32px)", fontWeight: 800, color: T.ink, margin: "6px 0 4px", letterSpacing: "-.02em" }}>Pick your favorite</h2>
         <p style={{ fontFamily: T.body, fontSize: 14, color: T.muted2, margin: 0, lineHeight: 1.55, maxWidth: 600 }}>
           Two community pets, one choice. Your pick advances round by round until one pet is crowned Champion. Real pets, your call.
@@ -964,7 +964,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
         <div aria-hidden style={{ position: "absolute", right: -8, top: -16, opacity: 0.08, lineHeight: 1, zIndex: 1 }}><Icon name="trophy" size={130} /></div>
         <div style={{ position: "relative", zIndex: 2 }}>
-          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", color: T.terraSub, textTransform: "uppercase" }}>Favorites Bracket · 이상형 월드컵</div>
+          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", color: T.terraSub, textTransform: "uppercase" }}>Favorites Bracket</div>
           <h1 style={{ fontFamily: T.disp, fontSize: "clamp(34px,8vw,50px)", fontWeight: 800, color: T.ink, margin: "10px 0 0", letterSpacing: "-0.03em", lineHeight: 0.96 }}>Pick your favorite pet</h1>
           <p style={{ fontFamily: T.body, fontSize: 15.5, color: T.muted2, margin: "16px auto 0", lineHeight: 1.6, maxWidth: 580 }}>
             Two community pets appear at a time — tap the one you love and it advances. Round of 16 → Final, until one pet is your <strong style={{ color: T.terra, fontWeight: 600 }}>Champion</strong>. Real pets, your personal bracket.
