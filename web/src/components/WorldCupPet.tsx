@@ -420,7 +420,7 @@ function SeasonalWorldCup() {
 
   if (hidden) {
     return (
-      <div style={{ borderTop: `1px solid ${T.hair}`, paddingTop: 18, marginTop: 4 }}>
+      <div id="wc-seasonal" style={{ scrollMarginTop: 90, borderTop: `1px solid ${T.hair}`, paddingTop: 18, marginTop: 4 }}>
         <button onClick={restore} className="wc-press" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: T.mono, background: "transparent", border: "none", cursor: "pointer", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 6, padding: 0 }}>
           <Icon name="trophy" size={13} /> Show seasonal World Cup module
         </button>

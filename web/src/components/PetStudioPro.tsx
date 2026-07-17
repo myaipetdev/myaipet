@@ -235,6 +235,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   const [view, setView] = useState<View>("idle");
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [avatarSaved, setAvatarSaved] = useState(false);
+  // Inline failure flash when the avatar/card-art PATCH is rejected (401/403/4xx/
+  // 5xx) — a click that fails must never be a silent no-op.
+  const [avatarError, setAvatarError] = useState(false);
   const [resultIsDemo, setResultIsDemo] = useState(false);
   // generationId of the current result — powers the public Share link (/c/<id>).
   const [lastGenId, setLastGenId] = useState<number | null>(null);
@@ -257,6 +260,8 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   const [gallery, setGallery] = useState<Generation[] | null>(null);
   const [galleryCopiedId, setGalleryCopiedId] = useState<number | null>(null);
   const [galleryAvatarId, setGalleryAvatarId] = useState<number | null>(null);
+  // Gallery-row counterpart of avatarError — flashes on the row whose set-avatar failed.
+  const [galleryAvatarErrId, setGalleryAvatarErrId] = useState<number | null>(null);
   // Terracotta flash when the balance drops (item #20).
   const [creditFlash, setCreditFlash] = useState(false);
   const prevCreditsRef = useRef<number | null>(null);
@@ -1157,14 +1162,21 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                         // PATCH also updates the card art (item #25-6).
                         const ok = await setImageAsAvatar(resultUrl);
                         if (ok) {
+                          setAvatarError(false);
                           setAvatarSaved(true);
                           setTimeout(() => setAvatarSaved(false), 4000);
+                        } else {
+                          setAvatarError(true);
+                          setTimeout(() => setAvatarError(false), 4000);
                         }
                       }}
                       className="mp-enter"
-                      style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "150ms" }}
+                      style={{
+                        ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "150ms",
+                        ...(avatarError ? { color: T.terra, borderColor: T.terra } : null),
+                      }}
                       title="Use this image as your pet's profile picture AND their trading-card art (improves identity lock on future generations)"
-                    >{avatarSaved ? "✓ Card art updated" : (
+                    >{avatarError ? "Couldn't update card art — try again" : avatarSaved ? "✓ Card art updated" : (
                       <>
                         <svg width={14} height={14} viewBox="0 0 24 24" fill="none"
                           stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
@@ -2419,7 +2431,8 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                               <button onClick={async () => {
                                 const ok = await setImageAsAvatar(g.photo_path!);
                                 if (ok) { setGalleryAvatarId(g.id); setTimeout(() => setGalleryAvatarId(c => (c === g.id ? null : c)), 2600); }
-                              }} style={galleryActionBtn}>{galleryAvatarId === g.id ? "✓ Card art" : "Set as avatar"}</button>
+                                else { setGalleryAvatarErrId(g.id); setTimeout(() => setGalleryAvatarErrId(c => (c === g.id ? null : c)), 2600); }
+                              }} style={galleryAvatarErrId === g.id ? { ...galleryActionBtn, color: T.terra, borderColor: T.terra } : galleryActionBtn}>{galleryAvatarErrId === g.id ? "Couldn't update — retry" : galleryAvatarId === g.id ? "✓ Card art" : "Set as avatar"}</button>
                             )}
                           </div>
                         )}

@@ -51,6 +51,12 @@ const T = {
 // The single V1 pay-moment: watermark-free 1080p export. Zero vendor cost →
 // pure margin. Value mirrors docs/STUDIO-PRO.md §5.1 ("HD 1080p clean = 10 cr").
 const HD_EXPORT_COST = 10;
+// HONESTY GATE: the atomic credit charge + one-time server token (POST
+// /api/studio/export, docs/STUDIO-PRO.md §3.4) is NOT wired yet, so no click
+// ever actually deducts credits. Until that endpoint ships, HD export is
+// genuinely free — the UI must say so and must NOT advertise a "10 cr" price
+// that never gets charged. Flip this to false the moment the charge lands.
+const HD_EXPORT_FREE_BETA = true;
 const MAX_CLIPS = 3;
 const MAX_REEL_SEC = 60; // ruthless V1 cap — social lengths only (STUDIO-PRO §6)
 
@@ -543,16 +549,18 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
   // ── credit gate for the HD / watermark-free export ───────────────────────
   const tierIncludesHd = userTier === "pro" || userTier === "studio";
   const canAffordHd = credits != null && credits >= HD_EXPORT_COST;
-  const hdUnlocked = tierIncludesHd || canAffordHd;
+  // While in free beta HD is open to everyone; once the paywall endpoint lands,
+  // fall back to the tier/credit gate.
+  const hdUnlocked = HD_EXPORT_FREE_BETA || tierIncludesHd || canAffordHd;
 
   const onHdExport = () => {
     if (!hdUnlocked) return;
     // TODO(v1-paywall): before rendering clean, charge the HD-export credits and
     // mint a one-time server token so the watermark can't be bypassed client-side
     //   → POST /api/studio/export { projectHash } → { token, creditsRemaining }
-    // (see docs/STUDIO-PRO.md §3.4 / §6 "Watermark bypass"). For this V1 UI slice
-    // the gate is enforced in the UI only; the actual atomic charge is not wired,
-    // so DO NOT ship this as the real paywall without the endpoint.
+    // (see docs/STUDIO-PRO.md §3.4 / §6 "Watermark bypass"). Until that endpoint
+    // exists, HD_EXPORT_FREE_BETA keeps this honestly free — the label reflects
+    // that, so no charge is ever advertised that doesn't happen.
     runExport(true, false);
   };
 
@@ -752,7 +760,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                     <button
                       onClick={onHdExport}
                       disabled={!hasClips || exporting || !caps.canRecord || !hdUnlocked}
-                      title={tierIncludesHd ? "Included in your membership" : hdUnlocked ? `Costs ${HD_EXPORT_COST} credits` : `Needs ${HD_EXPORT_COST} credits — you have ${credits ?? 0}`}
+                      title={HD_EXPORT_FREE_BETA ? "Free while Studio is in beta" : tierIncludesHd ? "Included in your membership" : hdUnlocked ? `Costs ${HD_EXPORT_COST} credits` : `Needs ${HD_EXPORT_COST} credits — you have ${credits ?? 0}`}
                       style={{
                         ...exportCard,
                         borderColor: hdUnlocked ? T.studio : T.hair,
@@ -768,7 +776,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                         Export HD
                       </span>
                       <span style={{ fontSize: 13, color: T.muted2, fontFamily: T.m, marginTop: 3 }}>
-                        1080p · no watermark · {tierIncludesHd ? "included" : `${HD_EXPORT_COST} cr`}
+                        1080p · no watermark · {HD_EXPORT_FREE_BETA ? "free · beta" : tierIncludesHd ? "included" : `${HD_EXPORT_COST} cr`}
                       </span>
                     </button>
                   </div>
@@ -776,6 +784,11 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                     <a href="/?section=home&scroll=pricing" style={{ display: "inline-block", marginTop: 10, fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.terra, textDecoration: "underline" }}>
                       Get credits to unlock watermark-free HD &rarr;
                     </a>
+                  )}
+                  {HD_EXPORT_FREE_BETA && (
+                    <div style={{ marginTop: 10, fontSize: 12.5, color: T.muted2, fontFamily: T.m }}>
+                      HD export is free while Studio is in beta.
+                    </div>
                   )}
                   <div style={{ marginTop: 10, fontSize: 13, color: T.muted, fontFamily: T.body, lineHeight: 1.5 }}>
                     Rendering runs entirely in your browser (the server never transcodes). HD export is a real-time render — a {fmtTime(totalDur)} reel takes about {fmtTime(totalDur)}.

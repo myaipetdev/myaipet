@@ -2419,12 +2419,15 @@ const chatScript = [
 ];
 const msgsEl = document.getElementById('msgs');
 let chatIdx = 0;
+let userTookOver = false; // once the visitor sends a message, stop the auto-play loop so their chat isn't wiped
 function renderChat() {
+  if (userTookOver) return;
   msgsEl.innerHTML = '';
   chatIdx = 0;
   nextMsg();
 }
 function nextMsg() {
+  if (userTookOver) return;
   if (chatIdx >= chatScript.length) {
     setTimeout(renderChat, 4000);
     return;
@@ -2436,7 +2439,8 @@ function nextMsg() {
     t.innerHTML = '<span></span><span></span><span></span>';
     msgsEl.appendChild(t);
     setTimeout(() => {
-      msgsEl.removeChild(t);
+      if (userTookOver) { if (t.parentNode) msgsEl.removeChild(t); return; }
+      if (t.parentNode) msgsEl.removeChild(t);
       pushMsg(m);
       setTimeout(nextMsg, 900);
     }, 1100);
@@ -2460,6 +2464,54 @@ const chatIo = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.3 });
 chatIo.observe(document.getElementById('chatDemo'));
+
+// ---------- CHAT DEMO: honest local preview (no backend) ----------
+// This marketing page has no chat server. To keep the input honest, the send
+// button replies locally with rotating in-character lines that state plainly
+// it's a preview — nothing here claims to be a live, remembering companion.
+const chatInputEl = document.getElementById('hero-chat-input');
+const chatSendEl = document.querySelector('#chatDemo .send');
+const petPreviewReplies = [
+  "Love that! In the full app I'd remember it forever — this is just a preview, though. 🐾",
+  "Ooh, tell me more when we're for real. (Demo preview — adopt me in the app and I'll actually remember.)",
+  "You've got my attention! The real me lives in the app, with true memory of every chat. ✨",
+  "Noted! …well, I *would* note it — this demo can't remember yet. Launch the app and I will.",
+  "Ha, I like you already. Full Sparky (with memory + skills) is one wallet-connect away. 🐕",
+];
+let petReplyIdx = 0;
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+function nowClock() {
+  return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+function sendUserMsg() {
+  const text = chatInputEl.value.trim();
+  if (!text) return;
+  if (!userTookOver) {          // first send: stop the auto-play loop and clear the scripted demo
+    userTookOver = true;
+    msgsEl.innerHTML = '';
+    msgsEl.style.overflowY = 'auto';
+  }
+  pushMsg({ from: 'user', text: escapeHtml(text), time: nowClock() });
+  chatInputEl.value = '';
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+  const t = document.createElement('div');
+  t.className = 'typing';
+  t.innerHTML = '<span></span><span></span><span></span>';
+  msgsEl.appendChild(t);
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+  setTimeout(() => {
+    if (t.parentNode) msgsEl.removeChild(t);
+    const reply = petPreviewReplies[petReplyIdx++ % petPreviewReplies.length];
+    pushMsg({ from: 'pet', text: reply, time: nowClock() });
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  }, 1000);
+}
+if (chatSendEl) chatSendEl.addEventListener('click', sendUserMsg);
+if (chatInputEl) chatInputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); sendUserMsg(); }
+});
 
 // ---------- GALLERY ----------
 const petImages = {

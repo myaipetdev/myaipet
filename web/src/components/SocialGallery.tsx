@@ -45,6 +45,10 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // A failed POST (401/429/500) used to be swallowed — the field just sat there
+  // with no signal. Surface a distinct, wallet-aware message; clear it on the
+  // next keystroke or a successful post.
+  const [error, setError] = useState("");
 
   // Closing the detail modal unmounts this card mid-fetch; guard every async
   // setState so a late comments/post response doesn't warn on an unmounted node.
@@ -68,13 +72,19 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
   const handleSubmit = async () => {
     if (!newComment.trim() || submitting) return;
     setSubmitting(true);
+    if (mountedRef.current) setError("");
     try {
       await api.social.addComment(generationId, newComment.trim());
+      // Only clear the field once the server actually accepted the comment.
       if (mountedRef.current) setNewComment("");
       await loadComments();
       onAdded?.();
-    } catch {
-      // ignore
+    } catch (e: any) {
+      if (mountedRef.current) {
+        setError(e?.status === 401
+          ? "Connect your wallet to comment"
+          : "Couldn't post — try again");
+      }
     }
     if (mountedRef.current) setSubmitting(false);
   };
@@ -159,11 +169,21 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
         )}
       </div>
 
+      {/* Post-failure notice — a click that hits a 401/4xx/5xx must say so. */}
+      {error && (
+        <div role="alert" style={{
+          fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.04em",
+          color: T.terra, marginBottom: 6, paddingLeft: 2,
+        }}>
+          {error}
+        </div>
+      )}
+
       {/* Comment input */}
       <div style={{ display: "flex", gap: 6 }}>
         <input
           value={newComment}
-          onChange={e => setNewComment(e.target.value)}
+          onChange={e => { setNewComment(e.target.value); if (error) setError(""); }}
           onKeyDown={e => e.key === "Enter" && handleSubmit()}
           placeholder="Write a comment…"
           style={{
@@ -1075,6 +1095,17 @@ export default function SocialGallery() {
   // (wrong) state — ignore re-clicks until the first resolves.
   const likeInFlight = useRef<Set<number>>(new Set());
 
+  // A failed like used to silently revert the heart — no signal the click did
+  // nothing. Surface a brief, wallet-aware toast instead; it auto-dismisses.
+  const [likeNotice, setLikeNotice] = useState("");
+  const likeNoticeTimer = useRef<any>(null);
+  const flashLikeNotice = useCallback((msg: string) => {
+    setLikeNotice(msg);
+    if (likeNoticeTimer.current) clearTimeout(likeNoticeTimer.current);
+    likeNoticeTimer.current = setTimeout(() => setLikeNotice(""), 2600);
+  }, []);
+  useEffect(() => () => { if (likeNoticeTimer.current) clearTimeout(likeNoticeTimer.current); }, []);
+
   const handleLike = useCallback(async (generationId: number, _index: number) => {
     if (likeInFlight.current.has(generationId)) return;
     // Optimistic toggle, then reconcile with the server's truth. (The API
@@ -1105,14 +1136,17 @@ export default function SocialGallery() {
       });
       setItems(prev => prev.map(item => (matches(item) ? apply(item) : item)));
       setSelectedItem((prev: any) => (matches(prev) ? apply(prev) : prev));
-    } catch {
+    } catch (e: any) {
       // revert the optimistic flip
       setItems(prev => prev.map(item => (matches(item) ? flip(item) : item)));
       setSelectedItem((prev: any) => (matches(prev) ? flip(prev) : prev));
+      flashLikeNotice(e?.status === 401
+        ? "Connect your wallet to like"
+        : "Couldn't save your like — try again");
     } finally {
       likeInFlight.current.delete(generationId);
     }
-  }, []);
+  }, [flashLikeNotice]);
 
   const filteredItems = useMemo(() => {
     let result = items;
@@ -1145,7 +1179,23 @@ export default function SocialGallery() {
         .lib-tile { transition: transform .16s cubic-bezier(.2,.8,.2,1), box-shadow .16s ease; }
         @media (hover: hover) { .lib-tile:hover { transform: scale(1.06); box-shadow: var(--ed-shadow-float); z-index: 3; } }
         .lib-tile:active { transform: scale(1.0); }
+        @keyframes likeToastIn { from { opacity:0; transform:translate(-50%, 10px) } to { opacity:1; transform:translate(-50%, 0) } }
       `}</style>
+
+      {/* Like-failure toast — a failed like isn't a silent no-op anymore. */}
+      {likeNotice && (
+        <div role="alert" style={{
+          position: "fixed", bottom: 24, left: "50%", zIndex: 300,
+          transform: "translateX(-50%)", animation: "likeToastIn 0.2s ease-out",
+          background: T.ink, color: T.creamOn,
+          fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.04em",
+          padding: "10px 18px", borderRadius: 999,
+          boxShadow: "var(--ed-shadow-float)", border: `1px solid ${T.hair}`,
+          maxWidth: "90vw", textAlign: "center",
+        }}>
+          {likeNotice}
+        </div>
+      )}
 
       {/* Real community stats + featured pets live in <CommunityHighlights>,
           mounted just above this gallery — we don't repeat them here with mock

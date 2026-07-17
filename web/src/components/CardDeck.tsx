@@ -925,7 +925,7 @@ function CatchTile({ onClick }: { onClick?: () => void }) {
         marginTop: 4, padding: "8px 16px", borderRadius: 999,
         background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
         fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase",
-      }}>Open camera</span>
+      }}>Go catch ▸</span>
       <div style={{ fontFamily: T.m, fontSize: 11.5, color: "rgba(251,246,236,.5)", letterSpacing: ".04em" }}>
         📱 Best on mobile — or upload a photo
       </div>

@@ -903,11 +903,11 @@ function ChromeExtensionSection() {
           <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: MONO_CLR, letterSpacing: "0.14em", marginBottom: 12 }}>POPUP PREVIEW</div>
           {/* Extension popup mockup — a realistic dark device preview, framed
               softly on the warm field (no hard offset shadow, no purple glow). */}
-          <div className="sov-popup-mock" style={{
+          <div className="sov-popup-mock" aria-hidden role="img" aria-label="Chrome extension popup preview" style={{
             width: 320, maxWidth: "100%", borderRadius: 16, overflow: "hidden",
             background: "#1f1b16", fontFamily: "'Segoe UI', -apple-system, sans-serif",
             boxShadow: CARD_SHADOW, border: `1px solid ${HAIR}`,
-            fontSize: 13,
+            fontSize: 13, pointerEvents: "none", userSelect: "none",
           }}>
             {/* Header */}
             <div style={{
@@ -945,7 +945,7 @@ function ChromeExtensionSection() {
                 return (
                 <div key={t} style={{
                   flex: 1, padding: "8px 0", textAlign: "center", fontSize: 10, fontWeight: 600,
-                  color: active ? "#F49B2A" : "#6a635a", cursor: "pointer",
+                  color: active ? "#F49B2A" : "#6a635a",
                   borderBottom: active ? "2px solid #F49B2A" : "2px solid transparent",
                 }}>{t}</div>
               );})}
@@ -985,7 +985,7 @@ function ChromeExtensionSection() {
                   <div key={a} style={{
                     padding: "8px 0", borderRadius: 8, textAlign: "center",
                     background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)",
-                    color: "#cbb", fontSize: 11, cursor: "pointer",
+                    color: "#cbb", fontSize: 11,
                   }}>{a}</div>
                 ))}
               </div>
@@ -1172,11 +1172,36 @@ export default function SovereigntyDashboard() {
   }, []);
 
   // ── Copy-to-clipboard ──
-  const copyHash = (hash: string, label: string) => {
+  const copyHash = async (hash: string, label: string) => {
     if (!hash) return;
-    navigator.clipboard?.writeText(hash);
-    setCopied(label);
-    setTimeout(() => setCopied(null), 1600);
+    const flash = () => {
+      setCopied(label);
+      setTimeout(() => setCopied(null), 1600);
+    };
+    // Try the async Clipboard API first; only confirm on a real success.
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(hash);
+        flash();
+        return;
+      } catch {
+        // fall through to legacy path
+      }
+    }
+    // Legacy fallback: only confirm if execCommand reports success.
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = hash;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      if (ok) flash();
+    } catch {
+      // copy unavailable — show no false confirmation
+    }
   };
 
   // ── Successor actions ──
