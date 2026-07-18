@@ -60,6 +60,18 @@ petclaw_exact_release_header() {
   ' "${headers_file}"
 }
 
+petclaw_verify_landing_body() {
+  node -e '
+    let body = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", (chunk) => { body += chunk; });
+    process.stdin.on("end", () => {
+      const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
+      if (hangul.test(body) || !body.includes("/api/petclaw/demo-chat")) process.exitCode = 1;
+    });
+  '
+}
+
 expect_env_exact AVATAR_UPLOAD_USER_DAILY_CAP 20
 expect_env_exact AVATAR_UPLOAD_GLOBAL_DAILY_CAP 1000
 expect_env_exact AVATAR_PREVIEW_TTL_HOURS 24
@@ -148,12 +160,11 @@ DEMO_BODY="$(petclaw_curl -H "Origin: https://myaipet.ai" -H "Content-Type: appl
 node -e 'const d=JSON.parse(process.argv[1]); if(d?.output?.synthetic!==true||d?.output?.persisted!==false) process.exit(1)' "${DEMO_BODY}"
 
 if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
-  LANDING_BODY="$(curl --disable --silent --show-error --max-time 20 --noproxy '*' \
+  curl --disable --silent --show-error --max-time 20 --noproxy '*' \
     --resolve "myaipet.ai:${PETCLAW_SMOKE_PORT}:${PETCLAW_SMOKE_HOST}" \
-    https://myaipet.ai/)"
+    https://myaipet.ai/
 else
-  LANDING_BODY="$(petclaw_curl https://myaipet.ai/)"
-fi
-node -e 'const s=process.argv[1]; if(/[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u.test(s)||!s.includes("/api/petclaw/demo-chat")) process.exit(1)' "${LANDING_BODY}"
+  petclaw_curl https://myaipet.ai/
+fi | petclaw_verify_landing_body
 
 echo "Release smoke passed: ${PETCLAW_SMOKE_BASE}"

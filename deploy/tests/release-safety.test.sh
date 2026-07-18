@@ -261,6 +261,32 @@ if ! grep -Fq -- "--noproxy '*'" "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" 
 fi
 PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 7))"
 
+PETCLAW_LANDING_FUNCTION="${PETCLAW_TEST_TMP}/landing-body-function.sh"
+awk '/^petclaw_verify_landing_body\(\) \{/{copy=1} copy{print} copy && /^\}$/{exit}' \
+  "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" > "${PETCLAW_LANDING_FUNCTION}"
+# shellcheck source=/dev/null
+source "${PETCLAW_LANDING_FUNCTION}"
+if ! {
+  printf '%s' '/api/petclaw/demo-chat'
+  awk 'BEGIN { for (i = 0; i < 200000; i += 1) printf "x" }'
+} | petclaw_verify_landing_body; then
+  echo "FAIL: landing verifier cannot stream a body above Linux single-argument limits" >&2
+  exit 1
+fi
+if printf '%s' '/api/petclaw/demo-chat Hangul: 한' | petclaw_verify_landing_body; then
+  echo "FAIL: streaming landing verifier accepts Hangul" >&2
+  exit 1
+fi
+if printf '%s' 'English landing without the demo endpoint' | petclaw_verify_landing_body; then
+  echo "FAIL: streaming landing verifier accepts a missing demo endpoint" >&2
+  exit 1
+fi
+if grep -Fq '"${LANDING_BODY}"' "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh"; then
+  echo "FAIL: landing smoke still passes the full HTML body through argv" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 4))"
+
 if grep -Fq '/bin/bash "${PETCLAW_RELEASE_DIR}/deploy/release-rollback-watchdog.sh"' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh"; then
   echo "FAIL: mutable release watchdog is still scheduled as root" >&2
