@@ -61,7 +61,7 @@ function privateApiCors(req: NextRequest, methods: string): NextResponse {
   return res;
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   // Stateful/authenticated PetClaw APIs are readable from approved browser
   // origins only. Chrome extension host permissions continue to support its
   // background requests; a stable store origin can be added via the env list.

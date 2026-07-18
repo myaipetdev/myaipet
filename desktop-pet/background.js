@@ -58,12 +58,49 @@ function normalizeSiteHost(hostname) {
   return String(hostname || "").trim().toLowerCase().replace(/\.+$/, "");
 }
 
+// Local dashboards, routers, development servers, and private IPs commonly
+// expose credentials or administrative controls. They are never eligible for
+// PetClaw injection, even when a broad optional-host declaration would allow
+// Chrome to show a permission prompt for them.
+function isPrivateOrLocalSiteHost(hostname) {
+  const host = normalizeSiteHost(hostname);
+  if (!host) return true;
+
+  // URL.hostname keeps IPv6 literals bracketed in Chromium/Node. Block every
+  // IPv6 literal rather than trying to maintain an incomplete private-range
+  // parser that could be bypassed with compression or IPv4-mapped forms.
+  if (host.includes(":") || host.startsWith("[") || host.endsWith("]")) return true;
+  if (
+    !host.includes(".") ||
+    host === "localhost" || host.endsWith(".localhost") ||
+    host.endsWith(".local") || host.endsWith(".internal") || host.endsWith(".home.arpa")
+  ) return true;
+
+  const parts = host.split(".");
+  if (parts.length !== 4 || !parts.every((part) => /^\d{1,3}$/.test(part))) return false;
+  const octets = parts.map(Number);
+  if (octets.some((part) => part > 255)) return true;
+  const [a, b] = octets;
+  return (
+    a === 0 || a === 10 || a === 127 ||
+    (a === 100 && b >= 64 && b <= 127) ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 198 && (b === 18 || b === 19)) ||
+    a >= 224
+  );
+}
+
 function siteAccessDescriptor(rawUrl) {
   let parsed;
   try { parsed = new URL(String(rawUrl || "")); } catch { return null; }
   if (!['http:', 'https:'].includes(parsed.protocol)) return null;
   const host = normalizeSiteHost(parsed.hostname);
-  if (!host || host.includes("*") || BLOCKED_SITE_DOMAINS.some((domain) => host === domain || host.endsWith(`.${domain}`))) {
+  if (
+    !host || host.includes("*") || isPrivateOrLocalSiteHost(host) ||
+    BLOCKED_SITE_DOMAINS.some((domain) => host === domain || host.endsWith(`.${domain}`))
+  ) {
     return null;
   }
   const pattern = `${parsed.protocol}//${host}/*`;
@@ -474,14 +511,16 @@ async function saveEmotions(emotions) {
 // _emotionsSeen was read but never written, so it could never unlock.
 async function recordEmotionSeen(name) {
   if (!name) return;
-  const points = await getPoints();
-  const seen = Array.isArray(points._emotionSet) ? points._emotionSet : [];
-  if (!seen.includes(name)) {
-    seen.push(name);
-    points._emotionSet = seen;
-    points._emotionsSeen = seen.length;
-    await chrome.storage.local.set({ [POINTS_KEY]: points });
-  }
+  await withActivityMutation(async () => {
+    const points = await getPoints();
+    const seen = Array.isArray(points._emotionSet) ? [...points._emotionSet] : [];
+    if (!seen.includes(name)) {
+      seen.push(name);
+      points._emotionSet = seen;
+      points._emotionsSeen = seen.length;
+      await chrome.storage.local.set({ [POINTS_KEY]: points });
+    }
+  });
 }
 
 function getDominantEmotion(emotions) {
@@ -1115,19 +1154,21 @@ async function exportSoul() {
 let streakTickInFlight = null;
 
 async function tickStreakNow() {
-  const points = await getPoints();
-  const today = localDayKey();
-  let justIncremented = false;
-  if (points.lastDaily !== today) {
+  const { points, justIncremented } = await withActivityMutation(async () => {
+    const current = await getPoints();
+    const today = localDayKey();
+    if (current.lastDaily === today) return { points: current, justIncremented: false };
     const yesterday = localDayKey(new Date(Date.now() - 86400000));
-    if (points.lastDaily === yesterday) {
-      points.dailyStreak = (points.dailyStreak || 0) + 1;
+    if (current.lastDaily === yesterday) {
+      current.dailyStreak = (current.dailyStreak || 0) + 1;
     } else {
-      points.dailyStreak = 1;
+      current.dailyStreak = 1;
     }
-    points.lastDaily = today;
-    justIncremented = true;
-    await chrome.storage.local.set({ [POINTS_KEY]: points });
+    current.lastDaily = today;
+    await chrome.storage.local.set({ [POINTS_KEY]: current });
+    return { points: current, justIncremented: true };
+  });
+  if (justIncremented) {
     // Award the daily-login + streak bonus HERE (was only in sendHeartbeat),
     // so it fires once per day regardless of whether a page load or the 5-min
     // heartbeat was the first trigger — previously a page load set lastDaily

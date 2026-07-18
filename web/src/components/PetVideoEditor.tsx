@@ -183,7 +183,13 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
                   }}>{p}</button>
                 ))}
                 {["white", "#fbbf24", "#a855f7", "#34d399"].map(c => (
-                  <button key={c} onClick={() => setState(s => ({ ...s, captionColor: c }))} style={{
+                  <button
+                    key={c}
+                    type="button"
+                    aria-label={`Set caption color to ${c === "white" ? "white" : c}`}
+                    aria-pressed={state.captionColor === c}
+                    onClick={() => setState(s => ({ ...s, captionColor: c }))}
+                    style={{
                     width: 28, height: 28, borderRadius: 6,
                     background: c, cursor: "pointer",
                     border: state.captionColor === c ? "2px solid white" : "1px solid rgba(255,255,255,0.15)",

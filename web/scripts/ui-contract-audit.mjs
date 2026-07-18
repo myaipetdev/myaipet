@@ -7,7 +7,7 @@ const repoRoot = path.resolve(webRoot, "..");
 const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
 const staticAssetExtension = /\.(?:png|jpe?g|gif|webp|svg|ico|mp4|webm|wav|mp3|zip|json|md|txt|pdf|wasm)$/i;
 const failures = [];
-const inventory = { buttons: 0, links: 0, inputs: 0, uiFiles: 0, visibleLabels: new Set() };
+const inventory = { buttons: 0, roleButtons: 0, links: 0, inputs: 0, uiFiles: 0, visibleLabels: new Set() };
 const retiredCopy = [
   "100 welcome credits included",
   "Studio creations included each month",
@@ -43,6 +43,47 @@ const retiredCopy = [
   "petclaw consent",
   "Heartbeat</span><span class=\"v\">+1 / 5min",
   "First adoption</span><span class=\"v\">+100",
+  "Open the Home tab to buy more credits",
+  "Buy more credits on the Home tab",
+  "Add credits and try again.",
+];
+
+const requiredUiContracts = [
+  {
+    file: "web/src/components/SovereigntyDashboard.tsx",
+    description: "extension onboarding must disclose blocked private/local and sensitive sites",
+    pattern: /MY AI PET, private\/local network addresses, and a built-in list of common sensitive domains are blocked\./,
+  },
+  {
+    file: "web/src/components/App.tsx",
+    description: "Season Rewards section must expose its visible title as a semantic heading",
+    pattern: /<h1\s+className="season-banner-title"[\s\S]*?>[\s\S]*?Season 1 Rewards[\s\S]*?<\/h1>/,
+  },
+  {
+    file: "web/src/components/Hero.tsx",
+    description: "PetClaw portability copy must not claim user data bypasses platform storage",
+    pattern: /open, exportable protocol designed to move across supported clients instead of locking you to one surface\./,
+  },
+  {
+    file: "landing-assets/index.html",
+    description: "sovereignty cards must be allowed to shrink on narrow viewports",
+    pattern: /\.right\s*\{[^}]*\bmin-width\s*:\s*0\s*;/,
+  },
+  {
+    file: "landing-assets/index.html",
+    description: "sovereignty receipt commands must truncate instead of overflowing",
+    pattern: /\.right-receipt\s+\.rr-cmd\s*\{[^}]*\bmin-width\s*:\s*0\s*;[^}]*\boverflow\s*:\s*hidden\s*;[^}]*\btext-overflow\s*:\s*ellipsis\s*;/,
+  },
+  {
+    file: "landing-assets/index.html",
+    description: "launch demo must remain keyboard-operable before the iframe loads",
+    pattern: /id="journeyVideo"\s+role="button"\s+tabindex="0"[\s\S]*?onclick="playDemo\(this\)"[\s\S]*?onkeydown="[^"]*Enter[^"]*playDemo\(this\)[^"]*"/,
+  },
+  {
+    file: "landing-assets/index.html",
+    description: "launch demo must replace its launcher with the local titled product-demo iframe",
+    pattern: /function\s+playDemo\(el\)\s*\{[\s\S]*?document\.createElement\(['"]iframe['"]\)[\s\S]*?f\.src\s*=\s*['"]product-demo\.html['"][\s\S]*?f\.title\s*=\s*['"]MY AI PET launch demo['"][\s\S]*?el\.innerHTML\s*=\s*['"]{2}[\s\S]*?el\.appendChild\(f\)/,
+  },
 ];
 
 function auditRetiredCopy(file, text) {
@@ -78,6 +119,40 @@ function assetExists(assetRoot, value, allowAppRoute) {
   if (fs.existsSync(diskPath)) return true;
   if (!allowAppRoute || !clean.startsWith("/")) return false;
   return fs.existsSync(path.join(webRoot, "src", "app", clean.slice(1), "route.ts"));
+}
+
+let appRouteMatchers;
+function getAppRouteMatchers() {
+  if (appRouteMatchers) return appRouteMatchers;
+  const appRoot = path.join(webRoot, "src", "app");
+  appRouteMatchers = walk(appRoot, (file) => /\/(?:page|route)\.tsx?$/.test(file)).map((file) => {
+    const route = path.relative(appRoot, path.dirname(file)).replaceAll(path.sep, "/");
+    const parts = route ? route.split("/") : [];
+    const source = parts.map((part) => {
+      if (/^\[\[\.\.\.[^\]]+\]\]$/.test(part)) return "(?:/.*)?";
+      if (/^\[\.\.\.[^\]]+\]$/.test(part)) return "/.+";
+      if (/^\[[^\]]+\]$/.test(part)) return "/[^/]+";
+      return `/${part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`;
+    }).join("");
+    return new RegExp(`^${source || "/"}/?$`);
+  });
+  return appRouteMatchers;
+}
+
+function internalTargetExists(value) {
+  const clean = withoutQuery(value);
+  if (!clean.startsWith("/")) return true;
+  const publicTarget = path.join(webRoot, "public", clean.replace(/^\//, ""));
+  if (fs.existsSync(publicTarget)) return true;
+  return getAppRouteMatchers().some((matcher) => matcher.test(clean));
+}
+
+function auditStaticFetchTargets(file, text) {
+  for (const match of text.matchAll(/\bfetch\s*\(\s*(["'`])(\/[^"'`\r\n{}]*)\1/g)) {
+    if (!internalTargetExists(match[2])) {
+      failures.push(`${relative(file)}: fetch targets missing internal route: ${match[2]}`);
+    }
+  }
 }
 
 function auditAbsoluteAssetLiterals(file, text, assetRoot, allowAppRoute = false) {
@@ -143,12 +218,26 @@ function attrComparableValue(attribute) {
   return null;
 }
 
+function hasAccessibleAttribute(opening, name) {
+  const attribute = attr(opening, name);
+  if (!attribute) return false;
+  const literal = attrStaticValue(attribute);
+  // A non-literal expression such as `aria-label={`Open ${name}`}` is a real
+  // runtime name. Empty static attributes are not.
+  return literal === null || literal.length > 0;
+}
+
 function hasSpread(opening) {
   return opening.attributes.properties.some(ts.isJsxSpreadAttribute);
 }
 
 function jsxTagName(opening) {
   return opening.tagName.getText().toLowerCase();
+}
+
+function canRenderButtonRole(opening) {
+  const role = attrComparableValue(attr(opening, "role"));
+  return role === "button" || (role !== null && /["'`]button["'`]/.test(role));
 }
 
 function descendantText(node) {
@@ -172,7 +261,13 @@ function descendantText(node) {
     }
     ts.forEachChild(child, visit);
   }
-  ts.forEachChild(node, visit);
+  // Only inspect rendered children. Walking the entire JSX node also visits
+  // opening-element attributes, so an unrelated dynamic prop such as
+  // `onClick={() => ...}` used to mark an icon-only button as dynamically
+  // named and let it pass without an accessible name.
+  if (ts.isJsxElement(node) || ts.isJsxFragment(node)) {
+    for (const child of node.children) visit(child);
+  }
   return { text: parts.join(" ").trim(), dynamic };
 }
 
@@ -208,6 +303,7 @@ function auditTsx(file) {
   if (hangul.test(text)) failures.push(`${relative(file)}: contains Korean text`);
   auditRetiredCopy(file, text);
   auditAbsoluteAssetLiterals(file, text, path.join(webRoot, "public"), true);
+  auditStaticFetchTargets(file, text);
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const labelTargets = new Set();
   const anchorTargets = new Set();
@@ -251,7 +347,12 @@ function auditTsx(file) {
         const label = attrStaticValue(attr(opening, "aria-label"))
           || attrStaticValue(attr(opening, "title"))
           || descendantText(node).text;
-        if (!label && !descendantText(node).dynamic) fail(source, node, "button has no accessible name");
+        const hasNamedAttribute = hasAccessibleAttribute(opening, "aria-label")
+          || hasAccessibleAttribute(opening, "aria-labelledby")
+          || hasAccessibleAttribute(opening, "title");
+        if (!label && !hasNamedAttribute && !descendantText(node).dynamic) {
+          fail(source, node, "button has no accessible name");
+        }
         if (label) inventory.visibleLabels.add(label);
       } else if (tag === "a" || opening.tagName.getText() === "Link") {
         inventory.links++;
@@ -264,10 +365,18 @@ function auditTsx(file) {
         if (href?.startsWith("#") && !anchorTargets.has(href.slice(1))) {
           fail(source, node, `${tag} targets missing id ${href}`);
         }
+        if (href?.startsWith("/") && !internalTargetExists(href)) {
+          fail(source, node, `${tag} targets missing internal route ${href}`);
+        }
         const label = attrStaticValue(attr(opening, "aria-label"))
           || attrStaticValue(attr(opening, "title"))
           || descendantText(node).text;
-        if (!label && !descendantText(node).dynamic) fail(source, node, `${tag} has no accessible name`);
+        const hasNamedAttribute = hasAccessibleAttribute(opening, "aria-label")
+          || hasAccessibleAttribute(opening, "aria-labelledby")
+          || hasAccessibleAttribute(opening, "title");
+        if (!label && !hasNamedAttribute && !descendantText(node).dynamic) {
+          fail(source, node, `${tag} has no accessible name`);
+        }
         if (label) inventory.visibleLabels.add(label);
       } else if (["input", "select", "textarea"].includes(tag)) {
         inventory.inputs++;
@@ -288,6 +397,22 @@ function auditTsx(file) {
           || hasSpread(opening)
         );
         if (!named) fail(source, node, `${tag} has no programmatic label`);
+      } else if (canRenderButtonRole(opening)) {
+        inventory.roleButtons++;
+        if (!attr(opening, "onClick") && !attr(opening, "onPointerDown")) {
+          fail(source, node, "role=button has no pointer action");
+        }
+        if (!attr(opening, "tabIndex")) fail(source, node, "role=button is not keyboard focusable");
+        if (!attr(opening, "onKeyDown")) fail(source, node, "role=button has no keyboard activation handler");
+        const label = attrStaticValue(attr(opening, "aria-label"))
+          || attrStaticValue(attr(opening, "title"))
+          || descendantText(node).text;
+        const hasNamedAttribute = hasAccessibleAttribute(opening, "aria-label")
+          || hasAccessibleAttribute(opening, "aria-labelledby")
+          || hasAccessibleAttribute(opening, "title");
+        if (!label && !hasNamedAttribute && !descendantText(node).dynamic) {
+          fail(source, node, "role=button has no accessible name");
+        }
       }
     }
     ts.forEachChild(node, visit);
@@ -366,14 +491,44 @@ function auditHtml(file) {
       || (id && new RegExp(`<label\\b[^>]*\\bfor=["']${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["']`, "i").test(text)));
     if (!hasLabel) failures.push(`${relative(file)}: HTML ${match[1]} has no programmatic label`);
   }
+  for (const match of text.matchAll(/<(?!button\b)([a-z][\w-]*)\b([^>]*\brole\s*=\s*["']button["'][^>]*)>([\s\S]*?)<\/\1>/gi)) {
+    inventory.roleButtons++;
+    const attributes = htmlAttrs(`<${match[1]} ${match[2]}>`);
+    const id = attributes.get("id");
+    const classNames = (attributes.get("class") || "").split(/\s+/).filter(Boolean);
+    const tokens = [id, ...classNames].filter(Boolean);
+    const scriptBound = tokens.some((token) => scriptCorpus.includes(token));
+    const label = (attributes.get("aria-label")
+      || match[3].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+    if (!label) failures.push(`${relative(file)}: HTML role=button has no accessible name`);
+    if (!attributes.has("tabindex") || attributes.get("tabindex") === "-1") {
+      failures.push(`${relative(file)}: HTML role=button is not keyboard focusable`);
+    }
+    if (!attributes.has("onclick") && !scriptBound) {
+      failures.push(`${relative(file)}: HTML role=button has no click action`);
+    }
+    if (!attributes.has("onkeydown") && !scriptBound) {
+      failures.push(`${relative(file)}: HTML role=button has no keyboard activation handler`);
+    }
+  }
 }
 
 for (const file of walk(path.join(webRoot, "src"), (file) => /\.(?:tsx|jsx)$/.test(file))) auditTsx(file);
 for (const file of walk(path.join(webRoot, "src"), (file) => /\.(?:ts|js)$/.test(file))) {
-  auditAbsoluteAssetLiterals(file, fs.readFileSync(file, "utf8"), path.join(webRoot, "public"), true);
+  const text = fs.readFileSync(file, "utf8");
+  auditAbsoluteAssetLiterals(file, text, path.join(webRoot, "public"), true);
+  auditStaticFetchTargets(file, text);
 }
 for (const dir of [path.join(repoRoot, "landing-assets"), path.join(repoRoot, "desktop-pet")]) {
   for (const file of walk(dir, (file) => file.endsWith(".html"))) auditHtml(file);
+}
+
+for (const contract of requiredUiContracts) {
+  const file = path.join(repoRoot, contract.file);
+  const text = fs.readFileSync(file, "utf8");
+  if (!contract.pattern.test(text)) {
+    failures.push(`${contract.file}: ${contract.description}`);
+  }
 }
 
 if (failures.length) {
@@ -384,5 +539,6 @@ if (failures.length) {
 
 process.stdout.write(
   `UI contract audit passed: ${inventory.uiFiles} files, ${inventory.buttons} buttons, `
-  + `${inventory.links} links, ${inventory.inputs} inputs, ${inventory.visibleLabels.size} static labels.\n`,
+  + `${inventory.roleButtons} non-native button roles, ${inventory.links} links, ${inventory.inputs} inputs, `
+  + `${inventory.visibleLabels.size} static labels.\n`,
 );

@@ -41,6 +41,39 @@ petclaw_runtime_versions_supported() {
   [[ "${PETCLAW_RUNTIME_NPM_VERSION}" == "${PETCLAW_REQUIRED_NPM_VERSION}" ]]
 }
 
+petclaw_seal_release_tree() {
+  local PETCLAW_SEAL_RELEASE_DIR="$1"
+  local PETCLAW_SEAL_WEB="$2"
+  local PETCLAW_SEAL_LANDING="${PETCLAW_SEAL_RELEASE_DIR}/landing-assets"
+  local PETCLAW_SEAL_STATIC="${PETCLAW_SEAL_WEB}/.next/static"
+
+  # The service account needs the generated runtime, but unrelated local users
+  # do not. Preserve executable files for npm/Prisma, make all other private
+  # files group-readable, and expose only nginx's two immutable asset trees.
+  sudo find "${PETCLAW_SEAL_RELEASE_DIR}" -type d -exec chmod 750 {} +
+  sudo find "${PETCLAW_SEAL_RELEASE_DIR}" -type f \
+    ! -path "${PETCLAW_SEAL_WEB}/.env.production" \
+    -exec /bin/bash -c '
+      for PETCLAW_SEAL_FILE do
+        if [[ -x "${PETCLAW_SEAL_FILE}" ]]; then
+          chmod 750 "${PETCLAW_SEAL_FILE}"
+        else
+          chmod 640 "${PETCLAW_SEAL_FILE}"
+        fi
+      done
+    ' petclaw-seal {} +
+  sudo chown -R root:ubuntu "${PETCLAW_SEAL_RELEASE_DIR}"
+  sudo chmod 640 "${PETCLAW_SEAL_WEB}/.env.production"
+
+  sudo chmod 755 "${PETCLAW_SEAL_RELEASE_DIR}" \
+    "${PETCLAW_SEAL_WEB}" "${PETCLAW_SEAL_WEB}/.next"
+  for PETCLAW_SEAL_PUBLIC_TREE in \
+    "${PETCLAW_SEAL_LANDING}" "${PETCLAW_SEAL_STATIC}"; do
+    sudo find "${PETCLAW_SEAL_PUBLIC_TREE}" -type d -exec chmod 755 {} +
+    sudo find "${PETCLAW_SEAL_PUBLIC_TREE}" -type f -exec chmod 644 {} +
+  done
+}
+
 if [[ "$(id -un)" != "${PETCLAW_DEPLOY_USER}" \
   || "$(id -u)" != "$(id -u "${PETCLAW_DEPLOY_USER}" 2>/dev/null || true)" ]]; then
   echo "ERROR: production release controller must run as the ubuntu service account, not root." >&2
@@ -835,17 +868,12 @@ fi
 # Prisma input and the approval file are byte-for-byte identical to the signed,
 # root-owned verified source. The releases parent is root-owned, so the ubuntu
 # runtime cannot rename this generation after the comparison.
-sudo chown -R root:root "${PETCLAW_RELEASE_DIR}"
-sudo find "${PETCLAW_RELEASE_DIR}" -type d -exec chmod a-w,a+rx {} +
-# The controller runs with umask 077, so generated dependency and standalone
-# files would otherwise become root-only after sealing. Preserve each owner's
-# executable bit and make every secret-scanned release file runtime-readable.
-# Exclude the production dotenv so it is never briefly world-readable.
-sudo find "${PETCLAW_RELEASE_DIR}" -type f \
-  ! -path "${PETCLAW_WEB}/.env.production" \
-  -exec chmod u+rw,go+rX,go-w {} +
-sudo chown root:ubuntu "${PETCLAW_WEB}/.env.production"
-sudo chmod 640 "${PETCLAW_WEB}/.env.production"
+petclaw_seal_release_tree "${PETCLAW_RELEASE_DIR}" "${PETCLAW_WEB}"
+if ! sudo -u www-data test -r "${PETCLAW_RELEASE_DIR}/landing-assets/index.html" \
+  || ! sudo -u www-data test -r "${PETCLAW_STATIC_PROBE}"; then
+  echo "ERROR: post-seal nginx cannot read the explicitly public release assets." >&2
+  exit 1
+fi
 for PETCLAW_IMMUTABLE_MIGRATION_INPUT in \
   web/prisma \
   web/prisma.config.ts \
@@ -861,11 +889,24 @@ for PETCLAW_IMMUTABLE_MIGRATION_INPUT in \
 done
 PETCLAW_PRISMA_CLI="$(realpath -e "${PETCLAW_WEB}/node_modules/.bin/prisma" 2>/dev/null || true)"
 if find "${PETCLAW_RELEASE_DIR}" ! -user root -print -quit | grep -q . \
+  || find "${PETCLAW_RELEASE_DIR}" ! -group ubuntu -print -quit | grep -q . \
   || find "${PETCLAW_RELEASE_DIR}" \( -type f -o -type d \) \
     -perm /022 -print -quit | grep -q . \
-  || find "${PETCLAW_RELEASE_DIR}" -type d ! -perm -005 -print -quit | grep -q . \
+  || find "${PETCLAW_RELEASE_DIR}" -type d ! -perm -050 -print -quit | grep -q . \
+  || find "${PETCLAW_RELEASE_DIR}" -type f ! -perm -040 -print -quit | grep -q . \
   || find "${PETCLAW_RELEASE_DIR}" -type f \
-    ! -path "${PETCLAW_WEB}/.env.production" ! -perm -004 -print -quit | grep -q . \
+    ! -path "${PETCLAW_RELEASE_DIR}/landing-assets/*" \
+    ! -path "${PETCLAW_WEB}/.next/static/*" \
+    -perm /007 -print -quit | grep -q . \
+  || find "${PETCLAW_RELEASE_DIR}" -type d \
+    ! -path "${PETCLAW_RELEASE_DIR}" \
+    ! -path "${PETCLAW_WEB}" \
+    ! -path "${PETCLAW_WEB}/.next" \
+    ! -path "${PETCLAW_RELEASE_DIR}/landing-assets" \
+    ! -path "${PETCLAW_RELEASE_DIR}/landing-assets/*" \
+    ! -path "${PETCLAW_WEB}/.next/static" \
+    ! -path "${PETCLAW_WEB}/.next/static/*" \
+    -perm /007 -print -quit | grep -q . \
   || [[ -z "${PETCLAW_PRISMA_CLI}" || ! -r "${PETCLAW_PRISMA_CLI}" \
     || ! -x "${PETCLAW_PRISMA_CLI}" ]]; then
   echo "ERROR: pre-migration candidate could not be sealed root-owned, non-writable, and runtime-readable." >&2
@@ -933,33 +974,9 @@ if (( (8#${PETCLAW_PSQL_MODE} & 8#022) != 0 )); then
   echo "ERROR: psql executable is writable by group or other." >&2
   exit 2
 fi
-if ! PETCLAW_PSQL_RECORDS="$(node -e '
-  try {
-    const url = new URL(process.env.DATABASE_URL);
-    if (url.protocol !== "postgresql:" && url.protocol !== "postgres:") process.exit(2);
-    for (const key of ["schema", "connection_limit", "pool_timeout", "socket_timeout", "pgbouncer", "statement_cache_size"]) {
-      url.searchParams.delete(key);
-    }
-    const sslmode = url.searchParams.get("sslmode") || "prefer";
-    url.searchParams.delete("sslmode");
-    if (!new Set(["disable", "allow", "prefer", "require", "verify-ca", "verify-full"]).has(sslmode)) process.exit(2);
-    if ([...url.searchParams].length !== 0) process.exit(2);
-    const fields = [
-      ["HOST", url.hostname],
-      ["PORT", url.port || "5432"],
-      ["USER", decodeURIComponent(url.username)],
-      ["PASSWORD", decodeURIComponent(url.password)],
-      ["DATABASE", decodeURIComponent(url.pathname.slice(1))],
-      ["SSLMODE", sslmode],
-    ];
-    for (const [name, value] of fields) {
-      if ((name !== "PASSWORD" && !value) || /[\0\r\n]/.test(value)) process.exit(2);
-      process.stdout.write(`${name}\t${Buffer.from(value, "utf8").toString("base64")}\n`);
-    }
-  } catch {
-    process.exit(2);
-  }
-')" || [[ -z "${PETCLAW_PSQL_RECORDS}" ]]; then
+if ! PETCLAW_PSQL_RECORDS="$("${PETCLAW_NODE_BIN}" \
+  "${PETCLAW_RELEASE_SOURCE}/deploy/parse-database-url.mjs")" \
+  || [[ -z "${PETCLAW_PSQL_RECORDS}" ]]; then
   echo "ERROR: DATABASE_URL is not a supported PostgreSQL URL." >&2
   exit 2
 fi
@@ -1077,6 +1094,9 @@ if [[ -e "${PETCLAW_RUNTIME_CACHE}" || -L "${PETCLAW_RUNTIME_CACHE}" ]]; then
 fi
 sudo install -d -o ubuntu -g ubuntu -m 700 "${PETCLAW_RUNTIME_CACHE}"
 if find "${PETCLAW_RELEASE_DIR}" ! -user root \
+    ! -path "${PETCLAW_RUNTIME_CACHE}" ! -path "${PETCLAW_RUNTIME_CACHE}/*" \
+    -print -quit | grep -q . \
+  || find "${PETCLAW_RELEASE_DIR}" ! -group ubuntu \
     ! -path "${PETCLAW_RUNTIME_CACHE}" ! -path "${PETCLAW_RUNTIME_CACHE}/*" \
     -print -quit | grep -q . \
   || find "${PETCLAW_RELEASE_DIR}" \( -type f -o -type d \) \

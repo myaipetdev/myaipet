@@ -23,9 +23,13 @@ expect_code() {
   local method="$2"
   local url="$3"
   shift 3
-  local code
-  code="$(petclaw_curl -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' -X "${method}" "${PETCLAW_SMOKE_BASE}${url}" "$@" || true)"
-  if [[ "${code}" != "${expected}" ]]; then
+  local code=""
+  local curl_ok=1
+  if ! code="$(petclaw_curl -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
+    -X "${method}" "${PETCLAW_SMOKE_BASE}${url}" "$@")"; then
+    curl_ok=0
+  fi
+  if [[ "${curl_ok}" != "1" || "${code}" != "${expected}" ]]; then
     echo "ERROR: ${method} ${url} returned ${code:-000}; expected ${expected}." >&2
     return 1
   fi
@@ -60,6 +64,61 @@ petclaw_exact_release_header() {
   ' "${headers_file}"
 }
 
+petclaw_exact_header_value() {
+  local headers_file="$1"
+  local header_name="$2"
+  local expected="$3"
+  awk -v wanted="${header_name}" -v expected="${expected}" '
+    BEGIN { total = 0; exact = 0 }
+    {
+      line = $0
+      sub(/\r$/, "", line)
+      lower = tolower(line)
+      prefix = tolower(wanted) ":"
+      if (index(lower, prefix) == 1) {
+        total += 1
+        sub(/^[^:]*:[ \t]*/, "", line)
+        sub(/[ \t]+$/, "", line)
+        if (line == expected) exact += 1
+      }
+    }
+    END { exit(total == 1 && exact == 1 ? 0 : 1) }
+  ' "${headers_file}"
+}
+
+petclaw_header_contains_token() {
+  local headers_file="$1"
+  local header_name="$2"
+  local expected_token="$3"
+  node -e '
+    const fs = require("node:fs");
+    const [file, wanted, expected] = process.argv.slice(1);
+    const values = fs.readFileSync(file, "utf8")
+      .split(/\r?\n/)
+      .filter((line) => line.toLowerCase().startsWith(`${wanted.toLowerCase()}:`))
+      .flatMap((line) => line.slice(line.indexOf(":") + 1).split(","))
+      .map((value) => value.trim().toLowerCase());
+    if (!values.includes(expected.toLowerCase())) process.exit(1);
+  ' "${headers_file}" "${header_name}" "${expected_token}"
+}
+
+petclaw_exact_frame_ancestors() {
+  local headers_file="$1"
+  local expected_sources="$2"
+  node -e '
+    const fs = require("node:fs");
+    const [file, expected] = process.argv.slice(1);
+    const values = fs.readFileSync(file, "utf8")
+      .split(/\r?\n/)
+      .filter((line) => /^content-security-policy:/i.test(line))
+      .map((line) => line.slice(line.indexOf(":") + 1).trim());
+    if (values.length !== 1) process.exit(1);
+    const directives = values[0].split(";").map((value) => value.trim())
+      .filter((value) => value.toLowerCase().startsWith("frame-ancestors "));
+    if (directives.length !== 1 || directives[0] !== `frame-ancestors ${expected}`) process.exit(1);
+  ' "${headers_file}" "${expected_sources}"
+}
+
 petclaw_verify_landing_body() {
   node -e '
     let body = "";
@@ -72,14 +131,28 @@ petclaw_verify_landing_body() {
   '
 }
 
+petclaw_verify_product_demo_body() {
+  node -e '
+    let body = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", (chunk) => { body += chunk; });
+    process.stdin.on("end", () => {
+      const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
+      if (hangul.test(body) || !body.includes("id=\"playBtn\"") || !body.includes("id=\"replayBtn\"")) process.exitCode = 1;
+    });
+  '
+}
+
 petclaw_fetch_landing() {
+  local path="${1:-/}"
   if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
     curl --disable --silent --show-error --max-time 20 --noproxy '*' \
-      -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
+      -D "${PETCLAW_SMOKE_HEADERS}" -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
       --resolve "myaipet.ai:${PETCLAW_SMOKE_PORT}:${PETCLAW_SMOKE_HOST}" \
-      https://myaipet.ai/
+      "https://myaipet.ai${path}"
   else
-    petclaw_curl -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' https://myaipet.ai/
+    petclaw_curl -D "${PETCLAW_SMOKE_HEADERS}" -o "${PETCLAW_SMOKE_BODY}" \
+      -w '%{http_code}' "https://myaipet.ai${path}"
   fi
 }
 
@@ -105,11 +178,15 @@ if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
   # Retry only the exact release-identity probe; every other smoke remains
   # single-shot after the expected generation is proven active.
   for PETCLAW_IDENTITY_ATTEMPT in {1..20}; do
-    PETCLAW_IDENTITY_CODE="$(petclaw_curl -D "${PETCLAW_SMOKE_HEADERS}" \
+    PETCLAW_IDENTITY_CURL_OK=1
+    if ! PETCLAW_IDENTITY_CODE="$(petclaw_curl -D "${PETCLAW_SMOKE_HEADERS}" \
       -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
       -H 'Connection: close' \
-      "${PETCLAW_SMOKE_BASE}/api/health" || true)"
-    if [[ "${PETCLAW_IDENTITY_CODE}" == "200" ]] \
+      "${PETCLAW_SMOKE_BASE}/api/health")"; then
+      PETCLAW_IDENTITY_CURL_OK=0
+    fi
+    if [[ "${PETCLAW_IDENTITY_CURL_OK}" == "1" \
+      && "${PETCLAW_IDENTITY_CODE}" == "200" ]] \
       && petclaw_exact_release_header "${PETCLAW_SMOKE_HEADERS}"; then
       PETCLAW_IDENTITY_OK=1
       break
@@ -163,21 +240,51 @@ if [[ -n "${PETCLAW_EXTENSION_SHA256:-}" ]]; then
   fi
 fi
 PETCLAW_EXTENSION_MANIFEST="$(unzip -p "${PETCLAW_SMOKE_BODY}" manifest.json)"
-node -e 'const m=JSON.parse(process.argv[1]); if(m.manifest_version!==3 || m.version!=="2.3.1") process.exit(1)' "${PETCLAW_EXTENSION_MANIFEST}"
+node -e 'const m=JSON.parse(process.argv[1]); if(m.manifest_version!==3 || m.version!=="2.3.2") process.exit(1)' "${PETCLAW_EXTENSION_MANIFEST}"
 expect_code 204 OPTIONS "/api/petclaw/skills" -H "Origin: https://myaipet.ai" -H "Access-Control-Request-Method: POST"
 expect_code 403 OPTIONS "/api/petclaw/skills" -H "Origin: https://evil.example" -H "Access-Control-Request-Method: POST"
+expect_code 204 OPTIONS "/api/pets" -H "Origin: https://myaipet.ai" -H "Access-Control-Request-Method: GET"
+expect_code 403 OPTIONS "/api/pets" -H "Origin: https://evil.example" -H "Access-Control-Request-Method: GET"
+PETCLAW_PETS_CURL_OK=1
+if ! PETCLAW_PETS_CODE="$(petclaw_curl -D "${PETCLAW_SMOKE_HEADERS}" \
+  -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
+  -H 'Origin: https://myaipet.ai' "${PETCLAW_SMOKE_BASE}/api/pets")"; then
+  PETCLAW_PETS_CURL_OK=0
+fi
+if [[ "${PETCLAW_PETS_CURL_OK}" != "1" || "${PETCLAW_PETS_CODE}" != "401" ]] \
+  || ! petclaw_exact_header_value "${PETCLAW_SMOKE_HEADERS}" \
+    access-control-allow-origin https://myaipet.ai \
+  || ! petclaw_header_contains_token "${PETCLAW_SMOKE_HEADERS}" vary origin; then
+  echo "ERROR: authenticated pet-list CORS boundary is not exact." >&2
+  exit 1
+fi
 
 DEMO_BODY="$(petclaw_curl -H "Origin: https://myaipet.ai" -H "Content-Type: application/json" -d '{"message":"What can PetClaw do?"}' "${PETCLAW_SMOKE_BASE}/api/petclaw/demo-chat")"
 node -e 'const d=JSON.parse(process.argv[1]); if(d?.output?.synthetic!==true||d?.output?.persisted!==false) process.exit(1)' "${DEMO_BODY}"
 
 PETCLAW_LANDING_CURL_OK=1
-if ! PETCLAW_LANDING_CODE="$(petclaw_fetch_landing)"; then
+if ! PETCLAW_LANDING_CODE="$(petclaw_fetch_landing /)"; then
   PETCLAW_LANDING_CURL_OK=0
 fi
 if [[ "${PETCLAW_LANDING_CURL_OK}" != "1" \
   || "${PETCLAW_LANDING_CODE}" != "200" ]] \
-  || ! petclaw_verify_landing_body < "${PETCLAW_SMOKE_BODY}"; then
+  || ! petclaw_verify_landing_body < "${PETCLAW_SMOKE_BODY}" \
+  || ! petclaw_exact_header_value "${PETCLAW_SMOKE_HEADERS}" x-frame-options DENY \
+  || ! petclaw_exact_frame_ancestors "${PETCLAW_SMOKE_HEADERS}" "'none'"; then
   echo "ERROR: landing smoke did not return exact English launch HTML." >&2
+  exit 1
+fi
+
+PETCLAW_PRODUCT_DEMO_CURL_OK=1
+if ! PETCLAW_PRODUCT_DEMO_CODE="$(petclaw_fetch_landing /product-demo.html)"; then
+  PETCLAW_PRODUCT_DEMO_CURL_OK=0
+fi
+if [[ "${PETCLAW_PRODUCT_DEMO_CURL_OK}" != "1" \
+  || "${PETCLAW_PRODUCT_DEMO_CODE}" != "200" ]] \
+  || ! petclaw_verify_product_demo_body < "${PETCLAW_SMOKE_BODY}" \
+  || ! petclaw_exact_header_value "${PETCLAW_SMOKE_HEADERS}" x-frame-options SAMEORIGIN \
+  || ! petclaw_exact_frame_ancestors "${PETCLAW_SMOKE_HEADERS}" "'self'"; then
+  echo "ERROR: same-origin product demo frame contract failed." >&2
   exit 1
 fi
 

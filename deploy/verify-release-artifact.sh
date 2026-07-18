@@ -211,6 +211,7 @@ if find "${PETCLAW_STAGE}" -type l -o -type f -links +1 | grep -q . \
 fi
 for PETCLAW_REQUIRED_PATH in \
   deploy/ec2-release.sh \
+  deploy/parse-database-url.mjs \
   deploy/verify-release-artifact.sh \
   deploy/scan-release-secrets.sh \
   deploy/check-release-migrations.sh \

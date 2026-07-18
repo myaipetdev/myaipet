@@ -17,6 +17,19 @@ server {
         expires -1;
     }
 
+    # The landing page opens this one same-origin interactive demo in an
+    # iframe. Keep every other landing response non-frameable and repeat the
+    # full inherited policy because any add_header here disables inheritance.
+    location = /product-demo.html {
+        alias __CURRENT_ROOT__/landing-assets/product-demo.html;
+        add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://app.myaipet.ai; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
+    }
+
     listen 443 ssl;
     ssl_certificate /etc/letsencrypt/live/myaipet.ai/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/myaipet.ai/privkey.pem;
@@ -39,6 +52,7 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_hide_header X-Petclaw-Release;
         proxy_read_timeout 120s;
         proxy_buffering off;
     }
@@ -52,6 +66,9 @@ server {
         alias __CURRENT_ROOT__/web/.next/static/;
         expires 1y;
         add_header Cache-Control "public, immutable";
+        # This location has its own add_header, so the server-level trusted
+        # generation header must be repeated explicitly.
+        add_header X-Petclaw-Release "__RELEASE_ID__" always;
         access_log off;
     }
 
@@ -64,6 +81,7 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_hide_header X-Petclaw-Release;
         proxy_cache_bypass $http_upgrade;
         proxy_read_timeout 120s;
     }

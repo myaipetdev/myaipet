@@ -75,6 +75,7 @@ function activateTab(tab, moveFocus = false) {
     candidate.tabIndex = selected ? 0 : -1;
     const panel = $("tab-" + candidate.dataset.tab);
     panel?.classList.toggle("active", selected);
+    if (panel) panel.hidden = !selected;
   });
   if (moveFocus) tab.focus();
 }
@@ -331,10 +332,13 @@ function loadEvolution() {
 
     if (next) {
       const progress = ((evo.xp - current.xp) / (next.xp - current.xp)) * 100;
-      $("evoProgressBar").style.width = Math.min(100, Math.max(0, progress)) + "%";
+      const clampedProgress = Math.min(100, Math.max(0, progress));
+      $("evoProgressBar").style.width = clampedProgress + "%";
+      $("evoProgress").setAttribute("aria-valuenow", String(Math.round(clampedProgress)));
       $("evoProgressText").textContent = `${evo.xp} / ${next.xp} XP to ${next.name}`;
     } else {
       $("evoProgressBar").style.width = "100%";
+      $("evoProgress").setAttribute("aria-valuenow", "100");
       $("evoProgressText").textContent = "MAX LEVEL! 🎉";
     }
 

@@ -636,6 +636,7 @@
   }
   .right {
     position: relative; padding: 26px 22px 0 30px; border-radius: 4px;
+    min-width: 0;
     background: linear-gradient(180deg, #FFFDF6, #F5ECD8);
     color: var(--ink);
     border: 1px solid rgba(33,26,18,0.55);
@@ -689,6 +690,7 @@
     border-radius: 0 0 4px 4px;
   }
   .right-receipt .rr-prompt { color: var(--terra); font-weight: 700; }
+  .right-receipt .rr-cmd { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .right-receipt.copy-cmd { cursor: pointer; transition: color .18s ease; }
   .right-receipt.copy-cmd:hover .rr-cmd,
   .right-receipt.copy-cmd:focus-visible .rr-cmd { color: var(--terra); }

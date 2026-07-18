@@ -110,7 +110,7 @@ const BSCSCAN = "https://bscscan.com";
 // Single source of truth for the shipped extension version — must match
 // desktop-pet/manifest.json "version". Keeping the dashboard honest: it
 // previously advertised "v2.0" while the packaged extension was 2.2.x.
-const EXT_VERSION = "2.3.1";
+const EXT_VERSION = "2.3.2";
 
 const truncate = (s?: string | null, n = 4) => {
   if (!s) return "—";
@@ -830,7 +830,7 @@ function ChromeExtensionSection() {
     { n: 4, title: "Developer Mode", desc: 'Flip the "Developer mode" toggle on, top-right of that page.' },
     { n: 5, title: "Load Unpacked", desc: 'Click "Load unpacked" and select the unzipped folder.' },
     { n: 6, title: "Pin & Pair", desc: 'Pin the pet, generate a 30-day extension token in "Connect PetClaw clients" above, then paste it into Settings → Connection.' },
-    { n: 7, title: "Allow One Site", desc: "Open the site, then choose Extension → Settings → Website Access → Allow. Access is per scheme and domain. A built-in list blocks common sensitive domains; keep access off on every other sensitive page." },
+    { n: 7, title: "Allow One Site", desc: "Open the site, then choose Extension → Settings → Website Access → Allow. Access is per scheme and domain. MY AI PET, private/local network addresses, and a built-in list of common sensitive domains are blocked. Keep access off on every other sensitive page." },
   ];
 
   return (

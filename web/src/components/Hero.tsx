@@ -542,8 +542,8 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
           fontFamily: "var(--ed-body)", fontSize: 17, color: "#5C5140",
           maxWidth: 560, margin: "0 auto 24px", lineHeight: 1.7,
         }}>
-          Your pet&apos;s memory + identity live on <strong style={{ color: "#9A4E1E" }}>PetClaw</strong> — an
-          open protocol, not our database. Exportable, MCP-callable, portable. Yours.
+          Your pet&apos;s memory + identity use <strong style={{ color: "#9A4E1E" }}>PetClaw</strong> — an
+          open, exportable protocol designed to move across supported clients instead of locking you to one surface.
         </p>
         </Reveal>
 

@@ -59,6 +59,7 @@ for PETCLAW_REQUIRED_PATH in \
   web/package.json \
   web/public/petclaw-extension.zip \
   deploy/ec2-release.sh \
+  deploy/parse-database-url.mjs \
   deploy/verify-release-artifact.sh \
   deploy/release-boot-guard.sh \
   deploy/petclaw-release-boot-guard.service \

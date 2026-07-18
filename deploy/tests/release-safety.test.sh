@@ -24,6 +24,15 @@ petclaw_sha256() {
   fi
 }
 
+petclaw_mode() {
+  local PETCLAW_MODE_VALUE
+  if PETCLAW_MODE_VALUE="$(stat -c '%a' "$1" 2>/dev/null)"; then
+    printf '%s' "${PETCLAW_MODE_VALUE}"
+  else
+    stat -f '%OLp' "$1"
+  fi
+}
+
 petclaw_expect_success() {
   local PETCLAW_TEST_NAME="$1"
   shift
@@ -126,6 +135,46 @@ petclaw_expect_success "all release scripts parse" /bin/bash -n \
   "${PETCLAW_TEST_ROOT}/deploy/scan-release-secrets.sh" \
   "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh"
 
+petclaw_expect_success "database URL parser boundaries pass" \
+  node "${PETCLAW_TEST_ROOT}/deploy/tests/database-url-parser.test.mjs"
+
+petclaw_expect_success "nginx frame and release-header trust boundaries pass" \
+  node - "${PETCLAW_TEST_ROOT}/deploy/nginx-petclaw.conf.template" <<'NODE'
+const fs = require("node:fs");
+const source = fs.readFileSync(process.argv[2], "utf8");
+const locationBlocks = [...source.matchAll(/location\s+(?:=\s+\/product-demo\.html|\/_next\/static\/|\/uploads\/|\/)\s*\{([^{}]*)\}/g)]
+  .map((match) => ({ declaration: match[0].slice(0, match[0].indexOf("{")).trim(), body: match[1] }));
+const demo = locationBlocks.filter(({ declaration }) => declaration === "location = /product-demo.html");
+const staticAssets = locationBlocks.filter(({ declaration }) => declaration === "location /_next/static/");
+const proxied = locationBlocks.filter(({ body }) => body.includes("proxy_pass "));
+const exactDemoContracts = [
+  'alias __CURRENT_ROOT__/landing-assets/product-demo.html;',
+  'add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;',
+  'add_header X-Content-Type-Options "nosniff" always;',
+  'add_header X-Frame-Options "SAMEORIGIN" always;',
+  'add_header Referrer-Policy "strict-origin-when-cross-origin" always;',
+  'add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;',
+  "frame-ancestors 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+];
+const count = (needle) => source.split(needle).length - 1;
+if (demo.length !== 1 || exactDemoContracts.some((needle) => !demo[0].body.includes(needle))) process.exit(1);
+if (count('add_header X-Frame-Options "DENY" always;') !== 1
+  || count('add_header X-Frame-Options "SAMEORIGIN" always;') !== 1
+  || count("frame-ancestors 'none'") !== 1
+  || count("frame-ancestors 'self'") !== 1) process.exit(1);
+if (proxied.length !== 2
+  || proxied.some(({ body }) => countIn(body, 'proxy_hide_header X-Petclaw-Release;') !== 1)) process.exit(1);
+if (staticAssets.length !== 1
+  || countIn(staticAssets[0].body, 'add_header X-Petclaw-Release "__RELEASE_ID__" always;') !== 1
+  || count('add_header X-Petclaw-Release "__RELEASE_ID__" always;') !== 2) process.exit(1);
+function countIn(haystack, needle) {
+  return haystack.split(needle).length - 1;
+}
+NODE
+
 for PETCLAW_CONTRACT in \
   'ec2-release.sh:PETCLAW_ROLLBACK_WATCHDOG_BIN' \
   'ec2-release.sh:PETCLAW_EXPECTED_RELEASE_ID' \
@@ -158,14 +207,17 @@ for PETCLAW_CONTRACT in \
   'ec2-release.sh:export PGSSLMODE="${PETCLAW_PSQL_SSLMODE}"' \
   'ec2-release.sh:default_transaction_read_only=on' \
   'ec2-release.sh:PETCLAW_PSQL_COMMAND="$(type -P psql' \
+  'ec2-release.sh:${PETCLAW_RELEASE_SOURCE}/deploy/parse-database-url.mjs' \
   'ec2-release.sh:PETCLAW_PSQL_COMMAND}" != "/usr/bin/psql"' \
   'ec2-release.sh:exec "${PETCLAW_PSQL_COMMAND}" "$@"' \
   'ec2-release.sh:previous nginx configuration could not be restored' \
   'ec2-release.sh:restored PM2 state could not be persisted' \
   'ec2-release.sh:--no-preserve=ownership' \
-  'ec2-release.sh:chmod u+rw,go+rX,go-w' \
+  'ec2-release.sh:petclaw_seal_release_tree "${PETCLAW_RELEASE_DIR}" "${PETCLAW_WEB}"' \
+  'ec2-release.sh:sudo chown -R root:ubuntu "${PETCLAW_SEAL_RELEASE_DIR}"' \
   'ec2-release.sh:PETCLAW_PRISMA_CLI' \
-  'ec2-release.sh:! -perm -004' \
+  'ec2-release.sh:! -perm -040' \
+  'ec2-release.sh:-perm /007' \
   'ec2-release.sh:REFERRALS_ENABLED' \
   'ec2-release.sh:/bin/bash "${PETCLAW_RELEASE_SOURCE}/deploy/release-smoke.sh"' \
   'ec2-release.sh:"${PETCLAW_RELEASE_SOURCE}/deploy/release-boot-guard.sh"' \
@@ -259,7 +311,29 @@ if ! grep -Fq -- "--noproxy '*'" "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" 
   echo "FAIL: local release identity probe can be reused or diverted through a proxy" >&2
   exit 1
 fi
-PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 7))"
+PETCLAW_STATUS_FUNCTION="${PETCLAW_TEST_TMP}/release-status-functions.sh"
+awk '/^petclaw_curl\(\) \{/{copy=1} /^expect_env_exact\(\) \{/{exit} copy{print}' \
+  "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" > "${PETCLAW_STATUS_FUNCTION}"
+# shellcheck source=/dev/null
+source "${PETCLAW_STATUS_FUNCTION}"
+PETCLAW_SMOKE_BASE=https://app.myaipet.ai
+PETCLAW_SMOKE_HOST=""
+PETCLAW_SMOKE_BODY="${PETCLAW_TEST_TMP}/transport-body"
+curl() {
+  printf '%s' '200'
+  return 18
+}
+if expect_code 200 GET "/api/health" 2>/dev/null; then
+  echo "FAIL: expected HTTP code masks a partial curl transport" >&2
+  exit 1
+fi
+unset -f curl
+if grep -Fq '"${PETCLAW_SMOKE_BASE}/api/health" || true)' \
+  "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh"; then
+  echo "FAIL: release identity still erases curl transport status" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 9))"
 
 PETCLAW_LANDING_FUNCTION="${PETCLAW_TEST_TMP}/landing-body-function.sh"
 awk '/^petclaw_verify_landing_body\(\) \{/{copy=1} copy{print} copy && /^\}$/{exit}' \
@@ -287,7 +361,7 @@ if grep -Fq '"${LANDING_BODY}"' "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh"; 
 fi
 if ! grep -Fq '|| "${PETCLAW_LANDING_CODE}" != "200" ]]' \
   "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" \
-  || ! grep -Fq 'if ! PETCLAW_LANDING_CODE="$(petclaw_fetch_landing)"; then' \
+  || ! grep -Fq 'if ! PETCLAW_LANDING_CODE="$(petclaw_fetch_landing /)"; then' \
     "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" \
   || ! grep -Fq 'PETCLAW_LANDING_CURL_OK=0' \
     "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" \
@@ -305,6 +379,7 @@ PETCLAW_EXPECTED_RELEASE_ID=synthetic-release
 PETCLAW_SMOKE_PORT=443
 PETCLAW_SMOKE_HOST=127.0.0.1
 PETCLAW_SMOKE_BODY="${PETCLAW_TEST_TMP}/partial-landing"
+PETCLAW_SMOKE_HEADERS="${PETCLAW_TEST_TMP}/partial-landing-headers"
 curl() {
   printf '%s' '/api/petclaw/demo-chat' > "${PETCLAW_SMOKE_BODY}"
   printf '%s' '200'
@@ -352,20 +427,69 @@ for PETCLAW_ROOT_INSTALL_INPUT in \
 done
 PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 6))"
 
-PETCLAW_RUNTIME_MODE_LINE="$(grep -nF 'chmod u+rw,go+rX,go-w' \
+PETCLAW_SEAL_FUNCTION="${PETCLAW_TEST_TMP}/release-seal-function.sh"
+awk '/^petclaw_seal_release_tree\(\) \{/{copy=1} copy{print} copy && /^\}$/{exit}' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" > "${PETCLAW_SEAL_FUNCTION}"
+# shellcheck source=/dev/null
+source "${PETCLAW_SEAL_FUNCTION}"
+PETCLAW_MODE_FIXTURE="${PETCLAW_TEST_TMP}/mode-release"
+PETCLAW_MODE_WEB="${PETCLAW_MODE_FIXTURE}/web"
+mkdir -p "${PETCLAW_MODE_FIXTURE}/landing-assets/nested" \
+  "${PETCLAW_MODE_WEB}/.next/static/chunks" \
+  "${PETCLAW_MODE_WEB}/.next/standalone/private" \
+  "${PETCLAW_MODE_WEB}/node_modules/.bin"
+printf '%s' demo > "${PETCLAW_MODE_FIXTURE}/landing-assets/product-demo.html"
+printf '%s' chunk > "${PETCLAW_MODE_WEB}/.next/static/chunks/app.js"
+printf '%s' runtime > "${PETCLAW_MODE_WEB}/.next/standalone/private/server.js"
+printf '%s' dotenv > "${PETCLAW_MODE_WEB}/.env.production"
+printf '%s' '#!/bin/sh' > "${PETCLAW_MODE_WEB}/node_modules/.bin/prisma"
+find "${PETCLAW_MODE_FIXTURE}" -type d -exec chmod 777 {} +
+find "${PETCLAW_MODE_FIXTURE}" -type f -exec chmod 666 {} +
+chmod 777 "${PETCLAW_MODE_WEB}/node_modules/.bin/prisma"
+(
+  sudo() {
+    if [[ "$1" == "chown" ]]; then
+      return 0
+    fi
+    "$@"
+  }
+  petclaw_seal_release_tree "${PETCLAW_MODE_FIXTURE}" "${PETCLAW_MODE_WEB}"
+)
+for PETCLAW_MODE_CONTRACT in \
+  "${PETCLAW_MODE_FIXTURE}:755" \
+  "${PETCLAW_MODE_FIXTURE}/landing-assets:755" \
+  "${PETCLAW_MODE_FIXTURE}/landing-assets/product-demo.html:644" \
+  "${PETCLAW_MODE_WEB}:755" \
+  "${PETCLAW_MODE_WEB}/.next:755" \
+  "${PETCLAW_MODE_WEB}/.next/static/chunks/app.js:644" \
+  "${PETCLAW_MODE_WEB}/.next/standalone/private:750" \
+  "${PETCLAW_MODE_WEB}/.next/standalone/private/server.js:640" \
+  "${PETCLAW_MODE_WEB}/node_modules/.bin/prisma:750" \
+  "${PETCLAW_MODE_WEB}/.env.production:640"; do
+  PETCLAW_MODE_PATH="${PETCLAW_MODE_CONTRACT%:*}"
+  PETCLAW_MODE_EXPECTED="${PETCLAW_MODE_CONTRACT##*:}"
+  if [[ "$(petclaw_mode "${PETCLAW_MODE_PATH}")" != "${PETCLAW_MODE_EXPECTED}" ]]; then
+    echo "FAIL: sealed mode drift for ${PETCLAW_MODE_PATH}" >&2
+    exit 1
+  fi
+  PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
+done
+
+PETCLAW_RUNTIME_MODE_LINE="$(grep -nF 'petclaw_seal_release_tree "${PETCLAW_RELEASE_DIR}" "${PETCLAW_WEB}"' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | cut -d: -f1)"
-PETCLAW_RUNTIME_OWNER_LINE="$(grep -nF 'sudo chown -R root:root "${PETCLAW_RELEASE_DIR}"' \
-  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | head -n 1 | cut -d: -f1)"
+PETCLAW_POSTSEAL_NGINX_LINE="$(grep -nF 'post-seal nginx cannot read' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | cut -d: -f1)"
 PETCLAW_RUNTIME_READ_LINE="$(grep -nF 'PETCLAW_PRISMA_CLI="$(realpath -e' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | cut -d: -f1)"
 PETCLAW_DOTENV_PARSE_LINE="$(grep -nF 'const dotenv = require("dotenv");' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | cut -d: -f1)"
 if [[ ! "${PETCLAW_RUNTIME_MODE_LINE}" =~ ^[0-9]+$ \
-  || ! "${PETCLAW_RUNTIME_OWNER_LINE}" =~ ^[0-9]+$ \
+  || ! "${PETCLAW_POSTSEAL_NGINX_LINE}" =~ ^[0-9]+$ \
   || ! "${PETCLAW_RUNTIME_READ_LINE}" =~ ^[0-9]+$ \
   || ! "${PETCLAW_DOTENV_PARSE_LINE}" =~ ^[0-9]+$ \
-  || "${PETCLAW_RUNTIME_OWNER_LINE}" -ge "${PETCLAW_RUNTIME_MODE_LINE}" \
   || "${PETCLAW_RUNTIME_MODE_LINE}" -ge "${PETCLAW_RUNTIME_READ_LINE}" \
+  || "${PETCLAW_RUNTIME_MODE_LINE}" -ge "${PETCLAW_POSTSEAL_NGINX_LINE}" \
+  || "${PETCLAW_POSTSEAL_NGINX_LINE}" -ge "${PETCLAW_RUNTIME_READ_LINE}" \
   || "${PETCLAW_RUNTIME_READ_LINE}" -ge "${PETCLAW_DOTENV_PARSE_LINE}" ]]; then
   echo "FAIL: sealed candidate is not normalized and checked before runtime dotenv parsing" >&2
   exit 1
@@ -494,8 +618,8 @@ if grep -En \
 fi
 PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
 
-PETCLAW_SEAL_LINE="$(grep -nF 'sudo chown -R root:root "${PETCLAW_RELEASE_DIR}"' \
-  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | head -n 1 | cut -d: -f1)"
+PETCLAW_SEAL_LINE="$(grep -nF 'petclaw_seal_release_tree "${PETCLAW_RELEASE_DIR}" "${PETCLAW_WEB}"' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | cut -d: -f1)"
 PETCLAW_MIGRATION_GATE_LINE="$(grep -nF '/bin/bash "${PETCLAW_TRUSTED_MIGRATION_GATE}"' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | tail -n 1 | cut -d: -f1)"
 PETCLAW_MIGRATE_LINE="$(grep -nF 'npx prisma migrate deploy' \

@@ -222,7 +222,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
         body: JSON.stringify({ type: "image", style: 6, codexVariant }),
       });
       if (res.status === 402) {
-        if (activeIdRef.current === petId) showFlash({ text: `Not enough credits — ${petName}'s Codex needs 5. Add credits and try again.`, error: true });
+        if (activeIdRef.current === petId) showFlash({ text: `Not enough credits — ${petName}'s Codex needs 5. Credit purchases are paused right now.`, error: true });
       } else if (!res.ok) {
         const j = await res.json().catch(() => ({} as any));
         throw new Error(j.error || j.details || `Couldn't illustrate (${res.status})`);

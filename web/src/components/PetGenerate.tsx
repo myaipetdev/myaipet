@@ -197,9 +197,10 @@ export default function PetGenerate() {
   const handleGenerate = async () => {
     if (!selectedPet || generating) return;
     if (balance !== null && balance < creditCost) {
-      // Pricing only renders on Home, so there's nothing to scroll to here —
-      // point the user to the Home tab (the Nav balance pill also opens it).
-      setError(`Insufficient credits — need ${creditCost} but have ${balance}. Open the Home tab to buy more credits.`);
+      // Pricing only renders on Home, so there's nothing to scroll to here.
+      // Purchases are paused; do not send the user toward a checkout that the
+      // launch configuration deliberately does not offer.
+      setError(`Insufficient credits — need ${creditCost} but have ${balance}. Credit purchases are paused right now.`);
       return;
     }
     setError(null);
@@ -378,7 +379,7 @@ export default function PetGenerate() {
           }}>
             <button type="button" style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A4E1E", fontWeight: 600, cursor: "pointer", border: 0, background: "transparent", padding: 0 }}
               onClick={() => { window.location.href = "/"; }}
-              title="Buy more credits on the Home tab"
+              title="View credit status on the Home tab"
             >
               <Icon name="coin" size={12} /> {balance !== null ? balance : "—"} credits
             </button>

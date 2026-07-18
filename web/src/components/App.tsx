@@ -290,12 +290,12 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, paddingRight: 16, borderRight: "2px dashed rgba(252,233,207,0.4)" }}>
           <Icon name="trophy" size={26} />
           <div style={{ minWidth: 0 }}>
-            <div className="season-banner-title" style={{
+            <h1 className="season-banner-title" style={{
               fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 18,
-              color: "#FFF8EE", letterSpacing: "-0.02em", whiteSpace: "nowrap",
+              color: "#FFF8EE", letterSpacing: "-0.02em", whiteSpace: "nowrap", margin: 0,
             }}>
               Season 1 Rewards
-            </div>
+            </h1>
             {/* Tier/points/progress were stripped: MyCard, the RaisePitch standing
                 bar and SeasonTierCard already show them — the banner's ONE job
                 is the countdown. */}

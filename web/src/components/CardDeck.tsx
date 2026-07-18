@@ -479,6 +479,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
               <Reveal key={`slot-${i}`} dir="up" delay={Math.min(visible.length + i, 8) * 70}>
                 <a
                   href="/?section=my%20pet" onClick={navTo("my pet")}
+                  aria-label={`Adopt a pet in empty slot ${i + 1}`}
                   className="ed-card-hover"
                   style={{ textDecoration: "none", display: "block", borderRadius: 18 }}
                 >

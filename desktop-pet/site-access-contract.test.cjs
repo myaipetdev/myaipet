@@ -85,6 +85,15 @@ async function runBehaviorContract() {
   assert.equal(call("siteAccessDescriptor", "https://app.myaipet.ai/"), null, "first-party double injection");
   assert.equal(call("siteAccessDescriptor", "chrome://settings"), null, "browser page support");
   assert.equal(call("siteAccessDescriptor", "https://*/"), null, "wildcard must not become a per-site descriptor");
+  for (const url of [
+    "http://localhost:3000/", "http://devbox/", "http://printer.local/",
+    "http://router.home.arpa/", "http://127.0.0.1/", "http://10.0.0.1/",
+    "http://100.64.0.1/", "http://169.254.169.254/", "http://172.31.0.1/",
+    "http://192.168.1.1/", "http://198.18.0.1/", "http://[::1]/",
+    "http://[fd00::1]/", "http://224.0.0.1/",
+  ]) {
+    assert.equal(call("siteAccessDescriptor", url), null, `private/local host must stay blocked: ${url}`);
+  }
 
   state.petConfig = {
     apiUrl: "https://attacker.example",
@@ -192,7 +201,7 @@ async function runActivityConcurrencyContract() {
     petEvolution: { stage: 0, xp: 0 },
     petPoints: {},
   };
-  const clone = (value) => JSON.parse(JSON.stringify(value));
+  const clone = (value) => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
   const activityChrome = {
     storage: {
       local: {
@@ -209,15 +218,31 @@ async function runActivityConcurrencyContract() {
   };
   const activityConsole = { log() {}, warn: console.warn, error: console.error };
   const activityContext = vm.createContext({ chrome: activityChrome, console: activityConsole, Math, Promise });
-  vm.runInContext(backgroundSource.slice(start, end), activityContext, { filename: backgroundPath });
+  const moodStart = backgroundSource.indexOf("async function recordEmotionSeen");
+  const moodEnd = backgroundSource.indexOf("function getDominantEmotion");
+  const streakStart = backgroundSource.indexOf("let streakTickInFlight = null");
+  const streakEnd = backgroundSource.indexOf("// SCRUM-20: import a SOUL JSON");
+  assert.ok(moodStart > 0 && moodEnd > moodStart, "mood metadata mutation boundary was not found");
+  assert.ok(streakStart > 0 && streakEnd > streakStart, "streak mutation boundary was not found");
+  activityContext.Date = Date;
+  activityContext.localDayKey = () => "2026-07-18";
+  activityContext.addNotification = async () => {};
+  vm.runInContext(
+    `${backgroundSource.slice(moodStart, moodEnd)}\n${backgroundSource.slice(start, end)}\n${backgroundSource.slice(streakStart, streakEnd)}`,
+    activityContext,
+    { filename: backgroundPath },
+  );
   activityContext.__awards = Array.from({ length: 50 }, (_, index) => index);
   await vm.runInContext(
-    'Promise.all(__awards.map((index) => addPoints("care", 1, `race-${index}`)))',
+    'Promise.all([...__awards.map((index) => addPoints("care", 1, `race-${index}`)), recordEmotionSeen("Happy"), tickStreak()])',
     activityContext,
   );
-  assert.equal(activityState.petPoints.totalPoints, 50, "concurrent awards must preserve the total");
+  assert.equal(activityState.petPoints.totalPoints, 62, "concurrent awards and daily bonuses must preserve the total");
   assert.equal(activityState.petPoints.carePoints, 50, "concurrent care awards must preserve their category total");
-  assert.equal(activityState.petEvolution.xp, 50, "concurrent awards must preserve evolution XP");
+  assert.equal(activityState.petPoints.heartbeatPoints, 12, "daily and streak bonuses must retain their category total");
+  assert.equal(activityState.petPoints.dailyStreak, 1, "daily streak metadata must survive concurrent awards");
+  assert.deepEqual(Array.from(activityState.petPoints._emotionSet), ["Happy"], "mood metadata must survive concurrent awards");
+  assert.equal(activityState.petEvolution.xp, 56, "concurrent awards must preserve evolution XP");
 }
 
 function runStaticContract() {
@@ -230,10 +255,16 @@ function runStaticContract() {
   assert.ok(manifest.permissions.includes("activeTab"));
   assert.ok(manifest.permissions.includes("scripting"));
   assert.ok(!manifest.permissions.includes("tabs"), "persistent tabs access is unnecessary");
+  assert.equal(
+    manifest.content_security_policy?.extension_pages,
+    "script-src 'self'; object-src 'none'; base-uri 'none'",
+    "extension pages need an explicit no-remote-code CSP",
+  );
 
   const popupSource = fs.readFileSync(path.join(extensionDir, "popup.js"), "utf8");
   const popupHtml = fs.readFileSync(path.join(extensionDir, "popup.html"), "utf8");
   const contentSource = fs.readFileSync(path.join(extensionDir, "content.js"), "utf8");
+  assert.match(popupHtml, /<html lang="en">[\s\S]*<title>PetClaw<\/title>/, "popup needs a language and document title");
   assert.match(popupSource, /siteAccessBtn[\s\S]*chrome\.permissions\.request/, "permission request must follow the site-access user action");
   assert.doesNotMatch(backgroundSource, /chrome\.permissions\.request/, "service worker must not prompt outside a direct user gesture");
   assert.match(backgroundSource, /sender\.tab[\s\S]*Promise\.all\(\[siteAccessInfo\(senderUrl\), getConfig\(\)\]\)/, "page messages require active-site and runtime-policy authorization");
@@ -243,6 +274,23 @@ function runStaticContract() {
   assert.match(contentSource, /function shutdown\(\)[\s\S]*cancelAnimationFrame[\s\S]*removeListener[\s\S]*extensionHost\.remove/, "permission removal must tear down page observers and timers");
   assert.match(contentSource, /PAGE_SUMMARY_MAX_CHARS = 1_500[\s\S]*Preview up to 1,500 characters/, "summary preview and transport limits must agree");
   assert.match(contentSource, /id="aipet-body" role="button" tabindex="0"[\s\S]*event\.key === "ContextMenu"/, "page companion must be keyboard operable");
+  const menuTemplate = contentSource.match(/menu\.innerHTML = `([\s\S]*?)`;/)?.[1] || "";
+  const menuButtons = menuTemplate.match(/<button\b[^>]*>[\s\S]*?<\/button>/g) || [];
+  assert.equal(menuButtons.length, 11, "page companion menu inventory changed; audit every added or removed action");
+  for (const tag of menuButtons) {
+    assert.match(tag, /type="button"/, `companion menu button lacks explicit type: ${tag}`);
+    assert.match(tag, /role="menuitem"/, `companion menu button lacks menuitem semantics: ${tag}`);
+    const action = tag.match(/data-action="([^"]+)"/)?.[1];
+    assert.ok(action, `companion menu button lacks an action: ${tag}`);
+    assert.match(contentSource, new RegExp(`case "${action}"`), `companion menu action has no handler: ${action}`);
+  }
+  const disabledMenuButtons = menuButtons.filter((tag) => /\bdisabled\b/.test(tag));
+  assert.equal(disabledMenuButtons.length, 1, "only the honest coming-soon action may be disabled");
+  assert.match(disabledMenuButtons[0], /Selfie — Coming soon/, "disabled companion action must explain its state");
+  assert.match(contentSource, /function bubbleButton[\s\S]*btn\.type = "button"[\s\S]*if \(!event\.isTrusted\) return/, "summary consent buttons need trusted-click gating");
+  assert.match(contentSource, /bubbleButton\("Preview"/, "page summaries need an explicit preview control");
+  assert.match(contentSource, /bubbleButton\("Send for summary"/, "page summaries need a separate send confirmation");
+  assert.match(contentSource, /el\.type = "button"[\s\S]*Collect \$\{kind[\s\S]*if \(!ev\.isTrusted\) return/, "collectible controls need names and trusted-click gating");
   assert.match(popupHtml, /id="siteAccessBtn"[^>]*aria-describedby="siteAccessStatus"/, "site access control needs its status description");
   assert.match(popupHtml, /id="disconnectBtn"/, "pairing needs an explicit local disconnect action");
   assert.match(popupSource, /disconnectBtn[\s\S]*authToken: ""[\s\S]*petId: null/, "disconnect must clear the local credential and pet binding");
@@ -250,9 +298,61 @@ function runStaticContract() {
   assert.match(backgroundSource, /carePoints: 0/, "care awards need a durable points bucket");
   assert.match(popupHtml, /id="carePoints"/, "the popup must account for care points shown in the total");
   assert.match(popupSource, /\$\("carePoints"\)\.textContent = p\.carePoints/, "the popup must render the care points bucket");
+  assert.match(backgroundSource, /function isPrivateOrLocalSiteHost[\s\S]*siteAccessDescriptor/, "private/local hosts need a fail-closed site gate");
+  assert.match(popupHtml, /role="tablist"[^>]*aria-orientation="horizontal"/, "the popup tablist needs an orientation");
+  assert.match(popupHtml, /id="evoProgress"[^>]*role="progressbar"[^>]*aria-valuenow="0"/, "evolution progress needs accessible value semantics");
 
-  for (const tag of popupHtml.match(/<button\b[^>]*>/g) || []) {
+  const ids = [...popupHtml.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
+  assert.equal(new Set(ids).size, ids.length, "popup element IDs must be unique");
+  assert.doesNotMatch(popupHtml, /\son[a-z]+\s*=/i, "popup markup must not use inline event handlers");
+  for (const link of popupHtml.match(/<a\b[^>]*>/g) || []) {
+    assert.match(link, /href="https:\/\/app\.myaipet\.ai\//, `popup link must stay first-party HTTPS: ${link}`);
+    if (/target="_blank"/.test(link)) assert.match(link, /rel="noopener noreferrer"/, `new-tab link needs rel isolation: ${link}`);
+  }
+
+  const tabs = [...popupHtml.matchAll(/<button\b[^>]*role="tab"[^>]*aria-controls="([^"]+)"[^>]*>/g)];
+  assert.equal(tabs.length, 6, "all six popup sections need operable tabs");
+  for (const [, panelId] of tabs) {
+    assert.match(popupHtml, new RegExp(`id="${panelId}"[^>]*role="tabpanel"`), `missing tab panel: ${panelId}`);
+  }
+  const inactivePanels = [...popupHtml.matchAll(/<div\b[^>]*class="tab-content"[^>]*role="tabpanel"[^>]*>/g)];
+  assert.equal(inactivePanels.length, 5, "only one tab panel should be active initially");
+  assert.ok(inactivePanels.every(([tag]) => /\bhidden\b/.test(tag)), "inactive tab panels must be hidden from assistive technology");
+
+  const palette = Object.fromEntries(
+    [...popupHtml.matchAll(/--([a-z-]+):\s*(#[0-9A-Fa-f]{6})/g)].map(([, name, value]) => [name, value]),
+  );
+  const luminance = (hex) => {
+    const channels = hex.match(/[0-9A-Fa-f]{2}/g).map((part) => parseInt(part, 16) / 255)
+      .map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  };
+  const contrast = (first, second) => {
+    const values = [luminance(first), luminance(second)].sort((a, b) => b - a);
+    return (values[0] + 0.05) / (values[1] + 0.05);
+  };
+  for (const [foreground, background] of [
+    [palette.terracotta, palette.paper],
+    [palette.muted, palette.paper],
+    [palette.muted, palette.field],
+    [palette["muted-soft"], palette.paper],
+  ]) {
+    assert.ok(contrast(foreground, background) >= 4.5, `${foreground} on ${background} must meet WCAG AA text contrast`);
+  }
+
+  const popupButtons = popupHtml.match(/<button\b[^>]*>/g) || [];
+  for (const tag of popupButtons) {
     assert.match(tag, /\btype="button"/, `popup button lacks explicit type: ${tag}`);
+  }
+  assert.equal(popupButtons.length, 26, "popup button inventory changed; audit every added or removed control");
+  for (const match of popupHtml.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)) {
+    const attrs = match[1];
+    const visibleText = match[2].replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    assert.ok(visibleText || /\baria-label="[^"]+"/.test(attrs), `popup button lacks an accessible name: ${match[0]}`);
+    const id = attrs.match(/\bid="([^"]+)"/)?.[1];
+    if (id && !/\bclass="[^"]*\b(?:tab|toggle)\b/.test(attrs)) {
+      assert.match(popupSource, new RegExp(`\\$\\("${id}"\\)\\??\\.addEventListener|\\$\\("${id}"\\)\\.addEventListener`), `popup button has no direct handler: ${id}`);
+    }
   }
 
   const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;

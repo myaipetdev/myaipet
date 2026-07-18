@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PetClaw</title>
   <style>
     /* ══════════════════════════════════════ */
     /* ── Collectible Editorial design system ─ */
@@ -12,12 +13,12 @@
     :root {
       --paper: #FBF6EC;
       --ink: #211A12;
-      --terracotta: #BE4F28;
+      --terracotta: #BD4E27;
       --terracotta-ink: #9A3E1E;
       --foil: #E8C77E;
       --foil-deep: #C8932F;
-      --muted: #7A6E5A;
-      --muted-soft: #9C917C;
+      --muted: #675A47;
+      --muted-soft: #746650;
       --field: #ECE4D4;
       --line: rgba(33,26,18,0.12);
       --line-soft: rgba(33,26,18,0.07);
@@ -390,7 +391,7 @@
   </div>
 
   <!-- Tabs -->
-  <div class="tabs" role="tablist" aria-label="PetClaw sections">
+  <div class="tabs" role="tablist" aria-label="PetClaw sections" aria-orientation="horizontal">
     <button type="button" class="tab active" id="tab-button-points" role="tab" aria-selected="true" aria-controls="tab-points" tabindex="0" data-tab="points">Points</button>
     <button type="button" class="tab" id="tab-button-evolution" role="tab" aria-selected="false" aria-controls="tab-evolution" tabindex="-1" data-tab="evolution">Evolve</button>
     <button type="button" class="tab" id="tab-button-emotions" role="tab" aria-selected="false" aria-controls="tab-emotions" tabindex="-1" data-tab="emotions">Mood</button>
@@ -489,13 +490,13 @@
   </div>
 
   <!-- Evolution Tab -->
-  <div class="tab-content" id="tab-evolution" role="tabpanel" aria-labelledby="tab-button-evolution">
+  <div class="tab-content" id="tab-evolution" role="tabpanel" aria-labelledby="tab-button-evolution" hidden>
     <div class="evo-stage" id="evoCurrentStage">
       <div class="evo-icon" id="evoCurrentIcon">🥚</div>
       <div class="evo-info">
         <h3 id="evoCurrentName">Egg</h3>
         <p id="evoCurrentDesc">Your pet is just beginning its journey...</p>
-        <div class="evo-progress">
+        <div class="evo-progress" id="evoProgress" role="progressbar" aria-label="Evolution progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
           <div class="evo-progress-fill" id="evoProgressBar" style="width:0%"></div>
         </div>
         <p id="evoProgressText" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:5px">0 / 100 XP to next stage</p>
@@ -520,7 +521,7 @@
   </div>
 
   <!-- Emotions Tab -->
-  <div class="tab-content" id="tab-emotions" role="tabpanel" aria-labelledby="tab-button-emotions">
+  <div class="tab-content" id="tab-emotions" role="tabpanel" aria-labelledby="tab-button-emotions" hidden>
     <div class="emotion-display">
       <div class="big-emoji" id="emotionEmoji">😊</div>
       <div class="emotion-name" id="emotionName">Happy</div>
@@ -563,7 +564,7 @@
   </div>
 
   <!-- Game Tab -->
-  <div class="tab-content" id="tab-game" role="tabpanel" aria-labelledby="tab-button-game">
+  <div class="tab-content" id="tab-game" role="tabpanel" aria-labelledby="tab-button-game" hidden>
     <div style="display:flex;gap:6px;margin-bottom:10px">
       <button type="button" class="game-select active" data-game="catcher" aria-pressed="true" style="flex:1;padding:7px;border:1px solid var(--terracotta-ink);border-radius:8px;background:var(--terracotta);color:var(--paper);font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;cursor:pointer">🎯 Catcher</button>
       <button type="button" class="game-select" data-game="memory" aria-pressed="false" style="flex:1;padding:7px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--muted);font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;cursor:pointer">🧠 Memory</button>
@@ -592,7 +593,7 @@
   </div>
 
   <!-- Achievements Tab -->
-  <div class="tab-content" id="tab-achieve" role="tabpanel" aria-labelledby="tab-button-achieve">
+  <div class="tab-content" id="tab-achieve" role="tabpanel" aria-labelledby="tab-button-achieve" hidden>
     <div style="text-align:center;margin-bottom:12px">
       <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Unlocked</div>
       <div id="achieveCount" style="font-family:var(--mono);font-size:26px;font-weight:700;color:var(--terracotta)">0 / 0</div>
@@ -601,7 +602,7 @@
   </div>
 
   <!-- Settings Tab -->
-  <div class="tab-content" id="tab-settings" role="tabpanel" aria-labelledby="tab-button-settings">
+  <div class="tab-content" id="tab-settings" role="tabpanel" aria-labelledby="tab-button-settings" hidden>
     <div class="section">
       <div class="section-title">Connection</div>
       <label for="apiUrl">API Server</label>
@@ -619,7 +620,7 @@
     <div class="section">
       <div class="section-title">Website Access</div>
       <p style="font-size:11px;line-height:1.45;color:var(--muted);margin:0 0 8px">
-        PetClaw runs only on sites you approve. MY AI PET and a built-in list of common account, wallet, email, and banking sites are blocked. Keep access off on every sensitive page.
+        PetClaw runs only on sites you approve. MY AI PET, private/local network addresses, and a built-in list of common account, wallet, email, and banking sites are blocked. Keep access off on every sensitive page.
       </p>
       <p style="font-size:10px;line-height:1.45;color:var(--muted);margin:0 0 8px">
         Access applies to this scheme and domain. PetClaw observes interaction timing for sleep and wake. Title and H1 reactions are off by default; page text is read only after Preview and sent only after a second confirmation.

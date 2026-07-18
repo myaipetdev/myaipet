@@ -9,7 +9,22 @@ const standaloneRoot = path.join(nextRoot, "standalone");
 const maxStandaloneBytes = Number(process.env.MAX_STANDALONE_BYTES || 750 * 1024 * 1024);
 
 const secretName = /^(?:\.env(?:\..*)?|id_(?:rsa|dsa|ecdsa|ed25519)|.*\.(?:pem|key|p12|pfx))$/i;
-const forbiddenProjectTopLevel = new Set(["src", "scripts"]);
+const forbiddenProjectTopLevel = new Set([
+  "src",
+  "scripts",
+  "next.config.ts",
+  "next.config.js",
+  "next.config.mjs",
+  "next.config.cjs",
+  "prisma.config.ts",
+  "eslint.config.mjs",
+  "tsconfig.json",
+  "tsconfig.tsbuildinfo",
+  "ds-entry.ts",
+  "ds-sync-head.css",
+  "ds-sync-tail.css",
+  "render-village.cjs",
+]);
 
 async function walk(root) {
   const out = [];
