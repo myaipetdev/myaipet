@@ -201,6 +201,66 @@ for PETCLAW_CONTRACT in \
   PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
 done
 
+PETCLAW_HEADER_FUNCTION="${PETCLAW_TEST_TMP}/release-header-function.sh"
+awk '/^petclaw_exact_release_header\(\) \{/{copy=1} copy{print} copy && /^\}$/{exit}' \
+  "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" > "${PETCLAW_HEADER_FUNCTION}"
+# shellcheck source=/dev/null
+source "${PETCLAW_HEADER_FUNCTION}"
+PETCLAW_EXPECTED_RELEASE_ID=20260718T184721-synthetic
+printf '%s\r\n' \
+  'HTTP/1.1 200 OK' \
+  'X-Petclaw-Release: 20260718T184721-synthetic' \
+  > "${PETCLAW_TEST_TMP}/release-headers"
+if ! petclaw_exact_release_header "${PETCLAW_TEST_TMP}/release-headers"; then
+  echo "FAIL: exact release identity header is rejected" >&2
+  exit 1
+fi
+printf '%s\r\n' \
+  'X-Petclaw-Release: 20260718T184721-synthetic' \
+  >> "${PETCLAW_TEST_TMP}/release-headers"
+if petclaw_exact_release_header "${PETCLAW_TEST_TMP}/release-headers"; then
+  echo "FAIL: duplicate release identity headers are accepted" >&2
+  exit 1
+fi
+printf '%s\r\n' \
+  'HTTP/1.1 200 OK' \
+  'X-Petclaw-Release: wrong-generation' \
+  > "${PETCLAW_TEST_TMP}/release-headers"
+if petclaw_exact_release_header "${PETCLAW_TEST_TMP}/release-headers"; then
+  echo "FAIL: wrong release identity header is accepted" >&2
+  exit 1
+fi
+printf '%s\r\n' \
+  'HTTP/1.1 200 OK' \
+  'X-Petclaw-Release: 20260718T184721-synthetic' \
+  'X-Petclaw-Release: wrong-generation' \
+  > "${PETCLAW_TEST_TMP}/release-headers"
+if petclaw_exact_release_header "${PETCLAW_TEST_TMP}/release-headers"; then
+  echo "FAIL: mixed exact and wrong release identity headers are accepted" >&2
+  exit 1
+fi
+printf '%s\r\n' \
+  'HTTP/1.1 200 OK' \
+  'X-Petclaw-Release: 20260718T184721-synthetic trailing-data' \
+  > "${PETCLAW_TEST_TMP}/release-headers"
+if petclaw_exact_release_header "${PETCLAW_TEST_TMP}/release-headers"; then
+  echo "FAIL: release identity with trailing data is accepted" >&2
+  exit 1
+fi
+if ! grep -Fq 'for PETCLAW_IDENTITY_ATTEMPT in {1..20}; do' \
+  "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh"; then
+  echo "FAIL: release identity does not tolerate asynchronous nginx worker retirement" >&2
+  exit 1
+fi
+if ! grep -Fq -- "--noproxy '*'" "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" \
+  || ! grep -Fq -- "-H 'Connection: close'" \
+    "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" \
+  || [[ "$(grep -Fc 'curl --disable' "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh")" -lt 3 ]]; then
+  echo "FAIL: local release identity probe can be reused or diverted through a proxy" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 7))"
+
 if grep -Fq '/bin/bash "${PETCLAW_RELEASE_DIR}/deploy/release-rollback-watchdog.sh"' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh"; then
   echo "FAIL: mutable release watchdog is still scheduled as root" >&2

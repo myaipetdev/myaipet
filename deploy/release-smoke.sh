@@ -11,9 +11,10 @@ trap 'rm -f "${PETCLAW_SMOKE_BODY}" "${PETCLAW_SMOKE_HEADERS}"' EXIT
 
 petclaw_curl() {
   if [[ -n "${PETCLAW_SMOKE_HOST}" ]]; then
-    curl --silent --show-error --max-time 20 --resolve "app.myaipet.ai:${PETCLAW_SMOKE_PORT}:${PETCLAW_SMOKE_HOST}" "$@"
+    curl --disable --silent --show-error --max-time 20 --noproxy '*' \
+      --resolve "app.myaipet.ai:${PETCLAW_SMOKE_PORT}:${PETCLAW_SMOKE_HOST}" "$@"
   else
-    curl --silent --show-error --max-time 20 "$@"
+    curl --disable --silent --show-error --max-time 20 "$@"
   fi
 }
 
@@ -41,6 +42,24 @@ expect_env_exact() {
   fi
 }
 
+petclaw_exact_release_header() {
+  local headers_file="$1"
+  awk -v expected="${PETCLAW_EXPECTED_RELEASE_ID}" '
+    BEGIN { total = 0; exact = 0 }
+    {
+      line = $0
+      sub(/\r$/, "", line)
+      if (tolower(line) ~ /^x-petclaw-release:[ \t]*/) {
+        total += 1
+        sub(/^[^:]*:[ \t]*/, "", line)
+        sub(/[ \t]+$/, "", line)
+        if (line == expected) exact += 1
+      }
+    }
+    END { exit(total == 1 && exact == 1 ? 0 : 1) }
+  ' "${headers_file}"
+}
+
 expect_env_exact AVATAR_UPLOAD_USER_DAILY_CAP 20
 expect_env_exact AVATAR_UPLOAD_GLOBAL_DAILY_CAP 1000
 expect_env_exact AVATAR_PREVIEW_TTL_HOURS 24
@@ -57,19 +76,24 @@ if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
     echo "ERROR: commit smoke must be pinned to the local TLS release identity." >&2
     exit 1
   fi
-  PETCLAW_IDENTITY_CODE="$(petclaw_curl -D "${PETCLAW_SMOKE_HEADERS}" \
-    -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
-    "${PETCLAW_SMOKE_BASE}/api/health" || true)"
-  if [[ "${PETCLAW_IDENTITY_CODE}" != "200" ]] \
-    || ! awk -v expected="${PETCLAW_EXPECTED_RELEASE_ID}" '
-      BEGIN { matches = 0 }
-      tolower($1) == "x-petclaw-release:" {
-        value = $2
-        sub(/\r$/, "", value)
-        if (value == expected) matches += 1
-      }
-      END { exit(matches == 1 ? 0 : 1) }
-    ' "${PETCLAW_SMOKE_HEADERS}"; then
+  PETCLAW_IDENTITY_OK=0
+  # nginx reload is asynchronous: a connection opened immediately after
+  # systemctl returns can still reach a retiring worker with the old route.
+  # Retry only the exact release-identity probe; every other smoke remains
+  # single-shot after the expected generation is proven active.
+  for PETCLAW_IDENTITY_ATTEMPT in {1..20}; do
+    PETCLAW_IDENTITY_CODE="$(petclaw_curl -D "${PETCLAW_SMOKE_HEADERS}" \
+      -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
+      -H 'Connection: close' \
+      "${PETCLAW_SMOKE_BASE}/api/health" || true)"
+    if [[ "${PETCLAW_IDENTITY_CODE}" == "200" ]] \
+      && petclaw_exact_release_header "${PETCLAW_SMOKE_HEADERS}"; then
+      PETCLAW_IDENTITY_OK=1
+      break
+    fi
+    sleep 1
+  done
+  if [[ "${PETCLAW_IDENTITY_OK}" != "1" ]]; then
     echo "ERROR: local nginx route did not expose the exact candidate release identity." >&2
     exit 1
   fi
@@ -124,7 +148,7 @@ DEMO_BODY="$(petclaw_curl -H "Origin: https://myaipet.ai" -H "Content-Type: appl
 node -e 'const d=JSON.parse(process.argv[1]); if(d?.output?.synthetic!==true||d?.output?.persisted!==false) process.exit(1)' "${DEMO_BODY}"
 
 if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
-  LANDING_BODY="$(curl --silent --show-error --max-time 20 \
+  LANDING_BODY="$(curl --disable --silent --show-error --max-time 20 --noproxy '*' \
     --resolve "myaipet.ai:${PETCLAW_SMOKE_PORT}:${PETCLAW_SMOKE_HOST}" \
     https://myaipet.ai/)"
 else
