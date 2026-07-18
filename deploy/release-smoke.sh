@@ -72,6 +72,17 @@ petclaw_verify_landing_body() {
   '
 }
 
+petclaw_fetch_landing() {
+  if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
+    curl --disable --silent --show-error --max-time 20 --noproxy '*' \
+      -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
+      --resolve "myaipet.ai:${PETCLAW_SMOKE_PORT}:${PETCLAW_SMOKE_HOST}" \
+      https://myaipet.ai/
+  else
+    petclaw_curl -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' https://myaipet.ai/
+  fi
+}
+
 expect_env_exact AVATAR_UPLOAD_USER_DAILY_CAP 20
 expect_env_exact AVATAR_UPLOAD_GLOBAL_DAILY_CAP 1000
 expect_env_exact AVATAR_PREVIEW_TTL_HOURS 24
@@ -159,16 +170,12 @@ expect_code 403 OPTIONS "/api/petclaw/skills" -H "Origin: https://evil.example" 
 DEMO_BODY="$(petclaw_curl -H "Origin: https://myaipet.ai" -H "Content-Type: application/json" -d '{"message":"What can PetClaw do?"}' "${PETCLAW_SMOKE_BASE}/api/petclaw/demo-chat")"
 node -e 'const d=JSON.parse(process.argv[1]); if(d?.output?.synthetic!==true||d?.output?.persisted!==false) process.exit(1)' "${DEMO_BODY}"
 
-if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
-  PETCLAW_LANDING_CODE="$(curl --disable --silent --show-error --max-time 20 --noproxy '*' \
-    -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
-    --resolve "myaipet.ai:${PETCLAW_SMOKE_PORT}:${PETCLAW_SMOKE_HOST}" \
-    https://myaipet.ai/ || true)"
-else
-  PETCLAW_LANDING_CODE="$(petclaw_curl -o "${PETCLAW_SMOKE_BODY}" \
-    -w '%{http_code}' https://myaipet.ai/ || true)"
+PETCLAW_LANDING_CURL_OK=1
+if ! PETCLAW_LANDING_CODE="$(petclaw_fetch_landing)"; then
+  PETCLAW_LANDING_CURL_OK=0
 fi
-if [[ "${PETCLAW_LANDING_CODE}" != "200" ]] \
+if [[ "${PETCLAW_LANDING_CURL_OK}" != "1" \
+  || "${PETCLAW_LANDING_CODE}" != "200" ]] \
   || ! petclaw_verify_landing_body < "${PETCLAW_SMOKE_BODY}"; then
   echo "ERROR: landing smoke did not return exact English launch HTML." >&2
   exit 1

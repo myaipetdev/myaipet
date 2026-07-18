@@ -285,14 +285,42 @@ if grep -Fq '"${LANDING_BODY}"' "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh"; 
   echo "FAIL: landing smoke still passes the full HTML body through argv" >&2
   exit 1
 fi
-if ! grep -Fq '[[ "${PETCLAW_LANDING_CODE}" != "200" ]]' \
+if ! grep -Fq '|| "${PETCLAW_LANDING_CODE}" != "200" ]]' \
   "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" \
+  || ! grep -Fq 'if ! PETCLAW_LANDING_CODE="$(petclaw_fetch_landing)"; then' \
+    "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" \
+  || ! grep -Fq 'PETCLAW_LANDING_CURL_OK=0' \
+    "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" \
   || ! grep -Fq 'petclaw_verify_landing_body < "${PETCLAW_SMOKE_BODY}"' \
     "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh"; then
   echo "FAIL: landing body verification is not preceded by an exact HTTP 200 gate" >&2
   exit 1
 fi
-PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 5))"
+PETCLAW_FETCH_FUNCTION="${PETCLAW_TEST_TMP}/landing-fetch-function.sh"
+awk '/^petclaw_fetch_landing\(\) \{/{copy=1} copy{print} copy && /^\}$/{exit}' \
+  "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" > "${PETCLAW_FETCH_FUNCTION}"
+# shellcheck source=/dev/null
+source "${PETCLAW_FETCH_FUNCTION}"
+PETCLAW_EXPECTED_RELEASE_ID=synthetic-release
+PETCLAW_SMOKE_PORT=443
+PETCLAW_SMOKE_HOST=127.0.0.1
+PETCLAW_SMOKE_BODY="${PETCLAW_TEST_TMP}/partial-landing"
+curl() {
+  printf '%s' '/api/petclaw/demo-chat' > "${PETCLAW_SMOKE_BODY}"
+  printf '%s' '200'
+  return 18
+}
+if petclaw_fetch_landing > "${PETCLAW_TEST_TMP}/partial-code"; then
+  echo "FAIL: landing fetch accepts a partial HTTP 200 transport" >&2
+  exit 1
+fi
+unset -f curl
+if [[ "$(cat "${PETCLAW_TEST_TMP}/partial-code")" != "200" ]] \
+  || ! petclaw_verify_landing_body < "${PETCLAW_SMOKE_BODY}"; then
+  echo "FAIL: partial-transfer regression fixture is invalid" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 7))"
 
 if grep -Fq '/bin/bash "${PETCLAW_RELEASE_DIR}/deploy/release-rollback-watchdog.sh"' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh"; then
