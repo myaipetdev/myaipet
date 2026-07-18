@@ -1143,7 +1143,7 @@ PETCLAW_CANDIDATE_PID="$(pm2 jlist | node -e '
 PETCLAW_CANDIDATE_SOCKET="$(ss -H -ltnp "sport = :${PETCLAW_CANDIDATE_PORT}")"
 PETCLAW_CANDIDATE_NODE="$(readlink -e "/proc/${PETCLAW_CANDIDATE_PID}/exe" 2>/dev/null || true)"
 if [[ ! "${PETCLAW_CANDIDATE_PID}" =~ ^[0-9]+$ ]] \
-  || "${PETCLAW_CANDIDATE_NODE}" != "${PETCLAW_NODE_BIN}" \
+  || [[ "${PETCLAW_CANDIDATE_NODE}" != "${PETCLAW_NODE_BIN}" ]] \
   || ! grep -Eq "pid=${PETCLAW_CANDIDATE_PID}(,|\\))" <<< "${PETCLAW_CANDIDATE_SOCKET}" \
   || ! grep -Eq "(^|[[:space:]])127\\.0\\.0\\.1:${PETCLAW_CANDIDATE_PORT}([[:space:]]|$)" \
     <<< "${PETCLAW_CANDIDATE_SOCKET}" \
@@ -1195,10 +1195,10 @@ sudo sync -f "${PETCLAW_NGINX_BACKUP}"
 PETCLAW_NGINX_BACKUP_READY=1
 
 sudo install -o root -g root -m 755 \
-  "${PETCLAW_RELEASE_DIR}/deploy/release-boot-guard.sh" \
+  "${PETCLAW_RELEASE_SOURCE}/deploy/release-boot-guard.sh" \
   /usr/local/sbin/petclaw-release-boot-guard.sh
 sudo install -o root -g root -m 644 \
-  "${PETCLAW_RELEASE_DIR}/deploy/petclaw-release-boot-guard.service" \
+  "${PETCLAW_RELEASE_SOURCE}/deploy/petclaw-release-boot-guard.service" \
   /etc/systemd/system/petclaw-release-boot-guard.service
 sudo systemctl daemon-reload
 sudo systemctl reenable petclaw-release-boot-guard.service >/dev/null
@@ -1208,7 +1208,7 @@ PETCLAW_ROLLBACK_WATCHDOG_UNIT="petclaw-release-rollback-${PETCLAW_WATCHDOG_SAFE
 PETCLAW_ROLLBACK_WATCHDOG_BIN="/usr/local/libexec/petclaw/release-rollback-${PETCLAW_WATCHDOG_SAFE_ID}-$$.sh"
 sudo install -d -o root -g root -m 755 /usr/local/libexec/petclaw
 sudo install -o root -g root -m 755 \
-  "${PETCLAW_RELEASE_DIR}/deploy/release-rollback-watchdog.sh" \
+  "${PETCLAW_RELEASE_SOURCE}/deploy/release-rollback-watchdog.sh" \
   "${PETCLAW_ROLLBACK_WATCHDOG_BIN}"
 sudo /usr/local/sbin/petclaw-release-boot-guard.sh --arm \
   "${PETCLAW_RELEASE_DIR}" "${PETCLAW_WATCHDOG_PREVIOUS}" \
@@ -1245,14 +1245,14 @@ export PETCLAW_EXTENSION_SHA256
 if ! PETCLAW_SMOKE_BASE="https://app.myaipet.ai" \
   PETCLAW_SMOKE_HOST="127.0.0.1" PETCLAW_SMOKE_PORT="443" \
   PETCLAW_EXPECTED_RELEASE_ID="${PETCLAW_RELEASE_ID}" \
-  "${PETCLAW_RELEASE_DIR}/deploy/release-smoke.sh"; then
+  /bin/bash "${PETCLAW_RELEASE_SOURCE}/deploy/release-smoke.sh"; then
   exit 1
 fi
 
 pm2 save
 chmod 600 "${PETCLAW_PM2_HOME}/dump.pm2"
 sudo install -o root -g root -m 644 \
-  "${PETCLAW_RELEASE_DIR}/deploy/petclaw-logrotate.conf" \
+  "${PETCLAW_RELEASE_SOURCE}/deploy/petclaw-logrotate.conf" \
   /etc/logrotate.d/petclaw
 sudo logrotate --debug /etc/logrotate.d/petclaw >/dev/null
 

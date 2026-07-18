@@ -143,6 +143,7 @@ for PETCLAW_CONTRACT in \
   'ec2-release.sh:PETCLAW_PM2_EXPECTED_EXECUTABLE="/usr/lib/node_modules/pm2/bin/pm2"' \
   'ec2-release.sh:PETCLAW_PM2_DAEMON_NODE' \
   'ec2-release.sh:PETCLAW_CANDIDATE_NODE' \
+  'ec2-release.sh:[[ "${PETCLAW_CANDIDATE_NODE}" != "${PETCLAW_NODE_BIN}" ]]' \
   'ec2-release.sh:npm_config_engine_strict=true npm ci --ignore-scripts --no-audit --no-fund' \
   'ec2-release.sh:PETCLAW_VERIFIED_DIR="/opt/petclaw/verified"' \
   'ec2-release.sh:exec 9<>"${PETCLAW_RELEASE_LOCK}"' \
@@ -166,6 +167,11 @@ for PETCLAW_CONTRACT in \
   'ec2-release.sh:PETCLAW_PRISMA_CLI' \
   'ec2-release.sh:! -perm -004' \
   'ec2-release.sh:REFERRALS_ENABLED' \
+  'ec2-release.sh:/bin/bash "${PETCLAW_RELEASE_SOURCE}/deploy/release-smoke.sh"' \
+  'ec2-release.sh:"${PETCLAW_RELEASE_SOURCE}/deploy/release-boot-guard.sh"' \
+  'ec2-release.sh:"${PETCLAW_RELEASE_SOURCE}/deploy/petclaw-release-boot-guard.service"' \
+  'ec2-release.sh:"${PETCLAW_RELEASE_SOURCE}/deploy/release-rollback-watchdog.sh"' \
+  'ec2-release.sh:"${PETCLAW_RELEASE_SOURCE}/deploy/petclaw-logrotate.conf"' \
   'release-rollback-watchdog.sh:flock -w 900' \
   'release-rollback-watchdog.sh:exec 9<>"${PETCLAW_RELEASE_LOCK}"' \
   'release-rollback-watchdog.sh:stale watchdog generation refused' \
@@ -201,6 +207,29 @@ if grep -Fq '/bin/bash "${PETCLAW_RELEASE_DIR}/deploy/release-rollback-watchdog.
   exit 1
 fi
 PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
+
+if grep -Fq '|| "${PETCLAW_CANDIDATE_NODE}" != "${PETCLAW_NODE_BIN}"' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh"; then
+  echo "FAIL: candidate Node identity comparison can execute the Node binary as a shell command" >&2
+  exit 1
+fi
+if grep -Fq '"${PETCLAW_RELEASE_DIR}/deploy/release-smoke.sh"; then' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh"; then
+  echo "FAIL: sealed candidate smoke still relies on an executable bit" >&2
+  exit 1
+fi
+for PETCLAW_ROOT_INSTALL_INPUT in \
+  release-boot-guard.sh \
+  petclaw-release-boot-guard.service \
+  release-rollback-watchdog.sh \
+  petclaw-logrotate.conf; do
+  if grep -Fq '"${PETCLAW_RELEASE_DIR}/deploy/'"${PETCLAW_ROOT_INSTALL_INPUT}"'"' \
+    "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh"; then
+    echo "FAIL: root install still trusts build-writable candidate input ${PETCLAW_ROOT_INSTALL_INPUT}" >&2
+    exit 1
+  fi
+done
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 6))"
 
 PETCLAW_RUNTIME_MODE_LINE="$(grep -nF 'chmod u+rw,go+rX,go-w' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | cut -d: -f1)"
