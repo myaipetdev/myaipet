@@ -34,8 +34,9 @@ while IFS= read -r -d '' PETCLAW_SECRET_FILE; do
       ;;
   esac
 
-  # Scan strings from every file, including binaries, without printing values.
-  if strings -a "${PETCLAW_SECRET_FILE}" 2>/dev/null | petclaw_stream_contains_secret; then
+  # grep -a scans raw binary bytes as text, so the verifier does not silently
+  # lose coverage when the optional binutils `strings` utility is absent.
+  if petclaw_stream_contains_secret < "${PETCLAW_SECRET_FILE}"; then
     echo "ERROR: credential signature found in release file: ${PETCLAW_SECRET_REL}" >&2
     PETCLAW_SCAN_FAILED=1
     continue
@@ -49,7 +50,7 @@ while IFS= read -r -d '' PETCLAW_SECRET_FILE; do
         echo "ERROR: invalid ZIP/JAR in release: ${PETCLAW_SECRET_REL}" >&2
         PETCLAW_SCAN_FAILED=1
       elif unzip -p "${PETCLAW_SECRET_FILE}" 2>/dev/null \
-        | strings -a | petclaw_stream_contains_secret; then
+        | petclaw_stream_contains_secret; then
         echo "ERROR: credential signature found inside release archive: ${PETCLAW_SECRET_REL}" >&2
         PETCLAW_SCAN_FAILED=1
       fi
@@ -59,7 +60,7 @@ while IFS= read -r -d '' PETCLAW_SECRET_FILE; do
         echo "ERROR: invalid tar archive in release: ${PETCLAW_SECRET_REL}" >&2
         PETCLAW_SCAN_FAILED=1
       elif tar -xOf "${PETCLAW_SECRET_FILE}" 2>/dev/null \
-        | strings -a | petclaw_stream_contains_secret; then
+        | petclaw_stream_contains_secret; then
         echo "ERROR: credential signature found inside release archive: ${PETCLAW_SECRET_REL}" >&2
         PETCLAW_SCAN_FAILED=1
       fi

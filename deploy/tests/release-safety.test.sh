@@ -101,6 +101,17 @@ printf 'xai-%s%s\n' 'abcdefghijklmnop' 'qrstuvwxyz123456' \
 (cd "${PETCLAW_TEST_TMP}/zip" && zip -q "${PETCLAW_SCAN_FIXTURE}/public.zip" token.txt)
 petclaw_expect_failure "compressed public credential is detected" /bin/bash \
   "${PETCLAW_TEST_ROOT}/deploy/scan-release-secrets.sh" "${PETCLAW_SCAN_FIXTURE}"
+rm -f "${PETCLAW_SCAN_FIXTURE}/public.zip"
+printf '\0xai-%s%s\0' 'abcdefghijklmnop' 'qrstuvwxyz123456' \
+  > "${PETCLAW_SCAN_FIXTURE}/binary.bin"
+petclaw_expect_failure "raw binary credential is detected without strings" /bin/bash \
+  "${PETCLAW_TEST_ROOT}/deploy/scan-release-secrets.sh" "${PETCLAW_SCAN_FIXTURE}"
+if grep -Eq '(^|[|[:space:]])strings[[:space:]]' \
+  "${PETCLAW_TEST_ROOT}/deploy/scan-release-secrets.sh"; then
+  echo "FAIL: secret scan still depends on the optional strings utility" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
 
 petclaw_expect_success "all release scripts parse" /bin/bash -n \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" \
