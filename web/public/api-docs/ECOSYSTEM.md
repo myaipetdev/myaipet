@@ -60,10 +60,10 @@ Endpoints: `GET/POST/DELETE /api/petclaw/models` (owner-auth).
 | Platform | Type | Capabilities |
 |----------|------|-------------|
 | **Telegram** | Messaging | Send/receive messages, photos, webhooks, bot management |
-| **Twitter/X** | Social | Post tweets, timeline, search, likes, DMs |
-| **Discord** | Community | Server messages, reactions, channel management |
+| **Twitter/X** | Social | Post/reply, own timeline, recent search, likes, profile lookup |
+| **Discord** | Community | Send/read channel messages, reactions, guild list, bot profile |
 | **Slack** | Workspace | Channel messages, threads, reactions, history |
-| **Web Search** | Knowledge | Search + page summarization (no API key needed) |
+| **Web Search** | Knowledge | DuckDuckGo instant-answer search; server-side page summarization is unavailable |
 | **Enhanced Memory** | Internal | Semantic search, timeline, cross-platform recall |
 
 ## MCP Compatibility
@@ -85,7 +85,7 @@ npx @myaipet/petclaw-sdk mcp --url https://app.myaipet.ai --pet-id 1
 
 ## On-Chain (planned · not live)
 
-On-chain features are disabled. Two legacy contracts remain paused on BSC; a future **Base** deployment and external audit are planned, but no activation date is announced. The economy is points-only loyalty — **no token**.
+Production on-chain integration is disabled. Two legacy BSC contracts returned `paused() = false` with zero activity/supply counters at the 2026-07-18 launch review; a future **Base** deployment and external audit are required before any integration, and no activation date is announced. The economy is points-only loyalty — **no token**.
 
 | Contract | Type | Purpose |
 |----------|------|---------|
@@ -94,7 +94,7 @@ On-chain features are disabled. Two legacy contracts remain paused on BSC; a fut
 | PETActivity | — | On-chain activity recording |
 | PetaGenTracker | — | Batch activity tracking |
 
-The two deployed BSC contracts are non-upgradeable and paused. The other rows are roadmap designs, not deployed live contracts. An external audit is planned before any future activation.
+The two deployed BSC contracts are non-upgradeable. Their production integration is disabled, and both returned `paused() = false` with zero activity/supply counters at the 2026-07-18 launch review. The other rows are roadmap designs, not deployed live contracts. An external audit and owner-permission review are required before any future integration.
 
 ## Data Sovereignty
 

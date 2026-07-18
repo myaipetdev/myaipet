@@ -467,8 +467,8 @@ export function buildManifest(): PetClawManifest {
     capabilities: {
       companionAI: true,
       dataSovereignty: true,
-      // The schema can preserve legacy Soul NFT state, but live on-chain
-      // minting is paused. Capability discovery must describe availability,
+      // The schema can preserve legacy Soul NFT state, but production on-chain
+      // integration is disabled. Capability discovery must describe availability,
       // not merely the existence of dormant implementation code.
       soulNFT: false,
       memoryExport: true,

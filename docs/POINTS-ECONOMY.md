@@ -5,6 +5,18 @@ is the issuance half: what we give away, to whom, and what it may cost us.
 Grounded in the 2026-07-16 issuance audit and the 1,000-wallet red-team exercise;
 file:line references point at `web/src/`._
 
+> **Launch-state correction (2026-07-18):** season points remain off-chain and
+> non-financial. External payments and referrals are disabled
+> (`PAYMENTS_ENABLED=false`, `REFERRALS_ENABLED=false`); dollar values and
+> referral grants below are enablement models, not currently offered products.
+>
+> **Historical-baseline warning:** the `Current` columns below preserve the
+> pre-hardening red-team snapshot and are not the current release state. The
+> launch release already implements arena first-clear/caps, a durable catch
+> vision guard, a signed 50+50 starter grant, the authenticated skill cap, and
+> earned-credit/video/vision caps; referrals remain disabled. Use the deploy
+> checklist and committed contract tests as the live source of truth.
+
 ---
 
 ## 0. Doctrine (one paragraph)
@@ -24,7 +36,7 @@ The two lanes:
 
 | | Lane A — recognition | Lane B — metered utility |
 |---|---|---|
-| Currency | season_points (non-financial) | credits ($0.05 retail / $0.025 bulk floor) |
+| Currency | season_points (non-financial) | credits (modeled after enablement: $0.05 retail / $0.025 bulk floor) |
 | Marginal $ to us | ~$0 (Postgres rows) | ~$0.006/credit worst-case when spent (grok video/img), up to $0.45 for kling i2v |
 | Farmers | **welcome** — they are DAU | tolerated, but every call is paid or budget-capped |
 | Defense | per-wallet daily caps + snapshot-time cluster weighting | credits-first, global LLM/vision budgets as backstop |
@@ -132,13 +144,13 @@ Justification from the red-team numbers:
   admin dashboard long before it matters.
 - Season points issuance contributes **$0** to X. Points are never the leak.
 
-### 2.2 Free-credit faucet policy (how many, from where, per day)
+### 2.2 Historical pre-hardening faucet review (not current launch state)
 
 Faucets exist for genuine-user onboarding and session ritual, not as income.
 All faucet grants are real, spendable credits — but sized so a hoarding farmer
 gains little and a griefing farmer hits global budgets.
 
-| Faucet | Current | Recommended | Why |
+| Faucet | Historical baseline (superseded) | Target | Why |
 |---|---|---|---|
 | Signup grant | **100 cr minted on unauthenticated `GET /nonce`** (`nonce/route.ts:25`) | **50 cr at first successful `verify`** (proven key control) **+ 50 cr at day-3 check-in** | Kills the mint-without-signature leak (red-team Leak 3); halves day-1 grief exposure; day-3 tranche converts farmers into 3-day-retained "users" or filters them |
 | First-video gate | none — starter credits can buy ~6 videos day 1 (~$1.80/wallet real cost) | **video-kind generation unlocks at day-2 check-in OR first purchase** (images/cards available immediately) | Caps one-time starter grief at ~$0.30/wallet (images only); genuine users hit day-2 trivially; not a paywall — a pacing gate |
@@ -166,30 +178,28 @@ Defense in depth, mostly already built:
 2. **Past any cap: degrade to canned/persona replies, never an error.** The pet
    still answers; it just answers from the template pool. Bots can't tell the
    difference cheaply; humans rarely hit 60 turns.
-3. **Close red-team Leak 2:** migrate every raw `api.x.ai` fetch in
-   `lib/petclaw/memory/*` (retainFromConversation, observeConversation,
-   maybeReflectOnBond) and `best-of-n.ts` onto `callLLM` so `consumeLLMBudget`
-   counts them. Today they're bounded only by an accident of call ordering;
-   flipping `PETCLAW_BEST_OF_N` would unbound them silently.
-4. **PetClaw authed skill execute** (`app/api/petclaw/skills/route.ts` authed
-   branch) currently has NO rate limit — llm-prompt skills are unbounded free
-   Grok. Add `llm:skill` 50/day/wallet + route through `callLLM`.
-5. Add `llm:chat` 200/day/wallet in `DailyActionCount` as the per-wallet
-   backstop independent of the 60-pts point cap (points caps never stopped
-   LLM spend — red-team Leak 2's whole premise).
+3. **Memory fan-out is now budgeted:** persistent-memory, self-learning,
+   bond-loop, consolidation, and best-of-N paths route through `callLLM`, so
+   `consumeLLMBudget` counts their platform-provider calls.
+4. **Authenticated PetClaw LLM skills are capped:** the execute branch reserves
+   `llm:skill:<petId>` with `LLM_SKILL_DAILY_CAP` (default 50/day/pet), and the
+   handler also routes through `callLLM`.
+5. **Chat uses the shared LLM wall:** `callLLM` enforces
+   `LLM_USER_DAILY_CAP=60` per pet and `LLM_DAILY_CALL_CAP=2000` globally.
+   A separate proposed `llm:chat` wallet row was not required for launch.
 
 ### 2.4 Catch vision — the one scalable leak, closed
 
-`POST /api/catch` fires a Grok-vision call before any credit check, outside
-`consumeLLMBudget`, 20/hr/token only (`catch/route.ts:48`, `vision.ts:82`).
-Red-team worst case: **$2,400/day**. Fix set:
+The pre-hardening route called vision before billing and relied on a 20/hour
+token-local limit. The launch implementation closes that path:
 
-- **3 free verify attempts/day/wallet** (resets daily), then **1 credit per
-  attempt** — charged on attempt, not success, because WE pay on attempt.
-- Route the vision call through `consumeLLMBudget` with a dedicated
+- `consumeCatchVerify` runs before vision: **3 free verify attempts/day/wallet**,
+  then **1 available credit per attempt**, charged on attempt rather than success.
+- Each provider attempt reserves the dedicated
   `VISION_DAILY_CAP` (global) = **300 calls/day** (~$1.50/day at the original estimate),
   plus `VISION_USER_DAILY_CAP` = **30 calls/day** per authenticated owner.
-- Drop per-token rate to 6/hr. (Politeness only; the global cap is the wall.)
+- The route limit is **6/hour**. If a vision budget refuses a billed request,
+  the reserved catch credit is refunded.
 
 At 3 free/day: farm of 1,000 = 3,000 calls ≈ $15/day max, inside X. Genuine
 users average <2 catches/day; collectors who binge pay a fair 1 cr (~$0.05,
@@ -205,14 +215,16 @@ global shared budgets change farmer ROI":
 |---|---|---|
 | `LLM_DAILY_CALL_CAP` (chat main, exists) | 2,000 | ~$0.60 + ~$1.20 fan-out |
 | `VISION_DAILY_CAP` + per-user cap | 300 global / 30 per owner | ~$1.50 global at the original estimate |
-| `FREE_ORIGIN_VIDEO_CAP` (new): video generations by never-paid wallets | 300/day global, 2/day/wallet | ~$90 (grok-video $0.30 avg) |
+| Free-origin video gate for never-paid wallets | 300/day global, 2/day/wallet, unlock day 2 | ~$90 (grok-video $0.30 avg) |
 | **Total grief ceiling** | | **~$120/day** |
 
-`FREE_ORIGIN_VIDEO_CAP` needs only a `has_ever_purchased` boolean check + one
-global `DailyActionCount` row — no credit-provenance ledger. Paying users are
-never subject to it (their credits are revenue; ECONOMY.md guarantees the
-margin). When a global budget trips, degrade gracefully: canned chat, "try
-again tomorrow" on free catch-verify, queue-for-tomorrow on free-origin video.
+`checkVideoAllowed` now checks confirmed purchase history, enforces the day-2
+pacing gate and a durable `video:free` per-wallet quota, then applies the
+process-wide 300/day backstop. Paying users bypass this free-origin gate. When a
+global budget trips, the product degrades without spending another provider
+call: canned chat, "try again tomorrow" on catch verification, or a next-day
+message for free-origin video. The global video counter is process-local and
+resets on deployment; keep that limitation in mind before horizontal scaling.
 
 ---
 
@@ -284,21 +296,21 @@ the correct psychological anchor for a $0.05 credit.
 
 ---
 
-## 5. Parameter table — every knob, current → recommended
+## 5. Historical pre-hardening parameter review (not current launch state)
 
-| # | Knob | Current | Recommended | Why (one line) |
+| # | Knob | Historical baseline (superseded) | Target | Why (one line) |
 |---|---|---|---|---|
 | 1 | Arena PvE credit payout | 5–200 cr EVERY replay, ×30/day/pet (≤6,000 cr/day) | **first-clear only + `credits:arena` ≤50/day** | The P0: in-house copy of the sibling app's $36/day burn profile |
-| 2 | Catch vision billing | free, 20/hr, outside budget guard | **3 free/day then 1 cr/attempt; guard + global 300/day + 30/user/day; 6/hr** | Charge the call we pay for and bound one-owner exhaustion |
+| 2 | Catch vision billing | **Pre-hardening:** free, 20/hr, outside budget guard | **Implemented:** 3 free/day then 1 cr/attempt; global 300/day + 30/user/day; 6/hr | Charge the call we pay for and bound one-owner exhaustion |
 | 3 | Signup credit grant | 100 cr on unauthenticated `GET /nonce` | **50 cr at verify + 50 cr at day-3 check-in** | No minting without a signature; day-3 tranche filters or retains |
 | 4 | First video generation | day-1 with starter credits (~$1.80/wallet grief) | **unlock at day-2 check-in or first purchase** | Caps starter-grant grief at ~$0.30/wallet (images) |
-| 5 | PetClaw authed skill execute | NO rate limit (anon-only 6/min) | **`llm:skill` 50/day + route via `callLLM`** | Unbounded free Grok for any authed user today |
+| 5 | PetClaw authed skill execute | **Pre-hardening:** no authenticated daily cap | **Implemented:** `llm:skill` 50/day/pet + route via `callLLM` | Closes the historical unbounded-skill path |
 | 6 | Pet chat daily LLM cap | none per-wallet (30/min RL only) | **`llm:chat` 200/day/wallet, degrade to canned** | 43,200 free calls/day/bot possible; canned fallback keeps the free-companion promise |
-| 7 | Chat memory fan-out (retain/observe/bond/best-of-n) | raw `api.x.ai`, bypasses budget guard | **migrate onto `callLLM`** | Bounded today only by call-ordering accident; `PETCLAW_BEST_OF_N` would unbound it |
+| 7 | Chat memory fan-out (retain/observe/bond/best-of-n) | **Pre-hardening:** raw provider calls bypassed the budget guard | **Implemented:** routed through `callLLM` | Makes fan-out consume the shared LLM budget |
 | 8 | Adventure credits | EV ~75–90 cr/day | **`credits:adventure` ≤40/day** | Faucet is ritual, not salary |
 | 9 | Per-wallet earned-credit total | none | **`credits:earned` ≤100/day** | Hard $0.60/day/wallet worst-case exposure, belt over per-faucet caps |
-| 10 | Free-origin video (never-paid wallets) | uncapped globally | **2/day/wallet + 300/day GLOBAL** | Global budgets, not per-entity limits, are what change farm ROI |
-| 11 | Vision caps | absent | **300/day global + 30/day per owner (~$1.50 global at the original estimate)** | Backstop making the grief ceiling real |
+| 10 | Free-origin video (never-paid wallets) | **Pre-hardening:** uncapped globally | **Implemented:** day-2 gate + 2/day/wallet + 300/day process-wide | Global budgets, not per-entity limits, are what change farm ROI |
+| 11 | Vision caps | **Pre-hardening:** absent | **Implemented:** 300/day global + 30/day per owner (~$1.50 global at the original estimate) | Backstop making the grief ceiling real |
 | 12 | level_up season pts | uncapped, bypasses capped path | **via `awardPointsCapped`, 150/day** | Honest admin issuance metrics + bounded wallet/day |
 | 13 | Arena season pts | direct increment ≤6,000/day | **via `awardPointsCapped`, 200/day** | Same |
 | 14 | Wallet daily point total | none (~1,100 maxed) | **500 @100%, then 50%, hard 750** | Leaderboard legibility; compression not punishment |
@@ -329,15 +341,17 @@ DAU that we know are farm-inflated **as if organic** — report raw counts as
 raw counts, segment when we present traction (DD honesty: no fabricated or
 laundered metrics).
 
-**May say:** "season points are recognition — leaderboard rank, badges,
-cosmetics, bragging rights"; "points have no cash value and cannot be redeemed"
-(put this disclaimer ON the leaderboard UI, permanently); "credits are the
-paid utility — $5/100" ; "wallet sign-in, no email, no card"; "your pet is
-free forever — creation is what you pay for."
+**May say at launch:** "season points are recognition — leaderboard rank,
+badges, cosmetics, bragging rights"; "points have no cash value and cannot be
+redeemed" (put this disclaimer ON the leaderboard UI, permanently); "credits
+meter supported creation features"; "wallet sign-in, no email, no card".
+Do not quote a credit sale price or say users pay for creation until
+`PAYMENTS_ENABLED=true` and the separate payment checklist has passed.
 
 **Product-copy rules:** any new earn surface ships with the non-financial
-disclaimer inherited from the leaderboard component; referral copy rewards
-"bring a friend" framing (points + a few credits), never "earn per head";
+disclaimer inherited from the leaderboard component; referral copy is prohibited
+while `REFERRALS_ENABLED=false`. After enablement it uses "bring a friend"
+framing (points + a few credits), never "earn per head";
 cluster-weighting policy is published in the rules page BEFORE each season
 starts (§3) so no participant can claim ambush.
 
@@ -347,14 +361,18 @@ recognition or credits before shipping.
 
 ---
 
-## Appendix — implementation order
+## Appendix — original hardening order (historical, not a current checklist)
 
-1. **P0 (this week):** #1 arena credits, #2 catch-vision billing+guard, #5
+This records the order proposed by the pre-hardening review. The launch-state
+warning at the top of this document and committed contract tests supersede it;
+an item's priority label below does not mean that work is still open.
+
+1. **Historical P0 tranche:** #1 arena credits, #2 catch-vision billing+guard, #5
    petclaw skill RL, #3 nonce→verify grant move. These four close every leak
    the red-team priced above $5/day.
-2. **P1:** #6/#7 chat daily cap + fan-out migration, #9/#10/#11 global
+2. **Historical P1 tranche:** #6/#7 chat daily cap + fan-out migration, #9/#10/#11 global
    budgets, #12/#13 capped-path routing, #4 video day-2 gate.
-3. **P2:** #14 diminishing wallet total, #15 referral wiring, #17 snapshot
+3. **Historical P2 tranche:** #14 diminishing wallet total, #15 referral wiring, #17 snapshot
    clustering (needed before first season snapshot, not before).
 
 Key files: `web/src/lib/seasonRewards.ts`, `web/src/lib/llm/router.ts`,

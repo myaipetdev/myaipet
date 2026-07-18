@@ -29,15 +29,15 @@ Server capabilities and endpoints.
 }
 ```
 
-`soulNFT` is `false` while live on-chain minting is paused. Exported SOUL data
+`soulNFT` is `false` while production on-chain mint integration is disabled. Exported SOUL data
 can still preserve legacy off-chain or previously recorded NFT state.
 
-> Note: `version` here is the **protocol** version (`petclaw-v1`, semver `1.0.0`) — it is distinct from, and not pinned to, the npm **SDK package** version (currently `1.6.0`).
+> Note: `version` here is the **protocol** version (`petclaw-v1`, semver `1.0.0`) — it is distinct from, and not pinned to, the npm **SDK package** version (currently `1.6.1`).
 
 ### GET `/api/petclaw`
 Full manifest with skills and stats.
 
-**Response:**
+**Response shape (numeric values below are illustrative, not launch metrics):**
 ```json
 {
   "success": true,
@@ -47,9 +47,9 @@ Full manifest with skills and stats.
     "endpoints": { ... }
   },
   "stats": {
-    "totalPets": 100,
-    "activePets": 85,
-    "totalSoulNfts": 42
+    "totalPets": 0,
+    "activePets": 0,
+    "totalSoulNfts": 0
   }
 }
 ```

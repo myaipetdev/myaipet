@@ -91,20 +91,20 @@ Updated: 2026-07-13
 - [x] Wallet signature on adoption/generation
 - [x] Rate limiting on payment/session endpoints (lib/rateLimit.ts)
 - [x] Content moderation for user text + generation prompts (lib/moderation.ts)
-- [x] Pet avatar guard — isHumanAvatar blocks human photos as pets (lib/services/petAvatarGuard.ts, fail-open)
+- [x] Pet avatar guard — isHumanAvatar blocks human photos and fails closed when classification is unavailable (lib/services/petAvatarGuard.ts)
 
 ### Core Features
 - [x] Pet adoption (AI chat + photo upload)
 - [x] AI content generation (image + video, multiple styles)
-- [x] On-chain activity recording (PETActivity)
-- [x] NFT minting (PETContent) via relayer
-- [x] PetaGenTracker batch recording via relayer
+- [x] On-chain activity recording implementation (production integration disabled)
+- [x] NFT minting implementation (PETContent via relayer; production integration disabled)
+- [x] PetaGenTracker batch-recording implementation via relayer (production integration disabled)
 - [x] Arena battle system
 - [x] Leaderboard + ranking
 - [x] Social gallery + comments
 - [x] Marketplace (DB-driven shop across 6 categories + Skills tab)
 - [x] Pet evolution (5 stages)
-- [x] Credit purchase — SIWE + USDT on BSC only (packs: 100/500/2000 credits for 5/20/50 USDT)
+- [x] Credit-purchase implementation — SIWE + USDT on BSC only; production sales disabled (packs defined as 100/500/2000 credits for 5/20/50 USDT)
 - [x] Credits balance dropdown in Nav (platform credits, not wallet balance)
 - [x] Season Rewards — airdrop_points renamed to season_points, lib/seasonRewards.ts (non-financial loyalty points; never "airdrop")
 - [x] reward_redemptions table + unique-constraint migration
@@ -112,7 +112,7 @@ Updated: 2026-07-13
 
 ### 2026 H1 Ships
 - [x] Guest tour mode ?tour=1 — read-only DEMO previews for community/worldcup/my pet (lib/tour.ts, TourMyPet.tsx, WalletGate.tsx)
-- [x] PetClaw native tool-calling — callLLMWithTools (lib/llm/router.ts), runToolAgent with connector tools (web_search, web_read + SSRF guard, wikipedia_lookup, crypto_price, recall_memory), SSE via ?stream=1 on /api/pets/[petId]/agent
+- [x] PetClaw native tool-calling — callLLMWithTools (lib/llm/router.ts), runToolAgent with available connector tools (web_search, wikipedia_lookup, crypto_price, recall_memory); web_read is declared and SSRF-guarded but unavailable; SSE via ?stream=1 on /api/pets/[petId]/agent
 - [x] LLM router + BYOK owner models (/api/petclaw/models), plan-execute loop, GBrain memory retrieval (lib/petclaw/memory/retrieval.ts)
 - [x] PetClaw honest skill surface — 18 real-handler/endpoint-backed skills (canonical count)
 - [x] Studio: 22 trending templates with hover-play example videos (lib/studio/templates.ts, public/studio_examples/), Prompt Director v2 two-phase question sheet (/api/studio/prompt-director), client-side StudioEditor (WebCodecs/MediaRecorder, watermark on free tier)

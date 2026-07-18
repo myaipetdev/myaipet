@@ -6,14 +6,20 @@ Updated: 2026-07-13 — the Veo 3 reprice recommended below has since landed in
 code (`providers.ts`: 250 → **400 cr**, `usdPerRun` $2.40 → **$4.50**, ETA Q4 2026);
 tables and the P0 section now reflect the repriced values._
 
+> **Launch-state correction (2026-07-18):** this is enablement economics, not
+> current revenue. External payment sales are disabled
+> (`PAYMENTS_ENABLED=false`), as are subscription sales. No USDT credit pack or
+> other external paid action is currently sellable.
+
 ---
 
 ## TL;DR (the thesis)
 
-**Studio pay-per-creation credits IS the primary revenue engine — and it is the
-only one that is live today.** Subscription sales are hard-disabled in code
-(`SUBSCRIPTION_SALES_ENABLED = false`, `studio/subscription/route.ts:33`), so
-100% of realizable revenue right now flows through the three USDT credit packs.
+**Studio pay-per-creation credits is the proposed primary revenue engine after
+the separate payment-enablement gates are cleared.** Both external payment sales
+(`PAYMENTS_ENABLED=false`) and subscription sales
+(`SUBSCRIPTION_SALES_ENABLED=false`, `studio/subscription/route.ts:33`) are
+disabled at launch, so the three USDT credit packs generate no current revenue.
 
 The "main BM feels weak" instinct is half-right: the _mechanism_ (credits) is
 sound and margin-positive, but the **framing** is weak — the product talks like a
@@ -22,7 +28,8 @@ your pet into video."** Video is the premium SKU (25–50 cr = $1.25–$2.50 a c
 at ~65–85% gross margin). Everything else (chat, care, streaks, cards) is
 free/cheap engagement whose job is to feed video demand.
 
-**No live paid action is sold below cost.** The one margin-negative risk this doc
+**No external paid action is currently sold.** Among the actions priced for later
+enablement, the one margin-negative risk this doc
 originally flagged — a _locked_ model (Veo 3) priced at 250 cr against a real
 ~$4–6 vendor cost — has been **repriced in code to 400 cr / $4.50 `usdPerRun`**
 and remains correctly `comingSoon`. See the P0 section.
@@ -47,7 +54,7 @@ both the retail anchor (**$0.05**) and the worst case a user can realize
 ### Studio model catalog — `src/lib/studio/providers.ts`
 `creditsPerRun` = what we charge; `usdPerRun` = our internal wholesale estimate.
 
-| Model | kind | credits | usdPerRun (code) | live? |
+| Model | kind | credits | usdPerRun (code) | catalog status |
 |-------|------|---------|------------------|-------|
 | grok-imagine | image | 5 | $0.03 | ✅ |
 | flux-schnell | image | 3 | $0.003 | ✅ |
@@ -107,7 +114,7 @@ Gross margin = (revenue − vendor cost) / revenue. Two revenue columns: retail
 ($0.05/cr) and bulk pro-pack ($0.025/cr). **GM@bulk is the number that matters** —
 it's the floor a heavy user forces.
 
-### Live actions (all currently sellable)
+### Catalog-enabled actions (external sale disabled at launch)
 
 | Action | cr | $ @0.05 | $ @0.025 | vendor cost | **GM@0.05** | **GM@bulk** |
 |--------|----|---------|----------|-------------|-------------|-------------|
@@ -129,8 +136,9 @@ it's the floor a heavy user forces.
 \* Wan's coded $0.18 may understate real fal cost. At a realistic $0.40 it drops
 to **68% @retail / 36% @bulk** — still positive but thin; verify against live fal.
 
-**Every live action is margin-positive, even at the bulk $0.025/cr floor.** The
-worst live case is Kling i2v at 64% GM@bulk. Nothing to fix as P0 among live SKUs.
+**Every modeled catalog action is margin-positive, even at the bulk $0.025/cr
+floor.** The worst modeled case is Kling i2v at 64% GM@bulk. This is a
+pre-enablement pricing result, not evidence of live sales.
 
 ### Locked actions (comingSoon) — priced for when unlocked
 
@@ -144,7 +152,8 @@ worst live case is Kling i2v at 64% GM@bulk. Nothing to fix as P0 among live SKU
 
 ## 3. P0 — margin-negative flag
 
-**No LIVE action is margin-negative.** The one LOCKED action that was —
+**No catalog-enabled action is modeled as margin-negative.** The one locked
+action that was —
 
 > **P0 — RESOLVED in code: Veo 3 was priced at 250 cr with `usdPerRun` $2.40,
 > which was break-even-to-negative at bulk-pack pricing** (a pro-pack buyer
@@ -165,15 +174,17 @@ One data-hygiene fix remains (not money-losing today, but it makes the ledger li
 ## 4. Business-model recommendation
 
 ### Primary revenue engine
-**Studio pay-per-creation credits, with video as the hero SKU.** This is already
-how the code monetizes; the recommendation is to _commit to it in the product
-narrative_ rather than treat it as a side shop. Positioning:
+**Studio pay-per-creation credits, with video as the hero SKU, after payment
+enablement.** The code contains this metering model, but external sales remain
+launch-disabled; the recommendation applies only after the payment readiness
+checklist is cleared. Positioning for that later state:
 
 - **Companion = free.** Chat, care, streaks, season points, catching, TCG cards
   earned deterministically. This is the retention/engagement loop. Never paywall
   the pet or its memory (matches the standing "paywall the creation + recall,
   never the memory" posture).
-- **Studio = monetized.** Every image/video generation burns credits. Video
+- **Studio = metered, with monetization gated.** Every image/video generation
+  burns credits, but users cannot buy credits externally at launch. Video
   (25–50 cr) is where the money is; images (3–12 cr) are the on-ramp and the
   iteration surface that keeps users buying.
 - **Companion+ subscription = optional access gate, additive not primary.** Note
@@ -197,9 +208,10 @@ softening the top-tier discount so the worst-case realized price floors at
 
 This lifts every video's GM@bulk by ~10 points (Kling i2v 64% → 73%) with almost
 no perceived-value loss (a 33–40% bulk discount still reads as generous). If
-acquisition matters more than margin near-term, keep 2000/$50 as a launch promo
-but treat $0.025 as the floor the per-action prices must survive — which, per the
-table, they already do for every live SKU.
+acquisition matters more than margin near-term, keep 2000/$50 as a future
+enablement promo but treat $0.025 as the floor the per-action prices must survive
+— which, per the table, they already do for every catalog-enabled SKU before
+payment enablement.
 
 ### How to set per-API-call credit values (the rule)
 
@@ -210,7 +222,7 @@ So no future model is ever accidentally sold below cost, price each action by a
 > i.e. charge so vendor cost ≤ 50% of bulk-pack revenue → **≥50% GM guaranteed
 > even at the deepest discount.** Target 3–4× cost (GM ≥ 66–75%) for video.
 
-Sanity check vs current live prices (using coded costs, current $0.025 floor):
+Sanity check vs coded enablement prices (using the modeled $0.025 floor):
 - Kling std $0.35 → rule floor = 28 cr; charged **40** ✓ (comfortable)
 - Kling i2v $0.45 → rule floor = 36 cr; charged **50** ✓
 - Grok img $0.03 → rule floor = 3 cr; charged **5** ✓
@@ -243,11 +255,10 @@ the next Veo-3-style mispricing at PR time).
 5. **Failed-generation leakage.** Credits are correctly refunded on failure
    (`studio/generate` catch path), but confirm fal doesn't bill us for
    submitted-then-failed jobs; if it does, that's silent cost with no revenue.
-6. **Free-tier fal exposure.** `grok-imagine-video` (25 cr) and `wan-2.1` are
-   `tier: "free"`/`"pro"` and generatable; with free monthly video quota = 3
-   (`TIER_LIMITS.free`), a free user can burn ~$0.45–0.54 of vendor cost
-   (grok-imagine-video is Grok-backend; Wan is fal but pro-tier) before paying.
-   That's an acceptable CAC, but it IS real spend — keep the free video quota tight.
+6. **Free-tier vendor exposure.** Free users can access only eligible free
+   models. Wan is pro-tier and unavailable without membership, while membership
+   sales are disabled. Before enablement, verify the current catalog and vendor
+   costs for every free model, then keep the free video quota tight.
 
 ---
 

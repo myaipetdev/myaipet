@@ -1,6 +1,14 @@
 # MY AI PET — 프로젝트 정의서
 
-> Updated: 2026-07-13
+> Updated: 2026-07-18
+>
+> **Launch truth:** Studio is live at `/studio`; `/studio_test` was removed.
+> External payments, OAuth connections, legacy agent channels, Pet-LoRA,
+> blockchain production integration, and referrals are disabled. PetClaw
+> Extension v2.3.2 is distributed only as a developer/unpacked ZIP and is not
+> published in the Chrome Web Store. Deployed contracts report
+> `paused()=false`, but no production write path is enabled and the observed
+> tracker totals/supply are 0.
 
 ## 한 줄 정의
 
@@ -26,7 +34,7 @@
 
 **현재 구현**
 - AI 챗 입양 (상담 에이전트가 종/성격/특질 추출) 또는 사진 업로드 입양
-- 아바타 가드 — `isHumanAvatar` (Grok vision, fail-open)가 사람 사진 입양을 차단
+- 아바타 가드 — 업로드의 `isPetPhoto`와 URL 기반 `isHumanAvatar`가 사람 사진/비검증 이미지를 fail-closed로 차단
 - 6 스탯 (happiness / energy / hunger / bond / EXP / level), 9 무드, 5단계 진화
 - Feed / Play / Talk / Pet / Walk / Train 인터랙션
 - Memory Timeline + Pet Daydream (펫이 메모리를 짝지어 "주인 생각" 통찰 생성)
@@ -53,18 +61,18 @@
 **정체성**: 프로페셔널 멀티-모델 AI 비디오/이미지 툴, 단 내 펫이 주인공.
 
 **현재 구현**
-- 9개 라이브 모델 (FLUX schnell/dev/PuLID, Kling standard/i2v, Seedance Lite, Wan 2.1, Grok image/video) + 3개 Coming Soon (Veo 3 — 400크레딧 책정, Kling Pro, MiniMax — 마진 보호)
+- 12개 catalog 엔트리: 기본 무료 3개, 판매 중이 아닌 멤버십에 묶인 6개, Coming Soon 3개
 - 펫 앵커 (PuLID/i2v로 내 펫 얼굴 고정), Image/Video 토글, 6 스타일
-- 템플릿 22종 (트렌딩 13 포함, hover-play 예시 영상 — `lib/studio/templates.ts` + `public/studio_examples/`)
+- 템플릿 22종 (트렌딩 12 포함, hover-play 예시 영상 — `lib/studio/templates.ts` + `public/studio_examples/`)
 - Prompt Director v2 — 2단계 질문 시트 프롬프트 코칭 (`/api/studio/prompt-director`)
-- 클라이언트 사이드 StudioEditor — WebCodecs/MediaRecorder 타임라인 편집, 무료 티어 워터마크 (`StudioEditor.tsx` + `lib/studio/editorEngine.ts`)
-- 실제 유료 API (fal.ai + xAI) 직결, credit 경제 — 1크레딧 = $0.05, 팩 100/500/2000크레딧 = 5/20/50 USDT, 결제는 SIWE + USDT(BSC) 전용 (Stripe/카드/이메일 없음)
+- 클라이언트 사이드 StudioEditor — WebCodecs/MediaRecorder 타임라인 편집. 현재 무료 베타는 HD/no-watermark export를 임시 허용 (`StudioEditor.tsx` + `lib/studio/editorEngine.ts`)
+- fal.ai + xAI 생성 백엔드와 credit 가격표 구현. 외부 결제는 launch-disabled (`PAYMENTS_ENABLED=false`)라 100/500/2000크레딧 USDT 팩은 현재 판매하지 않음
 - Memory → Video seed (daydream 인사이트를 프롬프트 씨앗으로)
 
 **업그레이드 방향** (우선순위순)
 | # | 업그레이드 | 왜 |
 |---|---|---|
-| 1 | Pet-LoRA 파인튜닝 | 펫 사진 3-5장 → LoRA 학습($2-3 1회) → 싼 base 모델로 무제한·일관 생성. 마진 5-10× + "내 펫 정확히 그 얼굴" |
+| 1 | Pet-LoRA 파인튜닝 (launch-disabled) | 펫 사진 3-5장 → LoRA 학습($2-3 1회) → 싼 base 모델로 무제한·일관 생성. 마진 5-10× + "내 펫 정확히 그 얼굴" |
 | 2 | Memory → Video 자동화 | daydream + memory ledger를 자동 합성 → "Sparky의 지난주" 회상 영상. 우리만 가진 데이터로 만든 콘텐츠 |
 | 3 | Persona 자동 프롬프트 | 펫 성격/무드가 생성 톤에 자동 반영 |
 | 4 | 에디터 고도화 | 1차 타임라인 에디터는 출시됨 (StudioEditor) → 멀티트랙/전환 등 Pro 편집 확장 |
@@ -106,7 +114,7 @@
 - SOUL export (memories + persona + skills + SHA-256 무결성 해시 → 다른 서버로 이주)
 - MCP 서버 (`npx petclaw-mcp`), `/.well-known/pet-card.json` discovery
 - Pet Daydream (default-mode-network), Bond Feedback Loop (관계 회고 → 다음 대화 context)
-- 네이티브 tool-calling 에이전트 — `callLLMWithTools` (`lib/llm/router.ts`) + `runToolAgent` 커넥터 툴 (web_search, web_read + SSRF 가드, wikipedia_lookup, crypto_price, recall_memory — `lib/petclaw/agent/tool-agent.ts`), `/api/pets/[petId]/agent`에서 `?stream=1` SSE 스트리밍
+- 네이티브 tool-calling 에이전트 — `callLLMWithTools` (`lib/llm/router.ts`) + `runToolAgent` 커넥터 툴 (web_search, wikipedia_lookup, crypto_price, recall_memory — `lib/petclaw/agent/tool-agent.ts`), `/api/pets/[petId]/agent`에서 `?stream=1` SSE 스트리밍. `web_read`는 선언돼 있지만 현재 unavailable 응답만 반환.
 - Plan-Execute 루프 (`lib/petclaw/agent/plan-execute.ts`) + GBrain 스타일 대용량 메모리 리트리벌 (`lib/petclaw/memory/retrieval.ts`)
 - LLM 라우터 + BYOK — 오너가 자기 모델 연결 (암호화 키, `/api/petclaw/models`)
 - 정직한 스킬 셋 18개 (실제 핸들러/엔드포인트가 있는 스킬만 집계)
@@ -131,21 +139,21 @@
 
 **정체성**: 펫이 항상 곁에 있게 (always-present companion).
 
-**현재 구현**: 로밍 데스크탑 펫, 페이지 인식, 스킬 레지스트리, v2.2.3
+**현재 구현**: 로밍 데스크탑 펫, 페이지 인식, 스킬 레지스트리, v2.3.2. 개발자용 unpacked ZIP으로만 배포하며 Chrome Web Store에는 게시되지 않음
 - 확장 케어(pet/treat/welcome) → 계정 season_points 연동 — 서버 권위·일일 캡 적용 `/api/petclaw/engagement` (ext_care는 pet/treat 공유 카운터, ext_welcome은 일일 인사)
 
 **업그레이드 방향** — agentic화
 - 페이지 위에서 행동: 현재 페이지를 펫이 요약/리서치/번역 ("Sparky, 이거 뭐야?")
 - 맥락 기반 proactive: 쇼핑몰이면 "이거 살 거야?", 긴 글이면 "요약해줄까?"
-- 크로스 서피스 메모리: 웹/확장/텔레그램/디스코드 같은 펫 기억 (cross-platform 설계됨)
+- 크로스 서피스 메모리: 웹/확장/텔레그램/디스코드 같은 펫 기억 (cross-platform 설계만 존재하며 외부 채널은 launch-disabled)
 
 > "로밍 위젯" → "맥락 인식 비서". Sovereignty의 agentic 레이어가 확장으로 발현.
 
 ---
 
-### 🏆 6. Season Rewards — 활동 유도 · 경쟁심리 · 온체인 활동 기록
+### 🏆 6. Season Rewards — 활동 유도 · 경쟁심리 · off-chain 기록
 
-**정체성**: 리텐션 엔진 + 온체인 활동 기록 + 지갑 등록 유도.
+**정체성**: 리텐션 엔진 + off-chain recognition + 지갑 로그인 유도. 온체인 production integration은 launch-disabled.
 *(네이밍: "Airdrop" 아님 — 항상 "Season Rewards". 포인트는 순수 off-chain·비금융 recognition score이며 토큰·현금·교환 약속이 전혀 없음. DB 컬럼 `season_points`, 코드 `lib/seasonRewards.ts`.)*
 
 **현재 구현** (통합 허브)
@@ -160,7 +168,7 @@
 | 계속 활동 | daily/hourly/weekly 다층 미션 + streak 손실회피 |
 | 포인트 기대감 | "Still on the table" 잔여 포인트 표시 + 시즌 랭크/티어 (SeasonTierCard) |
 | 경쟁심리 | 6탭 리더보드 (모두가 어딘가 1등) + podium |
-| 온체인 활동 기록 | PetaGenTracker 컨트랙트(BSC) 활동 기록 → BscScan 가시성 |
+| 온체인 활동 기록 | launch-disabled. 컨트랙트의 `paused()=false`와 별개로 production write path는 꺼져 있고, 관측된 tracker totals/supply는 0 |
 | 지갑 등록 | 입양·생성마다 wallet 활동 → 등록 wallet 수 = 등록 사용자 |
 | 노-토큰 원칙 | 토큰 없음. 포인트는 비금융 recognition — 교환·상환·배포 약속 금지 (`lib/seasonRewards.ts`에 명문화) |
 
@@ -180,8 +188,8 @@
 공유·상호작용 (Community)
    ↓ 활동마다
 포인트·streak (Season Rewards)
-   ↓ 온체인 기록
-지갑 활동 ↑ → 더 자주 옴 → 더 많은 기억 → 더 좋은 daydream → 더 좋은 콘텐츠 → …
+   ↓ off-chain recognition (온체인 production integration은 disabled)
+재방문 ↑ → 더 많은 기억 → 더 좋은 daydream → 더 좋은 콘텐츠 → …
 ```
 
 각 표면이 다음 표면의 연료가 되는 순환. 단순 기능 묶음이 아니라 누적적.

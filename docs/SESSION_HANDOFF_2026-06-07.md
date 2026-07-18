@@ -1,6 +1,10 @@
 # AIPET 세션 인수인계 — 2026-06-07
 
-> 새 세션에서 **이 파일부터 읽고** 이어가세요. (이전 세션은 macOS 파일-읽기 권한이 막혀 중단됨)
+> **HISTORICAL / SUPERSEDED:** 운영 인수인계로 사용하지 마세요. 현재 Studio는
+> `/studio`에서 라이브이며 `/studio_test`는 제거됐습니다. 외부 결제, OAuth,
+> legacy agent channels, Pet-LoRA, blockchain production integration, referrals는
+> launch-disabled입니다. PetClaw Extension은 v2.3.2 developer/unpacked ZIP이며
+> Chrome Web Store에 게시되지 않았습니다. 현재 운영 기준은 `docs/DEPLOYMENT.md`입니다.
 
 ---
 
@@ -19,7 +23,7 @@
 ### 대상 파일
 - `web/src/components/PetStudio.tsx` (717줄) — 메인 Studio UI (좌 라이브러리 / 중앙 프리뷰+타임라인 / 우 Inspector)
 - `web/src/components/PetVideoEditor.tsx` (321줄) — ffmpeg.wasm 인브라우저 에디터 (필요시 같이 톤 맞추기)
-- `web/src/app/studio_test/page.tsx` — staging 래퍼 (robots noindex, nav 미연결, "⚠ STAGING · NOT LIVE" 리본)
+- `/studio_test` staging 래퍼 — 역사적 대상이며 현재는 제거됨. 라이브 경로는 `/studio`
 
 ### 합의된 디자인 방향
 - **다크 테마**: 배경 `#0b0c10`, 패널 `#16181d`, 보더 `rgba(255,255,255,.06)`, 텍스트 흐림 단계. ← "장난감 탈출"의 핵심.
@@ -34,11 +38,11 @@
 - 미해결 선호(기본값=정제된 다크+앰버 액센트): 브랜드 앰버를 더 살릴지 vs 라이트 유지 정제. → 진행하며 사용자에게 확인 가능.
 
 ### Studio 아키텍처 (리디자인 시 참고 — 데이터 계약)
-- **API**: `GET /api/studio/providers`(모델 13개, tier free/pro/studio) · `GET /api/studio/templates`(22개) · `GET /api/studio/subscription` · `POST /api/studio/generate {modelId, petId, templateId|prompt, customDirection}` · `GET /api/studio/generate/[jobId]`(폴링) · `GET /api/pets`.
+- **API**: `GET /api/studio/providers`(현재 모델 엔트리 12개, tier free/pro/studio) · `GET /api/studio/templates`(22개) · `GET /api/studio/subscription` · `POST /api/studio/generate {modelId, petId, templateId|prompt, customDirection}` · `GET /api/studio/generate/[jobId]`(폴링) · `GET /api/pets`.
 - **lib/studio/**: `providers.ts`, `templates.ts`, `backend.ts`(FAL queue + Grok 실제 호출), `subscription.ts`(3-tier, 월 한도; DB 모델 `UserSubscription`, `StudioMonthlyUsage`).
-- **상태**: Studio는 **라이브 아님** — 5/29에 라이브에서 롤백, `/studio_test` staging으로 이동.
-- **알려진 갭**(리디자인과 별개): `public/studio_music/*.mp3` 누락(에디터 음악 깨짐); `/api/upload`가 **이미지 전용**이라 에디터 mp4 export→업로드 경로 미작동 가능(비디오 업로드 경로 필요); UI는 5/29 이후 손 안 댐.
-- **완성도 추정**: 백엔드/API ~90-95%, 구독 ~95%, UI 셸 ~80%, 에디터 ~70%, 라이브 출시 0%(의도적 staging).
+- **현재 상태 정정 (2026-07-18)**: Studio는 `/studio`에서 라이브이며 `/studio_test`는 제거됨.
+- **현재 상태 정정 (2026-07-18)**: 에디터 음악은 WebAudio로 합성하므로 `public/studio_music/*.mp3`에 의존하지 않음. `/api/upload`는 아바타 이미지 전용이므로, 에디터 mp4를 서버에 저장하는 기능을 추가할 경우 별도의 owner-private 비디오 업로드 경로가 필요함.
+- **역사적 완성도 추정 (2026-06-07 당시)**: 백엔드/API ~90-95%, 구독 ~95%, UI 셸 ~80%, 에디터 ~70%. 현재 라이브 상태 판단에는 사용하지 않음.
 
 ---
 
@@ -52,12 +56,12 @@
 - 마이그레이션: `web/prisma/migrations/20260604000000_security_hardening/migration.sql` (consumed_payments 테이블 + 유니크/인덱스).
 
 ### 온체인 교체 가능성 레이어 (`lib/onchain.ts`)
-- 트레저리 지갑·체인·USDT·컨트랙트 주소·검증 로직을 **env로 교체 가능**하게 중앙화. 기본값=현재 BSC/USDT(동작 불변).
+- 트레저리 지갑·체인·USDT·컨트랙트 주소·검증 로직을 **env로 교체 가능**하게 중앙화. 구현된 주소나 키만으로 기능이 켜지지 않으며 production integration은 launch-disabled.
 - 결제 검증 메커니즘 교체점: `getUsdtVerifier()` / `UsdtVerifier` 인터페이스. 결제 라우트는 전부 `verifyUsdtTransfer()` 호출.
 
 ### ⚠️ 배포 전 필수 운영 조치 (보안 수정이 fail-closed라 미설정 시 기능 중단)
 1. `npx prisma migrate deploy` — `consumed_payments` 등 없으면 결제 라우트 런타임 오류.
-2. `TREASURY_WALLET` 설정 — 미설정 시 모든 USDT 결제 503.
+2. 외부 결제는 현재 `PAYMENTS_ENABLED=false`. 향후 별도 체크리스트를 통과해 enable할 때만 `TREASURY_WALLET`을 설정·검증.
 3. `CRON_SECRET` 설정(+Vercel Cron `Authorization: Bearer $CRON_SECRET`) — 미설정 시 크론 503.
 4. (선택) `SIWE_ALLOWED_DOMAINS`.
 5. 시크릿 로테이션: Grok·Neon DB·FAL·AGENT_ENCRYPTION_KEY·CRON_SECRET·JWT_SECRET.
@@ -71,7 +75,7 @@
 2. `git status` / `git branch` 로 `security-hardening-2026-06` 상태 확인 (작업 트리에 미커밋 변경 다수 — 정상).
 3. `web/src/components/PetStudio.tsx` 통독 → 위 디자인 방향대로 비주얼만 리디자인 (로직 보존).
 4. `cd web && node node_modules/typescript/bin/tsc --noEmit` 로 회귀 확인 (기준선: 기존 에러 11건).
-5. 가능하면 staging(`/studio_test`)에서 시각 확인.
+5. 현재 라이브 경로(`/studio`)에서 시각 확인. 제거된 `/studio_test`는 사용하지 않음.
 
 ---
 *프로젝트 루트: `/Users/max/Documents/개발/aipet-project 2` · 메인 앱: `web/` (Next.js 16, Prisma/Postgres) · 작업 브랜치: `security-hardening-2026-06`*

@@ -129,9 +129,9 @@ console.log(res.output.reply);
 | `web/` | The Next.js app — consumer product + every `/api/*` route (PetClaw protocol endpoints included) |
 | `packages/petclaw` | `@myaipet/petclaw-sdk` — CLI, MCP server, client library, skill docs |
 | `desktop-pet/` | Chrome extension — your pet walks the page you're on; daily care actions feed capped season points via `/api/petclaw/engagement` |
-| `contracts/` | Hardhat contracts for on-chain anchoring (currently paused) |
+| `contracts/` | Hardhat contract sources; production integration is disabled, while the two deployed BSC contracts returned `paused() = false` at launch review |
 | `tools/demo-video/` | Repeatable product-video production kit |
-| `deploy/` | EC2 / RDS deploy scripts + env checklist |
+| `deploy/` | Signed-artifact EC2 deployment, backup, rollback, and environment checks; RDS helpers are historical only |
 | `landing-assets/` | Static marketing site (myaipet.ai) — served separately from the app |
 | `docs/` | Architecture, economy, security-audit and DD docs |
 

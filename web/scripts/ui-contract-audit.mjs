@@ -46,6 +46,19 @@ const retiredCopy = [
   "Open the Home tab to buy more credits",
   "Buy more credits on the Home tab",
   "Add credits and try again.",
+  "Deployed (paused)",
+  "remain paused on BSC",
+  "are deployed and paused on BSC",
+  "ON-CHAIN · PAUSED",
+  "2 Deployed · 2 Paused",
+  "On-chain minting is paused",
+  "non-upgradeable and paused",
+  "currently `1.6.0`",
+  "likes, DMs",
+  "reactions, channel management",
+  "Search + page summarization (no API key needed)",
+  "grab a credit pack",
+  "top up to keep hunting",
 ];
 
 const requiredUiContracts = [
@@ -58,6 +71,26 @@ const requiredUiContracts = [
     file: "web/src/components/PetClawPreview.tsx",
     description: "logged-out visitors must receive the public extension onboarding and download",
     pattern: /id="petclaw-extension"[\s\S]*?PETCLAW_EXTENSION_STEPS\.map[\s\S]*?href="\/petclaw-extension\.zip"[\s\S]*?Download Extension/,
+  },
+  {
+    file: "web/public/api-docs/API.md",
+    description: "public API examples must identify the current SDK and label synthetic metrics",
+    pattern: /SDK package\*\* version \(currently `1\.6\.1`\)[\s\S]*?numeric values below are illustrative, not launch metrics[\s\S]*?"totalSoulNfts": 0/,
+  },
+  {
+    file: "web/src/app/contracts/page.tsx",
+    description: "PETContent disclosure must include its exact address, disabled integration status, and zero supply",
+    pattern: /name: "PETContent \(NFT\)"[^\n]*0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c[^\n]*status: "Deployed \(integration off\)"[^\n]*paused\(\) was false and totalSupply\(\) = 0/,
+  },
+  {
+    file: "web/src/app/contracts/page.tsx",
+    description: "PetaGenTracker disclosure must include its exact address, disabled integration status, and zero counters",
+    pattern: /name: "PetaGenTracker"[^\n]*0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a[^\n]*status: "Deployed \(integration off\)"[^\n]*paused\(\) was false, totalUsers\(\) = 0, and totalGenerations\(\) = 0/,
+  },
+  {
+    file: "web/src/app/contracts/page.tsx",
+    description: "public contract disclosure must separate the disabled app gate from on-chain state and active owner permissions",
+    pattern: /all blockchain integration disabled[\s\S]*?paused\(\) = false[\s\S]*?BLOCKCHAIN_ENABLED=false[\s\S]*?owner relayer\/minter authorization remains active/,
   },
   {
     file: "web/src/components/App.tsx",
@@ -521,11 +554,20 @@ function auditHtml(file) {
 for (const file of walk(path.join(webRoot, "src"), (file) => /\.(?:tsx|jsx)$/.test(file))) auditTsx(file);
 for (const file of walk(path.join(webRoot, "src"), (file) => /\.(?:ts|js)$/.test(file))) {
   const text = fs.readFileSync(file, "utf8");
+  inventory.uiFiles++;
+  if (hangul.test(text)) failures.push(`${relative(file)}: runtime source contains Korean text`);
+  auditRetiredCopy(file, text);
   auditAbsoluteAssetLiterals(file, text, path.join(webRoot, "public"), true);
   auditStaticFetchTargets(file, text);
 }
 for (const dir of [path.join(repoRoot, "landing-assets"), path.join(repoRoot, "desktop-pet")]) {
   for (const file of walk(dir, (file) => file.endsWith(".html"))) auditHtml(file);
+}
+for (const file of walk(path.join(webRoot, "public"), (file) => /\.(?:html|md|txt)$/i.test(file))) {
+  const text = fs.readFileSync(file, "utf8");
+  inventory.uiFiles++;
+  if (hangul.test(text)) failures.push(`${relative(file)}: public text contains Korean text`);
+  auditRetiredCopy(file, text);
 }
 
 for (const contract of requiredUiContracts) {

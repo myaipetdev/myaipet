@@ -1963,7 +1963,7 @@ export default function SovereigntyDashboard() {
                 fontSize: 13,
                 color: MUTED,
               }}>
-                On-chain minting is paused. Records without a transaction hash remain off-chain history — see <a href="/contracts" style={{ color: TERRA_SUB, fontWeight: 700, textDecoration: "none" }}>/contracts</a>.
+                Production on-chain mint integration is disabled. Records without a transaction hash remain off-chain history — see <a href="/contracts" style={{ color: TERRA_SUB, fontWeight: 700, textDecoration: "none" }}>/contracts</a>.
               </span>
             </div>
 

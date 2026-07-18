@@ -212,8 +212,8 @@ export async function PATCH(
         return NextResponse.json({ error: "Avatar media is not owned by this account" }, { status: 403 });
       }
       // Pet avatars must be an animal/creature, not a human — this mirrors into
-      // the public Community showcase. Ordinary vendor errors fail open, while
-      // spend-cap/store failures return 429/503 and cannot be bypassed.
+      // the public Community showcase. Ordinary vendor errors fail closed,
+      // while spend-cap/store failures return 429/503 and cannot be bypassed.
       try {
         if (await isHumanAvatar(safeAvatar, user.id)) {
           return NextResponse.json(

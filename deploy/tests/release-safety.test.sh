@@ -138,6 +138,24 @@ petclaw_expect_success "all release scripts parse" /bin/bash -n \
 petclaw_expect_success "database URL parser boundaries pass" \
   node "${PETCLAW_TEST_ROOT}/deploy/tests/database-url-parser.test.mjs"
 
+petclaw_expect_success "UI contract audit runs before build, migration, and traffic switch" \
+  node - "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" <<'NODE'
+const fs = require("node:fs");
+const source = fs.readFileSync(process.argv[2], "utf8");
+const ordered = [
+  "npm_config_engine_strict=true npm ci --ignore-scripts --no-audit --no-fund",
+  "npx prisma generate",
+  "npm run test:ui-contract",
+  "npm run build",
+  "npx prisma migrate deploy",
+  'sudo install -o root -g root -m 644 "${PETCLAW_NGINX_RENDERED}" "${PETCLAW_NGINX_SITE}"',
+].map((needle) => source.indexOf(needle));
+if (ordered.some((index) => index < 0)
+  || ordered.some((index, position) => position > 0 && index <= ordered[position - 1])) {
+  process.exit(1);
+}
+NODE
+
 petclaw_expect_success "nginx frame and release-header trust boundaries pass" \
   node - "${PETCLAW_TEST_ROOT}/deploy/nginx-petclaw.conf.template" <<'NODE'
 const fs = require("node:fs");
@@ -219,6 +237,7 @@ for PETCLAW_CONTRACT in \
   'ec2-release.sh:! -perm -040' \
   'ec2-release.sh:-perm /007' \
   'ec2-release.sh:REFERRALS_ENABLED' \
+  'ec2-release.sh:npm run test:ui-contract' \
   'ec2-release.sh:/bin/bash "${PETCLAW_RELEASE_SOURCE}/deploy/release-smoke.sh"' \
   'ec2-release.sh:"${PETCLAW_RELEASE_SOURCE}/deploy/release-boot-guard.sh"' \
   'ec2-release.sh:"${PETCLAW_RELEASE_SOURCE}/deploy/petclaw-release-boot-guard.service"' \
@@ -227,6 +246,11 @@ for PETCLAW_CONTRACT in \
   'release-rollback-watchdog.sh:flock -w 900' \
   'release-rollback-watchdog.sh:exec 9<>"${PETCLAW_RELEASE_LOCK}"' \
   'release-rollback-watchdog.sh:stale watchdog generation refused' \
+  'release-smoke.sh:expect_env_exact PAYMENTS_ENABLED false' \
+  'release-smoke.sh:expect_env_exact OAUTH_CONNECTIONS_ENABLED false' \
+  'release-smoke.sh:expect_env_exact AGENT_CHANNELS_ENABLED false' \
+  'release-smoke.sh:expect_env_exact PET_LORA_ENABLED false' \
+  'release-smoke.sh:expect_env_exact BLOCKCHAIN_ENABLED false' \
   'release-boot-guard.sh:--ensure-lock' \
   'release-boot-guard.sh:stale boot rollback intent refused' \
   'build-release-artifact.sh:--detach-sign' \
@@ -341,17 +365,17 @@ awk '/^petclaw_verify_landing_body\(\) \{/{copy=1} copy{print} copy && /^\}$/{ex
 # shellcheck source=/dev/null
 source "${PETCLAW_LANDING_FUNCTION}"
 if ! {
-  printf '%s' '/api/petclaw/demo-chat'
+  printf '%s' '/api/petclaw/demo-chat ON-CHAIN · INTEGRATION OFF'
   awk 'BEGIN { for (i = 0; i < 200000; i += 1) printf "x" }'
 } | petclaw_verify_landing_body; then
   echo "FAIL: landing verifier cannot stream a body above Linux single-argument limits" >&2
   exit 1
 fi
-if printf '%s' '/api/petclaw/demo-chat Hangul: 한' | petclaw_verify_landing_body; then
+if printf '%s' '/api/petclaw/demo-chat ON-CHAIN · INTEGRATION OFF Hangul: 한' | petclaw_verify_landing_body; then
   echo "FAIL: streaming landing verifier accepts Hangul" >&2
   exit 1
 fi
-if printf '%s' 'English landing without the demo endpoint' | petclaw_verify_landing_body; then
+if printf '%s' 'ON-CHAIN · INTEGRATION OFF English landing without the demo endpoint' | petclaw_verify_landing_body; then
   echo "FAIL: streaming landing verifier accepts a missing demo endpoint" >&2
   exit 1
 fi
@@ -370,6 +394,57 @@ if ! grep -Fq '|| "${PETCLAW_LANDING_CODE}" != "200" ]]' \
   echo "FAIL: landing body verification is not preceded by an exact HTTP 200 gate" >&2
   exit 1
 fi
+
+PETCLAW_CONTRACT_DISCLOSURE_FUNCTION="${PETCLAW_TEST_TMP}/contract-disclosure-function.sh"
+awk '/^petclaw_verify_contract_disclosure\(\) \{/{copy=1} copy{print} copy && /^\}$/{exit}' \
+  "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" \
+  > "${PETCLAW_CONTRACT_DISCLOSURE_FUNCTION}"
+# shellcheck source=/dev/null
+source "${PETCLAW_CONTRACT_DISCLOSURE_FUNCTION}"
+PETCLAW_GOOD_CONTRACT_DISCLOSURE='all blockchain integration disabled paused() = false BLOCKCHAIN_ENABLED=false owner relayer/minter authorization remains active PETContent (NFT) 0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c On-chain paused() was false and totalSupply() = 0 PetaGenTracker 0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a On-chain paused() was false, totalUsers() = 0, and totalGenerations() = 0 DEPLOYED (INTEGRATION OFF)'
+if ! printf '%s' "${PETCLAW_GOOD_CONTRACT_DISCLOSURE}" \
+  | petclaw_verify_contract_disclosure; then
+  echo "FAIL: exact public contract disclosure is rejected" >&2
+  exit 1
+fi
+if printf '%s' 'all blockchain integration disabled paused() = false BLOCKCHAIN_ENABLED=false owner relayer/minter authorization remains active PETContent (NFT) 0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c On-chain paused() was false and totalSupply() = 0 DEPLOYED (INTEGRATION OFF)' \
+  | petclaw_verify_contract_disclosure; then
+  echo "FAIL: disclosure missing the tracker tuple is accepted" >&2
+  exit 1
+fi
+if printf '%s' "${PETCLAW_GOOD_CONTRACT_DISCLOSURE} Deployed (paused)" \
+  | petclaw_verify_contract_disclosure; then
+  echo "FAIL: retired paused-contract disclosure is accepted" >&2
+  exit 1
+fi
+if ! {
+  printf '%s' "${PETCLAW_GOOD_CONTRACT_DISCLOSURE}"
+  awk 'BEGIN { for (i = 0; i < 300000; i += 1) printf "x" }'
+} | petclaw_verify_contract_disclosure; then
+  echo "FAIL: contract disclosure verifier cannot stream a large response body" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 4))"
+
+PETCLAW_ECOSYSTEM_DOC="${PETCLAW_TEST_ROOT}/web/public/api-docs/ECOSYSTEM.md"
+if ! grep -Fq 'Production on-chain integration is disabled.' "${PETCLAW_ECOSYSTEM_DOC}" \
+  || ! grep -Fq 'returned `paused() = false` with zero activity/supply counters' \
+    "${PETCLAW_ECOSYSTEM_DOC}" \
+  || grep -Fq 'contracts remain paused' "${PETCLAW_ECOSYSTEM_DOC}"; then
+  echo "FAIL: public ecosystem document does not preserve the verified launch state" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
+
+if ! grep -Fq 'd?.blockchain_enabled!==false' \
+    "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" \
+  || ! grep -Fq 'typeof d?.contracts!=="object"||d.contracts===null||Array.isArray(d.contracts)||Object.keys(d.contracts).length!==0' \
+    "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh"; then
+  echo "FAIL: release smoke does not enforce the disabled blockchain config" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
+
 PETCLAW_FETCH_FUNCTION="${PETCLAW_TEST_TMP}/landing-fetch-function.sh"
 awk '/^petclaw_fetch_landing\(\) \{/{copy=1} copy{print} copy && /^\}$/{exit}' \
   "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" > "${PETCLAW_FETCH_FUNCTION}"
@@ -381,7 +456,7 @@ PETCLAW_SMOKE_HOST=127.0.0.1
 PETCLAW_SMOKE_BODY="${PETCLAW_TEST_TMP}/partial-landing"
 PETCLAW_SMOKE_HEADERS="${PETCLAW_TEST_TMP}/partial-landing-headers"
 curl() {
-  printf '%s' '/api/petclaw/demo-chat' > "${PETCLAW_SMOKE_BODY}"
+  printf '%s' '/api/petclaw/demo-chat ON-CHAIN · INTEGRATION OFF' > "${PETCLAW_SMOKE_BODY}"
   printf '%s' '200'
   return 18
 }

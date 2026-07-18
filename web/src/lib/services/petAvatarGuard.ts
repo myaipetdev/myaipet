@@ -4,9 +4,10 @@
  * anti-cheat), this is permissive on style — real photo, illustration, or
  * AI-generated art are all fine — and only screens out confident humans.
  *
- * Fail-OPEN on ordinary vendor/network errors: a Grok hiccup must not block a
- * legitimate adoption. Spend-cap and spend-store failures are different: they
- * propagate so callers cannot bypass the cluster-wide vision guard.
+ * Fail-CLOSED on ordinary vendor/network errors: client-supplied avatar URLs
+ * feed the public Community surface, so an unavailable classifier must not let
+ * an unverified image through. Spend-cap and spend-store failures propagate so
+ * callers receive their exact 429/503 boundary.
  *
  * Shared by the pet-create (POST /api/pets) and pet-edit (PATCH
  * /api/pets/[petId]) paths — both accept a client-supplied avatar_url that
@@ -40,7 +41,7 @@ export async function isHumanAvatar(imageUrl: string, authenticatedUserId: numbe
     return answer.startsWith("HUMAN");
   } catch (e) {
     if (isLLMBudgetError(e) || isLLMBudgetStoreError(e)) throw e;
-    console.error("[petAvatarGuard] avatar human-check failed, failing open:", e);
-    return false; // fail open on network/timeout error
+    console.error("[petAvatarGuard] avatar human-check failed, failing closed:", e);
+    return true;
   }
 }

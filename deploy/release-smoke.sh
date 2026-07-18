@@ -126,7 +126,10 @@ petclaw_verify_landing_body() {
     process.stdin.on("data", (chunk) => { body += chunk; });
     process.stdin.on("end", () => {
       const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
-      if (hangul.test(body) || !body.includes("/api/petclaw/demo-chat")) process.exitCode = 1;
+      if (hangul.test(body)
+        || !body.includes("/api/petclaw/demo-chat")
+        || !body.includes("ON-CHAIN · INTEGRATION OFF")
+        || body.includes("2 Deployed · 2 Paused")) process.exitCode = 1;
     });
   '
 }
@@ -139,6 +142,32 @@ petclaw_verify_product_demo_body() {
     process.stdin.on("end", () => {
       const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
       if (hangul.test(body) || !body.includes("id=\"playBtn\"") || !body.includes("id=\"replayBtn\"")) process.exitCode = 1;
+    });
+  '
+}
+
+petclaw_verify_contract_disclosure() {
+  node -e '
+    let body = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", (chunk) => { body += chunk; });
+    process.stdin.on("end", () => {
+      const required = [
+        "all blockchain integration disabled",
+        "paused() = false",
+        "BLOCKCHAIN_ENABLED=false",
+        "owner relayer/minter authorization remains active",
+        "PETContent (NFT)",
+        "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c",
+        "On-chain paused() was false and totalSupply() = 0",
+        "PetaGenTracker",
+        "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a",
+        "On-chain paused() was false, totalUsers() = 0, and totalGenerations() = 0",
+        "DEPLOYED (INTEGRATION OFF)",
+      ];
+      if (required.some((value) => !body.includes(value)) || body.includes("Deployed (paused)")) {
+        process.exitCode = 1;
+      }
     });
   '
 }
@@ -162,6 +191,11 @@ expect_env_exact AVATAR_PREVIEW_TTL_HOURS 24
 expect_env_exact LOCAL_STORAGE_MIN_FREE_BYTES 2147483648
 expect_env_exact VISION_DAILY_CAP 300
 expect_env_exact VISION_USER_DAILY_CAP 30
+expect_env_exact PAYMENTS_ENABLED false
+expect_env_exact OAUTH_CONNECTIONS_ENABLED false
+expect_env_exact AGENT_CHANNELS_ENABLED false
+expect_env_exact PET_LORA_ENABLED false
+expect_env_exact BLOCKCHAIN_ENABLED false
 expect_env_exact REFERRALS_ENABLED false
 
 if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
@@ -215,7 +249,19 @@ fi
 
 expect_code 200 GET "/api/health"
 PAYMENT_CONFIG_BODY="$(petclaw_curl "${PETCLAW_SMOKE_BASE}/api/config")"
-node -e 'const d=JSON.parse(process.argv[1]); if(d?.payments_enabled!==false||d?.treasury!==""||d?.usdt!==""||d?.oauth_connections_enabled!==false||d?.agent_channels_enabled!==false) process.exit(1)' "${PAYMENT_CONFIG_BODY}"
+node -e 'const d=JSON.parse(process.argv[1]); if(d?.payments_enabled!==false||d?.treasury!==""||d?.usdt!==""||d?.blockchain_enabled!==false||typeof d?.contracts!=="object"||d.contracts===null||Array.isArray(d.contracts)||Object.keys(d.contracts).length!==0||d?.oauth_connections_enabled!==false||d?.agent_channels_enabled!==false) process.exit(1)' "${PAYMENT_CONFIG_BODY}"
+expect_code 200 GET "/contracts"
+if ! petclaw_verify_contract_disclosure < "${PETCLAW_SMOKE_BODY}"; then
+  echo "ERROR: public contract disclosure does not match the verified launch state." >&2
+  exit 1
+fi
+expect_code 200 GET "/api-docs/ECOSYSTEM.md"
+if ! grep -Fq 'returned `paused() = false` with zero activity/supply counters' \
+    "${PETCLAW_SMOKE_BODY}" \
+  || grep -Fq "contracts remain paused" "${PETCLAW_SMOKE_BODY}"; then
+  echo "ERROR: public ecosystem documentation does not match the verified launch state." >&2
+  exit 1
+fi
 expect_code 503 GET "/api/auth/oauth/discord?petId=1"
 expect_code 503 GET "/api/auth/oauth/discord/callback?code=synthetic&state=synthetic"
 expect_code 503 POST "/api/auth/oauth/telegram/callback?state=synthetic" -H "Content-Type: application/json" -d '{}'

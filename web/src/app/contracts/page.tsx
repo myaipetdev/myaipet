@@ -6,8 +6,8 @@ export const metadata: Metadata = {
 };
 
 const CONTRACTS = [
-  { name: "PETContent (NFT)",       addr: "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c", status: "Deployed (paused)", note: "Legacy ERC-721 for generated content + memory anchors on BSC; Base replacement is planned" },
-  { name: "PetaGenTracker",         addr: "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a", status: "Deployed (paused)", note: "Legacy generation-event recorder on BSC; Base replacement is planned" },
+  { name: "PETContent (NFT)",       addr: "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c", status: "Deployed (integration off)", note: "Production integration is disabled. On-chain paused() was false and totalSupply() = 0 at the 2026-07-18 launch review." },
+  { name: "PetaGenTracker",         addr: "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a", status: "Deployed (integration off)", note: "Production integration is disabled. On-chain paused() was false, totalUsers() = 0, and totalGenerations() = 0 at the 2026-07-18 launch review." },
   { name: "PETActivity",            addr: "TBD",                                          status: "Planned",    note: "Per-user activity recorder (gasless, roadmap)" },
   { name: "PETSoul",                addr: "TBD",                                          status: "Planned",    note: "Pet identity registry + successor inheritance (roadmap)" },
 ];
@@ -31,10 +31,12 @@ export default function ContractsPage() {
           Smart Contracts
         </h1>
         <p style={{ fontSize: 15, color: "rgba(33,26,18,0.65)", marginBottom: 32, lineHeight: 1.6 }}>
-          Two production contracts were deployed on <strong>BNB Smart Chain (chain id 56)</strong>{" "}
-          during the build and remain <strong>paused</strong>. They are not part of the live product flow.
-          A replacement deployment on <strong>Base</strong> and an external audit are planned, but
-          neither is complete and no activation date is announced. See the disclosure below.
+          Two legacy provenance contracts were deployed on <strong>BNB Smart Chain (chain id 56)</strong>{" "}
+          during the build. The production app has <strong>all blockchain integration disabled</strong>,
+          but that server-side gate is not the same as an on-chain pause: both contracts returned
+          <code>paused() = false</code> at the 2026-07-18 launch review. Neither contract is part of the
+          live product flow. A replacement deployment on <strong>Base</strong> and an external audit are
+          planned, but neither is complete and no activation date is announced.
         </p>
 
         <div style={{
@@ -43,11 +45,13 @@ export default function ContractsPage() {
           border: "1px solid rgba(190,79,40,0.25)",
           fontSize: 13, color: "#9A4E1E", marginBottom: 32, lineHeight: 1.6,
         }}>
-          <strong>Holding period notice (2026-Q2)</strong><br/>
+          <strong>Integration holding-period notice (verified 2026-07-18)</strong><br/>
           Server-side on-chain recording and NFT minting are disabled. Enabling them would require
           a reviewed Base deployment, verified contracts, relayer controls, and a completed external
           security audit. Passing those milestones does not imply an automatic launch; status changes
-          will be published here before any user-facing activation.
+          will be published here before any user-facing activation. The current owner wallet remains
+          authorized as a tracker relayer and NFT minter; pausing or changing those on-chain permissions
+          requires an owner-wallet transaction outside this web deployment.
         </div>
 
         <div style={{ display: "grid", gap: 12, marginBottom: 40 }}>
@@ -95,10 +99,12 @@ export default function ContractsPage() {
           Audits
         </h2>
         <div style={{ padding: 16, borderRadius: 14, background: "#FBF6EC", border: "1px solid rgba(33,26,18,0.13)" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Internal review — In progress</div>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Internal source review — Completed</div>
           <div style={{ fontSize: 13, color: "rgba(33,26,18,0.55)", lineHeight: 1.55 }}>
-            Core team review of the two deployed contracts. External audit firm announcements
-            will be published here once finalized — not before.
+            A prior internal Solidity source review covered four contracts and recorded its fixes.
+            Deployment-specific bytecode and owner-permission verification remains in progress;
+            no external audit is complete. Any external audit announcement will be published here
+            only after it is finalized.
           </div>
         </div>
 
@@ -108,9 +114,10 @@ export default function ContractsPage() {
         <ul style={{ fontSize: 14, lineHeight: 1.8, color: "rgba(33,26,18,0.75)", paddingLeft: 18 }}>
           <li>Deployer wallet: <code style={{ fontSize: 13 }}>0x872d5f7F03894EE5c8b84D22868009B58b927357</code></li>
           <li>Upgradeability: deployed contracts are <strong>non-upgradeable</strong>.</li>
-          <li>Current status: team-controlled owner / relayer operations while on-chain features are paused.</li>
+          <li>Current app status: <code style={{ fontSize: 13 }}>BLOCKCHAIN_ENABLED=false</code>; no production route submits contract writes.</li>
+          <li>Current contract status (checked 2026-07-18): both <code style={{ fontSize: 13 }}>paused()</code> reads returned <strong>false</strong>; owner relayer/minter authorization remains active.</li>
           <li>Owner privileges: pause/unpause where supported, relayer and admin operations for deployed provenance contracts.</li>
-          <li>Legacy PETToken/PETShop contracts are not part of the live user flow; their owner controls include minter management, tier changes, pause, and USDT withdrawal until formally deprecated or transferred to multisig.</li>
+          <li>Legacy PETToken/PETShop source code is outside the live flow. Deployment addresses and current owner state are not evidenced here; source-defined controls include minter management, tier changes, pause, and USDT withdrawal.</li>
         </ul>
       </div>
     </div>

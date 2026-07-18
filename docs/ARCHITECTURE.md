@@ -4,7 +4,7 @@
 
 ## Overview
 
-MY AI PET is a Web3-native AI pet platform. Users sign in with their wallet (SIWE-style message signing), adopt AI-driven pets, interact with them through daily activities, generate images and videos in Pet Studio, and earn **season points** — a non-financial recognition score ("Season Rewards"). The platform is deliberately **no-token**: there is no platform token and no redemption promise. The system is a single Next.js App Router monolith (`web/`), accompanied by Solidity contracts (on-chain features currently paused), the PetClaw SDK/CLI, and a Chrome desktop-pet extension.
+MY AI PET is a Web3-native AI pet platform. Users sign in with their wallet (SIWE-style message signing), adopt AI-driven pets, interact with them through daily activities, generate images and videos in Pet Studio, and earn **season points** — a non-financial recognition score ("Season Rewards"). The platform is deliberately **no-token**: there is no platform token and no redemption promise. The system is a single Next.js App Router monolith (`web/`), accompanied by Solidity contracts (production integration is launch-disabled; the deployed contracts are not paused), the PetClaw SDK/CLI, and a Chrome desktop-pet extension.
 
 ---
 
@@ -14,16 +14,18 @@ MY AI PET is a Web3-native AI pet platform. Users sign in with their wallet (SIW
 |-------|-----------|-------|
 | Web (primary) | Next.js 16, React 19, TypeScript | App Router, `output: "standalone"` — the entire app (UI + API) |
 | Runtime | Node.js under PM2 (`petclaw-web`) behind nginx on EC2 | A signed immutable artifact is uploaded over the operator PEM and activated by `deploy/ec2-release.sh`; `docker-compose.yml` is local-only |
-| Smart Contracts | Solidity 0.8.28, Hardhat, OpenZeppelin | Deployed on BSC, currently **paused**; Base migration planned (see `/contracts` page) |
+| Smart Contracts | Solidity 0.8.28, Hardhat, OpenZeppelin | Deployed on BSC; production integration is disabled (`BLOCKCHAIN_ENABLED=false`), while both deployed contracts currently return `paused() == false`; Base migration planned (see `/contracts` page) |
 | Database | PostgreSQL 16 on the production EC2 host | Prisma ORM v7; `web/.env.production` points to the host-local database. Old RDS migration scripts are historical and unused live. |
-| AI | LLM router (`web/src/lib/llm/router.ts`) | Grok (x.ai) by default; owner-connected BYOK models via `/api/petclaw/models`; images via Grok (+ optional fal.ai pet-LoRA); video via Studio provider catalog |
+| AI | LLM router (`web/src/lib/llm/router.ts`) | Grok (x.ai) by default; owner-connected BYOK models via `/api/petclaw/models`; images via Grok (the fal.ai pet-LoRA path is launch-disabled); video via Studio provider catalog |
 | Storage | EC2-local disk (`web/src/lib/storage.ts`) | Live mode is `STORAGE_PROVIDER=local` at `/opt/petclaw/uploads`; nginx proxies `/uploads` to the protected app route. The S3 adapter is not configured live. |
 | Wallet | RainbowKit + wagmi + `siwe` | Wallet signature → JWT (`jose`); no email/password accounts |
-| Payments | USDT (BEP-20) on BSC, verified on-chain | SIWE + USDT only — no Stripe, no cards, no email billing |
+| Payments | USDT (BEP-20) verification code on BSC | Production purchases are disabled (`PAYMENTS_ENABLED=false`); the implemented design is SIWE + USDT only — no Stripe, cards, or email billing |
 
 **Live URLs:**
 - App: https://app.myaipet.ai (Next.js on EC2)
 - Marketing: https://myaipet.ai — static `landing-assets/` from the same signed immutable release selected by `/opt/petclaw/current`; there is no manual production sync
+
+**Production launch gates (2026-07-18):** `PAYMENTS_ENABLED=false`, `BLOCKCHAIN_ENABLED=false`, `PET_LORA_ENABLED=false`, `OAUTH_CONNECTIONS_ENABLED=false`, `AGENT_CHANNELS_ENABLED=false`, and `REFERRALS_ENABLED=false`. The corresponding implementations remain in source but are unavailable in production until their separate enablement checklists pass.
 
 ---
 
@@ -40,8 +42,8 @@ aipet-project/
 │   │                           #   payments + onchain, storage, petMechanics
 │   └── prisma/                 # Database schema & migrations
 │
-├── contracts/                  # Solidity sources (BSC; on-chain features paused)
-│   ├── contracts/              # 6 .sol files (2 deployed-paused, 2 planned, 2 legacy)
+├── contracts/                  # Solidity sources (BSC integration launch-disabled)
+│   ├── contracts/              # 6 .sol files (2 deployed with paused()==false at review, 2 planned, 2 legacy)
 │   └── hardhat.config.cjs      # Hardhat configuration
 │
 ├── packages/petclaw/           # @myaipet/petclaw-sdk — SDK + `petclaw` CLI (git submodule)
@@ -86,9 +88,9 @@ The former FastAPI backend and legacy React+Vite frontend have been removed; eve
           ▼              ▼                ▼                  ▼
 ┌────────────────┐ ┌────────────┐ ┌───────────────┐ ┌────────────────┐
 │ EC2-local      │ │ Uploads    │ │ LLM router    │ │ BSC RPC        │
-│ PostgreSQL 16  │ │ local disk │ │ Grok (x.ai)   │ │ USDT payment   │
-│ (Prisma)       │ │ protected  │ │ fal.ai (LoRA/ │ │ verification;  │
-│                │ │            │ │ video), BYOK  │ │ paused NFT     │
+│ PostgreSQL 16  │ │ local disk │ │ Grok (x.ai)   │ │ payment/NFT    │
+│ (Prisma)       │ │ protected  │ │ fal.ai video, │ │ integration    │
+│                │ │            │ │ BYOK          │ │ launch-disabled│
 │                │ │            │ │ models        │ │ contracts      │
 └────────────────┘ └────────────┘ └───────────────┘ └────────────────┘
 ```
@@ -100,20 +102,20 @@ same EC2 boundary; only the AI-provider and BSC RPC boxes are external.
 
 ## Smart Contracts (BSC)
 
-On-chain features are currently **paused (holding period)** while relayer operations and an external audit are finalized; the deployment is migrating to Base. The `/contracts` page in the app is the public disclosure of addresses and status.
+Production on-chain writes are disabled by `BLOCKCHAIN_ENABLED=false` while relayer operations and an external audit are finalized; the deployment is migrating to Base. This application gate is distinct from the contracts' own `Pausable` state. At BSC block 110,707,528, both deployed contracts returned `paused() == false`; `PETContent.totalSupply()` and all `PetaGenTracker` activity counters were zero. The `/contracts` page in the app is the public disclosure of addresses and status.
 
 | Contract | Standard | Status | Purpose |
 |----------|----------|--------|---------|
-| **PETContent** | ERC-721 | Deployed on BSC — paused | NFTs for AI-generated content + memory anchors |
-| **PetaGenTracker** | — | Deployed on BSC — paused | On-chain generation-event log (relayer pattern) |
+| **PETContent** | ERC-721 | Deployed on BSC — `paused()==false` at review; app integration off | NFTs for AI-generated content + memory anchors |
+| **PetaGenTracker** | — | Deployed on BSC — `paused()==false` at review; app integration off | On-chain generation-event log (relayer pattern) |
 | **PETActivity** | — | Planned | Per-user activity recorder (gasless, roadmap) |
 | **PetSoul** | — | Planned | Pet identity registry + successor inheritance (roadmap) |
 
-`PETToken.sol` and `PETShop.sol` remain in `contracts/` as legacy sources, but **no token exists or is planned** — the platform is no-token by design. Season points are a non-financial recognition score, and payments are direct USDT transfers verified on-chain (no purchase contract).
+`PETToken.sol` and `PETShop.sol` remain in `contracts/` as legacy sources, but **no token exists or is planned** — the platform is no-token by design. Season points are a non-financial recognition score. The disabled payment implementation verifies direct USDT transfers on-chain and does not use a purchase contract.
 
 Deployed contracts use OpenZeppelin patterns:
 - **Ownable2Step** — Two-step ownership transfer (multisig ready)
-- **Pausable** — Emergency stop mechanism (currently engaged)
+- **Pausable** — Emergency stop mechanism (present, but not engaged at the block snapshot above)
 - **ReentrancyGuard** — On mint functions
 
 **ABI sync path:** `contracts/artifacts/` → `web/src/lib/contracts/*.abi.json`
@@ -155,9 +157,9 @@ Two modes are supported:
 
 **Mode B — Photo Upload Adoption:**
 1. User uploads a photo via `POST /api/upload` (storage layer).
-2. A human-avatar guard (`isHumanAvatar`, Grok vision, fail-open) blocks photos of people being used as pets.
+2. The upload-specific `isPetPhoto` vision check fails closed unless it can confirm that the main subject is a pet or creature.
 3. `POST /api/pets/adopt-chat` (action: `create`) creates the pet record.
-4. `PATCH /api/pets/{id}` sets the uploaded photo as the avatar.
+4. `PATCH /api/pets/{id}` sets the uploaded photo as the avatar; its separate `isHumanAvatar` guard fails closed for client-supplied avatar URLs.
 
 **Guest tour:** `?tour=1` (`web/src/lib/tour.ts`, `TourMyPet.tsx`, `WalletGate.tsx`) gives read-only DEMO previews of community, World Cup, and My Pet without a wallet.
 
@@ -166,16 +168,16 @@ Two modes are supported:
 ```
 User ──► POST /api/pets/{petId}/generate
               │
-              ├── Image: Grok generates image (or fal.ai flux-LoRA when the pet
-              │          has a trained pet-LoRA; falls back to Grok) → storage → URL
+              ├── Image: Grok generates image (the optional fal.ai flux-LoRA
+              │          path is launch-disabled by PET_LORA_ENABLED=false) → storage → URL
               │
               └── Video: Pet Studio pipeline — provider chosen from the catalog
                          (lib/studio/providers.ts) → poll status → storage → URL
 ```
 
-- **Pet Studio** offers 22 pre-baked templates (`lib/studio/templates.ts`, 13 of them "trending" short-form) with hover-play example clips in `web/public/studio_examples/`, a two-phase Prompt Director (`/api/studio/prompt-director`), and a client-side editor (`StudioEditor.tsx` + `lib/studio/editorEngine.ts`, WebCodecs/MediaRecorder; free-tier exports are watermarked).
-- Provider costs are credit-priced per run (credit = $0.05). Premium providers can be listed as **comingSoon** teasers — e.g. Veo 3 at 400 credits/run — and are not submittable until unlocked.
-- NFT minting of generated content is paused along with the contracts (holding period).
+- **Pet Studio** offers 22 pre-baked templates (`lib/studio/templates.ts`, 12 of them "trending" short-form) with hover-play example clips in `web/public/studio_examples/`, a two-phase Prompt Director (`/api/studio/prompt-director`), and a client-side editor (`StudioEditor.tsx` + `lib/studio/editorEngine.ts`, WebCodecs/MediaRecorder). HD/no-watermark export is temporarily enabled during the free beta.
+- Provider costs are credit-priced per run. The retail reference is $0.05/credit, while configured bulk packs reduce the effective price to as little as $0.025/credit. Premium providers can be listed as **comingSoon** teasers — e.g. Veo 3 at 400 credits/run — and are not submittable until unlocked.
+- Product-side NFT minting is unavailable because `BLOCKCHAIN_ENABLED=false`; the deployed contract returned `paused()==false` at the launch review.
 
 ### 4. Pet Interaction & Stats
 
@@ -205,18 +207,18 @@ There is a **single API surface**: ~150 route handlers under `web/src/app/api/`,
 
 | Domain | Routes | Responsibilities |
 |--------|--------|-----------------|
-| Auth | `/api/auth/*` | Nonce, SIWE verify, JWT session, OAuth connectors |
+| Auth | `/api/auth/*` | Nonce, SIWE verify, JWT session; OAuth connectors exist in source but are launch-disabled |
 | Pets | `/api/pets/*` | CRUD, chat, interact, generate, diary, evolve, agent |
 | PetClaw | `/api/petclaw/*` | Skills registry, memory, BYOK models, CLI tokens, engagement, mission-control, export/import |
 | Studio | `/api/studio/*` | Templates, prompt director, video jobs |
-| Economy | `/api/credits/*`, `/api/payments/*` | Credit balance, USDT-verified purchases |
+| Economy | `/api/credits/*`, `/api/payments/*` | Credit balance; USDT purchase routes are launch-disabled |
 | Social | `/api/community/*`, `/api/worldcup/*`, `/api/battle/*`, `/api/catch/*` | Feed, World Cup (favorites bracket + honest champion-prediction poll), TCG battles, Wild Encounters |
 | Ops | `/api/admin/*`, `/api/cron/*`, `/api/health` | Admin gates, scheduled jobs, health check |
 
 ### Agent stack
 
 - `POST /api/pets/{petId}/agent` runs the pet as an agent; responds with SSE when `Accept: text/event-stream` or `?stream=1`.
-- `runToolAgent` (`lib/petclaw/agent/tool-agent.ts`) does native tool-calling via `callLLMWithTools` with connector tools: `web_search`, `web_read` (SSRF-guarded), `wikipedia_lookup`, `crypto_price`, `recall_memory`.
+- `runToolAgent` (`lib/petclaw/agent/tool-agent.ts`) does native tool-calling via `callLLMWithTools` with connector tools: `web_search`, `wikipedia_lookup`, `crypto_price`, and `recall_memory`. `web_read` is declared and SSRF-guarded but currently returns an unavailable response.
 - A plan-execute loop (`lib/petclaw/agent/plan-execute.ts`) and GBrain memory retrieval (`lib/petclaw/memory/retrieval.ts`) back longer tasks.
 - Core text paths (pet/adoption chat, Pet Date, connected-platform replies,
   persona analysis, daydream/consolidation, skills and agent loops) route through
@@ -231,6 +233,8 @@ There is a **single API surface**: ~150 route handlers under `web/src/app/api/`,
   `lib/llm/platform-resilience.ts`. Owner BYOK requests never use this fallback.
 - Image/video routes stay on their image/video backends (xAI/FAL). A text
   provider is never used as a substitute for failed media generation.
+- Telegram and Discord connection routes exist in source but are unavailable at
+  launch because both OAuth subscriptions and legacy agent channels are gated off.
 
 Production env example:
 
@@ -249,12 +253,12 @@ The canonical skill set is **18 skills** — only skills backed by a real handle
 
 ### Chrome extension
 
-The desktop-pet extension reports care actions to `POST /api/petclaw/engagement`; grants are server-authoritative and daily-capped (`ext_care` shared pool 20 pts/day for pet+treat, `ext_welcome` 1 pt/day), landing in the same `season_points` score.
+Version 2.3.2 of the desktop-pet extension reports care actions to `POST /api/petclaw/engagement`; grants are server-authoritative and daily-capped (`ext_care` shared pool 20 pts/day for pet+treat, `ext_welcome` 1 pt/day), landing in the same `season_points` score. It is currently distributed as a direct ZIP for Chrome Developer mode (Load unpacked), not through the Chrome Web Store.
 
 ### Credits & payments
 
-- Credit = $0.05. Packs: **100 / 500 / 2000 credits for 5 / 20 / 50 USDT** (`/api/credits/purchase`).
-- Purchase flow: user sends USDT (BEP-20) to the treasury, submits the tx hash; the server verifies the transfer on-chain (`verifyUsdtTransfer`, BSC-USD `0x55d3…7955`) and records the hash in a global `ConsumedPayment` ledger so a tx can never be credited twice.
+- The source defines packs of **100 / 500 / 2000 credits for 5 / 20 / 50 USDT** (`/api/credits/purchase`), but purchases are unavailable while `PAYMENTS_ENABLED=false`.
+- When enabled after its checklist, the purchase flow sends USDT (BEP-20) to the treasury and submits the tx hash; the server verifies the transfer on-chain (`verifyUsdtTransfer`, BSC-USD `0x55d3…7955`) and records the hash in a global `ConsumedPayment` ledger so a tx can never be credited twice.
 
 ---
 
@@ -273,10 +277,10 @@ The desktop-pet extension reports care actions to `POST /api/petclaw/engagement`
 |------|---------|
 | Auth | SIWE signature verification (viem + ethers fallback); JWT bound to the user's nonce — logout rotates the nonce and invalidates tokens |
 | API auth | JWT Bearer on API routes; CLI PATs (`pck_`) stored hashed in `cli_tokens` |
-| Payments | On-chain USDT transfer verification + single-use `ConsumedPayment` tx-hash ledger (no double-credit) |
-| Agent SSRF | `web_read` URL guard blocks internal/metadata addresses before server-side fetch |
-| Content safety | Human-avatar guard (Grok vision, fail-open) blocks human photos as pet avatars |
+| Payments | Launch-disabled; the implemented rail uses on-chain USDT verification + a single-use `ConsumedPayment` tx-hash ledger (no double-credit) |
+| Agent SSRF | The currently unavailable `web_read` connector has a URL guard that blocks internal/metadata addresses before server-side fetch |
+| Content safety | Uploads use fail-closed `isPetPhoto` validation; pet create/edit routes separately use fail-closed `isHumanAvatar` validation for client-supplied avatar URLs |
 | Headers | HSTS, CSP, X-Frame-Options, etc. set in `next.config.ts` (nginx can layer more) |
 | Credits & points | Atomic Prisma operations; server-authoritative daily caps on engagement grants |
 | Rate limiting | `lib/rateLimit.ts` on abuse-prone routes (e.g. engagement 60/min) |
-| Contracts | Ownable2Step, Pausable (currently engaged), ReentrancyGuard on deployed contracts |
+| Contracts | Ownable2Step, Pausable (not engaged at the stated block snapshot), ReentrancyGuard on deployed contracts; app integration launch-disabled |

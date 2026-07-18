@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description: "Terms of Service for the PetClaw Protocol and MY AI PET.",
 };
 
-const LAST_UPDATED = "2026-04-30";
+const LAST_UPDATED = "2026-07-18";
 
 export default function TermsPage() {
   return (
@@ -53,18 +53,20 @@ export default function TermsPage() {
         </Section>
 
         <Section title="5. Points (Important)">
-          The platform may issue non-financial loyalty points for engagement. Points are in-app
-          loyalty credits with no monetary value. There is no token, and no token is planned.
+          The platform may issue non-financial recognition points for engagement. Points are an
+          in-app recognition score with no monetary value and are separate from generation credits.
+          There is no token, and no token is planned.
           Points are not convertible into any token, currency, or other asset, and carry no
           conversion right. Points do not represent equity, debt, profit share, or any investment
           in any entity. Nothing on this Service constitutes an offer or sale of securities.
         </Section>
 
         <Section title="6. On-chain Recording">
-          On-chain recording is disabled and no activation date is announced. Two legacy contracts
-          remain paused on BSC; a future Base deployment is planned. If on-chain features are enabled,
-          the Service will present a separate notice before use. On-chain records are immutable and
-          cannot be deleted or modified.
+          Production on-chain integration is disabled and no activation date is announced. Two legacy
+          BSC contracts are deployed but were not paused at the 2026-07-18 launch review; their activity
+          and supply counters were zero. The owner wallet still holds relayer/minter permissions. A future
+          Base deployment is planned. If on-chain features are enabled, the Service will present a separate
+          notice before use. On-chain records are immutable and cannot be deleted or modified.
         </Section>
 
         <Section title="7. Acceptable Use">

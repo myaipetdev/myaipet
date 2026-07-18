@@ -195,7 +195,7 @@ export async function consumeCatchVerify(
     return {
       ok: false,
       status: 402,
-      error: `Out of free scans today (${freePerDay}/day). Each extra scan costs ${cost} credit — top up to keep hunting. 🐾`,
+      error: `Out of free scans today (${freePerDay}/day). Each extra scan uses ${cost} available credit — earn credits or try again tomorrow. 🐾`,
     };
   }
   return { ok: true, mode: "credit" };
@@ -252,7 +252,7 @@ export async function checkVideoAllowed(user: {
       ok: false,
       status: 403,
       error:
-        "🎬 Video memories unlock on day 2 of your pet's life — images are ready to make right now. Come back tomorrow, or grab a credit pack to start today.",
+        "🎬 Video memories unlock on day 2 of your pet's life — images are ready to make right now. Come back tomorrow.",
     };
   }
 
@@ -262,7 +262,7 @@ export async function checkVideoAllowed(user: {
     return {
       ok: false,
       status: 429,
-      error: `You've used your ${perWallet} free videos for today — grab a credit pack to keep creating, or come back tomorrow.`,
+      error: `You've used your ${perWallet} free videos for today — come back tomorrow.`,
     };
   }
 
@@ -276,7 +276,7 @@ export async function checkVideoAllowed(user: {
       ok: false,
       status: 429,
       error:
-        "The free video studio is at capacity today — queued for tomorrow, or grab a credit pack to skip the line.",
+        "The free video studio is at capacity today — please come back tomorrow.",
     };
   }
   freeVideoBudget.total++;

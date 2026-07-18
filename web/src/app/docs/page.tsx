@@ -17,7 +17,7 @@ Every pet has a distinct personality shaped by user interactions. The platform u
     id: "getting-started",
     title: "Getting Started",
     content: `**1. Connect Your Wallet**
-Connect using MetaMask, Rainbow, Coinbase Wallet, or any WalletConnect-compatible wallet. Sign-in (SIWE) works with any EVM wallet — no gas, identity only. On-chain anchoring is disabled. Two legacy contracts remain paused on BSC; a future Base deployment is planned but has no launch date. The off-chain loyalty system uses non-transferable Credits and Season Rewards points — no token.
+Connect using MetaMask, Rainbow, Coinbase Wallet, or any WalletConnect-compatible wallet. Sign-in (SIWE) works with any EVM wallet — no gas, identity only. Production on-chain integration is disabled. Two legacy BSC contracts returned paused() = false with zero activity/supply counters at the 2026-07-18 launch review; a future Base deployment is planned but has no launch date. The off-chain loyalty system uses non-transferable Credits and Season Rewards points — no token.
 
 **2. Sign In**
 Sign a message to verify wallet ownership (SIWE — Sign-In with Ethereum). No gas fees for signing.
@@ -115,7 +115,7 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 - Server-side rendering with SSR-safe hydration
 
 **Backend**
-- Next.js API Routes (serverless)
+- Next.js App Router API routes on AWS EC2 behind nginx and PM2
 - PostgreSQL database (self-hosted)
 - Prisma ORM
 - JWT-based session management after SIWE authentication
@@ -130,7 +130,7 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 - On-chain anchoring and minting are disabled
 - Credits and Season Rewards points are separate, non-transferable off-chain balances — no token or on-chain settlement of value
 - USDT credit purchases are currently paused with no announced reopening date
-- Two legacy contracts are deployed and paused on BSC
+- Two legacy BSC contracts returned paused() = false with zero activity/supply counters at the 2026-07-18 launch review; the production integration remains disabled
 - A future Base deployment and external audit are planned; no activation date is committed — see /contracts for current status
 
 **Wallet Support**
@@ -183,7 +183,7 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 **Phase 2 — On-Chain Activity (Planned · disabled today)**
 - On-chain anchoring and minting are not active
 - USDT credit purchases are paused with no announced reopening date
-- Two legacy contracts remain paused on BSC
+- Two legacy BSC contracts returned paused() = false with zero counters at the 2026-07-18 launch review; production integration remains disabled
 - Base deployment, verification, and external audit are future milestones with no committed date
 
 **Phase 3 — Evolution & Marketplace (Partially shipped)**
