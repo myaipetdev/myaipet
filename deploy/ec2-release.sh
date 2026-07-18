@@ -933,21 +933,70 @@ if (( (8#${PETCLAW_PSQL_MODE} & 8#022) != 0 )); then
   echo "ERROR: psql executable is writable by group or other." >&2
   exit 2
 fi
-if ! PETCLAW_PSQL_DATABASE_URL="$(node -e '
+if ! PETCLAW_PSQL_RECORDS="$(node -e '
   try {
     const url = new URL(process.env.DATABASE_URL);
     if (url.protocol !== "postgresql:" && url.protocol !== "postgres:") process.exit(2);
     for (const key of ["schema", "connection_limit", "pool_timeout", "socket_timeout", "pgbouncer", "statement_cache_size"]) {
       url.searchParams.delete(key);
     }
-    process.stdout.write(url.href);
+    const sslmode = url.searchParams.get("sslmode") || "prefer";
+    url.searchParams.delete("sslmode");
+    if (!new Set(["disable", "allow", "prefer", "require", "verify-ca", "verify-full"]).has(sslmode)) process.exit(2);
+    if ([...url.searchParams].length !== 0) process.exit(2);
+    const fields = [
+      ["HOST", url.hostname],
+      ["PORT", url.port || "5432"],
+      ["USER", decodeURIComponent(url.username)],
+      ["PASSWORD", decodeURIComponent(url.password)],
+      ["DATABASE", decodeURIComponent(url.pathname.slice(1))],
+      ["SSLMODE", sslmode],
+    ];
+    for (const [name, value] of fields) {
+      if ((name !== "PASSWORD" && !value) || /[\0\r\n]/.test(value)) process.exit(2);
+      process.stdout.write(`${name}\t${Buffer.from(value, "utf8").toString("base64")}\n`);
+    }
   } catch {
     process.exit(2);
   }
-')" || [[ -z "${PETCLAW_PSQL_DATABASE_URL}" ]]; then
-  echo "ERROR: DATABASE_URL is not a valid PostgreSQL URL." >&2
+')" || [[ -z "${PETCLAW_PSQL_RECORDS}" ]]; then
+  echo "ERROR: DATABASE_URL is not a supported PostgreSQL URL." >&2
   exit 2
 fi
+PETCLAW_PSQL_FIELD_COUNT=0
+PETCLAW_PSQL_HOST=""
+PETCLAW_PSQL_PORT=""
+PETCLAW_PSQL_USER=""
+PETCLAW_PSQL_PASSWORD=""
+PETCLAW_PSQL_DATABASE=""
+PETCLAW_PSQL_SSLMODE=""
+while IFS=$'\t' read -r PETCLAW_PSQL_FIELD PETCLAW_PSQL_VALUE_B64; do
+  case "${PETCLAW_PSQL_FIELD}" in
+    HOST|PORT|USER|PASSWORD|DATABASE|SSLMODE) ;;
+    *)
+      echo "ERROR: PostgreSQL URL parser returned an invalid field." >&2
+      exit 2
+      ;;
+  esac
+  if [[ ! "${PETCLAW_PSQL_VALUE_B64}" =~ ^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$ ]]; then
+    echo "ERROR: PostgreSQL URL parser returned invalid encoded data." >&2
+    exit 2
+  fi
+  PETCLAW_PSQL_VALUE="$(printf '%s' "${PETCLAW_PSQL_VALUE_B64}" \
+    | base64 --decode; printf '\001')"
+  PETCLAW_PSQL_VALUE="${PETCLAW_PSQL_VALUE%$'\001'}"
+  printf -v "PETCLAW_PSQL_${PETCLAW_PSQL_FIELD}" '%s' "${PETCLAW_PSQL_VALUE}"
+  PETCLAW_PSQL_FIELD_COUNT="$((PETCLAW_PSQL_FIELD_COUNT + 1))"
+done <<< "${PETCLAW_PSQL_RECORDS}"
+if [[ "${PETCLAW_PSQL_FIELD_COUNT}" != 6 \
+  || -z "${PETCLAW_PSQL_HOST}" || -z "${PETCLAW_PSQL_USER}" \
+  || -z "${PETCLAW_PSQL_DATABASE}" || -z "${PETCLAW_PSQL_SSLMODE}" \
+  || ! "${PETCLAW_PSQL_PORT}" =~ ^[1-9][0-9]*$ \
+  || "${PETCLAW_PSQL_PORT}" -lt 1 || "${PETCLAW_PSQL_PORT}" -gt 65535 ]]; then
+  echo "ERROR: PostgreSQL URL parser returned incomplete connection fields." >&2
+  exit 2
+fi
+unset PETCLAW_PSQL_RECORDS PETCLAW_PSQL_FIELD PETCLAW_PSQL_VALUE PETCLAW_PSQL_VALUE_B64
 petclaw_psql_readonly() (
   # Passing NAME=value through an external environment scrubber exposes each
   # value briefly in that utility's argv. Clear inherited exports with bash
@@ -960,7 +1009,12 @@ petclaw_psql_readonly() (
     export -n "${PETCLAW_ENV_NAME}" 2>/dev/null || true
   done < <(compgen -e)
   export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-  export PGDATABASE="${PETCLAW_PSQL_DATABASE_URL}"
+  export PGHOST="${PETCLAW_PSQL_HOST}"
+  export PGPORT="${PETCLAW_PSQL_PORT}"
+  export PGUSER="${PETCLAW_PSQL_USER}"
+  export PGPASSWORD="${PETCLAW_PSQL_PASSWORD}"
+  export PGDATABASE="${PETCLAW_PSQL_DATABASE}"
+  export PGSSLMODE="${PETCLAW_PSQL_SSLMODE}"
   export PGAPPNAME=petclaw-release-preflight
   export PGCONNECT_TIMEOUT=10
   export PGOPTIONS='-c default_transaction_read_only=on -c statement_timeout=15000 -c lock_timeout=5000'
@@ -997,7 +1051,9 @@ case "${PETCLAW_SUBSCRIPTION_TABLE_STATE}" in
     exit 2
     ;;
 esac
-unset PETCLAW_PSQL_DATABASE_URL
+unset PETCLAW_PSQL_HOST PETCLAW_PSQL_PORT PETCLAW_PSQL_USER \
+  PETCLAW_PSQL_PASSWORD PETCLAW_PSQL_DATABASE PETCLAW_PSQL_SSLMODE \
+  PETCLAW_PSQL_FIELD_COUNT
 npx prisma migrate deploy
 PETCLAW_POSTMIGRATION_MIN_FREE_BYTES=$((3 * 1024 * 1024 * 1024))
 PETCLAW_AVAILABLE_BYTES="$(df --output=avail -B1 /opt/petclaw | tail -n 1 | tr -d '[:space:]')"
