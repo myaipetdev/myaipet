@@ -151,6 +151,9 @@ for PETCLAW_CONTRACT in \
   'ec2-release.sh:| sudo tee "${PETCLAW_NGINX_RENDERED}"' \
   'ec2-release.sh:export PGDATABASE="${PETCLAW_PSQL_DATABASE_URL}"' \
   'ec2-release.sh:default_transaction_read_only=on' \
+  'ec2-release.sh:PETCLAW_PSQL_COMMAND="$(type -P psql' \
+  'ec2-release.sh:PETCLAW_PSQL_COMMAND}" != "/usr/bin/psql"' \
+  'ec2-release.sh:exec "${PETCLAW_PSQL_COMMAND}" "$@"' \
   'ec2-release.sh:previous nginx configuration could not be restored' \
   'ec2-release.sh:restored PM2 state could not be persisted' \
   'ec2-release.sh:--no-preserve=ownership' \
@@ -313,6 +316,7 @@ for PETCLAW_FORBIDDEN_CONTRACT in \
   'ec2-release.sh:exec 9>/opt/petclaw/.release.lock' \
   'release-rollback-watchdog.sh:exec 9>"${PETCLAW_RELEASE_LOCK}"' \
   'ec2-release.sh:PETCLAW_PSQL_ENV=(' \
+  'ec2-release.sh:exec "${PETCLAW_PSQL_BIN}" "$@"' \
   'ec2-release.sh:env -i' \
   'ec2-release.sh:PETCLAW_NGINX_RENDERED="$(mktemp)"' \
   'verify-release-artifact.sh:mktemp -d "${PETCLAW_INCOMING_DIR}/.verify-'; do

@@ -7,7 +7,7 @@ umask 077
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 export PATH
 unset BASH_ENV CDPATH ENV GLOBIGNORE NODE_OPTIONS
-unset -f node npm npx pm2 2>/dev/null || true
+unset -f node npm npx pm2 psql 2>/dev/null || true
 hash -r
 
 PETCLAW_TRUSTED_CONTROLLER="/usr/local/sbin/petclaw-ec2-release.sh"
@@ -917,11 +917,15 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
   echo "ERROR: DATABASE_URL is required for the pre-migration integrity check." >&2
   exit 2
 fi
-PETCLAW_PSQL_COMMAND="$(command -v psql 2>/dev/null || true)"
+PETCLAW_PSQL_COMMAND="$(type -P psql 2>/dev/null || true)"
 PETCLAW_PSQL_BIN="$(realpath -e "${PETCLAW_PSQL_COMMAND}" 2>/dev/null || true)"
-if [[ -z "${PETCLAW_PSQL_BIN}" || ! -x "${PETCLAW_PSQL_BIN}" \
+if [[ "${PETCLAW_PSQL_COMMAND}" != "/usr/bin/psql" \
+  || ! -L "${PETCLAW_PSQL_COMMAND}" \
+  || "$(stat -c '%U:%G' "${PETCLAW_PSQL_COMMAND}" 2>/dev/null || true)" != "root:root" \
+  || "$(stat -c '%U:%G:%a' /usr/bin 2>/dev/null || true)" != "root:root:755" \
+  || -z "${PETCLAW_PSQL_BIN}" || ! -x "${PETCLAW_PSQL_BIN}" \
   || "$(stat -c '%U:%G' "${PETCLAW_PSQL_BIN}" 2>/dev/null || true)" != "root:root" ]]; then
-  echo "ERROR: a canonical root-owned psql executable is required." >&2
+  echo "ERROR: the root-owned /usr/bin/psql wrapper and canonical executable are required." >&2
   exit 2
 fi
 PETCLAW_PSQL_MODE="$(stat -c '%a' "${PETCLAW_PSQL_BIN}")"
@@ -960,7 +964,9 @@ petclaw_psql_readonly() (
   export PGAPPNAME=petclaw-release-preflight
   export PGCONNECT_TIMEOUT=10
   export PGOPTIONS='-c default_transaction_read_only=on -c statement_timeout=15000 -c lock_timeout=5000'
-  exec "${PETCLAW_PSQL_BIN}" "$@"
+  # Ubuntu's pg_wrapper dispatches from the /usr/bin/psql basename. Executing
+  # its realpath directly makes it treat the first option as a program name.
+  exec "${PETCLAW_PSQL_COMMAND}" "$@"
 )
 PETCLAW_SUBSCRIPTION_TABLE_STATE="$(petclaw_psql_readonly \
   -X -qAt -v ON_ERROR_STOP=1 -c \
