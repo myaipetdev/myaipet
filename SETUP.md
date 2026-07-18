@@ -28,7 +28,7 @@ contracts/         — Hardhat + Solidity (optional on-chain activity tracking)
 
 ```bash
 cd web
-npm install    # Node 20+ (dev machines run v24)
+npm install    # Node >=24.18.0 <25 and npm 11.16.0
 
 # Environment: no .env.example is checked in — create web/.env by hand.
 # Required (the app/route will throw or 500 without these):

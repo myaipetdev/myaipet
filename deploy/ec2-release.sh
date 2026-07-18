@@ -7,6 +7,8 @@ umask 077
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 export PATH
 unset BASH_ENV CDPATH ENV GLOBIGNORE NODE_OPTIONS
+unset -f node npm npx pm2 2>/dev/null || true
+hash -r
 
 PETCLAW_TRUSTED_CONTROLLER="/usr/local/sbin/petclaw-ec2-release.sh"
 PETCLAW_TRUSTED_SCANNER="/usr/local/libexec/petclaw/scan-release-secrets.sh"
@@ -17,6 +19,27 @@ PETCLAW_RELEASE_LOCK="/run/petclaw-release/release.lock"
 PETCLAW_VERIFIED_DIR="/opt/petclaw/verified"
 PETCLAW_DEPLOY_USER="ubuntu"
 PETCLAW_PM2_HOME="/home/ubuntu/.pm2"
+PETCLAW_REQUIRED_NODE_MAJOR=24
+PETCLAW_REQUIRED_NODE_MIN_MINOR=18
+PETCLAW_REQUIRED_NPM_VERSION="11.16.0"
+PETCLAW_REQUIRED_PM2_VERSION="6.0.14"
+
+petclaw_runtime_versions_supported() {
+  local PETCLAW_RUNTIME_NODE_VERSION="$1"
+  local PETCLAW_RUNTIME_NPM_VERSION="$2"
+  local PETCLAW_RUNTIME_NODE_MAJOR
+  local PETCLAW_RUNTIME_NODE_MINOR
+  if [[ ! "${PETCLAW_RUNTIME_NODE_VERSION}" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+    return 1
+  fi
+  PETCLAW_RUNTIME_NODE_MAJOR="${BASH_REMATCH[1]}"
+  PETCLAW_RUNTIME_NODE_MINOR="${BASH_REMATCH[2]}"
+  if (( PETCLAW_RUNTIME_NODE_MAJOR != PETCLAW_REQUIRED_NODE_MAJOR \
+    || PETCLAW_RUNTIME_NODE_MINOR < PETCLAW_REQUIRED_NODE_MIN_MINOR )); then
+    return 1
+  fi
+  [[ "${PETCLAW_RUNTIME_NPM_VERSION}" == "${PETCLAW_REQUIRED_NPM_VERSION}" ]]
+}
 
 if [[ "$(id -un)" != "${PETCLAW_DEPLOY_USER}" \
   || "$(id -u)" != "$(id -u "${PETCLAW_DEPLOY_USER}" 2>/dev/null || true)" ]]; then
@@ -50,7 +73,24 @@ if ! sudo systemctl is-enabled pm2-ubuntu.service >/dev/null 2>&1; then
   echo "ERROR: pinned pm2-ubuntu.service must be installed and enabled." >&2
   exit 2
 fi
-PETCLAW_PM2_COMMAND="$(command -v pm2 2>/dev/null || true)"
+PETCLAW_PM2_EXPECTED_EXECUTABLE="/usr/lib/node_modules/pm2/bin/pm2"
+PETCLAW_PM2_EFFECTIVE_USER="$(sudo systemctl show pm2-ubuntu.service -p User --value 2>/dev/null || true)"
+PETCLAW_PM2_EFFECTIVE_ENV="$(sudo systemctl show pm2-ubuntu.service -p Environment --value 2>/dev/null || true)"
+PETCLAW_PM2_EFFECTIVE_PIDFILE="$(sudo systemctl show pm2-ubuntu.service -p PIDFile --value 2>/dev/null || true)"
+PETCLAW_PM2_EFFECTIVE_EXECSTART="$(sudo systemctl show pm2-ubuntu.service -p ExecStart --value 2>/dev/null || true)"
+PETCLAW_PM2_EFFECTIVE_MAINPID="$(sudo systemctl show pm2-ubuntu.service -p MainPID --value 2>/dev/null || true)"
+if [[ "${PETCLAW_PM2_EFFECTIVE_USER}" != "ubuntu" \
+  || "${PETCLAW_PM2_EFFECTIVE_PIDFILE}" != "/home/ubuntu/.pm2/pm2.pid" ]] \
+  || ! grep -Fq 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:' \
+    <<< "${PETCLAW_PM2_EFFECTIVE_ENV}" \
+  || ! grep -Eq '(^|[[:space:]])PM2_HOME=/home/ubuntu/\.pm2($|[[:space:]])' \
+    <<< "${PETCLAW_PM2_EFFECTIVE_ENV}" \
+  || ! grep -Fq "path=${PETCLAW_PM2_EXPECTED_EXECUTABLE} ; argv[]=${PETCLAW_PM2_EXPECTED_EXECUTABLE} resurrect ;" \
+    <<< "${PETCLAW_PM2_EFFECTIVE_EXECSTART}"; then
+  echo "ERROR: effective pm2-ubuntu.service does not pin the production user, PATH, PM2_HOME, PIDFile, and executable." >&2
+  exit 2
+fi
+PETCLAW_PM2_COMMAND="$(type -P pm2 2>/dev/null || true)"
 PETCLAW_PM2_BIN="$(realpath -e "${PETCLAW_PM2_COMMAND}" 2>/dev/null || true)"
 if [[ -z "${PETCLAW_PM2_BIN}" || ! -x "${PETCLAW_PM2_BIN}" \
   || "$(stat -c '%U:%G' "${PETCLAW_PM2_BIN}")" != "root:root" ]]; then
@@ -60,6 +100,56 @@ fi
 PETCLAW_PM2_MODE="$(stat -c '%a' "${PETCLAW_PM2_BIN}")"
 if (( (8#${PETCLAW_PM2_MODE} & 8#022) != 0 )); then
   echo "ERROR: PM2 executable is writable by group or other." >&2
+  exit 2
+fi
+
+PETCLAW_NODE_COMMAND="$(type -P node 2>/dev/null || true)"
+PETCLAW_NODE_BIN="$(realpath -e "${PETCLAW_NODE_COMMAND}" 2>/dev/null || true)"
+if [[ -z "${PETCLAW_NODE_BIN}" || ! -x "${PETCLAW_NODE_BIN}" \
+  || "$(stat -c '%U:%G' "${PETCLAW_NODE_BIN}" 2>/dev/null || true)" != "root:root" ]]; then
+  echo "ERROR: Node.js must resolve to one root-owned canonical executable." >&2
+  exit 2
+fi
+PETCLAW_NODE_MODE="$(stat -c '%a' "${PETCLAW_NODE_BIN}")"
+if (( (8#${PETCLAW_NODE_MODE} & 8#022) != 0 )); then
+  echo "ERROR: Node.js executable is writable by group or other." >&2
+  exit 2
+fi
+PETCLAW_NODE_VERSION="$("${PETCLAW_NODE_BIN}" --version 2>/dev/null || true)"
+
+PETCLAW_NPM_COMMAND="$(type -P npm 2>/dev/null || true)"
+PETCLAW_NPM_BIN="$(realpath -e "${PETCLAW_NPM_COMMAND}" 2>/dev/null || true)"
+if [[ -z "${PETCLAW_NPM_BIN}" || ! -f "${PETCLAW_NPM_BIN}" \
+  || "$(stat -c '%U:%G' "${PETCLAW_NPM_BIN}" 2>/dev/null || true)" != "root:root" ]]; then
+  echo "ERROR: npm must resolve to one root-owned canonical file." >&2
+  exit 2
+fi
+PETCLAW_NPM_MODE="$(stat -c '%a' "${PETCLAW_NPM_BIN}")"
+if (( (8#${PETCLAW_NPM_MODE} & 8#022) != 0 )); then
+  echo "ERROR: npm is writable by group or other." >&2
+  exit 2
+fi
+PETCLAW_NPM_VERSION="$("${PETCLAW_NPM_COMMAND}" --version 2>/dev/null || true)"
+if ! petclaw_runtime_versions_supported "${PETCLAW_NODE_VERSION}" "${PETCLAW_NPM_VERSION}"; then
+  echo "ERROR: production requires Node.js >=24.18.0 <25 and npm 11.16.0; found ${PETCLAW_NODE_VERSION:-missing}/${PETCLAW_NPM_VERSION:-missing}." >&2
+  exit 2
+fi
+
+if ! sudo systemctl is-active pm2-ubuntu.service >/dev/null 2>&1; then
+  echo "ERROR: pinned pm2-ubuntu.service must be active before deployment." >&2
+  exit 2
+fi
+PETCLAW_PM2_DAEMON_PID="$(tr -d '[:space:]' < "${PETCLAW_PM2_HOME}/pm2.pid" 2>/dev/null || true)"
+PETCLAW_PM2_DAEMON_NODE="$(readlink -e "/proc/${PETCLAW_PM2_DAEMON_PID}/exe" 2>/dev/null || true)"
+if [[ ! "${PETCLAW_PM2_DAEMON_PID}" =~ ^[1-9][0-9]*$ \
+  || "${PETCLAW_PM2_EFFECTIVE_MAINPID}" != "${PETCLAW_PM2_DAEMON_PID}" \
+  || "${PETCLAW_PM2_DAEMON_NODE}" != "${PETCLAW_NODE_BIN}" ]]; then
+  echo "ERROR: systemd is not supervising the pinned PM2 daemon under the pinned Node.js executable." >&2
+  exit 2
+fi
+PETCLAW_PM2_VERSION="$(pm2 --version 2>/dev/null | tail -n 1 | tr -d '[:space:]')"
+if [[ "${PETCLAW_PM2_VERSION}" != "${PETCLAW_REQUIRED_PM2_VERSION}" ]]; then
+  echo "ERROR: production requires PM2 ${PETCLAW_REQUIRED_PM2_VERSION}; found ${PETCLAW_PM2_VERSION:-unknown}." >&2
   exit 2
 fi
 
@@ -702,7 +792,7 @@ install -m 600 "${PETCLAW_ENV_SOURCE}" "${PETCLAW_RELEASE_DIR}/web/.env.producti
 
 PETCLAW_WEB="${PETCLAW_RELEASE_DIR}/web"
 cd "${PETCLAW_WEB}"
-npm ci --no-audit --no-fund
+npm_config_engine_strict=true npm ci --ignore-scripts --no-audit --no-fund
 npx prisma generate
 npm run build
 
@@ -977,13 +1067,15 @@ PETCLAW_CANDIDATE_PID="$(pm2 jlist | node -e '
   });
 ' "${PETCLAW_CANDIDATE_APP}" "${PETCLAW_WEB}")"
 PETCLAW_CANDIDATE_SOCKET="$(ss -H -ltnp "sport = :${PETCLAW_CANDIDATE_PORT}")"
+PETCLAW_CANDIDATE_NODE="$(readlink -e "/proc/${PETCLAW_CANDIDATE_PID}/exe" 2>/dev/null || true)"
 if [[ ! "${PETCLAW_CANDIDATE_PID}" =~ ^[0-9]+$ ]] \
+  || "${PETCLAW_CANDIDATE_NODE}" != "${PETCLAW_NODE_BIN}" \
   || ! grep -Eq "pid=${PETCLAW_CANDIDATE_PID}(,|\\))" <<< "${PETCLAW_CANDIDATE_SOCKET}" \
   || ! grep -Eq "(^|[[:space:]])127\\.0\\.0\\.1:${PETCLAW_CANDIDATE_PORT}([[:space:]]|$)" \
     <<< "${PETCLAW_CANDIDATE_SOCKET}" \
   || grep -Eq "(^|[[:space:]])(0\\.0\\.0\\.0|\\*|\\[::\\]):${PETCLAW_CANDIDATE_PORT}([[:space:]]|$)" \
     <<< "${PETCLAW_CANDIDATE_SOCKET}"; then
-  echo "ERROR: candidate is not the exact PM2 process bound only to IPv4 loopback." >&2
+  echo "ERROR: candidate is not the exact pinned-Node PM2 process bound only to IPv4 loopback." >&2
   exit 1
 fi
 

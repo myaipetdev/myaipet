@@ -3,6 +3,9 @@
 # exact committed revision. The dirty workspace is never copied.
 set -euo pipefail
 umask 077
+unset BASH_ENV CDPATH ENV GLOBIGNORE NODE_OPTIONS
+unset -f node npm npx 2>/dev/null || true
+hash -r
 
 PETCLAW_REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 PETCLAW_REVISION="${1:-HEAD}"
@@ -10,6 +13,35 @@ PETCLAW_OUTPUT_DIR="${2:-${PETCLAW_REPO_ROOT}/release-artifacts}"
 PETCLAW_RELEASE_SIGNING_GPG_HOME="${PETCLAW_RELEASE_SIGNING_GPG_HOME:-${HOME}/.gnupg}"
 PETCLAW_RELEASE_SIGNING_FINGERPRINT="0B286A30DC9C53D08CE5ABC72E2A4FDD17382A1F"
 PETCLAW_RELEASE_SIGNING_SUBKEY_FINGERPRINT="ABD9D161F7FDB82D600D32B7EEB701346799673E"
+PETCLAW_REQUIRED_NODE_MAJOR=24
+PETCLAW_REQUIRED_NODE_MIN_MINOR=18
+PETCLAW_REQUIRED_NPM_VERSION="11.16.0"
+
+petclaw_runtime_versions_supported() {
+  local PETCLAW_RUNTIME_NODE_VERSION="$1"
+  local PETCLAW_RUNTIME_NPM_VERSION="$2"
+  local PETCLAW_RUNTIME_NODE_MAJOR
+  local PETCLAW_RUNTIME_NODE_MINOR
+  if [[ ! "${PETCLAW_RUNTIME_NODE_VERSION}" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+    return 1
+  fi
+  PETCLAW_RUNTIME_NODE_MAJOR="${BASH_REMATCH[1]}"
+  PETCLAW_RUNTIME_NODE_MINOR="${BASH_REMATCH[2]}"
+  if (( PETCLAW_RUNTIME_NODE_MAJOR != PETCLAW_REQUIRED_NODE_MAJOR \
+    || PETCLAW_RUNTIME_NODE_MINOR < PETCLAW_REQUIRED_NODE_MIN_MINOR )); then
+    return 1
+  fi
+  [[ "${PETCLAW_RUNTIME_NPM_VERSION}" == "${PETCLAW_REQUIRED_NPM_VERSION}" ]]
+}
+
+PETCLAW_NODE_COMMAND="$(type -P node 2>/dev/null || true)"
+PETCLAW_NPM_COMMAND="$(type -P npm 2>/dev/null || true)"
+PETCLAW_NODE_VERSION="$("${PETCLAW_NODE_COMMAND}" --version 2>/dev/null || true)"
+PETCLAW_NPM_VERSION="$("${PETCLAW_NPM_COMMAND}" --version 2>/dev/null || true)"
+if ! petclaw_runtime_versions_supported "${PETCLAW_NODE_VERSION}" "${PETCLAW_NPM_VERSION}"; then
+  echo "ERROR: release builder requires Node.js >=24.18.0 <25 and npm 11.16.0; found ${PETCLAW_NODE_VERSION:-missing}/${PETCLAW_NPM_VERSION:-missing}." >&2
+  exit 2
+fi
 
 cd "${PETCLAW_REPO_ROOT}"
 PETCLAW_COMMIT="$(git rev-parse --verify "${PETCLAW_REVISION}^{commit}")"
@@ -24,6 +56,7 @@ fi
 
 for PETCLAW_REQUIRED_PATH in \
   web/package-lock.json \
+  web/package.json \
   web/public/petclaw-extension.zip \
   deploy/ec2-release.sh \
   deploy/verify-release-artifact.sh \
@@ -89,6 +122,16 @@ tar -xf "${PETCLAW_STAGE}/release.tar" -C "${PETCLAW_STAGE}/tree"
 /bin/bash "${PETCLAW_STAGE}/tree/deploy/check-release-migrations.sh" \
   "${PETCLAW_STAGE}/tree" \
   "${PETCLAW_STAGE}/tree/deploy/destructive-migrations.allowlist"
+
+# Prove the committed package manifest and lockfile are clean-installable under
+# the same supported runtime family before signing immutable release bytes.
+# --dry-run and --ignore-scripts avoid executing dependency code or creating a
+# generated dependency tree inside the source archive.
+(
+  cd "${PETCLAW_STAGE}/tree/web"
+  npm_config_engine_strict=true \
+    npm ci --dry-run --ignore-scripts --no-audit --no-fund
+)
 
 if find "${PETCLAW_STAGE}/tree" -type l -o -type f -links +1 | grep -q . \
   || find "${PETCLAW_STAGE}/tree" -type f -name '.env*' -print -quit | grep -q . \

@@ -132,6 +132,18 @@ for PETCLAW_CONTRACT in \
   'ec2-release.sh:PETCLAW_POSTMIGRATION_MIN_FREE_BYTES' \
   'ec2-release.sh:PETCLAW_RUNTIME_CACHE' \
   'ec2-release.sh:PETCLAW_SUBSCRIPTION_ORPHANS' \
+  'ec2-release.sh:PETCLAW_REQUIRED_NODE_MAJOR=24' \
+  'ec2-release.sh:PETCLAW_REQUIRED_NODE_MIN_MINOR=18' \
+  'ec2-release.sh:PETCLAW_REQUIRED_NPM_VERSION="11.16.0"' \
+  'ec2-release.sh:PETCLAW_REQUIRED_PM2_VERSION="6.0.14"' \
+  'ec2-release.sh:PETCLAW_PM2_EFFECTIVE_ENV' \
+  'ec2-release.sh:PETCLAW_PM2_EFFECTIVE_PIDFILE' \
+  'ec2-release.sh:PETCLAW_PM2_EFFECTIVE_EXECSTART' \
+  'ec2-release.sh:PETCLAW_PM2_EFFECTIVE_MAINPID' \
+  'ec2-release.sh:PETCLAW_PM2_EXPECTED_EXECUTABLE="/usr/lib/node_modules/pm2/bin/pm2"' \
+  'ec2-release.sh:PETCLAW_PM2_DAEMON_NODE' \
+  'ec2-release.sh:PETCLAW_CANDIDATE_NODE' \
+  'ec2-release.sh:npm_config_engine_strict=true npm ci --ignore-scripts --no-audit --no-fund' \
   'ec2-release.sh:PETCLAW_VERIFIED_DIR="/opt/petclaw/verified"' \
   'ec2-release.sh:exec 9<>"${PETCLAW_RELEASE_LOCK}"' \
   'ec2-release.sh:diff --no-dereference -qr' \
@@ -149,6 +161,9 @@ for PETCLAW_CONTRACT in \
   'release-boot-guard.sh:--ensure-lock' \
   'release-boot-guard.sh:stale boot rollback intent refused' \
   'build-release-artifact.sh:--detach-sign' \
+  'build-release-artifact.sh:PETCLAW_REQUIRED_NODE_MIN_MINOR=18' \
+  'build-release-artifact.sh:npm_config_engine_strict=true' \
+  'build-release-artifact.sh:npm ci --dry-run --ignore-scripts --no-audit --no-fund' \
   'build-release-artifact.sh::(exclude)deploy/setup-rds.sh' \
   'verify-release-artifact.sh:PETCLAW_TRUSTED_VERIFIER' \
   'verify-release-artifact.sh:PETCLAW_VERIFIED_DIR="/opt/petclaw/verified"' \
@@ -172,6 +187,77 @@ done
 if grep -Fq '/bin/bash "${PETCLAW_RELEASE_DIR}/deploy/release-rollback-watchdog.sh"' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh"; then
   echo "FAIL: mutable release watchdog is still scheduled as root" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
+
+for PETCLAW_RUNTIME_POLICY_SCRIPT in ec2-release.sh build-release-artifact.sh; do
+  PETCLAW_RUNTIME_POLICY_FILE="${PETCLAW_TEST_TMP}/${PETCLAW_RUNTIME_POLICY_SCRIPT}.runtime-policy"
+  awk '/^petclaw_runtime_versions_supported\(\) \{/{copy=1} copy{print} copy && /^\}$/{exit}' \
+    "${PETCLAW_TEST_ROOT}/deploy/${PETCLAW_RUNTIME_POLICY_SCRIPT}" \
+    > "${PETCLAW_RUNTIME_POLICY_FILE}"
+  PETCLAW_REQUIRED_NODE_MAJOR=24
+  PETCLAW_REQUIRED_NODE_MIN_MINOR=18
+  PETCLAW_REQUIRED_NPM_VERSION="11.16.0"
+  # shellcheck source=/dev/null
+  source "${PETCLAW_RUNTIME_POLICY_FILE}"
+  if ! petclaw_runtime_versions_supported v24.18.0 11.16.0 \
+    || ! petclaw_runtime_versions_supported v24.99.4 11.16.0; then
+    echo "FAIL: ${PETCLAW_RUNTIME_POLICY_SCRIPT} rejects a supported pinned runtime" >&2
+    exit 1
+  fi
+  for PETCLAW_BAD_RUNTIME in \
+    'v24.17.9|11.16.0' \
+    'v25.0.0|11.16.0' \
+    'v24.18.0|11.15.9' \
+    'v24.18.0|11.16.1' \
+    'v24.18.0|12.0.0' \
+    'v24.18.0-rc.1|11.16.0' \
+    'v024.18.0|11.16.0'; do
+    if petclaw_runtime_versions_supported \
+      "${PETCLAW_BAD_RUNTIME%%|*}" "${PETCLAW_BAD_RUNTIME#*|}"; then
+      echo "FAIL: ${PETCLAW_RUNTIME_POLICY_SCRIPT} accepts unsupported runtime ${PETCLAW_BAD_RUNTIME}" >&2
+      exit 1
+    fi
+  done
+  PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 9))"
+done
+
+if ! node -e '
+  const fs = require("node:fs");
+  const pkg = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+  const lock = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+  const root = lock.packages?.[""];
+  if (JSON.stringify(pkg.engines) !== JSON.stringify(root?.engines)) process.exit(1);
+  if (pkg.packageManager !== "npm@11.16.0") process.exit(1);
+  if (pkg.devDependencies?.["@types/node"] !== "^24") process.exit(1);
+  if (root?.devDependencies?.["@types/node"] !== "^24") process.exit(1);
+' "${PETCLAW_TEST_ROOT}/web/package.json" "${PETCLAW_TEST_ROOT}/web/package-lock.json"; then
+  echo "FAIL: package runtime policy is not mirrored exactly in the lockfile" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
+
+PETCLAW_RUNTIME_GATE_LINE="$(grep -nF 'PETCLAW_NODE_VERSION="$("${PETCLAW_NODE_BIN}" --version' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | cut -d: -f1)"
+PETCLAW_PREFLIGHT_EXIT_LINE="$(grep -nF 'if [[ "${PETCLAW_RELEASE_PREFLIGHT_ONLY}" == "1" ]]' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | cut -d: -f1)"
+if [[ ! "${PETCLAW_RUNTIME_GATE_LINE}" =~ ^[0-9]+$ \
+  || ! "${PETCLAW_PREFLIGHT_EXIT_LINE}" =~ ^[0-9]+$ \
+  || "${PETCLAW_RUNTIME_GATE_LINE}" -ge "${PETCLAW_PREFLIGHT_EXIT_LINE}" ]]; then
+  echo "FAIL: production runtime gate does not precede preflight-only success" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
+
+PETCLAW_CLEAN_INSTALL_LINE="$(grep -nF 'npm ci --dry-run --ignore-scripts --no-audit --no-fund' \
+  "${PETCLAW_TEST_ROOT}/deploy/build-release-artifact.sh" | cut -d: -f1)"
+PETCLAW_ARTIFACT_WRITE_LINE="$(grep -nF 'gzip -n -c "${PETCLAW_STAGE}/release.tar"' \
+  "${PETCLAW_TEST_ROOT}/deploy/build-release-artifact.sh" | cut -d: -f1)"
+if [[ ! "${PETCLAW_CLEAN_INSTALL_LINE}" =~ ^[0-9]+$ \
+  || ! "${PETCLAW_ARTIFACT_WRITE_LINE}" =~ ^[0-9]+$ \
+  || "${PETCLAW_CLEAN_INSTALL_LINE}" -ge "${PETCLAW_ARTIFACT_WRITE_LINE}" ]]; then
+  echo "FAIL: committed clean-install validation does not precede artifact creation" >&2
   exit 1
 fi
 PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
