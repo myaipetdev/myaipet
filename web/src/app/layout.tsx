@@ -33,7 +33,10 @@ export const metadata: Metadata = {
   title: "MY AI PET — Your AI Companion, Portable & Yours",
   description: "The first AI companion you actually own. Persistent memory, data sovereignty, and cross-platform presence — powered by PetClaw Protocol.",
   icons: {
-    icon: "/icon.png",
+    // Keep both declarations on a file that is part of this release. The old
+    // The legacy favicon URL survived on the EC2 host from a previous deploy but was not
+    // present in `public/`, so a clean release could silently lose its favicon.
+    icon: "/apple-touch-icon.png",
     apple: "/apple-touch-icon.png",
   },
   openGraph: {

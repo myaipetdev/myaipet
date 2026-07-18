@@ -17,7 +17,17 @@ import {
   zeroPadValue,
 } from "ethers";
 import { getPersona, type PersonaData } from "@/lib/services/persona";
-import { ONCHAIN } from "@/lib/onchain";
+import { blockchainEnabled, ONCHAIN } from "@/lib/onchain";
+import {
+  claimMemoryMintRecord,
+  hashMemory,
+  markMemoryMintSubmissionFailed,
+  markMemoryMintSubmitted,
+  MemoryClaimNotFoundError,
+  SoulNotAnchoredError,
+} from "@/lib/memoryMintClaim";
+
+export { hashMemory, MemoryClaimNotFoundError, SoulNotAnchoredError };
 
 // ═══════════════════════════════════════════════
 // CONSTANTS
@@ -52,6 +62,13 @@ export type CheckpointTrigger =
 
 export type MemoryType = 0 | 1 | 2 | 3;
 export type MemoryImportance = 1 | 2 | 3 | 4 | 5;
+
+export class BlockchainPausedError extends Error {
+  constructor() {
+    super("On-chain minting is temporarily unavailable");
+    this.name = "BlockchainPausedError";
+  }
+}
 
 // ═══════════════════════════════════════════════
 // HASHING
@@ -144,31 +161,16 @@ export function hashGenesis(pet: {
   return keccak256(toUtf8Bytes(`genesis:${canonical}`));
 }
 
-/**
- * Hash arbitrary memory content for memory NFT.
- */
-export function hashMemory(memory: {
-  content: string;
-  memory_type: string;
-  created_at: Date;
-}): string {
-  const canonical = canonicalize({
-    content: memory.content,
-    memory_type: memory.memory_type,
-    created_at: memory.created_at.toISOString(),
-  });
-  return keccak256(toUtf8Bytes(`memory:${canonical}`));
-}
-
 // ═══════════════════════════════════════════════
 // ON-CHAIN INFRASTRUCTURE
 // ═══════════════════════════════════════════════
 
 function getSoulContract(): Contract | null {
   try {
-    const address = process.env.NEXT_PUBLIC_PET_SOUL_ADDRESS;
+    if (!blockchainEnabled()) return null;
+    const address = ONCHAIN.contracts.petSoul;
     if (!address) {
-      console.warn("[soul] NEXT_PUBLIC_PET_SOUL_ADDRESS not set, on-chain disabled");
+      console.warn("[soul] PET_SOUL_ADDRESS not set, on-chain disabled");
       return null;
     }
     const key = process.env.BACKEND_RELAYER_KEY;
@@ -444,76 +446,57 @@ export async function setSuccessor(
 // MEMORY NFT
 // ═══════════════════════════════════════════════
 
-/**
- * Mint a memory as NFT. Creates MemoryNft record and fires on-chain mint.
- */
+/** Claim one stored memory for chain submission, idempotently. */
 export async function mintMemoryNft(
   petId: number,
+  userId: number,
   options: {
-    memoryId?: number;
+    memoryId: number;
     title: string;
     description: string;
     memoryType: MemoryType;
     importance: MemoryImportance;
   },
-): Promise<{ memoryNftId: number; contentHash: string }> {
-  let soul = await prisma.petSoulNft.findUnique({ where: { pet_id: petId } });
-  if (!soul) {
-    const pet = await prisma.pet.findUnique({
-      where: { id: petId },
-      include: { user: true },
-    });
-    if (!pet || !pet.user) throw new Error(`Pet ${petId} or owner not found`);
-    await initializeSoul(petId, pet.user.wallet_address);
-    soul = await prisma.petSoulNft.findUnique({ where: { pet_id: petId } });
-    if (!soul) throw new Error(`Failed to auto-initialize soul for pet ${petId}`);
-  }
+): Promise<{
+  memoryNftId: number;
+  contentHash: string;
+  mintTxHash: string | null;
+  created: boolean;
+  shouldSubmit: boolean;
+}> {
+  if (!blockchainEnabled()) throw new BlockchainPausedError();
 
-  const now = new Date();
-  const contentHash = hashMemory({
-    content: `${options.title}\n${options.description}`,
-    memory_type: String(options.memoryType),
-    created_at: now,
+  const claim = await prisma.$transaction((tx) => claimMemoryMintRecord(tx, {
+    userId,
+    petId,
+    memoryId: options.memoryId,
+    title: options.title,
+    description: options.description,
+    fallbackMemoryType: options.memoryType,
+  }), {
+    maxWait: 5_000,
+    timeout: 10_000,
   });
 
-  const record = await prisma.memoryNft.create({
-    data: {
-      pet_id: petId,
-      memory_id: options.memoryId ?? null,
-      soul_token_id: soul.token_id ?? null,
-      content_hash: contentHash,
-      memory_type: options.memoryType,
-      importance: options.importance,
-      title: options.title,
-      description: options.description,
-      owner_wallet: soul.owner_wallet,
-      chain: "bsc",
-    },
-  });
-
-  if (options.memoryId != null) {
-    try {
-      await prisma.petMemory.update({
-        where: { id: options.memoryId },
-        data: { is_minted: true, memory_nft_id: record.id },
-      });
-    } catch (err) {
-      console.error("[soul] petMemory update skipped:", err);
-    }
-  }
-
-  if (soul.token_id != null) {
+  if (claim.shouldSubmit && claim.claimToken) {
     fireAndForgetMintMemory({
-      ownerWallet: soul.owner_wallet,
-      soulTokenId: soul.token_id,
-      contentHash,
-      memoryType: options.memoryType,
-      importance: options.importance,
-      memoryNftRecordId: record.id,
+      ownerWallet: claim.ownerWallet,
+      soulTokenId: claim.soulTokenId,
+      contentHash: claim.contentHash,
+      memoryType: claim.memoryType,
+      importance: claim.importance,
+      memoryNftRecordId: claim.memoryNftId,
+      claimToken: claim.claimToken,
     });
   }
 
-  return { memoryNftId: record.id, contentHash };
+  return {
+    memoryNftId: claim.memoryNftId,
+    contentHash: claim.contentHash,
+    mintTxHash: claim.mintTxHash,
+    created: claim.created,
+    shouldSubmit: claim.shouldSubmit,
+  };
 }
 
 // ═══════════════════════════════════════════════
@@ -717,11 +700,20 @@ function fireAndForgetMintMemory(params: {
   memoryType: number;
   importance: number;
   memoryNftRecordId: number;
+  claimToken: string;
 }): void {
   const contract = getSoulContract();
-  if (!contract) return;
+  if (!contract) {
+    void prisma.$transaction((tx) => markMemoryMintSubmissionFailed(
+      tx,
+      params.memoryNftRecordId,
+      params.claimToken,
+    )).catch((err) => console.error("[soul] failed to release unavailable relayer claim:", err));
+    return;
+  }
 
   (async () => {
+    let sentTxHash: string | null = null;
     try {
       const tx = await contract.mintMemory(
         params.ownerWallet,
@@ -730,12 +722,19 @@ function fireAndForgetMintMemory(params: {
         params.memoryType,
         params.importance,
       );
+      sentTxHash = tx.hash;
       console.log(`[soul] mintMemory tx sent: ${tx.hash}`);
 
-      await prisma.memoryNft.update({
-        where: { id: params.memoryNftRecordId },
-        data: { mint_tx_hash: tx.hash, minted_at: new Date() },
-      });
+      const submitted = await prisma.$transaction((db) => markMemoryMintSubmitted(
+        db,
+        params.memoryNftRecordId,
+        params.claimToken,
+        tx.hash,
+      ));
+      if (!submitted) {
+        console.error(`[soul] mintMemory tx ${tx.hash} was sent after its DB claim became stale`);
+        return;
+      }
 
       tx.wait()
         .then(async (receipt: { logs: unknown[] }) => {
@@ -758,20 +757,31 @@ function fireAndForgetMintMemory(params: {
                 // skip
               }
             }
-            if (tokenId !== null) {
-              await prisma.memoryNft.update({
-                where: { id: params.memoryNftRecordId },
-                data: { memory_token_id: tokenId },
-              });
-            }
+            await prisma.memoryNft.updateMany({
+              where: { id: params.memoryNftRecordId, mint_tx_hash: tx.hash },
+              data: {
+                mint_status: "confirmed",
+                minted_at: new Date(),
+                ...(tokenId !== null ? { memory_token_id: tokenId } : {}),
+              },
+            });
           } catch (err) {
             console.error("[soul] mintMemory post-confirm error:", err);
           }
         })
         .catch((err: unknown) => {
           console.error("[soul] mintMemory tx failed:", err);
-        });
+      });
     } catch (err) {
+      if (!sentTxHash) {
+        await prisma.$transaction((tx) => markMemoryMintSubmissionFailed(
+          tx,
+          params.memoryNftRecordId,
+          params.claimToken,
+        )).catch((releaseError) => {
+          console.error("[soul] failed to release rejected mint claim:", releaseError);
+        });
+      }
       console.error("[soul] fireAndForgetMintMemory error:", err);
     }
   })();

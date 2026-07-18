@@ -13,6 +13,7 @@ import { confirmDialog, promptDialog } from "@/components/Dialog";
 // ── Types ──
 interface SoulState {
   token_id?: number | string;
+  mint_tx_hash?: string | null;
   genesis_hash?: string;
   current_version?: number;
   current_hash?: string;
@@ -34,7 +35,7 @@ interface Checkpoint {
   hash?: string;
 }
 
-interface MemoryNft {
+interface MemoryMilestone {
   id: number | string;
   token_id?: number | string;
   memory_type: string;
@@ -43,10 +44,11 @@ interface MemoryNft {
   importance: number;
   tx_hash?: string | null;
   minted_at?: string;
+  recorded_at?: string;
 }
 
-// Receipts surfaced from the export/delete responses (cryptographic proof of
-// exactly what left / was erased from the system).
+// Receipts surfaced from export/delete responses. These are integrity
+// checksums/identifiers, not third-party-verifiable server signatures.
 interface ExportReceipt {
   exportedAt?: string;
   integrityHash?: string;
@@ -108,7 +110,7 @@ const BSCSCAN = "https://bscscan.com";
 // Single source of truth for the shipped extension version — must match
 // desktop-pet/manifest.json "version". Keeping the dashboard honest: it
 // previously advertised "v2.0" while the packaged extension was 2.2.x.
-const EXT_VERSION = "2.2.3";
+const EXT_VERSION = "2.3.1";
 
 const truncate = (s?: string | null, n = 4) => {
   if (!s) return "—";
@@ -141,6 +143,13 @@ const MEMORY_TYPE_ICONS: Record<string, string> = {
   milestone: "trophy",
   dream: "sparkling",
   achievement: "medal",
+  "0": "chat",
+  "1": "trophy",
+  "2": "sparkling",
+  "3": "medal",
+  "10": "heart",
+  "20": "trophy",
+  "30": "medal",
 };
 
 // ── Direct API access (no more defensive fallbacks) ──
@@ -159,6 +168,7 @@ const memoryNftApi = {
 function ChannelConnectionsCard({ petId }: { petId: number }) {
   const [providers, setProviders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unavailable, setUnavailable] = useState(false);
   const [actioning, setActioning] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -172,7 +182,11 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
       // and silently mask an auth/server failure as an empty state.
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
+        setUnavailable(false);
         setProviders(data.providers || []);
+      } else if (res.status === 503) {
+        setUnavailable(true);
+        setProviders([]);
       }
     } catch {}
     setLoading(false);
@@ -227,7 +241,7 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
   // connected. A card full of disabled "Coming soon — admin not configured"
   // rows just reads as broken, so when nothing is actionable we hide it entirely.
   const visible = providers.filter((p) => p.configured || p.connected);
-  if (!loading && visible.length === 0) return null;
+  if (!loading && !unavailable && visible.length === 0) return null;
 
   return (
     <div className="sov-card" style={{
@@ -243,15 +257,20 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
           fontSize: 13, padding: "3px 10px", borderRadius: 999,
           background: "rgba(190,79,40,0.1)", color: TERRA_SUB,
           fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
-        }}>OAUTH</span>
+        }}>{unavailable ? "UNAVAILABLE" : "OAUTH"}</span>
       </div>
       <p style={{ fontFamily: BODY, fontSize: 14, color: MUTED2, lineHeight: 1.6, margin: "0 0 22px" }}>
-        Subscribe your pet to platforms via OAuth. Tokens stored per-pet, revocable anytime,
-        never returned to the browser. Same memory follows across every channel.
+        {unavailable
+          ? "Channel subscriptions are unavailable for launch while credential storage is being upgraded."
+          : "Subscribe your pet to platforms via OAuth. Tokens are encrypted per pet, revocable anytime, and never returned to the browser."}
       </p>
 
       {loading ? (
         <div style={{ padding: 20, textAlign: "center", color: MUTED, fontSize: 13, fontFamily: BODY }}>Loading…</div>
+      ) : unavailable ? (
+        <div role="status" style={{ padding: "14px 16px", borderRadius: 12, background: INSET, color: MUTED2, fontSize: 14, fontFamily: BODY, lineHeight: 1.6 }}>
+          Unavailable right now. No new channel can be connected, and no OAuth callback will be accepted.
+        </div>
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
           {visible.map((p) => {
@@ -316,12 +335,12 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
         </div>
       )}
 
-      <div style={{
+      {!unavailable && <div style={{
         marginTop: 16, padding: "10px 14px", borderRadius: 10,
         background: INSET, fontFamily: BODY, fontSize: 13.5, color: MUTED2, lineHeight: 1.6,
       }}>
         Tokens never leave the server. Disconnect any time — pet stops posting/reading on that channel within seconds.
-      </div>
+      </div>}
     </div>
   );
 }
@@ -334,7 +353,7 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
 // turns may contain Korean (chats predating the English-only enforcement); we
 // hide those from the log rather than fabricating translations. Underlying data
 // is untouched and still exportable.
-const hasHangul = (s: string) => /[㄰-㆏가-힣]/.test(s || "");
+const hasHangul = (s: string) => /[\u3130-\u318f\uac00-\ud7a3]/.test(s || "");
 // Strip the leading "[user]" / "[pet]" speaker tag for display.
 const stripSpeakerTag = (s: string) => (s || "").replace(/^\[(user(?::[^\]]+)?|pet)\]\s*/, "");
 
@@ -764,7 +783,7 @@ function StepArt({ n }: { n: number }) {
           <path d="M150 78l8 8 14-16" stroke={INK} strokeWidth="2.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
-    default: // 6: Pin & Sign In — pinned toolbar icon + Settings › Connection field
+    case 6: // Pin & Sign In — pinned toolbar icon + Settings › Connection field
       return (
         <svg {...common}>
           {/* browser toolbar with the pinned pet icon */}
@@ -773,32 +792,53 @@ function StepArt({ n }: { n: number }) {
           <circle cx="173" cy="27" r="1.3" fill={INK} /><circle cx="179" cy="27" r="1.3" fill={INK} />
           <path d="M173 31q3 2 6 0" stroke={INK} strokeWidth="1.3" fill="none" strokeLinecap="round" />
           <path d="M176 39l-4.5 6h9Z" fill={AMBER} {...S} strokeWidth="1.6" />
-          {/* Settings > Connection panel with pasted CLI token */}
+          {/* Settings > Connection panel with a scoped extension token */}
           <rect x="24" y="52" width="172" height="56" rx="9" fill={CREAM} {...S} />
           <text x="36" y="68" fontSize="8.5" fontFamily="var(--ed-m)" fontWeight="700" fill="#7A6E5A">SETTINGS › CONNECTION</text>
           <rect x="36" y="76" width="116" height="20" rx="6" fill={WHITE} {...S} />
-          <text x="44" y="90" fontSize="9.5" fontFamily="var(--ed-m)" fontWeight="700" fill={INK}>pck_••••••••</text>
+          <text x="44" y="90" fontSize="9.5" fontFamily="var(--ed-m)" fontWeight="700" fill={INK}>pex_••••••••</text>
           <rect x="158" y="76" width="22" height="20" rx="6" fill={AMBER} {...S} />
           <path d="M164 86l4 4 6-8" stroke={INK} strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    default: // 7: grant this one site's optional Chrome host permission
+      return (
+        <svg {...common}>
+          <rect x="24" y="18" width="172" height="92" rx="9" fill={WHITE} {...S} />
+          <text x="36" y="36" fontSize="8.5" fontFamily="var(--ed-m)" fontWeight="700" fill="#7A6E5A">SETTINGS › WEBSITE ACCESS</text>
+          <rect x="36" y="48" width="148" height="20" rx="6" fill={CREAM} {...S} />
+          <circle cx="49" cy="58" r="4" fill={GOOD} />
+          <text x="59" y="62" fontSize="9" fontFamily="var(--ed-m)" fontWeight="700" fill={INK}>This scheme + domain</text>
+          <rect x="56" y="78" width="108" height="20" rx="10" fill={AMBER} {...S} />
+          <text x="110" y="92" fontSize="9" fontFamily="var(--ed-disp)" fontWeight="800" fill={INK} textAnchor="middle">Allow on this site</text>
         </svg>
       );
   }
 }
 
 function ChromeExtensionSection() {
+  useEffect(() => {
+    if (window.location.hash === "#petclaw-extension") {
+      window.setTimeout(() => document.getElementById("petclaw-extension")?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    }
+  }, []);
+
   const steps = [
     { n: 1, title: "Download", desc: 'Click "Download Extension" below to get the ZIP file.' },
     { n: 2, title: "Unzip", desc: "Extract the ZIP to any folder on your computer — remember where you put it." },
     { n: 3, title: "Open Extensions", desc: "In Chrome, go to chrome://extensions." },
     { n: 4, title: "Developer Mode", desc: 'Flip the "Developer mode" toggle on, top-right of that page.' },
     { n: 5, title: "Load Unpacked", desc: 'Click "Load unpacked" and select the unzipped folder.' },
-    { n: 6, title: "Pin & Sign In", desc: 'Pin the pet to your toolbar, then open it → Settings › Connection and paste your CLI token (from "Connect your CLI" above) so it shows YOUR pet.' },
+    { n: 6, title: "Pin & Pair", desc: 'Pin the pet, generate a 30-day extension token in "Connect PetClaw clients" above, then paste it into Settings → Connection.' },
+    { n: 7, title: "Allow One Site", desc: "Open the site, then choose Extension → Settings → Website Access → Allow. Access is per scheme and domain. A built-in list blocks common sensitive domains; keep access off on every other sensitive page." },
   ];
 
   return (
     <div
+      id="petclaw-extension"
       className="sov-card"
       style={{
+        scrollMarginTop: 88,
         borderRadius: 20, marginBottom: 32, overflow: "hidden",
         border: `1px solid ${HAIR}`,
         background: PAPER,
@@ -812,9 +852,9 @@ function ChromeExtensionSection() {
           <span style={{ fontSize: 13, padding: "3px 9px", borderRadius: 999, background: "rgba(190,79,40,0.1)", color: TERRA_SUB, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>v{EXT_VERSION} · CHROME</span>
         </div>
         <p style={{ fontFamily: BODY, fontSize: 14, color: MUTED2, lineHeight: 1.65, marginBottom: 14 }}>
-          Your pet follows you across the web — a little companion in the corner of every page. Click it to chat,
-          ask <em>&ldquo;what&apos;s this page?&rdquo;</em>, feed or play. It reads the page you&apos;re on (locally,
-          on your machine) so it can react in your pet&apos;s voice.
+          Your pet follows you across supported websites — a little companion you can pause per site. Click it to chat,
+          ask <em>&ldquo;what&apos;s this page?&rdquo;</em>, feed or play. Page reactions are off by default. A summary reads
+          only after you approve a preview, then sends the approved excerpt to a non-memory summarizer.
         </p>
         <div style={{
           display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 14px", borderRadius: 12,
@@ -822,9 +862,8 @@ function ChromeExtensionSection() {
         }}>
           <span style={{ fontSize: 16, lineHeight: 1.4, display: "inline-flex", color: TERRA }}><Icon name="lock" size={16} /></span>
           <p style={{ fontFamily: BODY, fontSize: 13, color: INK70, lineHeight: 1.6, margin: 0 }}>
-            <strong>To see YOUR pet</strong> (not a random one): after installing, open the extension&apos;s
-            <strong> Settings</strong> and paste your <strong>CLI token</strong> — generate one in{" "}
-            <a href="#connect-cli" style={{ color: TERRA, fontWeight: 700, textDecoration: "underline" }}>&ldquo;Connect your CLI&rdquo;</a> above. Without it, the extension can&apos;t tell which pet is yours.
+            <strong>To see YOUR pet:</strong> generate a <strong>30-day extension token</strong> in{" "}
+            <a href="#connect-cli" style={{ color: TERRA, fontWeight: 700, textDecoration: "underline" }}>&ldquo;Connect PetClaw clients&rdquo;</a> above, then paste it in the extension&apos;s <strong>Settings</strong>. The token is limited to extension features and can be revoked at any time.
           </p>
         </div>
       </Reveal>
@@ -836,11 +875,11 @@ function ChromeExtensionSection() {
         <Reveal dir="left" threshold={0.1} style={{ flex: "1 1 280px", padding: "24px 30px", borderRight: `1px solid ${HAIR}` }}>
           <div className="sov-2col" style={{ gap: 10, marginBottom: 24 }}>
             {[
-              { icon: "paw", title: "Always Alive", desc: "Your pet runs in the background and sends push notifications." },
+              { icon: "paw", title: "Background Companion", desc: "Chrome wakes your pet for allowed-site activity, scheduled care checks, and enabled notifications." },
               { icon: "medal", title: "Play Points", desc: "Collect local play points for browsing, chats, streaks, and evolution — stored on your device, just for fun." },
               { icon: "joystick", title: "Mini Games", desc: "Treat Catcher and Memory Match, built right into the popup." },
-              { icon: "crystal-ball", title: "Context Aware", desc: "Pet reads the current page and reacts to what you're looking at." },
-              { icon: "sparkling", title: "Evolution", desc: "6 stages from Baby → Legendary. Each stage unlocks new behaviors." },
+              { icon: "crystal-ball", title: "Context Aware", desc: "Optional local reactions; summaries show the full excerpt and ask twice before sending." },
+              { icon: "sparkling", title: "Evolution", desc: "6 local stages from Egg → Legendary, with visual auras and a Legendary Play Points bonus." },
               { icon: "heart", title: "Mood System", desc: "Pet gets hungry, tired, or excited based on your activity." },
             ].map(({ icon, title, desc }) => (
               <div key={title} style={{ padding: 12, borderRadius: 12, background: INSET, border: `1px solid ${HAIR}` }}>
@@ -894,7 +933,7 @@ function ChromeExtensionSection() {
           </div>
           <p style={{ marginTop: 10, fontFamily: BODY, fontSize: 13, color: MUTED2, lineHeight: 1.55, maxWidth: 460 }}>
             Not yet on the Chrome Web Store — this is a developer / &ldquo;unpacked&rdquo; install straight from the ZIP,
-            using the 6 steps above. Takes about 2 minutes.
+            using the 7 steps above. Takes about 2 minutes.
           </p>
         </Reveal>
 
@@ -927,7 +966,7 @@ function ChromeExtensionSection() {
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 3 }}>Sparky</div>
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                  {["⚡ Teen", "😄 Happy", "🔥 Fire"].map((tag) => (
+                  {["⚡ Adult", "😄 Happy", "🔥 Fire"].map((tag) => (
                     <span key={tag} style={{ fontSize: 9, padding: "2px 6px", borderRadius: 5, background: "rgba(255,255,255,0.06)", color: "#cbb" }}>{tag}</span>
                   ))}
                 </div>
@@ -994,8 +1033,8 @@ function ChromeExtensionSection() {
               <div style={{ marginTop: 12, padding: "8px 10px", borderRadius: 8, background: "rgba(244,155,42,0.08)", border: "1px solid rgba(244,155,42,0.16)", display: "flex", gap: 8, alignItems: "flex-start" }}>
                 <span style={{ fontSize: 14 }}>⚡</span>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#F49B2A" }}>Level up! Teen stage unlocked</div>
-                  <div style={{ fontSize: 9, color: "#7a736a", fontFamily: "monospace" }}>+200 evolution points earned</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#F49B2A" }}>Evolved! Adult stage unlocked</div>
+                  <div style={{ fontSize: 9, color: "#7a736a", fontFamily: "monospace" }}>+50 local Play Points earned</div>
                 </div>
               </div>
             </div>
@@ -1020,7 +1059,7 @@ export default function SovereigntyDashboard() {
   const [selectedPet, setSelectedPet] = useState<any>(null);
   const [soul, setSoul] = useState<SoulState | null>(null);
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
-  const [memoryNfts, setMemoryNfts] = useState<MemoryNft[]>([]);
+  const [memoryMilestones, setMemoryMilestones] = useState<MemoryMilestone[]>([]);
   const [loading, setLoading] = useState(true);
   const [successorInput, setSuccessorInput] = useState("");
   const [successorSaving, setSuccessorSaving] = useState(false);
@@ -1043,11 +1082,12 @@ export default function SovereigntyDashboard() {
     return false;
   };
   const [consent, setConsent] = useState({
-    allowPublicProfile: true,
+    allowPublicProfile: false,
     allowDataSharing: false,
     allowAITraining: false,
-    allowInteraction: true,
+    allowInteraction: false,
   });
+  const [consentSaving, setConsentSaving] = useState(false);
 
   // ── Transparency snapshot ("what we hold about you") ──
   // Memory stats are NOT fetched by fetchSovereigntyData — pulled in below.
@@ -1055,7 +1095,7 @@ export default function SovereigntyDashboard() {
   const [connectedCount, setConnectedCount] = useState<number | null>(null);
   const [installedSkillCount, setInstalledSkillCount] = useState<number | null>(null);
 
-  // ── Export / Delete proof receipts (surfaced from response payloads) ──
+  // ── Export integrity / deletion receipts (surfaced from responses) ──
   const [exportReceipt, setExportReceipt] = useState<ExportReceipt | null>(null);
   const [deleteReceipt, setDeleteReceipt] = useState<DeleteReceipt | null>(null);
 
@@ -1126,9 +1166,9 @@ export default function SovereigntyDashboard() {
       const toArr = (v: any) => Array.isArray(v) ? v : [];
       setSoul(soulRes?.soul || soulRes || null);
       setCheckpoints(toArr(ckptRes?.checkpoints ?? ckptRes));
-      // Route returns { items } — reading .memories coerced the object to []
-      // via toArr, so minted NFTs would never render once they exist.
-      setMemoryNfts(toArr(memsRes?.items ?? memsRes?.memories ?? memsRes?.memory_nfts ?? memsRes));
+      // Route returns { items }; these are off-chain history records unless an
+      // individual item includes a real transaction hash.
+      setMemoryMilestones(toArr(memsRes?.items ?? memsRes?.memories ?? memsRes?.memory_nfts ?? memsRes));
       setSuccessorInput((soulRes?.soul?.successor_wallet || soulRes?.successor_wallet) || "");
       if (consentRes?.consent) setConsent(consentRes.consent);
       setMemoryStats(memStatsRes?.stats ?? null);
@@ -1138,20 +1178,31 @@ export default function SovereigntyDashboard() {
     setLoading(false);
   }, [selectedPet]);
 
-  // Persist consent toggle (debounced via flag)
-  const saveConsent = async (next: typeof consent) => {
+  // Persist consent toggle and roll the optimistic UI back on any server error.
+  const saveConsent = async (next: typeof consent, previous: typeof consent) => {
     if (!selectedPet || guardDemo()) return;
+    setConsentSaving(true);
     try {
-      await fetch("/api/petclaw/consent", {
+      const response = await fetch("/api/petclaw/consent", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ petId: selectedPet.id, consent: next }),
       });
+      if (!response.ok) {
+        throw new Error(`Consent save failed (${response.status})`);
+      }
+      const payload = await response.json().catch(() => null);
+      if (payload?.consent) setConsent(payload.consent);
       setSovMsg("Consent saved");
       setTimeout(() => setSovMsg(null), 2000);
     } catch {
+      // The controls are optimistic for responsiveness, but privacy choices must
+      // never look persisted when the server rejected or lost the request.
+      setConsent(previous);
       setSovMsg("Failed to save consent");
       setTimeout(() => setSovMsg(null), 3000);
+    } finally {
+      setConsentSaving(false);
     }
   };
 
@@ -1216,7 +1267,7 @@ export default function SovereigntyDashboard() {
     setSuccessorMsg(null);
     try {
       await soulApi.setSuccessor(selectedPet.id, successorInput.trim());
-      setSuccessorMsg("Successor saved — anchors on-chain at go-live");
+      setSuccessorMsg("Successor saved off-chain — on-chain inheritance is planned, not live");
       fetchSovereigntyData();
     } catch (err: any) {
       setSuccessorMsg(err?.message || "Failed to save");
@@ -1327,7 +1378,7 @@ export default function SovereigntyDashboard() {
         </div>
 
         {/* PetClaw agentic-harness console — the headline of this tab */}
-        <div style={{ marginBottom: 40 }}>
+        <div id="connect-cli" style={{ marginBottom: 40, scrollMarginTop: 88 }}>
           <PetClawConsole
             key={selectedPet?.id ?? "none"}
             petId={selectedPet?.id}
@@ -1370,7 +1421,7 @@ export default function SovereigntyDashboard() {
                   <rect x="3" y="9" width="9.5" height="6" rx="3" />
                   <rect x="11.5" y="9" width="9.5" height="6" rx="3" />
                 </svg>
-                ON-CHAIN AT GO-LIVE
+                ON-CHAIN · PLANNED, NOT LIVE
               </span>
             </div>
             <MaskedTitle
@@ -1379,7 +1430,7 @@ export default function SovereigntyDashboard() {
               style={{ fontFamily: DISP, fontSize: 52, fontWeight: 800, letterSpacing: "-0.04em", color: INK, lineHeight: 1.0, margin: "0 0 16px" }}
             />
             <p style={{ fontFamily: BODY, fontSize: 16, color: MUTED2, lineHeight: 1.7, margin: "0 0 28px", maxWidth: 380 }}>
-              Every memory, every conversation, every bond — owned by you. Not us. Export your pet&apos;s full soul anytime; its on-chain anchor and inheritance activate at go-live.
+              Every memory, every conversation, every bond — owned by you. Not us. Export your pet&apos;s full soul anytime. On-chain anchoring and inheritance are planned but have no activation date.
             </p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               {[
@@ -1451,7 +1502,7 @@ export default function SovereigntyDashboard() {
             No pets yet
           </div>
           <div style={{ fontFamily: MONO, fontSize: 13, color: MONO_CLR, letterSpacing: "0.1em" }}>
-            Adopt a pet to birth your sovereign self on-chain
+            Adopt a pet to create a portable, exportable Soul
           </div>
         </div>
       )}
@@ -1483,7 +1534,9 @@ export default function SovereigntyDashboard() {
           {soul ? (
             /* ── Soul Identity Card — warm editorial spec sheet ── */
             <Reveal dir="up" style={{ marginBottom: 28 }}>
-              <p className="sov-section-sub" style={{ marginBottom: 16 }}>Soul Identity</p>
+              <p className="sov-section-sub" style={{ marginBottom: 16 }}>
+                Soul Identity · {soul.on_chain ? "ON-CHAIN" : "OFF-CHAIN RECORD"}
+              </p>
               <div style={{
                 display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12,
               }}>
@@ -1497,7 +1550,18 @@ export default function SovereigntyDashboard() {
                   // during the on-chain holding period must NOT render as "#null".
                   ...(soul.token_id != null ? [{ label: "TOKEN ID", value: `#${soul.token_id}`, accent: INK }] : []),
                 ].map(({ label, value, accent, click, copied: isCopied }: any) => (
-                  <div key={label} onClick={click} style={{
+                  <div
+                    key={label}
+                    onClick={click}
+                    role={click ? "button" : undefined}
+                    tabIndex={click ? 0 : undefined}
+                    aria-label={click ? `Copy ${label.toLowerCase()}` : undefined}
+                    onKeyDown={click ? (event) => {
+                      if (event.key !== "Enter" && event.key !== " ") return;
+                      event.preventDefault();
+                      click();
+                    } : undefined}
+                    style={{
                     padding: "16px 18px", borderRadius: 14, background: PAPER,
                     border: `1px solid ${HAIR}`, boxShadow: CARD_SHADOW, cursor: click ? "pointer" : "default",
                     transition: "border-color 0.2s",
@@ -1511,8 +1575,8 @@ export default function SovereigntyDashboard() {
                 ))}
               </div>
 
-              {soul.on_chain && soul.genesis_hash && (
-                <a href={`${BSCSCAN}/tx/${soul.genesis_hash}`} target="_blank" rel="noopener noreferrer" className="ed-wipe" style={{
+              {soul.on_chain && soul.mint_tx_hash && (
+                <a href={`${BSCSCAN}/tx/${soul.mint_tx_hash}`} target="_blank" rel="noopener noreferrer" className="ed-wipe" style={{
                   display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14,
                   padding: "7px 14px", borderRadius: 999, background: INSET,
                   border: `1px solid ${HAIR}`, color: TERRA_SUB,
@@ -1533,10 +1597,9 @@ export default function SovereigntyDashboard() {
                 <span style={{ color: TERRA, display: "inline-flex" }}><Icon name="crystal-ball" size={18} /></span> Soul not yet anchored on-chain
               </div>
               <div style={{ fontFamily: BODY, fontSize: 13, color: INK70, lineHeight: 1.7 }}>
-                Your pet&apos;s Soul — its 5-layer memory, persona, and identity — already lives in your
-                account and is fully yours today. The on-chain Soul NFT (which timestamps it to BSC and
-                unlocks inheritance) is paused until on-chain features resume — see /contracts. You can export your
-                complete memory ledger any time with <strong>Export SOUL Data</strong> below.
+                Your pet&apos;s Soul — its memory, persona, and identity — lives in your account and can be
+                exported today. An on-chain Soul NFT and automatic inheritance are future designs, not
+                active features; no activation date is announced. See /contracts for current status.
               </div>
             </Reveal>
           )}
@@ -1582,7 +1645,7 @@ export default function SovereigntyDashboard() {
 
             {/* What this actually is — it's NOT the level/XP bar. */}
             <p style={{ fontFamily: BODY, fontSize: 13.5, lineHeight: 1.6, color: MUTED2, margin: "0 0 22px" }}>
-              <strong style={{ color: INK }}>Not your level.</strong> This is the versioned history of <em>who your pet is becoming</em> — each checkpoint is an immutable snapshot of its personality, voice, and memory at a turning point (adoption, a memory consolidation, a milestone). A SHA-256 hash fingerprints each version; each version can be anchored on-chain at go-live, so your pet&apos;s identity is portable and provable — not locked to this app.
+              <strong style={{ color: INK }}>Not your level.</strong> This is the versioned history of <em>who your pet is becoming</em> — each checkpoint is an immutable snapshot of its personality, voice, and memory at a turning point (adoption, a memory consolidation, a milestone). A SHA-256 hash fingerprints each version. Future on-chain anchoring is planned but not live; portability works through the downloadable SOUL bundle today.
             </p>
 
             {checkpoints.length === 0 ? (
@@ -1752,7 +1815,7 @@ export default function SovereigntyDashboard() {
                 lineHeight: 1.65,
               }}
             >
-              Your AI self outlives you. Designate a successor wallet to inherit your sovereign identity.
+              Record a successor-wallet preference. This is stored off-chain today; automatic transfer and on-chain inheritance are not active.
             </p>
 
             <div style={{ marginBottom: 14 }}>
@@ -1772,6 +1835,7 @@ export default function SovereigntyDashboard() {
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <input
                   className="sov-successor-input"
+                  aria-label="Successor wallet"
                   value={successorInput}
                   onChange={(e) => setSuccessorInput(e.target.value)}
                   placeholder="0x..."
@@ -1854,10 +1918,10 @@ export default function SovereigntyDashboard() {
             >
               <div>
                 <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 6, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                  Inheritance Trigger
+                  Planned Trigger · Not Active
                 </div>
                 <div style={{ fontSize: 15, fontFamily: DISP, fontWeight: 700, color: INK }}>
-                  {soul?.inactivity_days ?? 180} days of inactivity
+                  Proposed: {soul?.inactivity_days ?? 180} days of inactivity
                 </div>
               </div>
               <div>
@@ -1871,7 +1935,7 @@ export default function SovereigntyDashboard() {
             </div>
           </Reveal>
 
-          {/* ───── Memory NFT Collection ───── */}
+          {/* ───── Memory milestone history ───── */}
           <Reveal
             dir="up"
             threshold={0.1}
@@ -1894,7 +1958,7 @@ export default function SovereigntyDashboard() {
                 }}
               />
               <h2 style={{ fontFamily: DISP, fontSize: 24, fontWeight: 800, color: INK, letterSpacing: "-0.02em" }}>
-                Memory NFTs
+                Memory milestones
               </h2>
               <span
                 style={{
@@ -1905,7 +1969,7 @@ export default function SovereigntyDashboard() {
                   color: MONO_CLR,
                 }}
               >
-                {memoryNfts.length} preserved
+                {memoryMilestones.length} preserved
               </span>
               <span style={{
                 marginLeft: "auto",
@@ -1913,11 +1977,11 @@ export default function SovereigntyDashboard() {
                 fontSize: 13,
                 color: MUTED,
               }}>
-                Minting resumes at on-chain go-live — see <a href="/contracts" style={{ color: TERRA_SUB, fontWeight: 700, textDecoration: "none" }}>/contracts</a>.
+                On-chain minting is paused. Records without a transaction hash remain off-chain history — see <a href="/contracts" style={{ color: TERRA_SUB, fontWeight: 700, textDecoration: "none" }}>/contracts</a>.
               </span>
             </div>
 
-            {memoryNfts.length === 0 ? (
+            {memoryMilestones.length === 0 ? (
               <div
                 style={{
                   padding: 40,
@@ -1938,7 +2002,7 @@ export default function SovereigntyDashboard() {
                   gap: 16,
                 }}
               >
-                {memoryNfts.map((m) => (
+                {memoryMilestones.map((m) => (
                   <div
                     key={m.id}
                     style={{
@@ -1998,7 +2062,7 @@ export default function SovereigntyDashboard() {
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontFamily: MONO, fontSize: 13, color: MONO_CLR }}>
-                        {formatDate(m.minted_at)}
+                        {formatDate(m.minted_at || m.recorded_at)}
                       </span>
                       {m.tx_hash && (
                         <a
@@ -2016,6 +2080,11 @@ export default function SovereigntyDashboard() {
                         >
                           on-chain ↗
                         </a>
+                      )}
+                      {!m.tx_hash && (
+                        <span style={{ fontSize: 13, fontFamily: MONO, color: MUTED, fontWeight: 700 }}>
+                          off-chain history
+                        </span>
                       )}
                     </div>
                   </div>
@@ -2062,7 +2131,7 @@ export default function SovereigntyDashboard() {
               <Stat label="Connected platforms" value={connectedCount ?? 0} />
               <Stat label="Installed skills" value={installedSkillCount ?? 0} />
               <Stat label="Soul checkpoints" value={checkpoints.length} />
-              <Stat label="Memory NFTs" value={memoryNfts.length} />
+              <Stat label="Memory milestones" value={memoryMilestones.length} />
             </div>
 
             <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 8, letterSpacing: "0.12em", textTransform: "uppercase" }}>
@@ -2126,10 +2195,11 @@ export default function SovereigntyDashboard() {
               fontSize: 15, color: MUTED2, marginBottom: 20,
               fontFamily: BODY, lineHeight: 1.65,
             }}>
-              Your pet, your data, your rules. <strong>Export SOUL Data</strong> downloads your pet&apos;s
-              complete memory ledger as a signed JSON bundle (SHA-256 verified) you can re-import on any
-              PetClaw-compatible server — no lock-in. <strong>Delete All Data</strong> permanently erases
-              everything; this cannot be undone.
+              Your pet, your data, your rules. <strong>Export SOUL Data</strong> downloads a portable JSON
+              bundle containing your pet&apos;s identity, memory, skills, consent, and linked activity data.
+              <strong> Delete Pet Data</strong> removes pet-scoped records and owned media from active
+              systems immediately. Backup copies expire under the published retention schedule, and public
+              on-chain records cannot be erased.
             </p>
 
             {/* Actions */}
@@ -2149,7 +2219,7 @@ export default function SovereigntyDashboard() {
                     a.download = `${selectedPet.name}_SOUL.json`;
                     a.click();
                     URL.revokeObjectURL(url);
-                    // Surface the cryptographic proof of exactly what left the system.
+                    // Surface the bundle checksum recorded at export time.
                     const d = data as any;
                     setExportReceipt({
                       exportedAt: d?.exportedAt,
@@ -2194,7 +2264,7 @@ export default function SovereigntyDashboard() {
                     <path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" />
                     <path d="M10 11v7M14 11v7" />
                   </svg>
-                  Delete All Data
+                  Delete Pet Data
                 </button>
               ) : (
                 <div style={{ display: "flex", gap: 6 }}>
@@ -2206,7 +2276,7 @@ export default function SovereigntyDashboard() {
                         const result = await api.petclaw.delete(selectedPet.id);
                         const r = result as any;
                         setDeleteReceipt({ deletedAt: r?.deletedAt, deletionHash: r?.deletionHash });
-                        setSovMsg("All data permanently deleted");
+                        setSovMsg("Pet data removed from active systems");
                         setDeleteConfirm(false);
                         fetchSovereigntyData();
                       } catch (e: any) {
@@ -2251,8 +2321,7 @@ export default function SovereigntyDashboard() {
               </div>
             )}
 
-            {/* ── Export proof receipt — cryptographic proof of exactly what left.
-                Mounts after the action → pops in like a pressed seal. ── */}
+            {/* ── Export integrity receipt. Mounts after the action. ── */}
             {exportReceipt && (
               <Reveal dir="pop" style={{
                 marginBottom: 16, padding: "16px 18px", borderRadius: 14,
@@ -2260,7 +2329,7 @@ export default function SovereigntyDashboard() {
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 16, display: "inline-flex", color: GOOD }}><Icon name="open-box" size={16} /></span>
-                  <span style={{ fontSize: 15, fontWeight: 800, color: INK, fontFamily: DISP }}>Export proof receipt</span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: INK, fontFamily: DISP }}>Export integrity receipt</span>
                   <span style={{
                     fontSize: 13, padding: "2px 8px", borderRadius: 10,
                     background: "rgba(92,138,78,0.14)", color: GOOD,
@@ -2287,12 +2356,12 @@ export default function SovereigntyDashboard() {
                   <span style={{ fontFamily: MONO, color: INK, fontWeight: 700 }}>
                     {exportReceipt.integrityHash ? `${exportReceipt.integrityHash.slice(0, 16)}…` : "—"}
                   </span>
-                  {" "}— verifies the bundle is exactly what left the system, unchanged.
+                  {" "}— compare it with the value recorded at export time to detect later file changes. It is an integrity checksum, not a server signature.
                 </div>
               </Reveal>
             )}
 
-            {/* ── Delete proof receipt — proof of permanent erasure ── */}
+            {/* ── Deletion receipt — records completion in active systems. ── */}
             {deleteReceipt && (
               <Reveal dir="pop" style={{
                 marginBottom: 16, padding: "16px 18px", borderRadius: 14,
@@ -2307,7 +2376,7 @@ export default function SovereigntyDashboard() {
                       <path d="M10 11v7M14 11v7" />
                     </svg>
                   </span>
-                  <span style={{ fontSize: 15, fontWeight: 800, color: INK, fontFamily: DISP }}>Deletion proof receipt</span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: INK, fontFamily: DISP }}>Deletion receipt</span>
                   <span style={{
                     fontSize: 13, padding: "2px 8px", borderRadius: 10,
                     background: "rgba(181,70,43,0.12)", color: DANGER,
@@ -2322,7 +2391,8 @@ export default function SovereigntyDashboard() {
                   <span style={{ fontFamily: MONO, color: DANGER, fontWeight: 700 }}>
                     {deleteReceipt.deletionHash ? `${deleteReceipt.deletionHash.slice(0, 16)}…` : "—"}
                   </span>
-                  {" "}— your pet&apos;s data has been <strong>permanently deleted</strong>. This cannot be undone.
+                  {" "}— identifies this completed server request; it is not third-party cryptographic proof. Pet-scoped data and owned media were removed from active systems. Backup copies
+                  expire within 90 days; public on-chain records are unchanged.
                 </div>
               </Reveal>
             )}
@@ -2355,17 +2425,18 @@ export default function SovereigntyDashboard() {
                       role="switch"
                       aria-checked={!!(consent as any)[key]}
                       aria-label={label}
+                      disabled={consentSaving}
                       onClick={() => {
-                        setConsent(prev => {
-                          const next = { ...prev, [key]: !prev[key as keyof typeof prev] };
-                          saveConsent(next);
-                          return next;
-                        });
+                        const previous = consent;
+                        const next = { ...previous, [key]: !previous[key as keyof typeof previous] };
+                        setConsent(next);
+                        void saveConsent(next, previous);
                       }}
                       style={{
                         width: 44, height: 24, borderRadius: 12, padding: 0,
                         background: (consent as any)[key] ? CTA : "rgba(33,26,18,0.1)",
-                        cursor: "pointer", position: "relative", transition: "all 0.2s",
+                        cursor: consentSaving ? "wait" : "pointer", position: "relative", transition: "all 0.2s",
+                        opacity: consentSaving ? 0.65 : 1,
                         border: `1px solid ${(consent as any)[key] ? "transparent" : HAIR}`,
                       }}
                     >
@@ -2484,7 +2555,7 @@ export default function SovereigntyDashboard() {
               <div style={{ marginTop: 16 }}>
                 <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 8, letterSpacing: "0.12em", textTransform: "uppercase" }}>SDK (TypeScript)</div>
                 <div style={{ background: "#211A12", borderRadius: 12, padding: "16px 20px", fontFamily: "monospace", fontSize: 13, color: "#F5EFE2", lineHeight: 2, overflowX: "auto" }}>
-                  <div><span style={{ color: "#E8A86A" }}>import</span> {"{ PetClawClient }"} <span style={{ color: "#E8A86A" }}>from</span> <span style={{ color: "#7CB36A" }}>'petclaw-sdk'</span></div>
+                  <div><span style={{ color: "#E8A86A" }}>import</span> {"{ PetClawClient }"} <span style={{ color: "#E8A86A" }}>from</span> <span style={{ color: "#7CB36A" }}>'@myaipet/petclaw-sdk'</span></div>
                   <div style={{ marginTop: 8 }}><span style={{ color: "#E8A86A" }}>const</span> claw = <span style={{ color: "#E8A86A" }}>new</span> <span style={{ color: "#F49B2A" }}>PetClawClient</span>{"({ baseUrl: process.env.PETCLAW_URL })"}</div>
                   <div style={{ marginTop: 8, color: "rgba(251,246,236,0.65)" }}>{"// chat — personality & memory context auto-included"}</div>
                   <div><span style={{ color: "#E8A86A" }}>const</span> res = <span style={{ color: "#E8A86A" }}>await</span> claw.skills.<span style={{ color: "#F49B2A" }}>execute</span>(petId, <span style={{ color: "#7CB36A" }}>'companion-chat'</span>, {"{ message }"})</div>
@@ -2549,14 +2620,14 @@ export default function SovereigntyDashboard() {
                 fontSize: 13, padding: "3px 10px", borderRadius: 999,
                 background: "rgba(190,79,40,0.1)", color: TERRA_SUB,
                 fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
-              }}>LIVE · PUBLIC</span>
+              }}>PUBLIC DISCOVERY</span>
             </div>
             <p style={{
               fontSize: 14, color: MUTED2, lineHeight: 1.6, margin: "0 0 22px",
               fontFamily: BODY,
             }}>
-              Your pet can discover and interact with other sovereign pets on the open network —
-              each one owned by its person, reachable by its pet card.
+              Your pet can discover other public profiles on the open network. Remote skill
+              invocation stays disabled until consent and caller funding are explicit.
             </p>
 
             {/* Network stats — ONLY the real number. "Online now" (= every active
@@ -2571,23 +2642,23 @@ export default function SovereigntyDashboard() {
               </div>
             </div>
 
-            {/* Online nodes */}
+            {/* Public nodes */}
             {(() => {
-              const online = networkNodes.filter((n) => n.status === "online");
-              if (online.length === 0) {
+              const publicNodes = networkNodes;
+              if (publicNodes.length === 0) {
                 return (
                   <div style={{
                     padding: 24, borderRadius: 14, border: `1px dashed ${HAIR}`,
                     textAlign: "center", fontSize: 13, color: MUTED,
                     fontFamily: BODY,
                   }}>
-                    No pets online yet — check back soon.
+                    No public pets yet — check back soon.
                   </div>
                 );
               }
               return (
                 <div style={{ display: "grid", gap: 8 }}>
-                  {online.slice(0, 5).map((n) => (
+                  {publicNodes.slice(0, 5).map((n) => (
                     <div key={n.petId} style={{
                       display: "flex", alignItems: "center", gap: 12,
                       padding: "10px 14px", borderRadius: 12,
@@ -2656,7 +2727,7 @@ export default function SovereigntyDashboard() {
               fontSize: 15, color: MUTED2, marginBottom: 20,
               fontFamily: BODY, lineHeight: 1.65,
             }}>
-              19 platform connectors. Your pet, everywhere you are.
+              19 connectors in the registry; 6 are live today. Planned connectors are marked below.
             </p>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 8 }}>

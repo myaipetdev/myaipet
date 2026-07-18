@@ -2,77 +2,53 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { SKILL_DB, DAILY_BATTLE_CAP, DAILY_EXP_CAP, getGrowthMultiplier } from "@/lib/skills";
 import { simulateBattle } from "@/lib/battleSim";
+import {
+  claimArenaBattle,
+  recordArenaLevelUpRecognition,
+  ArenaDailyBattleCapError,
+  ArenaClaimPetNotFoundError,
+} from "@/lib/arenaBattleClaim";
+import { rateLimit } from "@/lib/rateLimit";
+import { consumeArenaMatchChallenge, InvalidArenaMatchChallengeError } from "@/lib/arenaMatchChallenge";
+import { interactablePetWhere } from "@/lib/publicPet";
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@/generated/prisma/client";
 
 export async function POST(req: NextRequest) {
   try {
+  const rl = rateLimit(req, { key: "arena-battle-reward", limit: 40, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
   const user = await getUser(req);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // audit C4: the battle OUTCOME is decided server-side from real pet stats —
-  // the client no longer reports won/turns/hp_left (it only names the opponent).
-  const { pet_id, opponent_id, opponent_name } = await req.json();
+  // The result is accepted only for the exact server-issued player/opponent
+  // pair. Client battle outcomes and opponent names are never authoritative.
+  const { pet_id, opponent_id, match_challenge } = await req.json();
+  const petId = Number(pet_id);
+  const opponentId = Number(opponent_id);
+  if (
+    !Number.isSafeInteger(petId) ||
+    !Number.isSafeInteger(opponentId) ||
+    typeof match_challenge !== "string"
+  ) {
+    return NextResponse.json({ error: "A valid Arena match challenge is required" }, { status: 400 });
+  }
 
   const pet = await prisma.pet.findFirst({
-    where: { id: pet_id, user_id: user.id },
+    where: { id: petId, user_id: user.id, is_active: true },
+    select: { id: true },
   });
   if (!pet) {
     return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   }
 
-  // ── Daily training cap check ──
+  // ── Shared day key for the atomic daily claim ──
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  const dailyLog = await prisma.dailyTrainingLog.upsert({
-    where: { user_id_pet_id_date: { user_id: user.id, pet_id, date: today } },
-    create: { user_id: user.id, pet_id, date: today, battles: 0, exp_earned: 0, credits_spent: 0 },
-    update: {},
-  });
-
-  if (dailyLog.battles >= DAILY_BATTLE_CAP) {
-    return NextResponse.json({
-      error: "Daily battle cap reached",
-      daily_battles: dailyLog.battles,
-      cap: DAILY_BATTLE_CAP,
-    }, { status: 429 });
-  }
-
-  // ── Resolve the battle SERVER-SIDE (audit C4) ──
-  // Look up the real opponent's combat stats; if none was supplied or it no
-  // longer exists, synthesise a wild NPC of comparable power (same as
-  // /api/battle/create). The outcome is then derived from a deterministic
-  // simulation over real stats — never from the client.
-  let opp: { atk: number; def: number; spd: number; level: number; name: string };
-  const oppPet = opponent_id
-    ? await prisma.pet.findFirst({
-        where: { id: Number(opponent_id), is_active: true },
-        select: { atk: true, def: true, spd: true, level: true, name: true },
-      })
-    : null;
-  if (oppPet) {
-    opp = oppPet;
-  } else {
-    opp = {
-      atk: Math.max(5, pet.atk - 2 + Math.floor(Math.random() * 5)),
-      def: Math.max(5, pet.def - 2 + Math.floor(Math.random() * 5)),
-      spd: Math.max(5, pet.spd - 2 + Math.floor(Math.random() * 5)),
-      level: pet.level,
-      name: opponent_name || "Wild Challenger",
-    };
-  }
-
-  const sim = simulateBattle(
-    { atk: pet.atk, def: pet.def, spd: pet.spd, level: pet.level },
-    opp,
-    crypto.randomBytes(16).toString("hex"),
-  );
-  const won = sim.won;
-  const turns = sim.turns;
-  const hp_left = sim.player_hp_left;
 
   // ── Calculate rewards with growth multiplier (based on USDT purchases, not shop spending) ──
   const totalUsdSpent = await prisma.creditPurchase.aggregate({
@@ -81,115 +57,139 @@ export async function POST(req: NextRequest) {
   });
   const growthMul = getGrowthMultiplier(totalUsdSpent._sum.amount_usd || 0);
 
-  const baseExp = won ? 30 : 12;
-  const expGain = Math.min(
-    Math.floor(baseExp * growthMul),
-    Math.max(0, DAILY_EXP_CAP - dailyLog.exp_earned)
-  );
-  const airdropIncrement = won ? 35 : 10;
+  const reward = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    // Consume first. A concurrent replay blocks on this row and then updates
+    // zero rows; because this is the reward transaction, any later failure
+    // rolls the consume back as well.
+    const match = await consumeArenaMatchChallenge(tx, {
+      token: match_challenge,
+      userId: user.id,
+      playerPetId: petId,
+      opponentPetId: opponentId,
+    });
 
-  // ── Rare skill drop on win (5% chance) ──
-  let skillDrop: string | null = null;
-  if (won && Math.random() < 0.05) {
-    const petSkills = await prisma.petSkill.findMany({ where: { pet_id } });
-    const learnedKeys = new Set(petSkills.map((s) => s.skill_key));
-    const droppable = SKILL_DB.filter(
-      (s) =>
-        !learnedKeys.has(s.key) &&
-        s.levelReq <= pet.level &&
-        (s.element === pet.element || s.element === "normal") &&
-        s.rarity >= 2
-    );
-    if (droppable.length > 0) {
-      const drop = droppable[Math.floor(Math.random() * droppable.length)];
-      skillDrop = drop.key;
-      await prisma.petSkill.create({
-        data: { pet_id, skill_key: drop.key, level: 1, slot: null },
-      });
+    const currentPet = await tx.pet.findFirst({
+      where: { id: petId, user_id: user.id, is_active: true },
+      select: { id: true, atk: true, def: true, spd: true, level: true },
+    });
+    if (!currentPet) throw new ArenaClaimPetNotFoundError();
+
+    // Consent, other-user ownership and the ±3 current-level band are checked
+    // again at consume time. A pet made private after matchmaking cannot pay.
+    const opponentPet = await tx.pet.findFirst({
+      where: interactablePetWhere({
+        id: match.opponent_pet_id,
+        user_id: { not: user.id },
+        level: {
+          gte: Math.max(1, currentPet.level - 3),
+          lte: currentPet.level + 3,
+        },
+      }),
+      select: { id: true, atk: true, def: true, spd: true, level: true, name: true },
+    });
+    if (!opponentPet || opponentPet.id === currentPet.id) {
+      throw new InvalidArenaMatchChallengeError();
     }
-  }
 
-  // ── Apply exp + level up ──
-  const newExp = pet.experience + expGain;
-  const expNeeded = pet.level * 100;
-  const leveledUp = newExp >= expNeeded;
+    const sim = simulateBattle(
+      { atk: currentPet.atk, def: currentPet.def, spd: currentPet.spd, level: currentPet.level },
+      opponentPet,
+      crypto.randomBytes(16).toString("hex"),
+    );
+    const won = sim.won;
+    const turns = sim.turns;
+    const hpLeft = sim.player_hp_left;
+    const baseExp = won ? 30 : 12;
+    const requestedExp = Math.min(Math.floor(baseExp * growthMul), DAILY_EXP_CAP);
+    const airdropIncrement = won ? 35 : 10;
 
-  const petUpdateData = leveledUp
-    ? {
-        experience: { set: newExp - expNeeded },
-        level: { increment: 1 },
-        total_interactions: { increment: 1 },
+    const claim = await claimArenaBattle(tx, {
+      userId: user.id,
+      petId: pet.id,
+      date: today,
+      requestedExp,
+    });
+
+    // Every reward runs only after the locked daily claim succeeds. Keeping the
+    // skill read/create under the pet lock also makes its unique grant stable.
+    let skillDrop: string | null = null;
+    if (won && Math.random() < 0.05) {
+      const petSkills = await tx.petSkill.findMany({ where: { pet_id: petId } });
+      const learnedKeys = new Set(petSkills.map((s) => s.skill_key));
+      const droppable = SKILL_DB.filter(
+        (s) =>
+          !learnedKeys.has(s.key) &&
+          s.levelReq <= claim.pet.level &&
+          (s.element === claim.pet.element || s.element === "normal") &&
+          s.rarity >= 2,
+      );
+      if (droppable.length > 0) {
+        skillDrop = droppable[Math.floor(Math.random() * droppable.length)].key;
+        await tx.petSkill.create({
+          data: { pet_id: petId, skill_key: skillDrop, level: 1, slot: null },
+        });
       }
-    : {
-        experience: { increment: expGain },
-        total_interactions: { increment: 1 },
-      };
+    }
 
-  await prisma.$transaction([
-    prisma.pet.update({
-      where: { id: pet.id },
-      data: petUpdateData,
-    }),
-    prisma.user.update({
+    await tx.user.update({
       where: { id: user.id },
       data: { season_points: { increment: airdropIncrement } },
-    }),
-    prisma.dailyTrainingLog.update({
-      where: { id: dailyLog.id },
+    });
+    await recordArenaLevelUpRecognition(tx, user.id, claim.leveledUp);
+    await tx.battleHistory.create({
       data: {
-        battles: { increment: 1 },
-        exp_earned: { increment: expGain },
-      },
-    }),
-    prisma.battleHistory.create({
-      data: {
-        player_pet_id: pet_id,
-        opponent_pet_id: opponent_id || null,
-        opponent_name: opponent_name || "Unknown",
+        player_pet_id: petId,
+        opponent_pet_id: opponentPet.id,
+        opponent_name: opponentPet.name.slice(0, 50),
         won,
         turns: turns || 0,
-        player_hp_left: hp_left || 0,
-        exp_gained: expGain,
+        player_hp_left: hpLeft || 0,
+        exp_gained: claim.expGain,
         points_earned: airdropIncrement,
         skill_drop_key: skillDrop,
+        battle_type: "pvp",
       },
-    }),
-  ]);
+    });
 
-  if (leveledUp) {
-    // COMPLIANCE: arena EXP is scaled by getGrowthMultiplier(USDT spent), so a
-    // level-up here can be spend-accelerated. Recognition points must not derive
-    // from paid actions ("never bought") — credit the NON-RANKING lifetime
-    // ledger instead of season_points.
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { total_points_earned: { increment: 50 } },
-    }).catch(() => {});
-  }
+    return { ...claim, skillDrop, sim, won, airdropIncrement };
+  }, { maxWait: 10_000, timeout: 20_000 });
 
   return NextResponse.json({
     // Server-decided battle outcome (audit C4) — client renders this, not its own.
     battle: {
-      won,
-      turns,
-      player_hp_left: sim.player_hp_left,
-      player_hp_max: sim.player_hp_max,
-      opponent_hp_left: sim.opponent_hp_left,
-      opponent_hp_max: sim.opponent_hp_max,
-      log: sim.log,
+      won: reward.won,
+      turns: reward.sim.turns,
+      player_hp_left: reward.sim.player_hp_left,
+      player_hp_max: reward.sim.player_hp_max,
+      opponent_hp_left: reward.sim.opponent_hp_left,
+      opponent_hp_max: reward.sim.opponent_hp_max,
+      log: reward.sim.log,
     },
-    won,
-    points_earned: airdropIncrement,
-    exp_gained: expGain,
+    won: reward.won,
+    points_earned: reward.airdropIncrement,
+    exp_gained: reward.expGain,
     growth_multiplier: growthMul,
-    leveled_up: leveledUp,
-    new_level: leveledUp ? pet.level + 1 : pet.level,
-    skill_drop: skillDrop,
-    daily_battles: dailyLog.battles + 1,
+    leveled_up: reward.leveledUp,
+    new_level: reward.newLevel,
+    skill_drop: reward.skillDrop,
+    daily_battles: reward.dailyBattles,
     daily_battle_cap: DAILY_BATTLE_CAP,
-    message: won ? "Victory! Great battle!" : "Defeat... Train harder!",
+    message: reward.won ? "Victory! Great battle!" : "Defeat... Train harder!",
   });
   } catch (error) {
+    if (error instanceof InvalidArenaMatchChallengeError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    if (error instanceof ArenaDailyBattleCapError) {
+      return NextResponse.json({
+        error: error.message,
+        daily_battles: error.battles,
+        cap: error.cap,
+      }, { status: 429 });
+    }
+    if (error instanceof ArenaClaimPetNotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
     console.error("Arena result error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

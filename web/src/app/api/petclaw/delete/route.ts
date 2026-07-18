@@ -17,7 +17,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({
       success: true,
       ...result,
-      message: "All pet data has been permanently deleted",
+      message: "Pet-scoped data and owned media were removed from active systems. Backup copies expire under the published retention schedule; public on-chain records cannot be erased.",
     });
   } catch (e: any) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

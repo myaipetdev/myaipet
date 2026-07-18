@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import { isPrivateAutoGen } from "@/lib/publicFeed";
+import { publicGenerationWhere } from "@/lib/publicFeed";
 
 // Public, wallet-gate-free share page for a single community creation.
 // Shares from the Community gallery deep-link here (app.myaipet.ai/c/<id>) so a
@@ -47,18 +47,14 @@ async function getCreation(idRaw: string) {
   const id = parseInt(idRaw, 10);
   if (!Number.isInteger(id) || id <= 0) return null;
   try {
-    const g = await prisma.generation.findUnique({
-      where: { id },
+    const g = await prisma.generation.findFirst({
+      where: await publicGenerationWhere({ id }),
       include: {
         user: { select: { profile: { select: { display_name: true } } } },
         _count: { select: { likes: true } },
       },
     });
-    if (!g || g.status !== "completed") return null;
-    if (!g.photo_path && !g.video_path) return null;
-    // Privacy: daydream auto-gens carry the pet's private insight in the
-    // prompt — not publicly shareable (see lib/publicFeed.ts).
-    if (await isPrivateAutoGen(g.id)) return null;
+    if (!g) return null;
     return g;
   } catch {
     return null;
@@ -68,11 +64,7 @@ async function getCreation(idRaw: string) {
 async function getMoreCreations(excludeId: number) {
   try {
     return await prisma.generation.findMany({
-      where: {
-        status: "completed",
-        id: { not: excludeId },
-        OR: [{ photo_path: { not: "" } }, { video_path: { not: "" } }],
-      },
+      where: await publicGenerationWhere({ id: { not: excludeId } }),
       orderBy: { created_at: "desc" },
       take: 6,
       select: { id: true, photo_path: true, prompt: true },

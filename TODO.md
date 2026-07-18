@@ -67,7 +67,7 @@ Updated: 2026-07-13
 - [ ] i18n (Korean/English toggle)
 
 ### Technical Debt
-- [ ] Prune retired Coinbase Onramp code (`api/coinbase/session/`, `useCoinbaseOnramp.ts`) — the "Buy with Card" flow was removed; payment rail is SIWE + USDT on BSC only
+- [x] Prune retired Coinbase Onramp code and dependencies — the "Buy with Card" flow was removed; payment rail is SIWE + USDT on BSC only
 
 ---
 

@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { importSoulData } from "@/lib/petclaw/data-sovereignty";
-import { validateSoulExport } from "@/lib/petclaw/soul-schema";
+import { readSoulImportJson, validateSoulExport } from "@/lib/petclaw/soul-schema";
 import type { SoulExport } from "@/lib/petclaw/petclaw";
-
-// Hard request size cap — anything beyond this is rejected before parsing
-const MAX_BODY_BYTES = 1_500_000; // 1.5 MB
 
 export async function POST(req: NextRequest) {
   const user = await getUser(req);
@@ -13,18 +10,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Reject oversized requests by Content-Length header before reading body
-  const lenHeader = req.headers.get("content-length");
-  if (lenHeader && Number(lenHeader) > MAX_BODY_BYTES) {
-    return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+  // Enforce the shared cap against actual streamed UTF-8 bytes. A missing or
+  // forged Content-Length header cannot bypass this check.
+  const parsedBody = await readSoulImportJson(req);
+  if (parsedBody.ok === false) {
+    return NextResponse.json(
+      { error: parsedBody.error },
+      { status: parsedBody.kind === "too_large" ? 413 : 400 },
+    );
   }
-
-  let raw: unknown;
-  try {
-    raw = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Body is not valid JSON" }, { status: 400 });
-  }
+  const raw = parsedBody.data;
 
   // Schema validation (zod) — covers types, lengths, ranges, allowed enums, regex,
   // forbidden control chars, and rejects unknown keys via .strict()

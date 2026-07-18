@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     nodes,
     meta: {
       discoveryEndpoint: "/api/petclaw/network/discover",
-      invokeEndpoint: "/api/petclaw/network/invoke",
+      remoteInvocation: "disabled",
       petCardUrl: "/.well-known/pet-card.json",
     },
   });

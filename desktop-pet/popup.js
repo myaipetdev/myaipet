@@ -4,6 +4,57 @@
  */
 
 const $ = (id) => document.getElementById(id);
+const EXTENSION_TOKEN_PATTERN = /^pex_[A-Za-z0-9_-]{32,128}$/;
+let latestConfig = null;
+
+function safeRenderAvatar(parent, url, name, fallback = "🐾") {
+  parent.replaceChildren();
+  if (!url) {
+    parent.textContent = fallback;
+    return;
+  }
+  let ok = false;
+  if (/^data:image\/(?:jpeg|png|webp|gif|avif);base64,[A-Za-z0-9+/=]+$/.test(url)) {
+    ok = true;
+  } else {
+    try {
+      const parsed = new URL(url);
+      ok = parsed.protocol === "https:" || parsed.protocol === "http:";
+    } catch {}
+  }
+  if (!ok) { parent.textContent = fallback; return; }
+  const img = document.createElement("img");
+  img.src = url;
+  img.alt = name || "pet";
+  parent.appendChild(img);
+}
+
+function renderPetConfig(c) {
+  latestConfig = c;
+  $("petName").textContent = c.petName || "Demo Pet";
+  $("petLevel").textContent = `Lv.${c.level || 1}`;
+  $("petPersonality").textContent = c.personality || "playful";
+  $("petId").value = c.petId || "";
+  safeRenderAvatar($("avatar"), c.avatarUrl, c.petName, c.petEmoji || "🐾");
+  const demoBadge = $("demoBadge");
+  const hasToken = EXTENSION_TOKEN_PATTERN.test(String(c.authToken || ""));
+  const paired = Boolean(hasToken && c.petId && !c.needsPairing);
+  if (demoBadge) demoBadge.style.display = paired ? "none" : "inline-block";
+  if ($("syncStatus")) {
+    $("syncStatus").textContent = hasToken
+      ? (paired
+          ? "✓ Linked — shows your pet and refreshes live stats every 3 minutes."
+          : "Token saved, but pairing is unavailable. Check your connection or create a new token.")
+      : "Not linked yet. Generate a limited extension token (pex_…) in the PetClaw dashboard.";
+    $("syncStatus").style.color = paired ? "var(--terracotta)" : "var(--muted)";
+  }
+  if (!$("saveBtn").hasAttribute("aria-busy")) $("saveBtn").textContent = paired ? "Update Pairing" : "Pair Extension";
+  $("exportBtn").disabled = !paired;
+  $("importBtn").disabled = !hasToken;
+  $("refreshBtn").disabled = !hasToken;
+  $("disconnectBtn").disabled = !hasToken;
+  $("resumeSitesBtn").disabled = !Array.isArray(c.pausedHosts) || c.pausedHosts.length === 0;
+}
 
 // Stamp the footer with the live manifest version so it never drifts stale.
 try {
@@ -14,24 +65,65 @@ try {
 // ══════════════════════════════════════
 // ── TABS ──
 // ══════════════════════════════════════
-document.querySelectorAll(".tab").forEach((tab) => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach((c) => c.classList.remove("active"));
-    tab.classList.add("active");
-    $("tab-" + tab.dataset.tab).classList.add("active");
+const popupTabs = Array.from(document.querySelectorAll(".tab"));
+
+function activateTab(tab, moveFocus = false) {
+  popupTabs.forEach((candidate) => {
+    const selected = candidate === tab;
+    candidate.classList.toggle("active", selected);
+    candidate.setAttribute("aria-selected", String(selected));
+    candidate.tabIndex = selected ? 0 : -1;
+    const panel = $("tab-" + candidate.dataset.tab);
+    panel?.classList.toggle("active", selected);
+  });
+  if (moveFocus) tab.focus();
+}
+
+popupTabs.forEach((tab, index) => {
+  tab.addEventListener("click", () => activateTab(tab));
+  tab.addEventListener("keydown", (event) => {
+    let nextIndex = index;
+    if (event.key === "ArrowRight") nextIndex = (index + 1) % popupTabs.length;
+    else if (event.key === "ArrowLeft") nextIndex = (index - 1 + popupTabs.length) % popupTabs.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = popupTabs.length - 1;
+    else return;
+    event.preventDefault();
+    activateTab(popupTabs[nextIndex], true);
   });
 });
 
 // ══════════════════════════════════════
 // ── STATUS ──
 // ══════════════════════════════════════
+let statusTimer = null;
+
 function showStatus(msg, isError = false) {
   const el = $("status");
+  if (statusTimer) clearTimeout(statusTimer);
   el.textContent = msg;
   el.className = isError ? "error" : "";
+  el.setAttribute("aria-live", isError ? "assertive" : "polite");
   el.style.display = "block";
-  setTimeout(() => { el.style.display = "none"; }, 3000);
+  statusTimer = setTimeout(() => { el.style.display = "none"; }, 3000);
+}
+
+function setButtonBusy(id, busy, busyLabel) {
+  const button = $(id);
+  if (!button) return;
+  if (busy) {
+    if (!button.dataset.idleLabel) button.dataset.idleLabel = button.textContent;
+    if (button.dataset.wasDisabled == null) button.dataset.wasDisabled = String(button.disabled);
+    button.disabled = true;
+    button.setAttribute("aria-busy", "true");
+    if (busyLabel) button.textContent = busyLabel;
+  } else {
+    button.disabled = button.dataset.wasDisabled === "true";
+    button.removeAttribute("aria-busy");
+    if (button.dataset.idleLabel) button.textContent = button.dataset.idleLabel;
+    delete button.dataset.idleLabel;
+    delete button.dataset.wasDisabled;
+  }
 }
 
 // ══════════════════════════════════════
@@ -39,10 +131,29 @@ function showStatus(msg, isError = false) {
 // ══════════════════════════════════════
 document.querySelectorAll(".toggle").forEach((toggle) => {
   toggle.addEventListener("click", () => {
+    if (toggle.disabled) return;
+    const previous = toggle.classList.contains("on");
     toggle.classList.toggle("on");
     const key = toggle.dataset.key;
     const val = toggle.classList.contains("on");
-    chrome.runtime.sendMessage({ type: "setPreference", key, value: val });
+    toggle.setAttribute("aria-pressed", String(val));
+    toggle.disabled = true;
+    toggle.setAttribute("aria-busy", "true");
+    chrome.runtime.sendMessage({ type: "setPreference", key, value: val }, (res) => {
+      const runtimeError = chrome.runtime.lastError;
+      toggle.disabled = false;
+      toggle.removeAttribute("aria-busy");
+      if (runtimeError || !res?.success) {
+        toggle.classList.toggle("on", previous);
+        toggle.setAttribute("aria-pressed", String(previous));
+        showStatus(res?.error || "Preference could not be saved", true);
+        return;
+      }
+      if (key === "enabled") {
+        showStatus(val ? "Companion enabled — reload open tabs to show it." : "Companion disabled on open tabs.");
+        refreshSiteAccess();
+      }
+    });
   });
 });
 
@@ -51,7 +162,7 @@ document.querySelectorAll(".toggle").forEach((toggle) => {
 // ══════════════════════════════════════
 function loadPoints() {
   chrome.runtime.sendMessage({ type: "getActivity" }, (res) => {
-    if (!res) return;
+    if (chrome.runtime.lastError || !res) return;
     const p = res.points || {};
     $("totalPoints").textContent = (p.totalPoints || 0).toLocaleString();
     $("chatPoints").textContent = p.chatPoints || 0;
@@ -60,6 +171,7 @@ function loadPoints() {
     $("browsingPoints").textContent = p.browsingPoints || 0;
     $("gamePoints").textContent = p.gamePoints || 0;
     $("evolutionPoints").textContent = p.evolutionPoints || 0;
+    $("carePoints").textContent = p.carePoints || 0;
     $("streak").textContent = p.dailyStreak || 0;
     $("chatCount").textContent = p.chatCount || 0;
     $("uptime").textContent = res.uptime || 0;
@@ -69,7 +181,6 @@ function loadPoints() {
       renderNotifications(res.notifications);
     }
   });
-  loadSeasonSync();
 }
 
 // Account season sync — shows that the extension's ambient care is linked to the
@@ -118,7 +229,9 @@ function renderNotifications(notifs) {
 }
 
 loadPoints();
+loadSeasonSync();
 setInterval(loadPoints, 5000);
+setInterval(loadSeasonSync, 30000);
 
 // ══════════════════════════════════════
 // ── DAILY QUESTS ──
@@ -128,23 +241,26 @@ function loadQuests() {
     if (!res?.quests) return;
     const list = $("questList");
     list.innerHTML = res.quests.map((q) => {
-      const pct = Math.min(100, Math.round((q.progress / q.target) * 100));
+      const progress = Math.max(0, Number(q.progress) || 0);
+      const target = Math.max(1, Number(q.target) || 1);
+      const reward = Math.max(0, Number(q.reward) || 0);
+      const pct = Math.min(100, Math.round((progress / target) * 100));
       const done = q.completed;
       const claimed = q.claimed;
       return `
         <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-soft)">
-          <div style="font-size:16px;flex-shrink:0">${q.icon}</div>
+          <div style="font-size:16px;flex-shrink:0">${escapeHtml(q.icon)}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:11px;color:${done ? "var(--terracotta)" : "var(--ink)"};font-weight:700">${q.name}</div>
-            <div style="font-size:9px;color:var(--muted)">${q.desc}</div>
+            <div style="font-size:11px;color:${done ? "var(--terracotta)" : "var(--ink)"};font-weight:700">${escapeHtml(q.name)}</div>
+            <div style="font-size:9px;color:var(--muted)">${escapeHtml(q.desc)}</div>
             <div style="margin-top:3px;height:5px;background:var(--field);border:1px solid var(--line);border-radius:2px;overflow:hidden">
               <div style="width:${pct}%;height:100%;background:${done ? "var(--terracotta)" : "var(--foil-deep)"};transition:width 0.3s"></div>
             </div>
           </div>
           <div style="font-family:var(--mono);font-size:9px;color:var(--muted);text-align:right;flex-shrink:0">
             ${claimed ? '<span style="color:var(--terracotta)">✅</span>' :
-              done ? `<button class="quest-claim" data-id="${q.id}" style="padding:3px 8px;border:1px solid var(--terracotta-ink);border-radius:6px;background:var(--terracotta);color:var(--paper);font-family:var(--mono);font-size:9px;font-weight:700;cursor:pointer">+${q.reward}</button>` :
-              `${q.progress}/${q.target}`}
+              done ? `<button type="button" class="quest-claim" data-id="${escapeHtml(q.id)}" style="padding:3px 8px;border:1px solid var(--terracotta-ink);border-radius:6px;background:var(--terracotta);color:var(--paper);font-family:var(--mono);font-size:9px;font-weight:700;cursor:pointer">+${reward}</button>` :
+              `${progress}/${target}`}
           </div>
         </div>
       `;
@@ -153,11 +269,23 @@ function loadQuests() {
     // Claim buttons
     list.querySelectorAll(".quest-claim").forEach((btn) => {
       btn.addEventListener("click", () => {
+        const idleLabel = btn.textContent;
+        btn.disabled = true;
+        btn.setAttribute("aria-busy", "true");
+        btn.textContent = "…";
         chrome.runtime.sendMessage({ type: "claimQuest", questId: btn.dataset.id }, (r) => {
+          const runtimeError = chrome.runtime.lastError;
           if (r?.success) {
             loadQuests();
             loadPoints();
+            loadEvolution();
+            loadAchievements();
             showStatus(`✅ +${r.reward} Play Points!`);
+          } else {
+            btn.disabled = false;
+            btn.removeAttribute("aria-busy");
+            btn.textContent = idleLabel;
+            showStatus(runtimeError ? "Quest claim is unavailable" : "Quest was already claimed or is not complete", true);
           }
         });
       });
@@ -174,19 +302,19 @@ setInterval(loadQuests, 10000);
 const EVO_STAGES = [
   { name: "Egg", icon: "🥚", xp: 0, desc: "Your pet is just beginning its journey..." },
   { name: "Baby", icon: "🐣", xp: 100, desc: "Just hatched! So cute and curious!" },
-  { name: "Junior", icon: "🐾", xp: 500, desc: "Growing fast and learning new tricks!" },
-  { name: "Teen", icon: "⚡", xp: 1500, desc: "Energetic and full of personality!" },
-  { name: "Adult", icon: "🔥", xp: 5000, desc: "Powerful and wise, a true companion!" },
-  { name: "Legend", icon: "👑", xp: 15000, desc: "A legendary pet! The ultimate form!" },
+  { name: "Young", icon: "🐾", xp: 500, desc: "Growing fast and learning new tricks!" },
+  { name: "Adult", icon: "⚡", xp: 1500, desc: "Energetic and full of personality!" },
+  { name: "Elder", icon: "🔥", xp: 5000, desc: "Powerful and wise, a true companion!" },
+  { name: "Legendary", icon: "👑", xp: 15000, desc: "A legendary pet! The ultimate form!" },
 ];
 
 const EVO_PERKS = [
-  "Egg: Basic chat",
-  "Baby: Emoji reactions, mood system",
-  "Junior: Particle effects, mini-game access",
-  "Teen: Auto-skills, Selfie (coming soon)",
-  "Adult: Advanced AI conversations, custom themes",
-  "Legend: Exclusive aura, bonus points multiplier (2x)",
+  "Egg: Base local companion",
+  "Baby: Subtle aura and sparkle accents",
+  "Young: Stronger aura and leaf particles",
+  "Adult: Pulsing aura and lightning accents",
+  "Elder: Layered fire and foil aura",
+  "Legendary: Crown aura and 2× local Play Points",
 ];
 
 function loadEvolution() {
@@ -256,26 +384,26 @@ loadEmotions();
 setInterval(loadEmotions, 10000);
 
 // Emotion action buttons
-$("feedBtn").addEventListener("click", () => {
-  chrome.runtime.sendMessage({ type: "emotionAction", action: "feed" }, () => {
+function runEmotionAction(buttonId, action, successMessage) {
+  setButtonBusy(buttonId, true, "Working…");
+  chrome.runtime.sendMessage({ type: "emotionAction", action }, (res) => {
+    const runtimeError = chrome.runtime.lastError;
+    setButtonBusy(buttonId, false);
+    if (runtimeError || !res?.emotions) {
+      showStatus(res?.error || "PetClaw is unavailable right now", true);
+      return;
+    }
     loadEmotions();
-    showStatus("🍖 Yum! Your pet is eating...");
+    loadPoints();
+    loadEvolution();
+    loadAchievements();
+    showStatus(successMessage);
   });
-});
+}
 
-$("playBtn").addEventListener("click", () => {
-  chrome.runtime.sendMessage({ type: "emotionAction", action: "play" }, () => {
-    loadEmotions();
-    showStatus("🎾 Wheee! Playing is fun!");
-  });
-});
-
-$("petBtn").addEventListener("click", () => {
-  chrome.runtime.sendMessage({ type: "emotionAction", action: "pet" }, () => {
-    loadEmotions();
-    showStatus("💕 Purrrr... so happy!");
-  });
-});
+$("feedBtn").addEventListener("click", () => runEmotionAction("feedBtn", "feed", "🍖 Yum! Your pet is eating..."));
+$("playBtn").addEventListener("click", () => runEmotionAction("playBtn", "play", "🎾 Wheee! Playing is fun!"));
+$("petBtn").addEventListener("click", () => runEmotionAction("petBtn", "pet", "💕 Purrrr... so happy!"));
 
 // ══════════════════════════════════════
 // ── MINI-GAME: Treat Catcher ──
@@ -297,6 +425,7 @@ function startGame() {
 
   const canvas = $("gameCanvas");
   canvas.innerHTML = "";
+  canvas.focus();
 
   // Create catcher (the pet)
   catcher = document.createElement("div");
@@ -425,8 +554,13 @@ function endGame() {
   // Award points
   const earned = Math.floor(gameScore / 5);
   chrome.runtime.sendMessage({ type: "gameComplete", score: gameScore, points: earned }, (res) => {
-    if (res?.highScore) $("highScore").textContent = res.highScore;
-    $("gamePointsEarned").textContent = earned;
+    if (res?.highScore != null) $("highScore").textContent = res.highScore;
+    $("gamePointsEarned").textContent = res?.awardedPoints ?? 0;
+    if (!chrome.runtime.lastError && res) {
+      loadPoints();
+      loadEvolution();
+      loadAchievements();
+    }
   });
 
   const canvas = $("gameCanvas");
@@ -452,6 +586,17 @@ $("gameCanvas").addEventListener("touchmove", (e) => {
   catcher.style.transform = "translateX(-50%)";
 }, { passive: false });
 
+$("gameCanvas").addEventListener("keydown", (event) => {
+  if (!gameRunning || !catcher || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+  event.preventDefault();
+  const canvasRect = $("gameCanvas").getBoundingClientRect();
+  const catcherRect = catcher.getBoundingClientRect();
+  const current = catcherRect.left - canvasRect.left + catcherRect.width / 2;
+  const delta = event.key === "ArrowLeft" ? -24 : 24;
+  catcher.style.left = Math.max(20, Math.min(canvasRect.width - 20, current + delta)) + "px";
+  catcher.style.transform = "translateX(-50%)";
+});
+
 // Load high score
 chrome.runtime.sendMessage({ type: "getGameStats" }, (res) => {
   if (res?.highScore) $("highScore").textContent = res.highScore;
@@ -468,11 +613,13 @@ document.querySelectorAll(".game-select").forEach((btn) => {
       b.style.color = "var(--muted)";
       b.style.borderColor = "var(--line)";
       b.classList.remove("active");
+      b.setAttribute("aria-pressed", "false");
     });
     btn.style.background = "var(--terracotta)";
     btn.style.color = "var(--paper)";
     btn.style.borderColor = "var(--terracotta-ink)";
     btn.classList.add("active");
+    btn.setAttribute("aria-pressed", "true");
 
     $("game-catcher").style.display = btn.dataset.game === "catcher" ? "" : "none";
     $("game-memory").style.display = btn.dataset.game === "memory" ? "" : "none";
@@ -513,11 +660,13 @@ function startMemoryGame() {
   grid.style.gridTemplateColumns = "repeat(4, 1fr)";
 
   memoryCards.forEach((emoji, idx) => {
-    const card = document.createElement("div");
+    const card = document.createElement("button");
+    card.type = "button";
+    card.setAttribute("aria-label", `Hidden memory card ${idx + 1}`);
     card.style.cssText = `
       width:100%;aspect-ratio:1;background:var(--paper);border-radius:8px;
       display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;
-      border:1px solid var(--line);box-shadow:2px 2px 0 rgba(33,26,18,0.10);transition:all 0.3s;user-select:none;
+      border:1px solid var(--line);padding:0;font-family:inherit;box-shadow:2px 2px 0 rgba(33,26,18,0.10);transition:all 0.3s;user-select:none;
     `;
     card.textContent = "❓";
     card.dataset.idx = idx;
@@ -536,6 +685,7 @@ function flipCard(card) {
 
   card.dataset.state = "flipped";
   card.textContent = card.dataset.emoji;
+  card.setAttribute("aria-label", `Card ${Number(card.dataset.idx) + 1}: ${card.dataset.emoji}`);
   card.style.background = "var(--field)";
   card.style.borderColor = "var(--foil-deep)";
   memoryFlipped.push(card);
@@ -549,6 +699,10 @@ function flipCard(card) {
       // Match!
       a.dataset.state = "matched";
       b.dataset.state = "matched";
+      a.disabled = true;
+      b.disabled = true;
+      a.setAttribute("aria-label", `Matched ${a.dataset.emoji}`);
+      b.setAttribute("aria-label", `Matched ${b.dataset.emoji}`);
       a.style.background = "rgba(190,79,40,0.16)";
       b.style.background = "rgba(190,79,40,0.16)";
       a.style.borderColor = "var(--terracotta)";
@@ -566,6 +720,8 @@ function flipCard(card) {
         b.textContent = "❓";
         a.dataset.state = "hidden";
         b.dataset.state = "hidden";
+        a.setAttribute("aria-label", `Hidden memory card ${Number(a.dataset.idx) + 1}`);
+        b.setAttribute("aria-label", `Hidden memory card ${Number(b.dataset.idx) + 1}`);
         a.style.background = "var(--paper)";
         b.style.background = "var(--paper)";
         a.style.borderColor = "var(--line)";
@@ -587,7 +743,12 @@ function endMemoryGame() {
 
   chrome.runtime.sendMessage({ type: "gameComplete", score, points: earned, game: "memory" }, (res) => {
     if (res?.highScoreMemory != null) $("memoryHighScore").textContent = res.highScoreMemory;
-    $("memoryPointsEarned").textContent = earned;
+    $("memoryPointsEarned").textContent = res?.awardedPoints ?? 0;
+    if (!chrome.runtime.lastError && res) {
+      loadPoints();
+      loadEvolution();
+      loadAchievements();
+    }
   });
 
   $("memoryGrid").innerHTML = `
@@ -632,84 +793,191 @@ function loadAchievements() {
 loadAchievements();
 
 // ══════════════════════════════════════
+// ── EXPLICIT PER-SITE ACCESS ──
+// ══════════════════════════════════════
+let currentSiteAccess = null;
+
+async function refreshSiteAccess() {
+  const button = $("siteAccessBtn");
+  const status = $("siteAccessStatus");
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id || !tab.url) throw new Error("Open a regular website first");
+    const info = await chrome.runtime.sendMessage({ type: "getSiteAccessInfo", url: tab.url });
+    currentSiteAccess = { ...info, tabId: tab.id, url: tab.url };
+    if (!info?.supported) {
+      let unavailableReason = info?.error || "PetClaw cannot run on this browser page.";
+      try {
+        const currentHost = new URL(tab.url).hostname.toLowerCase().replace(/\.+$/, "");
+        if (!info?.error && (currentHost === "myaipet.ai" || currentHost.endsWith(".myaipet.ai"))) {
+          unavailableReason = "MY AI PET already has its own companion. Open a regular, non-sensitive website and reopen this popup to grant access there.";
+        } else if (!info?.error && /^https?:/.test(tab.url)) {
+          unavailableReason = "PetClaw blocks access on this sensitive website. Keep it off here and open a regular website instead.";
+        }
+      } catch {}
+      status.textContent = unavailableReason;
+      button.textContent = "Website access unavailable";
+      button.disabled = true;
+      return;
+    }
+    if (info.active && info.enabled === false) {
+      status.textContent = `Access is granted on ${info.host}, but the companion is disabled globally below.`;
+      button.textContent = `Remove access to ${info.host}`;
+    } else if (info.active && info.paused) {
+      status.textContent = `Paused on ${info.host}. Access remains granted; resume below, then reload the tab.`;
+      button.textContent = `Remove access to ${info.host}`;
+    } else if (info.active) {
+      status.textContent = `Active on ${info.host}. No other site was granted by this action.`;
+      button.textContent = `Remove access to ${info.host}`;
+    } else if (info.granted) {
+      status.textContent = `Permission exists for ${info.host}, but PetClaw is not active there.`;
+      button.textContent = `Remove inactive access to ${info.host}`;
+    } else {
+      status.textContent = `Not allowed on ${info.host}. Nothing from this page is accessible yet.`;
+      button.textContent = `Allow on ${info.host}`;
+    }
+    delete button.dataset.idleLabel;
+    button.classList.toggle("btn-danger", info.granted === true);
+    button.classList.toggle("btn-secondary", info.granted !== true);
+    button.disabled = false;
+  } catch (error) {
+    currentSiteAccess = null;
+    status.textContent = error?.message || "Website access could not be checked.";
+    button.textContent = "Website access unavailable";
+    button.disabled = true;
+  }
+}
+
+$("siteAccessBtn").addEventListener("click", () => {
+  const state = currentSiteAccess;
+  if (!state?.supported || !state.pattern) return;
+  setButtonBusy("siteAccessBtn", true, state.granted ? "Removing access…" : "Requesting access…");
+
+  if (state.granted) {
+    chrome.runtime.sendMessage({ type: "removeSiteAccess", url: state.url, tabId: state.tabId }, (result) => {
+      const runtimeError = chrome.runtime.lastError;
+      setButtonBusy("siteAccessBtn", false);
+      if (runtimeError || !result?.success) {
+        showStatus(result?.error || "Could not remove website access", true);
+        refreshSiteAccess();
+        return;
+      }
+      showStatus(`Access removed from ${state.host}`);
+      refreshSiteAccess();
+    });
+    return;
+  }
+
+  const activate = () => {
+    chrome.runtime.sendMessage({ type: "registerSiteAccess", url: state.url, tabId: state.tabId }, (result) => {
+      const runtimeError = chrome.runtime.lastError;
+      setButtonBusy("siteAccessBtn", false);
+      if (runtimeError || !result?.success) {
+        showStatus(result?.error || "Website access could not be activated", true);
+        // Avoid retaining host permission when registration or tab validation
+        // fails. Chrome can re-grant a previously removed optional permission.
+        chrome.permissions.remove({ origins: [state.pattern] }, () => refreshSiteAccess());
+        return;
+      } else if (state.enabled === false) {
+        showStatus(`Access enabled for ${state.host}. Enable the companion below, then reload this tab.`);
+      } else if (state.paused) {
+        showStatus(`Access enabled for ${state.host}. Resume paused sites below, then reload this tab.`);
+      } else if (result.reloadRequired) {
+        showStatus(`Access enabled for ${state.host}. Reload this tab to show PetClaw.`);
+      } else {
+        showStatus(`PetClaw is now enabled on ${state.host}`);
+      }
+      refreshSiteAccess();
+    });
+  };
+
+  // Permission prompts are issued only inside this direct user click handler.
+  chrome.permissions.request({ origins: [state.pattern] }, (granted) => {
+    const permissionError = chrome.runtime.lastError;
+    if (permissionError || !granted) {
+      setButtonBusy("siteAccessBtn", false);
+      showStatus("Website access was not granted", true);
+      refreshSiteAccess();
+      return;
+    }
+    activate();
+  });
+});
+
+refreshSiteAccess();
+
+// ══════════════════════════════════════
 // ── CONFIG ──
 // ══════════════════════════════════════
 chrome.runtime.sendMessage({ type: "getConfig" }, (res) => {
   if (!res?.config) return;
   const c = res.config;
 
-  // SCRUM-49/53/55: render petName / avatar safely — never innerHTML user data
-  function safeRenderAvatar(parent, url, name) {
-    parent.replaceChildren();
-    if (!url) {
-      parent.textContent = c.petEmoji || "🐾";
-      return;
-    }
-    // Reject non-http(s) URLs (blocks javascript:, data:, file: etc.)
-    let ok = false;
-    try {
-      const u = new URL(url);
-      ok = u.protocol === "https:" || u.protocol === "http:";
-    } catch {}
-    if (!ok) { parent.textContent = "🐾"; return; }
-    const img = document.createElement("img");
-    img.src = url;                // assignment via property auto-escapes
-    img.alt = name || "pet";       // alt via property — no HTML interpretation
-    parent.appendChild(img);
-  }
-  window.__safeRenderAvatar = safeRenderAvatar;
-
   $("apiUrl").value = c.apiUrl || "https://app.myaipet.ai";
-  $("petId").value = c.petId || 1;
+  $("petId").value = c.petId || "";
   $("autoInterval").value = c.autoTalkInterval || 90;
   if ($("authToken")) $("authToken").value = c.authToken || "";
   if ($("syncStatus")) {
     $("syncStatus").textContent = c.authToken
       ? (c.needsPairing
-          ? "Token saved, but no pet found — check the token in 'Connect your CLI' and try again."
+          ? "Token saved, but no pet found — create a new extension token and try again."
           : "✓ Linked — shows your pet, pulls live stats every 3 min")
-      : "Not linked yet. Paste your CLI token (pck_…) from 'Connect your CLI' in the app to show YOUR pet.";
+      : "Not linked yet. Generate a limited extension token (pex_…) in the PetClaw dashboard.";
     $("syncStatus").style.color = (c.authToken && !c.needsPairing) ? "var(--terracotta)" : "var(--muted)";
   }
-  $("petName").textContent = c.petName || "Demo Pet";
-  { const db = $("demoBadge"); if (db) db.style.display = c.authToken ? "none" : "inline-block"; }
-  $("petLevel").textContent = `Lv.${c.level || 1}`;
-  $("petPersonality").textContent = c.personality || "playful";
-
-  safeRenderAvatar($("avatar"), c.avatarUrl, c.petName);
+  renderPetConfig(c);
 
   // Load preferences
   const prefs = c.preferences || {};
+  if (c.enabled === false) $("toggleEnabled").classList.remove("on");
   if (prefs.notifications === false) $("toggleNotifs").classList.remove("on");
   if (prefs.particles === false) $("toggleParticles").classList.remove("on");
-  if (prefs.autoTalk === false) $("toggleAutoTalk").classList.remove("on");
+  if (prefs.autoTalk !== true) $("toggleAutoTalk").classList.remove("on");
+  if (prefs.pageAwareness !== true) $("togglePageAwareness").classList.remove("on");
+  document.querySelectorAll(".toggle").forEach((toggle) => {
+    toggle.setAttribute("aria-pressed", String(toggle.classList.contains("on")));
+  });
 });
 
 // Save
 $("saveBtn").addEventListener("click", () => {
-  const apiUrl = $("apiUrl").value.trim().replace(/\/$/, "");
-  const petId = parseInt($("petId").value) || 1;
-  const autoTalkInterval = parseInt($("autoInterval").value) || 90;
+  const apiUrl = "https://app.myaipet.ai";
+  const petId = parseInt($("petId").value) || null;
+  const autoTalkInterval = Number($("autoInterval").value);
   const authToken = $("authToken") ? $("authToken").value.trim() : "";
+  if (!EXTENSION_TOKEN_PATTERN.test(authToken)) {
+    showStatus("⚠️ Paste a valid extension token (pex_…)", true);
+    return;
+  }
+  if (!Number.isInteger(autoTalkInterval) || autoTalkInterval < 30 || autoTalkInterval > 600) {
+    showStatus("⚠️ Auto-talk interval must be 30–600 seconds", true);
+    return;
+  }
+
+  setButtonBusy("saveBtn", true, "Pairing…");
 
   chrome.runtime.sendMessage({
     type: "saveConfig",
-    config: { apiUrl, petId, autoTalkInterval, authToken, enabled: true },
-  }, () => {
+    config: { apiUrl, petId, autoTalkInterval, authToken },
+  }, (saved) => {
+    if (chrome.runtime.lastError || !saved?.success) {
+      setButtonBusy("saveBtn", false);
+      showStatus(saved?.error || "⚠️ Extension service is unavailable", true);
+      return;
+    }
     chrome.runtime.sendMessage({ type: "fetchPetInfo" }, (res) => {
-      if (res?.config && !res.config.needsPairing) {
-        $("petName").textContent = res.config.petName;
-        $("petLevel").textContent = `Lv.${res.config.level}`;
-        $("petPersonality").textContent = res.config.personality;
-        if (res.config.avatarUrl) {
-          window.__safeRenderAvatar?.($("avatar"), res.config.avatarUrl, res.config.petName);
-        } else {
-          $("avatar").textContent = res.config.petEmoji || "🐾";
-        }
-        { const db = $("demoBadge"); if (db) db.style.display = "none"; }
+      const fetchError = chrome.runtime.lastError;
+      setButtonBusy("saveBtn", false);
+      if (fetchError) {
+        showStatus("⚠️ Extension service is unavailable", true);
+        return;
+      }
+      if (res?.success && res.config) {
+        renderPetConfig(res.config);
         showStatus("✅ Linked! Your pet is loaded.");
       } else if (res?.config?.needsPairing) {
-        showStatus("⚠️ Couldn't find your pet — paste a valid CLI token (pck_…)", true);
+        renderPetConfig(res.config);
+        showStatus("⚠️ Couldn't pair — create a new extension token (pex_…)", true);
       } else {
         showStatus("⚠️ Saved, but couldn't reach the server", true);
       }
@@ -717,16 +985,51 @@ $("saveBtn").addEventListener("click", () => {
   });
 });
 
+$("disconnectBtn").addEventListener("click", () => {
+  if (!confirm("Disconnect this browser from your pet? This clears the local token only. Revoke the token in the dashboard if it may be exposed.")) return;
+  setButtonBusy("disconnectBtn", true, "Disconnecting…");
+  const disconnected = {
+    ...(latestConfig || {}),
+    authToken: "",
+    petId: null,
+    needsPairing: true,
+    petName: "Demo Pet",
+    petEmoji: "🐾",
+    avatarUrl: "",
+    personality: "playful",
+    level: 1,
+  };
+  chrome.runtime.sendMessage({ type: "saveConfig", config: disconnected }, (res) => {
+    const runtimeError = chrome.runtime.lastError;
+    setButtonBusy("disconnectBtn", false);
+    if (runtimeError || !res?.success) {
+      showStatus(res?.error || "Couldn't clear the local pairing", true);
+      return;
+    }
+    $("authToken").value = "";
+    renderPetConfig(disconnected);
+    showStatus("Disconnected locally. Revoke the token in the dashboard if needed.");
+  });
+});
+
 // Export
 $("exportBtn").addEventListener("click", () => {
+  setButtonBusy("exportBtn", true, "Exporting…");
   showStatus("Exporting SOUL data...");
   chrome.runtime.sendMessage({ type: "exportSoul" }, (res) => {
+    const runtimeError = chrome.runtime.lastError;
+    setButtonBusy("exportBtn", false);
+    if (runtimeError) {
+      showStatus("❌ Extension service is unavailable", true);
+      return;
+    }
     if (res?.data) {
       const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${$("petName").textContent}_SOUL.json`;
+      const safeName = String($("petName").textContent || "pet").replace(/[^A-Za-z0-9._-]+/g, "_").slice(0, 80) || "pet";
+      a.download = `${safeName}_SOUL.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -746,6 +1049,9 @@ $("importBtn")?.addEventListener("click", () => {
 $("importFile")?.addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
+  // Reset immediately so choosing the same invalid/cancelled file again still
+  // fires `change` and gives the user a real retry path.
+  e.target.value = "";
   if (file.size > 1500000) {
     showStatus("❌ File too large (>1.5MB)", true);
     return;
@@ -758,31 +1064,51 @@ $("importFile")?.addEventListener("change", async (e) => {
       showStatus("❌ Not a valid JSON file", true);
       return;
     }
+    const importName = soul?.pet?.name || soul?.name || "this pet";
+    if (!confirm(`Import "${importName}" into your account? Review the file source before continuing.`)) {
+      showStatus("Import cancelled.");
+      return;
+    }
+    setButtonBusy("importBtn", true, "Importing…");
     chrome.runtime.sendMessage({ type: "importSoul", soul }, (res) => {
+      const runtimeError = chrome.runtime.lastError;
+      setButtonBusy("importBtn", false);
+      if (runtimeError) {
+        showStatus("❌ Extension service is unavailable", true);
+        return;
+      }
       if (res?.success) {
         showStatus(`✅ Imported "${res.petName || "pet"}"`);
-        // Refresh pet info so the new pet shows up
-        setTimeout(() => chrome.runtime.sendMessage({ type: "fetchPetInfo" }), 500);
+        const selectImportedPet = res.petId
+          ? new Promise((resolve) => chrome.runtime.sendMessage({ type: "saveConfig", config: { petId: res.petId } }, resolve))
+          : Promise.resolve();
+        selectImportedPet.then(() => {
+          setTimeout(() => chrome.runtime.sendMessage({ type: "fetchPetInfo" }, (fresh) => {
+            if (fresh?.success && fresh.config) renderPetConfig(fresh.config);
+          }), 500);
+        });
       } else {
         showStatus("❌ " + (res?.error || "Import failed — server rejected payload"), true);
       }
     });
   } catch (err) {
+    setButtonBusy("importBtn", false);
     showStatus("❌ Import error: " + (err.message || "unknown"), true);
   }
-  e.target.value = ""; // reset for next pick
 });
 
 // Refresh
 $("refreshBtn").addEventListener("click", () => {
+  setButtonBusy("refreshBtn", true, "Refreshing…");
   chrome.runtime.sendMessage({ type: "fetchPetInfo" }, (res) => {
-    if (res?.config) {
-      $("petName").textContent = res.config.petName;
-      $("petLevel").textContent = `Lv.${res.config.level}`;
-      $("petPersonality").textContent = res.config.personality;
-      if (res.config.avatarUrl) {
-        window.__safeRenderAvatar?.($("avatar"), res.config.avatarUrl, res.config.petName);
-      }
+    const runtimeError = chrome.runtime.lastError;
+    setButtonBusy("refreshBtn", false);
+    if (runtimeError) {
+      showStatus("❌ Extension service is unavailable", true);
+      return;
+    }
+    if (res?.success && res.config) {
+      renderPetConfig(res.config);
       showStatus("✅ Refreshed!");
       loadEvolution();
       loadEmotions();
@@ -792,13 +1118,36 @@ $("refreshBtn").addEventListener("click", () => {
   });
 });
 
+$("resumeSitesBtn").addEventListener("click", () => {
+  setButtonBusy("resumeSitesBtn", true, "Resuming…");
+  chrome.runtime.sendMessage({ type: "resumeAllSites" }, (res) => {
+    const runtimeError = chrome.runtime.lastError;
+    setButtonBusy("resumeSitesBtn", false);
+    if (runtimeError) {
+      showStatus("Couldn't clear paused sites", true);
+      return;
+    }
+    showStatus(res?.success ? "Paused sites cleared — reload those tabs." : "Couldn't clear paused sites", !res?.success);
+    if (res?.success) {
+      if (latestConfig) renderPetConfig({ ...latestConfig, pausedHosts: [] });
+      refreshSiteAccess();
+    }
+  });
+});
+
 // Reset
 $("resetBtn").addEventListener("click", () => {
-  if (confirm("Reset all points? This cannot be undone!")) {
-    chrome.runtime.sendMessage({ type: "resetPoints" }, () => {
-      showStatus("🗑️ Points reset.");
+  if (confirm("Reset local Play Points? Evolution, quests, achievements, your pet, and server data will be kept.")) {
+    setButtonBusy("resetBtn", true, "Resetting…");
+    chrome.runtime.sendMessage({ type: "resetPoints" }, (res) => {
+      const runtimeError = chrome.runtime.lastError;
+      setButtonBusy("resetBtn", false);
+      if (runtimeError || !res?.success) {
+        showStatus("Couldn't reset local Play Points", true);
+        return;
+      }
+      showStatus("🗑️ Local Play Points reset.");
       loadPoints();
-      loadEvolution();
     });
   }
 });

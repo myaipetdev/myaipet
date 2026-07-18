@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     /* ══════════════════════════════════════ */
     /* ── Collectible Editorial design system ─ */
@@ -29,6 +30,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       width: 360px;
+      max-width: 100vw;
       font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
       background: var(--paper);
       color: var(--ink);
@@ -96,6 +98,10 @@
 
     .tab.active { color: var(--terracotta); border-bottom-color: var(--terracotta); }
     .tab:hover { color: var(--ink); }
+    button:focus-visible, a:focus-visible, input:focus-visible {
+      outline: 3px solid var(--terracotta);
+      outline-offset: 2px;
+    }
 
     /* ── Tab Content ── */
     .tab-content { display: none; padding: 14px 16px; }
@@ -269,6 +275,7 @@
     .toggle {
       width: 38px; height: 22px; background: var(--field);
       border: 1px solid var(--line);
+      padding: 0;
       border-radius: 11px; position: relative; cursor: pointer;
       transition: background 0.15s;
     }
@@ -289,6 +296,8 @@
       font-size: 12px; font-weight: 700; cursor: pointer;
       font-family: inherit; transition: transform 0.1s;
     }
+    .btn:disabled { cursor: not-allowed; opacity: 0.62; transform: none; box-shadow: none; }
+    .btn[aria-busy="true"] { cursor: wait; }
 
     .btn-primary {
       background: var(--terracotta); color: var(--paper);
@@ -346,6 +355,22 @@
     /* ── Scrollbar ── */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+
+    @media (max-width: 340px) {
+      .header { padding-left: 10px; padding-right: 10px; }
+      .tabs { padding: 0 8px; }
+      .tab { font-size: 9px; }
+      .tab-content { padding-left: 10px; padding-right: 10px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -365,17 +390,17 @@
   </div>
 
   <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab active" data-tab="points">Points</button>
-    <button class="tab" data-tab="evolution">Evolve</button>
-    <button class="tab" data-tab="emotions">Mood</button>
-    <button class="tab" data-tab="game">Game</button>
-    <button class="tab" data-tab="achieve">Badges</button>
-    <button class="tab" data-tab="settings">Settings</button>
+  <div class="tabs" role="tablist" aria-label="PetClaw sections">
+    <button type="button" class="tab active" id="tab-button-points" role="tab" aria-selected="true" aria-controls="tab-points" tabindex="0" data-tab="points">Points</button>
+    <button type="button" class="tab" id="tab-button-evolution" role="tab" aria-selected="false" aria-controls="tab-evolution" tabindex="-1" data-tab="evolution">Evolve</button>
+    <button type="button" class="tab" id="tab-button-emotions" role="tab" aria-selected="false" aria-controls="tab-emotions" tabindex="-1" data-tab="emotions">Mood</button>
+    <button type="button" class="tab" id="tab-button-game" role="tab" aria-selected="false" aria-controls="tab-game" tabindex="-1" data-tab="game">Game</button>
+    <button type="button" class="tab" id="tab-button-achieve" role="tab" aria-selected="false" aria-controls="tab-achieve" tabindex="-1" data-tab="achieve">Badges</button>
+    <button type="button" class="tab" id="tab-button-settings" role="tab" aria-selected="false" aria-controls="tab-settings" tabindex="-1" data-tab="settings">Settings</button>
   </div>
 
   <!-- Points Tab -->
-  <div class="tab-content active" id="tab-points">
+  <div class="tab-content active" id="tab-points" role="tabpanel" aria-labelledby="tab-button-points">
     <div class="points-hero">
       <div class="label">Play Points (this browser)</div>
       <div class="total" id="totalPoints">0</div>
@@ -387,9 +412,9 @@
         <div class="name">Chat</div>
       </div>
       <div class="point-card">
-        <div class="icon">💓</div>
+        <div class="icon">📅</div>
         <div class="value" id="heartbeatPoints">0</div>
-        <div class="name">Heartbeat</div>
+        <div class="name">Daily &amp; Streak</div>
       </div>
       <div class="point-card">
         <div class="icon">⚡</div>
@@ -412,6 +437,11 @@
         <div class="icon">🧬</div>
         <div class="value" id="evolutionPoints">0</div>
         <div class="name">Evolution</div>
+      </div>
+      <div class="point-card">
+        <div class="icon">🧡</div>
+        <div class="value" id="carePoints">0</div>
+        <div class="name">Care</div>
       </div>
     </div>
     <div class="stats-row">
@@ -459,7 +489,7 @@
   </div>
 
   <!-- Evolution Tab -->
-  <div class="tab-content" id="tab-evolution">
+  <div class="tab-content" id="tab-evolution" role="tabpanel" aria-labelledby="tab-button-evolution">
     <div class="evo-stage" id="evoCurrentStage">
       <div class="evo-icon" id="evoCurrentIcon">🥚</div>
       <div class="evo-info">
@@ -475,10 +505,10 @@
     <div class="evo-stages" id="evoStages">
       <div class="stage current"><span class="stage-icon">🥚</span>Egg</div>
       <div class="stage locked"><span class="stage-icon">🐣</span>Baby</div>
-      <div class="stage locked"><span class="stage-icon">🐾</span>Junior</div>
-      <div class="stage locked"><span class="stage-icon">⚡</span>Teen</div>
-      <div class="stage locked"><span class="stage-icon">🔥</span>Adult</div>
-      <div class="stage locked"><span class="stage-icon">👑</span>Legend</div>
+      <div class="stage locked"><span class="stage-icon">🐾</span>Young</div>
+      <div class="stage locked"><span class="stage-icon">⚡</span>Adult</div>
+      <div class="stage locked"><span class="stage-icon">🔥</span>Elder</div>
+      <div class="stage locked"><span class="stage-icon">👑</span>Legendary</div>
     </div>
 
     <div class="section" style="margin-top:14px">
@@ -490,7 +520,7 @@
   </div>
 
   <!-- Emotions Tab -->
-  <div class="tab-content" id="tab-emotions">
+  <div class="tab-content" id="tab-emotions" role="tabpanel" aria-labelledby="tab-button-emotions">
     <div class="emotion-display">
       <div class="big-emoji" id="emotionEmoji">😊</div>
       <div class="emotion-name" id="emotionName">Happy</div>
@@ -526,23 +556,23 @@
     </div>
 
     <div style="margin-top:12px;display:flex;gap:6px">
-      <button class="btn btn-secondary" id="feedBtn" style="flex:1;margin-top:0">🍖 Feed</button>
-      <button class="btn btn-secondary" id="playBtn" style="flex:1;margin-top:0">🎾 Play</button>
-      <button class="btn btn-secondary" id="petBtn" style="flex:1;margin-top:0">💕 Pet</button>
+      <button type="button" class="btn btn-secondary" id="feedBtn" style="flex:1;margin-top:0">🍖 Feed</button>
+      <button type="button" class="btn btn-secondary" id="playBtn" style="flex:1;margin-top:0">🎾 Play</button>
+      <button type="button" class="btn btn-secondary" id="petBtn" style="flex:1;margin-top:0">💕 Pet</button>
     </div>
   </div>
 
   <!-- Game Tab -->
-  <div class="tab-content" id="tab-game">
+  <div class="tab-content" id="tab-game" role="tabpanel" aria-labelledby="tab-button-game">
     <div style="display:flex;gap:6px;margin-bottom:10px">
-      <button class="game-select active" data-game="catcher" style="flex:1;padding:7px;border:1px solid var(--terracotta-ink);border-radius:8px;background:var(--terracotta);color:var(--paper);font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;cursor:pointer">🎯 Catcher</button>
-      <button class="game-select" data-game="memory" style="flex:1;padding:7px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--muted);font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;cursor:pointer">🧠 Memory</button>
+      <button type="button" class="game-select active" data-game="catcher" aria-pressed="true" style="flex:1;padding:7px;border:1px solid var(--terracotta-ink);border-radius:8px;background:var(--terracotta);color:var(--paper);font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;cursor:pointer">🎯 Catcher</button>
+      <button type="button" class="game-select" data-game="memory" aria-pressed="false" style="flex:1;padding:7px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--muted);font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;cursor:pointer">🧠 Memory</button>
     </div>
 
     <div id="game-catcher" class="game-area">
       <div class="game-title">🎯 Treat Catcher</div>
-      <div class="game-canvas" id="gameCanvas"></div>
-      <button class="game-btn" id="startGameBtn">▶ Start Game</button>
+      <div class="game-canvas" id="gameCanvas" tabindex="0" role="group" aria-label="Treat Catcher. Use the mouse, touch, or Left and Right Arrow keys to move."></div>
+      <button type="button" class="game-btn" id="startGameBtn">▶ Start Game</button>
       <div class="game-score">
         High Score: <strong id="highScore">0</strong> |
         Points earned: <strong id="gamePointsEarned">0</strong>
@@ -551,8 +581,8 @@
 
     <div id="game-memory" class="game-area" style="display:none">
       <div class="game-title">🧠 Memory Match</div>
-      <div id="memoryGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px"></div>
-      <button class="game-btn" id="startMemoryBtn">▶ Start Game</button>
+      <div id="memoryGrid" role="group" aria-label="Memory Match cards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px"></div>
+      <button type="button" class="game-btn" id="startMemoryBtn">▶ Start Game</button>
       <div class="game-score">
         Moves: <strong id="memoryMoves">0</strong> |
         High Score: <strong id="memoryHighScore">0</strong> |
@@ -562,7 +592,7 @@
   </div>
 
   <!-- Achievements Tab -->
-  <div class="tab-content" id="tab-achieve">
+  <div class="tab-content" id="tab-achieve" role="tabpanel" aria-labelledby="tab-button-achieve">
     <div style="text-align:center;margin-bottom:12px">
       <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Unlocked</div>
       <div id="achieveCount" style="font-family:var(--mono);font-size:26px;font-weight:700;color:var(--terracotta)">0 / 0</div>
@@ -571,55 +601,79 @@
   </div>
 
   <!-- Settings Tab -->
-  <div class="tab-content" id="tab-settings">
+  <div class="tab-content" id="tab-settings" role="tabpanel" aria-labelledby="tab-button-settings">
     <div class="section">
       <div class="section-title">Connection</div>
-      <label>API Server URL</label>
-      <input type="text" id="apiUrl" class="mono" placeholder="https://app.myaipet.ai" />
+      <label for="apiUrl">API Server</label>
+      <input type="text" id="apiUrl" class="mono" value="https://app.myaipet.ai" readonly />
       <div style="height:6px"></div>
-      <label>Pet ID</label>
-      <input type="number" id="petId" class="mono" placeholder="1" min="1" />
+      <label for="petId">Pet ID</label>
+      <input type="number" id="petId" class="mono" placeholder="Selected automatically" min="1" readonly />
       <div style="height:6px"></div>
-      <label>CLI token (links the extension to YOUR pet)</label>
-      <input type="password" id="authToken" class="mono" placeholder="pck_… · generate in 'Connect your CLI' in the app" />
+      <label for="authToken">Extension token (30 days · limited scope)</label>
+      <input type="password" id="authToken" class="mono" placeholder="pex_… · generate in the PetClaw dashboard" autocomplete="off" autocapitalize="none" spellcheck="false" />
       <div id="syncStatus" style="font-family:var(--mono);font-size:11px; color:var(--muted); margin-top:6px;"></div>
+      <a href="https://app.myaipet.ai/sovereignty#connect-cli" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:7px;font-size:11px;color:var(--terracotta-ink);font-weight:700">Generate or revoke an extension token</a>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Website Access</div>
+      <p style="font-size:11px;line-height:1.45;color:var(--muted);margin:0 0 8px">
+        PetClaw runs only on sites you approve. MY AI PET and a built-in list of common account, wallet, email, and banking sites are blocked. Keep access off on every sensitive page.
+      </p>
+      <p style="font-size:10px;line-height:1.45;color:var(--muted);margin:0 0 8px">
+        Access applies to this scheme and domain. PetClaw observes interaction timing for sleep and wake. Title and H1 reactions are off by default; page text is read only after Preview and sent only after a second confirmation.
+      </p>
+      <div id="siteAccessStatus" role="status" aria-live="polite" style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:8px">Checking this site…</div>
+      <button type="button" class="btn btn-secondary" id="siteAccessBtn" aria-describedby="siteAccessStatus" disabled>Checking website access…</button>
     </div>
 
     <div class="section">
       <div class="section-title">Behavior</div>
-      <label>Auto-talk interval (seconds)</label>
+      <label for="autoInterval">Auto-talk interval (seconds)</label>
       <input type="number" id="autoInterval" class="mono" placeholder="90" min="30" max="600" />
     </div>
 
     <div class="section">
       <div class="section-title">Preferences</div>
       <div class="toggle-row">
+        <span class="label">🐾 Companion Enabled</span>
+        <button type="button" class="toggle on" id="toggleEnabled" data-key="enabled" aria-label="Companion enabled" aria-pressed="true"></button>
+      </div>
+      <div class="toggle-row">
         <span class="label">🔔 Notifications</span>
-        <div class="toggle on" id="toggleNotifs" data-key="notifications"></div>
+        <button type="button" class="toggle on" id="toggleNotifs" data-key="notifications" aria-label="Notifications" aria-pressed="true"></button>
       </div>
       <div class="toggle-row">
         <span class="label">✨ Particle Effects</span>
-        <div class="toggle on" id="toggleParticles" data-key="particles"></div>
+        <button type="button" class="toggle on" id="toggleParticles" data-key="particles" aria-label="Particle effects" aria-pressed="true"></button>
       </div>
       <div class="toggle-row">
         <span class="label">🗣️ Auto Talk</span>
-        <div class="toggle on" id="toggleAutoTalk" data-key="autoTalk"></div>
+        <button type="button" class="toggle" id="toggleAutoTalk" data-key="autoTalk" aria-label="Auto Talk" aria-pressed="false"></button>
       </div>
+      <div class="toggle-row">
+        <span class="label">📄 Local Page Reactions</span>
+        <button type="button" class="toggle" id="togglePageAwareness" data-key="pageAwareness" aria-label="Local page reactions" aria-pressed="false"></button>
+      </div>
+      <p style="font-size:10px;line-height:1.45;color:var(--muted);margin:7px 0 0">Page summaries preview up to 1,500 characters and always require a second confirmation. Summaries use the non-memory summarizer and are not added to pet memory.</p>
     </div>
 
-    <button class="btn btn-primary" id="saveBtn">Save & Connect</button>
-    <button class="btn btn-secondary" id="exportBtn">📦 Export SOUL Data</button>
-    <button class="btn btn-secondary" id="importBtn">📥 Import SOUL JSON</button>
+    <button type="button" class="btn btn-primary" id="saveBtn">Pair Extension</button>
+    <button type="button" class="btn btn-secondary" id="disconnectBtn" disabled>Disconnect Local Pairing</button>
+    <button type="button" class="btn btn-secondary" id="exportBtn" disabled>📦 Export SOUL Data</button>
+    <button type="button" class="btn btn-secondary" id="importBtn" disabled>📥 Import SOUL JSON</button>
     <input type="file" id="importFile" accept="application/json,.json" style="display:none" />
-    <button class="btn btn-secondary" id="refreshBtn">🔄 Refresh Pet Info</button>
-    <button class="btn btn-danger" id="resetBtn">🗑️ Reset Points</button>
+    <button type="button" class="btn btn-secondary" id="refreshBtn" disabled>🔄 Refresh Pet Info</button>
+    <button type="button" class="btn btn-secondary" id="resumeSitesBtn" disabled>▶ Resume on Paused Sites</button>
+    <button type="button" class="btn btn-danger" id="resetBtn">🗑️ Reset Local Play Points</button>
   </div>
 
-  <div id="status"></div>
+  <div id="status" role="status" aria-live="polite"></div>
 
   <div class="footer">
     <p id="version-line">MY AI PET — PetClaw</p>
-    <p><a href="https://app.myaipet.ai" target="_blank" rel="noopener noreferrer">Open Dashboard</a></p>
+    <p><a href="https://app.myaipet.ai/sovereignty" target="_blank" rel="noopener noreferrer">Open PetClaw Dashboard</a></p>
   </div>
 
   <script src="popup.js"></script>

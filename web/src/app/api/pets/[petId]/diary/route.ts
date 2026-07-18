@@ -5,15 +5,21 @@
  *     → { entry: "<2-3 sentence first-person journal of the week>", weekOf, ... }
  *
  * The pet writes a short diary entry about its week with the owner, drawn from
- * the past 7 days of memories. This is the "주간 펫 일기" daily-rhythm beat — a
+ * the past 7 days of memories. This is the weekly diary rhythm beat — a
  * reason to come back, and content only we can make (it needs the memory
  * ledger). Cached per-pet for 7 days; personality-flavored fallback if Grok is
- * unavailable. Owner-gated (paid LLM + write) except the public demo pet.
+ * unavailable. Owner-gated because this reads private memory and writes state.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
-import { ownsPet, PUBLIC_DEMO_PET_ID } from "@/lib/authz";
+import { ownsPet } from "@/lib/authz";
+import { callLLM } from "@/lib/llm/router";
+import {
+  containsHangul,
+  generatedEnglishOrFallback,
+  generatedEnglishOrNull,
+} from "@/lib/generatedLanguage";
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -43,9 +49,6 @@ interface CachedDiary {
 }
 
 async function generateWithLLM(pet: any): Promise<string | null> {
-  const grokKey = process.env.GROK_API_KEY;
-  if (!grokKey) return null;
-
   const weekAgo = new Date(Date.now() - CACHE_TTL_MS);
   const recent = await prisma.petMemory.findMany({
     where: {
@@ -57,31 +60,30 @@ async function generateWithLLM(pet: any): Promise<string | null> {
     take: 14,
     select: { content: true },
   });
-  const lines = recent.map(r => `- ${r.content}`).join("\n").slice(0, 1200);
+  const lines = recent
+    .filter((row) => !containsHangul(row.content))
+    .map(r => `- ${r.content}`)
+    .join("\n")
+    .slice(0, 1200);
 
   try {
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${grokKey}` },
-      body: JSON.stringify({
-        model: "grok-3-mini-fast",
-        temperature: 0.9,
-        max_tokens: 160,
-        messages: [
-          {
-            role: "system",
-            content: `You are ${pet.name}, a ${pet.personality_type} pet at Lv.${pet.level} writing this week's short diary entry about your life with your owner. 2-3 sentences, first person, warm and specific, casual not formal. Reference the moments below if any. No preamble, no date header, no quotes. Always write in English.`,
-          },
-          {
-            role: "user",
-            content: `This week's moments:\n${lines || "(a quiet week with not much logged)"}\n\nWrite your diary entry for the week:`,
-          },
-        ],
-      }),
+    const result = await callLLM({
+      task: "chat",
+      petId: pet.id,
+      temperature: 0.9,
+      max_tokens: 160,
+      messages: [
+        {
+          role: "system",
+          content: `You are ${pet.name}, a ${pet.personality_type} pet at Lv.${pet.level} writing this week's short diary entry about your life with your owner. 2-3 sentences, first person, warm and specific, casual not formal. Reference the moments below if any. No preamble, no date header, no quotes. Always write in English.`,
+        },
+        {
+          role: "user",
+          content: `This week's moments:\n${lines || "(a quiet week with not much logged)"}\n\nWrite your diary entry for the week:`,
+        },
+      ],
     });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const text = data.choices?.[0]?.message?.content?.trim()?.replace(/^["']|["']$/g, "");
+    const text = generatedEnglishOrNull(result.text?.trim().replace(/^["']|["']$/g, ""));
     if (!text || text.length > 600) return null;
     return text;
   } catch {
@@ -99,7 +101,7 @@ export async function GET(
   const { petId } = await params;
   const pid = Number(petId);
 
-  if (pid !== PUBLIC_DEMO_PET_ID && !(await ownsPet(req, pid))) {
+  if (!(await ownsPet(req, pid))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -112,7 +114,11 @@ export async function GET(
   const isFresh = cached && (now - new Date(cached.generatedAt).getTime()) < CACHE_TTL_MS;
 
   if (isFresh && cached) {
-    return NextResponse.json({ entry: cached.text, weekOf: cached.weekOf, cached: true });
+    return NextResponse.json({
+      entry: generatedEnglishOrFallback(cached.text, pickFallback(pet.personality_type)),
+      weekOf: cached.weekOf,
+      cached: true,
+    });
   }
 
   const llmText = await generateWithLLM(pet);

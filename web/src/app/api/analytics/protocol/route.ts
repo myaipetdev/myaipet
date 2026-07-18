@@ -40,8 +40,12 @@ export async function GET(req: NextRequest) {
       creditPurchaseSum,
       itemPurchases,
       onchainTxs,
+      memoryMilestoneCount,
+      memoryMintSubmissionCount,
       memoryNftCount,
-      petSoulCount,
+      petSoulIdentityCount,
+      petSoulSubmissionCount,
+      petSoulNftCount,
       uniqueOnchainUsers,
     ] = await Promise.all([
       prisma.user.count(),
@@ -66,7 +70,11 @@ export async function GET(req: NextRequest) {
       prisma.transaction.count({ where: { type: "premium_buy" } }),
       prisma.transaction.count(),
       prisma.memoryNft.count(),
+      prisma.memoryNft.count({ where: { mint_tx_hash: { not: null } } }),
+      prisma.memoryNft.count({ where: { memory_token_id: { not: null } } }),
       prisma.petSoulNft.count(),
+      prisma.petSoulNft.count({ where: { mint_tx_hash: { not: null } } }),
+      prisma.petSoulNft.count({ where: { token_id: { not: null } } }),
       prisma.transaction.findMany({
         where: { user_id: { not: null } },
         distinct: ["user_id"],
@@ -97,8 +105,16 @@ export async function GET(req: NextRequest) {
         total_transactions: onchainTxs,
         unique_onchain_users: uniqueOnchainUsers.length,
         memory_nfts: memoryNftCount,
-        pet_soul_nfts: petSoulCount,
+        memory_mint_submissions: memoryMintSubmissionCount,
+        pet_soul_nfts: petSoulNftCount,
+        pet_soul_mint_submissions: petSoulSubmissionCount,
         chain: "BNB Smart Chain (chain id 56)",
+      },
+      records: {
+        memory_milestones: memoryMilestoneCount,
+        off_chain_memory_milestones: memoryMilestoneCount - memoryMintSubmissionCount,
+        pet_soul_identity_records: petSoulIdentityCount,
+        off_chain_pet_soul_identity_records: petSoulIdentityCount - petSoulSubmissionCount,
       },
       contracts: {
         pet_content: "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c",
@@ -109,7 +125,8 @@ export async function GET(req: NextRequest) {
         pet_soul: null,
       },
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || "stats failed" }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "stats failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -16,8 +16,8 @@
  *     getUsdtVerifier(). Every payment route already calls verifyUsdtTransfer(),
  *     so nothing else changes.
  *
- * Defaults reproduce the current BSC mainnet + BSC-USD setup, so behaviour is
- * unchanged until the env / factory is updated.
+ * Chain/token defaults reproduce the current BSC mainnet + BSC-USD setup.
+ * Payments themselves remain disabled unless PAYMENTS_ENABLED is exact `true`.
  *
  * NOTE: only NEXT_PUBLIC_* values are ever exposed to the browser. The bare
  * env names below are server-only; the client mirror lives in lib/contracts.
@@ -39,6 +39,9 @@ export const ONCHAIN = {
   chainId: envNum(process.env.CHAIN_ID, 56),
   chainName: pick(process.env.CHAIN_NAME) || "BSC",
   rpcUrl: pick(process.env.RPC_URL, process.env.BSC_RPC_URL) || "https://bsc-dataseed1.binance.org",
+  // A receipt is not final at inclusion. Default to three confirmed blocks;
+  // operators may raise (but not disable) this before enabling payments.
+  paymentMinConfirmations: Math.floor(envNum(process.env.PAYMENT_MIN_CONFIRMATIONS, 3)),
   usdt: {
     address: pick(process.env.USDT_CONTRACT) || "0x55d398326f99059fF775485246999027B3197955", // BSC-USD
     decimals: envNum(process.env.USDT_DECIMALS, 18),
@@ -62,14 +65,44 @@ export const ONCHAIN = {
 export const ERC20_TRANSFER_TOPIC =
   "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 
-/** Payment routes must FAIL CLOSED when no treasury is configured (audit H4). */
+/**
+ * Master switch for every server-side provenance write. This is deliberately
+ * exact and opt-in: missing, `false`, `TRUE`, and all other values stay paused.
+ */
+export function blockchainEnabled(): boolean {
+  return process.env.BLOCKCHAIN_ENABLED === "true";
+}
+
+/**
+ * External payments are opt-in. A configured treasury is necessary but never
+ * sufficient: only the exact value PAYMENTS_ENABLED=true opens the rail.
+ */
+export function paymentsEnabled(): boolean {
+  return process.env.PAYMENTS_ENABLED === "true" && ONCHAIN.treasuryWallet.length > 0;
+}
+
+/** Backwards-compatible name used by paid routes and runtime config. */
 export function treasuryConfigured(): boolean {
-  // Master payment kill-switch: PAYMENTS_ENABLED=false reports "no treasury" so
-  // every paid surface shows "payments paused" / 503 even while a treasury wallet
-  // stays configured in env (used during the BSC→Base chain migration). Flip the
-  // flag back to re-enable — no code change needed.
-  if (process.env.PAYMENTS_ENABLED === "false") return false;
-  return ONCHAIN.treasuryWallet.length > 0;
+  return paymentsEnabled();
+}
+
+export class InvalidPaymentTxHash extends Error {
+  constructor() {
+    super("Invalid transaction hash format");
+    this.name = "InvalidPaymentTxHash";
+  }
+}
+
+/**
+ * Canonical representation for every financial receipt lookup and write.
+ * Ethereum transaction hashes are byte strings; hexadecimal letter case is
+ * presentation-only and must never create a second replay namespace.
+ */
+export function canonicalizePaymentTxHash(value: unknown): string {
+  if (typeof value !== "string" || !/^0x[0-9a-f]{64}$/i.test(value)) {
+    throw new InvalidPaymentTxHash();
+  }
+  return value.toLowerCase();
 }
 
 export type UsdtVerifyResult =
@@ -117,19 +150,45 @@ class RpcUsdtVerifier implements UsdtVerifier {
     expectedAmountUsd: number,
   ): Promise<UsdtVerifyResult> {
     try {
+      if (!paymentsEnabled()) {
+        return { ok: false, error: "Payments are temporarily unavailable" };
+      }
+      const canonicalTxHash = canonicalizePaymentTxHash(txHash);
       const res = await fetch(ONCHAIN.rpcUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           jsonrpc: "2.0", id: 1,
           method: "eth_getTransactionReceipt",
-          params: [txHash],
+          params: [canonicalTxHash],
         }),
       });
       const json = await res.json();
       const receipt = json.result;
       if (!receipt) return { ok: false, error: "Transaction receipt not found — TX may be pending or invalid" };
       if (receipt.status !== "0x1") return { ok: false, error: "Transaction failed or was reverted on-chain" };
+      if (typeof receipt.blockNumber !== "string" || !/^0x[0-9a-f]+$/i.test(receipt.blockNumber)) {
+        return { ok: false, error: "Transaction receipt is missing a valid block number" };
+      }
+
+      const tipRes = await fetch(ONCHAIN.rpcUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "eth_blockNumber", params: [] }),
+      });
+      const tipJson = await tipRes.json();
+      if (typeof tipJson.result !== "string" || !/^0x[0-9a-f]+$/i.test(tipJson.result)) {
+        return { ok: false, error: "Could not determine payment confirmation depth" };
+      }
+      const receiptBlock = BigInt(receipt.blockNumber);
+      const tipBlock = BigInt(tipJson.result);
+      const confirmations = tipBlock >= receiptBlock ? tipBlock - receiptBlock + BigInt(1) : BigInt(0);
+      if (confirmations < BigInt(ONCHAIN.paymentMinConfirmations)) {
+        return {
+          ok: false,
+          error: `Payment is confirming (${confirmations.toString()}/${ONCHAIN.paymentMinConfirmations} confirmations)`,
+        };
+      }
 
       const expectedFromLc = expectedFrom.toLowerCase();
       const expectedToLc = ONCHAIN.treasuryWallet.toLowerCase();
@@ -172,10 +231,21 @@ export function getUsdtVerifier(): UsdtVerifier {
 }
 
 /** Convenience wrapper used by every payment route. */
-export function verifyUsdtTransfer(
+export async function verifyUsdtTransfer(
   txHash: string,
   expectedFrom: string,
   expectedAmountUsd: number,
 ): Promise<UsdtVerifyResult> {
-  return getUsdtVerifier().verifyTransfer(txHash, expectedFrom, expectedAmountUsd);
+  if (!paymentsEnabled()) {
+    return { ok: false, error: "Payments are temporarily unavailable" };
+  }
+  try {
+    const canonicalTxHash = canonicalizePaymentTxHash(txHash);
+    return await getUsdtVerifier().verifyTransfer(canonicalTxHash, expectedFrom, expectedAmountUsd);
+  } catch (error) {
+    if (error instanceof InvalidPaymentTxHash) {
+      return { ok: false, error: error.message };
+    }
+    throw error;
+  }
 }

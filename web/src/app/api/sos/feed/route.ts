@@ -3,6 +3,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { publicPetWhere } from "@/lib/publicPet";
 
 export async function GET(_req: NextRequest) {
   const rows = await prisma.streakSos.findMany({
@@ -12,7 +13,7 @@ export async function GET(_req: NextRequest) {
     include: {
       sender: { select: {
         wallet_address: true,
-        pets: { take: 1, orderBy: { level: "desc" }, where: { is_active: true }, select: { name: true, avatar_url: true } },
+        pets: { take: 1, orderBy: { level: "desc" }, where: publicPetWhere(), select: { name: true, avatar_url: true } },
       } },
     },
   });

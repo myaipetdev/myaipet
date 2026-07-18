@@ -5,14 +5,334 @@
 
 import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { deleteStoredFile, listStoredFileReferencesByPrefix, storedFileExists } from "@/lib/storage";
+import { enqueueExpiredAvatarMediaObjects } from "@/lib/avatarMedia";
+import {
+  applicationMediaKey,
+  applicationMediaReferences,
+  isFreshOwnerUploadKey,
+} from "@/lib/mediaOwnership";
+import { publicPetWhere } from "@/lib/publicPet";
+import { lockAvailablePetSlot } from "@/lib/petSlots";
+import { isExpressionKey } from "@/lib/moodPortraits";
+import type { Prisma } from "@/generated/prisma/client";
 import {
   PETCLAW_PROTOCOL,
   PETCLAW_VERSION,
   buildPetDID,
   computeIntegrityHash,
   type SoulExport,
+  type SoulImportReport,
+  type SoulImportResult,
   type ConsentSettings,
 } from "./petclaw";
+
+type JsonRecord = Record<string, unknown>;
+const MEDIA_RETENTION_RETRY_MS = 60_000;
+
+const PORTABLE_MODIFIER_KEYS = new Set([
+  // Identity/context only. Combat stats, unlocked skills/combos, interaction
+  // ledgers and pending actions are server-authoritative and never portable.
+  "bond_reflections", "custom_traits", "learned_patterns",
+  "persistent_memories", "species_name", "thought_of_day", "user_profile",
+  "weekly_diary",
+]);
+
+const LINKED_DATA_CATEGORIES = new Set([
+  "petState", "personaDetails", "memoryNfts", "soulExportHistory",
+  "interactions", "dreamJournals", "insights", "loras", "notifications",
+  "autonomousActions", "trainingLogs", "pveProgress", "battleHistory",
+  "equippedItems", "platformConnections", "agentMessages", "agentSchedule",
+  "conversations", "inheritanceEvents", "agentReactions", "likes", "comments",
+  "paidActions", "linkedGenerations", "petDates",
+]);
+
+function asRecord(value: unknown): JsonRecord | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as JsonRecord
+    : null;
+}
+
+function rowsFrom(value: unknown): JsonRecord[] {
+  return Array.isArray(value)
+    ? value.map(asRecord).filter((row): row is JsonRecord => row !== null)
+    : [];
+}
+
+function sourceCount(value: unknown): number {
+  if (Array.isArray(value)) return value.length;
+  return value === null || value === undefined ? 0 : 1;
+}
+
+function isSensitiveExtensionKey(key: string): boolean {
+  const normalized = key.replace(/[^a-z0-9]/gi, "").toLowerCase();
+  return ["__proto__", "prototype", "constructor"].includes(key.toLowerCase())
+    || normalized.includes("password")
+    || normalized.includes("passphrase")
+    || normalized.includes("secret")
+    || normalized.includes("credential")
+    || normalized.includes("apikey")
+    || normalized.includes("privatekey")
+    || normalized.includes("accesstoken")
+    || normalized.includes("refreshtoken")
+    || normalized.endsWith("token")
+    || normalized.includes("tokenhash")
+    || normalized.includes("webhooksecret")
+    || normalized.includes("connectcode")
+    || normalized.includes("authorization")
+    || normalized.includes("cookie")
+    || normalized === "wallet"
+    || normalized.endsWith("wallet")
+    || normalized.endsWith("walletaddress")
+    || normalized.endsWith("userid")
+    || normalized.endsWith("ownerid")
+    || normalized.endsWith("accountid")
+    || normalized.endsWith("tenantid")
+    || normalized.endsWith("petid")
+    || normalized.endsWith("generationid")
+    || normalized.endsWith("chatid")
+    || normalized.endsWith("messageid")
+    || normalized.endsWith("msgid")
+    || normalized.endsWith("sessionid")
+    || normalized.endsWith("tokenid")
+    || normalized.endsWith("nftid")
+    || normalized.endsWith("txhash")
+    || normalized.endsWith("transactionhash");
+}
+
+function countSensitivePortableFields(value: unknown, depth = 0): number {
+  if (depth > 32 || value === null || value === undefined) return 0;
+  if (Array.isArray(value)) {
+    return value.reduce((count, entry) => count + countSensitivePortableFields(entry, depth + 1), 0);
+  }
+  const record = asRecord(value);
+  if (!record) return 0;
+  let count = 0;
+  for (const [key, entry] of Object.entries(record)) {
+    if (isSensitiveExtensionKey(key)) count += 1;
+    else count += countSensitivePortableFields(entry, depth + 1);
+  }
+  return count;
+}
+
+/** Clone portable JSON while dropping credential-shaped keys at every depth. */
+function sanitizePortableJson(value: unknown, depth = 0): unknown {
+  if (depth > 32 || value === undefined || typeof value === "function" || typeof value === "symbol") {
+    return undefined;
+  }
+  if (value === null || typeof value === "string" || typeof value === "boolean") return value;
+  if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
+  if (typeof value === "bigint") return value.toString();
+  if (value instanceof Date) return value.toISOString();
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => sanitizePortableJson(entry, depth + 1))
+      .filter((entry) => entry !== undefined);
+  }
+  const record = asRecord(value);
+  if (!record) return undefined;
+  const result: JsonRecord = {};
+  for (const [key, entry] of Object.entries(record)) {
+    if (isSensitiveExtensionKey(key)) continue;
+    const clean = sanitizePortableJson(entry, depth + 1);
+    if (clean !== undefined) result[key] = clean;
+  }
+  return result;
+}
+
+function portablePetModifiers(value: unknown): JsonRecord {
+  const source = asRecord(value) || {};
+  const result: JsonRecord = {};
+  for (const key of PORTABLE_MODIFIER_KEYS) {
+    if (!(key in source)) continue;
+    const clean = sanitizePortableJson(source[key]);
+    if (clean !== undefined) result[key] = clean;
+  }
+  return result;
+}
+
+function safeString(value: unknown, maxLength: number): string | undefined {
+  if (typeof value !== "string" || value.length === 0 || value.length > maxLength) return undefined;
+  return value;
+}
+
+function safeInteger(value: unknown, fallback: number, min: number, max: number): number {
+  return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max
+    ? value
+    : fallback;
+}
+
+function safeDate(value: unknown): Date | undefined {
+  if (typeof value !== "string" && !(value instanceof Date)) return undefined;
+  const parsed = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
+function addRestored(report: SoulImportReport, category: string, count: number): void {
+  if (count > 0) report.restored[category] = (report.restored[category] || 0) + count;
+}
+
+function addSkipped(report: SoulImportReport, category: string, count: number, reason: string): void {
+  if (count <= 0) return;
+  const current = report.skipped[category] || { count: 0, reasons: [] };
+  current.count += count;
+  if (!current.reasons.includes(reason)) current.reasons.push(reason);
+  report.skipped[category] = current;
+}
+
+function jsonContainsAnyReference(value: unknown, references: Set<string>): boolean {
+  if (typeof value === "string") return references.has(value);
+  if (Array.isArray(value)) return value.some((entry) => jsonContainsAnyReference(entry, references));
+  const record = asRecord(value);
+  return !!record && Object.values(record).some((entry) => jsonContainsAnyReference(entry, references));
+}
+
+function moodPortraitMediaValues(value: unknown): string[] {
+  const modifiers = asRecord(value);
+  const portraits = asRecord(modifiers?.mood_portraits);
+  if (!portraits) return [];
+  return Object.entries(portraits)
+    .filter((entry): entry is [string, string] => isExpressionKey(entry[0]) && typeof entry[1] === "string")
+    .map(([, portrait]) => portrait);
+}
+
+function moodPortraitContainsReference(value: unknown, references: Set<string>): boolean {
+  return moodPortraitMediaValues(value).some((portrait) => references.has(portrait));
+}
+
+/** True while any live row still points at this first-party object. */
+async function mediaObjectIsStillReferenced(value: string): Promise<boolean> {
+  const key = applicationMediaKey(value);
+  if (!key) return true; // fail closed: never delete an ambiguous value
+  const references = applicationMediaReferences(key);
+  const referenceSet = new Set(references);
+  const [generation, pet, profile, caught, battle, avatarLifecycle, loras, modifierPets] = await Promise.all([
+    prisma.generation.findFirst({
+      where: { OR: [{ photo_path: { in: references } }, { video_path: { in: references } }] },
+      select: { id: true },
+    }),
+    prisma.pet.findFirst({
+      where: { OR: [{ avatar_url: { in: references } }, { codex_url: { in: references } }] },
+      select: { id: true },
+    }),
+    prisma.userProfile.findFirst({ where: { avatar_url: { in: references } }, select: { id: true } }),
+    prisma.caughtCat.findFirst({ where: { photo_path: { in: references } }, select: { id: true } }),
+    prisma.battleHistory.findFirst({
+      where: { OR: [{ player_avatar: { in: references } }, { opponent_avatar: { in: references } }] },
+      select: { id: true },
+    }),
+    prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT "id"::text AS "id"
+      FROM "avatar_media_objects"
+      WHERE "object_ref" = ${`/uploads/${key}`}
+      LIMIT 1
+    `,
+    prisma.petLora.findMany({ select: { lora_url: true, training_archive_ref: true, images_used: true } }),
+    prisma.pet.findMany({ select: { personality_modifiers: true } }),
+  ]);
+  if (generation || pet || profile || caught || battle || avatarLifecycle[0]) return true;
+  if (loras.some((row) =>
+    references.includes(row.lora_url)
+    || references.includes(row.training_archive_ref)
+    || jsonContainsAnyReference(row.images_used, referenceSet)
+  )) return true;
+  // personality_modifiers is mostly arbitrary user/profile JSON. Only the
+  // product-owned, key-bounded mood_portraits subtree is media-bearing; an
+  // unrelated string elsewhere must never grant retention/ownership.
+  return modifierPets.some((row) => moodPortraitContainsReference(row.personality_modifiers, referenceSet));
+}
+
+/**
+ * Drain committed media-deletion tasks. DB ownership disappears first; physical
+ * deletion is attempted only when no remaining row references the object.
+ * Failed tasks stay durable and can be retried by the protected cron route.
+ */
+export async function processMediaDeletionTasks(options: { sourcePetId?: number; limit?: number } = {}) {
+  const expiredAvatarPreviews = await enqueueExpiredAvatarMediaObjects(options.limit || 100);
+  const dueAt = new Date();
+  const tasks = await prisma.mediaDeletionTask.findMany({
+    where: {
+      ...(options.sourcePetId !== undefined ? { source_pet_id: options.sourcePetId } : {}),
+      updated_at: { lte: dueAt },
+    },
+    // A retained shared reference is rescheduled by updated_at below. Ordering
+    // by the oldest reservation prevents a fixed head of live shared refs from
+    // starving newer deletable objects forever.
+    orderBy: [{ updated_at: "asc" }, { id: "asc" }],
+    take: Math.min(Math.max(options.limit || 100, 1), 500),
+  });
+  let deleted = 0;
+  let retained = 0;
+  let failed = 0;
+  for (const task of tasks) {
+    try {
+      const key = applicationMediaKey(task.object_ref);
+      if (!key) {
+        // Ambiguous references fail closed and remain visible for operator
+        // repair; silently dropping the tombstone would make cleanup
+        // permanently impossible.
+        failed += 1;
+        await prisma.mediaDeletionTask.update({
+          where: { id: task.id },
+          data: {
+            attempts: { increment: 1 },
+            last_error: "Invalid application media reference",
+            // Invalid/operator-repair tasks also back off so a malformed head
+            // cannot hot-loop ahead of valid cleanup work.
+            updated_at: new Date(Date.now() + MEDIA_RETENTION_RETRY_MS),
+          },
+        });
+        continue;
+      }
+      if (await mediaObjectIsStillReferenced(task.object_ref)) {
+        // Keep the tombstone while another live row shares the object. Its
+        // unique object_ref also blocks the last owner deletion from losing
+        // the cleanup intent; a later cron deletes it once every reference is
+        // detached.
+        retained += 1;
+        await prisma.mediaDeletionTask.update({
+          where: { id: task.id },
+          data: {
+            attempts: { increment: 1 },
+            last_error: "Retained while a live row references this object",
+            // A true not-before reservation avoids relying on millisecond
+            // timestamp ordering: even a very fast 200-row drain moves every
+            // retained head behind currently-due tail work.
+            updated_at: new Date(Date.now() + MEDIA_RETENTION_RETRY_MS),
+          },
+        });
+        continue;
+      }
+      await deleteStoredFile(`/uploads/${key}`);
+      await prisma.mediaDeletionTask.delete({ where: { id: task.id } });
+      deleted += 1;
+    } catch (error: any) {
+      failed += 1;
+      await prisma.mediaDeletionTask.update({
+        where: { id: task.id },
+        data: {
+          attempts: { increment: 1 },
+          last_error: String(error?.message || "media deletion failed").slice(0, 500),
+          updated_at: new Date(Date.now() + MEDIA_RETENTION_RETRY_MS),
+        },
+      }).catch(() => {});
+    }
+  }
+  return { processed: tasks.length, deleted, retained, failed, expiredAvatarPreviews };
+}
+
+async function createManyInBatches(
+  delegate: { createMany: (args: { data: JsonRecord[] }) => Promise<unknown> },
+  data: JsonRecord[],
+): Promise<void> {
+  const batchSize = 500;
+  for (let index = 0; index < data.length; index += batchSize) {
+    const batch = data.slice(index, index + batchSize).map((row) =>
+      Object.fromEntries(Object.entries(row).filter(([, value]) => value !== undefined))
+    );
+    await delegate.createMany({ data: batch });
+  }
+}
 
 // Read the pet's consent settings from its stored personality_modifiers.
 // Single source of truth shared by getConsent() and exportPetData() so the
@@ -20,10 +340,10 @@ import {
 function readConsentFromPet(personalityModifiers: unknown): ConsentSettings {
   const mods = (personalityModifiers as Record<string, unknown>) || {};
   return {
-    allowPublicProfile: (mods.consent_public_profile as boolean) ?? true,
+    allowPublicProfile: (mods.consent_public_profile as boolean) ?? false,
     allowDataSharing: (mods.consent_data_sharing as boolean) ?? false,
     allowAITraining: (mods.consent_ai_training as boolean) ?? false,
-    allowInteraction: (mods.consent_interaction as boolean) ?? true,
+    allowInteraction: (mods.consent_interaction as boolean) ?? false,
   };
 }
 
@@ -50,7 +370,6 @@ export async function exportPetData(petId: number, userId: number): Promise<Soul
     prisma.petMemory.findMany({
       where: { pet_id: petId },
       orderBy: { created_at: "desc" },
-      take: 1000,
     }),
     prisma.petSkill.findMany({ where: { pet_id: petId } }),
     prisma.petPersona.findFirst({ where: { pet_id: petId } }),
@@ -61,6 +380,83 @@ export async function exportPetData(petId: number, userId: number): Promise<Soul
     }),
     prisma.memoryNft.findMany({ where: { pet_id: petId } }),
   ]);
+
+  // Pet-scoped activity archive. Secrets (provider credentials, webhook
+  // secrets, encrypted model keys, and PAT hashes) are intentionally excluded.
+  const [
+    interactions,
+    dreamJournals,
+    insights,
+    loras,
+    notifications,
+    autonomousActions,
+    trainingLogs,
+    pveProgress,
+    battleHistory,
+    equippedItems,
+    platformConnections,
+    agentMessages,
+    agentSchedule,
+    conversations,
+    inheritanceEvents,
+    agentReactions,
+    petLikes,
+    petComments,
+    paidActions,
+    soulExportHistory,
+    petDates,
+  ] = await Promise.all([
+    prisma.petInteraction.findMany({ where: { pet_id: petId }, orderBy: { created_at: "asc" } }),
+    prisma.dreamJournal.findMany({ where: { pet_id: petId }, orderBy: { created_at: "asc" } }),
+    prisma.petInsight.findMany({ where: { pet_id: petId }, orderBy: { created_at: "asc" } }),
+    prisma.petLora.findMany({ where: { pet_id: petId }, orderBy: { created_at: "asc" } }),
+    prisma.petNotification.findMany({ where: { pet_id: petId }, orderBy: { created_at: "asc" } }),
+    prisma.petAutonomousAction.findMany({ where: { pet_id: petId }, orderBy: { created_at: "asc" } }),
+    prisma.dailyTrainingLog.findMany({ where: { pet_id: petId }, orderBy: { date: "asc" } }),
+    prisma.pveProgress.findMany({ where: { pet_id: petId }, orderBy: { stage_id: "asc" } }),
+    prisma.battleHistory.findMany({
+      where: { OR: [{ player_pet_id: petId }, { opponent_pet_id: petId }] },
+      orderBy: { created_at: "asc" },
+    }),
+    prisma.petEquippedItem.findMany({ where: { pet_id: petId }, include: { item: true } }),
+    prisma.petPlatformConnection.findMany({
+      where: { pet_id: petId },
+      select: {
+        platform: true,
+        is_active: true,
+        platform_chat_id: true,
+        connected_at: true,
+        last_active_at: true,
+      },
+    }),
+    prisma.petAgentMessage.findMany({ where: { pet_id: petId }, orderBy: { created_at: "asc" } }),
+    prisma.petAgentSchedule.findUnique({ where: { pet_id: petId } }),
+    prisma.petConversation.findMany({ where: { pet_id: petId }, orderBy: { created_at: "asc" } }),
+    prisma.inheritanceEvent.findMany({ where: { pet_id: petId }, orderBy: { claimed_at: "asc" } }),
+    prisma.petAgentReaction.findMany({ where: { pet_id: petId }, orderBy: { created_at: "asc" } }),
+    prisma.like.findMany({ where: { pet_id: petId }, orderBy: { created_at: "asc" } }),
+    prisma.comment.findMany({ where: { pet_id: petId }, orderBy: { created_at: "asc" } }),
+    prisma.paidAction.findMany({ where: { pet_id: petId }, orderBy: { created_at: "asc" } }),
+    prisma.soulExport.findMany({ where: { pet_id: petId }, orderBy: { exported_at: "asc" } }),
+    prisma.petDate.findMany({
+      where: { OR: [{ pet_a_id: petId }, { pet_b_id: petId }] },
+      orderBy: { created_at: "asc" },
+    }),
+  ]);
+
+  const linkedGenerationIds = Array.from(new Set([
+    ...insights.map((row) => row.video_generation_id),
+    ...autonomousActions.map((row) => row.generation_id),
+  ].filter((id): id is number => Number.isInteger(id))));
+  const linkedGenerations = await prisma.generation.findMany({
+    where: {
+      OR: [
+        { pet_id: petId },
+        ...(linkedGenerationIds.length > 0 ? [{ id: { in: linkedGenerationIds } }] : []),
+      ],
+    },
+    orderBy: { created_at: "asc" },
+  });
 
   const exportData: Omit<SoulExport, "integrityHash"> = {
     protocol: PETCLAW_PROTOCOL,
@@ -126,8 +522,6 @@ export async function exportPetData(petId: number, userId: number): Promise<Soul
     consent: readConsentFromPet(pet.personality_modifiers),
   };
 
-  const integrityHash = computeIntegrityHash(exportData);
-
   // Attach persistent memory + learning data as extended fields
   let persistentMemory = null;
   let learningData = null;
@@ -136,18 +530,95 @@ export async function exportPetData(petId: number, userId: number): Promise<Soul
     learningData = await selfLearner.exportLearning();
   } catch {}
 
-  return {
+  const linkedData = JSON.parse(JSON.stringify({
+    // Explicit whitelist: local user_id/id and any future secret-bearing fields
+    // must never become portable ownership claims by accident.
+    petState: {
+      energy: pet.energy,
+      hunger: pet.hunger,
+      total_interactions: pet.total_interactions,
+      soul_version: pet.soul_version,
+      last_dream_at: pet.last_dream_at,
+      last_interaction_at: pet.last_interaction_at,
+      created_at: pet.created_at,
+      codex_url: pet.codex_url,
+      atk: pet.atk,
+      def: pet.def,
+      spd: pet.spd,
+      care_streak: pet.care_streak,
+      last_care_at: pet.last_care_at,
+      personality_modifiers: portablePetModifiers(pet.personality_modifiers),
+    },
+    personaDetails: persona ? {
+      owner_expressions: persona.owner_expressions,
+      sample_messages: persona.sample_messages,
+      vocabulary_style: persona.vocabulary_style,
+      observed_topics: persona.observed_topics,
+      observed_style: persona.observed_style,
+      last_observed_at: persona.last_observed_at,
+      persona_version: persona.persona_version,
+      created_at: persona.created_at,
+    } : null,
+    memoryNfts,
+    soulExportHistory,
+    interactions,
+    dreamJournals,
+    insights,
+    loras,
+    notifications,
+    autonomousActions,
+    trainingLogs,
+    pveProgress,
+    battleHistory: battleHistory.map((row) => ({
+      source_role: row.player_pet_id === petId ? "player" : "opponent",
+      opponent_name: row.opponent_name,
+      won: row.won,
+      turns: row.turns,
+      player_hp_left: row.player_hp_left,
+      exp_gained: row.exp_gained,
+      points_earned: row.points_earned,
+      skill_drop_key: row.skill_drop_key,
+      battle_type: row.battle_type,
+      stage_id: row.stage_id,
+      created_at: row.created_at,
+      battle_log: row.battle_log,
+      seed: row.seed,
+      player_hp_max: row.player_hp_max,
+      opponent_hp_max: row.opponent_hp_max,
+      opponent_avatar: row.opponent_avatar,
+    })),
+    equippedItems,
+    platformConnections,
+    agentMessages,
+    agentSchedule,
+    conversations,
+    inheritanceEvents,
+    agentReactions,
+    likes: petLikes,
+    comments: petComments,
+    paidActions,
+    linkedGenerations,
+    petDates,
+  })) as Record<string, unknown>;
+
+  const completeExport: Omit<SoulExport, "integrityHash"> = {
     ...exportData,
-    integrityHash,
-    // Extended PetClaw v1.1 fields
     ...(persistentMemory && { persistentMemory }),
     ...(learningData && { learningData }),
-  } as any;
+    linkedData,
+  };
+  const integrityHash = computeIntegrityHash(completeExport);
+
+  return { ...completeExport, integrityHash };
 }
 
 // ── Import: Restore pet from SOUL.md export ──
 
-export async function importSoulData(userId: number, soulData: SoulExport): Promise<{ petId: number }> {
+export async function importSoulData(
+  userId: number,
+  soulData: SoulExport,
+  database: typeof prisma = prisma,
+): Promise<SoulImportResult> {
   // Verify integrity
   const { integrityHash, ...rest } = soulData;
   const computed = computeIntegrityHash(rest);
@@ -159,148 +630,354 @@ export async function importSoulData(userId: number, soulData: SoulExport): Prom
     throw new Error(`Unsupported protocol: ${soulData.protocol}`);
   }
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) throw new Error("User not found");
-
-  // Check pet slots
-  const activePets = await prisma.pet.count({ where: { user_id: userId, is_active: true } });
-  if (activePets >= user.pet_slots) {
-    throw new Error("No available pet slots");
-  }
-
-  // Create pet from export
-  const pet = await prisma.pet.create({
-    data: {
-      user_id: userId,
-      name: soulData.pet.name,
-      species: soulData.pet.species,
-      personality_type: soulData.pet.personalityType,
-      element: soulData.pet.element,
-      level: soulData.pet.level,
-      experience: soulData.pet.experience,
-      happiness: soulData.pet.happiness,
-      bond_level: soulData.pet.bondLevel,
-      evolution_stage: soulData.pet.evolutionStage,
-      evolution_name: soulData.pet.evolutionName,
-      avatar_url: soulData.pet.avatarUrl,
-      appearance_desc: soulData.pet.appearanceDesc,
-      total_interactions: 0,
-      energy: 100,
-      hunger: 0,
-      is_active: true,
-    },
-  });
-
-  // Restore persona
-  if (soulData.persona) {
-    await prisma.petPersona.create({
-      data: {
-        pet_id: pet.id,
-        owner_speech_style: soulData.persona.speechStyle,
-        owner_interests: soulData.persona.interests,
-        owner_tone: soulData.persona.tone,
-        owner_language: soulData.persona.language,
-        owner_bio: soulData.persona.bio,
-        analyzed_patterns: (soulData.persona.analyzedPatterns as any) || undefined,
-      },
-    });
-  }
-
-  // Restore memories (batch)
-  if (soulData.memories.length > 0) {
-    await prisma.petMemory.createMany({
-      data: soulData.memories.map(m => ({
-        pet_id: pet.id,
-        memory_type: m.type,
-        content: m.content,
-        emotion: m.emotion,
-        importance: m.importance,
-        created_at: new Date(m.createdAt),
-      })),
-    });
-  }
-
-  // Restore skills
-  if (soulData.skills.length > 0) {
-    await prisma.petSkill.createMany({
-      data: soulData.skills.map(s => ({
-        pet_id: pet.id,
-        skill_key: s.key,
-        level: s.level,
-        slot: s.slot ?? null,
-      })),
-    });
-  }
-
-  // Restore extended PetClaw v1.1 state into personality_modifiers so the
-  // export→import round-trip is LOSSLESS. exportPetData attaches persistentMemory
-  // ({ memories, userProfile, ... }) and learningData ({ patterns, ... }); these
-  // live in personality_modifiers.{persistent_memories,user_profile,learned_patterns}
-  // (see persistent-memory.ts / self-learning.ts). We also persist the consent
-  // toggles so the imported pet starts with the owner's chosen settings, not defaults.
-  const extended = soulData as SoulExport & {
-    persistentMemory?: { memories?: unknown[]; userProfile?: unknown[] };
-    learningData?: { patterns?: unknown[] };
+  const linkedData = asRecord(soulData.linkedData) || {};
+  const petState = asRecord(linkedData.petState) || {};
+  const personaDetails = asRecord(linkedData.personaDetails) || {};
+  const sourceExportedAt = safeDate(soulData.exportedAt) || new Date();
+  const report: SoulImportReport = {
+    sourceIntegrityHash: integrityHash,
+    restored: {},
+    skipped: {},
+    warnings: [],
   };
-  const restoredMods: Record<string, unknown> = {};
-  if (extended.persistentMemory?.memories) {
-    restoredMods.persistent_memories = extended.persistentMemory.memories;
+
+  const sensitiveFieldCount = countSensitivePortableFields({
+    persona: soulData.persona,
+    persistentMemory: soulData.persistentMemory,
+    learningData: soulData.learningData,
+    linkedData,
+  });
+  addSkipped(
+    report,
+    "security.sensitiveFields",
+    sensitiveFieldCount,
+    "Credential, token, webhook, external-account, transaction, and foreign-ownership fields are never restored",
+  );
+
+  for (const [category, value] of Object.entries(linkedData)) {
+    if (!LINKED_DATA_CATEGORIES.has(category)) {
+      addSkipped(report, `linkedData.${category}`, sourceCount(value), "Unknown extension category; retained only by the source integrity hash");
+    }
   }
-  if (extended.persistentMemory?.userProfile) {
-    restoredMods.user_profile = extended.persistentMemory.userProfile;
+
+  // These records make claims about an external account, chain, transaction,
+  // provider job, or media owner. They remain cryptographically covered by the
+  // source hash but are never materialized as ownership on this server.
+  addSkipped(report, "soul", soulData.soul ? 1 : 0, "On-chain identity and successor ownership cannot be transferred by JSON import");
+  addSkipped(report, "checkpoints", soulData.checkpoints.length, "Persona checkpoint hashes belong to the source Soul identity");
+  addSkipped(report, "linkedData.memoryNfts", sourceCount(linkedData.memoryNfts), "NFT ownership must be proven on-chain");
+  addSkipped(report, "linkedData.soulExportHistory", sourceCount(linkedData.soulExportHistory), "Source export transactions are provenance, not local ownership records");
+  addSkipped(report, "linkedData.loras", sourceCount(linkedData.loras), "Provider jobs and model assets require source ownership verification");
+  addSkipped(report, "linkedData.platformConnections", sourceCount(linkedData.platformConnections), "Provider credentials, chat identifiers, token hashes, and webhook secrets are never restored; reconnect explicitly");
+  addSkipped(report, "linkedData.inheritanceEvents", sourceCount(linkedData.inheritanceEvents), "Wallet inheritance ownership must be proven on-chain");
+  addSkipped(report, "linkedData.likes", sourceCount(linkedData.likes), "Generation ownership cannot be inferred from a portable JSON file");
+  addSkipped(report, "linkedData.comments", sourceCount(linkedData.comments), "Generation and author ownership cannot be inferred from a portable JSON file");
+  addSkipped(report, "linkedData.agentReactions", sourceCount(linkedData.agentReactions), "Generation ownership cannot be inferred from a portable JSON file");
+  addSkipped(report, "linkedData.paidActions", sourceCount(linkedData.paidActions), "Payment and transaction claims are never recreated by import");
+  addSkipped(report, "linkedData.linkedGenerations", sourceCount(linkedData.linkedGenerations), "Media ownership cannot be proven; re-upload or regenerate assets under the new owner");
+  addSkipped(report, "linkedData.petDates", sourceCount(linkedData.petDates), "Other pets and initiating-user ownership cannot be transferred by import");
+  addSkipped(report, "pet.progression", 1, "Level, experience, happiness, bond, evolution and combat state are server-authoritative and start from new-pet defaults");
+  addSkipped(report, "skills", soulData.skills.length, "Skills and equipped slots are server-authoritative and cannot be granted by a portable file");
+  addSkipped(report, "linkedData.interactions", sourceCount(linkedData.interactions), "Interaction ledgers can affect missions and rewards, so they are not restored");
+  addSkipped(report, "linkedData.trainingLogs", sourceCount(linkedData.trainingLogs), "Training and credit ledgers are server-authoritative");
+  addSkipped(report, "linkedData.pveProgress", sourceCount(linkedData.pveProgress), "PvE progress is server-authoritative");
+  addSkipped(report, "linkedData.battleHistory", sourceCount(linkedData.battleHistory), "Battle results, points and drops are server-authoritative");
+  addSkipped(report, "linkedData.equippedItems", sourceCount(linkedData.equippedItems), "Equipment ownership must be earned or purchased on this server");
+  addSkipped(report, "linkedData.autonomousActions", sourceCount(linkedData.autonomousActions), "Execution and credit ledgers are not portable identity data");
+  addSkipped(report, "linkedData.insights", sourceCount(linkedData.insights), "Imported insights could trigger automated provider spend and are not restored");
+  addSkipped(report, "linkedData.notifications", sourceCount(linkedData.notifications), "Server notifications are not portable identity data");
+  addSkipped(report, "linkedData.agentSchedule", sourceCount(linkedData.agentSchedule), "Imported automation remains disabled and must be configured explicitly by the owner");
+  if (Object.keys(petState).length > 0) {
+    addSkipped(report, "linkedData.petState.authoritative", 1, "Counters, timestamps, energy, hunger, care state and combat stats reset to safe defaults");
   }
-  if (extended.learningData?.patterns) {
-    restoredMods.learned_patterns = extended.learningData.patterns;
+
+  // A portable hash proves file integrity, not ownership of a URL or object.
+  // All media must be uploaded or generated again under the destination owner.
+  const avatarUrl = undefined;
+  if (soulData.pet.avatarUrl) {
+    addSkipped(report, "pet.avatarUrl", 1, "Media references cannot be re-owned by import; upload the avatar again");
   }
-  if (soulData.consent) {
-    restoredMods.consent_public_profile = soulData.consent.allowPublicProfile;
-    restoredMods.consent_data_sharing = soulData.consent.allowDataSharing;
-    restoredMods.consent_ai_training = soulData.consent.allowAITraining;
-    restoredMods.consent_interaction = soulData.consent.allowInteraction;
+  const codexUrl = undefined;
+  if (petState.codex_url) {
+    addSkipped(report, "linkedData.petState.codex_url", 1, "Media references cannot be re-owned by import; regenerate Codex art");
   }
-  if (Object.keys(restoredMods).length > 0) {
-    const existing =
-      (pet.personality_modifiers as Record<string, unknown>) || {};
-    await prisma.pet.update({
-      where: { id: pet.id },
+
+  const persistentMemory = asRecord(soulData.persistentMemory);
+  const learningData = asRecord(soulData.learningData);
+  const restoredMods: JsonRecord = portablePetModifiers(petState.personality_modifiers);
+  const importedModifiers = asRecord(petState.personality_modifiers);
+  if (importedModifiers?.mood_portraits) {
+    addSkipped(report, "pet.personality_modifiers.mood_portraits", 1, "Media references cannot be re-owned by import; regenerate mood portraits");
+  }
+  if (Array.isArray(persistentMemory?.memories)) {
+    restoredMods.persistent_memories = sanitizePortableJson(persistentMemory.memories) || [];
+    addRestored(report, "persistentMemory.memories", persistentMemory.memories.length);
+  }
+  if (Array.isArray(persistentMemory?.userProfile)) {
+    restoredMods.user_profile = sanitizePortableJson(persistentMemory.userProfile) || [];
+    addRestored(report, "persistentMemory.userProfile", persistentMemory.userProfile.length);
+  }
+  if (Array.isArray(learningData?.patterns)) {
+    restoredMods.learned_patterns = sanitizePortableJson(learningData.patterns) || [];
+    addRestored(report, "learningData.patterns", learningData.patterns.length);
+  }
+  // Consent is destination-specific and must be opted into again. An import can
+  // never silently publish a pet or authorize training/interaction.
+  restoredMods.consent_public_profile = false;
+  restoredMods.consent_data_sharing = false;
+  restoredMods.consent_ai_training = false;
+  restoredMods.consent_interaction = false;
+  restoredMods.import_provenance = {
+    source_integrity_hash: integrityHash,
+    source_exported_at: soulData.exportedAt,
+    competitive_state_restored: false,
+    consent_restored: false,
+  };
+  if (Object.values(soulData.consent).some(Boolean)) {
+    addSkipped(report, "consent", 1, "Consent is destination-specific and must be enabled again by the owner");
+  }
+
+  return database.$transaction(async (tx: typeof prisma) => {
+    await lockAvailablePetSlot(tx, userId);
+
+    const pet = await tx.pet.create({
       data: {
-        personality_modifiers: { ...existing, ...restoredMods } as any,
+        user_id: userId,
+        name: soulData.pet.name,
+        species: soulData.pet.species,
+        personality_type: soulData.pet.personalityType,
+        element: soulData.pet.element,
+        avatar_url: avatarUrl,
+        codex_url: codexUrl,
+        appearance_desc: soulData.pet.appearanceDesc,
+        personality_modifiers: restoredMods as any,
+        is_active: true,
       },
     });
-  }
+    addRestored(report, "pet", 1);
 
-  // Create import memory
-  await prisma.petMemory.create({
-    data: {
+    if (soulData.persona || Object.keys(personaDetails).length > 0) {
+      await tx.petPersona.create({
+        data: {
+          pet_id: pet.id,
+          owner_speech_style: soulData.persona?.speechStyle,
+          owner_interests: soulData.persona?.interests,
+          owner_expressions: safeString(personaDetails.owner_expressions, 20_000),
+          owner_tone: soulData.persona?.tone,
+          owner_language: soulData.persona?.language,
+          owner_bio: soulData.persona?.bio,
+          analyzed_patterns: sanitizePortableJson(soulData.persona?.analyzedPatterns) as any,
+          sample_messages: sanitizePortableJson(personaDetails.sample_messages) as any,
+          vocabulary_style: safeString(personaDetails.vocabulary_style, 20_000),
+          observed_topics: sanitizePortableJson(personaDetails.observed_topics) as any,
+          observed_style: sanitizePortableJson(personaDetails.observed_style) as any,
+          // Version/timestamps are local server state, not portable authority.
+          persona_version: 1,
+        },
+      });
+      addRestored(report, "persona", 1);
+    }
+
+    const memoryRows: JsonRecord[] = soulData.memories.map((memory) => ({
       pet_id: pet.id,
-      memory_type: "milestone",
-      content: `Imported from another platform via PetClaw protocol. Original export: ${soulData.exportedAt}`,
-      emotion: "hopeful",
-      importance: 5,
-    },
-  });
+      memory_type: memory.type,
+      content: memory.content,
+      emotion: memory.emotion || "calm",
+      importance: memory.importance,
+      created_at: safeDate(memory.createdAt) || sourceExportedAt,
+    }));
+    await createManyInBatches(tx.petMemory as any, memoryRows);
+    addRestored(report, "memories", memoryRows.length);
 
-  return { petId: pet.id };
+    const dreamRows: JsonRecord[] = [];
+    for (const row of rowsFrom(linkedData.dreamJournals)) {
+      const summary = typeof row.summary === "string" && row.summary.length > 0 ? row.summary : undefined;
+      const emotionalTone = safeString(row.emotional_tone, 30);
+      const dreamDate = safeDate(row.dream_date);
+      if (!summary || !emotionalTone || !dreamDate) {
+        addSkipped(report, "linkedData.dreamJournals", 1, "Invalid dream journal row");
+        continue;
+      }
+      dreamRows.push({
+        pet_id: pet.id,
+        dream_date: dreamDate,
+        summary,
+        emotional_tone: emotionalTone,
+        personality_changes: sanitizePortableJson(row.personality_changes),
+        // Imported journals are narrative context only, never a mechanics input.
+        stat_changes: null,
+        significant_events: sanitizePortableJson(row.significant_events),
+        created_at: safeDate(row.created_at) || dreamDate,
+      });
+    }
+    await createManyInBatches(tx.dreamJournal as any, dreamRows);
+    addRestored(report, "linkedData.dreamJournals", dreamRows.length);
+
+    const agentMessageRows: JsonRecord[] = [];
+    for (const row of rowsFrom(linkedData.agentMessages)) {
+      const platform = safeString(row.platform, 20);
+      const direction = safeString(row.direction, 10);
+      const content = typeof row.content === "string" && row.content.length > 0 ? row.content : undefined;
+      if (!platform || !direction || !content) {
+        addSkipped(report, "linkedData.agentMessages", 1, "Invalid agent-message row");
+        continue;
+      }
+      agentMessageRows.push({
+        pet_id: pet.id,
+        platform,
+        direction,
+        message_type: safeString(row.message_type, 20) || "text",
+        content,
+        // External message/chat identifiers are ownership-bearing links. The
+        // content is portable; those identifiers are not.
+        platform_msg_id: null,
+        chat_id: null,
+        credits_used: 0,
+        metadata: null,
+        created_at: safeDate(row.created_at) || sourceExportedAt,
+      });
+    }
+    await createManyInBatches(tx.petAgentMessage as any, agentMessageRows);
+    addRestored(report, "linkedData.agentMessages", agentMessageRows.length);
+
+    const conversationRows: JsonRecord[] = [];
+    rowsFrom(linkedData.conversations).forEach((row, index) => {
+      const platform = safeString(row.platform, 20);
+      if (!platform) {
+        addSkipped(report, "linkedData.conversations", 1, "Invalid conversation row");
+        return;
+      }
+      conversationRows.push({
+        pet_id: pet.id,
+        platform,
+        // Source chat IDs can point at another account. A deterministic local ID
+        // preserves separate histories without restoring that external link.
+        chat_id: `import:${integrityHash.slice(0, 12)}:${index}`,
+        participant_name: safeString(row.participant_name, 100),
+        summary: typeof row.summary === "string" ? row.summary : null,
+        // This is narrative context, not a trusted activity counter.
+        message_count: 0,
+        last_message_at: safeDate(row.last_message_at),
+        created_at: safeDate(row.created_at) || sourceExportedAt,
+      });
+    });
+    await createManyInBatches(tx.petConversation as any, conversationRows);
+    addRestored(report, "linkedData.conversations", conversationRows.length);
+
+    // Retain the exact verified source hash as local provenance. We intentionally
+    // do not copy source tx_hash/IPFS/chain ownership claims.
+    await tx.soulExport.create({
+      data: {
+        pet_id: pet.id,
+        ipfs_cid: `petclaw-import:${integrityHash}`,
+        soul_hash: integrityHash,
+        chain: "none",
+        version: 1,
+        exported_at: safeDate(soulData.exportedAt) || new Date(),
+      },
+    });
+    addRestored(report, "sourceIntegrityHash", 1);
+
+    // Product-visible provenance is an intentional extra memory, so this import
+    // is a safe, reported reconstruction—not a misleading byte-for-byte clone.
+    await tx.petMemory.create({
+      data: {
+        pet_id: pet.id,
+        memory_type: "milestone",
+        content: `Imported from another platform via PetClaw protocol. Original export: ${soulData.exportedAt}`,
+        emotion: "hopeful",
+        importance: 5,
+      },
+    });
+    addRestored(report, "importMilestone", 1);
+
+    return { petId: pet.id, sourceIntegrityHash: integrityHash, report };
+  }, { maxWait: 10_000, timeout: 120_000 });
 }
 
 // ── Delete: Complete data removal with proof ──
 
-export async function deletePetData(petId: number, userId: number): Promise<{ deletionHash: string; deletedAt: string }> {
-  // Verify ownership
-  const pet = await prisma.pet.findFirst({
-    where: { id: petId, user_id: userId },
-  });
-  if (!pet) throw new Error("Pet not found or not owned by you");
+type LockedDeletionPet = {
+  id: number;
+  user_id: number;
+  name: string;
+  avatar_url: string | null;
+  codex_url: string | null;
+  personality_modifiers: unknown;
+};
 
-  // Generate deletion proof before deleting
-  const deletionPayload = JSON.stringify({
-    petId,
-    petName: pet.name,
-    userId,
-    deletedAt: new Date().toISOString(),
-    protocol: PETCLAW_PROTOCOL,
+type LockedDeletionGeneration = {
+  id: number;
+  photo_path: string;
+  video_path: string | null;
+};
+
+type LockedDeletionLora = {
+  lora_url: string | null;
+  training_archive_ref: string | null;
+  images_used: unknown;
+};
+
+async function transactionProvesUserMediaOwnership(
+  tx: Prisma.TransactionClient,
+  userId: number,
+  value: string,
+): Promise<boolean> {
+  const key = applicationMediaKey(value);
+  if (!key) return false;
+  const references = applicationMediaReferences(key);
+  const avatarLifecycle = await tx.$queryRaw<Array<{ id: string }>>`
+    SELECT "id"::text AS "id"
+    FROM "avatar_media_objects"
+    WHERE "object_ref" = ${`/uploads/${key}`}
+      AND "owner_user_id" = ${userId}
+    LIMIT 1
+  `;
+  if (avatarLifecycle[0]) return true;
+  const generation = await tx.generation.findFirst({
+    where: {
+      user_id: userId,
+      OR: [{ photo_path: { in: references } }, { video_path: { in: references } }],
+    },
+    select: { id: true },
   });
-  const deletionHash = createHash("sha256").update(deletionPayload).digest("hex");
+  if (generation) return true;
+  const caught = await tx.caughtCat.findFirst({
+    where: { owner_user_id: userId, photo_path: { in: references } },
+    select: { id: true },
+  });
+  if (caught) return true;
+  return isFreshOwnerUploadKey(userId, key) && await storedFileExists(`/uploads/${key}`);
+}
+
+export async function deletePetData(petId: number, userId: number): Promise<{
+  deletionHash: string;
+  deletedAt: string;
+  mediaCleanup: { processed: number; deleted: number; retained: number; failed: number };
+}> {
+  // Cheap preflight before touching storage. Ownership is re-verified under the
+  // authoritative Pet row lock in the deletion transaction below.
+  const preflightPet = await prisma.pet.findFirst({
+    where: { id: petId, user_id: userId },
+    select: { id: true },
+  });
+  if (!preflightPet) throw new Error("Pet not found or not owned by you");
+
+  // Rows created before training_archive_ref existed have no DB pointer to
+  // their ZIP. Inventory only the exact server-issued pet prefix, with a hard
+  // bound. Truncation fails closed so deleting the pet cannot erase the last
+  // ownership metadata while silently leaving an unbounded archive tail.
+  const legacyLoraArchives = await listStoredFileReferencesByPrefix(
+    `lora-train/pet-${petId}-`,
+    500,
+  );
+  if (legacyLoraArchives.truncated) {
+    throw new Error("Too many legacy LoRA training archives; operator cleanup is required before pet deletion");
+  }
+
+  // One timestamp is used byte-for-byte by the hash payload, durable proof and
+  // API response. Multiple Date reads would make a returned proof impossible
+  // to recompute exactly.
   const deletedAt = new Date().toISOString();
 
   // The deletion proof must be RECOVERABLE later, not just returned once. The pet
@@ -317,52 +994,193 @@ export async function deletePetData(petId: number, userId: number): Promise<{ de
     select: { id: true },
   });
 
-  // Delete all related data in correct order (respecting foreign keys).
-  // audit M11: also delete the child tables whose FK defaults to onDelete:
-  // Restrict (DreamJournal, PetNotification, PetAutonomousAction, SoulExport) —
-  // otherwise pet.delete() throws and the whole "right to be forgotten" deletion
-  // fails for any pet that has those rows. (Cascade-FK children delete with the
-  // pet automatically.) DailyTrainingLog carries pet_id but has NO pet FK, so it
-  // is NOT cascade-deleted and would otherwise survive the wipe — delete it
-  // explicitly here so "complete data removal" really is complete.
-  const ops: any[] = [
-    prisma.memoryNft.deleteMany({ where: { pet_id: petId } }),
-    prisma.personaCheckpoint.deleteMany({ where: { pet_id: petId } }),
-    prisma.petSoulNft.deleteMany({ where: { pet_id: petId } }),
-    prisma.petPersona.deleteMany({ where: { pet_id: petId } }),
-    prisma.petSkill.deleteMany({ where: { pet_id: petId } }),
-    prisma.petMemory.deleteMany({ where: { pet_id: petId } }),
-    prisma.petInteraction.deleteMany({ where: { pet_id: petId } }),
-    prisma.battleHistory.deleteMany({ where: { player_pet_id: petId } }),
-    prisma.pveProgress.deleteMany({ where: { pet_id: petId } }),
-    prisma.dreamJournal.deleteMany({ where: { pet_id: petId } }),
-    prisma.petNotification.deleteMany({ where: { pet_id: petId } }),
-    prisma.petAutonomousAction.deleteMany({ where: { pet_id: petId } }),
-    prisma.dailyTrainingLog.deleteMany({ where: { pet_id: petId } }),
-    prisma.soulExport.deleteMany({ where: { pet_id: petId } }),
-    prisma.pet.delete({ where: { id: petId } }),
-  ];
+  const collectStrings = (value: unknown): string[] => {
+    if (typeof value === "string") return [value];
+    if (Array.isArray(value)) return value.flatMap(collectStrings);
+    if (value && typeof value === "object") {
+      return Object.values(value as Record<string, unknown>).flatMap(collectStrings);
+    }
+    return [];
+  };
+  const deletionHash = await prisma.$transaction(async (tx) => {
+    // Arena's global order is daily log -> Pet. Deletion uses the same order so
+    // a reward transaction can never hold Pet while waiting on a daily row that
+    // deletion already holds. Multiple rows are locked deterministically.
+    await tx.$queryRaw`
+      SELECT "id"
+      FROM "daily_training_logs"
+      WHERE "pet_id" = ${petId}
+      ORDER BY "id"
+      FOR UPDATE
+    `;
 
-  // Persist the recoverable deletion proof on a surviving sibling pet (same txn,
-  // so either everything commits or nothing does — the proof never desyncs from
-  // the actual deletion).
-  if (proofAnchor) {
-    ops.push(
-      prisma.soulExport.create({
+    const lockedPets = await tx.$queryRaw<LockedDeletionPet[]>`
+      SELECT "id", "user_id", "name", "avatar_url", "codex_url", "personality_modifiers"
+      FROM "pets"
+      WHERE "id" = ${petId} AND "user_id" = ${userId}
+      FOR UPDATE
+    `;
+    const pet = lockedPets[0];
+    if (!pet) throw new Error("Pet not found or not owned by you");
+
+    // Lock link rows before resolving Generation ids. Existing link updates can
+    // otherwise slide between an unlocked snapshot and their later cascade.
+    await tx.$queryRaw`
+      SELECT "id"
+      FROM "pet_insights"
+      WHERE "pet_id" = ${petId}
+      ORDER BY "id"
+      FOR UPDATE
+    `;
+    await tx.$queryRaw`
+      SELECT "id"
+      FROM "pet_autonomous_actions"
+      WHERE "pet_id" = ${petId}
+      ORDER BY "id"
+      FOR UPDATE
+    `;
+    const loras = await tx.$queryRaw<LockedDeletionLora[]>`
+      SELECT "lora_url", "training_archive_ref", "images_used"
+      FROM "pet_loras"
+      WHERE "pet_id" = ${petId}
+      ORDER BY "id"
+      FOR UPDATE
+    `;
+
+    const linkedGenerations = await tx.$queryRaw<LockedDeletionGeneration[]>`
+      SELECT g."id", g."photo_path", g."video_path"
+      FROM "generations" AS g
+      WHERE g."pet_id" = ${petId}
+         OR (
+           g."user_id" = ${userId}
+           AND (
+             g."id" IN (
+               SELECT pi."video_generation_id"
+               FROM "pet_insights" AS pi
+               WHERE pi."pet_id" = ${petId} AND pi."video_generation_id" IS NOT NULL
+             )
+             OR g."id" IN (
+               SELECT paa."generation_id"
+               FROM "pet_autonomous_actions" AS paa
+               WHERE paa."pet_id" = ${petId} AND paa."generation_id" IS NOT NULL
+             )
+           )
+         )
+      ORDER BY g."id"
+      FOR UPDATE
+    `;
+    const generationIds = linkedGenerations.map((row) => row.id);
+
+    // Every media reference is read after its authoritative owner row is
+    // locked, then tombstoned before any owner row is removed.
+    const ownedFiles = new Set<string>();
+    const addCanonicalFile = (value: unknown) => {
+      if (typeof value !== "string") return;
+      const key = applicationMediaKey(value);
+      if (key) ownedFiles.add(`/uploads/${key}`);
+    };
+    for (const value of loras.flatMap((row) => [
+      row.lora_url,
+      row.training_archive_ref,
+      ...collectStrings(row.images_used),
+    ])) addCanonicalFile(value);
+    for (const value of legacyLoraArchives.references) addCanonicalFile(value);
+    for (const value of linkedGenerations.flatMap((row) => [row.photo_path, row.video_path])) {
+      addCanonicalFile(value);
+    }
+    // Avatar/codex columns were historically user-editable. Require separate
+    // owner proof rather than treating the destination Pet row as proof itself.
+    for (const value of [pet.avatar_url, pet.codex_url]) {
+      if (
+        typeof value === "string"
+        && await transactionProvesUserMediaOwnership(tx, userId, value)
+      ) addCanonicalFile(value);
+    }
+    for (const value of moodPortraitMediaValues(pet.personality_modifiers)) {
+      if (await transactionProvesUserMediaOwnership(tx, userId, value)) addCanonicalFile(value);
+    }
+
+    const deletionPayload = JSON.stringify({
+      petId,
+      petName: pet.name,
+      userId,
+      deletedAt,
+      protocol: PETCLAW_PROTOCOL,
+    });
+    const hash = createHash("sha256").update(deletionPayload).digest("hex");
+
+    for (const objectRefs of Array.from(ownedFiles).reduce<string[][]>((batches, objectRef, index) => {
+      if (index % 500 === 0) batches.push([]);
+      batches[batches.length - 1].push(objectRef);
+      return batches;
+    }, [])) {
+      await tx.mediaDeletionTask.createMany({
+        data: objectRefs.map((objectRef) => ({
+          owner_user_id: userId,
+          source_pet_id: petId,
+          object_ref: objectRef,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    // Delete all related data in FK-safe order. Restrict children are explicit;
+    // cascade children are harmless if already gone. Referral is user-scoped and
+    // intentionally remains untouched.
+    await tx.memoryNft.deleteMany({ where: { pet_id: petId } });
+    await tx.personaCheckpoint.deleteMany({ where: { pet_id: petId } });
+    await tx.petSoulNft.deleteMany({ where: { pet_id: petId } });
+    await tx.petPersona.deleteMany({ where: { pet_id: petId } });
+    await tx.petSkill.deleteMany({ where: { pet_id: petId } });
+    await tx.petMemory.deleteMany({ where: { pet_id: petId } });
+    await tx.petInteraction.deleteMany({ where: { pet_id: petId } });
+    await tx.battleHistory.updateMany({
+      where: { opponent_pet_id: petId },
+      data: {
+        opponent_pet_id: null,
+        opponent_name: "Deleted Pet",
+        opponent_avatar: null,
+        battle_log: null,
+        seed: null,
+      },
+    });
+    await tx.battleHistory.deleteMany({ where: { player_pet_id: petId } });
+    await tx.pveProgress.deleteMany({ where: { pet_id: petId } });
+    await tx.dreamJournal.deleteMany({ where: { pet_id: petId } });
+    await tx.petNotification.deleteMany({ where: { pet_id: petId } });
+    await tx.petAutonomousAction.deleteMany({ where: { pet_id: petId } });
+    await tx.dailyTrainingLog.deleteMany({ where: { pet_id: petId } });
+    // Financial receipts are an audit ledger, not disposable pet content.
+    // Detach the deleted pet while preserving tx hash, payer, amount, action,
+    // and consumed state. The DB FK independently enforces ON DELETE SET NULL.
+    await tx.paidAction.updateMany({ where: { pet_id: petId }, data: { pet_id: null } });
+    await tx.petDate.updateMany({ where: { pet_a_id: petId }, data: { pet_a_id: null } });
+    await tx.petDate.updateMany({ where: { pet_b_id: petId }, data: { pet_b_id: null } });
+    await tx.soulExport.deleteMany({ where: { pet_id: petId } });
+    if (generationIds.length > 0) {
+      await tx.like.deleteMany({ where: { generation_id: { in: generationIds } } });
+      await tx.comment.deleteMany({ where: { generation_id: { in: generationIds } } });
+      await tx.petAgentReaction.deleteMany({ where: { generation_id: { in: generationIds } } });
+      await tx.generation.deleteMany({ where: { id: { in: generationIds } } });
+    }
+    await tx.pet.delete({ where: { id: petId } });
+
+    if (proofAnchor) {
+      await tx.soulExport.create({
         data: {
           pet_id: proofAnchor.id,
           ipfs_cid: `petclaw-deletion:${petId}`,
-          soul_hash: deletionHash,
+          soul_hash: hash,
           chain: "none",
           exported_at: new Date(deletedAt),
         },
-      })
-    );
-  }
+      });
+    }
+    return hash;
+  }, { maxWait: 20_000, timeout: 120_000 });
 
-  await prisma.$transaction(ops);
-
-  return { deletionHash, deletedAt };
+  const mediaCleanup = await processMediaDeletionTasks({ sourcePetId: petId, limit: 500 });
+  return { deletionHash, deletedAt, mediaCleanup };
 }
 
 // ── Consent Management ──
@@ -411,8 +1229,8 @@ export async function verifyPetOwnership(
   petId: number,
   walletAddress: string
 ): Promise<{ verified: boolean; petDID: string; soulNftId?: number }> {
-  const pet = await prisma.pet.findUnique({
-    where: { id: petId },
+  const pet = await prisma.pet.findFirst({
+    where: publicPetWhere({ id: petId }),
     include: { user: true },
   });
   if (!pet || !pet.user) return { verified: false, petDID: "" };

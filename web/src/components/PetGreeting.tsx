@@ -4,10 +4,10 @@
  * Daily-rhythm greeting for the My Pet screen.
  *
  * Delivers three of the My-Pet upgrade directions in one card:
- *   · 일상 리듬 (#4)  — time-of-day aware ("Good evening")
- *   · 무드가 행동을 바꿈 (#2) — the welcome's *tone* shifts with the pet's mood
- *     (grumpy = 시큰둥/curt, ecstatic = 먼저 말 검/effusive)
- *   · 펫이 스스로 산다 (#1) — surfaces "while you were away, I was thinking…"
+ *   · Daily rhythm (#4) — time-of-day aware ("Good evening")
+ *   · Mood changes behavior (#2) — the welcome's tone shifts with the pet's mood
+ *     (grumpy is curt, ecstatic is effusive)
+ *   · An autonomous pet (#1) — surfaces "while you were away, I was thinking…"
  *     by reusing the cached /thought endpoint (no new LLM cost)
  *
  * Pure client-side timing (the browser knows the user's real local hour and the

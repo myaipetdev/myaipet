@@ -24,9 +24,9 @@ export interface CardBattle {
 }
 
 /** Resolve the duel for two pet ids. Deterministic by the ordered pair. Returns null if either card is missing. */
-export async function resolveCardBattle(petId: number, opponentId: number): Promise<CardBattle | null> {
+export async function resolveCardBattle(petId: number, opponentId: number, ownerUserId?: number): Promise<CardBattle | null> {
   if (!petId || !opponentId || petId === opponentId) return null;
-  const [you, opp] = await Promise.all([getCardData(petId), getCardData(opponentId)]);
+  const [you, opp] = await Promise.all([getCardData(petId, ownerUserId), getCardData(opponentId)]);
   if (!you || !opp) return null;
   const seed = `card-duel-${petId}-vs-${opponentId}`;
   const result = simulateBattle(combatant(you, opp.element), combatant(opp, you.element), seed);

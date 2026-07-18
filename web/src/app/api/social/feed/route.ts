@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { triggerAgentReactions } from "@/lib/agents";
+import { publicGenerationWhere } from "@/lib/publicFeed";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -13,13 +13,9 @@ export async function GET(req: NextRequest) {
 
     const user = await getUser(req).catch(() => null);
 
-    const where: any = {
-      status: "completed",
-      OR: [
-        { photo_path: { not: "" } },
-        { video_path: { not: "" } },
-      ],
-    };
+    // One canonical, fail-closed privacy predicate covers private daydream
+    // auto-generations plus per-pet Public Profile / Interaction consent.
+    const where: any = await publicGenerationWhere();
 
     if (pet_type) where.pet_type = pet_type;
 
@@ -94,11 +90,6 @@ export async function GET(req: NextRequest) {
         is_liked: user ? item.likes?.length > 0 : false,
       };
     });
-
-    // Lazy trigger: generate pet reactions for displayed content (fire-and-forget)
-    if (items.length > 0) {
-      triggerAgentReactions(items.map((i: any) => i.id));
-    }
 
     return NextResponse.json({ items: formatted, total, page, page_size });
   } catch (error: any) {

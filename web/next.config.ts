@@ -31,6 +31,36 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Compile the public, non-secret browser kill-switch from the authoritative
+  // server flag so direct wallet-write UI cannot drift from relayer policy.
+  env: {
+    NEXT_PUBLIC_BLOCKCHAIN_ENABLED:
+      process.env.BLOCKCHAIN_ENABLED === "true" ? "true" : "false",
+  },
+  // Server-side storage uses runtime paths. Without narrow trace exclusions,
+  // @vercel/nft can conservatively pull the whole workspace (including .env)
+  // into a route artifact. Runtime code is compiled under .next/server; raw
+  // project sources, build inputs and secrets are never needed there.
+  outputFileTracingExcludes: {
+    "/*": [
+      ".env",
+      ".env.*",
+      ".next/dev/**/*",
+      ".next/cache/**/*",
+      ".next/standalone/**/*",
+      "Dockerfile*",
+      "SETUP.md",
+      "README.md",
+      "prisma/**/*",
+      "public/**/*",
+      "scripts/**/*",
+      "src/**/*",
+      "*.pem",
+      "*.key",
+      "*.p12",
+      "*.pfx",
+    ],
+  },
   poweredByHeader: false, // SCRUM-40: drop x-powered-by header
   serverExternalPackages: ["ws", "pg", "@neondatabase/serverless", "@prisma/adapter-neon", "@prisma/adapter-pg"],
   images: {
@@ -39,6 +69,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.amazonaws.com" },
       { protocol: "https", hostname: "imgen.x.ai" },
     ],
+  },
+  async rewrites() {
+    return [{ source: "/uploads/:path*", destination: "/api/media/:path*" }];
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

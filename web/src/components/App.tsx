@@ -401,7 +401,7 @@ export default function App() {
     return () => clearTimeout(t);
   }, [section]);
 
-  // Landing on Pricing from /studio: Nav's "Get More Credits" and Studio's
+  // Landing on Pricing from /studio: Nav's "Credits & Points" and Studio's
   // out-of-credits links navigate to /?section=home&scroll=pricing (or set the
   // sessionStorage `scrollPricing` flag before the full-page hop). Honor it
   // once the home section renders, then clear both so refreshes stay at top.
@@ -636,7 +636,7 @@ export default function App() {
 
       {section === "community" && (
         <div style={{ paddingTop: 90 }}>
-          {/* Per the design 시안, Community opens straight into the remix wall
+          {/* Per the design concept, Community opens straight into the remix wall
               (SocialGallery). The old dark "THE PACK — not a wall of images"
               hero was off-mockup and self-contradictory, so it's removed. */}
           <PetOfTheWeek />
@@ -771,7 +771,7 @@ export default function App() {
             GitHub
           </a>
           */}
-          <a href="/petclaw-extension.zip" download="myaipet-extension.zip" style={{
+          <a href="/?section=sovereignty#petclaw-extension" style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "12px 22px", borderRadius: 12,
             background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
@@ -784,7 +784,7 @@ export default function App() {
             onMouseOut={(e) => { e.currentTarget.style.transform = ""; }}
           >
             <span>⬇</span>
-            Chrome Extension
+            Chrome Extension Setup
           </a>
         </div>
 

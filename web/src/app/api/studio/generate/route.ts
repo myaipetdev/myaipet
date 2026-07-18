@@ -32,8 +32,11 @@ import { getTemplate } from "@/lib/studio/templates";
 import { submitToBackend } from "@/lib/studio/backend";
 import { getCurrentSubscription, gateModel, incrementUsage } from "@/lib/studio/subscription";
 import { moderateText } from "@/lib/moderation";
-import { saveRemoteFile } from "@/lib/storage";
 import { checkVideoAllowed } from "@/lib/economyGuards";
+import { prepareVisionImageInput } from "@/lib/services/vision-image";
+import { getLLMBudgetFailureStatus } from "@/lib/llm/router";
+import { persistGenerationMediaExactlyOnce } from "@/lib/services/generation-media";
+import { failGenerationAndRefund } from "@/lib/generationSettlement";
 
 export async function POST(req: NextRequest) {
   const rl = rateLimit(req, { key: "studio-generate", limit: 30, windowMs: 60_000 });
@@ -133,7 +136,16 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Pet reference image (if model supports it and we have one) ──
-  const refUrl = model.supportsImageRef && pet?.avatar_url ? pet.avatar_url : undefined;
+  let refUrl: string | undefined;
+  if (model.supportsImageRef && pet?.avatar_url) {
+    try {
+      // Private owner media is never made public for a provider. Both xAI and
+      // fal accept bounded base64 data URIs for image/file inputs.
+      refUrl = await prepareVisionImageInput(pet.avatar_url, { materializeExternal: true });
+    } catch {
+      return NextResponse.json({ error: "The pet reference image is unavailable or invalid" }, { status: 422 });
+    }
+  }
 
   // ── Atomic credit deduction + generation row ──
   // audit H17: guarded conditional decrement — concurrent requests that read the
@@ -148,6 +160,8 @@ export async function POST(req: NextRequest) {
     const g = await tx.generation.create({
       data: {
         user_id: user.id,
+        pet_id: pet?.id,
+        visibility: "private",
         pet_type: pet?.species ?? 0,
         style: 0,
         prompt: finalPrompt,
@@ -167,41 +181,74 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const failAndRefund = async (message: string) => {
+    await failGenerationAndRefund({
+      generationId: created.gen.id,
+      ownerUserId: user.id,
+      fromStatuses: ["pending", "running", "persisting"],
+      errorMessage: message,
+    });
+  };
+
   // ── Submit to backend (outside transaction — may take seconds) ──
-  const result = await submitToBackend(model, finalPrompt, refUrl, safeAspect);
+  // Image backends reserve the persistent per-user/global attempt budget
+  // immediately before their real network submission. Budget/store failures
+  // deliberately propagate so credits can be refunded here.
+  let result: Awaited<ReturnType<typeof submitToBackend>>;
+  try {
+    result = await submitToBackend(model, finalPrompt, user.id, refUrl, safeAspect);
+  } catch (error) {
+    const budgetStatus = getLLMBudgetFailureStatus(error);
+    await failAndRefund(
+      budgetStatus === 429
+        ? "image daily budget exceeded"
+        : budgetStatus === 503
+          ? "image spend guard unavailable"
+          : "backend submission failed",
+    );
+    if (budgetStatus) {
+      return NextResponse.json({
+        error: budgetStatus === 429
+          ? "Image generation has reached today's limit. Please try again tomorrow."
+          : "Image generation is temporarily unavailable. Please try again later.",
+      }, { status: budgetStatus });
+    }
+    console.error("studio: backend submission threw:", error instanceof Error ? error.name : "unknown");
+    return NextResponse.json({ error: "Generation failed" }, { status: 502 });
+  }
   if (!result.ok) {
-    // Refund + mark failed
-    await prisma.$transaction([
-      prisma.user.update({ where: { id: user.id }, data: { credits: { increment: cost } } }),
-      prisma.generation.update({
-        where: { id: created.gen.id },
-        data: { status: "failed", error_message: result.error || "submit failed" },
-      }),
-    ]);
+    await failAndRefund(result.error || "submit failed");
     return NextResponse.json({ error: result.error || "Generation failed" }, { status: 502 });
   }
 
   // Some backends return synchronously (Grok image). Mark completed immediately.
   if (result.immediateUrl) {
-    // Upstream xAI/fal URLs expire within hours — persist to permanent storage
-    // BEFORE saving so History + public /c/<id> share links don't rot. Fall
-    // back to the raw URL only if the copy fails (better a short-lived link
-    // than a failed generation the user already paid for).
-    let persistedUrl = result.immediateUrl;
+    // Never store an upstream public URL for a private-by-default creation.
+    let persisted;
     try {
-      persistedUrl = await saveRemoteFile(result.immediateUrl, "generations");
+      persisted = await persistGenerationMediaExactlyOnce({
+        generationId: created.gen.id,
+        upstreamUrl: result.immediateUrl,
+        kind: model.kind,
+        claimableStatuses: ["pending"],
+        retryStatus: "pending",
+        prefix: model.kind === "video" ? "videos" : "generations",
+      });
     } catch (e) {
-      console.error("studio: saveRemoteFile (immediate) failed, using raw URL:", e);
+      console.error("studio: private media persistence failed:", e);
+      await failAndRefund("media persistence failed");
+      return NextResponse.json({ error: "Generation storage is temporarily unavailable" }, { status: 503 });
     }
-    await prisma.generation.update({
-      where: { id: created.gen.id },
-      data: {
-        status: "completed",
-        video_path: model.kind === "video" ? persistedUrl : null,
-        photo_path: model.kind === "image" ? persistedUrl : created.gen.photo_path,
-        completed_at: new Date(),
-      },
-    });
+    if (persisted.status !== "completed" || !persisted.url) {
+      return NextResponse.json({
+        ok: true,
+        generationId: created.gen.id,
+        status: "running",
+        creditsRemaining: created.user?.credits ?? 0,
+        model: { id: model.id, displayName: model.displayName, provider: model.provider },
+      }, { status: 202 });
+    }
+    const persistedUrl = persisted.url;
     await incrementUsage(user.id, model.kind);
     const genPts = await awardPointsCapped(user.id, "studio_gen", model.kind === "video" ? 20 : 10, DAILY_POINT_CAPS.studio_gen);
     return NextResponse.json({

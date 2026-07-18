@@ -117,20 +117,36 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string | string[]>>({});
 
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
+  const [configuredPlatforms, setConfiguredPlatforms] = useState<Record<string, boolean>>({});
+  const [providersLoading, setProvidersLoading] = useState(true);
+  const [channelsUnavailable, setChannelsUnavailable] = useState(false);
+  const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   // Fetch existing OAuth connections on mount — if user returns from a provider
   // mid-onboarding, the just-connected platform shows ✓ immediately.
   useEffect(() => {
     let mounted = true;
     fetch(`/api/petclaw/connections?petId=${pet.id}`, { headers: getAuthHeaders() })
-      .then(r => r.ok ? r.json() : null)
+      .then(async r => {
+        if (r.status === 503) return { unavailable: true };
+        return r.ok ? r.json() : null;
+      })
       .then(d => {
-        if (!mounted || !d?.providers) return;
+        if (!mounted) return;
+        if (d?.unavailable) {
+          setChannelsUnavailable(true);
+          return;
+        }
+        if (!d?.providers) return;
+        setChannelsUnavailable(false);
         const connected = d.providers.filter((p: any) => p.connected).map((p: any) => p.id);
+        setConfiguredPlatforms(Object.fromEntries(d.providers.map((p: any) => [p.id, Boolean(p.configured)])));
         if (connected.length) setConnectedPlatforms(connected);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => { if (mounted) setProvidersLoading(false); });
     return () => { mounted = false; };
   }, [pet.id]);
 
@@ -150,6 +166,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   const [tdMessages, setTdMessages] = useState<{ role: "user" | "pet"; text: string }[]>([]);
   const [tdInput, setTdInput] = useState("");
   const [tdLoading, setTdLoading] = useState(false);
+  const [tdError, setTdError] = useState("");
 
   const sendTestDrive = async (msg?: string) => {
     const text = (msg ?? tdInput).trim();
@@ -157,17 +174,20 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
     setTdMessages(m => [...m, { role: "user", text }]);
     setTdInput("");
     setTdLoading(true);
+    setTdError("");
     try {
       const res = await api.pets.chat(pet.id, text);
       setTdMessages(m => [...m, { role: "pet", text: res.reply || `*${pet.name} tilts head*` }]);
     } catch {
-      setTdMessages(m => [...m, { role: "pet", text: `*${pet.name} blinks slowly*` }]);
+      setTdError(`Couldn’t reach ${pet.name}. Check your connection and try again.`);
+    } finally {
+      setTdLoading(false);
     }
-    setTdLoading(false);
   };
 
   const saveAndComplete = async () => {
     setSaving(true);
+    setSaveError("");
     try {
       // The persona PUT handler (pets/[petId]/persona) reads UNPREFIXED keys
       // (tone/speech_style/expressions/interests/bio) — sending owner_* keys
@@ -178,9 +198,13 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
       if (quizAnswers.role) data.expressions = quizAnswers.role;
       if (quizAnswers.interests) data.interests = Array.isArray(quizAnswers.interests) ? (quizAnswers.interests as string[]).join(", ") : quizAnswers.interests;
       if (quizAnswers.frequency) data.bio = `Prefers ${quizAnswers.frequency} interaction frequency`;
-      if (Object.keys(data).length > 0) await api.persona.save(pet.id, data).catch(() => {});
-    } catch {}
-    setSaving(false);
+      if (Object.keys(data).length > 0) await api.persona.save(pet.id, data);
+    } catch {
+      setSaveError("Couldn’t save your setup. Check your connection and try again.");
+      return;
+    } finally {
+      setSaving(false);
+    }
     // Persona is saved — jump to the test-drive activation moment instead of
     // immediately confetti'ing. User chats first, THEN celebrates.
     setStep("testdrive");
@@ -246,13 +270,14 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
     marginTop: 8,
   };
   const optionStyle = (on: boolean): React.CSSProperties => ({
-    padding: "14px 16px", borderRadius: 14, cursor: "pointer",
+    width: "100%", padding: "14px 16px", borderRadius: 14, cursor: "pointer",
     transition: "all 0.18s", textAlign: "left" as const,
     border: on ? "1px solid #BE4F28" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
     background: on
       ? "rgba(190,79,40,0.08)"
       : "#F5EFE2",
     transform: on ? "scale(1.01)" : "scale(1)",
+    font: "inherit",
   });
 
   // Eyebrow label (e.g. "STEP 1 / 3")
@@ -318,7 +343,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             {[
               { n: 1, icon: "scroll", label: "Tune the personality", desc: "5 quick questions — now", tag: "Now" },
               { n: 2, icon: "chat", label: "Say hi", desc: "A first chat, so it starts learning you", tag: "Now" },
-              { n: 3, icon: "extension-icon", label: "Connect your apps", desc: "Discord, Telegram, X, GitHub — same pet everywhere", tag: "Optional" },
+              { n: 3, icon: "extension-icon", label: "Connect your apps", desc: "Use any channels configured for this deployment", tag: "Optional" },
               { n: 4, icon: "compass", label: "Bring your own model / browser companion", desc: "Connect a model or install the browser pet — from the PetClaw page", tag: "Later" },
             ].map((item) => (
               <div key={item.n} className="mp-lift" style={{
@@ -378,20 +403,33 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           {isMulti && <p style={{ color: "#7A6E5A", fontSize: 13, margin: 0 }}>Pick up to 3</p>}
         </div>
 
-        <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
+        <div role="group" aria-label={q.question} style={{ display: "grid", gap: 8, marginBottom: 12 }}>
           {q.options.map(opt => {
             const on = isMulti ? ((cur as string[]) || []).includes(opt.value) : cur === opt.value;
             return (
-              <div key={opt.value} onClick={() => handleQuizAnswer(q.id, opt.value, isMulti)} style={optionStyle(on)}>
+              <button
+                key={opt.value}
+                type="button"
+                aria-pressed={on}
+                onClick={() => handleQuizAnswer(q.id, opt.value, isMulti)}
+                style={optionStyle(on)}
+              >
                 <div style={{ fontSize: 14, fontWeight: 700, color: on ? "#9A4E1E" : "#211A12", fontFamily: "var(--ed-disp)" }}>{opt.label}</div>
                 {"desc" in opt && <div style={{ fontSize: 13, color: "#7A6E5A", marginTop: 3 }}>{(opt as any).desc}</div>}
-              </div>
+              </button>
             );
           })}
         </div>
 
         {/* Question dots */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 4 }}>
+        <div
+          role="progressbar"
+          aria-label="Onboarding question progress"
+          aria-valuemin={1}
+          aria-valuemax={QUIZ_QUESTIONS.length}
+          aria-valuenow={quizIndex + 1}
+          style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 4 }}
+        >
           {QUIZ_QUESTIONS.map((_, i) => (
             <div key={i} style={{
               width: i === quizIndex ? 18 : 6, height: 6, borderRadius: 3,
@@ -418,6 +456,9 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   // ── SOCIAL ──
   // ══════════════════════════════════════════════════════════
   if (step === "social") {
+    const visiblePlatforms = SOCIAL_PLATFORMS.filter((platform) =>
+      configuredPlatforms[platform.id] || connectedPlatforms.includes(platform.id)
+    );
     return (
       <Shell>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
@@ -430,14 +471,31 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           </p>
         </div>
 
-        <div style={{ display: "grid", gap: 10, marginBottom: 8 }}>
-          {SOCIAL_PLATFORMS.map(p => {
+        <div style={{ display: "grid", gap: 10, marginBottom: 8 }} aria-busy={providersLoading}>
+          {providersLoading && (
+            <div role="status" style={{ padding: "14px 16px", borderRadius: 14, background: "#F5EFE2", color: "#7A6E5A", fontSize: 13 }}>
+              Checking available channels…
+            </div>
+          )}
+          {!providersLoading && channelsUnavailable && (
+            <div role="status" style={{ padding: "14px 16px", borderRadius: 14, background: "#F5EFE2", color: "#7A6E5A", fontSize: 13, lineHeight: 1.5 }}>
+              Channel subscriptions are unavailable for launch while secure credential storage is being upgraded. You can finish setup without connecting a channel.
+            </div>
+          )}
+          {!providersLoading && !channelsUnavailable && visiblePlatforms.length === 0 && (
+            <div style={{ padding: "14px 16px", borderRadius: 14, background: "#F5EFE2", color: "#7A6E5A", fontSize: 13, lineHeight: 1.5 }}>
+              No optional channels are configured right now. You can finish setup and connect them later from PetClaw when they become available.
+            </div>
+          )}
+          {!providersLoading && !channelsUnavailable && visiblePlatforms.map(p => {
             const on = connectedPlatforms.includes(p.id);
+            const connecting = connectingPlatform === p.id;
             return (
-              <div key={p.id} onClick={async () => {
-                if (on) return; // connected chip is informational — disconnect lives in Sovereignty
+              <button key={p.id} type="button" disabled={on || connectingPlatform !== null} onClick={async () => {
                 // Persist the persona quiz BEFORE the full-page OAuth redirect —
                 // otherwise every answer is silently destroyed mid-flow.
+                setSaveError("");
+                setConnectingPlatform(p.id);
                 try {
                   const data: Record<string, any> = {};
                   if (quizAnswers.humor) data.tone = quizAnswers.humor;
@@ -445,19 +503,24 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
                   if (quizAnswers.role) data.expressions = quizAnswers.role;
                   if (quizAnswers.interests) data.interests = Array.isArray(quizAnswers.interests) ? (quizAnswers.interests as string[]).join(", ") : quizAnswers.interests;
                   if (quizAnswers.frequency) data.bio = `Prefers ${quizAnswers.frequency} interaction frequency`;
-                  if (Object.keys(data).length > 0) await api.persona.save(pet.id, data).catch(() => {});
-                } catch {}
+                  if (Object.keys(data).length > 0) await api.persona.save(pet.id, data);
+                } catch {
+                  setConnectingPlatform(null);
+                  setSaveError("Couldn’t save your setup before connecting. Check your connection and try again.");
+                  return;
+                }
                 // OAuth redirect — server starts the flow, callback persists token,
                 // user is sent back to /sovereignty?connected={id}.
                 const url = `/api/auth/oauth/${p.id}?petId=${pet.id}&returnTo=${encodeURIComponent("/sovereignty?from=onboarding")}`;
                 window.location.href = url;
               }} style={{
                 display: "flex", alignItems: "center", gap: 14,
-                padding: "13px 16px", borderRadius: 14, cursor: "pointer",
+                width: "100%", padding: "13px 16px", borderRadius: 14, cursor: on || connectingPlatform !== null ? "default" : "pointer",
                 border: on ? `1px solid ${p.color}` : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 background: on ? `${p.color}10` : "#F5EFE2",
                 transition: "all 0.18s",
                 transform: on ? "scale(1.01)" : "scale(1)",
+                font: "inherit", textAlign: "left",
               }}>
                 <div style={{
                   width: 42, height: 42, borderRadius: 12,
@@ -474,12 +537,13 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
                   fontFamily: "var(--ed-m)",
                   background: on ? "rgba(92,138,78,0.16)" : "rgba(33,26,18,0.06)",
                   color: on ? "#5C8A4E" : "#9A7B4E",
-                }}>{on ? "✓ Connected" : "Connect"}</span>
-              </div>
+                }}>{on ? "✓ Connected" : connecting ? "Opening…" : "Connect"}</span>
+              </button>
             );
           })}
         </div>
 
+        {saveError && <div role="alert" style={{ color: "#9A4E1E", fontSize: 13, lineHeight: 1.45, marginTop: 10 }}>{saveError}</div>}
         <button onClick={saveAndComplete} disabled={saving} style={primaryBtn}>
           {saving ? "Saving…" : "Finish — all set 🎉"}
         </button>
@@ -507,7 +571,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
         </div>
 
         {/* Chat window */}
-        <div style={{
+        <div role="log" aria-live="polite" aria-busy={tdLoading} aria-label={`Conversation with ${pet.name}`} style={{
           height: 220, padding: 12, marginBottom: 10,
           background: "#ECE4D4", borderRadius: 14,
           border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -538,6 +602,8 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           )}
         </div>
 
+        {tdError && <div role="alert" style={{ color: "#9A4E1E", fontSize: 13, marginBottom: 10 }}>{tdError}</div>}
+
         {/* Quick suggestions */}
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
           {[
@@ -545,7 +611,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             "What do you remember about me?",
             "Make me laugh",
           ].map(s => (
-            <button key={s} onClick={() => sendTestDrive(s)} disabled={tdLoading} style={{
+            <button type="button" key={s} onClick={() => sendTestDrive(s)} disabled={tdLoading} style={{
               padding: "6px 12px", borderRadius: 999,
               background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
               color: "#5C5140", cursor: tdLoading ? "wait" : "pointer",
@@ -559,8 +625,14 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           <input
             value={tdInput}
             onChange={e => setTdInput(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") sendTestDrive(); }}
+            onKeyDown={e => {
+              if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                sendTestDrive();
+              }
+            }}
             placeholder={`Message ${pet.name}…`}
+            aria-label={`Message ${pet.name}`}
             disabled={tdLoading}
             autoFocus
             style={{
@@ -570,7 +642,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
               background: "#F5EFE2",
             }}
           />
-          <button onClick={() => sendTestDrive()} disabled={tdLoading || !tdInput.trim()} style={{
+          <button type="button" aria-busy={tdLoading} onClick={() => sendTestDrive()} disabled={tdLoading || !tdInput.trim()} style={{
             padding: "11px 18px", borderRadius: 12, border: "none",
             background: tdInput.trim() ? "linear-gradient(180deg,#F49B2A,#E27D0C)" : "rgba(33,26,18,0.06)",
             color: tdInput.trim() ? "#FFF8EE" : "#9A7B4E",

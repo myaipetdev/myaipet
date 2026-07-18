@@ -1,31 +1,63 @@
-# PetClaw production cron — install on the EC2 instance with:
-#   crontab -e
-# then paste these lines (replace $CRON_SECRET with the value from .env).
+# PetClaw production cron — install as the `ubuntu` user.
 #
+# One-time setup (do not skip: cron cannot create files in /var/log):
+#   install -d -m 700 /home/ubuntu/.local/state/petclaw-cron
+#   touch /home/ubuntu/.local/state/petclaw-cron/{consolidate,daydream,daydream-video,season-close,embed-memories,media-deletions,agent-credit-refunds,backup}.log
+#   chmod 600 /home/ubuntu/.local/state/petclaw-cron/*.log
+#
+# Then run `crontab -e` and paste this file. Each job sources the immutable
+# release env (`root:ubuntu`, mode 640) at runtime, so CRON_SECRET is not copied
+# into the crontab.
+# Launch storage values are exact: AVATAR_UPLOAD_USER_DAILY_CAP=20,
+# AVATAR_UPLOAD_GLOBAL_DAILY_CAP=1000, AVATAR_PREVIEW_TTL_HOURS=24, and
+# LOCAL_STORAGE_MIN_FREE_BYTES=2147483648 (2 GiB). The media cleanup job logs
+# configuration drift but still drains already-committed deletion tasks. Vision
+# launch caps are VISION_DAILY_CAP=300 and VISION_USER_DAILY_CAP=30.
+
+SHELL=/bin/bash
+PETCLAW_WEB=/opt/petclaw/current/web
+PETCLAW_CRON_LOG_DIR=/home/ubuntu/.local/state/petclaw-cron
+
 # Memory consolidation: every hour, processes pets active in last 7 days.
 # Skips pets that haven't had 20+ new turns since last run (cheap no-ops).
-0 * * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/petclaw/memory/consolidate?cron=1" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-consolidate.log 2>&1
+0 * * * * cd "$PETCLAW_WEB" && set -a && . ./.env.production && set +a && /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/petclaw/memory/consolidate?cron=1" -H "x-cron-secret: $CRON_SECRET" >> "$PETCLAW_CRON_LOG_DIR/consolidate.log" 2>&1
 
 # Pet Daydream: every 6 hours, pets active in the last 14 days "daydream" —
 # connecting two memories about their owner into a caring insight. Pets with
 # too few memories are cheap no-ops. Batched to 25 pets per tick.
-0 */6 * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/daydream?cron=1" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-daydream.log 2>&1
+0 */6 * * * cd "$PETCLAW_WEB" && set -a && . ./.env.production && set +a && /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/daydream?cron=1" -H "x-cron-secret: $CRON_SECRET" >> "$PETCLAW_CRON_LOG_DIR/daydream.log" 2>&1
 
-# Daydream → video: every 4 hours, settles previous tick's video jobs, then
+# Daydream -> video: every 4 hours, settles previous tick's video jobs, then
 # converts up to 3 top-scoring fresh insights into 5s auto-videos
 # (platform-funded, per-pet 3-day cooldown). Offset 15min from the daydream
 # cron so fresh insights from the same hour are eligible.
-15 */4 * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/daydream-to-video?cron=1" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-daydream-video.log 2>&1
+15 */4 * * * cd "$PETCLAW_WEB" && set -a && . ./.env.production && set +a && /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/daydream-to-video?cron=1" -H "x-cron-secret: $CRON_SECRET" >> "$PETCLAW_CRON_LOG_DIR/daydream-video.log" 2>&1
 
 # Season close: daily check — freezes final standings once SEASON_END passes
-# (idempotent no-op before then). REQUIRED before Season 1 ends (2026-08-01):
-# without it, "recognized when Season 1 closes" never actually happens.
-10 0 * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/season-close" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-season-close.log 2>&1
+# (idempotent no-op before then). REQUIRED before Season 1 ends (2026-08-01).
+10 0 * * * cd "$PETCLAW_WEB" && set -a && . ./.env.production && set +a && /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/season-close" -H "x-cron-secret: $CRON_SECRET" >> "$PETCLAW_CRON_LOG_DIR/season-close.log" 2>&1
 
 # Memory embeddings backfill: hourly — embeds recent pet_memories rows so
 # GBrain-style recall (and the proactive greeting) rank across the full corpus.
-40 * * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/embed-memories" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-embed.log 2>&1
+40 * * * * cd "$PETCLAW_WEB" && set -a && . ./.env.production && set +a && /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/embed-memories" -H "x-cron-secret: $CRON_SECRET" >> "$PETCLAW_CRON_LOG_DIR/embed-memories.log" 2>&1
+
+# Durable storage cleanup: DB deletion commits a tombstone first; this retries
+# physical deletion only after proving that no live row shares the object. It
+# also atomically queues expired, unclaimed avatar previews before draining.
+*/15 * * * * cd "$PETCLAW_WEB" && set -a && . ./.env.production && set +a && { if [[ "${AVATAR_UPLOAD_USER_DAILY_CAP:-}" != "20" || "${AVATAR_UPLOAD_GLOBAL_DAILY_CAP:-}" != "1000" || "${AVATAR_PREVIEW_TTL_HOURS:-}" != "24" || "${LOCAL_STORAGE_MIN_FREE_BYTES:-}" != "2147483648" || "${VISION_DAILY_CAP:-}" != "300" || "${VISION_USER_DAILY_CAP:-}" != "30" ]]; then echo "ERROR: avatar storage/vision launch env drift"; fi; /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/media-deletions" -H "x-cron-secret: $CRON_SECRET"; } >> "$PETCLAW_CRON_LOG_DIR/media-deletions.log" 2>&1
+
+# Recover agent-loop credit reservations stranded by a crash/reboot. The loop's
+# hard wall-clock is 60s; reservations expire after 5m and this CAS worker makes
+# refund-vs-commit races exact-once.
+*/5 * * * * cd "$PETCLAW_WEB" && set -a && . ./.env.production && set +a && /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/cron/agent-credit-reservations" -H "x-cron-secret: $CRON_SECRET" >> "$PETCLAW_CRON_LOG_DIR/agent-credit-refunds.log" 2>&1
+
+# Production backups: enable only after PETCLAW_BACKUP_DIR is an off-host mount
+# (EFS/NFS/etc.). The script refuses a same-filesystem destination by default,
+# uses atomic partial directories, verifies both archives, and exits nonzero on
+# any failure. Monitor backup.log and free space; only completed, verified
+# backup directories older than 90 days are pruned.
+# 30 2 * * * PETCLAW_BACKUP_DIR=/mnt/petclaw-backups /opt/petclaw/current/deploy/backup-production.sh >> "$PETCLAW_CRON_LOG_DIR/backup.log" 2>&1
 
 # Optional: nightly memory anchor checkpoint for pets with souls. Only meaningful
 # after BLOCKCHAIN_ENABLED=true + relayer is funded.
-# 30 3 * * * /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/petclaw/memory/anchor-batch?cron=1" -H "x-cron-secret: $CRON_SECRET" >> /var/log/petclaw-anchor.log 2>&1
+# 30 3 * * * cd "$PETCLAW_WEB" && set -a && . ./.env.production && set +a && /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/petclaw/memory/anchor-batch?cron=1" -H "x-cron-secret: $CRON_SECRET" >> "$PETCLAW_CRON_LOG_DIR/anchor.log" 2>&1

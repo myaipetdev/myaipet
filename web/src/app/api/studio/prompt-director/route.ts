@@ -19,8 +19,7 @@
  *     STRICT-JSON sheet of 8–12 creative decisions (mood, location+time,
  *     lighting, palette, camera/POV, lens, wardrobe, actions, pacing, audio+VO,
  *     ending, forbid-list), each with concrete option suggestions + a sensible
- *     default. Questions are written in the USER'S language (Korean idea →
- *     Korean questions); the final prompt always stays English for fal models.
+ *     default. Questions and final prompts always stay English for fal models.
  *   - phase:"final" → produces the ultra-detailed prompt honoring every answer;
  *     any unanswered decision is decided by the LLM (told so explicitly).
  *   - phase omitted → the original single-shot behaviour (backwards compatible).
@@ -42,6 +41,7 @@ import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
 import { callLLM } from "@/lib/llm/router";
 import { moderateText } from "@/lib/moderation";
+import { containsHangul } from "@/lib/generatedLanguage";
 
 // Species int → readable noun (mirrors the studio generate route's mapping;
 // falls back to a generic "companion" when the id isn't in the table so a new
@@ -117,6 +117,9 @@ function parseQuestions(raw: string): DirectorQuestion[] | null {
       def = options[0];
     }
     const whyItMatters = String(q.whyItMatters ?? q.why ?? "").trim().slice(0, 240);
+    // Shared studio UI is English-only. Reject and retry a model response that
+    // mirrors Korean input instead of following the English output contract.
+    if ([topic, question, ...options, def, whyItMatters].some(containsHangul)) return null;
     out.push({ id, topic, question, options, default: def, whyItMatters });
   }
   return out.length ? out : null;
@@ -183,11 +186,6 @@ export async function POST(req: NextRequest) {
   // PHASE "questions" — interrogate the concept, return a STRICT-JSON sheet.
   // ═══════════════════════════════════════════════════════════════════════
   if (phase === "questions") {
-    // Detect the user's language from the idea so the QUESTIONS come back in
-    // their language (the FINAL prompt always stays English for fal models).
-    const hasHangul = /[가-힣]/.test(idea);
-    const questionLang = hasHangul ? "Korean (한국어)" : "the SAME language the user's idea is written in";
-
     const qSystem = `You are "The Director", an elite cinematic prompt engineer for state-of-the-art AI VIDEO models. Before writing any final prompt, you INTERROGATE the concept: you enumerate every creative decision a real film crew must make so this short video hits the quality of a viral cinematic vlog (the "supercar vlog" gold standard), instead of the cheap "AI ad / game-engine" look.
 
 ${starLine}
@@ -213,7 +211,7 @@ Rules:
 - 8 to 12 questions. Each must be CONCRETE and specific to this idea.
 - Every question offers 2–4 concrete suggested options and a sensible "default" — and the "default" MUST be exactly one of the listed "options".
 - "whyItMatters": one short sentence on how this decision changes the result.
-- Write "topic", "question", every "options" entry, "default" and "whyItMatters" in ${questionLang}. Keep "id" in English kebab-case.
+- Write "topic", "question", every "options" entry, "default" and "whyItMatters" in English, even when the user's idea is written in another language. Keep "id" in English kebab-case.
 - Output ONLY the JSON object.`;
 
     const qUser = `Rough idea: "${idea}"
@@ -227,9 +225,10 @@ Interrogate this concept. Return the JSON question sheet only. Target: ${aspect}
         const out = await callLLM({
           task: "reason",
           petId: pet ? petIdNum ?? undefined : undefined,
+          budgetUserId: user.id,
           messages: [
             { role: "system", content: qSystem },
-            { role: "user", content: attempt === 0 ? qUser : `${qUser}\n\nYour previous reply was not valid JSON. Reply with ONLY the JSON object in the exact shape specified — nothing else.` },
+            { role: "user", content: attempt === 0 ? qUser : `${qUser}\n\nYour previous reply was not valid English-only JSON. Reply with ONLY the English JSON object in the exact shape specified — nothing else.` },
           ],
           max_tokens: 900,
           temperature: attempt === 0 ? 0.6 : 0.3,
@@ -318,6 +317,7 @@ Expand this into the full cinematic video prompt following the anatomy exactly. 
     const out = await callLLM({
       task: "reason",
       petId: pet ? petIdNum ?? undefined : undefined,
+      budgetUserId: user.id,
       messages: [
         { role: "system", content: system },
         { role: "user", content: userMsg },
@@ -337,6 +337,11 @@ Expand this into the full cinematic video prompt following the anatomy exactly. 
 
   // Strip any stray markdown fences the model may add despite instructions.
   const cleaned = text.replace(/^```[a-z]*\n?/i, "").replace(/\n?```$/i, "").trim();
+  if (containsHangul(cleaned)) {
+    // The prompt is a generated product artifact and may later become public.
+    // Fail closed rather than spend a second reasoning call or persist Hangul.
+    return NextResponse.json({ error: "The Director couldn't produce an English prompt. Try again." }, { status: 502 });
+  }
 
   return NextResponse.json({ prompt: cleaned });
 }

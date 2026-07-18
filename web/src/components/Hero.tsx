@@ -199,11 +199,11 @@ const PILLARS: { mark: StickerKind; label: string; desc: string }[] = [
   { mark: "reel", label: "AI Video Engine", desc: "Personalized content for every moment" },
   { mark: "sparkle", label: "Evolve & Equip", desc: "Skills, skins & marketplace" },
   { mark: "chat", label: "Social Circle", desc: "Life sharing & network effects" },
-  { mark: "export", label: "Portable Legacy", desc: "Export your pet's soul; on-chain anchor at go-live" },
+  { mark: "export", label: "Portable Legacy", desc: "Export your pet's soul; on-chain anchoring is planned, not live" },
 ];
 
 // Right-rail hero — the PET as the star: a foil-stamped collectible poster of the
-// brand companion on a terracotta editorial stage (matches 시안 02). The pet is the
+// brand companion on a terracotta editorial stage (matches design concept 02). The pet is the
 // hero, not a montage of samples.
 function HeroShowcase({ txToday }: { txToday?: number }) {
   return (
@@ -340,7 +340,7 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
         <FloatingPet key={i} {...p} />
       ))}
 
-      {/* ═══ 2-column hero — text left, live "what you can make" reel right (시안 02) ═══ */}
+      {/* ═══ 2-column hero — text left, live "what you can make" reel right (concept 02) ═══ */}
       <div className="hero-2col" style={{
         position: "relative", zIndex: 2, maxWidth: 1180, margin: "0 auto",
         display: "grid", gridTemplateColumns: "1.04fr 0.92fr", gap: 46, alignItems: "center", textAlign: "left",
@@ -367,7 +367,7 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
             </span>
           </div>
 
-          {/* Headline — stacked, three colors (시안) */}
+          {/* Headline — stacked, three colors */}
           <h1 className="mp-enter" data-carve style={{
             fontFamily: "var(--ed-disp)", fontSize: "clamp(34px,4.4vw,56px)",
             fontWeight: 800, color: "#211A12", lineHeight: 1.0, margin: "0 0 16px", letterSpacing: "-0.035em",
@@ -550,7 +550,7 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
         {/* Infrastructure evidence chips */}
         <Reveal dir="up" delay={180}>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, marginBottom: 18 }}>
-          {["Open SDK", "MCP-native", "19 connectors", "Your data, portable"].map((c) => (
+          {["Open SDK", "MCP-native", "19-connector registry · 6 live", "Your data, portable"].map((c) => (
             <span key={c} style={{
               fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
               padding: "6px 14px", borderRadius: 999, color: "#7A6E5A",
@@ -646,98 +646,6 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
             </Reveal>
           ))}
         </div>
-      </div>
-
-      {/* ─── Investment ─── */}
-      <div style={{
-        position: "relative", zIndex: 2,
-        marginTop: 80, padding: "0 20px",
-        maxWidth: 960, marginLeft: "auto", marginRight: "auto",
-      }}>
-        <MaskedTitle
-          as="h2"
-          lines={["Backed by"]}
-          style={{
-            fontFamily: "var(--ed-disp)", fontSize: "clamp(24px,3.5vw,36px)",
-            fontWeight: 700, color: "#211A12", letterSpacing: "-0.02em", margin: "0 0 8px",
-            textAlign: "center",
-          }}
-        />
-
-        {/* Two featured partner cards — the "Lead Investors" label was removed
-            per founder; the cards stay. */}
-        <div style={{
-          display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12,
-          marginTop: 28, marginBottom: 28, maxWidth: 500, marginLeft: "auto", marginRight: "auto",
-        }}>
-          {[
-            { name: "Amber", logo: "/partners/amber.png" },
-            { name: "WAGMI Ventures", logo: "/partners/wagmi.png" },
-          ].map((p, i) => (
-            <Reveal key={p.name} dir="up" delay={Math.min(i, 8) * 90}>
-            <div className="hero-invest-card" style={{
-              background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-              borderRadius: 14, padding: "16px 20px", height: "100%",
-              display: "flex", alignItems: "center", gap: 12,
-            }}>
-              <img src={p.logo} alt={p.name} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: 32, height: 32, borderRadius: 8, objectFit: "contain" }} />
-              <span style={{ fontFamily: "var(--ed-disp)", fontSize: 15, fontWeight: 700, color: "#211A12" }}>
-                {p.name}
-              </span>
-            </div>
-            </Reveal>
-          ))}
-        </div>
-        {/* Backers rotate — two counter-flowing marquee rows (speed mismatch = depth).
-            Each row's item list is duplicated exactly x2 (aria-hidden dupe half) so
-            translateX(-50%) loops seamlessly; hover pauses via .ed-ticker-wrap. */}
-        <Reveal dir="up" delay={90}>
-        <div style={{ maxWidth: 700, marginLeft: "auto", marginRight: "auto" }}>
-          {[
-            {
-              duration: "32s", reverse: false,
-              items: [
-                { name: "Animoca Brands", logo: "/partners/animoca.png" },
-                { name: "Web3 Labs", logo: "/partners/web3labs.png" },
-                { name: "KuCoin Ventures", logo: "/partners/kucoin.png" },
-                { name: "ViaBTC", logo: "/partners/viabtc.png" },
-              ],
-            },
-            {
-              duration: "40s", reverse: true,
-              items: [
-                { name: "Arkstream Capital", logo: "/partners/arkstream.png" },
-                { name: "ICC Ventures", logo: "/partners/icc.png" },
-                { name: "WaterDrip", logo: "/partners/waterdrip.png" },
-                { name: "CryptoSen", logo: "/partners/cryptosen.svg" },
-              ],
-            },
-          ].map((row, ri) => (
-            <div key={ri} className="ed-ticker-wrap" style={{ overflow: "hidden", marginTop: ri === 0 ? 0 : 10 }}>
-              <div style={{
-                display: "flex", width: "max-content",
-                animation: `heroTicker ${row.duration} linear infinite${row.reverse ? " reverse" : ""}`,
-              }}>
-                {[false, true].map(dup => (
-                  <div key={dup ? "dup" : "orig"} aria-hidden={dup || undefined} style={{ display: "flex" }}>
-                    {row.items.map(p => (
-                      <div key={p.name} className="hero-backer-chip">
-                        <img src={p.logo} alt={dup ? "" : p.name} onError={(e) => { e.currentTarget.style.display = "none"; }} style={{ width: 24, height: 24, borderRadius: 6, objectFit: "contain" }} />
-                        <span style={{
-                          fontFamily: "var(--ed-disp)", fontSize: 13, fontWeight: 600,
-                          color: "#5C5140",
-                        }}>
-                          {p.name}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-        </Reveal>
       </div>
 
       {/* ─── Footer CTA — field-notes postcard (on-system: paper, mono eyebrow,

@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════ */
-/* ── MY AI PET v2.0 Desktop Companion ── */
+/* ── MY AI PET PetClaw Desktop Companion ── */
 /* ══════════════════════════════════════ */
 
 #aipet-container {
@@ -30,6 +30,13 @@
 
 #aipet-body:active { cursor: grabbing; }
 #aipet-body:hover { transform: scale(1.1); }
+#aipet-body:focus-visible,
+.aipet-menu-item:focus-visible,
+.aipet-consent-button:focus-visible,
+.aipet-treat:focus-visible {
+  outline: 3px solid #BE4F28;
+  outline-offset: 3px;
+}
 
 /* Sleeping state — gentle pulse + slight tilt + reduced saturation */
 #aipet-body.aipet-sleeping {
@@ -213,6 +220,48 @@
 
 #aipet-chat-input::placeholder { color: rgba(0, 0, 0, 0.3); }
 
+.aipet-consent-copy {
+  font-size: 11px;
+  line-height: 1.45;
+  color: #4d4439;
+}
+
+.aipet-page-preview {
+  max-height: 92px;
+  overflow: auto;
+  margin-top: 7px;
+  padding: 7px;
+  border: 1px solid rgba(33, 26, 18, 0.16);
+  border-radius: 7px;
+  background: #fffaf0;
+  color: #5d5347;
+  font-size: 10px;
+  line-height: 1.4;
+  user-select: text;
+}
+
+.aipet-consent-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.aipet-consent-button {
+  border: 1px solid #9a3e1e;
+  border-radius: 7px;
+  padding: 6px 8px;
+  background: #be4f28;
+  color: #fffaf0;
+  cursor: pointer;
+  font: 600 10px/1.2 'Segoe UI', sans-serif;
+}
+
+.aipet-consent-button.secondary {
+  border-color: rgba(33, 26, 18, 0.2);
+  background: transparent;
+  color: #4d4439;
+}
+
 /* ── Typing Dots ── */
 .aipet-typing {
   display: inline-flex;
@@ -267,6 +316,11 @@
 }
 
 .aipet-menu-item:hover { background: rgba(190, 79, 40, 0.1); }
+.aipet-menu-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: transparent;
+}
 
 .aipet-menu-item .icon {
   font-size: 16px;
@@ -445,10 +499,13 @@
    drop-in bounce, idle bob, and hover pop compose instead of fighting. */
 .aipet-treat {
   position: fixed;
+  pointer-events: auto;
   width: 30px; height: 30px;
   line-height: 30px; text-align: center; font-size: 21px;
   cursor: pointer; z-index: 2147483646;
   border-radius: 50%;
+  border: 0; padding: 0;
+  font-family: inherit;
   background: radial-gradient(circle at 40% 35%, #fff6da, #ffe08a 55%, #f4b23c);
   box-shadow: 0 3px 8px rgba(40,20,0,0.28), inset 0 1px 2px rgba(255,255,255,0.7);
   user-select: none; -webkit-user-select: none;
@@ -464,3 +521,13 @@
 }
 @keyframes aipet-treat-bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -4px; } }
 @keyframes aipet-treat-pop { from { transform: scale(1); opacity: 1; } to { transform: scale(1.85); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  #aipet-container *,
+  .aipet-treat {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}

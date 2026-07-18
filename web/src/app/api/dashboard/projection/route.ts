@@ -22,6 +22,7 @@ import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
 import { SEASON_START_MS as SEASON_START, SEASON_END_MS as SEASON_END, seasonPhase } from "@/lib/season";
 import { readSeasonSnapshot, computeFinalStandings } from "@/lib/seasonSnapshot";
+import { publicPetWhere } from "@/lib/publicPet";
 
 export async function GET(req: NextRequest) {
   const rl = rateLimit(req, { key: "projection", limit: 60, windowMs: 60_000 });
@@ -55,7 +56,7 @@ export async function GET(req: NextRequest) {
       const rank = fromSnap
         ? fromSnap.rank
         : (await prisma.user.count({
-            where: { season_points: { gt: myPoints }, pets: { some: { is_active: true } } },
+            where: { season_points: { gt: myPoints }, pets: { some: publicPetWhere() } },
           })) + 1;
       me = {
         rank,
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest) {
   // "Pool" = total loyalty points in play across active raisers. This genuinely
   // grows as players raise & create (each care/creation banks points), so the
   // "grows as players raise & create" copy is now true.
-  const onlyRaisers = { season_points: { gt: 0 }, pets: { some: { is_active: true } } };
+  const onlyRaisers = { season_points: { gt: 0 }, pets: { some: publicPetWhere() } };
   const [poolAgg, participants] = await Promise.all([
     prisma.user.aggregate({ _sum: { season_points: true }, where: onlyRaisers }),
     prisma.user.count({ where: onlyRaisers }),
@@ -96,12 +97,12 @@ export async function GET(req: NextRequest) {
 
   // Top-3 by points (sneak preview, always shown)
   const topUsers = await prisma.user.findMany({
-    where: { pets: { some: { is_active: true } } },
+    where: { pets: { some: publicPetWhere() } },
     orderBy: { season_points: "desc" },
     take: 3,
     select: {
       season_points: true,
-      pets: { where: { is_active: true }, orderBy: { level: "desc" }, take: 1, select: { id: true, name: true, level: true, avatar_url: true } },
+      pets: { where: publicPetWhere(), orderBy: { level: "desc" }, take: 1, select: { id: true, name: true, level: true, avatar_url: true } },
     },
   });
   const topThree = topUsers.map((u, i) => ({
@@ -129,10 +130,10 @@ export async function GET(req: NextRequest) {
       orderBy: { level: "desc" },
       select: { id: true, name: true, avatar_url: true, level: true },
     }),
-    prisma.user.count({ where: { season_points: { gt: myPoints }, pets: { some: { is_active: true } } } }),
+    prisma.user.count({ where: { season_points: { gt: myPoints }, pets: { some: publicPetWhere() } } }),
     // The raiser just above me — how many points to climb one rank.
     prisma.user.findFirst({
-      where: { season_points: { gt: myPoints }, pets: { some: { is_active: true } } },
+      where: { season_points: { gt: myPoints }, pets: { some: publicPetWhere() } },
       orderBy: { season_points: "asc" },
       select: { season_points: true },
     }),

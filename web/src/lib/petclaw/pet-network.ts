@@ -1,13 +1,12 @@
 /**
  * PetClaw Network — Pet-to-Pet A2A Protocol
- * Pets discover each other, invoke skills, and settle payments automatically
+ * Public pet discovery. Remote invocation is intentionally not exposed.
  */
 
-import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { PETCLAW_PROTOCOL, buildPetDID } from "./petclaw";
-import { getSkill, executeSkill, getInstalledSkills } from "./pethub";
-import { creditPetWallet, deductPetWallet } from "./pet-wallet";
+import { interactablePetWhere } from "@/lib/publicPet";
+import { buildPetDID } from "./petclaw";
+import { getInstalledSkills } from "./pethub";
 
 // ── Network Types ──
 
@@ -25,42 +24,7 @@ export interface PetNode {
   trustScore: number;       // 0-100
   totalInteractions: number;
   lastSeen: string;
-  endpoint: string;          // base URL for invoking this pet
 }
-
-export interface NetworkMessage {
-  id: string;
-  fromPetId: number;
-  toPetId: number;
-  type: "invoke" | "response" | "billing" | "heartbeat";
-  payload: Record<string, unknown>;
-  timestamp: string;
-  latencyMs?: number;
-  status: "pending" | "completed" | "failed";
-}
-
-export interface InvokeRequest {
-  callerPetId: number;
-  providerPetId: number;
-  skillId: string;
-  input: Record<string, unknown>;
-}
-
-export interface InvokeResult {
-  success: boolean;
-  output: unknown;
-  billing: {
-    cost: number;
-    callerCharged: number;
-    providerEarned: number;
-    platformFee: number;
-  };
-  latencyMs: number;
-  messageId: string;
-}
-
-// ── Platform fee: 10% (lower than BoredBrain's 15% — sovereignty premium) ──
-const PLATFORM_FEE_RATE = 0.10;
 
 // ── Node Discovery ──
 
@@ -71,14 +35,14 @@ export async function discoverPets(filters?: {
   skill?: string;
   limit?: number;
 }): Promise<PetNode[]> {
-  const where: any = { is_active: true };
+  const filtersWhere: any = {};
 
-  if (filters?.personality) where.personality_type = filters.personality;
-  if (filters?.element) where.element = filters.element;
-  if (filters?.minLevel) where.level = { gte: filters.minLevel };
+  if (filters?.personality) filtersWhere.personality_type = filters.personality;
+  if (filters?.element) filtersWhere.element = filters.element;
+  if (filters?.minLevel) filtersWhere.level = { gte: filters.minLevel };
 
   const pets = await prisma.pet.findMany({
-    where,
+    where: interactablePetWhere(filtersWhere),
     include: { user: true },
     orderBy: { level: "desc" },
     take: filters?.limit || 50,
@@ -98,10 +62,6 @@ export async function discoverPets(filters?: {
     // Filter by skill if requested
     if (filters?.skill && !capabilities.includes(filters.skill)) continue;
 
-    const mods = (pet.personality_modifiers as Record<string, unknown>) || {};
-    const consent = (mods.consent_interaction as boolean) ?? true;
-    if (!consent) continue; // respect consent
-
     nodes.push({
       petId: pet.id,
       name: pet.name,
@@ -116,7 +76,6 @@ export async function discoverPets(filters?: {
       trustScore: Math.min(100, 50 + pet.bond_level * 5 + pet.level),
       totalInteractions: pet.total_interactions,
       lastSeen: (pet.last_interaction_at || pet.updated_at).toISOString(),
-      endpoint: `/api/petclaw/network/invoke`,
     });
   }
 
@@ -148,108 +107,6 @@ export async function getPetNode(petId: number): Promise<PetNode | null> {
     trustScore: Math.min(100, 50 + pet.bond_level * 5 + pet.level),
     totalInteractions: pet.total_interactions,
     lastSeen: (pet.last_interaction_at || pet.updated_at).toISOString(),
-    endpoint: `/api/petclaw/network/invoke`,
-  };
-}
-
-// ── Pet-to-Pet Invocation ──
-
-export async function invokePet(req: InvokeRequest): Promise<InvokeResult> {
-  const start = Date.now();
-  const messageId = createHash("sha256")
-    .update(`${req.callerPetId}:${req.providerPetId}:${Date.now()}`)
-    .digest("hex")
-    .slice(0, 16);
-
-  // Verify provider exists and has the skill
-  const skill = getSkill(req.skillId);
-  if (!skill) {
-    return {
-      success: false,
-      output: { error: `Skill not found: ${req.skillId}` },
-      billing: { cost: 0, callerCharged: 0, providerEarned: 0, platformFee: 0 },
-      latencyMs: Date.now() - start,
-      messageId,
-    };
-  }
-
-  // Check consent
-  const providerPet = await prisma.pet.findUnique({ where: { id: req.providerPetId } });
-  if (!providerPet) {
-    return {
-      success: false,
-      output: { error: "Provider pet not found" },
-      billing: { cost: 0, callerCharged: 0, providerEarned: 0, platformFee: 0 },
-      latencyMs: Date.now() - start,
-      messageId,
-    };
-  }
-
-  const mods = (providerPet.personality_modifiers as Record<string, unknown>) || {};
-  const consentInteraction = (mods.consent_interaction as boolean) ?? true;
-  if (!consentInteraction) {
-    return {
-      success: false,
-      output: { error: "Provider pet has declined interactions (data sovereignty)" },
-      billing: { cost: 0, callerCharged: 0, providerEarned: 0, platformFee: 0 },
-      latencyMs: Date.now() - start,
-      messageId,
-    };
-  }
-
-  // Execute skill on provider pet
-  const result = await executeSkill(req.providerPetId, req.skillId, req.input);
-
-  // api-call skills don't actually run inside invoke() — they return an
-  // "invoke_via_endpoint" descriptor that the caller must execute at the skill's
-  // own REST endpoint (with its OWN auth + credits). Billing for a descriptor
-  // would charge for undelivered work, so we only settle when real output ran.
-  const delivered =
-    result.success &&
-    !(result.output && typeof result.output === "object" &&
-      (result.output as { status?: string }).status === "invoke_via_endpoint");
-
-  // Calculate billing
-  const cost = skill.price;
-  let callerCharged = 0;
-  let providerEarned = 0;
-  let platformFee = 0;
-
-  if (cost > 0 && delivered) {
-    platformFee = Math.ceil(cost * PLATFORM_FEE_RATE);
-    providerEarned = cost - platformFee;
-    callerCharged = cost;
-
-    // Settle debit + credit atomically: if the caller is short OR the credit
-    // can't land (e.g. provider deleted mid-call), the whole transaction rolls
-    // back, so the caller is never charged without the provider being paid.
-    try {
-      await prisma.$transaction(async (tx: any) => {
-        const deductResult = await deductPetWallet(req.callerPetId, callerCharged, `Invoked ${providerPet.name}/${req.skillId}`, tx);
-        if (!deductResult.success) throw new Error("INSUFFICIENT_FUNDS");
-        await creditPetWallet(req.providerPetId, providerEarned, `Service to pet#${req.callerPetId}/${req.skillId}`, tx);
-      });
-    } catch {
-      // Insufficient balance or settlement failure — execute unpaid, charge nothing.
-      callerCharged = 0;
-      providerEarned = 0;
-      platformFee = 0;
-    }
-  }
-
-  // Record interaction on provider pet (best-effort — must not 500 a request
-  // whose billing already settled above).
-  await prisma.pet.update({
-    where: { id: req.providerPetId },
-    data: { total_interactions: { increment: 1 } },
-  }).catch(() => {});
-
-  return {
-    success: result.success,
-    output: result.output,
-    billing: { cost, callerCharged, providerEarned, platformFee },
-    latencyMs: Date.now() - start,
-    messageId,
   };
 }
 
@@ -261,7 +118,7 @@ export async function getNetworkStats(): Promise<{
   totalInvocations: number;
   avgTrustScore: number;
 }> {
-  const activePets = await prisma.pet.count({ where: { is_active: true } });
+  const activePets = await prisma.pet.count({ where: interactablePetWhere() });
 
   return {
     totalNodes: activePets,

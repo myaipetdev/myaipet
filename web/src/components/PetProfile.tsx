@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import { useConfig } from "wagmi";
 import { api, getAuthHeaders } from "@/lib/api";
 import { signAction } from "@/lib/signAction";
@@ -46,9 +46,9 @@ const PERSONALITIES = [
 // minLevel gates a few interactions behind progression so leveling up matters.
 const INTERACTIONS = [
   { type: "feed",  label: "Feed",  icon: "🍖", color: "#4ade80",
-    desc: "5/day free · then 0.10 USDT · 7-day streak = milestone badge", minLevel: 1, purpose: "EARN" },
+    desc: "5/day free · extras paused · 7-day streak = milestone badge", minLevel: 1, purpose: "EARN" },
   { type: "play",  label: "Play",  icon: "⚽", color: "#3E8FE0",
-    desc: "5/day free · then 0.10 USDT · happiness ↑",        minLevel: 1, purpose: "EARN" },
+    desc: "5/day free · extras paused · happiness ↑",        minLevel: 1, purpose: "EARN" },
   { type: "talk",  label: "Talk",  icon: "💬", color: "#9E72E8",
     desc: "Memory grows. Bond unlocks chat depth.",            minLevel: 1, purpose: "GROW" },
   { type: "pet",   label: "Pet",   icon: "🤚", color: "#f472b6",
@@ -147,7 +147,7 @@ function AnimatedStatBar({ label, value, color, max = 100, icon }: any) {
         </span>
       </div>
       <div style={{ height: 6, borderRadius: 3, background: "rgba(33,26,18,0.08)", overflow: "hidden" }}>
-        <div style={{
+        <div role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={Math.min(max, Math.max(0, displayValue))} style={{
           height: "100%", borderRadius: 3,
           background: `linear-gradient(90deg, ${color}, ${color}cc)`,
           width: `${pct}%`,
@@ -169,6 +169,13 @@ function AnimatedStatBar({ label, value, color, max = 100, icon }: any) {
 
 
 function CreatePetModal({ onClose, onCreated }: any) {
+  const uploadNameId = useId();
+  const uploadSpeciesId = useId();
+  const uploadFileId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  const creatingRef = useRef(false);
   const wagmiConfig = useConfig();
   const { checkBnb, switchToBsc } = useCheckBnbBalance();
   const { recordAdoption: parentRecordAdoption } = useRecordAdoption();
@@ -186,11 +193,48 @@ function CreatePetModal({ onClose, onCreated }: any) {
   // Escape closes the modal — but never mid-adoption, since an on-chain tx is
   // in flight and tearing the UI down would orphan it.
   const closeIfIdle = () => { if (!creating) onClose(); };
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  useEffect(() => { creatingRef.current = creating; }, [creating]);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !creating) onClose(); };
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !creatingRef.current) {
+        e.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusable = modalRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [creating, onClose]);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+      const target = returnFocusRef.current;
+      requestAnimationFrame(() => target?.focus());
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      (modalRef.current?.querySelector<HTMLElement>('[autofocus], input:not([disabled]), button:not([disabled])') || modalRef.current)?.focus();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [mode]);
 
   // Upload mode state
   const [uploadName, setUploadName] = useState("");
@@ -418,8 +462,8 @@ function CreatePetModal({ onClose, onCreated }: any) {
       <div style={{
         position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center",
         background: "rgba(0,0,0,0.5)", backdropFilter: "blur(12px)",
-      }} onClick={onClose}>
-        <div onClick={e => e.stopPropagation()} style={{
+      }} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+        <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Choose how to adopt a pet" tabIndex={-1} onMouseDown={e => e.stopPropagation()} style={{
           background: "#FBF6EC", borderRadius: 24, width: 420, maxWidth: "95vw",
           border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))", animation: "slideIn 0.3s ease-out",
@@ -434,7 +478,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <button onClick={() => setMode("chat")} style={{
+            <button type="button" onClick={() => setMode("chat")} style={{
               padding: "18px 24px", borderRadius: 16,
               background: "rgba(107,79,160,0.06)",
               border: "1px solid rgba(107,79,160,0.2)", cursor: "pointer",
@@ -453,7 +497,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
               </div>
             </button>
 
-            <button onClick={() => setMode("upload")} style={{
+            <button type="button" onClick={() => setMode("upload")} style={{
               padding: "18px 24px", borderRadius: 16,
               background: "rgba(190,79,40,0.06)",
               border: "1px solid rgba(190,79,40,0.2)", cursor: "pointer",
@@ -478,7 +522,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
             </button>
           </div>
 
-          <button onClick={onClose} style={{
+          <button type="button" onClick={onClose} style={{
             marginTop: 20, background: "none", border: "none", cursor: "pointer",
             fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E",
           }}>Cancel</button>
@@ -493,8 +537,8 @@ function CreatePetModal({ onClose, onCreated }: any) {
       <div style={{
         position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center",
         background: "rgba(0,0,0,0.5)", backdropFilter: "blur(12px)",
-      }} onClick={closeIfIdle}>
-        <div onClick={e => e.stopPropagation()} style={{
+      }} onMouseDown={(event) => { if (event.target === event.currentTarget) closeIfIdle(); }}>
+        <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Upload a pet photo" aria-busy={creating} tabIndex={-1} onMouseDown={e => e.stopPropagation()} style={{
           background: "#FBF6EC", borderRadius: 24, width: 440, maxWidth: "95vw", maxHeight: "90vh",
           border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
           boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))", animation: "slideIn 0.3s ease-out",
@@ -506,7 +550,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
             background: "rgba(190,79,40,0.06)",
             display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
           }}>
-            <button onClick={() => setMode("choose")} style={{
+            <button type="button" onClick={() => setMode("choose")} disabled={creating} aria-label="Back to adoption options" style={{
               background: "rgba(33,26,18,0.05)", border: "none", borderRadius: 8,
               width: 32, height: 32, cursor: "pointer", fontSize: 14, color: "#7A6E5A",
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -525,9 +569,12 @@ function CreatePetModal({ onClose, onCreated }: any) {
           {/* Form */}
           <div style={{ flex: 1, overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 18 }}>
             {/* Photo Upload */}
-            <div
+            <button
+              type="button"
               onClick={() => fileInputRef.current?.click()}
+              aria-label={uploadPreview ? "Choose a different pet photo" : "Choose a pet photo to upload"}
               style={{
+                width: "100%", font: "inherit",
                 border: uploadPreview ? "none" : "2px dashed rgba(190,79,40,0.3)",
                 borderRadius: 16, padding: uploadPreview ? 16 : 32,
                 cursor: "pointer", textAlign: "center",
@@ -556,12 +603,12 @@ function CreatePetModal({ onClose, onCreated }: any) {
                   </div>
                 </>
               )}
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} style={{ display: "none" }} />
-            </div>
+            </button>
+            <input id={uploadFileId} ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} tabIndex={-1} aria-hidden="true" style={{ display: "none" }} />
 
             {/* Upload / pet validation error — shown right below the photo */}
             {adoptError && (
-              <div style={{
+              <div role="alert" style={{
                 background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
                 borderRadius: 12, padding: "10px 14px",
                 color: "#dc2626", fontSize: 13, fontWeight: 600,
@@ -573,10 +620,10 @@ function CreatePetModal({ onClose, onCreated }: any) {
 
             {/* Name */}
             <div>
-              <label style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 600, color: "#7A6E5A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
+              <label htmlFor={uploadNameId} style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 600, color: "#7A6E5A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
                 Pet Name *
               </label>
-              <input value={uploadName} onChange={e => setUploadName(e.target.value)} placeholder="What's your pet's name?"
+              <input id={uploadNameId} value={uploadName} onChange={e => setUploadName(e.target.value)} placeholder="What's your pet's name?"
                 style={{
                   width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                   background: "#F5EFE2",
@@ -588,10 +635,10 @@ function CreatePetModal({ onClose, onCreated }: any) {
 
             {/* Species */}
             <div>
-              <label style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 600, color: "#7A6E5A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
+              <label htmlFor={uploadSpeciesId} style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 600, color: "#7A6E5A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
                 Species
               </label>
-              <input value={uploadSpecies} onChange={e => setUploadSpecies(e.target.value)} placeholder="e.g. Golden Retriever, Persian Cat, Dragon..."
+              <input id={uploadSpeciesId} value={uploadSpecies} onChange={e => setUploadSpecies(e.target.value)} placeholder="e.g. Golden Retriever, Persian Cat, Dragon..."
                 style={{
                   width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                   background: "#F5EFE2",
@@ -606,9 +653,9 @@ function CreatePetModal({ onClose, onCreated }: any) {
               <label style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 600, color: "#7A6E5A", textTransform: "uppercase", letterSpacing: "0.12em" }}>
                 Personality
               </label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+              <div role="group" aria-label="Pet personality" style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                 {PERS.map(p => (
-                  <button key={p.id} onClick={() => setUploadPersonality(p.id)} style={{
+                  <button type="button" key={p.id} aria-pressed={uploadPersonality === p.id} onClick={() => setUploadPersonality(p.id)} style={{
                     padding: "6px 12px", borderRadius: 20, fontSize: 13, fontFamily: "var(--ed-body)",
                     border: uploadPersonality === p.id ? "1px solid #BE4F28" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                     background: uploadPersonality === p.id ? "rgba(190,79,40,0.1)" : "rgba(33,26,18,0.03)",
@@ -626,8 +673,10 @@ function CreatePetModal({ onClose, onCreated }: any) {
           {/* Adopt button */}
           <div style={{ padding: "16px 24px", borderTop: "1px solid var(--ed-hair, rgba(33,26,18,.13))", flexShrink: 0 }}>
             <button
+              type="button"
               onClick={handleUploadAdopt}
               disabled={!uploadName.trim() || !uploadFile || creating}
+              aria-busy={creating}
               style={{
                 width: "100%", padding: "14px", borderRadius: 14, border: "none", cursor: "pointer",
                 background: uploadName.trim() && uploadFile
@@ -663,8 +712,8 @@ function CreatePetModal({ onClose, onCreated }: any) {
     <div style={{
       position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center",
       background: "rgba(0,0,0,0.5)", backdropFilter: "blur(12px)",
-    }} onClick={closeIfIdle}>
-      <div onClick={e => e.stopPropagation()} style={{
+    }} onMouseDown={(event) => { if (event.target === event.currentTarget) closeIfIdle(); }}>
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Create a pet with AI" aria-busy={creating || chatLoading} tabIndex={-1} onMouseDown={e => e.stopPropagation()} style={{
         background: "#FBF6EC",
         borderRadius: 24, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
         width: 480, maxWidth: "95vw", maxHeight: "85vh",
@@ -678,7 +727,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
           background: "rgba(107,79,160,0.05)",
           display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
         }}>
-          <button onClick={() => setMode("choose")} style={{
+          <button type="button" onClick={() => setMode("choose")} disabled={creating} aria-label="Back to adoption options" style={{
             background: "rgba(33,26,18,0.05)", border: "none", borderRadius: 8,
             width: 32, height: 32, cursor: "pointer", fontSize: 14, color: "#7A6E5A",
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -699,7 +748,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
         </div>
 
         {/* Messages */}
-        <div style={{
+        <div role="log" aria-live="polite" aria-label="AI pet adoption conversation" aria-busy={chatLoading} style={{
           flex: 1, overflowY: "auto", padding: "16px 20px",
           display: "flex", flexDirection: "column", gap: 10, minHeight: 0,
         }}>
@@ -733,7 +782,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
           ))}
 
           {chatLoading && (
-            <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", gap: 10 }}>
+            <div role="status" style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", gap: 10 }}>
               <div style={{
                 padding: "12px 18px", borderRadius: "18px 18px 18px 6px",
                 background: "#F5EFE2",
@@ -785,7 +834,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
                   "{petData.custom_traits}"
                 </div>
               )}
-              <button onClick={() => handleAdopt(false)} disabled={creating} style={{
+              <button type="button" onClick={() => handleAdopt(false)} disabled={creating} aria-busy={creating} style={{
                 width: "100%", marginTop: 16, padding: "13px", borderRadius: 14, border: "none", cursor: "pointer",
                 background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
                 color: "#FFF8EE", fontFamily: "var(--ed-disp)", fontSize: 15, fontWeight: 700,
@@ -793,7 +842,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
               }}>
                 {creating ? "Generating avatar..." : "🐣 Adopt!"}
               </button>
-              {adoptError && <div style={{ color: "#ef4444", fontSize: 13, marginTop: 8, textAlign: "center", fontWeight: 600 }}>{adoptError}</div>}
+              {adoptError && <div role="alert" style={{ color: "#ef4444", fontSize: 13, marginTop: 8, textAlign: "center", fontWeight: 600 }}>{adoptError}</div>}
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -802,7 +851,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
         {/* Manual create fallback — never dead-end if the AI hasn't finalized */}
         {showManualCreate && (
           <div style={{ padding: "0 20px 8px", flexShrink: 0 }}>
-            <button onClick={() => handleAdopt(true)} disabled={creating} style={{
+            <button type="button" onClick={() => handleAdopt(true)} disabled={creating} aria-busy={creating} style={{
               width: "100%", padding: "11px", borderRadius: 12, cursor: creating ? "default" : "pointer",
               border: "1px solid rgba(107,79,160,0.3)", background: "rgba(107,79,160,0.06)",
               color: "#6B4FA0", fontFamily: "var(--ed-disp)", fontSize: 13.5, fontWeight: 700,
@@ -813,7 +862,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
             <div style={{ textAlign: "center", fontSize: 13, color: "#9A7B4E", marginTop: 5, fontFamily: "var(--ed-body)" }}>
               We'll use what you've told us so far — you can refine details anytime.
             </div>
-            {adoptError && <div style={{ color: "#ef4444", fontSize: 13, marginTop: 6, textAlign: "center", fontWeight: 600 }}>{adoptError}</div>}
+            {adoptError && <div role="alert" style={{ color: "#ef4444", fontSize: 13, marginTop: 6, textAlign: "center", fontWeight: 600 }}>{adoptError}</div>}
           </div>
         )}
 
@@ -821,7 +870,7 @@ function CreatePetModal({ onClose, onCreated }: any) {
         {showSuggestions && (
           <div style={{ padding: "0 20px 8px", display: "flex", gap: 6, flexWrap: "wrap", flexShrink: 0 }}>
             {quickSuggestions.map((s, i) => (
-              <button key={i} onClick={() => sendMessage(s)} style={{
+              <button type="button" key={i} onClick={() => sendMessage(s)} style={{
                 padding: "6px 12px", borderRadius: 20, border: "1px solid rgba(107,79,160,0.2)",
                 background: "rgba(107,79,160,0.06)", cursor: "pointer",
                 fontFamily: "var(--ed-m)", fontSize: 13, color: "#6B4FA0",
@@ -838,15 +887,16 @@ function CreatePetModal({ onClose, onCreated }: any) {
         }}>
           <input
             value={chatInput} onChange={e => setChatInput(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(chatInput); } }}
+            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); sendMessage(chatInput); } }}
             placeholder="Describe your dream pet..." autoFocus disabled={chatLoading || creating}
+            aria-label="Describe your dream pet"
             style={{
               flex: 1, padding: "10px 14px", borderRadius: 12, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
               background: "#F5EFE2", fontFamily: "var(--ed-body)", fontSize: 14,
               outline: "none", color: "#211A12",
             }}
           />
-          <button onClick={() => sendMessage(chatInput)} disabled={!chatInput.trim() || chatLoading || creating}
+          <button type="button" aria-label="Send adoption message" aria-busy={chatLoading} onClick={() => sendMessage(chatInput)} disabled={!chatInput.trim() || chatLoading || creating}
             style={{
               width: 40, height: 40, borderRadius: 12, border: "none",
               background: chatInput.trim() && !chatLoading ? "#6B4FA0" : "rgba(33,26,18,0.05)",
@@ -1047,9 +1097,11 @@ function PetAvatar({ pet, mood, size = 80, reaction, equipped, moodPortraits }: 
           {react.burst}
         </div>
       )}
-      <div
+      <button
+        type="button"
         onClick={() => fireReact({ anim: "petReactWiggle", burst: "💖" })}
-        title="boop"
+        aria-label={`Boop ${pet.name}`}
+        title={`Boop ${pet.name}`}
         style={{
         width: size, height: size, borderRadius: size * 0.3,
         background: "rgba(33,26,18,0.03)",
@@ -1059,11 +1111,12 @@ function PetAvatar({ pet, mood, size = 80, reaction, equipped, moodPortraits }: 
         transition: "all 0.5s ease",
         animation: react ? `${react.anim} 0.85s ease-in-out` : "petFloat 6s ease-in-out infinite",
         display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 0,
       }}>
         <div style={{ width: "100%", height: "100%", animation: "petBreathe 3.4s ease-in-out infinite" }}>
           <img src={imgSrc} alt={pet.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.3s" }} />
         </div>
-      </div>
+      </button>
       {/* Equipped cosmetics — accessory rests on the head, cosmetic glows in a corner */}
       {equipped?.accessory && (
         <div style={{
@@ -1116,6 +1169,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
   const [interacting, setInteracting] = useState<string | null>(null);
   const [lastResponse, setLastResponse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [petsLoadError, setPetsLoadError] = useState<string | null>(null);
   const [responseAnim, setResponseAnim] = useState(false);
   const [evoStatus, setEvoStatus] = useState<any>(null);
   const [evolving, setEvolving] = useState(false);
@@ -1138,6 +1192,9 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatDialogRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLInputElement>(null);
+  const chatReturnFocusRef = useRef<HTMLElement | null>(null);
   const [petRequest, setPetRequest] = useState<any>(null);
   const [comboToast, setComboToast] = useState<{ name: string; description: string; emoji: string } | null>(null);
   // Default to clean stat bars rather than the hexagon radar — the radar
@@ -1209,12 +1266,57 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePet?.id]);
 
-  // Escape closes the chat modal — keyboard users can't reach the backdrop or ✕.
+  // Keep keyboard focus inside the pet chat, and return it to the control that
+  // opened the modal after close.
   useEffect(() => {
     if (!showChat) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setShowChat(false); };
+
+    chatReturnFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusTimer = window.setTimeout(() => {
+      (chatInputRef.current || chatDialogRef.current)?.focus();
+    }, 0);
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setShowChat(false);
+        return;
+      }
+      if (e.key !== "Tab") return;
+
+      const dialog = chatDialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+      )).filter((element) => element.getClientRects().length > 0);
+      if (!focusable.length) {
+        e.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !dialog.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+      chatReturnFocusRef.current?.focus();
+    };
   }, [showChat]);
 
   useEffect(() => {
@@ -1230,6 +1332,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
   };
 
   const loadPets = async () => {
+    setPetsLoadError(null);
     try {
       const data = await api.pets.list();
       const list = data.pets || data;
@@ -1255,7 +1358,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
         window.location.reload();
         return;
       }
-      setPets([]);
+      setPetsLoadError("Couldn't load your pets. Check your connection and try again.");
     }
     setLoading(false);
   };
@@ -1372,9 +1475,9 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
         setPaywall({
           ...pw,
           onPaid: async (newTx: string) => {
-            setPaywall(null);
             const retry = await callInteract(newTx);
-            if (retry) finishInteract(retry);
+            if (!retry) throw new Error("The registered payment could not be applied");
+            finishInteract(retry);
           },
         });
         return null;
@@ -1507,7 +1610,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
 
   if (loading) {
     return (
-      <div style={{ padding: "140px 40px", textAlign: "center" }}>
+      <div role="status" aria-live="polite" style={{ padding: "140px 40px", textAlign: "center" }}>
         <div style={{
           width: 40, height: 40, border: "2px solid rgba(190,79,40,0.2)",
           borderTopColor: "#BE4F28", borderRadius: "50%",
@@ -1515,6 +1618,30 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
         }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
         <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E" }}>Loading your pets...</div>
+      </div>
+    );
+  }
+
+  if (petsLoadError && pets.length === 0) {
+    return (
+      <div role="alert" style={{ padding: "140px 40px", textAlign: "center", maxWidth: 500, margin: "0 auto" }}>
+        <div style={{ fontFamily: "var(--ed-disp)", fontSize: 22, fontWeight: 800, color: "#211A12", marginBottom: 8 }}>
+          We couldn't load your pets
+        </div>
+        <div style={{ fontFamily: "var(--ed-body)", fontSize: 14, lineHeight: 1.6, color: "#5C5140", marginBottom: 20 }}>
+          {petsLoadError}
+        </div>
+        <button
+          type="button"
+          onClick={() => { setLoading(true); loadPets(); }}
+          style={{
+            padding: "11px 22px", border: 0, borderRadius: 12, cursor: "pointer",
+            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+            fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 700,
+          }}
+        >
+          Try again
+        </button>
       </div>
     );
   }
@@ -1545,7 +1672,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
         <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E", marginBottom: 32, lineHeight: 1.7 }}>
           Feed them, play with them, talk to them — every interaction matters.
         </div>
-        <button onClick={() => setShowCreate(true)} style={{
+        <button type="button" onClick={() => setShowCreate(true)} style={{
           background: "linear-gradient(180deg,#F49B2A,#E27D0C)", border: "none", borderRadius: 14,
           padding: "15px 40px", fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 600, color: "#FFF8EE", cursor: "pointer",
           boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
@@ -1618,9 +1745,18 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
           />
         </div>
       )}
+      {petsLoadError && (
+        <div role="alert" style={{
+          marginBottom: 14, padding: "10px 14px", borderRadius: 10,
+          background: "rgba(190,79,40,0.08)", border: "1px solid rgba(190,79,40,0.24)",
+          color: "#9A4E1E", fontFamily: "var(--ed-body)", fontSize: 13,
+        }}>
+          {petsLoadError} Existing pet data is still shown.
+        </div>
+      )}
       {/* On-chain recording overlay */}
       {chainToast && (
-        <div style={{
+        <div role={chainToast.startsWith("❌") ? "alert" : "status"} aria-live={chainToast.startsWith("❌") ? "assertive" : "polite"} style={{
           position: "fixed",
           inset: 0,
           zIndex: 9999,
@@ -1644,7 +1780,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
         </div>
       )}
       {errorToast && (
-        <div style={{
+        <div role="alert" style={{
           position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)",
           zIndex: 9999, background: "#211A12", color: "#FFF8EE",
           padding: "14px 28px", borderRadius: 14,
@@ -1666,7 +1802,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
         creditsEarned={evolutionAnim?.creditsEarned || 0}
       />
       {comboToast && (
-        <div style={{
+        <div role="status" aria-live="polite" style={{
           position: "fixed", top: 80, left: "50%", transform: "translateX(-50%)",
           zIndex: 9999,
           background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
@@ -1692,7 +1828,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
       )}
       {/* Floating stat-delta pops after a care interaction */}
       {statPops.length > 0 && (
-        <div style={{
+        <div aria-hidden="true" style={{
           position: "fixed", top: "30%", left: "50%", transform: "translateX(-50%)",
           zIndex: 9998, display: "flex", gap: 16, pointerEvents: "none",
         }}>
@@ -1744,7 +1880,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
         border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
       }}>
         {pets.map((p: any) => (
-          <button key={p.id} onClick={() => selectPet(p)} style={{
+          <button type="button" key={p.id} onClick={() => selectPet(p)} aria-pressed={activePet?.id === p.id} style={{
             background: activePet?.id === p.id ? "rgba(190,79,40,0.1)" : "transparent",
             border: "none", borderRadius: 10, padding: "10px 18px", cursor: "pointer",
             display: "flex", alignItems: "center", gap: 10, transition: "all 0.2s",
@@ -1765,13 +1901,13 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
         ))}
         <div style={{ flex: 1 }} />
         {pets.length < petSlots ? (
-          <button onClick={() => setShowCreate(true)} style={{
+          <button type="button" onClick={() => setShowCreate(true)} style={{
             background: "rgba(33,26,18,0.03)", border: "1px dashed var(--ed-hair, rgba(33,26,18,.13))",
             borderRadius: 10, padding: "10px 18px", cursor: "pointer", fontFamily: "var(--ed-m)", fontSize: 13,
             color: "#9A7B4E", transition: "all 0.2s",
           }}>+ Adopt New</button>
         ) : petSlots < 5 ? (
-          <button onClick={handleUnlockSlot} disabled={unlockingSlot} style={{
+          <button type="button" onClick={handleUnlockSlot} disabled={unlockingSlot} aria-busy={unlockingSlot} style={{
             background: "rgba(190,79,40,0.08)", border: "1px dashed rgba(190,79,40,0.3)",
             borderRadius: 10, padding: "10px 18px", cursor: unlockingSlot ? "wait" : "pointer",
             fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A4E1E", transition: "all 0.2s",
@@ -1784,7 +1920,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
           {pets.length}/{petSlots} slots
         </span>
         {balance !== null && (<>
-          <div style={{
+          <button type="button" aria-label={`${balance.toLocaleString()} credits. View pricing.`} style={{
             fontFamily: "var(--ed-m)", fontSize: 13, padding: "6px 14px", borderRadius: 10,
             background: "rgba(190,79,40,0.06)",
             border: "1px solid rgba(190,79,40,0.2)",
@@ -1792,7 +1928,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
             display: "flex", alignItems: "center", gap: 4, cursor: "pointer",
           }} onClick={() => { const el = document.querySelector(".pricing-root"); if (el) el.scrollIntoView({ behavior: "smooth" }); }}>
             <Icon name="coin" size={13} /> {balance.toLocaleString()} credits
-          </div>
+          </button>
         </>)}
       </div>
 
@@ -1856,8 +1992,15 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                         autoFocus
                         value={nameInput}
                         onChange={(e) => setNameInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") saveName(); if (e.key === "Escape") { setNaming(false); setNameInput(""); } }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                            e.preventDefault();
+                            saveName();
+                          }
+                          if (e.key === "Escape") { setNaming(false); setNameInput(""); }
+                        }}
                         maxLength={20}
+                        aria-label={`New name for ${pet.name}`}
                         placeholder={`Name this ${pet.name.toLowerCase()}… (2–20 letters)`}
                         style={{
                           width: "100%", padding: "9px 12px", borderRadius: 9, marginBottom: 6,
@@ -1868,9 +2011,11 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                       />
                       <div style={{ display: "flex", gap: 6 }}>
                         <button
+                          type="button"
                           className="mp-btn-primary mp-lift"
                           onClick={saveName}
                           disabled={savingName || nameInput.trim().length < 2}
+                          aria-busy={savingName}
                           style={{
                             flex: 1, padding: "9px 16px", fontSize: 14,
                             background: "#6B4FA0", color: "#FFF8EE",
@@ -1880,6 +2025,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                           }}
                         >{savingName ? "Saving…" : "Save name"}</button>
                         <button
+                          type="button"
                           onClick={() => { setNaming(false); setNameInput(""); }}
                           style={{
                             padding: "9px 14px", borderRadius: 9, fontSize: 13, cursor: "pointer",
@@ -1891,6 +2037,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                     </div>
                   ) : (
                     <button
+                      type="button"
                       className="mp-btn-primary mp-lift"
                       onClick={() => { setNameInput(""); setNaming(true); }}
                       style={{
@@ -1973,6 +2120,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
               {editingDesc ? (
                 <div>
                   <input
+                    aria-label="Pet appearance description"
                     value={descInput}
                     onChange={(e) => setDescInput(e.target.value)}
                     placeholder="e.g. small black chihuahua with big ears"
@@ -1983,7 +2131,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                     }}
                   />
                   <div style={{ display: "flex", gap: 4 }}>
-                    <button onClick={async () => {
+                    <button type="button" onClick={async () => {
                       try {
                         await api.pets.updateDesc(pet.id, descInput);
                         await loadPetStatus(pet.id);
@@ -1994,33 +2142,35 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                       padding: "4px 12px", borderRadius: 6, border: "none",
                       background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontFamily: "var(--ed-m)", fontSize: 13, cursor: "pointer",
                     }}>Save</button>
-                    <button onClick={() => setEditingDesc(false)} style={{
+                    <button type="button" onClick={() => setEditingDesc(false)} style={{
                       padding: "4px 12px", borderRadius: 6, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                       background: "#F5EFE2", color: "#5C5140", fontFamily: "var(--ed-m)", fontSize: 13, cursor: "pointer",
                     }}>Cancel</button>
                   </div>
                 </div>
               ) : (
-                <div onClick={() => { setDescInput(pet.appearance_desc || ""); setEditingDesc(true); }}
-                  style={{ cursor: "pointer" }}>
+                <button type="button" onClick={() => { setDescInput(pet.appearance_desc || ""); setEditingDesc(true); }}
+                  style={{ width: "100%", padding: 0, border: 0, background: "transparent", textAlign: "left", cursor: "pointer" }}>
                   <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E", marginBottom: 2 }}>
                     {pet.appearance_desc ? "APPEARANCE" : "⚠️ ADD APPEARANCE (required for AI generation)"}
                   </div>
                   <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: pet.appearance_desc ? "#5C5140" : "#9A4E1E" }}>
                     {pet.appearance_desc || "Tap to describe your pet's look"}
                   </div>
-                </div>
+                </button>
               )}
             </div>
           )}
 
           {/* View toggle — hidden in compact mode (MyPetEditorial owns the stat rows) */}
           {!compact && (<>
-          <div style={{ display: "flex", gap: 4, marginBottom: 14, padding: 3, borderRadius: 10, background: "rgba(33,26,18,0.05)" }}>
+          <div role="group" aria-label="Pet stats view" style={{ display: "flex", gap: 4, marginBottom: 14, padding: 3, borderRadius: 10, background: "rgba(33,26,18,0.05)" }}>
             {(["slots", "radar"] as const).map((v) => (
               <button
+                type="button"
                 key={v}
                 onClick={() => setStatsView(v)}
+                aria-pressed={statsView === v}
                 style={{
                   flex: 1, padding: "6px 10px", borderRadius: 8,
                   background: statsView === v ? "#BE4F28" : "transparent",
@@ -2803,14 +2953,21 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
           backdropFilter: "blur(8px)", zIndex: 1000,
           display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
-        }} onClick={() => setShowChat(false)}>
-          <div style={{
+        }} onMouseDown={(event) => { if (event.target === event.currentTarget) setShowChat(false); }}>
+          <div
+            ref={chatDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Chat with ${pet.name}`}
+            aria-busy={chatLoading}
+            tabIndex={-1}
+            style={{
             background: "#FBF6EC", borderRadius: 24, width: 420, maxWidth: "95vw",
             maxHeight: "80vh", display: "flex", flexDirection: "column",
             border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
             boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))", overflow: "hidden",
             animation: "slideIn 0.3s ease-out",
-          }} onClick={e => e.stopPropagation()}>
+          }} onMouseDown={e => e.stopPropagation()}>
             {/* Chat Header */}
             <div style={{
               padding: "16px 20px", borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -2831,14 +2988,14 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                   {pet.personality_type} · {MOOD_CONFIG[pet.current_mood || "neutral"]?.emoji} {MOOD_CONFIG[pet.current_mood || "neutral"]?.label}
                 </div>
               </div>
-              <button onClick={() => setShowChat(false)} aria-label="Close chat" style={{
+              <button type="button" onClick={() => setShowChat(false)} aria-label="Close chat" style={{
                 background: "none", border: "none", cursor: "pointer",
                 fontSize: 18, color: "#9A7B4E", padding: 4,
               }}>✕</button>
             </div>
 
             {/* Chat Messages */}
-            <div style={{
+            <div role="log" aria-live="polite" aria-label={`Conversation with ${pet.name}`} aria-busy={chatLoading} style={{
               flex: 1, overflowY: "auto", padding: "16px 20px",
               display: "flex", flexDirection: "column", gap: 12,
               minHeight: 300,
@@ -2856,7 +3013,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                   </div>
                   <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 12, flexWrap: "wrap" }}>
                     {["Hey there! 👋", "How are you?", "I love you!", "Are you hungry?"].map(q => (
-                      <button key={q} onClick={() => handleChat(q)} style={{
+                      <button type="button" key={q} onClick={() => handleChat(q)} disabled={chatLoading} style={{
                         background: "rgba(190,79,40,0.08)", border: "1px solid rgba(190,79,40,0.15)",
                         borderRadius: 20, padding: "5px 12px", cursor: "pointer",
                         fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A4E1E",
@@ -2901,7 +3058,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
               ))}
 
               {chatLoading && (
-                <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                <div role="status" aria-label={`${pet.name} is thinking`} style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
                   <div style={{ width: 28, height: 28, borderRadius: 8, overflow: "hidden", border: "1px solid rgba(190,79,40,0.2)", flexShrink: 0 }}>
                     {pet.avatar_url ? <img src={pet.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span>🐾</span>}
                   </div>
@@ -2935,10 +3092,17 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
               display: "flex", gap: 8, background: "#FBF6EC",
             }}>
               <input
+                ref={chatInputRef}
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleChat()}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    handleChat();
+                  }
+                }}
                 placeholder={`Message ${pet.name}...`}
+                aria-label={`Message ${pet.name}`}
                 spellCheck={false}
                 disabled={chatLoading}
                 autoFocus
@@ -2951,6 +3115,9 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                 }}
               />
               <button
+                type="button"
+                aria-label={`Send message to ${pet.name}`}
+                aria-busy={chatLoading}
                 onClick={() => handleChat()}
                 disabled={chatLoading || !chatInput.trim()}
                 style={{

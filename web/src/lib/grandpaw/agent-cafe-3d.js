@@ -1798,7 +1798,7 @@ class AgentCafe3D extends HTMLElement {
     scene.add(basket);
 
     const artM = std('artCanvas', 0xFFFFFF, 0.9, 0, { map: artTexture() });
-    new THREE.TextureLoader().load((window.__resources && window.__resources.mascotPortrait) || 'pets/mascot-portrait.png', (tx) => { tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8; artM.map = tx; artM.needsUpdate = true; });
+    new THREE.TextureLoader().load((window.__resources && window.__resources.mascotPortrait) || '/mascot.jpg', (tx) => { tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8; artM.map = tx; artM.needsUpdate = true; });
     const art = new THREE.Group(); art.name = 'wallArt';
     art.add(rbox('artFrame', 0.08, 1.5, 1.2, 0.02, M.brass, 0, 0, 0));
     const artPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.06, 1.36), artM);

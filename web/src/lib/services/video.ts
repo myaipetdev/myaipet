@@ -3,13 +3,16 @@
  * Full Grok API pipeline (image + video)
  */
 
-import { saveRemoteFile as saveToStorage } from "@/lib/storage";
-import { isFetchableImageUrl } from "@/lib/sanitize";
-
-// Save a remote image/video to storage (S3 or Vercel Blob)
-export async function saveToBlob(remoteUrl: string, prefix = "generations"): Promise<string> {
-  return saveToStorage(remoteUrl, prefix);
-}
+import {
+  callLLM,
+  consumeImageBudget,
+  consumeVisionBudget,
+  isLLMBudgetError,
+  isLLMBudgetStoreError,
+} from "@/lib/llm/router";
+import { generatedEnglishOrNull } from "@/lib/generatedLanguage";
+import { callVisionTextWithFallback } from "@/lib/llm/vision-fallback";
+import { prepareVisionImageInput } from "@/lib/services/vision-image";
 
 const PERSONALITY_PROMPTS: Record<string, string> = {
   friendly: "warm and approachable expression, gentle eyes, relaxed posture",
@@ -45,41 +48,29 @@ const SPECIES_NAMES: Record<number, string> = {
   4: "hamster", 5: "rabbit", 6: "fox", 7: "pomeranian",
 };
 
-// Translate non-ASCII prompts (Korean, Japanese, Chinese, etc.) to English via Grok
-// so image gen models actually understand the scene description.
-export async function translatePromptIfNeeded(prompt: string): Promise<string> {
+// Translate non-ASCII prompts (Korean, Japanese, Chinese, etc.) through the
+// owner-safe text router so image models understand the scene description.
+export async function translatePromptIfNeeded(prompt: string, petId?: number): Promise<string> {
   if (!prompt) return prompt;
   // Pure ASCII — pass through unchanged
-  // eslint-disable-next-line no-control-regex
   if (/^[\x00-\x7F]*$/.test(prompt)) return prompt;
 
-  const key = process.env.GROK_API_KEY;
-  if (!key) {
-    // No translator available — fall back to stripped version (better than nothing)
-    return prompt.replace(/[^\x00-\x7F]/g, " ").replace(/\s+/g, " ").trim();
-  }
-
   try {
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: "grok-3-mini-fast",
-        messages: [
-          {
-            role: "system",
-            content:
-              "Translate the user's scene description into vivid, concrete English suitable for an image/video generation prompt. Preserve the visual specifics (camera angle, action, environment, mood). Output ONLY the translation, no explanation, no quotes.",
-          },
-          { role: "user", content: prompt },
-        ],
-        max_tokens: 240,
-        temperature: 0.2,
-      }),
+    const result = await callLLM({
+      task: "chat",
+      petId,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Translate the user's scene description into vivid, concrete English suitable for an image/video generation prompt. Preserve the visual specifics (camera angle, action, environment, mood). Output ONLY the translation, no explanation, no quotes.",
+        },
+        { role: "user", content: prompt },
+      ],
+      max_tokens: 240,
+      temperature: 0.2,
     });
-    if (!res.ok) throw new Error(`translate ${res.status}`);
-    const data = await res.json();
-    const out = data.choices?.[0]?.message?.content?.trim();
+    const out = generatedEnglishOrNull(result.text);
     if (out) return out;
   } catch (e) {
     console.error("translatePromptIfNeeded failed:", e);
@@ -129,95 +120,69 @@ export function buildPetPrompt(
   return parts.join(", ");
 }
 
-// Use Grok to describe a pet's appearance from their avatar
-export async function describePetAvatar(avatarUrl: string): Promise<string> {
-  const models = ["grok-4-1-fast-non-reasoning", "grok-4-fast-non-reasoning", "grok-3"];
-
-  for (const model of models) {
-    try {
-      const res = await fetch("https://api.x.ai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getGrokKey()}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "image_url", image_url: { url: avatarUrl } },
-                {
-                  type: "text",
-                  text: "Describe this pet's appearance for image generation. Include: species/breed, color, markings, fur type, distinctive features. Output ONLY the description. Example: 'small black and tan chihuahua with large pointed ears, short smooth fur, big round dark eyes'",
-                },
-              ],
-            },
-          ],
-          max_tokens: 150,
-        }),
-      });
-
-      if (!res.ok) {
-        console.error(`Vision model ${model} failed:`, res.status);
-        continue;
-      }
-
-      const data = await res.json();
-      const desc = data.choices?.[0]?.message?.content?.trim();
-      if (desc) return desc;
-    } catch (e) {
-      console.error(`describePetAvatar ${model} error:`, e);
-    }
+// Describe a pet through the metered xAI → OpenAI vision chain.
+export async function describePetAvatar(avatarUrl: string, authenticatedUserId: number): Promise<string> {
+  const visionImage = await prepareVisionImageInput(avatarUrl);
+  try {
+    const description = await callVisionTextWithFallback(
+      {
+        imageUrl: visionImage,
+        prompt: "Describe this pet's appearance for image generation. Include: species/breed, color, markings, fur type, distinctive features. Output ONLY the description. Example: 'small black and tan chihuahua with large pointed ears, short smooth fur, big round dark eyes'",
+        maxTokens: 150,
+      },
+      { reserveAttempt: async () => consumeVisionBudget(authenticatedUserId) },
+    );
+    return generatedEnglishOrNull(description) || "";
+  } catch (error) {
+    if (isLLMBudgetError(error) || isLLMBudgetStoreError(error)) throw error;
+    return "";
   }
-  return "";
 }
 
 // Generate image with reference pet photo — sends image directly to Grok
-export async function generateGrokImageWithRef(prompt: string, referenceUrl: string): Promise<string> {
-  // audit H8: SSRF guard — the reference URL is user-controlled (pet.avatar_url).
-  // Resolve + reject private/loopback/metadata targets before fetching it.
-  if (!(await isFetchableImageUrl(referenceUrl))) {
-    throw new Error("Reference image URL is not allowed");
-  }
-  // Download reference image and convert to base64
-  const imgRes = await fetch(referenceUrl);
-  if (!imgRes.ok) throw new Error("Failed to fetch reference image");
-  const imgBuffer = await imgRes.arrayBuffer();
-  const base64 = Buffer.from(imgBuffer).toString("base64");
-  const mimeType = imgRes.headers.get("content-type") || "image/jpeg";
+export async function generateGrokImageWithRef(
+  prompt: string,
+  referenceUrl: string,
+  userId: number,
+): Promise<string> {
+  // Local private media and inline data are verified directly. External URLs
+  // are SSRF-checked on every redirect, streamed with an 8MB ceiling, and
+  // magic-byte verified before any bytes are sent to the image provider.
+  const referenceImage = await prepareVisionImageInput(referenceUrl, { materializeExternal: true });
 
   const editPrompt = `Create a new image of this EXACT same pet (same breed, colors, markings, features). New scene: ${prompt}`;
+  const key = getGrokKey();
 
-  // Try sending reference image via grok-imagine-image
+  // Count the actual reference-image provider submission. If the provider
+  // rejects that request and we retry text-only below, that second submission
+  // reserves its own attempt as well.
+  await consumeImageBudget(userId, "xai");
   const res = await fetch("https://api.x.ai/v1/images/generations", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${getGrokKey()}`,
+      Authorization: `Bearer ${key}`,
     },
     body: JSON.stringify({
       model: "grok-imagine-image",
       prompt: editPrompt,
       n: 1,
       response_format: "url",
-      image: `data:${mimeType};base64,${base64}`,
+      image: referenceImage,
     }),
   });
 
   if (res.ok) {
-    const data = await res.json();
-    const url = data.data?.[0]?.url;
-    if (url) return saveToBlob(url, "generations");
+    const data = await res.json().catch(() => null);
+    const url = data?.data?.[0]?.url;
+    if (url) return url;
   }
 
   // If image param not supported, log and try without
-  const errText = await res.text().catch(() => "");
-  console.error("Image ref attempt failed:", res.status, errText);
+  console.error("Image ref attempt failed:", res.status);
 
   // Retry with just the prompt (appearance_desc should be in the prompt already)
-  return generateGrokImage(editPrompt);
+  return generateGrokImage(editPrompt, userId);
 }
 
 export function buildAvatarPrompt(
@@ -239,15 +204,24 @@ function getGrokKey(): string {
   return key;
 }
 
-export async function generateGrokImage(prompt: string): Promise<string> {
+export type GrokImageModel = "grok-imagine-image" | "grok-2-image";
+
+/** Return the ephemeral upstream URL. The owning route persists it exactly once. */
+export async function generateGrokImage(
+  prompt: string,
+  userId: number,
+  model: GrokImageModel = "grok-imagine-image",
+): Promise<string> {
+  const key = getGrokKey();
+  await consumeImageBudget(userId, "xai");
   const res = await fetch("https://api.x.ai/v1/images/generations", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${getGrokKey()}`,
+      Authorization: `Bearer ${key}`,
     },
     body: JSON.stringify({
-      model: "grok-imagine-image",
+      model,
       prompt,
       n: 1,
       response_format: "url",
@@ -255,15 +229,13 @@ export async function generateGrokImage(prompt: string): Promise<string> {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Grok image API failed: ${res.status} ${text}`);
+    throw new Error(`Grok image API failed: HTTP ${res.status}`);
   }
 
-  const data = await res.json();
-  const url = data.data?.[0]?.url;
+  const data = await res.json().catch(() => null);
+  const url = data?.data?.[0]?.url;
   if (!url) throw new Error("No image URL returned from Grok");
-  // Save to Vercel Blob for permanent storage
-  return saveToBlob(url, "generations");
+  return url;
 }
 
 export async function submitGrokVideo(
@@ -280,7 +252,10 @@ export async function submitGrokVideo(
   };
 
   if (imageUrl) {
-    body.image_url = imageUrl;
+    // Never hand a private /uploads path (or a third-party URL that can follow
+    // redirects into private networks) to xAI. Materialise verified bytes into
+    // a bounded data URI before the provider request.
+    body.image_url = await prepareVisionImageInput(imageUrl, { materializeExternal: true });
   }
 
   const res = await fetch("https://api.x.ai/v1/videos/generations", {
@@ -293,8 +268,7 @@ export async function submitGrokVideo(
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Grok video API failed: ${res.status} ${text}`);
+    throw new Error(`Grok video API failed: HTTP ${res.status}`);
   }
 
   const data = await res.json();
@@ -316,6 +290,9 @@ export async function checkGrokVideoStatus(requestId: string): Promise<{
   );
 
   if (!res.ok) {
+    if (res.status === 408 || res.status === 429 || res.status >= 500) {
+      return { status: "processing" };
+    }
     return { status: "failed", error: `Status check failed: ${res.status}` };
   }
 
@@ -324,20 +301,20 @@ export async function checkGrokVideoStatus(requestId: string): Promise<{
   if (data.status === "done" || data.status === "complete" || data.status === "completed") {
     const rawVideoUrl = data.video?.url || data.url || data.data?.[0]?.url;
     if (rawVideoUrl) {
-      // Save video to Vercel Blob for permanent storage
-      try {
-        const permanentUrl = await saveToBlob(rawVideoUrl, "videos");
-        return { status: "completed", videoUrl: permanentUrl };
-      } catch (e) {
-        console.error("Video saveToBlob failed:", e);
-        return { status: "completed", videoUrl: rawVideoUrl };
-      }
+      // Status checks are read-only. The owning Generation caller atomically
+      // claims and persists this ephemeral URL exactly once.
+      return { status: "completed", videoUrl: rawVideoUrl };
     }
     return { status: "failed", error: "Video completed but no URL found" };
   }
 
   if (data.status === "failed" || data.status === "expired") {
-    return { status: "failed", error: data.error || `Video generation ${data.status}` };
+    return {
+      status: "failed",
+      error: typeof data.error === "string"
+        ? data.error.slice(0, 500)
+        : `Video generation ${data.status}`,
+    };
   }
 
   // Still processing (status: "pending", "in_progress", "queued", etc.)

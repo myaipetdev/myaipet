@@ -17,9 +17,7 @@ const CATEGORIES = [
   { key: "all", label: "All Items", emoji: "" },
   { key: "skills", label: "Skills", emoji: "" },
   { key: "consumable", label: "Consumables", emoji: "" },
-  { key: "equipment", label: "Equipment", emoji: "" },
   { key: "accessory", label: "Accessories", emoji: "" },
-  { key: "furniture", label: "Furniture", emoji: "" },
   { key: "cosmetic", label: "Cosmetics", emoji: "" },
 ];
 
@@ -35,16 +33,6 @@ export default function Marketplace() {
   const [petSkills, setPetSkills] = useState<any[]>([]);
   const [skillMessage, setSkillMessage] = useState<string | null>(null);
   const [purchaseAnim, setPurchaseAnim] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    if (selectedPet && category === "skills") {
-      loadPetSkills(selectedPet.id);
-    }
-  }, [selectedPet, category]);
 
   const loadPetSkills = async (petId: number) => {
     try {
@@ -71,6 +59,16 @@ export default function Marketplace() {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (selectedPet && category === "skills") {
+      loadPetSkills(selectedPet.id);
+    }
+  }, [selectedPet, category]);
 
   const handleLearnSkill = async (skillKey: string) => {
     if (!selectedPet) return;
@@ -187,6 +185,7 @@ export default function Marketplace() {
           {/* Pet selector */}
           {pets.length > 0 && (
             <select
+              aria-label="Select pet for marketplace purchases"
               value={selectedPet?.id || ""}
               onChange={e => setSelectedPet(pets.find((p: any) => p.id === Number(e.target.value)))}
               style={{
@@ -531,6 +530,9 @@ export default function Marketplace() {
           const isLegendary = item.rarity === "legendary";
           const isEpic = item.rarity === "epic";
           const isPurchasing = purchaseAnim === item.key;
+          const burnAmount = Math.floor(item.price * 0.05);
+          const totalPrice = item.price + burnAmount;
+          const cannotBuy = !selectedPet || purchasing === item.key || (balance !== null && balance < totalPrice);
           return (
             <div key={item.key} style={{
               background: `linear-gradient(145deg, ${rarity.bg}, rgba(255,255,255,0.01))`,
@@ -626,30 +628,42 @@ export default function Marketplace() {
                 <span style={{
                   fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, color: "#f59e0b", fontWeight: 800,
                 }}>
-                  <Icon name="coin" size={14} /> {item.price}
+                  <Icon name="coin" size={14} /> {totalPrice}
                 </span>
+              </div>
+              <div style={{
+                marginTop: 6, textAlign: "right", fontFamily: "monospace",
+                fontSize: 11, color: "rgba(255,255,255,0.3)",
+              }}>
+                {item.price} item + {burnAmount} credit sink
               </div>
 
               <button
                 onClick={() => handlePurchase(item)}
-                disabled={purchasing === item.key || (balance !== null && balance < item.price)}
+                disabled={cannotBuy}
                 style={{
                   width: "100%", marginTop: 14, padding: "11px",
-                  borderRadius: 12, border: "none", cursor: purchasing === item.key ? "wait" : "pointer",
-                  background: balance !== null && balance < item.price
+                  borderRadius: 12, border: "none", cursor: purchasing === item.key ? "wait" : cannotBuy ? "not-allowed" : "pointer",
+                  background: cannotBuy
                     ? "rgba(255,255,255,0.03)"
                     : "linear-gradient(135deg,#f59e0b,#d97706)",
-                  color: balance !== null && balance < item.price
+                  color: cannotBuy
                     ? "rgba(255,255,255,0.2)"
                     : "white",
                   fontFamily: "monospace", fontSize: 13, fontWeight: 700,
                   transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-                  boxShadow: balance !== null && balance >= item.price
+                  boxShadow: selectedPet && balance !== null && balance >= totalPrice
                     ? "0 2px 16px rgba(245,158,11,0.25)"
                     : "none",
                 }}
               >
-                {purchasing === item.key ? "Purchasing..." : balance !== null && balance < item.price ? "Not enough credits" : "Buy"}
+                {purchasing === item.key
+                  ? "Purchasing..."
+                  : !selectedPet
+                    ? "Adopt a pet first"
+                    : balance !== null && balance < totalPrice
+                      ? "Not enough credits"
+                      : `Buy for ${totalPrice}`}
               </button>
             </div>
           );

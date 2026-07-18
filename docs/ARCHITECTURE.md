@@ -1,6 +1,6 @@
 # MY AI PET — Project Architecture
 
-> Updated: 2026-07-13. Reflects the EC2 single-box deployment; the earlier Vercel + FastAPI + token-economy description is obsolete.
+> Updated: 2026-07-18. Reflects the EC2 single-box deployment; the earlier Vercel + FastAPI + token-economy description is obsolete.
 
 ## Overview
 
@@ -13,17 +13,17 @@ MY AI PET is a Web3-native AI pet platform. Users sign in with their wallet (SIW
 | Layer | Technology | Notes |
 |-------|-----------|-------|
 | Web (primary) | Next.js 16, React 19, TypeScript | App Router, `output: "standalone"` — the entire app (UI + API) |
-| Runtime | Node.js under PM2 (`petclaw-web`) behind nginx on EC2 | Deploy via `deploy/ec2-pull.sh`; `docker-compose.yml` is an optional container path |
+| Runtime | Node.js under PM2 (`petclaw-web`) behind nginx on EC2 | A signed immutable artifact is uploaded over the operator PEM and activated by `deploy/ec2-release.sh`; `docker-compose.yml` is local-only |
 | Smart Contracts | Solidity 0.8.28, Hardhat, OpenZeppelin | Deployed on BSC, currently **paused**; Base migration planned (see `/contracts` page) |
-| Database | AWS RDS PostgreSQL (production) | Prisma ORM v7; prod credentials in `web/.env.production` (local `.env` may point at a stale dev DB) |
+| Database | PostgreSQL 16 on the production EC2 host | Prisma ORM v7; `web/.env.production` points to the host-local database. Old RDS migration scripts are historical and unused live. |
 | AI | LLM router (`web/src/lib/llm/router.ts`) | Grok (x.ai) by default; owner-connected BYOK models via `/api/petclaw/models`; images via Grok (+ optional fal.ai pet-LoRA); video via Studio provider catalog |
-| Storage | S3 or local disk (`web/src/lib/storage.ts`) | `STORAGE_PROVIDER=s3` or default local `/opt/petclaw/uploads` served by nginx at `/uploads` |
+| Storage | EC2-local disk (`web/src/lib/storage.ts`) | Live mode is `STORAGE_PROVIDER=local` at `/opt/petclaw/uploads`; nginx proxies `/uploads` to the protected app route. The S3 adapter is not configured live. |
 | Wallet | RainbowKit + wagmi + `siwe` | Wallet signature → JWT (`jose`); no email/password accounts |
 | Payments | USDT (BEP-20) on BSC, verified on-chain | SIWE + USDT only — no Stripe, no cards, no email billing |
 
 **Live URLs:**
 - App: https://app.myaipet.ai (Next.js on EC2)
-- Marketing: https://myaipet.ai — a **separate static copy** served by nginx from `/opt/petclaw/landing-assets` (source in `landing-assets/`; synced manually, not part of the app deploy)
+- Marketing: https://myaipet.ai — static `landing-assets/` from the same signed immutable release selected by `/opt/petclaw/current`; there is no manual production sync
 
 ---
 
@@ -46,8 +46,8 @@ aipet-project/
 │
 ├── packages/petclaw/           # @myaipet/petclaw-sdk — SDK + `petclaw` CLI (git submodule)
 ├── desktop-pet/                # Chrome extension (desktop pet → capped season points)
-├── deploy/                     # EC2 deploy (ec2-pull.sh), RDS setup, env checklist
-├── landing-assets/             # Marketing site source (separate nginx copy in prod)
+├── deploy/                     # signed-artifact EC2 release, verification, backup, env checklist
+├── landing-assets/             # Marketing source included in each immutable release
 ├── tools/                      # demo-video production kit, etc.
 ├── scripts/                    # Utility & maintenance scripts
 └── docs/                       # Documentation
@@ -70,8 +70,8 @@ The former FastAPI backend and legacy React+Vite frontend have been removed; eve
 ┌──────────────────────────────────────────────────────────────┐
 │                     EC2 (single box)                         │
 │                                                              │
-│  nginx ── TLS, reverse proxy, /uploads static,               │
-│   │       myaipet.ai marketing copy (landing-assets)         │
+│  nginx ── TLS, reverse proxy, protected /uploads proxy,      │
+│   │       immutable myaipet.ai landing-assets                 │
 │   ▼                                                          │
 │  Next.js 16 standalone under PM2 ("petclaw-web")             │
 │  ┌──────────────┐  ┌──────────────────────────────────────┐  │
@@ -85,13 +85,16 @@ The former FastAPI backend and legacy React+Vite frontend have been removed; eve
           ┌──────────────┬───────┴────────┬──────────────────┐
           ▼              ▼                ▼                  ▼
 ┌────────────────┐ ┌────────────┐ ┌───────────────┐ ┌────────────────┐
-│ AWS RDS        │ │ Uploads    │ │ LLM router    │ │ BSC RPC        │
-│ PostgreSQL     │ │ local disk │ │ Grok (x.ai)   │ │ USDT payment   │
-│ (Prisma)       │ │ or S3      │ │ fal.ai (LoRA/ │ │ verification;  │
+│ EC2-local      │ │ Uploads    │ │ LLM router    │ │ BSC RPC        │
+│ PostgreSQL 16  │ │ local disk │ │ Grok (x.ai)   │ │ USDT payment   │
+│ (Prisma)       │ │ protected  │ │ fal.ai (LoRA/ │ │ verification;  │
 │                │ │            │ │ video), BYOK  │ │ paused NFT     │
 │                │ │            │ │ models        │ │ contracts      │
 └────────────────┘ └────────────┘ └───────────────┘ └────────────────┘
 ```
+
+PostgreSQL 16 and `/opt/petclaw/uploads` are host-local services inside the
+same EC2 boundary; only the AI-provider and BSC RPC boxes are external.
 
 ---
 
@@ -147,7 +150,7 @@ Two modes are supported:
 1. User chats with the Grok AI counselor.
 2. AI extracts pet attributes (name, species, personality, traits).
 3. `POST /api/pets/adopt-chat` (action: `create`) creates the pet record.
-4. `POST /api/pets/avatar` triggers Grok image generation; avatar saved via the storage layer (S3 or local disk).
+4. `POST /api/pets/avatar` triggers Grok image generation; the live deployment saves the avatar to protected EC2-local storage. The unused S3 adapter remains optional in code.
 5. `PATCH /api/pets/{id}` persists the `avatar_url`.
 
 **Mode B — Photo Upload Adoption:**
@@ -215,7 +218,30 @@ There is a **single API surface**: ~150 route handlers under `web/src/app/api/`,
 - `POST /api/pets/{petId}/agent` runs the pet as an agent; responds with SSE when `Accept: text/event-stream` or `?stream=1`.
 - `runToolAgent` (`lib/petclaw/agent/tool-agent.ts`) does native tool-calling via `callLLMWithTools` with connector tools: `web_search`, `web_read` (SSRF-guarded), `wikipedia_lookup`, `crypto_price`, `recall_memory`.
 - A plan-execute loop (`lib/petclaw/agent/plan-execute.ts`) and GBrain memory retrieval (`lib/petclaw/memory/retrieval.ts`) back longer tasks.
-- All LLM calls route through `callLLM({task})` in `lib/llm/router.ts`; owners can connect their own encrypted BYOK models at `/api/petclaw/models`.
+- Core text paths (pet/adoption chat, Pet Date, connected-platform replies,
+  persona analysis, daydream/consolidation, skills and agent loops) route through
+  `callLLM({task})` in `lib/llm/router.ts`; owners can connect their own encrypted
+  BYOK models at `/api/petclaw/models`.
+- Platform-funded text defaults to xAI and falls back once to OpenAI when the
+  primary has a network/timeout, spend-limit, HTTP 429, or 5xx failure. HTTP
+  authentication/permission and input errors do **not** fall back. Configure
+  `LLM_PLATFORM_PROVIDER`, `LLM_PLATFORM_FALLBACK_PROVIDER`, and
+  `LLM_REQUEST_TIMEOUT_MS`; model env overrides are validated against the
+  code-owned allowlist in
+  `lib/llm/platform-resilience.ts`. Owner BYOK requests never use this fallback.
+- Image/video routes stay on their image/video backends (xAI/FAL). A text
+  provider is never used as a substitute for failed media generation.
+
+Production env example:
+
+```dotenv
+GROK_API_KEY=xai-...
+OPENAI_API_KEY=sk-...
+LLM_PLATFORM_PROVIDER=xai
+LLM_PLATFORM_FALLBACK_PROVIDER=openai  # xai | openai | none
+LLM_OPENAI_MODEL=gpt-5.6-luna          # optional; must be allowlisted
+LLM_REQUEST_TIMEOUT_MS=20000           # allowed range: 1000–120000
+```
 
 ### PetClaw skills
 
@@ -234,9 +260,10 @@ The desktop-pet extension reports care actions to `POST /api/petclaw/engagement`
 
 ## Deployment
 
-- **App:** EC2 single box at `/opt/petclaw` — `bash deploy/ec2-pull.sh` does git reset to `origin/main`, `npm ci`, `prisma generate` + `prisma migrate deploy` (sourcing `web/.env.production`, which holds the RDS URL), `next build` (standalone), PM2 reload of `petclaw-web`, then a smoke curl against `https://app.myaipet.ai`.
-- **Marketing:** `myaipet.ai` is a separate nginx-served static copy at `/opt/petclaw/landing-assets` — updating the app does **not** update it; sync it explicitly from `landing-assets/`.
-- **Database:** production is AWS RDS PostgreSQL (see `deploy/setup-rds.sh`, `deploy/migrate-neon-to-rds.sh` for the Neon→RDS migration history).
+- **App:** Build and sign a clean immutable release artifact off-host, upload its archive/manifest/signature/checksum over the operator PEM, verify it into root-owned `/opt/petclaw/verified`, then run `deploy/ec2-release.sh`. The script builds and smokes a candidate port before atomically switching `/opt/petclaw/current`; production never pulls from GitHub.
+- **Marketing:** `landing-assets/` ships in that same signed artifact. Nginx serves it through the current release pointer, so app and landing rollback together; no manual production copy is used.
+- **Database:** production is PostgreSQL 16 on the same EC2 host. `deploy/setup-rds.sh` and `deploy/migrate-neon-to-rds.sh` document an abandoned/historical RDS path and are not part of the live release.
+- **Uploads:** production uses `/opt/petclaw/uploads` on the EC2 host, reachable only through the protected app route. S3 support is an inactive adapter, not current production storage.
 
 ---
 

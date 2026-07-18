@@ -10,7 +10,7 @@ const SECTIONS = [
   { key: "arena", label: "Arena", icon: "sword" },
   { key: "items", label: "Items & Shop", icon: "shopping-cart" },
   { key: "rewards", label: "Standing", icon: "trophy" },
-  { key: "economy", label: "pts Economy", icon: "coin" },
+  { key: "economy", label: "Credits & Points", icon: "coin" },
 ];
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -74,11 +74,11 @@ function OverviewSection() {
           MY AI PET is a Web3 companion raising game where you adopt, raise, and battle AI-powered pets.
           Every interaction shapes your pet&apos;s personality, stats, and evolution path.
         </P>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginTop: 8 }}>
+        <div className="guide-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginTop: 8 }}>
           {[
             { icon: "chicken", title: "Adopt", desc: "Create your unique AI pet with custom personality and appearance" },
             { icon: "heart", title: "Raise", desc: "Feed, play, train — every interaction matters" },
-            { icon: "sword", title: "Battle", desc: "Compete in the Arena for glory and pts rewards" },
+            { icon: "sword", title: "Battle", desc: "Compete in the Arena for Season Points, EXP and first-clear rewards" },
           ].map(item => (
             <div key={item.title} style={{
               padding: "16px", borderRadius: 14,
@@ -95,7 +95,7 @@ function OverviewSection() {
 
       <SectionCard title="🎮 Game Loop">
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-          {["Adopt Pet", "→", "Interact Daily", "→", "Level Up", "→", "Evolve", "→", "Arena Battle", "→", "Earn pts", "→", "Buy Items", "↩"].map((step, i) => (
+          {["Adopt Pet", "→", "Interact Daily", "→", "Level Up", "→", "Evolve", "→", "Arena Battle", "→", "Earn recognition", "→", "Use credits", "↩"].map((step, i) => (
             <span key={i} style={{
               fontFamily: "mono", fontSize: step === "→" || step === "↩" ? 14 : 11,
               fontWeight: step === "→" || step === "↩" ? 400 : 600,
@@ -129,7 +129,7 @@ function RaisingSection() {
 
       <SectionCard title="📊 Stats Guide">
         <P>Your pet has 5 core stats. Keep them balanced for optimal growth!</P>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div className="guide-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
           {[
             { icon: "heart", name: "Happiness", desc: "Affects mood and battle HP. Keep above 40 to avoid sadness.", color: "#f472b6" },
             { icon: "electric", name: "Energy", desc: "Required for Play, Walk, Train. Recovers slowly over time.", color: "#60a5fa" },
@@ -159,7 +159,7 @@ function RaisingSection() {
             "Feed before hunger hits 80 to prevent mood drops.",
             "Talk and Pet cost almost no energy — great for when energy is low.",
             "Caring for your pet earns Season Points, capped daily — consistency matters!",
-            "Level-up grants a bonus +50 Season Points.",
+            "An eligible level-up from free care grants +50 Season Points.",
           ].map((tip, i) => (
             <div key={i} style={{
               display: "flex", gap: 8, alignItems: "flex-start",
@@ -179,14 +179,14 @@ function EvolutionSection() {
   return (
     <>
       <SectionCard title="🌟 Evolution Stages">
-        <P>Your pet evolves through 5 stages. Each evolution unlocks new battle skills and grants 50 credits!</P>
+        <P>Your pet evolves through 5 stages. Each completed evolution grants 50 credits; battle skills are learned separately through starter grants, Adventure drops, and the Skill Shop.</P>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, flexWrap: "wrap", justifyContent: "center" }}>
           {[
-            { icon: "open-box", name: "Baby", lv: 1, skills: "—" },
-            { icon: "grass", name: "Young", lv: 5, skills: "Fetch, Sit" },
-            { icon: "sparkling", name: "Adult", lv: 10, skills: "Guard, Trick" },
-            { icon: "crown", name: "Elder", lv: 20, skills: "Inspire, Heal" },
-            { icon: "trophy", name: "Legendary", lv: 35, skills: "Transcend" },
+            { icon: "open-box", name: "Baby", lv: 1, reward: "Starting stage" },
+            { icon: "grass", name: "Young", lv: 5, reward: "+50 credits" },
+            { icon: "sparkling", name: "Adult", lv: 10, reward: "+50 credits" },
+            { icon: "crown", name: "Elder", lv: 20, reward: "+50 credits" },
+            { icon: "trophy", name: "Legendary", lv: 35, reward: "+50 credits" },
           ].map((stage, i, arr) => (
             <div key={stage.name} style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{
@@ -197,7 +197,7 @@ function EvolutionSection() {
                 <div style={{ marginBottom: 4 }}><Icon name={stage.icon} size={28} /></div>
                 <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>{stage.name}</div>
                 <div style={{ fontFamily: "mono", fontSize: 13, color: "#b45309" }}>Lv.{stage.lv}+</div>
-                <div style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.4)", marginTop: 4 }}>{stage.skills}</div>
+                <div style={{ fontFamily: "mono", fontSize: 10, color: "rgba(26,26,46,0.4)", marginTop: 4 }}>{stage.reward}</div>
               </div>
               {i < arr.length - 1 && <span style={{ fontSize: 16, color: "#d97706" }}>→</span>}
             </div>
@@ -206,15 +206,13 @@ function EvolutionSection() {
       </SectionCard>
 
       <SectionCard title="⚡ Battle Skills">
-        <P>Skills are used in Arena battles. Each skill has different energy costs and effects.</P>
+        <P>Pets can equip up to four skills. Normal and pet-element skills become available by level; some are starter grants, drops, or credit-priced Skill Shop unlocks.</P>
         <StatTable rows={[
-          ["Fetch", "Young (Lv.5)", "Basic attack — low energy cost, reliable damage"],
-          ["Sit", "Young (Lv.5)", "Defensive stance — reduces incoming damage"],
-          ["Guard", "Adult (Lv.10)", "Strong defense — blocks heavy attacks"],
-          ["Trick", "Adult (Lv.10)", "Special attack — high damage, higher energy cost"],
-          ["Inspire", "Elder (Lv.20)", "Team buff — boosts ATK temporarily"],
-          ["Heal", "Elder (Lv.20)", "Restore HP — crucial for survival"],
-          ["Transcend", "Legendary (Lv.35)", "Ultimate move — devastating damage, very high cost"],
+          ["Starter skills", "Level 1", "Scratch plus one Normal or element skill"],
+          ["Learnable skills", "Level-gated", "Normal skills and skills matching your pet's element"],
+          ["Adventure / Arena", "Drops", "Winning can unlock eligible unlearned skills"],
+          ["Skill Shop", "Credits", "Priced skills show their exact cost before purchase"],
+          ["Skill upgrades", "Credits", "Cost scales with current level and rarity"],
         ]} />
       </SectionCard>
     </>
@@ -228,7 +226,7 @@ function ArenaSection() {
         <P>
           Battle other trainers&apos; pets in turn-based combat! Your pet&apos;s stats determine battle power.
         </P>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+        <div className="guide-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 16 }}>
           {[
             { label: "HP", desc: "Based on level + happiness", icon: "heart" },
             { label: "ATK", desc: "Based on evolution stage + energy", icon: "sword" },
@@ -250,11 +248,11 @@ function ArenaSection() {
         </div>
       </SectionCard>
 
-      <SectionCard title="🏆 Arena Rewards">
+      <SectionCard title="🏆 Ranked Arena Base Rewards">
         <StatTable rows={[
-          ["🏅 Victory", "+30 Season Points, +25 EXP", "Win the battle"],
-          ["💪 Defeat", "+10 Season Points, +10 EXP", "You still earn!"],
-          ["⬆️ Level Up Bonus", "+50 Season Points", "When your pet levels up"],
+          ["🏅 Victory", "+35 Season Points, +30 EXP", "Before any eligible historical growth multiplier"],
+          ["💪 Defeat", "+10 Season Points, +12 EXP", "Before any eligible historical growth multiplier"],
+          ["📅 Daily limit", "30 claimed battles per pet", "Ranked Arena and PvE share the claim counter"],
         ]} />
         <div style={{
           marginTop: 14, padding: "12px 16px", borderRadius: 12,
@@ -274,46 +272,34 @@ function ItemsSection() {
   return (
     <>
       <SectionCard title="🛒 Item Shop">
-        <P>Buy items with pts credits to boost your pet&apos;s stats, speed up leveling, or equip cool gear.</P>
+        <P>Buy active launch items with credits. Season Points are recognition only and cannot be spent.</P>
 
         <div style={{ fontFamily: "mono", fontSize: 13, fontWeight: 600, color: "rgba(26,26,46,0.5)", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.1em" }}>
           Consumables — Use instantly
         </div>
         <StatTable rows={[
-          ["🧪 EXP Potion (S)", "50 pts", "EXP +100"],
-          ["🧪 EXP Potion (M)", "120 pts", "EXP +300"],
-          ["🧬 EXP Potion (L)", "280 pts", "EXP +800"],
-          ["🌟 Mega EXP Elixir", "600 pts", "EXP +2000 (Legendary)"],
-          ["⚡ Energy Drink", "30 pts", "Energy +100"],
-          ["🍱 Premium Feast", "45 pts", "Hunger -80, Happiness +25"],
-          ["🎂 Happiness Cake", "60 pts", "Happiness +40"],
-          ["💍 Bond Ring", "150 pts", "Bond +35"],
-          ["💎 Full Restore", "300 pts", "All stats MAX (Epic)"],
+          ["🧪 EXP Potion (S)", "50 credits", "EXP +100"],
+          ["🧪 EXP Potion (M)", "120 credits", "EXP +300"],
+          ["🧬 EXP Potion (L)", "280 credits", "EXP +800"],
+          ["🌟 Mega EXP Elixir", "600 credits", "EXP +2000 (Legendary)"],
+          ["⚡ Energy Drink", "30 credits", "Restores Energy to 100"],
+          ["🍱 Premium Feast", "45 credits", "Hunger -80, Happiness +25"],
+          ["🎂 Happiness Cake", "60 credits", "Happiness +40"],
+          ["💍 Bond Ring", "150 credits", "Bond +35"],
+          ["💎 Full Restore", "300 credits", "Happiness/Energy 100, Hunger -100, Bond +20"],
         ]} />
 
         <div style={{ fontFamily: "mono", fontSize: 13, fontWeight: 600, color: "rgba(26,26,46,0.5)", marginBottom: 10, marginTop: 20, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-          Equipment & Accessories — Equip to pet
+          Available accessories & cosmetics
         </div>
         <StatTable rows={[
-          ["🏋️ Training Weights", "100 pts", "Boost EXP gain"],
-          ["🍀 Lucky Charm", "200 pts", "Boost happiness gain"],
-          ["🛡️ Battle Armor", "350 pts", "Arena DEF boost (Epic)"],
-          ["⚔️ Dragon Blade", "500 pts", "Arena ATK boost (Legendary)"],
-          ["🎀 Cute Bow", "25 pts", "Cosmetic + Happiness +3"],
-          ["🕶️ Cool Sunglasses", "80 pts", "Style points"],
-          ["👑 Royal Crown", "800 pts", "Ultimate flex (Legendary)"],
+          ["🎀 Cute Bow", "25 credits", "Cosmetic + Happiness +3"],
+          ["🕶️ Cool Sunglasses", "80 credits", "Visual-only accessory"],
+          ["👑 Royal Crown", "800 credits", "Visual-only accessory (Legendary)"],
+          ["✨ Sparkle Aura", "150 credits", "Visual-only profile accent"],
+          ["🔥 Flame Accent", "300 credits", "Visual-only profile accent (Epic)"],
         ]} />
-
-        <div style={{ fontFamily: "mono", fontSize: 13, fontWeight: 600, color: "rgba(26,26,46,0.5)", marginBottom: 10, marginTop: 20, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-          Furniture & Cosmetics
-        </div>
-        <StatTable rows={[
-          ["🛏️ Cozy Bed", "40 pts", "Energy recovery boost"],
-          ["🏰 Play Tower", "90 pts", "Happiness boost"],
-          ["🪴 Zen Garden", "400 pts", "All stats boost (Epic)"],
-          ["✨ Sparkle Aura", "150 pts", "Visual effect"],
-          ["🔥 Flame Trail", "300 pts", "Visual effect (Epic)"],
-        ]} />
+        <P>Passive equipment and furniture are hidden at launch until their effects are implemented.</P>
       </SectionCard>
 
       <SectionCard title="💎 Rarity System">
@@ -343,7 +329,7 @@ function RewardsSection() {
       </SectionCard>
 
       <SectionCard title="📈 How Points Work">
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div className="guide-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
           {[
             { source: "Care & create (free)", pts: "capped daily" },
             { source: "Level-up bonus", pts: "+50 pts" },
@@ -368,18 +354,18 @@ function RewardsSection() {
 function EconomySection() {
   return (
     <>
-      <SectionCard title="🪙 Points Economy">
+      <SectionCard title="🪙 Credits and Season Points are separate">
         <P>
-          Points are an in-game recognition score — gained from interactions, evolutions,
-          and battles, and spent on items, slots, and premium actions. They are
-          loyalty-only: no token, no cash value, and no redemption path — now or planned —
-          and confer no claim on equity.
+          Season Points are a non-financial recognition score and are never spent.
+          Credits are the utility balance used for active shop items, pet slots, skill
+          upgrades, and Studio generation. Neither balance is a token or a claim on equity,
+          and credits never convert into Season Points.
         </P>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+        <div className="guide-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 16 }}>
           <div style={{ padding: "14px", borderRadius: 12, background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.15)" }}>
-            <div style={{ fontFamily: "mono", fontSize: 13, color: "#16a34a", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Earn pts</div>
+            <div style={{ fontFamily: "mono", fontSize: 13, color: "#16a34a", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Season Points · recognition</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {["Evolution rewards (+50 credits)", "Daily interactions", "Arena victories", "Achievement milestones"].map(item => (
+              {["Eligible free interactions", "Ranked Arena and PvE", "Creation and community actions", "Daily caps limit repeatable sources"].map(item => (
                 <div key={item} style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.55)", display: "flex", gap: 4, alignItems: "center" }}>
                   <span style={{ color: "#16a34a" }}>+</span> {item}
                 </div>
@@ -387,9 +373,9 @@ function EconomySection() {
             </div>
           </div>
           <div style={{ padding: "14px", borderRadius: 12, background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)" }}>
-            <div style={{ fontFamily: "mono", fontSize: 13, color: "#dc2626", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Spend pts</div>
+            <div style={{ fontFamily: "mono", fontSize: 13, color: "#dc2626", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Credits · utility balance</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {["Shop items & consumables", "Unlock pet slots", "Equipment & cosmetics", "Premium features"].map(item => (
+              {["Active shop items", "Pet slots and skill upgrades", "Studio image/video generation", "Some earned-credit grants are capped daily"].map(item => (
                 <div key={item} style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.55)", display: "flex", gap: 4, alignItems: "center" }}>
                   <span style={{ color: "#dc2626" }}>-</span> {item}
                 </div>
@@ -399,13 +385,13 @@ function EconomySection() {
         </div>
       </SectionCard>
 
-      <SectionCard title="💳 Credit Packages">
-        <P>Purchase credits with USDT to spend in-game. Credits convert to pts on use.</P>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+      <SectionCard title="💳 Credit package reference — purchases paused">
+        <P>Credit checkout is paused for launch. The rates below are reference pricing only; no purchase button is available while payments are disabled.</P>
+        <div className="guide-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
           {[
-            { name: "Explorer", price: "$5", credits: "100", pet: "500 pts", color: "#4ade80" },
-            { name: "Creator", price: "$20", credits: "500", pet: "2,500 pts", color: "#60a5fa" },
-            { name: "Breeder", price: "$50", credits: "2,000", pet: "10,000 pts", color: "#c084fc" },
+            { name: "Explorer", price: "$5", credits: "100", color: "#4ade80" },
+            { name: "Creator", price: "$20", credits: "500", color: "#60a5fa" },
+            { name: "Breeder", price: "$50", credits: "2,000", color: "#c084fc" },
           ].map(plan => (
             <div key={plan.name} style={{
               padding: "18px", borderRadius: 14, textAlign: "center",
@@ -414,7 +400,6 @@ function EconomySection() {
               <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, fontWeight: 700, color: "#1a1a2e", marginBottom: 4 }}>{plan.name}</div>
               <div style={{ fontFamily: "mono", fontSize: 22, fontWeight: 700, color: plan.color, marginBottom: 4 }}>{plan.price}</div>
               <div style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.5)" }}>{plan.credits} credits</div>
-              <div style={{ fontFamily: "mono", fontSize: 13, color: "#b45309", marginTop: 2 }}>{plan.pet}</div>
             </div>
           ))}
         </div>
@@ -438,7 +423,13 @@ export default function Guide() {
   const ActiveSection = SECTION_COMPONENTS[active] || OverviewSection;
 
   return (
-    <div style={{ padding: "120px 40px 60px", maxWidth: 960, margin: "0 auto" }}>
+    <div className="guide-shell" style={{ padding: "120px 40px 60px", maxWidth: 960, margin: "0 auto" }}>
+      <style>{`
+        @media (max-width: 720px) {
+          .guide-shell { padding: 92px 16px 40px !important; }
+          .guide-grid-2, .guide-grid-3 { grid-template-columns: minmax(0, 1fr) !important; }
+        }
+      `}</style>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h2 style={{
@@ -453,13 +444,13 @@ export default function Guide() {
       </div>
 
       {/* Tab Navigation */}
-      <div style={{
+      <div role="tablist" aria-label="Game guide sections" style={{
         display: "flex", gap: 4, marginBottom: 24, padding: 3, borderRadius: 14,
         background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)",
         overflowX: "auto", flexWrap: "wrap",
       }}>
         {SECTIONS.map(s => (
-          <button key={s.key} onClick={() => setActive(s.key)} style={{
+          <button key={s.key} type="button" role="tab" aria-selected={active === s.key} aria-controls={`guide-panel-${s.key}`} onClick={() => setActive(s.key)} style={{
             background: active === s.key ? "rgba(251,191,36,0.12)" : "transparent",
             border: active === s.key ? "1px solid rgba(251,191,36,0.2)" : "1px solid transparent",
             borderRadius: 10, padding: "8px 14px", cursor: "pointer",
@@ -475,7 +466,9 @@ export default function Guide() {
       </div>
 
       {/* Content */}
-      <ActiveSection />
+      <div id={`guide-panel-${active}`} role="tabpanel">
+        <ActiveSection />
+      </div>
     </div>
   );
 }

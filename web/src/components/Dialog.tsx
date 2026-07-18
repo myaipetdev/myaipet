@@ -17,7 +17,7 @@
  * Mount <DialogHost /> once near <ToastHost /> in App.tsx.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 interface ConfirmReq {
   kind: "confirm"; id: number;
@@ -57,6 +57,17 @@ export function promptDialog(opts: {
 export default function DialogHost() {
   const [req, setReq] = useState<DialogReq | null>(null);
   const [input, setInput] = useState("");
+  const panelRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const titleId = useId();
+  const bodyId = useId();
+
+  const finish = useCallback((value: boolean | string | null) => {
+    if (!req) return;
+    if (req.kind === "confirm") req.resolve(value as boolean);
+    else req.resolve(value as string | null);
+    setReq(null);
+  }, [req]);
 
   useEffect(() => {
     const onReq = (r: DialogReq) => {
@@ -69,22 +80,49 @@ export default function DialogHost() {
 
   useEffect(() => {
     if (!req) return;
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      const target = returnFocusRef.current;
+      requestAnimationFrame(() => target?.focus());
+    };
+  }, [req]);
+
+  useEffect(() => {
+    if (!req) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") finish(req.kind === "confirm" ? false : null);
-      if (e.key === "Enter" && req.kind === "prompt") finish(input);
+      if (e.key === "Escape") {
+        e.preventDefault();
+        finish(req.kind === "confirm" ? false : null);
+        return;
+      }
+      if (e.key === "Enter" && req.kind === "prompt" && input.trim() && !e.isComposing) {
+        e.preventDefault();
+        finish(input);
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [req, input]);
+  }, [finish, input, req]);
 
   if (!req) return null;
-
-  const finish = (value: boolean | string | null) => {
-    if (req.kind === "confirm") req.resolve(value as boolean);
-    else req.resolve(value as string | null);
-    setReq(null);
-  };
 
   const danger = req.kind === "confirm" && req.danger;
   const accent = danger ? "#C0392B" : "#BE4F28";
@@ -94,8 +132,6 @@ export default function DialogHost() {
 
   return (
     <div
-      role="dialog"
-      aria-modal="true"
       onMouseDown={(e) => { if (e.target === e.currentTarget) finish(req.kind === "confirm" ? false : null); }}
       style={{
         position: "fixed", inset: 0, zIndex: 10_001,
@@ -105,6 +141,11 @@ export default function DialogHost() {
       }}
     >
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={req.body ? bodyId : undefined}
         onMouseDown={(e) => e.stopPropagation()}
         style={{
           width: "100%", maxWidth: 400, background: "#FBF6EC", borderRadius: 18,
@@ -113,11 +154,11 @@ export default function DialogHost() {
           fontFamily: "var(--ed-body)",
         }}
       >
-        <div style={{ fontSize: 17, fontWeight: 800, color: "#211A12", letterSpacing: "-0.02em", lineHeight: 1.35, fontFamily: "var(--ed-disp)" }}>
+        <div id={titleId} style={{ fontSize: 17, fontWeight: 800, color: "#211A12", letterSpacing: "-0.02em", lineHeight: 1.35, fontFamily: "var(--ed-disp)" }}>
           {req.title}
         </div>
         {req.body && (
-          <div style={{ fontSize: 13.5, color: "#7A6E5A", marginTop: 8, lineHeight: 1.55 }}>
+          <div id={bodyId} style={{ fontSize: 13.5, color: "#7A6E5A", marginTop: 8, lineHeight: 1.55 }}>
             {req.body}
           </div>
         )}
@@ -129,6 +170,7 @@ export default function DialogHost() {
             onChange={(e) => setInput(e.target.value)}
             maxLength={req.maxLength}
             placeholder={req.placeholder || ""}
+            aria-label={`Response for ${req.title}`}
             style={{
               width: "100%", boxSizing: "border-box", marginTop: 14,
               padding: "10px 13px", borderRadius: 10, outline: "none",
@@ -141,6 +183,7 @@ export default function DialogHost() {
 
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 20 }}>
           <button
+            type="button"
             onClick={() => finish(req.kind === "confirm" ? false : null)}
             style={{
               padding: "9px 16px", borderRadius: 10, cursor: "pointer",
@@ -150,6 +193,7 @@ export default function DialogHost() {
             }}
           >{cancelLabel}</button>
           <button
+            type="button"
             autoFocus={req.kind === "confirm"}
             onClick={() => finish(req.kind === "confirm" ? true : input)}
             disabled={promptTooShort}

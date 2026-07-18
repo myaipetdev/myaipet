@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
+import { publicGenerationWhere } from "@/lib/publicFeed";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
@@ -15,8 +16,8 @@ export async function POST(
 
     const { generationId } = await params;
 
-    const generation = await prisma.generation.findUnique({
-      where: { id: Number(generationId) },
+    const generation = await prisma.generation.findFirst({
+      where: await publicGenerationWhere({ id: Number(generationId) }),
     });
 
     if (!generation) {

@@ -11,26 +11,27 @@ import {
   type InteractionType,
 } from "@/lib/petMechanics";
 import { rateLimit } from "@/lib/rateLimit";
-import { enforcePaywall } from "@/lib/paywall";
+import { executePetActionWithPaywall } from "@/lib/paywall";
 import { NextRequest, NextResponse } from "next/server";
 
-// Which interaction types are gated by daily free cap + USDT paywall
-// (feed/play are unlimited-cost gameplay, so they get free tier + paid overflow.
-// Other interactions (talk/pet/walk/train) stay free — they're chat/emotional UX.)
+// Feed/play use a daily free allowance and paid overflow. Emotional actions stay free.
 const PAID_INTERACTION_MAP: Record<string, string> = {
   feed: "feed_extra",
   play: "play_extra",
 };
 
-// SCRUM-59: minimum gap between interactions to prevent point/exp farming
+// Minimum authoritative gap between interactions to prevent point/exp farming.
 const INTERACT_COOLDOWN_MS = 1500;
-
 const VALID_TYPES = Object.keys(BASE_EFFECTS) as InteractionType[];
 
 const SPECIES_MAP: Record<number, string> = {
   0: "cat", 1: "dog", 2: "parrot", 3: "turtle",
   4: "hamster", 5: "rabbit", 6: "fox", 7: "pomeranian",
 };
+
+type InteractionDomainFailure =
+  | { kind: "cooldown"; retryInMs: number }
+  | { kind: "blocked"; reason: string };
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -40,15 +41,15 @@ function generateResponse(
   petName: string,
   species: string,
   personality: string,
-  interactionType: string
+  interactionType: string,
 ): string {
   const responses: Record<string, string[]> = {
     feed: [`${petName} happily munches on the food!`, `${petName} beams with joy at the delicious meal!`, `The ${species} gobbles up every last bite!`],
     play: [`${petName} bounces around excitedly!`, `The ${personality} ${species} plays enthusiastically!`, `${petName} is having so much fun playing with you!`],
     talk: [`${petName} listens intently and tilts their head.`, `The ${species} seems to understand every word!`, `${petName} responds with a cheerful sound!`],
-    pet:  [`${petName} nuzzles against your hand.`, `The ${species} relaxes contentedly as you pet them.`, `${petName} closes their eyes in bliss!`],
+    pet: [`${petName} nuzzles against your hand.`, `The ${species} relaxes contentedly as you pet them.`, `${petName} closes their eyes in bliss!`],
     walk: [`${petName} trots happily beside you!`, `The ${personality} ${species} explores everything on the walk!`, `${petName} found something interesting on the path!`],
-    train:[`${petName} focuses hard and learns something new!`, `The ${species} is getting smarter with each session!`, `${petName} nailed the training exercise!`],
+    train: [`${petName} focuses hard and learns something new!`, `The ${species} is getting smarter with each session!`, `${petName} nailed the training exercise!`],
   };
   const options = responses[interactionType] || [`${petName} responds happily!`];
   return options[Math.floor(Math.random() * options.length)];
@@ -56,238 +57,307 @@ function generateResponse(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ petId: string }> }
+  { params }: { params: Promise<{ petId: string }> },
 ) {
   const user = await getUser(req);
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // SCRUM-67: rate limit
   const rl = rateLimit(req, { key: "pet-interact", limit: 60, windowMs: 60_000 });
   if (!rl.ok) return rl.response;
 
   const { petId } = await params;
-  const body = await req.json();
-  const interaction_type = body.interaction_type as InteractionType;
-
-  if (!interaction_type || !VALID_TYPES.includes(interaction_type)) {
-    return NextResponse.json(
-      { error: `Invalid interaction_type. Valid types: ${VALID_TYPES.join(", ")}` },
-      { status: 400 }
-    );
-  }
-
-  const pet = await prisma.pet.findFirst({
-    where: { id: Number(petId), user_id: user.id, is_active: true },
-  });
-
-  if (!pet) {
+  const parsedPetId = /^[1-9][0-9]*$/.test(petId) ? Number(petId) : Number.NaN;
+  if (!Number.isSafeInteger(parsedPetId)) {
     return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   }
 
-  // SCRUM-59: enforce per-pet cooldown — prevents repeated calls farming points/exp.
-  // MUST run BEFORE the paywall: enforcePaywall irreversibly consumes a USDT
-  // receipt, so rejecting AFTER it would charge the user for a blocked action.
-  if (pet.last_interaction_at) {
-    const sinceMs = Date.now() - new Date(pet.last_interaction_at).getTime();
-    if (sinceMs < INTERACT_COOLDOWN_MS) {
+  const body = await req.json().catch(() => null);
+  const interactionType = body && typeof body === "object"
+    ? (body as { interaction_type?: unknown }).interaction_type as InteractionType | undefined
+    : undefined;
+  if (!interactionType || !VALID_TYPES.includes(interactionType)) {
+    return NextResponse.json(
+      { error: `Invalid interaction_type. Valid types: ${VALID_TYPES.join(", ")}` },
+      { status: 400 },
+    );
+  }
+
+  const actionKey = PAID_INTERACTION_MAP[interactionType];
+  const txHash = actionKey ? req.nextUrl.searchParams.get("tx_hash") || undefined : undefined;
+  const action = await executePetActionWithPaywall<
+    {
+      updatedPet: any;
+      paidAction: boolean;
+      responseText: string;
+      effects: { happiness: number; energy: number; hunger: number; experience: number; bond: number };
+      leveledUp: boolean;
+      combo: any;
+      requestFulfilled: any;
+      nextRequest: any;
+    },
+    InteractionDomainFailure
+  >(
+    prisma,
+    {
+      userId: user.id,
+      petId: parsedPetId,
+      actionKey,
+      txHash,
+    },
+    {
+      validate: (pet, now) => {
+        if (pet.last_interaction_at) {
+          const sinceMs = now.getTime() - new Date(pet.last_interaction_at).getTime();
+          if (sinceMs < INTERACT_COOLDOWN_MS) {
+            return {
+              kind: "cooldown",
+              retryInMs: Math.max(0, INTERACT_COOLDOWN_MS - sinceMs),
+            };
+          }
+        }
+        const blocked = gateInteraction(interactionType, {
+          energy: pet.energy,
+          hunger: pet.hunger,
+          happiness: pet.happiness,
+        });
+        return blocked ? { kind: "blocked", reason: blocked } : null;
+      },
+      apply: async (tx, pet, access, now) => {
+        const paidAction = access?.paid === true;
+        const base = BASE_EFFECTS[interactionType];
+        const adjusted = applyPersonality(interactionType, pet.personality_type, base);
+
+        const rawMods: any = pet.personality_modifiers;
+        const mods: any = rawMods && typeof rawMods === "object" && !Array.isArray(rawMods)
+          ? rawMods
+          : {};
+        const history: InteractionType[] = Array.isArray(mods.interaction_history)
+          ? mods.interaction_history
+          : [];
+        const pendingRequest = mods.pending_request;
+        const combosUnlocked: string[] = Array.isArray(mods.combos_unlocked)
+          ? mods.combos_unlocked
+          : [];
+
+        let requestFulfilled: {
+          name: string;
+          bonus: { happiness: number; bond: number; exp: number };
+        } | null = null;
+        let stillValidRequest = pendingRequest;
+        if (pendingRequest?.type) {
+          const expired = pendingRequest.expiresAt
+            && new Date(pendingRequest.expiresAt).getTime() < now.getTime();
+          if (expired) {
+            stillValidRequest = null;
+          } else if (pendingRequest.type === interactionType) {
+            requestFulfilled = {
+              name: "Request Fulfilled",
+              bonus: pendingRequest.reward || { happiness: 10, bond: 5, exp: 5 },
+            };
+            stillValidRequest = null;
+          }
+        }
+
+        const newHistory = [...history, interactionType].slice(-8);
+        const combo = detectCombo(newHistory);
+        const persistedHistory = combo ? [] : newHistory;
+        let comboBonus = { happiness: 0, energy: 0, hunger: 0, exp: 0, bond: 0 };
+        if (combo) {
+          comboBonus = { ...comboBonus, ...combo.bonusEffects };
+        }
+
+        const intimacyMult = intimacyMultiplier(pet.personality_type, interactionType);
+        const bondGain = Math.round(adjusted.bond * intimacyMult);
+        const reqHap = requestFulfilled?.bonus.happiness || 0;
+        const reqBond = requestFulfilled?.bonus.bond || 0;
+        const reqExp = requestFulfilled?.bonus.exp || 0;
+
+        const newHappiness = clamp(pet.happiness + adjusted.happiness + comboBonus.happiness + reqHap, 0, 100);
+        const newEnergy = clamp(pet.energy + adjusted.energy + comboBonus.energy, 0, 100);
+        const newHunger = clamp(pet.hunger + adjusted.hunger + comboBonus.hunger, 0, 100);
+        const newExperience = pet.experience + adjusted.exp + comboBonus.exp + reqExp;
+        const newBondLevel = clamp(pet.bond_level + bondGain + comboBonus.bond + reqBond, 0, 100);
+        const newLevel = Math.floor(newExperience / 100) + 1;
+        const leveledUp = newLevel > pet.level;
+
+        const species = mods.species_name || SPECIES_MAP[pet.species] || pet.name;
+        const responseText = generateResponse(
+          pet.name,
+          species,
+          pet.personality_type,
+          interactionType,
+        );
+
+        let nextRequest = stillValidRequest;
+        if (!nextRequest) {
+          nextRequest = generateRequest(
+            {
+              energy: newEnergy,
+              hunger: newHunger,
+              happiness: newHappiness,
+              bond_level: newBondLevel,
+              last_interaction_at: now,
+            },
+            pet.personality_type,
+          );
+        }
+
+        let updatedCombos = combosUnlocked;
+        if (combo && !combosUnlocked.includes(combo.name)) {
+          updatedCombos = [...combosUnlocked, combo.name];
+        }
+
+        const effects = {
+          happiness: adjusted.happiness + comboBonus.happiness + reqHap,
+          energy: adjusted.energy + comboBonus.energy,
+          hunger: adjusted.hunger + comboBonus.hunger,
+          experience: adjusted.exp + comboBonus.exp + reqExp,
+          bond: bondGain + comboBonus.bond + reqBond,
+        };
+        const updatedPet = await tx.pet.update({
+          where: { id: pet.id },
+          data: {
+            happiness: newHappiness,
+            energy: newEnergy,
+            hunger: newHunger,
+            experience: newExperience,
+            level: newLevel,
+            bond_level: newBondLevel,
+            total_interactions: pet.total_interactions + 1,
+            last_interaction_at: now,
+            personality_modifiers: {
+              ...mods,
+              interaction_history: persistedHistory,
+              pending_request: nextRequest,
+              combos_unlocked: updatedCombos,
+            },
+          },
+        });
+        await tx.petInteraction.create({
+          data: {
+            pet_id: pet.id,
+            user_id: user.id,
+            interaction_type: interactionType,
+            response_text: responseText,
+            happiness_change: effects.happiness,
+            energy_change: effects.energy,
+            hunger_change: effects.hunger,
+            experience_gained: effects.experience,
+          },
+        });
+        await tx.petMemory.create({
+          data: {
+            pet_id: pet.id,
+            memory_type: combo ? "combo" : "interaction",
+            content: combo
+              ? `${combo.emoji} ${combo.name} combo activated! ${combo.description}`
+              : responseText,
+            emotion: newHappiness >= 70 ? "happy" : newHappiness >= 40 ? "calm" : "sad",
+            importance: leveledUp ? 3 : combo ? 4 : 1,
+          },
+        });
+        return {
+          updatedPet,
+          paidAction,
+          responseText,
+          effects,
+          leveledUp,
+          combo,
+          requestFulfilled,
+          nextRequest,
+        };
+      },
+    },
+  );
+
+  if (action.ok !== true) {
+    if (action.kind === "pet_not_found") {
+      return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+    }
+    if (action.kind === "domain") {
+      if (action.domain.kind === "cooldown") {
+        return NextResponse.json(
+          {
+            error: "Slow down — pet is still processing the last action",
+            retryInMs: action.domain.retryInMs,
+          },
+          { status: 429 },
+        );
+      }
       return NextResponse.json(
-        { error: "Slow down — pet is still processing the last action", retryInMs: INTERACT_COOLDOWN_MS - sinceMs },
-        { status: 429 }
+        { error: action.domain.reason, blocked: true, reason: action.domain.reason },
+        { status: 400 },
       );
     }
-  }
-
-  // ── Gate check (energy/hunger) — also before the paywall, same reason ──
-  const blocked = gateInteraction(interaction_type, {
-    energy: pet.energy,
-    hunger: pet.hunger,
-    happiness: pet.happiness,
-  });
-  if (blocked) {
+    if (action.kind === "receipt_already_consumed") {
+      return NextResponse.json(
+        {
+          error: "This payment was already applied; refresh the pet to recover current state",
+          code: "PAYMENT_ALREADY_APPLIED",
+          refresh: true,
+        },
+        { status: 409 },
+      );
+    }
+    const paused = action.paywall.reason === "payments_paused";
     return NextResponse.json(
-      { error: blocked, blocked: true, reason: blocked },
-      { status: 400 }
+      {
+        error: paused ? "Payments are temporarily unavailable" : "Payment required",
+        paywall: action.paywall,
+      },
+      { status: paused ? 503 : 402 },
     );
   }
 
-  // ── Paywall: feed/play have a daily free cap, paid overflow via USDT ──
-  // Other interaction types (talk/pet/walk/train) stay free — they're the
-  // emotional/companionship surface, charging for those would kill the product.
-  // Track whether THIS action was paid: recognition points must never derive
-  // from a paid action (same rule as battle/create — points are "never bought").
-  let paidAction = false;
-  const paidActionKey = PAID_INTERACTION_MAP[interaction_type];
-  if (paidActionKey) {
-    const txHash = req.nextUrl.searchParams.get("tx_hash") || undefined;
-    const gate = await enforcePaywall(user.id, paidActionKey, txHash, pet.id);
-    if (gate.ok !== true) {
-      return NextResponse.json({ error: "Payment required", paywall: gate.paywall }, { status: 402 });
-    }
-    paidAction = gate.paid;
-  }
+  const {
+    updatedPet,
+    paidAction,
+    responseText,
+    effects,
+    leveledUp,
+    combo,
+    requestFulfilled,
+    nextRequest,
+  } = action.value;
 
-  // ── Apply personality modifiers ──
-  const base = BASE_EFFECTS[interaction_type];
-  const adjusted = applyPersonality(interaction_type, pet.personality_type, base);
-
-  // ── Read pending request and history from JSON modifiers ──
-  const mods: any = pet.personality_modifiers || {};
-  const history: InteractionType[] = Array.isArray(mods.interaction_history) ? mods.interaction_history : [];
-  const pendingRequest = mods.pending_request;
-  const combosUnlocked: string[] = Array.isArray(mods.combos_unlocked) ? mods.combos_unlocked : [];
-
-  // ── Check if fulfilling request ──
-  let requestFulfilled: { name: string; bonus: { happiness: number; bond: number; exp: number } } | null = null;
-  let stillValidRequest = pendingRequest;
-  if (pendingRequest && pendingRequest.type) {
-    const expired = pendingRequest.expiresAt && new Date(pendingRequest.expiresAt).getTime() < Date.now();
-    if (expired) {
-      stillValidRequest = null;
-    } else if (pendingRequest.type === interaction_type) {
-      requestFulfilled = {
-        name: "Request Fulfilled",
-        bonus: pendingRequest.reward || { happiness: 10, bond: 5, exp: 5 },
-      };
-      stillValidRequest = null; // consumed
-    }
-  }
-
-  // ── Combo detection ──
-  const newHistory = [...history, interaction_type].slice(-8); // keep last 8
-  const combo = detectCombo(newHistory);
-  // audit H6: once a combo fires, consume the matched history so spamming the
-  // same action can't re-trigger the same combo (overlapping tail) every turn.
-  const persistedHistory = combo ? [] : newHistory;
-  let comboBonus = { happiness: 0, energy: 0, hunger: 0, exp: 0, bond: 0 };
-  if (combo) {
-    comboBonus = { happiness: 0, energy: 0, hunger: 0, exp: 0, bond: 0, ...combo.bonusEffects };
-  }
-
-  // ── Calculate final stats ──
-  const intimacyMult = intimacyMultiplier(pet.personality_type, interaction_type);
-  const bondGain = Math.round(adjusted.bond * intimacyMult);
-
-  const reqHap = requestFulfilled?.bonus.happiness || 0;
-  const reqBond = requestFulfilled?.bonus.bond || 0;
-  const reqExp = requestFulfilled?.bonus.exp || 0;
-
-  const newHappiness = clamp(pet.happiness + adjusted.happiness + comboBonus.happiness + reqHap, 0, 100);
-  const newEnergy = clamp(pet.energy + adjusted.energy + comboBonus.energy, 0, 100);
-  const newHunger = clamp(pet.hunger + adjusted.hunger + comboBonus.hunger, 0, 100);
-  const newExperience = pet.experience + adjusted.exp + comboBonus.exp + reqExp;
-  const newBondLevel = clamp(pet.bond_level + bondGain + comboBonus.bond + reqBond, 0, 100);
-  const newLevel = Math.floor(newExperience / 100) + 1;
-  const leveledUp = newLevel > pet.level;
-
-  const species = mods.species_name || SPECIES_MAP[pet.species] || pet.name;
-  const responseText = generateResponse(pet.name, species, pet.personality_type, interaction_type);
-
-  // ── Generate next event request (if no current valid one) ──
-  let nextRequest = stillValidRequest;
-  if (!nextRequest) {
-    nextRequest = generateRequest(
-      { energy: newEnergy, hunger: newHunger, happiness: newHappiness, bond_level: newBondLevel, last_interaction_at: new Date() },
-      pet.personality_type
-    );
-  }
-
-  // ── Track unlocked combos ──
-  let updatedCombos = combosUnlocked;
-  if (combo && !combosUnlocked.includes(combo.name)) {
-    updatedCombos = [...combosUnlocked, combo.name];
-  }
-
-  const updatedPet = await prisma.pet.update({
-    where: { id: pet.id },
-    data: {
-      happiness: newHappiness,
-      energy: newEnergy,
-      hunger: newHunger,
-      experience: newExperience,
-      level: newLevel,
-      bond_level: newBondLevel,
-      total_interactions: pet.total_interactions + 1,
-      last_interaction_at: new Date(),
-      personality_modifiers: {
-        ...mods,
-        interaction_history: persistedHistory,
-        pending_request: nextRequest,
-        combos_unlocked: updatedCombos,
-      } as any,
-    },
-  });
-
-  await prisma.petInteraction.create({
-    data: {
-      pet_id: pet.id,
-      user_id: user.id,
-      interaction_type,
-      response_text: responseText,
-      happiness_change: adjusted.happiness + comboBonus.happiness + reqHap,
-      energy_change: adjusted.energy + comboBonus.energy,
-      hunger_change: adjusted.hunger + comboBonus.hunger,
-      experience_gained: adjusted.exp + comboBonus.exp + reqExp,
-    },
-  });
-
-  await prisma.petMemory.create({
-    data: {
-      pet_id: pet.id,
-      memory_type: combo ? "combo" : "interaction",
-      content: combo
-        ? `${combo.emoji} ${combo.name} combo activated! ${combo.description}`
-        : responseText,
-      emotion: newHappiness >= 70 ? "happy" : newHappiness >= 40 ? "calm" : "sad",
-      importance: leveledUp ? 3 : combo ? 4 : 1,
-    },
-  });
-
-  // Award season points — interact is daily-capped (audit H5/M5) so it can't be
-  // scripted to farm unlimited points. COMPLIANCE: a PAID (USDT) interaction
-  // grants NO season points — points are non-financial recognition, "never
-  // bought" (RaisePitch disclaimer; same rule battle/create enforces).
-  // points_earned reports the ACTUAL granted sum, not advertised maximums.
+  // Recognition points never derive from a paid interaction. These post-commit
+  // rewards are deliberately outside the paid-action core and may not turn an
+  // already committed pet action into an error response.
   let actualPoints = 0;
   if (!paidAction) {
-    const interactCap = DAILY_POINT_CAPS.interact;
-    const pointsResult = await awardPointsCapped(user.id, "interact", 5, interactCap);
-    actualPoints += pointsResult.points || 0;
-    if (leveledUp) {
-      const lv = await awardPoints(user.id, pet.id, "level_up");
-      actualPoints += lv.points || 0;
-    }
-    if (combo) {
-      const cb = await awardPointsCapped(user.id, "interact", 5, interactCap); // bonus (same daily pool)
-      actualPoints += cb.points || 0;
+    try {
+      const interactCap = DAILY_POINT_CAPS.interact;
+      const pointsResult = await awardPointsCapped(user.id, "interact", 5, interactCap);
+      actualPoints += pointsResult.points || 0;
+      if (leveledUp) {
+        const lv = await awardPoints(user.id, updatedPet.id, "level_up");
+        actualPoints += lv.points || 0;
+      }
+      if (combo) {
+        const cb = await awardPointsCapped(user.id, "interact", 5, interactCap);
+        actualPoints += cb.points || 0;
+      }
+    } catch (error) {
+      console.error("[interact] season points failed after committed action:", error);
     }
   }
 
-  // Care Streak: only feed counts. Mints a NFT every 7-day consecutive streak.
-  // Fire-and-forget — chain calls don't block the interaction response.
   let streakResult: any = null;
-  if (interaction_type === "feed") {
+  if (interactionType === "feed") {
     try {
       const { checkCareStreak } = await import("@/lib/petclaw/nft-mint");
-      streakResult = await checkCareStreak(pet.id);
-    } catch (e: any) {
-      console.error("[interact] streak check failed:", e?.message);
+      streakResult = await checkCareStreak(updatedPet.id);
+    } catch (error: any) {
+      console.error("[interact] streak check failed:", error?.message);
     }
   }
 
   return NextResponse.json({
     pet: updatedPet,
     interaction: {
-      type: interaction_type,
+      type: interactionType,
       response: responseText,
-      effects: {
-        happiness: adjusted.happiness + comboBonus.happiness + reqHap,
-        energy: adjusted.energy + comboBonus.energy,
-        hunger: adjusted.hunger + comboBonus.hunger,
-        experience: adjusted.exp + comboBonus.exp + reqExp,
-        bond: bondGain + comboBonus.bond + reqBond,
-      },
+      effects,
       leveled_up: leveledUp,
       points_earned: actualPoints,
       combo: combo
@@ -295,20 +365,21 @@ export async function POST(
         : null,
       request_fulfilled: requestFulfilled,
       next_request: nextRequest,
-      care_streak: streakResult ? { days: streakResult.streak, mintedNft: streakResult.minted } : null,
+      care_streak: streakResult
+        ? { days: streakResult.streak, milestone: streakResult.milestone }
+        : null,
     },
   });
 }
 
-// ── GET: returns current pending request without performing action ──
+// GET returns the pending request without performing an interaction.
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ petId: string }> }
+  { params }: { params: Promise<{ petId: string }> },
 ) {
   const user = await getUser(req);
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { petId } = await params;
   const pet = await prisma.pet.findFirst({
     where: { id: Number(petId), user_id: user.id, is_active: true },
@@ -317,13 +388,9 @@ export async function GET(
 
   const mods: any = pet.personality_modifiers || {};
   let request = mods.pending_request;
-
-  // Drop expired
   if (request?.expiresAt && new Date(request.expiresAt).getTime() < Date.now()) {
     request = null;
   }
-
-  // Generate one if missing
   if (!request) {
     request = generateRequest(
       {
@@ -333,14 +400,12 @@ export async function GET(
         bond_level: pet.bond_level,
         last_interaction_at: pet.last_interaction_at,
       },
-      pet.personality_type
+      pet.personality_type,
     );
     if (request) {
       await prisma.pet.update({
         where: { id: pet.id },
-        data: {
-          personality_modifiers: { ...mods, pending_request: request } as any,
-        },
+        data: { personality_modifiers: { ...mods, pending_request: request } },
       });
     }
   }

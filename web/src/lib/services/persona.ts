@@ -11,6 +11,15 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { callLLM } from "@/lib/llm/router";
+import {
+  normalizeChatAnalysis,
+  normalizePersonaObservation,
+  sanitizeStoredPersonaGeneratedFields,
+  type ChatAnalysisResult,
+} from "@/lib/personaGeneratedLanguage";
+
+export type { ChatAnalysisResult } from "@/lib/personaGeneratedLanguage";
 
 // ── Types ──
 
@@ -32,20 +41,6 @@ export interface PersonaData {
   persona_version: number;
 }
 
-export interface ChatAnalysisResult {
-  patterns: {
-    formality: string;
-    sentence_length: string;
-    emoji_usage: string;
-    punctuation_style: string;
-  };
-  sampleMessages: string[];
-  vocabularyStyle: string;
-  detectedTone: string;
-  detectedLanguage: string;
-  interests: string[];
-}
-
 export interface OnboardingData {
   speech_style?: string;
   interests?: string;
@@ -55,42 +50,26 @@ export interface OnboardingData {
   bio?: string;
 }
 
-// ── Grok API helper (analytical, low-temperature) ──
+// ── Routed analytical helper (low-temperature) ──
 
-async function callGrokAnalytical(
+async function callAnalytical(
   systemPrompt: string,
   userMessage: string,
   maxTokens = 800,
+  petId?: number,
 ): Promise<string> {
-  const grokKey = process.env.GROK_API_KEY;
-  if (!grokKey) throw new Error("GROK_API_KEY not configured");
-
-  const res = await fetch("https://api.x.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${grokKey}`,
-    },
-    body: JSON.stringify({
-      model: "grok-3-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
-      ],
-      max_tokens: maxTokens,
-      temperature: 0.3,
-    }),
+  const out = await callLLM({
+    task: "persona",
+    petId,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userMessage },
+    ],
+    max_tokens: maxTokens,
+    temperature: 0.3,
   });
-
-  if (!res.ok) {
-    const text = await res.text();
-    console.error("[persona] Grok analytical API error:", res.status, text);
-    throw new Error(`Grok API returned ${res.status}`);
-  }
-
-  const data = await res.json();
-  const content = data.choices?.[0]?.message?.content?.trim();
-  if (!content) throw new Error("Empty response from Grok");
+  const content = out.text.trim();
+  if (!content) throw new Error("Empty response from text provider");
   return content;
 }
 
@@ -153,7 +132,7 @@ export function buildPersonaContext(persona: PersonaData | null): string {
 
   return `\nOWNER PERSONA:
 ${sections.join("\n")}
-IMPORTANT: Mirror the owner's speech patterns naturally. Use their expressions, match their tone and language preference. If they use slang, use slang. If they use ㅋㅋ, use ㅋㅋ. If they speak casually, speak casually. Adapt your personality to feel like a natural extension of the owner.`;
+IMPORTANT: Mirror the owner's speech patterns naturally while replying in English only. Use equivalent English expressions, match their tone, and use natural English slang when they speak casually. Adapt your personality to feel like a natural extension of the owner.`;
 }
 
 // ── Analyze chat history text and extract personality patterns ──
@@ -178,11 +157,12 @@ Return this exact JSON structure:
   "interests": ["topic1", "topic2", ...]
 }
 
-For sampleMessages, pick 5-10 most representative messages that capture the person's unique voice.
-For vocabularyStyle, describe their word choices, slang, abbreviations, and expression patterns.
-For interests, extract topics they frequently discuss.`;
+All model-authored descriptions, topic labels, and interest labels MUST be written in English only, even when the source messages use another language.
+For sampleMessages, copy 5-10 representative source messages verbatim. Never translate or rewrite them.
+For vocabularyStyle, describe their word choices, slang, abbreviations, and expression patterns in English.
+For interests, extract topics they frequently discuss and label them in English.`;
 
-  const raw = await callGrokAnalytical(systemPrompt, trimmed, 1000);
+  const raw = await callAnalytical(systemPrompt, trimmed, 1000);
 
   // Parse JSON from response (handle potential markdown wrapping)
   let cleaned = raw;
@@ -191,20 +171,7 @@ For interests, extract topics they frequently discuss.`;
   }
 
   try {
-    const parsed = JSON.parse(cleaned);
-    return {
-      patterns: parsed.patterns || {
-        formality: "casual",
-        sentence_length: "medium",
-        emoji_usage: "moderate",
-        punctuation_style: "standard",
-      },
-      sampleMessages: Array.isArray(parsed.sampleMessages) ? parsed.sampleMessages : [],
-      vocabularyStyle: parsed.vocabularyStyle || "",
-      detectedTone: parsed.detectedTone || "casual",
-      detectedLanguage: parsed.detectedLanguage || "mixed",
-      interests: Array.isArray(parsed.interests) ? parsed.interests : [],
-    };
+    return normalizeChatAnalysis(JSON.parse(cleaned));
   } catch (err) {
     console.error("[persona] Failed to parse chat analysis JSON:", err, raw);
     throw new Error("Failed to parse chat analysis result");
@@ -222,6 +189,9 @@ export async function observeAndUpdate(petId: number, messages: string[]): Promi
 1. Topics being discussed (as a JSON array of strings)
 2. Style observations: average message length, common phrases, tone
 
+Write every generated topic and style description in English only. Do not copy
+non-English phrases into generated fields.
+
 Return ONLY valid JSON:
 {
   "topics": ["topic1", "topic2"],
@@ -233,25 +203,25 @@ Return ONLY valid JSON:
 }`;
 
   try {
-    const raw = await callGrokAnalytical(systemPrompt, combined.slice(0, 10000), 500);
+    const raw = await callAnalytical(systemPrompt, combined.slice(0, 10000), 500, petId);
     let cleaned = raw;
     if (cleaned.startsWith("```")) {
       cleaned = cleaned.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
     }
 
-    const parsed = JSON.parse(cleaned);
+    const observations = normalizePersonaObservation(JSON.parse(cleaned));
 
     await prisma.petPersona.update({
       where: { pet_id: petId },
       data: {
-        observed_topics: parsed.topics || [],
-        observed_style: parsed.style || {},
+        observed_topics: observations.topics,
+        observed_style: observations.style,
         last_observed_at: new Date(),
         persona_version: { increment: 1 },
       },
     });
 
-    console.log(`[persona] Updated observations for pet ${petId}: ${(parsed.topics || []).length} topics`);
+    console.log(`[persona] Updated observations for pet ${petId}: ${observations.topics.length} topics`);
   } catch (err) {
     console.error("[persona] observeAndUpdate error:", err);
   }
@@ -260,7 +230,8 @@ Return ONLY valid JSON:
 // ── Get persona for a pet ──
 
 export async function getPersona(petId: number): Promise<PersonaData | null> {
-  return prisma.petPersona.findUnique({ where: { pet_id: petId } }) as any;
+  const persona = await prisma.petPersona.findUnique({ where: { pet_id: petId } });
+  return persona ? sanitizeStoredPersonaGeneratedFields(persona) as PersonaData : null;
 }
 
 // ── Save onboarding answers ──
@@ -336,23 +307,27 @@ export async function saveChatAnalysis(
   petId: number,
   analysis: ChatAnalysisResult,
 ): Promise<PersonaData> {
-  return prisma.petPersona.upsert({
+  // Defense in depth: callers cannot bypass the generated-language boundary by
+  // constructing ChatAnalysisResult directly. User sample excerpts are kept as-is.
+  const safeAnalysis = normalizeChatAnalysis(analysis);
+  const persona = await prisma.petPersona.upsert({
     where: { pet_id: petId },
     create: {
       pet_id: petId,
-      analyzed_patterns: analysis.patterns,
-      sample_messages: analysis.sampleMessages,
-      vocabulary_style: analysis.vocabularyStyle,
-      owner_tone: analysis.detectedTone,
-      owner_language: analysis.detectedLanguage,
-      owner_interests: analysis.interests.join(", "),
+      analyzed_patterns: safeAnalysis.patterns,
+      sample_messages: safeAnalysis.sampleMessages,
+      vocabulary_style: safeAnalysis.vocabularyStyle,
+      owner_tone: safeAnalysis.detectedTone,
+      owner_language: safeAnalysis.detectedLanguage,
+      owner_interests: safeAnalysis.interests.join(", "),
     },
     update: {
-      analyzed_patterns: analysis.patterns,
-      sample_messages: analysis.sampleMessages,
-      vocabulary_style: analysis.vocabularyStyle,
+      analyzed_patterns: safeAnalysis.patterns,
+      sample_messages: safeAnalysis.sampleMessages,
+      vocabulary_style: safeAnalysis.vocabularyStyle,
       // Only update tone/language/interests if not already set by onboarding
       persona_version: { increment: 1 },
     },
-  }) as any;
+  });
+  return sanitizeStoredPersonaGeneratedFields(persona) as PersonaData;
 }

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
-
-// SCRUM-72: SIWE chainId is server-pinned to BNB Smart Chain (56)
-const DEFAULT_CHAIN_ID = Number(process.env.SIWE_CHAIN_ID || 56);
+import {
+  buildSiweMessage,
+  createSiweNonce,
+  getTrustedSiweConfig,
+  hashSiweMessage,
+} from "@/lib/siweLogin";
 
 export async function GET(req: NextRequest) {
   // SCRUM-67: rate-limit nonce generation
@@ -16,44 +19,47 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Invalid wallet address" }, { status: 400 });
     }
 
-    // SCRUM-68: always lowercase — no mixed-case duplicate accounts
+    // Always lowercase — no mixed-case duplicate accounts. This is challenge
+    // metadata only; requesting it proves no key control.
     const address = rawAddress.toLowerCase();
-    const nonce = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+    const config = getTrustedSiweConfig(req.nextUrl, req.headers.get("host"));
+    const nonce = createSiweNonce();
+    const issuedAt = new Date();
+    const expiresAt = new Date(issuedAt.getTime() + config.challengeTtlMs);
+    const message = buildSiweMessage({ address, nonce, issuedAt, expiresAt, config });
 
-    // POINTS-ECONOMY §2.2 knob #3: NO credit mint here. `GET /nonce` is
-    // unauthenticated (no signature yet), so minting on it let anyone script
-    // free credits with zero key control (red-team Leak 3). The starter grant is
-    // now 50 cr at first successful `verify` (proven key control) + 50 cr at the
-    // day-3 check-in. New wallets start at 0 credits.
-    await prisma.user.upsert({
-      where: { wallet_address: address },
-      create: { wallet_address: address, nonce, credits: 0 },
-      update: { nonce },
+    // LoginChallenge is intentionally independent of User.nonce. This endpoint
+    // is unauthenticated, so it must not create users or invalidate sessions.
+    // Separate rows allow multiple tabs/devices to hold concurrent challenges.
+    await prisma.$transaction([
+      prisma.loginChallenge.deleteMany({
+        where: { expires_at: { lt: issuedAt } },
+      }),
+      prisma.loginChallenge.create({
+        data: {
+          nonce,
+          wallet_address: address,
+          message_hash: hashSiweMessage(message),
+          domain: config.domain,
+          uri: config.uri,
+          chain_id: config.chainId,
+          issued_at: issuedAt,
+          expires_at: expiresAt,
+        },
+      }),
+    ]);
+
+    const response = NextResponse.json({
+      nonce,
+      message,
+      chainId: config.chainId,
+      expiresAt: expiresAt.toISOString(),
     });
-
-    // SCRUM-72: pin chainId server-side; client value is ignored unless it matches
-    const clientChainId = Number(req.nextUrl.searchParams.get("chainId"));
-    const chainId = clientChainId === DEFAULT_CHAIN_ID ? clientChainId : DEFAULT_CHAIN_ID;
-
-    const host = req.headers.get("host") || "myaipet.ai";
-    const origin = req.headers.get("origin") || `https://${host}`;
-
-    const message = [
-      `${host} wants you to sign in with your Ethereum account:`,
-      address,
-      "",
-      "Sign in to MY AI PET",
-      "",
-      `URI: ${origin}`,
-      `Version: 1`,
-      `Chain ID: ${chainId}`,
-      `Nonce: ${nonce}`,
-      `Issued At: ${new Date().toISOString()}`,
-    ].join("\n");
-
-    return NextResponse.json({ nonce, message, chainId });
-  } catch (error: any) {
-    console.error("Nonce error:", error?.message);
+    response.headers.set("Cache-Control", "no-store, max-age=0");
+    response.headers.set("Pragma", "no-cache");
+    return response;
+  } catch (error: unknown) {
+    console.error("Nonce error:", error instanceof Error ? error.message : "unknown error");
     return NextResponse.json({ error: "Failed to generate nonce" }, { status: 500 });
   }
 }

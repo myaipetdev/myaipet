@@ -1,11 +1,13 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
 
 # ── PetClaw AWS Infrastructure Setup ──
 # Run once to create all required AWS resources
 
-REGION="ap-northeast-2"
-PROJECT="petclaw"
+REGION="${AWS_REGION:-ap-northeast-2}"
+PROJECT="${PETCLAW_PROJECT:-petclaw}"
+UPLOAD_BUCKET="${PETCLAW_UPLOAD_BUCKET:-${PROJECT}-uploads}"
 
 echo "═══════════════════════════════════"
 echo "  PetClaw AWS Setup"
@@ -22,24 +24,36 @@ aws ecr create-repository \
 
 # ── 2. S3 Bucket ──
 echo "→ Creating S3 bucket..."
-aws s3 mb s3://${PROJECT}-uploads --region ${REGION} 2>/dev/null || echo "  (already exists)"
+aws s3 mb "s3://${UPLOAD_BUCKET}" --region "${REGION}" 2>/dev/null || echo "  (already exists)"
+# Private by default. All browser reads are mediated by /api/media/* and the
+# app's owner/public-consent checks; providers receive short-lived presigned URLs.
 aws s3api put-public-access-block \
-  --bucket ${PROJECT}-uploads \
-  --public-access-block-configuration "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false" \
-  2>/dev/null
-aws s3api put-bucket-policy \
-  --bucket ${PROJECT}-uploads \
-  --policy '{
-    "Version": "2012-10-17",
-    "Statement": [{
-      "Sid": "PublicRead",
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::'"${PROJECT}"'-uploads/uploads/*"
+  --bucket "${UPLOAD_BUCKET}" \
+  --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+aws s3api delete-bucket-policy --bucket "${UPLOAD_BUCKET}" 2>/dev/null || true
+aws s3api put-bucket-ownership-controls \
+  --bucket "${UPLOAD_BUCKET}" \
+  --ownership-controls 'Rules=[{ObjectOwnership=BucketOwnerEnforced}]'
+aws s3api put-bucket-encryption \
+  --bucket "${UPLOAD_BUCKET}" \
+  --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"},"BucketKeyEnabled":true}]}'
+aws s3api put-bucket-versioning \
+  --bucket "${UPLOAD_BUCKET}" \
+  --versioning-configuration Status=Enabled
+aws s3api put-bucket-lifecycle-configuration \
+  --bucket "${UPLOAD_BUCKET}" \
+  --lifecycle-configuration '{
+    "Rules": [{
+      "ID": "retain-recoverable-versions",
+      "Status": "Enabled",
+      "Filter": {"Prefix": ""},
+      "NoncurrentVersionTransitions": [{"NoncurrentDays": 30, "StorageClass": "STANDARD_IA"}],
+      "NoncurrentVersionExpiration": {"NoncurrentDays": 90},
+      "Expiration": {"ExpiredObjectDeleteMarker": true},
+      "AbortIncompleteMultipartUpload": {"DaysAfterInitiation": 7}
     }]
-  }' 2>/dev/null
-echo "  S3 bucket: ${PROJECT}-uploads"
+  }'
+echo "  Private, versioned S3 bucket: ${UPLOAD_BUCKET}"
 
 # ── 3. ECS Cluster ──
 echo "→ Creating ECS cluster..."
@@ -61,6 +75,7 @@ echo "  Run these manually with your actual values:"
 echo ""
 echo "  aws secretsmanager create-secret --name ${PROJECT}/database-url --secret-string 'postgresql://...' --region ${REGION}"
 echo "  aws secretsmanager create-secret --name ${PROJECT}/grok-api-key --secret-string 'xai-...' --region ${REGION}"
+echo "  aws secretsmanager create-secret --name ${PROJECT}/openai-api-key --secret-string 'sk-...' --region ${REGION}"
 echo "  aws secretsmanager create-secret --name ${PROJECT}/jwt-secret --secret-string '$(openssl rand -hex 32)' --region ${REGION}"
 echo "  aws secretsmanager create-secret --name ${PROJECT}/fal-api-key --secret-string '...' --region ${REGION}"
 echo "  aws secretsmanager create-secret --name ${PROJECT}/agent-encryption-key --secret-string '$(openssl rand -hex 32)' --region ${REGION}"

@@ -179,6 +179,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
   const [exportError, setExportError] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
   // Loaded media elements keyed by source url (created once, reused).
   const mediaRef = useRef<Map<string, HTMLVideoElement | HTMLImageElement>>(new Map());
   const rafRef = useRef<number | null>(null);
@@ -423,7 +424,25 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
   // Escape closes (but not mid-export).
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !exporting) onClose(); };
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    requestAnimationFrame(() => dialogRef.current?.focus());
+    return () => { previousFocus?.focus(); };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !exporting) onClose();
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ));
+      if (!focusable.length) { e.preventDefault(); dialogRef.current.focus(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open, exporting, onClose]);
@@ -583,6 +602,11 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
       }}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="studio-editor-title"
+        tabIndex={-1}
         onMouseDown={(e) => e.stopPropagation()}
         style={{
           background: T.field, borderRadius: 20, padding: 20,
@@ -597,7 +621,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
             <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.16em", color: T.studio, textTransform: "uppercase" }}>
               STUDIO · ASSEMBLE
             </div>
-            <h2 style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 30, letterSpacing: "-0.02em", margin: "2px 0 0", color: T.ink, lineHeight: 1.05 }}>
+            <h2 id="studio-editor-title" style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 30, letterSpacing: "-0.02em", margin: "2px 0 0", color: T.ink, lineHeight: 1.05 }}>
               Build your reel
             </h2>
           </div>
@@ -697,7 +721,18 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                   {timeline.map((c, i) => {
                     const sel = c.key === selectedKey;
                     return (
-                      <div key={c.key} onClick={() => setSelectedKey(c.key)} style={{
+                      <div
+                        key={c.key}
+                        role="group"
+                        tabIndex={0}
+                        aria-label={`Clip ${i + 1}${sel ? ", selected" : ""}`}
+                        onClick={() => setSelectedKey(c.key)}
+                        onKeyDown={(event) => {
+                          if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
+                          event.preventDefault();
+                          setSelectedKey(c.key);
+                        }}
+                        style={{
                         position: "relative", flexShrink: 0, width: 120, cursor: "pointer",
                         borderRadius: 12, overflow: "hidden", background: T.inset,
                         border: sel ? `2px solid ${T.studio}` : `1px solid ${T.hair}`,
@@ -782,7 +817,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                   </div>
                   {!hdUnlocked && (
                     <a href="/?section=home&scroll=pricing" style={{ display: "inline-block", marginTop: 10, fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.terra, textDecoration: "underline" }}>
-                      Get credits to unlock watermark-free HD &rarr;
+                      Credit purchases are paused — view status &rarr;
                     </a>
                   )}
                   {HD_EXPORT_FREE_BETA && (
@@ -879,6 +914,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                   <div>
                     <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.mono, letterSpacing: "0.06em", marginBottom: 5 }}>CAPTION</div>
                     <input
+                      aria-label="Clip caption"
                       value={selected.caption}
                       onChange={(e) => patchClip(selected.key, { caption: e.target.value.slice(0, 60) })}
                       placeholder="Add a caption (optional)"
@@ -951,6 +987,7 @@ function Range({ label, min, max, step, value, onChange }: { label: string; min:
     <label style={{ display: "block" }}>
       <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted2, letterSpacing: "0.04em" }}>{label}</span>
       <input
+        aria-label={label}
         type="range" min={min} max={max} step={step} value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
         style={{ width: "100%", marginTop: 6, accentColor: T.studio }}

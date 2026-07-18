@@ -38,6 +38,17 @@ function baseUrl(req: NextRequest): string {
 }
 
 export async function GET(req: NextRequest) {
+  // The referral schema and grant flow are not part of this launch. Keep the
+  // dormant route fail-closed so a clean production build does not depend on
+  // an unapproved migration. When the program is reviewed and migrated, this
+  // exact flag can be enabled without exposing a half-created ledger.
+  if (process.env.REFERRALS_ENABLED !== "true") {
+    return NextResponse.json(
+      { error: "Referrals are not available" },
+      { status: 503 },
+    );
+  }
+
   const user = await getUser(req);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -46,12 +57,21 @@ export async function GET(req: NextRequest) {
   const code = referralCodeForUserId(user.id);
   const link = `${baseUrl(req)}/?ref=${code}`;
 
-  const referralCount = await prisma.referral.count({
-    where: { referrer_id: user.id, credited: true },
-  });
-  const pendingCount = await prisma.referral.count({
-    where: { referrer_id: user.id, credited: false },
-  });
+  // Raw SQL deliberately keeps this dormant route decoupled from the launch
+  // Prisma schema. The table exists only after the separately reviewed
+  // referral migration is approved.
+  const [counts] = await prisma.$queryRaw<Array<{
+    credited_count: bigint;
+    pending_count: bigint;
+  }>>`
+    SELECT
+      count(*) FILTER (WHERE "credited" = true)::bigint AS "credited_count",
+      count(*) FILTER (WHERE "credited" = false)::bigint AS "pending_count"
+    FROM "referrals"
+    WHERE "referrer_id" = ${user.id}
+  `;
+  const referralCount = Number(counts?.credited_count ?? BigInt(0));
+  const pendingCount = Number(counts?.pending_count ?? BigInt(0));
 
   return NextResponse.json({
     code,

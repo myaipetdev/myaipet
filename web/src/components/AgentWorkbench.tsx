@@ -16,7 +16,7 @@
  * agent endpoint directly with getAuthHeaders(). Does NOT touch AgentDashboard.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 
@@ -80,6 +80,8 @@ function pretty(v: any): string {
 }
 
 export default function AgentWorkbench() {
+  const goalId = useId();
+  const budgetId = useId();
   const [pets, setPets] = useState<any[]>([]);
   const [petId, setPetId] = useState<number | null>(null);
   const [loadingPets, setLoadingPets] = useState(true);
@@ -260,7 +262,7 @@ export default function AgentWorkbench() {
           <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(33,26,18,0.65)" }}>
             ⏎ Resumed your last run · {relTime(result.at)}
           </span>
-          <button onClick={clearSession} style={ghostBtn}>Clear session</button>
+          <button type="button" onClick={clearSession} style={ghostBtn}>Clear session</button>
         </div>
       )}
 
@@ -269,10 +271,10 @@ export default function AgentWorkbench() {
         {/* Pet picker */}
         {!loadingPets && pets.length > 1 && (
           <div style={{ marginBottom: 14 }}>
-            <label style={fieldLabel}>Pet</label>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div style={fieldLabel}>Pet</div>
+            <div role="group" aria-label="Choose a pet" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {pets.map((p) => (
-                <button key={p.id} onClick={() => setPetId(p.id)}
+                <button type="button" key={p.id} onClick={() => setPetId(p.id)} aria-pressed={petId === p.id}
                   style={{ ...chip, ...(petId === p.id ? chipActive : {}) }}>
                   {p.name || `Pet #${p.id}`}
                 </button>
@@ -281,8 +283,9 @@ export default function AgentWorkbench() {
           </div>
         )}
 
-        <label style={fieldLabel}>Goal for {petName}</label>
+        <label htmlFor={goalId} style={fieldLabel}>Goal for {petName}</label>
         <textarea
+          id={goalId}
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
           placeholder="e.g. Check my mood from our recent chats and suggest one thing for today"
@@ -294,7 +297,7 @@ export default function AgentWorkbench() {
         {/* Example seeds */}
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
           {EXAMPLES.map((ex) => (
-            <button key={ex} onClick={() => setGoal(ex)} style={seedChip} title={ex}>
+            <button type="button" key={ex} onClick={() => setGoal(ex)} style={seedChip} title={ex}>
               {ex.length > 42 ? ex.slice(0, 42) + "…" : ex}
             </button>
           ))}
@@ -302,8 +305,9 @@ export default function AgentWorkbench() {
 
         {/* Step budget */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
-          <label style={{ ...fieldLabel, margin: 0 }}>Step budget</label>
-          <input type="range" min={1} max={MAX_STEPS} value={maxSteps}
+          <label htmlFor={budgetId} style={{ ...fieldLabel, margin: 0 }}>Step budget</label>
+          <input id={budgetId} type="range" min={1} max={MAX_STEPS} value={maxSteps}
+            aria-valuetext={`${maxSteps} maximum work packages`}
             onChange={(e) => setMaxSteps(Number(e.target.value))}
             style={{ accentColor: PURPLE, flex: 1, minWidth: 120, maxWidth: 240 }} />
           <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: INK }}>{maxSteps}</span>
@@ -319,14 +323,16 @@ export default function AgentWorkbench() {
         </div>
 
         {error && (
-          <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: TONE.err.bg, border: `1px solid ${TONE.err.bd}`, color: TONE.err.fg, fontFamily: SANS, fontSize: 13.5 }}>
+          <div role="alert" style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: TONE.err.bg, border: `1px solid ${TONE.err.bd}`, color: TONE.err.fg, fontFamily: SANS, fontSize: 13.5 }}>
             {error}
           </div>
         )}
 
         <button
+          type="button"
           onClick={() => run(goal, maxSteps)}
           disabled={!ready}
+          aria-busy={running}
           style={{
             marginTop: 16, width: "100%", padding: "13px 16px", borderRadius: 12, border: "none",
             fontFamily: SANS, fontSize: 15, fontWeight: 800, letterSpacing: "-0.01em",
@@ -342,7 +348,7 @@ export default function AgentWorkbench() {
 
       {/* ── Result: work packages ── */}
       {running && !result && (
-        <div style={{ ...card, marginTop: 18, textAlign: "center", color: "rgba(33,26,18,0.55)", fontFamily: SANS }}>
+        <div role="status" aria-live="polite" style={{ ...card, marginTop: 18, textAlign: "center", color: "rgba(33,26,18,0.55)", fontFamily: SANS }}>
           <div style={{ marginBottom: 8 }}><Icon name="compass" size={30} /></div>
           {petName} is planning the first step…
         </div>
@@ -357,7 +363,7 @@ export default function AgentWorkbench() {
                 {workPackages.length} work package{workPackages.length === 1 ? "" : "s"}
               </span>
               {stop && (
-                <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "3px 9px", borderRadius: 7, color: TONE[stop.tone].fg, background: TONE[stop.tone].bg, border: `1px solid ${TONE[stop.tone].bd}` }}>
+                <span role="status" aria-live="polite" style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "3px 9px", borderRadius: 7, color: TONE[stop.tone].fg, background: TONE[stop.tone].bg, border: `1px solid ${TONE[stop.tone].bd}` }}>
                   {stop.label}
                 </span>
               )}
@@ -368,7 +374,7 @@ export default function AgentWorkbench() {
               )}
             </div>
             {hasFailure && (
-              <button onClick={() => run(result.goal, Math.min(MAX_STEPS, maxSteps + 2))} disabled={running} style={recoverBtn}>
+              <button type="button" onClick={() => run(result.goal, Math.min(MAX_STEPS, maxSteps + 2))} disabled={running} style={recoverBtn}>
                 ↻ Recover (+2 steps)
               </button>
             )}
@@ -415,11 +421,17 @@ export default function AgentWorkbench() {
                     <div style={{ fontFamily: SANS, fontSize: 14, color: "rgba(33,26,18,0.78)", lineHeight: 1.5 }}>
                       {s.thought || "(no plan recorded)"}
                     </div>
-                    <button onClick={() => setOpen((o) => ({ ...o, [i]: !o[i] }))} style={{ ...ghostBtn, marginTop: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => setOpen((o) => ({ ...o, [i]: !o[i] }))}
+                      aria-expanded={isOpen}
+                      aria-controls={`workbench-observation-${i}`}
+                      style={{ ...ghostBtn, marginTop: 8 }}
+                    >
                       {isOpen ? "Hide observation" : "Show observation"}
                     </button>
                     {isOpen && (
-                      <pre style={{ marginTop: 8, padding: "10px 12px", borderRadius: 10, background: "#1E1710", color: "#E8C77E", fontFamily: MONO, fontSize: 13, lineHeight: 1.5, overflow: "auto", maxHeight: 280, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                      <pre id={`workbench-observation-${i}`} style={{ marginTop: 8, padding: "10px 12px", borderRadius: 10, background: "#1E1710", color: "#E8C77E", fontFamily: MONO, fontSize: 13, lineHeight: 1.5, overflow: "auto", maxHeight: 280, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                         {pretty(s.output)}
                       </pre>
                     )}

@@ -11,8 +11,13 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import { getProvider, isConfigured, getCallbackUrl } from "@/lib/oauth/providers";
 import { signState, pkceVerifier, pkceChallenge } from "@/lib/oauth/state";
+import { oauthConnectionsEnabled, oauthUnavailableResponse } from "@/lib/oauth/availability";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
+  // Launch kill-switch must run before auth, provider lookup, state creation,
+  // or any redirect. Direct URLs and stale browser tabs fail closed too.
+  if (!oauthConnectionsEnabled()) return oauthUnavailableResponse();
+
   const rl = rateLimit(req, { key: "oauth-start", limit: 30, windowMs: 60_000 });
   if (!rl.ok) return rl.response;
 

@@ -104,27 +104,27 @@ const GAME_ITEMS = [
   {
     key: "training_weights",
     name: "Training Weights",
-    description: "Increases EXP gained from training by boosting workout intensity.",
+    description: "Unavailable at launch; its passive training effect is not implemented yet.",
     category: "equipment",
     rarity: "uncommon",
     price: 100,
     icon: "🏋️",
-    stat_bonus: { experience: 10 },
+    stat_bonus: {},
   },
   {
     key: "lucky_charm",
     name: "Lucky Charm",
-    description: "A four-leaf clover pendant. Boosts happiness gain from interactions.",
+    description: "Unavailable at launch; its passive interaction effect is not implemented yet.",
     category: "equipment",
     rarity: "rare",
     price: 200,
     icon: "🍀",
-    stat_bonus: { happiness: 5 },
+    stat_bonus: {},
   },
   {
     key: "battle_armor",
     name: "Battle Armor",
-    description: "Reinforced armor for arena battles. Increases DEF and survivability.",
+    description: "Unavailable at launch; its passive arena effect is not implemented yet.",
     category: "equipment",
     rarity: "epic",
     price: 350,
@@ -134,7 +134,7 @@ const GAME_ITEMS = [
   {
     key: "dragon_blade",
     name: "Dragon Blade",
-    description: "A legendary weapon forged in dragon fire. Massively boosts ATK in arena.",
+    description: "Unavailable at launch; its passive arena effect is not implemented yet.",
     category: "equipment",
     rarity: "legendary",
     price: 500,
@@ -156,7 +156,7 @@ const GAME_ITEMS = [
   {
     key: "cool_sunglasses",
     name: "Cool Sunglasses",
-    description: "Stylish shades that boost your pet's confidence and arena presence.",
+    description: "Stylish visual-only shades for your pet profile.",
     category: "accessory",
     rarity: "uncommon",
     price: 80,
@@ -166,19 +166,19 @@ const GAME_ITEMS = [
   {
     key: "crown",
     name: "Royal Crown",
-    description: "A golden crown fit for a legendary pet. Ultimate flex in the arena.",
+    description: "A visual-only golden crown for your pet profile.",
     category: "accessory",
     rarity: "legendary",
     price: 800,
     icon: "👑",
-    stat_bonus: { happiness: 10 },
+    stat_bonus: {},
   },
 
   // ── Cosmetics ──
   {
     key: "sparkle_aura",
     name: "Sparkle Aura",
-    description: "Your pet glows with a magical sparkle effect. Pure cosmetic drip.",
+    description: "Adds a visual-only sparkle accent to your pet profile.",
     category: "cosmetic",
     rarity: "rare",
     price: 150,
@@ -187,8 +187,8 @@ const GAME_ITEMS = [
   },
   {
     key: "flame_trail",
-    name: "Flame Trail",
-    description: "Leaves a trail of fire wherever your pet goes. Maximum cool factor.",
+    name: "Flame Accent",
+    description: "Adds a visual-only flame accent to your pet profile.",
     category: "cosmetic",
     rarity: "epic",
     price: 300,
@@ -200,34 +200,39 @@ const GAME_ITEMS = [
   {
     key: "cozy_bed",
     name: "Cozy Bed",
-    description: "A comfortable bed that helps your pet rest better. Boosts energy recovery.",
+    description: "Unavailable at launch; its passive recovery effect is not implemented yet.",
     category: "furniture",
     rarity: "common",
     price: 40,
     icon: "🛏️",
-    stat_bonus: { energy: 5 },
+    stat_bonus: {},
   },
   {
     key: "play_tower",
     name: "Play Tower",
-    description: "A multi-level play structure. Your pet gains extra happiness during play.",
+    description: "Unavailable at launch; its passive play effect is not implemented yet.",
     category: "furniture",
     rarity: "uncommon",
     price: 90,
     icon: "🏰",
-    stat_bonus: { happiness: 5 },
+    stat_bonus: {},
   },
   {
     key: "zen_garden",
     name: "Zen Garden",
-    description: "A tranquil garden that calms your pet. Boosts all stat gains slightly.",
+    description: "Unavailable at launch; its passive stat effect is not implemented yet.",
     category: "furniture",
     rarity: "epic",
     price: 400,
     icon: "🪴",
-    stat_bonus: { happiness: 5, energy: 5, bond_level: 5 },
+    stat_bonus: {},
   },
 ];
+
+const DISABLED_LAUNCH_ITEMS = new Set([
+  "training_weights", "lucky_charm", "battle_armor", "dragon_blade",
+  "cozy_bed", "play_tower", "zen_garden",
+]);
 
 async function main() {
   console.log("Seeding game items...");
@@ -243,9 +248,9 @@ async function main() {
         price: item.price,
         icon: item.icon,
         stat_bonus: item.stat_bonus,
-        is_active: true,
+        is_active: !DISABLED_LAUNCH_ITEMS.has(item.key),
       },
-      create: item,
+      create: { ...item, is_active: !DISABLED_LAUNCH_ITEMS.has(item.key) },
     });
     console.log(`  ✓ ${item.icon} ${item.name} (${item.rarity}) — ${item.price} $PET`);
   }

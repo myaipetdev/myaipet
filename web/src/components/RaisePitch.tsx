@@ -41,6 +41,8 @@ function ArrowSwap() {
 interface ProjectionData {
   signedIn: boolean;
   started: boolean;
+  seasonClosed: boolean;
+  final?: boolean;
   pool: { points: number; participants: number; closesAtIso: string };
   me?: {
     rank: number; points: number; petId: number | null; petName: string;
@@ -98,15 +100,20 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
   const cdHours = Math.floor((remaining % 86_400_000) / 3_600_000);
   const cdMins = Math.floor((remaining % 3_600_000) / 60_000);
   const seasonStarted = data?.started ?? false;
-  const cdLabel = seasonStarted ? "SEASON 1 CLOSES IN" : "SEASON 1 STARTS IN";
-  const cdWhen = seasonStarted ? "Aug 1 00:00 UTC" : "Jul 1 00:00 UTC";
+  const seasonClosed = data?.seasonClosed ?? false;
+  const cdLabel = seasonClosed ? "SEASON 1 STATUS" : seasonStarted ? "SEASON 1 CLOSES IN" : "SEASON 1 STARTS IN";
+  const cdWhen = seasonClosed
+    ? (data?.final ? "Final standings frozen" : "Final standings being confirmed")
+    : seasonStarted ? "Aug 1 00:00 UTC" : "Jul 1 00:00 UTC";
 
   // Show a placeholder until the pool data loads — otherwise the countdown
   // renders a zeroed "00d 00h 00m" for a frame and then jumps to real values.
-  const countdownEl = data ? (
-    <>{String(cdDays).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>d</span> {String(cdHours).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>h</span> {String(cdMins).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>m</span></>
-  ) : (
+  const countdownEl = !data ? (
     <span style={{ color: "rgba(255,255,255,0.5)" }}>—</span>
+  ) : seasonClosed ? (
+    <span style={{ color: "#E8C77E" }}>FINAL</span>
+  ) : (
+    <>{String(cdDays).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>d</span> {String(cdHours).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>h</span> {String(cdMins).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>m</span></>
   );
 
   const me = data?.me;
@@ -120,12 +127,14 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
     <section style={{ padding: "60px 40px", maxWidth: 1060, margin: "0 auto" }}>
       {/* Headline */}
       <div style={{ textAlign: "center", marginBottom: 30 }}>
-        <Reveal dir="fade"><span style={pill}>SEASON 1 · STANDING</span></Reveal>
-        <MaskedTitle as="h2" lines={["Your pet climbs the Season 1 board."]} style={headline} />
+        <Reveal dir="fade"><span style={pill}>{seasonClosed ? "SEASON 1 · FINAL" : "SEASON 1 · STANDING"}</span></Reveal>
+        <MaskedTitle as="h2" lines={[seasonClosed ? "Season 1 final standings." : "Your pet climbs the Season 1 board."]} style={headline} />
         <Reveal dir="fade" delay={120}>
         <p style={sub}>
-          Every interaction stacks loyalty points — non-financial recognition. Raise &amp;
-          create to climb the Season 1 leaderboard before it closes.
+          {seasonClosed
+            ? "Season 1 is closed. Results are recognition only — no token, cash value, or payout."
+            : <>Every interaction stacks loyalty points — non-financial recognition. Raise &amp;
+                create to climb the Season 1 leaderboard before it closes.</>}
         </p>
         </Reveal>
       </div>
@@ -151,7 +160,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
             <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", gap: 24, alignItems: "center" }} className="pitch-projection-grid">
               {/* Your real Season Rewards points + rank */}
               <div>
-                <div style={miniLabel}>YOUR SEASON 1 POINTS</div>
+                <div style={miniLabel}>{seasonClosed ? "YOUR FINAL SEASON 1 POINTS" : "YOUR SEASON 1 POINTS"}</div>
                 <div style={{ ...bigNumber, color: "#F49B2A" }}>
                   {me.points.toLocaleString()}
                   <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
@@ -185,7 +194,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
             </div>
 
             {/* Next-rank call-out */}
-            {me.pointsToNextRank > 0 && (
+            {!seasonClosed && me.pointsToNextRank > 0 && (
               <div style={{
                 marginTop: 18, padding: "10px 14px", borderRadius: 10,
                 background: "rgba(244,155,42,0.08)", border: "1px solid rgba(244,155,42,0.18)",
@@ -207,14 +216,14 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
           // ── ANON: pool + top-3 sneak peek ──
           <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr", gap: 24, alignItems: "center" }} className="pitch-projection-grid">
             <div>
-              <div style={miniLabel}>{seasonStarted ? "SEASON 1 · POINTS IN PLAY" : "SEASON 1 · OPENS JUL 1"}</div>
+              <div style={miniLabel}>{seasonClosed ? "SEASON 1 · FINAL POINTS" : seasonStarted ? "SEASON 1 · POINTS IN PLAY" : "SEASON 1 · OPENS JUL 1"}</div>
               {seasonStarted ? (
                 <>
                   <div style={{ ...bigNumber, color: "#F49B2A" }}>
                     {(data?.pool.points ?? 0).toLocaleString()}
                     <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
                   </div>
-                  <div style={mini}>{data?.pool.participants ?? 0} raising · grows as players raise &amp; create</div>
+                  <div style={mini}>{data?.pool.participants ?? 0} raisers · {seasonClosed ? "season total" : "grows as players raise & create"}</div>
                 </>
               ) : (
                 <>
@@ -226,12 +235,12 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
             <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24 }}>
               <div style={miniLabel}>{cdLabel}</div>
               <div style={{ ...bigNumber, fontSize: 22, color: "white" }}>
-                {String(cdDays).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>d</span> {String(cdHours).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>h</span> {String(cdMins).padStart(2, "0")}<span style={{ color: "rgba(255,255,255,0.4)" }}>m</span>
+                {countdownEl}
               </div>
               <div style={mini}>{cdWhen}</div>
             </div>
             <div style={{ borderLeft: "1px solid rgba(255,255,255,0.1)", paddingLeft: 24 }}>
-              <div style={miniLabel}>TOP RAISERS</div>
+              <div style={miniLabel}>{seasonClosed ? "FINAL TOP RAISERS" : "TOP RAISERS"}</div>
               {(data?.topThree?.length ? data.topThree.slice(0, 3) : []).map((t) => (
                 <div key={t.rank} style={{ display: "flex", alignItems: "baseline", gap: 8, fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 4 }}>
                   <span style={{ color: "#F49B2A", fontWeight: 700 }}>#{t.rank}</span>
@@ -320,6 +329,30 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
         </Reveal>
       </div>
 
+      {seasonClosed ? (
+        <Reveal dir="pop">
+          <div style={{
+            marginTop: 10, borderRadius: 18, padding: "30px 26px", textAlign: "center",
+            background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+            boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
+          }}>
+            <div style={{ ...miniLabel, color: "#9A4E1E", marginBottom: 10 }}>SEASON 1 · CLOSED</div>
+            <div style={{ fontFamily: "var(--ed-disp)", fontSize: 26, fontWeight: 800, color: "#211A12", marginBottom: 8 }}>
+              The board is final.
+            </div>
+            <p style={{ ...sub, fontSize: 14, marginBottom: 18 }}>
+              New care and creations no longer change Season 1 standings. You can keep raising your pet while the next season is prepared.
+            </p>
+            <button onClick={() => onNavigate?.("leaderboard")} style={{
+              padding: "11px 20px", borderRadius: 10, border: "none", cursor: "pointer",
+              background: "#BE4F28", color: "#FFF8EE", fontFamily: "var(--ed-disp)", fontWeight: 800,
+            }}>
+              View final standings <ArrowSwap />
+            </button>
+          </div>
+        </Reveal>
+      ) : (
+      <>
       {/* ── HOW grid (content unchanged; cards fly up with a 90ms stagger) ── */}
       <Reveal dir="fade">
       <div style={{ textAlign: "center", marginBottom: 14 }}>
@@ -403,6 +436,8 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
         </button>
       </div>
       </Reveal>
+      </>
+      )}
 
       <div style={{
         marginTop: 26, fontSize: 13, color: "#5C5140",
@@ -449,6 +484,14 @@ function PathCard({ step, icon, title, body, earn, cta, onClick, accent }: {
       transition: "transform 160ms ease, box-shadow 160ms ease",
       cursor: onClick ? "pointer" : "default",
     }}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={onClick ? `${cta}: ${title}` : undefined}
+      onKeyDown={onClick ? (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        onClick();
+      } : undefined}
       onMouseEnter={(e) => { if (onClick) { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "var(--ed-shadow-card-hover, 0 26px 50px -24px rgba(80,55,20,.55))"; } }}
       onMouseLeave={(e) => { if (onClick) { (e.currentTarget as HTMLDivElement).style.transform = ""; (e.currentTarget as HTMLDivElement).style.boxShadow = "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))"; } }}
       onClick={onClick}

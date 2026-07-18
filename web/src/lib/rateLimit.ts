@@ -12,7 +12,6 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 
 type Bucket = { tokens: number; refilledAt: number };
 const buckets = new Map<string, Bucket>();
@@ -20,15 +19,11 @@ const GC_INTERVAL_MS = 5 * 60_000;
 let lastGc = 0;
 
 function clientId(req: NextRequest): string {
-  // audit H10: key on a hash of the FULL bearer token so distinct logged-in
-  // users get distinct buckets. The previous `auth.slice(7, 32)` was the same
-  // constant ("eyJhbGciOiJIUzI1NiJ9.eyJz") for every HS256 JWT, collapsing all
-  // authenticated users into one shared bucket.
-  const auth = req.headers.get("authorization");
-  if (auth && auth.startsWith("Bearer ")) {
-    const token = auth.slice(7);
-    return "u:" + crypto.createHash("sha256").update(token).digest("hex").slice(0, 24);
-  }
+  // Never treat an unverified Authorization header as limiter identity. Public
+  // routes (notably nonce/verify) call this before authentication, so accepting
+  // arbitrary bearer text lets an attacker mint a fresh bucket per request.
+  // The shared edge-IP gate remains mandatory even for authenticated routes;
+  // expensive endpoints add persistent per-user/database quotas separately.
   // audit H11: do NOT trust the client-supplied leftmost X-Forwarded-For hop.
   // Prefer X-Real-IP (set by our nginx/edge proxy) and otherwise take the
   // RIGHTMOST XFF entry (appended by our own proxy), which an external attacker

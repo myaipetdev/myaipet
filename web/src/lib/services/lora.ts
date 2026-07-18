@@ -16,9 +16,9 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { uploadFile } from "@/lib/storage";
+import { deleteStoredFile, readStoredFile, temporaryStoredFileUrl, uploadFile } from "@/lib/storage";
 import { isFetchableImageUrl } from "@/lib/sanitize";
-import { saveToBlob } from "@/lib/services/video";
+import { consumeImageBudget } from "@/lib/llm/router";
 
 const TRAINER_MODEL = "fal-ai/flux-lora-fast-training";
 const LORA_GEN_MODEL = "fal-ai/flux-lora";
@@ -137,13 +137,10 @@ export async function collectTrainingImages(pet: {
   const urls: string[] = [];
   if (pet.avatar_url) urls.push(absolutize(pet.avatar_url));
 
-  // Best-available identity set: the owner's completed image generations of the
-  // same species. (Generations aren't pet-linked yet; multi-pet same-species
-  // owners get mixed sets — acceptable for v1, noted in the route response.)
+  // Exact identity set: only generations explicitly linked to this pet.
   const gens = await prisma.generation.findMany({
     where: {
-      user_id: pet.user_id,
-      pet_type: pet.species,
+      pet_id: pet.id,
       status: "completed",
       photo_path: { not: "" },
       credits_charged: { gt: 0 }, // styled generations only — skips raw avatar copies
@@ -160,6 +157,10 @@ export async function collectTrainingImages(pet: {
 
 async function downloadImage(url: string): Promise<Buffer | null> {
   try {
+    if (url.startsWith(`${appBaseUrl()}/uploads/`) || url.startsWith("/uploads/")) {
+      const buffer = await readStoredFile(url);
+      return buffer.length > 0 && buffer.length <= MAX_IMAGE_BYTES ? buffer : null;
+    }
     if (!(await isFetchableImageUrl(url))) {
       // Allow our own app-served uploads (localhost in dev) — isFetchableImageUrl
       // rejects loopback, but these are our files, fetched by us.
@@ -242,37 +243,64 @@ export async function submitPetLoraTraining(pet: {
   }
 
   const zip = buildStoreZip(entries);
-  const uploaded = await uploadFile(
-    `lora-train/pet-${pet.id}-${Date.now()}.zip`,
-    zip,
-    "application/zip"
-  );
-  const zipUrl = absolutize(uploaded.url);
-  if (/^https?:\/\/(localhost|127\.|0\.0\.0\.0|\[::1\])/i.test(zipUrl)) {
-    throw new Error(
-      "Training zip is only reachable on localhost — fal can't download it. " +
-      "Configure S3 storage (STORAGE_PROVIDER=s3) to train LoRAs."
+  let trainingArchiveRef: string | null = null;
+  try {
+    const uploaded = await uploadFile(
+      `lora-train/pet-${pet.id}-${Date.now()}.zip`,
+      zip,
+      "application/zip"
     );
-  }
+    trainingArchiveRef = uploaded.url;
+    const zipUrl = await temporaryStoredFileUrl(uploaded.url, 3600);
 
-  const trigger = triggerWordFor(pet.id);
-  const requestId = await falQueueSubmit(TRAINER_MODEL, {
-    images_data_url: zipUrl,
-    trigger_word: trigger,
-    is_style: false,
-  });
-
-  const row = await prisma.petLora.create({
-    data: {
-      pet_id: pet.id,
-      status: "training",
-      fal_request_id: requestId,
+    const trigger = triggerWordFor(pet.id);
+    const requestId = await falQueueSubmit(TRAINER_MODEL, {
+      images_data_url: zipUrl,
       trigger_word: trigger,
-      images_used: used,
-    },
-  });
+      is_style: false,
+    });
 
-  return { loraId: row.id, imagesUsed: used };
+    const row = await prisma.petLora.create({
+      data: {
+        pet_id: pet.id,
+        status: "training",
+        fal_request_id: requestId,
+        training_archive_ref: trainingArchiveRef,
+        trigger_word: trigger,
+        images_used: used,
+      },
+    });
+
+    return { loraId: row.id, imagesUsed: used };
+  } catch (error) {
+    // Upload succeeded but provider/DB persistence did not. Delete immediately;
+    // if storage is unavailable, retain durable deletion intent. The strict
+    // server-issued pet-id filename also lets a later pet deletion inventory
+    // pre-metadata archives without trusting user-controlled paths.
+    if (trainingArchiveRef) {
+      try {
+        await deleteStoredFile(trainingArchiveRef);
+      } catch (cleanupError) {
+        await prisma.mediaDeletionTask.upsert({
+          where: { object_ref: trainingArchiveRef },
+          create: {
+            object_ref: trainingArchiveRef,
+            owner_user_id: pet.user_id,
+            source_pet_id: pet.id,
+            attempts: 1,
+            last_error: "LoRA training archive immediate cleanup failed",
+          },
+          update: {
+            attempts: { increment: 1 },
+            last_error: "LoRA training archive immediate cleanup failed",
+          },
+        }).catch(() => {
+          console.error("[lora] archive cleanup and durable cleanup enqueue both failed", cleanupError instanceof Error ? cleanupError.name : "unknown");
+        });
+      }
+    }
+    throw error;
+  }
 }
 
 /** Lazy poll — called from the GET route while a training run is in flight. */
@@ -313,14 +341,18 @@ export async function getReadyPetLora(petId: number) {
 
 /**
  * Generate an image with the pet's trained LoRA (fal-ai/flux-lora). Polls
- * inline up to ~45s (flux is typically 5–15s). Returns a permanent storage
- * URL. Throws on timeout/failure — callers fall back to the Grok path.
+ * inline up to ~45s (flux is typically 5–15s). Returns the ephemeral provider
+ * URL; the owning route persists it exactly once. Throws on timeout/failure —
+ * callers may fall back to the Grok path.
  */
 export async function falLoraImage(
   prompt: string,
   loraUrl: string,
   triggerWord: string,
+  userId: number,
 ): Promise<string> {
+  falKey(); // configuration failures are not provider attempts
+  await consumeImageBudget(userId, "fal");
   const requestId = await falQueueSubmit(LORA_GEN_MODEL, {
     prompt: `${triggerWord}, ${prompt}`,
     loras: [{ path: loraUrl, scale: 1 }],
@@ -335,7 +367,7 @@ export async function falLoraImage(
     if (st.status === "completed") {
       const url = st.result?.images?.[0]?.url;
       if (!url) throw new Error("flux-lora returned no image URL");
-      return saveToBlob(url, "generations");
+      return url;
     }
     if (st.status === "failed") throw new Error(st.error || "flux-lora generation failed");
   }

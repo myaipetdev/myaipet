@@ -31,7 +31,7 @@ export default function SkillsPage() {
       padding: "60px 24px 100px",
     }}>
       <div style={{ maxWidth: 980, margin: "0 auto" }}>
-        <a href="/" style={{
+        <a href="https://myaipet.ai" style={{
           display: "inline-block", marginBottom: 24, fontSize: 13,
           color: "rgba(33,26,18,0.65)", textDecoration: "none",
         }}>← Back to landing</a>
@@ -211,20 +211,19 @@ export default function SkillsPage() {
           border: "1px solid rgba(190,79,40,0.2)",
         }}>
           <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>
-            Try a skill right now
+            Try the stateless chat preview
           </h3>
           <p style={{ fontSize: 14, color: "rgba(33,26,18,0.7)", lineHeight: 1.6, margin: "0 0 14px" }}>
-            The Sparky demo pet (petId=1) can run any free skill without auth.
-            Test from your terminal:
+            This synthetic preview does not use a real pet, model, or memory.
+            Real skill execution requires an owner token and pet ID.
           </p>
           <pre style={{
             background: "#1E1710", color: "#FFF8EE", padding: 16, borderRadius: 12,
             fontFamily: "var(--ed-m, ui-monospace, monospace)", fontSize: 13, lineHeight: 1.7, margin: 0,
             overflowX: "auto",
-          }}>{`curl -X POST https://app.myaipet.ai/api/petclaw/skills \\
+          }}>{`curl -X POST https://app.myaipet.ai/api/petclaw/demo-chat \\
   -H "Content-Type: application/json" \\
-  -d '{"action":"execute","petId":1,"skillId":"vibe-check",
-       "input":{"message":"hey wanna grab dinner tonight?"}}'`}</pre>
+  -d '{"message":"What can PetClaw do?"}'`}</pre>
         </div>
 
         <div style={{

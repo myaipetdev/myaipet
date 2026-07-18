@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rateLimit";
+import { getUser } from "@/lib/auth";
+import { getLLMBudgetFailureStatus } from "@/lib/llm/router";
+import { generateGrokImage } from "@/lib/services/video";
+import { deleteStoredFile, saveRemoteFile } from "@/lib/storage";
+import { prisma } from "@/lib/prisma";
+import { enqueueMediaDeletionReference } from "@/lib/mediaDeletion";
 
 const ELEMENT_VISUAL: Record<string, string> = {
   fire: "surrounded by swirling flames and embers, fiery orange-red aura, burning ground beneath",
@@ -74,40 +80,55 @@ export async function POST(req: NextRequest) {
   const rl = rateLimit(req, { key: "battle-sprite", limit: 10, windowMs: 60_000 });
   if (!rl.ok) return rl.response;
 
-  const key = process.env.GROK_API_KEY;
-  if (!key) return NextResponse.json({ error: "GROK_API_KEY not set" }, { status: 500 });
+  const user = await getUser(req);
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
   const { name, species, element, personality, isBoss } = body;
 
   const prompt = buildBattlePrompt(name, species || 0, element || "normal", isBoss || false, personality);
 
+  let storedUrl: string | null = null;
+  let ownerReferenceCommitted = false;
   try {
-    const res = await fetch("https://api.x.ai/v1/images/generations", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model: "grok-imagine-image",
+    const upstreamUrl = await generateGrokImage(prompt, user.id);
+    storedUrl = await saveRemoteFile(upstreamUrl, `battle-sprites/${user.id}`);
+    // Persist an exact owner reference. The protected media route deliberately
+    // has no path-prefix ownership fallback, so untracked sprites would be both
+    // unreadable and impossible to retain/delete correctly.
+    await prisma.generation.create({
+      data: {
+        user_id: user.id,
+        pet_id: null,
+        pet_type: Number.isInteger(species) ? species : 0,
+        style: 0,
         prompt,
-        n: 1,
-        response_format: "url",
-      }),
+        duration: 0,
+        photo_path: storedUrl,
+        status: "completed",
+        visibility: "private",
+        credits_charged: 0,
+        completed_at: new Date(),
+      },
     });
-
-    if (!res.ok) {
-      const text = await res.text();
-      return NextResponse.json({ error: `Grok API failed: ${res.status}` }, { status: 502 });
+    ownerReferenceCommitted = true;
+    return NextResponse.json({ url: storedUrl, prompt });
+  } catch (e: unknown) {
+    if (storedUrl && !ownerReferenceCommitted) {
+      await enqueueMediaDeletionReference(storedUrl, {
+        ownerUserId: user.id,
+        reason: "Battle sprite storage succeeded but owner reference creation failed",
+      }).catch(async () => deleteStoredFile(storedUrl).catch(() => {}));
     }
-
-    const data = await res.json();
-    const url = data.data?.[0]?.url;
-    if (!url) return NextResponse.json({ error: "No image returned" }, { status: 502 });
-
-    return NextResponse.json({ url, prompt });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    const budgetStatus = getLLMBudgetFailureStatus(e);
+    if (budgetStatus) {
+      return NextResponse.json({
+        error: budgetStatus === 429
+          ? "Image generation has reached today's limit."
+          : "Image generation is temporarily unavailable.",
+      }, { status: budgetStatus });
+    }
+    console.error("Battle sprite generation failed:", e instanceof Error ? e.name : "unknown");
+    return NextResponse.json({ error: "Battle sprite generation failed" }, { status: 502 });
   }
 }

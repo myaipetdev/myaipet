@@ -285,6 +285,7 @@ export default function SosFeedAndBuddy() {
               <div style={{ display: "flex", gap: 8 }}>
                 <input
                   type="text"
+                  aria-label="Partner wallet"
                   value={inviteWallet}
                   onChange={e => setInviteWallet(e.target.value)}
                   placeholder="Partner wallet 0x…"

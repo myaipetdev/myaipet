@@ -5,6 +5,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { PETCLAW_PROTOCOL, buildPetDID, type PetClawSkill, DEFAULT_SKILLS } from "./petclaw";
+import { publicPetWhere } from "@/lib/publicPet";
 
 export interface RegisteredPet {
   id: number;
@@ -37,8 +38,8 @@ export interface PetCard {
 }
 
 export async function getRegisteredPet(petId: number): Promise<RegisteredPet | null> {
-  const pet = await prisma.pet.findUnique({
-    where: { id: petId },
+  const pet = await prisma.pet.findFirst({
+    where: publicPetWhere({ id: petId }),
     include: { user: true },
   });
   if (!pet || !pet.user) return null;
@@ -70,7 +71,7 @@ export async function getAllRegisteredPets(filters?: {
   status?: string;
   limit?: number;
 }): Promise<RegisteredPet[]> {
-  const where: any = { is_active: true };
+  const where: any = {};
 
   if (filters?.ownerWallet) {
     const user = await prisma.user.findFirst({
@@ -81,7 +82,7 @@ export async function getAllRegisteredPets(filters?: {
   }
 
   const pets = await prisma.pet.findMany({
-    where,
+    where: publicPetWhere(where),
     include: { user: true },
     orderBy: { created_at: "desc" },
     take: filters?.limit || 50,
@@ -133,8 +134,8 @@ export async function getRegistryStats(): Promise<{
   totalSoulNfts: number;
 }> {
   const [totalPets, activePets, totalSoulNfts] = await Promise.all([
-    prisma.pet.count(),
-    prisma.pet.count({ where: { is_active: true } }),
+    prisma.pet.count({ where: publicPetWhere() }),
+    prisma.pet.count({ where: publicPetWhere() }),
     prisma.petSoulNft.count(),
   ]);
 

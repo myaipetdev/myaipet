@@ -1,15 +1,44 @@
 /**
- * MY AI PET v2.2.3 — Content Script
- * Pet on every webpage: walking, chatting, emotions, particles, evolution effects
+ * MY AI PET — Content Script
+ * Pet on supported webpages: walking, chatting, emotions, particles, evolution effects
  */
 
-(function () {
-  if (document.getElementById("aipet-container")) return;
+(async function () {
+  const EXTENSION_HOST_ID = "myaipet-petclaw-root";
+  const INSTANCE_KEY = "__myaipetPetclawInstanceV230";
+  const PAGE_SUMMARY_MAX_CHARS = 1_500;
+  const PAGE_SUMMARY_MAX_BYTES = 2_800;
+  if (globalThis[INSTANCE_KEY]) return;
+  // executeScript() and a newly registered persistent script can race on the
+  // same document. The isolated-world marker closes that gap before any await.
+  globalThis[INSTANCE_KEY] = true;
+  const releaseInstance = () => {
+    try { delete globalThis[INSTANCE_KEY]; } catch { globalThis[INSTANCE_KEY] = false; }
+  };
+  if (document.getElementById(EXTENSION_HOST_ID)) {
+    releaseInstance();
+    return;
+  }
 
   // Skip on myaipet domains — landing already has its own Sparky companion.
-  // "왜 2마리야" report: extension overlapped with landing's native pet.
-  const host = location.hostname;
+  // Avoid rendering a second pet over the landing page's native companion.
+  const host = location.hostname.toLowerCase().replace(/\.+$/, "");
   if (host === "myaipet.ai" || host === "www.myaipet.ai" || host === "app.myaipet.ai") {
+    releaseInstance();
+    return;
+  }
+
+  const sitePolicy = await new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: "getSitePolicy", host }, (response) => {
+      if (chrome.runtime.lastError) {
+        resolve({ enabled: false, paused: false });
+        return;
+      }
+      resolve(response || { enabled: false, paused: false });
+    });
+  });
+  if (sitePolicy.enabled === false || sitePolicy.paused === true || sitePolicy.authorized !== true) {
+    releaseInstance();
     return;
   }
 
@@ -18,10 +47,10 @@
   let emotions = { happiness: 70, energy: 60, hunger: 30, affection: 60, curiosity: 50 };
   let dominant = { emoji: "\uD83D\uDE0A", name: "Happy" };
   let evolution = { stage: 0, xp: 0 };
-  let preferences = { particles: true, autoTalk: true, sound: false };
+  let preferences = { particles: true, autoTalk: false, pageAwareness: false, sound: false };
 
   // 2-D autonomous roaming: pick a target on screen, walk to it, pause, pick another.
-  // "주변만 맴도는" report — previous walk used fixed-duration random shuffles that
+  // The previous walk used fixed-duration random shuffles that
   // never covered much ground before flipping direction.
   let posX = window.innerWidth / 2;
   let posY = 0;                     // rendered height above bottom (px)
@@ -46,6 +75,9 @@
   let lastActivityAt = Date.now();   // for sleep/wake idle detection
   let isAsleep = false;
   let pageCommented = false;         // page-aware comment shown once per page
+  let petStreak = 0;
+  let lastPageKey = "";
+  let lastActivityReportAt = 0;
 
   const EVO_AURAS = [
     "", // egg - no aura
@@ -60,14 +92,30 @@
     return min + Math.random() * (max - min);
   }
 
-  // ── Build DOM ──
+  // ── Build an isolated DOM ──
+  // A closed shadow root prevents host-page JavaScript from reading chat input,
+  // replies, and controls or dispatching events directly at those controls.
+  const extensionHost = document.createElement("div");
+  extensionHost.id = EXTENSION_HOST_ID;
+  extensionHost.style.setProperty("all", "initial", "important");
+  extensionHost.style.setProperty("position", "fixed", "important");
+  extensionHost.style.setProperty("inset", "0", "important");
+  extensionHost.style.setProperty("width", "0", "important");
+  extensionHost.style.setProperty("height", "0", "important");
+  extensionHost.style.setProperty("z-index", "2147483647", "important");
+  extensionHost.style.setProperty("pointer-events", "none", "important");
+  const shadowRoot = extensionHost.attachShadow({ mode: "closed" });
+  const style = document.createElement("style");
+  shadowRoot.appendChild(style);
+
   const container = document.createElement("div");
   container.id = "aipet-container";
+  container.style.visibility = "hidden";
 
   container.innerHTML = `
     <div id="aipet-particles"></div>
     <div id="aipet-mood">\uD83D\uDE0A</div>
-    <div id="aipet-body">
+    <div id="aipet-body" role="button" tabindex="0" aria-label="Open PetClaw chat">
       <div id="aipet-emoji">\uD83D\uDC3E</div>
       <div id="aipet-name">Pet</div>
       <div id="aipet-level">Lv.1</div>
@@ -76,29 +124,115 @@
     <div id="aipet-emotion-bar">
       <div id="aipet-emotion-fill"></div>
     </div>
-    <div id="aipet-bubble" class="hidden"></div>
-    <div id="aipet-menu" class="hidden"></div>
+    <div id="aipet-bubble" class="hidden" role="status" aria-live="polite"></div>
+    <div id="aipet-menu" class="hidden" role="menu" aria-label="PetClaw actions"></div>
   `;
 
-  document.body.appendChild(container);
+  shadowRoot.appendChild(container);
+  (document.body || document.documentElement).appendChild(extensionHost);
 
-  const body = document.getElementById("aipet-body");
-  const bubble = document.getElementById("aipet-bubble");
-  const menu = document.getElementById("aipet-menu");
-  const moodEl = document.getElementById("aipet-mood");
-  const emojiEl = document.getElementById("aipet-emoji");
-  const nameEl = document.getElementById("aipet-name");
-  const levelEl = document.getElementById("aipet-level");
-  const evoBadge = document.getElementById("aipet-evo-badge");
-  const emotionBarFill = document.getElementById("aipet-emotion-fill");
-  const particlesContainer = document.getElementById("aipet-particles");
+  let destroyed = false;
+  let animationFrameId = null;
+  const scheduledTimeouts = new Set();
+  const scheduledIntervals = new Set();
+  const eventCleanups = new Set();
+  const runtimeListeners = new Set();
+
+  function scheduleTimeout(callback, delay) {
+    if (destroyed) return null;
+    const id = globalThis.setTimeout(() => {
+      scheduledTimeouts.delete(id);
+      if (!destroyed) callback();
+    }, delay);
+    scheduledTimeouts.add(id);
+    return id;
+  }
+
+  function cancelScheduledTimeout(id) {
+    if (id == null) return;
+    globalThis.clearTimeout(id);
+    scheduledTimeouts.delete(id);
+  }
+
+  function scheduleInterval(callback, delay) {
+    if (destroyed) return null;
+    const id = globalThis.setInterval(() => {
+      if (!destroyed) callback();
+    }, delay);
+    scheduledIntervals.add(id);
+    return id;
+  }
+
+  function listen(target, type, listener, options) {
+    target.addEventListener(type, listener, options);
+    // Descendants disappear with extensionHost. Only global targets need an
+    // explicit teardown (and therefore a retained cleanup closure).
+    const tracked = target === window || target === document;
+    const cleanup = () => {
+      target.removeEventListener(type, listener, options);
+      if (tracked) eventCleanups.delete(cleanup);
+    };
+    if (tracked) eventCleanups.add(cleanup);
+    return cleanup;
+  }
+
+  function listenRuntime(listener) {
+    chrome.runtime.onMessage.addListener(listener);
+    runtimeListeners.add(listener);
+  }
+
+  function scheduleFrame(callback) {
+    if (destroyed) return null;
+    animationFrameId = globalThis.requestAnimationFrame((now) => {
+      animationFrameId = null;
+      if (!destroyed) callback(now);
+    });
+    return animationFrameId;
+  }
+
+  function shutdown() {
+    if (destroyed) return;
+    destroyed = true;
+    for (const id of scheduledTimeouts) globalThis.clearTimeout(id);
+    for (const id of scheduledIntervals) globalThis.clearInterval(id);
+    scheduledTimeouts.clear();
+    scheduledIntervals.clear();
+    if (animationFrameId != null) globalThis.cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+    for (const cleanup of eventCleanups) cleanup();
+    eventCleanups.clear();
+    for (const listener of runtimeListeners) chrome.runtime.onMessage.removeListener(listener);
+    runtimeListeners.clear();
+    extensionHost.remove();
+    releaseInstance();
+  }
+
+  fetch(chrome.runtime.getURL("styles.css"))
+    .then((res) => {
+      if (!res.ok) throw new Error(`stylesheet ${res.status}`);
+      return res.text();
+    })
+    .then((css) => { if (!destroyed) style.textContent = css; })
+    .catch((err) => { if (!destroyed) console.error("[AI Pet] Could not load isolated styles:", err.message); })
+    .finally(() => { if (!destroyed) container.style.visibility = ""; });
+
+  const body = shadowRoot.getElementById("aipet-body");
+  const bubble = shadowRoot.getElementById("aipet-bubble");
+  const menu = shadowRoot.getElementById("aipet-menu");
+  const moodEl = shadowRoot.getElementById("aipet-mood");
+  const emojiEl = shadowRoot.getElementById("aipet-emoji");
+  const nameEl = shadowRoot.getElementById("aipet-name");
+  const levelEl = shadowRoot.getElementById("aipet-level");
+  const evoBadge = shadowRoot.getElementById("aipet-evo-badge");
+  const emotionBarFill = shadowRoot.getElementById("aipet-emotion-fill");
+  const particlesContainer = shadowRoot.getElementById("aipet-particles");
 
   // ── Load full state ──
   chrome.runtime.sendMessage({ type: "getFullState" }, (res) => {
-    if (!res) return;
+    if (destroyed || !res) return;
     if (res.config) {
       config = res.config;
-      preferences = config.preferences || preferences;
+      preferences = { ...preferences, ...(config.preferences || {}) };
       updateAppearance();
     }
     if (res.emotions) emotions = res.emotions;
@@ -113,14 +247,14 @@
     // Streak counter for return-trip messages
     chrome.runtime.sendMessage({ type: "tickStreak" }, (sres) => {
       if (sres?.streak) {
-        window.__petStreak = sres.streak;
+        petStreak = sres.streak;
         if (sres.justIncremented && sres.streak >= 2) {
-          setTimeout(() => showBubble(`Day ${sres.streak} together! 🔥`, 5500), 800);
+          scheduleTimeout(() => showBubble(`Day ${sres.streak} together! 🔥`, 5500), 800);
         }
       }
     });
     // Page-aware reaction — fires once after state is loaded
-    setTimeout(reactToPage, 1500);
+    scheduleTimeout(reactToPage, 1500);
   });
 
   function updateAppearance() {
@@ -128,15 +262,20 @@
     emojiEl.replaceChildren();
     let safeUrl = "";
     if (config.avatarUrl) {
-      try {
-        const u = new URL(config.avatarUrl);
-        if (u.protocol === "https:" || u.protocol === "http:") safeUrl = config.avatarUrl;
-      } catch {}
+      if (/^data:image\/(?:jpeg|png|webp|gif|avif);base64,[A-Za-z0-9+/=]+$/.test(config.avatarUrl)) {
+        safeUrl = config.avatarUrl;
+      } else {
+        try {
+          const u = new URL(config.avatarUrl);
+          if (u.protocol === "https:" || u.protocol === "http:") safeUrl = config.avatarUrl;
+        } catch {}
+      }
     }
     if (safeUrl) {
       const img = document.createElement("img");
       img.id = "aipet-avatar";
       img.src = safeUrl;
+      img.referrerPolicy = "no-referrer";
       img.alt = String(config.petName || "pet");
       emojiEl.appendChild(img);
     } else {
@@ -144,6 +283,7 @@
     }
     nameEl.textContent = config.petName;
     levelEl.textContent = `Lv.${config.level}`;
+    body.setAttribute("aria-label", `Open chat with ${config.petName || "PetClaw"}`);
   }
 
   function updateEvolutionVisuals() {
@@ -234,7 +374,7 @@
 
   // ── Markdown cleaner ──
   function cleanResponse(text) {
-    return text
+    return String(text == null ? "" : text)
       .replace(/\*\*(.*?)\*\*/g, "$1")
       .replace(/\*(.*?)\*/g, "$1")
       .replace(/#{1,3}\s/g, "")
@@ -255,12 +395,12 @@
     p.style.setProperty("--dx", (Math.random() - 0.5) * 60 + "px");
     p.style.setProperty("--dy", -(30 + Math.random() * 40) + "px");
     particlesContainer.appendChild(p);
-    setTimeout(() => p.remove(), 1000);
+    scheduleTimeout(() => p.remove(), 1000);
   }
 
   function burstParticles(emojis, count = 5) {
     for (let i = 0; i < count; i++) {
-      setTimeout(() => {
+      scheduleTimeout(() => {
         const emoji = emojis[Math.floor(Math.random() * emojis.length)];
         spawnParticle(emoji, 30 + Math.random() * 20, -10 - Math.random() * 20);
       }, i * 80);
@@ -275,31 +415,34 @@
   function dropTreat() {
     if (treatEl || !preferences.particles) return;   // one at a time; honor effects pref
     const kind = Math.random() < 0.5 ? "🪙" : "🍪";
-    const el = document.createElement("div");
+    const el = document.createElement("button");
+    el.type = "button";
+    el.setAttribute("aria-label", `Collect ${kind === "🪙" ? "coin" : "treat"}`);
     el.className = "aipet-treat";
     el.textContent = kind;
     el.style.left = Math.round(posX - 15) + "px";     // posX is the pet's centre
     el.style.bottom = Math.max(4, Math.round(posY)) + "px";
     const collect = (ev) => {
+      if (!ev.isTrusted) return;
       ev.stopPropagation();
       if (treatEl !== el) return;
-      el.removeEventListener("mousedown", collect);
+      el.removeEventListener("click", collect);
       el.classList.add("aipet-treat-gone");
-      setTimeout(() => el.remove(), 260);
+      scheduleTimeout(() => el.remove(), 260);
       treatEl = null;
       burstParticles(["✨", kind], 5);
       showBubble("+1 — nice catch! 🐾", 2200);
       chrome.runtime.sendMessage({ type: "treat", reason: "collect_treat" }, () => {});
     };
-    el.addEventListener("mousedown", collect);
-    document.body.appendChild(el);
+    listen(el, "click", collect);
+    shadowRoot.appendChild(el);
     treatEl = el;
     showBubble("ooh, a treat! 👀", 1800);
     // Uncollected treats don't linger — fade after ~25s.
-    setTimeout(() => {
+    scheduleTimeout(() => {
       if (treatEl === el) {
         el.classList.add("aipet-treat-gone");
-        setTimeout(() => el.remove(), 260);
+        scheduleTimeout(() => el.remove(), 260);
         treatEl = null;
       }
     }, 25000);
@@ -307,11 +450,12 @@
 
   // ── Speech Bubble ──
   function showBubble(text, duration = 5000) {
-    if (bubbleTimeout) clearTimeout(bubbleTimeout);
+    if (bubbleTimeout) cancelScheduledTimeout(bubbleTimeout);
     bubble.classList.remove("hidden");
+    bubble.removeAttribute("aria-label");
     bubble.textContent = cleanResponse(text);
     menu.classList.add("hidden");
-    bubbleTimeout = setTimeout(() => {
+    bubbleTimeout = scheduleTimeout(() => {
       bubble.classList.add("hidden");
       state = "idle";
     }, duration);
@@ -322,14 +466,14 @@
   // light comment matching the page topic. Designed to be the "magic moment"
   // that makes general users go "whoa, it noticed".
   const PAGE_REACTIONS = [
-    { match: /youtube\.com|video|watch|영상/i,           lines: ["Watch party? 🎬", "Got popcorn? 🍿", "What are we watching?"] },
-    { match: /github\.com|gitlab|stackoverflow|코드|coding|programming|javascript|typescript|python/i,
+    { match: /youtube\.com|video|watch/i,           lines: ["Watch party? 🎬", "Got popcorn? 🍿", "What are we watching?"] },
+    { match: /github\.com|gitlab|stackoverflow|coding|programming|javascript|typescript|python/i,
                                                           lines: ["Coding time! 💻", "Push it, ship it 🚀", "Comments are for the weak (kidding!)"] },
     { match: /wikipedia|encyclopedia|wiki/i,             lines: ["Ooh, facts! 🤓", "Teach me too!", "Down the rabbit hole 🐰"] },
     { match: /twitter\.com|x\.com|threads|reddit/i,      lines: ["Don't doomscroll too long 🌊", "Touch grass after? 🌿", "Anything good today?"] },
-    { match: /amazon|shopping|cart|쇼핑|store|aliexpress/i, lines: ["Treat yourself 🛒", "Add to cart, you deserve it", "Show me what you got!"] },
-    { match: /spotify|music|soundcloud|apple\.com\/music|음악/i, lines: ["Dance with me? 🎵", "What's the vibe?", "Bops only 🔊"] },
-    { match: /news|뉴스|breaking|cnn|nytimes|reuters/i,  lines: ["What's happening out there?", "Heavy stuff... take a breath", "Stay informed, stay sane"] },
+    { match: /amazon|shopping|cart|store|aliexpress/i, lines: ["Treat yourself 🛒", "Add to cart, you deserve it", "Show me what you got!"] },
+    { match: /spotify|music|soundcloud|apple\.com\/music/i, lines: ["Dance with me? 🎵", "What's the vibe?", "Bops only 🔊"] },
+    { match: /news|breaking|cnn|nytimes|reuters/i,  lines: ["What's happening out there?", "Heavy stuff... take a breath", "Stay informed, stay sane"] },
     { match: /tutorial|how to|guide|docs|documentation/i, lines: ["Learning something new? 📚", "RTFM mode 👍", "Ooh ooh, what is it?"] },
     { match: /gmail|outlook|mail/i,                       lines: ["Inbox zero? 📬", "One email at a time 🐌"] },
     { match: /linkedin|recruiter|job|career/i,            lines: ["Career mode 💼", "Update that resume!"] },
@@ -346,38 +490,46 @@
   }
 
   function reactToPage() {
+    // Reading even a local title/H1 is opt-in. Page summaries have a separate,
+    // per-use consent and preview flow below.
+    if (preferences.pageAwareness !== true) return;
     if (pageCommented) return;
     pageCommented = true;
     const topic = getPageTopic();
     for (const r of PAGE_REACTIONS) {
       if (r.match.test(topic)) {
         const phrase = r.lines[Math.floor(Math.random() * r.lines.length)];
-        setTimeout(() => showBubble(phrase, 5000), 1800);
+        scheduleTimeout(() => showBubble(phrase, 5000), 1800);
         return;
       }
     }
     // Generic greeting if no topic match (subtle, only sometimes)
     if (Math.random() < 0.35) {
       const generics = ["I'm here 🐾", "Hi friend", "Hanging out", "Whatcha doing?"];
-      setTimeout(() => showBubble(generics[Math.floor(Math.random() * generics.length)], 4000), 2500);
+      scheduleTimeout(() => showBubble(generics[Math.floor(Math.random() * generics.length)], 4000), 2500);
     }
   }
 
   // ── Idle / sleep / wake ──
-  function recordActivity() {
+  function recordActivity(event) {
+    if (event && event.isTrusted === false) return;
     lastActivityAt = Date.now();
+    if (Date.now() - lastActivityReportAt > 60_000) {
+      lastActivityReportAt = Date.now();
+      chrome.runtime.sendMessage({ type: "userActivity" }, () => {});
+    }
     if (isAsleep) {
       isAsleep = false;
       body.classList.remove("aipet-sleeping");
-      const streakHint = (window.__petStreak > 0) ? ` (day ${window.__petStreak}!)` : "";
+      const streakHint = petStreak > 0 ? ` (day ${petStreak}!)` : "";
       showBubble("Welcome back! ✨" + streakHint, 4000);
     }
   }
   ["mousemove", "keydown", "scroll", "click"].forEach(ev =>
-    window.addEventListener(ev, recordActivity, { passive: true })
+    listen(window, ev, recordActivity, { passive: true })
   );
   // Sleep check every 30s — fall asleep after 5min idle
-  setInterval(() => {
+  scheduleInterval(() => {
     const idleMs = Date.now() - lastActivityAt;
     if (!isAsleep && idleMs > 5 * 60 * 1000) {
       isAsleep = true;
@@ -389,10 +541,11 @@
 
   // ── Tab visibility — pet acknowledges return ──
   let __welcomeHiddenAt = 0;
-  document.addEventListener("visibilitychange", () => {
+  listen(document, "visibilitychange", (event) => {
+    if (!event.isTrusted) return;
     if (document.visibilityState === "hidden") { __welcomeHiddenAt = Date.now(); return; }
     if (document.visibilityState === "visible") {
-      recordActivity();
+      recordActivity(event);
 
       // Daily "welcome back" — a genuine greeting the first time you come back each
       // day, and only after a real absence (>2min) so quick tab-flips don't trigger
@@ -404,18 +557,20 @@
         chrome.runtime.sendMessage({ type: "welcome", reason: "welcome_back_daily" }, (res) => {
           if (!res || !res.welcomed) return;
           body.classList.add("jumping");
-          setTimeout(() => body.classList.remove("jumping"), 600);
+          scheduleTimeout(() => body.classList.remove("jumping"), 600);
           burstParticles([(dominant && dominant.emoji) ? dominant.emoji : "🐾", "❤️"], 5);
           showBubble("welcome back 💕 +1", 2800);
         });
       }
 
       // Reset page-comment flag so a brand-new SPA navigation can trigger again
-      const newKey = document.title;
-      if (window.__lastPageKey !== newKey) {
-        window.__lastPageKey = newKey;
-        pageCommented = false;
-        setTimeout(reactToPage, 1200);
+      if (preferences.pageAwareness === true) {
+        const newKey = document.title;
+        if (lastPageKey !== newKey) {
+          lastPageKey = newKey;
+          pageCommented = false;
+          scheduleTimeout(reactToPage, 1200);
+        }
       }
     }
   });
@@ -423,32 +578,44 @@
   function showTyping() {
     bubble.classList.remove("hidden");
     bubble.innerHTML = '<div class="aipet-typing"><span></span><span></span><span></span></div>';
+    bubble.setAttribute("aria-label", "PetClaw is thinking");
   }
 
   function showChatInput(prefill = "") {
     bubble.classList.remove("hidden");
     bubble.replaceChildren();
-    const label = document.createElement("div");
+    bubble.removeAttribute("aria-label");
+    const label = document.createElement("label");
     label.style.cssText = "font-size:11px;color:#999;margin-bottom:4px";
     label.textContent = `${dominant.emoji} ${config.petName} is listening...`;
+    label.htmlFor = "aipet-chat-input";
     const input = document.createElement("input");
     input.id = "aipet-chat-input";
     input.type = "text";
     input.placeholder = "Say something...";
+    input.maxLength = 1_000;
+    input.autocomplete = "off";
+    input.spellcheck = true;
     input.value = prefill;
     bubble.appendChild(label);
     bubble.appendChild(input);
     input.focus();
-    input.addEventListener("keydown", (e) => {
+    listen(input, "keydown", (e) => {
+      if (!e.isTrusted) return;
       if (e.key === "Enter" && input.value.trim()) {
         const msg = input.value.trim();
         showTyping();
         state = "chatting";
         chrome.runtime.sendMessage({ type: "chat", message: msg }, (res) => {
+          const runtimeError = chrome.runtime.lastError;
+          if (runtimeError) {
+            showBubble("PetClaw is unavailable right now. Please try again.", 4000);
+            return;
+          }
           if (res?.reply) {
             showBubble(res.reply, 6000);
             body.classList.add("jumping");
-            setTimeout(() => body.classList.remove("jumping"), 500);
+            scheduleTimeout(() => body.classList.remove("jumping"), 500);
             burstParticles(["\u2728", "\uD83D\uDCAC", "\u2764\uFE0F"], 3);
           } else {
             showBubble("Hmm, I couldn't think of anything... \uD83D\uDE05", 3000);
@@ -462,34 +629,101 @@
     });
   }
 
-  // ── Agentic page action: "Sparky, what's this page?" ──
-  // Reads the page locally (user-initiated) and routes it through the existing
-  // chat pipeline so the pet answers in its own voice. No new permission — the
-  // content script already has DOM access on the host page.
+  // ── Agentic page action: explicit consent → preview → send ──
+  // No title/body is read until Preview, and nothing is transmitted until a
+  // second trusted click. The background uses the non-memory summarize-page
+  // skill rather than companion-chat.
+  function limitPageSummaryText(value) {
+    const normalized = String(value || "").replace(/<\/?page_content/gi, "[page tag]").trim();
+    const encoder = new TextEncoder();
+    let output = "";
+    let bytes = 0;
+    let chars = 0;
+    for (const char of normalized) {
+      const charBytes = encoder.encode(char).byteLength;
+      if (chars >= PAGE_SUMMARY_MAX_CHARS || bytes + charBytes > PAGE_SUMMARY_MAX_BYTES) break;
+      output += char;
+      bytes += charBytes;
+      chars++;
+    }
+    return output;
+  }
+
   function extractPageText() {
     const title = (document.title || "").slice(0, 200);
     const main = document.querySelector("main, article, [role='main']") || document.body;
-    const text = ((main && main.innerText) || "").replace(/\s+/g, " ").trim().slice(0, 3000);
+    const text = limitPageSummaryText(((main && main.innerText) || "").replace(/\s+/g, " "));
     return { title, text };
   }
 
-  function askAboutPage() {
+  function bubbleButton(label, secondary, onClick) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `aipet-consent-button${secondary ? " secondary" : ""}`;
+    btn.textContent = label;
+    listen(btn, "click", (event) => {
+      if (!event.isTrusted) return;
+      event.stopPropagation();
+      onClick();
+    });
+    return btn;
+  }
+
+  function showPagePreview() {
     const { title, text } = extractPageText();
     if (!text) { showBubble("I can't quite read this page 😅", 3000); return; }
-    showTyping();
+
+    bubble.replaceChildren();
+    const notice = document.createElement("div");
+    notice.className = "aipet-consent-copy";
+    notice.textContent = `Preview (${text.length.toLocaleString()} chars): ${title || "Untitled page"}`;
+    const preview = document.createElement("div");
+    preview.className = "aipet-page-preview";
+    preview.textContent = text;
+    const actions = document.createElement("div");
+    actions.className = "aipet-consent-actions";
+    actions.append(
+      bubbleButton("Send for summary", false, () => {
+        showTyping();
+        state = "chatting";
+        chrome.runtime.sendMessage({ type: "summarizePage", title, text }, (res) => {
+          const runtimeError = chrome.runtime.lastError;
+          if (runtimeError) {
+            showBubble("The summary service is unavailable right now.", 4000);
+            return;
+          }
+          if (res?.reply) {
+            showBubble(res.reply, 8000);
+            burstParticles(["🔍", "💬", "✨"], 3);
+          } else {
+            showBubble(res?.error || "I couldn't summarize that page.", 4000);
+          }
+        });
+      }),
+      bubbleButton("Cancel", true, () => showBubble("Nothing was sent.", 1800)),
+    );
+    bubble.append(notice, preview, actions);
+  }
+
+  function askAboutPage() {
+    if (!config.paired) {
+      showBubble("Connect your pet in Settings before sharing a page for summary.", 5000);
+      return;
+    }
+    if (bubbleTimeout) cancelScheduledTimeout(bubbleTimeout);
     state = "chatting";
-    const msg =
-      "I'm browsing a web page with you. In your own voice, tell me what it's " +
-      "about in 1-2 short sentences, then one thing you find interesting. " +
-      `Page title: "${title}". Page content: ${text}`;
-    chrome.runtime.sendMessage({ type: "chat", message: msg }, (res) => {
-      if (res?.reply) {
-        showBubble(res.reply, 8000);
-        burstParticles(["🔍", "💬", "✨"], 3);
-      } else {
-        showBubble("Hmm, I couldn't make sense of it 😅", 3000);
-      }
-    });
+    bubble.classList.remove("hidden");
+    bubble.replaceChildren();
+    const notice = document.createElement("div");
+    notice.className = "aipet-consent-copy";
+    notice.textContent = "Preview up to 1,500 characters from this page? The preview stays here. It is sent only if you approve again, and it is not saved to pet memory.";
+    const actions = document.createElement("div");
+    actions.className = "aipet-consent-actions";
+    actions.append(
+      bubbleButton("Preview", false, showPagePreview),
+      bubbleButton("Cancel", true, () => showBubble("Nothing was read or sent.", 1800)),
+    );
+    bubble.append(notice, actions);
   }
 
   // ── Context Menu ──
@@ -497,32 +731,51 @@
     menu.classList.remove("hidden");
     bubble.classList.add("hidden");
 
-    const evoStage = evolution.stage || 0;
-
     menu.innerHTML = `
-      <button class="aipet-menu-item" data-action="chat"><span class="icon">\uD83D\uDCAC</span> Chat</button>
-      <button class="aipet-menu-item" data-action="page"><span class="icon">\uD83D\uDD0D</span> What's this page?</button>
-      <button class="aipet-menu-item" data-action="mood"><span class="icon">${dominant.emoji}</span> How are you?</button>
-      <button class="aipet-menu-item" data-action="feed"><span class="icon">\uD83C\uDF56</span> Feed</button>
-      <button class="aipet-menu-item" data-action="play"><span class="icon">\uD83C\uDFBE</span> Play</button>
-      <button class="aipet-menu-item" data-action="pet"><span class="icon">\uD83D\uDC95</span> Pet</button>
+      <button type="button" role="menuitem" class="aipet-menu-item" data-action="chat"><span class="icon">\uD83D\uDCAC</span> Chat</button>
+      <button type="button" role="menuitem" class="aipet-menu-item" data-action="page"><span class="icon">\uD83D\uDD0D</span> What's this page?</button>
+      <button type="button" role="menuitem" class="aipet-menu-item" data-action="mood"><span class="icon">${dominant.emoji}</span> How are you?</button>
+      <button type="button" role="menuitem" class="aipet-menu-item" data-action="feed"><span class="icon">\uD83C\uDF56</span> Feed</button>
+      <button type="button" role="menuitem" class="aipet-menu-item" data-action="play"><span class="icon">\uD83C\uDFBE</span> Play</button>
+      <button type="button" role="menuitem" class="aipet-menu-item" data-action="pet"><span class="icon">\uD83D\uDC95</span> Pet</button>
       <div class="aipet-menu-divider"></div>
-      <button class="aipet-menu-item" data-action="skills"><span class="icon">\u2728</span> Skills</button>
-      <button class="aipet-menu-item" data-action="selfie" ${evoStage < 3 ? 'style="opacity:0.4" title="Unlock at Teen stage"' : ""}><span class="icon">\uD83D\uDCF8</span> Take Selfie ${evoStage < 3 ? "\uD83D\uDD12" : ""}</button>
-      <button class="aipet-menu-item" data-action="export"><span class="icon">\uD83D\uDCE6</span> Export SOUL</button>
+      <button type="button" role="menuitem" class="aipet-menu-item" data-action="skills"><span class="icon">\u2728</span> Skills</button>
+      <button type="button" role="menuitem" class="aipet-menu-item" data-action="selfie" disabled title="Coming soon"><span class="icon">\uD83D\uDCF8</span> Selfie — Coming soon</button>
+      <button type="button" role="menuitem" class="aipet-menu-item" data-action="export"><span class="icon">\uD83D\uDCE6</span> Export SOUL</button>
       <div class="aipet-menu-divider"></div>
-      <button class="aipet-menu-item" data-action="sleep"><span class="icon">\uD83D\uDCA4</span> Sleep</button>
-      <button class="aipet-menu-item" data-action="hide"><span class="icon">\uD83D\uDC4B</span> Hide</button>
+      <button type="button" role="menuitem" class="aipet-menu-item" data-action="sleep"><span class="icon">\uD83D\uDCA4</span> Sleep</button>
+      <button type="button" role="menuitem" class="aipet-menu-item" data-action="hide"><span class="icon">\u23F8</span> Pause on this site</button>
     `;
 
     menu.querySelectorAll(".aipet-menu-item").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
+      listen(btn, "click", (e) => {
+        if (!e.isTrusted) return;
         const action = e.currentTarget.dataset.action;
         menu.classList.add("hidden");
         handleMenuAction(action);
       });
     });
+    menu.querySelector(".aipet-menu-item:not(:disabled)")?.focus();
   }
+
+  listen(menu, "keydown", (event) => {
+    if (!event.isTrusted) return;
+    const items = Array.from(menu.querySelectorAll(".aipet-menu-item:not(:disabled)"));
+    const current = items.indexOf(shadowRoot.activeElement);
+    let next = current;
+    if (event.key === "ArrowDown") next = (current + 1 + items.length) % items.length;
+    else if (event.key === "ArrowUp") next = (current - 1 + items.length) % items.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = items.length - 1;
+    else if (event.key === "Escape") {
+      menu.classList.add("hidden");
+      body.focus();
+      event.preventDefault();
+      return;
+    } else return;
+    event.preventDefault();
+    items[next]?.focus();
+  });
 
   function handleMenuAction(action) {
     switch (action) {
@@ -535,96 +788,108 @@
         break;
 
       case "mood":
-        showTyping();
-        state = "chatting";
-        chrome.runtime.sendMessage({ type: "chat", message: "How are you feeling right now?" }, (res) => {
-          showBubble(res?.reply || `${dominant.emoji} I'm feeling ${dominant.name.toLowerCase()}!`, 6000);
-          burstParticles([dominant.emoji], 3);
-        });
+        showBubble(`${dominant.emoji} I'm feeling ${dominant.name.toLowerCase()}!`, 6000);
+        burstParticles([dominant.emoji], 3);
         break;
 
       case "feed":
         chrome.runtime.sendMessage({ type: "emotionAction", action: "feed" }, (res) => {
-          if (res?.emotions) { emotions = res.emotions; dominant = res.dominant; }
+          const runtimeError = chrome.runtime.lastError;
+          if (runtimeError || !res?.emotions) {
+            showBubble(res?.error || "I couldn't eat right now. Please try again.", 3000);
+            return;
+          }
+          emotions = res.emotions;
+          dominant = res.dominant;
           showBubble("\uD83C\uDF56 Yum yum! That was delicious!", 3000);
           burstParticles(["\uD83C\uDF56", "\uD83E\uDDB4", "\uD83C\uDF1F"], 5);
           body.classList.add("jumping");
-          setTimeout(() => body.classList.remove("jumping"), 500);
+          scheduleTimeout(() => body.classList.remove("jumping"), 500);
           updateEmotionBar();
         });
         break;
 
       case "play":
         chrome.runtime.sendMessage({ type: "emotionAction", action: "play" }, (res) => {
-          if (res?.emotions) { emotions = res.emotions; dominant = res.dominant; }
+          const runtimeError = chrome.runtime.lastError;
+          if (runtimeError || !res?.emotions) {
+            showBubble(res?.error || "I couldn't play right now. Please try again.", 3000);
+            return;
+          }
+          emotions = res.emotions;
+          dominant = res.dominant;
           showBubble("\uD83C\uDFBE Wheee! That was fun!", 3000);
           burstParticles(["\uD83C\uDFBE", "\u2B50", "\uD83C\uDF89"], 6);
           body.classList.add("jumping");
-          setTimeout(() => body.classList.remove("jumping"), 500);
+          scheduleTimeout(() => body.classList.remove("jumping"), 500);
           updateEmotionBar();
         });
         break;
 
       case "pet":
         chrome.runtime.sendMessage({ type: "emotionAction", action: "pet" }, (res) => {
-          if (res?.emotions) { emotions = res.emotions; dominant = res.dominant; }
+          const runtimeError = chrome.runtime.lastError;
+          if (runtimeError || !res?.emotions) {
+            showBubble(res?.error || "I couldn't respond right now. Please try again.", 3000);
+            return;
+          }
+          emotions = res.emotions;
+          dominant = res.dominant;
           showBubble("\uD83D\uDC95 Purrrr... I love you!", 3000);
           burstParticles(["\u2764\uFE0F", "\uD83D\uDC95", "\uD83E\uDE77", "\u2728"], 8);
           body.classList.add("jumping");
-          setTimeout(() => body.classList.remove("jumping"), 500);
+          scheduleTimeout(() => body.classList.remove("jumping"), 500);
           updateEmotionBar();
         });
         break;
 
       case "selfie":
-        if ((evolution.stage || 0) < 3) {
-          showBubble("\uD83D\uDD12 Unlock selfies at Teen stage!", 3000);
-          return;
-        }
-        showBubble("\uD83D\uDCF8 Say cheese! *click*", 2500);
-        burstParticles(["\uD83D\uDCF8", "\u2728", "\uD83C\uDF1F"], 5);
-        chrome.runtime.sendMessage({
-          type: "executeSkill",
-          skillId: "selfie",
-          input: { mood: dominant.name },
-        }, (res) => {
-          // Always close the loop \u2014 selfie image-gen isn't live yet, so without
-          // a fallback the "*click*" left the user hanging with no reply.
-          const url = res?.result?.output?.imageUrl;
-          if (chrome.runtime.lastError || !url) {
-            setTimeout(() => showBubble("\uD83D\uDCF8 Selfie cam isn't ready yet \u2014 coming soon!", 4000), 2600);
-          } else {
-            showBubble("\uD83D\uDCF8 Check out my selfie!", 5000);
-          }
-        });
+        showBubble("\uD83D\uDCF8 Selfies are coming soon.", 3000);
         break;
 
       case "skills":
+        if (!config.paired) {
+          showBubble("Pair your pet in extension Settings to load its installed skills.", 4000);
+          break;
+        }
         chrome.runtime.sendMessage({ type: "fetchSkills" }, (res) => {
-          if (res?.data?.skills) {
-            const skillList = res.data.skills.map((s) => `${s.emoji || "\u2728"} ${s.name}`).join(", ");
+          const runtimeError = chrome.runtime.lastError;
+          if (Array.isArray(res?.data?.installed)) {
+            const skillList = res.data.installed
+              .map((s) => s.manifest || s)
+              .filter(Boolean)
+              .map((s) => `\u2728 ${s.name || s.skillId || s.id}`)
+              .join(", ");
             showBubble(`My skills: ${skillList}`, 5000);
           } else {
-            showBubble("\u2728 Skills: Chat, Mood Check, Feed, Play, Pet, Export", 4000);
+            showBubble(runtimeError ? "Skills are unavailable right now." : "I couldn't load installed skills. Check your pairing in Settings.", 4000);
           }
         });
         break;
 
       case "export":
+        if (!config.paired) {
+          showBubble("Pair your pet in extension Settings before exporting SOUL data.", 4000);
+          break;
+        }
         showBubble("\uD83D\uDCE6 Exporting SOUL data...", 2000);
         chrome.runtime.sendMessage({ type: "exportSoul" }, (res) => {
+          const runtimeError = chrome.runtime.lastError;
           if (res?.data) {
             const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `${config.petName}_SOUL.json`;
+            const safeName = String(config.petName || "pet").replace(/[^A-Za-z0-9._-]+/g, "_").slice(0, 80) || "pet";
+            a.download = `${safeName}_SOUL.json`;
+            shadowRoot.appendChild(a);
             a.click();
+            a.remove();
             URL.revokeObjectURL(url);
             showBubble("\u2705 SOUL exported! Your data, your rules.", 4000);
             burstParticles(["\uD83D\uDCE6", "\u2705"], 3);
           } else {
-            showBubble("\u274C Export failed. Is the server running?", 3000);
+            showBubble(runtimeError ? "\u274C PetClaw is unavailable right now." : "\u274C Export failed. Check your pairing in Settings.", 3500);
           }
         });
         break;
@@ -634,7 +899,7 @@
         body.classList.add("sleeping");
         showBubble("Zzz... \uD83D\uDCA4", 3000);
         burstParticles(["\uD83D\uDCA4", "\u2728", "\uD83C\uDF19"], 4);
-        setTimeout(() => {
+        scheduleTimeout(() => {
           body.classList.remove("sleeping");
           state = "idle";
           showBubble("*yawn* That was a nice nap! \uD83D\uDE0A", 3000);
@@ -642,68 +907,91 @@
         break;
 
       case "hide":
-        container.classList.add("aipet-hiding");
-        setTimeout(() => {
-          container.style.display = "none";
-          container.classList.remove("aipet-hiding");
-        }, 500);
-        setTimeout(() => {
-          // Skip if the user already un-hid it (e.g. via Ctrl+Shift+P) \u2014 avoids a duplicate "I'm back" greeting.
-          if (container.style.display !== "none") return;
-          container.style.display = "";
-          showBubble("I'm back! Did you miss me? \uD83D\uDE0A", 3000);
-          burstParticles(["\uD83D\uDC4B", "\u2728"], 3);
-        }, 30000);
+        chrome.runtime.sendMessage({ type: "pauseCurrentSite", host }, (res) => {
+          const runtimeError = chrome.runtime.lastError;
+          if (runtimeError || !res?.success) {
+            showBubble("I couldn't pause this site.", 2500);
+            return;
+          }
+          container.classList.add("aipet-hiding");
+          scheduleTimeout(shutdown, 500);
+        });
         break;
     }
   }
 
   // ── Events ──
-  body.addEventListener("click", (e) => {
+  listen(body, "click", (e) => {
+    if (!e.isTrusted) return;
     if (isDragging) return;
     if (state === "chatting") return;
     showChatInput();
     burstParticles(["\u2728"], 2);
   });
 
-  body.addEventListener("contextmenu", (e) => {
+  listen(body, "keydown", (event) => {
+    if (!event.isTrusted) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      if (state !== "chatting") showChatInput();
+      return;
+    }
+    if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+      event.preventDefault();
+      showMenu();
+      return;
+    }
+    if (event.key === "Escape") {
+      bubble.classList.add("hidden");
+      menu.classList.add("hidden");
+      state = "idle";
+    }
+  });
+
+  listen(body, "contextmenu", (e) => {
+    if (!e.isTrusted) return;
     e.preventDefault();
     e.stopPropagation();
     showMenu();
   });
 
   // Drag
-  body.addEventListener("mousedown", (e) => {
+  listen(body, "mousedown", (e) => {
+    if (!e.isTrusted) return;
     if (e.button !== 0) return;
     isDragging = false;
     dragOffsetX = e.clientX - posX;
     const startX = e.clientX;
+    let removeMove = () => {};
+    let removeUp = () => {};
 
     function onMove(ev) {
+      if (!ev.isTrusted) return;
       if (Math.abs(ev.clientX - startX) > 5) isDragging = true;
       posX = ev.clientX - dragOffsetX;
       posX = Math.max(40, Math.min(window.innerWidth - 40, posX));
       updatePosition();
     }
 
-    function onUp() {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-      patAffection();  // you caught/held the pet → happy + (capped) affection point
-      setTimeout(() => { isDragging = false; }, 50);
+    function onUp(ev) {
+      if (!ev.isTrusted) return;
+      removeMove();
+      removeUp();
+      if (isDragging) patAffection(); // a click opens chat; only a real drag counts as a pat
+      scheduleTimeout(() => { isDragging = false; }, 50);
     }
 
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+    removeMove = listen(document, "mousemove", onMove);
+    removeUp = listen(document, "mouseup", onUp);
   });
 
   // ── Hover = FREEZE so you can actually catch it (it used to walk away too fast
   //    to grab). Cursor turns to a grab hand; a tiny scale says "catchable". ──
-  body.addEventListener("mouseenter", () => {
+  listen(body, "mouseenter", () => {
     isHovered = true;
     body.classList.add("grabbable");
   });
-  body.addEventListener("mouseleave", () => {
+  listen(body, "mouseleave", () => {
     isHovered = false;
     body.classList.remove("grabbable");
   });
@@ -713,7 +1001,7 @@
   //    from the drag's onUp so it never collides with single-click (=chat). ──
   function patAffection() {
     body.classList.add("jumping");
-    setTimeout(() => body.classList.remove("jumping"), 500);
+    scheduleTimeout(() => body.classList.remove("jumping"), 500);
     const now = Date.now();
     // one affection point at most every 90s — the cap keeps it non-farmable
     if (now - lastPatAt > 90000) {
@@ -733,33 +1021,34 @@
       // Local points + (when signed in) synced to the account's season score by
       // the background worker — points are non-financial, capped.
       chrome.runtime.sendMessage({ type: "affection", reason: "pet_the_walker", moodBonus }, () => {});
-      chrome.runtime.sendMessage({ type: "emotionAction", action: "pet" }, () => {});
     } else {
       burstParticles(["❤️"], 1);
     }
   }
 
   // Double-click = pet (full care action)
-  body.addEventListener("dblclick", () => {
+  listen(body, "dblclick", (event) => {
+    if (!event.isTrusted) return;
     handleMenuAction("pet");
   });
 
   // Click outside
-  document.addEventListener("click", (e) => {
-    if (!container.contains(e.target)) {
+  listen(document, "click", (e) => {
+    if (!e.isTrusted) return;
+    if (!e.composedPath().includes(extensionHost)) {
       bubble.classList.add("hidden");
       menu.classList.add("hidden");
     }
   });
 
   // ── Messages from background ──
-  chrome.runtime.onMessage.addListener((msg) => {
+  listenRuntime((msg) => {
     if (msg.type === "autoTalk" && state !== "chatting" && state !== "sleeping") {
       chrome.runtime.sendMessage({ type: "autonomousMessage" }, (res) => {
         if (res?.message) {
           showBubble(res.message, 6000);
           body.classList.add("jumping");
-          setTimeout(() => body.classList.remove("jumping"), 500);
+          scheduleTimeout(() => body.classList.remove("jumping"), 500);
           burstParticles([dominant.emoji, "\uD83D\uDCAC"], 2);
         }
       });
@@ -780,11 +1069,15 @@
       showBubble(`\uD83C\uDF89 I evolved into ${msg.name}! ${msg.icon}`, 8000);
       burstParticles([msg.icon, "\uD83C\uDF89", "\u2728", "\uD83C\uDF1F", "\uD83D\uDCAB"], 15);
       body.classList.add("aipet-evolving");
-      setTimeout(() => body.classList.remove("aipet-evolving"), 3000);
+      scheduleTimeout(() => body.classList.remove("aipet-evolving"), 3000);
     }
 
     if (msg.type === "prefChange") {
       preferences[msg.key] = msg.value;
+    }
+
+    if (msg.type === "disableForSite" && (msg.host === host || msg.all === true)) {
+      shutdown();
     }
   });
 
@@ -809,7 +1102,7 @@
     }
   }
 
-  setInterval(ambientParticles, 2000);
+  scheduleInterval(ambientParticles, 2000);
 
   // ── Main Loop ──
   let lastTime = performance.now();
@@ -828,7 +1121,7 @@
 
     if (state === "walking") {
       // Freeze while the cursor is over it (or you're holding it) so it's catchable.
-      if (isHovered || isDragging) { updatePosition(); return requestAnimationFrame(gameLoop); }
+      if (isHovered || isDragging) { updatePosition(); return scheduleFrame(gameLoop); }
       posX += direction * walkSpeed;
 
       // Edge bounce — keeps pet on screen if window resized mid-walk
@@ -853,7 +1146,7 @@
           body.classList.toggle("walking-left", direction === -1);
         } else {
           stopWalking();
-          return requestAnimationFrame(gameLoop);
+          return scheduleFrame(gameLoop);
         }
       }
 
@@ -877,13 +1170,13 @@
     // Mood updates from emotion state
     moodEl.textContent = dominant.emoji;
 
-    requestAnimationFrame(gameLoop);
+    scheduleFrame(gameLoop);
   }
 
-  requestAnimationFrame(gameLoop);
+  scheduleFrame(gameLoop);
 
   // ── Periodic emotion sync ──
-  setInterval(() => {
+  scheduleInterval(() => {
     chrome.runtime.sendMessage({ type: "getEmotions" }, (res) => {
       if (!res) return;
       if (res.emotions) emotions = res.emotions;
@@ -893,7 +1186,7 @@
   }, 30000);
 
   // ── Evolution sync ──
-  setInterval(() => {
+  scheduleInterval(() => {
     chrome.runtime.sendMessage({ type: "getEvolution" }, (res) => {
       if (!res) return;
       const oldStage = evolution.stage;
@@ -903,17 +1196,18 @@
   }, 60000);
 
   // ── Quest completion handler ──
-  chrome.runtime.onMessage.addListener((msg) => {
+  listenRuntime((msg) => {
     if (msg.type === "questComplete") {
       showBubble("✅ Quest complete! Check the popup!", 5000);
       burstParticles(["✅", "🎉", "⭐"], 6);
       body.classList.add("jumping");
-      setTimeout(() => body.classList.remove("jumping"), 500);
+      scheduleTimeout(() => body.classList.remove("jumping"), 500);
     }
   });
 
   // ── Keyboard shortcut: Ctrl+Shift+P = toggle pet visibility ──
-  document.addEventListener("keydown", (e) => {
+  listen(document, "keydown", (e) => {
+    if (!e.isTrusted) return;
     if (e.ctrlKey && e.shiftKey && e.key === "P") {
       e.preventDefault();
       if (container.style.display === "none") {

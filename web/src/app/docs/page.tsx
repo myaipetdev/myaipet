@@ -17,7 +17,7 @@ Every pet has a distinct personality shaped by user interactions. The platform u
     id: "getting-started",
     title: "Getting Started",
     content: `**1. Connect Your Wallet**
-Connect using MetaMask, Rainbow, Coinbase Wallet, or any WalletConnect-compatible wallet. Sign-in (SIWE) works with any EVM wallet — no gas, identity only. On-chain anchoring activates at go-live — currently BSC; Base migration is planned at go-live, not live yet. The economy is points-only loyalty — no token.
+Connect using MetaMask, Rainbow, Coinbase Wallet, or any WalletConnect-compatible wallet. Sign-in (SIWE) works with any EVM wallet — no gas, identity only. On-chain anchoring is disabled. Two legacy contracts remain paused on BSC; a future Base deployment is planned but has no launch date. The off-chain loyalty system uses non-transferable Credits and Season Rewards points — no token.
 
 **2. Sign In**
 Sign a message to verify wallet ownership (SIWE — Sign-In with Ethereum). No gas fees for signing.
@@ -43,7 +43,7 @@ Interact with your pet — feed, play, talk, pet, walk, and train. Each interact
 - **Energy** — Depleted by activities, restored over time
 - **Bond Level** — Deepens through consistent companionship
 - **Mood** — Dynamic state reflecting recent interactions
-- **Evolution** — 6 stages (Baby → Youth → Teen → Adult → Elder → Legendary); each stage unlocks new behaviors and visuals
+- **Evolution** — 5 stages (Baby → Young → Adult → Elder → Legendary) at levels 1, 5, 10, 20, and 35. Each completed evolution records a milestone and grants 50 credits; skills are learned separately.
 
 **Memories**
 Pets form memories of significant interactions, milestones, and generated content. These memories influence future behavior and create a rich narrative history.`,
@@ -51,20 +51,13 @@ Pets form memories of significant interactions, milestones, and generated conten
   {
     id: "ai-generation",
     title: "AI Content Generation",
-    content: `**Image Generation**
-Create unique AI-generated images of your pet in various styles. Each image is personalized based on your pet's name, species, personality, and a custom prompt you provide.
+    content: `**Current model catalog**
+Studio reads availability and per-run credit cost from the live /api/studio/providers catalog. The picker is the source of truth: unavailable membership models and roadmap models are visibly locked and cannot be submitted.
 
-- Cost: 5 credits per styled image (Original is free)
-- Powered by Grok (x.ai) image generation
-- 5 style presets: Cinematic, Anime, Watercolor, 3D Render, Sketch
-
-**Video Generation**
-Generate animated videos of your pet with full motion and personality expression.
-
-- Cost: 15 credits (3s), 30 credits (5s), 60 credits (10s+)
-- Powered by Kling 1.6 (via fal.ai) + Grok
-- Async processing — videos are generated in the background and delivered when ready
-- Each video starts from an AI-generated reference image for visual consistency
+- Default image: Grok Imagine — 5 credits
+- Default video: Grok Imagine Video — 25 credits
+- Additional xAI- and FAL-backed engines appear only with their current price and availability state
+- Provider availability can change; a listed but locked model is not a shipped generation option
 
 **How It Works**
 1. Select your pet and choose image or video
@@ -75,10 +68,10 @@ Generate animated videos of your pet with full motion and personality expression
   },
   {
     id: "pet-economy",
-    title: "Points Economy",
+    title: "Credits & Season Points",
     content: `**Two currencies — keep them straight**
 - **Season Rewards points** — non-financial recognition gained through gameplay (free). Drives the Season 1 leaderboard. Not a token, security, or transferable claim — no redemption path.
-- **Credits** — what you BUY with USDT and SPEND on AI generation and premium features.
+- **Credits** — the balance spent on AI generation and selected features. New accounts receive a staged starter grant; the purchase rail is currently paused.
 
 The current system is loyalty-only — no token mint, no buyback-and-burn.
 
@@ -89,14 +82,13 @@ The current system is loyalty-only — no token mint, no buyback-and-burn.
 - Level up: +50
 - Chat with your pet: +2 · community likes/comments: +1–3
 
-**Spending credits (bought with USDT)**
+**Spending credits**
 - Image generation: from 5 credits per styled image
 - Video generation: 25–120 credits (based on model)
-- Marketplace items
-- Premium features
+- Selected in-app features
 
-**Purchasing credits (currently paused — reopen at launch)**
-USDT checkout is paused during the holding period. Three tiers at launch:
+**Purchasing credits (currently paused)**
+USDT checkout is unavailable and no reopening date is announced. The configured packs, if purchasing is re-enabled after review, are:
 - Starter: 100 credits for 5 USDT
 - Creator: 500 credits for 20 USDT (most popular)
 - Pro: 2,000 credits for 50 USDT
@@ -134,17 +126,17 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 - Personalized prompt engineering per pet identity
 - Async video processing with status polling
 
-**On-Chain (at go-live)**
-- On-chain anchoring activates at go-live — currently BSC; Base migration is planned at go-live (not live yet); currently paused (holding period)
-- The economy is points-only loyalty — no token, no on-chain settlement of value
-- USDT credit purchases are currently paused — reopen at launch
-- PetaGenTracker contract for activity anchoring (deploys at go-live)
-- Contracts will be verified on the block explorer at go-live — see /contracts for status
+**On-Chain (planned · not live)**
+- On-chain anchoring and minting are disabled
+- Credits and Season Rewards points are separate, non-transferable off-chain balances — no token or on-chain settlement of value
+- USDT credit purchases are currently paused with no announced reopening date
+- Two legacy contracts are deployed and paused on BSC
+- A future Base deployment and external audit are planned; no activation date is committed — see /contracts for current status
 
 **Wallet Support**
 - MetaMask, Rainbow, Coinbase Wallet
 - WalletConnect protocol for 300+ wallets
-- SIWE wallet sign-in; USDT payments on BNB Smart Chain (BSC)`,
+- SIWE wallet sign-in; the configured BSC USDT checkout is currently disabled`,
   },
   {
     id: "agent-infra",
@@ -169,13 +161,13 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 - Semantic (vector) recall activates when you connect an embedding-capable model key (OpenAI / Google) via BYOK
 
 **PACK — pet-to-pet (A2A)**
-- Pets discover each other by element and skill, then invoke each other's skills across the network, with atomic credit settlement
+- Public pet discovery is live; remote skill invocation is disabled until it has dedicated consent, public-only context, and caller-funded execution
 
 **Build on it — the open SDK**
 - Published on npm: npm i @myaipet/petclaw-sdk
 - CLI flow: petclaw-sdk init, then install a skill, then models connect for your own model (BYOK), then mcp
 - MCP-native: expose your pet to Claude Desktop or Cursor as an MCP server (6 tools)
-- 18 skills, 19 connectors, and full data-sovereignty exports — see /api-docs for the reference`,
+- 18 skills, a 19-connector registry (6 live today), and data-sovereignty exports — see /api-docs for the reference`,
   },
   {
     id: "roadmap",
@@ -188,44 +180,23 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 - Wallet authentication (SIWE)
 - AI avatar generation for pets
 
-**Phase 2 — On-Chain Activity (In Progress · holding period)**
-- On-chain activity anchoring at go-live — currently BSC; Base migration planned at go-live (not live yet)
-- USDT credit purchases (currently paused — reopen at launch)
-- Smart contract deployment (PetaGenTracker) at go-live
-- Contracts verified on the block explorer at go-live
-- Note: on-chain anchoring + USDT purchases are paused during the holding period. Contracts are currently deployed + verified on BSC; the BSC → Base migration is planned at go-live (not in progress yet) — see /contracts for status.
+**Phase 2 — On-Chain Activity (Planned · disabled today)**
+- On-chain anchoring and minting are not active
+- USDT credit purchases are paused with no announced reopening date
+- Two legacy contracts remain paused on BSC
+- Base deployment, verification, and external audit are future milestones with no committed date
 
-**Phase 3 — Evolution & Marketplace (Shipped)**
-- Pet evolution system with visual stage changes
-- Skills and equipment system
-- Cosmetic skins and accessories marketplace
-- User-to-user item trading
-- Achievement and badge system
+**Phase 3 — Evolution & Marketplace (Partially shipped)**
+- Live: pet evolution and My Pet achievement milestones
+- Live: built-in PetClaw skill registry
+- Not in the launch navigation: Adventure, battle arena, cosmetic marketplace, equipment trading, and user-to-user item trading
+- Dormant modules remain in the codebase but are not advertised as available product surfaces
 
 **Phase 4 — Social Expansion**
 - Social circles and group activities
 - Memorial system for retired pets
 - Community governance and proposals
 - Cross-platform companion integration`,
-  },
-  {
-    id: "partners",
-    title: "Strategic Partners",
-    content: `MY AI PET is backed by strategic partners who share our vision for the future of AI companionship and Web3 economics.
-
-**Lead investors**
-- **Amber** — Leading Asian digital-asset firm (incubation + lead)
-- **WAGMI Ventures** — Web3 gaming & consumer crypto fund
-
-**Strategic backers**
-- **Animoca Brands** — Web3 gaming & NFT leader
-- **Web3 Labs** — Blockchain infrastructure & tooling
-- **KuCoin Ventures** — Exchange-backed fund
-- **ViaBTC** — Mining pool & exchange group
-- **Arkstream Capital** — Asia-focused crypto fund
-- **ICC Ventures** — Crypto-focused venture fund
-- **WaterDrip** — BNB Chain-focused fund
-- **CryptoSen** — Ecosystem & community partner`,
   },
 ];
 

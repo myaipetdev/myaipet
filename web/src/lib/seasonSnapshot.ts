@@ -22,6 +22,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { SEASON_KEY, SEASON_END_MS, type SeasonSnapshot, type SeasonSnapshotEntry } from "@/lib/season";
+import { publicPetWhere } from "@/lib/publicPet";
 
 const TOP_N = 100;
 
@@ -42,7 +43,9 @@ export async function readSeasonSnapshot(): Promise<SeasonSnapshot | null> {
  * the cron has run.
  */
 export async function computeFinalStandings(): Promise<SeasonSnapshot> {
-  const where = { season_points: { gt: 0 }, pets: { some: { is_active: true } } } as const;
+  // A leaderboard is publication. Only pets whose owners explicitly opted in
+  // may affect its participant count or appear in its durable snapshot.
+  const where = { season_points: { gt: 0 }, pets: { some: publicPetWhere() } };
   const [poolAgg, participants, top] = await Promise.all([
     prisma.user.aggregate({ _sum: { season_points: true }, where }),
     prisma.user.count({ where }),
@@ -54,7 +57,7 @@ export async function computeFinalStandings(): Promise<SeasonSnapshot> {
         id: true,
         season_points: true,
         pets: {
-          where: { is_active: true },
+          where: publicPetWhere(),
           orderBy: { level: "desc" },
           take: 1,
           select: { id: true, name: true, level: true, avatar_url: true },

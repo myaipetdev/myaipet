@@ -27,27 +27,55 @@ export function useDirectUsdtPay() {
   const { address } = useAccount();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
   const [error, setError] = useState<string | null>(null);
-  const [treasury, setTreasury] = useState<`0x${string}` | "">(
-    ((process.env.NEXT_PUBLIC_TREASURY_WALLET || "").trim() as `0x${string}`) || ""
-  );
+  const [treasury, setTreasury] = useState<`0x${string}` | "">("");
+  const [paymentsEnabled, setPaymentsEnabled] = useState(false);
 
-  // Runtime fetch — covers builds where NEXT_PUBLIC_TREASURY_WALLET wasn't set at build time
+  // Runtime config is authoritative. Never let a build-time public treasury
+  // bypass the server's PAYMENTS_ENABLED kill-switch and prompt a real transfer
+  // that the paused server would refuse to credit.
   useEffect(() => {
-    if (treasury) return;
     fetch("/api/config")
       .then(r => r.ok ? r.json() : null)
       .then(d => {
-        if (d?.treasury && /^0x[a-fA-F0-9]{40}$/.test(d.treasury)) {
+        if (d?.payments_enabled === true && d?.treasury && /^0x[a-fA-F0-9]{40}$/.test(d.treasury)) {
           setTreasury(d.treasury as `0x${string}`);
+          setPaymentsEnabled(true);
+        } else {
+          setTreasury("");
+          setPaymentsEnabled(false);
         }
       })
-      .catch(() => {});
-  }, [treasury]);
+      .catch(() => {
+        setTreasury("");
+        setPaymentsEnabled(false);
+      });
+  }, []);
 
   const pay = async (amountUsd: number): Promise<{ hash: `0x${string}` } | { error: string }> => {
     setError(null);
-    if (!treasury || !/^0x[a-fA-F0-9]{40}$/.test(treasury)) {
-      const msg = "Treasury wallet not configured. Contact support.";
+    if (!paymentsEnabled || !treasury || !/^0x[a-fA-F0-9]{40}$/.test(treasury)) {
+      const msg = "Payments are temporarily paused. No transfer was requested.";
+      setError(msg);
+      return { error: msg };
+    }
+    // Re-read the no-store runtime gate immediately before asking the wallet to
+    // sign. This closes the stale-open-tab case when an operator pauses sales.
+    let liveTreasury: `0x${string}`;
+    try {
+      const response = await fetch("/api/config", { cache: "no-store" });
+      const runtime = response.ok ? await response.json() : null;
+      if (
+        runtime?.payments_enabled !== true
+        || typeof runtime?.treasury !== "string"
+        || !/^0x[a-fA-F0-9]{40}$/.test(runtime.treasury)
+      ) {
+        throw new Error("paused");
+      }
+      liveTreasury = runtime.treasury as `0x${string}`;
+    } catch {
+      setPaymentsEnabled(false);
+      setTreasury("");
+      const msg = "Payments are temporarily paused. No transfer was requested.";
       setError(msg);
       return { error: msg };
     }
@@ -63,7 +91,7 @@ export function useDirectUsdtPay() {
         address: USDT_ADDRESS,
         abi: TRANSFER_ABI,
         functionName: "transfer",
-        args: [treasury, amountWei],
+        args: [liveTreasury, amountWei],
         account: address,
         chain: targetChain,
         chainId: targetChainId,
@@ -83,7 +111,8 @@ export function useDirectUsdtPay() {
     isConfirming,
     isSuccess,
     error,
-    treasuryConfigured: !!treasury && /^0x[a-fA-F0-9]{40}$/.test(treasury),
+    paymentsEnabled,
+    treasuryConfigured: paymentsEnabled && !!treasury && /^0x[a-fA-F0-9]{40}$/.test(treasury),
     treasury,
   };
 }

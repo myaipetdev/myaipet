@@ -7,9 +7,9 @@
  * (MyCard + the season banner) over three tabbed pillars that mirror how the
  * reward economy is actually framed:
  *
- *   🎯 Earn    (활동 유도)   — hourly drops, daily/weekly/monthly missions, streak
- *   🏆 Compete (경쟁심리)   — the six-dimensional leaderboard
- *   🤝 Connect (소셜)       — SOS rescues, buddies, pet dates
+ *   🎯 Earn — hourly drops, daily/weekly/monthly missions, streak
+ *   🏆 Compete — the six-dimensional leaderboard
+ *   🤝 Connect — SOS rescues, buddies, pet dates
  *
  * The premium upsell sits below the tabs on every pillar. `banner` is injected
  * by App (it owns the live season-point count the season strip renders).

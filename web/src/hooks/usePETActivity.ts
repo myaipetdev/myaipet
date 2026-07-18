@@ -11,9 +11,9 @@ const targetChain = targetChainId === base.id ? base : targetChainId === mainnet
 const NATIVE_SYMBOL = CONTRACTS.nativeSymbol; // BNB on BSC, ETH on Base
 const MIN_GAS = BigInt(5e13); // 0.00005 native token minimum for gas (~$0.03)
 
-/** Returns true if the PETActivity contract address is configured */
+/** A configured address never overrides the exact public blockchain gate. */
 export function isPETActivityEnabled(): boolean {
-  return !!CONTRACTS.petActivity;
+  return CONTRACTS.blockchainEnabled && Boolean(CONTRACTS.petActivity);
 }
 
 /** Check native-gas-token balance and throw if insufficient */

@@ -7,7 +7,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { privateAutoGenIds } from "@/lib/publicFeed";
+import { publicGenerationWhere } from "@/lib/publicFeed";
 
 export const dynamic = "force-dynamic";
 
@@ -15,12 +15,7 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(24, Math.max(1, Number(req.nextUrl.searchParams.get("limit")) || 12));
 
   const rows = await prisma.generation.findMany({
-    where: {
-      status: "completed",
-      OR: [{ video_path: { not: null } }, { photo_path: { not: "" } }],
-      // Privacy: exclude daydream auto-gens (private memory in the prompt).
-      id: { notIn: await privateAutoGenIds() },
-    },
+    where: await publicGenerationWhere(),
     orderBy: { created_at: "desc" },
     take: limit,
     select: {

@@ -23,6 +23,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma/client";
 
 function envCap(name: string, def: number): number {
   const n = Number(process.env[name]);
@@ -88,52 +89,73 @@ export async function grantEarnedCredits(
   sourceDailyCap?: number,
 ): Promise<{ granted: number; source: string }> {
   if (amount <= 0) return { granted: 0, source };
-  const day = todayKey();
-  const globalCap = envCap("EARNED_CREDIT_DAILY_CAP", 100);
-  const sourceKey = `credits:${source}`;
   try {
-    const granted = await prisma.$transaction(async (tx) => {
-      let headroom = amount;
-
-      // Per-source headroom (e.g. credits:arena ≤ 50/day)
-      if (sourceDailyCap && sourceDailyCap > 0) {
-        const s = await tx.dailyActionCount.upsert({
-          where: { user_action_day: { user_id: userId, action_key: sourceKey, day } },
-          create: { user_id: userId, action_key: sourceKey, day, count: 0 },
-          update: {},
-        });
-        headroom = Math.min(headroom, Math.max(0, sourceDailyCap - s.count));
-      }
-
-      // Global per-wallet earned headroom (credits:earned ≤ 100/day)
-      const g = await tx.dailyActionCount.upsert({
-        where: { user_action_day: { user_id: userId, action_key: EARNED_TOTAL_KEY, day } },
-        create: { user_id: userId, action_key: EARNED_TOTAL_KEY, day, count: 0 },
-        update: {},
-      });
-      headroom = Math.min(headroom, Math.max(0, globalCap - g.count));
-
-      const grant = Math.max(0, Math.min(amount, headroom));
-      if (grant <= 0) return 0;
-
-      if (sourceDailyCap && sourceDailyCap > 0) {
-        await tx.dailyActionCount.update({
-          where: { user_action_day: { user_id: userId, action_key: sourceKey, day } },
-          data: { count: { increment: grant } },
-        });
-      }
-      await tx.dailyActionCount.update({
-        where: { user_action_day: { user_id: userId, action_key: EARNED_TOTAL_KEY, day } },
-        data: { count: { increment: grant } },
-      });
-      await tx.user.update({ where: { id: userId }, data: { credits: { increment: grant } } });
-      return grant;
-    });
-    return { granted, source };
+    return await prisma.$transaction((tx) =>
+      grantEarnedCreditsInTransaction(tx, userId, source, amount, sourceDailyCap),
+    );
   } catch (e) {
     console.error("grantEarnedCredits error:", e);
     return { granted: 0, source };
   }
+}
+
+/**
+ * Transaction-scoped form of `grantEarnedCredits`. Free-credit rewards that are
+ * part of a larger gameplay claim must use this function so the reward, quota,
+ * energy debit, and earned-credit ceilings commit (or roll back) together.
+ *
+ * The upserts deliberately run in a stable source → global order. PostgreSQL's
+ * conflict-update path locks the counter row, so a waiter observes the prior
+ * grant before calculating its own headroom.
+ */
+export async function grantEarnedCreditsInTransaction(
+  tx: Prisma.TransactionClient,
+  userId: number,
+  source: string,
+  amount: number,
+  sourceDailyCap?: number,
+): Promise<{ granted: number; source: string }> {
+  if (amount <= 0) return { granted: 0, source };
+
+  const day = todayKey();
+  const globalCap = envCap("EARNED_CREDIT_DAILY_CAP", 100);
+  const sourceKey = `credits:${source}`;
+  let headroom = amount;
+
+  // Per-source headroom (e.g. credits:arena ≤ 50/day).
+  if (sourceDailyCap && sourceDailyCap > 0) {
+    const sourceCounter = await tx.dailyActionCount.upsert({
+      where: { user_action_day: { user_id: userId, action_key: sourceKey, day } },
+      create: { user_id: userId, action_key: sourceKey, day, count: 0 },
+      update: {},
+    });
+    headroom = Math.min(headroom, Math.max(0, sourceDailyCap - sourceCounter.count));
+  }
+
+  // Global per-wallet earned headroom (credits:earned ≤ configured cap).
+  const globalCounter = await tx.dailyActionCount.upsert({
+    where: { user_action_day: { user_id: userId, action_key: EARNED_TOTAL_KEY, day } },
+    create: { user_id: userId, action_key: EARNED_TOTAL_KEY, day, count: 0 },
+    update: {},
+  });
+  headroom = Math.min(headroom, Math.max(0, globalCap - globalCounter.count));
+
+  const grant = Math.max(0, Math.min(Math.floor(amount), headroom));
+  if (grant <= 0) return { granted: 0, source };
+
+  if (sourceDailyCap && sourceDailyCap > 0) {
+    await tx.dailyActionCount.update({
+      where: { user_action_day: { user_id: userId, action_key: sourceKey, day } },
+      data: { count: { increment: grant } },
+    });
+  }
+  await tx.dailyActionCount.update({
+    where: { user_action_day: { user_id: userId, action_key: EARNED_TOTAL_KEY, day } },
+    data: { count: { increment: grant } },
+  });
+  await tx.user.update({ where: { id: userId }, data: { credits: { increment: grant } } });
+
+  return { granted: grant, source };
 }
 
 export function arenaCreditDailyCap(): number {

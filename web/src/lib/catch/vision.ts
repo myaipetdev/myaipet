@@ -10,6 +10,11 @@
  * Reuses the x.ai chat/completions image_url pattern (see services/video.ts).
  */
 
+import {
+  generatedEnglishOrFallback,
+  generatedEnglishOrNull,
+} from "@/lib/generatedLanguage";
+
 export interface AnimalVerdict {
   /** a real, live animal is clearly the subject (cat/dog or otherwise) */
   isAnimal: boolean;
@@ -59,15 +64,21 @@ function parseVerdict(raw: string): AnimalVerdict | null {
     // Back-compat: older prompt used "isPet".
     const isAnimal = !!(j.isAnimal ?? j.isPet);
     const isDog = kind === "dog";
+    const fallbackBreed = isDog ? "Mixed Breed" : kind === "cat" ? "Domestic Shorthair" : "Wild";
+    const allowedMoods = new Set(["calm", "playful", "grumpy", "curious", "sleepy", "fierce", "shy"]);
+    const mood = String(j.mood || "calm").toLowerCase().trim();
     return {
       isAnimal,
       kind,
       isLivePhoto: !!j.isLivePhoto,
       confidence: typeof j.confidence === "number" ? Math.max(0, Math.min(1, j.confidence)) : 0.5,
-      breed: String(j.breed || (isDog ? "Mixed Breed" : kind === "cat" ? "Domestic Shorthair" : "Wild")).slice(0, 40),
-      furColor: String(j.furColor || "").slice(0, 60),
-      mood: String(j.mood || "calm").toLowerCase().slice(0, 12),
-      reason: String(j.reason || "").slice(0, 200),
+      breed: generatedEnglishOrFallback(j.breed, fallbackBreed).slice(0, 40),
+      furColor: (generatedEnglishOrNull(j.furColor) || "").slice(0, 60),
+      mood: allowedMoods.has(mood) ? mood : "calm",
+      reason: generatedEnglishOrFallback(
+        j.reason,
+        "The image did not pass the live-animal check.",
+      ).slice(0, 200),
     };
   } catch {
     return null;
@@ -75,11 +86,17 @@ function parseVerdict(raw: string): AnimalVerdict | null {
 }
 
 /** Verify + describe an animal photo via Grok vision. Returns null on total failure. */
-export async function verifyAndDescribeAnimal(imageUrl: string): Promise<AnimalVerdict | null> {
+export async function verifyAndDescribeAnimal(
+  imageUrl: string,
+  reserveAttempt: () => Promise<void>,
+): Promise<AnimalVerdict | null> {
   const key = getKey();
   if (!key) return null;
 
   for (const model of VISION_MODELS) {
+    // The model fallback loop can make up to three real provider requests; each
+    // one needs its own durable global + authenticated-owner reservation.
+    await reserveAttempt();
     try {
       const res = await fetch("https://api.x.ai/v1/chat/completions", {
         method: "POST",

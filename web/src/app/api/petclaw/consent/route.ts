@@ -16,10 +16,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 // allowX (UI/API) → flat personality_modifiers key (enforced) + default
 const CONSENT_MAP = {
-  allowPublicProfile: { flat: "consent_public_profile", def: true },
+  allowPublicProfile: { flat: "consent_public_profile", def: false },
   allowDataSharing:   { flat: "consent_data_sharing",   def: false },
   allowAITraining:    { flat: "consent_ai_training",     def: false },
-  allowInteraction:   { flat: "consent_interaction",     def: true },
+  allowInteraction:   { flat: "consent_interaction",     def: false },
 } as const;
 
 function readConsent(mods: any) {

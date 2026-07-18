@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Wraps PetStudioPro with the global Nav so the /studio (and /studio_test)
+ * Wraps PetStudioPro with the global Nav so the /studio
  * routes look like the rest of the site. App.tsx renders Nav locally for the
  * single-page-app home; standalone routes have to bring their own.
  */

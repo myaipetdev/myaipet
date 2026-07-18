@@ -6,8 +6,8 @@ export const metadata: Metadata = {
 };
 
 const CONTRACTS = [
-  { name: "PETContent (NFT)",       addr: "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c", status: "Deployed (paused)", note: "ERC-721 for AI-generated content NFTs + memory anchors — on BSC, migrating to Base" },
-  { name: "PetaGenTracker",         addr: "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a", status: "Deployed (paused)", note: "Records generation events on-chain — on BSC, migrating to Base" },
+  { name: "PETContent (NFT)",       addr: "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c", status: "Deployed (paused)", note: "Legacy ERC-721 for generated content + memory anchors on BSC; Base replacement is planned" },
+  { name: "PetaGenTracker",         addr: "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a", status: "Deployed (paused)", note: "Legacy generation-event recorder on BSC; Base replacement is planned" },
   { name: "PETActivity",            addr: "TBD",                                          status: "Planned",    note: "Per-user activity recorder (gasless, roadmap)" },
   { name: "PETSoul",                addr: "TBD",                                          status: "Planned",    note: "Pet identity registry + successor inheritance (roadmap)" },
 ];
@@ -22,7 +22,7 @@ export default function ContractsPage() {
       padding: "80px 24px",
     }}>
       <div style={{ maxWidth: 880, margin: "0 auto" }}>
-        <a href="/" style={{
+        <a href="https://myaipet.ai" style={{
           display: "inline-block", marginBottom: 24,
           fontSize: 13, color: "rgba(33,26,18,0.55)", textDecoration: "none",
         }}>← Back to landing</a>
@@ -32,11 +32,9 @@ export default function ContractsPage() {
         </h1>
         <p style={{ fontSize: 15, color: "rgba(33,26,18,0.65)", marginBottom: 32, lineHeight: 1.6 }}>
           Two production contracts were deployed on <strong>BNB Smart Chain (chain id 56)</strong>{" "}
-          during the build (BSCScan-verified at deploy time); the deployment is being migrated to{" "}
-          <strong>Base</strong> ahead of go-live, and further contracts are prepared. On-chain
-          features are currently <strong>paused (holding period)</strong> and will be anchored on
-          Base at go-live. An external audit is planned pre-launch — announcements published here
-          once finalized. See the disclosure below.
+          during the build and remain <strong>paused</strong>. They are not part of the live product flow.
+          A replacement deployment on <strong>Base</strong> and an external audit are planned, but
+          neither is complete and no activation date is announced. See the disclosure below.
         </p>
 
         <div style={{
@@ -46,10 +44,10 @@ export default function ContractsPage() {
           fontSize: 13, color: "#9A4E1E", marginBottom: 32, lineHeight: 1.6,
         }}>
           <strong>Holding period notice (2026-Q2)</strong><br/>
-          Server-side on-chain recording and NFT minting are temporarily paused while we
-          (a) finalize relayer wallet operations, (b) complete the external security audit,
-          and (c) deploy the remaining contracts above. The application remains fully usable;
-          on-chain features will resume publicly as each milestone clears.
+          Server-side on-chain recording and NFT minting are disabled. Enabling them would require
+          a reviewed Base deployment, verified contracts, relayer controls, and a completed external
+          security audit. Passing those milestones does not imply an automatic launch; status changes
+          will be published here before any user-facing activation.
         </div>
 
         <div style={{ display: "grid", gap: 12, marginBottom: 40 }}>

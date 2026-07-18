@@ -2,6 +2,7 @@ import { generatePetReactions } from "@/lib/agents";
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
+import { publicGenerationWhere } from "@/lib/publicFeed";
 import { NextRequest, NextResponse } from "next/server";
 
 // audit H9: each call fans out a PAID LLM completion per active pet per
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
     if (gate) return gate;
 
     const recentGens = await prisma.generation.findMany({
-      where: { status: "completed" },
+      where: await publicGenerationWhere(),
       orderBy: { created_at: "desc" },
       take: 5,
       select: { id: true },

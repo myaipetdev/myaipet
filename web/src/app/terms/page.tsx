@@ -17,7 +17,7 @@ export default function TermsPage() {
       padding: "80px 24px",
     }}>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
-        <a href="/" style={{
+        <a href="https://myaipet.ai" style={{
           display: "inline-block", marginBottom: 24,
           fontSize: 13, color: "rgba(33,26,18,0.55)", textDecoration: "none",
         }}>← Back to landing</a>
@@ -61,11 +61,10 @@ export default function TermsPage() {
         </Section>
 
         <Section title="6. On-chain Recording">
-          On-chain recording is currently paused during a holding period and is not active. It will
-          activate at go-live, when on-chain features migrate to Base. Once active, certain actions
-          may be anchored on-chain; such records are immutable and we cannot delete or modify them.
-          By using on-chain features after go-live you consent to permanent public recording of the
-          relevant action data.
+          On-chain recording is disabled and no activation date is announced. Two legacy contracts
+          remain paused on BSC; a future Base deployment is planned. If on-chain features are enabled,
+          the Service will present a separate notice before use. On-chain records are immutable and
+          cannot be deleted or modified.
         </Section>
 
         <Section title="7. Acceptable Use">

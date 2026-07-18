@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
+import { getLLMBudgetFailureStatus } from "@/lib/llm/router";
+import { generateGrokImage } from "@/lib/services/video";
+import { deleteStoredFile, saveRemoteFile } from "@/lib/storage";
+import { enqueueMediaDeletionReference } from "@/lib/mediaDeletion";
 import { NextRequest, NextResponse } from "next/server";
 
 const MOCKUP_CREDIT_COST = 5; // paid Grok image generation
@@ -34,7 +38,7 @@ export async function POST(req: NextRequest) {
   // Get pet appearance description
   const pet = await prisma.pet.findFirst({
     where: { id: Number(pet_id), user_id: user.id, is_active: true },
-    select: { appearance_desc: true, name: true, avatar_url: true },
+    select: { id: true, species: true, appearance_desc: true, name: true, avatar_url: true },
   });
 
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
@@ -51,41 +55,66 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Insufficient credits", required: MOCKUP_CREDIT_COST }, { status: 402 });
   }
 
+  let storedUrl: string | null = null;
+  let ownerReferenceCommitted = false;
   try {
-    const grokKey = process.env.GROK_API_KEY;
-    if (!grokKey) throw new Error("GROK_API_KEY not configured");
+    const upstreamUrl = await generateGrokImage(prompt, user.id, "grok-2-image");
+    storedUrl = await saveRemoteFile(upstreamUrl, `reward-mockups/${user.id}`);
+    const imageUrl = storedUrl;
 
-    const res = await fetch("https://api.x.ai/v1/images/generations", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${grokKey}`,
-      },
-      body: JSON.stringify({
-        model: "grok-2-image",
-        prompt,
-        n: 1,
-        response_format: "url",
-      }),
+    await prisma.$transaction(async (tx) => {
+      const lockedPet = await tx.$queryRaw<Array<{ id: number }>>`
+        SELECT "id"
+        FROM "pets"
+        WHERE "id" = ${pet.id}
+          AND "user_id" = ${user.id}
+          AND "is_active" = TRUE
+        FOR UPDATE
+      `;
+      if (!lockedPet[0]) throw new Error("Pet was deleted before mockup ownership could be saved");
+      await tx.generation.create({
+        data: {
+          user_id: user.id,
+          pet_id: pet.id,
+          pet_type: pet.species,
+          style: 0,
+          prompt,
+          duration: 0,
+          photo_path: imageUrl,
+          status: "completed",
+          visibility: "private",
+          credits_charged: MOCKUP_CREDIT_COST,
+          completed_at: new Date(),
+        },
+      });
     });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Grok API failed: ${res.status} ${text}`);
-    }
-
-    const data = await res.json();
-    const imageUrl = data.data?.[0]?.url;
-    if (!imageUrl) throw new Error("No image returned");
+    ownerReferenceCommitted = true;
 
     return NextResponse.json({ image_url: imageUrl, product_type });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (storedUrl && !ownerReferenceCommitted) {
+      await enqueueMediaDeletionReference(storedUrl, {
+        ownerUserId: user.id,
+        sourcePetId: pet.id,
+        reason: "Reward mockup storage succeeded but owner reference creation failed",
+      }).catch(async () => deleteStoredFile(storedUrl).catch(() => {}));
+    }
     // Refund the credits charged up-front if generation failed.
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { credits: { increment: MOCKUP_CREDIT_COST } },
-    }).catch(() => {});
-    console.error("Mockup generation error:", error);
-    return NextResponse.json({ error: "Generation failed" }, { status: 500 });
+    if (!ownerReferenceCommitted) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { credits: { increment: MOCKUP_CREDIT_COST } },
+      }).catch(() => {});
+    }
+    console.error("Mockup generation error:", error instanceof Error ? error.name : "unknown");
+    const budgetStatus = getLLMBudgetFailureStatus(error);
+    if (budgetStatus) {
+      return NextResponse.json({
+        error: budgetStatus === 429
+          ? "Image generation has reached today's limit."
+          : "Image generation is temporarily unavailable.",
+      }, { status: budgetStatus });
+    }
+    return NextResponse.json({ error: "Generation failed" }, { status: 502 });
   }
 }

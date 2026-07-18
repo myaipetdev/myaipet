@@ -1,5 +1,5 @@
 /**
- * Codex sticker variants — the "띠부씰 / collectible creature sticker" looks a
+ * Codex sticker variants — the collectible creature sticker looks a
  * pet can be illustrated in. ONE source of truth shared by every surface:
  *   - /api/pets/[petId]/generate (style 6) uses `codexVariantDesc` as the style
  *     override fed to buildPetPrompt (appearance + ref image carry identity).

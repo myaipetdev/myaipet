@@ -8,44 +8,88 @@ datasource db {
 }
 
 model User {
-  id               Int              @id @default(autoincrement())
-  wallet_address   String           @unique @db.VarChar(42)
-  nonce            String           @db.VarChar(32)
-  credits          Int              @default(0)
-  pet_slots        Int              @default(1)
-  season_points   Int              @default(0)
-  created_at       DateTime         @default(now())
-  updated_at       DateTime         @default(now()) @updatedAt
-  generations      Generation[]
-  credit_purchases CreditPurchase[]
-  pets             Pet[]
-  interactions     PetInteraction[]
-  likes            Like[]
-  comments         Comment[]
-  followers        Follow[]         @relation("following")
-  following        Follow[]         @relation("follower")
-  profile          UserProfile?
-  last_active_at   DateTime         @default(now())
-  successor_wallet String?          @db.VarChar(42)
+  id                        Int                      @id @default(autoincrement())
+  wallet_address            String                   @unique @db.VarChar(42)
+  nonce                     String                   @db.VarChar(32)
+  credits                   Int                      @default(0)
+  pet_slots                 Int                      @default(1)
+  season_points             Int                      @default(0)
+  created_at                DateTime                 @default(now())
+  updated_at                DateTime                 @default(now()) @updatedAt
+  generations               Generation[]
+  credit_purchases          CreditPurchase[]
+  pets                      Pet[]
+  interactions              PetInteraction[]
+  likes                     Like[]
+  comments                  Comment[]
+  followers                 Follow[]                 @relation("following")
+  following                 Follow[]                 @relation("follower")
+  profile                   UserProfile?
+  last_active_at            DateTime                 @default(now())
+  successor_wallet          String?                  @db.VarChar(42)
   // Mission system (Phase 1)
-  daily_missions    DailyMission[]
-  user_streak       UserStreak?
-  streak_purchases  StreakPurchase[]
+  daily_missions            DailyMission[]
+  user_streak               UserStreak?
+  streak_purchases          StreakPurchase[]
   // Mission system (Phase 2 + 3)
-  periodic_missions PeriodicMission[]
-  buddy_as_a        StreakBuddy[]     @relation("StreakBuddyA")
-  buddy_as_b        StreakBuddy[]     @relation("StreakBuddyB")
-  sos_sent          StreakSos[]       @relation("SosSender")
-  sos_helped        StreakSos[]       @relation("SosHelper")
-  pet_dates         PetDate[]
-  subscription      UserSubscription?
+  periodic_missions         PeriodicMission[]
+  buddy_as_a                StreakBuddy[]            @relation("StreakBuddyA")
+  buddy_as_b                StreakBuddy[]            @relation("StreakBuddyB")
+  sos_sent                  StreakSos[]              @relation("SosSender")
+  sos_helped                StreakSos[]              @relation("SosHelper")
+  pet_dates                 PetDate[]
+  subscription              UserSubscription?
+  arena_match_challenges    ArenaMatchChallenge[]
+  agent_credit_reservations AgentCreditReservation[]
+  avatar_media_objects      AvatarMediaObject[]
 
   @@map("users")
+}
+
+// Durable, idempotent physical-media cleanup. Pet deletion commits ownership
+// removal and this tombstone atomically; a protected worker deletes the object
+// only after proving no live row still references it.
+model MediaDeletionTask {
+  id            Int      @id @default(autoincrement())
+  object_ref    String   @unique @db.VarChar(700)
+  owner_user_id Int
+  source_pet_id Int
+  attempts      Int      @default(0)
+  last_error    String?  @db.VarChar(500)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @default(now()) @updatedAt
+
+  @@index([source_pet_id])
+  @@index([created_at])
+  @@index([updated_at, id])
+  @@map("media_deletion_tasks")
+}
+
+// Durable provenance for short-lived avatar previews. A row starts pending
+// (pet_id/claimed_at NULL), is atomically claimed by Pet create/PATCH, or is
+// converted into a MediaDeletionTask after expires_at.
+model AvatarMediaObject {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  object_ref    String    @unique @db.VarChar(700)
+  owner_user_id Int
+  pet_id        Int?
+  expires_at    DateTime
+  claimed_at    DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @default(now()) @updatedAt
+  owner         User      @relation(fields: [owner_user_id], references: [id], onDelete: Restrict)
+  pet           Pet?      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+
+  @@index([owner_user_id, expires_at])
+  @@index([expires_at, id])
+  @@index([pet_id])
+  @@map("avatar_media_objects")
 }
 
 model Generation {
   id              Int                @id @default(autoincrement())
   user_id         Int?
+  pet_id          Int?
   pet_type        Int
   style           Int
   prompt          String?            @db.Text
@@ -56,17 +100,22 @@ model Generation {
   tx_hash         String?            @db.VarChar(66)
   chain           String?            @db.VarChar(10)
   status          String             @default("pending") @db.VarChar(20)
+  // Generated media is private until the owner explicitly publishes it.
+  visibility      String             @default("private") @db.VarChar(12)
   error_message   String?            @db.Text
   fal_request_id  String?            @db.VarChar(128)
   credits_charged Int
   created_at      DateTime           @default(now())
   completed_at    DateTime?
   user            User?              @relation(fields: [user_id], references: [id])
+  pet             Pet?               @relation(fields: [pet_id], references: [id], onDelete: Cascade)
   likes           Like[]
   comments        Comment[]
   agent_reactions PetAgentReaction[]
 
   @@index([user_id])
+  @@index([pet_id])
+  @@index([visibility, status, created_at])
   @@map("generations")
 }
 
@@ -83,6 +132,52 @@ model Transaction {
   @@index([user_id])
   @@index([tx_hash])
   @@map("transactions")
+}
+
+// Short-lived, one-time SIWE login challenges. These are deliberately not
+// related to User: requesting a challenge proves no wallet ownership and must
+// neither create a user nor rotate the nonce that binds existing sessions.
+model LoginChallenge {
+  id             Int       @id @default(autoincrement())
+  nonce          String    @unique @db.VarChar(64)
+  wallet_address String    @db.VarChar(42)
+  message_hash   String    @db.Char(64)
+  domain         String    @db.VarChar(255)
+  uri            String    @db.VarChar(512)
+  chain_id       Int
+  issued_at      DateTime
+  expires_at     DateTime
+  consumed_at    DateTime?
+  created_at     DateTime  @default(now())
+
+  @@index([wallet_address, expires_at])
+  @@index([expires_at])
+  @@map("login_challenges")
+}
+
+// Short-lived bearer challenges bind a ranked Arena reward to the exact
+// server-selected player/opponent pair and are consumed once with the reward.
+// Only a SHA-256 token hash is stored; the bearer token is returned once.
+model ArenaMatchChallenge {
+  id              Int       @id @default(autoincrement())
+  token_hash      String    @unique @db.Char(64)
+  user_id         Int
+  player_pet_id   Int
+  opponent_pet_id Int
+  player_level    Int
+  opponent_level  Int
+  issued_at       DateTime
+  expires_at      DateTime
+  consumed_at     DateTime?
+  created_at      DateTime  @default(now())
+
+  user         User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  player_pet   Pet  @relation("ArenaChallengePlayer", fields: [player_pet_id], references: [id], onDelete: Cascade)
+  opponent_pet Pet  @relation("ArenaChallengeOpponent", fields: [opponent_pet_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, player_pet_id, expires_at])
+  @@index([expires_at])
+  @@map("arena_match_challenges")
 }
 
 model CreditPurchase {
@@ -120,87 +215,103 @@ model ConsumedPayment {
 }
 
 model Pet {
-  id                    Int                     @id @default(autoincrement())
-  user_id               Int
-  name                  String                  @db.VarChar(50)
-  species               Int
-  personality_type      String                  @default("friendly") @db.VarChar(20)
-  level                 Int                     @default(1)
-  experience            Int                     @default(0)
-  happiness             Int                     @default(70)
-  energy                Int                     @default(100)
-  hunger                Int                     @default(30)
-  bond_level            Int                     @default(0)
-  total_interactions    Int                     @default(0)
-  avatar_url            String?                 @db.Text
+  id                           Int                      @id @default(autoincrement())
+  user_id                      Int
+  name                         String                   @db.VarChar(50)
+  species                      Int
+  personality_type             String                   @default("friendly") @db.VarChar(20)
+  level                        Int                      @default(1)
+  experience                   Int                      @default(0)
+  happiness                    Int                      @default(70)
+  energy                       Int                      @default(100)
+  hunger                       Int                      @default(30)
+  bond_level                   Int                      @default(0)
+  total_interactions           Int                      @default(0)
+  avatar_url                   String?                  @db.Text
   // Codex art — the AI-illustrated "collectible creature sticker" of this pet
   // (Studio style 6). Kept SEPARATE from avatar_url so the real photo identity
   // and the photo-based card/OG are never overwritten; card + My Pet hero prefer
   // codex_url when present and fall back to the photo.
-  codex_url             String?                 @db.Text
-  appearance_desc       String?                 @db.Text
-  is_active             Boolean                 @default(true)
-  soul_version          Int                     @default(1)
-  personality_modifiers Json?                   @default("{}")
-  last_dream_at         DateTime?
-  last_interaction_at   DateTime?
-  created_at            DateTime                @default(now())
-  updated_at            DateTime                @default(now()) @updatedAt
-  element               String                  @default("normal") @db.VarChar(10)
-  evolution_stage       Int                     @default(0)
-  evolution_name        String?                 @db.VarChar(30)
+  codex_url                    String?                  @db.Text
+  appearance_desc              String?                  @db.Text
+  is_active                    Boolean                  @default(true)
+  soul_version                 Int                      @default(1)
+  personality_modifiers        Json?                    @default("{}")
+  last_dream_at                DateTime?
+  last_interaction_at          DateTime?
+  created_at                   DateTime                 @default(now())
+  updated_at                   DateTime                 @default(now()) @updatedAt
+  element                      String                   @default("normal") @db.VarChar(10)
+  evolution_stage              Int                      @default(0)
+  evolution_name               String?                  @db.VarChar(30)
   // Combat stats — upgradeable via paid /api/pets/[petId]/stats/upgrade.
   // Used by Pet Battle League ranking + matchmaking. Combined power = atk+def+spd.
-  atk                   Int                     @default(10)
-  def                   Int                     @default(10)
-  spd                   Int                     @default(10)
-  care_streak           Int                     @default(0) // consecutive days of care
-  last_care_at          DateTime?
-  user                  User                    @relation(fields: [user_id], references: [id])
-  memories              PetMemory[]
-  interactions          PetInteraction[]
-  dream_journals        DreamJournal[]
-  insights              PetInsight[]
-  loras                 PetLora[]
-  notifications         PetNotification[]
-  autonomous_actions    PetAutonomousAction[]
-  soul_exports          SoulExport[]
-  skills                PetSkill[]
-  equipped_items        PetEquippedItem[]
-  agent_reactions       PetAgentReaction[]
-  agent_likes           Like[]
-  agent_comments        Comment[]
-  platform_connections  PetPlatformConnection[]
-  agent_messages        PetAgentMessage[]
-  agent_schedule        PetAgentSchedule?
-  conversations         PetConversation[]
-  persona               PetPersona?
-  soul_nft              PetSoulNft?
-  memory_nfts           MemoryNft[]
-  inheritance_events    InheritanceEvent[]
+  atk                          Int                      @default(10)
+  def                          Int                      @default(10)
+  spd                          Int                      @default(10)
+  care_streak                  Int                      @default(0) // consecutive days of care
+  last_care_at                 DateTime?
+  user                         User                     @relation(fields: [user_id], references: [id])
+  memories                     PetMemory[]
+  interactions                 PetInteraction[]
+  dream_journals               DreamJournal[]
+  insights                     PetInsight[]
+  loras                        PetLora[]
+  notifications                PetNotification[]
+  autonomous_actions           PetAutonomousAction[]
+  soul_exports                 SoulExport[]
+  skills                       PetSkill[]
+  equipped_items               PetEquippedItem[]
+  agent_reactions              PetAgentReaction[]
+  agent_likes                  Like[]
+  agent_comments               Comment[]
+  platform_connections         PetPlatformConnection[]
+  agent_messages               PetAgentMessage[]
+  agent_schedule               PetAgentSchedule?
+  conversations                PetConversation[]
+  persona                      PetPersona?
+  soul_nft                     PetSoulNft?
+  memory_nfts                  MemoryNft[]
+  inheritance_events           InheritanceEvent[]
+  generations                  Generation[]
+  battles_as_player            BattleHistory[]          @relation("BattlePlayer")
+  battles_as_opponent          BattleHistory[]          @relation("BattleOpponent")
+  dates_as_a                   PetDate[]                @relation("PetDateA")
+  dates_as_b                   PetDate[]                @relation("PetDateB")
+  arena_challenges_as_player   ArenaMatchChallenge[]    @relation("ArenaChallengePlayer")
+  arena_challenges_as_opponent ArenaMatchChallenge[]    @relation("ArenaChallengeOpponent")
+  paid_actions                 PaidAction[]
+  agent_credit_reservations    AgentCreditReservation[]
+  avatar_media_objects         AvatarMediaObject[]
 
   @@index([user_id])
   @@map("pets")
 }
 
 model PetMemory {
-  id            Int      @id @default(autoincrement())
+  id            Int                      @id @default(autoincrement())
   pet_id        Int
-  memory_type   String   @db.VarChar(20)
-  content       String   @db.Text
-  emotion       String   @default("calm") @db.VarChar(20)
-  importance    Int      @default(1)
-  is_minted     Boolean  @default(false)
+  memory_type   String                   @db.VarChar(20)
+  content       String                   @db.Text
+  emotion       String                   @default("calm") @db.VarChar(20)
+  importance    Int                      @default(1)
+  is_minted     Boolean                  @default(false)
   memory_nft_id Int?
+  // Generated by 20260615000000_memory_fts. Declaring the unsupported native
+  // column prevents future Prisma diffs from attempting to drop the live FTS
+  // index and generated search data.
+  content_tsv   Unsupported("tsvector")? @default(dbgenerated("to_tsvector('simple'::regconfig, COALESCE(content, ''::text))"))
   // Optional embedding vector stored as a plain JSON float array (no pgvector —
   // per-pet retrieval is candidate-limited to ~400 rows, so app-side cosine is
   // exact + fast at this scale). Null until an owner connects an embedding key
   // and the backfill (scripts/embed-memories.mjs) or write path populates it.
   embedding     Json?
-  created_at    DateTime @default(now())
-  pet           Pet      @relation(fields: [pet_id], references: [id])
+  created_at    DateTime                 @default(now())
+  pet           Pet                      @relation(fields: [pet_id], references: [id])
 
   @@index([pet_id])
+  @@index([content_tsv], type: Gin)
+  @@index([pet_id, created_at(sort: Desc)])
   @@map("pet_memories")
 }
 
@@ -243,48 +354,49 @@ model DreamJournal {
 // connecting two memories about the owner (see lib/petclaw/memory/daydream.ts).
 // Surfaced proactively on My Pet so the pet feels like it thinks about you.
 model PetInsight {
-  id           Int      @id @default(autoincrement())
-  pet_id       Int
-  insight      String   @db.Text          // the caring observation, 1st person
-  rationale    String?  @db.Text          // why the pet connected these memories
-  mood         String   @db.VarChar(20)   // tender | playful | concerned | hopeful
-  score        Int      @default(5)       // critic score 0-10
-  source_keys  Json?                       // memory keys that fed it
-  seen         Boolean  @default(false)   // has the owner viewed it
-  reacted      Boolean  @default(false)   // did the owner react (kept for feedback)
+  id                  Int      @id @default(autoincrement())
+  pet_id              Int
+  insight             String   @db.Text // the caring observation, 1st person
+  rationale           String?  @db.Text // why the pet connected these memories
+  mood                String   @db.VarChar(20) // tender | playful | concerned | hopeful
+  score               Int      @default(5) // critic score 0-10
+  source_keys         Json? // memory keys that fed it
+  seen                Boolean  @default(false) // has the owner viewed it
+  reacted             Boolean  @default(false) // did the owner react (kept for feedback)
   // Set when the daydream-to-video cron turns this insight into an auto-generated
   // video (generations.id) — doubles as the "already converted" marker.
   video_generation_id Int?
-  created_at   DateTime @default(now())
-  pet          Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  created_at          DateTime @default(now())
+  pet                 Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "pet_insights_pet_fkey")
 
-  @@index([pet_id, created_at])
+  @@index([pet_id, created_at], map: "pet_insights_pet_created_idx")
   @@map("pet_insights")
 }
 
 // Per-pet LoRA fine-tune checkpoint (fal.ai flux-lora-fast-training). One
 // "ready" row per pet is the active identity model used for image generation.
 model PetLora {
-  id             Int       @id @default(autoincrement())
-  pet_id         Int
-  status         String    @default("training") @db.VarChar(20) // training | ready | failed
-  fal_request_id String?   @db.VarChar(128)
-  lora_url       String?   @db.VarChar(512)   // diffusers safetensors URL once ready
-  trigger_word   String    @db.VarChar(40)    // rare token bound to this pet's identity
-  images_used    Json?                        // training image URLs (provenance)
-  error_message  String?   @db.Text
-  created_at     DateTime  @default(now())
-  completed_at   DateTime?
-  pet            Pet       @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  id                   Int       @id @default(autoincrement())
+  pet_id               Int
+  status               String    @default("training") @db.VarChar(20) // training | ready | failed
+  fal_request_id       String?   @db.VarChar(128)
+  lora_url             String?   @db.VarChar(512) // diffusers safetensors URL once ready
+  training_archive_ref String?   @db.VarChar(700) // owner-protected ZIP submitted to fal
+  trigger_word         String    @db.VarChar(40) // rare token bound to this pet's identity
+  images_used          Json? // training image URLs (provenance)
+  error_message        String?   @db.Text
+  created_at           DateTime  @default(now())
+  completed_at         DateTime?
+  pet                  Pet       @relation(fields: [pet_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "pet_loras_pet_fkey")
 
-  @@index([pet_id, created_at])
+  @@index([pet_id, created_at], map: "pet_loras_pet_created_idx")
   @@map("pet_loras")
 }
 
 // BYO model connections (FEATURE 1). Owner-scoped; the API key is encrypted at
 // rest via src/lib/crypto.ts. The LLM router (src/lib/llm/router.ts) prefers a
-// connection whose task_scopes include the call's task, else falls back to the
-// platform Grok default. Additive table — safe migration.
+// connection whose task_scopes include the call's task. Only absence of a
+// matching row permits platform routing; a broken matching row fails closed.
 model ModelConnection {
   id            Int      @id @default(autoincrement())
   owner_user_id Int
@@ -299,6 +411,20 @@ model ModelConnection {
 
   @@index([owner_user_id])
   @@map("model_connections")
+}
+
+// Cluster-safe daily counters for platform-funded text, vision, and image
+// attempts. Image submissions atomically reserve image:global/image:user and
+// image:provider scopes. Owner/BYOK text inference never writes.
+model LlmPlatformUsage {
+  usage_date DateTime @db.Date
+  scope_key  String   @db.VarChar(64)
+  attempts   Int      @default(0)
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@id([usage_date, scope_key])
+  @@index([usage_date])
+  @@map("llm_platform_usage")
 }
 
 // CLI personal access tokens. Minted from the web app ("Generate CLI token"),
@@ -514,8 +640,11 @@ model BattleHistory {
   opponent_hp_max Int      @default(0)
   player_avatar   String?  @db.Text
   opponent_avatar String?  @db.Text
+  player_pet      Pet      @relation("BattlePlayer", fields: [player_pet_id], references: [id], onDelete: Cascade)
+  opponent_pet    Pet?     @relation("BattleOpponent", fields: [opponent_pet_id], references: [id], onDelete: SetNull)
 
   @@index([player_pet_id])
+  @@index([opponent_pet_id])
   @@map("battle_history")
 }
 
@@ -618,8 +747,8 @@ model RewardRedemption {
   created_at    DateTime @default(now())
   updated_at    DateTime @default(now()) @updatedAt
 
-  @@index([user_id])
   @@unique([user_id, reward_id])
+  @@index([user_id])
   @@map("reward_redemptions")
 }
 
@@ -790,7 +919,9 @@ model PersonaCheckpoint {
 model MemoryNft {
   id              Int       @id @default(autoincrement())
   pet_id          Int
-  memory_id       Int?
+  // One durable memory can be claimed for chain submission at most once.
+  // PostgreSQL permits multiple NULLs, so auto-recorded milestones remain valid.
+  memory_id       Int?      @unique
   soul_token_id   Int?
   memory_token_id Int?
   content_hash    String    @unique @db.VarChar(66)
@@ -800,6 +931,12 @@ model MemoryNft {
   description     String?   @db.Text
   ipfs_cid        String?   @db.VarChar(128)
   mint_tx_hash    String?   @db.VarChar(66)
+  // Durable relayer lease: exactly one concurrent request may submit, failed
+  // attempts are retryable, and a stored tx hash makes all replays read-only.
+  mint_status     String    @default("recorded") @db.VarChar(20)
+  mint_claim_token String?  @db.VarChar(36)
+  mint_claimed_at DateTime?
+  mint_attempts   Int       @default(0)
   chain           String    @default("bsc") @db.VarChar(10)
   owner_wallet    String    @db.VarChar(42)
   minted_at       DateTime?
@@ -844,8 +981,10 @@ model PaidAction {
   consumed_at DateTime? // set when the gated action actually executes; null = available
   metadata    Json?     @default("{}")
   created_at  DateTime  @default(now())
+  pet         Pet?      @relation(fields: [pet_id], references: [id], onDelete: SetNull)
 
   @@index([user_id])
+  @@index([pet_id])
   @@index([action_key])
   @@index([created_at])
   @@map("paid_actions")
@@ -920,6 +1059,28 @@ model DailyActionCount {
   @@map("daily_action_counts")
 }
 
+// Durable debit state for paid Pet agent loops. A guarded user debit and the
+// `reserved` row are created together; terminal transitions make refunds
+// idempotent even when several error paths race or retry.
+model AgentCreditReservation {
+  id         String    @id @default(uuid()) @db.Uuid
+  user_id    Int
+  pet_id     Int
+  purpose    String    @db.VarChar(40)
+  amount     Int
+  status     String    @default("reserved") @db.VarChar(20)
+  created_at DateTime  @default(now())
+  settled_at DateTime?
+  expires_at DateTime
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  pet        Pet       @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, status])
+  @@index([created_at])
+  @@index([status, expires_at])
+  @@map("agent_credit_reservations")
+}
+
 // ───────────────────────────────────────────────────────────────────────────
 // MISSION SYSTEM (Phase 1 — daily missions + mission-streak)
 // ───────────────────────────────────────────────────────────────────────────
@@ -936,20 +1097,20 @@ model DailyActionCount {
 model DailyMission {
   id           Int       @id @default(autoincrement())
   user_id      Int
-  date         String    @db.VarChar(10)   // "YYYY-MM-DD" UTC
-  mission_id   String    @db.VarChar(60)   // matches mission catalog key
+  date         String    @db.VarChar(10) // "YYYY-MM-DD" UTC
+  mission_id   String    @db.VarChar(60) // matches mission catalog key
   category     String    @db.VarChar(20)
   title        String    @db.VarChar(120)
   points       Int
   status       String    @default("pending") @db.VarChar(20) // pending | completed
   completed_at DateTime?
-  bonus_x     Float     @default(1.0)    // hourly-drop multiplier captured at completion
+  bonus_x      Float     @default(1.0) // hourly-drop multiplier captured at completion
   created_at   DateTime  @default(now())
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([user_id, date, mission_id], name: "user_date_mission")
-  @@index([user_id, date])
+  @@unique([user_id, date, mission_id], name: "user_date_mission", map: "daily_missions_user_date_mission_key")
+  @@index([user_id, date], map: "daily_missions_user_date_idx")
   @@index([date])
   @@map("daily_missions")
 }
@@ -958,7 +1119,7 @@ model UserStreak {
   user_id              Int       @id
   current_streak       Int       @default(0)
   longest_streak       Int       @default(0)
-  last_completed_date  String?   @db.VarChar(10)    // last YYYY-MM-DD with >=1 completion
+  last_completed_date  String?   @db.VarChar(10) // last YYYY-MM-DD with >=1 completion
   shields_owned        Int       @default(0)
   shields_used         Int       @default(0)
   last_shield_used_at  DateTime?
@@ -970,24 +1131,24 @@ model UserStreak {
   pending_apology_days Int       @default(0)
   updated_at           DateTime  @default(now()) @updatedAt
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("user_streaks")
 }
 
 model StreakPurchase {
-  id               Int      @id @default(autoincrement())
-  user_id          Int
-  kind             String   @db.VarChar(30)  // shield | repair-1d | repair-7d | ... | doubler | week_1_5x | bundle
-  price_usd        Float                     // sticker price at purchase
-  paid_via         String   @db.VarChar(20)  // credits | usdt | pet_token
-  paid_credits     Int?                      // amount of in-app credits debited
-  tx_hash          String?  @db.VarChar(66)
-  streak_before    Int
-  streak_after     Int
-  created_at       DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  user_id       Int
+  kind          String   @db.VarChar(30) // shield | repair-1d | repair-7d | ... | doubler | week_1_5x | bundle
+  price_usd     Float // sticker price at purchase
+  paid_via      String   @db.VarChar(20) // credits | usdt | pet_token
+  paid_credits  Int? // amount of in-app credits debited
+  tx_hash       String?  @db.VarChar(66)
+  streak_before Int
+  streak_after  Int
+  created_at    DateTime @default(now())
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([user_id, created_at])
   @@map("streak_purchases")
@@ -1005,94 +1166,97 @@ model StreakPurchase {
 
 model HourlyDrop {
   id           Int      @id @default(autoincrement())
-  kind         String   @db.VarChar(30)  // snack | memory | studio | compliment | chat | care
+  kind         String   @db.VarChar(30) // snack | memory | studio | compliment | chat | care
   label        String   @db.VarChar(80)
   emoji        String   @db.VarChar(8)
   multiplier_x Float    @default(2.0)
-  applies_to   String   @db.VarChar(20)  // mission category boosted (or "*" for all)
+  applies_to   String   @db.VarChar(20) // mission category boosted (or "*" for all)
   starts_at    DateTime
   ends_at      DateTime
   created_at   DateTime @default(now())
-  @@index([starts_at, ends_at])
+
+  @@index([starts_at, ends_at], map: "hourly_drops_window_idx")
   @@map("hourly_drops")
 }
 
 model PeriodicMission {
   id           Int       @id @default(autoincrement())
   user_id      Int
-  period       String    @db.VarChar(8)   // "week" | "month"
-  period_key   String    @db.VarChar(10)  // "2026-W24" or "2026-06"
+  period       String    @db.VarChar(8) // "week" | "month"
+  period_key   String    @db.VarChar(10) // "2026-W24" or "2026-06"
   mission_id   String    @db.VarChar(60)
   category     String    @db.VarChar(20)
   title        String    @db.VarChar(160)
-  target       Int                          // e.g. "5 generations"
+  target       Int // e.g. "5 generations"
   progress     Int       @default(0)
   points       Int
   status       String    @default("pending") @db.VarChar(20)
   completed_at DateTime?
   created_at   DateTime  @default(now())
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([user_id, period, period_key, mission_id], name: "user_period_mission")
-  @@index([user_id, period_key])
+  @@unique([user_id, period, period_key, mission_id], name: "user_period_mission", map: "periodic_missions_user_period_key")
+  @@index([user_id, period_key], map: "periodic_missions_user_period_idx")
   @@map("periodic_missions")
 }
 
 model StreakBuddy {
-  id            Int      @id @default(autoincrement())
-  user_a_id     Int      // initiator
-  user_b_id     Int      // accepter
-  status        String   @default("pending") @db.VarChar(12) // pending | active | ended
-  shared_streak Int      @default(0)
-  last_active_a String?  @db.VarChar(10)
-  last_active_b String?  @db.VarChar(10)
-  created_at    DateTime @default(now())
+  id            Int       @id @default(autoincrement())
+  user_a_id     Int // initiator
+  user_b_id     Int // accepter
+  status        String    @default("pending") @db.VarChar(12) // pending | active | ended
+  shared_streak Int       @default(0)
+  last_active_a String?   @db.VarChar(10)
+  last_active_b String?   @db.VarChar(10)
+  created_at    DateTime  @default(now())
   accepted_at   DateTime?
   ended_at      DateTime?
 
-  user_a User @relation("StreakBuddyA", fields: [user_a_id], references: [id], onDelete: Cascade)
-  user_b User @relation("StreakBuddyB", fields: [user_b_id], references: [id], onDelete: Cascade)
+  user_a User @relation("StreakBuddyA", fields: [user_a_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "streak_buddies_a_fkey")
+  user_b User @relation("StreakBuddyB", fields: [user_b_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "streak_buddies_b_fkey")
 
-  @@unique([user_a_id, user_b_id], name: "buddy_pair")
-  @@index([user_a_id])
-  @@index([user_b_id])
+  @@unique([user_a_id, user_b_id], name: "buddy_pair", map: "streak_buddies_pair_key")
+  @@index([user_a_id], map: "streak_buddies_a_idx")
+  @@index([user_b_id], map: "streak_buddies_b_idx")
   @@map("streak_buddies")
 }
 
 model StreakSos {
   id            Int       @id @default(autoincrement())
   sender_id     Int
-  sender_streak Int                       // streak we're trying to save
-  expires_at    DateTime                  // when the gap will become permanent
-  helped_by_id  Int?                      // null until someone helps
+  sender_streak Int // streak we're trying to save
+  expires_at    DateTime // when the gap will become permanent
+  helped_by_id  Int? // null until someone helps
   helped_at     DateTime?
   credits_paid  Int       @default(0)
   message       String?   @db.VarChar(280)
   created_at    DateTime  @default(now())
 
-  sender User @relation("SosSender", fields: [sender_id], references: [id], onDelete: Cascade)
-  helper User? @relation("SosHelper", fields: [helped_by_id], references: [id])
+  sender User  @relation("SosSender", fields: [sender_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "streak_sos_sender_fkey")
+  helper User? @relation("SosHelper", fields: [helped_by_id], references: [id], onUpdate: NoAction, map: "streak_sos_helper_fkey")
 
-  @@index([expires_at])
-  @@index([sender_id, created_at])
+  @@index([expires_at], map: "streak_sos_expires_idx")
+  @@index([sender_id, created_at], map: "streak_sos_sender_idx")
   @@map("streak_sos")
 }
 
 model PetDate {
   id           Int      @id @default(autoincrement())
-  pet_a_id     Int
-  pet_b_id     Int
-  initiator_id Int                          // user who started it
-  log          String   @db.Text             // JSON: [{speaker: "A"|"B", text: "..."}]
-  vibe         String   @db.VarChar(40)      // "playful" | "deep" | "rivalry" | "shy"
-  friendship   Int      @default(0)          // -100..100
+  pet_a_id     Int?
+  pet_b_id     Int?
+  initiator_id Int // user who started it
+  log          String   @db.Text // JSON: [{speaker: "A"|"B", text: "..."}]
+  vibe         String   @db.VarChar(40) // "playful" | "deep" | "rivalry" | "shy"
+  friendship   Int      @default(0) // -100..100
   created_at   DateTime @default(now())
 
-  initiator User @relation(fields: [initiator_id], references: [id], onDelete: Cascade)
+  initiator User @relation(fields: [initiator_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "pet_dates_initiator_fkey")
+  pet_a     Pet? @relation("PetDateA", fields: [pet_a_id], references: [id], onDelete: SetNull)
+  pet_b     Pet? @relation("PetDateB", fields: [pet_b_id], references: [id], onDelete: SetNull)
 
-  @@index([pet_a_id])
-  @@index([pet_b_id])
-  @@index([initiator_id, created_at])
+  @@index([pet_a_id], map: "pet_dates_a_idx")
+  @@index([pet_b_id], map: "pet_dates_b_idx")
+  @@index([initiator_id, created_at], map: "pet_dates_initiator_idx")
   @@map("pet_dates")
 }

@@ -29,6 +29,8 @@ interface Overview {
   caughtAnimals7d: number;
   seasonPointsIssued7d: { cappedLedger: number };
   llmToday: { date: string; platformCalls: number; distinctCallers: number; callCap: number; perUserCap: number };
+  visionToday: { date: string; visionCalls: number; cap: number };
+  imageToday: { date: string; imageCalls: number; distinctCallers: number; cap: number; perUserCap: number; providers: Record<string, number> };
   recentPurchases: Array<{ id: number; wallet: string; purpose: string; usd: number; at: string }>;
   recentRuns: Array<{ id: number; pet: string; urge: string; action: string; credits: number; platform: string | null; at: string }>;
 }
@@ -99,7 +101,17 @@ export default function AdminOpsPage() {
     {
       label: "LLM CALLS TODAY",
       value: `${fmt(data.llmToday.platformCalls)}/${fmt(data.llmToday.callCap)}`,
-      sub: `${fmt(data.llmToday.distinctCallers)} callers · this process`,
+      sub: `${fmt(data.llmToday.distinctCallers)} owner-scoped callers · cluster-wide`,
+    },
+    {
+      label: "VISION CALLS TODAY",
+      value: `${fmt(data.visionToday.visionCalls)}/${fmt(data.visionToday.cap)}`,
+      sub: "cluster-wide",
+    },
+    {
+      label: "IMAGE ATTEMPTS TODAY",
+      value: `${fmt(data.imageToday.imageCalls)}/${fmt(data.imageToday.cap)}`,
+      sub: `${fmt(data.imageToday.distinctCallers)} callers · ${fmt(data.imageToday.perUserCap)}/user/day`,
     },
   ];
 

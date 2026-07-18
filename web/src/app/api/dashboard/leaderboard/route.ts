@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
+import { publicPetWhere } from "@/lib/publicPet";
 
 const MAX_LIMIT = 200;
 
@@ -39,6 +40,10 @@ export async function GET(req: NextRequest) {
     FROM pets p
     JOIN users u ON u.id = p.user_id
     WHERE p.is_active = true
+      AND (
+        p.personality_modifiers->>'consent_public_profile' = 'true'
+        OR p.personality_modifiers->'consent'->>'allowPublicProfile' = 'true'
+      )
     ORDER BY combined_power DESC, p.level DESC, p.total_interactions DESC
     LIMIT ${limit}
   `;
@@ -74,7 +79,7 @@ export async function GET(req: NextRequest) {
     }
     // Pet exists but outside top N → compute their rank with a separate count query
     const myPet = await prisma.pet.findFirst({
-      where: { id, is_active: true },
+      where: publicPetWhere({ id }),
       select: { id: true, name: true, atk: true, def: true, spd: true, level: true, total_interactions: true, avatar_url: true, evolution_stage: true, user: { select: { wallet_address: true } } },
     });
     if (myPet) {
@@ -83,6 +88,10 @@ export async function GET(req: NextRequest) {
         SELECT COUNT(*) + 1 AS rank
         FROM pets
         WHERE is_active = true
+          AND (
+            personality_modifiers->>'consent_public_profile' = 'true'
+            OR personality_modifiers->'consent'->>'allowPublicProfile' = 'true'
+          )
           AND (atk + def + spd) > ${myPower}
       `;
       return NextResponse.json({

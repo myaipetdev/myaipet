@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import { useConfig } from "wagmi";
 import { api } from "@/lib/api";
 import { signAction } from "@/lib/signAction";
@@ -39,11 +39,14 @@ const GALLERY_IMAGES = [
 ];
 
 export default function PetGenerate() {
+  const promptId = useId();
   const wagmiConfig = useConfig();
   const { recordImageGeneration } = useRecordImageGeneration();
   const { recordVideoGeneration } = useRecordVideoGeneration();
   const [chainToast, setChainToast] = useState<string | null>(null);
   const [pets, setPets] = useState<any[]>([]);
+  const [loadingPets, setLoadingPets] = useState(true);
+  const [petsError, setPetsError] = useState("");
   const [selectedPet, setSelectedPet] = useState<any>(null);
   const [style, setStyle] = useState(0);
   const [duration, setDuration] = useState(5);
@@ -101,13 +104,18 @@ export default function PetGenerate() {
   }, [generating]);
 
   const loadPets = async () => {
+    setLoadingPets(true);
+    setPetsError("");
     try {
       const data = await api.pets.list();
       const list = data.pets || data;
       setPets(list);
       if (list.length > 0) setSelectedPet(list[0]);
-    } catch {
+    } catch (error: any) {
       setPets([]);
+      setPetsError(error?.status === 401 ? "Connect your wallet to load your pets." : "Couldn’t load your pets. Check your connection and try again.");
+    } finally {
+      setLoadingPets(false);
     }
   };
 
@@ -269,6 +277,25 @@ export default function PetGenerate() {
     ? (duration <= 3 ? 15 : duration <= 5 ? 30 : 60)
     : 5;
 
+  if (loadingPets) {
+    return (
+      <div role="status" aria-live="polite" style={{ padding: "120px 40px", textAlign: "center", color: "#7A6E5A", fontFamily: "var(--ed-body)" }}>
+        Loading your pets…
+      </div>
+    );
+  }
+
+  if (petsError) {
+    return (
+      <div style={{ padding: "120px 40px", textAlign: "center", maxWidth: 500, margin: "0 auto" }}>
+        <div role="alert" style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#9A4E1E", lineHeight: 1.6 }}>{petsError}</div>
+        <button type="button" onClick={loadPets} style={{ marginTop: 16, padding: "10px 18px", borderRadius: 10, border: "none", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontWeight: 700, cursor: "pointer" }}>
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   if (pets.length === 0) {
     return (
       <div style={{ padding: "120px 40px", textAlign: "center", maxWidth: 500, margin: "0 auto" }}>
@@ -287,7 +314,7 @@ export default function PetGenerate() {
     <div style={{ padding: "40px", maxWidth: 960, margin: "0 auto", paddingTop: 100 }}>
       {/* On-chain recording overlay */}
       {chainToast && (
-        <div style={{
+        <div role="dialog" aria-modal="true" aria-live="polite" aria-label="On-chain transaction status" style={{
           position: "fixed",
           inset: 0,
           zIndex: 9999,
@@ -349,12 +376,12 @@ export default function PetGenerate() {
             padding: "6px 14px", borderRadius: 10,
             background: "rgba(190,79,40,0.07)", border: "1px solid rgba(190,79,40,0.15)",
           }}>
-            <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A4E1E", fontWeight: 600, cursor: "pointer" }}
+            <button type="button" style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A4E1E", fontWeight: 600, cursor: "pointer", border: 0, background: "transparent", padding: 0 }}
               onClick={() => { window.location.href = "/"; }}
               title="Buy more credits on the Home tab"
             >
               <Icon name="coin" size={12} /> {balance !== null ? balance : "—"} credits
-            </span>
+            </button>
           </div>
         </div>
 
@@ -370,9 +397,9 @@ export default function PetGenerate() {
                 }}>
                   Choose Your Pet
                 </label>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <div role="group" aria-label="Choose your pet" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {pets.map((p: any) => (
-                    <button key={p.id} onClick={() => { setSelectedPet(p); setResult(null); setError(null); setGenerating(false); setProgress(0); }} style={{
+                    <button type="button" key={p.id} aria-pressed={selectedPet?.id === p.id} onClick={() => { setSelectedPet(p); setResult(null); setError(null); setGenerating(false); setProgress(0); }} style={{
                       background: selectedPet?.id === p.id ? "rgba(190,79,40,0.09)" : "#F5EFE2",
                       border: selectedPet?.id === p.id ? "1px solid rgba(190,79,40,0.35)" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                       borderRadius: 12, padding: "10px 14px", cursor: "pointer",
@@ -450,6 +477,7 @@ export default function PetGenerate() {
                                 const url = isVideo ? result.video_path : (result.image_url || result.photo_path);
                                 const ext = isVideo ? "mp4" : "jpg";
                                 const res = await fetch(url);
+                                if (!res.ok) throw new Error(`Download failed (${res.status})`);
                                 const blob = await res.blob();
                                 const a = document.createElement("a");
                                 a.href = URL.createObjectURL(blob);
@@ -487,7 +515,7 @@ export default function PetGenerate() {
                   </div>
                 ) : generating ? (
                   /* Generating state */
-                  <div style={{
+                  <div role="status" aria-live="polite" aria-label={`Generating ${genType} for ${selectedPet.name}`} style={{
                     display: "flex", flexDirection: "column", alignItems: "center",
                     justifyContent: "center", padding: 40, minHeight: 320,
                   }}>
@@ -520,7 +548,7 @@ export default function PetGenerate() {
                       </div>
                     </div>
                     <div style={{ width: "70%", maxWidth: 240, marginBottom: 14 }}>
-                      <div style={{ height: 5, borderRadius: 3, background: "rgba(33,26,18,0.08)", overflow: "hidden" }}>
+                      <div role="progressbar" aria-label="Generation progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(Math.min(100, progress))} style={{ height: 5, borderRadius: 3, background: "rgba(33,26,18,0.08)", overflow: "hidden" }}>
                         <div style={{
                           height: "100%", borderRadius: 3,
                           background: "linear-gradient(90deg, #E27D0C, #F49B2A, #E27D0C)",
@@ -585,14 +613,14 @@ export default function PetGenerate() {
                   </div>
                   <div style={{ display: "flex", gap: 6, overflow: "auto" }}>
                     {history.filter((h: any) => h.photo_path || h.photo_url || h.image_url).slice(0, 6).map((h: any, i: number) => (
-                      <div key={h.id || i} className="recent-thumb" style={{
+                      <button type="button" key={h.id || i} className="recent-thumb" aria-label={`Open recent creation ${i + 1}`} style={{
                         width: 72, height: 72, borderRadius: 10, overflow: "hidden",
-                        flexShrink: 0, cursor: "pointer", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                        flexShrink: 0, cursor: "pointer", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", padding: 0,
                       }} onClick={() => setResult(h)}>
                         <img src={h.photo_path || h.photo_url || h.image_url} alt=""
                           style={{ width: "100%", height: "100%", objectFit: "cover" }}
                           onError={(e) => { (e.target as HTMLElement).parentElement!.style.display = "none"; }} />
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -609,7 +637,7 @@ export default function PetGenerate() {
                 }}>
                   Generation Type
                 </label>
-                <div style={{
+                <div role="group" aria-label="Generation type" style={{
                   display: "flex", gap: 4, padding: 3, borderRadius: 10,
                   background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                 }}>
@@ -617,7 +645,7 @@ export default function PetGenerate() {
                     { key: "image", label: "Image", icon: "🖼" },
                     { key: "video", label: "Video", icon: "🎬" },
                   ].map(t => (
-                    <button key={t.key} onClick={() => setGenType(t.key)} style={{
+                    <button type="button" key={t.key} aria-pressed={genType === t.key} onClick={() => setGenType(t.key)} style={{
                       flex: 1,
                       background: genType === t.key ? "rgba(190,79,40,0.09)" : "transparent",
                       border: "none", borderRadius: 8, padding: "10px",
@@ -633,13 +661,13 @@ export default function PetGenerate() {
 
               {/* Prompt — hidden for Original style */}
               {!isOriginal && <div>
-                <label style={{
+                <label htmlFor={promptId} style={{
                   fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A",
                   textTransform: "uppercase", letterSpacing: "0.12em", display: "block", marginBottom: 8, fontWeight: 600,
                 }}>
                   Prompt (Optional)
                 </label>
-                <textarea value={prompt} onChange={e => setPrompt(e.target.value)}
+                <textarea id={promptId} value={prompt} onChange={e => setPrompt(e.target.value)}
                   placeholder={`Describe a scene for ${selectedPet?.name || "your pet"}...`}
                   maxLength={500}
                   style={{
@@ -679,9 +707,9 @@ export default function PetGenerate() {
                 }}>
                   Style
                 </label>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                <div role="group" aria-label="Image style" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {STYLES.map((s, idx) => (
-                    <button key={s.name} onClick={() => setStyle(idx)} style={{
+                    <button type="button" key={s.name} aria-pressed={style === idx} onClick={() => setStyle(idx)} style={{
                       background: style === idx ? "rgba(190,79,40,0.09)" : "#F5EFE2",
                       border: style === idx ? "1px solid rgba(190,79,40,0.3)" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
                       borderRadius: 10, padding: "8px 12px", cursor: "pointer",
@@ -711,9 +739,9 @@ export default function PetGenerate() {
                       AI Video
                     </span>
                   </div>
-                  <div style={{ display: "flex", gap: 6 }}>
+                  <div role="group" aria-label="Video duration" style={{ display: "flex", gap: 6 }}>
                     {[3, 5, 10].map(d => (
-                      <button key={d} onClick={() => setDuration(d)} style={{
+                      <button type="button" key={d} aria-pressed={d === duration} onClick={() => setDuration(d)} style={{
                         flex: 1, padding: "8px", borderRadius: 8, cursor: "pointer",
                         background: d === duration ? "rgba(190,79,40,0.09)" : "#F5EFE2",
                         border: d === duration ? "1px solid rgba(190,79,40,0.3)" : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -733,7 +761,7 @@ export default function PetGenerate() {
 
               {/* Error */}
               {error && (
-                <div style={{
+                <div role="alert" style={{
                   padding: "12px 16px", borderRadius: 12, background: "rgba(190,79,40,0.06)",
                   border: "1px solid rgba(190,79,40,0.18)", display: "flex", alignItems: "center", gap: 8,
                 }}>
@@ -743,7 +771,7 @@ export default function PetGenerate() {
               )}
 
               {/* Generate button */}
-              <button onClick={handleGenerate} disabled={!selectedPet || generating} style={{
+              <button type="button" onClick={handleGenerate} disabled={!selectedPet || generating} aria-busy={generating} style={{
                 marginTop: "auto", width: "100%",
                 background: generating
                   ? "rgba(33,26,18,0.06)"

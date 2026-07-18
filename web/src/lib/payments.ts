@@ -12,7 +12,15 @@
 
 // Treasury config + fail-closed check live in the central on-chain module so the
 // treasury wallet can be swapped in one place (audit + replaceability).
-export { ONCHAIN, treasuryConfigured, verifyUsdtTransfer } from "./onchain";
+import { canonicalizePaymentTxHash, paymentsEnabled } from "./onchain";
+
+export {
+  ONCHAIN,
+  canonicalizePaymentTxHash,
+  paymentsEnabled,
+  treasuryConfigured,
+  verifyUsdtTransfer,
+} from "./onchain";
 export const TREASURY_WALLET = (process.env.TREASURY_WALLET || "").trim();
 
 /** Thrown by consumePaymentTx when the tx_hash was already used anywhere. */
@@ -20,6 +28,14 @@ export class PaymentAlreadyConsumed extends Error {
   constructor() {
     super("Transaction already used");
     this.name = "PaymentAlreadyConsumed";
+  }
+}
+
+/** Defense-in-depth if a caller reaches the ledger while the rail is paused. */
+export class PaymentsPausedError extends Error {
+  constructor() {
+    super("Payments are temporarily unavailable");
+    this.name = "PaymentsPausedError";
   }
 }
 
@@ -38,16 +54,19 @@ type ConsumeTxClient = {
 export async function consumePaymentTx(
   tx: ConsumeTxClient,
   args: { txHash: string; userId: number; purpose: string; amountUsd: number },
-): Promise<void> {
+): Promise<string> {
+  if (!paymentsEnabled()) throw new PaymentsPausedError();
+  const canonicalTxHash = canonicalizePaymentTxHash(args.txHash);
   try {
     await tx.consumedPayment.create({
       data: {
-        tx_hash: args.txHash,
+        tx_hash: canonicalTxHash,
         user_id: args.userId,
         purpose: args.purpose,
         amount_usd: args.amountUsd,
       },
     });
+    return canonicalTxHash;
   } catch (e: unknown) {
     if (e && typeof e === "object" && (e as { code?: string }).code === "P2002") {
       throw new PaymentAlreadyConsumed();

@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   });
   if (!own) return NextResponse.json({ error: "You can only battle with your own pet" }, { status: 403 });
 
-  const b = await resolveCardBattle(petId, opponentId);
+  const b = await resolveCardBattle(petId, opponentId, user.id);
   if (!b) return NextResponse.json({ error: "Card not found" }, { status: 404 });
 
   // Small, daily-capped airdrop points for dueling (anti-spam).

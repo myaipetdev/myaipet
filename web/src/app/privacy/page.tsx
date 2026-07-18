@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description: "Privacy Policy for the PetClaw Protocol and MY AI PET.",
 };
 
-const LAST_UPDATED = "2026-04-30";
+const LAST_UPDATED = "2026-07-17";
 
 export default function PrivacyPage() {
   return (
@@ -17,7 +17,7 @@ export default function PrivacyPage() {
       padding: "80px 24px",
     }}>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
-        <a href="/" style={{
+        <a href="https://myaipet.ai" style={{
           display: "inline-block", marginBottom: 24,
           fontSize: 13, color: "rgba(33,26,18,0.55)", textDecoration: "none",
         }}>← Back to landing</a>
@@ -43,33 +43,48 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="3. AI Processing">
-          Pet conversations and image/video prompts are sent to third-party AI providers (currently
-          xAI Grok and FAL) under their respective data processing terms. These providers may
-          process your input transiently to produce a response. We do not authorize them to retain
-          your data for model training.
+          Pet conversations, relevant memory context, and image/video prompts are sent to
+          third-party AI providers under their respective data processing terms. Platform-funded
+          text processing uses xAI Grok first and may send the same prompt and context to OpenAI
+          after a transient, rate-limit, or provider-spend failure. Uploaded pet images are sent to
+          xAI for animal validation and appearance description and may be retried with OpenAI after
+          eligible provider failures. Pet avatar, personal image, and Pet video generation use xAI;
+          Studio generation uses FAL. Private reference images are sent as verified inline bytes
+          rather than public storage links. If you connect your own model for a task, that provider
+          processes the task with your
+          key; a broken matching connection is not replaced with a platform provider. These
+          providers may process your input transiently to produce a response. We do not authorize
+          them to retain your data for model training.
         </Section>
 
         <Section title="4. On-Chain Data">
-          On-chain records (BSC) are public and permanent. We cannot delete them. Avoid putting
-          sensitive personal information into on-chain fields. On-chain anchoring is currently
-          migrating to Base and activates at go-live.
+          Existing on-chain records on BSC are public and permanent. We cannot delete them. Avoid
+          putting sensitive personal information into on-chain fields. New anchoring is disabled;
+          a future Base deployment is planned but has no announced activation date.
         </Section>
 
         <Section title="5. Cookies & Local Storage">
-          We use session storage for SIWE authentication and UX preferences. We do not use
-          cross-site advertising trackers.
+          We use an HttpOnly, SameSite session cookie for SIWE authentication and local browser
+          storage for UX preferences. We do not use cross-site advertising trackers.
         </Section>
 
         <Section title="6. Your Rights (GDPR / PIPA / CCPA)">
-          You can: (a) export all your pet data via Sovereignty → Export SOUL Data; (b) delete all
-          off-chain data via Sovereignty → Delete All Data, which produces a SHA-256 deletion
-          proof; (c) toggle data-sharing consent toggles at any time. For requests we cannot fulfill
-          via the UI, contact support@myaipet.ai.
+          You can: (a) export your pet&apos;s portable SOUL bundle and linked activity data via
+          Sovereignty → Export SOUL Data; (b) remove pet-scoped records and owned media from active
+          systems via Sovereignty → Delete Pet Data, which produces a SHA-256 deletion receipt;
+          and (c) change consent settings at any time. Public on-chain records cannot be erased.
+          For account-level requests or records that cannot yet be linked to one pet, contact
+          support@myaipet.ai.
         </Section>
 
         <Section title="7. Data Retention">
-          Active pets and memory: stored as long as your account is active. Server logs: 90 days.
-          Deleted data: removed from primary databases within 30 days; backups rotated every 90 days.
+          Active pets and memory are stored as long as your account is active. Security and
+          application logs are retained for up to 90 days. Encrypted, access-restricted off-host
+          backup sets are retained for up to 90 days and are restore-tested at creation.
+          A completed in-product pet deletion removes linked records and owned media from active
+          systems immediately. Backup copies are isolated from active product serving. Retention
+          policies make backup and versioned-storage residual copies eligible for deletion no later
+          than 90 days; cloud lifecycle removal may complete asynchronously after eligibility.
         </Section>
 
         <Section title="8. International Transfers">
@@ -83,8 +98,9 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="10. Security">
-          We use TLS (HTTPS) for all transport, encrypted-at-rest databases, and least-privilege
-          IAM. No system is perfectly secure — please use a hardware wallet for high-value assets.
+          We use TLS (HTTPS), owner-scoped authorization, restricted filesystem permissions,
+          encrypted off-host backups, and one-time wallet login challenges. No system is perfectly
+          secure — please use a hardware wallet for high-value assets.
         </Section>
 
         <Section title="11. Changes">

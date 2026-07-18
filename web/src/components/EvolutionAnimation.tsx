@@ -39,10 +39,20 @@ export default function EvolutionAnimation({
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [open]);
 
+  useEffect(() => {
+    if (!open || phase !== "details") return;
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, phase, onClose]);
+
   if (!open) return null;
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${petName} evolution`}
       style={{
         position: "fixed", inset: 0, zIndex: 10000,
         background: phase === "charge" ? "rgba(30,23,16,0.90)" : "rgba(30,23,16,0.96)",

@@ -6,7 +6,7 @@
 import { ethers } from "ethers";
 import PETContentABI from "@/lib/contracts/PETContent.abi.json";
 import PetaGenTrackerABI from "@/lib/contracts/PetaGenTracker.abi.json";
-import { ONCHAIN } from "@/lib/onchain";
+import { blockchainEnabled, ONCHAIN } from "@/lib/onchain";
 
 // Addresses / RPC / chain come from the central on-chain config so they can be
 // swapped (re-deploy, chain migration) via env without editing this file.
@@ -17,7 +17,7 @@ async function getRelayerWallet() {
   // ON-CHAIN HOLD: server-side recording + NFT minting paused.
   // Re-enable by setting BLOCKCHAIN_ENABLED=true once relayer wallet is funded
   // and PETActivity is deployed.
-  if (process.env.BLOCKCHAIN_ENABLED !== "true") {
+  if (!blockchainEnabled()) {
     return null;
   }
   const key = process.env.BACKEND_RELAYER_KEY;

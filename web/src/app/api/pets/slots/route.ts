@@ -1,9 +1,13 @@
-import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
-
-const MAX_SLOTS = 5;
-const SLOT_PRICES = [0, 50, 100, 200, 500]; // price for slot 1,2,3,4,5
+import {
+  MAX_PET_SLOTS,
+  PetSlotInsufficientCreditsError,
+  PetSlotMaximumReachedError,
+  PetSlotPurchaseConflictError,
+  PetSlotUserNotFoundError,
+  purchasePetSlot,
+} from "@/lib/petSlots";
 
 export async function POST(req: NextRequest) {
   const user = await getUser(req);
@@ -11,34 +15,36 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (user.pet_slots >= MAX_SLOTS) {
+  if (user.pet_slots >= MAX_PET_SLOTS) {
     return NextResponse.json({ error: "Maximum slots reached" }, { status: 400 });
   }
 
-  const nextSlotIndex = user.pet_slots; // 0-indexed: slot 1 = index 0
-  const price = SLOT_PRICES[nextSlotIndex] || 500;
-
-  // Guarded decrement (audit H17): balance check + debit + slot cap re-check in
-  // ONE atomic statement — concurrent buys can't race the balance negative or
-  // exceed MAX_SLOTS.
-  const dec = await prisma.user.updateMany({
-    where: { id: user.id, credits: { gte: price }, pet_slots: { lt: MAX_SLOTS } },
-    data: { pet_slots: { increment: 1 }, credits: { decrement: price } },
-  });
-  if (dec.count === 0) {
-    return NextResponse.json(
-      { error: "Insufficient credits", required: price, available: user.credits },
-      { status: 400 }
-    );
+  try {
+    const result = await purchasePetSlot({
+      userId: user.id,
+      expectedPetSlots: user.pet_slots,
+    });
+    return NextResponse.json({
+      pet_slots: result.petSlots,
+      credits: result.credits,
+      price_paid: result.pricePaid,
+    });
+  } catch (error) {
+    if (error instanceof PetSlotPurchaseConflictError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    if (error instanceof PetSlotMaximumReachedError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    if (error instanceof PetSlotInsufficientCreditsError) {
+      return NextResponse.json(
+        { error: error.message, required: error.required, available: error.available },
+        { status: 400 },
+      );
+    }
+    if (error instanceof PetSlotUserNotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+    throw error;
   }
-  const updatedUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: { pet_slots: true, credits: true },
-  });
-
-  return NextResponse.json({
-    pet_slots: updatedUser?.pet_slots ?? user.pet_slots + 1,
-    credits: updatedUser?.credits ?? 0,
-    price_paid: price,
-  });
 }

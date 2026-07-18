@@ -16,6 +16,7 @@
 import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { callLLM } from "@/lib/llm/router";
+import { containsHangul } from "@/lib/generatedLanguage";
 
 // ── Constants ──
 // SCRUM-74 §2-2: caps raised. 20-entry ledger risked "forgetting" for 6mo+
@@ -110,18 +111,22 @@ export class PetMemoryManager {
 
   async buildContext(userMessage: string, platform: string): Promise<MemoryContext> {
     const { memories, userProfile } = await this.getMemoryData();
+    const englishMemories = memories.filter((entry) => !containsHangul(entry.content));
+    const englishUserProfile = userProfile.filter((entry) => !containsHangul(entry.content));
 
     // Get recent conversation for continuity
-    const recentMessages = await this.getRecentMessages(platform, 10);
+    const recentMessages = (await this.getRecentMessages(platform, 10)).filter(
+      (message) => message.role === "user" || !containsHangul(message.content),
+    );
 
     // Find relevant memories based on message content
-    const relevantMemories = this.searchMemories(memories, userMessage);
+    const relevantMemories = this.searchMemories(englishMemories, userMessage);
 
     // Format MEMORY.md
-    const memoryMd = this.formatMemoryMd(memories);
+    const memoryMd = this.formatMemoryMd(englishMemories);
 
     // Format USER.md
-    const userMd = this.formatUserMd(userProfile);
+    const userMd = this.formatUserMd(englishUserProfile);
 
     return { memoryMd, userMd, recentMessages, relevantMemories };
   }
@@ -274,6 +279,7 @@ export class PetMemoryManager {
           {
             role: "system",
             content: `Extract useful information from this conversation to remember for future sessions. Return JSON only.
+Write every key and content value in English only, even when the user wrote in another language. Never output Hangul.
 
 Output format:
 {
@@ -305,6 +311,10 @@ Rules:
 
       const content = out.text || "{}";
       const parsed = JSON.parse(content);
+      // A provider/BYOK model can ignore the prompt. Memory extraction is
+      // best-effort, so reject the whole generated batch instead of persisting
+      // mixed-language facts or spending on a retry.
+      if (containsHangul(parsed)) return { facts: [], userInfo: [] };
 
       return {
         facts: (parsed.facts || []).map((f: any) => ({
@@ -451,6 +461,7 @@ Rules:
     let prompt = `You are ${petName}, a ${personality} companion AI pet.
 You remember past conversations and grow from every interaction.
 Keep responses SHORT (1-2 sentences, under 80 words). No markdown. Be natural and casual.
+Always respond in English, even if the owner's input or stored profile uses another language. Never output Hangul.
 IMPORTANT: Never address the user by a specific name unless they tell you their name in THIS conversation. Just say "you" or "friend" instead.
 
 Platform: ${platform}

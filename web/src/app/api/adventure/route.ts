@@ -1,16 +1,23 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { SKILL_DB, SKILL_MAP, SPECIES_ELEMENTS } from "@/lib/skills";
+import { SKILL_DB } from "@/lib/skills";
+import { rateLimit } from "@/lib/rateLimit";
+import { AdventureClaimError, commitAdventureClaim } from "@/lib/adventureClaim";
 import { NextRequest, NextResponse } from "next/server";
 
 // POST /api/adventure — Execute an adventure action (wild, explore, gym)
 export async function POST(req: NextRequest) {
   try {
+    const rl = rateLimit(req, { key: "adventure", limit: 20, windowMs: 60_000 });
+    if (!rl.ok) return rl.response;
+
     const user = await getUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { mode, pet_id } = await req.json();
-    if (!pet_id || !mode) {
+    const body = await req.json();
+    const mode = body?.mode;
+    const pet_id = Number(body?.pet_id);
+    if (!Number.isInteger(pet_id) || pet_id <= 0 || !mode) {
       return NextResponse.json({ error: "pet_id and mode required" }, { status: 400 });
     }
 
@@ -20,23 +27,8 @@ export async function POST(req: NextRequest) {
     });
     if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
 
-    // Energy check — calculate actual cost based on mode before checking
-    const energyCostMap: Record<string, number> = { wild: 15, explore: 20, gym: 20 };
-    const minEnergyCost = energyCostMap[mode];
-    if (minEnergyCost === undefined) {
+    if (mode !== "wild" && mode !== "explore" && mode !== "gym") {
       return NextResponse.json({ error: "Invalid mode" }, { status: 400 });
-    }
-    if (pet.energy < minEnergyCost) {
-      return NextResponse.json({ error: "Not enough energy. Let your pet rest!" }, { status: 400 });
-    }
-
-    // Daily adventure cap — max 15 adventures per day
-    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-    const adventuresToday = await prisma.petInteraction.count({
-      where: { pet_id, user_id: user.id, interaction_type: { startsWith: "adventure_" }, created_at: { gte: todayStart } },
-    });
-    if (adventuresToday >= 15) {
-      return NextResponse.json({ error: "Daily adventure limit reached (15/day). Come back tomorrow!" }, { status: 429 });
     }
 
     switch (mode) {
@@ -46,6 +38,9 @@ export async function POST(req: NextRequest) {
       default: return NextResponse.json({ error: "Invalid mode" }, { status: 400 });
     }
   } catch (error) {
+    if (error instanceof AdventureClaimError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error("Adventure error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -91,10 +86,6 @@ async function handleWildEncounter(user: any, pet: any) {
     if (droppable.length > 0) {
       const drop = droppable[Math.floor(Math.random() * droppable.length)];
       skillDropped = drop.key;
-      await prisma.petSkill.create({
-        data: { pet_id: pet.id, skill_key: drop.key, level: 1, slot: null },
-      });
-      outcomes.push(`Learned ${drop.name} from ${wild.name}!`);
     }
     expGain = 30;
   } else if (roll < 0.4) {
@@ -109,38 +100,42 @@ async function handleWildEncounter(user: any, pet: any) {
   } else if (roll < 0.85) {
     // Find item
     creditsGain = 10 + Math.floor(Math.random() * 15);
-    outcomes.push(`Found treasure near ${wild.name}! +${creditsGain} credits`);
+    outcomes.push(`Found treasure near ${wild.name}!`);
   } else {
     // It fled
     expGain = 8;
     outcomes.push(`${wild.name} fled before you could react!`);
   }
 
-  // Apply rewards. Record an "adventure_wild" interaction so the daily cap (which
-  // counts adventure_* rows) actually enforces — without a row to count, the
-  // 15/day limit never fired and the credit reward could be minted unbounded.
-  await prisma.$transaction([
-    prisma.pet.update({
-      where: { id: pet.id },
-      data: {
-        experience: { increment: expGain },
-        energy: { decrement: 15 },
-        happiness: { increment: 3 },
-      },
-    }),
-    prisma.petInteraction.create({
-      data: { pet_id: pet.id, user_id: user.id, interaction_type: "adventure_wild", experience_gained: expGain },
-    }),
-    ...(creditsGain > 0
-      ? [prisma.user.update({ where: { id: user.id }, data: { credits: { increment: creditsGain } } })]
-      : []),
-  ]);
+  const claim = await commitAdventureClaim({
+    userId: user.id,
+    petId: pet.id,
+    mode: "wild",
+    energyCost: 15,
+    experienceGain: expGain,
+    happinessChange: 3,
+    creditsRequested: creditsGain,
+    skillKey: skillDropped,
+  });
+
+  skillDropped = claim.skillGranted;
+  if (skillDropped) {
+    const skill = SKILL_DB.find((candidate) => candidate.key === skillDropped);
+    outcomes.push(`Learned ${skill?.name ?? skillDropped} from ${wild.name}!`);
+  }
+  if (creditsGain > 0) {
+    outcomes.push(
+      claim.creditsGranted > 0
+        ? `+${claim.creditsGranted} credits${claim.creditsGranted < creditsGain ? " (daily cap applied)" : ""}`
+        : "Daily earned-credit limit reached; no credits awarded.",
+    );
+  }
 
   return NextResponse.json({
     mode: "wild",
     wild_pet: wild,
     outcomes,
-    rewards: { exp: expGain, credits: creditsGain, skill: skillDropped },
+    rewards: { exp: expGain, credits: claim.creditsGranted, skill: skillDropped },
   });
 }
 
@@ -171,7 +166,7 @@ async function handleExplore(user: any, pet: any) {
     case "treasure": {
       creditsGain = 8 + Math.floor(Math.random() * 20);
       expGain = 15;
-      outcomes.push(`Found ${creditsGain} credits in ${location.name}!`);
+      outcomes.push(`Found treasure in ${location.name}!`);
 
       // 8% chance to find a skill scroll
       if (Math.random() < 0.08) {
@@ -182,10 +177,6 @@ async function handleExplore(user: any, pet: any) {
         if (available.length > 0) {
           const skill = available[Math.floor(Math.random() * available.length)];
           skillDropped = skill.key;
-          await prisma.petSkill.create({
-            data: { pet_id: pet.id, skill_key: skill.key, level: 1, slot: null },
-          });
-          outcomes.push(`Discovered a skill scroll: ${skill.name}!`);
         }
       }
       break;
@@ -204,28 +195,35 @@ async function handleExplore(user: any, pet: any) {
     }
   }
 
-  await prisma.$transaction([
-    prisma.pet.update({
-      where: { id: pet.id },
-      data: {
-        experience: { increment: expGain },
-        energy: { decrement: Math.min(energyCost, pet.energy) },
-        happiness: { increment: happinessChange },
-      },
-    }),
-    prisma.petInteraction.create({
-      data: { pet_id: pet.id, user_id: user.id, interaction_type: "adventure_explore", experience_gained: expGain },
-    }),
-    ...(creditsGain > 0
-      ? [prisma.user.update({ where: { id: user.id }, data: { credits: { increment: creditsGain } } })]
-      : []),
-  ]);
+  const claim = await commitAdventureClaim({
+    userId: user.id,
+    petId: pet.id,
+    mode: "explore",
+    energyCost,
+    experienceGain: expGain,
+    happinessChange,
+    creditsRequested: creditsGain,
+    skillKey: skillDropped,
+  });
+
+  skillDropped = claim.skillGranted;
+  if (skillDropped) {
+    const skill = SKILL_DB.find((candidate) => candidate.key === skillDropped);
+    outcomes.push(`Discovered a skill scroll: ${skill?.name ?? skillDropped}!`);
+  }
+  if (creditsGain > 0) {
+    outcomes.push(
+      claim.creditsGranted > 0
+        ? `Found ${claim.creditsGranted} credits${claim.creditsGranted < creditsGain ? " (daily cap applied)" : ""}!`
+        : "Daily earned-credit limit reached; no credits awarded.",
+    );
+  }
 
   return NextResponse.json({
     mode: "explore",
     location,
     outcomes,
-    rewards: { exp: expGain, credits: creditsGain, happiness: happinessChange, skill: skillDropped },
+    rewards: { exp: expGain, credits: claim.creditsGranted, happiness: happinessChange, skill: skillDropped },
   });
 }
 
@@ -252,41 +250,24 @@ async function handleGym(user: any, pet: any) {
     outcomes.push(`+${expGain} EXP (participation)`);
   }
 
-  // Level up check
-  const newExp = pet.experience + expGain;
-  const expNeeded = pet.level * 100;
-  const leveledUp = newExp >= expNeeded;
+  const claim = await commitAdventureClaim({
+    userId: user.id,
+    petId: pet.id,
+    mode: "gym",
+    energyCost: 20,
+    experienceGain: expGain,
+    happinessChange: success ? 5 : 2,
+  });
 
-  await prisma.$transaction([
-    prisma.pet.update({
-      where: { id: pet.id },
-      data: leveledUp
-        ? {
-            experience: { set: newExp - expNeeded },
-            level: { increment: 1 },
-            energy: { decrement: Math.min(20, pet.energy) },
-            happiness: { increment: success ? 5 : 2 },
-          }
-        : {
-            experience: { increment: expGain },
-            energy: { decrement: Math.min(20, pet.energy) },
-            happiness: { increment: success ? 5 : 2 },
-          },
-    }),
-    prisma.petInteraction.create({
-      data: { pet_id: pet.id, user_id: user.id, interaction_type: "adventure_gym", experience_gained: expGain },
-    }),
-  ]);
-
-  if (leveledUp) {
-    outcomes.push(`🎉 Level Up! Now Lv.${pet.level + 1}!`);
+  if (claim.leveledUp) {
+    outcomes.push(`🎉 Level Up! Now Lv.${claim.level}!`);
   }
 
   return NextResponse.json({
     mode: "gym",
     challenge,
     success,
-    leveled_up: leveledUp,
+    leveled_up: claim.leveledUp,
     outcomes,
     rewards: { exp: expGain },
   });

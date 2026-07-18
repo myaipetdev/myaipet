@@ -15,8 +15,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { verifyState } from "@/lib/oauth/state";
-import { saveConnection, StoredCredentials } from "@/lib/oauth/store";
+import { saveConnection } from "@/lib/oauth/store";
+import type { StoredCredentials } from "@/lib/oauth/store";
 import { rateLimit } from "@/lib/rateLimit";
+import { oauthConnectionsEnabled, oauthUnavailableResponse } from "@/lib/oauth/availability";
 
 interface TelegramUser {
   id: number;
@@ -51,6 +53,10 @@ function verifyTelegramHash(user: TelegramUser, botToken: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  // Check before reading state or the provider payload so a paused callback
+  // cannot verify, persist, or disclose anything about an old connection.
+  if (!oauthConnectionsEnabled()) return oauthUnavailableResponse();
+
   const rl = rateLimit(req, { key: "oauth-telegram-cb", limit: 20, windowMs: 60_000 });
   if (!rl.ok) return rl.response;
 

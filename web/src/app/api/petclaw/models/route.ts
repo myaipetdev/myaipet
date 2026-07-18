@@ -9,7 +9,8 @@
  *
  * Owner-auth: getUser(). A connection belongs to the authenticated user; the LLM
  * router (lib/llm/router.ts) prefers it for the pet-owner's calls on matching
- * task scopes, else falls back to the platform Grok default.
+ * task scopes. Only no matching row permits platform routing; matching rows
+ * fail closed on key/model/provider/decrypt errors.
  *
  * SECURITY: the user supplies THEIR OWN provider key for THEIR OWN usage. We
  * encrypt at rest, never return it, and never log it.
@@ -20,7 +21,19 @@ import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { encrypt } from "@/lib/crypto";
 import { rateLimit } from "@/lib/rateLimit";
-import { supportedProviders, CONNECTABLE_TASKS, type ProviderId, type LLMTask } from "@/lib/llm/router";
+import {
+  supportedProviders,
+  CONNECTABLE_TASKS,
+  validateOwnerModelConnection,
+  type ProviderId,
+} from "@/lib/llm/router";
+import {
+  LLMOwnerConfigError,
+  LLMUpstreamError,
+  validateOwnerModelConfig,
+} from "@/lib/llm/platform-resilience";
+
+export const maxDuration = 60;
 
 function maskKey(len: number): string {
   return len > 8 ? `••••••••${"•".repeat(Math.min(8, len - 8))}` : "••••••";
@@ -42,11 +55,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Unsupported provider. Use one of: ${valid.join(", ")}` }, { status: 400 });
   }
   const apiKey = String(body?.apiKey || "").trim();
-  if (apiKey.length < 8) return NextResponse.json({ error: "apiKey is required" }, { status: 400 });
+  if (apiKey.length < 8 || apiKey.length > 512) {
+    return NextResponse.json({ error: "apiKey must be between 8 and 512 characters" }, { status: 400 });
+  }
 
-  const label = String(body?.label || provider).slice(0, 60);
+  const label = String(body?.label || provider).trim().slice(0, 60) || provider;
+  if (body?.taskScopes != null && !Array.isArray(body.taskScopes)) {
+    return NextResponse.json({ error: "taskScopes must be an array" }, { status: 400 });
+  }
   const requestedScopes: string[] = Array.isArray(body?.taskScopes) ? body.taskScopes.map(String) : [];
-  const taskScopes = requestedScopes.filter((s): s is LLMTask => (CONNECTABLE_TASKS as string[]).includes(s));
+  const requestedModel = String(body?.model || "").trim() || defaultModelFor(provider);
+
+  let config;
+  try {
+    config = validateOwnerModelConfig(provider, requestedModel, requestedScopes);
+  } catch (error) {
+    const message = error instanceof LLMOwnerConfigError ? error.message : "Invalid provider/model configuration.";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+
+  try {
+    await validateOwnerModelConnection({
+      provider: config.provider,
+      model: config.model,
+      apiKey,
+      taskScopes: config.taskScopes,
+    });
+  } catch (error) {
+    const detail = error instanceof LLMOwnerConfigError
+      ? error.message
+      : error instanceof LLMUpstreamError
+        ? `${error.reason}${error.status ? ` (${error.status})` : ""}`
+        : "request failed";
+    return NextResponse.json({
+      error: `Connection validation failed: ${detail}. Check the key, model id, access tier, and selected task scopes. No key was saved.`,
+    }, { status: 422 });
+  }
 
   let encrypted_key: string;
   try { encrypted_key = encrypt(apiKey); }
@@ -57,9 +101,9 @@ export async function POST(req: NextRequest) {
       owner_user_id: user.id,
       provider,
       label,
-      model: String(body?.model || "").slice(0, 80) || defaultModelFor(provider),
+      model: config.model,
       encrypted_key,
-      task_scopes: taskScopes,
+      task_scopes: config.taskScopes,
       is_active: true,
     },
     select: { id: true, provider: true, label: true, model: true, task_scopes: true, is_active: true, created_at: true },

@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { decrypt } from "@/lib/crypto";
 import { TelegramAdapter } from "@/lib/telegram";
 import { NextRequest, NextResponse } from "next/server";
+import { decodeTelegramAgentBotToken } from "@/lib/agentCredentials";
 
 interface DisconnectBody {
   platform: "telegram" | "twitter";
@@ -47,9 +47,9 @@ export async function POST(
     // Platform-specific cleanup
     if (platform === "telegram" && connection.credentials) {
       try {
-        const creds = JSON.parse(decrypt(connection.credentials));
-        if (creds.bot_token) {
-          await TelegramAdapter.deleteWebhook(creds.bot_token);
+        const botToken = decodeTelegramAgentBotToken(connection.credentials);
+        if (botToken) {
+          await TelegramAdapter.deleteWebhook(botToken);
         }
       } catch (err: any) {
         console.error("Failed to delete Telegram webhook:", err.message);
@@ -62,6 +62,8 @@ export async function POST(
       where: { id: connection.id },
       data: {
         is_active: false,
+        credentials: null,
+        webhook_secret: null,
         last_active_at: new Date(),
       },
     });

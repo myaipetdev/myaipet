@@ -16,12 +16,20 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getUser, generateCliToken, hashCliToken, isCliToken } from "@/lib/auth";
+import {
+  CLI_TOKEN_PREFIX,
+  EXTENSION_TOKEN_PREFIX,
+  getUser,
+  generateCliToken,
+  hashCliToken,
+  isCliToken,
+} from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 
 const MAX_ACTIVE_TOKENS = 10;
-const TOKEN_TTL_MS = 365 * 24 * 60 * 60_000; // 1 year
+const CLI_TOKEN_TTL_MS = 365 * 24 * 60 * 60_000; // 1 year
+const EXTENSION_TOKEN_TTL_MS = 30 * 24 * 60 * 60_000; // 30 days, scoped in getUser()
 
 /** True when the caller authenticated with a PAT rather than the web session. */
 function authedViaPat(req: NextRequest): boolean {
@@ -41,7 +49,9 @@ export async function POST(req: NextRequest) {
 
   let body: any = {};
   try { body = await req.json(); } catch { /* label is optional; empty body is fine */ }
-  const label = (String(body?.label || "").trim() || "CLI token").slice(0, 60);
+  const purpose = body?.purpose === "extension" ? "extension" : "cli";
+  const defaultLabel = purpose === "extension" ? "Chrome extension" : "CLI token";
+  const label = (String(body?.label || "").trim() || defaultLabel).slice(0, 60);
 
   const activeCount = await prisma.cliToken.count({
     where: {
@@ -57,20 +67,22 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const token = generateCliToken();
+  const prefix = purpose === "extension" ? EXTENSION_TOKEN_PREFIX : CLI_TOKEN_PREFIX;
+  const ttl = purpose === "extension" ? EXTENSION_TOKEN_TTL_MS : CLI_TOKEN_TTL_MS;
+  const token = generateCliToken(prefix);
   const created = await prisma.cliToken.create({
     data: {
       owner_user_id: user.id,
       token_hash: hashCliToken(token),
       prefix: token.slice(0, 12), // pck_ + first 8 chars — for display only
       label,
-      expires_at: new Date(Date.now() + TOKEN_TTL_MS),
+      expires_at: new Date(Date.now() + ttl),
     },
     select: { id: true, prefix: true, label: true, created_at: true, expires_at: true },
   });
 
   // token is returned exactly once; it is never recoverable after this response.
-  return NextResponse.json({ ok: true, token, cliToken: created });
+  return NextResponse.json({ ok: true, token, purpose, cliToken: created });
 }
 
 export async function GET(req: NextRequest) {

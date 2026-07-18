@@ -5,7 +5,7 @@
  * editorial print piece: a terracotta collector's poster holding the framed
  * collectible (CollectibleFrame) and a status/care column. Care actions use a
  * direct fetch so the real server payload surfaces: the pet's reply, +PTS,
- * stat-delta pops, combos, level-ups, streak NFTs — and real errors (cooldown,
+ * stat-delta pops, combos, level-ups, streak milestones — and real errors (cooldown,
  * gates) plus the 402 USDT paywall. The dashed "REMEMBERS" box is wired to the
  * live pending-request + memories endpoints. Zero fabricated numbers — every
  * value rendered comes from a real API payload; empty/error states are honest.
@@ -132,7 +132,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
   const [showClassic, setShowClassic] = useState<null | "tools" | "create">(null);
   const [codexBusy, setCodexBusy] = useState(false);
   const [showPhoto, setShowPhoto] = useState(false); // hero toggle: prefer codex, flip to raw photo
-  const [codexVariant, setCodexVariant] = useState(CODEX_VARIANTS[0].key); // which 띠부씰 look to generate
+  const [codexVariant, setCodexVariant] = useState(CODEX_VARIANTS[0].key); // which collectible sticker look to generate
 
   const activeIdRef = useRef<number | null>(null);
   useEffect(() => { activeIdRef.current = active?.id ?? null; }, [active?.id]);
@@ -280,7 +280,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
         later(() => setCombo((cur) => (cur && cur.id === id ? null : cur)), 4200);
       }
       if (it.leveled_up) setLvPop((n) => n + 1);
-      if (it.care_streak?.mintedNft) {
+      if (it.care_streak?.milestone?.recorded) {
         const id = ++seq.current;
         setStreakMint({ id, days: it.care_streak.days });
         later(() => setStreakMint((cur) => (cur && cur.id === id ? null : cur)), 9000);
@@ -310,13 +310,14 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
           setPaywall({
             ...j.paywall,
             onPaid: async (newTx: string) => {
-              setPaywall(null);
               setBusy(type);  // keep Feed/Play/Pet locked through the paid retry (no double-submit)
               try {
                 const retry = await callInteract(newTx);
-                if (retry) finishCare(retry);
+                if (!retry) throw new Error("The registered payment could not be applied");
+                finishCare(retry);
               } catch (e: any) {
                 if (activeIdRef.current === petId) showFlash({ text: e?.message || "Try again in a moment.", error: true });
+                throw e;
               } finally {
                 setBusy(null);
               }
@@ -347,6 +348,17 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
     }
     setBusy(null);
   };
+
+  useEffect(() => {
+    if (!showClassic) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setShowClassic(null);
+      load();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [showClassic, load]);
 
   if (pets === null) {
     if (loadError) {
@@ -666,7 +678,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                   : <>A numbered die-cut creature sticker — your own dex entry. Pick a style; it becomes {active.name}&apos;s card art and this hero.</>}
               </p>
 
-              {/* 띠부씰 style picker — one asset, many looks */}
+              {/* Collectible sticker style picker — one asset, many looks */}
               <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: "rgba(232,199,126,.75)", marginBottom: 7 }}>STICKER STYLE · {selVariant.blurb.toUpperCase()}</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 13 }}>
                 {CODEX_VARIANTS.map((v) => {
@@ -790,7 +802,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
           backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
           overflowY: "auto", padding: "4vh 12px 6vh", animation: "edScrimIn .16s ease both",
         }}>
-          <div onClick={(e) => e.stopPropagation()} style={{
+          <div role="dialog" aria-modal="true" aria-label={showClassic === "create" ? "Adopt a new pet" : "Classic pet tools"} onClick={(e) => e.stopPropagation()} style={{
             position: "relative", maxWidth: 990, margin: "0 auto", background: T.paper, borderRadius: 22,
             boxShadow: "var(--ed-shadow-float)", animation: "edPanelIn .26s cubic-bezier(.2,.8,.2,1) both", paddingBottom: 10,
           }}>

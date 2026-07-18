@@ -12,6 +12,7 @@
  */
 
 import type { StudioModel } from "./providers";
+import { consumeImageBudget } from "@/lib/llm/router";
 
 export interface SubmitResult {
   ok: boolean;
@@ -28,7 +29,13 @@ export interface PollResult {
 }
 
 // ── FAL backend ──
-async function falSubmit(model: StudioModel, prompt: string, refUrl?: string, aspect?: string): Promise<SubmitResult> {
+async function falSubmit(
+  model: StudioModel,
+  prompt: string,
+  userId: number,
+  refUrl?: string,
+  aspect?: string,
+): Promise<SubmitResult> {
   const key = process.env.FAL_API_KEY;
   if (!key) return { ok: false, error: "FAL_API_KEY not configured" };
 
@@ -42,6 +49,7 @@ async function falSubmit(model: StudioModel, prompt: string, refUrl?: string, as
   // Kling/Seedance/Wan/FLUX accept aspect_ratio ("16:9" | "9:16" | "1:1").
   if (aspect) body.aspect_ratio = aspect;
 
+  if (model.kind === "image") await consumeImageBudget(userId, "fal");
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -93,14 +101,22 @@ async function falPoll(model: StudioModel, jobId: string): Promise<PollResult> {
 }
 
 // ── Grok backend (existing video.ts wraps this; we keep the call shape local) ──
-async function grokSubmit(model: StudioModel, prompt: string, refUrl?: string): Promise<SubmitResult> {
+async function grokSubmit(
+  model: StudioModel,
+  prompt: string,
+  userId: number,
+  refUrl?: string,
+): Promise<SubmitResult> {
   const key = process.env.GROK_API_KEY;
   if (!key) return { ok: false, error: "GROK_API_KEY not configured" };
 
   // Image: synchronous return
   if (model.kind === "image") {
+    await consumeImageBudget(userId, "xai");
     try {
-      const res = await fetch("https://api.x.ai/v1/images/generations", {
+      const res = await fetch(refUrl
+        ? "https://api.x.ai/v1/images/edits"
+        : "https://api.x.ai/v1/images/generations", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
         body: JSON.stringify({
@@ -108,7 +124,7 @@ async function grokSubmit(model: StudioModel, prompt: string, refUrl?: string): 
           prompt,
           n: 1,
           response_format: "url",
-          ...(refUrl ? { reference_image_url: refUrl } : {}),
+          ...(refUrl ? { image: { url: refUrl, type: "image_url" } } : {}),
         }),
       });
       const data = await safeJson(res);
@@ -133,7 +149,7 @@ async function grokSubmit(model: StudioModel, prompt: string, refUrl?: string): 
         model: model.backendModel,
         prompt,
         duration: model.maxDurationSec,
-        ...(refUrl ? { reference_image_url: refUrl } : {}),
+        ...(refUrl ? { image: { url: refUrl } } : {}),
       }),
     });
     const data = await safeJson(res);
@@ -185,9 +201,15 @@ async function safeJson(res: Response): Promise<any> {
 }
 
 // ── Public dispatch ──
-export async function submitToBackend(model: StudioModel, prompt: string, refUrl?: string, aspect?: string): Promise<SubmitResult> {
-  if (model.backend === "fal") return falSubmit(model, prompt, refUrl, aspect);
-  if (model.backend === "grok") return grokSubmit(model, prompt, refUrl);
+export async function submitToBackend(
+  model: StudioModel,
+  prompt: string,
+  userId: number,
+  refUrl?: string,
+  aspect?: string,
+): Promise<SubmitResult> {
+  if (model.backend === "fal") return falSubmit(model, prompt, userId, refUrl, aspect);
+  if (model.backend === "grok") return grokSubmit(model, prompt, userId, refUrl);
   return { ok: false, error: `Unknown backend: ${model.backend}` };
 }
 

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { privateAutoGenIds } from "@/lib/publicFeed";
+import { publicGenerationWhere } from "@/lib/publicFeed";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -12,16 +12,7 @@ export async function GET(req: NextRequest) {
     const style = searchParams.get("style");
     const sort = searchParams.get("sort") || "recent";
 
-    const where: any = {
-      status: "completed",
-      OR: [
-        { photo_path: { not: "" } },
-        { video_path: { not: "" } },
-      ],
-      // Privacy: daydream auto-gens embed the pet's private inner insight in
-      // their prompt — never list them publicly (see lib/publicFeed.ts).
-      id: { notIn: await privateAutoGenIds() },
-    };
+    const where: any = await publicGenerationWhere();
 
     if (pet_type) where.pet_type = pet_type;
     if (style) where.style = style;

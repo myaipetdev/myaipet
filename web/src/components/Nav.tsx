@@ -12,7 +12,7 @@ const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
   // Game features grouped right after My Pet. (Catch lives inside Cards as a
   // tab now — /?section=catch still aliases to the Cards screen's Catch tab.)
   { key: "cards", label: "Cards" },
-  // Evergreen "Favorites Bracket" (이상형 월드컵) — pick-your-favorite pet
+  // Evergreen "Favorites Bracket" — pick-your-favorite pet
   // tournament. Keeps the "worldcup" section key so old deep links still land;
   // the seasonal national-flag World Cup is a small hideable module inside it.
   { key: "worldcup", label: "Bracket" },
@@ -157,7 +157,10 @@ export default function Nav({ section, setSection, credits }: any) {
         }}
       >
         {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0 }}
+        <button
+          type="button"
+          aria-label="Go to home"
+          style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0, border: 0, padding: 0, background: "transparent", color: "inherit", font: "inherit" }}
           onClick={() => setSection("home")}>
           <img
             className="nav-logo-img"
@@ -181,7 +184,7 @@ export default function Nav({ section, setSection, credits }: any) {
           }}>
             COMPANION PROTOCOL
           </span>
-        </div>
+        </button>
 
         {/* Nav items — scrollable on mobile. Relative wrapper hosts the mobile
             scroll-hint chevron; the inner div is the actual scroller (ref). */}
@@ -300,7 +303,7 @@ export default function Nav({ section, setSection, credits }: any) {
                       transition: "all 0.2s ease",
                     }}
                   >
-                    Get More Credits
+                    Credits &amp; Points
                   </button>
                 </div>
               )}

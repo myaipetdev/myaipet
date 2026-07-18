@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PETCLAW_SMOKE_BASE="${PETCLAW_SMOKE_BASE:-https://app.myaipet.ai}"
+PETCLAW_SMOKE_HOST="${PETCLAW_SMOKE_HOST:-}"
+PETCLAW_SMOKE_PORT="${PETCLAW_SMOKE_PORT:-443}"
+PETCLAW_EXPECTED_RELEASE_ID="${PETCLAW_EXPECTED_RELEASE_ID:-}"
+PETCLAW_SMOKE_BODY="$(mktemp)"
+PETCLAW_SMOKE_HEADERS="$(mktemp)"
+trap 'rm -f "${PETCLAW_SMOKE_BODY}" "${PETCLAW_SMOKE_HEADERS}"' EXIT
+
+petclaw_curl() {
+  if [[ -n "${PETCLAW_SMOKE_HOST}" ]]; then
+    curl --silent --show-error --max-time 20 --resolve "app.myaipet.ai:${PETCLAW_SMOKE_PORT}:${PETCLAW_SMOKE_HOST}" "$@"
+  else
+    curl --silent --show-error --max-time 20 "$@"
+  fi
+}
+
+expect_code() {
+  local expected="$1"
+  local method="$2"
+  local url="$3"
+  shift 3
+  local code
+  code="$(petclaw_curl -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' -X "${method}" "${PETCLAW_SMOKE_BASE}${url}" "$@" || true)"
+  if [[ "${code}" != "${expected}" ]]; then
+    echo "ERROR: ${method} ${url} returned ${code:-000}; expected ${expected}." >&2
+    return 1
+  fi
+}
+
+expect_env_exact() {
+  local name="$1"
+  local expected="$2"
+  local actual
+  actual="$(printenv "${name}" 2>/dev/null || true)"
+  if [[ "${actual}" != "${expected}" ]]; then
+    echo "ERROR: ${name} must equal the exact launch value ${expected}." >&2
+    return 1
+  fi
+}
+
+expect_env_exact AVATAR_UPLOAD_USER_DAILY_CAP 20
+expect_env_exact AVATAR_UPLOAD_GLOBAL_DAILY_CAP 1000
+expect_env_exact AVATAR_PREVIEW_TTL_HOURS 24
+expect_env_exact LOCAL_STORAGE_MIN_FREE_BYTES 2147483648
+expect_env_exact VISION_DAILY_CAP 300
+expect_env_exact VISION_USER_DAILY_CAP 30
+expect_env_exact REFERRALS_ENABLED false
+
+if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
+  if [[ ! "${PETCLAW_EXPECTED_RELEASE_ID}" =~ ^[A-Za-z0-9._-]{6,80}$ \
+    || "${PETCLAW_SMOKE_BASE}" != "https://app.myaipet.ai" \
+    || "${PETCLAW_SMOKE_HOST}" != "127.0.0.1" \
+    || "${PETCLAW_SMOKE_PORT}" != "443" ]]; then
+    echo "ERROR: commit smoke must be pinned to the local TLS release identity." >&2
+    exit 1
+  fi
+  PETCLAW_IDENTITY_CODE="$(petclaw_curl -D "${PETCLAW_SMOKE_HEADERS}" \
+    -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
+    "${PETCLAW_SMOKE_BASE}/api/health" || true)"
+  if [[ "${PETCLAW_IDENTITY_CODE}" != "200" ]] \
+    || ! awk -v expected="${PETCLAW_EXPECTED_RELEASE_ID}" '
+      BEGIN { matches = 0 }
+      tolower($1) == "x-petclaw-release:" {
+        value = $2
+        sub(/\r$/, "", value)
+        if (value == expected) matches += 1
+      }
+      END { exit(matches == 1 ? 0 : 1) }
+    ' "${PETCLAW_SMOKE_HEADERS}"; then
+    echo "ERROR: local nginx route did not expose the exact candidate release identity." >&2
+    exit 1
+  fi
+fi
+
+if [[ "${STORAGE_PROVIDER:-local}" == "local" ]]; then
+  PETCLAW_LOCAL_UPLOAD_DIR="${LOCAL_UPLOAD_DIR:-/opt/petclaw/uploads}"
+  if [[ ! -d "${PETCLAW_LOCAL_UPLOAD_DIR}" ]]; then
+    echo "ERROR: local upload directory does not exist for the storage floor smoke." >&2
+    exit 1
+  fi
+  PETCLAW_LOCAL_AVAILABLE_BYTES="$(df -PB1 "${PETCLAW_LOCAL_UPLOAD_DIR}" | awk 'NR==2 {print $4}')"
+  if [[ ! "${PETCLAW_LOCAL_AVAILABLE_BYTES}" =~ ^[0-9]+$ ]] \
+    || (( PETCLAW_LOCAL_AVAILABLE_BYTES < LOCAL_STORAGE_MIN_FREE_BYTES + 5242880 )); then
+    echo "ERROR: local upload filesystem cannot preserve the 2 GiB floor after one max avatar." >&2
+    exit 1
+  fi
+fi
+
+expect_code 200 GET "/api/health"
+PAYMENT_CONFIG_BODY="$(petclaw_curl "${PETCLAW_SMOKE_BASE}/api/config")"
+node -e 'const d=JSON.parse(process.argv[1]); if(d?.payments_enabled!==false||d?.treasury!==""||d?.usdt!==""||d?.oauth_connections_enabled!==false||d?.agent_channels_enabled!==false) process.exit(1)' "${PAYMENT_CONFIG_BODY}"
+expect_code 503 GET "/api/auth/oauth/discord?petId=1"
+expect_code 503 GET "/api/auth/oauth/discord/callback?code=synthetic&state=synthetic"
+expect_code 503 POST "/api/auth/oauth/telegram/callback?state=synthetic" -H "Content-Type: application/json" -d '{}'
+expect_code 503 GET "/api/petclaw/connections?petId=1"
+expect_code 503 POST "/api/pets/1/agent/connect" -H "Content-Type: application/json" -d '{}'
+expect_code 503 GET "/api/referral"
+expect_code 200 POST "/api/agent/webhook/telegram/1" -H "Content-Type: application/json" -d '{}'
+expect_code 200 GET "/api/petclaw/skills?id=companion-chat"
+expect_code 401 POST "/api/petclaw/skills" -H "Content-Type: application/json" -d '{"action":"execute","petId":1,"skillId":"companion-chat","input":{"message":"hello"}}'
+expect_code 404 GET "/uploads/privacy-probe-does-not-exist.jpg"
+expect_code 401 POST "/api/cron/media-deletions"
+expect_code 200 GET "/petclaw-extension.zip"
+if ! unzip -tq "${PETCLAW_SMOKE_BODY}" >/dev/null; then
+  echo "ERROR: extension download is not a valid ZIP." >&2
+  exit 1
+fi
+if [[ -n "${PETCLAW_EXTENSION_SHA256:-}" ]]; then
+  PETCLAW_DOWNLOADED_EXTENSION_SHA="$(sha256sum "${PETCLAW_SMOKE_BODY}" | awk '{print $1}')"
+  if [[ "${PETCLAW_DOWNLOADED_EXTENSION_SHA}" != "${PETCLAW_EXTENSION_SHA256}" ]]; then
+    echo "ERROR: extension download hash differs from the release artifact." >&2
+    exit 1
+  fi
+fi
+PETCLAW_EXTENSION_MANIFEST="$(unzip -p "${PETCLAW_SMOKE_BODY}" manifest.json)"
+node -e 'const m=JSON.parse(process.argv[1]); if(m.manifest_version!==3 || m.version!=="2.3.1") process.exit(1)' "${PETCLAW_EXTENSION_MANIFEST}"
+expect_code 204 OPTIONS "/api/petclaw/skills" -H "Origin: https://myaipet.ai" -H "Access-Control-Request-Method: POST"
+expect_code 403 OPTIONS "/api/petclaw/skills" -H "Origin: https://evil.example" -H "Access-Control-Request-Method: POST"
+
+DEMO_BODY="$(petclaw_curl -H "Origin: https://myaipet.ai" -H "Content-Type: application/json" -d '{"message":"What can PetClaw do?"}' "${PETCLAW_SMOKE_BASE}/api/petclaw/demo-chat")"
+node -e 'const d=JSON.parse(process.argv[1]); if(d?.output?.synthetic!==true||d?.output?.persisted!==false) process.exit(1)' "${DEMO_BODY}"
+
+if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
+  LANDING_BODY="$(curl --silent --show-error --max-time 20 \
+    --resolve "myaipet.ai:${PETCLAW_SMOKE_PORT}:${PETCLAW_SMOKE_HOST}" \
+    https://myaipet.ai/)"
+else
+  LANDING_BODY="$(petclaw_curl https://myaipet.ai/)"
+fi
+node -e 'const s=process.argv[1]; if(/[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u.test(s)||!s.includes("/api/petclaw/demo-chat")) process.exit(1)' "${LANDING_BODY}"
+
+echo "Release smoke passed: ${PETCLAW_SMOKE_BASE}"

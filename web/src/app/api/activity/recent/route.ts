@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { publicGenerationWhere } from "@/lib/publicFeed";
+import { publicPetWhere } from "@/lib/publicPet";
 
 // Public "Live On-Chain Activity" social-proof feed for the home dashboard.
 // Built only from already-public events (content generations + new pet
@@ -27,12 +29,13 @@ export async function GET(req: NextRequest) {
 
     const [generations, newPets] = await Promise.all([
       prisma.generation.findMany({
+        where: await publicGenerationWhere(),
         orderBy: { created_at: "desc" },
         take: limit,
         include: { user: { select: { wallet_address: true } } },
       }),
       prisma.pet.findMany({
-        where: { is_active: true },
+        where: publicPetWhere(),
         orderBy: { created_at: "desc" },
         take: limit,
         include: { user: { select: { wallet_address: true } } },

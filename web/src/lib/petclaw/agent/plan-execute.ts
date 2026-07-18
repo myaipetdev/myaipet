@@ -16,7 +16,7 @@
  * Grounding (verified against the codebase):
  *   - Skills + executor: web/src/lib/petclaw/pethub.ts
  *       BUILTIN_SKILLS (18 ids), executeSkill(petId, skillId, input), getSkill().
- *   - LLM transport: xAI Grok, https://api.x.ai/v1/chat/completions
+ *   - LLM transport: owner-safe unified router (platform xAI → OpenAI fallback)
  *       (same endpoint every call site uses today).
  *
  * Model routing:
@@ -34,6 +34,10 @@
 
 import { BUILTIN_SKILLS, executeSkill, getSkill } from "../pethub";
 import { callLLM, type LLMMessage, type LLMTask } from "@/lib/llm/router";
+import {
+  generatedEnglishOrFallback,
+  generatedEnglishOrNull,
+} from "@/lib/generatedLanguage";
 
 // FEATURE 1 landed: the loop now routes through the model router, so planning
 // uses the 'reason' task (the pet-owner's connected reasoning model if they've
@@ -42,6 +46,7 @@ import { callLLM, type LLMMessage, type LLMTask } from "@/lib/llm/router";
 export type AgentTask = Extract<LLMTask, "reason" | "chat">;
 
 const TASK_TEMPERATURE: Record<AgentTask, number> = { reason: 0.3, chat: 0.8 };
+const AGENT_REPLY_FALLBACK = "I tried, but I couldn't pull together an English answer this time.";
 
 // ── Types ──
 
@@ -152,6 +157,7 @@ You MUST reply with ONLY a single JSON object, no prose, in this exact shape:
 }
 
 RULES:
+- Write every thought and answer draft in English. Never output Hangul, even if the goal or observations use another language.
 - Prefer "RUNNABLE-IN-LOOP" skills — their results are real content you can reason over and chain into later steps. "ENDPOINT-ONLY" skills are NOT executed here; they only return a pointer to a REST endpoint, so they give you NOTHING to reason over. Only choose an ENDPOINT-ONLY skill if the goal is literally to locate or hand off that endpoint, and never expect a usable result back from one.
 - Use the OBSERVATIONS from previous steps. Do not repeat an identical skill+input.
 - Most goals need 1–3 steps. If you already have enough to answer, action MUST be "finish".
@@ -196,7 +202,11 @@ Steps remaining in budget: ${remaining}. Decide the next step (JSON only).`;
     // instead of hanging; the synthesizer still produces an answer from the trace.
     return { thought: "planner produced no valid step; finishing with what we have", action: "finish" };
   }
-  return decision;
+  return {
+    ...decision,
+    thought: generatedEnglishOrFallback(decision.thought, "Continuing with the next step."),
+    answer_draft: generatedEnglishOrNull(decision.answer_draft) || undefined,
+  };
 }
 
 // ── The Synthesizer: writes the final in-character answer from the trace ──
@@ -216,7 +226,7 @@ async function synthesize(
         .join("\n")
     : "(no skill results)";
 
-  const system = `You are the pet itself, writing the FINAL answer to your owner's goal. Use the observations gathered by your tools. Be in-character, warm, and concise (2-4 sentences). Do not mention "skills", "tools", "JSON", or that you are an AI. If a draft is provided, refine it.`;
+  const system = `You are the pet itself, writing the FINAL answer to your owner's goal. Always answer in English and never output Hangul, even if the goal or observations use another language. Use the observations gathered by your tools. Be in-character, warm, and concise (2-4 sentences). Do not mention "skills", "tools", "JSON", or that you are an AI. If a draft is provided, refine it.`;
   const user = `GOAL: ${goal}
 
 GATHERED OBSERVATIONS:
@@ -226,21 +236,26 @@ ${draft ? `\nDRAFT ANSWER: ${draft}` : ""}
 Write the final answer:`;
 
   try {
-    return await callModel("chat", [
+    const answer = await callModel("chat", [
       { role: "system", content: system },
       { role: "user", content: user },
     ], 220, petId);
+    return generatedEnglishOrFallback(answer, AGENT_REPLY_FALLBACK);
   } catch {
     // Synthesis failure must not lose the work — fall back to the draft or the
     // last successful observation rendered plainly.
-    if (draft) return draft;
+    const safeDraft = generatedEnglishOrNull(draft);
+    if (safeDraft) return safeDraft;
     const lastOk = [...steps].reverse().find((s) => s.ok);
     if (lastOk) {
       const out = lastOk.output as any;
-      if (out?.reply) return String(out.reply);
-      return `Here's what I found: ${JSON.stringify(lastOk.output).slice(0, 300)}`;
+      if (out?.reply) return generatedEnglishOrFallback(out.reply, AGENT_REPLY_FALLBACK);
+      return generatedEnglishOrFallback(
+        `Here's what I found: ${JSON.stringify(lastOk.output).slice(0, 300)}`,
+        AGENT_REPLY_FALLBACK,
+      );
     }
-    return "I tried, but I couldn't pull together an answer this time.";
+    return AGENT_REPLY_FALLBACK;
   }
 }
 

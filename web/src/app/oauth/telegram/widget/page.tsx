@@ -19,15 +19,29 @@ import { useEffect, useState } from "react";
 export default function TelegramWidget() {
   const [state, setState] = useState<string | null>(null);
   const [bot, setBot] = useState<string | null>(null);
+  const [availability, setAvailability] = useState<"checking" | "enabled" | "unavailable">("checking");
 
   useEffect(() => {
-    const sp = new URLSearchParams(window.location.search);
-    setState(sp.get("state"));
-    setBot(sp.get("bot"));
+    let mounted = true;
+    fetch("/api/config", { cache: "no-store" })
+      .then(r => r.ok ? r.json() : null)
+      .then(config => {
+        if (!mounted) return;
+        if (config?.oauth_connections_enabled !== true) {
+          setAvailability("unavailable");
+          return;
+        }
+        const sp = new URLSearchParams(window.location.search);
+        setState(sp.get("state"));
+        setBot(sp.get("bot"));
+        setAvailability("enabled");
+      })
+      .catch(() => { if (mounted) setAvailability("unavailable"); });
+    return () => { mounted = false; };
   }, []);
 
   useEffect(() => {
-    if (!bot) return;
+    if (availability !== "enabled" || !bot) return;
     (window as any).onTelegramAuth = async (user: any) => {
       // Send signed data to callback for HMAC verification + persist
       const res = await fetch(`/api/auth/oauth/telegram/callback?state=${encodeURIComponent(state || "")}`, {
@@ -51,7 +65,23 @@ export default function TelegramWidget() {
     s.setAttribute("data-onauth", "onTelegramAuth(user)");
     s.setAttribute("data-request-access", "write");
     document.getElementById("tg-mount")?.appendChild(s);
-  }, [bot, state]);
+  }, [availability, bot, state]);
+
+  if (availability === "checking") {
+    return <Wrap><p style={{ color: "rgba(26,26,46,0.65)", fontSize: 14 }}>Checking availability…</p></Wrap>;
+  }
+
+  if (availability === "unavailable") {
+    return (
+      <Wrap>
+        <h2 style={{ fontSize: 22, fontWeight: 700, color: "#1a1a2e" }}>Channel subscriptions unavailable</h2>
+        <p style={{ color: "rgba(26,26,46,0.65)", fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>
+          Telegram connection is disabled for launch while secure credential storage is being upgraded.
+        </p>
+        <a href="/sovereignty" style={{ color: "rgba(26,26,46,0.65)", fontSize: 13 }}>Back to PetClaw</a>
+      </Wrap>
+    );
+  }
 
   if (!bot) {
     return (

@@ -1,19 +1,66 @@
 import { prisma } from "@/lib/prisma";
-import { getUser } from "@/lib/auth";
+import { getAuthContext, getUser } from "@/lib/auth";
 import { applyDecay } from "@/lib/petMechanics";
 import { isHumanAvatar } from "@/lib/services/petAvatarGuard";
+import { getLLMBudgetFailureStatus } from "@/lib/llm/router";
 import { NextRequest, NextResponse } from "next/server";
+import { containsHangul } from "@/lib/generatedLanguage";
+import {
+  applicationMediaKey,
+  AvatarMediaAssignmentError,
+  claimOrVerifyApplicationMediaForPet,
+  userCanAssignApplicationMedia,
+} from "@/lib/mediaOwnership";
+import { releaseClaimedAvatarMedia } from "@/lib/avatarMedia";
+import {
+  EXTENSION_PET_DETAIL_SELECT,
+  toExtensionPetDetailView,
+} from "@/lib/extensionPetView";
+
+function visionBudgetResponse(error: unknown): NextResponse | null {
+  const status = getLLMBudgetFailureStatus(error);
+  if (!status) return null;
+  return NextResponse.json({
+    error: status === 429
+      ? "Pet image verification has reached today's limit. Please try again tomorrow."
+      : "Pet image verification is temporarily unavailable. Please try again later.",
+  }, { status });
+}
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ petId: string }> }
 ) {
-  const user = await getUser(req);
-  if (!user) {
+  const auth = await getAuthContext(req);
+  if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const { user } = auth;
 
   const { petId } = await params;
+
+  if (auth.credential === "extension") {
+    const pet = await prisma.pet.findFirst({
+      where: { id: Number(petId), user_id: user.id, is_active: true },
+      select: EXTENSION_PET_DETAIL_SELECT,
+    });
+    if (!pet) {
+      return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+    }
+    // Keep extension sync behavior compatible with the first-party detail view
+    // without selecting the private personality_modifiers decay clock. Prisma's
+    // updated_at advances whenever that clock is written, so these non-private
+    // timestamps are sufficient inputs and are stripped by the safe serializer.
+    const decayClockMs = Math.max(
+      pet.last_interaction_at?.getTime() || 0,
+      pet.updated_at.getTime(),
+    );
+    const decayed = applyDecay(
+      { happiness: pet.happiness, energy: pet.energy, hunger: pet.hunger },
+      Date.now() - decayClockMs,
+    );
+    return NextResponse.json(toExtensionPetDetailView({ ...pet, ...decayed }));
+  }
 
   const pet = await prisma.pet.findFirst({
     where: { id: Number(petId), user_id: user.id },
@@ -80,10 +127,12 @@ export async function GET(
   else if (pet.happiness <= 20) current_mood = "grumpy";
   else if (pet.happiness <= 40) current_mood = "sad";
 
+  const visibleMemories = pet.memories.filter((memory) => !containsHangul(memory.content));
   return NextResponse.json({
     ...pet,
+    memories: visibleMemories,
     current_mood,
-    recent_memories: pet.memories,
+    recent_memories: visibleMemories,
   });
 }
 
@@ -159,14 +208,23 @@ export async function PATCH(
   if (body.avatar_url !== undefined) {
     const safeAvatar = safeUrlOrEmpty(body.avatar_url);
     if (safeAvatar) {
+      if (applicationMediaKey(safeAvatar) && !await userCanAssignApplicationMedia(user.id, safeAvatar)) {
+        return NextResponse.json({ error: "Avatar media is not owned by this account" }, { status: 403 });
+      }
       // Pet avatars must be an animal/creature, not a human — this mirrors into
-      // the public Community showcase. Same guard as pet-create (fails open on
-      // a vision outage; only blocks a confident human portrait).
-      if (await isHumanAvatar(safeAvatar)) {
-        return NextResponse.json(
-          { error: "Pet avatars must be an animal or creature, not a person" },
-          { status: 400 },
-        );
+      // the public Community showcase. Ordinary vendor errors fail open, while
+      // spend-cap/store failures return 429/503 and cannot be bypassed.
+      try {
+        if (await isHumanAvatar(safeAvatar, user.id)) {
+          return NextResponse.json(
+            { error: "Pet avatars must be an animal or creature, not a person" },
+            { status: 400 },
+          );
+        }
+      } catch (error) {
+        const response = visionBudgetResponse(error);
+        if (response) return response;
+        throw error;
       }
       updateData.avatar_url = safeAvatar;
     }
@@ -176,6 +234,10 @@ export async function PATCH(
   // to the photo everywhere).
   if (body.codex_url !== undefined) {
     updateData.codex_url = body.codex_url === "" ? null : safeUrlOrEmpty(body.codex_url) || undefined;
+    if (updateData.codex_url && applicationMediaKey(updateData.codex_url)
+      && !await userCanAssignApplicationMedia(user.id, updateData.codex_url)) {
+      return NextResponse.json({ error: "Codex media is not owned by this account" }, { status: 403 });
+    }
     if (updateData.codex_url === undefined) delete updateData.codex_url;
   }
 
@@ -183,10 +245,77 @@ export async function PATCH(
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }
 
-  const updated = await prisma.pet.update({
-    where: { id: pet.id },
-    data: updateData,
-  });
+  // Re-lock and re-authorize the destination at the write boundary. Pet
+  // deletion takes the same row lock before collecting avatar/codex refs, so a
+  // PATCH either commits first and is included in deletion, or observes the
+  // deleted row and cannot attach media after the cleanup snapshot.
+  let updated;
+  try {
+    updated = await prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<Array<{
+        id: number;
+        avatar_url: string | null;
+        codex_url: string | null;
+      }>>`
+        SELECT "id", "avatar_url", "codex_url"
+        FROM "pets"
+        WHERE "id" = ${pet.id}
+          AND "user_id" = ${user.id}
+          AND "is_active" = TRUE
+        FOR UPDATE
+      `;
+      const current = locked[0];
+      if (!current) return null;
+
+      const nextAvatar = Object.prototype.hasOwnProperty.call(updateData, "avatar_url")
+        ? updateData.avatar_url as string | null
+        : current.avatar_url;
+      const nextCodex = Object.prototype.hasOwnProperty.call(updateData, "codex_url")
+        ? updateData.codex_url as string | null
+        : current.codex_url;
+
+      // Claim each new first-party object while the Pet and preview rows are
+      // locked. Cleanup either wins first (and assignment fails) or skips this
+      // row; it can never delete bytes after a successful binding.
+      const mediaToClaim = new Map<string, string>();
+      const changedMedia = [
+        Object.prototype.hasOwnProperty.call(updateData, "avatar_url") ? nextAvatar : null,
+        Object.prototype.hasOwnProperty.call(updateData, "codex_url") ? nextCodex : null,
+      ];
+      for (const value of changedMedia) {
+        if (!value) continue;
+        const key = applicationMediaKey(value);
+        if (key) mediaToClaim.set(key, value);
+      }
+      for (const value of mediaToClaim.values()) {
+        await claimOrVerifyApplicationMediaForPet(tx, user.id, pet.id, value);
+      }
+
+      const result = await tx.pet.update({ where: { id: pet.id }, data: updateData });
+      const retainedKeys = new Set(
+        [nextAvatar, nextCodex]
+          .map((value) => value ? applicationMediaKey(value) : null)
+          .filter((key): key is string => Boolean(key)),
+      );
+      const releasedKeys = new Set<string>();
+      for (const oldValue of [current.avatar_url, current.codex_url]) {
+        if (!oldValue) continue;
+        const oldKey = applicationMediaKey(oldValue);
+        if (!oldKey || retainedKeys.has(oldKey) || releasedKeys.has(oldKey)) continue;
+        await releaseClaimedAvatarMedia(tx, user.id, pet.id, oldValue);
+        releasedKeys.add(oldKey);
+      }
+      return result;
+    });
+  } catch (error) {
+    if (error instanceof AvatarMediaAssignmentError) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+    throw error;
+  }
+  if (!updated) {
+    return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  }
 
   return NextResponse.json(updated);
 }

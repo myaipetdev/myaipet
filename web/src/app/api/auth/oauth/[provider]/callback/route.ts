@@ -9,10 +9,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProvider, getCallbackUrl } from "@/lib/oauth/providers";
 import { verifyState } from "@/lib/oauth/state";
-import { saveConnection, StoredCredentials } from "@/lib/oauth/store";
+import { saveConnection } from "@/lib/oauth/store";
+import type { StoredCredentials } from "@/lib/oauth/store";
 import { rateLimit } from "@/lib/rateLimit";
+import { oauthConnectionsEnabled, oauthUnavailableResponse } from "@/lib/oauth/availability";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
+  // Do not exchange an authorization code while subscriptions are paused.
+  // This deliberately precedes parsing/logging any callback parameters.
+  if (!oauthConnectionsEnabled()) return oauthUnavailableResponse();
+
   const rl = rateLimit(req, { key: "oauth-callback", limit: 30, windowMs: 60_000 });
   if (!rl.ok) return rl.response;
 

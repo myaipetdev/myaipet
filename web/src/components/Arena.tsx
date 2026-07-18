@@ -680,6 +680,7 @@ export default function Arena() {
   const [player, setPlayer] = useState<BattlePet | null>(null);
   const [opponent, setOpponent] = useState<BattlePet | null>(null);
   const [opponentOwner, setOpponentOwner] = useState("");
+  const matchChallengeRef = useRef<string | null>(null);
 
   const [turn, setTurn] = useState(1);
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
@@ -820,6 +821,7 @@ export default function Arena() {
 
   // ── Start Battle ──
   const startBattle = useCallback(async (pet: Pet) => {
+    matchChallengeRef.current = null;
     setSelectedPet(pet);
     setPhase("matchmaking");
 
@@ -828,8 +830,10 @@ export default function Arena() {
     let owner: string;
 
     try {
-      const data = await api.arena.findOpponent(pet.level);
+      const data = await api.arena.findOpponent(pet.id);
       if (data.opponent) {
+        if (typeof data.match_challenge !== "string") throw new Error("Missing Arena match challenge");
+        matchChallengeRef.current = data.match_challenge;
         const oppElement = (data.opponent.element as Element) || "normal";
         const oppSkills = data.opponent.skills?.length > 0
           ? data.opponent.skills.map((s: any, i: number) => ({
@@ -863,6 +867,7 @@ export default function Arena() {
         owner = OPPONENT_OWNERS[Math.floor(Math.random() * OPPONENT_OWNERS.length)];
       }
     } catch {
+      matchChallengeRef.current = null;
       opp = generateOpponent(pet.level);
       owner = OPPONENT_OWNERS[Math.floor(Math.random() * OPPONENT_OWNERS.length)];
     }
@@ -900,9 +905,11 @@ export default function Arena() {
 
   // ── Report battle result to server ──
   useEffect(() => {
-    if (phase === "result" && selectedPet && opponent && player) {
+    const matchChallenge = matchChallengeRef.current;
+    if (phase === "result" && selectedPet && opponent && player && matchChallenge) {
+      matchChallengeRef.current = null;
       api.arena
-        .reportResult(selectedPet.id, opponent.pet.id || 0, playerWon, turn, opponent.pet.name, player.hp)
+        .reportResult(selectedPet.id, opponent.pet.id || 0, matchChallenge)
         .then((res: any) => {
           if (res.exp_gained) setEarnedExp(res.exp_gained);
           if (res.skill_drop) setSkillDrop(res.skill_drop);
@@ -1202,6 +1209,7 @@ export default function Arena() {
 
   // ── Reset Battle ──
   const resetBattle = () => {
+    matchChallengeRef.current = null;
     setPhase("select");
     setPlayer(null);
     setOpponent(null);

@@ -1847,7 +1847,9 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
   // D-pad helpers
   const pd = (d: Dir) => keysDown.current.add(d === "up" ? "w" : d === "down" ? "s" : d === "left" ? "a" : "d");
   const pu = (d: Dir) => keysDown.current.delete(d === "up" ? "w" : d === "down" ? "s" : d === "left" ? "a" : "d");
+  const pulseDirection = (d: Dir) => { pd(d); setTimeout(() => pu(d), 80); };
   const pa = () => { keysDown.current.add(" "); setTimeout(() => keysDown.current.delete(" "), 80); };
+  const closeDialogue = () => { st.current.dlg = null; st.current.dlgNpc = null; setDialogue(null); };
 
   return (
     <div style={{ textAlign: "center", position: "relative", userSelect: "none" }}>
@@ -1858,7 +1860,7 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
           <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 13, fontWeight: 700, color: "#e0e0e0", letterSpacing: 1, textShadow: "1px 1px 0 #000" }}>{regionName}</span>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button onClick={() => setShowMinimap(v => !v)} style={{ background: "none", border: "1px solid #555", borderRadius: 3, color: "#aaa", fontSize: 13, fontFamily: "monospace", cursor: "pointer", padding: "2px 5px" }}>
+          <button type="button" aria-pressed={showMinimap} onClick={() => setShowMinimap(v => !v)} style={{ background: "none", border: "1px solid #555", borderRadius: 3, color: "#aaa", fontSize: 13, fontFamily: "monospace", cursor: "pointer", padding: "2px 5px" }}>
             {showMinimap ? "MAP ON" : "MAP OFF"} (M)
           </button>
           <span style={{ fontFamily: "monospace", fontSize: 10, color: "#555" }}>WASD move / SPACE interact</span>
@@ -2024,21 +2026,23 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
         display: "flex", justifyContent: "space-between", alignItems: "center",
         marginTop: 10, maxWidth: CW * SCALE, margin: "10px auto 0", padding: "0 12px",
       }}>
-        <div style={{ position: "relative", width: 94, height: 94 }}>
+        <div style={{ position: "relative", width: 132, height: 132 }}>
           {([
-            { dir: "up" as Dir, t: 0, l: 32, s: "\u25b2" },
-            { dir: "down" as Dir, t: 62, l: 32, s: "\u25bc" },
-            { dir: "left" as Dir, t: 32, l: 0, s: "\u25c0" },
-            { dir: "right" as Dir, t: 32, l: 62, s: "\u25b6" },
+            { dir: "up" as Dir, t: 0, l: 44, s: "\u25b2" },
+            { dir: "down" as Dir, t: 88, l: 44, s: "\u25bc" },
+            { dir: "left" as Dir, t: 44, l: 0, s: "\u25c0" },
+            { dir: "right" as Dir, t: 44, l: 88, s: "\u25b6" },
           ]).map(d => (
-            <button key={d.dir}
+            <button type="button" key={d.dir} aria-label={`Move ${d.dir}`}
               onPointerDown={() => pd(d.dir)}
               onPointerUp={() => pu(d.dir)}
               onPointerLeave={() => pu(d.dir)}
+              onPointerCancel={() => pu(d.dir)}
+              onClick={(event) => { if (event.detail === 0) pulseDirection(d.dir); }}
               onContextMenu={e => e.preventDefault()}
               style={{
                 position: "absolute", top: d.t, left: d.l,
-                width: 30, height: 30, borderRadius: 5,
+                width: 44, height: 44, borderRadius: 7,
                 background: "linear-gradient(180deg, #3a3a4a, #2a2a3a)",
                 border: "2px solid #555",
                 color: "#bbb", fontSize: 13,
@@ -2049,16 +2053,19 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
             >{d.s}</button>
           ))}
           <div style={{
-            position: "absolute", top: 32, left: 32, width: 30, height: 30,
-            background: "#1a1a28", borderRadius: 5, border: "1px solid #333",
+            position: "absolute", top: 44, left: 44, width: 44, height: 44,
+            background: "#1a1a28", borderRadius: 7, border: "1px solid #333",
           }} />
         </div>
         <div style={{ display: "flex", gap: 12 }}>
           <button
-            onPointerDown={() => { st.current.dlg = null; st.current.dlgNpc = null; setDialogue(null); }}
+            type="button"
+            aria-label="Close dialogue"
+            onPointerDown={closeDialogue}
+            onClick={(event) => { if (event.detail === 0) closeDialogue(); }}
             onContextMenu={e => e.preventDefault()}
             style={{
-              width: 42, height: 42, borderRadius: "50%",
+              width: 46, height: 46, borderRadius: "50%",
               background: "linear-gradient(180deg, #cc3333, #aa2222)",
               border: "2px solid #dd4444",
               color: "#fff", fontSize: 13, fontWeight: 900,
@@ -2067,7 +2074,10 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
               boxShadow: "0 3px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)",
             }}>B</button>
           <button
+            type="button"
+            aria-label="Interact"
             onPointerDown={pa}
+            onClick={(event) => { if (event.detail === 0) pa(); }}
             onContextMenu={e => e.preventDefault()}
             style={{
               width: 50, height: 50, borderRadius: "50%",

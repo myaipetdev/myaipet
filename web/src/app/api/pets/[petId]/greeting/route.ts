@@ -24,10 +24,16 @@ import { rateLimit } from "@/lib/rateLimit";
 import { callLLM } from "@/lib/llm/router";
 import { getPersona, buildPersonaContext } from "@/lib/services/persona";
 import { createMemoryManager } from "@/lib/petclaw/memory/persistent-memory";
+import {
+  containsHangul,
+  generatedEnglishOrFallback,
+  generatedEnglishOrNull,
+} from "@/lib/generatedLanguage";
 
 const GAP_MIN_MS = 45 * 60 * 1000;                 // don't interrupt an active session
 const CALLBACK_MIN_AGE_MS = 12 * 60 * 60 * 1000;   // a callback should be genuinely older, not "you just said this"
 const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;      // never reuse a stale "away about X" line for days
+const GREETING_FALLBACK = "I'm so glad you're back! I missed you. 🐾";
 
 function humanGap(ms: number): string {
   const h = Math.floor(ms / 3_600_000);
@@ -79,7 +85,10 @@ export async function GET(
     cached.at > last && cached.for === last &&
     now - cached.at < CACHE_MAX_AGE_MS
   ) {
-    return NextResponse.json({ greeting: cached.text, cached: true });
+    return NextResponse.json({
+      greeting: generatedEnglishOrFallback(cached.text, GREETING_FALLBACK),
+      cached: true,
+    });
   }
 
   // Pick a genuine older callback: important, not a raw session log, > 12h old.
@@ -94,14 +103,20 @@ export async function GET(
     take: 8,
     select: { content: true },
   }).catch(() => [] as { content: string }[]);
-  const memory = mems.length ? mems[Math.floor(Math.random() * mems.length)] : null;
+  // Legacy non-English memories remain in the owner's export, but are not fed
+  // into an English-only generated greeting.
+  const englishMems = mems.filter((entry) => !containsHangul(entry.content));
+  const memory = englishMems.length
+    ? englishMems[Math.floor(Math.random() * englishMems.length)]
+    : null;
 
   const persona = await getPersona(pet.id).catch(() => null);
   const personaCtx = buildPersonaContext(persona);
 
   const system = `You are ${pet.name}, a ${pet.personality_type} AI pet companion (level ${pet.level}).
 ${personaCtx ? `\n${personaCtx}\n` : ""}
-Your owner just came back after being away about ${humanGap(gap)}. Greet them FIRST — unprompted — warm and genuine, in YOUR voice and in the SAME LANGUAGE your owner usually speaks to you.
+Your owner just came back after being away about ${humanGap(gap)}. Greet them FIRST — unprompted — warm and genuine, in YOUR voice.
+Always write in English, even if the owner's profile, name, or older memories use another language. Never output Hangul.
 ${memory
   ? `Naturally bring up this REAL shared memory as a callback — weave it in as if you'd been thinking about it, don't quote it verbatim and don't list it:\n"${memory.content.slice(0, 300)}"`
   : `You have no specific memory to reference — just warmly welcome them back and show you missed them. Do NOT invent a shared memory.`}
@@ -119,11 +134,10 @@ Keep it to 1–2 short sentences. Sound genuinely glad they're back.`;
       max_tokens: 90,
       temperature: 0.9,
     });
-    text = (out.text || "").trim();
+    text = generatedEnglishOrNull(out.text) || GREETING_FALLBACK;
   } catch {
-    text = "";
+    text = GREETING_FALLBACK;
   }
-  if (!text) return NextResponse.json({ greeting: null });
 
   // Persist the cache TRANSACTIONALLY with a fresh in-transaction read of
   // personality_modifiers, merging ONLY the `proactive` key. The snapshot read

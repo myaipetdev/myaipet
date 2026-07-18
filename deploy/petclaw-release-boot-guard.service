@@ -1,0 +1,14 @@
+[Unit]
+Description=PetClaw uncommitted release boot rollback guard
+After=local-fs.target
+Before=nginx.service pm2-ubuntu.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/petclaw-release-boot-guard.sh
+RemainAfterExit=yes
+TimeoutStartSec=90
+
+[Install]
+WantedBy=multi-user.target
+RequiredBy=nginx.service pm2-ubuntu.service

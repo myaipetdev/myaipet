@@ -25,6 +25,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
+import { oauthConnectionsEnabled } from "@/lib/oauth/availability";
+import { decodeOAuthCredentials } from "@/lib/oauth/credentials";
+import { claimTelegramInboundMessageWithDb } from "@/lib/agentWebhookDelivery";
+import { consumeAgentCredits } from "@/lib/agentCredits";
 
 interface TgMessage {
   message_id: number;
@@ -59,6 +63,11 @@ async function sendTelegram(chatId: number, text: string, botToken: string): Pro
 }
 
 export async function POST(req: NextRequest) {
+  if (!oauthConnectionsEnabled()) {
+    return NextResponse.json({ ok: true, disabled: true }, {
+      headers: { "Cache-Control": "no-store" },
+    });
+  }
   // Telegram-side spam protection: reject if we get too many updates from
   // the same IP. Telegram's edge sends from a known IP range — this is a
   // belt-and-suspenders check.
@@ -119,20 +128,31 @@ export async function POST(req: NextRequest) {
     include: { pet: true },
   });
 
-  // credentials is stringified JSON — extract access_token (= telegram user id)
+  // Decode only the purpose-bound encrypted OAuth envelope.
   const match = connections.find(c => {
-    try {
-      const creds = JSON.parse(c.credentials || "{}");
-      return creds.access_token === tgUserId;
-    } catch {
-      return false;
-    }
+    const creds = decodeOAuthCredentials(c.credentials);
+    return creds?.access_token === tgUserId;
   });
 
   if (!match) {
     await sendTelegram(msg.chat.id,
       "I don't recognise you yet. Connect this Telegram to a pet at https://app.myaipet.ai/?section=sovereignty",
       botToken);
+    return NextResponse.json({ ok: true });
+  }
+
+  const claimed = await claimTelegramInboundMessageWithDb(prisma, {
+    petId: match.pet_id,
+    chatId: String(msg.chat.id),
+    messageId: String(msg.message_id),
+    text,
+    metadata: { telegram_user_id: tgUserId, oauth_channel: true },
+  });
+  if (!claimed) return NextResponse.json({ ok: true, duplicate: true });
+
+  const charged = await consumeAgentCredits(match.pet_id, 1);
+  if (!charged) {
+    await sendTelegram(msg.chat.id, "💤 I'm out of energy for now — check back later!", botToken);
     return NextResponse.json({ ok: true });
   }
 

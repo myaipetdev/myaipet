@@ -417,7 +417,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     id: "view_stats",
     category: "reflection",
     title: "Open your pet's stat sheet",
-    description: "Quick health check on Sparky.",
+    description: "Quick health check on your pet.",
     points: 3, verifier: "manual",
     cta: { label: "Pet stats", href: "/?section=my pet" },
   },

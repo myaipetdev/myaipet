@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
+import { publicPetWhere } from "@/lib/publicPet";
 
 export async function GET(
   req: NextRequest,
@@ -31,15 +32,22 @@ export async function GET(
   if (!battle) return NextResponse.json({ error: "Battle not found" }, { status: 404 });
 
   // Look up player pet (still active or not — we keep the avatar snapshot anyway)
-  const playerPet = await prisma.pet.findUnique({
-    where: { id: battle.player_pet_id },
+  const playerPet = await prisma.pet.findFirst({
+    where: publicPetWhere({ id: battle.player_pet_id }),
     include: { user: { select: { wallet_address: true } } },
   });
 
-  const opponentPet = battle.opponent_pet_id ? await prisma.pet.findUnique({
-    where: { id: battle.opponent_pet_id },
+  const opponentPet = battle.opponent_pet_id ? await prisma.pet.findFirst({
+    where: publicPetWhere({ id: battle.opponent_pet_id }),
     include: { user: { select: { wallet_address: true } } },
   }) : null;
+
+  if (!playerPet || (battle.opponent_pet_id && !opponentPet)) {
+    return NextResponse.json({ error: "Battle not found" }, { status: 404 });
+  }
+  // Human-opponent links are detached on pet deletion. Never mistake that
+  // tombstone for an NPC and fall back to immutable snapshot PII.
+  const opponentRedacted = battle.battle_type === "pvp" && battle.opponent_pet_id == null;
 
   const shortWallet = (w?: string | null) =>
     w ? `${w.slice(0, 6)}…${w.slice(-4)}` : null;
@@ -48,7 +56,7 @@ export async function GET(
     battleId: battle.id,
     createdAt: battle.created_at,
     battleType: battle.battle_type,    // "pvp" | "pve"
-    seed: battle.seed,
+    seed: opponentRedacted ? null : battle.seed,
     txHash: battle.tx_hash,
     won: battle.won,
     turns: battle.turns,
@@ -66,15 +74,16 @@ export async function GET(
     },
     opponent: {
       petId: battle.opponent_pet_id,
-      name: battle.opponent_name,
-      avatar: battle.opponent_avatar || opponentPet?.avatar_url || null,
+      name: opponentRedacted ? "Deleted Pet" : battle.opponent_name,
+      avatar: opponentRedacted ? null : battle.opponent_avatar || opponentPet?.avatar_url || null,
       level: opponentPet?.level || null,
       stats: opponentPet ? { atk: opponentPet.atk, def: opponentPet.def, spd: opponentPet.spd } : null,
       hpLeft: 0, // by definition; winner stayed >0, loser stayed ≤0
       hpMax: battle.opponent_hp_max,
       ownerWallet: shortWallet(opponentPet?.user?.wallet_address),
-      isNpc: battle.opponent_pet_id == null,
+      isNpc: !opponentRedacted && battle.opponent_pet_id == null,
+      redacted: opponentRedacted,
     },
-    log: battle.battle_log || [],
+    log: opponentRedacted ? [] : battle.battle_log || [],
   });
 }

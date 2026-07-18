@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { generatedEnglishOrFallback } from "@/lib/generatedLanguage";
+
+const LEGACY_MEMORY_FALLBACK =
+  "A previous generated memory is unavailable in this English-only release.";
 
 export async function GET(
   req: NextRequest,
@@ -40,5 +44,13 @@ export async function GET(
     prisma.petMemory.count({ where }),
   ]);
 
-  return NextResponse.json({ items, total, page, page_size: pageSize });
+  const visibleItems = items.map((item) => {
+    const content = String(item.content || "");
+    const ownerAuthored = /^\[user(?::[^\]]+)?\]\s*/.test(content);
+    return ownerAuthored
+      ? item
+      : { ...item, content: generatedEnglishOrFallback(content, LEGACY_MEMORY_FALLBACK) };
+  });
+
+  return NextResponse.json({ items: visibleItems, total, page, page_size: pageSize });
 }

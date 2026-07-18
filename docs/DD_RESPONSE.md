@@ -63,7 +63,7 @@ Active revenue streams (detail in Q38 below):
 4. **Marketplace** (21 credit-priced items across 5 categories + 9 premium USDT-priced items)
 5. **Pet Studio subscription** (live tiered subscription — free / pro / studio, settled on-chain in USDT)
 
-> The live payment rail is **SIWE wallet sign-in + USDT on BSC only** — no card processor, no Stripe, no email/password accounts. A Coinbase Onramp (fiat → USDC on Base) integration was built and its code is retained, but it is **not surfaced in the current purchase flow**.
+> The live payment rail is **SIWE wallet sign-in + USDT on BSC only** — no card processor, no Stripe, no email/password accounts. A former Coinbase Onramp prototype was retired and removed from the production codebase.
 
 ---
 
@@ -85,10 +85,10 @@ The platform is built around a **portable, memory-rich, sovereign-AI companion**
 | 4 | **9 mood states + 6 stats + 5 evolution stages** | Tamagotchi-style stat decay (happiness / energy / hunger / bond / EXP / level), 9 derived mood states (ecstatic → starving), evolution unlocks at level thresholds. |
 | 5 | **Adventure Mode V2 — Pokémon-style 4-skill PvP** | Turn-based battles, 4 skill slots, element type advantage (Fire / Water / Grass / Electric), HP/EP system, EXP / season-point / rare-skill (5%) drops. |
 | 6 | **PvE Story Mode — 30 stages, 6 regions, boss progression** | Grasslands → Volcano → Ocean → Storm → Shadow → Dragon. Boss intro/victory/defeat dialogue, 3-star rating (HP remaining + turn count), first-clear guaranteed skill drops. |
-| 7 | **NFT minting (PETContent ERC-721)** | Generated content (image / video) can be minted as ERC-721 NFTs via a relayer pattern (gas paid by platform, user only signs). Token URI points to Vercel Blob storage. **On-chain minting is currently paused (holding period); re-enabled via `BLOCKCHAIN_ENABLED`.** |
+| 7 | **NFT minting (PETContent ERC-721)** | Generated content (image / video) can be minted as ERC-721 NFTs via a relayer pattern (gas paid by platform, user only signs). Live media is stored on protected EC2-local uploads; the historical Vercel Blob path is not used in production. **On-chain minting is currently paused (holding period); re-enabled via `BLOCKCHAIN_ENABLED`.** |
 | 8 | **On-chain activity ledger (PetaGenTracker)** | Gas-efficient batched on-chain recording of pet generation events; max 50 events per batch tx via relayer. **Currently paused (holding period).** |
 | 9 | **5-layer payment verification** | Every paid credit purchase passes: (i) tx hash format, (ii) replay prevention, (iii) eth_getTransactionReceipt confirmation, (iv) sender match, (v) value/amount match. Single-use paywall receipts. |
-| 10 | **Guest tour mode** | `?tour=1` renders read-only DEMO previews of wallet-gated sections (my pet, community, World Cup) so first-touch users can explore before connecting a wallet. Live rail remains SIWE + USDT; Coinbase Onramp code is retained but not surfaced. |
+| 10 | **Guest tour mode** | `?tour=1` renders read-only DEMO previews of wallet-gated sections (my pet, community, World Cup) so first-touch users can explore before connecting a wallet. The live payment rail remains SIWE + USDT; the retired Coinbase Onramp prototype is not shipped. |
 | 11 | **Social layer** | Public gallery, likes, threaded comments (with orphan-prevention on parent delete), follow / following graph, weekly leaderboard. |
 | 12 | **Marketplace — 21 items across 5 categories + premium shop** | 21 credit-priced items (consumables, equipment, accessories, furniture, cosmetics; each purchase burns an extra 5% of credits as a sink) plus 9 premium items purchasable in USDT (or a higher credit price). |
 | 13 | **PetClaw SDK + MCP server (open, MIT)** | `@myaipet/petclaw-sdk` v1.6.1 on npm (with `petclaw-mcp` MCP server binary). Exposes companion-chat, persona-mirror, memory-recall, soul-export as MCP tools. Canonical skill registry: **18 skills, each backed by a real handler/endpoint**. CLI personal-access tokens (`pck_` prefix, revocable) authenticate SDK/CLI use. `/.well-known/pet-card.json` discovery file is conformant with the PetClaw spec. |
@@ -111,7 +111,7 @@ The platform is built around a **portable, memory-rich, sovereign-AI companion**
 
 ### 4.4 Tech stack
 
-Next.js 16 + React 19 + TypeScript (web) · Solidity 0.8.28 + OpenZeppelin 5.x + Hardhat 3 (contracts) · AWS RDS PostgreSQL + Prisma 7.x (DB) · fal.ai model family (Kling 1.6, FLUX, Seedance, Wan, MiniMax) + Grok (x.ai) (AI providers) · task-based LLM router with owner BYOK model support · Vercel Blob + AWS S3 (storage) · RainbowKit + wagmi + viem + SIWE + JWT (Web3 auth) · AWS-only deployment stack (Vercel + Neon dependencies dropped 2026-Q1; the legacy Python/FastAPI backend has been removed from the codebase).
+Next.js 16 + React 19 + TypeScript (web) · Solidity 0.8.28 + OpenZeppelin 5.x + Hardhat 3 (contracts) · EC2-local PostgreSQL 16 + Prisma 7.x (DB) · fal.ai model family (Kling 1.6, FLUX, Seedance, Wan, MiniMax) + Grok (x.ai) (AI providers) · task-based LLM router with owner BYOK model support · protected EC2-local uploads (storage) · RainbowKit + wagmi + viem + SIWE + JWT (Web3 auth) · AWS EC2 signed-artifact deployment (the former Vercel/Neon, RDS, and S3 production paths are historical or inactive; the legacy Python/FastAPI backend has been removed).
 
 ---
 
@@ -233,7 +233,7 @@ Repo: petclaw-sdk (public)
 | 2026 Q1 | AI image + video generation (6 styles) — live | Finished |
 | 2026 Q1 | NFT minting via PETContent (relayer pattern) — built; on-chain writes currently paused (holding period) | Finished (paused) |
 | 2026 Q1 | PetaGenTracker batch recording (relayer, max 50/batch) — built; on-chain writes currently paused (holding period) | Finished (paused) |
-| 2026 Q1 | Coinbase Onramp integration (Base/USDC, session-token auth) — built; code retained but **not surfaced in the current purchase flow** (live rail is USDT on BSC) | Finished (dormant) |
+| 2026 Q1 | Coinbase Onramp prototype (Base/USDC, session-token auth) — evaluated, then retired and removed from production code; live rail remains USDT on BSC | Retired |
 | 2026 Q1 | Arena battle system + Leaderboard / ranking — live | Finished |
 | 2026 Q1 | Social layer (gallery + likes + comments + follow graph) — live | Finished |
 | 2026 Q1 | Marketplace (5 categories; currently 21 credit-priced items + 9 premium USDT items) — live | Finished |
@@ -271,7 +271,7 @@ Repo: petclaw-sdk (public)
 | 2026 Q3 | **External third-party smart-contract audit** (firm TBD) + re-enable on-chain writes (`BLOCKCHAIN_ENABLED`) post-audit | Upcoming |
 | 2026 Q3 | **Multisig ownership transfer to Gnosis Safe** (Ownable2Step finalization) | Upcoming |
 | 2026 Q3 | USDT purchase end-to-end test (BNB wallet, real-user) | Upcoming |
-| 2026 Q3–Q4 | Coinbase Onramp re-evaluation (integration dormant; CDP full approval required before any re-enable) | Future Plans |
+| 2026 Q3–Q4 | Fiat-onramp re-evaluation (would require a fresh security/compliance review and provider approval) | Future Plans |
 | **2026 Q4** | Pet Studio subscription Phase 2 tier expansion + creator marketplace | Future Plans |
 | 2026 Q4 | PetClaw SDK adoption push to MCP-client ecosystem (Claude Code / Cursor / Gemini CLI) | Future Plans |
 | 2026 Q4 | Content moderation hardening (IP filtering on uploads + generated content) | Future Plans |
@@ -285,7 +285,7 @@ Repo: petclaw-sdk (public)
 | Active **$PET token economy** with mint into user hands | **Points-only loyalty economy** (token contracts deployed but not actively distributed) | Compliance posture: avoid any artifact that could be construed as a financial instrument absent clear regulatory framing. Commit `7c20c0ec` removed all token-mint traces from the live app. Public-facing manifest (`/.well-known/pet-card.json`) makes this explicit. |
 | **Single-surface (web only)** | Multi-surface: web + browser extension + Telegram bot + Discord bot | Companion AI works best when always-present. We expanded the surface to match user behavior — the pet is now reachable wherever the user is. |
 | **Closed product only** | Closed product **+ open PetClaw SDK + MCP server** | We concluded the protocol layer is more strategic than the product layer. Open SDK gives us distribution via every MCP-compatible client and de-risks platform-lock-in concerns voiced by power users. |
-| **Vercel + Neon hosted stack** | **AWS-only stack** (PR `784072ef`, 2026-Q1) | Operational simplification, cost control, and a single root-of-trust for compliance once we hit Vercel/Neon free-tier ceilings. |
+| **Vercel + Neon hosted stack** | **AWS EC2 single-host stack**: local PostgreSQL, local protected uploads, signed immutable artifacts uploaded over PEM | Operational simplification, cost control, and a single root of trust. Vercel/Neon and the evaluated RDS/S3 paths are not used by the live deployment. |
 | **Pet Studio Phase 1 shipping live on /studio** | Phase 1 was **reverted**, rebuilt in `/studio_test` staging, and the rebuilt Studio is **now live on `/studio`** (12 models, templates, Prompt Director, client-side editor) | Phase 1 quality bar was below user expectation for a video editor. We moved iteration off the live URL into a staging path (commit `00082268`, 2026-05), then promoted the rebuilt version once it met the bar. |
 
 ---
@@ -406,7 +406,7 @@ MY AI PET runs a **points-based loyalty economy**. Users buy credits (a **closed
 | **Marketplace** | 21 credit-priced items across 5 categories (consumables, equipment, accessories, furniture, cosmetics; +5% credit burn per purchase) + 9 premium items in USDT or higher credit price | USDT on-chain (premium) + in-app credits | [TBD] |
 | **Pet Studio subscription (live)** | Tiered monthly subscription — free / pro ($4.99/mo) / studio, with monthly video+image quotas | USDT on-chain | [TBD] |
 
-> Note: the live payment rail is SIWE + USDT on BSC only. The Coinbase Onramp (fiat → USDC) integration exists in code but is not surfaced in the current purchase flow, so it contributes no revenue.
+> Note: the live payment rail is SIWE + USDT on BSC only. The retired Coinbase Onramp prototype is not shipped and contributes no revenue.
 
 ### Planned revenue streams (Q3–Q4 2026)
 
@@ -473,11 +473,11 @@ The project is sustained by a combination of (i) initial funding, (ii) accumulat
 
 | Category | Provider | Details |
 |---|---|---|
-| Web hosting | AWS (EC2 + RDS Postgres) | After Vercel/Neon migration (2026 Q1) — single-cloud consolidation |
-| Object storage (images, videos, avatars) | Vercel Blob + AWS S3 | Vercel Blob for active user content; S3 for backups |
-| Database | AWS RDS PostgreSQL (via Prisma 7.x) | Migrated from Neon in 2026 Q1 |
+| Web hosting | AWS EC2 (nginx + PM2) | Signed immutable release artifacts are uploaded over the restricted operator PEM and atomically activated; production does not pull from GitHub. |
+| Object storage (images, videos, avatars) | EC2-local `/opt/petclaw/uploads` | Access is mediated by the protected app route. Vercel Blob and S3 are not used by the live deployment. |
+| Database | PostgreSQL 16 on the production EC2 host (via Prisma 7.x) | RDS/Neon migration material is historical; neither service backs the live database. |
 | AI providers | fal.ai (Kling 1.6, FLUX, Seedance, Wan, MiniMax), Grok (x.ai) | Multi-provider fallback for resilience and cost; owners may attach their own LLM keys (BYOK, encrypted at rest) |
-| Fiat onramp | Coinbase Onramp integration built but **not active in the live flow** | Live rail is SIWE + USDT on BSC only |
+| Fiat onramp | None in production; the Coinbase Onramp prototype was retired and removed | Live rail is SIWE + USDT on BSC only |
 | Wallet auth | RainbowKit + WalletConnect + SIWE | No custodial wallet — user holds keys |
 | Email | [TBD: e.g., AWS SES / Postmark / etc.] | Transactional + support@myaipet.ai |
 

@@ -205,12 +205,20 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
             </svg>
           </span>
           <div style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#9A4E1E", lineHeight: 1.5 }}>
-            <strong>Credit purchases are paused right now.</strong> You can still earn credits free by raising &amp; creating — buying reopens soon.
+            <strong>Credit purchases are paused right now.</strong> Existing credits remain usable. The activities below earn Season points, not generation credits.
           </div>
         </div>
       )}
 
-      {/* Earn methods grid — cards fly up with a 90ms stagger */}
+      <div style={{
+        fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+        letterSpacing: "0.14em", textTransform: "uppercase", color: "#9A4E1E",
+        textAlign: "center", marginBottom: 14,
+      }}>
+        Earn Season points · not generation credits
+      </div>
+
+      {/* Season-point methods grid — cards fly up with a 90ms stagger */}
       <div className="pricing-earn-grid" style={{
         display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 48,
       }}>
@@ -249,11 +257,11 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           fontFamily: "var(--ed-disp)", fontSize: 22, fontWeight: 700,
           color: "#211A12", marginBottom: 6,
         }}>
-          Get Credits
+          Credits &amp; Season points
         </h3>
         <p style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#7A6E5A", marginBottom: 10 }}>
           {SHOW_PURCHASE_CARDS && paused
-            ? "Purchases are paused right now — earn credits free by raising & creating"
+            ? "Purchases are paused; existing credits remain usable"
             : "Credits power AI image & video creation with your pet"}
         </p>
       </div>
@@ -415,7 +423,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
               Purchases paused
             </div>
             <div style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#7A6E5A", fontWeight: 500 }}>
-              Earn credits free by raising &amp; creating
+              Existing credits remain usable; no purchase date is announced
             </div>
           </div>
         </div>

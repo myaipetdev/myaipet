@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { verifyCron } from "@/lib/cronAuth";
 import { NextRequest, NextResponse } from "next/server";
+import { agentChannelsEnabled } from "@/lib/oauth/availability";
+import { generatedEnglishOrFallback } from "@/lib/generatedLanguage";
 
 /**
  * Autonomous Activity Cron
@@ -60,6 +62,11 @@ export async function GET(req: NextRequest) {
     // audit H12: fail closed — reject if CRON_SECRET is unset/incorrect.
     const gate = verifyCron(req);
     if (gate) return gate;
+    if (!agentChannelsEnabled()) {
+      return NextResponse.json({ processed: 0, actions: [], disabled: true }, {
+        headers: { "Cache-Control": "no-store" },
+      });
+    }
 
     // Fetch all pets with autonomous mode enabled
     const schedules = await prisma.petAgentSchedule.findMany({
@@ -253,5 +260,8 @@ function generateAutonomousPost(petName: string, personality_type: string | null
   };
 
   const options = templates[mood] || templates.happy;
-  return options[Math.floor(Math.random() * options.length)];
+  return generatedEnglishOrFallback(
+    options[Math.floor(Math.random() * options.length)],
+    "Having a wonderful day and sending good vibes to everyone!",
+  );
 }

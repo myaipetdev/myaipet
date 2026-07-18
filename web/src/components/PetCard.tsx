@@ -16,6 +16,7 @@
 import { useEffect, useRef, useState } from "react";
 import { elementTheme, rarityColor, type Rarity } from "@/lib/tcg/theme";
 import type { CardData } from "@/lib/tcg/card";
+import { getAuthHeaders } from "@/lib/api";
 
 const INK = "#211A12", PAPER = "#FBF6EC", MUTED = "rgba(33,26,18,.5)", HAIR = "rgba(33,26,18,.13)";
 const HOLO = "conic-gradient(from 210deg, #FFE08A, #FF9FB0, #C0A6FF, #8FE6D8, #FFE08A)";
@@ -43,10 +44,11 @@ const RARITY_FINISH: Record<Rarity, { pad: number; ring: string; sheen: number; 
   Legendary: { pad: 3, ring: HOLO,      sheen: 0.38, gloss: 0.7, foilName: true,  topo: 0.6 },
 };
 
-export default function PetCard({ card: cardProp, petId, maxWidth = 320, placeholder }: {
+export default function PetCard({ card: cardProp, petId, maxWidth = 320, placeholder, insideButton = false }: {
   card?: CardData; petId?: number; maxWidth?: number;
   /** Real name + rarity CardDeck already knows — printed on the skeleton/error tile. */
   placeholder?: { name: string; rarity: Rarity };
+  insideButton?: boolean;
 }) {
   const [card, setCard] = useState<CardData | null>(cardProp || null);
   const [loading, setLoading] = useState(!cardProp);
@@ -90,7 +92,7 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320, placeho
     let alive = true;
     setLoading(true);
     setFailed(false);
-    fetch(`/api/card/${petId}`)
+    fetch(`/api/card/${petId}`, { headers: getAuthHeaders() })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!alive) return;
@@ -131,9 +133,16 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320, placeho
     return (
       <div style={{ width: "100%", maxWidth, margin: "0 auto" }}>
         <div
-          role="button"
-          aria-label={`Retry loading ${placeholder?.name ? `${placeholder.name}'s` : "this"} card`}
+          role={insideButton ? undefined : "button"}
+          tabIndex={insideButton ? undefined : 0}
+          aria-label={insideButton ? undefined : `Retry loading ${placeholder?.name ? `${placeholder.name}'s` : "this"} card`}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setAttempt((a) => a + 1); }}
+          onKeyDown={insideButton ? undefined : (e) => {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault();
+            e.stopPropagation();
+            setAttempt((a) => a + 1);
+          }}
           style={{
             width: "100%", aspectRatio: "5 / 7", borderRadius: 18, background: "#F5EFE2",
             border: `1px dashed ${HAIR}`, display: "flex", flexDirection: "column", alignItems: "center",

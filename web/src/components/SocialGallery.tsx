@@ -101,7 +101,7 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
       {/* Comment list */}
       <div style={{ flex: 1, overflowY: "auto", marginBottom: 10, maxHeight: 200 }}>
         {loading ? (
-          <div style={{ fontFamily: T.m, fontSize: 13, color: T.mono, padding: 8, letterSpacing: "0.04em" }}>Loading…</div>
+          <div role="status" aria-live="polite" style={{ fontFamily: T.m, fontSize: 13, color: T.mono, padding: 8, letterSpacing: "0.04em" }}>Loading comments…</div>
         ) : comments.length === 0 ? (
           <div style={{
             fontFamily: T.m, fontSize: 13, color: T.mono,
@@ -182,9 +182,15 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
       {/* Comment input */}
       <div style={{ display: "flex", gap: 6 }}>
         <input
+          aria-label="Write a comment"
           value={newComment}
           onChange={e => { setNewComment(e.target.value); if (error) setError(""); }}
-          onKeyDown={e => e.key === "Enter" && handleSubmit()}
+          onKeyDown={e => {
+            if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
           placeholder="Write a comment…"
           style={{
             flex: 1, padding: "9px 12px", borderRadius: 8,
@@ -193,7 +199,7 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
             outline: "none", boxSizing: "border-box",
           }}
         />
-        <button onClick={handleSubmit} disabled={!newComment.trim() || submitting} style={{
+        <button type="button" aria-busy={submitting} onClick={handleSubmit} disabled={!newComment.trim() || submitting} style={{
           padding: "9px 14px", borderRadius: 8, border: "none", cursor: "pointer",
           background: newComment.trim() ? `linear-gradient(135deg,${T.cta1},${T.cta2})` : T.inset,
           color: newComment.trim() ? "#fff" : T.mono,
@@ -209,13 +215,45 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
 
 // ── Detail Modal ──
 function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
-  // Escape closes the modal (keyboard users can't reach the backdrop/✕).
-  // Declared before the early return so the hook order stays unconditional.
+  const panelRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusTimer = window.setTimeout(() => panelRef.current?.querySelector<HTMLElement>('[data-modal-close="true"]')?.focus(), 0);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+      const target = returnFocusRef.current;
+      requestAnimationFrame(() => target?.focus());
+    };
+  }, []);
   const [copied, setCopied] = useState(false);
   if (!item) return null;
 
@@ -223,9 +261,9 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
     <div style={{
       position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center",
       background: "rgba(38,28,12,0.52)",
-    }} onClick={onClose}>
+    }} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <style>{`@keyframes modalIn { from { opacity:0; transform:scale(0.96) } to { opacity:1; transform:scale(1) } }`}</style>
-      <div onClick={e => e.stopPropagation()} style={{
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-label="Creation details" onMouseDown={e => e.stopPropagation()} style={{
         display: "flex", maxWidth: 1000, width: "92vw", maxHeight: "88vh",
         background: T.paper, borderRadius: 16, overflow: "hidden",
         boxShadow: "var(--ed-shadow-float)",
@@ -314,7 +352,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
                 </div>
               </div>
             </div>
-            <button aria-label="Close" onClick={onClose} style={{
+            <button type="button" data-modal-close="true" aria-label="Close creation details" onClick={onClose} style={{
               background: T.inset, border: "none", color: T.muted,
               cursor: "pointer", width: 30, height: 30, borderRadius: 8,
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15,
@@ -337,7 +375,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
             borderTop: `1px solid ${T.hair}`,
             borderBottom: `1px solid ${T.hair}`,
           }}>
-            <button onClick={() => onLike(item.generation_id || item.id, index)} style={{
+            <button type="button" aria-label={item.is_liked ? "Unlike this creation" : "Like this creation"} aria-pressed={!!item.is_liked} onClick={() => onLike(item.generation_id || item.id, index)} style={{
               display: "flex", alignItems: "center", gap: 5, background: "none",
               border: "none", cursor: "pointer", padding: 0,
             }}>
@@ -365,6 +403,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
             </div>
             <div style={{ flex: 1 }} />
             <button
+              type="button"
               onClick={async () => {
                 try {
                   await navigator.clipboard.writeText(`https://app.myaipet.ai/c/${item.generation_id || item.id}`);
@@ -388,6 +427,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
               </svg>
             )}</span> {copied ? "Copied" : "Copy link"}</button>
             <button
+              type="button"
               onClick={() => {
                 const text = encodeURIComponent(`${item.prompt || "My AI Pet creation"} — generated on MY AI PET 🐾`);
                 const url = encodeURIComponent(`https://app.myaipet.ai/c/${item.generation_id || item.id}`);
@@ -408,6 +448,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
               prompt and jump to the Create tab so a viewer becomes a generator. */}
           {!item.__mock && (
             <button
+              type="button"
               onClick={() => {
                 try {
                   sessionStorage.setItem("studio_prefill", JSON.stringify({
@@ -440,6 +481,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
 function GalleryCard({ item, index, onLike, onClick }: any) {
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [shareError, setShareError] = useState("");
   const [imgLoaded, setImgLoaded] = useState(false);
   const [mediaFailed, setMediaFailed] = useState(false);
   const [cardVisible, setCardVisible] = useState(true);
@@ -492,13 +534,12 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      aria-label={`Open creation${item.prompt ? `: ${String(item.prompt).slice(0, 60)}` : ""}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={() => onClick(item, index)}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(item, index); } }}
+      onFocusCapture={() => setHovered(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setHovered(false);
+      }}
       style={{
         borderRadius: 10, overflow: "hidden", cursor: "pointer",
         height: cardHeight, position: "relative",
@@ -578,13 +619,22 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
         </div>
       )}
 
+      {/* A real full-card button keeps the card keyboard-operable without
+          nesting the like/share buttons inside another interactive element. */}
+      <button
+        type="button"
+        aria-label={`Open creation${item.prompt ? `: ${String(item.prompt).slice(0, 60)}` : ""}`}
+        onClick={() => onClick(item, index)}
+        style={{ position: "absolute", inset: 0, zIndex: 9, border: 0, padding: 0, background: "transparent", cursor: "pointer" }}
+      />
+
       {/* Top-left badges (always visible) */}
       {isVideo && (
         <div style={{
           position: "absolute", top: 8, left: 8, zIndex: 10,
           padding: "3px 8px", borderRadius: 5,
           background: T.paper, boxShadow: "var(--ed-shadow-card)",
-          display: "flex", alignItems: "center", gap: 5,
+          display: "flex", alignItems: "center", gap: 5, pointerEvents: "none",
         }}>
           <span style={{
             width: 5, height: 5, borderRadius: "50%",
@@ -606,9 +656,18 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
         transition: "all 0.3s ease",
         display: "flex", flexDirection: "column", justifyContent: "flex-end",
         padding: hovered ? 12 : 8,
-        pointerEvents: hovered ? "auto" : "none",
+        pointerEvents: "none",
       }}>
         {/* Hover: show pet name only, no prompt */}
+
+        {shareError && (
+          <div role="alert" style={{
+            alignSelf: "flex-end", marginBottom: 6, padding: "4px 7px", borderRadius: 6,
+            background: "rgba(33,26,18,0.82)", color: "#FFF8EE", fontFamily: T.m, fontSize: 13,
+          }}>
+            {shareError}
+          </div>
+        )}
 
         {/* Bottom bar */}
         <div style={{
@@ -640,10 +699,13 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
 
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <button
+              type="button"
               onClick={e => { e.stopPropagation(); onLike(item.generation_id || item.id, index); }}
+              aria-label={item.is_liked ? "Unlike this creation" : "Like this creation"}
+              aria-pressed={!!item.is_liked}
               style={{
                 background: "none", border: "none", cursor: "pointer", padding: 0,
-                display: "flex", alignItems: "center", gap: 3,
+                display: "flex", alignItems: "center", gap: 3, pointerEvents: "auto",
               }}
             >
               <span style={{
@@ -678,19 +740,24 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
 
             {hovered && (
               <button
+                type="button"
                 onClick={async e => {
                   e.stopPropagation();
                   try {
                     await navigator.clipboard.writeText(`https://app.myaipet.ai/c/${item.generation_id || item.id}`);
+                    setShareError("");
                     setCopied(true);
                     setTimeout(() => setCopied(false), 1600);
-                  } catch {}
+                  } catch {
+                    setShareError("Couldn't copy the link.");
+                    setTimeout(() => setShareError(""), 2400);
+                  }
                 }}
                 style={{
                   background: copied ? "rgba(92,138,78,0.9)" : "rgba(33,26,18,0.5)", border: "none", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   width: 22, height: 22, borderRadius: 6, padding: 0,
-                  animation: "fadeUp 0.15s ease-out", flexShrink: 0,
+                  animation: "fadeUp 0.15s ease-out", flexShrink: 0, pointerEvents: "auto",
                 }}
                 title={copied ? "Copied!" : "Copy link"}
                 aria-label="Copy link"
@@ -706,6 +773,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
             )}
             {hovered && (
               <button
+                type="button"
                 onClick={e => {
                   e.stopPropagation();
                   const text = encodeURIComponent(`${item.prompt || "My AI Pet creation"} — generated on MY AI PET 🐾`);
@@ -717,9 +785,10 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
                   background: "rgba(33,26,18,0.5)", border: "none", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   width: 22, height: 22, borderRadius: 6, padding: 0,
-                  animation: "fadeUp 0.15s ease-out", flexShrink: 0,
+                  animation: "fadeUp 0.15s ease-out", flexShrink: 0, pointerEvents: "auto",
                 }}
                 title="Share on X"
+                aria-label="Share on X"
               >
                 <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 700, lineHeight: 1 }}>𝕏</span>
               </button>
@@ -830,8 +899,6 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
           return (
             <div
               key={it.generation_id || it.id}
-              onClick={() => { resetAuto(); if (center) onOpen(it, i); else setIdx(i); }}
-              title={center ? "Open" : undefined}
               style={{
                 position: "absolute", left: "50%", top: "50%", width: SLEEVE_W,
                 marginLeft: -SLEEVE_W / 2, marginTop: -(SLEEVE_W / 2 + 45),
@@ -843,7 +910,7 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
               }}
             >
               {/* printed sleeve: paper mat + gold keyline well + spine caption */}
-              <div style={{ position: "relative", background: T.paper, borderRadius: 6, padding: 9, boxShadow: center ? "var(--ed-shadow-float)" : "var(--ed-shadow-card)" }}>
+              <div aria-hidden="true" style={{ position: "relative", background: T.paper, borderRadius: 6, padding: 9, boxShadow: center ? "var(--ed-shadow-float)" : "var(--ed-shadow-card)" }}>
                 <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", overflow: "hidden", borderRadius: 3, boxShadow: "inset 0 0 0 2px rgba(184,130,44,.5)", background: T.inset }}>
                   {url ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -875,6 +942,17 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
                   <span>♥ {it.likes_count || 0}</span>
                 </div>
               </div>
+              <button
+                type="button"
+                role="option"
+                aria-selected={center}
+                aria-posinset={i + 1}
+                aria-setsize={n}
+                aria-label={`${center ? "Open" : "Show"} creation by ${it.display_name || "Anonymous"}${it.prompt ? `: ${String(it.prompt).slice(0, 60)}` : ""}`}
+                onClick={() => { resetAuto(); if (center) onOpen(it, i); else setIdx(i); }}
+                title={center ? "Open" : undefined}
+                style={{ position: "absolute", inset: 0, zIndex: 2, cursor: "pointer", padding: 0, border: 0, borderRadius: 6, background: "transparent" }}
+              />
             </div>
           );
         })}
@@ -887,7 +965,7 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
           background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 999,
           padding: "8px 10px 8px 16px", boxShadow: "var(--ed-shadow-card)",
         }}>
-          <button onClick={() => go(-1)} disabled={idx === 0} aria-label="Previous" style={{ background: "transparent", border: "none", cursor: idx === 0 ? "default" : "pointer", fontSize: 18, color: idx === 0 ? T.hair : T.ink, padding: "0 2px" }}>‹</button>
+          <button type="button" onClick={() => go(-1)} disabled={idx === 0} aria-label="Previous" style={{ background: "transparent", border: "none", cursor: idx === 0 ? "default" : "pointer", fontSize: 18, color: idx === 0 ? T.hair : T.ink, padding: "0 2px" }}>‹</button>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: T.terraSub, textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {cur.display_name || "Anonymous"} · {idx + 1}/{n}
@@ -898,17 +976,19 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
           </div>
           {onLike && (
             <button
+              type="button"
               onClick={() => curId != null && onLike(curId, idx)}
-              aria-label="Like"
+              aria-label={cur.is_liked ? "Unlike this creation" : "Like this creation"}
+              aria-pressed={!!cur.is_liked}
               style={{ background: "transparent", border: `1px solid ${T.hair}`, borderRadius: 999, padding: "6px 12px", cursor: "pointer", fontFamily: T.m, fontSize: 13, fontWeight: 700, color: cur.is_liked ? T.terra : T.muted2 }}
             >
               {cur.is_liked ? "♥" : "♡"} {cur.likes_count || 0}
             </button>
           )}
-          <button onClick={() => onOpen(cur, idx)} style={{ background: T.ink, border: "none", borderRadius: 999, padding: "7px 14px", cursor: "pointer", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: T.creamOn }}>
+          <button type="button" onClick={() => onOpen(cur, idx)} style={{ background: T.ink, border: "none", borderRadius: 999, padding: "7px 14px", cursor: "pointer", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: T.creamOn }}>
             OPEN ▸
           </button>
-          <button onClick={() => go(1)} disabled={idx >= n - 1} aria-label="Next" style={{ background: "transparent", border: "none", cursor: idx >= n - 1 ? "default" : "pointer", fontSize: 18, color: idx >= n - 1 ? T.hair : T.ink, padding: "0 2px" }}>›</button>
+          <button type="button" onClick={() => go(1)} disabled={idx >= n - 1} aria-label="Next" style={{ background: "transparent", border: "none", cursor: idx >= n - 1 ? "default" : "pointer", fontSize: 18, color: idx >= n - 1 ? T.hair : T.ink, padding: "0 2px" }}>›</button>
         </div>
       )}
     </div>
@@ -1231,11 +1311,11 @@ export default function SocialGallery() {
 
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             {/* Surface toggle — the creations Feed vs the walkable Pet Square */}
-            <div style={{ display: "flex", gap: 4, marginRight: 4, padding: 3, borderRadius: 999, background: T.inset, border: `1px solid ${T.hair}` }}>
+            <div role="group" aria-label="Community surface" style={{ display: "flex", gap: 4, marginRight: 4, padding: 3, borderRadius: 999, background: T.inset, border: `1px solid ${T.hair}` }}>
               {([["feed", "Feed"], ["square", "Square"]] as const).map(([key, label]) => {
                 const on = mode === key;
                 return (
-                  <button key={key} onClick={() => setMode(key)} style={{
+                  <button type="button" key={key} aria-pressed={on} onClick={() => setMode(key)} style={{
                     background: on ? T.terra : "transparent",
                     border: "none", borderRadius: 999, padding: "6px 16px",
                     fontFamily: T.m, fontSize: 13, cursor: "pointer",
@@ -1251,11 +1331,11 @@ export default function SocialGallery() {
             </div>
 
             {/* View toggle — Album carousel vs Library wall */}
-            {mode === "feed" && <div style={{ display: "flex", gap: 4, marginRight: 4 }}>
+            {mode === "feed" && <div role="group" aria-label="Feed layout" style={{ display: "flex", gap: 4, marginRight: 4 }}>
               {([["album", "Album"], ["library", "Library"]] as const).map(([key, label]) => {
                 const on = view === key;
                 return (
-                  <button key={key} onClick={() => setView(key)} style={{
+                  <button type="button" key={key} aria-pressed={on} onClick={() => setView(key)} style={{
                     background: on ? T.ink : T.paper,
                     border: `1px solid ${on ? T.ink : T.hair}`,
                     borderRadius: 999, padding: "6px 15px",
@@ -1272,7 +1352,7 @@ export default function SocialGallery() {
             </div>}
 
             {/* Type filters — inline with search (feed only) */}
-            {mode === "feed" && <div style={{ display: "flex", gap: 4 }}>
+            {mode === "feed" && <div role="group" aria-label="Creation type" style={{ display: "flex", gap: 4 }}>
               {[
                 { key: "all", label: "All", color: T.terra },
                 { key: "image", label: "Images", color: T.rareRare },
@@ -1280,7 +1360,7 @@ export default function SocialGallery() {
               ].map(f => {
                 const on = typeFilter === f.key;
                 return (
-                  <button key={f.key} onClick={() => setTypeFilter(f.key)} style={{
+                  <button type="button" key={f.key} aria-pressed={on} onClick={() => setTypeFilter(f.key)} style={{
                     background: on ? f.color : T.paper,
                     border: `1px solid ${on ? f.color : T.hair}`,
                     borderRadius: 6, padding: "5px 13px",
@@ -1343,7 +1423,7 @@ export default function SocialGallery() {
         {/* Sort tabs — ink underline on active (feed only) */}
         {mode === "feed" && <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${T.hair}` }}>
           {TABS.map(t => (
-            <button className="sort-tab" key={t.key} onClick={() => setSort(t.key)} style={{
+            <button type="button" className="sort-tab" key={t.key} aria-pressed={sort === t.key} onClick={() => setSort(t.key)} style={{
               background: "transparent", border: "none", padding: "8px 16px",
               fontFamily: T.m, fontSize: 13, cursor: "pointer",
               letterSpacing: "0.1em", textTransform: "uppercase",

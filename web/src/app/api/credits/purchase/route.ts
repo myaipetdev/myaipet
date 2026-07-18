@@ -1,7 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { consumePaymentTx, PaymentAlreadyConsumed } from "@/lib/payments";
-import { verifyUsdtTransfer, treasuryConfigured } from "@/lib/onchain";
+import {
+  consumePaymentTx,
+  PaymentAlreadyConsumed,
+  PaymentsPausedError,
+} from "@/lib/payments";
+import {
+  canonicalizePaymentTxHash,
+  InvalidPaymentTxHash,
+  verifyUsdtTransfer,
+  treasuryConfigured,
+} from "@/lib/onchain";
 import { rateLimit } from "@/lib/rateLimit";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -28,8 +37,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing: plan, payment_tx_hash" }, { status: 400 });
     }
 
-    if (!/^0x[0-9a-fA-F]{64}$/.test(payment_tx_hash)) {
-      return NextResponse.json({ error: "Invalid transaction hash format" }, { status: 400 });
+    let canonicalTxHash: string;
+    try {
+      canonicalTxHash = canonicalizePaymentTxHash(payment_tx_hash);
+    } catch (error) {
+      if (error instanceof InvalidPaymentTxHash) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      throw error;
     }
 
     const selectedPlan = PLANS[plan];
@@ -44,13 +59,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Fast-path replay check against the global ledger (audit C3).
-    const seen = await prisma.consumedPayment.findUnique({ where: { tx_hash: payment_tx_hash } });
+    const seen = await prisma.consumedPayment.findUnique({ where: { tx_hash: canonicalTxHash } });
     if (seen) {
       return NextResponse.json({ error: "Transaction already used" }, { status: 409 });
     }
 
     // On-chain USDT transfer verification (central, swappable verifier)
-    const verification = await verifyUsdtTransfer(payment_tx_hash, user.wallet_address, selectedPlan.price);
+    const verification = await verifyUsdtTransfer(canonicalTxHash, user.wallet_address, selectedPlan.price);
     if (verification.ok !== true) {
       return NextResponse.json({ error: verification.error }, { status: 400 });
     }
@@ -61,7 +76,7 @@ export async function POST(req: NextRequest) {
     try {
       newCredits = await prisma.$transaction(async (tx) => {
         await consumePaymentTx(tx, {
-          txHash: payment_tx_hash,
+          txHash: canonicalTxHash,
           userId: user.id,
           purpose: "credits",
           amountUsd: verification.amount,
@@ -71,7 +86,7 @@ export async function POST(req: NextRequest) {
             user_id: user.id,
             credits: selectedPlan.credits,
             amount_usd: verification.amount, // audit M3: record what was actually paid
-            payment_tx_hash,
+            payment_tx_hash: canonicalTxHash,
             status: "confirmed",
           },
         });
@@ -85,6 +100,9 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       if (e instanceof PaymentAlreadyConsumed) {
         return NextResponse.json({ error: "Transaction already used" }, { status: 409 });
+      }
+      if (e instanceof PaymentsPausedError) {
+        return NextResponse.json({ error: e.message }, { status: 503 });
       }
       throw e;
     }

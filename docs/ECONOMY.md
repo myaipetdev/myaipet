@@ -73,7 +73,9 @@ both the retail anchor (**$0.05**) and the worst case a user can realize
 | Card illustrate (Codex sticker) | 5 | routes through `studio/generate` grok-imagine (`CardDeck.tsx:209`) | grok-imagine $0.03 |
 
 ### Grok/LLM real costs (for the LLM-backed actions)
-`src/lib/llm/router.ts` `TASK_MODEL_MAP` → all default to xAI Grok:
+`src/lib/llm/router.ts` defaults to xAI Grok and can fail over once to the
+allowlisted OpenAI `gpt-5.6-luna` text model when xAI is transiently unavailable
+or spend-limited. The xAI task defaults are:
 `grok-3-mini` (chat), `grok-3-mini-fast` (judge/summarize/persona),
 `grok-4-1-fast-non-reasoning` (reason). These are xAI's cheap tier
 (order ~$0.20–0.50 per 1M tokens). A single chat turn (~1–4K tokens) is a

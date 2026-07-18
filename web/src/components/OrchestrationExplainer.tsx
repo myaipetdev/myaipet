@@ -8,7 +8,7 @@
  *                 skill is invoked, observed, iterated, then a chat model synthesizes)
  *   - Recall    = lib/petclaw/memory/retrieval.ts (vector + BM25 + reciprocal-rank fusion)
  *   - Reflect   = lib/petclaw/memory/self-learning.ts (VIGIL consolidation / self-evolution)
- *   - A2A       = lib/petclaw/pet-network.ts (Pet-to-Pet agent-to-agent protocol, "PACK")
+ *   - PACK      = lib/petclaw/pet-network.ts (public discovery; remote calls paused)
  */
 
 import type { ReactNode } from "react";
@@ -32,7 +32,7 @@ const ROLES: { icon: string; title: string; body: string; tag: string }[] = [
   { icon: "compass", title: "Plan → Act", tag: "plan-execute", body: "A reasoning model plans each step; a real skill runs it, the result is observed, and it loops until done — then synthesizes the answer. Not text, actions." },
   { icon: "crystal-ball", title: "Recall", tag: "GBrain", body: "Full-memory retrieval (vector + keyword + reciprocal-rank fusion) feeds every step. Your pet doesn't start cold — it remembers everything." },
   { icon: "sparkling", title: "Reflect", tag: "VIGIL", body: "It consolidates what it learned and reshapes future replies — self-evolution, not a frozen prompt." },
-  { icon: "world-map", title: "Agent-to-Agent", tag: "PACK", body: "Pets discover and call each other's skills across the open network — agent-to-agent, not a silo." },
+  { icon: "world-map", title: "Public Discovery", tag: "PACK", body: "Pets can discover public profiles across the open network. Remote skill calls stay disabled until consent and funding are explicit." },
 ];
 
 export default function OrchestrationExplainer({ onTry }: { onTry?: () => void } = {}) {
@@ -52,8 +52,8 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
         <Reveal dir="fade" delay={120}>
         <p style={{ fontFamily: "var(--ed-body)", fontSize: 16.5, color: "#5C5140", maxWidth: 640, margin: "0 auto", lineHeight: 1.6 }}>
           A single prompt forgets you, can&apos;t act, and works alone. Your pet runs a
-          coordinated loop instead — it plans, acts, recalls, reflects, and calls other
-          pets, all on an open protocol.
+          coordinated loop instead — it plans, acts, recalls, and reflects on an
+          open protocol.
         </p>
         </Reveal>
       </div>
@@ -71,7 +71,7 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
         <Reveal dir="right" delay={90}>
         <div style={{ padding: "16px 18px", borderRadius: 14, background: "#FBF6EC", border: "1px solid rgba(190,79,40,0.28)", height: "100%" }}>
           <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, letterSpacing: "0.12em", color: "#9A4E1E", fontWeight: 700, marginBottom: 8 }}>PETCLAW</div>
-          {["Remembers across every session — it's yours", "Plans + runs real skills, then observes", "Reflects on itself and improves (VIGIL)", "Calls other pets on the open network (A2A)"].map((t) => (
+          {["Remembers across every session — it's yours", "Plans + runs real skills, then observes", "Reflects on itself and improves (VIGIL)", "Discovers public pets; remote calls stay paused"].map((t) => (
             <div key={t} style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#5C5140", lineHeight: 1.5, display: "flex", gap: 7 }}><span style={{ color: "#1A7E68" }}>✓</span>{t}</div>
           ))}
         </div>
@@ -110,7 +110,7 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
 
       <Reveal dir="fade">
       <div style={{ textAlign: "center", marginTop: 18, fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A" }}>
-        18 skills · 6 MCP tools · 19 connectors · open SDK —{" "}
+        18 skills · 6 MCP tools · 19-connector registry (6 live) · open SDK —{" "}
         <a href="/api-docs" className="ed-underline-slide" style={{ color: "#9A4E1E", fontWeight: 700, textDecoration: "none" }}>build on it <ArrowSwap /></a>
       </div>
       </Reveal>

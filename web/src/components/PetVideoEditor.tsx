@@ -6,8 +6,7 @@
  * Capabilities (MVP):
  *   - Trim: set start/end on the source clip
  *   - Caption: text overlay with position + size + color
- *   - Music: load an mp3 (royalty-free presets or user upload), mix at adjustable volume
- *   - Export: render with ffmpeg.wasm → mp4 blob → upload to /api/upload → save as new Generation
+ *   - Export: render with ffmpeg.wasm → download the MP4 locally
  *
  * Loaded lazily from PetStudio so the ~30MB wasm bundle only ships when the
  * user actually clicks the editor button. Pro+ tier gate at the UI level.
@@ -16,7 +15,6 @@
 import { useEffect, useRef, useState } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
-import { getAuthHeaders } from "@/lib/api";
 import { toast } from "@/components/Toast";
 
 interface EditorState {
@@ -25,16 +23,7 @@ interface EditorState {
   caption: string;
   captionColor: string;
   captionPos: "bottom" | "top" | "center";
-  musicVolume: number;     // 0..1, 0 = no music
-  musicUrl: string | null; // null = no music
 }
-
-const PRESET_MUSIC = [
-  { id: "upbeat", label: "Upbeat", url: "/studio_music/upbeat.mp3" },
-  { id: "chill",  label: "Chill", url: "/studio_music/chill.mp3" },
-  { id: "synth",  label: "Synth", url: "/studio_music/synth.mp3" },
-  { id: "lo-fi",  label: "Lo-fi", url: "/studio_music/lofi.mp3" },
-];
 
 export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string; onClose: () => void }) {
   const [ffmpeg, setFFmpeg] = useState<FFmpeg | null>(null);
@@ -52,8 +41,6 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
     caption: "",
     captionColor: "white",
     captionPos: "bottom",
-    musicVolume: 0,
-    musicUrl: null,
   });
 
   // ── Lazy-load ffmpeg.wasm ──
@@ -122,15 +109,6 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
         ...videoFilter,
       ];
 
-      // Music overlay
-      if (state.musicUrl && state.musicVolume > 0) {
-        await ffmpeg.writeFile("music.mp3", await fetchFile(state.musicUrl));
-        args.push("-i", "music.mp3");
-        args.push("-filter_complex",
-          `[1:a]volume=${state.musicVolume.toFixed(2)},aloop=loop=-1:size=2e9[mus];[0:a][mus]amix=inputs=2:duration=shortest[aout]`);
-        args.push("-map", "0:v", "-map", "[aout]");
-      }
-
       args.push(
         "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
         "-c:a", "aac", "-b:a", "128k",
@@ -147,26 +125,6 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
       toast(`Export failed: ${e?.message || e}`, "error");
     } finally {
       setExporting(false);
-    }
-  };
-
-  // ── Save edited clip to server ──
-  const saveToLibrary = async () => {
-    if (!exportedUrl) return;
-    try {
-      const blob = await (await fetch(exportedUrl)).blob();
-      const fd = new FormData();
-      fd.append("file", blob, `edited-${Date.now()}.mp4`);
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: { ...getAuthHeaders() },
-        body: fd,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Upload failed");
-      toast(`Saved! URL: ${data.url}`, "success");
-    } catch (e: any) {
-      toast(`Save failed: ${e?.message || e}`, "error");
     }
   };
 
@@ -197,11 +155,11 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
               <label style={miniLabel}>TRIM</label>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 6, fontSize: 13, color: "rgba(255,255,255,0.7)" }}>
                 <span>Start {state.trimStart.toFixed(1)}s</span>
-                <input type="range" min={0} max={duration} step={0.1} value={state.trimStart}
+                <input type="range" aria-label="Trim start time" min={0} max={duration} step={0.1} value={state.trimStart}
                   onChange={e => setState(s => ({ ...s, trimStart: Math.min(parseFloat(e.target.value), s.trimEnd - 0.1) }))}
                   style={{ flex: 1 }} />
                 <span>End {state.trimEnd.toFixed(1)}s</span>
-                <input type="range" min={0} max={duration} step={0.1} value={state.trimEnd}
+                <input type="range" aria-label="Trim end time" min={0} max={duration} step={0.1} value={state.trimEnd}
                   onChange={e => setState(s => ({ ...s, trimEnd: Math.max(parseFloat(e.target.value), s.trimStart + 0.1) }))}
                   style={{ flex: 1 }} />
               </div>
@@ -212,7 +170,7 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
           <div style={{ display: "grid", gap: 16 }}>
             <div>
               <label style={miniLabel}>CAPTION</label>
-              <input type="text" value={state.caption}
+              <input type="text" aria-label="Video caption" value={state.caption}
                 onChange={e => setState(s => ({ ...s, caption: e.target.value }))}
                 placeholder="e.g. Happy Birthday, Sparky!"
                 style={inputStyle} />
@@ -232,35 +190,6 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
                   }} />
                 ))}
               </div>
-            </div>
-
-            <div>
-              <label style={miniLabel}>MUSIC</label>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 6, marginTop: 6 }}>
-                <button onClick={() => setState(s => ({ ...s, musicUrl: null }))} style={{
-                  ...btnSmall,
-                  background: state.musicUrl === null ? "#fbbf24" : "rgba(255,255,255,0.06)",
-                  color: state.musicUrl === null ? "#1a1a2e" : "white",
-                }}>None</button>
-                {PRESET_MUSIC.map(m => (
-                  <button key={m.id} onClick={() => setState(s => ({ ...s, musicUrl: m.url, musicVolume: s.musicVolume || 0.5 }))} style={{
-                    ...btnSmall,
-                    background: state.musicUrl === m.url ? "#fbbf24" : "rgba(255,255,255,0.06)",
-                    color: state.musicUrl === m.url ? "#1a1a2e" : "white",
-                  }}>{m.label}</button>
-                ))}
-              </div>
-              {state.musicUrl && (
-                <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontFamily: "mono" }}>Volume</span>
-                  <input type="range" min={0} max={1} step={0.05} value={state.musicVolume}
-                    onChange={e => setState(s => ({ ...s, musicVolume: parseFloat(e.target.value) }))}
-                    style={{ flex: 1 }} />
-                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontFamily: "mono", minWidth: 30 }}>
-                    {Math.round(state.musicVolume * 100)}%
-                  </span>
-                </div>
-              )}
             </div>
 
             <button onClick={exportClip} disabled={exporting} style={{
@@ -283,12 +212,9 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
                     </svg>
                     Download
                   </a>
-                  <button onClick={saveToLibrary} style={{ ...btnSecondary, display: "inline-flex", alignItems: "center", gap: 7 }}>
-                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M6.5 18A4.5 4.5 0 0 1 6 9.05a6 6 0 0 1 11.6 1.45A3.75 3.75 0 0 1 17 18H6.5z" />
-                    </svg>
-                    Save to library
-                  </button>
+                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", alignSelf: "center" }}>
+                    Edits stay on this device until you download them.
+                  </span>
                 </div>
               </div>
             )}

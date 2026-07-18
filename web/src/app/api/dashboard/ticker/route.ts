@@ -14,6 +14,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
+import { publicGenerationWhere } from "@/lib/publicFeed";
+import { publicPetWhere } from "@/lib/publicPet";
 
 interface TickerEvent {
   at: string;        // ISO
@@ -38,27 +40,31 @@ export async function GET(req: NextRequest) {
   const since = new Date(Date.now() - 7 * 86_400_000);
   const [creations, nfts] = await Promise.all([
     prisma.generation.findMany({
-      where: { status: "completed", created_at: { gte: since } },
+      where: await publicGenerationWhere({ created_at: { gte: since } }),
       orderBy: { created_at: "desc" }, take: limit,
       select: { user_id: true, video_path: true, created_at: true },
     }),
     prisma.memoryNft.findMany({
       where: { created_at: { gte: since } },
       orderBy: { created_at: "desc" }, take: limit,
-      select: { memory_type: true, title: true, created_at: true, pet_id: true },
+      // Memory titles are owner-authored private text. A public pet profile is
+      // not consent to republish that text in an unauthenticated ticker.
+      select: { memory_type: true, created_at: true, pet_id: true },
     }),
   ]);
 
   // Resolve user wallets + pet names (one round of joins)
   const userIds = [...new Set(creations.map(c => c.user_id).filter((x): x is number => x != null))];
-  const petIds = [...new Set(nfts.map(n => n.pet_id))];
+  const petIds: number[] = Array.from(new Set<number>(
+    nfts.map(n => Number(n.pet_id)).filter(Number.isSafeInteger),
+  ));
   const [users, pets] = await Promise.all([
     userIds.length
       ? prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, wallet_address: true } })
-      : Promise.resolve([]),
+      : Promise.resolve([] as Array<{ id: number; wallet_address: string }>),
     petIds.length
-      ? prisma.pet.findMany({ where: { id: { in: petIds } }, select: { id: true, name: true } })
-      : Promise.resolve([]),
+      ? prisma.pet.findMany({ where: publicPetWhere({ id: { in: petIds } }), select: { id: true, name: true } })
+      : Promise.resolve([] as Array<{ id: number; name: string }>),
   ]);
   const userById = new Map(users.map(u => [u.id, u.wallet_address]));
   const petById = new Map(pets.map(p => [p.id, p.name]));
@@ -74,7 +80,8 @@ export async function GET(req: NextRequest) {
     });
   }
   for (const n of nfts) {
-    const petName = petById.get(n.pet_id) || "A pet";
+    const petName = petById.get(n.pet_id);
+    if (!petName) continue;
     const kind = n.memory_type === 10 ? "Care-Streak"
               : n.memory_type === 20 ? "Evolution"
               : n.memory_type === 30 ? "Top-Content" : "Memory";
@@ -82,7 +89,7 @@ export async function GET(req: NextRequest) {
       at: n.created_at.toISOString(),
       kind: "nft",
       accent: ACCENTS.nft,
-      text: `${petName} recorded a ${kind} milestone — ${n.title || "memory"}`,
+      text: `${petName} recorded a ${kind} milestone`,
     });
   }
 

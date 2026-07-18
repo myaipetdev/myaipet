@@ -2,9 +2,30 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { PREMIUM_MAP } from "@/lib/premium";
 import { SKILL_DB, SKILL_MAP } from "@/lib/skills";
-import { consumePaymentTx, PaymentAlreadyConsumed } from "@/lib/payments";
-import { verifyUsdtTransfer, treasuryConfigured, ONCHAIN } from "@/lib/onchain";
+import {
+  consumePaymentTx,
+  PaymentAlreadyConsumed,
+  PaymentsPausedError,
+} from "@/lib/payments";
+import {
+  canonicalizePaymentTxHash,
+  InvalidPaymentTxHash,
+  verifyUsdtTransfer,
+  treasuryConfigured,
+  ONCHAIN,
+} from "@/lib/onchain";
 import { NextRequest, NextResponse } from "next/server";
+
+export async function GET() {
+  return NextResponse.json({
+    payments_enabled: treasuryConfigured(),
+    items: Object.values(PREMIUM_MAP).map((item) => ({
+      ...item,
+      sale_enabled: item.saleEnabled,
+      availability_message: item.saleEnabled ? null : item.unavailableReason,
+    })),
+  });
+}
 
 // POST /api/shop/premium — Purchase a premium item
 export async function POST(req: NextRequest) {
@@ -15,27 +36,57 @@ export async function POST(req: NextRequest) {
 
   const item = PREMIUM_MAP[item_key];
   if (!item) return NextResponse.json({ error: "Item not found" }, { status: 404 });
+  if (!item.saleEnabled) {
+    return NextResponse.json({
+      error: item.unavailableReason || "This item is not currently for sale",
+      code: "ITEM_NOT_FOR_SALE",
+      item_key,
+      sale_enabled: false,
+    }, { status: 409 });
+  }
+
+  // Premium purchases are a paid surface even when the caller spends an
+  // existing credit balance. The launch kill-switch pauses the whole route.
+  if (!treasuryConfigured()) {
+    return NextResponse.json({ error: "Payments are temporarily unavailable" }, { status: 503 });
+  }
 
   // BUG 1 FIX: Validate payment method strictly
   if (payment_method !== "credits" && payment_method !== "usdt") {
     return NextResponse.json({ error: "Invalid payment_method. Must be 'credits' or 'usdt'." }, { status: 400 });
   }
 
+  const parsedPetId = typeof pet_id === "number"
+    ? pet_id
+    : typeof pet_id === "string" && /^[1-9][0-9]*$/.test(pet_id)
+      ? Number(pet_id)
+      : Number.NaN;
+  if (!Number.isSafeInteger(parsedPetId) || parsedPetId <= 0) {
+    return NextResponse.json({ error: "A positive safe-integer pet_id is required" }, { status: 400 });
+  }
+  const pet = await prisma.pet.findFirst({
+    where: { id: parsedPetId, user_id: user.id, is_active: true },
+    include: { skills: true },
+  });
+  if (!pet) return NextResponse.json({ error: "Active pet not found" }, { status: 404 });
+
   let usdtPaid = false;
+  let canonicalTxHash: string | null = null;
   if (payment_method === "usdt") {
-    if (!tx_hash || typeof tx_hash !== "string" || !/^0x[0-9a-fA-F]{64}$/.test(tx_hash)) {
-      return NextResponse.json({ error: "Valid tx_hash required for USDT payment" }, { status: 400 });
-    }
-    // audit H4: fail closed when treasury isn't configured.
-    if (!treasuryConfigured()) {
-      return NextResponse.json({ error: "Payments are temporarily unavailable" }, { status: 503 });
+    try {
+      canonicalTxHash = canonicalizePaymentTxHash(tx_hash);
+    } catch (error) {
+      if (error instanceof InvalidPaymentTxHash) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      throw error;
     }
     // Fast-path replay check against the global ledger (audit C3).
-    const seen = await prisma.consumedPayment.findUnique({ where: { tx_hash } });
+    const seen = await prisma.consumedPayment.findUnique({ where: { tx_hash: canonicalTxHash } });
     if (seen) {
       return NextResponse.json({ error: "Transaction already used" }, { status: 409 });
     }
-    const v = await verifyUsdtTransfer(tx_hash, user.wallet_address, item.priceUSD);
+    const v = await verifyUsdtTransfer(canonicalTxHash, user.wallet_address, item.priceUSD);
     if (v.ok !== true) return NextResponse.json({ error: v.error }, { status: 400 });
     // NOTE: the tx is claimed + the Transaction row written INSIDE the effects
     // transaction below (audit H2) so dedup and item-grant are atomic.
@@ -52,10 +103,6 @@ export async function POST(req: NextRequest) {
     }, { status: 400 });
   }
 
-  const pet = pet_id
-    ? await prisma.pet.findFirst({ where: { id: pet_id, user_id: user.id }, include: { skills: true } })
-    : null;
-
   // BUG 2 FIX: Wrap all effects + credit deduction in a single transaction
   let result: any;
   try {
@@ -63,14 +110,15 @@ export async function POST(req: NextRequest) {
     // audit C3/H2: claim the on-chain payment in the global ledger + record the
     // Transaction row atomically with the item grant.
     if (usdtPaid) {
+      if (!canonicalTxHash) throw new Error("Canonical payment hash missing");
       await consumePaymentTx(tx, {
-        txHash: tx_hash,
+        txHash: canonicalTxHash,
         userId: user.id,
         purpose: "shop_premium",
         amountUsd: item.priceUSD,
       });
       await tx.transaction.create({
-        data: { user_id: user.id, type: "premium_buy", tx_hash, chain: ONCHAIN.chainName },
+        data: { user_id: user.id, type: "premium_buy", tx_hash: canonicalTxHash, chain: ONCHAIN.chainName },
       });
     }
 
@@ -169,9 +217,7 @@ export async function POST(req: NextRequest) {
       case "battle_revive":
       case "type_shield":
       case "unlimited_battles": {
-        res.token = item_key;
-        res.message = `${item.name} added to your inventory. Use it in battle!`;
-        break;
+        throw new Error("This item is not for sale until its persistent effect is enforced");
       }
 
       // Gacha effects (gacha_legendary / gacha_mystery) were removed — the
@@ -184,6 +230,9 @@ export async function POST(req: NextRequest) {
   } catch (e: any) {
     if (e instanceof PaymentAlreadyConsumed) {
       return NextResponse.json({ error: "Transaction already used" }, { status: 409 });
+    }
+    if (e instanceof PaymentsPausedError) {
+      return NextResponse.json({ error: e.message }, { status: 503 });
     }
     const msg = e?.message || "Purchase failed";
     return NextResponse.json({ error: msg }, { status: 400 });

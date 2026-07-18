@@ -14,7 +14,15 @@ import {
   PERSONALITY_IMAGE_PROMPTS,
 } from "@/lib/personality";
 import { getPersona, buildPersonaContext } from "@/lib/services/persona";
-import { saveToBlob } from "@/lib/services/video";
+import { generateGrokImage } from "@/lib/services/video";
+import { saveRemoteFile } from "@/lib/storage";
+import { callLLM, type LLMMessage } from "@/lib/llm/router";
+import {
+  generatedEnglishOrFallback,
+  generatedEnglishOrNull,
+} from "@/lib/generatedLanguage";
+
+export { consumeAgentCredits } from "@/lib/agentCredits";
 
 const SPECIES_NAMES: Record<number, string> = {
   0: "cat",
@@ -26,43 +34,28 @@ const SPECIES_NAMES: Record<number, string> = {
   6: "fox",
   7: "pomeranian",
 };
+const PET_AGENT_FALLBACK = "I'm happy to hear from you! 🐾";
 
-// ── Grok API helper ──
+// ── Routed text helper (owner BYOK, then resilient platform route) ──
 
-async function callGrok(
+async function callPetText(
+  petId: number,
   systemPrompt: string,
   userMessage: string,
   maxTokens = 150,
 ): Promise<string> {
-  const grokKey = process.env.GROK_API_KEY;
-  if (!grokKey) throw new Error("GROK_API_KEY not configured");
-
-  const res = await fetch("https://api.x.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${grokKey}`,
-    },
-    body: JSON.stringify({
-      model: "grok-3-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
-      ],
-      max_tokens: maxTokens,
-      temperature: 0.9,
-    }),
+  const out = await callLLM({
+    task: "chat",
+    petId,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userMessage },
+    ],
+    max_tokens: maxTokens,
+    temperature: 0.9,
   });
-
-  if (!res.ok) {
-    const text = await res.text();
-    console.error("[pet-agent] Grok API error:", res.status, text);
-    throw new Error(`Grok API returned ${res.status}`);
-  }
-
-  const data = await res.json();
-  const content = data.choices?.[0]?.message?.content?.trim();
-  if (!content) throw new Error("Empty response from Grok");
+  const content = generatedEnglishOrNull(out.text);
+  if (!content) throw new Error("Empty response from text provider");
   return content;
 }
 
@@ -73,7 +66,7 @@ async function getConversationContext(
   platform: string,
   chatId: string,
   limit = 10,
-): Promise<{ role: string; content: string }[]> {
+): Promise<Array<Pick<LLMMessage, "role" | "content">>> {
   const messages = await prisma.petAgentMessage.findMany({
     where: { pet_id: petId, platform, chat_id: chatId },
     orderBy: { created_at: "desc" },
@@ -81,9 +74,9 @@ async function getConversationContext(
     select: { direction: true, content: true },
   });
 
-  // Reverse to chronological order; map direction -> role for Grok API
+  // Reverse to chronological order; map direction -> provider-neutral role.
   return messages.reverse().map((m) => ({
-    role: m.direction === "outgoing" ? "assistant" : "user",
+    role: (m.direction === "outgoing" ? "assistant" : "user") as "assistant" | "user",
     content: m.content,
   }));
 }
@@ -96,19 +89,12 @@ export async function respondToMessage(
   platform: string,
   chatId: string,
   isGroupChat = false,
+  options?: { incomingAlreadyLogged?: boolean },
 ): Promise<{ reply: string; mood: string }> {
   const pet = await prisma.pet.findFirst({
     where: { id: petId, is_active: true },
   });
   if (!pet) throw new Error(`Pet ${petId} not found or inactive`);
-
-  const traits = PERSONALITY_TRAITS[pet.personality_type] || PERSONALITY_TRAITS.friendly;
-
-  // In group chats, skip responding based on chatFrequency probability
-  if (isGroupChat && Math.random() > traits.chatFrequency) {
-    const mood = calculateMood(pet);
-    return { reply: "", mood };
-  }
 
   // Load recent memories and persona in parallel
   const [recentMemories, persona] = await Promise.all([
@@ -134,42 +120,27 @@ export async function respondToMessage(
   const history = await getConversationContext(petId, platform, chatId, 8);
 
   // Build messages array with history
-  const messages: { role: string; content: string }[] = [
+  const messages: LLMMessage[] = [
     { role: "system", content: systemPrompt },
     ...history,
-    { role: "user", content: message.trim().slice(0, 500) },
+    ...(options?.incomingAlreadyLogged
+      ? []
+      : [{ role: "user" as const, content: message.trim().slice(0, 500) }]),
   ];
-
-  const grokKey = process.env.GROK_API_KEY;
-  if (!grokKey) throw new Error("GROK_API_KEY not configured");
 
   let reply: string;
   try {
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${grokKey}`,
-      },
-      body: JSON.stringify({
-        model: "grok-3-mini",
-        messages,
-        max_tokens: isGroupChat ? 80 : 150,
-        temperature: 0.9,
-      }),
+    const out = await callLLM({
+      task: "chat",
+      petId: pet.id,
+      messages,
+      max_tokens: isGroupChat ? 80 : 150,
+      temperature: 0.9,
     });
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("[pet-agent] respondToMessage Grok error:", text);
-      throw new Error("Chat API failed");
-    }
-
-    const data = await res.json();
-    reply = data.choices?.[0]?.message?.content?.trim() || `*${pet.name} tilts head curiously*`;
+    reply = generatedEnglishOrFallback(out.text, PET_AGENT_FALLBACK);
   } catch (err) {
     console.error("[pet-agent] respondToMessage error:", err);
-    reply = `*${pet.name} looks at you happily*`;
+    reply = PET_AGENT_FALLBACK;
   }
 
   const mood = calculateMood(pet);
@@ -178,13 +149,13 @@ export async function respondToMessage(
   try {
     await prisma.petAgentMessage.createMany({
       data: [
-        {
+        ...(!options?.incomingAlreadyLogged ? [{
           pet_id: pet.id,
           platform,
           chat_id: chatId,
           direction: "incoming",
           content: message.trim().slice(0, 1000),
-        },
+        }] : []),
         {
           pet_id: pet.id,
           platform,
@@ -274,7 +245,7 @@ export async function generateAutonomousPost(
   ].join(" ");
 
   try {
-    const content = await callGrok(systemPrompt, promptHints, 100);
+    const content = await callPetText(pet.id, systemPrompt, promptHints, 100);
 
     // Log the autonomous action
     await prisma.petAutonomousAction.create({
@@ -314,12 +285,6 @@ export async function generateSelfie(
   });
   if (!pet) return null;
 
-  const grokKey = process.env.GROK_API_KEY;
-  if (!grokKey) {
-    console.error("[pet-agent] GROK_API_KEY not configured for selfie");
-    return null;
-  }
-
   const speciesName = SPECIES_NAMES[pet.species] || "pet";
   const personalityPrompt =
     PERSONALITY_IMAGE_PROMPTS[pet.personality_type] ||
@@ -339,34 +304,8 @@ export async function generateSelfie(
   }
 
   try {
-    // Generate image via Grok
-    const imageRes = await fetch("https://api.x.ai/v1/images/generations", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${grokKey}`,
-      },
-      body: JSON.stringify({
-        model: "grok-imagine-image",
-        prompt: imagePrompt,
-      }),
-    });
-
-    if (!imageRes.ok) {
-      const text = await imageRes.text();
-      console.error("[pet-agent] Selfie image generation failed:", text);
-      return null;
-    }
-
-    const imageData = await imageRes.json();
-    const rawUrl = imageData.data?.[0]?.url;
-    if (!rawUrl) {
-      console.error("[pet-agent] No image URL in response");
-      return null;
-    }
-
-    // Save to blob storage for permanence
-    const imageUrl = await saveToBlob(rawUrl, "pet-selfies");
+    const rawUrl = await generateGrokImage(imagePrompt, pet.user_id);
+    const imageUrl = await saveRemoteFile(rawUrl, "pet-selfies");
 
     // Generate a caption
     const mood = calculateMood(pet);
@@ -378,13 +317,14 @@ export async function generateSelfie(
 
     let caption: string;
     try {
-      caption = await callGrok(
+      caption = await callPetText(
+        pet.id,
         captionPrompt,
         `Write a short selfie caption. You just took a photo of yourself ${scene || "looking cute"}. Your mood: ${mood}. Keep it fun and in character.`,
         60,
       );
     } catch {
-      caption = `*${pet.name} strikes a pose*`;
+      caption = "A little pose for my favorite human. ✨";
     }
 
     // Log autonomous action
@@ -487,67 +427,4 @@ export async function decideAction(
   }
 
   return null;
-}
-
-// ── Check and consume credits for agent actions ──
-
-export async function consumeAgentCredits(
-  petId: number,
-  amount: number,
-): Promise<boolean> {
-  const pet = await prisma.pet.findFirst({
-    where: { id: petId, is_active: true },
-    select: { id: true, user_id: true },
-  });
-  if (!pet) return false;
-
-  // Check user has enough credits
-  const user = await prisma.user.findUnique({
-    where: { id: pet.user_id },
-    select: { credits: true },
-  });
-  if (!user || user.credits < amount) {
-    console.log(`[pet-agent] Insufficient credits for pet ${petId} (need ${amount}, have ${user?.credits ?? 0})`);
-    return false;
-  }
-
-  // Ensure schedule exists
-  const schedule = await prisma.petAgentSchedule.upsert({
-    where: { pet_id: petId },
-    create: {
-      pet_id: petId,
-      daily_credit_limit: 10,
-      action_cooldown_minutes: 30,
-      credits_used_today: 0,
-      last_reset_at: new Date(),
-    },
-    update: {},
-  });
-
-  // Check daily limit
-  if (schedule.credits_used_today + amount > schedule.daily_credit_limit) {
-    console.log(`[pet-agent] Daily credit limit reached for pet ${petId}`);
-    return false;
-  }
-
-  // Deduct credits and update schedule atomically
-  try {
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: pet.user_id },
-        data: { credits: { decrement: amount } },
-      }),
-      prisma.petAgentSchedule.update({
-        where: { pet_id: petId },
-        data: {
-          credits_used_today: { increment: amount },
-          last_action_at: new Date(),
-        },
-      }),
-    ]);
-    return true;
-  } catch (err) {
-    console.error("[pet-agent] consumeAgentCredits transaction failed:", err);
-    return false;
-  }
 }

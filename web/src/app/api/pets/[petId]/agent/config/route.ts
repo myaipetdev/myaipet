@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { agentChannelsEnabled, agentChannelsUnavailableResponse } from "@/lib/oauth/availability";
 
 export async function GET(
   req: NextRequest,
@@ -32,7 +33,7 @@ export async function GET(
     }
 
     return NextResponse.json({
-      is_enabled: schedule.is_enabled,
+      is_enabled: agentChannelsEnabled() ? schedule.is_enabled : false,
       daily_credit_limit: schedule.daily_credit_limit,
       credits_used_today: schedule.credits_used_today,
       last_reset_at: schedule.last_reset_at,
@@ -74,6 +75,10 @@ export async function PUT(
     if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
 
     const body: UpdateConfigBody = await req.json();
+
+    if (body.is_enabled === true && !agentChannelsEnabled()) {
+      return agentChannelsUnavailableResponse();
+    }
 
     // Validate fields
     const updateData: Record<string, any> = {};

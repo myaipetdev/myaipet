@@ -59,6 +59,27 @@ export interface ConsentSettings {
   allowInteraction: boolean;
 }
 
+export interface SoulImportSkipDetail {
+  count: number;
+  reasons: string[];
+}
+
+export interface SoulImportReport {
+  /** Exact hash of the source export, retained as import provenance. */
+  sourceIntegrityHash: string;
+  /** Rows/state fragments actually recreated under the importing owner. */
+  restored: Record<string, number>;
+  /** Rows intentionally not recreated, with an explicit safety/compatibility reason. */
+  skipped: Record<string, SoulImportSkipDetail>;
+  warnings: string[];
+}
+
+export interface SoulImportResult {
+  petId: number;
+  sourceIntegrityHash: string;
+  report: SoulImportReport;
+}
+
 // ── SOUL.md Export Format ──
 
 export interface SoulExport {
@@ -129,6 +150,13 @@ export interface SoulExport {
   // Consent settings
   consent: ConsentSettings;
 
+  // Optional PetClaw extensions. They are included in the integrity hash. Import
+  // safely reconstructs supported categories and reports anything intentionally
+  // not materialized into the destination schema.
+  persistentMemory?: unknown;
+  learningData?: unknown;
+  linkedData?: Record<string, unknown>;
+
   // Integrity proof
   integrityHash: string;
 }
@@ -186,7 +214,7 @@ export function computeIntegrityHash(data: Omit<SoulExport, "integrityHash">): s
       ]
     : null;
 
-  const payload = JSON.stringify({
+  const payloadObject: Record<string, unknown> = {
     protocol: data.protocol,
     version: data.version,
     exportedAt: data.exportedAt,
@@ -197,7 +225,20 @@ export function computeIntegrityHash(data: Omit<SoulExport, "integrityHash">): s
     soul: stableStringify(data.soul ?? null),
     checkpoints,
     consent,
-  });
+  };
+  const extensionSource = data as Omit<SoulExport, "integrityHash"> & Record<string, unknown>;
+  const extensionKeys = Object.keys(extensionSource)
+    .filter((key) => ![
+      "protocol", "version", "exportedAt", "pet", "persona", "memories",
+      "skills", "soul", "checkpoints", "consent",
+    ].includes(key))
+    .sort();
+  if (extensionKeys.length > 0) {
+    payloadObject.extensions = stableStringify(Object.fromEntries(
+      extensionKeys.map((key) => [key, extensionSource[key]])
+    ));
+  }
+  const payload = JSON.stringify(payloadObject);
   return createHash("sha256").update(payload).digest("hex");
 }
 
@@ -211,12 +252,13 @@ function stableStringify(value: unknown): string {
 function sortKeys(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sortKeys);
   if (value && typeof value === "object") {
+    const result = Object.create(null) as Record<string, unknown>;
     return Object.keys(value as Record<string, unknown>)
       .sort()
       .reduce<Record<string, unknown>>((acc, key) => {
         acc[key] = sortKeys((value as Record<string, unknown>)[key]);
         return acc;
-      }, {});
+      }, result);
   }
   return value;
 }
@@ -388,7 +430,7 @@ export const DEFAULT_SKILLS: PetClawSkill[] = [
   {
     id: "soul-export",
     name: "Soul Export",
-    description: "Export complete pet identity, memories, and personality as portable SOUL data.",
+    description: "Export portable pet identity, memories, personality, and safe history as SOUL data.",
     category: "utility",
     protocol: PETCLAW_PROTOCOL,
     version: "1.0.0",
@@ -398,12 +440,12 @@ export const DEFAULT_SKILLS: PetClawSkill[] = [
   {
     id: "soul-import",
     name: "Soul Import",
-    description: "Import a portable SOUL bundle (SHA-256 verified) into a pet.",
+    description: "Safely reconstruct a portable SOUL bundle (SHA-256 verified, 16 MiB max) and report restored/skipped data.",
     category: "utility",
     protocol: PETCLAW_PROTOCOL,
     version: "1.0.0",
     inputSchema: { type: "object", properties: { soul: { type: "object" } }, required: ["soul"] },
-    outputSchema: { type: "object", properties: { ok: { type: "boolean" }, petId: { type: "number" } } },
+    outputSchema: { type: "object", properties: { success: { type: "boolean" }, petId: { type: "number" }, sourceIntegrityHash: { type: "string" }, report: { type: "object" } } },
   },
   {
     id: "consent-manage",
@@ -425,7 +467,10 @@ export function buildManifest(): PetClawManifest {
     capabilities: {
       companionAI: true,
       dataSovereignty: true,
-      soulNFT: true,
+      // The schema can preserve legacy Soul NFT state, but live on-chain
+      // minting is paused. Capability discovery must describe availability,
+      // not merely the existence of dormant implementation code.
+      soulNFT: false,
       memoryExport: true,
       consentManagement: true,
     },

@@ -38,8 +38,8 @@ export default function PetClawPreview({ cta, ctaNote }: { cta?: ReactNode; ctaN
     return () => { alive = false; };
   }, []);
 
-  const onlineAll = (net?.nodes || []).filter((n: any) => n.status === "online");
-  const online = onlineAll.slice(0, 8);
+  const publicNodes = net?.nodes || [];
+  const visibleNodes = publicNodes.slice(0, 8);
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "104px 20px 56px" }}>
@@ -112,20 +112,20 @@ export default function PetClawPreview({ cta, ctaNote }: { cta?: ReactNode; ctaN
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
             <Icon name="world-map" size={20} />
             <span style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 18, color: "#211A12" }}>Pet Network</span>
-            <span style={{ fontSize: 13, fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.08em", padding: "3px 10px", borderRadius: 999, background: "rgba(26,126,104,0.12)", color: "#1A7E68" }}>LIVE · PUBLIC</span>
+            <span style={{ fontSize: 13, fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.08em", padding: "3px 10px", borderRadius: 999, background: "rgba(26,126,104,0.12)", color: "#1A7E68" }}>PUBLIC DISCOVERY</span>
             <div style={{ flex: 1 }} />
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--ed-m)", fontSize: 13, color: "#1A7E68", fontWeight: 700 }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#1A7E68" }} />
-              {onlineAll.length} online
+              {publicNodes.length} public
             </span>
           </div>
-          {online.length === 0 ? (
+          {visibleNodes.length === 0 ? (
             <div style={{ padding: 16, textAlign: "center", fontFamily: "var(--ed-body)", fontSize: 13, color: "#9A7B4E" }}>
-              Loading the network…
+              No public pets yet.
             </div>
           ) : (
             <div style={{ display: "grid", gap: 8 }}>
-              {online.map((n: any) => (
+              {visibleNodes.map((n: any) => (
                 <div key={n.petId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: 12, background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))" }}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "#1E1710", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {n.avatarUrl ? <img src={n.avatarUrl} alt={n.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Icon name="paw" size={20} />}

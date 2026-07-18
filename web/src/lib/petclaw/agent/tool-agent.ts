@@ -43,6 +43,10 @@ import { WebSearchConnector } from "../connectors/web-search";
 import { WikipediaConnector } from "../connectors/wikipedia";
 import { CoinGeckoConnector } from "../connectors/coingecko";
 import { MemoryConnector } from "../connectors/memory-enhanced";
+import {
+  generatedEnglishOrFallback,
+  generatedEnglishOrNull,
+} from "@/lib/generatedLanguage";
 
 // ── Config ──
 
@@ -54,6 +58,7 @@ const PER_CALL_TIMEOUT_MS = 20_000; // per skill execution
 const SKILL_RETRIES = 2; // => up to 3 attempts total
 const RESULT_CLIP = 4000; // chars of skill output fed back to the model
 const CONNECTOR_TIMEOUT_MS = 10_000; // per connector (external API) call — single attempt, no retry
+const AGENT_REPLY_FALLBACK = "I tried, but I couldn't pull together an English answer this time.";
 
 // Only these handlers run in-process (real, chainable output). Mirrors the
 // allowlist in plan-execute.ts — fail closed so a new endpoint handler is never
@@ -412,7 +417,7 @@ async function synthesize(
       ? `Reasoning: ${terminalContent}`
       : "(no tool results)";
 
-  const system = `You are ${name}, a ${personality} AI pet, writing the FINAL answer to your owner's goal. Use the observations you gathered from your tools. Be in-character, warm, and concise (2-4 sentences). Do NOT mention "skills", "tools", "JSON", or that you are an AI.`;
+  const system = `You are ${name}, a ${personality} AI pet, writing the FINAL answer to your owner's goal. Always answer in English and never output Hangul, even if the goal or observations use another language. Use the observations you gathered from your tools. Be in-character, warm, and concise (2-4 sentences). Do NOT mention "skills", "tools", "JSON", or that you are an AI.`;
   const user = `GOAL: ${goal}
 
 WHAT YOU GATHERED:
@@ -432,18 +437,20 @@ Write the final answer:`;
       max_tokens: 220,
       temperature: 0.8,
     });
-    if (out.text) return out.text;
+    const safe = generatedEnglishOrNull(out.text);
+    if (safe) return safe;
   } catch {
     // fall through to a non-LLM fallback so the gathered work is never lost
   }
-  if (terminalContent) return terminalContent;
+  const safeTerminal = generatedEnglishOrNull(terminalContent);
+  if (safeTerminal) return safeTerminal;
   const lastOk = [...trace].reverse().find((s) => s.ok);
   if (lastOk) {
     const out = lastOk.output as any;
-    if (out?.reply) return String(out.reply);
-    return `Here's what I found: ${clip(lastOk.output, 300)}`;
+    if (out?.reply) return generatedEnglishOrFallback(out.reply, AGENT_REPLY_FALLBACK);
+    return generatedEnglishOrFallback(`Here's what I found: ${clip(lastOk.output, 300)}`, AGENT_REPLY_FALLBACK);
   }
-  return "I tried, but I couldn't pull together an answer this time.";
+  return AGENT_REPLY_FALLBACK;
 }
 
 // ── The Loop ──
@@ -453,6 +460,7 @@ const AGENT_SYSTEM = `You are an AI pet's autonomous agent, working toward your 
 You have TOOLS (your pet skills). To make progress, CALL the tools that help — you may call several. Read each tool's result, then decide whether to call more or to STOP.
 
 Rules:
+- Write all assistant text in English and never output Hangul, even if the goal uses another language.
 - Prefer calling a tool over guessing when a tool can get you real information.
 - Do NOT repeat the same tool with the same arguments.
 - Most goals need 1-3 tool calls. When you have enough to answer, reply with a short plain-text answer and NO tool calls — that ends the loop.
@@ -516,14 +524,15 @@ export async function runToolAgent(
 
     // No tool calls → the model's content IS the terminal reasoning answer.
     if (!res.toolCalls || res.toolCalls.length === 0) {
-      terminalContent = res.content;
-      if (res.content) onEvent({ type: "thought", text: res.content });
+      terminalContent = generatedEnglishOrNull(res.content);
+      if (terminalContent) onEvent({ type: "thought", text: terminalContent });
       break;
     }
 
     // The model requested tool calls — record the assistant turn, then execute.
     appendAssistantToolCalls(messages, res);
-    if (res.content) onEvent({ type: "thought", text: res.content });
+    const safeThought = generatedEnglishOrNull(res.content);
+    if (safeThought) onEvent({ type: "thought", text: safeThought });
 
     const results: Array<{ tool_call_id: string; name: string; content: string }> = [];
     for (const call of res.toolCalls) {
@@ -534,7 +543,7 @@ export async function runToolAgent(
         ? await executeConnector(petId, call.name, call.arguments, deadline)
         : await executeWithRetry(petId, call.name, call.arguments, deadline);
       trace.push({
-        thought: res.content ?? undefined,
+        thought: safeThought ?? undefined,
         skill: call.name,
         input: call.arguments,
         output: exec.output,

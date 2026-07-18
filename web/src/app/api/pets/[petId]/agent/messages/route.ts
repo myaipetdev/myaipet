@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { generatedEnglishOrFallback } from "@/lib/generatedLanguage";
+
+const LEGACY_AGENT_REPLY =
+  "A previous agent reply is unavailable in this English-only release.";
 
 export async function GET(
   req: NextRequest,
@@ -50,8 +54,17 @@ export async function GET(
       prisma.petAgentMessage.count({ where }),
     ]);
 
+    const visibleMessages = messages.map((message) =>
+      message.direction === "incoming"
+        ? message
+        : {
+            ...message,
+            content: generatedEnglishOrFallback(message.content, LEGACY_AGENT_REPLY),
+          },
+    );
+
     return NextResponse.json({
-      messages,
+      messages: visibleMessages,
       pagination: {
         total,
         limit,

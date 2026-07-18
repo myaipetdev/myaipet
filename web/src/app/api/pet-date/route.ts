@@ -11,9 +11,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
+import { callLLM } from "@/lib/llm/router";
+import { interactablePetWhere } from "@/lib/publicPet";
+import { containsHangul } from "@/lib/generatedLanguage";
 
 const COST_CREDITS = 20;
-const MODEL = "grok-3-mini";
 
 export async function POST(req: NextRequest) {
   // LLM call + credit spend — tight per-caller limit.
@@ -22,8 +24,6 @@ export async function POST(req: NextRequest) {
 
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const grokKey = process.env.GROK_API_KEY;
-  if (!grokKey) return NextResponse.json({ error: "AI provider not configured" }, { status: 500 });
 
   const { myPetId, theirPetId } = await req.json().catch(() => ({}));
   if (!myPetId || !theirPetId) return NextResponse.json({ error: "myPetId + theirPetId required" }, { status: 400 });
@@ -35,7 +35,13 @@ export async function POST(req: NextRequest) {
   if (!mine) return NextResponse.json({ error: "Your pet not found" }, { status: 404 });
 
   const theirs = await prisma.pet.findFirst({
-    where: { id: Number(theirPetId), is_active: true },
+    where: {
+      id: Number(theirPetId),
+      OR: [
+        { user_id: user.id, is_active: true },
+        interactablePetWhere(),
+      ],
+    },
     include: { user: true },
   });
   if (!theirs) return NextResponse.json({ error: "Their pet not found" }, { status: 404 });
@@ -70,23 +76,15 @@ RULES:
 - Output JSON only, nothing else.`;
 
   try {
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${grokKey}` },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [{ role: "system", content: system }, { role: "user", content: "Begin the date." }],
-        max_tokens: 500,
-        temperature: 0.85,
-      }),
+    const out = await callLLM({
+      task: "chat",
+      petId: mine.id,
+      messages: [{ role: "system", content: system }, { role: "user", content: "Begin the date." }],
+      max_tokens: 500,
+      temperature: 0.85,
+      response_format: { type: "json_object" },
     });
-    if (!res.ok) {
-      const err = await res.text().catch(() => "");
-      console.error("grok pet-date failure:", res.status, err.slice(0, 200));
-      return NextResponse.json({ error: "AI provider failed" }, { status: 502 });
-    }
-    const data = await res.json();
-    const raw = data?.choices?.[0]?.message?.content || "";
+    const raw = out.text;
     const match = raw.match(/\{[\s\S]+\}/);
     if (!match) return NextResponse.json({ error: "Bad AI output" }, { status: 502 });
 
@@ -97,6 +95,11 @@ RULES:
     if (!Array.isArray(parsed.log) || parsed.log.length < 4) {
       return NextResponse.json({ error: "AI output too short" }, { status: 502 });
     }
+    // Do not debit or persist a provider/BYOK response that ignored the English
+    // contract. A retry would spend a second model call, so fail closed instead.
+    if (containsHangul(parsed)) {
+      return NextResponse.json({ error: "AI output was not English" }, { status: 502 });
+    }
 
     // Debit + persist atomically. Guarded decrement (audit H17): the early
     // balance check above is advisory only — concurrent requests could both
@@ -104,13 +107,13 @@ RULES:
     const friendship = Math.max(-30, Math.min(50, Math.round(parsed.friendship || 0)));
     const vibe = String(parsed.vibe || "playful").slice(0, 40);
 
-    const row = await prisma.$transaction(async (tx) => {
+    const settled = await prisma.$transaction(async (tx) => {
       const dec = await tx.user.updateMany({
         where: { id: user.id, credits: { gte: COST_CREDITS } },
         data: { credits: { decrement: COST_CREDITS } },
       });
       if (dec.count === 0) return null;
-      return tx.petDate.create({
+      const row = await tx.petDate.create({
         data: {
           pet_a_id: mine.id,
           pet_b_id: theirs.id,
@@ -119,19 +122,30 @@ RULES:
           vibe, friendship,
         },
       });
+      const balance = await tx.user.findUniqueOrThrow({
+        where: { id: user.id },
+        select: { credits: true },
+      });
+      return { row, creditsRemaining: balance.credits };
     });
-    if (!row) {
+    if (!settled) {
       return NextResponse.json({ error: "Not enough credits", needed: COST_CREDITS }, { status: 402 });
     }
 
     return NextResponse.json({
-      ok: true, id: row.id,
+      ok: true, id: settled.row.id,
       pet_a: { name: mine.name, avatar_url: mine.avatar_url },
       pet_b: { name: theirs.name, avatar_url: theirs.avatar_url },
       log: parsed.log, vibe, friendship,
-      creditsRemaining: u.credits - COST_CREDITS,
+      creditsRemaining: settled.creditsRemaining,
     });
   } catch (e: any) {
+    // A pet may be deleted while the LLM is running. The PetDate foreign keys
+    // reject a stale insert and the surrounding transaction rolls the credit
+    // debit back; surface that normal race as a conflict, not a server fault.
+    if (e?.code === "P2003") {
+      return NextResponse.json({ error: "One of these pets is no longer available" }, { status: 409 });
+    }
     console.error("pet-date threw:", e?.message || e);
     return NextResponse.json({ error: "internal" }, { status: 500 });
   }

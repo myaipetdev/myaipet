@@ -4,12 +4,17 @@ import { verifySignature } from "@/lib/signAction";
 import { sanitizeName, sanitizeText } from "@/lib/sanitize";
 import { moderateText } from "@/lib/moderation";
 import { rateLimit } from "@/lib/rateLimit";
+import { callLLM, type LLMMessage } from "@/lib/llm/router";
 import { NextRequest, NextResponse } from "next/server";
+import { lockAvailablePetSlot, PetSlotLimitError } from "@/lib/petSlots";
+import type { Pet, Prisma } from "@/generated/prisma/client";
+import { generatedEnglishOrFallback } from "@/lib/generatedLanguage";
 
 const PERSONALITIES = [
   "friendly", "playful", "shy", "brave", "lazy", "curious",
   "mischievous", "gentle", "adventurous", "dramatic", "wise", "sassy",
 ] as const;
+const ADOPTION_REPLY_FALLBACK = "Tell me a little more about your dream pet! 🐾";
 
 const SYSTEM_PROMPT = `You are a friendly pet adoption counselor at MY AI PET. Help the user describe their dream pet companion!
 
@@ -89,6 +94,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid wallet signature" }, { status: 403 });
     }
 
+    // Fast preflight for a friendly response. The final create transaction
+    // repeats this check under the shared user-row lock.
     const activePetCount = await prisma.pet.count({
       where: { user_id: user.id, is_active: true },
     });
@@ -122,22 +129,36 @@ export async function POST(req: NextRequest) {
         ? effectivePetData.personality
         : PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)];
 
-    const pet = await prisma.pet.create({
-      data: {
-        user_id: user.id,
-        name,
-        species: 0,
-        personality_type: finalPersonality,
-        ...(species_name || custom_traits
-          ? {
-              personality_modifiers: {
-                ...(species_name ? { species_name } : {}),
-                ...(custom_traits ? { custom_traits } : {}),
-              },
-            }
-          : {}),
-      },
-    });
+    let pet: Pet;
+    try {
+      pet = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        await lockAvailablePetSlot(tx, user.id);
+        return tx.pet.create({
+          data: {
+            user_id: user.id,
+            name,
+            species: 0,
+            personality_type: finalPersonality,
+            ...(species_name || custom_traits
+              ? {
+                  personality_modifiers: {
+                    ...(species_name ? { species_name } : {}),
+                    ...(custom_traits ? { custom_traits } : {}),
+                  },
+                }
+              : {}),
+          },
+        });
+      });
+    } catch (error) {
+      if (error instanceof PetSlotLimitError) {
+        return NextResponse.json(
+          { error: `You need to unlock more pet slots. Current: ${error.petSlots}` },
+          { status: 400 },
+        );
+      }
+      throw error;
+    }
 
     await prisma.petMemory.create({
       data: {
@@ -175,44 +196,34 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const grokKey = process.env.GROK_API_KEY;
-    if (!grokKey) throw new Error("GROK_API_KEY not configured");
-
-    const chatMessages = [
+    const chatMessages: LLMMessage[] = [
       { role: "system", content: SYSTEM_PROMPT },
       // Cap the history LENGTH too (each entry is already capped at 500 chars) so
       // an oversized client payload can't balloon the upstream LLM request.
       ...messages.slice(-30).map((m: { role: string; content?: string; text?: string }) => ({
-        role: m.role === "ai" ? "assistant" : m.role,
+        // Only conversation roles are accepted from the client. In particular,
+        // a client-supplied "system" role must not override the adoption rules.
+        role: (m.role === "ai" || m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
         content: (m.content || m.text || "").slice(0, 500),
       })),
     ];
 
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${grokKey}`,
-      },
-      body: JSON.stringify({
-        model: "grok-3-mini",
-        messages: chatMessages,
-        max_tokens: 300,
-        temperature: 0.9,
-      }),
+    const out = await callLLM({
+      task: "chat",
+      budgetUserId: user.id,
+      messages: chatMessages,
+      max_tokens: 300,
+      temperature: 0.9,
     });
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("Grok adopt-chat error:", text);
-      throw new Error("Chat failed");
-    }
-
-    const data = await res.json();
-    const rawReply = data.choices?.[0]?.message?.content || "Hmm, I didn't catch that. Could you tell me more about your dream pet?";
+    const rawReply = out.text || "Hmm, I didn't catch that. Could you tell me more about your dream pet?";
 
     const result = parsePetReady(rawReply);
-    return NextResponse.json(result);
+    // Keep user-derived structured pet data (including a name the owner chose),
+    // but never expose a model-generated non-English assistant message.
+    return NextResponse.json({
+      ...result,
+      reply: generatedEnglishOrFallback(result.reply, ADOPTION_REPLY_FALLBACK),
+    });
   } catch (error: any) {
     console.error("Adopt chat error:", error);
     return NextResponse.json(

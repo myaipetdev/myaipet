@@ -6,9 +6,9 @@
  *
  *   +1.0  user replied within 60s with ≥30 chars AND mentioned pet by name
  *   +0.6  user replied within 60s with ≥30 chars
- *   +0.3  user replied with positive lexicon (haha/lol/❤️/ㅋㅋ/감사/thanks)
+ *   +0.3  user replied with a positive lexicon or reaction
  *   +0.0  default (insufficient signal)
- *   -0.5  user replied with negative lexicon (no/wrong/틀려/별로)
+ *   -0.5  user replied with a negative lexicon
  *   -1.0  user abandoned (>24h silence since last reply, this is current turn)
  *
  * The signal is computed BEFORE the new reply happens, based on what the user
@@ -17,13 +17,13 @@
 
 import { prisma } from "@/lib/prisma";
 
-// Note: \b doesn't work for Korean (it's keyed off [a-zA-Z0-9_]), so we use
-// ASCII patterns with word boundaries AND Korean/emoji patterns without them.
+// Note: \b does not work for Korean text, so we use ASCII patterns with word
+// boundaries and escaped Unicode/emoji patterns without them.
 // We match if EITHER hits.
 const POSITIVE_ASCII = /\b(thanks|thank you|love it|perfect|great|nice|awesome|haha|hehe|lol|love this)\b/i;
-const POSITIVE_RAW = /(ㅋㅋ|ㅎㅎ|좋아|좋네|감사|❤️|😊|😍|🥰|👍|👏)/;
+const POSITIVE_RAW = /(\u314b\u314b|\u314e\u314e|\uc88b\uc544|\uc88b\ub124|\uac10\uc0ac|❤️|😊|😍|🥰|👍|👏)/;
 const NEGATIVE_ASCII = /\b(no|nope|wrong|incorrect|bad|stop|hate it)\b/i;
-const NEGATIVE_RAW = /(틀려|아니야|아니라|별로|싫어|이상해|👎)/;
+const NEGATIVE_RAW = /(\ud2c0\ub824|\uc544\ub2c8\uc57c|\uc544\ub2c8\ub77c|\ubcc4\ub85c|\uc2eb\uc5b4|\uc774\uc0c1\ud574|👎)/;
 
 export interface HelpfulnessSignal {
   score: number;       // -1.0 .. +1.0
@@ -64,7 +64,7 @@ export async function estimateHelpfulness(
     return { score: -0.5, confidence: 0.6, reason: `abandonment_${Math.round(ageMin/60)}h` };
   }
 
-  // Lexical signals — check ASCII patterns AND Korean/emoji patterns
+  // Lexical signals — check ASCII patterns and escaped Unicode/emoji patterns.
   if (NEGATIVE_ASCII.test(currentUserMessage) || NEGATIVE_RAW.test(currentUserMessage)) {
     return { score: -0.8, confidence: 0.8, reason: "negative_lexicon" };
   }

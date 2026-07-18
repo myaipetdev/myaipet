@@ -4,14 +4,44 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node scripts/verify-standalone-artifact.mjs",
+    "verify:artifact": "node scripts/verify-standalone-artifact.mjs",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:generated-language": "tsx scripts/generated-language-contract.test.ts",
+    "test:persona-extension-boundaries": "tsx scripts/persona-extension-boundaries-contract.test.ts",
+    "test:llm-fallback": "node --no-warnings scripts/llm-fallback-test.mjs",
+    "test:llm-router-live": "tsx scripts/llm-router-smoke.ts",
+    "test:llm-input-budget": "tsx scripts/llm-input-budget-contract.ts",
+    "test:siwe": "tsx scripts/siwe-login-test.ts",
+    "test:vision-image": "tsx scripts/vision-image-test.ts",
+    "test:image-generation-contract": "node scripts/image-generation-contract-test.mjs",
+    "test:generation-media": "tsx scripts/generation-media-test.ts",
+    "test:soul-contract": "node --no-warnings --experimental-transform-types scripts/soul-contract.test.mjs",
+    "test:media-security": "node --no-warnings --experimental-transform-types scripts/media-security.test.mjs",
+    "test:remote-media": "tsx scripts/remote-media-download-test.ts",
+    "test:privacy-boundary": "node scripts/privacy-boundary.test.mjs",
+    "test:pet-slot-race": "tsx scripts/pet-slot-race.integration.ts",
+    "test:avatar-storage-contract": "node scripts/avatar-storage-p0-contract.test.mjs",
+    "test:avatar-storage-p0": "tsx scripts/avatar-storage-p0.integration.ts",
+    "test:economy-races": "tsx scripts/economy-purchase-races.integration.ts",
+    "test:deletion-p0-contract": "node scripts/deletion-p0-contract.test.mjs",
+    "test:deletion-p0-integration": "tsx scripts/deletion-p0-integration.ts",
+    "test:arena-claim-race": "tsx scripts/arena-claim-race.integration.ts",
+    "test:arena-match": "tsx scripts/arena-match-challenge.integration.ts",
+    "test:payment-receipts": "tsx scripts/payment-receipt-hardening.integration.ts",
+    "test:shop-purchase": "tsx scripts/shop-purchase.integration.ts",
+    "test:oauth-credentials": "tsx scripts/oauth-credentials-p0.integration.ts",
+    "audit:oauth-credentials": "tsx scripts/audit-oauth-credentials.ts",
+    "test:agent-credits": "tsx scripts/agent-channel-credit.integration.ts",
+    "test:generation-settlement": "tsx scripts/generation-settlement.integration.ts",
+    "test:ui-contract": "node scripts/ui-contract-audit.mjs",
+    "test:paywall-effects": "tsx scripts/paywall-effect-atomicity.integration.ts",
+    "test:memory-mint": "tsx scripts/memory-mint-idempotency.integration.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1031.0",
-    "@coinbase/cbpay-js": "^2.4.0",
-    "@coinbase/coinbase-sdk": "^0.25.0",
+    "@aws-sdk/s3-request-presigner": "3.1031.0",
     "@fal-ai/client": "^1.9.4",
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
@@ -36,7 +66,13 @@
     "tweetnacl": "^1.0.3",
     "viem": "^2.47.2",
     "wagmi": "^2.19.5",
-    "ws": "^8.19.0"
+    "ws": "^8.21.0"
+  },
+  "overrides": {
+    "@hono/node-server": "1.19.14",
+    "postcss": "8.5.19",
+    "uuid": "11.1.1",
+    "ws@8.18.0": "8.21.0"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -46,6 +82,7 @@
     "dotenv": "^16.4.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "tsx": "^4.23.1",
     "typescript": "^5"
   }
 }

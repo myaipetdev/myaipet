@@ -2294,18 +2294,19 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                   fontFamily: "mono", fontSize: 13, color: "#444", textAlign: "center",
                   letterSpacing: 1,
                 }}>
-                  {isInMode ? "B = BACK" : "A = SELECT"}
+                    {isInMode ? "B = BACK" : "CHOOSE AN ACTIVITY ABOVE"}
                 </div>
 
                 {/* ABXY Buttons (Right side) */}
                 <div style={{ position: "relative", width: 80, height: 80 }}>
                   {[
                     { label: "X", top: 0, left: 28, color: "#64b5f6" },
-                    { label: "B", top: 52, left: 28, color: "#ffa726", action: () => isInMode && setSelected(null) },
+                    { label: "B", top: 52, left: 28, color: "#ffa726", action: isInMode ? () => setSelected(null) : undefined },
                     { label: "Y", top: 26, left: 2, color: "#66bb6a" },
                     { label: "A", top: 26, left: 54, color: "#ef5350" },
                   ].map(b => (
-                    <button key={b.label} onClick={() => b.action?.()}
+                    <button type="button" key={b.label} onClick={() => b.action?.()} disabled={!b.action}
+                      aria-label={b.action ? "Back to adventure menu" : `${b.label} controller button unavailable`}
                       style={{
                         position: "absolute", top: b.top, left: b.left, width: 24, height: 24,
                         borderRadius: "50%",
@@ -2313,7 +2314,8 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                         border: `1.5px solid ${b.color}55`,
                         color: b.color, fontSize: 13, fontWeight: 700,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        cursor: b.action ? "pointer" : "default",
+                        cursor: b.action ? "pointer" : "not-allowed",
+                        opacity: b.action ? 1 : 0.45,
                         fontFamily: "inherit", outline: "none",
                         transition: "all 0.2s ease",
                         boxShadow: `0 0 6px ${b.color}20`,

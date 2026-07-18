@@ -81,6 +81,7 @@ export default function ModelsPanel() {
   // CLI tokens (personal access tokens for `petclaw-sdk auth`)
   const [tokens, setTokens] = useState<any[]>([]);
   const [newToken, setNewToken] = useState<string | null>(null);
+  const [newTokenPurpose, setNewTokenPurpose] = useState<"cli" | "extension">("cli");
   const [genLoading, setGenLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -125,14 +126,18 @@ export default function ModelsPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const genToken = async () => {
+  const genToken = async (purpose: "cli" | "extension") => {
     setGenLoading(true); setNewToken(null); setCopied(false);
     try {
-      const d = await api.petclaw.cliTokens.create();
+      const d = await api.petclaw.cliTokens.create(
+        purpose === "extension" ? "Chrome extension" : "CLI token",
+        purpose,
+      );
       setNewToken(d.token);
+      setNewTokenPurpose(purpose);
       await loadTokens();
     } catch (e: any) {
-      setErr(e?.status === 401 ? "Connect your wallet to generate a CLI token." : e?.message || "Could not create token");
+      setErr(e?.status === 401 ? "Connect your wallet to generate a client token." : e?.message || "Could not create token");
     } finally {
       setGenLoading(false);
     }
@@ -145,7 +150,8 @@ export default function ModelsPanel() {
 
   const copyToken = () => {
     if (!newToken) return;
-    navigator.clipboard?.writeText(`petclaw-sdk auth ${newToken}`).then(() => setCopied(true)).catch(() => {});
+    const value = newTokenPurpose === "extension" ? newToken : `petclaw-sdk auth ${newToken}`;
+    navigator.clipboard?.writeText(value).then(() => setCopied(true)).catch(() => {});
   };
 
   // Quick-pick: pre-fill provider + model. The owner still enters their own key.
@@ -198,19 +204,24 @@ export default function ModelsPanel() {
 
       <div style={{ height: 20 }} />
 
-      <Card id="connect-cli" title="Connect your CLI" sub="Generate a token, then run it once in your terminal. It replaces copy-pasting the web session, stays valid until you revoke it, and only works for your account.">
-        <button onClick={genToken} disabled={genLoading} style={{ ...btn, opacity: genLoading ? 0.6 : 1 }}>
-          {genLoading ? "Generating…" : "Generate CLI token"}
-        </button>
+      <Card id="connect-cli" title="Connect PetClaw clients" sub="Use a one-year CLI token for your terminal, or a 30-day, limited-scope extension token for Chrome. Both are revocable and shown only once.">
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button onClick={() => genToken("extension")} disabled={genLoading} style={{ ...btn, opacity: genLoading ? 0.6 : 1 }}>
+            {genLoading ? "Generating…" : "Generate extension token"}
+          </button>
+          <button onClick={() => genToken("cli")} disabled={genLoading} style={{ ...btn, background: PAPER, color: INK, border: `1px solid ${LINE}`, opacity: genLoading ? 0.6 : 1 }}>
+            Generate CLI token
+          </button>
+        </div>
 
         {newToken && (
           <div style={{ marginTop: 16, background: TERM_BG, borderRadius: 14, padding: "14px 16px" }}>
             <div style={{ fontFamily: BODY, color: TERM_GREEN, fontSize: 13, marginBottom: 8 }}>Copy this now — it won&apos;t be shown again.</div>
             <div style={{ fontFamily: MONO, fontSize: 13, color: TERM_CREAM, wordBreak: "break-all", lineHeight: 1.6 }}>
-              petclaw-sdk auth {newToken}
+              {newTokenPurpose === "extension" ? newToken : `petclaw-sdk auth ${newToken}`}
             </div>
             <button onClick={copyToken} style={{ marginTop: 10, padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(236,224,206,0.18)", background: "transparent", color: copied ? TERM_GREEN : TERM_GOLD, fontSize: 13, cursor: "pointer", fontFamily: MONO }}>
-              {copied ? "Copied ✓" : "Copy command"}
+              {copied ? "Copied ✓" : newTokenPurpose === "extension" ? "Copy extension token" : "Copy command"}
             </button>
           </div>
         )}
@@ -225,6 +236,7 @@ export default function ModelsPanel() {
                   </div>
                   <div style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>
                     {t.revoked_at ? "revoked" : t.last_used_at ? `last used ${new Date(t.last_used_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : "never used"}
+                    {!t.revoked_at && t.expires_at ? ` · expires ${new Date(t.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}
                   </div>
                 </div>
                 {!t.revoked_at && (
@@ -276,18 +288,18 @@ export default function ModelsPanel() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div>
             <label style={{ fontSize: 13, fontWeight: 600, color: MUTED2 }}>Provider</label>
-            <select value={provider} onChange={(e) => { setProvider(e.target.value); setModel(""); }} style={inputStyle}>
+            <select aria-label="Provider" value={provider} onChange={(e) => { setProvider(e.target.value); setModel(""); }} style={inputStyle}>
               {supported.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
           </div>
           <div>
             <label style={{ fontSize: 13, fontWeight: 600, color: MUTED2 }}>Model <span style={{ color: MUTED, fontWeight: 400 }}>(optional)</span></label>
-            <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="default for provider" style={inputStyle} />
+            <input aria-label="Model" value={model} onChange={(e) => setModel(e.target.value)} placeholder="default for provider" style={inputStyle} />
           </div>
         </div>
         <div style={{ marginTop: 12 }}>
           <label style={{ fontSize: 13, fontWeight: 600, color: MUTED2 }}>API key <span style={{ color: MUTED, fontWeight: 400 }}>(stored encrypted, never shown again)</span></label>
-          <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={supported.find((s) => s.id === provider)?.keyFormat || "sk-..."} style={inputStyle} autoComplete="off" />
+          <input type="password" aria-label="API key" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={supported.find((s) => s.id === provider)?.keyFormat || "sk-..."} style={inputStyle} autoComplete="off" />
         </div>
         <div style={{ marginTop: 14 }}>
           <label style={{ fontSize: 13, fontWeight: 600, color: MUTED2 }}>Use for <span style={{ color: MUTED, fontWeight: 400 }}>(none = all supported tasks below)</span></label>

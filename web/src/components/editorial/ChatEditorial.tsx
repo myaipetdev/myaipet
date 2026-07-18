@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * ChatEditorial — the dedicated Chat screen (design 시안 05). A terracotta pet
+ * ChatEditorial — the dedicated Chat screen (design concept 05). A terracotta pet
  * rail (identity + bond + "remembers you") on the left, the live conversation on
  * the right. Wired to the real chat API (api.pets.chat / chatHistory) — no faked
  * messages; an empty history just opens with the pet's greeting.
@@ -179,6 +179,7 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
 
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderTop: `1px solid ${T.hair}` }}>
                 <input
+                  aria-label={`Message ${active?.name || "your pet"}`}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") send(); }}

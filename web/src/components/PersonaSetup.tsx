@@ -37,7 +37,7 @@ interface ConnectedPlatform {
 const TABS = [
   { key: "quick", label: "Quick Setup", icon: "Q", desc: "Onboarding questions" },
   { key: "chat", label: "Chat Import", icon: "C", desc: "Chat learning" },
-  { key: "live", label: "Live Learning", icon: "L", desc: "Connected Agent" },
+  { key: "live", label: "Live Learning", icon: "L", desc: "Planned · unavailable" },
 ] as const;
 
 // Flat line-icons (16px, currentColor) replacing bare tone emoji — they inherit
@@ -117,12 +117,6 @@ const SPEECH_OPTIONS = [
   { value: "mix", label: "Mix (situational)" },
 ];
 
-const LANGUAGE_OPTIONS = [
-  { value: "ko", label: "Korean" },
-  { value: "en", label: "English" },
-  { value: "mixed", label: "Mixed (both)" },
-];
-
 // ── Component ──
 export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetupProps) {
   const [activeTab, setActiveTab] = useState<"quick" | "chat" | "live">("quick");
@@ -151,10 +145,11 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
 
   // Live Learning state
   const [platforms, setPlatforms] = useState<ConnectedPlatform[]>([]);
-  const [observedTopics, setObservedTopics] = useState<string[]>([]);
+  const observedTopics: string[] = [];
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [liveLearning, setLiveLearning] = useState(true);
-  const [loadingLive, setLoadingLive] = useState(false);
+  // There is no live-learning persistence or ingestion pipeline yet. Keep the
+  // preview tab explicitly OFF so the UI never implies background collection.
+  const liveLearning = false;
 
   // Load existing persona
   useEffect(() => {
@@ -175,11 +170,12 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
           tone: toArr(p.owner_tone),
           interests: toArr(p.owner_interests),
           expressions: p.owner_expressions || "",
-          language: p.owner_language || "en",
+          // Responses are English-only in this release. Normalize legacy
+          // profile values so the settings UI never promises unsupported output.
+          language: "en",
           bio: p.owner_bio || "",
         }));
         setLastUpdated(p.updated_at || null);
-        setLiveLearning(p.live_learning ?? true);
       }
     }).catch(() => {});
 
@@ -302,13 +298,6 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
     setSaveResult({ type: "success", text: "Analysis results applied!" });
     setTimeout(() => setSaveResult(null), 3000);
     setApplyingAnalysis(false);
-  };
-
-  const handleToggleLiveLearning = () => {
-    // Live-learning has no persistence layer yet (no live_learning column or
-    // route), so keep this a local session preference rather than firing the
-    // /persona/live-learning PUT that 404'd and was silently swallowed.
-    setLiveLearning(v => !v);
   };
 
   // ── Shared styles ──
@@ -506,6 +495,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
             </div>
             <input
               className="persona-input"
+              aria-label="Additional speech style details"
               placeholder="Additional details (e.g. uses lots of abbreviations and internet slang)"
               value={persona.speech_detail}
               onChange={e => setPersona(prev => ({ ...prev, speech_detail: e.target.value }))}
@@ -582,20 +572,24 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   }}
                 >
                   {tag}
-                  <span
+                  <button
+                    type="button"
                     className="persona-tag-x"
                     onClick={() => removeTag(tag)}
+                    aria-label={`Remove ${tag}`}
                     style={{
                       cursor: "pointer", opacity: 0.5,
                       marginLeft: 2, fontSize: 14, lineHeight: 1,
-                      transition: "opacity 0.15s",
+                      transition: "opacity 0.15s", border: 0, padding: 0,
+                      background: "transparent", color: "inherit", font: "inherit",
                     }}
                   >
                     \u00d7
-                  </span>
+                  </button>
                 </span>
               ))}
               <input
+                aria-label="Add an interest keyword"
                 value={tagInput}
                 onChange={e => setTagInput(e.target.value)}
                 onKeyDown={handleTagKeyDown}
@@ -635,6 +629,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
             <div style={labelStyle}>Frequent Expressions</div>
             <input
               className="persona-input"
+              aria-label="Frequent expressions"
               placeholder="e.g. fr, okay, lol, let's go, love it"
               value={persona.expressions}
               onChange={e => setPersona(prev => ({ ...prev, expressions: e.target.value }))}
@@ -646,38 +641,23 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
           {/* Language */}
           <div style={cardStyle}>
             <div style={labelStyle}>Language</div>
-            <div style={{ display: "flex", gap: 8 }}>
-              {LANGUAGE_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => setPersona(prev => ({ ...prev, language: opt.value }))}
-                  style={{
-                    flex: 1, padding: "12px 16px",
-                    borderRadius: 12,
-                    border: persona.language === opt.value
-                      ? "1.5px solid rgba(190,79,40,0.4)"
-                      : "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-                    background: persona.language === opt.value
-                      ? "rgba(190,79,40,0.1)"
-                      : "#F5EFE2",
-                    color: persona.language === opt.value ? "#BE4F28" : "#7A6E5A",
-                    fontFamily: "var(--ed-disp)",
-                    fontSize: 13, fontWeight: 600,
-                    cursor: "pointer", transition: "all 0.2s",
-                    textAlign: "center" as const,
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            <div style={{
+              padding: "12px 16px", borderRadius: 12,
+              border: "1.5px solid rgba(190,79,40,0.4)",
+              background: "rgba(190,79,40,0.1)", color: "#BE4F28",
+              fontFamily: "var(--ed-disp)", fontSize: 13, fontWeight: 600,
+              textAlign: "center",
+            }}>
+              English
             </div>
-            <div style={helpStyle}>Primary language for your pet&apos;s responses</div>
+            <div style={helpStyle}>Pet responses are English-only in this release.</div>
           </div>
 
           {/* Bio */}
           <div style={cardStyle}>
             <div style={labelStyle}>About You</div>
             <textarea
+              aria-label="About you"
               className="persona-input"
               placeholder="e.g. I'm a 26-year-old developer who likes crypto and coding at night. I have a playful sense of humor..."
               value={persona.bio}
@@ -748,6 +728,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
             {importMethod === "paste" ? (
               <>
                 <textarea
+                  aria-label="Chat history"
                   className="persona-input"
                   placeholder="Paste chat history from KakaoTalk, Telegram, Discord, or another platform here"
                   value={chatText}
@@ -771,6 +752,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
             ) : (
               <div style={{ textAlign: "center", padding: "30px 0" }}>
                 <input
+                  aria-hidden="true"
                   ref={fileInputRef}
                   type="file"
                   accept=".txt,.json,.csv"
@@ -995,20 +977,22 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                   fontSize: 14, fontWeight: 600,
                   color: liveLearning ? "#5C8A4E" : "#7A6E5A",
                 }}>
-                  {liveLearning ? "Learning in real time from connected platforms" : "Live learning is off"}
+                  Planned — not active
                 </div>
               </div>
 
               {/* Toggle */}
               <button
-                onClick={handleToggleLiveLearning}
-                disabled={loadingLive}
+                type="button"
+                disabled
+                aria-label="Live Learning is planned and unavailable"
+                title="Live Learning is not available yet"
                 style={{
                   width: 48, height: 26, borderRadius: 13,
                   background: liveLearning
                     ? "#5C8A4E"
                     : "rgba(33,26,18,0.12)",
-                  border: "none", cursor: loadingLive ? "not-allowed" : "pointer",
+                  border: "none", cursor: "not-allowed",
                   position: "relative", transition: "all 0.3s ease",
                 }}
               >
@@ -1023,7 +1007,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
               </button>
             </div>
             <div style={helpStyle}>
-              When enabled, your pet learns from conversations on connected platforms
+              Live Learning is not running. Connected-platform conversations are not observed by this feature.
             </div>
           </div>
 
@@ -1061,13 +1045,13 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                     }}>
                       <div style={{
                         width: 6, height: 6, borderRadius: "50%",
-                        background: p.connected && liveLearning ? "#5C8A4E" : "rgba(33,26,18,0.15)",
+                        background: p.connected ? "#5C8A4E" : "rgba(33,26,18,0.15)",
                       }} />
                       <span style={{
                         fontFamily: "var(--ed-m)", fontSize: 13,
-                        color: p.connected && liveLearning ? "#5C8A4E" : "#9A7B4E",
+                        color: p.connected ? "#5C8A4E" : "#9A7B4E",
                       }}>
-                        {p.connected && liveLearning ? "Learning" : "Not connected"}
+                        {p.connected ? "Connected" : "Not connected"}
                       </span>
                     </div>
                   </div>
@@ -1085,7 +1069,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                 fontFamily: "var(--ed-m)", fontSize: 13,
                 color: "#9A7B4E",
               }}>
-                No topics detected yet. Topics will appear as your pet observes conversations.
+                Live Learning is not available yet. No platform conversations are being observed.
               </div>
             ) : (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -1107,7 +1091,7 @@ export default function PersonaSetup({ petId, petName, onComplete }: PersonaSetu
                 })}
               </div>
             )}
-            <div style={helpStyle}>Topics detected from platform conversations (read-only, auto-updated)</div>
+            <div style={helpStyle}>Planned feature — no collection is active.</div>
           </div>
 
           {/* Last Updated */}

@@ -12,6 +12,8 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { publicGenerationWhere } from "@/lib/publicFeed";
+import { publicPetWhere } from "@/lib/publicPet";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +29,7 @@ export async function GET(_req: NextRequest) {
   // heart of "of the week" and what makes the hero rotate.
   const activeGroups = await prisma.petMemory.groupBy({
     by: ["pet_id"],
-    where: { created_at: { gte: weekAgo } },
+    where: { created_at: { gte: weekAgo }, pet: publicPetWhere() },
     _count: { _all: true },
     orderBy: { _count: { pet_id: "desc" } },
     take: 30,
@@ -38,7 +40,7 @@ export async function GET(_req: NextRequest) {
 
   // Bond leaders as a fallback so a quiet week still has a worthy hero.
   const bondLeaders = await prisma.pet.findMany({
-    where: { is_active: true, avatar_url: { not: null } },
+    where: publicPetWhere({ avatar_url: { not: null } }),
     orderBy: [{ bond_level: "desc" }, { level: "desc" }],
     take: 10,
     select: { id: true },
@@ -46,7 +48,7 @@ export async function GET(_req: NextRequest) {
 
   const candidateIds = Array.from(new Set([...activeIds, ...bondLeaders.map(b => b.id)]));
   const pool = await prisma.pet.findMany({
-    where: { id: { in: candidateIds }, is_active: true, avatar_url: { not: null } },
+    where: publicPetWhere({ id: { in: candidateIds }, avatar_url: { not: null } }),
     select: {
       id: true, name: true, avatar_url: true, level: true, bond_level: true,
       personality_type: true, user_id: true,
@@ -71,7 +73,7 @@ export async function GET(_req: NextRequest) {
   const [owner, heroGen] = await Promise.all([
     prisma.user.findUnique({ where: { id: p.user_id }, select: { wallet_address: true } }),
     prisma.generation.findFirst({
-      where: { user_id: p.user_id, status: "completed", photo_path: { not: "" } },
+      where: await publicGenerationWhere({ pet_id: p.id }),
       orderBy: { created_at: "desc" },
       select: { photo_path: true, video_path: true, prompt: true },
     }),

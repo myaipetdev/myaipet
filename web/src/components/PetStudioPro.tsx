@@ -223,8 +223,8 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   // Image-first by default: best margin (~10×) and instant feedback.
   const [outputKind, setOutputKind] = useState<"image" | "video">("image");
   const [aspect, setAspect] = useState<"16:9" | "9:16" | "1:1">("16:9");
-  // Studio is Grok-only for now (fal account unfunded — see GROK_ONLY in
-  // lib/studio/providers.ts): image → grok-imagine, video → grok-imagine-video.
+  // Default to the free-tier Grok engines. The provider response remains the
+  // source of truth for every additional engine's price and availability.
   const [chosenModelId, setChosenModelId] = useState<string>("grok-imagine");
   const [modelOpen, setModelOpen] = useState(false);
   // Memory seeds — the pet's daydream insights, offered as prompt starters so
@@ -242,6 +242,8 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   // generationId of the current result — powers the public Share link (/c/<id>).
   const [lastGenId, setLastGenId] = useState<number | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  const [shareBusyId, setShareBusyId] = useState<number | null>(null);
+  const [shareError, setShareError] = useState<string | null>(null);
   // ×N variations of the current image result. Each entry keeps its OWN
   // generationId so sharing a variation shares that exact artwork (item #11).
   const [variations, setVariations] = useState<{ url: string; genId: number }[]>([]);
@@ -271,6 +273,38 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   const updateCredits = (c: number | null) => {
     setCredits(c);
     onCreditsChange?.(c);
+  };
+
+  // Generations are private by default. Sharing is an explicit server-side
+  // publication action before any public link is copied.
+  const publishAndCopy = async (generationId: number): Promise<boolean> => {
+    if (!window.confirm("Publish this creation and its prompt publicly? It can appear in Community and anyone with the link can view it.")) {
+      return false;
+    }
+    setShareBusyId(generationId);
+    setShareError(null);
+    try {
+      const response = await fetch(`/api/social/publish/${generationId}`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || "Could not publish this creation");
+      const link = typeof body.url === "string"
+        ? body.url
+        : `${window.location.origin}/c/${generationId}`;
+      try {
+        await navigator.clipboard.writeText(link);
+      } catch {
+        window.open(link, "_blank", "noreferrer");
+      }
+      return true;
+    } catch (error) {
+      setShareError(error instanceof Error ? error.message : "Could not publish this creation");
+      return false;
+    } finally {
+      setShareBusyId(null);
+    }
   };
 
   const creditAnim = useCountUp(credits ?? 0, 500);
@@ -476,6 +510,13 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [directorQuestions, directorFinalBusy]);
+
+  useEffect(() => {
+    if (!galleryOpen) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setGalleryOpen(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [galleryOpen]);
 
   const buildFullPrompt = (): string => {
     const base = prompt.trim();
@@ -1081,7 +1122,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                         background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: "#FFF8EE",
                         fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.04em",
                         textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
-                      }}>Get credits →</a>
+                      }}>Credit purchases are paused →</a>
                     )}
                     <button onClick={() => generate()} style={errorIs402 ? btnGhostOnDark : {
                       padding: "9px 18px", borderRadius: 10, border: "none", cursor: "pointer",
@@ -1195,23 +1236,30 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                 {!isDemo && lastGenId != null && (
                   <button
                     onClick={async () => {
-                      const link = `${window.location.origin}/c/${lastGenId}`;
-                      try { await navigator.clipboard.writeText(link); setShareCopied(true); setTimeout(() => setShareCopied(false), 2200); }
-                      catch { window.open(link, "_blank", "noreferrer"); }
+                      if (await publishAndCopy(lastGenId)) {
+                        setShareCopied(true);
+                        setTimeout(() => setShareCopied(false), 2200);
+                      }
                     }}
+                    disabled={shareBusyId === lastGenId}
                     className="mp-enter"
                     style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6, animationDelay: "200ms" }}
-                    title="Copy a public share link to this creation"
-                  >{shareCopied ? "✓ Link copied" : (
+                    title="Publish this creation and prompt, then copy its public link"
+                  >{shareBusyId === lastGenId ? "Publishing…" : shareCopied ? "✓ Link copied" : (
                     <>
                       <svg width={14} height={14} viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
                         aria-hidden="true">
                         <path d="M9.5 13.5a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 1 0-5-5l-1.2 1.2" />
                         <path d="M14.5 10.5a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 1 0 5 5l1.2-1.2" />
-                      </svg>Share
+                      </svg>Publish &amp; share
                     </>
                   )}</button>
+                )}
+                {shareError && (
+                  <span role="alert" style={{ width: "100%", color: T.terra, fontSize: 13 }}>
+                    {shareError}{shareError.includes("Public profile") ? <> · <a href="/?section=sovereignty" style={{ color: "inherit", fontWeight: 700 }}>Open Data Sovereignty</a></> : null}
+                  </span>
                 )}
                 {!isDemo && pet && pet.id > 0 && chosenModel?.kind === "image" && !/\.(mp4|webm)$/i.test(resultUrl) && (() => {
                   // Item #8-4/#25-2: chosenModel is guaranteed here — real cost,
@@ -1263,7 +1311,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   }}>
                     <span>{error}</span>
                     {errorIs402 && (
-                      <a href="/?section=home&scroll=pricing" style={{ color: T.terra, fontWeight: 700, textDecoration: "underline" }}>Get credits →</a>
+                      <a href="/?section=home&scroll=pricing" style={{ color: T.terra, fontWeight: 700, textDecoration: "underline" }}>View credit status →</a>
                     )}
                   </div>
                 )}
@@ -1874,8 +1922,8 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
 
         {/* ── Generate ── */}
         {insufficient && runCost != null && view !== "generating" ? (
-          // Item #8-1: out of credits is a purchase moment, not a dead button.
-          // Links to the home Pricing section (App.tsx reads scroll=pricing).
+          // Out of credits links to the honest credit-options section. Purchase
+          // rails are currently paused, so the CTA must not promise a checkout.
           <a
             href="/?section=home&scroll=pricing"
             className="mp-enter-4 studio-cta"
@@ -1887,7 +1935,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               boxShadow: "0 20px 40px -22px rgba(226,125,12,.8)",
             }}
           >
-            Not enough credits — get more →
+            Not enough credits — purchases are paused →
             <span style={{
               display: "block", fontSize: 13, fontFamily: T.m, fontWeight: 700,
               letterSpacing: "0.06em", marginTop: 4,
@@ -2322,6 +2370,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="All creations"
             onClick={e => e.stopPropagation()}
             style={{
               background: T.paper, borderRadius: 18, padding: 20,
@@ -2422,10 +2473,13 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                           <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: "auto" }}>
                             <button onClick={() => { reusePrompt(g); setGalleryOpen(false); }} style={galleryActionBtn}>Reuse</button>
                             <button onClick={async () => {
-                              const link = `${window.location.origin}/c/${g.id}`;
-                              try { await navigator.clipboard.writeText(link); setGalleryCopiedId(g.id); setTimeout(() => setGalleryCopiedId(c => (c === g.id ? null : c)), 2200); }
-                              catch { window.open(link, "_blank", "noreferrer"); }
-                            }} style={galleryActionBtn}>{galleryCopiedId === g.id ? "✓ Copied" : "Share"}</button>
+                              if (await publishAndCopy(g.id)) {
+                                setGalleryCopiedId(g.id);
+                                setTimeout(() => setGalleryCopiedId(c => (c === g.id ? null : c)), 2200);
+                              }
+                            }} disabled={shareBusyId === g.id} title="Publish this creation and prompt, then copy its public link" style={galleryActionBtn}>
+                              {shareBusyId === g.id ? "Publishing…" : galleryCopiedId === g.id ? "✓ Copied" : "Publish & share"}
+                            </button>
                             <a href={media} download style={{ ...galleryActionBtn, textDecoration: "none" }}>Download</a>
                             {!isDemo && pet && pet.id > 0 && !isVid && g.photo_path && (
                               <button onClick={async () => {

@@ -1,18 +1,51 @@
 import { prisma } from "@/lib/prisma";
-import { getUser } from "@/lib/auth";
+import { getAuthContext, getUser } from "@/lib/auth";
 import { describePetAvatar } from "@/lib/services/video";
 import { sanitizeName, sanitizeText, safeUrlOrEmpty } from "@/lib/sanitize";
 import { moderateText } from "@/lib/moderation";
 import { isHumanAvatar } from "@/lib/services/petAvatarGuard";
+import { getLLMBudgetFailureStatus } from "@/lib/llm/router";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  applicationMediaKey,
+  AvatarMediaAssignmentError,
+  claimOrVerifyApplicationMediaForPet,
+  userCanAssignApplicationMedia,
+} from "@/lib/mediaOwnership";
+import { lockAvailablePetSlot, PetSlotLimitError } from "@/lib/petSlots";
+import type { Pet, Prisma } from "@/generated/prisma/client";
+import {
+  EXTENSION_PET_LIST_SELECT,
+  toExtensionPetListView,
+} from "@/lib/extensionPetView";
 
 const PERSONALITIES = ["friendly", "playful", "shy", "brave", "lazy", "curious", "mischievous", "gentle", "adventurous", "dramatic", "wise", "sassy"] as const;
 const SLOT_PRICES = [0, 50, 100, 200, 500]; // Cost for slot 2, 3, 4, 5
 
+function visionBudgetResponse(error: unknown): NextResponse | null {
+  const status = getLLMBudgetFailureStatus(error);
+  if (!status) return null;
+  return NextResponse.json({
+    error: status === 429
+      ? "Pet image verification has reached today's limit. Please try again tomorrow."
+      : "Pet image verification is temporarily unavailable. Please try again later.",
+  }, { status });
+}
+
 export async function GET(req: NextRequest) {
-  const user = await getUser(req);
-  if (!user) {
+  const auth = await getAuthContext(req);
+  if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { user } = auth;
+
+  if (auth.credential === "extension") {
+    const pets = await prisma.pet.findMany({
+      where: { user_id: user.id, is_active: true },
+      orderBy: { created_at: "desc" },
+      select: EXTENSION_PET_LIST_SELECT,
+    });
+    return NextResponse.json({ pets: pets.map(toExtensionPetListView) });
   }
 
   const pets = await prisma.pet.findMany({
@@ -48,6 +81,10 @@ export async function POST(req: NextRequest) {
   const userAppearanceDesc = sanitizeText(rawAppearance, 2000);
   const avatar_url = safeUrlOrEmpty(rawAvatar);
 
+  if (avatar_url && applicationMediaKey(avatar_url) && !await userCanAssignApplicationMedia(user.id, avatar_url)) {
+    return NextResponse.json({ error: "Avatar media is not owned by this account" }, { status: 403 });
+  }
+
   if (!name) {
     return NextResponse.json(
       { error: "name is required" },
@@ -68,6 +105,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Cost-saving preflight only. The authoritative check is repeated under the
+  // user-row lock in the final create transaction below.
   const activePetCount = await prisma.pet.count({
     where: { user_id: user.id, is_active: true },
   });
@@ -82,11 +121,19 @@ export async function POST(req: NextRequest) {
   // Pet avatars must be an animal/creature, not a human — this feeds the
   // Community showcase (studio generations of pets), so a human photo
   // shouldn't be able to slip in as a "pet".
-  if (avatar_url && (await isHumanAvatar(avatar_url))) {
-    return NextResponse.json(
-      { error: "Pet avatars must be an animal or creature, not a person" },
-      { status: 400 }
-    );
+  if (avatar_url) {
+    try {
+      if (await isHumanAvatar(avatar_url, user.id)) {
+        return NextResponse.json(
+          { error: "Pet avatars must be an animal or creature, not a person" },
+          { status: 400 },
+        );
+      }
+    } catch (error) {
+      const response = visionBudgetResponse(error);
+      if (response) return response;
+      throw error;
+    }
   }
 
   const finalPersonality = personality && PERSONALITIES.includes(personality as any)
@@ -97,8 +144,10 @@ export async function POST(req: NextRequest) {
   let appearanceDesc = userAppearanceDesc || undefined;
   if (!appearanceDesc && avatar_url) {
     try {
-      appearanceDesc = await describePetAvatar(avatar_url);
+      appearanceDesc = await describePetAvatar(avatar_url, user.id);
     } catch (e) {
+      const response = visionBudgetResponse(e);
+      if (response) return response;
       console.error("Auto-describe failed:", e);
     }
   }
@@ -140,21 +189,48 @@ export async function POST(req: NextRequest) {
     user_profile: inheritedProfile,
     interaction_history: [],
     combos_unlocked: [],
+    // Privacy is opt-in. A newly adopted pet is not published or enrolled in
+    // cross-pet interactions until its owner explicitly enables those controls.
+    consent_public_profile: false,
+    consent_data_sharing: false,
+    consent_ai_training: false,
+    consent_interaction: false,
   };
   if (species_name) initialMods.species_name = species_name;
   if (custom_traits) initialMods.custom_traits = custom_traits;
 
-  const pet = await prisma.pet.create({
-    data: {
-      user_id: user.id,
-      name,
-      species: species ?? 0,
-      personality_type: finalPersonality,
-      ...(avatar_url ? { avatar_url } : {}),
-      ...(appearanceDesc ? { appearance_desc: appearanceDesc } : {}),
-      personality_modifiers: initialMods as any,
-    },
-  });
+  let pet: Pet;
+  try {
+    pet = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await lockAvailablePetSlot(tx, user.id);
+      const created = await tx.pet.create({
+        data: {
+          user_id: user.id,
+          name,
+          species: species ?? 0,
+          personality_type: finalPersonality,
+          ...(avatar_url ? { avatar_url } : {}),
+          ...(appearanceDesc ? { appearance_desc: appearanceDesc } : {}),
+          personality_modifiers: initialMods as any,
+        },
+      });
+      if (avatar_url && applicationMediaKey(avatar_url)) {
+        await claimOrVerifyApplicationMediaForPet(tx, user.id, created.id, avatar_url);
+      }
+      return created;
+    });
+  } catch (error) {
+    if (error instanceof AvatarMediaAssignmentError) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+    if (error instanceof PetSlotLimitError) {
+      return NextResponse.json(
+        { error: `You need to unlock more pet slots. Current: ${error.petSlots}` },
+        { status: 400 },
+      );
+    }
+    throw error;
+  }
 
   // Birth memory + first impression of the pet's own personality
   await prisma.petMemory.createMany({
@@ -181,12 +257,14 @@ export async function POST(req: NextRequest) {
     await prisma.generation.create({
       data: {
         user_id: user.id,
+        pet_id: pet.id,
         pet_type: species ?? 0,
         style: 0,
         prompt: `${name} — newly adopted ${species_name || "pet"} companion`,
         duration: 0,
         photo_path: avatar_url,
         status: "completed",
+        visibility: "private",
         credits_charged: 0,
         completed_at: new Date(),
       },

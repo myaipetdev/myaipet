@@ -448,6 +448,7 @@ export default function PetStudio() {
             ) : (
               <Field label="PROMPT">
                 <textarea
+                  aria-label="Prompt"
                   value={customDirection}
                   onChange={e => setCustomDirection(e.target.value)}
                   placeholder={`Describe a scene starring ${pet?.name || "your pet"}…`}
@@ -463,7 +464,7 @@ export default function PetStudio() {
 
             {chosenTemplate && (
               <Field label="CUSTOM DIRECTION (optional)">
-                <input type="text" value={customDirection}
+                <input type="text" aria-label="Custom direction" value={customDirection}
                   onChange={e => setCustomDirection(e.target.value)}
                   placeholder='e.g. "wearing a red bowtie"'
                   style={{
@@ -475,7 +476,7 @@ export default function PetStudio() {
             )}
 
             <Field label="MODEL">
-              <select value={chosenModelId} onChange={e => setChosenModelId(e.target.value)} style={{
+              <select aria-label="Model" value={chosenModelId} onChange={e => setChosenModelId(e.target.value)} style={{
                 width: "100%", padding: 8, borderRadius: 8,
                 border: "1px solid rgba(0,0,0,0.12)", fontSize: 13, background: "white",
                 fontFamily: "'Space Grotesk',sans-serif",
@@ -526,7 +527,10 @@ export default function PetStudio() {
       </div>
 
       {editorOpen && previewUrl && (
-        <EditorModal videoUrl={previewUrl} onClose={() => setEditorOpen(false)} />
+        <EditorModal
+          videoUrl={previewUrl}
+          onClose={() => setEditorOpen(false)}
+        />
       )}
 
       <style>{`
@@ -688,13 +692,18 @@ function EditorModal({ videoUrl, onClose }: { videoUrl: string; onClose: () => v
   useEffect(() => {
     import("./PetVideoEditor").then(m => setEditor(() => m.default));
   }, []);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
   return (
     <div onClick={onClose} style={{
       position: "fixed", inset: 0, zIndex: 9999,
       background: "rgba(0,0,0,0.7)",
       display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
     }}>
-      <div onClick={(e) => e.stopPropagation()} style={{
+      <div role="dialog" aria-modal="true" aria-label="Video editor" onClick={(e) => e.stopPropagation()} style={{
         maxWidth: 1080, width: "100%", maxHeight: "90vh", overflow: "auto",
         background: "white", borderRadius: 16, padding: 24,
         border: "1px solid rgba(0,0,0,0.1)",

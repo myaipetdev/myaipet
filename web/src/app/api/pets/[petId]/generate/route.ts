@@ -12,11 +12,47 @@ import { recordGenerationOnChain, mintContentNFT } from "@/lib/blockchain";
 import { ethers } from "ethers";
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rateLimit";
+import { deleteStoredFile, saveRemoteFile } from "@/lib/storage";
+import { enqueueMediaDeletionReference } from "@/lib/mediaDeletion";
+import { getLLMBudgetFailureStatus } from "@/lib/llm/router";
 
 function getVideoCreditCost(duration: number): number {
   if (duration <= 3) return 15;
   if (duration <= 5) return 30;
   return 60;
+}
+
+function visionBudgetResponse(error: unknown): NextResponse | null {
+  const status = getLLMBudgetFailureStatus(error);
+  if (!status) return null;
+  return NextResponse.json({
+    error: status === 429
+      ? "Pet image analysis has reached today's limit. Please try again tomorrow."
+      : "Pet image analysis is temporarily unavailable. Please try again later.",
+  }, { status });
+}
+
+async function cleanupUncommittedGeneratedMedia(
+  refs: string[],
+  ownerUserId: number,
+  sourcePetId: number,
+): Promise<void> {
+  for (const ref of refs) {
+    try {
+      await enqueueMediaDeletionReference(ref, {
+        ownerUserId,
+        sourcePetId,
+        reason: "Pet generation storage succeeded but its DB transaction did not commit",
+      });
+    } catch (queueError) {
+      // These refs are newly generated, random-name objects and the caller only
+      // invokes this helper before its Generation transaction commits. If the
+      // durable DB is unavailable, immediate deletion is the safe fallback.
+      await deleteStoredFile(ref).catch(() => {
+        console.error("[generate] media cleanup queue and direct delete both failed", queueError instanceof Error ? queueError.name : "unknown");
+      });
+    }
+  }
 }
 
 export async function POST(
@@ -87,7 +123,7 @@ export async function POST(
   let appearanceDesc = pet.appearance_desc;
   if (pet.avatar_url && !appearanceDesc) {
     try {
-      appearanceDesc = await describePetAvatar(pet.avatar_url);
+      appearanceDesc = await describePetAvatar(pet.avatar_url, user.id);
       if (appearanceDesc) {
         await prisma.pet.update({
           where: { id: pet.id },
@@ -95,6 +131,8 @@ export async function POST(
         });
       }
     } catch (e) {
+      const response = visionBudgetResponse(e);
+      if (response) return response;
       console.error("Auto-describe failed:", e);
     }
   }
@@ -116,7 +154,7 @@ export async function POST(
   }
 
   // Translate non-English prompts so image/video models can actually render the scene
-  const translatedPrompt = prompt ? await translatePromptIfNeeded(prompt) : undefined;
+  const translatedPrompt = prompt ? await translatePromptIfNeeded(prompt, pet.id) : undefined;
 
   // Second moderation pass on the translated form — a Korean/Chinese/Japanese
   // prompt could have hidden harmful content that only surfaces post-translation.
@@ -129,7 +167,7 @@ export async function POST(
   }
 
   // Codex sticker (style 6): a validated variant swaps the style fragment so one
-  // slot serves all 띠부씰 looks (classic/chibi/holo/retro/pixel/pop).
+  // slot serves all collectible sticker looks (classic/chibi/holo/retro/pixel/pop).
   const codexOverride = style === 6 && isCodexVariant(codexVariant) ? codexVariantDesc(codexVariant) : undefined;
   const personalizedPrompt = buildPetPrompt(
     pet.name,
@@ -161,6 +199,8 @@ export async function POST(
     reserved = creditCost;
   }
 
+  const newlyPersistedRefs: string[] = [];
+  let mediaTransactionCommitted = false;
   try {
     if (type === "image") {
       // Style 0 = Original: use pet's avatar directly (no generation, no credit cost)
@@ -178,39 +218,50 @@ export async function POST(
           try {
             const lora = await getReadyPetLora(pet.id);
             if (lora?.lora_url) {
-              loraImage = await falLoraImage(personalizedPrompt, lora.lora_url, lora.trigger_word);
+              loraImage = await falLoraImage(personalizedPrompt, lora.lora_url, lora.trigger_word, user.id);
             }
           } catch (e) {
+            if (getLLMBudgetFailureStatus(e)) throw e;
             console.error("Pet-LoRA generation failed, falling back to Grok:", e);
           }
         }
         imageUrl = loraImage ?? (pet.avatar_url
-          ? await generateGrokImageWithRef(personalizedPrompt, pet.avatar_url)
-          : await generateGrokImage(personalizedPrompt));
+          ? await generateGrokImageWithRef(personalizedPrompt, pet.avatar_url, user.id)
+          : await generateGrokImage(personalizedPrompt, user.id));
+        imageUrl = await saveRemoteFile(imageUrl, "generations");
+        newlyPersistedRefs.push(imageUrl);
       }
 
       const actualCost = isOriginal ? 0 : creditCost;
 
       // Credits were already reserved atomically above (audit H13) — only
       // persist the generation + memory here.
-      const txOps = [];
-      txOps.push(
-        prisma.generation.create({
+      const generation = await prisma.$transaction(async (tx) => {
+        const lockedPet = await tx.$queryRaw<Array<{ id: number }>>`
+          SELECT "id"
+          FROM "pets"
+          WHERE "id" = ${pet.id}
+            AND "user_id" = ${user.id}
+            AND "is_active" = TRUE
+          FOR UPDATE
+        `;
+        if (!lockedPet[0]) throw new Error("Pet was deleted before generation could be saved");
+        const created = await tx.generation.create({
           data: {
             user_id: user.id,
+            pet_id: pet.id,
             pet_type: pet.species,
             style: style ?? 0,
             prompt: isOriginal ? `Original photo of ${pet.name}` : personalizedPrompt,
             duration: 0,
             photo_path: imageUrl,
             status: "completed",
+            visibility: "private",
             credits_charged: actualCost,
             completed_at: new Date(),
           },
-        })
-      );
-      txOps.push(
-        prisma.petMemory.create({
+        });
+        await tx.petMemory.create({
           data: {
             pet_id: pet.id,
             memory_type: "generation",
@@ -218,19 +269,16 @@ export async function POST(
             emotion: "happy",
             importance: 2,
           },
-        })
-      );
+        });
       // Codex sticker (style 6): also pin it as the pet's collectible art so the
       // card + My Pet hero switch to the illustration. Never touches avatar_url
       // (the real photo). Latest codex generation wins.
       if (style === 6 && !isOriginal) {
-        txOps.push(
-          prisma.pet.update({ where: { id: pet.id }, data: { codex_url: imageUrl } })
-        );
+          await tx.pet.update({ where: { id: pet.id }, data: { codex_url: imageUrl } });
       }
-
-      const txResults = await prisma.$transaction(txOps);
-      const generation = txResults[0];
+        return created;
+      });
+      mediaTransactionCommitted = true;
 
       // Fire-and-forget: trigger pet agent reactions + award points
       triggerAgentReactions([generation.id]);
@@ -274,30 +322,43 @@ export async function POST(
     }
 
     // Video generation: Grok image + Grok video
-    const imageUrl = await generateGrokImage(personalizedPrompt);
+    const providerImageUrl = await generateGrokImage(personalizedPrompt, user.id);
 
     const { requestId } = await submitGrokVideo(
       personalizedPrompt,
       duration || 5,
-      imageUrl,
+      providerImageUrl,
     );
+    const imageUrl = await saveRemoteFile(providerImageUrl, "generations");
+    newlyPersistedRefs.push(imageUrl);
 
     // Credits already reserved before the paid Grok image+video calls (audit H18).
-    const [generation] = await prisma.$transaction([
-      prisma.generation.create({
+    const generation = await prisma.$transaction(async (tx) => {
+      const lockedPet = await tx.$queryRaw<Array<{ id: number }>>`
+        SELECT "id"
+        FROM "pets"
+        WHERE "id" = ${pet.id}
+          AND "user_id" = ${user.id}
+          AND "is_active" = TRUE
+        FOR UPDATE
+      `;
+      if (!lockedPet[0]) throw new Error("Pet was deleted before generation could be saved");
+      const created = await tx.generation.create({
         data: {
           user_id: user.id,
+          pet_id: pet.id,
           pet_type: pet.species,
           style: style ?? 0,
           prompt: personalizedPrompt,
           duration: duration || 5,
           photo_path: imageUrl,
           status: "processing",
+          visibility: "private",
           credits_charged: creditCost,
           fal_request_id: requestId,
         },
-      }),
-      prisma.petMemory.create({
+      });
+      await tx.petMemory.create({
         data: {
           pet_id: pet.id,
           memory_type: "generation",
@@ -305,8 +366,10 @@ export async function POST(
           emotion: "excited",
           importance: 2,
         },
-      }),
-    ]);
+      });
+      return created;
+    });
+    mediaTransactionCommitted = true;
 
     // Fire-and-forget: record video generation on-chain and mint NFT
     if (user.wallet_address) {
@@ -342,8 +405,11 @@ export async function POST(
       credits_charged: creditCost,
     });
   } catch (err: any) {
+    if (!mediaTransactionCommitted && newlyPersistedRefs.length > 0) {
+      await cleanupUncommittedGeneratedMedia(newlyPersistedRefs, user.id, pet.id);
+    }
     // audit H18: refund the reserved credits if generation failed after reserving.
-    if (reserved > 0) {
+    if (reserved > 0 && !mediaTransactionCommitted) {
       await prisma.user.update({
         where: { id: user.id },
         data: { credits: { increment: reserved } },
@@ -352,6 +418,14 @@ export async function POST(
     // SCRUM-61/63: log full error server-side, never echo to client.
     // Previous behavior leaked xAI team UUID and Grok internals.
     console.error("Generation error:", err?.message);
+    const budgetStatus = getLLMBudgetFailureStatus(err);
+    if (budgetStatus) {
+      return NextResponse.json({
+        error: budgetStatus === 429
+          ? "Image generation has reached today's limit. Please try again tomorrow."
+          : "Image generation is temporarily unavailable. Please try again later.",
+      }, { status: budgetStatus });
+    }
     const isQuotaError = /credit|quota|exhaust|429/i.test(err?.message || "");
     return NextResponse.json(
       { error: isQuotaError ? "Generation service is at capacity — try again later" : "Generation failed" },

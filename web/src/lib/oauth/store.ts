@@ -1,42 +1,34 @@
 /**
  * Per-pet OAuth credential storage.
- * Schema: pet_platform_connections.credentials (Text) stores JSON.
- *
- * Tokens are encrypted-at-rest by the DB layer. Future hardening:
- * wrap with AGENT_ENCRYPTION_KEY before persisting.
+ * Schema: pet_platform_connections.credentials stores an AES-256-GCM OAuth
+ * envelope. Raw JSON is rejected by the database credential-format guard.
  */
 
 import { prisma } from "@/lib/prisma";
+import {
+  decodeOAuthCredentials,
+  encodeOAuthCredentials,
+} from "@/lib/oauth/credentials";
+import type { OAuthCredentials } from "@/lib/oauth/credentials";
 
-export interface StoredCredentials {
-  access_token: string;
-  refresh_token?: string;
-  expires_at?: number;       // unix epoch ms
-  scope?: string;
-  token_type?: string;
-  profile?: {
-    id?: string;
-    username?: string;
-    displayName?: string;
-    avatarUrl?: string;
-  };
-}
+export type StoredCredentials = OAuthCredentials;
 
 export async function saveConnection(petId: number, platform: string, creds: StoredCredentials, config?: Record<string, any>) {
+  const encryptedCredentials = encodeOAuthCredentials(creds);
   return prisma.petPlatformConnection.upsert({
     where: { pet_id_platform: { pet_id: petId, platform } },
     create: {
       pet_id: petId,
       platform,
       is_active: true,
-      credentials: JSON.stringify(creds),
+      credentials: encryptedCredentials,
       config: (config || {}) as any,
       connected_at: new Date(),
       last_active_at: new Date(),
     },
     update: {
       is_active: true,
-      credentials: JSON.stringify(creds),
+      credentials: encryptedCredentials,
       config: (config || {}) as any,
       last_active_at: new Date(),
     },
@@ -50,18 +42,15 @@ export async function listConnections(petId: number) {
       platform: true,
       connected_at: true,
       last_active_at: true,
-      credentials: true,    // we'll strip to profile only before returning
+      credentials: true,    // decrypted server-side; only profile is returned
       config: true,
     },
     orderBy: { connected_at: "desc" },
   });
 
   return rows.map(r => {
-    let profile: StoredCredentials["profile"] | undefined;
-    try {
-      const c = JSON.parse(r.credentials || "{}") as StoredCredentials;
-      profile = c.profile;
-    } catch {}
+    const c = decodeOAuthCredentials(r.credentials);
+    const profile: StoredCredentials["profile"] | undefined = c?.profile;
     return {
       platform: r.platform,
       connectedAt: r.connected_at,

@@ -102,11 +102,10 @@ export async function awardPointsCapped(
 // Evolution stages with requirements
 export const EVOLUTION_STAGES = [
   { stage: 0, name: "Baby", minLevel: 1, icon: "🥚" },
-  { stage: 1, name: "Youth", minLevel: 5, icon: "🐣" },
-  { stage: 2, name: "Teen", minLevel: 10, icon: "⭐" },
-  { stage: 3, name: "Adult", minLevel: 20, icon: "🔥" },
-  { stage: 4, name: "Elder", minLevel: 35, icon: "👑" },
-  { stage: 5, name: "Legendary", minLevel: 50, icon: "💎" },
+  { stage: 1, name: "Young", minLevel: 5, icon: "🌱" },
+  { stage: 2, name: "Adult", minLevel: 10, icon: "⭐" },
+  { stage: 3, name: "Elder", minLevel: 20, icon: "👑" },
+  { stage: 4, name: "Legendary", minLevel: 35, icon: "🔱" },
 ];
 
 export function getEvolutionStage(level: number) {

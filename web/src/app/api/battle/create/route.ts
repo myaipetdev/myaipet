@@ -1,15 +1,14 @@
 /**
- * Pet Battle League — paid entry, deterministic resolution.
+ * Pet Battle League — retired legacy mode, no paid entry.
  *
- *   POST /api/battle/create?tx_hash=0x...
+ *   POST /api/battle/create
  *   { petId: 1, opponentPetId?: 7 }   // opponentPetId optional → auto-match
  *
  * Flow:
- *   1. Caller's pet must be active. Entry fee 0.5 USDT via paywall (battle_entry).
- *   2. If no opponentPetId: auto-match against a similar-power active pet that
- *      itself paid entry within the same 1h window.
- *   3. Deterministic resolution: power + small randomness from a seed = block hash
- *      of payment tx (verifiable).
+ *   1. The mode is disabled server-side. If it is relaunched, it remains free;
+ *      the old battle_entry paywall is permanently retired.
+ *   2. If no opponentPetId: auto-match against a similar-power active pet.
+ *   3. Deterministic resolution uses a server-generated seed.
  *   4. Winner gets EXP only. Season points do NOT accrue from a paid/competitive
  *      battle (compliance: recognition points must not derive from paid actions).
  *   5. Battle goes into battle_history with tx_hash.
@@ -23,10 +22,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
-import { enforcePaywall } from "@/lib/paywall";
 import crypto from "crypto";
 
-const ENTRY_FEE_USD = 0.50;
 const WINNER_POINTS_BASE = 100;       // base points for winning
 const POWER_RANGE_PCT = 0.3;           // auto-match within ±30% combined power
 
@@ -44,7 +41,6 @@ interface BattleResult {
   points_earned: number;
   log: BattleLogEntry[];
   seed: string;
-  txHash?: string;
 }
 
 /** Deterministic 0..1 PRNG from a seed string (used for combat randomness). */
@@ -129,8 +125,8 @@ function simulateBattle(
 const BATTLE_ENABLED = false;
 
 export async function POST(req: NextRequest) {
-  // Disabled server-side so a paid 'battle_entry' can never be created while the
-  // feature is off (UI entry points are already removed).
+  // Disabled server-side. The retired battle_entry payment path is deliberately
+  // absent, so re-enabling cannot accidentally charge an entry fee.
   if (!BATTLE_ENABLED) {
     return NextResponse.json(
       { error: "Battle mode is currently unavailable.", code: "BATTLE_DISABLED" },
@@ -152,13 +148,6 @@ export async function POST(req: NextRequest) {
     where: { id: Number(petId), user_id: user.id, is_active: true },
   });
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
-
-  // Paywall — battle entry has 1 free per day, paid after
-  const txHash = req.nextUrl.searchParams.get("tx_hash") || undefined;
-  const gate = await enforcePaywall(user.id, "battle_entry", txHash, pet.id);
-  if (gate.ok !== true) {
-    return NextResponse.json({ error: "Payment required", paywall: gate.paywall }, { status: 402 });
-  }
 
   // ── Find opponent ──
   let opponent;
@@ -195,7 +184,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Resolve battle ──
-  const seed = txHash || `${pet.id}-${opponent.id}-${Date.now()}`;
+  const seed = `${pet.id}-${opponent.id}-${Date.now()}`;
   const result = simulateBattle(
     { atk: pet.atk, def: pet.def, spd: pet.spd, level: pet.level },
     { atk: opponent.atk, def: opponent.def, spd: opponent.spd, level: opponent.level, name: opponent.name },
@@ -218,7 +207,7 @@ export async function POST(req: NextRequest) {
       player_hp_left: result.player_hp_left,
       exp_gained: expGained,
       points_earned: pointsEarned,
-      tx_hash: txHash,
+      tx_hash: null,
       battle_type: isNpc ? "pve" : "pvp",
       battle_log: result.log as any,
       seed,
@@ -253,7 +242,6 @@ export async function POST(req: NextRequest) {
       points_earned: pointsEarned,
       log: result.log,
       seed,
-      txHash,
     } satisfies BattleResult,
   });
 }

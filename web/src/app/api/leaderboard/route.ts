@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { publicPetWhere } from "@/lib/publicPet";
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
         season_points: true,
         credits: true,
         pets: {
-          where: { is_active: true },
+          where: publicPetWhere(),
           orderBy: { level: "desc" },
           take: 1,
           select: {
@@ -68,7 +69,7 @@ export async function GET(req: NextRequest) {
         const higherCount = await prisma.user.count({
           where: {
             season_points: { gt: currentUser.season_points },
-            pets: { some: { is_active: true } },
+            pets: { some: publicPetWhere() },
           },
         });
         const myPet = await prisma.pet.findFirst({

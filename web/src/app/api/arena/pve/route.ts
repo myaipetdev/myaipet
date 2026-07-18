@@ -1,12 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { awardPoints } from "@/lib/seasonRewards";
 import { grantEarnedCredits, arenaCreditDailyCap } from "@/lib/economyGuards";
-import { SKILL_DB, SKILL_MAP, DAILY_BATTLE_CAP, DAILY_EXP_CAP, getGrowthMultiplier } from "@/lib/skills";
-import { PVE_STAGES, REGIONS, getStage, getRegionForStage, generateMinion, calculateStars, getStageMinLevel } from "@/lib/pve";
+import { SKILL_DB, DAILY_EXP_CAP, getGrowthMultiplier } from "@/lib/skills";
+import { REGIONS, getStage, calculateStars, getStageMinLevel } from "@/lib/pve";
 import { simulateBattle } from "@/lib/battleSim";
+import {
+  claimArenaBattle,
+  recordArenaLevelUpRecognition,
+  ArenaDailyBattleCapError,
+  ArenaClaimPetNotFoundError,
+} from "@/lib/arenaBattleClaim";
+import { rateLimit } from "@/lib/rateLimit";
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@/generated/prisma/client";
 
 // GET /api/arena/pve?pet_id=X — Get PvE progress map + current stage info
 export async function GET(req: NextRequest) {
@@ -65,6 +72,9 @@ export async function GET(req: NextRequest) {
 // POST /api/arena/pve — Report PvE battle result
 export async function POST(req: NextRequest) {
   try {
+  const rl = rateLimit(req, { key: "arena-battle-reward", limit: 40, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
+
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -99,19 +109,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Pet must be at least Lv.${getStageMinLevel(stage_id)}` }, { status: 400 });
   }
 
-  // Daily cap check
+  // Shared calendar-day row used by the atomic claim helper below.
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const dailyLog = await prisma.dailyTrainingLog.upsert({
-    where: { user_id_pet_id_date: { user_id: user.id, pet_id, date: today } },
-    create: { user_id: user.id, pet_id, date: today },
-    update: {},
-  });
-
-  if (dailyLog.battles >= DAILY_BATTLE_CAP) {
-    return NextResponse.json({ error: "Daily battle cap reached", cap: DAILY_BATTLE_CAP }, { status: 429 });
-  }
-
   // ── Resolve the stage SERVER-SIDE (audit C5) ──
   // Boss combat stats come from the stage definition (incl. its tuned baseHp).
   const sim = simulateBattle(
@@ -142,10 +142,7 @@ export async function POST(req: NextRequest) {
   });
   const growthMul = getGrowthMultiplier(totalUsdSpent._sum.amount_usd || 0);
   const baseExp = won ? stage.rewards.exp : Math.floor(stage.rewards.exp * 0.3);
-  const expGain = Math.min(
-    Math.floor(baseExp * growthMul),
-    Math.max(0, DAILY_EXP_CAP - dailyLog.exp_earned)
-  );
+  const requestedExp = Math.min(Math.floor(baseExp * growthMul), DAILY_EXP_CAP);
   // POINTS-ECONOMY §2.2 knob #1 (the P0): arena credits are FIRST-CLEAR only and
   // routed through the capped earned-credit helper (credits:arena ≤50/day + the
   // global credits:earned ≤100/day). Replays still grant exp/season points but
@@ -154,65 +151,45 @@ export async function POST(req: NextRequest) {
   let creditsGain = 0;
   const seasonGain = won ? stage.rewards.seasonPoints : Math.floor(stage.rewards.seasonPoints * 0.2);
 
-  // First clear skill drop
-  let skillDrop: string | null = null;
-  const existingProgress = progress.find((p) => p.stage_id === stage_id && p.pet_id === pet_id);
-  const isFirstClear = won && (!existingProgress || existingProgress.stars === 0);
+  const reward = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const claim = await claimArenaBattle(tx, {
+      userId: user.id,
+      petId: pet.id,
+      date: today,
+      requestedExp,
+    });
+    const existingProgress = await tx.pveProgress.findUnique({
+      where: { user_id_pet_id_stage_id: { user_id: user.id, pet_id, stage_id } },
+    });
+    const isFirstClear = won && (!existingProgress || existingProgress.stars === 0);
 
-  if (isFirstClear && stage.rewards.skillDrop) {
-    const petSkills = await prisma.petSkill.findMany({ where: { pet_id } });
-    const alreadyLearned = petSkills.some((s) => s.skill_key === stage.rewards.skillDrop);
-    if (!alreadyLearned) {
-      skillDrop = stage.rewards.skillDrop;
-      await prisma.petSkill.create({
+    let skillDrop: string | null = null;
+    const petSkills = won ? await tx.petSkill.findMany({ where: { pet_id } }) : [];
+    const learnedKeys = new Set(petSkills.map((skill) => skill.skill_key));
+    if (isFirstClear && stage.rewards.skillDrop) {
+      if (!learnedKeys.has(stage.rewards.skillDrop)) skillDrop = stage.rewards.skillDrop;
+    } else if (won && stage.rewards.skillDropChance && Math.random() < stage.rewards.skillDropChance) {
+      const droppable = SKILL_DB.filter(
+        (skill) => !learnedKeys.has(skill.key) && skill.levelReq <= claim.pet.level && skill.rarity >= 2,
+      );
+      if (droppable.length > 0) {
+        skillDrop = droppable[Math.floor(Math.random() * droppable.length)].key;
+      }
+    }
+    if (skillDrop) {
+      await tx.petSkill.create({
         data: { pet_id, skill_key: skillDrop, level: 1, slot: null },
       });
     }
-  } else if (won && stage.rewards.skillDropChance && Math.random() < stage.rewards.skillDropChance) {
-    // Repeat clear has a chance for random skill drop
-    const petSkills = await prisma.petSkill.findMany({ where: { pet_id } });
-    const learnedKeys = new Set(petSkills.map((s) => s.skill_key));
-    const droppable = SKILL_DB.filter(
-      (s) => !learnedKeys.has(s.key) && s.levelReq <= pet.level && s.rarity >= 2
-    );
-    if (droppable.length > 0) {
-      const drop = droppable[Math.floor(Math.random() * droppable.length)];
-      skillDrop = drop.key;
-      await prisma.petSkill.create({
-        data: { pet_id, skill_key: drop.key, level: 1, slot: null },
-      });
-    }
-  }
 
-  // Apply exp + level up
-  const newExp = pet.experience + expGain;
-  const expNeeded = pet.level * 100;
-  const leveledUp = newExp >= expNeeded;
-
-  // Save everything in transaction
-  await prisma.$transaction([
-    // Update pet
-    prisma.pet.update({
-      where: { id: pet.id },
-      data: leveledUp
-        ? { experience: { set: newExp - expNeeded }, level: { increment: 1 }, total_interactions: { increment: 1 } }
-        : { experience: { increment: expGain }, total_interactions: { increment: 1 } },
-    }),
-    // Season points only — arena credits are granted separately (first-clear +
-    // capped) via grantEarnedCredits after this transaction.
-    prisma.user.update({
+    await tx.user.update({
       where: { id: user.id },
-      data: {
-        season_points: { increment: seasonGain },
-      },
-    }),
-    // Daily training log
-    prisma.dailyTrainingLog.update({
-      where: { id: dailyLog.id },
-      data: { battles: { increment: 1 }, exp_earned: { increment: expGain } },
-    }),
-    // PvE progress (upsert)
-    prisma.pveProgress.upsert({
+      data: { season_points: { increment: seasonGain } },
+    });
+    // Growth multiplier is based on USDT purchases, so its level-up recognition
+    // must stay out of season ranking and live only in the lifetime ledger.
+    await recordArenaLevelUpRecognition(tx, user.id, claim.leveledUp);
+    await tx.pveProgress.upsert({
       where: { user_id_pet_id_stage_id: { user_id: user.id, pet_id, stage_id } },
       create: {
         user_id: user.id, pet_id, stage_id,
@@ -222,39 +199,35 @@ export async function POST(req: NextRequest) {
         ...(won ? { cleared_at: new Date() } : {}),
       },
       update: {
-        // Only update if better
         ...(stars > (existingProgress?.stars || 0) ? { stars } : {}),
         ...(turns && (!existingProgress?.best_turns || turns < existingProgress.best_turns) ? { best_turns: turns } : {}),
         ...(hp_left && (!existingProgress?.best_hp_left || hp_left > existingProgress.best_hp_left) ? { best_hp_left: hp_left } : {}),
         ...(won && !existingProgress?.cleared_at ? { cleared_at: new Date() } : {}),
       },
-    }),
-    // Battle history
-    prisma.battleHistory.create({
+    });
+    await tx.battleHistory.create({
       data: {
         player_pet_id: pet_id,
         opponent_name: stage.name,
         won,
         turns: turns || 0,
         player_hp_left: hp_left || 0,
-        exp_gained: expGain,
+        exp_gained: claim.expGain,
         points_earned: seasonGain,
         skill_drop_key: skillDrop,
         battle_type: "pve",
         stage_id,
       },
-    }),
-  ]);
+    });
+
+    return { ...claim, skillDrop, isFirstClear };
+  }, { maxWait: 10_000, timeout: 20_000 });
 
   // Arena credits: first clear only, capped (credits:arena ≤50/day + global
   // credits:earned ≤100/day). Never throws — a capped/errored grant yields 0.
-  if (isFirstClear && stage.rewards.credits > 0) {
+  if (reward.isFirstClear && stage.rewards.credits > 0) {
     const g = await grantEarnedCredits(user.id, "arena", stage.rewards.credits, arenaCreditDailyCap());
     creditsGain = g.granted;
-  }
-
-  if (leveledUp) {
-    await awardPoints(user.id, pet.id, "level_up");
   }
 
   return NextResponse.json({
@@ -270,17 +243,27 @@ export async function POST(req: NextRequest) {
     },
     won,
     stars,
-    exp_gained: expGain,
+    exp_gained: reward.expGain,
     credits_gained: creditsGain,
     season_gained: seasonGain,
-    leveled_up: leveledUp,
-    new_level: leveledUp ? pet.level + 1 : pet.level,
-    skill_drop: skillDrop,
-    first_clear: isFirstClear,
+    leveled_up: reward.leveledUp,
+    new_level: reward.newLevel,
+    skill_drop: reward.skillDrop,
+    first_clear: reward.isFirstClear,
     boss_dialogue: won ? stage.dialogue.win : stage.dialogue.lose,
-    daily_battles: dailyLog.battles + 1,
+    daily_battles: reward.dailyBattles,
   });
   } catch (error) {
+    if (error instanceof ArenaDailyBattleCapError) {
+      return NextResponse.json({
+        error: error.message,
+        daily_battles: error.battles,
+        cap: error.cap,
+      }, { status: 429 });
+    }
+    if (error instanceof ArenaClaimPetNotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
     console.error("PvE POST error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

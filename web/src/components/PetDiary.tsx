@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Weekly pet diary card for the My Pet screen — the "주간 펫 일기" beat. The pet
+ * Weekly pet diary card for the My Pet screen. The pet
  * writes a short journal entry about its week with the owner (from the memory
  * ledger). Renders nothing until the entry loads. Backed by /api/pets/[id]/diary
  * (cached 7 days server-side, so this is cheap to fetch on every visit).

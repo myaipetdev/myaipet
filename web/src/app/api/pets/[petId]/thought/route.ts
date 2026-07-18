@@ -20,7 +20,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
-import { ownsPet, PUBLIC_DEMO_PET_ID } from "@/lib/authz";
+import { ownsPet } from "@/lib/authz";
+import { callLLM } from "@/lib/llm/router";
+import {
+  containsHangul,
+  generatedEnglishOrFallback,
+  generatedEnglishOrNull,
+} from "@/lib/generatedLanguage";
 
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 
@@ -52,43 +58,39 @@ interface CachedThought {
 }
 
 async function generateWithLLM(pet: any): Promise<string | null> {
-  const grokKey = process.env.GROK_API_KEY;
-  if (!grokKey) return null;
-
   // Pull a few last memories for context (cheap — already loaded by memory infra)
   const recent = await prisma.petMemory.findMany({
     where: { pet_id: pet.id, memory_type: { in: ["interaction", "conversation", "combo", "milestone"] } },
     orderBy: { created_at: "desc" }, take: 5,
     select: { content: true, emotion: true },
   });
-  const recentLines = recent.map(r => `- ${r.content}`).join("\n").slice(0, 600);
+  const recentLines = recent
+    .filter((row) => !containsHangul(row.content))
+    .map(r => `- ${r.content}`)
+    .join("\n")
+    .slice(0, 600);
 
   const mood = pet.happiness >= 70 ? "happy" : pet.hunger > 60 ? "hungry"
     : pet.energy < 30 ? "sleepy" : pet.happiness < 30 ? "wistful" : "calm";
 
   try {
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${grokKey}` },
-      body: JSON.stringify({
-        model: "grok-3-mini-fast",
-        temperature: 0.95,
-        max_tokens: 80,
-        messages: [
-          {
-            role: "system",
-            content: `You are ${pet.name}, a ${pet.personality_type} ${mood} pet at Lv.${pet.level}. Output ONE sentence (max 18 words) of an inner thought you're having right now. First person. Casual, not formal. No quotes, no preamble. No emoji unless 1 fits. Always write in English.`,
-          },
-          {
-            role: "user",
-            content: `Recent moments in your memory:\n${recentLines || "(nothing notable yet)"}\n\nWrite one inner thought, right now:`,
-          },
-        ],
-      }),
+    const result = await callLLM({
+      task: "chat",
+      petId: pet.id,
+      temperature: 0.95,
+      max_tokens: 80,
+      messages: [
+        {
+          role: "system",
+          content: `You are ${pet.name}, a ${pet.personality_type} ${mood} pet at Lv.${pet.level}. Output ONE sentence (max 18 words) of an inner thought you're having right now. First person. Casual, not formal. No quotes, no preamble. No emoji unless 1 fits. Always write in English.`,
+        },
+        {
+          role: "user",
+          content: `Recent moments in your memory:\n${recentLines || "(nothing notable yet)"}\n\nWrite one inner thought, right now:`,
+        },
+      ],
     });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const text = data.choices?.[0]?.message?.content?.trim()?.replace(/^["']|["']$/g, "");
+    const text = generatedEnglishOrNull(result.text?.trim().replace(/^["']|["']$/g, ""));
     if (!text || text.length > 200) return null;
     return text;
   } catch {
@@ -106,9 +108,9 @@ export async function GET(
   const { petId } = await params;
   const pid = Number(petId);
 
-  // SECURITY (audit M2): generating a thought triggers a paid LLM call and
-  // writes to the pet. Restrict to the pet's owner — except the public demo pet.
-  if (pid !== PUBLIC_DEMO_PET_ID && !(await ownsPet(req, pid))) {
+  // Generating a thought can read private memory, spend model budget, and write
+  // cached state. It is always restricted to the pet's owner.
+  if (!(await ownsPet(req, pid))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -125,7 +127,7 @@ export async function GET(
 
   if (isFresh && cached) {
     return NextResponse.json({
-      thought: cached.text,
+      thought: generatedEnglishOrFallback(cached.text, pickFallback(pet.personality_type)),
       emotion: cached.emotion,
       generatedAt: cached.generatedAt,
       cached: true,

@@ -13,6 +13,7 @@ import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { listConnections, disconnect } from "@/lib/oauth/store";
 import { listProviders } from "@/lib/oauth/providers";
+import { oauthConnectionsEnabled, oauthUnavailableResponse } from "@/lib/oauth/availability";
 
 type GuardOk = { ok: true; petId: number; userId: number };
 type GuardErr = { ok: false; res: NextResponse };
@@ -30,6 +31,8 @@ async function ownsPet(req: NextRequest): Promise<GuardOk | GuardErr> {
 }
 
 export async function GET(req: NextRequest) {
+  if (!oauthConnectionsEnabled()) return oauthUnavailableResponse();
+
   const guard = await ownsPet(req);
   if (guard.ok !== true) return guard.res;
 

@@ -1,9 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { encrypt } from "@/lib/crypto";
 import { TelegramAdapter } from "@/lib/telegram";
 import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { agentChannelsEnabled, agentChannelsUnavailableResponse } from "@/lib/oauth/availability";
+import {
+  encodeTelegramAgentCredentials,
+  encodeTwitterAgentCredentials,
+} from "@/lib/agentCredentials";
 
 type Platform = "telegram" | "twitter";
 
@@ -17,6 +21,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ petId: string }> }
 ) {
+  // Fail closed before reading, validating, or transmitting a credential. The
+  // legacy shared-row format and webhook update idempotency are not launch-safe.
+  if (!agentChannelsEnabled()) return agentChannelsUnavailableResponse();
   try {
     const user = await getUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -77,9 +84,7 @@ export async function POST(
       }
 
       // 4. Encrypt bot token
-      const encryptedCredentials = encrypt(
-        JSON.stringify({ bot_token })
-      );
+      const encryptedCredentials = encodeTelegramAgentCredentials(bot_token);
 
       // 5. Upsert platform connection
       await prisma.petPlatformConnection.upsert({
@@ -138,9 +143,7 @@ export async function POST(
       }
 
       // Twitter integration - encrypt and store credentials
-      const encryptedCredentials = encrypt(
-        JSON.stringify({ api_key })
-      );
+      const encryptedCredentials = encodeTwitterAgentCredentials(api_key);
 
       await prisma.petPlatformConnection.upsert({
         where: {

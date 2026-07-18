@@ -1,122 +1,131 @@
-# MY AI PET - Deployment Guide
+# MY AI PET — Production Deployment
 
-> Updated: 2026-07-13
+> Updated: 2026-07-18
 
-## Overview
+## Live topology
 
-Production is a single EC2 instance running the Next.js app (`web/`) under **PM2** (`petclaw-web`) at `https://app.myaipet.ai`, backed by **RDS PostgreSQL**. The marketing landing page (`https://myaipet.ai`) is a **separate** static nginx copy on the same instance and is synced by hand (see below).
+Production is one AWS EC2 host reached with the production PEM. It is not
+deployed from GitHub and it does not currently use RDS, EFS, or S3.
 
-| Surface | What | Deploy path |
-|---------|------|-------------|
-| **App** (`app.myaipet.ai`) | Next.js in `web/`, PM2 process `petclaw-web` | `deploy/ec2-pull.sh` on EC2 |
-| **Landing** (`myaipet.ai`) | Static files from `landing-assets/` | manual `sudo cp` |
-| **Database** | RDS PostgreSQL (`.env.production` `DATABASE_URL`) | Prisma migrations, applied by `ec2-pull.sh` |
+| Surface | Current production path |
+|---|---|
+| `myaipet.ai` | nginx serves `landing-assets/` from the immutable current release |
+| `app.myaipet.ai` | nginx proxies to a loopback-only Next.js standalone process managed by PM2 |
+| PostgreSQL 16 | local `petclaw` database, bound to `127.0.0.1:5432` |
+| Uploaded media | local `/opt/petclaw/uploads`, exposed only through the authenticated media boundary |
+| Release source | signed artifact verified below root-owned `/opt/petclaw/verified` |
+| Active release | root-owned immutable directory below `/opt/petclaw/releases`, selected by `/opt/petclaw/current` |
 
-> The local `web/.env` points at a stale Neon database — production config lives only in `.env.production` on the EC2 instance. The Neon → RDS migration is complete (`deploy/migrate-neon-to-rds.sh` was the one-time tool).
+The legacy checkout at `/opt/petclaw/aipet-project` supplies the production
+environment file during the first immutable release. It is not a Git deployment
+target and must not be reset or pulled during a release.
 
----
+## Authoritative release procedure
 
-## Standard app deploy (the live path)
+The exact commands, ownership requirements, environment gates, backup evidence,
+and verification sequence are in [`deploy/ENV-CHECKLIST.md`](../deploy/ENV-CHECKLIST.md).
+The required order is:
 
-1. Push to `main` on `myaipetdev/myaipet`.
-2. SSH to the EC2 instance and run the pull script from the repo root:
+1. Finish tests locally and create one local release commit. Do not push it as a
+   deployment mechanism.
+2. Run `deploy/build-release-artifact.sh` against that exact commit. The builder
+   creates a deterministic archive, scans it for secrets, checks migrations, and
+   signs its canonical manifest with the pinned release-signing subkey.
+3. Produce a recent encrypted off-host production backup. The database restore,
+   media references, snapshot quiescence, hashes, and signed release receipt must
+   all verify before deployment.
+4. Upload the archive, manifest, detached signature, checksum, and signed backup
+   evidence to `/opt/petclaw/incoming` over SSH/SCP with the production PEM.
+   `incoming` is an untrusted upload spool only.
+5. Run the root-installed `petclaw-verify-release-artifact.sh`. It verifies the
+   pinned signature and archive hash, rejects unsafe members, scans secrets and
+   migrations, then seals the source under root-owned `/opt/petclaw/verified`.
+6. Run the root-installed `petclaw-ec2-release.sh` as `ubuntu`, pointing it at the
+   verified source and signed backup evidence. The controller builds on an unused
+   loopback port, seals and compares migration inputs, applies migrations, starts
+   the candidate, runs smoke tests, and atomically switches nginx and `current`.
+7. Reboot the EC2 host and verify the boot guard, PM2 state, nginx, PostgreSQL,
+   loopback bindings, cron jobs, release header, and public HTTPS routes.
 
-```bash
-ssh -i ~/.ssh/your-key.pem ubuntu@app.myaipet.ai
-cd /opt/petclaw/aipet-project   # repo checkout on the instance
-bash deploy/ec2-pull.sh
+The controller keeps the current release serving until the candidate passes. A
+root-owned boot guard and independent rollback watchdog restore the previous
+nginx/current generation if the deploy shell dies or the host reboots inside the
+switch window.
+
+## Prohibited production shortcuts
+
+Do not use any of these as the live release path:
+
+- `git pull`, `git reset --hard`, or a GitHub push on the EC2 host;
+- `deploy/ec2-pull.sh` (legacy only);
+- copying `landing-assets/` directly into a mutable nginx directory;
+- executing an uploaded controller or verifier from `/tmp` or `incoming`;
+- running Prisma migrations from an unverified or ubuntu-writable source tree;
+- deploying without the recent signed backup receipt.
+
+ECS/Fargate, RDS, S3, and the old Neon migration helpers remain historical or
+future infrastructure options. They do not describe the live host.
+
+## Launch gates
+
+The release controller requires these launch-time features to be explicitly and
+exactly disabled:
+
+```text
+PAYMENTS_ENABLED=false
+OAUTH_CONNECTIONS_ENABLED=false
+AGENT_CHANNELS_ENABLED=false
+PET_LORA_ENABLED=false
+BLOCKCHAIN_ENABLED=false
+REFERRALS_ENABLED=false
 ```
 
-The script (`deploy/ec2-pull.sh`) is idempotent and does, in order:
+It also requires the production upload, storage-reserve, vision, and payment
+confirmation caps documented in `deploy/ENV-CHECKLIST.md`. A treasury address,
+relayer key, provider credential, or contract address must never enable a feature
+by itself. Only an exact `true` gate can do that, after its separate enablement
+checklist has passed.
 
-1. `git fetch` + `git reset --hard origin/main` (EC2 is a push-target only — local changes are discarded)
-2. `npm ci` in `web/` (falls back to `npm install` if the lockfile has drifted; commit the resulting lock diff back later)
-3. `npx prisma generate`
-4. `npx prisma migrate deploy` — runs **before** the build so new code never starts against an old schema; sources `.env.production` explicitly
-5. `npm run build` — this bakes `web/public/` assets (studio example videos, images, etc.) into the build
-6. `pm2 reload petclaw-web --update-env` (or `pm2 start npm --name petclaw-web -- start` on first run), then `pm2 save`
-7. Smoke test: `curl https://app.myaipet.ai/api/petclaw/skills?id=companion-chat` (expect HTTP 200)
+## Backup and storage
 
-Post-deploy verification (printed by the script):
+The current launch uses local PostgreSQL and local uploads, so the database dump
+and `/opt/petclaw/uploads` archive are one consistency unit. The off-host backup
+workflow pauses PetClaw PM2 processes briefly, captures both, resumes service,
+restores the dump into an isolated temporary database, verifies every first-party
+media reference, encrypts both payloads, and signs the release receipt on the
+operator workstation.
 
-```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://app.myaipet.ai/api/petclaw/memory?petId=1   # expect 401 — auth required, route exists
-pm2 logs petclaw-web --lines 30
-```
+`/opt/petclaw`, `/opt/petclaw/verified`, and `/opt/petclaw/releases` are root-owned.
+Uploads and the dedicated backup staging child remain writable only where the
+runtime workflow requires it. Release and backup coordination uses root-created
+non-truncating locks below `/run/petclaw-release`.
 
-Overridable env vars for the script: `PETCLAW_ROOT` (defaults to cwd), `PETCLAW_BRANCH` (default `main`), `PM2_APP` (default `petclaw-web`).
+## Smart contracts and payments
 
----
+There is no project token. Season points are non-financial engagement points.
+External payments and all chain writes are paused at launch. Existing utility
+contracts and off-chain milestone records must not be presented as active minting
+or verified on-chain assets unless a confirmed transaction exists.
 
-## Landing page sync (myaipet.ai)
+Before enabling payments or blockchain writes, complete the separate RPC,
+treasury, confirmation-depth, relayer-gas, idempotency, reconciliation, support,
+and rollback checks in `deploy/ENV-CHECKLIST.md`. Never commit environment files,
+wallet keys, API keys, or backup private keys.
 
-The marketing landing is **not** deployed by `ec2-pull.sh`. When anything under `landing-assets/` changes, copy it into the nginx-served directory on the instance:
+## Post-deploy checks
 
-```bash
-sudo cp landing-assets/* /opt/petclaw/landing-assets/
-```
+At minimum verify:
 
-Forgetting this step leaves the public landing page stale even after a successful app deploy.
+- `https://myaipet.ai`, `https://app.myaipet.ai`, and `/api/health` return 200;
+- the response release header matches the signed release ID;
+- Next.js and PostgreSQL listen only on loopback, while only nginx exposes 80/443;
+- PM2 and PostgreSQL are enabled and healthy after an actual reboot;
+- the full cron set is installed, including media deletion and stale credit refund;
+- landing/app static HTML contains no Hangul product copy;
+- protected routes reject unauthenticated requests and all disabled launch gates
+  fail closed;
+- the next scheduled off-host backup completes under the new release layout.
 
----
-
-## Environment (`.env.production` on EC2)
-
-Full var-by-var reference: `deploy/ENV-CHECKLIST.md`. Highlights:
-
-| Var | What | If missing |
-|-----|------|-----------|
-| `DATABASE_URL` | RDS PostgreSQL connection string | App crashes on first DB query |
-| `JWT_SECRET` | 64-char random (`openssl rand -hex 32`) | All auth fails |
-| `GROK_API_KEY` | x.ai console | Chat/memory extraction degrade to fallback |
-| `FAL_API_KEY` | fal.ai console | Image generation fails |
-| `AGENT_ENCRYPTION_KEY` | 64-char random | Agent token storage fails |
-| `NEXT_PUBLIC_APP_URL` | `https://app.myaipet.ai` | OAuth redirects break |
-| `CRON_SECRET` | 64-char random | Cron consolidation can't auth |
-| `TREASURY_WALLET` | USDT receive address | Payment routes **fail closed** (by design — see `web/src/lib/onchain.ts`) |
-
-Storage: `STORAGE_PROVIDER=s3` (+ `AWS_S3_BUCKET`/`AWS_S3_REGION`/credentials) recommended for prod, or `STORAGE_PROVIDER=local` + `LOCAL_UPLOAD_DIR` served via nginx.
-
-**Payments:** the only rail is SIWE wallet auth + **USDT (BEP-20) on BSC** — no Stripe, cards, or email accounts. Credit packs (verified in `web/src/app/api/credits/purchase/route.ts`): 100 credits / 5 USDT, 500 / 20 USDT, 2000 / 50 USDT (1 credit = $0.05). On-chain payment verification config (chain, RPC, USDT contract `0x55d398326f99059fF775485246999027B3197955`, treasury) is centralized and env-overridable in `web/src/lib/onchain.ts`.
-
----
-
-## Legacy / alternative deploy paths
-
-- **ECS/Docker** (`deploy/deploy.sh`, `deploy/ecs-task-definition.json`, `web/Dockerfile`, `docker-compose.yml`): a complete ECR → ECS Fargate pipeline exists in the repo but is **not** the live path. Actual production is the EC2 git-pull flow above.
-- **One-time AWS setup helpers**: `deploy/setup-aws.sh` (S3/ECR/log group), `deploy/setup-rds.sh` (RDS provisioning), `deploy/migrate-neon-to-rds.sh` (data copy, already done).
-
----
-
-## Appendix: smart contracts (BSC — currently paused)
-
-There is **no token**. MY AI PET operates a no-token model: credits are bought directly with USDT, and `season_points` are non-financial engagement points with no redemption. Do not deploy or document token-sale contracts.
-
-Two utility contracts were deployed to BNB Smart Chain during the build and are currently **paused (holding period)**, with a migration to Base planned ahead of go-live (see the public `/contracts` page, `web/src/app/contracts/page.tsx`):
-
-| Contract | Address | Status |
-|----------|---------|--------|
-| **PETContent** (ERC-721, content NFTs / memory anchors) | `0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c` | Deployed, paused |
-| **PetaGenTracker** (generation-event recorder) | `0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a` | Deployed, paused |
-| PETActivity, PetSoul | TBD | Planned (roadmap) |
-
-Tooling lives in `contracts/` (Hardhat 2.x, Solidity 0.8.28, OpenZeppelin 5.x; `hardhat.config.cjs`, `deploy.cjs`). Server-side on-chain recording is opt-in via `BLOCKCHAIN_ENABLED=true` + `BACKEND_RELAYER_KEY` (~0.0005 BNB per anchor); contract addresses are overridable via `PET_CONTENT_ADDRESS` / `PET_TRACKER_ADDRESS` (server) and `NEXT_PUBLIC_PET_CONTENT` / `NEXT_PUBLIC_PET_TRACKER` (client). Manual BscScan verification, if ever needed:
-
-```bash
-cd contracts
-npx hardhat --config hardhat.config.cjs verify --network bsc <CONTRACT_ADDRESS> <CONSTRUCTOR_ARGS...>
-```
-
-> **Never commit `.env` files (deployer/relayer keys) to version control.**
-
----
-
-## Troubleshooting
-
-| Issue | Fix |
-|-------|-----|
-| Smoke curl not 200 after deploy | `pm2 logs petclaw-web --lines 30`; check `.env.production` and that `prisma migrate deploy` succeeded |
-| `npm ci` fails on EC2 | Script auto-falls back to `npm install`; commit the updated `package-lock.json` back to keep CI in sync |
-| New route 500s on missing column/table | A migration didn't apply — re-run `bash deploy/ec2-pull.sh` (migrate step is idempotent) |
-| Payment routes reject everything | `TREASURY_WALLET` unset — payments fail closed by design (`web/src/lib/onchain.ts`) |
-| Landing page shows old content | Run the manual sync: `sudo cp landing-assets/* /opt/petclaw/landing-assets/` |
+If a smoke check fails, preserve the signed artifact and logs, confirm the rollback
+guard restored the prior generation, and diagnose before attempting another
+release. Do not modify the immutable current release in place.

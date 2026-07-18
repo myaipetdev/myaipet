@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * WorldCupPet — evergreen "Favorites Bracket" (이상형 월드컵).
+ * WorldCupPet — evergreen "Favorites Bracket".
  *
  * PRIMARY experience: a single-elimination "ideal-type world cup" over REAL
  * community pets. The player is shown two pets at a time and taps their
@@ -77,7 +77,7 @@ export default function WorldCupPet() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   FAVORITES BRACKET (이상형 월드컵) — the evergreen primary experience.
+   FAVORITES BRACKET — the evergreen primary experience.
    Real community pets, personal client-managed picks, honest low-data state.
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -540,7 +540,12 @@ function NationalPetStudio() {
         if (d?.status === "completed" && d?.url) { setResultUrl(d.url); setErr(null); setPendingJob(null); return; }
         if (d?.status === "failed") { setErr(d?.error || "Generation failed. Try another country."); setPendingJob(null); return; }
       } catch { /* transient — keep polling */ }
-      if (!stop && tries < 36) timer = setTimeout(tick, 2500);
+      if (!stop && tries < 36) {
+        timer = setTimeout(tick, 2500);
+      } else if (!stop) {
+        setErr("Rendering is taking longer than expected. Check Studio history before trying again.");
+        setPendingJob(null);
+      }
     };
     timer = setTimeout(tick, 2500);
     return () => { stop = true; clearTimeout(timer); };
@@ -557,7 +562,13 @@ function NationalPetStudio() {
 
   const copyLink = () => {
     if (!shareUrl) return;
-    navigator.clipboard?.writeText(shareUrl).then(() => setCopied(true)).catch(() => {});
+    if (!navigator.clipboard) {
+      setErr("Copy isn’t available in this browser. Open the shared creation and copy its URL.");
+      return;
+    }
+    navigator.clipboard.writeText(shareUrl).then(() => setCopied(true)).catch(() => {
+      setErr("Couldn’t copy the link. Try again or copy it from the shared creation.");
+    });
   };
 
   const setAsAvatar = async () => {
@@ -604,10 +615,10 @@ function NationalPetStudio() {
 
       {/* Pet picker (only if >1) */}
       {pets.length > 1 && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
+        <div role="group" aria-label="Choose your pet" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
           <span style={{ fontSize: 13, fontFamily: T.m, fontWeight: 700, letterSpacing: "0.14em", color: T.mono, textTransform: "uppercase" }}>Your pet</span>
           {pets.map((p) => (
-            <button key={p.id} onClick={() => setPetId(p.id)} className="ed-card-hover" style={{
+            <button type="button" key={p.id} onClick={() => setPetId(p.id)} aria-pressed={p.id === petId} className="ed-card-hover" style={{
               padding: "6px 14px", borderRadius: 999, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: T.body,
               border: p.id === petId ? `1.5px solid ${T.terra}` : `1px solid ${T.hair}`,
               background: p.id === petId ? T.terra : T.paper,
@@ -621,11 +632,11 @@ function NationalPetStudio() {
       <div style={{ fontSize: 14, fontFamily: T.body, color: T.muted2, marginBottom: 12 }}>
         Pick a country — your pet becomes its iconic animal in the flag&apos;s colors.
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 10, marginBottom: 22 }}>
+      <div role="group" aria-label="Choose a country" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 10, marginBottom: 22 }}>
         {WORLD_CUP_COUNTRIES.map((c) => {
           const on = country?.code === c.code;
           return (
-            <button key={c.code} onClick={() => setCountry(c)} title={`${c.name} — ${c.animal}`} className="ed-card-hover" style={{
+            <button type="button" key={c.code} onClick={() => setCountry(c)} aria-pressed={on} title={`${c.name} — ${c.animal}`} className="ed-card-hover" style={{
               display: "flex", flexDirection: "column", alignItems: "stretch", gap: 0, width: "100%",
               padding: 0, borderRadius: 10, cursor: "pointer", overflow: "hidden",
               border: on ? `2px solid ${T.terra}` : `1px solid ${T.hair}`,
@@ -662,10 +673,10 @@ function NationalPetStudio() {
           : "Pick a country above"}
       </button>
 
-      {err && <div style={{ fontFamily: T.body, background: "rgba(190,79,40,.08)", color: T.terraSub, border: `1px solid rgba(190,79,40,.22)`, borderRadius: 10, padding: "10px 14px", fontSize: 13.5, marginTop: 16 }}>{err}</div>}
+      {err && <div role="alert" style={{ fontFamily: T.body, background: "rgba(190,79,40,.08)", color: T.terraSub, border: `1px solid rgba(190,79,40,.22)`, borderRadius: 10, padding: "10px 14px", fontSize: 13.5, marginTop: 16 }}>{err}</div>}
 
       {pendingJob !== null && !resultUrl && !err && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontFamily: T.body, background: T.inset, color: T.muted2, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "10px 14px", fontSize: 13.5, marginTop: 16 }}>
+        <div role="status" aria-live="polite" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontFamily: T.body, background: T.inset, color: T.muted2, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "10px 14px", fontSize: 13.5, marginTop: 16 }}>
           <span>Still rendering — your national pet will appear here automatically.</span>
           <a href="/studio" className="ed-underline-slide" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.terra, textDecoration: "none" }}>OPEN STUDIO HISTORY →</a>
         </div>
@@ -823,6 +834,7 @@ function ChampionPrediction() {
           <img src={flagUrl(selCountry, 80)} alt={`${selCountry.name} flag`} style={{ width: 30, height: 20, objectFit: "cover", borderRadius: 3, border: `1px solid ${T.hair}`, flexShrink: 0 }} />
         )}
         <select
+          aria-label="World Cup champion prediction"
           value={sel}
           onChange={(e) => setSel(e.target.value)}
           style={{
@@ -837,8 +849,10 @@ function ChampionPrediction() {
           ))}
         </select>
         <button
+          type="button"
           onClick={submit}
           disabled={!sel || saving}
+          aria-busy={saving}
           className="wc-press"
           style={{
             padding: "10px 18px", borderRadius: 10, border: "none",
@@ -854,12 +868,12 @@ function ChampionPrediction() {
       </div>
 
       {submitErr && (
-        <div style={{ fontFamily: T.body, fontSize: 13, color: T.terraSub, background: "rgba(190,79,40,.08)", border: `1px solid rgba(190,79,40,.22)`, borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
+        <div role="alert" style={{ fontFamily: T.body, fontSize: 13, color: T.terraSub, background: "rgba(190,79,40,.08)", border: `1px solid rgba(190,79,40,.22)`, borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
           Couldn&apos;t submit — try again.
         </div>
       )}
       {!authed && (
-        <div style={{ fontFamily: T.body, fontSize: 13, color: T.terraSub, background: "rgba(190,79,40,.08)", border: `1px solid rgba(190,79,40,.22)`, borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
+        <div role="alert" style={{ fontFamily: T.body, fontSize: 13, color: T.terraSub, background: "rgba(190,79,40,.08)", border: `1px solid rgba(190,79,40,.22)`, borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
           Connect your wallet to cast your prediction.
         </div>
       )}
@@ -926,7 +940,7 @@ function ChampionPrediction() {
           <button onClick={load} className="wc-press ed-wipe" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.terra, background: "transparent", border: "1px solid rgba(190,79,40,.4)", borderRadius: 999, padding: "4px 12px", cursor: "pointer", textTransform: "uppercase" }}>Retry</button>
         </div>
       ) : (
-        <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase" }}>Loading the board…</div>
+        <div role="status" aria-live="polite" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase" }}>Loading the board…</div>
       )}
     </Reveal>
   );

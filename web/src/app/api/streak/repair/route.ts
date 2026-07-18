@@ -6,15 +6,14 @@
  * streak that's being recovered (see repairPriceForStreak).
  */
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { getOrCreateStreak, repairPriceForStreak, streakAfterRepair, todayUtcString } from "@/lib/missions/streak";
-
-function diffDays(a: string, b: string) {
-  const da = new Date(`${a}T00:00:00Z`).getTime();
-  const db = new Date(`${b}T00:00:00Z`).getTime();
-  return Math.round((da - db) / 86400000);
-}
+import { getOrCreateStreak, todayUtcString } from "@/lib/missions/streak";
+import {
+  repairStreak,
+  StreakInsufficientCreditsError,
+  StreakRepairUnavailableError,
+  StreakStateConflictError,
+} from "@/lib/streakPurchases";
 
 export async function POST(req: NextRequest) {
   const user = await getUser(req);
@@ -27,60 +26,29 @@ export async function POST(req: NextRequest) {
   }
 
   const s = await getOrCreateStreak(user.id);
-  if (!s.last_completed_date) {
-    return NextResponse.json({ error: "No streak to repair" }, { status: 400 });
-  }
   const today = todayUtcString();
-  const gap = diffDays(today, s.last_completed_date) - 1;
-  if (gap < 1) {
-    return NextResponse.json({ error: "Streak is not broken" }, { status: 400 });
-  }
-  if (s.longest_streak < 3) {
-    return NextResponse.json({ error: "Streak too short to repair (build it up first!)" }, { status: 400 });
-  }
-
-  const price = repairPriceForStreak(s.longest_streak);
-  const newStreak = streakAfterRepair(0, s.longest_streak);
-
-  // Guarded decrement (audit H17): balance check + debit in ONE atomic
-  // statement so concurrent repairs can't race the balance negative.
-  const after = await prisma.$transaction(async (tx) => {
-    const dec = await tx.user.updateMany({
-      where: { id: user.id, credits: { gte: price.credits } },
-      data: { credits: { decrement: price.credits } },
+  try {
+    const result = await repairStreak({
+      userId: user.id,
+      expectedUpdatedAt: s.updated_at,
+      today,
     });
-    if (dec.count === 0) return null; // insufficient credits
-    await tx.userStreak.update({
-      where: { user_id: user.id },
-      data: {
-        current_streak: newStreak,
-        last_completed_date: today,
-        pending_apology: false,
-        pending_apology_days: 0,
-      },
+    return NextResponse.json({
+      ok: true,
+      streak: result.streak,
+      creditsRemaining: result.creditsRemaining,
+      price: result.price,
     });
-    await tx.streakPurchase.create({
-      data: {
-        user_id: user.id,
-        kind: price.kind,
-        price_usd: price.usd,
-        paid_via: "credits",
-        paid_credits: price.credits,
-        streak_before: s.current_streak,
-        streak_after: newStreak,
-      },
-    });
-    const fresh = await tx.user.findUnique({ where: { id: user.id }, select: { credits: true } });
-    return fresh?.credits ?? 0;
-  });
-  if (after === null) {
-    return NextResponse.json({ error: "Not enough credits", needed: price.credits }, { status: 402 });
+  } catch (error) {
+    if (error instanceof StreakInsufficientCreditsError) {
+      return NextResponse.json(
+        { error: error.message, needed: error.required, available: error.available },
+        { status: 402 },
+      );
+    }
+    if (error instanceof StreakStateConflictError || error instanceof StreakRepairUnavailableError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    throw error;
   }
-
-  return NextResponse.json({
-    ok: true,
-    streak: newStreak,
-    creditsRemaining: after,
-    price,
-  });
 }

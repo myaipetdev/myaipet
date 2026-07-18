@@ -24,6 +24,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import nacl from "tweetnacl";
+import { oauthConnectionsEnabled, oauthUnavailableResponse } from "@/lib/oauth/availability";
+import { decodeOAuthCredentials } from "@/lib/oauth/credentials";
 
 // Discord interaction types
 const INT_TYPE_PING = 1;
@@ -60,6 +62,8 @@ async function verifySignature(req: NextRequest, rawBody: string): Promise<boole
 }
 
 export async function POST(req: NextRequest) {
+  if (!oauthConnectionsEnabled()) return oauthUnavailableResponse();
+
   // Discord enforces signature verify on every call, but this also blunts
   // forged-sig DoS attempts by capping per-IP volume.
   const rl = rateLimit(req, { key: "discord-int", limit: 120, windowMs: 60_000 });
@@ -92,10 +96,8 @@ export async function POST(req: NextRequest) {
         where: { platform: "discord", is_active: true },
       });
       const match = connections.find(c => {
-        try {
-          const creds = JSON.parse(c.credentials || "{}");
-          return creds.profile?.id === userId;
-        } catch { return false; }
+        const creds = decodeOAuthCredentials(c.credentials);
+        return creds?.profile?.id === userId;
       });
 
       if (!match) {

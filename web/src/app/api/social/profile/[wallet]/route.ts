@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { publicGenerationWhere } from "@/lib/publicFeed";
 
 export async function GET(
   req: NextRequest,
@@ -9,6 +10,7 @@ export async function GET(
   try {
     const { wallet } = await params;
 
+    const publicGenerations = await publicGenerationWhere();
     const user = await prisma.user.findFirst({
       where: { wallet_address: wallet.toLowerCase() },
       select: {
@@ -18,7 +20,6 @@ export async function GET(
         profile: true,
         _count: {
           select: {
-            generations: true,
             followers: true,
             following: true,
           },
@@ -30,13 +31,10 @@ export async function GET(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const totalLikes = await prisma.like.count({
-      where: {
-        generation: {
-          user_id: user.id,
-        },
-      },
-    });
+    const [generationCount, totalLikes] = await Promise.all([
+      prisma.generation.count({ where: await publicGenerationWhere({ user_id: user.id }) }),
+      prisma.like.count({ where: { generation: { AND: [publicGenerations, { user_id: user.id }] } } }),
+    ]);
 
     return NextResponse.json({
       id: user.id,
@@ -46,7 +44,7 @@ export async function GET(
       stats: {
         followers: user._count.followers,
         following: user._count.following,
-        generations: user._count.generations,
+        generations: generationCount,
         total_likes: totalLikes,
       },
     });

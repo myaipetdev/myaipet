@@ -16,8 +16,17 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import { TIER_LIMITS } from "@/lib/studio/providers";
 import { getCurrentSubscription } from "@/lib/studio/subscription";
-import { consumePaymentTx, PaymentAlreadyConsumed } from "@/lib/payments";
-import { verifyUsdtTransfer, treasuryConfigured } from "@/lib/onchain";
+import {
+  consumePaymentTx,
+  PaymentAlreadyConsumed,
+  PaymentsPausedError,
+} from "@/lib/payments";
+import {
+  canonicalizePaymentTxHash,
+  InvalidPaymentTxHash,
+  verifyUsdtTransfer,
+  treasuryConfigured,
+} from "@/lib/onchain";
 
 export async function GET(req: NextRequest) {
   const user = await getUser(req);
@@ -48,13 +57,19 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const tier = body?.tier as "pro" | "studio";
-  const txHash = body?.txHash as string;
+  const txHash = body?.txHash;
 
   if (tier !== "pro" && tier !== "studio") {
     return NextResponse.json({ error: "tier must be pro or studio" }, { status: 400 });
   }
-  if (!txHash || !/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
-    return NextResponse.json({ error: "Invalid txHash" }, { status: 400 });
+  let canonicalTxHash: string;
+  try {
+    canonicalTxHash = canonicalizePaymentTxHash(txHash);
+  } catch (error) {
+    if (error instanceof InvalidPaymentTxHash) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    throw error;
   }
 
   const price = TIER_LIMITS[tier].pricePerMonthUsd;
@@ -67,7 +82,7 @@ export async function POST(req: NextRequest) {
 
   // Replay protection via global ledger (audit C3) with same-user idempotency.
   // (last_payment_tx alone is insufficient — it's overwritten on each renewal.)
-  const seen = await prisma.consumedPayment.findUnique({ where: { tx_hash: txHash } });
+  const seen = await prisma.consumedPayment.findUnique({ where: { tx_hash: canonicalTxHash } });
   if (seen) {
     if (seen.purpose === "subscription" && seen.user_id === user.id) {
       return NextResponse.json({ ok: true, reused: true });
@@ -75,7 +90,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Transaction already used" }, { status: 409 });
   }
 
-  const verify = await verifyUsdtTransfer(txHash, user.wallet_address, price);
+  const verify = await verifyUsdtTransfer(canonicalTxHash, user.wallet_address, price);
   if (verify.ok !== true) return NextResponse.json({ error: verify.error }, { status: 400 });
 
   // Extend or set expires_at — 30 days from now or from existing expiry if still active
@@ -88,7 +103,7 @@ export async function POST(req: NextRequest) {
   try {
     updated = await prisma.$transaction(async (tx) => {
       await consumePaymentTx(tx, {
-        txHash,
+        txHash: canonicalTxHash,
         userId: user.id,
         purpose: "subscription",
         amountUsd: verify.amount,
@@ -97,11 +112,11 @@ export async function POST(req: NextRequest) {
         where: { user_id: user.id },
         create: {
           user_id: user.id, tier, expires_at: newExpiry,
-          last_payment_tx: txHash, total_paid_usd: verify.amount,
+          last_payment_tx: canonicalTxHash, total_paid_usd: verify.amount,
         },
         update: {
           tier, expires_at: newExpiry,
-          last_payment_tx: txHash,
+          last_payment_tx: canonicalTxHash,
           total_paid_usd: { increment: verify.amount },
         },
       });
@@ -109,6 +124,9 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     if (e instanceof PaymentAlreadyConsumed) {
       return NextResponse.json({ error: "Transaction already used" }, { status: 409 });
+    }
+    if (e instanceof PaymentsPausedError) {
+      return NextResponse.json({ error: e.message }, { status: 503 });
     }
     throw e;
   }

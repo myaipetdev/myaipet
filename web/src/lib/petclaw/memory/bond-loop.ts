@@ -17,6 +17,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { callLLM } from "@/lib/llm/router";
+import { containsHangul, generatedEnglishOrNull } from "@/lib/generatedLanguage";
 
 const MAX_REFLECTIONS = 12;       // keep the most recent dozen
 const REFLECT_EVERY_TURNS = 8;    // generate one roughly every 8 exchanges
@@ -34,7 +35,12 @@ export async function getBondNotesBlock(petId: number): Promise<string> {
   const mods = (pet?.personality_modifiers as Record<string, unknown>) || {};
   const refs = (mods.bond_reflections as BondReflection[]) || [];
   if (refs.length === 0) return "";
-  const recent = refs.slice(-6).map(r => `- ${r.note}`).join("\n");
+  const recent = refs
+    .filter((reflection) => !containsHangul(reflection.note))
+    .slice(-6)
+    .map(r => `- ${r.note}`)
+    .join("\n");
+  if (!recent) return "";
   return `\nRELATIONSHIP NOTES (how to be a good companion to THIS owner — honor these):\n${recent}`;
 }
 
@@ -68,7 +74,7 @@ export async function maybeReflectOnBond(
     `specific owner — their emotional patterns, what helps, what to avoid. Not a ` +
     `fact about them (that's separate), a relationship cue.\n\n` +
     `Bond level: ${pet.bond_level}/100. Prior notes:\n${priorNotes}\n\n` +
-    `Rules: actionable, specific, no sycophancy. If this exchange revealed nothing ` +
+    `Rules: write in English only and never output Hangul; actionable, specific, no sycophancy. If this exchange revealed nothing ` +
     `new about how to treat them, output exactly "SKIP". Otherwise output only the note.`;
 
   try {
@@ -85,7 +91,7 @@ export async function maybeReflectOnBond(
       max_tokens: 80,
       temperature: 0.7,
     });
-    const note = (out.text || "").trim();
+    const note = generatedEnglishOrNull(out.text);
     if (!note || note.toUpperCase().startsWith("SKIP") || note.length < 8) return;
 
     const next = [...existing, { date: ymd(), note: note.slice(0, 160) }].slice(-MAX_REFLECTIONS);

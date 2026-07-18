@@ -244,12 +244,9 @@ export function getModel(id: string): StudioModel | undefined {
   return MODELS.find(m => m.id === id);
 }
 
-// TEMPORARY: the fal.ai account is unfunded. Rather than hide the other models
-// (Kling/FLUX/Wan/…) we keep them in the catalog but mark them locked, so the
-// fal is wired (falSubmit/falPoll in backend.ts) and FAL_API_KEY is configured
-// (the Pet-LoRA pipeline uses it), so unlock the fal roster — FLUX, Kling,
-// Seedance, Wan are now generatable. The explicitly comingSoon entries
-// (Kling Pro, MiniMax, Veo 3, Grok video) stay locked until funded.
+// Emergency catalog switch. Keep false while the FAL-backed roster is enabled;
+// setting true marks every non-Grok engine unavailable without changing prices
+// or deleting roadmap entries. Individual comingSoon flags remain authoritative.
 const GROK_ONLY = false;
 
 export function listModels(opts?: { kind?: ModelKind; maxTier?: ModelTier }): StudioModel[] {

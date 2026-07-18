@@ -1,6 +1,8 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import react from "eslint-plugin-react";
+import reactHooks from "eslint-plugin-react-hooks";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -12,6 +14,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local visual-render helper; not part of the shipped Next.js application.
+    "render-village.cjs",
   ]),
   {
     // Stylistic + React-compiler advisory rules are surfaced as warnings, not
@@ -19,6 +23,10 @@ const eslintConfig = defineConfig([
     // correctness (it passes clean). Genuine-bug rules — react-hooks/rules-of-hooks,
     // react/jsx-key, prefer-const, exhaustive-deps — stay at default severity and
     // are fixed in code, never silenced here.
+    plugins: {
+      react,
+      "react-hooks": reactHooks,
+    },
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/ban-ts-comment": "warn",

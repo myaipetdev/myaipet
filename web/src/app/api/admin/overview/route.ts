@@ -11,8 +11,8 @@
  * indistinguishable from a route that doesn't exist. The page at /admin is
  * likewise unlisted — no nav links anywhere.
  *
- * Every number here is a REAL DB aggregate (or the honest in-memory LLM budget
- * snapshot from src/lib/llm/router.ts). Empty tables return zeros — nothing is
+ * Every number here is a REAL DB aggregate, including persistent cluster-wide
+ * text and vision LLM budget counters. Empty tables return zeros — nothing is
  * ever fabricated.
  *
  * NOTE on "credits spent": there is no single credit-debit ledger table; spends
@@ -33,7 +33,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
-import { getLLMDailyCounters } from "@/lib/llm/router";
+import { getImageDailyCounters, getLLMDailyCounters, getVisionDailyCounters } from "@/lib/llm/router";
 
 export const dynamic = "force-dynamic";
 
@@ -153,6 +153,11 @@ export async function GET(req: NextRequest) {
     : [];
   const walletById = new Map<number, string>(purchasers.map((u) => [u.id, u.wallet_address]));
   const shortWallet = (w: string | undefined) => (w ? `${w.slice(0, 6)}…${w.slice(-4)}` : "?");
+  const [llmToday, visionToday, imageToday] = await Promise.all([
+    getLLMDailyCounters(),
+    getVisionDailyCounters(),
+    getImageDailyCounters(),
+  ]);
 
   return NextResponse.json({
     generatedAt: new Date().toISOString(),
@@ -167,8 +172,10 @@ export async function GET(req: NextRequest) {
     // Capped award-path ledger only (ap:* DailyActionCount rows); the small
     // uncapped grants have no dated trail and are deliberately NOT estimated.
     seasonPointsIssued7d: { cappedLedger: seasonPointsCapped7d._sum.count || 0 },
-    // Per-process in-memory snapshot — resets on deploy, platform-funded calls only.
-    llmToday: getLLMDailyCounters(),
+    // Persistent cluster-wide platform attempts; owner/BYOK calls are excluded.
+    llmToday,
+    visionToday,
+    imageToday,
     recentPurchases: recentPurchases.map((p) => ({
       id: p.id,
       wallet: shortWallet(walletById.get(p.user_id)),

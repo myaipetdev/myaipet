@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUser, invalidateSession } from "@/lib/auth";
+import { getUser, invalidateSession, SESSION_COOKIE_NAME } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
 
 /**
@@ -16,12 +16,18 @@ export async function POST(req: NextRequest) {
   const user = await getUser(req);
   if (!user) {
     // Already not authenticated — treat as success (idempotent)
-    return NextResponse.json({ ok: true });
+    const response = NextResponse.json({ ok: true });
+    response.cookies.delete(SESSION_COOKIE_NAME);
+    return response;
   }
 
   try {
-    await invalidateSession(user.id);
-    return NextResponse.json({ ok: true });
+    // Rotate every active session and consume any still-pending signed login
+    // challenge for this wallet in the same transaction.
+    await invalidateSession(user.id, user.wallet_address);
+    const response = NextResponse.json({ ok: true });
+    response.cookies.delete(SESSION_COOKIE_NAME);
+    return response;
   } catch (e: any) {
     console.error("Logout error:", e?.message);
     return NextResponse.json({ error: "Logout failed" }, { status: 500 });

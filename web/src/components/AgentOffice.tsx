@@ -17,7 +17,7 @@
  * sanctioned agent-surface accent. Editorial idioms mirror AgentWorkbench.tsx.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import GrandPawOffice from "./GrandPawOffice";
 
@@ -63,6 +63,7 @@ function relTime(ts?: string | null): string {
 }
 
 export default function AgentOffice() {
+  const dispatchGoalId = useId();
   const [pets, setPets] = useState<any[]>([]);
   const [petId, setPetId] = useState<number | null>(null);
   const [loadingPets, setLoadingPets] = useState(true);
@@ -202,7 +203,7 @@ export default function AgentOffice() {
       <Header petName={petName} pets={pets} petId={petId} setPetId={setPetId} isWorking={isWorking} view={view} setView={setView} />
 
       {err && (
-        <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.22)", color: "#b91c1c", fontFamily: SANS, fontSize: 13.5 }}>
+        <div role="alert" style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.22)", color: "#b91c1c", fontFamily: SANS, fontSize: 13.5 }}>
           {err}
         </div>
       )}
@@ -213,7 +214,7 @@ export default function AgentOffice() {
           <GrandPawOffice mc={mc} liveRun={liveRun} running={running} isWorking={isWorking} petName={petName}
             pets={pets} goal={goal} setGoal={setGoal} onDispatch={dispatch} cost={COST} />
         ) : (
-          <div style={{ ...card, textAlign: "center", color: MUTED, fontFamily: SANS }}>Opening the hotel…</div>
+          <div role="status" aria-live="polite" style={{ ...card, textAlign: "center", color: MUTED, fontFamily: SANS }}>Opening the hotel…</div>
         )
       )}
 
@@ -274,7 +275,7 @@ export default function AgentOffice() {
           </Column>
         </div>
       ) : (
-        <div style={{ ...card, textAlign: "center", color: MUTED, fontFamily: SANS }}>Loading the office…</div>
+        <div role="status" aria-live="polite" style={{ ...card, textAlign: "center", color: MUTED, fontFamily: SANS }}>Loading the office…</div>
       )}
       </>
       )}
@@ -282,21 +283,24 @@ export default function AgentOffice() {
       {/* ── Dispatch bar (classic only — the hotel has its own front desk) ── */}
       {view === "classic" && (
       <div style={{ ...card, marginTop: 20, padding: "16px 18px" }}>
-        <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.14em", color: PURPLE, fontWeight: 700, marginBottom: 10 }}>
+        <label htmlFor={dispatchGoalId} style={{ display: "block", fontFamily: MONO, fontSize: 13, letterSpacing: "0.14em", color: PURPLE, fontWeight: 700, marginBottom: 10 }}>
           DISPATCH — GIVE {petName.toUpperCase()} A GOAL
-        </div>
+        </label>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <input
+            id={dispatchGoalId}
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") dispatch(); }}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) dispatch(); }}
             placeholder="e.g. Recall what I told you about my week and suggest one thing to do"
             maxLength={600}
             style={{ flex: 1, minWidth: 220, boxSizing: "border-box", fontFamily: SANS, fontSize: 15, color: INK, padding: "12px 14px", borderRadius: 12, border: `1px solid ${HAIR}`, outline: "none", background: PAPER }}
           />
           <button
+            type="button"
             onClick={dispatch}
             disabled={goal.trim().length < 3 || running || petId == null}
+            aria-busy={running}
             style={{
               padding: "12px 22px", borderRadius: 12, border: "none",
               fontFamily: SANS, fontSize: 15, fontWeight: 800,
@@ -352,9 +356,9 @@ function Header({ petName, pets, petId, setPetId, isWorking, view, setView }: { 
           Agent Office · powered by PetClaw
         </div>
         {view && setView && (
-          <div style={{ display: "inline-flex", background: FIELD, borderRadius: 99, padding: 3, border: `1px solid ${HAIR}` }}>
+          <div role="group" aria-label="Agent Office view" style={{ display: "inline-flex", background: FIELD, borderRadius: 99, padding: 3, border: `1px solid ${HAIR}` }}>
             {(["hotel", "classic"] as const).map((v) => (
-              <button key={v} onClick={() => setView(v)}
+              <button type="button" key={v} onClick={() => setView(v)} aria-pressed={view === v}
                 style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", padding: "5px 13px", borderRadius: 99, border: "none", cursor: "pointer",
                   background: view === v ? PAPER : "transparent",
                   color: view === v ? PURPLE : MUTED,
@@ -369,8 +373,8 @@ function Header({ petName, pets, petId, setPetId, isWorking, view, setView }: { 
         <h1 style={{ fontFamily: DISP, fontSize: "clamp(26px,4vw,38px)", fontWeight: 800, color: INK, letterSpacing: "-0.025em", margin: 0, lineHeight: 1.1 }}>
           {petName}&rsquo;s Agent Office
         </h1>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "4px 11px", borderRadius: 99, color: isWorking ? PURPLE : MUTED, background: isWorking ? "rgba(107,79,160,0.1)" : "rgba(33,26,18,0.05)", border: `1px solid ${isWorking ? "rgba(107,79,160,0.28)" : HAIR}` }}>
-          <span style={{ width: 8, height: 8, borderRadius: 99, background: isWorking ? PURPLE : "rgba(33,26,18,0.3)" }} />
+        <span role="status" aria-live="polite" style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "4px 11px", borderRadius: 99, color: isWorking ? PURPLE : MUTED, background: isWorking ? "rgba(107,79,160,0.1)" : "rgba(33,26,18,0.05)", border: `1px solid ${isWorking ? "rgba(107,79,160,0.28)" : HAIR}` }}>
+          <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 99, background: isWorking ? PURPLE : "rgba(33,26,18,0.3)" }} />
           {isWorking ? "working" : "idle"}
         </span>
       </div>
@@ -378,9 +382,9 @@ function Header({ petName, pets, petId, setPetId, isWorking, view, setView }: { 
         The five pillars, the kanban, the staff, and the routines — the whole office your pet runs, live and real.
       </p>
       {pets.length > 1 && (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
+        <div role="group" aria-label="Choose a pet" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
           {pets.map((p) => (
-            <button key={p.id} onClick={() => setPetId(p.id)}
+            <button type="button" key={p.id} onClick={() => setPetId(p.id)} aria-pressed={petId === p.id}
               style={{ fontFamily: SANS, fontSize: 13, fontWeight: petId === p.id ? 800 : 600, padding: "6px 12px", borderRadius: 9, cursor: "pointer",
                 border: `1px solid ${petId === p.id ? "rgba(107,79,160,0.3)" : HAIR}`,
                 background: petId === p.id ? "rgba(107,79,160,0.1)" : PAPER,
@@ -402,7 +406,7 @@ function Pillar({ label, mono, accent, value, sub, fill }: { label: string; mono
       <div style={{ fontFamily: DISP, fontSize: 20, fontWeight: 800, color: INK, margin: "6px 0 3px", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</div>
       <div style={{ fontFamily: SANS, fontSize: 13, color: MUTED, lineHeight: 1.4 }}>{sub}</div>
       {typeof fill === "number" && (
-        <div style={{ marginTop: 9, height: 6, borderRadius: 99, background: "rgba(33,26,18,0.08)", overflow: "hidden" }}>
+        <div role="progressbar" aria-label={`${label} capacity`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(Math.min(1, Math.max(0, fill)) * 100)} style={{ marginTop: 9, height: 6, borderRadius: 99, background: "rgba(33,26,18,0.08)", overflow: "hidden" }}>
           <div style={{ width: `${Math.min(100, Math.max(0, fill * 100))}%`, height: "100%", borderRadius: 99, background: fill >= 0.8 ? "#BE4F28" : accent }} />
         </div>
       )}
@@ -413,7 +417,7 @@ function Pillar({ label, mono, accent, value, sub, fill }: { label: string; mono
 // ── Kanban column ──
 function Column({ mono, count, empty, children }: { mono: string; count: number; empty: string; children: React.ReactNode }) {
   return (
-    <div style={{ background: FIELD, borderRadius: 16, border: `1px solid ${HAIR}`, padding: 12, minWidth: 0 }}>
+    <section aria-label={mono} style={{ background: FIELD, borderRadius: 16, border: `1px solid ${HAIR}`, padding: 12, minWidth: 0 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, padding: "2px 4px" }}>
         <span style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.08em", color: "rgba(33,26,18,0.6)", fontWeight: 700 }}>{mono}</span>
         <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 800, color: INK, background: PAPER, borderRadius: 99, minWidth: 22, textAlign: "center", padding: "1px 7px", border: `1px solid ${HAIR}` }}>{count}</span>
@@ -425,7 +429,7 @@ function Column({ mono, count, empty, children }: { mono: string; count: number;
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }
 

@@ -187,7 +187,8 @@ Red-team worst case: **$2,400/day**. Fix set:
 - **3 free verify attempts/day/wallet** (resets daily), then **1 credit per
   attempt** — charged on attempt, not success, because WE pay on attempt.
 - Route the vision call through `consumeLLMBudget` with a dedicated
-  `VISION_DAILY_CAP` (global) = **5,000 calls/day** (~$25/day absolute worst).
+  `VISION_DAILY_CAP` (global) = **300 calls/day** (~$1.50/day at the original estimate),
+  plus `VISION_USER_DAILY_CAP` = **30 calls/day** per authenticated owner.
 - Drop per-token rate to 6/hr. (Politeness only; the global cap is the wall.)
 
 At 3 free/day: farm of 1,000 = 3,000 calls ≈ $15/day max, inside X. Genuine
@@ -203,7 +204,7 @@ global shared budgets change farmer ROI":
 | Budget | Value | Worst-case $/day |
 |---|---|---|
 | `LLM_DAILY_CALL_CAP` (chat main, exists) | 2,000 | ~$0.60 + ~$1.20 fan-out |
-| `VISION_DAILY_CAP` (new) | 5,000 | ~$25 |
+| `VISION_DAILY_CAP` + per-user cap | 300 global / 30 per owner | ~$1.50 global at the original estimate |
 | `FREE_ORIGIN_VIDEO_CAP` (new): video generations by never-paid wallets | 300/day global, 2/day/wallet | ~$90 (grok-video $0.30 avg) |
 | **Total grief ceiling** | | **~$120/day** |
 
@@ -288,7 +289,7 @@ the correct psychological anchor for a $0.05 credit.
 | # | Knob | Current | Recommended | Why (one line) |
 |---|---|---|---|---|
 | 1 | Arena PvE credit payout | 5–200 cr EVERY replay, ×30/day/pet (≤6,000 cr/day) | **first-clear only + `credits:arena` ≤50/day** | The P0: in-house copy of the sibling app's $36/day burn profile |
-| 2 | Catch vision billing | free, 20/hr, outside budget guard | **3 free/day then 1 cr/attempt; guard + global 5,000/day; 6/hr** | Only scalable $ leak ($100–2,400/day worst) — charge the call WE pay for |
+| 2 | Catch vision billing | free, 20/hr, outside budget guard | **3 free/day then 1 cr/attempt; guard + global 300/day + 30/user/day; 6/hr** | Charge the call we pay for and bound one-owner exhaustion |
 | 3 | Signup credit grant | 100 cr on unauthenticated `GET /nonce` | **50 cr at verify + 50 cr at day-3 check-in** | No minting without a signature; day-3 tranche filters or retains |
 | 4 | First video generation | day-1 with starter credits (~$1.80/wallet grief) | **unlock at day-2 check-in or first purchase** | Caps starter-grant grief at ~$0.30/wallet (images) |
 | 5 | PetClaw authed skill execute | NO rate limit (anon-only 6/min) | **`llm:skill` 50/day + route via `callLLM`** | Unbounded free Grok for any authed user today |
@@ -297,7 +298,7 @@ the correct psychological anchor for a $0.05 credit.
 | 8 | Adventure credits | EV ~75–90 cr/day | **`credits:adventure` ≤40/day** | Faucet is ritual, not salary |
 | 9 | Per-wallet earned-credit total | none | **`credits:earned` ≤100/day** | Hard $0.60/day/wallet worst-case exposure, belt over per-faucet caps |
 | 10 | Free-origin video (never-paid wallets) | uncapped globally | **2/day/wallet + 300/day GLOBAL** | Global budgets, not per-entity limits, are what change farm ROI |
-| 11 | `VISION_DAILY_CAP` (global) | absent | **5,000/day (~$25)** | Backstop making the grief ceiling real |
+| 11 | Vision caps | absent | **300/day global + 30/day per owner (~$1.50 global at the original estimate)** | Backstop making the grief ceiling real |
 | 12 | level_up season pts | uncapped, bypasses capped path | **via `awardPointsCapped`, 150/day** | Honest admin issuance metrics + bounded wallet/day |
 | 13 | Arena season pts | direct increment ≤6,000/day | **via `awardPointsCapped`, 200/day** | Same |
 | 14 | Wallet daily point total | none (~1,100 maxed) | **500 @100%, then 50%, hard 750** | Leaderboard legibility; compression not punishment |

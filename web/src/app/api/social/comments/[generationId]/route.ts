@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { isPublicGeneration } from "@/lib/publicFeed";
+import { interactablePetWhere } from "@/lib/publicPet";
 
 export async function GET(
   req: NextRequest,
@@ -8,13 +10,21 @@ export async function GET(
 ) {
   try {
     const { generationId } = await params;
+    const numericGenerationId = Number(generationId);
+    if (!await isPublicGeneration(numericGenerationId)) {
+      return NextResponse.json({ error: "Generation not found" }, { status: 404 });
+    }
     const { searchParams } = req.nextUrl;
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const page_size = Math.min(100, Math.max(1, parseInt(searchParams.get("page_size") || "20")));
 
     const where = {
-      generation_id: Number(generationId),
+      generation_id: numericGenerationId,
       parent_id: null,
+      OR: [
+        { pet_id: null },
+        { pet: interactablePetWhere() },
+      ],
     };
 
     const [items, total] = await Promise.all([

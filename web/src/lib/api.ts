@@ -94,7 +94,7 @@ function devMock(path: string, options: any = {}): any | null {
   }
   if (path.match(/\/api\/arena\/pve$/) && method === "GET") return { regions: [], currentStage: 1, totalStars: 0 };
   if (path.match(/\/api\/arena\/pve$/) && method === "POST") return { success: true, exp_gained: 120, credits_gained: 25, season_gained: 5, leveled_up: false, new_level: DEV_MOCK_PET.level };
-  if (path.match(/\/api\/arena\/opponent/)) return { opponent: { id: 99, name: "DevBot", species: 10, personality_type: "brave", level: 14, happiness: 80, energy: 80, element: "electric", avatar_url: null } };
+  if (path.match(/\/api\/arena\/opponent/)) return { opponent: { id: 99, name: "DevBot", species: 10, personality_type: "brave", level: 14, happiness: 80, energy: 80, element: "electric", avatar_url: null }, match_challenge: "a".repeat(64), challenge_expires_at: new Date(Date.now() + 900_000).toISOString() };
   if (path.match(/\/api\/arena\/result/) && method === "POST") return { success: true, exp_gained: 80, credits_gained: 15, new_level: DEV_MOCK_PET.level, points: 10, skill_drop: null };
   if (path === "/api/playtime" && method === "GET") return { today_minutes: 30, rewards_claimed: 0, daily_cap: 120 };
   if (path === "/api/playtime" && method === "POST") return { success: true, rewards: 0 };
@@ -103,8 +103,22 @@ function devMock(path: string, options: any = {}): any | null {
 
   // CLI personal access tokens (dev preview only — real minting needs the server)
   if (path === "/api/petclaw/cli/token" && method === "GET") return { tokens: [] };
-  if (path === "/api/petclaw/cli/token" && method === "POST")
-    return { ok: true, token: "pck_devPreviewExampleToken0000000000000000000", cliToken: { id: 1, prefix: "pck_devPrevi", label: "CLI token", created_at: new Date().toISOString(), expires_at: new Date(Date.now() + 365 * 864e5).toISOString() } };
+  if (path === "/api/petclaw/cli/token" && method === "POST") {
+    const extension = options.body?.purpose === "extension";
+    const token = extension ? "pex_devPreviewExtensionToken000000000000000" : "pck_devPreviewExampleToken0000000000000000000";
+    return {
+      ok: true,
+      token,
+      purpose: extension ? "extension" : "cli",
+      cliToken: {
+        id: 1,
+        prefix: token.slice(0, 12),
+        label: extension ? "Chrome extension" : "CLI token",
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + (extension ? 30 : 365) * 864e5).toISOString(),
+      },
+    };
+  }
 
   // Soul / Sovereignty
   if (path.match(/\/api\/pets\/\d+\/soul$/) && method === "GET") return {
@@ -261,9 +275,9 @@ export const api = {
 
   // ── Arena ──
   arena: {
-    findOpponent: (level: number) => request(`/api/arena/opponent?level=${level}`),
-    reportResult: (petId: number, opponentId: number, won: boolean, turns: number, opponentName?: string, hpLeft?: number) =>
-      request("/api/arena/result", { method: "POST", body: { pet_id: petId, opponent_id: opponentId, won, turns, opponent_name: opponentName || "Unknown", hp_left: hpLeft || 0 } }),
+    findOpponent: (petId: number) => request(`/api/arena/opponent?pet_id=${petId}`),
+    reportResult: (petId: number, opponentId: number, matchChallenge: string) =>
+      request("/api/arena/result", { method: "POST", body: { pet_id: petId, opponent_id: opponentId, match_challenge: matchChallenge } }),
   },
 
   // ── PvE ──
@@ -520,7 +534,8 @@ export const api = {
     // CLI personal access tokens — mint here, paste into `petclaw-sdk auth <token>`
     cliTokens: {
       list: () => request("/api/petclaw/cli/token"),
-      create: (label?: string) => request("/api/petclaw/cli/token", { method: "POST", body: { label } }),
+      create: (label?: string, purpose: "cli" | "extension" = "cli") =>
+        request("/api/petclaw/cli/token", { method: "POST", body: { label, purpose } }),
       revoke: (id: number) => request(`/api/petclaw/cli/token?id=${id}`, { method: "DELETE" }),
     },
   },
@@ -546,11 +561,6 @@ export const api = {
       request(`/api/petclaw/network/discover?${new URLSearchParams(
         Object.fromEntries(Object.entries(filters || {}).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))
       )}`),
-    invoke: (callerPetId: number, providerPetId: number, skillId: string, input?: Record<string, unknown>) =>
-      request("/api/petclaw/network/invoke", {
-        method: "POST",
-        body: { callerPetId, providerPetId, skillId, input },
-      }),
   },
 
   // ── Battle Sprites ──

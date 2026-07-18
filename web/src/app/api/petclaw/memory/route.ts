@@ -21,6 +21,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
+import { containsHangul, generatedEnglishOrFallback } from "@/lib/generatedLanguage";
 
 async function ownsPet(req: NextRequest): Promise<{ user: { id: number } | null; petId: number; pet: any | null }> {
   const user = await getUser(req);
@@ -41,13 +42,21 @@ export async function GET(req: NextRequest) {
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
 
   const mods = (pet.personality_modifiers as any) || {};
-  const memories = Array.isArray(mods.persistent_memories) ? mods.persistent_memories : [];
-  const userProfile = Array.isArray(mods.user_profile) ? mods.user_profile : [];
-  const learnedPatterns = Array.isArray(mods.learned_patterns) ? mods.learned_patterns : [];
+  // Legacy generated rows remain untouched and exportable, but this English-only
+  // inspection surface hides them rather than silently translating owner data.
+  const memories = (Array.isArray(mods.persistent_memories) ? mods.persistent_memories : [])
+    .filter((entry: any) => !containsHangul(entry?.content));
+  const userProfile = (Array.isArray(mods.user_profile) ? mods.user_profile : [])
+    .filter((entry: any) => !containsHangul(entry?.content));
+  const learnedPatterns = (Array.isArray(mods.learned_patterns) ? mods.learned_patterns : [])
+    .filter((entry: any) => !containsHangul(entry));
   // VIGIL bond-loop relationship notes — the second-person, actionable notes the
   // pet wrote about how to treat you (capped ring in bond_reflections).
   const bondNotes = Array.isArray(mods.bond_reflections)
-    ? mods.bond_reflections.map((r: any) => (typeof r === "string" ? r : r?.note)).filter(Boolean).slice(-8)
+    ? mods.bond_reflections
+        .map((r: any) => (typeof r === "string" ? r : r?.note))
+        .filter((note: unknown) => typeof note === "string" && !containsHangul(note))
+        .slice(-8)
     : [];
 
   const sessions = await prisma.petMemory.findMany({
@@ -63,12 +72,22 @@ export async function GET(req: NextRequest) {
     userProfile,
     learnedPatterns,
     bondNotes,
-    sessions: sessions.map(s => ({
-      id: s.id,
-      platform: s.memory_type.replace("session_", ""),
-      content: s.content,
-      createdAt: s.created_at,
-    })),
+    sessions: sessions.map(s => {
+      const petGenerated = /^\[pet\]\s*/.test(s.content);
+      return {
+        id: s.id,
+        platform: s.memory_type.replace("session_", ""),
+        // Owner-authored turns remain intact. Only legacy pet-generated turns
+        // receive a neutral English display fallback.
+        content: petGenerated
+          ? generatedEnglishOrFallback(
+              s.content,
+              "[pet] A previous pet reply is unavailable in this English-only release.",
+            )
+          : s.content,
+        createdAt: s.created_at,
+      };
+    }),
     stats: {
       memoryCount: memories.length,
       profileCount: userProfile.length,

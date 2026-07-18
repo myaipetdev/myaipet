@@ -129,7 +129,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
   const [filter, setFilter] = useState<"All" | Rarity>("All");
   const [sort, setSort] = useState<SortKey>("rarity");
   const [openId, setOpenId] = useState<number | null>(null); // card detail overlay
-  const [cardVariant, setCardVariant] = useState(CODEX_VARIANTS[0].key); // 띠부씰 look for Illustrate
+  const [cardVariant, setCardVariant] = useState(CODEX_VARIANTS[0].key); // collectible sticker look for Illustrate
 
   // SCRUM-100 — non-destructive Illustrate preview. Holds the just-generated art
   // for a pet until the user explicitly confirms replacing the original.
@@ -196,7 +196,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
   const illustrate = async (petId: number, name: string) => {
     setIllustrating(petId); setErr(null);
     try {
-      // Codex sticker — our ©-free collectible-creature look in the chosen 띠부씰
+      // Codex sticker — our original collectible-creature look in the chosen
       // variant (grok-imagine uses the pet's photo as reference for identity). The
       // number/name badge is our UI's job, so the art itself stays text-free.
       const prompt = codexPrompt(name, cardVariant);
@@ -230,10 +230,14 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
     try {
       // Save to codex_url — NEVER avatar_url. The real photo is preserved; the
       // card + My Pet hero prefer codex_url when present (toggle-able on My Pet).
-      await fetch(`/api/pets/${petId}`, {
+      const res = await fetch(`/api/pets/${petId}`, {
         method: "PATCH", headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ codex_url: url }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || `Couldn't set the Codex art (${res.status}).`);
+      }
       setBust((b) => ({ ...b, [petId]: Date.now() }));
       setPreview(null);
     } catch (e: any) {
@@ -293,9 +297,9 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
 
   // Tabs — mono-labelled editorial pills, active = ink. Album · Catch · Battle.
   const tabStrip = (
-    <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+    <div role="group" aria-label="Cards section" style={{ display: "flex", gap: 8, marginBottom: 20 }}>
       {(["collection", "catch", "battle"] as const).map((t) => (
-        <button key={t} onClick={() => switchTab(t)} style={{
+        <button type="button" key={t} onClick={() => switchTab(t)} aria-pressed={tab === t} style={{
           padding: "9px 18px", borderRadius: 999, cursor: "pointer",
           fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase",
           border: `1px solid ${tab === t ? T.ink : T.hair}`, background: tab === t ? T.ink : T.paper,
@@ -391,18 +395,18 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
 
       {/* Page-level banner only for errors with no overlay open (battle tab) —
           overlay errors render INSIDE the overlay, above the scrim. */}
-      {err && !openPet && !preview && <div style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "10px 14px", fontFamily: T.body, fontSize: 13.5, marginBottom: 16, boxShadow: "var(--ed-shadow-card)" }}>{err}</div>}
+      {err && !openPet && !preview && <div role="alert" style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "10px 14px", fontFamily: T.body, fontSize: 13.5, marginBottom: 16, boxShadow: "var(--ed-shadow-card)" }}>{err}</div>}
 
       {tab === "collection" && (
         <div>
           {/* Rarity filter tabs (colored dot each) + sort control */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <div role="group" aria-label="Filter cards by rarity" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {FILTER_TABS.map((f) => {
                 const active = filter === f.key;
                 const n = f.key === "All" ? pets.length : (rarityCounts[f.key] || 0);
                 return (
-                  <button key={f.key} onClick={() => setFilter(f.key)} style={{
+                  <button type="button" key={f.key} onClick={() => setFilter(f.key)} aria-pressed={active} style={{
                     display: "inline-flex", alignItems: "center", gap: 7,
                     padding: "8px 14px", borderRadius: 999, cursor: "pointer",
                     fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase",
@@ -441,7 +445,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                   }}
                   aria-label={`Open ${p.name}'s card`}
                 >
-                  <PetCard petId={p.id} maxWidth={260} placeholder={{ name: p.name, rarity: p.rarity }} />
+                  <PetCard petId={p.id} maxWidth={260} placeholder={{ name: p.name, rarity: p.rarity }} insideButton />
                 </button>
               </Reveal>
             ))}
@@ -507,7 +511,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
           <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "flex-end", marginBottom: 18 }}>
             <Reveal dir="left">
               <Field label="Your pet">
-                <select value={myPetId ?? ""} onChange={(e) => setMyPetId(Number(e.target.value))} style={select}>
+                <select aria-label="Your pet" value={myPetId ?? ""} onChange={(e) => setMyPetId(Number(e.target.value))} style={select}>
                   {pets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </Field>
@@ -517,14 +521,14 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
             </Reveal>
             <Reveal dir="right" delay={90}>
               <Field label="Opponent">
-                <select value={oppId ?? ""} onChange={(e) => setOppId(Number(e.target.value))} style={select}>
+                <select aria-label="Opponent" value={oppId ?? ""} onChange={(e) => setOppId(Number(e.target.value))} style={select}>
                   <option value="">Pick an opponent…</option>
                   {oppList.map((o) => <option key={o.petId} value={o.petId}>{o.name} · Lv{o.level} · {o.element}</option>)}
                 </select>
               </Field>
             </Reveal>
             <Reveal dir="pop" delay={180}>
-              <button onClick={runBattle} disabled={!myPetId || !oppId || battling} style={{ ...btn, padding: "11px 22px", opacity: !myPetId || !oppId || battling ? 0.5 : 1 }}>
+              <button type="button" onClick={runBattle} disabled={!myPetId || !oppId || battling} aria-busy={battling} style={{ ...btn, padding: "11px 22px", opacity: !myPetId || !oppId || battling ? 0.5 : 1 }}>
                 {battling ? "Battling…" : "Battle!"}
               </button>
             </Reveal>
@@ -610,7 +614,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
              The big card is NOT a link anymore: the holo tilt owns the inspect
              gesture ("View card page ▸" below stays the sole external link). ── */}
       {openPet && (
-        <Overlay onClose={() => { setOpenId(null); setErr(null); }}>
+        <Overlay label={`${openPet.name} card details`} closeDisabled={illustrating != null} onClose={() => { setOpenId(null); setErr(null); }}>
           <div style={{ maxWidth: 320, margin: "0 auto" }}>
             {/* One-shot "drawn from the binder" flip */}
             <div style={{ position: "relative", animation: "cdThunk .18s ease-out 640ms both" }}>
@@ -634,7 +638,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                 perforation to share (the reference interaction). The buttons
                 below remain the accessible path to every action. */}
             <RipStub petId={openPet.id} rarity={openPet.rarity} onRip={() => shareCard(openPet.id, openPet.name)} />
-            {/* 띠부씰 style picker — the look Illustrate will generate */}
+            {/* Collectible sticker style picker — the look Illustrate will generate */}
             <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginTop: 14 }}>
               {CODEX_VARIANTS.map((v) => {
                 const on = v.key === cardVariant;
@@ -660,7 +664,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
             </div>
             {/* Errors surface INSIDE the overlay — a 402 must never hide under the scrim */}
             {err && (
-              <div style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "9px 12px", fontFamily: T.body, fontSize: 13, marginTop: 12, textAlign: "center" }}>{err}</div>
+              <div role="alert" style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "9px 12px", fontFamily: T.body, fontSize: 13, marginTop: 12, textAlign: "center" }}>{err}</div>
             )}
             <p style={{ fontFamily: T.body, fontSize: 13, color: T.muted, textAlign: "center", margin: "12px auto 0", maxWidth: 268, lineHeight: 1.5 }}>
               Codex turns {openPet.name}{" "}into a collectible creature sticker — you preview &amp; confirm before it becomes the card art. Your photo is always kept. Costs 5 credits.
@@ -671,7 +675,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
 
       {/* ── SCRUM-100: non-destructive Illustrate PREVIEW + confirm ── */}
       {preview && (
-        <Overlay onClose={() => { if (!illustrating) { setPreview(null); setErr(null); } }}>
+        <Overlay label={`Preview ${preview.name}'s Codex sticker`} closeDisabled={illustrating != null} onClose={() => { if (!illustrating) { setPreview(null); setErr(null); } }}>
           <div style={{ maxWidth: 520, margin: "0 auto", textAlign: "center" }}>
             <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.terra, marginBottom: 6 }}>Preview · not saved yet</div>
             <h3 style={{ fontFamily: T.disp, fontSize: 24, fontWeight: 800, color: T.ink, margin: "0 0 4px", letterSpacing: "-0.02em" }}>Make this {preview.name}&apos;s Codex sticker?</h3>
@@ -695,7 +699,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
             </div>
             {/* confirmIllustrate PATCH failures surface here, above the scrim */}
             {err && (
-              <div style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "9px 12px", fontFamily: T.body, fontSize: 13, marginTop: 14 }}>{err}</div>
+              <div role="alert" style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "9px 12px", fontFamily: T.body, fontSize: 13, marginTop: 14 }}>{err}</div>
             )}
           </div>
         </Overlay>
@@ -727,14 +731,18 @@ function RipStub({ petId, rarity, onRip }: { petId: number; rarity: Rarity; onRi
   };
   // A real DRAG must cross the strip — a tap that merely lands past 85% must
   // never fire the share, so require actual movement (moved flag) too.
+  const fireRip = () => {
+    if (ripped || firedRef.current) return;
+    firedRef.current = true;
+    setRipped(true);
+    setProg(1);
+    setTimeout(onRip, 480);
+  };
   const done = () => {
     if (!dragging.current) return;
     dragging.current = false;
     if (moved.current && progRef.current >= 0.85 && !firedRef.current) {
-      firedRef.current = true;
-      setRipped(true);
-      setProg(1);
-      setTimeout(onRip, 480);
+      fireRip();
     } else if (!firedRef.current) {
       progRef.current = 0;
       setProg(0);
@@ -748,12 +756,26 @@ function RipStub({ petId, rarity, onRip }: { petId: number; rarity: Rarity; onRi
       {/* Perforation strip — dashed tear line + the glowing grab dot */}
       <div
         ref={stripRef}
-        onPointerDown={(e) => { if (ripped) return; dragging.current = true; moved.current = false; (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId); }}
+        onPointerDown={(e) => {
+          if (ripped) return;
+          e.currentTarget.focus();
+          dragging.current = true;
+          moved.current = false;
+          (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+        }}
         onPointerMove={(e) => { if (dragging.current) { moved.current = true; moveTo(e.clientX); } }}
         onPointerUp={done}
         onPointerCancel={done}
         role="button"
-        aria-label="Rip the ticket stub to share this card"
+        tabIndex={0}
+        aria-disabled={ripped}
+        aria-label={ripped ? "Ticket stub shared" : "Rip the ticket stub to share this card"}
+        onKeyDown={(e) => {
+          if (!ripped && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            fireRip();
+          }
+        }}
         style={{ position: "relative", height: 30, cursor: ripped ? "default" : "grab", touchAction: "none" }}
       >
         {/* uncut dashed perforation (remaining right segment) */}
@@ -933,10 +955,53 @@ function CatchTile({ onClick }: { onClick?: () => void }) {
   );
 }
 
-function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+function Overlay({ children, onClose, label, closeDisabled = false }: { children: React.ReactNode; onClose: () => void; label: string; closeDisabled?: boolean }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  const closeDisabledRef = useRef(closeDisabled);
+
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  useEffect(() => { closeDisabledRef.current = closeDisabled; }, [closeDisabled]);
+  useEffect(() => {
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusTimer = window.setTimeout(() => panelRef.current?.querySelector<HTMLElement>("button:not([disabled])")?.focus(), 0);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !closeDisabledRef.current) {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+      const target = returnFocusRef.current;
+      requestAnimationFrame(() => target?.focus());
+    };
+  }, []);
+
   return (
     <div
-      onClick={onClose}
+      onMouseDown={(event) => { if (event.target === event.currentTarget && !closeDisabled) onClose(); }}
       style={{
         position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center",
         background: "rgba(24,16,8,.44)", backdropFilter: "blur(3px)", padding: 20, overflowY: "auto",
@@ -944,13 +1009,18 @@ function Overlay({ children, onClose }: { children: React.ReactNode; onClose: ()
       }}
     >
       <div
-        onClick={(e) => e.stopPropagation()}
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        aria-busy={closeDisabled}
+        onMouseDown={(e) => e.stopPropagation()}
         style={{
           position: "relative", background: T.field, borderRadius: 24, border: `1px solid ${T.hair}`, padding: "34px 26px 28px", maxWidth: 600, width: "100%", boxShadow: "var(--ed-shadow-card)",
           animation: "edPanelIn 260ms cubic-bezier(.2,.8,.2,1) both",
         }}
       >
-        <button onClick={onClose} aria-label="Close" style={{
+        <button type="button" onClick={onClose} disabled={closeDisabled} aria-label={`Close ${label}`} style={{
           position: "absolute", top: 14, right: 14, width: 30, height: 30, borderRadius: "50%",
           border: `1px solid ${T.hair}`, background: T.paper, color: T.ink, cursor: "pointer",
           fontFamily: T.body, fontSize: 16, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center",

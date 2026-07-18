@@ -6,9 +6,14 @@
  * stamps a streak_purchases row.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { getOrCreateStreak, SHIELD_PRICE, SHIELD_MAX_OWNED } from "@/lib/missions/streak";
+import { getOrCreateStreak } from "@/lib/missions/streak";
+import {
+  buyStreakShield,
+  StreakInsufficientCreditsError,
+  StreakShieldInventoryFullError,
+  StreakStateConflictError,
+} from "@/lib/streakPurchases";
 
 export async function POST(req: NextRequest) {
   const user = await getUser(req);
@@ -21,43 +26,26 @@ export async function POST(req: NextRequest) {
   }
 
   const s = await getOrCreateStreak(user.id);
-  if (s.shields_owned >= SHIELD_MAX_OWNED) {
-    return NextResponse.json({ error: `Shield inventory full (${SHIELD_MAX_OWNED})` }, { status: 400 });
+  try {
+    const result = await buyStreakShield({
+      userId: user.id,
+      expectedUpdatedAt: s.updated_at,
+    });
+    return NextResponse.json({
+      ok: true,
+      shieldsOwned: result.shieldsOwned,
+      creditsRemaining: result.creditsRemaining,
+    });
+  } catch (error) {
+    if (error instanceof StreakInsufficientCreditsError) {
+      return NextResponse.json(
+        { error: error.message, needed: error.required, available: error.available },
+        { status: 402 },
+      );
+    }
+    if (error instanceof StreakStateConflictError || error instanceof StreakShieldInventoryFullError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    throw error;
   }
-
-  // Guarded decrement (audit H17): the balance check and the debit are ONE
-  // atomic statement, so concurrent buys can't race a balance negative.
-  const after = await prisma.$transaction(async (tx) => {
-    const dec = await tx.user.updateMany({
-      where: { id: user.id, credits: { gte: SHIELD_PRICE.credits } },
-      data: { credits: { decrement: SHIELD_PRICE.credits } },
-    });
-    if (dec.count === 0) return null; // insufficient credits
-    await tx.userStreak.update({
-      where: { user_id: user.id },
-      data: { shields_owned: { increment: 1 } },
-    });
-    await tx.streakPurchase.create({
-      data: {
-        user_id: user.id,
-        kind: "shield",
-        price_usd: SHIELD_PRICE.usd,
-        paid_via: "credits",
-        paid_credits: SHIELD_PRICE.credits,
-        streak_before: s.current_streak,
-        streak_after: s.current_streak,
-      },
-    });
-    const fresh = await tx.user.findUnique({ where: { id: user.id }, select: { credits: true } });
-    return fresh?.credits ?? 0;
-  });
-  if (after === null) {
-    return NextResponse.json({ error: "Not enough credits" }, { status: 402 });
-  }
-
-  return NextResponse.json({
-    ok: true,
-    shieldsOwned: s.shields_owned + 1,
-    creditsRemaining: after,
-  });
 }

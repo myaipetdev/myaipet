@@ -44,8 +44,15 @@ export default function DashboardList({ rows }: { rows: LeaderRow[] }) {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!picker) return;
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") setPicker(null); };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [picker]);
+
   const startChallenge = async (myPetId: number, opponentPetId: number, txHash?: string) => {
-    if (busy) return;
+    if (busy && !txHash) return;
     setBusy(true);
     try {
       const url = txHash
@@ -61,7 +68,6 @@ export default function DashboardList({ rows }: { rows: LeaderRow[] }) {
         setPaywall({
           ...pw,
           onPaid: async (newTx: string) => {
-            setPaywall(null);
             await startChallenge(myPetId, opponentPetId, newTx);
           },
         });
@@ -69,7 +75,9 @@ export default function DashboardList({ rows }: { rows: LeaderRow[] }) {
       }
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        toast(err.error || "Challenge failed", "error");
+        const message = err.error || "Challenge failed";
+        if (txHash) throw new Error(message);
+        toast(message, "error");
         return;
       }
       const { result } = await res.json();
@@ -144,11 +152,11 @@ export default function DashboardList({ rows }: { rows: LeaderRow[] }) {
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999,
           display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
         }}>
-          <div onClick={(e) => e.stopPropagation()} style={{
+          <div role="dialog" aria-modal="true" aria-labelledby="challenge-picker-title" onClick={(e) => e.stopPropagation()} style={{
             maxWidth: 440, width: "100%", background: "white", borderRadius: 20,
             padding: 24, boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
           }}>
-            <h2 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 6px", letterSpacing: "-0.02em" }}>
+            <h2 id="challenge-picker-title" style={{ fontSize: 18, fontWeight: 800, margin: "0 0 6px", letterSpacing: "-0.02em" }}>
               Challenge {picker.opponent.name}
             </h2>
             <p style={{ fontSize: 13, color: "rgba(26,26,46,0.6)", margin: "0 0 18px", lineHeight: 1.55 }}>

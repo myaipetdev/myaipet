@@ -37,8 +37,8 @@ export default function TrustStrip() {
         }}>
           <TrustColumn
             emoji="⛓"
-            title="On-chain at go-live"
-            sub="Your pet's soul + activity anchor on-chain at go-live — non-upgradeable, owner-minimized."
+            title="On-chain · planned"
+            sub="Soul + activity anchoring is not live. Deployment and audit must complete before it can be enabled."
             rows={[
               { label: "Contracts & roadmap", value: "View →", href: "/contracts" },
             ]}

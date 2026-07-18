@@ -8,6 +8,9 @@ import PETActivityABI from "./PETActivity.abi.json";
 // is lib/onchain.ts; keep these env values in sync so chain/token/contract
 // swaps only require env changes (no code edits).
 export const CONTRACTS = {
+  // Public boolean only; no relayer key or other secret is exposed. next.config
+  // derives this exact value from the authoritative server kill-switch at build.
+  blockchainEnabled: process.env.NEXT_PUBLIC_BLOCKCHAIN_ENABLED === "true",
   chainId: Number(process.env.NEXT_PUBLIC_CHAIN_ID || 56),
   petToken: (process.env.NEXT_PUBLIC_PET_TOKEN || "").trim(),
   petShop: (process.env.NEXT_PUBLIC_PET_SHOP || "").trim(),

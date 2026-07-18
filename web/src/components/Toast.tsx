@@ -55,7 +55,6 @@ export default function ToastHost() {
 
   return (
     <div
-      aria-live="polite"
       style={{
         position: "fixed",
         top: "calc(env(safe-area-inset-top, 0px) + 76px)",
@@ -75,8 +74,8 @@ function ToastRowView({ row, onDismiss }: { row: ToastRow; onDismiss: () => void
   const { fg, bg, border, emoji } = STYLE[row.kind];
   return (
     <div
-      role="status"
-      onClick={onDismiss}
+      role={row.kind === "error" ? "alert" : "status"}
+      aria-atomic="true"
       style={{
         pointerEvents: "auto",
         background: bg, color: fg, border,
@@ -87,12 +86,22 @@ function ToastRowView({ row, onDismiss }: { row: ToastRow; onDismiss: () => void
         fontFamily: "'Space Grotesk', sans-serif",
         lineHeight: 1.45,
         boxShadow: "0 10px 32px rgba(15,23,42,0.12), 0 1px 0 rgba(255,255,255,0.6) inset",
-        cursor: "pointer",
         animation: "toastIn 320ms cubic-bezier(0.2,0.8,0.2,1)",
       }}
     >
-      <span style={{ fontSize: 18 }}>{emoji}</span>
+      <span aria-hidden="true" style={{ fontSize: 18 }}>{emoji}</span>
       <span style={{ flex: 1 }}>{row.text}</span>
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label={`Dismiss ${row.kind} notification`}
+        style={{
+          border: 0, background: "transparent", color: "currentColor",
+          width: 28, height: 28, margin: -6, borderRadius: 8,
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer", fontSize: 18, lineHeight: 1, opacity: 0.72,
+        }}
+      >×</button>
       <style>{`
         @keyframes toastIn {
           from { opacity: 0; transform: translateY(-6px) scale(0.98); }

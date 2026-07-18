@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/pets/[petId]/soul
- * Returns the Web4 Soul NFT state for the pet.
+ * Returns the pet's Soul identity record and any confirmed on-chain token.
  */
 export async function GET(
   req: NextRequest,
@@ -33,12 +33,14 @@ export async function GET(
       soul: null,
       checkpoint_count: 0,
       memory_nft_count: 0,
+      memory_milestone_count: 0,
     });
   }
 
-  const [checkpoint_count, memory_nft_count] = await Promise.all([
+  const [checkpoint_count, memory_milestone_count, memory_nft_count] = await Promise.all([
     prisma.personaCheckpoint.count({ where: { soul_id: soul.id } }),
     prisma.memoryNft.count({ where: { pet_id: pid } }),
+    prisma.memoryNft.count({ where: { pet_id: pid, memory_token_id: { not: null } } }),
   ]);
 
   return NextResponse.json({
@@ -60,12 +62,13 @@ export async function GET(
       birth_at: soul.created_at,
       last_heartbeat: soul.last_heartbeat_at,
       wallet_address: soul.owner_wallet,
-      on_chain: !!soul.mint_tx_hash,
+      on_chain: soul.token_id != null,
       inactivity_days: soul.last_heartbeat_at
         ? Math.floor((Date.now() - new Date(soul.last_heartbeat_at).getTime()) / 86_400_000)
         : null,
     },
     checkpoint_count,
     memory_nft_count,
+    memory_milestone_count,
   });
 }

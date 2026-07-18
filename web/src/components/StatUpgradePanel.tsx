@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * Pay-to-power stat upgrade panel.
+ * Payment-gated stat upgrade panel.
  *
- * Three rows (ATK / DEF / SPD), each showing current value + ceiling + a
- * "+5 (1 USDT)" button. Click → POST to /api/pets/[petId]/stats/upgrade →
- * 402 opens PaywallModal → after pay, auto-retries with ?tx_hash=…
+ * This surface fails closed: it is not rendered unless the public runtime
+ * config says payments are explicitly enabled. When enabled, each row shows
+ * current value + ceiling and opens the receipt-backed paywall flow.
  *
  * Combined power displayed at top — directly feeds the Leaderboard ranking.
  * The buttons drive the BM grid's "Compete" column (Stat Upgrade USDT).
@@ -36,22 +36,39 @@ const STAT_META: Record<keyof Stats, { label: string; icon: string; color: strin
 
 export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: number; onStatsChanged?: (stats: Stats) => void }) {
   const [data, setData] = useState<PanelData | null>(null);
+  const [paymentsAvailable, setPaymentsAvailable] = useState(false);
   const [busy, setBusy] = useState<keyof Stats | null>(null);
   const [paywall, setPaywall] = useState<any>(null);
   const [celebrate, setCelebrate] = useState<{ stat: keyof Stats; from: number; to: number; combinedPower: number } | null>(null);
 
   const load = async () => {
     try {
+      const configRes = await fetch("/api/config", { cache: "no-store" });
+      const config = configRes.ok ? await configRes.json() : null;
+      if (config?.payments_enabled !== true) {
+        setPaymentsAvailable(false);
+        setData(null);
+        return;
+      }
+      setPaymentsAvailable(true);
       const res = await fetch(`/api/pets/${petId}/stats/upgrade`, { headers: getAuthHeaders() });
       if (res.ok) setData(await res.json());
-    } catch {}
+    } catch {
+      setPaymentsAvailable(false);
+      setData(null);
+    }
   };
 
   useEffect(() => {
     let alive = true;
     setData(null); // clear immediately so a pet switch never shows the previous pet's stats
+    setPaymentsAvailable(false);
     (async () => {
       try {
+        const configRes = await fetch("/api/config", { cache: "no-store" });
+        const config = configRes.ok ? await configRes.json() : null;
+        if (!alive || config?.payments_enabled !== true) return;
+        setPaymentsAvailable(true);
         const res = await fetch(`/api/pets/${petId}/stats/upgrade`, { headers: getAuthHeaders() });
         if (alive && res.ok) setData(await res.json());
       } catch {}
@@ -60,7 +77,7 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
   }, [petId]);
 
   const upgrade = async (stat: keyof Stats, txHash?: string) => {
-    if (busy) return;
+    if (busy && !txHash) return;
     setBusy(stat);
     try {
       const qs = new URLSearchParams({ stat });
@@ -74,7 +91,6 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
         setPaywall({
           ...pw,
           onPaid: async (newTx: string) => {
-            setPaywall(null);
             await upgrade(stat, newTx);
           },
         });
@@ -82,7 +98,9 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
       }
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        toast(err.error || "Upgrade failed", "error");
+        const message = err.error || "Upgrade failed";
+        if (txHash) throw new Error(message);
+        toast(message, "error");
         return;
       }
       const j = await res.json();
@@ -96,7 +114,7 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
     }
   };
 
-  if (!data) return null;
+  if (!paymentsAvailable || !data) return null;
 
   return (
     <div className="stat-upgrade-panel" style={{
@@ -122,7 +140,7 @@ export default function StatUpgradePanel({ petId, onStatsChanged }: { petId: num
         </div>
       </div>
       <p style={{ fontSize: 13, color: "rgba(33,26,18,0.6)", margin: "0 0 14px", lineHeight: 1.6 }}>
-        Each +{data.increment} pushes you up the leaderboard. 50% of every USDT spent is burned.
+        Each +{data.increment} raises this pet&apos;s combined battle power. A verified payment receipt is required for every upgrade.
       </p>
 
       {/* Three stat rows */}

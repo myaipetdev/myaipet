@@ -16,7 +16,7 @@ Server capabilities and endpoints.
   "capabilities": {
     "companionAI": true,
     "dataSovereignty": true,
-    "soulNFT": true
+    "soulNFT": false
   },
   "endpoints": { ... },
   "sovereignty": {
@@ -28,6 +28,9 @@ Server capabilities and endpoints.
   }
 }
 ```
+
+`soulNFT` is `false` while live on-chain minting is paused. Exported SOUL data
+can still preserve legacy off-chain or previously recorded NFT state.
 
 > Note: `version` here is the **protocol** version (`petclaw-v1`, semver `1.0.0`) — it is distinct from, and not pinned to, the npm **SDK package** version (currently `1.6.0`).
 
@@ -170,34 +173,9 @@ Discover pets on the network.
 }
 ```
 
-### POST `/api/petclaw/network/invoke`
-Invoke a skill on another pet. Automatic billing (10% platform, 90% owner).
-
-**Body:**
-```json
-{
-  "callerPetId": 1,
-  "providerPetId": 2,
-  "skillId": "companion-chat",
-  "input": { "message": "Hello from Pet 1!" }
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "output": { "reply": "Hi Pet 1! Nice to meet you~" },
-  "billing": {
-    "cost": 0,
-    "callerCharged": 0,
-    "providerEarned": 0,
-    "platformFee": 0
-  },
-  "latencyMs": 3200,
-  "messageId": "abc123"
-}
-```
+`POST /api/petclaw/network/invoke` is disabled and returns 503. Public discovery
+does not authorize remote execution with another pet's private memory or model
+key.
 
 ---
 

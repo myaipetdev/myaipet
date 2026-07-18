@@ -1,7 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
-import { SKILL_DB, SKILL_MAP, MAX_SKILL_SLOTS, getStarterSkills, getSkillUpgradeCost } from "@/lib/skills";
+import { SKILL_DB, SKILL_MAP, MAX_SKILL_SLOTS, getStarterSkills } from "@/lib/skills";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  SkillAlreadyMaxLevelError,
+  SkillUpgradeConflictError,
+  SkillUpgradeInsufficientCreditsError,
+  SkillUpgradeUnavailableError,
+  upgradeSkill,
+} from "@/lib/skillUpgrade";
 
 // GET /api/skills?pet_id=X — Get pet's skills (learned + equipped)
 export async function GET(req: NextRequest) {
@@ -17,8 +24,11 @@ export async function GET(req: NextRequest) {
   });
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
 
-  // If pet has no skills, initialize starters
-  if (pet.skills.length === 0) {
+  // Ignore legacy phantom skill rows created by the retired evolution mapping.
+  // If none of the pet's rows belong to the canonical battle database, grant
+  // the normal starters so an evolved legacy pet is not left with an empty UI.
+  const canonicalSkills = pet.skills.filter((skill) => Boolean(SKILL_MAP[skill.skill_key]));
+  if (canonicalSkills.length === 0) {
     const element = (pet.element as any) || "normal";
     const starterKeys = getStarterSkills(element);
     const created = await prisma.$transaction(
@@ -35,7 +45,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ skills, available: getAvailableForPet(pet) });
   }
 
-  const skills = pet.skills.map((s) => ({
+  const skills = canonicalSkills.map((s) => ({
     ...s,
     def: SKILL_MAP[s.skill_key],
   }));
@@ -90,6 +100,7 @@ export async function POST(req: NextRequest) {
     }
 
     case "equip": {
+      if (!skillDef) return NextResponse.json({ error: "Unknown skill" }, { status: 400 });
       const skill = pet.skills.find((s) => s.skill_key === skill_key);
       if (!skill) return NextResponse.json({ error: "Skill not learned" }, { status: 400 });
 
@@ -124,22 +135,39 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Already max level" }, { status: 400 });
       }
 
-      const cost = getSkillUpgradeCost(skill.level, skillDef.rarity);
-      // Guarded decrement (audit H17) — same pattern as "learn".
-      const upgraded = await prisma.$transaction(async (tx) => {
-        const dec = await tx.user.updateMany({
-          where: { id: user.id, credits: { gte: cost } },
-          data: { credits: { decrement: cost } },
+      try {
+        const result = await upgradeSkill({
+          userId: user.id,
+          petId: pet.id,
+          skillKey: skill.skill_key,
+          expectedLevel: skill.level,
+          maxLevel: skillDef.maxLevel,
+          rarity: skillDef.rarity,
         });
-        if (dec.count === 0) return false;
-        await tx.petSkill.update({ where: { id: skill.id }, data: { level: { increment: 1 } } });
-        return true;
-      });
-      if (!upgraded) {
-        return NextResponse.json({ error: "Insufficient credits", required: cost }, { status: 400 });
+        return NextResponse.json({
+          upgraded: skill_key,
+          new_level: result.newLevel,
+          credits_spent: result.creditsSpent,
+          credits_remaining: result.creditsRemaining,
+        });
+      } catch (error) {
+        if (error instanceof SkillUpgradeConflictError) {
+          return NextResponse.json({ error: error.message }, { status: 409 });
+        }
+        if (error instanceof SkillAlreadyMaxLevelError) {
+          return NextResponse.json({ error: error.message }, { status: 409 });
+        }
+        if (error instanceof SkillUpgradeInsufficientCreditsError) {
+          return NextResponse.json(
+            { error: error.message, required: error.required, available: error.available },
+            { status: 400 },
+          );
+        }
+        if (error instanceof SkillUpgradeUnavailableError) {
+          return NextResponse.json({ error: error.message }, { status: 404 });
+        }
+        throw error;
       }
-
-      return NextResponse.json({ upgraded: skill_key, new_level: skill.level + 1, credits_spent: cost });
     }
 
     default:

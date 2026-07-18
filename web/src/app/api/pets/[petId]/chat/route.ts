@@ -13,6 +13,10 @@ import { sanitizeText } from "@/lib/sanitize";
 import { estimateHelpfulness } from "@/lib/petclaw/memory/feedback";
 import { BEST_OF_N_ENABLED, pickBest, pickBestLLM } from "@/lib/petclaw/memory/best-of-n";
 import { callLLM } from "@/lib/llm/router";
+import { generatedEnglishOrFallback } from "@/lib/generatedLanguage";
+
+const GENERATED_REPLY_FALLBACK = "I'm happy to see you! Tell me more. 🐾";
+const LEGACY_REPLY_FALLBACK = "A previous pet reply is unavailable in this English-only release.";
 
 const PERSONALITY_VOICES: Record<string, string> = {
   friendly: "You speak warmly, use lots of exclamation marks, and are always encouraging. You love your owner.",
@@ -58,7 +62,14 @@ export async function GET(
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   const memory = createMemoryManager(pet.id);
   const recent = await memory.getRecentMessages("all", 20).catch(() => []);
-  const messages = recent.map((m) => ({ role: m.role === "user" ? "user" : "pet", text: m.content }));
+  // Preserve owner-authored text exactly. Only assistant/generated turns cross
+  // the English-only display boundary.
+  const messages = recent.map((m) => ({
+    role: m.role === "user" ? "user" : "pet",
+    text: m.role === "user"
+      ? m.content
+      : generatedEnglishOrFallback(m.content, LEGACY_REPLY_FALLBACK),
+  }));
   return NextResponse.json({ messages });
 }
 
@@ -169,35 +180,29 @@ ${learnedPatternsBlock(pet)}
 - NEVER break character. You are a pet, not an AI.`;
 
   try {
-    const grokKey = process.env.GROK_API_KEY;
-    if (!grokKey) throw new Error("GROK_API_KEY not configured");
-
-    const callGrok = (temperature: number) => fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${grokKey}`,
-      },
-      body: JSON.stringify({
-        model: "grok-3-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: message.trim().slice(0, 500) },
-        ],
-        max_tokens: 150,
-        temperature,
-      }),
+    const callCandidate = (temperature: number) => callLLM({
+      task: "chat",
+      petId: pet.id,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: message.trim().slice(0, 500) },
+      ],
+      max_tokens: 150,
+      temperature,
     });
 
     let reply: string;
     if (BEST_OF_N_ENABLED) {
-      // 2 candidates with different temperatures, picked by heuristic scorer
-      const [r1, r2] = await Promise.all([callGrok(0.75), callGrok(1.0)]);
-      const j1 = r1.ok ? await r1.json() : null;
-      const j2 = r2.ok ? await r2.json() : null;
-      const candidates = [j1, j2]
-        .map((d, i) => ({ text: d?.choices?.[0]?.message?.content || "", temperature: i === 0 ? 0.75 : 1.0 }))
-        .filter(c => c.text);
+      // Two routed candidates preserve owner BYOK and gain the same bounded
+      // platform-provider fallback as the normal single-candidate path.
+      const results = await Promise.allSettled([callCandidate(0.75), callCandidate(1.0)]);
+      const temperatures = [0.75, 1.0];
+      const candidates = results
+        .map((result, i) => ({
+          text: result.status === "fulfilled" ? result.value.text : "",
+          temperature: temperatures[i],
+        }))
+        .filter((candidate) => candidate.text);
       if (candidates.length === 0) throw new Error("Chat failed");
       const learnedPatterns: any[] = ((pet.personality_modifiers as any)?.learned_patterns) || [];
       // CHORUS v2: an independent LLM judge picks the best candidate; on any
@@ -215,20 +220,15 @@ ${learnedPatternsBlock(pet)}
     } else {
       // Main reply path — routed through the model router (task:'chat'), so the
       // pet-owner's connected model (BYOK) answers if they've connected one for
-      // chat, else the platform Grok default. The Grok default is byte-identical
-      // to the previous direct call (same model grok-3-mini, max_tokens, temp).
-      const out = await callLLM({
-        task: "chat",
-        petId: pet.id,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: message.trim().slice(0, 500) },
-        ],
-        max_tokens: 150,
-        temperature: 0.9,
-      });
-      reply = out.text || `*${pet.name} tilts head curiously*`;
+      // chat, else the env-selected platform route (xAI, then OpenAI by default).
+      const out = await callCandidate(0.9);
+      reply = out.text || GENERATED_REPLY_FALLBACK;
     }
+
+    // Provider and BYOK models can ignore prompt language. Enforce the invariant
+    // once, immediately before any DB write or API response, without a second
+    // paid model call.
+    reply = generatedEnglishOrFallback(reply, GENERATED_REPLY_FALLBACK);
 
     // Save as interaction + memory.
     // interaction_type MUST be "chat" (not "talk") — this row is the ledger the
@@ -321,10 +321,13 @@ ${learnedPatternsBlock(pet)}
       playful: ["Ooh ooh! Let's play instead! 🎾", "Hehe, you're funny!", "Tag, you're it!"],
       shy: ["O-oh... hi... 👉👈", "That's nice...", "*hides behind paw*"],
       lazy: ["*yawns* ...huh? Oh, hi... 😴", "Can we nap instead?", "Mmm... five more minutes..."],
-      default: [`*${pet.name} looks at you happily*`, `*wags tail*`, "Woof! 🐾"],
+      default: [GENERATED_REPLY_FALLBACK, "*wags tail*", "Woof! 🐾"],
     };
     const opts = fallbacks[pet.personality_type] || fallbacks.default;
-    const reply = opts[Math.floor(Math.random() * opts.length)];
+    const reply = generatedEnglishOrFallback(
+      opts[Math.floor(Math.random() * opts.length)],
+      GENERATED_REPLY_FALLBACK,
+    );
 
     // Even on LLM failure, log the user's turn so cross-platform timeline doesn't
     // get holes. We skip extraction (no real reply to extract from).

@@ -14,21 +14,27 @@ export interface PremiumItem {
   rarity: "common" | "rare" | "epic" | "legendary";
   duration?: number;      // hours, if time-limited
   stackable: boolean;
+  saleEnabled: boolean;
+  unavailableReason?: string;
 }
 
 export const PREMIUM_ITEMS: PremiumItem[] = [
   // ── Boosts ──
   {
     key: "premium_feed", name: "Premium Feed", emoji: "🍖",
-    description: "Double EXP gain for 24 hours. Stack with Battle Pass.",
+    description: "Not for sale until a persistent 24-hour 2x EXP boost is enforced.",
     category: "boost", priceUSD: 1, priceCredits: 500,
     effect: "exp_2x", rarity: "common", duration: 24, stackable: true,
+    saleEnabled: false,
+    unavailableReason: "Premium Feed is unavailable: its advertised 24-hour 2x EXP effect is not persisted yet.",
   },
   {
     key: "battle_pass_daily", name: "Daily Battle Pass", emoji: "🎫",
-    description: "Unlimited battles + 2x drop rate for 24 hours.",
+    description: "Not for sale until unlimited battles and 2x drops are persistently enforced.",
     category: "battle", priceUSD: 2, priceCredits: 800,
     effect: "unlimited_battles", rarity: "rare", duration: 24, stackable: false,
+    saleEnabled: false,
+    unavailableReason: "Daily Battle Pass is unavailable until its battle limits and drop-rate effects are enforced.",
   },
 
   // ── Skills ──
@@ -36,13 +42,13 @@ export const PREMIUM_ITEMS: PremiumItem[] = [
     key: "skill_scroll", name: "Skill Scroll", emoji: "📜",
     description: "Learn a random Rare+ skill. Element matches your pet.",
     category: "skill", priceUSD: 3, priceCredits: 1200,
-    effect: "random_rare_skill", rarity: "rare", stackable: true,
+    effect: "random_rare_skill", rarity: "rare", stackable: true, saleEnabled: true,
   },
   {
     key: "skill_crystal", name: "Skill Upgrade Crystal", emoji: "💎",
     description: "Upgrade any skill by +1 level (max ★5). Higher stars = flashier effects.",
     category: "skill", priceUSD: 2, priceCredits: 900,
-    effect: "skill_level_up", rarity: "rare", stackable: true,
+    effect: "skill_level_up", rarity: "rare", stackable: true, saleEnabled: true,
   },
 
   // ── Evolution ──
@@ -50,27 +56,31 @@ export const PREMIUM_ITEMS: PremiumItem[] = [
     key: "element_stone", name: "Element Stone", emoji: "🔮",
     description: "Change your pet's element type. Resets type advantage matchups.",
     category: "evolution", priceUSD: 5, priceCredits: 2000,
-    effect: "change_element", rarity: "epic", stackable: true,
+    effect: "change_element", rarity: "epic", stackable: true, saleEnabled: true,
   },
   {
     key: "evolution_catalyst", name: "Evolution Catalyst", emoji: "⚗️",
     description: "Instantly evolve your pet to next stage. Skip level requirements.",
     category: "evolution", priceUSD: 10, priceCredits: 5000,
-    effect: "instant_evolve", rarity: "legendary", stackable: true,
+    effect: "instant_evolve", rarity: "legendary", stackable: true, saleEnabled: true,
   },
 
   // ── Battle ──
   {
     key: "revive_token", name: "Revive Token", emoji: "💚",
-    description: "Use in battle to fully restore HP. One-time use per battle.",
+    description: "Not for sale until revive inventory and battle consumption are persisted.",
     category: "battle", priceUSD: 0.5, priceCredits: 200,
     effect: "battle_revive", rarity: "common", stackable: true,
+    saleEnabled: false,
+    unavailableReason: "Revive Token is unavailable until durable inventory and battle consumption are enforced.",
   },
   {
     key: "type_shield", name: "Type Shield", emoji: "🛡️",
-    description: "Nullify type disadvantage for 3 battles.",
+    description: "Not for sale until three-battle shield inventory is persisted and enforced.",
     category: "battle", priceUSD: 1.5, priceCredits: 600,
     effect: "type_shield", rarity: "rare", stackable: true,
+    saleEnabled: false,
+    unavailableReason: "Type Shield is unavailable until its durable three-battle effect is enforced.",
   },
 
   // ── Gacha (REMOVED) ──

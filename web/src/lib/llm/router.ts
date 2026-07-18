@@ -1,19 +1,15 @@
 /**
  * Unified LLM caller + task routing (FEATURE 1: BYO multi-model).
  *
- * GROUNDING — the real call sites today all hand-roll a fetch to xAI Grok:
- *   - app/api/pets/[petId]/chat/route.ts        model grok-3-mini
- *   - lib/petclaw/pethub.ts executeLLMSkill     model grok-3-mini-fast
- *   - lib/petclaw/memory/best-of-n.ts pickBestLLM grok-3-mini-fast
- *   - lib/services/pet-agent.ts + memory/*.ts   grok-3 / grok-4-1-fast
- * Every one is `fetch("https://api.x.ai/v1/chat/completions", { Authorization:
- * Bearer GROK_API_KEY, body { model, messages, max_tokens, temperature } })`.
- * There is NO provider abstraction. THIS module is it.
+ * All platform-funded text inference routes through this module so persistent
+ * attempt caps, owner BYOK isolation, request-shape validation, and bounded
+ * xAI→OpenAI fallback apply consistently. Direct vendor chat fetches are kept
+ * only in the separately metered catch-vision referee.
  *
  * Design contract:
- *   - The DEFAULT (no owner-connected model) path is byte-for-byte identical to
- *     the existing Grok fetch — same URL/headers/body keys — so migrating a call
- *     site to callLLM() cannot change its output or cost.
+ *   - The DEFAULT (no owner-connected model) path remains xAI Grok. Platform
+ *     calls can fail over once to OpenAI for transient/provider-spend failures;
+ *     owner BYOK calls never spill into a platform key or another provider.
  *   - A pet owner may connect their OWN model (BYOK) via /api/petclaw/models.
  *     The key is stored ENCRYPTED at rest with the existing src/lib/crypto.ts
  *     (AES-256-GCM, AGENT_ENCRYPTION_KEY) — no new secret, no new crypto.
@@ -28,6 +24,20 @@
 
 import { prisma } from "@/lib/prisma";
 import { decrypt } from "@/lib/crypto";
+import {
+  LLMOwnerConfigError,
+  LLMPlatformConfigError,
+  LLMUpstreamError,
+  classifyLLMHTTPFailure,
+  getLLMRequestTimeoutMs,
+  getPlatformApiKey,
+  getPlatformModel,
+  getPlatformProviderOrder,
+  runWithProviderFallback,
+  validateOwnerModelConfig,
+  type ConnectableLLMTask,
+  type PlatformProviderId,
+} from "./platform-resilience";
 
 export type LLMTask = "chat" | "reason" | "judge" | "summarize" | "extract" | "persona";
 export type ProviderId = "xai" | "openai" | "anthropic" | "openrouter" | "google" | "nous";
@@ -75,10 +85,46 @@ export interface CallLLMArgs {
   messages: LLMMessage[];
   /** If set, prefer this pet-owner's connected model for the task. */
   petId?: number;
+  /** Required for authenticated platform-funded calls that have no pet. */
+  budgetUserId?: number;
   temperature?: number;
   max_tokens?: number;
-  /** OpenAI-shaped providers only (e.g. { type: "json_object" }). */
+  /** Structured JSON request. The adapters currently support json_object. */
   response_format?: { type: string };
+}
+
+const MAX_LLM_MESSAGES = 64;
+const MAX_LLM_INPUT_BYTES = 64 * 1024;
+const MAX_LLM_OUTPUT_TOKENS = 2_000;
+
+export class LLMInputError extends Error {
+  readonly status = 400;
+  readonly code = "llm_input_too_large";
+  constructor(message = "The AI request is too large.") {
+    super(message);
+    this.name = "LLMInputError";
+  }
+}
+
+function validateTextMessages(messages: LLMMessage[]): void {
+  if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_LLM_MESSAGES) {
+    throw new LLMInputError(`AI requests require 1-${MAX_LLM_MESSAGES} messages.`);
+  }
+  let bytes = 0;
+  for (const message of messages) {
+    if (!message || !["system", "user", "assistant"].includes(message.role) || typeof message.content !== "string") {
+      throw new LLMInputError("AI messages must contain a valid role and text content.");
+    }
+    bytes += Buffer.byteLength(message.content, "utf8");
+    if (bytes > MAX_LLM_INPUT_BYTES) throw new LLMInputError();
+  }
+}
+
+function boundedOutputTokens(value: number): number {
+  if (!Number.isFinite(value) || value < 1 || value > MAX_LLM_OUTPUT_TOKENS) {
+    throw new LLMInputError(`AI output must be between 1 and ${MAX_LLM_OUTPUT_TOKENS} tokens.`);
+  }
+  return Math.floor(value);
 }
 
 export interface LLMResult {
@@ -94,18 +140,20 @@ interface ResolvedTarget {
   model: string;
   apiKey: string;
   source: "owner" | "platform";
+  /** Platform-only owner id for the persistent per-user attempt cap. */
+  budgetUserId?: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DAILY LLM SPEND GUARD — in-memory, DB-free, per-process (matches the posture
-// of src/lib/rateLimit.ts: good enough for a single standalone instance).
+// DAILY LLM SPEND GUARD — persistent PostgreSQL counters. Every platform
+// provider attempt reserves budget in a transaction before its network request,
+// so fallback calls, restarts, and multiple app instances cannot bypass caps.
 //
 // Counts PLATFORM-funded calls only (owner/BYOK calls burn the owner's own key,
 // not our Grok bill). Two caps, both env-tunable:
 //   LLM_DAILY_CALL_CAP  — total platform calls per UTC day (default 2000)
 //   LLM_USER_DAILY_CAP  — per-caller platform calls per UTC day (default 60);
-//                         keyed by petId (each pet belongs to one user, and
-//                         petId is what every call site already passes).
+//                         keyed by owner user id when a pet is known.
 // On breach we throw LLMBudgetError (status 429, friendly message). Every
 // existing call site already wraps callLLM in try/catch with a graceful
 // fallback, so a breach degrades politely instead of crashing routes.
@@ -124,144 +172,448 @@ export function isLLMBudgetError(err: unknown): err is LLMBudgetError {
   return err instanceof LLMBudgetError;
 }
 
+export class LLMBudgetStoreError extends Error {
+  readonly status = 503;
+  readonly code = "llm_budget_store_unavailable";
+  constructor() {
+    super("AI service is temporarily unavailable because its spend guard could not be verified.");
+    this.name = "LLMBudgetStoreError";
+  }
+}
+
+export function isLLMBudgetStoreError(err: unknown): err is LLMBudgetStoreError {
+  return err instanceof LLMBudgetStoreError;
+}
+
+export function getLLMBudgetFailureStatus(err: unknown): 429 | 503 | null {
+  if (isLLMBudgetError(err)) return 429;
+  if (isLLMBudgetStoreError(err)) return 503;
+  return null;
+}
+
 function envCap(name: string, def: number): number {
   const n = Number(process.env[name]);
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : def;
 }
 
-const budget = {
-  date: "", // UTC YYYY-MM-DD the counters belong to
-  total: 0,
-  perUser: new Map<string, number>(),
-};
-
-/** Count one platform-funded call; throws LLMBudgetError when a cap is hit. */
-function consumeLLMBudget(petId?: number): void {
-  const today = new Date().toISOString().slice(0, 10);
-  if (budget.date !== today) {
-    budget.date = today;
-    budget.total = 0;
-    budget.perUser.clear();
-  }
-  if (budget.total >= envCap("LLM_DAILY_CALL_CAP", 2000)) throw new LLMBudgetError();
-  if (petId) {
-    const key = `pet:${petId}`;
-    const used = budget.perUser.get(key) ?? 0;
-    if (used >= envCap("LLM_USER_DAILY_CAP", 60)) throw new LLMBudgetError();
-    budget.perUser.set(key, used + 1);
-  }
-  budget.total++;
+async function incrementCappedUsage(
+  tx: any,
+  usageDate: string,
+  scopeKey: string,
+  cap: number,
+): Promise<boolean> {
+  const rows = await tx.$queryRaw<Array<{ attempts: number }>>`
+    INSERT INTO "llm_platform_usage" ("usage_date", "scope_key", "attempts", "updated_at")
+    VALUES (CAST(${usageDate} AS date), ${scopeKey}, 1, CURRENT_TIMESTAMP)
+    ON CONFLICT ("usage_date", "scope_key") DO UPDATE
+      SET "attempts" = "llm_platform_usage"."attempts" + 1,
+          "updated_at" = CURRENT_TIMESTAMP
+      WHERE "llm_platform_usage"."attempts" < ${cap}
+    RETURNING "attempts"
+  `;
+  return rows.length === 1;
 }
 
-// ── Catch-vision global budget (POINTS-ECONOMY §2.4/§2.5, knobs #2/#11) ──
-// A dedicated global daily cap for Grok-vision verify calls (POST /api/catch),
-// separate from the chat LLM_DAILY_CALL_CAP. Same in-memory/per-process posture.
-// VISION_DAILY_CAP default 5,000 ≈ $25/day absolute worst case. Throws the same
-// LLMBudgetError (429) so the catch route can degrade to a friendly "try again
-// tomorrow" instead of spending vendor money past the ceiling.
-const visionBudget = { date: "", total: 0 };
+async function incrementUncappedUsage(tx: any, usageDate: string, scopeKey: string): Promise<void> {
+  await tx.$executeRaw`
+    INSERT INTO "llm_platform_usage" ("usage_date", "scope_key", "attempts", "updated_at")
+    VALUES (CAST(${usageDate} AS date), ${scopeKey}, 1, CURRENT_TIMESTAMP)
+    ON CONFLICT ("usage_date", "scope_key") DO UPDATE
+      SET "attempts" = "llm_platform_usage"."attempts" + 1,
+          "updated_at" = CURRENT_TIMESTAMP
+  `;
+}
 
-/** Count one platform-funded vision call; throws LLMBudgetError when the global cap is hit. */
-export function consumeVisionBudget(): void {
+/** Atomically reserve one platform-funded provider attempt. Fails closed on DB errors. */
+async function consumeLLMBudget(target: ResolvedTarget): Promise<void> {
+  if (target.source !== "platform") return;
   const today = new Date().toISOString().slice(0, 10);
-  if (visionBudget.date !== today) {
-    visionBudget.date = today;
-    visionBudget.total = 0;
+  try {
+    await prisma.$transaction(async (tx: any) => {
+      if (!await incrementCappedUsage(tx, today, "global", envCap("LLM_DAILY_CALL_CAP", 2000))) {
+        throw new LLMBudgetError();
+      }
+      if (target.budgetUserId && !await incrementCappedUsage(
+        tx,
+        today,
+        `user:${target.budgetUserId}`,
+        envCap("LLM_USER_DAILY_CAP", 60),
+      )) {
+        throw new LLMBudgetError();
+      }
+      await incrementUncappedUsage(tx, today, `provider:${target.provider.id}`);
+    }, { maxWait: 5_000, timeout: 10_000 });
+  } catch (error) {
+    if (error instanceof LLMBudgetError) throw error;
+    console.error(`[llm] persistent spend guard unavailable (${error instanceof Error ? error.name : "unknown"})`);
+    throw new LLMBudgetStoreError();
   }
-  if (visionBudget.total >= envCap("VISION_DAILY_CAP", 5000)) throw new LLMBudgetError();
-  visionBudget.total++;
+}
+
+// ── Grok-vision global budget (POINTS-ECONOMY §2.4/§2.5, knobs #2/#11) ──
+// A dedicated persistent daily cap shared by catch verification, avatar
+// validation, upload validation, and appearance-description attempts. It is
+// separate from the text LLM_DAILY_CALL_CAP.
+// VISION_DAILY_CAP default 300 plus VISION_USER_DAILY_CAP default 30. Both are
+// reserved in one transaction for authenticated requests, so one caller cannot
+// exhaust the launch-wide provider budget. Throws the same LLMBudgetError (429)
+// used by the other platform-funded guards.
+
+export async function reserveVisionBudgetInTransaction(
+  tx: any,
+  usageDate: string,
+  authenticatedUserId: number | undefined,
+  globalCap: number,
+  userCap: number,
+): Promise<void> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(usageDate)
+    || !Number.isSafeInteger(globalCap) || globalCap <= 0
+    || !Number.isSafeInteger(userCap) || userCap <= 0
+    || (authenticatedUserId !== undefined
+      && (!Number.isSafeInteger(authenticatedUserId) || authenticatedUserId <= 0))) {
+    throw new Error("Invalid vision budget reservation");
+  }
+  if (!await incrementCappedUsage(tx, usageDate, "vision:global", globalCap)) {
+    throw new LLMBudgetError();
+  }
+  if (authenticatedUserId !== undefined && !await incrementCappedUsage(
+    tx,
+    usageDate,
+    `vision:user:${authenticatedUserId}`,
+    userCap,
+  )) {
+    throw new LLMBudgetError();
+  }
+}
+
+/** Atomically reserve one platform-funded vision attempt. Fails closed on DB errors. */
+export async function consumeVisionBudget(authenticatedUserId?: number): Promise<void> {
+  if (authenticatedUserId !== undefined
+    && (!Number.isSafeInteger(authenticatedUserId) || authenticatedUserId <= 0)) {
+    console.error("[llm] vision spend guard called with an invalid authenticated user id");
+    throw new LLMBudgetStoreError();
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    await prisma.$transaction(async (tx: any) => {
+      await reserveVisionBudgetInTransaction(
+        tx,
+        today,
+        authenticatedUserId,
+        envCap("VISION_DAILY_CAP", 300),
+        envCap("VISION_USER_DAILY_CAP", 30),
+      );
+    }, { maxWait: 5_000, timeout: 10_000 });
+  } catch (error) {
+    if (error instanceof LLMBudgetError) throw error;
+    console.error(`[llm] persistent vision spend guard unavailable (${error instanceof Error ? error.name : "unknown"})`);
+    throw new LLMBudgetStoreError();
+  }
 }
 
 /** Read-only snapshot of today's global vision budget (admin/ops surfaces). */
-export function getVisionDailyCounters(): { date: string; visionCalls: number; cap: number } {
+export async function getVisionDailyCounters(): Promise<{ date: string; visionCalls: number; cap: number }> {
   const today = new Date().toISOString().slice(0, 10);
-  const fresh = visionBudget.date !== today;
-  return { date: today, visionCalls: fresh ? 0 : visionBudget.total, cap: envCap("VISION_DAILY_CAP", 5000) };
+  const rows = await prisma.$queryRaw<Array<{ attempts: number }>>`
+    SELECT "attempts"
+    FROM "llm_platform_usage"
+    WHERE "usage_date" = CAST(${today} AS date)
+      AND "scope_key" = 'vision:global'
+  `;
+  return { date: today, visionCalls: Number(rows[0]?.attempts ?? 0), cap: envCap("VISION_DAILY_CAP", 300) };
 }
 
-/**
- * Read-only snapshot of today's in-memory platform-LLM budget counters, for the
- * admin ops dashboard (/api/admin/overview). Same per-process, resets-on-deploy
- * posture as the budget itself — HONEST but partial: it only sees calls handled
- * by THIS process since the last restart, and only platform-funded calls
- * (owner/BYOK calls never touch the budget). Zero means "none counted here",
- * not necessarily "none happened".
- */
-export function getLLMDailyCounters(): {
+// ── Platform image-generation budget ──
+// Image generation is substantially more expensive than text/vision analysis.
+// Reserve both a cluster-wide and an authenticated-user slot immediately before
+// every real provider submission. The same PostgreSQL transaction rolls the
+// global increment back when the user cap is already exhausted.
+export type ImageGenerationProvider = "xai" | "fal";
+
+/** Atomically reserve one platform-funded image-generation provider attempt. */
+export async function consumeImageBudget(
+  userId: number,
+  provider: ImageGenerationProvider,
+): Promise<void> {
+  if (!Number.isSafeInteger(userId) || userId <= 0) {
+    console.error("[llm] image spend guard called without a valid authenticated user id");
+    throw new LLMBudgetStoreError();
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    await prisma.$transaction(async (tx: any) => {
+      if (!await incrementCappedUsage(tx, today, "image:global", envCap("IMAGE_DAILY_CAP", 800))) {
+        throw new LLMBudgetError();
+      }
+      if (!await incrementCappedUsage(
+        tx,
+        today,
+        `image:user:${userId}`,
+        envCap("IMAGE_USER_DAILY_CAP", 20),
+      )) {
+        throw new LLMBudgetError();
+      }
+      await incrementUncappedUsage(tx, today, `image:provider:${provider}`);
+    }, { maxWait: 5_000, timeout: 10_000 });
+  } catch (error) {
+    if (error instanceof LLMBudgetError) throw error;
+    console.error(`[llm] persistent image spend guard unavailable (${error instanceof Error ? error.name : "unknown"})`);
+    throw new LLMBudgetStoreError();
+  }
+}
+
+/** Read-only snapshot of today's persistent image-generation attempt budget. */
+export async function getImageDailyCounters(): Promise<{
+  date: string;
+  imageCalls: number;
+  distinctCallers: number;
+  cap: number;
+  perUserCap: number;
+  providers: Record<string, number>;
+}> {
+  const today = new Date().toISOString().slice(0, 10);
+  const rows = await prisma.$queryRaw<Array<{ scope_key: string; attempts: number }>>`
+    SELECT "scope_key", "attempts"
+    FROM "llm_platform_usage"
+    WHERE "usage_date" = CAST(${today} AS date)
+      AND "scope_key" LIKE 'image:%'
+  `;
+  const byScope = new Map<string, number>(
+    rows.map((row) => [row.scope_key, Number(row.attempts)] as const),
+  );
+  return {
+    date: today,
+    imageCalls: byScope.get("image:global") ?? 0,
+    distinctCallers: rows.filter((row) => row.scope_key.startsWith("image:user:") && Number(row.attempts) > 0).length,
+    cap: envCap("IMAGE_DAILY_CAP", 800),
+    perUserCap: envCap("IMAGE_USER_DAILY_CAP", 20),
+    providers: Object.fromEntries(
+      rows
+        .filter((row) => row.scope_key.startsWith("image:provider:"))
+        .map((row) => [row.scope_key.slice("image:provider:".length), Number(row.attempts)]),
+    ),
+  };
+}
+
+/** Cluster-wide snapshot of today's persistent platform-attempt budget. */
+export async function getLLMDailyCounters(): Promise<{
   date: string;
   platformCalls: number;
   distinctCallers: number;
   callCap: number;
   perUserCap: number;
-} {
+  providers: Record<string, number>;
+}> {
   const today = new Date().toISOString().slice(0, 10);
-  const fresh = budget.date !== today; // counters not yet rolled for today
+  const rows = await prisma.$queryRaw<Array<{ scope_key: string; attempts: number }>>`
+    SELECT "scope_key", "attempts"
+    FROM "llm_platform_usage"
+    WHERE "usage_date" = CAST(${today} AS date)
+  `;
+  const byScope = new Map<string, number>(
+    rows.map((row: { scope_key: string; attempts: number }) => [row.scope_key, Number(row.attempts)] as const),
+  );
   return {
     date: today,
-    platformCalls: fresh ? 0 : budget.total,
-    distinctCallers: fresh ? 0 : budget.perUser.size,
+    platformCalls: byScope.get("global") ?? 0,
+    distinctCallers: rows.filter((row) => row.scope_key.startsWith("user:") && Number(row.attempts) > 0).length,
     callCap: envCap("LLM_DAILY_CALL_CAP", 2000),
     perUserCap: envCap("LLM_USER_DAILY_CAP", 60),
+    providers: Object.fromEntries(
+      rows
+        .filter((row) => row.scope_key.startsWith("provider:"))
+        .map((row) => [row.scope_key.slice("provider:".length), Number(row.attempts)]),
+    ),
   };
+}
+
+/**
+ * Build the platform route from the explicit env-selected provider order. A
+ * provider without a configured key is skipped before any request; model env
+ * overrides are accepted only when they match the explicit provider allowlist.
+ */
+function resolvePlatformTargets(task: LLMTask, budgetUserId?: number): ResolvedTarget[] {
+  const targets = getPlatformProviderOrder()
+    .map((id: PlatformProviderId): ResolvedTarget => ({
+      provider: PROVIDERS[id],
+      model: getPlatformModel(id, task),
+      apiKey: getPlatformApiKey(id),
+      source: "platform",
+      budgetUserId,
+    }))
+    .filter((target) => Boolean(target.apiKey));
+  if (targets.length === 0) {
+    throw new LLMPlatformConfigError("No platform text provider is configured (set GROK_API_KEY and/or OPENAI_API_KEY)");
+  }
+  return targets;
 }
 
 /**
  * Resolve provider+model+key. Preference: the pet-owner's active ModelConnection
  * whose task_scopes include this task (most-recently-updated wins), else the
- * platform Grok default. Any owner-resolution failure (decrypt/missing/unknown)
- * silently falls through to the platform default — never throws here.
+ * platform provider chain. Owner calls return exactly one target, so an owner
+ * key failure can never leak their prompt to a platform fallback.
  */
-async function resolveTarget(task: LLMTask, petId?: number): Promise<ResolvedTarget> {
-  const fallback = (): ResolvedTarget => {
-    const def = TASK_MODEL_MAP[task];
-    return { provider: PROVIDERS[def.provider], model: def.model, apiKey: process.env.GROK_API_KEY || "", source: "platform" };
-  };
+async function resolveTargets(task: LLMTask, petId?: number, budgetUserId?: number): Promise<ResolvedTarget[]> {
+  if (petId == null) {
+    if (!Number.isSafeInteger(budgetUserId) || Number(budgetUserId) <= 0) {
+      throw new LLMPlatformConfigError("Platform-funded calls without a pet require an authenticated budget user id");
+    }
+    return resolvePlatformTargets(task, budgetUserId);
+  }
 
-  if (!petId) return fallback();
+  let pet: { user_id: number } | null;
   try {
-    const pet = await prisma.pet.findUnique({ where: { id: petId }, select: { user_id: true } });
-    if (!pet?.user_id) return fallback();
-    const conns = await prisma.modelConnection.findMany({
+    pet = await prisma.pet.findUnique({ where: { id: petId }, select: { user_id: true } });
+  } catch {
+    throw new LLMOwnerConfigError();
+  }
+  if (!pet?.user_id) {
+    throw new LLMOwnerConfigError("Pet ownership could not be resolved. Platform fallback was blocked to protect your data.");
+  }
+  if (budgetUserId !== undefined && budgetUserId !== pet.user_id) {
+    throw new LLMOwnerConfigError("Pet owner and budget identity do not match.");
+  }
+
+  let conns: Array<{
+    id: number;
+    provider: string;
+    model: string;
+    encrypted_key: string;
+    task_scopes: unknown;
+  }>;
+  try {
+    conns = await prisma.modelConnection.findMany({
       where: { owner_user_id: pet.user_id, is_active: true },
       orderBy: { updated_at: "desc" },
     });
-    const match = conns.find((c) => {
-      const scopes = (Array.isArray(c.task_scopes) ? c.task_scopes : []) as string[];
-      return scopes.length === 0 || scopes.includes(task);
-    });
-    if (!match) return fallback();
-    const provider = PROVIDERS[match.provider as ProviderId];
-    if (!provider || !match.encrypted_key) return fallback();
-    const apiKey = decrypt(match.encrypted_key);
-    if (!apiKey) return fallback();
-    return { provider, model: match.model, apiKey, source: "owner" };
   } catch {
-    return fallback();
+    throw new LLMOwnerConfigError();
+  }
+
+  const match = conns.find((conn) => {
+    const scopes = (Array.isArray(conn.task_scopes) ? conn.task_scopes : []) as string[];
+    return scopes.length === 0 || scopes.includes(task);
+  });
+  // This is the sole condition that authorizes platform inference for a
+  // pet-scoped call: the owner has no active connection matching this task.
+  if (!match) return resolvePlatformTargets(task, pet.user_id);
+
+  const scopes = (Array.isArray(match.task_scopes) ? match.task_scopes : []) as string[];
+  let validated;
+  try {
+    validated = validateOwnerModelConfig(match.provider, match.model, scopes);
+  } catch {
+    throw new LLMOwnerConfigError();
+  }
+  if (!match.encrypted_key) throw new LLMOwnerConfigError();
+
+  let apiKey: string;
+  try {
+    apiKey = decrypt(match.encrypted_key);
+  } catch {
+    throw new LLMOwnerConfigError();
+  }
+  if (!apiKey.trim()) throw new LLMOwnerConfigError();
+  return [{ provider: PROVIDERS[validated.provider], model: validated.model, apiKey, source: "owner" }];
+}
+
+async function requestProviderJSON(target: ResolvedTarget, url: string, init: RequestInit): Promise<any> {
+  const timeoutMs = getLLMRequestTimeoutMs();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let res: Response;
+  let body: string;
+  try {
+    res = await fetch(url, { ...init, signal: controller.signal });
+    body = await res.text();
+  } catch (error: any) {
+    const timedOut = controller.signal.aborted || error?.name === "AbortError";
+    throw new LLMUpstreamError(
+      target.provider.id,
+      `${target.provider.id} ${timedOut ? `timed out after ${timeoutMs}ms` : "network failure"}`,
+      true,
+      undefined,
+      timedOut ? "timeout" : "network",
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!res.ok) {
+    const policy = classifyLLMHTTPFailure(res.status, body);
+    throw new LLMUpstreamError(
+      target.provider.id,
+      `${target.provider.id} ${res.status} (${policy.reason})`,
+      policy.retryable,
+      res.status,
+      policy.reason,
+    );
+  }
+  try {
+    return JSON.parse(body);
+  } catch {
+    throw new LLMUpstreamError(target.provider.id, `${target.provider.id} returned malformed JSON`, true, res.status, "response");
   }
 }
 
-/**
- * Call an LLM, routed by task and (optionally) the pet-owner's connected model.
- * Returns normalized { text, model, provider, source, raw }.
- */
-export async function callLLM(args: CallLLMArgs): Promise<LLMResult> {
-  const { task, messages, petId, temperature = 0.7, max_tokens = 300, response_format } = args;
-  const target = await resolveTarget(task, petId);
-  if (!target.apiKey) throw new Error(`No API key available for task '${task}' (provider ${target.provider.id})`);
-  if (target.source === "platform") consumeLLMBudget(petId);
+function logProviderFallback(from: ResolvedTarget, to: ResolvedTarget, error: LLMUpstreamError): void {
+  console.warn(
+    `[llm] ${from.provider.id}/${from.model} failed (${error.reason}${error.status ? ` ${error.status}` : ""}); ` +
+    `falling back once to ${to.provider.id}/${to.model}`,
+  );
+}
 
+function openAIShapeGenerationOptions(target: ResolvedTarget, maxTokens: number): Record<string, unknown> {
+  if (target.provider.id === "openai") {
+    return {
+      max_completion_tokens: maxTokens,
+      // GPT-5.6 supports non-reasoning effort; using it keeps the router's
+      // temperature and latency contract valid for platform and BYOK alike.
+      ...(target.model.startsWith("gpt-5.6") ? { reasoning_effort: "none" } : {}),
+    };
+  }
+  return { max_tokens: maxTokens };
+}
+
+async function callTextTarget(
+  target: ResolvedTarget,
+  args: Omit<CallLLMArgs, "task" | "petId"> & Required<Pick<CallLLMArgs, "temperature" | "max_tokens">>,
+): Promise<LLMResult> {
+  const { messages, temperature, max_tokens, response_format } = args;
+  if (response_format && response_format.type !== "json_object") {
+    throw new LLMPlatformConfigError(`Unsupported response_format '${response_format.type}'`);
+  }
   if (target.provider.flavor === "anthropic") {
     // Anthropic: /messages, x-api-key + anthropic-version, system is top-level.
     const system = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
     const turns = messages.filter((m) => m.role !== "system").map((m) => ({ role: m.role, content: m.content }));
-    const res = await fetch(`${target.provider.baseUrl}/messages`, {
+    const jsonTool = {
+      name: "petclaw_return_json",
+      description: "Return the requested answer as one JSON object.",
+      input_schema: { type: "object", additionalProperties: true },
+    };
+    const raw = await requestProviderJSON(target, `${target.provider.baseUrl}/messages`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": target.apiKey, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: target.model, max_tokens, temperature, system: system || undefined, messages: turns }),
+      body: JSON.stringify({
+        model: target.model,
+        max_tokens,
+        temperature,
+        system: system || undefined,
+        messages: turns,
+        ...(response_format ? { tools: [jsonTool], tool_choice: { type: "tool", name: jsonTool.name } } : {}),
+      }),
     });
-    if (!res.ok) throw new Error(`${target.provider.id} ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
-    const raw = await res.json();
-    const text = (raw?.content?.[0]?.text || "").trim();
+    const blocks: any[] = Array.isArray(raw?.content) ? raw.content : [];
+    const jsonBlock = response_format
+      ? blocks.find((block) => block?.type === "tool_use" && block?.name === jsonTool.name)
+      : undefined;
+    const text = response_format
+      ? (jsonBlock?.input ? JSON.stringify(jsonBlock.input) : "")
+      : blocks.filter((block) => block?.type === "text").map((block) => block.text).join("").trim();
+    if (!text) throw new LLMUpstreamError(target.provider.id, `${target.provider.id} returned an empty text response`, true, 200, "response");
     return { text, model: raw?.model || target.model, provider: target.provider.id, source: target.source, raw };
   }
 
@@ -272,40 +624,68 @@ export async function callLLM(args: CallLLMArgs): Promise<LLMResult> {
     const contents = messages
       .filter((m) => m.role !== "system")
       .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
-    const res = await fetch(`${target.provider.baseUrl}/models/${target.model}:generateContent`, {
+    const raw = await requestProviderJSON(target, `${target.provider.baseUrl}/models/${target.model}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": target.apiKey },
       body: JSON.stringify({
         ...(systemText ? { systemInstruction: { parts: [{ text: systemText }] } } : {}),
         contents,
-        generationConfig: { temperature, maxOutputTokens: max_tokens },
+        generationConfig: {
+          temperature,
+          maxOutputTokens: max_tokens,
+          ...(response_format ? { responseMimeType: "application/json" } : {}),
+        },
       }),
     });
-    if (!res.ok) throw new Error(`google ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
-    const raw = await res.json();
     const text = (raw?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("") || "").trim();
+    if (!text) throw new LLMUpstreamError(target.provider.id, "google returned an empty text response", true, 200, "response");
     return { text, model: target.model, provider: target.provider.id, source: target.source, raw };
   }
 
   // OpenAI-shaped (xai / openai / openrouter) — identical body to today's Grok fetch.
-  const res = await fetch(`${target.provider.baseUrl}/chat/completions`, {
+  const raw = await requestProviderJSON(target, `${target.provider.baseUrl}/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${target.apiKey}` },
-    body: JSON.stringify({ model: target.model, messages, max_tokens, temperature, ...(response_format ? { response_format } : {}) }),
+    body: JSON.stringify({
+      model: target.model,
+      messages,
+      ...openAIShapeGenerationOptions(target, max_tokens),
+      temperature,
+      ...(response_format ? { response_format } : {}),
+    }),
   });
-  if (!res.ok) throw new Error(`${target.provider.id} ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
-  const raw = await res.json();
   const text = (raw?.choices?.[0]?.message?.content || "").trim();
+  if (!text) throw new LLMUpstreamError(target.provider.id, `${target.provider.id} returned an empty text response`, true, 200, "response");
   return { text, model: raw?.model || target.model, provider: target.provider.id, source: target.source, raw };
+}
+
+/**
+ * Call an LLM, routed by task and (optionally) the pet-owner's connected model.
+ * Platform calls may fall back once; owner BYOK calls always have one target.
+ * Returns normalized { text, model, provider, source, raw }.
+ */
+export async function callLLM(args: CallLLMArgs): Promise<LLMResult> {
+  const { task, messages, petId, budgetUserId, temperature = 0.7, max_tokens = 300, response_format } = args;
+  validateTextMessages(messages);
+  const safeMaxTokens = boundedOutputTokens(max_tokens);
+  if (!Number.isFinite(temperature) || temperature < 0 || temperature > 2) {
+    throw new LLMInputError("AI temperature must be between 0 and 2.");
+  }
+  const targets = await resolveTargets(task, petId, budgetUserId);
+  return runWithProviderFallback(
+    targets,
+    (target) => callTextTarget(target, { messages, temperature, max_tokens: safeMaxTokens, response_format }),
+    logProviderFallback,
+    consumeLLMBudget,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NATIVE FUNCTION-CALLING (tools) — used by the tool-calling agent loop.
 //
-// callLLMWithTools() mirrors callLLM()'s provider resolution + key decrypt
-// (reuses the SAME private resolveTarget helper) but sends NATIVE tool
-// definitions in each provider's shape and returns a NORMALIZED tool-call
-// result. callLLM() is untouched — its signature and behavior are identical.
+// callLLMWithTools() mirrors callLLM()'s provider chain + key decrypt
+// (reuses resolveTargets) but sends NATIVE tool definitions in each provider's
+// shape and returns a NORMALIZED tool-call result.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** A native tool/function the model may call. `parameters` is a JSON Schema. */
@@ -348,6 +728,7 @@ export interface CallLLMWithToolsArgs {
   tools: ToolDef[];
   toolChoice?: ToolChoice;
   petId?: number;
+  budgetUserId?: number;
   temperature?: number;
   maxTokens?: number;
 }
@@ -445,18 +826,11 @@ function toAnthropicToolChoice(tc?: ToolChoice): any {
   return { type: "tool", name: tc.name };
 }
 
-/**
- * Call an LLM with NATIVE tool/function definitions. Same routing/key resolution
- * as callLLM (owner-connected model for the task, else platform Grok default).
- * OpenAI-shape is the primary path (Grok supports tools + tool_choice + parallel
- * calls). Google is rejected with a clear, actionable error.
- */
-export async function callLLMWithTools(args: CallLLMWithToolsArgs): Promise<ToolCallResult> {
-  const { task, messages, tools, toolChoice, petId, temperature = 0.4, maxTokens = 800 } = args;
-  const target = await resolveTarget(task, petId);
-  if (!target.apiKey) throw new Error(`No API key available for task '${task}' (provider ${target.provider.id})`);
-  if (target.source === "platform") consumeLLMBudget(petId);
-
+async function callToolTarget(
+  target: ResolvedTarget,
+  args: Omit<CallLLMWithToolsArgs, "task" | "petId"> & Required<Pick<CallLLMWithToolsArgs, "temperature" | "maxTokens">>,
+): Promise<ToolCallResult> {
+  const { messages, tools, toolChoice, temperature, maxTokens } = args;
   if (target.provider.flavor === "google") {
     throw new Error(
       "tool-calling not supported for provider 'google' — connect an OpenAI-compatible (xAI/OpenAI/OpenRouter/Nous) or Anthropic model at /api/petclaw/models",
@@ -465,7 +839,7 @@ export async function callLLMWithTools(args: CallLLMWithToolsArgs): Promise<Tool
 
   if (target.provider.flavor === "anthropic") {
     const { system, turns } = toAnthropicToolConversation(messages);
-    const res = await fetch(`${target.provider.baseUrl}/messages`, {
+    const raw = await requestProviderJSON(target, `${target.provider.baseUrl}/messages`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": target.apiKey, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
@@ -478,8 +852,6 @@ export async function callLLMWithTools(args: CallLLMWithToolsArgs): Promise<Tool
         ...(toAnthropicToolChoice(toolChoice) ? { tool_choice: toAnthropicToolChoice(toolChoice) } : {}),
       }),
     });
-    if (!res.ok) throw new Error(`${target.provider.id} ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
-    const raw = await res.json();
     const blocks: any[] = Array.isArray(raw?.content) ? raw.content : [];
     const content = blocks.filter((b) => b?.type === "text").map((b) => b.text).join("") || null;
     const toolCalls: ToolCall[] = blocks
@@ -497,20 +869,18 @@ export async function callLLMWithTools(args: CallLLMWithToolsArgs): Promise<Tool
   }
 
   // OpenAI-shaped (xai / openai / openrouter / nous) — the primary path (Grok).
-  const res = await fetch(`${target.provider.baseUrl}/chat/completions`, {
+  const raw = await requestProviderJSON(target, `${target.provider.baseUrl}/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${target.apiKey}` },
     body: JSON.stringify({
       model: target.model,
       messages: toOpenAIToolMessages(messages),
-      max_tokens: maxTokens,
+      ...openAIShapeGenerationOptions(target, maxTokens),
       temperature,
       tools: tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.parameters } })),
       ...(toOpenAIToolChoice(toolChoice) ? { tool_choice: toOpenAIToolChoice(toolChoice) } : {}),
     }),
   });
-  if (!res.ok) throw new Error(`${target.provider.id} ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
-  const raw = await res.json();
   const msg = raw?.choices?.[0]?.message;
   const content = (msg?.content ?? null) as string | null;
   const toolCalls: ToolCall[] = (Array.isArray(msg?.tool_calls) ? msg.tool_calls : [])
@@ -525,6 +895,117 @@ export async function callLLMWithTools(args: CallLLMWithToolsArgs): Promise<Tool
     provider: target.provider.id,
     source: target.source,
   };
+}
+
+export interface ValidateOwnerModelConnectionArgs {
+  provider: ProviderId;
+  model: string;
+  apiKey: string;
+  taskScopes: ConnectableLLMTask[];
+}
+
+/**
+ * Prove the supplied key/model against the exact runtime wire adapters before
+ * persisting it. The probe is owner-funded and never participates in platform
+ * routing or platform budget counters.
+ */
+export async function validateOwnerModelConnection(
+  args: ValidateOwnerModelConnectionArgs,
+): Promise<{ checked: Array<"text" | "json" | "tools"> }> {
+  const config = validateOwnerModelConfig(args.provider, args.model, args.taskScopes);
+  if (!args.apiKey.trim()) throw new LLMOwnerConfigError("apiKey is required.");
+  const target: ResolvedTarget = {
+    provider: PROVIDERS[config.provider],
+    model: config.model,
+    apiKey: args.apiKey,
+    source: "owner",
+  };
+  const checked: Array<"text" | "json" | "tools"> = [];
+  const probeMessages: LLMMessage[] = [
+    { role: "system", content: "PetClaw connection check. Follow the requested response shape exactly." },
+    { role: "user", content: "Return an acknowledgement for this connection check." },
+  ];
+
+  if (config.effectiveTasks.includes("judge")) {
+    const result = await callTextTarget(target, {
+      messages: [
+        probeMessages[0],
+        { role: "user", content: "Return one JSON object with the single property ok set to true." },
+      ],
+      temperature: 0,
+      max_tokens: 32,
+      response_format: { type: "json_object" },
+    });
+    let parsed: unknown;
+    try { parsed = JSON.parse(result.text); } catch { /* handled below */ }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new LLMOwnerConfigError("The selected model did not produce structured JSON with PetClaw's request shape.");
+    }
+    checked.push("json");
+  }
+
+  if (config.effectiveTasks.includes("reason")) {
+    const toolName = "petclaw_connection_check";
+    const result = await callToolTarget(target, {
+      messages: probeMessages,
+      tools: [{
+        name: toolName,
+        description: "Acknowledge the PetClaw connection capability check.",
+        parameters: {
+          type: "object",
+          properties: { ok: { type: "boolean" } },
+          required: ["ok"],
+          additionalProperties: false,
+        },
+      }],
+      toolChoice: { name: toolName },
+      temperature: 0,
+      maxTokens: 32,
+    });
+    if (!result.toolCalls.some((call) => call.name === toolName)) {
+      throw new LLMOwnerConfigError("The selected model did not execute PetClaw's required tool-call request shape.");
+    }
+    checked.push("tools");
+  }
+
+  if (checked.length === 0) {
+    await callTextTarget(target, {
+      messages: probeMessages,
+      temperature: 0,
+      max_tokens: 16,
+    });
+    checked.push("text");
+  }
+
+  return { checked };
+}
+
+/**
+ * Call an LLM with NATIVE tool/function definitions. Same routing/fallback
+ * policy as callLLM. Owner BYOK stays single-provider; platform xAI may fail
+ * over once to OpenAI on transient/spend failures. Google owner connections are
+ * rejected because this adapter does not implement Gemini tool calls.
+ */
+export async function callLLMWithTools(args: CallLLMWithToolsArgs): Promise<ToolCallResult> {
+  const { task, messages, tools, toolChoice, petId, budgetUserId, temperature = 0.4, maxTokens = 800 } = args;
+  validateTextMessages(messages.map((message) => ({
+    role: message.role === "tool" ? "user" : message.role,
+    content: message.content ?? "",
+  })));
+  const safeMaxTokens = boundedOutputTokens(maxTokens);
+  if (!Array.isArray(tools) || tools.length > 64 || Buffer.byteLength(JSON.stringify(tools), "utf8") > MAX_LLM_INPUT_BYTES) {
+    throw new LLMInputError("AI tool definitions are too large.");
+  }
+  if (!Number.isFinite(temperature) || temperature < 0 || temperature > 2) {
+    throw new LLMInputError("AI temperature must be between 0 and 2.");
+  }
+  const targets = await resolveTargets(task, petId, budgetUserId);
+  return runWithProviderFallback(
+    targets,
+    (target) => callToolTarget(target, { messages, tools, toolChoice, temperature, maxTokens: safeMaxTokens }),
+    logProviderFallback,
+    consumeLLMBudget,
+  );
 }
 
 /**

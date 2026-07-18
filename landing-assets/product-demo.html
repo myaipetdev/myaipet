@@ -755,7 +755,7 @@ body{
 
   <!-- top bar -->
   <div class="topbar">
-    <div class="brand"><span class="paw">🐾</span> MY <b>AI</b> PET <small>web3 companion</small></div>
+    <div class="brand"><span class="paw">🐾</span> MY <b>AI</b> PET <small>portable companion</small></div>
     <div class="scenetag"><span class="d" id="tagDot"></span><span id="tagText">01 · Adopt</span></div>
   </div>
 
@@ -764,15 +764,15 @@ body{
     <div class="num" id="capNum">01</div>
     <div class="kick"><span class="bar"></span><span id="capKick">Adopt</span></div>
     <h1 id="capH">Adopt your AI pet.</h1>
-    <p id="capP">A companion that’s truly yours — on-chain, forever.</p>
+    <p id="capP">A companion whose identity and memories you can export.</p>
   </div>
 
   <!-- HUD -->
   <div class="hud">
     <div class="segbar" id="segbar"></div>
     <div class="controls">
-      <button class="btn" id="playBtn" aria-label="Play / Pause"><svg id="playIcon" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
-      <button class="btn" id="replayBtn" aria-label="Replay"><svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg></button>
+      <button type="button" class="btn" id="playBtn" aria-label="Play / Pause"><svg id="playIcon" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
+      <button type="button" class="btn" id="replayBtn" aria-label="Replay"><svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg></button>
       <span class="hint">space · play/pause &nbsp;·&nbsp; ← → · scenes &nbsp;·&nbsp; R · replay</span>
       <span class="clock"><b id="clockCur">01</b> / 08</span>
     </div>
@@ -848,9 +848,9 @@ body{
 
   /* ---- scene metadata ---- */
   var SCENES = [
-    {tag:'Adopt',      kick:'Adopt',      num:'01', h:'Adopt your AI pet.',                  p:'A companion that’s truly yours — minted, on-chain, forever.', dur:4400, accent:'#8168CE'},
+    {tag:'Adopt',      kick:'Adopt',      num:'01', h:'Adopt your AI pet.',                  p:'Its identity and memories stay portable — export them anytime.', dur:4400, accent:'#8168CE'},
     {tag:'Studio',     kick:'Studio',     num:'02', h:'Turn it into viral video.',           p:'One tap in Studio and your pet stars in a 9:16 hit.',        dur:3900, accent:'#C1502A'},
-    {tag:'PetClaw',    kick:'PetClaw',    num:'03', h:'It lives on every site.',             p:'Install PetClaw — your pet walks the whole web with you.',   dur:3900, accent:'#20A386'},
+    {tag:'PetClaw',    kick:'PetClaw',    num:'03', h:'It joins you on supported sites.',    p:'Install PetClaw, then grant only the site access you choose.', dur:3900, accent:'#20A386'},
     {tag:'Soul',       kick:'Soul',       num:'04', h:'Give it your Soul.',                  p:'Persistent memory & persona — it actually remembers you.',   dur:4400, accent:'#C8932F'},
     {tag:'Everywhere', kick:'Everywhere', num:'05', h:'Across every surface you use.',       p:'Web · Chrome · MCP — Claude, Cursor, and beyond.',           dur:3900, accent:'#8168CE'},
     {tag:'Community',  kick:'Community',  num:'06', h:'Meet the neighbors.',                 p:'A cozy square where your pets gather, chat and play.',        dur:3900, accent:'#20A386'},

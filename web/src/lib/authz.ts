@@ -11,10 +11,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "./auth";
 import { prisma } from "./prisma";
 
-// Sparky — the landing-page playground pet. The only pet that may be acted on
-// without authentication (and only through tightly rate-limited/demo paths).
-export const PUBLIC_DEMO_PET_ID = 1;
-
 /** True if the authenticated caller owns `petId`. Never throws. */
 export async function ownsPet(req: NextRequest, petId: number): Promise<boolean> {
   if (!Number.isInteger(petId) || petId <= 0) return false;

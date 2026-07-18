@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
+import { publicGenerationWhere } from "@/lib/publicFeed";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
@@ -15,8 +16,8 @@ export async function POST(
 
     const { generationId } = await params;
 
-    const generation = await prisma.generation.findUnique({
-      where: { id: Number(generationId) },
+    const generation = await prisma.generation.findFirst({
+      where: await publicGenerationWhere({ id: Number(generationId) }),
     });
 
     if (!generation) {
@@ -49,13 +50,12 @@ export async function POST(
       where: { generation_id: Number(generationId) },
     });
 
-    // When likes cross the threshold for the first time, auto-mint a Content NFT.
-    // Idempotent inside autoMintTopContent (bucketed by likes/10 in the hash).
-    // Fire-and-forget so a slow chain call doesn't delay the like toggle response.
+    // Record high-engagement milestones idempotently. Optional chain anchoring
+    // stays fire-and-forget so it never delays the like response.
     if (liked && likes_count >= 50 && likes_count % 10 === 0) {
-      import("@/lib/petclaw/nft-mint").then(({ autoMintTopContent }) =>
-        autoMintTopContent(Number(generationId))
-      ).catch((e) => console.error("[like] content NFT mint failed:", e?.message));
+      import("@/lib/petclaw/nft-mint").then(({ recordTopContentMilestone }) =>
+        recordTopContentMilestone(Number(generationId))
+      ).catch((e) => console.error("[like] content milestone failed:", e?.message));
     }
 
     // Engagement reward: when someone likes your creation, the AUTHOR earns a

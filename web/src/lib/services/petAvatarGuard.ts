@@ -4,16 +4,24 @@
  * anti-cheat), this is permissive on style — real photo, illustration, or
  * AI-generated art are all fine — and only screens out confident humans.
  *
- * Fail-OPEN on vision API error/outage: a Grok hiccup must never block a
- * legitimate adoption. We only block on a clear, confident "human" verdict.
+ * Fail-OPEN on ordinary vendor/network errors: a Grok hiccup must not block a
+ * legitimate adoption. Spend-cap and spend-store failures are different: they
+ * propagate so callers cannot bypass the cluster-wide vision guard.
  *
  * Shared by the pet-create (POST /api/pets) and pet-edit (PATCH
  * /api/pets/[petId]) paths — both accept a client-supplied avatar_url that
  * feeds the public Community showcase, so both must gate it.
  */
-export async function isHumanAvatar(imageUrl: string): Promise<boolean> {
-  const key = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
-  if (!key) return false; // fail open — no vision configured
+import {
+  consumeVisionBudget,
+  isLLMBudgetError,
+  isLLMBudgetStoreError,
+} from "@/lib/llm/router";
+import { callVisionTextWithFallback } from "@/lib/llm/vision-fallback";
+import { prepareVisionImageInput } from "@/lib/services/vision-image";
+
+export async function isHumanAvatar(imageUrl: string, authenticatedUserId: number): Promise<boolean> {
+  const visionImage = await prepareVisionImageInput(imageUrl);
 
   const question =
     "Look at this image. It will be used as a pet/creature avatar. " +
@@ -24,27 +32,14 @@ export async function isHumanAvatar(imageUrl: string): Promise<boolean> {
     "illustration, or AI-generated art all count as OK). Reply with ONLY 'HUMAN' or 'OK'.";
 
   try {
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: "grok-4-1-fast-non-reasoning",
-        messages: [{
-          role: "user",
-          content: [
-            { type: "image_url", image_url: { url: imageUrl } },
-            { type: "text", text: question },
-          ],
-        }],
-        max_tokens: 5,
-        temperature: 0,
-      }),
-    });
-    if (!res.ok) return false; // fail open on API error
-    const data = await res.json();
-    const answer = (data.choices?.[0]?.message?.content || "").trim().toUpperCase();
+    const rawAnswer = await callVisionTextWithFallback(
+      { imageUrl: visionImage, prompt: question, maxTokens: 5, temperature: 0 },
+      { reserveAttempt: async () => consumeVisionBudget(authenticatedUserId) },
+    );
+    const answer = (rawAnswer || "").toUpperCase();
     return answer.startsWith("HUMAN");
   } catch (e) {
+    if (isLLMBudgetError(e) || isLLMBudgetStoreError(e)) throw e;
     console.error("[petAvatarGuard] avatar human-check failed, failing open:", e);
     return false; // fail open on network/timeout error
   }

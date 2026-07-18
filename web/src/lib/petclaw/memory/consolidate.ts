@@ -16,6 +16,8 @@
 
 import { prisma } from "@/lib/prisma";
 import type { MemoryEntry, UserProfile } from "./persistent-memory";
+import { callLLM } from "@/lib/llm/router";
+import { containsHangul } from "@/lib/generatedLanguage";
 
 interface ConsolidationResult {
   petId: number;
@@ -54,9 +56,6 @@ export async function consolidateMemory(petId: number, force = false): Promise<C
     }
   }
 
-  const grokKey = process.env.GROK_API_KEY;
-  if (!grokKey) return null;
-
   // Pull recent session log to give the LLM real data to consolidate from
   const recentTurns = await prisma.petMemory.findMany({
     where: { pet_id: petId, memory_type: { startsWith: "session_" } },
@@ -77,24 +76,22 @@ export async function consolidateMemory(petId: number, force = false): Promise<C
   let consolidated: { memories: MemoryEntry[]; userProfile: UserProfile[] } | null = null;
 
   try {
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${grokKey}` },
-      body: JSON.stringify({
-        model: "grok-3-mini",
-        temperature: 0.1,
-        max_tokens: 1500,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content: `You are a memory consolidator. Given a pet's current memory ledger and recent conversation log, rewrite the ledger to be:
+    const out = await callLLM({
+      task: "summarize",
+      petId,
+      temperature: 0.1,
+      max_tokens: 1500,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are a memory consolidator. Given a pet's current memory ledger and recent conversation log, rewrite the ledger to be:
 - Deduplicated (merge entries about the same fact)
 - Free of contradictions (when two entries conflict, keep the more recent / specific one)
 - Compressed (shorter content with same meaning)
 - Importance-recalibrated (rare/critical info → 5, trivia → 1)
 - Free of noise (drop entries that look like one-off small talk)
-- Written in English (translate any non-English memory content to English)
+- Written in English (translate any non-English memory content to English); never output Hangul
 
 Return ONLY JSON with exact shape:
 {
@@ -105,10 +102,10 @@ Return ONLY JSON with exact shape:
 Preserve createdAt from input when possible. Set updatedAt to NOW.
 Keep at most 35 memories and 20 user profile entries — drop the lowest value.
 Never invent new facts not present in the input.`,
-          },
-          {
-            role: "user",
-            content: `CURRENT MEMORY LEDGER:
+        },
+        {
+          role: "user",
+          content: `CURRENT MEMORY LEDGER:
 ${memoryText || "(empty)"}
 
 CURRENT USER PROFILE:
@@ -118,17 +115,14 @@ RECENT SESSION LOG (newest last):
 ${turnsText || "(empty)"}
 
 Rewrite the ledger.`,
-          },
-        ],
-      }),
+        },
+      ],
     });
-
-    if (!res.ok) {
-      console.error("[consolidate] Grok returned", res.status);
+    const parsed = JSON.parse(out.text || "{}");
+    if (containsHangul(parsed)) {
+      console.error("[consolidate] rejected non-English generated memory");
       return null;
     }
-    const data = await res.json();
-    const parsed = JSON.parse(data.choices?.[0]?.message?.content || "{}");
     if (!Array.isArray(parsed.memories) || !Array.isArray(parsed.userProfile)) {
       console.error("[consolidate] malformed response");
       return null;

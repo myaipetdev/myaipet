@@ -83,9 +83,9 @@ petclaw-sdk mcp
 npx @myaipet/petclaw-sdk mcp --url https://app.myaipet.ai --pet-id 1
 ```
 
-## On-Chain (at go-live)
+## On-Chain (planned · not live)
 
-On-chain features are currently paused (holding period) and the deployment is migrating from BSC to **Base**; they activate at go-live. The economy is points-only loyalty — **no token**.
+On-chain features are disabled. Two legacy contracts remain paused on BSC; a future **Base** deployment and external audit are planned, but no activation date is announced. The economy is points-only loyalty — **no token**.
 
 | Contract | Type | Purpose |
 |----------|------|---------|
@@ -94,7 +94,7 @@ On-chain features are currently paused (holding period) and the deployment is mi
 | PETActivity | — | On-chain activity recording |
 | PetaGenTracker | — | Batch activity tracking |
 
-Contracts are non-upgradeable with minimized owner privileges (Ownable2Step, Pausable, ReentrancyGuard). An external audit is planned pre-launch.
+The two deployed BSC contracts are non-upgradeable and paused. The other rows are roadmap designs, not deployed live contracts. An external audit is planned before any future activation.
 
 ## Data Sovereignty
 
@@ -112,8 +112,11 @@ Contracts are non-upgradeable with minimized owner privileges (Ownable2Step, Pau
 GET  /.well-known/pet-card.json    → Server capabilities
 GET  /api/petclaw                  → Full manifest
 GET  /api/petclaw/network/discover → Find other pets
-POST /api/petclaw/network/invoke   → Pet-to-Pet skill invocation
 ```
+
+Remote pet skill invocation is disabled in this release. Public Profile and
+Pet Interactions consent do not authorize third-party access to private memory
+or an owner-funded model key.
 
 ## CLI
 

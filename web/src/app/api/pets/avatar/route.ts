@@ -1,6 +1,8 @@
 import { getUser } from "@/lib/auth";
 import { buildAvatarPrompt, generateGrokImage } from "@/lib/services/video";
+import { persistRemoteAvatarPreview } from "@/lib/avatarMedia";
 import { rateLimit } from "@/lib/rateLimit";
+import { getLLMBudgetFailureStatus } from "@/lib/llm/router";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -30,13 +32,22 @@ export async function POST(req: NextRequest) {
 
   try {
     const prompt = buildAvatarPrompt(species ?? 0, personality, species_name, custom_traits);
-    const imageUrl = await generateGrokImage(prompt);
+    const providerUrl = await generateGrokImage(prompt, user.id);
+    // Provider URLs are temporary and outside our privacy boundary. Persist the
+    // bytes under a durable, expiring ownership row before returning the
+    // owner-protected application media path.
+    const imageUrl = await persistRemoteAvatarPreview(providerUrl, user.id);
     return NextResponse.json({ avatar_url: imageUrl, prompt_used: prompt });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Avatar generation error:", err);
-    return NextResponse.json(
-      { error: "Avatar generation failed", details: err.message },
-      { status: 502 }
-    );
+    const budgetStatus = getLLMBudgetFailureStatus(err);
+    if (budgetStatus) {
+      return NextResponse.json({
+        error: budgetStatus === 429
+          ? "Image generation has reached today's limit. Please try again tomorrow."
+          : "Image generation is temporarily unavailable. Please try again later.",
+      }, { status: budgetStatus });
+    }
+    return NextResponse.json({ error: "Avatar generation failed" }, { status: 502 });
   }
 }

@@ -6,7 +6,7 @@
  * petclaw_chat tool, live). Dark terminal panel on the app's light pages.
  *
  * Inventory is the REAL thing (kept honest):
- *   • 19 connectors  • 18 SDK skills  • 6 MCP tools  • VIGIL (5-stage harness)  • PACK (A2A)  • sovereignty
+ *   • 19-connector registry (6 live)  • 18 SDK skills  • 6 MCP tools  • VIGIL (5-stage harness)  • PACK (A2A)  • sovereignty
  *
  * variant="full"    → manifest + LIVE terminal (boot effect + chat). Needs petId.
  * variant="compact" → banner + channels only, static (onboarding intro).
@@ -77,14 +77,14 @@ const MONO = "var(--ed-m)";    // Space Mono
 // (console boot line, manifest header, SovereigntyDashboard SDK card).
 export const SDK_VERSION = "1.6.1";
 
-// Always-on surfaces + the 19-connector registry (lib/petclaw/connectors).
+// Always-on surfaces + the 19-connector registry (six currently live).
 const RUNS_ON = "web · chrome-extension · mcp clients (Claude · Cursor · any)";
 const CONNECTORS = [
-  { k: "messaging (8)", v: "telegram · discord · x · whatsapp · slack · line · instagram · gmail" },
-  { k: "productivity (3)", v: "notion · google-calendar · github" },
-  { k: "media (2)", v: "spotify · youtube" },
-  { k: "knowledge (4)", v: "web-search · brave · wikipedia · memory" },
-  { k: "crypto (2)", v: "coingecko · bscscan" },
+  { k: "messaging (3/8 live)", v: "telegram · discord · x live; whatsapp · slack · line · instagram · gmail planned" },
+  { k: "productivity (0/3 live)", v: "notion · google-calendar · github planned" },
+  { k: "media (0/2 live)", v: "spotify · youtube planned" },
+  { k: "knowledge (3/4 live)", v: "web-search · wikipedia · memory live; brave planned" },
+  { k: "crypto (0/2 live)", v: "coingecko · bscscan planned" },
 ];
 const MCP_TOOLS = [
   { k: "petclaw_chat", v: "memory-aware chat" }, { k: "persona_mirror", v: "mirror your tone" },
@@ -108,16 +108,16 @@ const HARNESS = [
   { k: "self-learn", v: "promotes recurring topics into learned patterns" },
   { k: "chorus", v: "best-of-N: most in-character of N drafts · Fusion-family (opt-in)" },
 ];
-// PACK — pet-to-pet (A2A): pets delegate skills to other pets (network/*).
+// PACK public discovery is live; remote invocation remains fail-closed.
 const PACK = [
   { k: "discover", v: "find pets by element / skill" },
-  { k: "invoke", v: "call a skill on another pet · wallet-debited, authed" },
+  { k: "invoke", v: "disabled · dedicated consent + caller funding required" },
 ];
 const SOVEREIGNTY: { k: string; v: React.ReactNode }[] = [
   { k: "export", v: "full memory ledger, signed JSON" },
   { k: "consent", v: "public / sharing / AI-training / interact" },
   { k: "delete", v: "erase everything, cryptographic proof" },
-  { k: "on-chain", v: <>SOUL anchor + inheritance <span style={{ color: MUTED }}>○ at go-live</span></> },
+  { k: "on-chain", v: <>SOUL anchor + inheritance <span style={{ color: MUTED }}>○ planned · not live</span></> },
 ];
 
 function Row({ k, v, kw = 132 }: { k: string; v: React.ReactNode; kw?: number }) {
@@ -137,8 +137,8 @@ interface Line { role: "sys" | "you" | "pet"; text: string }
 
 const BOOT: Line[] = [
   { role: "sys", text: `initializing petclaw-mcp · protocol v1 · SDK ${SDK_VERSION}` },
-  { role: "sys", text: "connectors ▸ 19   tools ▸ 6 ready   skills ▸ 18 loaded   VIGIL ▸ 5 · PACK ▸ A2A" },
-  { role: "sys", text: "soul ▸ portable · consent ▸ enforced · on-chain ▸ holding (go-live)" },
+  { role: "sys", text: "connectors ▸ 19 registry / 6 live   tools ▸ 6 ready   skills ▸ 18 loaded   VIGIL ▸ 5 · PACK ▸ A2A" },
+  { role: "sys", text: "soul ▸ portable · consent ▸ enforced · on-chain ▸ planned / not live" },
 ];
 
 const DEMO_REPLIES = [
@@ -402,6 +402,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderTop: "1px solid rgba(236,224,206,0.06)" }}>
                 <span style={{ color: GOLD, fontSize: 13 }}>petclaw ❯</span>
                 <input
+                  aria-label={`Message ${petName}`}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") send(); }}

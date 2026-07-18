@@ -25,6 +25,11 @@ import { requirePetOwner } from "@/lib/authz";
 import { rateLimit } from "@/lib/rateLimit";
 import { sanitizeText } from "@/lib/sanitize";
 import { runToolAgent, type AgentEvent, type AgentStep } from "@/lib/petclaw/agent/tool-agent";
+import {
+  commitAgentCredits,
+  refundAgentCreditsOnce,
+  reserveAgentCredits,
+} from "@/lib/agentCreditReservation";
 
 // Server-enforced ceilings (client cannot exceed these).
 const MAX_STEPS = 6;
@@ -69,31 +74,24 @@ export async function POST(
   const requested = Number.isFinite(body?.maxSteps) ? Math.floor(body.maxSteps) : DEFAULT_STEPS;
   const maxSteps = Math.max(1, Math.min(MAX_STEPS, requested));
 
-  // Credit guard — must have credits before we burn reasoning-model calls.
-  const u = await prisma.user.findUnique({ where: { id: user.id }, select: { credits: true } });
-  if (!u || u.credits < COST_CREDITS) {
+  // Atomically reserve before any reasoning-model call. The guarded decrement
+  // cannot take credits negative even when several loops start concurrently.
+  const reservation = await reserveAgentCredits(user.id, pet.id, COST_CREDITS);
+  if (!reservation) {
     return NextResponse.json({ error: "Not enough credits", needed: COST_CREDITS }, { status: 402 });
   }
 
-  // Debit up-front, ONCE (refunded below if the loop executed no real skill call).
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { credits: { decrement: COST_CREDITS } },
-  });
-  const refund = () =>
-    prisma.user
-      .update({ where: { id: user.id }, data: { credits: { increment: COST_CREDITS } } })
-      .catch(() => {});
+  // Durable terminal transition: retries or overlapping error paths can call
+  // this repeatedly, but only reserved → refunded increments the wallet.
+  const refund = () => refundAgentCreditsOnce(reservation);
 
   // Shared: settle credits + write the audit log once the run completes.
   // `didRealWork` = at least one skill call was executed (trace non-empty).
   const settle = async (trace: AgentStep[], answer: string): Promise<number> => {
     const didRealWork = trace.length > 0;
-    let creditsRemaining = u.credits - COST_CREDITS;
-    if (!didRealWork) {
-      await refund();
-      creditsRemaining = u.credits;
-    }
+    const creditsRemaining = didRealWork
+      ? await commitAgentCredits(reservation)
+      : await refund();
     await prisma.petAutonomousAction
       .create({
         data: {
@@ -123,6 +121,7 @@ export async function POST(
     const encoder = new TextEncoder();
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
+        let didRealWork = false;
         const send = (evt: unknown) => {
           try {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(evt)}\n\n`));
@@ -135,6 +134,7 @@ export async function POST(
             maxSteps,
             onEvent: (e: AgentEvent) => send(e),
           });
+          didRealWork = result.trace.length > 0;
           const creditsRemaining = await settle(result.trace, result.answer);
           send({
             type: "done",
@@ -147,7 +147,11 @@ export async function POST(
           });
         } catch (e: any) {
           // Total failure — refund and surface an error event (no partial charge).
-          await refund();
+          if (!didRealWork) {
+            await refund().catch((refundError: unknown) =>
+              console.error("[agent-loop] durable refund failed:", refundError),
+            );
+          }
           console.error("[agent-loop] runToolAgent (stream) threw:", e?.message);
           send({ type: "error", ok: false, error: "Agent loop failed", detail: e?.message });
         } finally {
@@ -170,12 +174,27 @@ export async function POST(
   try {
     result = await runToolAgent(pet.id, cleanGoal, { maxSteps });
   } catch (e: any) {
-    await refund();
+    await refund().catch((refundError: unknown) =>
+      console.error("[agent-loop] durable refund failed:", refundError),
+    );
     console.error("[agent-loop] runToolAgent threw:", e?.message);
     return NextResponse.json({ error: "Agent loop failed", detail: e?.message }, { status: 502 });
   }
 
-  const creditsRemaining = await settle(result.trace, result.answer);
+  let creditsRemaining: number;
+  try {
+    creditsRemaining = await settle(result.trace, result.answer);
+  } catch (e: any) {
+    // A no-op should still be refunded if its first settlement attempt hit a
+    // transient DB error. The durable state transition keeps this retry exact-once.
+    if (result.trace.length === 0) {
+      await refund().catch((refundError: unknown) =>
+        console.error("[agent-loop] durable refund retry failed:", refundError),
+      );
+    }
+    console.error("[agent-loop] credit settlement failed:", e?.message);
+    return NextResponse.json({ error: "Agent credit settlement failed" }, { status: 503 });
+  }
 
   return NextResponse.json({
     ok: true,

@@ -145,9 +145,11 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
           </>
         )}
 
-        <div
+        <button
+          type="button"
           onClick={() => care("pet")}
-          title="boop"
+          aria-label={`Boop ${NAME}`}
+          title={`Boop ${NAME}`}
           style={{
             width: 216, padding: "12px 12px 14px", cursor: "pointer", background: PAPER,
             border: trusted ? `2px solid ${GOLD}` : `1px solid ${HAIR}`,
@@ -171,7 +173,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
             <span style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 19, color: INK, letterSpacing: "-0.01em" }}>{NAME}</span>
             <span style={{ fontFamily: "var(--ed-m)", fontSize: 10.5, letterSpacing: "0.1em", color: MUTED }}>POMERANIAN · ✦</span>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* ── Vitals (fill animates on reveal) ── */}

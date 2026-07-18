@@ -14,7 +14,8 @@ import { getUser } from "@/lib/auth";
 import { getModel } from "@/lib/studio/providers";
 import { pollBackend } from "@/lib/studio/backend";
 import { MODELS } from "@/lib/studio/providers";
-import { saveRemoteFile } from "@/lib/storage";
+import { persistGenerationMediaExactlyOnce } from "@/lib/services/generation-media";
+import { failGenerationAndRefund } from "@/lib/generationSettlement";
 
 export async function GET(
   req: NextRequest,
@@ -58,6 +59,13 @@ export async function GET(
       generationId: gen.id,
     });
   }
+  if (
+    gen.status === "persisting" &&
+    gen.completed_at &&
+    Date.now() - gen.completed_at.getTime() < 2 * 60_000
+  ) {
+    return NextResponse.json({ status: "running", generationId: gen.id });
+  }
   if (!gen.fal_request_id) {
     return NextResponse.json({ status: gen.status, generationId: gen.id });
   }
@@ -77,25 +85,31 @@ export async function GET(
   for (const model of candidates) {
     const r = await pollBackend(model, upstreamId);
     if (r.status === "completed" && r.url) {
-      // Upstream URLs expire within hours — persist to permanent storage BEFORE
-      // saving so History + public /c/<id> share links don't rot. Fall back to
-      // the raw URL only if the copy fails.
-      let persistedUrl = r.url;
+      // Never store an upstream public URL for a private-by-default creation.
+      let persisted;
       try {
-        persistedUrl = await saveRemoteFile(r.url, "generations");
+        persisted = await persistGenerationMediaExactlyOnce({
+          generationId: gen.id,
+          upstreamUrl: r.url,
+          kind: model.kind,
+          claimableStatuses: ["pending", "running"],
+          retryStatus: "running",
+          prefix: model.kind === "video" ? "videos" : "generations",
+        });
       } catch (e) {
-        console.error("studio: saveRemoteFile (poll) failed, using raw URL:", e);
+        console.error("studio: private media persistence failed:", e);
+        await failGenerationAndRefund({
+          generationId: gen.id,
+          ownerUserId: user.id,
+          fromStatuses: ["pending", "running", "persisting"],
+          errorMessage: "media persistence failed",
+        });
+        return NextResponse.json({ status: "failed", error: "Generation storage is temporarily unavailable", generationId: gen.id }, { status: 503 });
       }
-      await prisma.generation.update({
-        where: { id: gen.id },
-        data: {
-          status: "completed",
-          video_path: model.kind === "video" ? persistedUrl : null,
-          photo_path: model.kind === "image" ? persistedUrl : gen.photo_path,
-          completed_at: new Date(),
-        },
-      });
-      return NextResponse.json({ status: "completed", url: persistedUrl, generationId: gen.id });
+      if (persisted.status === "busy") {
+        return NextResponse.json({ status: "running", generationId: gen.id });
+      }
+      return NextResponse.json({ status: "completed", url: persisted.url, generationId: gen.id });
     }
     if (r.status === "failed") {
       // Legacy untagged rows scan every model — a "failed" there may just be
@@ -108,18 +122,11 @@ export async function GET(
       // status-guarded updateMany makes the transition (and refund) run exactly
       // once even if two polls race.
       const errMsg = r.error || "Generation failed upstream";
-      const refund = gen.credits_charged || 0;
-      await prisma.$transaction(async (tx) => {
-        const upd = await tx.generation.updateMany({
-          where: { id: gen.id, status: { notIn: ["failed", "completed"] } },
-          data: { status: "failed", error_message: errMsg },
-        });
-        if (upd.count > 0 && refund > 0) {
-          await tx.user.update({
-            where: { id: user.id },
-            data: { credits: { increment: refund } },
-          });
-        }
+      await failGenerationAndRefund({
+        generationId: gen.id,
+        ownerUserId: user.id,
+        fromStatuses: ["pending", "running", "persisting"],
+        errorMessage: errMsg,
       });
       return NextResponse.json({ status: "failed", error: errMsg, generationId: gen.id });
     }

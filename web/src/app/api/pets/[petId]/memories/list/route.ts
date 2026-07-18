@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { containsHangul } from "@/lib/generatedLanguage";
 
 /**
  * GET /api/pets/[petId]/memories/list?mintable=true
@@ -47,7 +48,14 @@ export async function GET(
   ]);
 
   // Fetch any linked MemoryNft records
-  const mintedIds = rawItems
+  // Minting should never turn a hidden legacy generated-language row into a
+  // new NFT. Preserve tagged owner messages; omit only generated Hangul rows.
+  const visibleRawItems = rawItems.filter((memory) => {
+    const content = String(memory.content || "");
+    return /^\[user(?::[^\]]+)?\]\s*/.test(content) || !containsHangul(content);
+  });
+
+  const mintedIds = visibleRawItems
     .map((m: any) => m.memory_nft_id)
     .filter((id: any): id is number => typeof id === "number");
 
@@ -59,7 +67,7 @@ export async function GET(
     for (const n of nfts) nftMap.set(n.id, n);
   }
 
-  const items = rawItems.map((m: any) => ({
+  const items = visibleRawItems.map((m: any) => ({
     ...m,
     memory_nft: m.memory_nft_id ? nftMap.get(m.memory_nft_id) || null : null,
   }));

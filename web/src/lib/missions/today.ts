@@ -32,6 +32,7 @@ export interface MissionView {
 
 export interface TodayResponse {
   date: string;                // YYYY-MM-DD UTC
+  petName: string;
   missions: MissionView[];
   earnedToday: number;
   remainingToday: number;
@@ -172,7 +173,14 @@ export async function getOrAssignToday(userId: number): Promise<TodayResponse> {
     });
   }
 
-  const streak = await getOrCreateStreak(userId);
+  const [streak, primaryPet] = await Promise.all([
+    getOrCreateStreak(userId),
+    prisma.pet.findFirst({
+      where: { user_id: userId, is_active: true },
+      orderBy: { level: "desc" },
+      select: { name: true },
+    }),
+  ]);
 
   // Project to view
   let earned = 0;
@@ -213,6 +221,7 @@ export async function getOrAssignToday(userId: number): Promise<TodayResponse> {
 
   return {
     date,
+    petName: primaryPet?.name ?? "Your pet",
     missions: missions.sort((a, b) => {
       const ao = a.status === "pending" ? 0 : 1;
       const bo = b.status === "pending" ? 0 : 1;

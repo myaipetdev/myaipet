@@ -67,7 +67,7 @@ export default function PremiumTeaser() {
             features={[
               "Unlimited chat & persona evolution",
               "Your pet remembers everything — recall when you ask",
-              "Studio access — pay-per-creation (100 welcome credits included)",
+              "Studio access — creations are priced in credits",
               "Daily missions, streak & season standing",
             ]}
             cta={onFree ? "You're on Companion" : "Included"}
@@ -75,8 +75,8 @@ export default function PremiumTeaser() {
           />
           <Tier
             name="Companion+"
-            price="$8.99"
-            priceNote="/mo · $69.99/yr"
+            price="Not for sale"
+            priceNote="roadmap · pricing not announced"
             current={sub?.tier === "pro"}
             highlight
             promise="Your pet, everywhere — remembering everything, never leaving."
@@ -84,22 +84,21 @@ export default function PremiumTeaser() {
               "Proactive memory — your pet brings up old moments on its own",
               "Preservation & inheritance — never lose your pet's history",
               "A companion presence on your phone",
-              "Studio creations included each month",
+              "Benefits and limits will be published before launch",
             ]}
             cta="Coming soon"
             disabled
             soon
-            footNote="or a one-time $29 'Forever' — preservation only"
           />
           <Tier
             name="Studio"
             price="Pay per creation"
-            priceNote="credits · Creator Pass $19.99/mo (soon)"
+            priceNote="credits · passes are not on sale"
             current={sub?.tier === "studio"}
             features={[
               "Image & video that lock in your pet's face",
               "Available on every tier — no subscription needed",
-              "Optional Creator Pass: volume quota, 4K, priority",
+              "Roadmap: volume limits, 4K and priority processing",
               "Every creation is yours to keep & share",
             ]}
             cta="Open Studio"

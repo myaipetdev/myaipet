@@ -10,15 +10,17 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
-import { uploadFile } from "@/lib/storage";
+import { deleteStoredFile, uploadFile } from "@/lib/storage";
 import { verifyAndDescribeAnimal } from "@/lib/catch/vision";
 import { rollRarity, rollStats, pickElement, pickName, rarityMeta, CATCH_POINTS } from "@/lib/catch/game";
 import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 import { consumeCatchVerify, refundCatchCredit } from "@/lib/economyGuards";
-import { consumeVisionBudget, isLLMBudgetError } from "@/lib/llm/router";
+import { consumeVisionBudget, isLLMBudgetError, isLLMBudgetStoreError } from "@/lib/llm/router";
+import { enqueueMediaDeletionReference } from "@/lib/mediaDeletion";
 
 export const runtime = "nodejs";
 
@@ -29,7 +31,7 @@ function withRarity(cat: any) {
 
 export async function POST(req: NextRequest) {
   // POINTS-ECONOMY §2.4: per-token rate is politeness only (6/hr) — the real wall
-  // is the per-wallet credit meter + the global VISION_DAILY_CAP below.
+  // is the per-wallet credit meter + durable per-owner/global vision caps below.
   const rl = rateLimit(req, { key: "cat-catch", limit: 6, windowMs: 60 * 60_000 });
   if (!rl.ok) return rl.response;
 
@@ -50,28 +52,37 @@ export async function POST(req: NextRequest) {
 
   // ── Metering (POINTS-ECONOMY §2.4, knob #2) ──
   // We pay Grok on ATTEMPT, so we charge on attempt: 3 free verifies/day/wallet,
-  // then 1 credit each. Then a GLOBAL VISION_DAILY_CAP backstop. Order: bill
-  // first, then the global guard; refund the credit if the global budget trips
-  // so a paying user isn't charged for a call we refused to make.
+  // then 1 credit each. Every actual fallback model attempt reserves the same
+  // transactionally paired owner/global vision budget. Refund the credit if a
+  // budget trips so a paying user isn't charged for a call we refused to finish.
   const bill = await consumeCatchVerify(user.id);
   if (!bill.ok) {
     return NextResponse.json({ caught: false, error: bill.error, needsCredits: true }, { status: bill.status });
   }
+  let verdict;
   try {
-    consumeVisionBudget();
+    verdict = await verifyAndDescribeAnimal(
+      dataUrl,
+      () => consumeVisionBudget(user.id),
+    );
   } catch (e) {
     if (bill.mode === "credit") await refundCatchCredit(user.id);
     if (isLLMBudgetError(e)) {
       return NextResponse.json({
         caught: false,
         reason: "The wildlife scanner is resting for today — come back tomorrow and try again. 🐾",
-      });
+      }, { status: 429 });
+    }
+    if (isLLMBudgetStoreError(e)) {
+      return NextResponse.json({
+        caught: false,
+        reason: "The wildlife scanner is temporarily unavailable. Please try again later.",
+      }, { status: 503 });
     }
     throw e;
   }
 
   // ── Anti-cheat: verify a real live animal BEFORE storing anything ──
-  const verdict = await verifyAndDescribeAnimal(dataUrl);
   if (!verdict) {
     return NextResponse.json({ caught: false, reason: "Couldn't read that photo — try again with more light." });
   }
@@ -90,7 +101,13 @@ export async function POST(req: NextRequest) {
   let photoPath = "";
   try {
     const buf = Buffer.from(match[2], "base64");
-    const up = await uploadFile(`catches/${user.id}-${Date.now()}.jpg`, buf, "image/jpeg");
+    const captureMime = match[1] === "image/jpg" ? "image/jpeg" : match[1];
+    const captureExt = captureMime === "image/png" ? "png" : captureMime === "image/webp" ? "webp" : "jpg";
+    const up = await uploadFile(
+      `catches/${user.id}-${randomUUID()}.${captureExt}`,
+      buf,
+      captureMime,
+    );
     photoPath = up.url;
   } catch {
     return NextResponse.json({ error: "Couldn't save the photo — try again" }, { status: 500 });
@@ -99,19 +116,38 @@ export async function POST(req: NextRequest) {
   const kind = (verdict.kind || "other").slice(0, 16); // real animal type (cat/dog mostly, but anything)
   const rarity = rollRarity(verdict.confidence);
   const stats = rollStats(rarity);
-  const cat = await prisma.caughtCat.create({
-    data: {
-      owner_user_id: user.id,
-      kind,
-      name: pickName(kind),
-      breed: verdict.breed,
-      rarity,
-      element: pickElement(verdict.mood),
-      hp: stats.hp, atk: stats.atk, def: stats.def, spd: stats.spd,
-      photo_path: photoPath,
-      lat, lng,
-    },
-  });
+  let cat;
+  try {
+    cat = await prisma.caughtCat.create({
+      data: {
+        owner_user_id: user.id,
+        kind,
+        name: pickName(kind),
+        breed: verdict.breed,
+        rarity,
+        element: pickElement(verdict.mood),
+        hp: stats.hp, atk: stats.atk, def: stats.def, spd: stats.spd,
+        photo_path: photoPath,
+        lat, lng,
+      },
+    });
+  } catch (error) {
+    console.error("Catch DB finalize failed after storage write:", error);
+    // Prefer the durable, reference-aware outbox. If PostgreSQL itself is the
+    // failure, fall back to an immediate idempotent storage delete.
+    try {
+      await enqueueMediaDeletionReference(photoPath, {
+        ownerUserId: user.id,
+        reason: "Catch database finalize failed after storage write",
+      });
+    } catch (enqueueError) {
+      console.error("Catch cleanup enqueue failed; deleting object directly:", enqueueError);
+      await deleteStoredFile(photoPath).catch((deleteError) => {
+        console.error("Catch direct storage cleanup failed:", deleteError);
+      });
+    }
+    return NextResponse.json({ error: "Couldn't save the catch — try again" }, { status: 500 });
+  }
 
   // Season points for a real catch, scaled by rarity, daily-capped (anti-farm).
   const pts = await awardPointsCapped(user.id, "catch", CATCH_POINTS[rarity], DAILY_POINT_CAPS.catch);

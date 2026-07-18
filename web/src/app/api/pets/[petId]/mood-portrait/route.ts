@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { isExpressionKey } from "@/lib/moodPortraits";
+import { applicationMediaKey, userCanAssignApplicationMedia } from "@/lib/mediaOwnership";
 
 async function ownedPet(req: NextRequest, petIdStr: string) {
   const user = await getUser(req);
@@ -21,7 +22,7 @@ async function ownedPet(req: NextRequest, petIdStr: string) {
   const petId = Number(petIdStr);
   const pet = await prisma.pet.findFirst({ where: { id: petId, user_id: user.id, is_active: true }, select: { id: true, personality_modifiers: true } });
   if (!pet) return { error: NextResponse.json({ error: "Pet not found" }, { status: 404 }) };
-  return { petId, pet };
+  return { user, petId, pet };
 }
 
 // Mutate ONLY mood_portraits inside a transaction that re-reads the row first —
@@ -63,6 +64,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pet
   if (!isExpressionKey(String(key))) return NextResponse.json({ error: "invalid expression key" }, { status: 400 });
   const safe = safeImageUrl(url);
   if (!safe) return NextResponse.json({ error: "invalid url" }, { status: 400 });
+  if (applicationMediaKey(safe)) {
+    if (!await userCanAssignApplicationMedia(ctx.user.id, safe)) {
+      return NextResponse.json({ error: "Portrait media is not owned by this account" }, { status: 403 });
+    }
+  }
 
   const portraits = await updateMoodPortraits(ctx.petId, (cur) => ({ ...cur, [key as string]: safe }));
   return NextResponse.json({ ok: true, moodPortraits: portraits });

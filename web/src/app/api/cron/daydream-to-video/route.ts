@@ -21,7 +21,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyCron } from "@/lib/cronAuth";
-import { isFetchableImageUrl } from "@/lib/sanitize";
+import { callLLM } from "@/lib/llm/router";
+import { generatedEnglishOrFallback } from "@/lib/generatedLanguage";
+import { persistGenerationMediaExactlyOnce } from "@/lib/services/generation-media";
+import { prepareVisionImageInput } from "@/lib/services/vision-image";
 import {
   buildPetPrompt,
   submitGrokVideo,
@@ -50,39 +53,31 @@ interface Candidate {
 
 /** Insight (1st-person inner thought) → concrete third-person visual scene. */
 async function insightToScene(c: Candidate): Promise<string> {
-  const key = process.env.GROK_API_KEY;
-  const fallback = `${c.name} quietly reminiscing about their owner, ${c.mood} mood, cozy familiar setting`;
-  if (!key) return fallback;
+  const fallback = `A beloved pet quietly reminiscing about their owner in a cozy familiar setting with warm, gentle lighting.`;
   try {
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: "grok-3-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a creative director for short heartwarming pet videos. " +
-              "Convert the pet's inner thought about its owner into ONE concrete, filmable " +
-              "third-person scene starring the pet (no human faces). Include setting, the pet's " +
-              "action, mood and lighting. Max 45 words. Output ONLY the scene description.",
-          },
-          {
-            role: "user",
-            content:
-              `Pet: ${c.name}${c.appearance_desc ? ` (${c.appearance_desc})` : ""}. ` +
-              `Mood: ${c.mood}. Inner thought: "${c.insight}"`,
-          },
-        ],
-        max_tokens: 120,
-        temperature: 0.8,
-      }),
+    const result = await callLLM({
+      task: "chat",
+      petId: c.pet_id,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a creative director for short heartwarming pet videos. " +
+            "Convert the pet's inner thought about its owner into ONE concrete, filmable " +
+            "third-person scene starring the pet (no human faces). Include setting, the pet's " +
+            "action, mood and lighting. Write in English only and never output Hangul. Max 45 words. Output ONLY the scene description.",
+        },
+        {
+          role: "user",
+          content:
+            `Pet: ${c.name}${c.appearance_desc ? ` (${c.appearance_desc})` : ""}. ` +
+            `Mood: ${c.mood}. Inner thought: "${c.insight}"`,
+        },
+      ],
+      max_tokens: 120,
+      temperature: 0.8,
     });
-    if (!res.ok) return fallback;
-    const d = await res.json();
-    const out = d?.choices?.[0]?.message?.content?.trim();
-    return out ? out.slice(0, 400) : fallback;
+    return generatedEnglishOrFallback(result.text, fallback).slice(0, 400);
   } catch {
     return fallback;
   }
@@ -97,27 +92,40 @@ export async function POST(req: NextRequest) {
   // ── Phase 1: settle in-flight auto-generations from previous ticks ──
   let settledCompleted = 0, settledFailed = 0, stillProcessing = 0;
   if (!dry) {
-    const inflight = await prisma.$queryRaw<Array<{ id: number; fal_request_id: string }>>`
-      SELECT g.id, g.fal_request_id
+    const inflight = await prisma.$queryRaw<Array<{ id: number; fal_request_id: string; status: string; completed_at: Date | null }>>`
+      SELECT g.id, g.fal_request_id, g.status, g.completed_at
       FROM generations g
       JOIN pet_insights pi ON pi.video_generation_id = g.id
-      WHERE g.status IN ('pending', 'processing')
+      WHERE g.status IN ('pending', 'processing', 'persisting')
         AND g.fal_request_id IS NOT NULL
       ORDER BY g.created_at ASC
       LIMIT ${SETTLE_LIMIT}`;
 
     for (const job of inflight) {
       try {
+        if (
+          job.status === "persisting" &&
+          job.completed_at &&
+          Date.now() - new Date(job.completed_at).getTime() < 2 * 60_000
+        ) {
+          stillProcessing++;
+          continue;
+        }
         const st = await checkGrokVideoStatus(job.fal_request_id);
         if (st.status === "completed" && st.videoUrl) {
-          await prisma.generation.update({
-            where: { id: job.id },
-            data: { status: "completed", video_path: st.videoUrl, completed_at: new Date() },
+          const persisted = await persistGenerationMediaExactlyOnce({
+            generationId: job.id,
+            upstreamUrl: st.videoUrl,
+            kind: "video",
+            claimableStatuses: ["pending", "processing"],
+            retryStatus: "processing",
+            prefix: "videos",
           });
-          settledCompleted++;
+          if (persisted.status === "completed") settledCompleted++;
+          else stillProcessing++;
         } else if (st.status === "failed") {
-          await prisma.generation.update({
-            where: { id: job.id },
+          await prisma.generation.updateMany({
+            where: { id: job.id, status: { in: ["pending", "processing", "persisting"] } },
             data: { status: "failed", error_message: (st.error || "video failed").slice(0, 500) },
           });
           settledFailed++;
@@ -181,12 +189,17 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      // Identity anchor: pass the avatar as image-to-video reference only when
-      // it's a publicly fetchable URL (SSRF-guarded; local /uploads paths are
-      // unreachable for the provider).
+      // Identity anchor: materialise private /uploads media (and bounded,
+      // redirect-checked external media) into an inline data URI. The provider
+      // never receives a private application path.
       let anchor: string | undefined;
-      if (c.avatar_url && /^https?:\/\//i.test(c.avatar_url) && (await isFetchableImageUrl(c.avatar_url))) {
-        anchor = c.avatar_url;
+      if (c.avatar_url) {
+        try {
+          anchor = await prepareVisionImageInput(c.avatar_url, { materializeExternal: true });
+        } catch {
+          // A missing identity anchor should not discard an otherwise valid
+          // daydream; submit a prompt-only video instead.
+        }
       }
 
       const { requestId } = await submitGrokVideo(prompt, DURATION_SEC, anchor);
@@ -194,12 +207,14 @@ export async function POST(req: NextRequest) {
       const gen = await prisma.generation.create({
         data: {
           user_id: c.user_id,
+          pet_id: c.pet_id,
           pet_type: c.species,
           style: 1,
           prompt,
           duration: DURATION_SEC,
           photo_path: c.avatar_url || "",
           status: "processing",
+          visibility: "private",
           fal_request_id: requestId,
           credits_charged: 0, // platform-funded daydream content
         },

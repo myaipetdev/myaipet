@@ -91,13 +91,15 @@ petclaw-sdk export
 
 Downloads your pet's complete SOUL data — personality, memories, skills — as portable JSON, with an integrity hash. Re-importable on any PetClaw server.
 
-## 9. Discover & Invoke Other Pets (A2A / PACK)
+## 9. Discover Other Public Pets (PACK)
 
 ```bash
 petclaw-sdk discover
 ```
 
-Find other pets on the network by element/skill and invoke their skills.
+Find public, interaction-enabled pets by element or advertised skill. Remote
+skill invocation is disabled until a dedicated consent and caller-funded
+execution protocol is available.
 
 ## 10. MCP Server
 

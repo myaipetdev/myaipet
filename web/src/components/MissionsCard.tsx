@@ -19,8 +19,8 @@
  *   └──────────────────────────────────────────────────────┘
  *
  * Sits on the home page. When a streak is broken, also surfaces the
- * Repair CTA. When pending_apology is true, shows "Sparky wonders where
- * you've been" with a link to chat.
+ * Repair CTA. When pending_apology is true, names the user's primary pet and
+ * links back to chat.
  */
 
 import { useEffect, useState, useCallback } from "react";
@@ -47,6 +47,7 @@ interface MissionView {
 
 interface TodayResponse {
   date: string;
+  petName: string;
   missions: MissionView[];
   earnedToday: number;
   remainingToday: number;
@@ -86,6 +87,7 @@ export default function MissionsCard() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [shieldModal, setShieldModal] = useState(false);
   const [repairModal, setRepairModal] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Escape closes the shield/repair modals (keyboard users can't click backdrop).
   useEffect(() => {
@@ -96,19 +98,30 @@ export default function MissionsCard() {
   }, [shieldModal, repairModal]);
 
   const load = useCallback(async () => {
+    setLoadError(null);
     try {
       const r = await fetch("/api/missions/today", { headers: getAuthHeaders() });
       if (r.status === 401) { setAuthed(false); setLoading(false); return; }
       setAuthed(true);
       // A 5xx returns { error } with no missions/streak — storing it then reading
       // today.streak.current / today.missions.map white-screens the Earn tab.
-      if (!r.ok) { setLoading(false); return; }
+      if (!r.ok) {
+        setLoadError("Daily missions couldn't load.");
+        setLoading(false);
+        return;
+      }
       const data: TodayResponse = await r.json();
-      if (!data?.missions || !data?.streak) { setLoading(false); return; }
+      if (!data?.missions || !data?.streak) {
+        setLoadError("Daily missions returned an incomplete response.");
+        setLoading(false);
+        return;
+      }
       setToday(data);
       const r2 = await fetch("/api/streak", { headers: getAuthHeaders() });
       if (r2.ok) setStreak(await r2.json());
-    } catch { /* keep last state */ }
+    } catch {
+      setLoadError("Daily missions couldn't load. Check your connection and try again.");
+    }
     setLoading(false);
   }, []);
 
@@ -128,7 +141,9 @@ export default function MissionsCard() {
       if (!r.ok && data?.hint) toast(`Not yet — ${data.hint}`, "warning");
       else if (r.ok && credited != null) toast(`+${credited} pts`, "success");
       await load();
-    } catch { /* ignore */ }
+    } catch {
+      toast("Mission update failed — try again.", "error");
+    }
     setBusyId(null);
   };
 
@@ -180,7 +195,24 @@ export default function MissionsCard() {
   if (authed === false) {
     return <UnauthTeaser />;
   }
-  if (!today) return null;
+  if (!today) {
+    return (
+      <div style={{ maxWidth: 1060, margin: "20px auto", padding: "0 24px" }}>
+        <div role="alert" style={{
+          padding: "22px 24px", borderRadius: 18, textAlign: "center",
+          background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+          color: "#5C5140", fontFamily: "var(--ed-body)",
+        }}>
+          <div style={{ fontWeight: 800, color: "#211A12", marginBottom: 6 }}>Daily missions unavailable</div>
+          <div style={{ fontSize: 13, marginBottom: 14 }}>{loadError || "Daily missions are temporarily unavailable."}</div>
+          <button onClick={() => { setLoading(true); void load(); }} style={{
+            padding: "8px 16px", borderRadius: 9, border: "none", cursor: "pointer",
+            background: "#BE4F28", color: "#FFF8EE", fontWeight: 800,
+          }}>Retry</button>
+        </div>
+      </div>
+    );
+  }
 
   const allComplete = today.missions.length > 0 && today.missions.every(m => m.status === "completed");
   const totalPossible = today.earnedToday + today.remainingToday + (allComplete ? 0 : today.bonusAllComplete);
@@ -238,7 +270,7 @@ export default function MissionsCard() {
           }}>
             <span style={{ fontSize: 18 }}><Icon name="heart" size={18} /></span>
             <span style={{ flex: 1 }}>
-              Sparky's been wondering where you've been{" "}
+              {today.petName} has been wondering where you&apos;ve been{" "}
               {today.streak.pending_apology_days > 1 ? `(${today.streak.pending_apology_days} days)` : ""} —
               maybe say hi?
             </span>
@@ -263,7 +295,7 @@ export default function MissionsCard() {
             <span style={{ fontSize: 18 }}><Icon name="fire" size={18} /></span>
             <span style={{ flex: 1 }}>
               Your {streak.repair.lost_days}-day streak broke. Restore it for{" "}
-              <strong>{streak.repair.credits} credits</strong> (${streak.repair.usd.toFixed(2)}).
+              <strong>{streak.repair.credits} credits</strong> (credits only).
             </span>
             <button onClick={() => setRepairModal(true)} style={{
               padding: "6px 14px", borderRadius: 8,
@@ -421,7 +453,7 @@ export default function MissionsCard() {
                   {streak.shield.credits} cr
                 </div>
                 <div style={{ fontSize: 13, color: "#9A7B4E", fontFamily: "var(--ed-m)" }}>
-                  ≈ ${streak.shield.usd.toFixed(2)}
+                  Existing credits only
                 </div>
               </div>
               <button
@@ -470,7 +502,7 @@ export default function MissionsCard() {
                   {streak.repair.credits} cr
                 </div>
                 <div style={{ fontSize: 13, color: "#9A7B4E", fontFamily: "var(--ed-m)" }}>
-                  ≈ ${streak.repair.usd.toFixed(2)}
+                  Existing credits only
                 </div>
               </div>
               <button onClick={buyRepair} disabled={busyId === "repair"} style={purchaseBtn}>
@@ -575,6 +607,11 @@ function Skeleton() {
 }
 
 function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
   return (
     <div onClick={onClose} style={{
       position: "fixed", inset: 0, zIndex: 1000,
@@ -582,12 +619,19 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: 20,
     }}>
-      <div onClick={e => e.stopPropagation()} style={{
+      <div role="dialog" aria-modal="true" aria-label="Mission purchase" onClick={e => e.stopPropagation()} style={{
         background: "#FBF6EC", borderRadius: 18,
         border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
         maxWidth: 480, width: "100%",
-        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
-      }}>{children}</div>
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))", position: "relative",
+      }}>
+        <button type="button" onClick={onClose} aria-label="Close" style={{
+          position: "absolute", top: 10, right: 10, zIndex: 1,
+          width: 34, height: 34, borderRadius: 9, border: "1px solid rgba(33,26,18,.13)",
+          background: "#F5EFE2", color: "#5C5140", cursor: "pointer", fontSize: 18,
+        }}>×</button>
+        {children}
+      </div>
     </div>
   );
 }

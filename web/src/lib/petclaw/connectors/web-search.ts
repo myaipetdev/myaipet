@@ -45,25 +45,14 @@ export class WebSearchConnector {
   }
 
   async summarize(url: string): Promise<ConnectorResult> {
-    try {
-      // Fetch page and extract text (basic)
-      const res = await fetch(url, {
-        headers: { "User-Agent": "PetClaw/1.0" },
-      });
-      const html = await res.text();
-
-      // Simple text extraction (strip HTML tags)
-      const text = html
-        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-        .replace(/<[^>]+>/g, " ")
-        .replace(/\s+/g, " ")
-        .trim()
-        .slice(0, 2000);
-
-      return { success: true, platform: "web-search", data: { url, text } };
-    } catch (e: any) {
-      return { success: false, platform: "web-search", data: null, error: e.message };
-    }
+    // Keep every caller fail-closed, including internal tool-agent call sites.
+    // The Chrome extension supplies an owner-previewed text excerpt to the
+    // normal summarize skill; the server must not dereference arbitrary URLs.
+    return {
+      success: false,
+      platform: "web-search",
+      data: null,
+      error: "Server-side URL summarization is disabled; provide an approved text excerpt instead.",
+    };
   }
 }

@@ -176,9 +176,9 @@ export default function FocusSession() {
           return next;
         });
 
-        // Best-effort log toward the pet's existing playtime heartbeat. Capped
-        // per the endpoint's own 10-min ceiling per call — send in chunks.
-        const minutesToLog = Math.min(focusMinutes, 10);
+        // The server caps this to wall-clock time elapsed since the zero-minute
+        // start marker and rejects rapid/replayed increments.
+        const minutesToLog = focusMinutes;
         if (minutesToLog > 0) {
           api.playtime.heartbeat(minutesToLog, petIdRef.current).catch(() => {
             // Local streak already recorded; server credit is a bonus, not required.
@@ -225,7 +225,14 @@ export default function FocusSession() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runState, phase, completeBlock]);
 
-  const start = () => setRunState("running");
+  const start = () => {
+    if (phase === "focus" && runState === "idle") {
+      // Establish a server timestamp without granting any minutes. Completion
+      // can then claim only time that truly elapsed after this point.
+      api.playtime.heartbeat(0, petIdRef.current).catch(() => {});
+    }
+    setRunState("running");
+  };
   const pause = () => setRunState("paused");
   const reset = () => {
     setRunState("idle");
@@ -502,6 +509,7 @@ export default function FocusSession() {
             <input
               className="fs-custom-input"
               type="number"
+              aria-label="Custom focus minutes"
               min={1}
               max={180}
               value={customValue}

@@ -30,7 +30,9 @@ export async function GET(req: NextRequest) {
     capabilities: {
       companionAI: true,
       dataSovereignty: true,
-      soulNFT: true,
+      // Preserve legacy Soul state in exports, but do not advertise live NFT
+      // capability while on-chain minting is paused.
+      soulNFT: false,
       memoryExport: true,
       consentManagement: true,
       protocols: ["petclaw-v1", "mcp"],

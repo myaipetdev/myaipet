@@ -22,6 +22,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePetOwner } from "@/lib/authz";
 import { rateLimit } from "@/lib/rateLimit";
 import { BUILTIN_SKILLS } from "@/lib/petclaw/pethub";
+import { containsHangul } from "@/lib/generatedLanguage";
 
 // A DB row is "recently working" if it landed inside this window. Autonomous
 // actions are logged on completion, so this reads as "the pet was just active".
@@ -68,7 +69,8 @@ export async function GET(req: NextRequest) {
 
   try {
     const mods = (pet.personality_modifiers as Record<string, any>) || {};
-    const memories: any[] = Array.isArray(mods.persistent_memories) ? mods.persistent_memories : [];
+    const memories: any[] = (Array.isArray(mods.persistent_memories) ? mods.persistent_memories : [])
+      .filter((memory: any) => !containsHangul(memory?.content));
     const userProfile: any[] = Array.isArray(mods.user_profile) ? mods.user_profile : [];
     const learnedPatterns: any[] = Array.isArray(mods.learned_patterns) ? mods.learned_patterns : [];
     const installedSkills: any[] = Array.isArray(mods.installed_skills) ? mods.installed_skills : [];

@@ -41,6 +41,8 @@
       ],
       "environment": [
         { "name": "NODE_ENV", "value": "production" },
+        { "name": "OAUTH_CONNECTIONS_ENABLED", "value": "false" },
+        { "name": "AGENT_CHANNELS_ENABLED", "value": "false" },
         { "name": "PORT", "value": "3000" },
         { "name": "STORAGE_PROVIDER", "value": "s3" },
         { "name": "AWS_S3_BUCKET", "value": "petclaw-uploads" },

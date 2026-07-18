@@ -21,8 +21,9 @@
 
 import { prisma } from "@/lib/prisma";
 import type { MemoryEntry, UserProfile } from "./persistent-memory";
+import { callLLM, type LLMTask } from "@/lib/llm/router";
+import { containsHangul, generatedEnglishOrNull } from "@/lib/generatedLanguage";
 
-const MODEL = "grok-3-mini";
 const MIN_NOTES = 4;          // need at least this many memories to daydream
 const MAX_PAIRS = 6;          // synthesize at most this many connections per run
 const KEEP_SCORE = 6;         // 0-10 critic threshold to surface an insight
@@ -51,7 +52,9 @@ function toNotes(memories: MemoryEntry[], profile: UserProfile[]): Note[] {
     importance: 3,             // owner-profile facts are inherently relevant
     ageDays: Math.max(0, (now - new Date(p.updatedAt).getTime()) / 86_400_000),
   }));
-  return [...fromMem, ...fromProfile].filter(n => n.text && n.text.length > 4);
+  return [...fromMem, ...fromProfile].filter(
+    (n) => n.text && n.text.length > 4 && !containsHangul(n.text),
+  );
 }
 
 /** Recency + importance weighted random pairing (the "idle brain"). */
@@ -78,23 +81,16 @@ function makePairs(notes: Note[], count: number): [Note, Note][] {
   return pairs;
 }
 
-async function callGrok(system: string, user: string, maxTokens = 400): Promise<string | null> {
-  const key = process.env.GROK_API_KEY;
-  if (!key) return null;
+async function callPetText(petId: number, task: LLMTask, system: string, user: string, maxTokens = 400): Promise<string | null> {
   try {
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [{ role: "system", content: system }, { role: "user", content: user }],
-        max_tokens: maxTokens,
-        temperature: 0.9,
-      }),
+    const out = await callLLM({
+      task,
+      petId,
+      messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      max_tokens: maxTokens,
+      temperature: 0.9,
     });
-    if (!res.ok) return null;
-    const d = await res.json();
-    return d?.choices?.[0]?.message?.content || null;
+    return out.text || null;
   } catch { return null; }
 }
 
@@ -126,13 +122,14 @@ export async function daydream(petId: number): Promise<DaydreamInsight[]> {
     `genuine, non-obvious connection and turn it into ONE caring thought you ` +
     `might share when they return.\n\n` +
     `Rules:\n` +
+    `- Write every JSON string in English only. Never output Hangul, even if a name or memory uses another language.\n` +
     `- 1-2 sentences, first person, warm, in-character for a ${personality} pet.\n` +
     `- Must connect BOTH memories, not just restate one.\n` +
     `- No generic filler ("I love you so much!"). Specific to these memories.\n` +
     `- Output strict JSON: {"insight":"...","rationale":"why you connected them","mood":"tender|playful|concerned|hopeful"}`;
 
   const raw = await Promise.all(pairs.map(([a, b]) =>
-    callGrok(synthSystem, `Memory 1: ${a.text}\nMemory 2: ${b.text}`)
+    callPetText(petId, "persona", synthSystem, `Memory 1: ${a.text}\nMemory 2: ${b.text}`)
       .then(out => ({ a, b, out }))
   ));
 
@@ -143,10 +140,12 @@ export async function daydream(petId: number): Promise<DaydreamInsight[]> {
     if (!m) continue;
     try {
       const p = JSON.parse(m[0]);
-      if (p.insight && typeof p.insight === "string") {
+      const insight = generatedEnglishOrNull(p.insight);
+      const rationale = generatedEnglishOrNull(p.rationale);
+      if (insight && rationale) {
         candidates.push({
-          insight: String(p.insight).slice(0, 280),
-          rationale: String(p.rationale || "").slice(0, 200),
+          insight: insight.slice(0, 280),
+          rationale: rationale.slice(0, 200),
           mood: ["tender", "playful", "concerned", "hopeful"].includes(p.mood) ? p.mood : "tender",
           sourceKeys: [a.key, b.key],
         });
@@ -159,12 +158,12 @@ export async function daydream(petId: number): Promise<DaydreamInsight[]> {
   const criticSystem =
     `You are a discerning critic. Score each pet "daydream" 0-10 on whether it's ` +
     `a genuinely insightful, specific, caring observation (10) versus generic ` +
-    `filler or a non-sequitur (0). Reward: specificity, a real connection between ` +
+    `filler or a non-sequitur (0). Work in English only and never output Hangul. Reward: specificity, a real connection between ` +
     `two facts, emotional attunement. Penalize: vagueness, sycophancy, restating ` +
     `one fact. Output strict JSON array: [{"i":<index>,"score":<0-10>}].`;
 
   const criticInput = candidates.map((c, i) => `[${i}] ${c.insight}`).join("\n");
-  const criticOut = await callGrok(criticSystem, criticInput, 300);
+  const criticOut = await callPetText(petId, "judge", criticSystem, criticInput, 300);
 
   const scores: Record<number, number> = {};
   if (criticOut) {

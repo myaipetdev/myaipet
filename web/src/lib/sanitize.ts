@@ -30,25 +30,100 @@ export function sanitizeText(input: unknown, maxLen = 2000): string {
     .slice(0, maxLen);
 }
 
-/** True if an IP literal (v4 or v6) is private/loopback/link-local/metadata. */
-export function isPrivateIp(ip: string): boolean {
-  const a = ip.toLowerCase().replace(/^\[|\]$/g, "");
-  if (a.includes(":")) {
-    // IPv6
-    if (a === "::1" || a === "::") return true;
-    if (a.startsWith("fc") || a.startsWith("fd")) return true; // ULA fc00::/7
-    if (a.startsWith("fe80")) return true;                      // link-local
-    if (a.startsWith("::ffff:")) return isPrivateIp(a.slice(7)); // IPv4-mapped
-    return false;
+function parseIpv4(value: string): number[] | null {
+  if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(value)) return null;
+  const parts = value.split(".").map(Number);
+  return parts.every((part) => Number.isInteger(part) && part >= 0 && part <= 255)
+    ? parts
+    : null;
+}
+
+function parseIpv6(value: string): bigint | null {
+  let input = value.toLowerCase();
+  if (!input || input.includes("%") || (input.match(/::/g) || []).length > 1) return null;
+
+  // Convert a dotted IPv4 tail into the two hextets used by mapped/compatible
+  // IPv6 forms before applying the normal compression rules.
+  if (input.includes(".")) {
+    const lastColon = input.lastIndexOf(":");
+    if (lastColon < 0) return null;
+    const ipv4 = parseIpv4(input.slice(lastColon + 1));
+    if (!ipv4) return null;
+    const high = ((ipv4[0] << 8) | ipv4[1]).toString(16);
+    const low = ((ipv4[2] << 8) | ipv4[3]).toString(16);
+    input = `${input.slice(0, lastColon)}:${high}:${low}`;
   }
-  const parts = a.split(".").map((n) => parseInt(n, 10));
-  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n) || n < 0 || n > 255)) return true; // malformed → unsafe
-  const [p0, p1] = parts;
-  if (p0 === 0 || p0 === 127 || p0 === 10) return true;
-  if (p0 === 192 && p1 === 168) return true;
+
+  const compressed = input.includes("::");
+  const [leftRaw, rightRaw = ""] = input.split("::");
+  const left = leftRaw ? leftRaw.split(":") : [];
+  const right = rightRaw ? rightRaw.split(":") : [];
+  if ([...left, ...right].some((part) => !/^[0-9a-f]{1,4}$/.test(part))) return null;
+  const missing = 8 - left.length - right.length;
+  if ((!compressed && missing !== 0) || (compressed && missing < 1)) return null;
+  const groups = [...left, ...Array(missing).fill("0"), ...right];
+  if (groups.length !== 8) return null;
+  return groups.reduce(
+    (result, group) => (result << BigInt(16)) | BigInt(`0x${group}`),
+    BigInt(0),
+  );
+}
+
+function ipv6Value(...groups: number[]): bigint {
+  return Array.from({ length: 8 }, (_, index) => groups[index] || 0)
+    .reduce<bigint>(
+      (result, group) => (result << BigInt(16)) | BigInt(group),
+      BigInt(0),
+    );
+}
+
+function matchesIpv6Prefix(value: bigint, prefix: bigint, bits: number): boolean {
+  const shift = BigInt(128 - bits);
+  return (value >> shift) === (prefix >> shift);
+}
+
+const UNSAFE_IPV6_RANGES: ReadonlyArray<readonly [bigint, number]> = [
+  [ipv6Value(), 96],                              // IPv4-compatible + unspecified/loopback
+  [ipv6Value(0, 0, 0, 0, 0, 0xffff), 96],       // IPv4-mapped (incl. hexadecimal tails)
+  [ipv6Value(0, 0, 0, 0, 0xffff, 0), 96],       // IPv4-translatable
+  [ipv6Value(0x0064, 0xff9b), 96],               // well-known NAT64
+  [ipv6Value(0x0064, 0xff9b, 0x0001), 48],       // local-use NAT64
+  [ipv6Value(0x0100), 64],                       // discard-only
+  [ipv6Value(0x2001, 0x0000), 32],               // Teredo
+  [ipv6Value(0x2001, 0x0002), 48],               // benchmarking
+  [ipv6Value(0x2001, 0x0010), 28],               // ORCHID (deprecated)
+  [ipv6Value(0x2001, 0x0020), 28],               // ORCHIDv2
+  [ipv6Value(0x2001, 0x0db8), 32],               // documentation
+  [ipv6Value(0x2002), 16],                       // 6to4 transition space
+  [ipv6Value(0xfc00), 7],                        // unique-local
+  [ipv6Value(0xfe80), 10],                       // link-local (fe80:: through febf::)
+  [ipv6Value(0xfec0), 10],                       // deprecated site-local
+  [ipv6Value(0xff00), 8],                        // multicast
+];
+
+/** True if an IP literal is non-public/private/loopback/link-local/metadata. */
+export function isPrivateIp(ip: string): boolean {
+  const value = ip.toLowerCase().replace(/^\[|\]$/g, "");
+  if (value.includes(":")) {
+    const parsed = parseIpv6(value);
+    if (parsed === null) return true; // malformed or zone-scoped → unsafe
+    return UNSAFE_IPV6_RANGES.some(([prefix, bits]) => matchesIpv6Prefix(parsed, prefix, bits));
+  }
+
+  const parts = parseIpv4(value);
+  if (!parts) return true;
+  const [p0, p1, p2] = parts;
+  if (p0 === 0 || p0 === 10 || p0 === 127) return true;
+  if (p0 === 100 && p1 >= 64 && p1 <= 127) return true; // CGNAT / provider metadata
+  if (p0 === 169 && p1 === 254) return true;
   if (p0 === 172 && p1 >= 16 && p1 <= 31) return true;
-  if (p0 === 169 && p1 === 254) return true; // link-local / cloud metadata
-  if (p0 === 100 && p1 >= 64 && p1 <= 127) return true; // CGNAT
+  if (p0 === 192 && p1 === 168) return true;
+  if (p0 === 192 && p1 === 0 && (p2 === 0 || p2 === 2)) return true;
+  if (p0 === 192 && p1 === 88 && p2 === 99) return true;
+  if (p0 === 198 && (p1 === 18 || p1 === 19)) return true;
+  if (p0 === 198 && p1 === 51 && p2 === 100) return true;
+  if (p0 === 203 && p1 === 0 && p2 === 113) return true;
+  if (p0 >= 224) return true; // multicast, reserved, limited broadcast
   return false;
 }
 
@@ -60,12 +135,22 @@ export function isPrivateIp(ip: string): boolean {
  * NOTE: this is the synchronous, input-time check. Before the server actually
  * FETCHES a user-supplied URL, also call isFetchableImageUrl() (async) which
  * resolves DNS and rejects hosts pointing at private space — defeating
- * hostname-based and DNS-rebinding SSRF (audit H8).
+ * ordinary hostname-based SSRF. Callers that follow redirects must repeat the
+ * check for every hop. (Pinning the validated address at connect time remains
+ * the strongest defence against a sub-second DNS rebinding race.)
  */
 export function isSafeImageUrl(input: unknown): boolean {
   if (typeof input !== "string") return false;
   const url = input.trim();
   if (url.length === 0 || url.length > 2048) return false;
+
+  // Application-owned media is stored as a relative path so every request is
+  // mediated by the owner/consent-aware /uploads rewrite. Only the canonical,
+  // traversal-free form is accepted.
+  if (url.startsWith("/uploads/")) {
+    if (!/^\/uploads\/[A-Za-z0-9._/-]+$/.test(url)) return false;
+    return !url.slice("/uploads/".length).split("/").some((part) => !part || part === "." || part === "..");
+  }
 
   // Allow data: URLs only for known image MIME types
   if (url.startsWith("data:")) {
@@ -93,8 +178,8 @@ export function isSafeImageUrl(input: unknown): boolean {
   }
 
   // Block IP literals in private/loopback/link-local/metadata ranges (v4 + v6).
-  // A bare IP host (digits/colons/dots) is validated directly; if it's a
-  // hostname, isPrivateIp returns false here and the async DNS check covers it.
+  // A bare IP host (digits/colons/dots) is validated directly; ordinary
+  // hostnames skip this branch and the async DNS check covers their addresses.
   const looksLikeIp = /^[0-9.]+$/.test(host) || host.includes(":");
   if (looksLikeIp && isPrivateIp(host)) return false;
 

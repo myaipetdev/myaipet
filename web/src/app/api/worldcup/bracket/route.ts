@@ -1,6 +1,6 @@
 /**
  * GET /api/worldcup/bracket?size=16 — pool of REAL community pets for the
- * evergreen "Favorites Bracket" (이상형 월드컵) single-elimination pick game.
+ * evergreen "Favorites Bracket" single-elimination pick game.
  *
  * Returns only real, active, avatar-bearing pets from the Pet table, ranked by
  * a real signal (level → bond → recency). No fabricated contestants: if the
@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
+import { publicPetWhere } from "@/lib/publicPet";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
   const size = Math.min(32, Math.max(4, Number(req.nextUrl.searchParams.get("size")) || 24));
 
   const pets = await prisma.pet.findMany({
-    where: { is_active: true, avatar_url: { not: null } },
+    where: publicPetWhere({ avatar_url: { not: null } }),
     orderBy: [{ level: "desc" }, { bond_level: "desc" }, { created_at: "desc" }],
     take: size,
     select: { id: true, name: true, avatar_url: true, level: true },

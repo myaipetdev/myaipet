@@ -15,7 +15,7 @@ export default function ArchitecturePage() {
       padding: "80px 24px",
     }}>
       <div style={{ maxWidth: 880, margin: "0 auto" }}>
-        <a href="/" style={{
+        <a href="https://myaipet.ai" style={{
           display: "inline-block", marginBottom: 24,
           fontSize: 13, color: "rgba(33,26,18,0.55)", textDecoration: "none",
         }}>← Back to landing</a>
@@ -93,13 +93,13 @@ export default function ArchitecturePage() {
           Sovereignty Operations
         </h2>
         <Op title="Export"
-            desc="Sovereignty → Export SOUL Data downloads {memories, userProfile, sessions, stats} as ${petName}_SOUL.json. The same payload is produced by petclaw-sdk export." />
+            desc="Sovereignty → Export SOUL Data downloads the pet's identity, memory, skills, consent, and linked activity as a portable JSON bundle. The same operation is available through the SDK." />
         <Op title="Delete"
-            desc="Sovereignty → Delete All Data wipes MEMORY.md, USER.md, and the session log, then returns a deletion proof = SHA-256 over the deleted entries' content hashes." />
+            desc="Sovereignty → Delete Pet Data removes pet-scoped records and owned media from active systems and returns a deletion receipt. Backup copies follow the published retention schedule; public on-chain records cannot be erased." />
         <Op title="Consent toggles"
-            desc="Public Profile · Data Sharing · AI Training · Pet Interactions — each gates a different downstream pipeline. Toggling AI Training off prevents your data from feeding any model fine-tune we may run." />
+            desc="Pet Interactions is enforced today. Data Sharing and AI Training record opt-in preferences for possible future programs; neither program is active today." />
         <Op title="Inheritance"
-            desc="A successor wallet can be designated. After N days of inactivity (default 180), the successor can claim the pet's SOUL — the memory and skills carry over." />
+            desc="A successor-wallet preference can be stored off-chain. Automatic transfer after inactivity and on-chain inheritance are planned designs, not active features." />
 
         <div style={{
           marginTop: 32, padding: "16px 20px", borderRadius: 14,

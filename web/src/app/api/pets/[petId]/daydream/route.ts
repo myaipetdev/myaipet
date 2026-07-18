@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ownsPet } from "@/lib/authz";
 import { daydream } from "@/lib/petclaw/memory/daydream";
+import { containsHangul } from "@/lib/generatedLanguage";
 
 const COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6h between cycles per pet
 
@@ -35,7 +36,9 @@ export async function GET(
   }
 
   return NextResponse.json({
-    insights: rows.map(r => ({
+    // Keep legacy rows in sovereign storage/export, but never put generated
+    // Hangul back onto this English-only product surface.
+    insights: rows.filter((r) => !containsHangul(r.insight)).map(r => ({
       id: r.id, insight: r.insight, mood: r.mood, score: r.score,
       created_at: r.created_at.toISOString(), wasNew: !r.seen,
     })),
@@ -74,8 +77,15 @@ export async function POST(
     return NextResponse.json({ ok: true, created: 0, note: "Not enough memories yet — keep chatting." });
   }
 
+  const safeInsights = insights.filter(
+    (ins) => !containsHangul(ins.insight) && !containsHangul(ins.rationale),
+  );
+  if (safeInsights.length === 0) {
+    return NextResponse.json({ ok: true, created: 0, note: "No English insight was generated this time." });
+  }
+
   await prisma.petInsight.createMany({
-    data: insights.map(ins => ({
+    data: safeInsights.map(ins => ({
       pet_id: id,
       insight: ins.insight,
       rationale: ins.rationale,
@@ -85,5 +95,5 @@ export async function POST(
     })),
   });
 
-  return NextResponse.json({ ok: true, created: insights.length });
+  return NextResponse.json({ ok: true, created: safeInsights.length });
 }

@@ -10,6 +10,7 @@
 import { prisma } from "@/lib/prisma";
 import type { Rarity } from "@/lib/tcg/theme";
 import { computeRarity } from "@/lib/tcg/theme";
+import { publicPetWhere } from "@/lib/publicPet";
 
 export { ELEMENT_THEME, elementTheme, rarityColor, computeRarity } from "@/lib/tcg/theme";
 export type { Rarity, ElementTheme } from "@/lib/tcg/theme";
@@ -56,12 +57,14 @@ export interface CardData {
  * missing/inactive. Exposes only card-appropriate public fields (no owner,
  * no private memory) — safe for a shareable page.
  */
-export async function getCardData(petId: number): Promise<CardData | null> {
+export async function getCardData(petId: number, ownerUserId?: number): Promise<CardData | null> {
   if (!Number.isInteger(petId) || petId <= 0) return null;
   let pet;
   try {
     pet = await prisma.pet.findFirst({
-      where: { id: petId, is_active: true },
+      where: ownerUserId
+        ? { id: petId, OR: [{ user_id: ownerUserId }, publicPetWhere()] }
+        : publicPetWhere({ id: petId }),
       select: {
         id: true, name: true, species: true, element: true, level: true,
         atk: true, def: true, spd: true, bond_level: true, care_streak: true,
@@ -95,7 +98,12 @@ export async function getCardData(petId: number): Promise<CardData | null> {
              COUNT(*) FILTER (
                WHERE (level*2 + bond_level*3 + care_streak + (atk+def+spd)/3 + evolution_stage*6) >= ${score}
              )::bigint AS higher
-      FROM pets WHERE is_active = true`;
+      FROM pets
+      WHERE is_active = true
+        AND (
+          personality_modifiers->>'consent_public_profile' = 'true'
+          OR personality_modifiers->'consent'->>'allowPublicProfile' = 'true'
+        )`;
     const total = Number(rows?.[0]?.total || 0);
     const higher = Number(rows?.[0]?.higher || 0);
     if (total > 0) topPercent = Math.min(100, Math.max(1, Math.round((higher / total) * 100)));

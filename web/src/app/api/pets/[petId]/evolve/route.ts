@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
+import { SKILL_MAP } from "@/lib/skills";
 import { NextRequest, NextResponse } from "next/server";
 
 const EVOLUTION_STAGES = [
@@ -9,13 +10,6 @@ const EVOLUTION_STAGES = [
   { stage: 3, name: "Elder", minLevel: 20, icon: "👑" },
   { stage: 4, name: "Legendary", minLevel: 35, icon: "🔱" },
 ];
-
-const SKILLS_BY_STAGE: Record<number, string[]> = {
-  1: ["fetch", "sit"],
-  2: ["guard", "trick"],
-  3: ["inspire", "heal"],
-  4: ["transcend"],
-};
 
 export async function POST(
   req: NextRequest,
@@ -80,31 +74,25 @@ export async function POST(
     return NextResponse.json({ error: "Already evolving" }, { status: 409 });
   }
 
-  // Unlock skills for this stage (non-critical, outside transaction)
-  const newSkills = SKILLS_BY_STAGE[nextStage.stage] || [];
-  for (const skillKey of newSkills) {
-    await prisma.petSkill.upsert({
-      where: { pet_id_skill_key: { pet_id: pet.id, skill_key: skillKey } },
-      create: { pet_id: pet.id, skill_key: skillKey, level: 1 },
-      update: {},
-    });
-  }
-
-  // Auto-mint Evolution NFT (off-chain row always; on-chain if BLOCKCHAIN_ENABLED).
-  let evolutionMint: any = null;
+  // Record the evolution locally; optional chain anchoring stays exact-gated.
+  let evolutionMilestone: any = null;
   try {
     const { recordEvolution } = await import("@/lib/petclaw/nft-mint");
-    evolutionMint = await recordEvolution(pet.id, nextStage.stage, nextStage.name);
+    evolutionMilestone = await recordEvolution(pet.id, nextStage.stage, nextStage.name);
   } catch (e: any) {
-    console.error("[evolve] NFT mint failed:", e?.message);
+    console.error("[evolve] milestone record failed:", e?.message);
   }
 
   return NextResponse.json({
     pet: evolved,
     new_stage: nextStage,
-    skills_unlocked: newSkills,
+    // Skills use the canonical 24-skill Adventure/Arena database and are
+    // learned through starter grants, Adventure drops and the Skill Shop.
+    // Older evolution code inserted unknown keys (fetch/sit/etc.) that could
+    // never be equipped or used; do not advertise or create phantom rewards.
+    skills_unlocked: [],
     credits_earned: 50,
-    evolution_nft: evolutionMint,
+    evolution_milestone: evolutionMilestone,
   });
 }
 
@@ -133,7 +121,9 @@ export async function GET(
     next_stage: next || null,
     can_evolve: next ? pet.level >= next.minLevel : false,
     level: pet.level,
-    skills: pet.skills,
+    // Hide legacy phantom skill rows from this progression surface. They are
+    // deliberately left untouched in storage so this read path is non-destructive.
+    skills: pet.skills.filter((skill) => Boolean(SKILL_MAP[skill.skill_key])),
     all_stages: EVOLUTION_STAGES,
   });
 }

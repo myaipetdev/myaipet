@@ -161,7 +161,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
 
       {/* ── dispatch bar ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 0, background: CHIP_BG, border: `1px solid ${CHIP_BR}`, borderRadius: 16, padding: 8, marginBottom: 18, boxShadow: "0 14px 30px -24px rgba(80,55,20,.45)" }}>
-        <input id="gp-dispatch" value={goal} onChange={(e) => setGoal(e.target.value)}
+        <input id="gp-dispatch" aria-label={`Goal for ${petName}`} value={goal} onChange={(e) => setGoal(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") onDispatch(); }}
           placeholder={`Ask the hotel to do anything — ${petName} takes it`}
           maxLength={600}
