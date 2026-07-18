@@ -9,6 +9,7 @@ import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import ModelsPanel from "@/components/ModelsPanel";
 import { toast } from "@/components/Toast";
 import { confirmDialog, promptDialog } from "@/components/Dialog";
+import { PETCLAW_EXTENSION_STEPS, PETCLAW_EXTENSION_VERSION } from "@/lib/petclaw-extension";
 
 // ── Types ──
 interface SoulState {
@@ -106,11 +107,6 @@ const MONO = "var(--ed-m)";
 
 // ── Helpers ──
 const BSCSCAN = "https://bscscan.com";
-
-// Single source of truth for the shipped extension version — must match
-// desktop-pet/manifest.json "version". Keeping the dashboard honest: it
-// previously advertised "v2.0" while the packaged extension was 2.2.x.
-const EXT_VERSION = "2.3.2";
 
 const truncate = (s?: string | null, n = 4) => {
   if (!s) return "—";
@@ -823,16 +819,6 @@ function ChromeExtensionSection() {
     }
   }, []);
 
-  const steps = [
-    { n: 1, title: "Download", desc: 'Click "Download Extension" below to get the ZIP file.' },
-    { n: 2, title: "Unzip", desc: "Extract the ZIP to any folder on your computer — remember where you put it." },
-    { n: 3, title: "Open Extensions", desc: "In Chrome, go to chrome://extensions." },
-    { n: 4, title: "Developer Mode", desc: 'Flip the "Developer mode" toggle on, top-right of that page.' },
-    { n: 5, title: "Load Unpacked", desc: 'Click "Load unpacked" and select the unzipped folder.' },
-    { n: 6, title: "Pin & Pair", desc: 'Pin the pet, generate a 30-day extension token in "Connect PetClaw clients" above, then paste it into Settings → Connection.' },
-    { n: 7, title: "Allow One Site", desc: "Open the site, then choose Extension → Settings → Website Access → Allow. Access is per scheme and domain. MY AI PET, private/local network addresses, and a built-in list of common sensitive domains are blocked. Keep access off on every other sensitive page." },
-  ];
-
   return (
     <div
       id="petclaw-extension"
@@ -849,7 +835,7 @@ function ChromeExtensionSection() {
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
           <span style={{ fontSize: 22, display: "inline-flex", color: TERRA }}><Icon name="extension-icon" size={22} /></span>
           <h2 style={{ fontFamily: DISP, fontSize: 24, fontWeight: 800, color: INK, letterSpacing: "-0.02em" }}>Desktop Companion Extension</h2>
-          <span style={{ fontSize: 13, padding: "3px 9px", borderRadius: 999, background: "rgba(190,79,40,0.1)", color: TERRA_SUB, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>v{EXT_VERSION} · CHROME</span>
+          <span style={{ fontSize: 13, padding: "3px 9px", borderRadius: 999, background: "rgba(190,79,40,0.1)", color: TERRA_SUB, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>v{PETCLAW_EXTENSION_VERSION} · CHROME</span>
         </div>
         <p style={{ fontFamily: BODY, fontSize: 14, color: MUTED2, lineHeight: 1.65, marginBottom: 14 }}>
           Your pet follows you across supported websites — a little companion you can pause per site. Click it to chat,
@@ -894,7 +880,7 @@ function ChromeExtensionSection() {
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: MONO_CLR, letterSpacing: "0.14em", marginBottom: 12 }}>DEVELOPER MODE INSTALL · ~2 MIN</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(158px, 1fr))", gap: 10 }}>
-              {steps.map((s) => (
+              {PETCLAW_EXTENSION_STEPS.map((s) => (
                 <div key={s.n} className="mp-lift" style={{ background: PAPER, border: `1px solid ${HAIR}`, borderRadius: 12, boxShadow: CARD_SHADOW, overflow: "hidden" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderBottom: `1px solid ${HAIR}`, background: INSET }}>
                     <span style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, background: TERRA, color: CREAM_ON, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, fontFamily: MONO }}>{s.n}</span>
@@ -1041,7 +1027,7 @@ function ChromeExtensionSection() {
 
             {/* Footer */}
             <div style={{ padding: "8px 16px 12px", borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 9, fontFamily: "monospace", color: "#5a544c" }}>v{EXT_VERSION} · PetClaw enabled</span>
+              <span style={{ fontSize: 9, fontFamily: "monospace", color: "#5a544c" }}>v{PETCLAW_EXTENSION_VERSION} · PetClaw enabled</span>
               <span style={{ fontSize: 9, color: "#7CB36A", fontFamily: "monospace" }}>● connected</span>
             </div>
           </div>

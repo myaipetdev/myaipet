@@ -19,6 +19,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
+import { PETCLAW_EXTENSION_STEPS, PETCLAW_EXTENSION_VERSION } from "@/lib/petclaw-extension";
 
 const PILLARS = [
   { icon: "scroll", eyebrow: "01 · EXPORT", title: "Export your pet's soul", body: "Memories, personality, skills — as portable JSON. Take it anywhere, anytime." },
@@ -36,6 +37,13 @@ export default function PetClawPreview({ cta, ctaNote }: { cta?: ReactNode; ctaN
       .then((d) => { if (alive) setNet(d); })
       .catch(() => {});
     return () => { alive = false; };
+  }, []);
+  useEffect(() => {
+    if (window.location.hash !== "#petclaw-extension") return;
+    const timer = window.setTimeout(() => {
+      document.getElementById("petclaw-extension")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const publicNodes = net?.nodes || [];
@@ -105,6 +113,56 @@ export default function PetClawPreview({ cta, ctaNote }: { cta?: ReactNode; ctaN
           </Reveal>
         ))}
       </div>
+
+      {/* Installation is public documentation. Pairing a real pet requires
+          sign-in, but nobody should have to connect a wallet just to learn how
+          the extension works or download the exact reviewed ZIP. */}
+      <Reveal dir="up">
+        <section
+          id="petclaw-extension"
+          aria-labelledby="petclaw-extension-title"
+          style={{
+            scrollMarginTop: 88, marginTop: 18, padding: "22px",
+            background: "#FBF6EC", borderRadius: 18,
+            border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+            boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+            <Icon name="extension-icon" size={22} />
+            <h2 id="petclaw-extension-title" style={{ margin: 0, fontFamily: "var(--ed-disp)", fontSize: 22, color: "#211A12" }}>
+              Install the PetClaw Desktop Companion
+            </h2>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "#9A4E1E" }}>
+              v{PETCLAW_EXTENSION_VERSION} · CHROME
+            </span>
+          </div>
+          <p style={{ margin: "0 0 14px", fontFamily: "var(--ed-body)", fontSize: 14, lineHeight: 1.6, color: "#5C5140" }}>
+            Install first, then pair your pet after signing in. PetClaw runs only on sites you explicitly allow.
+            MY AI PET, private/local network addresses, and common sensitive domains are blocked. Page summaries
+            show the exact excerpt and require a second confirmation before anything is sent.
+          </p>
+          <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(205px, 1fr))", gap: 10 }}>
+            {PETCLAW_EXTENSION_STEPS.map((step) => (
+              <li key={step.n} style={{ padding: 12, borderRadius: 12, background: "#F5EFE2", border: "1px solid rgba(33,26,18,.1)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+                  <span aria-hidden="true" style={{ width: 22, height: 22, borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center", background: "#BE4F28", color: "#FFF8EE", fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700 }}>{step.n}</span>
+                  <strong style={{ fontFamily: "var(--ed-disp)", fontSize: 14, color: "#211A12" }}>{step.title}</strong>
+                </div>
+                <div style={{ fontFamily: "var(--ed-body)", fontSize: 13, lineHeight: 1.5, color: "#5C5140" }}>{step.desc}</div>
+              </li>
+            ))}
+          </ol>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 16 }}>
+            <a href="/petclaw-extension.zip" download="myaipet-extension.zip" style={{ display: "inline-flex", alignItems: "center", padding: "11px 20px", borderRadius: 12, background: "#BE4F28", color: "#FFF8EE", textDecoration: "none", fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 800 }}>
+              Download Extension
+            </a>
+            <span style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#7A6E5A" }}>
+              Developer / unpacked install · not yet on the Chrome Web Store
+            </span>
+          </div>
+        </section>
+      </Reveal>
 
       {/* Live Pet Network (public, real) */}
       <Reveal dir="up">

@@ -18,7 +18,7 @@ trap cleanup EXIT
 node "$SOURCE_DIR/site-access-contract.test.cjs"
 
 VERSION="$(node -p "require('$SOURCE_DIR/manifest.json').version")"
-if ! grep -Fq "const EXT_VERSION = \"$VERSION\";" "$PROJECT_ROOT/web/src/components/SovereigntyDashboard.tsx"; then
+if ! grep -Fq "export const PETCLAW_EXTENSION_VERSION = \"$VERSION\";" "$PROJECT_ROOT/web/src/lib/petclaw-extension.ts"; then
   echo "Extension version mismatch: manifest is $VERSION but the dashboard is not." >&2
   exit 1
 fi

@@ -50,9 +50,14 @@ const retiredCopy = [
 
 const requiredUiContracts = [
   {
-    file: "web/src/components/SovereigntyDashboard.tsx",
+    file: "web/src/lib/petclaw-extension.ts",
     description: "extension onboarding must disclose blocked private/local and sensitive sites",
     pattern: /MY AI PET, private\/local network addresses, and a built-in list of common sensitive domains are blocked\./,
+  },
+  {
+    file: "web/src/components/PetClawPreview.tsx",
+    description: "logged-out visitors must receive the public extension onboarding and download",
+    pattern: /id="petclaw-extension"[\s\S]*?PETCLAW_EXTENSION_STEPS\.map[\s\S]*?href="\/petclaw-extension\.zip"[\s\S]*?Download Extension/,
   },
   {
     file: "web/src/components/App.tsx",
