@@ -160,11 +160,18 @@ DEMO_BODY="$(petclaw_curl -H "Origin: https://myaipet.ai" -H "Content-Type: appl
 node -e 'const d=JSON.parse(process.argv[1]); if(d?.output?.synthetic!==true||d?.output?.persisted!==false) process.exit(1)' "${DEMO_BODY}"
 
 if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
-  curl --disable --silent --show-error --max-time 20 --noproxy '*' \
+  PETCLAW_LANDING_CODE="$(curl --disable --silent --show-error --max-time 20 --noproxy '*' \
+    -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
     --resolve "myaipet.ai:${PETCLAW_SMOKE_PORT}:${PETCLAW_SMOKE_HOST}" \
-    https://myaipet.ai/
+    https://myaipet.ai/ || true)"
 else
-  petclaw_curl https://myaipet.ai/
-fi | petclaw_verify_landing_body
+  PETCLAW_LANDING_CODE="$(petclaw_curl -o "${PETCLAW_SMOKE_BODY}" \
+    -w '%{http_code}' https://myaipet.ai/ || true)"
+fi
+if [[ "${PETCLAW_LANDING_CODE}" != "200" ]] \
+  || ! petclaw_verify_landing_body < "${PETCLAW_SMOKE_BODY}"; then
+  echo "ERROR: landing smoke did not return exact English launch HTML." >&2
+  exit 1
+fi
 
 echo "Release smoke passed: ${PETCLAW_SMOKE_BASE}"

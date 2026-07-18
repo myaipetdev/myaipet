@@ -285,7 +285,14 @@ if grep -Fq '"${LANDING_BODY}"' "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh"; 
   echo "FAIL: landing smoke still passes the full HTML body through argv" >&2
   exit 1
 fi
-PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 4))"
+if ! grep -Fq '[[ "${PETCLAW_LANDING_CODE}" != "200" ]]' \
+  "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" \
+  || ! grep -Fq 'petclaw_verify_landing_body < "${PETCLAW_SMOKE_BODY}"' \
+    "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh"; then
+  echo "FAIL: landing body verification is not preceded by an exact HTTP 200 gate" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 5))"
 
 if grep -Fq '/bin/bash "${PETCLAW_RELEASE_DIR}/deploy/release-rollback-watchdog.sh"' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh"; then
