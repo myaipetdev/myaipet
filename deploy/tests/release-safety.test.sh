@@ -154,6 +154,9 @@ for PETCLAW_CONTRACT in \
   'ec2-release.sh:previous nginx configuration could not be restored' \
   'ec2-release.sh:restored PM2 state could not be persisted' \
   'ec2-release.sh:--no-preserve=ownership' \
+  'ec2-release.sh:chmod u+rw,go+rX,go-w' \
+  'ec2-release.sh:PETCLAW_PRISMA_CLI' \
+  'ec2-release.sh:! -perm -004' \
   'ec2-release.sh:REFERRALS_ENABLED' \
   'release-rollback-watchdog.sh:flock -w 900' \
   'release-rollback-watchdog.sh:exec 9<>"${PETCLAW_RELEASE_LOCK}"' \
@@ -187,6 +190,26 @@ done
 if grep -Fq '/bin/bash "${PETCLAW_RELEASE_DIR}/deploy/release-rollback-watchdog.sh"' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh"; then
   echo "FAIL: mutable release watchdog is still scheduled as root" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
+
+PETCLAW_RUNTIME_MODE_LINE="$(grep -nF 'chmod u+rw,go+rX,go-w' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | cut -d: -f1)"
+PETCLAW_RUNTIME_OWNER_LINE="$(grep -nF 'sudo chown -R root:root "${PETCLAW_RELEASE_DIR}"' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | head -n 1 | cut -d: -f1)"
+PETCLAW_RUNTIME_READ_LINE="$(grep -nF 'PETCLAW_PRISMA_CLI="$(realpath -e' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | cut -d: -f1)"
+PETCLAW_DOTENV_PARSE_LINE="$(grep -nF 'const dotenv = require("dotenv");' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | cut -d: -f1)"
+if [[ ! "${PETCLAW_RUNTIME_MODE_LINE}" =~ ^[0-9]+$ \
+  || ! "${PETCLAW_RUNTIME_OWNER_LINE}" =~ ^[0-9]+$ \
+  || ! "${PETCLAW_RUNTIME_READ_LINE}" =~ ^[0-9]+$ \
+  || ! "${PETCLAW_DOTENV_PARSE_LINE}" =~ ^[0-9]+$ \
+  || "${PETCLAW_RUNTIME_OWNER_LINE}" -ge "${PETCLAW_RUNTIME_MODE_LINE}" \
+  || "${PETCLAW_RUNTIME_MODE_LINE}" -ge "${PETCLAW_RUNTIME_READ_LINE}" \
+  || "${PETCLAW_RUNTIME_READ_LINE}" -ge "${PETCLAW_DOTENV_PARSE_LINE}" ]]; then
+  echo "FAIL: sealed candidate is not normalized and checked before runtime dotenv parsing" >&2
   exit 1
 fi
 PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"

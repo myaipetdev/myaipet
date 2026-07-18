@@ -837,7 +837,13 @@ fi
 # runtime cannot rename this generation after the comparison.
 sudo chown -R root:root "${PETCLAW_RELEASE_DIR}"
 sudo find "${PETCLAW_RELEASE_DIR}" -type d -exec chmod a-w,a+rx {} +
-sudo find "${PETCLAW_RELEASE_DIR}" -type f -exec chmod go-w {} +
+# The controller runs with umask 077, so generated dependency and standalone
+# files would otherwise become root-only after sealing. Preserve each owner's
+# executable bit and make every secret-scanned release file runtime-readable.
+# Exclude the production dotenv so it is never briefly world-readable.
+sudo find "${PETCLAW_RELEASE_DIR}" -type f \
+  ! -path "${PETCLAW_WEB}/.env.production" \
+  -exec chmod u+rw,go+rX,go-w {} +
 sudo chown root:ubuntu "${PETCLAW_WEB}/.env.production"
 sudo chmod 640 "${PETCLAW_WEB}/.env.production"
 for PETCLAW_IMMUTABLE_MIGRATION_INPUT in \
@@ -853,10 +859,16 @@ for PETCLAW_IMMUTABLE_MIGRATION_INPUT in \
     exit 2
   fi
 done
+PETCLAW_PRISMA_CLI="$(realpath -e "${PETCLAW_WEB}/node_modules/.bin/prisma" 2>/dev/null || true)"
 if find "${PETCLAW_RELEASE_DIR}" ! -user root -print -quit | grep -q . \
   || find "${PETCLAW_RELEASE_DIR}" \( -type f -o -type d \) \
-    -perm /022 -print -quit | grep -q .; then
-  echo "ERROR: pre-migration candidate could not be sealed root-owned and non-writable." >&2
+    -perm /022 -print -quit | grep -q . \
+  || find "${PETCLAW_RELEASE_DIR}" -type d ! -perm -005 -print -quit | grep -q . \
+  || find "${PETCLAW_RELEASE_DIR}" -type f \
+    ! -path "${PETCLAW_WEB}/.env.production" ! -perm -004 -print -quit | grep -q . \
+  || [[ -z "${PETCLAW_PRISMA_CLI}" || ! -r "${PETCLAW_PRISMA_CLI}" \
+    || ! -x "${PETCLAW_PRISMA_CLI}" ]]; then
+  echo "ERROR: pre-migration candidate could not be sealed root-owned, non-writable, and runtime-readable." >&2
   exit 2
 fi
 
