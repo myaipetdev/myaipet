@@ -183,7 +183,7 @@ const FLOAT_PETS = [
 
 function FloatingPet({ icon, x, y, delay, size }: any) {
   return (
-    <div style={{
+    <div className="hero-float" style={{
       position: "absolute", left: `${x}%`, top: `${y}%`,
       fontSize: size, opacity: 0.35,
       animation: `petFloat 6s ease-in-out ${delay}s infinite`,
@@ -318,6 +318,9 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
         }
         @media (max-width: 860px) {
           .hero-root { padding: 100px 16px 40px !important; min-height: auto !important; }
+          /* Single-column collapse centers the copy — the %-positioned float
+             glyphs would sit on top of the body paragraph, so retire them. */
+          .hero-float { display: none !important; }
           .hero-2col { grid-template-columns: 1fr !important; gap: 30px !important; text-align: center !important; }
           .hero-2col-left { display: flex; flex-direction: column; align-items: center; }
           .hero-cta { justify-content: center !important; }

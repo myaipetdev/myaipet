@@ -216,7 +216,7 @@ function FavoritesBracket() {
           <p style={{ fontFamily: T.body, fontSize: 14.5, color: T.muted2, margin: "0 0 14px", lineHeight: 1.55 }}>
             The Favorites Bracket needs at least four public pets to run. We only ever seed it with real community pets — none are made up — so it opens for real as more players adopt and give their pet an avatar.
           </p>
-          <a href="/?section=my%20pet" className="ed-underline-slide" style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".06em", color: T.terra, textDecoration: "none" }}>ADOPT A PET & MAKE YOURS ELIGIBLE ▸</a>
+          <a href="/?section=my%20pet" className="wc-press" style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, padding: "0 20px", borderRadius: 10, background: T.ink, color: T.creamOn, fontFamily: T.disp, fontWeight: 700, fontSize: 14, letterSpacing: ".01em", textDecoration: "none", boxShadow: "var(--ed-shadow-card)" }}>Adopt a pet &amp; make yours eligible <span aria-hidden>▸</span></a>
         </div>
       </BracketFrame>
     );
@@ -367,13 +367,6 @@ function Contender({ pet, side, onPick, picked, dimmed, disabled }: {
 function BracketFrame({ children }: { children: React.ReactNode }) {
   return (
     <div id="wc-bracket" style={{ scrollMarginTop: 90, marginBottom: 30 }}>
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: T.terraSub, textTransform: "uppercase" }}>Favorites Bracket</div>
-        <h2 style={{ fontFamily: T.disp, fontSize: "clamp(24px,6vw,32px)", fontWeight: 800, color: T.ink, margin: "6px 0 4px", letterSpacing: "-.02em" }}>Pick your favorite</h2>
-        <p style={{ fontFamily: T.body, fontSize: 14, color: T.muted2, margin: 0, lineHeight: 1.55, maxWidth: 600 }}>
-          Two community pets, one choice. Your pick advances round by round until one pet is crowned Champion. Real pets, your call.
-        </p>
-      </div>
       {children}
     </div>
   );

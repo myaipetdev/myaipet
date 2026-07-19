@@ -23,9 +23,9 @@ import { PETCLAW_EXTENSION_STEPS, PETCLAW_EXTENSION_VERSION } from "@/lib/petcla
 
 const PILLARS = [
   { icon: "scroll", eyebrow: "01 · EXPORT", title: "Export your pet's soul", body: "Memories, personality, skills — as portable JSON. Take it anywhere, anytime." },
-  { icon: "fire", eyebrow: "02 · DELETE", title: "Delete with proof", body: "Wipe everything and get a SHA-256 receipt. Real erasure you can verify." },
+  { icon: "fire", eyebrow: "02 · DELETE", title: "Delete with a receipt", body: "Wipe everything and get a signed SHA-256 receipt of exactly what was removed." },
   { icon: "crystal-ball", eyebrow: "03 · INSPECT", title: "See what we hold", body: "Every memory, fact, and connection we keep about your pet — in the open." },
-  { icon: "footprints", eyebrow: "04 · INHERIT", title: "Inheritance", body: "Name a successor wallet. Your pet's soul outlives any single device." },
+  { icon: "footprints", eyebrow: "04 · INHERIT", title: "Pass it on", body: "Name a successor wallet. Your pet's soul outlives any single device." },
 ];
 
 export default function PetClawPreview({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: string }) {
@@ -60,10 +60,10 @@ export default function PetClawPreview({ cta, ctaNote }: { cta?: ReactNode; ctaN
         }}>
           <div style={{ flex: "1 1 280px", minWidth: 220 }}>
             <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: "#FCE9CF", marginBottom: 5 }}>
-              YOUR CONSOLE IS WAITING
+              PETCLAW CONSOLE
             </div>
             <div style={{ fontFamily: "var(--ed-body)", fontSize: 14.5, lineHeight: 1.55, color: "#FFF8EE" }}>
-              Sign back in to open your PetClaw console, memory ledger and SOUL tools.
+              Sign in to open your PetClaw console, memory ledger and SOUL tools.
             </div>
             {ctaNote && (
               <div style={{ fontFamily: "var(--ed-body)", fontSize: 13, lineHeight: 1.5, color: "#FCE9CF", marginTop: 5 }}>
@@ -90,14 +90,14 @@ export default function PetClawPreview({ cta, ctaNote }: { cta?: ReactNode; ctaN
               Your pet. Your data.<br /><span style={{ color: "#E8C77E" }}>Your rules.</span>
             </h1>
             <p style={{ fontFamily: "var(--ed-body)", fontSize: 15.5, color: "rgba(255,248,238,0.82)", maxWidth: 520, margin: 0, lineHeight: 1.6 }}>
-              Most AI forgets you the moment the tab closes — and owns whatever it learns. Here, your pet&apos;s memory is <strong style={{ color: "#FFF8EE" }}>yours</strong>: exportable, deletable, inheritable. Built on an open standard.
+              Most AI forgets you the moment the tab closes — and owns whatever it learns. Here, your pet&apos;s memory is <strong style={{ color: "#FFF8EE" }}>yours</strong>: exportable, deletable, inheritable. Built on an open, exportable format.
             </p>
           </div>
         </div>
       </Reveal>
 
       {/* Pillars — paper cards, mono eyebrows, staggered fly-in */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12, marginTop: 16 }}>
         {PILLARS.map((p, i) => (
           <Reveal key={p.title} dir="up" delay={i * 90} style={{ height: "100%" }}>
             <div style={{

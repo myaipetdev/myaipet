@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
+import { unitLabel } from "@/lib/pluralize";
 
 const METRICS = [
   { key: "streak",   label: "Streak King",     icon: "fire" },
@@ -142,7 +143,7 @@ export default function MultiLeaderboard() {
                   fontSize: 18, fontFamily: "var(--ed-m)",
                   fontWeight: 800, color: "#9A4E1E",
                 }}>
-                  #{data.myRank.rank} · {data.myRank.value} {data.meta.unit}
+                  #{data.myRank.rank} · {data.myRank.value} {unitLabel(data.myRank.value, data.meta.unit)}
                 </div>
               </div>
             )}
@@ -234,7 +235,7 @@ export default function MultiLeaderboard() {
                   }}>
                     {e.value}
                     <span style={{ fontSize: 13, color: isFirst ? "rgba(255,248,238,0.75)" : "#9A7B4E", marginLeft: 4 }}>
-                      {data?.meta.unit}
+                      {data ? unitLabel(e.value, data.meta.unit) : ""}
                     </span>
                   </div>
                 </div>
@@ -273,7 +274,7 @@ export default function MultiLeaderboard() {
                 fontSize: 16, fontWeight: 800, fontFamily: "var(--ed-m)",
                 color: e.isMe ? "#9A4E1E" : "#211A12",
               }}>
-                {e.value}{data?.meta.unit ? ` ${data.meta.unit}` : ""}
+                {e.value}{data?.meta.unit ? ` ${unitLabel(e.value, data.meta.unit)}` : ""}
               </div>
             </div>
           ))}

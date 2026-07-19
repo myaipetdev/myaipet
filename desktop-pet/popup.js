@@ -7,6 +7,17 @@ const $ = (id) => document.getElementById(id);
 const EXTENSION_TOKEN_PATTERN = /^pex_[A-Za-z0-9_-]{32,128}$/;
 let latestConfig = null;
 
+// popup.html can be opened outside an installed extension (packaging preview / QA
+// in a plain browser tab). There chrome.* is undefined, so every top-level
+// initializer that messages the service worker would throw on load. Guard on this
+// flag and render a calm placeholder instead. Inside a real installed extension
+// chrome.* exists and everything behaves as before.
+const EXT_VERSION = "2.3.3"; // build-time fallback; keep in sync with manifest version
+const HAS_CHROME =
+  typeof chrome !== "undefined" &&
+  !!chrome.runtime &&
+  typeof chrome.runtime.sendMessage === "function";
+
 function safeRenderAvatar(parent, url, name, fallback = "🐾") {
   parent.replaceChildren();
   if (!url) {
@@ -57,10 +68,19 @@ function renderPetConfig(c) {
 }
 
 // Stamp the footer with the live manifest version so it never drifts stale.
+// Falls back to the build-time constant when getManifest() is unavailable so the
+// footer never goes blank outside an installed extension.
 try {
   const vEl = $("version-line");
-  if (vEl) vEl.textContent = `MY AI PET v${chrome.runtime.getManifest().version} — PetClaw`;
-} catch {}
+  const version =
+    (HAS_CHROME && typeof chrome.runtime.getManifest === "function"
+      ? chrome.runtime.getManifest().version
+      : null) || EXT_VERSION;
+  if (vEl) vEl.textContent = `MY AI PET v${version} — PetClaw`;
+} catch {
+  const vEl = $("version-line");
+  if (vEl) vEl.textContent = `MY AI PET v${EXT_VERSION} — PetClaw`;
+}
 
 // ══════════════════════════════════════
 // ── TABS ──
@@ -134,27 +154,46 @@ document.querySelectorAll(".toggle").forEach((toggle) => {
   toggle.addEventListener("click", () => {
     if (toggle.disabled) return;
     const previous = toggle.classList.contains("on");
-    toggle.classList.toggle("on");
     const key = toggle.dataset.key;
+    // Revert the optimistic visual flip and re-enable the control.
+    const revert = () => {
+      toggle.classList.toggle("on", previous);
+      toggle.setAttribute("aria-pressed", String(previous));
+      toggle.disabled = false;
+      toggle.removeAttribute("aria-busy");
+    };
+    toggle.classList.toggle("on");
     const val = toggle.classList.contains("on");
     toggle.setAttribute("aria-pressed", String(val));
     toggle.disabled = true;
     toggle.setAttribute("aria-busy", "true");
-    chrome.runtime.sendMessage({ type: "setPreference", key, value: val }, (res) => {
-      const runtimeError = chrome.runtime.lastError;
-      toggle.disabled = false;
-      toggle.removeAttribute("aria-busy");
-      if (runtimeError || !res?.success) {
-        toggle.classList.toggle("on", previous);
-        toggle.setAttribute("aria-pressed", String(previous));
-        showStatus(res?.error || "Preference could not be saved", true);
-        return;
-      }
-      if (key === "enabled") {
-        showStatus(val ? "Companion enabled — reload open tabs to show it." : "Companion disabled on open tabs.");
-        refreshSiteAccess();
-      }
-    });
+    if (!HAS_CHROME) {
+      revert();
+      showStatus("Preferences are only available inside the installed extension", true);
+      return;
+    }
+    // A synchronous throw from sendMessage (worker gone, invalidated context)
+    // must not leave the toggle stuck disabled + aria-busy.
+    try {
+      chrome.runtime.sendMessage({ type: "setPreference", key, value: val }, (res) => {
+        const runtimeError = chrome.runtime.lastError;
+        toggle.disabled = false;
+        toggle.removeAttribute("aria-busy");
+        if (runtimeError || !res?.success) {
+          toggle.classList.toggle("on", previous);
+          toggle.setAttribute("aria-pressed", String(previous));
+          showStatus(res?.error || "Preference could not be saved", true);
+          return;
+        }
+        if (key === "enabled") {
+          showStatus(val ? "Companion enabled — reload open tabs to show it." : "Companion disabled on open tabs.");
+          refreshSiteAccess();
+        }
+      });
+    } catch (error) {
+      revert();
+      showStatus(error?.message || "Preference could not be saved", true);
+    }
   });
 });
 
@@ -162,6 +201,7 @@ document.querySelectorAll(".toggle").forEach((toggle) => {
 // ── POINTS ──
 // ══════════════════════════════════════
 function loadPoints() {
+  if (!HAS_CHROME) return;
   chrome.runtime.sendMessage({ type: "getActivity" }, (res) => {
     if (chrome.runtime.lastError || !res) return;
     const p = res.points || {};
@@ -187,6 +227,7 @@ function loadPoints() {
 // Account season sync — shows that the extension's ambient care is linked to the
 // signed-in account (real, non-financial season score), plus today's share.
 function loadSeasonSync() {
+  if (!HAS_CHROME) return;
   chrome.runtime.sendMessage({ type: "getSeasonSync" }, (res) => {
     const panel = $("seasonSync");
     const out = $("seasonSyncSignedOut");
@@ -231,13 +272,20 @@ function renderNotifications(notifs) {
 
 loadPoints();
 loadSeasonSync();
-setInterval(loadPoints, 5000);
-setInterval(loadSeasonSync, 30000);
+if (HAS_CHROME) {
+  setInterval(loadPoints, 5000);
+  setInterval(loadSeasonSync, 30000);
+}
 
 // ══════════════════════════════════════
 // ── DAILY QUESTS ──
 // ══════════════════════════════════════
 function loadQuests() {
+  if (!HAS_CHROME) {
+    const list = $("questList");
+    if (list) list.innerHTML = '<div class="empty-note">Daily quests appear inside the installed extension.</div>';
+    return;
+  }
   chrome.runtime.sendMessage({ type: "getDailyQuests" }, (res) => {
     if (!res?.quests) return;
     const list = $("questList");
@@ -295,7 +343,7 @@ function loadQuests() {
 }
 
 loadQuests();
-setInterval(loadQuests, 10000);
+if (HAS_CHROME) setInterval(loadQuests, 10000);
 
 // ══════════════════════════════════════
 // ── EVOLUTION ──
@@ -319,6 +367,7 @@ const EVO_PERKS = [
 ];
 
 function loadEvolution() {
+  if (!HAS_CHROME) return;
   chrome.runtime.sendMessage({ type: "getEvolution" }, (res) => {
     if (!res) return;
     const evo = res.evolution || { stage: 0, xp: 0 };
@@ -365,6 +414,7 @@ loadEvolution();
 // ── EMOTIONS ──
 // ══════════════════════════════════════
 function loadEmotions() {
+  if (!HAS_CHROME) return;
   chrome.runtime.sendMessage({ type: "getEmotions" }, (res) => {
     if (!res) return;
     const e = res.emotions || { happiness: 80, energy: 60, hunger: 40, affection: 70, curiosity: 50 };
@@ -385,10 +435,14 @@ function loadEmotions() {
 }
 
 loadEmotions();
-setInterval(loadEmotions, 10000);
+if (HAS_CHROME) setInterval(loadEmotions, 10000);
 
 // Emotion action buttons
 function runEmotionAction(buttonId, action, successMessage) {
+  if (!HAS_CHROME) {
+    showStatus("Pet care is only available inside the installed extension", true);
+    return;
+  }
   setButtonBusy(buttonId, true, "Working…");
   chrome.runtime.sendMessage({ type: "emotionAction", action }, (res) => {
     const runtimeError = chrome.runtime.lastError;
@@ -557,15 +611,17 @@ function endGame() {
 
   // Award points
   const earned = Math.floor(gameScore / 5);
-  chrome.runtime.sendMessage({ type: "gameComplete", score: gameScore, points: earned }, (res) => {
-    if (res?.highScore != null) $("highScore").textContent = res.highScore;
-    $("gamePointsEarned").textContent = res?.awardedPoints ?? 0;
-    if (!chrome.runtime.lastError && res) {
-      loadPoints();
-      loadEvolution();
-      loadAchievements();
-    }
-  });
+  if (HAS_CHROME) {
+    chrome.runtime.sendMessage({ type: "gameComplete", score: gameScore, points: earned }, (res) => {
+      if (res?.highScore != null) $("highScore").textContent = res.highScore;
+      $("gamePointsEarned").textContent = res?.awardedPoints ?? 0;
+      if (!chrome.runtime.lastError && res) {
+        loadPoints();
+        loadEvolution();
+        loadAchievements();
+      }
+    });
+  }
 
   const canvas = $("gameCanvas");
   canvas.innerHTML = `
@@ -602,10 +658,13 @@ $("gameCanvas").addEventListener("keydown", (event) => {
 });
 
 // Load high score
-chrome.runtime.sendMessage({ type: "getGameStats" }, (res) => {
-  if (res?.highScore) $("highScore").textContent = res.highScore;
-  if (res?.highScoreMemory) $("memoryHighScore").textContent = res.highScoreMemory;
-});
+if (HAS_CHROME) {
+  chrome.runtime.sendMessage({ type: "getGameStats" }, (res) => {
+    if (chrome.runtime.lastError || !res) return;
+    if (res.highScore) $("highScore").textContent = res.highScore;
+    if (res.highScoreMemory) $("memoryHighScore").textContent = res.highScoreMemory;
+  });
+}
 
 // ══════════════════════════════════════
 // ── GAME SELECTOR ──
@@ -745,15 +804,17 @@ function endMemoryGame() {
   const score = Math.max(10, Math.round(100 * (6 / memoryMoves)));
   const earned = Math.floor(score / 5);
 
-  chrome.runtime.sendMessage({ type: "gameComplete", score, points: earned, game: "memory" }, (res) => {
-    if (res?.highScoreMemory != null) $("memoryHighScore").textContent = res.highScoreMemory;
-    $("memoryPointsEarned").textContent = res?.awardedPoints ?? 0;
-    if (!chrome.runtime.lastError && res) {
-      loadPoints();
-      loadEvolution();
-      loadAchievements();
-    }
-  });
+  if (HAS_CHROME) {
+    chrome.runtime.sendMessage({ type: "gameComplete", score, points: earned, game: "memory" }, (res) => {
+      if (res?.highScoreMemory != null) $("memoryHighScore").textContent = res.highScoreMemory;
+      $("memoryPointsEarned").textContent = res?.awardedPoints ?? 0;
+      if (!chrome.runtime.lastError && res) {
+        loadPoints();
+        loadEvolution();
+        loadAchievements();
+      }
+    });
+  }
 
   $("memoryGrid").innerHTML = `
     <div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--ink)">
@@ -769,15 +830,30 @@ $("startMemoryBtn").addEventListener("click", startMemoryGame);
 // ══════════════════════════════════════
 // ── ACHIEVEMENTS ──
 // ══════════════════════════════════════
+const ACHIEVE_EMPTY = '<div class="empty-note">Care for your pet to earn badges.</div>';
+
 function loadAchievements() {
+  const list = $("achieveList");
+  if (!HAS_CHROME) {
+    if ($("achieveCount")) $("achieveCount").textContent = "0 / 0";
+    if (list) list.innerHTML = ACHIEVE_EMPTY;
+    return;
+  }
   chrome.runtime.sendMessage({ type: "getAchievements" }, (res) => {
-    if (!res) return;
+    if (chrome.runtime.lastError || !res) {
+      if (list) list.innerHTML = ACHIEVE_EMPTY;
+      return;
+    }
     const unlocked = res.achievements || {};
     const defs = res.defs || [];
     const count = Object.keys(unlocked).length;
     $("achieveCount").textContent = `${count} / ${defs.length}`;
 
-    const list = $("achieveList");
+    if (defs.length === 0) {
+      if (list) list.innerHTML = ACHIEVE_EMPTY;
+      return;
+    }
+
     list.innerHTML = defs.map((d) => {
       const got = !!unlocked[d.id];
       return `
@@ -804,6 +880,14 @@ let currentSiteAccess = null;
 async function refreshSiteAccess() {
   const button = $("siteAccessBtn");
   const status = $("siteAccessStatus");
+  if (!HAS_CHROME || !chrome.tabs) {
+    if (status) status.textContent = "Website access is managed inside the installed extension.";
+    if (button) {
+      button.textContent = "Website access unavailable";
+      button.disabled = true;
+    }
+    return;
+  }
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id || !tab.url) throw new Error("Open a regular website first");
@@ -913,8 +997,8 @@ refreshSiteAccess();
 // ══════════════════════════════════════
 // ── CONFIG ──
 // ══════════════════════════════════════
-chrome.runtime.sendMessage({ type: "getConfig" }, (res) => {
-  if (!res?.config) return;
+if (HAS_CHROME) chrome.runtime.sendMessage({ type: "getConfig" }, (res) => {
+  if (chrome.runtime.lastError || !res?.config) return;
   const c = res.config;
 
   $("apiUrl").value = c.apiUrl || "https://app.myaipet.ai";
@@ -945,6 +1029,10 @@ chrome.runtime.sendMessage({ type: "getConfig" }, (res) => {
 
 // Save
 $("saveBtn").addEventListener("click", () => {
+  if (!HAS_CHROME) {
+    showStatus("Pairing is only available inside the installed extension", true);
+    return;
+  }
   const apiUrl = "https://app.myaipet.ai";
   const petId = parseInt($("petId").value) || null;
   const autoTalkInterval = Number($("autoInterval").value);
@@ -1141,6 +1229,10 @@ $("resumeSitesBtn").addEventListener("click", () => {
 
 // Reset
 $("resetBtn").addEventListener("click", () => {
+  if (!HAS_CHROME) {
+    showStatus("Local Play Points live inside the installed extension", true);
+    return;
+  }
   if (confirm("Reset local Play Points? Evolution, quests, achievements, your pet, and server data will be kept.")) {
     setButtonBusy("resetBtn", true, "Resetting…");
     chrome.runtime.sendMessage({ type: "resetPoints" }, (res) => {

@@ -333,7 +333,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Compliment a top creator",
     description: "Find this week's top creator and leave kindness.",
     points: 10, verifier: "manual",
-    cta: { label: "See leaderboard", href: "/?section=airdrop&pillar=compete" },
+    cta: { label: "See leaderboard", href: "/?section=season&pillar=compete" },
   },
   {
     id: "send_friend",
@@ -341,7 +341,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Buddy Lock is live — pair up for a shared streak",
     description: "Send a buddy request from the Connect tab to link your streaks.",
     points: 10, verifier: "manual",
-    cta: { label: "Open Connect", href: "/?section=airdrop&pillar=connect" },
+    cta: { label: "Open Connect", href: "/?section=season&pillar=connect" },
   },
 
   // ── CARE (5) ───────────────────────────────────────────────────────
@@ -411,7 +411,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Check your leaderboard rank",
     description: "Where do you stand today?",
     points: 3, verifier: "manual",
-    cta: { label: "Leaderboard", href: "/?section=airdrop&pillar=compete" },
+    cta: { label: "Leaderboard", href: "/?section=season&pillar=compete" },
   },
   {
     id: "view_stats",

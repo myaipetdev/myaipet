@@ -147,6 +147,10 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
 
   const loadPets = () => {
     setLoadErr(false);
+    // Guests / tour visitors carry no JWT — the authed /api/pets call would 401
+    // and log a console error. Skip it and land straight on the connect state.
+    const hasToken = typeof window !== "undefined" && !!localStorage.getItem("petagen_jwt");
+    if (!hasToken) { setNotAuthed(true); setLoaded(true); return; }
     api.pets.list().then((d: any) => {
       const list: Pet[] = (d?.pets || []).map((p: any) => {
         // Rarity + score from REAL grind columns via the shared deterministic

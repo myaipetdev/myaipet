@@ -120,13 +120,38 @@ export default function PetOfTheWeek() {
               />
             )
           ) : pet.avatarUrl ? (
-            <img
-              src={pet.avatarUrl} alt={pet.name}
-              style={{
-                position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
-                filter: "blur(7px) saturate(1.15)", transform: "scale(1.12)",
-              }}
-            />
+            // No standout creation yet → the portrait, softly blurred as a
+            // backdrop with the pet's real standing anchored over it so the
+            // pane reads as a caption card, not an empty blur.
+            <>
+              <img
+                src={pet.avatarUrl} alt=""
+                style={{
+                  position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
+                  filter: "blur(8px) saturate(1.15) brightness(0.8)", transform: "scale(1.12)",
+                }}
+              />
+              <div style={{
+                position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+                alignItems: "flex-start", justifyContent: "flex-end", gap: 8, padding: "22px 24px", zIndex: 1,
+              }}>
+                <div style={{
+                  fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em",
+                  textTransform: "uppercase", color: "rgba(255,248,238,0.7)",
+                }}>
+                  This week&apos;s companion
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {[`Lv ${pet.level}`, `Bond ${pet.bondLevel}`].map((s) => (
+                    <span key={s} style={{
+                      fontFamily: "var(--ed-disp)", fontSize: 13, fontWeight: 800,
+                      padding: "5px 12px", borderRadius: 999, color: "#FFF8EE",
+                      background: "rgba(190,79,40,0.9)", border: "1px solid rgba(252,233,207,0.35)",
+                    }}>{s}</span>
+                  ))}
+                </div>
+              </div>
+            </>
           ) : (
             <div style={{
               position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",

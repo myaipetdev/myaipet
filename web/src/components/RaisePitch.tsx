@@ -22,6 +22,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import { seasonTier } from "@/lib/season";
+import { pluralize } from "@/lib/pluralize";
 import Icon from "@/components/Icon";
 import Reveal, { MaskedTitle, useInvert } from "@/components/Reveal";
 
@@ -223,7 +224,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
                     {(data?.pool.points ?? 0).toLocaleString()}
                     <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
                   </div>
-                  <div style={mini}>{data?.pool.participants ?? 0} raisers · {seasonClosed ? "season total" : "grows as players raise & create"}</div>
+                  <div style={mini}>{data?.pool.participants ?? 0} {pluralize(data?.pool.participants ?? 0, "raiser")} · {seasonClosed ? "season total" : "grows as players raise & create"}</div>
                 </>
               ) : (
                 <>
@@ -343,7 +344,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
             <p style={{ ...sub, fontSize: 14, marginBottom: 18 }}>
               New care and creations no longer change Season 1 standings. You can keep raising your pet while the next season is prepared.
             </p>
-            <button onClick={() => onNavigate?.("leaderboard")} style={{
+            <button onClick={() => onNavigate?.("season")} style={{
               padding: "11px 20px", borderRadius: 10, border: "none", cursor: "pointer",
               background: "#BE4F28", color: "#FFF8EE", fontFamily: "var(--ed-disp)", fontWeight: 800,
             }}>
@@ -384,7 +385,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
         <PathCard step="04" icon="trophy" title="Climb leaderboard"
           body="Rank by Season 1 points. Final standings are frozen when Season 1 closes — recognition only, no cash value."
           earn="Top 100 = final standing" cta="See ranks"
-          onClick={() => onNavigate?.("leaderboard")} accent="#9A4E1E" />
+          onClick={() => onNavigate?.("season")} accent="#9A4E1E" />
         </Reveal>
       </div>
 

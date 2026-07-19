@@ -33,7 +33,7 @@ type Pillar = "earn" | "compete" | "connect";
 const TABS: Array<{ key: Pillar; icon: string; title: string; sub: string }> = [
   { key: "earn",    icon: "coins",  title: "Earn",    sub: "Missions · spotlights · streak" },
   { key: "compete", icon: "trophy", title: "Compete", sub: "Leaderboards" },
-  { key: "connect", icon: "chat",   title: "Connect", sub: "SOS · buddies · dates" },
+  { key: "connect", icon: "chat",   title: "Connect", sub: "SOS · buddies" },
 ];
 
 const INTRO: Record<Pillar, { eyebrow: string; line: string }> = {
@@ -47,7 +47,7 @@ const INTRO: Record<Pillar, { eyebrow: string; line: string }> = {
   },
   connect: {
     eyebrow: "CONNECT",
-    line: "Your pet doesn't grow alone. Send an SOS, pair with a buddy, or set up a pet date.",
+    line: "Your pet doesn't grow alone. Send an SOS or pair with a buddy.",
   },
 };
 
@@ -69,7 +69,7 @@ function SectionIntro({ pillar }: { pillar: Pillar }) {
 
 export default function SeasonRewardsHub({ banner }: { banner?: React.ReactNode }) {
   const [pillar, setPillar] = useState<Pillar>(() => {
-    // Deep-link support: /?section=airdrop&pillar=compete lands on that tab.
+    // Deep-link support: /?section=season&pillar=compete lands on that tab.
     if (typeof window !== "undefined") {
       const p = new URLSearchParams(window.location.search).get("pillar");
       if (p === "earn" || p === "compete" || p === "connect") return p;

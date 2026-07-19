@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MY AI PET — Desktop Companion",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "minimum_chrome_version": "102",
   "description": "Your AI pet lives in your browser, chats when you ask, evolves, plays mini-games, and can summarize a page only after you explicitly approve what will be sent.",
   "permissions": ["storage", "alarms", "notifications", "activeTab", "scripting"],

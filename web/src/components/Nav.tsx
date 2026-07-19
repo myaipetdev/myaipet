@@ -27,7 +27,7 @@ const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
   // "Season Rewards" (not "Airdrop") — points are off-chain loyalty credits,
   // and an "Airdrop" tab reads as a token-distribution commitment in
   // exchange/regulatory review (DD Q29).
-  { key: "airdrop", label: "Season Rewards" },
+  { key: "season", label: "Season Rewards" },
 ];
 
 export default function Nav({ section, setSection, credits }: any) {
@@ -199,7 +199,7 @@ export default function Nav({ section, setSection, credits }: any) {
             // (Catch tab) — highlight Cards for it.
             const isActive = item.url
               ? typeof window !== "undefined" && window.location.pathname === item.url
-              : section === item.key || (item.key === "cards" && section === "catch") || (item.key === "airdrop" && section === "leaderboard");
+              : section === item.key || (item.key === "cards" && section === "catch");
             const sharedStyle: React.CSSProperties = {
               background: "transparent",
               border: "none", cursor: "pointer",

@@ -31,6 +31,9 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { useAccount } from "wagmi";
+import { useAuth } from "@/hooks/useAuth";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
@@ -94,13 +97,17 @@ const TIER_QUALITY: Record<"free" | "pro" | "studio", string> = {
 };
 
 
-// Collectible Editorial tokens. Studio's section signature is indigo-purple
-// (#6B4FA0) — used for the eyebrow, active/selected states and the Generate CTA.
+// Collectible Editorial tokens. Studio's interactive accent is terracotta with
+// gold-foil selection rings — on-system with the rest of the app. `studioDeep`/
+// `studioInk` are the ONLY indigo left: they paint the dark "screening room"
+// preview panel (intentional), never buttons or badges.
 const T = {
   field: "#ECE4D4", paper: "#FBF6EC", inset: "#F5EFE2", ink: "#211A12", ink70: "#3A3024",
   muted: "#7A6E5A", muted2: "#5C5140", mono: "#9A7B4E", hair: "rgba(33,26,18,.13)",
   terra: "#BE4F28", creamOn: "#FCE9CF", cta1: "#F49B2A", cta2: "#E27D0C",
-  studio: "#6B4FA0", studioDeep: "#3E3470", studioInk: "#191334",
+  // `studio` is the interactive accent — retoned indigo → terracotta so every
+  // eyebrow/badge/action reads on-system. Dark preview panel keeps its indigo.
+  studio: "#BE4F28", studioDeep: "#3E3470", studioInk: "#191334",
   thrive: "#5C8A4E",
   foil: "#E8C77E", foilDeep: "#C8932F",
   disp: "var(--ed-disp)", body: "var(--ed-body)", m: "var(--ed-m)",
@@ -131,7 +138,7 @@ const STYLES = [
   { id: "anime",          icon: "sparkling", label: "Anime",      hint: "Japan",     swatch: "linear-gradient(135deg,#FBF6EC 0%,#9E72E8 100%)" },
   { id: "photorealistic", icon: "compass",   label: "Photoreal",  hint: "Real",      swatch: "linear-gradient(135deg,#E7DDCC 0%,#7A6E5A 100%)" },
   { id: "watercolor",     icon: "water2",    label: "Watercolor", hint: "Soft",      swatch: "linear-gradient(135deg,#FAF7F2 0%,#D7C7F0 55%,#9E72E8 100%)" },
-  { id: "pixar",          icon: "bear",      label: "3D Pixar",   hint: "Toon",      swatch: "linear-gradient(135deg,#9E72E8 0%,#E7DCF6 100%)" },
+  { id: "pixar",          icon: "bear",      label: "3D Toon",    hint: "Toon",      swatch: "linear-gradient(135deg,#9E72E8 0%,#E7DCF6 100%)" },
   { id: "pixel",          icon: "joystick",  label: "Pixel",      hint: "Retro",     swatch: "linear-gradient(135deg,#3A3024 0%,#6B4FA0 100%)" },
 ];
 
@@ -190,6 +197,15 @@ const DEMO_PET: Pet = { id: -1, name: "Mochi", avatar_url: "/mascot.jpg", specie
 type View = "idle" | "generating" | "done" | "error";
 
 export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c: number | null) => void } = {}) {
+  // In-place sign-in: open the app's wallet/SIWE connect modal without leaving
+  // Studio (the header pill / demo prompts used to navigate to "/" and dump the
+  // user off the page, losing all Studio state). The /studio route has no
+  // WalletGate, so we also drive the SIWE signature + workspace reload here.
+  const { openConnectModal } = useConnectModal();
+  const { isConnected, address } = useAccount();
+  const { isAuthenticated, isAuthenticating, authenticate } = useAuth();
+  const openSignIn = () => openConnectModal?.();
+
   const [pets, setPets] = useState<Pet[] | null>(null);
   const [petId, setPetId] = useState<number | null>(null);
   const [models, setModels] = useState<StudioModel[]>([]);
@@ -416,8 +432,10 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [outputKind, models, chosenModelId, userTier]);
 
-  // ── Load pets + models + credits + history ──
-  useEffect(() => {
+  // ── Load pets + credits + history + tier. Re-runnable so a mid-session
+  // sign-in (via the in-place connect modal) swaps the demo pet for the user's
+  // real pets without a full page reload. ──
+  const loadWorkspace = () => {
     (async () => {
       try {
         const r = await fetch("/api/pets", { headers: getAuthHeaders() });
@@ -437,10 +455,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
       }
     })();
 
-    fetch("/api/studio/providers")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => setModels(d?.models || []))
-      .catch(() => {});
+    // Authed-only reads: a signed-out guest has no token, so skip these on
+    // mount rather than firing a guaranteed-401 before the user has interacted.
+    if (!getAuthHeaders().Authorization) return;
 
     fetch("/api/studio/generate", { headers: getAuthHeaders() })
       .then(r => r.ok ? r.json() : null)
@@ -456,8 +473,39 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
       .then(r => (r.ok ? r.json() : null))
       .then(d => { if (d?.tier === "pro" || d?.tier === "studio") setUserTier(d.tier); })
       .catch(() => {});
+  };
+
+  // Providers list is public — fetch once regardless of auth. Also loads the
+  // workspace on first mount.
+  useEffect(() => {
+    fetch("/api/studio/providers")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setModels(d?.models || []))
+      .catch(() => {});
+    loadWorkspace();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // In-place sign-in flow (no WalletGate on /studio): once a wallet connects,
+  // prompt the SIWE signature exactly once per address. Mirrors WalletGate.
+  const autoAuthRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (isConnected && address && !isAuthenticated && !isAuthenticating && autoAuthRef.current !== address) {
+      autoAuthRef.current = address;
+      authenticate();
+    }
+    if (!isConnected) autoAuthRef.current = null;
+  }, [isConnected, address, isAuthenticated, isAuthenticating, authenticate]);
+
+  // When auth flips true mid-session, reload so the demo pet is replaced by the
+  // user's real pets/credits/history. Skips the initial mount (loadWorkspace
+  // already ran above) via a first-run guard.
+  const authReloadRef = useRef(false);
+  useEffect(() => {
+    if (!authReloadRef.current) { authReloadRef.current = true; return; }
+    if (isAuthenticated) loadWorkspace();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   // "Make one like this" handoff (Community → Studio): read the stashed prompt
   // once on mount, then clear it so a refresh doesn't re-apply it.
@@ -1001,34 +1049,35 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           {isDemo && (() => {
             // authed-but-petless gets an Adopt CTA, not a sign-in wall they've passed.
             const authed = typeof window !== "undefined" && !!localStorage.getItem("petagen_jwt");
-            return (
-              <a href={authed ? "/?section=my%20pet" : "/"} style={{
-                padding: "10px 16px", borderRadius: 12, fontSize: 13,
-                background: T.paper, color: T.studio,
-                border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
-                fontWeight: 700, textDecoration: "none",
-                fontFamily: T.m, letterSpacing: "0.08em", textTransform: "uppercase",
-                display: "inline-flex", alignItems: "center", gap: 7,
-              }}>{authed ? (
-                <>
-                  <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <ellipse cx="6" cy="9.5" rx="1.8" ry="2.4" />
-                    <ellipse cx="10.3" cy="6.6" rx="1.8" ry="2.5" />
-                    <ellipse cx="13.7" cy="6.6" rx="1.8" ry="2.5" />
-                    <ellipse cx="18" cy="9.5" rx="1.8" ry="2.4" />
-                    <path d="M12 11.5c-2.7 0-5 2.1-5 4.4 0 1.7 1.4 2.6 3 2.6.9 0 1.4-.4 2-.4s1.1.4 2 .4c1.6 0 3-.9 3-2.6 0-2.3-2.3-4.4-5-4.4Z" />
-                  </svg>Adopt a pet to star →
-                </>
-              ) : (
-                <>
-                  <svg width={15} height={15} viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
-                    aria-hidden="true">
-                    <path d="M9 18h6" /><path d="M10 21h4" />
-                    <path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.4 1 2.5h6c0-1.1.3-1.8 1-2.5A6 6 0 0 0 12 3Z" />
-                  </svg>DEMO · Sign in →
-                </>
-              )}</a>
+            const pillStyle: React.CSSProperties = {
+              padding: "10px 16px", borderRadius: 12, fontSize: 13,
+              background: T.paper, color: T.studio,
+              border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
+              fontWeight: 700, textDecoration: "none",
+              fontFamily: T.m, letterSpacing: "0.08em", textTransform: "uppercase",
+              display: "inline-flex", alignItems: "center", gap: 7,
+            };
+            return authed ? (
+              <a href="/?section=my%20pet" style={pillStyle}>
+                <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <ellipse cx="6" cy="9.5" rx="1.8" ry="2.4" />
+                  <ellipse cx="10.3" cy="6.6" rx="1.8" ry="2.5" />
+                  <ellipse cx="13.7" cy="6.6" rx="1.8" ry="2.5" />
+                  <ellipse cx="18" cy="9.5" rx="1.8" ry="2.4" />
+                  <path d="M12 11.5c-2.7 0-5 2.1-5 4.4 0 1.7 1.4 2.6 3 2.6.9 0 1.4-.4 2-.4s1.1.4 2 .4c1.6 0 3-.9 3-2.6 0-2.3-2.3-4.4-5-4.4Z" />
+                </svg>Adopt a pet to star →
+              </a>
+            ) : (
+              // Opens the wallet/SIWE connect modal in place — no navigation, so
+              // the prompt/preview and any in-progress Studio state survive.
+              <button type="button" onClick={openSignIn} style={{ ...pillStyle, cursor: "pointer" }}>
+                <svg width={15} height={15} viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
+                  aria-hidden="true">
+                  <path d="M9 18h6" /><path d="M10 21h4" />
+                  <path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.4 1 2.5h6c0-1.1.3-1.8 1-2.5A6 6 0 0 0 12 3Z" />
+                </svg>DEMO · Sign in →
+              </button>
             );
           })()}
           {canOpenEditor && (
@@ -1089,7 +1138,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               {view === "idle" && (
-                <PreviewIdle pet={pet} />
+                <PreviewIdle pet={pet} isDemo={isDemo} />
               )}
               {view === "generating" && <PreviewGenerating kind={outputKind} progress={genProgress} />}
               {view === "done" && resultUrl && resultUrl !== "__demo__" && (
@@ -1098,7 +1147,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   : <img src={resultUrl} alt="result" style={{ width: "100%", height: "100%", objectFit: "contain", animation: "studioPop .5s cubic-bezier(.2,1.3,.4,1)" }} />
               )}
               {view === "done" && resultIsDemo && (
-                <PreviewDemo pet={pet} prompt={buildFullPrompt()} />
+                <PreviewDemo pet={pet} prompt={buildFullPrompt()} onSignIn={openSignIn} />
               )}
               {view === "error" && (
                 <div style={{ color: "white", textAlign: "center", padding: 30 }}>
@@ -1186,7 +1235,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                     title="Open the client-side editor: trim, sequence, caption, add music, export a reel"
                     style={{
                       padding: "9px 16px", borderRadius: 10, border: `1px solid ${T.studio}`, cursor: "pointer",
-                      background: "rgba(107,79,160,0.08)", color: T.studio, boxShadow: "var(--ed-shadow-card)",
+                      background: "rgba(190,79,40,0.08)", color: T.studio, boxShadow: "var(--ed-shadow-card)",
                       fontFamily: T.body, fontSize: 13, fontWeight: 700,
                       display: "inline-flex", alignItems: "center", gap: 7, animationDelay: "60ms",
                     }}
@@ -1364,6 +1413,49 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             }}
           />
 
+          {/* Guest CTA — anchored right under the prompt (next to the preview),
+              not stranded at the very bottom below the whole template gallery.
+              Runs the free demo preview; the sign-in link opens the connect
+              modal in place. Authed users get the real Generate CTA further down. */}
+          {isDemo && (
+            <div style={{ marginTop: 12 }}>
+              <button
+                onClick={() => { if (prompt.trim()) generate(); else promptRef.current?.focus(); }}
+                disabled={view === "generating"}
+                className="studio-cta"
+                style={{
+                  width: "100%", padding: "14px 20px", borderRadius: 14, border: "none",
+                  background: prompt.trim()
+                    ? "linear-gradient(135deg,#D2643A,#BE4F28)"
+                    : T.inset,
+                  color: prompt.trim() ? "#FCE9CF" : T.muted2,
+                  fontFamily: T.disp, fontWeight: 800, fontSize: 16,
+                  letterSpacing: "0.01em",
+                  cursor: view === "generating" ? "progress" : "pointer",
+                  boxShadow: prompt.trim() ? "0 16px 32px -20px rgba(190,79,40,.7)" : "none",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9,
+                }}
+              >
+                {view === "generating"
+                  ? "Previewing…"
+                  : prompt.trim()
+                  ? "Preview a demo (free) →"
+                  : "Write a prompt to preview →"}
+              </button>
+              <div style={{
+                marginTop: 8, fontSize: 13, fontFamily: T.body, color: T.muted,
+                display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6,
+              }}>
+                <span>No sign-in needed to preview.</span>
+                <button type="button" onClick={openSignIn} style={{
+                  border: "none", background: "none", padding: 0, cursor: "pointer",
+                  fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.06em",
+                  color: T.terra, textTransform: "uppercase",
+                }}>Sign in to generate for real →</button>
+              </div>
+            </div>
+          )}
+
           {/* ── Director ── Turn a rough one-liner into a full cinematic video
               prompt. Sits right under the textarea: type an idea → "Direct it"
               → the detailed, editable prompt lands in the box above. */}
@@ -1424,10 +1516,10 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                 fontSize: 13, fontFamily: T.body, color: T.terra,
               }}>
                 <span>Sign in to use the Director.</span>
-                <a href="/" style={{
+                <button type="button" onClick={openSignIn} style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "6px 12px", borderRadius: 9,
-                  background: T.studio, color: "#fff", textDecoration: "none",
+                  padding: "6px 12px", borderRadius: 9, border: "none", cursor: "pointer",
+                  background: T.studio, color: "#fff",
                   fontFamily: T.m, fontWeight: 700, fontSize: 12,
                   letterSpacing: "0.08em", textTransform: "uppercase",
                   boxShadow: "var(--ed-shadow-card)",
@@ -1439,7 +1531,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                     <path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.4 1 2.5h6c0-1.1.3-1.8 1-2.5A6 6 0 0 0 12 3Z" />
                   </svg>
                   Sign in →
-                </a>
+                </button>
               </div>
             )}
           </div>
@@ -1559,19 +1651,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                         />
                         <span style={{ ...emojiChip, position: "absolute", left: 9, bottom: 7 }}>{t.emoji}</span>
-                        <span style={{
-                          position: "absolute", top: 7, right: 8,
-                          fontSize: 13, fontFamily: T.m,
-                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
-                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
-                        }}>▸ MOTION</span>
+                        <span style={{ ...cardTag, position: "absolute", top: 7, right: 8 }}>▸ MOTION</span>
                         {catLabel && (
-                        <span style={{
-                          position: "absolute", right: 9, bottom: 8,
-                          fontSize: 13, fontFamily: T.m,
-                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
-                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
-                        }}>{catLabel}</span>
+                        <span style={{ ...cardTag, position: "absolute", right: 9, bottom: 8 }}>{catLabel}</span>
                         )}
                       </div>
                     ) : ex ? (
@@ -1582,11 +1664,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       }}>
                         <span style={emojiChip}>{t.emoji}</span>
                         {catLabel && (
-                        <span style={{
-                          fontSize: 13, fontFamily: T.m,
-                          letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
-                          color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.75))",
-                        }}>{catLabel}</span>
+                        <span style={cardTag}>{catLabel}</span>
                         )}
                       </div>
                     ) : t.swatch ? (
@@ -1803,7 +1881,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                     {chosenModel.maxDurationSec}s
                   </span>
                   <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted2, textAlign: "right", lineHeight: 1.4 }}>
-                    fixed by {chosenModel.displayName}<br />sequence clips in Assemble for longer reels
+                    per clip on {chosenModel.displayName} —<br />chain clips in Assemble for longer reels
                   </span>
                 </div>
               </Panel>
@@ -1920,8 +1998,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           </div>
         </div>
 
-        {/* ── Generate ── */}
-        {insufficient && runCost != null && view !== "generating" ? (
+        {/* ── Generate (authed) ── The guest's "Preview a demo" CTA lives up by
+            the prompt/preview instead; this bottom action is the real spend. ── */}
+        {!isDemo && (insufficient && runCost != null && view !== "generating" ? (
           // Out of credits links to the honest credit-options section. Purchase
           // rails are currently paused, so the CTA must not promise a checkout.
           <a
@@ -1965,7 +2044,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           >
             <span aria-hidden style={{
               width: 38, height: 38, borderRadius: 11, flexShrink: 0,
-              background: "rgba(107,79,160,0.12)", color: T.studio,
+              background: "rgba(190,79,40,0.12)", color: T.studio,
               display: "inline-flex", alignItems: "center", justifyContent: "center",
             }}><PencilGlyph size={17} /></span>
             <span style={{ minWidth: 0 }}>
@@ -1987,8 +2066,8 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           // FULL-opacity text on a muted (deeper) surface so the label stays
           // readable — no grey-on-grey wash.
           ...(canGenerate || view === "generating" ? {} : {
-            background: T.studioDeep, color: "rgba(252,233,207,.95)",
-            boxShadow: "0 12px 24px -18px rgba(25,19,52,.5)",
+            background: "#8C4A2E", color: "rgba(252,233,207,.95)",
+            boxShadow: "0 12px 24px -18px rgba(140,74,46,.5)",
           }),
         }}>
           {view === "generating"
@@ -1998,8 +2077,6 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             ? "Loading engines…"
             : !pet
             ? "Loading pets…"
-            : isDemo
-            ? "Preview a demo (free) →"
             : (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
                 <PlayGlyph size={16} />
@@ -2012,7 +2089,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               </span>
             )}
         </button>
-        )}
+        ))}
 
         {/* ── Render queue: live progress for the in-flight job + any pending
             server jobs. Real backend state, never faked. ── */}
@@ -2082,7 +2159,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                         background: T.studio, color: T.creamOn,
                         fontSize: 13, cursor: "pointer", padding: 0, lineHeight: 1,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: "0 4px 10px -4px rgba(62,52,112,.7)",
+                        boxShadow: "0 4px 10px -4px rgba(190,79,40,.55)",
                       }}
                     ><svg width={14} height={14} viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
@@ -2230,7 +2307,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               style={{
                 width: "100%", marginTop: 14, marginBottom: 16,
                 padding: "12px 14px", borderRadius: 12,
-                border: `1px dashed ${T.studio}`, background: "rgba(107,79,160,0.06)",
+                border: `1px dashed ${T.studio}`, background: "rgba(190,79,40,0.06)",
                 color: T.studio, fontWeight: 700, fontSize: 14, fontFamily: T.body,
                 cursor: directorFinalBusy ? "default" : "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
@@ -2508,7 +2585,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
         .studio-start-here { transition: transform 140ms ease; }
         .studio-start-here:hover { transform: translateY(-1.5px); }
         .studio-start-here:active { transform: translateY(1px) scale(.995); }
-        .studio-cta:hover:not(:disabled) { transform: translateY(-1.5px); box-shadow: 0 26px 48px -24px rgba(62,52,112,.9); }
+        .studio-cta:hover:not(:disabled) { transform: translateY(-1.5px); box-shadow: 0 26px 48px -24px rgba(190,79,40,.55); }
         .studio-cta:active:not(:disabled) { transform: translateY(1px) scale(.995); transition-duration: 80ms; }
         .studio-cta::after {
           content: ""; position: absolute; inset: 0;
@@ -2537,7 +2614,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
 
 // ── Sub-components ──
 
-function PreviewIdle({ pet }: { pet: Pet | null }) {
+function PreviewIdle({ pet, isDemo }: { pet: Pet | null; isDemo?: boolean }) {
   const named = !!pet?.name && !["Cat", "Dog", "Parrot", "Turtle", "Hamster", "Rabbit", "Fox", "Pomeranian"].includes(pet.name);
   const who = named ? pet!.name : "your pet";
   // <480px the 16:9 plate is only ~170px tall — the full 210px collectible
@@ -2586,7 +2663,7 @@ function PreviewIdle({ pet }: { pet: Pet | null }) {
           fontSize: compact ? 13 : 14, color: "rgba(252,233,207,0.92)",
           maxWidth: 320, margin: compact ? 0 : "0 auto", lineHeight: compact ? 1.45 : 1.55,
         }}>
-          Pick a style, write a prompt, hit <strong>Generate</strong>{" "}
+          Pick a style, write a prompt, hit <strong>{isDemo ? "Preview" : "Generate"}</strong>{" "}
           — and put {who} in any scene you can imagine.
         </div>
       </div>
@@ -2689,7 +2766,7 @@ function RenderQueue({ generating, kind, progress, pending }: {
   );
 }
 
-function PreviewDemo({ pet, prompt }: { pet: Pet | null; prompt: string }) {
+function PreviewDemo({ pet, prompt, onSignIn }: { pet: Pet | null; prompt: string; onSignIn?: () => void }) {
   return (
     <div style={{
       color: "white", padding: "26px 30px", width: "100%",
@@ -2706,18 +2783,17 @@ function PreviewDemo({ pet, prompt }: { pet: Pet | null; prompt: string }) {
         fontSize: 14, color: "rgba(252,233,207,0.92)", fontFamily: "var(--ed-m)",
         marginBottom: 18, lineHeight: 1.5,
       }}>"{prompt}"</div>
-      <a href="/" style={{
-        alignSelf: "flex-start",
+      <button type="button" onClick={onSignIn} style={{
+        alignSelf: "flex-start", border: "none", cursor: "pointer",
         padding: "10px 18px", borderRadius: 10,
         background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
         color: "#FFF8EE", fontWeight: 800, fontSize: 13,
-        textDecoration: "none",
         fontFamily: "var(--ed-disp)",
         boxShadow: "0 14px 26px -14px rgba(226,125,12,.8)",
         display: "inline-flex", alignItems: "center", gap: 7,
       }}><svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12z" />
-        </svg>Sign in to generate for real →</a>
+        </svg>Sign in to generate for real →</button>
     </div>
   );
 }
@@ -2774,17 +2850,9 @@ function TemplateMnemonic({ swatch, emoji, catLabel }: { swatch: string; emoji: 
           opacity: i === 2 ? 1 : 0.85,
         }}>{emoji}</span>
       ))}
-      <span style={{
-        position: "absolute", top: 7, left: 9,
-        fontSize: 13, fontFamily: T.m, letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
-        color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.55))",
-      }}>▸ PREVIEW</span>
+      <span style={{ ...cardTag, position: "absolute", top: 7, left: 9 }}>▸ PREVIEW</span>
       {catLabel && (
-      <span style={{
-        position: "absolute", right: 9, bottom: 8,
-        fontSize: 13, fontFamily: T.m, letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
-        color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.55))",
-      }}>{catLabel}</span>
+      <span style={{ ...cardTag, position: "absolute", right: 9, bottom: 8 }}>{catLabel}</span>
       )}
     </div>
   );
@@ -2942,6 +3010,15 @@ const panelLabel: React.CSSProperties = {
   fontFamily: T.m,
 };
 
+// Corner tag over template imagery (▸ MOTION / category / ▸ PREVIEW). A solid
+// ink scrim chip — a bare drop-shadow washed out over light photography.
+const cardTag: React.CSSProperties = {
+  fontSize: 12, fontFamily: T.m, letterSpacing: "0.1em", fontWeight: 700,
+  textTransform: "uppercase", color: "#FCE9CF",
+  background: "rgba(33,26,18,.72)", padding: "3px 7px", borderRadius: 7,
+  lineHeight: 1.1,
+};
+
 const petChip: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 8,
   padding: "6px 10px 6px 6px", borderRadius: 12,
@@ -2995,10 +3072,10 @@ const galleryActionBtn: React.CSSProperties = {
 const generateBtn: React.CSSProperties = {
   width: "100%", padding: "18px 24px",
   borderRadius: 16, border: "none",
-  background: "linear-gradient(135deg,#7D5FB8,#6B4FA0)",
+  background: "linear-gradient(135deg,#D2643A,#BE4F28)",
   color: "#FCE9CF", fontWeight: 800, fontSize: 19,
   fontFamily: "var(--ed-disp)",
-  boxShadow: "0 20px 40px -22px rgba(62,52,112,.8)",
+  boxShadow: "0 20px 40px -22px rgba(190,79,40,.6)",
   letterSpacing: "0.01em",
   transition: "transform 140ms ease, box-shadow 140ms ease",
 };

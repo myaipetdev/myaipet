@@ -1245,6 +1245,12 @@ export default function SocialGallery() {
     { key: "recent", label: "Latest" },
   ];
 
+  // A genuinely empty feed (zero real works, not a search miss or outage) should
+  // lead with the "Create the first one" CTA — not a full filter toolbar over
+  // nothing. Hide the layout/type/search/sort chrome in that state.
+  const zeroWorks = mode === "feed" && !loading && !feedFailed && items.length === 0;
+  const showChrome = mode === "feed" && !zeroWorks;
+
   return (
     <div style={{ position: "relative", fontFamily: T.body, color: T.ink, paddingTop: 88 }}>
       <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
@@ -1300,7 +1306,7 @@ export default function SocialGallery() {
             }}>
               {mode === "square" ? "The pet square" : "The remix wall"}
             </h2>
-            {mode === "feed" && (
+            {showChrome && (
               <span style={{
                 fontFamily: T.m, fontSize: 13, color: T.mono, fontWeight: 700, letterSpacing: "0.08em",
               }}>
@@ -1331,7 +1337,7 @@ export default function SocialGallery() {
             </div>
 
             {/* View toggle — Album carousel vs Library wall */}
-            {mode === "feed" && <div role="group" aria-label="Feed layout" style={{ display: "flex", gap: 4, marginRight: 4 }}>
+            {showChrome && <div role="group" aria-label="Feed layout" style={{ display: "flex", gap: 4, marginRight: 4 }}>
               {([["album", "Album"], ["library", "Library"]] as const).map(([key, label]) => {
                 const on = view === key;
                 return (
@@ -1352,7 +1358,7 @@ export default function SocialGallery() {
             </div>}
 
             {/* Type filters — inline with search (feed only) */}
-            {mode === "feed" && <div role="group" aria-label="Creation type" style={{ display: "flex", gap: 4 }}>
+            {showChrome && <div role="group" aria-label="Creation type" style={{ display: "flex", gap: 4 }}>
               {[
                 { key: "all", label: "All", color: T.terra },
                 { key: "image", label: "Images", color: T.rareRare },
@@ -1377,7 +1383,7 @@ export default function SocialGallery() {
             </div>}
 
             {/* Search (feed only) */}
-            {mode === "feed" && <div style={{ position: "relative" }}>
+            {showChrome && <div style={{ position: "relative" }}>
               <span style={{
                 position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
                 fontSize: 13, color: T.mono, pointerEvents: "none",
@@ -1421,7 +1427,7 @@ export default function SocialGallery() {
         </div>
 
         {/* Sort tabs — ink underline on active (feed only) */}
-        {mode === "feed" && <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${T.hair}` }}>
+        {showChrome && <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${T.hair}` }}>
           {TABS.map(t => (
             <button type="button" className="sort-tab" key={t.key} aria-pressed={sort === t.key} onClick={() => setSort(t.key)} style={{
               background: "transparent", border: "none", padding: "8px 16px",

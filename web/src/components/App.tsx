@@ -22,6 +22,7 @@ import DialogHost from "@/components/Dialog";
 import { seasonTier, SEASON_START_MS, SEASON_END_MS } from "@/lib/season";
 import SeasonRewardsHub from "@/components/SeasonRewardsHub";
 import PetOfTheWeek from "@/components/PetOfTheWeek";
+import { isTourActive, TOUR_ALLOWLIST } from "@/lib/tour";
 
 const MyPetEditorial = lazy(() => import("@/components/editorial/MyPetEditorial"));
 const ChatEditorial = lazy(() => import("@/components/editorial/ChatEditorial"));
@@ -357,19 +358,27 @@ export default function App() {
   const { isConnected } = useAccount();
   const { user, isAuthenticated, refreshUser } = useAuth();
 
+  // Guest tour: WalletGate pins a fixed DEMO-TOUR banner to the bottom over
+  // allowlisted sections. Without matching bottom padding on the page it
+  // overlapped the last ~61px (desktop) / ~111px (mobile) of content — mirror
+  // the banner's presence here to reserve that space (see .tour-pad CSS below).
+  const [tourActive, setTourActive] = useState(false);
+  useEffect(() => { setTourActive(isTourActive()); }, []);
+
   // Section is URL-aware via ?section= so cross-page links land correctly.
   // (Studio is a separate route and routes back here with ?section=...)
   const [section, setSection] = useState(() => {
     if (typeof window === "undefined") return "home";
     const fromUrl = new URLSearchParams(window.location.search).get("section");
-    // Leaderboard folded into the Season Rewards hub — normalize old links/tabs.
-    // ("airdrop" stays the internal section/route key; the UI label is "Season Rewards".)
-    if (fromUrl === "leaderboard") return "airdrop";
+    // Season Rewards hub — the canonical section key is "season". The legacy
+    // "airdrop"/"leaderboard" keys (token-flavoured, contradict the no-token
+    // posture) are kept as inbound aliases so old deep links still resolve.
+    if (fromUrl === "leaderboard" || fromUrl === "airdrop") return "season";
     // Unknown section values used to render nav + an empty body — fall back home.
     // These are the EXACT in-SPA section keys that App renders below (note:
     // "worldcup"/"workbench" are single words, and Studio is the "create" section
     // — "studio" is only a header URL nav, never a section value).
-    const VALID = ["home", "my pet", "cards", "catch", "create", "community", "agent", "office", "workbench", "sovereignty", "worldcup", "airdrop", "chat"];
+    const VALID = ["home", "my pet", "cards", "catch", "create", "community", "agent", "office", "workbench", "sovereignty", "worldcup", "season", "chat"];
     return fromUrl && VALID.includes(fromUrl) ? fromUrl : "home";
   });
   // Keep the URL in sync when the user clicks nav inside the SPA.
@@ -493,12 +502,18 @@ export default function App() {
   // overflowX:clip (not overflow:hidden) — still clips horizontal reveal-animation
   // overflow, but does NOT create a scroll container, so position:sticky (My Pet
   // poster, etc.) keeps working. `overflow:hidden` silently broke sticky.
+  const showTourBanner = !isConnected && tourActive && TOUR_ALLOWLIST.has(section);
   return (
-    <div style={{ minHeight: "100vh", background: "#ECE4D4", color: "#211A12", position: "relative", overflowX: "clip" }}>
+    <div className={showTourBanner ? "tour-pad" : undefined} style={{ minHeight: "100vh", background: "#ECE4D4", color: "#211A12", position: "relative", overflowX: "clip" }}>
       <style>{`
         * { margin: 0; padding: 0; box-sizing: border-box }
         ::selection { background: rgba(190,79,40,0.18) }
         textarea::placeholder { color: rgba(33,26,18,0.25) }
+        /* Guest-tour: reserve room for the fixed DEMO-TOUR banner so it never
+           overlaps the last strip of content/footer. The banner wraps taller
+           on narrow screens, so mobile reserves more. */
+        .tour-pad { padding-bottom: 72px; }
+        @media (max-width: 640px) { .tour-pad { padding-bottom: 124px; } }
         @media (max-width: 768px) {
           .desktop-grid { grid-template-columns: 1fr !important; }
           .desktop-two-col { grid-template-columns: 1fr !important; }
@@ -606,7 +621,7 @@ export default function App() {
 
       {/* Season Rewards — the merged "my status + earn + compete + connect" hub.
           The old standalone Leaderboard tab folds in here under the tabs. */}
-      {(section === "airdrop" || section === "leaderboard") && (
+      {section === "season" && (
         <SeasonRewardsHub banner={<SeasonBanner seasonPoints={seasonPoints} />} />
       )}
 

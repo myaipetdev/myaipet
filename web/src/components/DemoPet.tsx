@@ -230,10 +230,10 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
         ))}
       </div>
 
-      {/* ── Adopt CTA ── */}
+      {/* ── Adopt CTA ── normal flow (never overlaps the care buttons above) ── */}
       <div style={{
         ...rv(8),
-        position: "sticky", bottom: 12, padding: "18px 20px", borderRadius: 18,
+        padding: "18px 20px", borderRadius: 18,
         background: "linear-gradient(135deg, #211A12, #1E1710)", color: "#FFF8EE",
         boxShadow: SHADOW, border: "1px solid rgba(232,199,126,.22)",
       }}>

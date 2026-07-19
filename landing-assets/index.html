@@ -779,14 +779,14 @@
   .fake-l.w1 { width: 90%; } .fake-l.w2 { width: 75%; } .fake-l.w3 { width: 82%; }
   .fake-img { height: 100px; border-radius: 10px; background: repeating-linear-gradient(135deg, #f2e9d8 0 10px, #e8dfc9 10px 20px); margin: 8px 0; }
   .pet-walker {
-    position: absolute; bottom: 18px; width: 80px; height: 80px;
+    position: absolute; bottom: 18px; width: 62px; height: 62px;
   }
   .pet-walker .mp {
-    width: 100%; height: 100%; border-radius: 14px;
-    background: repeating-linear-gradient(45deg, rgba(226,125,12,0.25) 0 6px, rgba(226,125,12,0.45) 6px 12px);
-    border: 1px dashed rgba(226,125,12,0.55);
-    font-family: var(--mono); font-size: 13px; color: var(--gold-deep);
-    display: flex; align-items: center; justify-content: center; text-align: center; padding: 6px;
+    width: 100%; height: 100%; border-radius: 50%;
+    object-fit: cover; display: block; background: #fff;
+    border: 3px solid #FFFDF7;
+    box-shadow: 0 0 0 2px var(--ink), 3px 4px 0 rgba(33,26,18,0.32);
+    transition: transform .15s ease;
   }
   .points-badge {
     position: absolute; top: 16px; right: 16px;
@@ -813,7 +813,8 @@
     margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
     padding: 18px; border-radius: 14px; background: #fff; border: 1px solid var(--line);
   }
-  .points-list .row { display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: 13px; }
+  .points-list .row { display: flex; justify-content: space-between; align-items: center; gap: 14px; font-family: var(--mono); font-size: 13px; }
+  .points-list .row .v { white-space: nowrap; }
   .points-list .row .k { color: var(--ink); }
   .points-list .row .v { color: var(--gold-deep); font-weight: 600; }
   .browser-side .btn { margin-top: 26px; }
@@ -1404,7 +1405,7 @@
       <span class="line gold">Your companion.</span>
     </h1>
     <p class="hero-sub">
-      The first AI pet that remembers you, grows with you,
+      An AI pet that remembers you, grows with you,
       and belongs to you — forever.
     </p>
     <div class="hero-ctas">
@@ -1585,8 +1586,8 @@
           <div class="j-body">
             <span class="j-eyebrow">Step 05</span>
             <h3>Use it everywhere</h3>
-            <p>Same pet, same memories — on the web, in Chrome, and in MCP clients like Claude and Cursor. Your companion is not locked to one model or one vendor.</p>
-            <span class="j-tag">Web · Chrome · MCP (Claude · Cursor)</span>
+            <p>Same pet, same memories — on the web, in Chrome, and in MCP clients like Claude, Cursor, and OpenClaw. Your companion is not locked to one model or one vendor.</p>
+            <span class="j-tag">Web · Chrome · MCP (Claude · Cursor · OpenClaw)</span>
           </div>
         </div>
         <div class="j-node" aria-hidden="true">5</div>
@@ -1687,15 +1688,14 @@
           </div>
           <div class="skill-card" data-reveal="pop" data-delay="320">
             <div class="stk-chip r-e" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="8.3" cy="15.7" rx="4.6" ry="3.3" transform="rotate(-45 8.3 15.7)" fill="#BE4F28" stroke="#211A12" stroke-width="2"/><ellipse cx="15.7" cy="8.3" rx="4.6" ry="3.3" transform="rotate(-45 15.7 8.3)" fill="#E8C77E" stroke="#211A12" stroke-width="2"/></svg></div>
-            <div><div class="sk-t">MCP Compatible</div><div class="sk-s">Claude · OpenClaw · Any client</div></div>
+            <div><div class="sk-t">MCP Compatible</div><div class="sk-s">Claude · Cursor · OpenClaw · Any client</div></div>
           </div>
         </div>
 
         <div style="margin-top:22px; display:flex; gap:8px; flex-wrap:wrap;">
           <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(226,125,12,0.12); color:var(--gold-soft); letter-spacing:0.1em;">PETCLAW v1</span>
           <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">6 MCP TOOLS</span>
-          <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">19 REGISTRY · 6 LIVE</span>
-          <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">ON-CHAIN · INTEGRATION OFF</span>
+          <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">19 CONNECTORS · 18 SKILLS · 6 LIVE</span>
         </div>
       </div>
     </div>
@@ -1867,7 +1867,7 @@
           </div>
           <div class="points-badge">+47 pts today</div>
           <div class="pet-walker" id="petWalker">
-            <div class="mp"><span class="mp-txt" style="display:inline-block;">PET<br/>WALK<br/>ANIM</span></div>
+            <img class="mp" src="mascot-original.jpg" alt="Sparky, walking across the page" />
           </div>
           <div class="callout" style="top: 70px; right: 30px;"><span class="num">1</span>Click to chat</div>
           <div class="callout" style="top: 180px; left: 30px;"><span class="num">2</span>Right-click for skills</div>
@@ -1900,7 +1900,7 @@
   <div class="container">
     <div class="section-head">
       <span class="eyebrow">PetClaw protocol</span>
-      <h2>Built on an open standard.</h2>
+      <h2>Built on an open, exportable format.</h2>
       <p>PetClaw is the open protocol for sovereign AI companions. Skills, networking, and memory — all portable by design.</p>
     </div>
 
@@ -1926,7 +1926,7 @@
       <div class="proto-col">
         <div class="num">03 / CLIENTS</div>
         <h4>MCP compatible</h4>
-        <p>Runs with Claude, OpenClaw, and any MCP client. Your companion is not locked to a single model or a single vendor.</p>
+        <p>Runs with Claude, Cursor, OpenClaw, and any MCP client. Your companion is not locked to a single model or a single vendor.</p>
         <span class="tag">mcp</span>
       </div>
     </div>
@@ -2096,10 +2096,10 @@
 
       <!-- Quick prompts -->
       <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; justify-content:center;">
-        <button type="button" class="pg-prompt" onclick="pgSend('What can you do?')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:13px; font-family:var(--mono); cursor:pointer;">What can you do?</button>
-        <button type="button" class="pg-prompt" onclick="pgSend('Tell me about data sovereignty')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:13px; font-family:var(--mono); cursor:pointer;">Data sovereignty?</button>
-        <button type="button" class="pg-prompt" onclick="pgSend('How do you remember things?')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:13px; font-family:var(--mono); cursor:pointer;">How do you remember?</button>
-        <button type="button" class="pg-prompt" onclick="pgSend('Export my SOUL data')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.5); font-size:13px; font-family:var(--mono); cursor:pointer;">Export SOUL</button>
+        <button type="button" class="pg-prompt" onclick="pgSend('What can you do?')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.8); font-size:13px; font-family:var(--mono); cursor:pointer;">What can you do?</button>
+        <button type="button" class="pg-prompt" onclick="pgSend('Tell me about data sovereignty')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.8); font-size:13px; font-family:var(--mono); cursor:pointer;">Data sovereignty?</button>
+        <button type="button" class="pg-prompt" onclick="pgSend('How do you remember things?')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.8); font-size:13px; font-family:var(--mono); cursor:pointer;">How do you remember?</button>
+        <button type="button" class="pg-prompt" onclick="pgSend('Export my SOUL data')" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:rgba(255,248,230,0.8); font-size:13px; font-family:var(--mono); cursor:pointer;">Export SOUL</button>
       </div>
     </div>
   </div>
@@ -2124,9 +2124,8 @@
     <a href="https://app.myaipet.ai/terms" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Terms of Service</a>
     <a href="https://app.myaipet.ai/privacy" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Privacy Policy</a>
     <a href="https://app.myaipet.ai/contracts" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Contracts</a>
-    <a href="https://app.myaipet.ai/docs" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Docs</a>
+    <a href="https://app.myaipet.ai/api-docs" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Docs</a>
     <a href="https://app.myaipet.ai/architecture" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Architecture</a>
-    <a href="https://app.myaipet.ai/api-docs" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">API Docs</a>
     <a href="https://app.myaipet.ai/.well-known/pet-card.json" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Protocol Spec</a>
   </div>
 
@@ -2593,16 +2592,15 @@ pets.forEach((p, i) => {
 (function walkerAnim(){
   const el = document.getElementById('petWalker');
   if (!el) return;
-  const label = el.querySelector('.mp-txt');
+  const sprite = el.querySelector('.mp');
   let pos = 10, dir = 1;
   setInterval(() => {
     pos += dir * 0.8;
-    if (pos > 85) dir = -1;
-    if (pos < 10) dir = 1;
-    // flip the sprite art only — counter-flip the label so text never mirrors
-    el.style.transform = dir === -1 ? 'scaleX(-1)' : 'scaleX(1)';
-    if (label) label.style.transform = dir === -1 ? 'scaleX(-1)' : '';
+    if (pos > 82) dir = -1;
+    if (pos < 8) dir = 1;
     el.style.left = pos + '%';
+    // flip the sticker to face its travel direction (shadow stays put)
+    if (sprite) sprite.style.transform = dir === -1 ? 'scaleX(-1)' : 'scaleX(1)';
   }, 40);
 })();
 
@@ -2683,7 +2681,7 @@ function persist() {
   const sprite = document.createElement('img');
   sprite.src = 'mascot-original.jpg';
   sprite.alt = 'Sparky';
-  sprite.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:50%;border:3px solid rgba(232,199,126,0.5);box-shadow:0 4px 16px rgba(232,199,126,0.25);transition:transform 0.15s;';
+  sprite.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:50%;border:3px solid rgba(232,199,126,0.6);box-shadow:3px 4px 0 rgba(33,26,18,0.45);transition:transform 0.15s;';
   pet.appendChild(sprite);
 
   const nameTag = document.createElement('div');
@@ -2770,6 +2768,15 @@ function persist() {
   setInterval(() => {
     stateTimer++;
 
+    // Mobile collision-avoidance: yield to the docked journey step-pill so the
+    // sticker never overlaps the step-04 card / progress bar on small screens.
+    if (window.innerWidth <= 640) {
+      const jp = document.getElementById('journeyPill');
+      pet.style.display = (jp && jp.classList.contains('show')) ? 'none' : '';
+    } else if (pet.style.display === 'none') {
+      pet.style.display = '';
+    }
+
     if (state === 'walk') {
       // Bob animation while walking
       if (stateTimer % 8 === 0) {
@@ -2792,7 +2799,7 @@ function persist() {
       // Random pause
       if (stateTimer > 250 + Math.random() * 300) {
         const r = Math.random();
-        if (r < 0.4) { state = 'idle'; sprite.style.border = '3px solid rgba(74,222,128,0.6)'; }
+        if (r < 0.4) { state = 'idle'; sprite.style.border = '3px solid rgba(190,79,40,0.7)'; }
         else { state = 'wave'; showBubble(pickPhrase(), 3500); sprite.style.border = '3px solid rgba(226,125,12,0.8)'; }
         stateTimer = 0;
       }
@@ -2828,7 +2835,7 @@ function persist() {
   // Click → playground
   pet.addEventListener('click', () => {
     sprite.style.transform = 'scale(1.2)';
-    sprite.style.border = '3px solid rgba(74,222,128,0.8)';
+    sprite.style.border = '3px solid rgba(190,79,40,0.85)';
     state = 'idle'; stateTimer = 0;
     setTimeout(() => { sprite.style.transform = 'scale(1)'; }, 300);
     const pg = document.getElementById('playgroundInput');

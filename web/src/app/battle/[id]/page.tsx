@@ -69,7 +69,7 @@ export default function BattleArchivedPage() {
           not on-chain combat. Your pet still has every stat and every memory.
           We just gave the combat sim the day off.
         </p>
-        <a href="/?section=airdrop" style={{
+        <a href="/?section=season" style={{
           display: "inline-block",
           padding: "14px 26px", borderRadius: 14, border: "none",
           background: "linear-gradient(135deg,#fbbf24,#f59e0b)",

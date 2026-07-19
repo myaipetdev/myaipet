@@ -15,5 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default function LegacyDashboardPage() {
-  redirect("/?section=airdrop");
+  redirect("/?section=season");
 }

@@ -218,12 +218,15 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         Earn Season points · not generation credits
       </div>
 
-      {/* Season-point methods grid — cards fly up with a 90ms stagger */}
+      {/* Season-point methods grid. Every method is LIVE, so no tile should read
+          as a faded "coming soon". A 90ms-per-card ramp held the last tile
+          (Play & compete) at opacity 0 for ~450ms (Reveal uses fill:backwards),
+          so cap the stagger — all tiles now land at full opacity almost together. */}
       <div className="pricing-earn-grid" style={{
         display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 48,
       }}>
         {EARN_METHODS.map((m, i) => (
-          <Reveal key={m.label} dir="up" delay={Math.min(i, 8) * 90}>
+          <Reveal key={m.label} dir="up" delay={Math.min(i, 3) * 55}>
           <div className="earn-card" style={{
             background: "#FBF6EC", borderRadius: 14,
             border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", padding: "18px 16px",

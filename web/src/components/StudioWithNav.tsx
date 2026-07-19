@@ -17,8 +17,8 @@ export default function StudioWithNav() {
   const [credits, setCredits] = useState<number | null>(null);
 
   // Non-studio nav items live on the home SPA. Route via ?section= so the
-  // user actually lands on the section they tapped (Airdrop → /?section=airdrop,
-  // not back to Home).
+  // user actually lands on the section they tapped (Season Rewards →
+  // /?section=season, not back to Home).
   const handleSection = (key: string) => {
     if (key === "studio") return;
     if (typeof window !== "undefined") {

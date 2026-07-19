@@ -9,6 +9,7 @@ import DemoPet from "@/components/DemoPet";
 import PetClawPreview from "@/components/PetClawPreview";
 import CommunityPreview from "@/components/CommunityPreview";
 import TourMyPet from "@/components/TourMyPet";
+import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import { isTourActive, TOUR_ALLOWLIST } from "@/lib/tour";
 
 // Session-global guard: the address we've already auto-prompted for a signature.
@@ -199,6 +200,88 @@ export default function WalletGate({ children, section }: any) {
     );
   }
 
+  // ── Agent Office guest gate ── the old generic wall read like an unfilled
+  // template ("access office."). Lead with a short editorial teaser of what the
+  // Office actually is, THEN the connect wall with real, specific copy.
+  if (section === "office") {
+    return (
+      <div style={{ maxWidth: 560, margin: "0 auto", padding: "132px 24px 60px", textAlign: "center" }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "#BE4F28", marginBottom: 12 }}>
+          Agent Office · Mission Control
+        </div>
+        <h2 style={{ fontFamily: "var(--ed-disp)", fontSize: 30, fontWeight: 800, color: "#211A12", marginBottom: 14, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+          Run your pet&apos;s whole operation from one board
+        </h2>
+        <p style={{ fontFamily: "var(--ed-body)", fontSize: 16, color: "#5C5140", lineHeight: 1.7, maxWidth: 470, margin: "0 auto 30px" }}>
+          The Agent Office is your mission-control desk: track the five pillars,
+          move tasks across the Kanban, manage the staff roster and cron
+          schedules, and dispatch new work from a live board.
+        </p>
+        <div style={{ fontSize: 52, marginBottom: 18, opacity: 0.7, animation: "petFloat 6s ease-in-out infinite" }}>
+          <Icon name="lock" size={52} />
+        </div>
+        <p style={{ fontFamily: "var(--ed-body)", fontSize: 16, color: "#7A6E5A", lineHeight: 1.8, marginBottom: 24 }}>
+          Connect your wallet to open the Agent Office.
+        </p>
+        <div style={{ display: "inline-block" }}>
+          <ConnectButton chainStatus="none" showBalance={false} label="Connect Wallet" />
+        </div>
+        <p style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#9A7B4E", marginTop: 22 }}>
+          No gas fees required. Wallet is used for identity only.
+        </p>
+        <style>{`@keyframes petFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }`}</style>
+      </div>
+    );
+  }
+
+  // ── Cards guest gate ── the bare connect-wall gave a collector nothing to
+  // look at. Show two clearly-labelled SAMPLE cards (never real inventory) so
+  // the deck's craft is visible before the wall.
+  if (section === "cards") {
+    return (
+      <div style={{ maxWidth: 560, margin: "0 auto", padding: "116px 24px 60px", textAlign: "center" }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "#BE4F28", marginBottom: 20 }}>
+          Sample cards · yours appear here once you connect
+        </div>
+        <div style={{ display: "flex", gap: 22, justifyContent: "center", marginBottom: 36, flexWrap: "wrap" }}>
+          {[
+            { label: "SAMPLE · COMMON", tilt: -4, lvl: 3 },
+            { label: "SAMPLE · RARE", tilt: 4, lvl: 12 },
+          ].map((s) => (
+            <div key={s.label} style={{ position: "relative" }}>
+              <CollectibleFrame
+                photoUrl="/mascot.jpg" level={s.lvl}
+                speciesLabel="COMPANION" elementLabel="SAMPLE"
+                width={148} tilt={s.tilt} float={false} seal={false} holo={false}
+              />
+              <span style={{
+                position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)",
+                fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700, letterSpacing: ".1em",
+                color: "#BE4F28", background: "#FCE9CF", borderRadius: 6, padding: "3px 8px",
+                whiteSpace: "nowrap", boxShadow: "3px 4px 0 rgba(33,26,18,.14)",
+              }}>{s.label}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 46, marginBottom: 16, opacity: 0.7 }}>
+          <Icon name="lock" size={46} />
+        </div>
+        <h2 style={{ fontFamily: "var(--ed-disp)", fontSize: 26, fontWeight: 800, color: "#211A12", marginBottom: 12, letterSpacing: "-0.02em" }}>
+          Your card deck
+        </h2>
+        <p style={{ fontFamily: "var(--ed-body)", fontSize: 16, color: "#7A6E5A", lineHeight: 1.8, marginBottom: 24 }}>
+          Cards are minted from the pets you actually raise and catch. Connect your wallet to open your deck.
+        </p>
+        <div style={{ display: "inline-block" }}>
+          <ConnectButton chainStatus="none" showBalance={false} label="Connect Wallet" />
+        </div>
+        <p style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#9A7B4E", marginTop: 22 }}>
+          No gas fees required. Wallet is used for identity only.
+        </p>
+      </div>
+    );
+  }
+
   const sectionLabels: any = {
     "my pet": "My Pet",
     create: "Create",
@@ -208,7 +291,7 @@ export default function WalletGate({ children, section }: any) {
     cards: "your card deck",
     agent: "the Agent dashboard",
     chat: "Chat",
-    airdrop: "Season Rewards",
+    season: "Season Rewards",
   };
 
   return (
@@ -221,7 +304,7 @@ export default function WalletGate({ children, section }: any) {
       </h2>
       <p style={{ fontFamily: "var(--ed-body)", fontSize: 16, color: "#7A6E5A", lineHeight: 1.8, marginBottom: 28 }}>
         Connect your wallet to access{" "}
-        <span style={{ color: "#BE4F28", fontWeight: 600 }}>{sectionLabels[section] || section}</span>.
+        <span style={{ color: "#211A12", fontWeight: 800 }}>{sectionLabels[section] || section}</span>.
       </p>
       <div style={{ display: "inline-block" }}>
         <ConnectButton chainStatus="none" showBalance={false} label="Connect Wallet" />
