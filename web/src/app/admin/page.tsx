@@ -128,7 +128,7 @@ export default function AdminOpsPage() {
             Owner Console
           </h1>
           <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 11, color: MUTED }}>
-            refreshed {new Date(data.generatedAt).toLocaleTimeString()} · every 30s{error ? ` · last poll failed (${error})` : ""}
+            refreshed {new Date(data.generatedAt).toLocaleTimeString("en-US")} · every 30s{error ? ` · last poll failed (${error})` : ""}
           </span>
         </header>
 
@@ -153,7 +153,7 @@ export default function AdminOpsPage() {
         <section style={{ marginTop: 18, fontFamily: MONO, fontSize: 11, color: MUTED }}>
           <span style={{ color: INK, fontWeight: 700 }}>credits 7d · </span>
           {Object.entries(bd).map(([k, v]) => `${k} ${fmt(v)}`).join(" · ")}
-          <span> · today = UTC day from {new Date(data.todayStartsAt).toLocaleTimeString()}</span>
+          <span> · today = UTC day from {new Date(data.todayStartsAt).toLocaleTimeString("en-US")}</span>
         </section>
 
         {/* two lists */}

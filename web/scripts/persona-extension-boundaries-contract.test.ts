@@ -12,19 +12,19 @@ import {
   toExtensionPetListView,
 } from "../src/lib/extensionPetView";
 
-const ownerSample = "안녕! 오늘 게임할래?";
+const ownerSample = "\uc548\ub155! \uc624\ub298 \uac8c\uc784\ud560\ub798?";
 const analysis = normalizeChatAnalysis({
   patterns: {
-    formality: "반말",
-    sentence_length: "짧음",
-    emoji_usage: "많음",
-    punctuation_style: "느낌표를 자주 쓸",
+    formality: "\ubc18\ub9d0",
+    sentence_length: "\uc9e7\uc74c",
+    emoji_usage: "\ub9ce\uc74c",
+    punctuation_style: "\ub290\ub08c\ud45c\ub97c \uc790\uc8fc \uc4f8",
   },
   sampleMessages: [ownerSample],
-  vocabularyStyle: "신조어를 자주 쓸",
-  detectedTone: "활발함",
-  detectedLanguage: "한국어",
-  interests: ["게임", "music"],
+  vocabularyStyle: "\uc2e0\uc870\uc5b4\ub97c \uc790\uc8fc \uc4f8",
+  detectedTone: "\ud65c\ubc1c\ud568",
+  detectedLanguage: "\ud55c\uad6d\uc5b4",
+  interests: ["\uac8c\uc784", "music"],
 });
 
 // Owner-authored excerpts remain byte-for-byte unchanged.
@@ -34,25 +34,25 @@ assert.equal(containsHangul(generatedAnalysis), false);
 assert.deepEqual(analysis.interests, ["music"]);
 
 const observations = normalizePersonaObservation({
-  topics: ["반려동물", "gaming"],
+  topics: ["\ubc18\ub824\ub3d9\ubb3c", "gaming"],
   style: {
-    avg_message_length: "짧음",
-    common_phrases: "진짜, 대박",
-    tone: "활발함",
+    avg_message_length: "\uc9e7\uc74c",
+    common_phrases: "\uc9c4\uc9dc, \ub300\ubc15",
+    tone: "\ud65c\ubc1c\ud568",
   },
 });
 assert.equal(containsHangul(observations), false);
 assert.deepEqual(observations.topics, ["gaming"]);
 
 const stored = sanitizeStoredPersonaGeneratedFields({
-  owner_bio: "사용자가 직접 쓴 소개",
+  owner_bio: "\uc0ac\uc6a9\uc790\uac00 \uc9c1\uc811 \uc4f4 \uc18c\uac1c",
   sample_messages: [ownerSample],
-  vocabulary_style: "신조어를 자주 쓸",
-  analyzed_patterns: { punctuation_style: "느낌표 자주 사용" },
-  observed_topics: ["애완동물"],
-  observed_style: { common_phrases: "대박" },
+  vocabulary_style: "\uc2e0\uc870\uc5b4\ub97c \uc790\uc8fc \uc4f8",
+  analyzed_patterns: { punctuation_style: "\ub290\ub08c\ud45c \uc790\uc8fc \uc0ac\uc6a9" },
+  observed_topics: ["\uc560\uc644\ub3d9\ubb3c"],
+  observed_style: { common_phrases: "\ub300\ubc15" },
 });
-assert.equal(stored.owner_bio, "사용자가 직접 쓴 소개");
+assert.equal(stored.owner_bio, "\uc0ac\uc6a9\uc790\uac00 \uc9c1\uc811 \uc4f4 \uc18c\uac1c");
 assert.deepEqual(stored.sample_messages, [ownerSample]);
 assert.equal(containsHangul({
   vocabulary_style: stored.vocabulary_style,

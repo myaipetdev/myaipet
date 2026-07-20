@@ -1,125 +1,171 @@
 import type { Metadata } from "next";
+import styles from "./contracts.module.css";
 
 export const metadata: Metadata = {
   title: "Contracts — MY AI PET",
   description: "On-chain contract addresses, audit status, and verification links.",
 };
 
-const CONTRACTS = [
-  { name: "PETContent (NFT)",       addr: "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c", status: "Deployed (integration off)", note: "Production integration is disabled. On-chain paused() was false and totalSupply() = 0 at the 2026-07-18 launch review." },
-  { name: "PetaGenTracker",         addr: "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a", status: "Deployed (integration off)", note: "Production integration is disabled. On-chain paused() was false, totalUsers() = 0, and totalGenerations() = 0 at the 2026-07-18 launch review." },
-  { name: "PETActivity",            addr: "TBD",                                          status: "Planned",    note: "Per-user activity recorder (gasless, roadmap)" },
-  { name: "PETSoul",                addr: "TBD",                                          status: "Planned",    note: "Pet identity registry + successor inheritance (roadmap)" },
+type Contract = {
+  name: string;
+  kind: string;
+  address: string | null;
+  state: "deployed" | "planned";
+  status: string;
+  summary: string;
+  reviewNote?: string;
+  checks?: string[];
+};
+
+const LAUNCH_DISCLOSURE = "The production app has all blockchain integration disabled.";
+
+const CONTRACTS: Contract[] = [
+  { name: "PETContent (NFT)", kind: "NFT provenance", address: "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c", state: "deployed", status: "DEPLOYED (INTEGRATION OFF)", summary: "Build-era provenance contract. The live app does not mint or write to it.", reviewNote: "Production integration is disabled. On-chain paused() was false and totalSupply() = 0 at the 2026-07-18 launch review.", checks: ["paused() = false", "totalSupply() = 0"] },
+  { name: "PetaGenTracker", kind: "Generation provenance", address: "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a", state: "deployed", status: "DEPLOYED (INTEGRATION OFF)", summary: "Build-era generation tracker. Production recording is disabled.", reviewNote: "Production integration is disabled. On-chain paused() was false, totalUsers() = 0, and totalGenerations() = 0 at the 2026-07-18 launch review.", checks: ["paused() = false", "totalUsers() = 0", "totalGenerations() = 0"] },
+  {
+    name: "PETActivity",
+    kind: "Activity recorder",
+    address: null,
+    state: "planned",
+    status: "Roadmap",
+    summary: "A gasless, per-user activity recorder. No address or activation date is announced.",
+  },
+  {
+    name: "PETSoul",
+    kind: "Identity registry",
+    address: null,
+    state: "planned",
+    status: "Roadmap",
+    summary: "A future pet identity and successor-inheritance registry. Not deployed.",
+  },
 ];
 
 export default function ContractsPage() {
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#ECE4D4",
-      fontFamily: "var(--ed-body, sans-serif)",
-      color: "#211A12",
-      padding: "80px 24px",
-    }}>
-      <div style={{ maxWidth: 880, margin: "0 auto" }}>
-        <a href="https://myaipet.ai" style={{
-          display: "inline-block", marginBottom: 24,
-          fontSize: 13, color: "rgba(33,26,18,0.55)", textDecoration: "none",
-        }}>← Back to landing</a>
+    <main className={styles.page}>
+      <div className={styles.ambient} aria-hidden="true" />
+      <div className={styles.shell}>
+        <a href="https://myaipet.ai" className={styles.backLink}>
+          <span aria-hidden="true">←</span> Back to MY AI PET
+        </a>
 
-        <h1 style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 6 }}>
-          Smart Contracts
-        </h1>
-        <p style={{ fontSize: 15, color: "rgba(33,26,18,0.65)", marginBottom: 32, lineHeight: 1.6 }}>
-          Two legacy provenance contracts were deployed on <strong>BNB Smart Chain (chain id 56)</strong>{" "}
-          during the build. The production app has <strong>all blockchain integration disabled</strong>,
-          but that server-side gate is not the same as an on-chain pause: both contracts returned
-          <code>paused() = false</code> at the 2026-07-18 launch review. Neither contract is part of the
-          live product flow. A replacement deployment on <strong>Base</strong> and an external audit are
-          planned, but neither is complete and no activation date is announced.
-        </p>
-
-        <div style={{
-          padding: "14px 18px", borderRadius: 12,
-          background: "rgba(190,79,40,0.10)",
-          border: "1px solid rgba(190,79,40,0.25)",
-          fontSize: 13, color: "#9A4E1E", marginBottom: 32, lineHeight: 1.6,
-        }}>
-          <strong>Integration holding-period notice (verified 2026-07-18)</strong><br/>
-          Server-side on-chain recording and NFT minting are disabled. Enabling them would require
-          a reviewed Base deployment, verified contracts, relayer controls, and a completed external
-          security audit. Passing those milestones does not imply an automatic launch; status changes
-          will be published here before any user-facing activation. The current owner wallet remains
-          authorized as a tracker relayer and NFT minter; pausing or changing those on-chain permissions
-          requires an owner-wallet transaction outside this web deployment.
-        </div>
-
-        <div style={{ display: "grid", gap: 12, marginBottom: 40 }}>
-          {CONTRACTS.map((c) => (
-            <div key={c.name} style={{
-              padding: 16, borderRadius: 14,
-              background: "#FBF6EC", border: "1px solid rgba(33,26,18,0.13)",
-              display: "grid", gridTemplateColumns: "1fr auto", gap: 16, alignItems: "center",
-            }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{c.name}</div>
-                <div style={{
-                  fontFamily: "var(--ed-m, ui-monospace, monospace)", fontSize: 13, color: "rgba(33,26,18,0.55)",
-                  wordBreak: "break-all", marginBottom: 4,
-                }}>
-                  {c.addr === "TBD" ? "— address pending —" : c.addr}
-                </div>
-                <div style={{ fontSize: 13, color: "rgba(33,26,18,0.65)" }}>{c.note}</div>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
-                <span style={{
-                  fontSize: 13, padding: "3px 10px", borderRadius: 999,
-                  background: c.status.startsWith("Deployed") ? "rgba(190,79,40,0.12)" : "rgba(33,26,18,0.06)",
-                  color: c.status.startsWith("Deployed") ? "#9A4E1E" : "rgba(33,26,18,0.65)",
-                  fontWeight: 700, letterSpacing: "0.06em",
-                }}>{c.status.toUpperCase()}</span>
-                {c.addr !== "TBD" && (
-                  <a
-                    href={`https://bscscan.com/address/${c.addr}`}
-                    target="_blank" rel="noopener noreferrer"
-                    style={{
-                      fontSize: 13, padding: "5px 12px", borderRadius: 8,
-                      background: "rgba(33,26,18,0.04)", color: "#211A12",
-                      textDecoration: "none", fontWeight: 600,
-                      border: "1px solid rgba(33,26,18,0.13)",
-                    }}
-                  >BSCScan (build) ↗</a>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, marginTop: 32 }}>
-          Audits
-        </h2>
-        <div style={{ padding: 16, borderRadius: 14, background: "#FBF6EC", border: "1px solid rgba(33,26,18,0.13)" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Internal source review — Completed</div>
-          <div style={{ fontSize: 13, color: "rgba(33,26,18,0.55)", lineHeight: 1.55 }}>
-            A prior internal Solidity source review covered four contracts and recorded its fixes.
-            Deployment-specific bytecode and owner-permission verification remains in progress;
-            no external audit is complete. Any external audit announcement will be published here
-            only after it is finalized.
+        <header className={styles.hero}>
+          <div className={styles.kicker}><span /> Public verification</div>
+          <h1>Smart contracts,<br /><em>clearly explained.</em></h1>
+          <p>
+            MY AI PET currently runs off-chain. {LAUNCH_DISCLOSURE} Two legacy provenance
+            contracts exist on BNB Smart Chain, but neither is connected to the live product flow.
+          </p>
+          <div className={styles.summaryGrid} aria-label="Current contract status">
+            <div><span>Network</span><strong>BNB legacy</strong></div>
+            <div><span>Live integration</span><strong className={styles.off}>Off</strong></div>
+            <div><span>External audit</span><strong>Planned</strong></div>
           </div>
-        </div>
+        </header>
 
-        <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, marginTop: 32 }}>
-          Ownership
-        </h2>
-        <ul style={{ fontSize: 14, lineHeight: 1.8, color: "rgba(33,26,18,0.75)", paddingLeft: 18 }}>
-          <li>Deployer wallet: <code style={{ fontSize: 13 }}>0x872d5f7F03894EE5c8b84D22868009B58b927357</code></li>
-          <li>Upgradeability: deployed contracts are <strong>non-upgradeable</strong>.</li>
-          <li>Current app status: <code style={{ fontSize: 13 }}>BLOCKCHAIN_ENABLED=false</code>; no production route submits contract writes.</li>
-          <li>Current contract status (checked 2026-07-18): both <code style={{ fontSize: 13 }}>paused()</code> reads returned <strong>false</strong>; owner relayer/minter authorization remains active.</li>
-          <li>Owner privileges: pause/unpause where supported, relayer and admin operations for deployed provenance contracts.</li>
-          <li>Legacy PETToken/PETShop source code is outside the live flow. Deployment addresses and current owner state are not evidenced here; source-defined controls include minter management, tier changes, pause, and USDT withdrawal.</li>
-        </ul>
+        <section className={styles.holdNotice} aria-labelledby="holding-title">
+          <div className={styles.noticeIcon} aria-hidden="true">II</div>
+          <div>
+            <div className={styles.noticeLabel}>Launch hold · verified July 18, 2026</div>
+            <h2 id="holding-title">No production route submits on-chain writes.</h2>
+            <p>
+              Activation requires a reviewed Base deployment, verified contracts, relayer
+              controls, and a completed external security audit. Status will be published
+              here before any user-facing activation.
+            </p>
+          </div>
+        </section>
+
+        <section className={styles.registry} aria-labelledby="registry-title">
+          <div className={styles.sectionHead}>
+            <div>
+              <span>Registry · 04</span>
+              <h2 id="registry-title">What exists today</h2>
+            </div>
+            <p>Build-era addresses and roadmap items, separated so deployed never reads as live.</p>
+          </div>
+
+          <div className={styles.contractGrid}>
+            {CONTRACTS.map((contract, index) => (
+              <article className={styles.contractCard} data-state={contract.state} key={contract.name}>
+                <div className={styles.cardTopline}>
+                  <span className={styles.cardNumber}>{String(index + 1).padStart(2, "0")}</span>
+                  <span className={styles.statusBadge}>{contract.status}</span>
+                </div>
+                <div className={styles.cardTitle}>
+                  <span>{contract.kind}</span>
+                  <h3>{contract.name}</h3>
+                </div>
+
+                <div className={styles.addressBlock}>
+                  <span>Contract address</span>
+                  <code>{contract.address ?? "Not deployed"}</code>
+                </div>
+
+                <p className={styles.cardSummary}>{contract.summary}</p>
+
+                {contract.checks && (
+                  <div className={styles.checks} aria-label={contract.reviewNote ?? "Last reviewed chain values"}>
+                    {contract.checks.map((check) => <code key={check}>{check}</code>)}
+                  </div>
+                )}
+
+                {contract.address ? (
+                  <a
+                    href={`https://bscscan.com/address/${contract.address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.explorerLink}
+                  >
+                    Verify on BscScan <span aria-hidden="true">↗</span>
+                  </a>
+                ) : (
+                  <div className={styles.roadmapLine}><span /> No address assigned</div>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.detailsGrid} aria-label="Audit and ownership details">
+          <article>
+            <span className={styles.detailIndex}>01 · Review</span>
+            <h2>Audit status</h2>
+            <p>
+              An internal Solidity source review covered four contracts and recorded its fixes.
+              Deployment-specific bytecode and owner-permission verification remains in progress.
+              No external audit is complete.
+            </p>
+          </article>
+          <article>
+            <span className={styles.detailIndex}>02 · Control</span>
+            <h2>Owner permissions</h2>
+            <p>
+              The deployed contracts are non-upgradeable. The owner can pause supported contracts
+              and manage relayer or minter permissions. Changing those permissions requires an
+              owner-wallet transaction outside this deployment.
+            </p>
+          </article>
+        </section>
+
+        <details className={styles.technicalDetails}>
+          <summary>Technical disclosure <span>View details</span></summary>
+          <ul>
+            <li>Deployer wallet: <code>0x872d5f7F03894EE5c8b84D22868009B58b927357</code></li>
+            <li>Production gate: <code>BLOCKCHAIN_ENABLED=false</code>.</li>
+            <li>Both deployed contracts returned <code>paused() = false</code> at the July 18, 2026 review.</li>
+            <li>The current owner relayer/minter authorization remains active until changed by an owner-wallet transaction.</li>
+            <li>Legacy PETToken and PETShop source code is outside the live product flow.</li>
+          </ul>
+        </details>
+
+        <footer className={styles.footer}>
+          <span>PetClaw Protocol v1</span>
+          <a href="/architecture">Architecture</a>
+          <a href="/terms">Terms</a>
+          <a href="/privacy">Privacy</a>
+        </footer>
       </div>
-    </div>
+    </main>
   );
 }

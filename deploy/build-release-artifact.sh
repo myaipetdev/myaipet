@@ -55,15 +55,19 @@ if ! git merge-base --is-ancestor "${PETCLAW_COMMIT}" HEAD; then
 fi
 
 for PETCLAW_REQUIRED_PATH in \
+  desktop-pet/manifest.json \
+  petclaw-extension.zip \
   web/package-lock.json \
   web/package.json \
   web/public/petclaw-extension.zip \
+  web/src/lib/petclaw-extension.ts \
   deploy/ec2-release.sh \
   deploy/parse-database-url.mjs \
   deploy/verify-release-artifact.sh \
   deploy/release-boot-guard.sh \
   deploy/petclaw-release-boot-guard.service \
   deploy/release-rollback-watchdog.sh \
+  deploy/scan-release-language.mjs \
   deploy/scan-release-secrets.sh \
   deploy/check-release-migrations.sh \
   deploy/destructive-migrations.allowlist \
@@ -123,6 +127,54 @@ tar -xf "${PETCLAW_STAGE}/release.tar" -C "${PETCLAW_STAGE}/tree"
 /bin/bash "${PETCLAW_STAGE}/tree/deploy/check-release-migrations.sh" \
   "${PETCLAW_STAGE}/tree" \
   "${PETCLAW_STAGE}/tree/deploy/destructive-migrations.allowlist"
+node "${PETCLAW_STAGE}/tree/deploy/scan-release-language.mjs" \
+  source "${PETCLAW_STAGE}/tree"
+
+PETCLAW_EXTENSION_VERSION="$(node -e '
+  const fs = require("node:fs");
+  const manifest = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+  if (!/^\d+\.\d+\.\d+$/.test(manifest.version || "")) process.exit(1);
+  process.stdout.write(manifest.version);
+' "${PETCLAW_STAGE}/tree/desktop-pet/manifest.json")"
+if [[ "$(grep -Fxc \
+    "export const PETCLAW_EXTENSION_VERSION = \"${PETCLAW_EXTENSION_VERSION}\";" \
+    "${PETCLAW_STAGE}/tree/web/src/lib/petclaw-extension.ts" || true)" != "1" \
+  || "$(grep -Fxc \
+    "PETCLAW_EXPECTED_EXTENSION_VERSION=\"${PETCLAW_EXTENSION_VERSION}\"" \
+    "${PETCLAW_STAGE}/tree/deploy/release-smoke.sh" || true)" != "1" ]]; then
+  echo "ERROR: committed extension manifest, dashboard, and release smoke versions differ." >&2
+  exit 2
+fi
+for PETCLAW_EXTENSION_ARCHIVE in \
+  "${PETCLAW_STAGE}/tree/petclaw-extension.zip" \
+  "${PETCLAW_STAGE}/tree/web/public/petclaw-extension.zip"; do
+  if ! unzip -tq "${PETCLAW_EXTENSION_ARCHIVE}" >/dev/null; then
+    echo "ERROR: committed extension archive is not a valid ZIP." >&2
+    exit 2
+  fi
+  if ! PETCLAW_PACKED_EXTENSION_VERSION="$(unzip -p \
+      "${PETCLAW_EXTENSION_ARCHIVE}" manifest.json | node -e '
+        let source = "";
+        process.stdin.setEncoding("utf8");
+        process.stdin.on("data", (chunk) => { source += chunk; });
+        process.stdin.on("end", () => {
+          try { process.stdout.write(JSON.parse(source).version || ""); }
+          catch { process.exitCode = 1; }
+        });
+      ')"; then
+    echo "ERROR: committed extension archive manifest is invalid." >&2
+    exit 2
+  fi
+  if [[ "${PETCLAW_PACKED_EXTENSION_VERSION}" != "${PETCLAW_EXTENSION_VERSION}" ]]; then
+    echo "ERROR: committed extension archive version differs from its source manifest." >&2
+    exit 2
+  fi
+done
+if ! cmp -s "${PETCLAW_STAGE}/tree/petclaw-extension.zip" \
+    "${PETCLAW_STAGE}/tree/web/public/petclaw-extension.zip"; then
+  echo "ERROR: root and public extension archives are not byte-identical." >&2
+  exit 2
+fi
 
 # Prove the committed package manifest and lockfile are clean-installable under
 # the same supported runtime family before signing immutable release bytes.

@@ -8,7 +8,10 @@
  *  - circular structures via .strict()
  */
 
-import { z } from "zod";
+// The v4 root entry re-exports every locale and makes server bundlers retain
+// unused translation dictionaries. The public v3 compatibility entry exposes
+// the same schema API used here without importing the locale registry.
+import { z } from "zod/v3";
 
 const HEX_HASH = /^[a-f0-9]{64}$/i;
 const SAFE_TEXT = /^[^\x00-\x08\x0E-\x1F\x7F]*$/; // no control chars

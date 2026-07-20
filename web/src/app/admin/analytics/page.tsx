@@ -69,7 +69,7 @@ export default function AdminAnalyticsPage() {
             BM Health Dashboard
           </h1>
           <p style={{ fontSize: 14, color: "rgba(26,26,46,0.6)" }}>
-            Window: last {data.windowDays} days · since {new Date(data.since).toLocaleDateString()}
+            Window: last {data.windowDays} days · since {new Date(data.since).toLocaleDateString("en-US")}
           </p>
 
           {/* Window selector */}

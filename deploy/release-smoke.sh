@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+PETCLAW_SMOKE_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 PETCLAW_SMOKE_BASE="${PETCLAW_SMOKE_BASE:-https://app.myaipet.ai}"
 PETCLAW_SMOKE_HOST="${PETCLAW_SMOKE_HOST:-}"
 PETCLAW_SMOKE_PORT="${PETCLAW_SMOKE_PORT:-443}"
 PETCLAW_EXPECTED_RELEASE_ID="${PETCLAW_EXPECTED_RELEASE_ID:-}"
+PETCLAW_RELEASE_ROOT="${PETCLAW_RELEASE_ROOT:-}"
+PETCLAW_EXPECTED_EXTENSION_VERSION="2.3.3"
+PETCLAW_EXPECTED_LANDING_REVISION="20260720-en-only"
 PETCLAW_SMOKE_BODY="$(mktemp)"
 PETCLAW_SMOKE_HEADERS="$(mktemp)"
 trap 'rm -f "${PETCLAW_SMOKE_BODY}" "${PETCLAW_SMOKE_HEADERS}"' EXIT
@@ -120,18 +124,34 @@ petclaw_exact_frame_ancestors() {
 }
 
 petclaw_verify_landing_body() {
+  local expected_revision="${PETCLAW_EXPECTED_LANDING_REVISION:-20260720-en-only}"
   node -e '
     let body = "";
     process.stdin.setEncoding("utf8");
     process.stdin.on("data", (chunk) => { body += chunk; });
     process.stdin.on("end", () => {
+      const revision = process.argv[1];
       const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
+      const required = [
+        `<html lang="en" translate="no" class="notranslate">`,
+        `<meta name="google" content="notranslate"`,
+        "/api/petclaw/demo-chat",
+        "19 CONNECTORS · 18 SKILLS · 6 LIVE",
+        "Two legacy BNB Smart Chain contracts are deployed.",
+        "Live app integration is off.",
+        "Both contracts returned <code>paused() = false</code>",
+        `class="footer-disclosure"`,
+        `product-demo.html?v=${revision}`,
+        `launch reel — starts as you scroll`,
+        `animation: heroGlowBreathe`,
+        `Sparky priority: footer/journey beats CTA overlap.`,
+        `href="https://app.myaipet.ai/contracts"`,
+      ];
       if (hangul.test(body)
-        || !body.includes("/api/petclaw/demo-chat")
-        || !body.includes("ON-CHAIN · INTEGRATION OFF")
+        || required.some((value) => !body.includes(value))
         || body.includes("2 Deployed · 2 Paused")) process.exitCode = 1;
     });
-  '
+  ' "${expected_revision}"
 }
 
 petclaw_verify_product_demo_body() {
@@ -141,7 +161,33 @@ petclaw_verify_product_demo_body() {
     process.stdin.on("data", (chunk) => { body += chunk; });
     process.stdin.on("end", () => {
       const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
-      if (hangul.test(body) || !body.includes("id=\"playBtn\"") || !body.includes("id=\"replayBtn\"")) process.exitCode = 1;
+      const required = [
+        `<html lang="en" translate="no" class="notranslate">`,
+        `<meta name="google" content="notranslate"`,
+        `id="playBtn"`,
+        `id="replayBtn"`,
+        `position:absolute; left:50%; top:50%; width:1280px; height:720px`,
+        `transform:translate(-50%,-50%) scale(var(--s,1))`,
+      ];
+      if (hangul.test(body) || required.some((value) => !body.includes(value))) process.exitCode = 1;
+    });
+  '
+}
+
+petclaw_verify_revalidated_english_html_headers() {
+  local headers_file="$1"
+  petclaw_exact_header_value "${headers_file}" content-language en \
+    && petclaw_header_contains_token "${headers_file}" cache-control no-cache
+}
+
+petclaw_verify_no_hangul_body() {
+  node -e '
+    let body = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", (chunk) => { body += chunk; });
+    process.stdin.on("end", () => {
+      const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
+      if (hangul.test(body)) process.exitCode = 1;
     });
   '
 }
@@ -198,6 +244,15 @@ expect_env_exact PET_LORA_ENABLED false
 expect_env_exact BLOCKCHAIN_ENABLED false
 expect_env_exact REFERRALS_ENABLED false
 
+if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" || -n "${PETCLAW_RELEASE_ROOT}" ]]; then
+  PETCLAW_RELEASE_ROOT="${PETCLAW_RELEASE_ROOT:-/opt/petclaw/current}"
+  if ! node "${PETCLAW_SMOKE_SCRIPT_DIR}/scan-release-language.mjs" \
+      built "${PETCLAW_RELEASE_ROOT}"; then
+    echo "ERROR: active release contains Hangul/Jamo in source or built output." >&2
+    exit 1
+  fi
+fi
+
 if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
   if [[ ! "${PETCLAW_EXPECTED_RELEASE_ID}" =~ ^[A-Za-z0-9._-]{6,80}$ \
     || "${PETCLAW_SMOKE_BASE}" != "https://app.myaipet.ai" \
@@ -248,6 +303,11 @@ if [[ "${STORAGE_PROVIDER:-local}" == "local" ]]; then
 fi
 
 expect_code 200 GET "/api/health"
+expect_code 200 GET "/"
+if ! petclaw_verify_no_hangul_body < "${PETCLAW_SMOKE_BODY}"; then
+  echo "ERROR: app HTML contains Hangul/Jamo." >&2
+  exit 1
+fi
 PAYMENT_CONFIG_BODY="$(petclaw_curl "${PETCLAW_SMOKE_BASE}/api/config")"
 node -e 'const d=JSON.parse(process.argv[1]); if(d?.payments_enabled!==false||d?.treasury!==""||d?.usdt!==""||d?.blockchain_enabled!==false||typeof d?.contracts!=="object"||d.contracts===null||Array.isArray(d.contracts)||Object.keys(d.contracts).length!==0||d?.oauth_connections_enabled!==false||d?.agent_channels_enabled!==false) process.exit(1)' "${PAYMENT_CONFIG_BODY}"
 expect_code 200 GET "/contracts"
@@ -286,7 +346,8 @@ if [[ -n "${PETCLAW_EXTENSION_SHA256:-}" ]]; then
   fi
 fi
 PETCLAW_EXTENSION_MANIFEST="$(unzip -p "${PETCLAW_SMOKE_BODY}" manifest.json)"
-node -e 'const m=JSON.parse(process.argv[1]); if(m.manifest_version!==3 || m.version!=="2.3.2") process.exit(1)' "${PETCLAW_EXTENSION_MANIFEST}"
+node -e 'const m=JSON.parse(process.argv[1]); if(m.manifest_version!==3 || m.version!==process.argv[2]) process.exit(1)' \
+  "${PETCLAW_EXTENSION_MANIFEST}" "${PETCLAW_EXPECTED_EXTENSION_VERSION}"
 expect_code 204 OPTIONS "/api/petclaw/skills" -H "Origin: https://myaipet.ai" -H "Access-Control-Request-Method: POST"
 expect_code 403 OPTIONS "/api/petclaw/skills" -H "Origin: https://evil.example" -H "Access-Control-Request-Method: POST"
 expect_code 204 OPTIONS "/api/pets" -H "Origin: https://myaipet.ai" -H "Access-Control-Request-Method: GET"
@@ -315,6 +376,7 @@ fi
 if [[ "${PETCLAW_LANDING_CURL_OK}" != "1" \
   || "${PETCLAW_LANDING_CODE}" != "200" ]] \
   || ! petclaw_verify_landing_body < "${PETCLAW_SMOKE_BODY}" \
+  || ! petclaw_verify_revalidated_english_html_headers "${PETCLAW_SMOKE_HEADERS}" \
   || ! petclaw_exact_header_value "${PETCLAW_SMOKE_HEADERS}" x-frame-options DENY \
   || ! petclaw_exact_frame_ancestors "${PETCLAW_SMOKE_HEADERS}" "'none'"; then
   echo "ERROR: landing smoke did not return exact English launch HTML." >&2
@@ -328,9 +390,50 @@ fi
 if [[ "${PETCLAW_PRODUCT_DEMO_CURL_OK}" != "1" \
   || "${PETCLAW_PRODUCT_DEMO_CODE}" != "200" ]] \
   || ! petclaw_verify_product_demo_body < "${PETCLAW_SMOKE_BODY}" \
+  || ! petclaw_verify_revalidated_english_html_headers "${PETCLAW_SMOKE_HEADERS}" \
   || ! petclaw_exact_header_value "${PETCLAW_SMOKE_HEADERS}" x-frame-options SAMEORIGIN \
   || ! petclaw_exact_frame_ancestors "${PETCLAW_SMOKE_HEADERS}" "'self'"; then
   echo "ERROR: same-origin product demo frame contract failed." >&2
+  exit 1
+fi
+
+PETCLAW_COMPAT_LANDING_CURL_OK=1
+if ! PETCLAW_COMPAT_LANDING_CODE="$(petclaw_curl \
+  -D "${PETCLAW_SMOKE_HEADERS}" -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
+  "${PETCLAW_SMOKE_BASE}/landing/?v=${PETCLAW_EXPECTED_LANDING_REVISION}")"; then
+  PETCLAW_COMPAT_LANDING_CURL_OK=0
+fi
+PETCLAW_COMPAT_LANDING_RELEASE_OK=1
+if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]] \
+  && ! petclaw_exact_release_header "${PETCLAW_SMOKE_HEADERS}"; then
+  PETCLAW_COMPAT_LANDING_RELEASE_OK=0
+fi
+if [[ "${PETCLAW_COMPAT_LANDING_CURL_OK}" != "1" \
+  || "${PETCLAW_COMPAT_LANDING_CODE}" != "200" \
+  || "${PETCLAW_COMPAT_LANDING_RELEASE_OK}" != "1" ]] \
+  || ! petclaw_verify_landing_body < "${PETCLAW_SMOKE_BODY}" \
+  || ! petclaw_verify_revalidated_english_html_headers "${PETCLAW_SMOKE_HEADERS}"; then
+  echo "ERROR: app landing compatibility path is not cache-safe English HTML." >&2
+  exit 1
+fi
+
+PETCLAW_COMPAT_DEMO_CURL_OK=1
+if ! PETCLAW_COMPAT_DEMO_CODE="$(petclaw_curl \
+  -D "${PETCLAW_SMOKE_HEADERS}" -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
+  "${PETCLAW_SMOKE_BASE}/landing/product-demo.html?v=${PETCLAW_EXPECTED_LANDING_REVISION}")"; then
+  PETCLAW_COMPAT_DEMO_CURL_OK=0
+fi
+PETCLAW_COMPAT_DEMO_RELEASE_OK=1
+if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]] \
+  && ! petclaw_exact_release_header "${PETCLAW_SMOKE_HEADERS}"; then
+  PETCLAW_COMPAT_DEMO_RELEASE_OK=0
+fi
+if [[ "${PETCLAW_COMPAT_DEMO_CURL_OK}" != "1" \
+  || "${PETCLAW_COMPAT_DEMO_CODE}" != "200" \
+  || "${PETCLAW_COMPAT_DEMO_RELEASE_OK}" != "1" ]] \
+  || ! petclaw_verify_product_demo_body < "${PETCLAW_SMOKE_BODY}" \
+  || ! petclaw_verify_revalidated_english_html_headers "${PETCLAW_SMOKE_HEADERS}"; then
+  echo "ERROR: app product-demo compatibility path is not cache-safe English HTML." >&2
   exit 1
 fi
 

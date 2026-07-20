@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" translate="no" class="notranslate">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="google" content="notranslate" />
 <title>MY AI PET — Your Portable AI Companion</title>
 <meta name="description" content="Raise an AI companion that remembers you, grows with you, and stays portable through a downloadable identity and memory export. Wallet sign-in uses no gas; payments and new on-chain anchoring are disabled." />
 <meta name="theme-color" content="#BE4F28" />
@@ -1349,6 +1350,192 @@
     .skill-card:nth-child(5) { grid-column: auto; }
     .specimen { transform: rotate(-1deg); }
   }
+
+  /* ═══ LIVING HERO — CSS-first motion that survives blocked video autoplay ═══ */
+  .hero-ambient {
+    position: absolute; inset: 0; z-index: 0; overflow: hidden;
+    pointer-events: none; transform: translateZ(0);
+  }
+  .hero-glow {
+    --gx: 72%; --gy: 30%;
+    position: absolute; inset: -20%;
+    background:
+      radial-gradient(circle at var(--gx) var(--gy), rgba(255,232,184,.27) 0 5%, rgba(232,199,126,.13) 14%, transparent 34%),
+      radial-gradient(circle at 18% 74%, rgba(190,79,40,.2), transparent 28%);
+    filter: blur(10px); opacity: .9;
+    animation: heroGlowBreathe 7s ease-in-out infinite alternate;
+    transition: background-position .5s var(--ease);
+  }
+  .hero-mesh {
+    position: absolute; inset: 0;
+    opacity: .16;
+    background-image:
+      linear-gradient(rgba(255,248,230,.2) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,248,230,.2) 1px, transparent 1px);
+    background-size: 68px 68px;
+    mask-image: radial-gradient(circle at 72% 48%, #000, transparent 56%);
+    animation: heroMeshDrift 18s linear infinite;
+  }
+  .hero-orbit {
+    position: absolute; width: min(58vw, 720px); aspect-ratio: 1;
+    right: -9vw; top: 6%; border: 1px solid rgba(255,248,230,.18); border-radius: 50%;
+    box-shadow: 0 0 0 56px rgba(255,248,230,.025), 0 0 0 112px rgba(232,199,126,.02);
+    animation: heroOrbit 28s linear infinite;
+  }
+  .hero-orbit::before,
+  .hero-orbit::after {
+    content: ""; position: absolute; border-radius: 50%;
+    background: #fbe3b8; box-shadow: 0 0 18px rgba(251,227,184,.9), 0 0 44px rgba(226,125,12,.4);
+  }
+  .hero-orbit::before { width: 10px; height: 10px; left: 9%; top: 26%; }
+  .hero-orbit::after { width: 6px; height: 6px; right: 16%; bottom: 18%; }
+  .hero-signal {
+    position: absolute; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--gold-soft); box-shadow: 0 0 0 0 rgba(232,199,126,.42);
+    animation: heroSignal 3.4s ease-out infinite;
+  }
+  .hero-signal.s1 { right: 23%; top: 25%; }
+  .hero-signal.s2 { right: 10%; top: 56%; animation-delay: 1.1s; }
+  .hero-signal.s3 { right: 38%; top: 72%; animation-delay: 2.2s; }
+  .hero-proof-chips {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px;
+    font-family: var(--mono); font-size: 11px; color: rgba(255,248,230,.88);
+  }
+  .hero-proof-chips span {
+    display: inline-flex; min-height: 32px; align-items: center; gap: 7px;
+    padding: 7px 10px; border: 1px solid rgba(255,248,230,.17); border-radius: 999px;
+    background: rgba(30,23,16,.32); backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    animation: heroChipFloat 4.6s ease-in-out infinite;
+  }
+  .hero-proof-chips span:nth-child(2) { animation-delay: -.9s; }
+  .hero-proof-chips span:nth-child(3) { animation-delay: -1.8s; }
+  .hero-proof-chips i { width: 5px; height: 5px; border-radius: 50%; background: var(--gold-soft); box-shadow: 0 0 8px rgba(232,199,126,.8); }
+  .hero .btn-primary { position: relative; overflow: hidden; isolation: isolate; }
+  .hero .btn-primary::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background: linear-gradient(110deg, transparent 20%, rgba(255,255,255,.3) 48%, transparent 72%);
+    transform: translateX(-120%); animation: heroCtaSweep 4.2s ease-in-out infinite;
+  }
+  @keyframes heroGlowBreathe { to { opacity: .62; transform: scale(1.08) translate3d(-1.5%,2%,0); } }
+  @keyframes heroMeshDrift { to { background-position: 68px 68px, 68px 68px; } }
+  @keyframes heroOrbit { to { transform: rotate(360deg); } }
+  @keyframes heroSignal { 0% { box-shadow: 0 0 0 0 rgba(232,199,126,.42); opacity: .9; } 75%,100% { box-shadow: 0 0 0 22px rgba(232,199,126,0); opacity: .2; } }
+  @keyframes heroChipFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  @keyframes heroCtaSweep { 0%,58% { transform: translateX(-120%); } 82%,100% { transform: translateX(120%); } }
+
+  /* ═══ FOOTER — conversion card, grouped navigation, progressive disclosure ═══ */
+  .footer-cta {
+    position: relative; padding: 108px 24px 34px !important; overflow: hidden;
+    background:
+      radial-gradient(circle at 8% 0%, rgba(190,79,40,.22), transparent 34rem),
+      radial-gradient(circle at 92% 22%, rgba(232,199,126,.12), transparent 28rem),
+      #18120d !important;
+    color: var(--cream); text-align: left !important;
+  }
+  .footer-noise {
+    position: absolute; inset: 0; pointer-events: none; opacity: .18;
+    background-image: radial-gradient(rgba(255,248,230,.35) .65px, transparent .65px);
+    background-size: 8px 8px;
+    mask-image: linear-gradient(to bottom, #000, transparent 78%);
+  }
+  .footer-shell { position: relative; width: min(1120px, 100%); margin: 0 auto; }
+  .footer-promo {
+    position: relative; min-height: 360px; overflow: hidden;
+    padding: clamp(32px, 6vw, 64px); border: 1px solid rgba(232,199,126,.26); border-radius: 30px;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,.055), transparent 55%),
+      linear-gradient(150deg, #2b2118, #21170f 68%);
+    box-shadow: 12px 14px 0 rgba(0,0,0,.26), 0 42px 90px -42px rgba(226,125,12,.42);
+  }
+  .footer-promo::before {
+    content: ""; position: absolute; width: 390px; height: 390px; right: -92px; top: -120px;
+    border: 1px solid rgba(232,199,126,.24); border-radius: 50%;
+    box-shadow: 0 0 0 44px rgba(232,199,126,.025), 0 0 0 88px rgba(232,199,126,.018);
+    animation: footerOrbit 24s linear infinite;
+  }
+  .footer-promo::after {
+    content: ""; position: absolute; right: 85px; top: 74px; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--gold-soft); box-shadow: 0 0 18px var(--gold-soft), 0 0 70px rgba(226,125,12,.55);
+    animation: footerPulse 3s ease-in-out infinite;
+  }
+  .footer-promo-copy { position: relative; z-index: 1; max-width: 680px; }
+  .footer-kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold-soft); }
+  .footer-cta .footer-title { margin: 14px 0 20px; font-size: clamp(42px, 7vw, 76px); line-height: .98; letter-spacing: -.05em; color: #fff; }
+  .footer-title em { color: var(--gold-soft); font-weight: 500; }
+  .footer-promo-copy > p { max-width: 560px; color: rgba(255,248,230,.67); font-size: 16px; line-height: 1.65; }
+  .footer-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+  .footer-actions .btn { min-height: 52px; justify-content: center; padding: 14px 21px; font-size: 14px; }
+  .footer-actions .btn-quiet { border: 1px solid rgba(255,248,230,.18); background: rgba(255,255,255,.04); color: var(--cream); }
+  .footer-proof { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 24px; color: rgba(255,248,230,.48); font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+  .footer-proof span { display: inline-flex; align-items: center; gap: 7px; }
+  .footer-proof span::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--gold-soft); }
+  .footer-directory {
+    display: grid; grid-template-columns: minmax(240px, 1.5fr) repeat(3, 1fr);
+    gap: 38px; padding: 70px 6px 46px;
+  }
+  .footer-brand { max-width: 280px; }
+  .footer-brand-row { display: flex; align-items: center; gap: 11px; font-family: var(--serif); font-size: 18px; font-weight: 700; color: #fff; }
+  .footer-brand-row img { width: 38px; height: 38px; border-radius: 11px; object-fit: cover; border: 1px solid rgba(232,199,126,.35); }
+  .footer-brand p { margin-top: 13px; color: rgba(255,248,230,.6); font-size: 13px; line-height: 1.6; }
+  .footer-nav-group h3 { margin: 3px 0 15px; color: rgba(255,248,230,.5); font-family: var(--mono); font-size: 10px; letter-spacing: .15em; text-transform: uppercase; }
+  .footer-nav-group a { display: flex; min-height: 38px; align-items: center; width: fit-content; color: rgba(255,248,230,.84); font-size: 13px; text-decoration: none; }
+  .footer-nav-group a:hover { color: var(--gold-soft); }
+  .footer-disclosure { border-top: 1px solid rgba(255,248,230,.1); border-bottom: 1px solid rgba(255,248,230,.1); }
+  .footer-disclosure summary {
+    display: flex; min-height: 64px; align-items: center; justify-content: space-between; gap: 16px;
+    cursor: pointer; list-style: none; color: rgba(255,248,230,.8); font-size: 13px; font-weight: 700;
+  }
+  .footer-disclosure summary::-webkit-details-marker { display: none; }
+  .footer-disclosure summary span { color: rgba(255,248,230,.52); font-family: var(--mono); font-size: 10px; font-weight: 400; letter-spacing: .08em; text-transform: uppercase; }
+  .footer-disclosure summary::after { content: "+"; margin-left: 12px; color: var(--gold-soft); font-size: 20px; font-weight: 400; }
+  .footer-disclosure[open] summary::after { content: "−"; }
+  .footer-disclosure-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; padding: 2px 0 28px; }
+  .footer-disclosure-grid p { color: rgba(255,248,230,.66); font-family: var(--mono); font-size: 11px; line-height: 1.75; }
+  .footer-disclosure-grid strong { display: block; margin-bottom: 6px; color: rgba(255,248,230,.76); font-family: var(--sans); font-size: 12px; }
+  .footer-disclosure-grid a { color: var(--gold-soft); text-decoration: underline; text-underline-offset: 3px; }
+  .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 20px; padding: 25px 0 0; color: rgba(255,248,230,.46); font-family: var(--mono); font-size: 10px; }
+  @keyframes footerOrbit { to { transform: rotate(360deg); } }
+  @keyframes footerPulse { 50% { transform: scale(.72); opacity: .55; } }
+
+  @media (max-width: 760px) {
+    .hero { min-height: 900px; }
+    .hero-content { padding: 16vh 20px 120px; max-width: 620px; }
+    .hero h1 { font-size: clamp(46px, 14vw, 64px); }
+    .hero-sub { font-size: 17px; }
+    .hero-orbit { width: 520px; right: -280px; top: 22%; opacity: .72; }
+    .hero-mesh { background-size: 46px 46px; }
+    .hero-proof-chips { gap: 6px; }
+    .hero-proof-chips span { animation-duration: 5.8s; }
+    .footer-cta { padding: 72px 16px 26px !important; }
+    .footer-promo { min-height: 0; padding: 30px 22px 32px; border-radius: 22px; }
+    .footer-promo::before { width: 270px; height: 270px; right: -170px; top: -100px; }
+    .footer-promo::after { right: 34px; top: 44px; }
+    .footer-cta .footer-title { font-size: clamp(39px, 12vw, 56px); }
+    .footer-promo-copy > p { font-size: 15px; }
+    .footer-actions { flex-direction: column; }
+    .footer-actions .btn { width: 100%; }
+    .footer-directory { grid-template-columns: 1fr 1fr; gap: 34px 18px; padding: 50px 2px 38px; }
+    .footer-brand { grid-column: 1 / -1; max-width: 100%; }
+    .footer-nav-group:last-child { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; }
+    .footer-nav-group:last-child h3 { grid-column: 1 / -1; }
+    .footer-disclosure summary { align-items: flex-start; flex-wrap: wrap; padding: 18px 0; }
+    .footer-disclosure summary span { width: calc(100% - 34px); }
+    .footer-disclosure-grid { grid-template-columns: 1fr; gap: 18px; }
+    .footer-disclosure-grid p { font-size: 12px; }
+    .footer-bottom { flex-direction: column; padding-top: 22px; }
+  }
+  @media (max-width: 420px) {
+    .hero-eyebrow { font-size: 10px; letter-spacing: .09em; }
+    .hero-ctas { flex-direction: column; }
+    .hero-ctas .btn { width: 100%; justify-content: center; min-height: 50px; }
+    .hero-proof-chips span { font-size: 10px; }
+    .footer-directory { grid-template-columns: 1fr 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-glow, .hero-mesh, .hero-orbit, .hero-signal, .hero-proof-chips span,
+    .hero .btn-primary::before, .footer-promo::before, .footer-promo::after { animation: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -1397,6 +1584,14 @@
     </div>
   </div>
   <div class="hero-petals" id="heroPetals" aria-hidden="true"></div>
+  <div class="hero-ambient" id="heroAmbient" aria-hidden="true">
+    <div class="hero-glow" id="heroGlow"></div>
+    <div class="hero-mesh"></div>
+    <div class="hero-orbit"></div>
+    <span class="hero-signal s1"></span>
+    <span class="hero-signal s2"></span>
+    <span class="hero-signal s3"></span>
+  </div>
 
   <div class="hero-content">
     <span class="hero-eyebrow"><span class="dot"></span>AI companionship · PetClaw Protocol live</span>
@@ -1415,6 +1610,11 @@
     </div>
     <div style="margin-top:14px;font-family:var(--mono);font-size:15px;letter-spacing:0.02em;color:rgba(255,248,230,0.68);">
       Connect wallet → adopt in 30 seconds · No gas required
+    </div>
+    <div class="hero-proof-chips" aria-label="Product capabilities">
+      <span><i></i>Persistent memory</span>
+      <span><i></i>Portable identity</span>
+      <span><i></i>Web · Chrome · MCP</span>
     </div>
   </div>
 
@@ -1503,7 +1703,9 @@
       function playDemo(el){
         if(el.dataset.on) return; el.dataset.on='1';
         var f=document.createElement('iframe');
-        f.src='product-demo.html'; f.title='MY AI PET launch demo'; f.loading='eager';
+        // Rotate the cache key once for mobile browsers that received the
+        // legacy seven-day HTML policy. New responses always revalidate.
+        f.src='product-demo.html?v=20260720-en-only'; f.title='MY AI PET launch demo'; f.loading='eager';
         f.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:inherit;display:block;';
         el.setAttribute('role','group'); el.removeAttribute('tabindex');
         el.innerHTML=''; el.appendChild(f);
@@ -2126,50 +2328,75 @@
 </section>
 
 <!-- SECTION 8: FOOTER CTA -->
-<footer class="footer-cta" id="adopt" data-screen-label="09 Footer" style="background:linear-gradient(180deg, #2A2118 0%, #1E1710 30%, #1E1710 100%); padding: 120px 32px 60px; text-align:center;">
-  <h2 style="font-size:clamp(40px,6vw,72px); line-height:1.05; margin-bottom:40px; color:#fff;">Your AI companion<br/><span style="color:var(--gold-soft); font-style:italic;">is waiting.</span></h2>
-  <a href="https://app.myaipet.ai" class="btn btn-primary" style="font-size:18px; padding:18px 40px; display:inline-flex; box-shadow:4px 5px 0 rgba(33,26,18,0.85); border:1px solid var(--foil-deep);">Adopt your pet &nbsp;→</a>
+<footer class="footer-cta" id="adopt" data-screen-label="09 Footer">
+  <div class="footer-noise" aria-hidden="true"></div>
+  <div class="footer-shell">
+    <section class="footer-promo" aria-labelledby="footer-title">
+      <div class="footer-promo-copy">
+        <span class="footer-kicker">Ready when you are · No gas required</span>
+        <h2 class="footer-title" id="footer-title">Meet the AI that<br/><em>grows with you.</em></h2>
+        <p>Adopt in about 30 seconds. Your companion keeps one portable identity across the web, Chrome, and MCP clients.</p>
+        <div class="footer-actions">
+          <a href="https://app.myaipet.ai" class="btn btn-primary">Adopt your pet <span aria-hidden="true">→</span></a>
+          <a href="https://app.myaipet.ai/?section=sovereignty#petclaw-extension" class="btn btn-quiet">Get the Chrome extension <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="footer-proof" aria-label="Product assurances">
+          <span>Wallet sign-in</span>
+          <span>Portable export</span>
+          <span>No token</span>
+        </div>
+      </div>
+    </section>
 
-  <div style="margin-top:60px; display:flex; justify-content:center; gap:32px; flex-wrap:wrap;">
-    <a href="https://www.npmjs.com/package/@myaipet/petclaw-sdk" style="font-family:var(--mono); font-size:13px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">npm</a>
-    <a href="https://app.myaipet.ai/?section=sovereignty#petclaw-extension" style="font-family:var(--mono); font-size:13px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">Chrome Extension Setup</a>
-    <a href="https://x.com/myaipets" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:13px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">X / Twitter</a>
-    <a href="https://t.me/myaipets" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono); font-size:13px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">Telegram</a>
-    <a href="https://app.myaipet.ai/api-docs" style="font-family:var(--mono); font-size:13px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); transition:color .2s;" onmouseover="this.style.color='#e8c77e'" onmouseout="this.style.color=''">API Docs</a>
-  </div>
+    <div class="footer-directory">
+      <div class="footer-brand">
+        <div class="footer-brand-row">
+          <img src="hero-mascot.jpg" alt="" />
+          <span>MY AI PET</span>
+        </div>
+        <p>A portable AI companion that remembers, grows, and stays yours.</p>
+      </div>
 
-  <!-- Legal & Protocol links -->
-  <div style="margin-top:40px; display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
-    <a href="https://app.myaipet.ai/stats" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Live Stats</a>
-    <a href="https://app.myaipet.ai/terms" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Terms of Service</a>
-    <a href="https://app.myaipet.ai/privacy" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Privacy Policy</a>
-    <a href="https://app.myaipet.ai/contracts" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Contracts</a>
-    <a href="https://app.myaipet.ai/api-docs" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Docs</a>
-    <a href="https://app.myaipet.ai/architecture" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Architecture</a>
-    <a href="https://app.myaipet.ai/.well-known/pet-card.json" style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.45); text-decoration:none;">Protocol Spec</a>
-  </div>
+      <nav class="footer-nav-group" aria-label="Product links">
+        <h3>Product</h3>
+        <a href="https://app.myaipet.ai">Launch app</a>
+        <a href="https://app.myaipet.ai/?section=sovereignty#petclaw-extension">Chrome setup</a>
+        <a href="https://app.myaipet.ai/stats">Live stats</a>
+      </nav>
 
-  <!-- On-chain info -->
-  <div style="margin-top:20px; text-align:center;">
-    <span style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.3);">
-      BNB Smart Chain · 2 Deployed · App integration off · Contracts returned paused() = false at 2026-07-18 review · External audit planned · See <a href="https://app.myaipet.ai/contracts" style="color:rgba(255,255,255,0.4); text-decoration:underline;">/contracts</a> for status
-    </span>
-  </div>
+      <nav class="footer-nav-group" aria-label="Developer links">
+        <h3>Build</h3>
+        <a href="https://www.npmjs.com/package/@myaipet/petclaw-sdk" target="_blank" rel="noopener noreferrer">npm SDK ↗</a>
+        <a href="https://app.myaipet.ai/api-docs">API docs</a>
+        <a href="https://app.myaipet.ai/architecture">Architecture</a>
+        <a href="https://app.myaipet.ai/.well-known/pet-card.json">Protocol spec</a>
+      </nav>
 
-  <!-- Token disclaimer -->
-  <div style="margin-top:14px; max-width:680px; margin-left:auto; margin-right:auto; text-align:center;">
-    <span style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.22); line-height:1.6;">
-      Engagement points are non-financial recognition — no token is issued, points have no cash value and no redemption or conversion path, now or planned. Nothing on this site constitutes financial advice or an offer of securities.
-    </span>
-  </div>
-
-  <div style="margin-top:30px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; max-width:800px; margin-left:auto; margin-right:auto; flex-wrap:wrap; gap:16px;">
-    <span style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.3);">PetClaw Protocol v1 · 2026</span>
-    <div style="display:flex; align-items:center; gap:8px;">
-      <img src="hero-mascot.jpg" alt="" style="width:28px; height:28px; border-radius:8px; object-fit:cover; border:2px solid rgba(226,125,12,0.3);" />
-      <span style="font-family:var(--serif); font-size:13px; font-weight:600; color:#fff;">MY AI PET</span>
+      <nav class="footer-nav-group" aria-label="Company and legal links">
+        <h3>Company</h3>
+        <a href="https://x.com/myaipets" target="_blank" rel="noopener noreferrer">X / Twitter ↗</a>
+        <a href="https://t.me/myaipets" target="_blank" rel="noopener noreferrer">Telegram ↗</a>
+        <a href="https://app.myaipet.ai/contracts">Contracts</a>
+        <a href="https://app.myaipet.ai/terms">Terms</a>
+        <a href="https://app.myaipet.ai/privacy">Privacy</a>
+      </nav>
     </div>
-    <span style="font-family:var(--mono); font-size:13px; color:rgba(255,255,255,0.3); font-style:italic;">Made with care, not hype.</span>
+
+    <details class="footer-disclosure">
+      <summary>
+        Protocol, network &amp; legal status
+        <span>Transparent details · Tap to expand</span>
+      </summary>
+      <div class="footer-disclosure-grid">
+        <p><strong>Network status</strong>Two legacy BNB Smart Chain contracts are deployed. Live app integration is off. Both contracts returned <code>paused() = false</code> at the July 18, 2026 review. An external audit is planned. See <a href="https://app.myaipet.ai/contracts">contract status</a>.</p>
+        <p><strong>Points disclosure</strong>Engagement points are non-financial recognition. No token is issued; points have no cash value or redemption path. Nothing on this site is financial advice or an offer of securities.</p>
+      </div>
+    </details>
+
+    <div class="footer-bottom">
+      <span>© 2026 MY AI PET · PetClaw Protocol v1</span>
+      <span>Made with care, not hype.</span>
+    </div>
   </div>
 </footer>
 
@@ -2394,6 +2621,8 @@ function onScroll() {
       const mx = Math.min(y * 0.4, 280);
       mascot.style.transform = `translateX(calc(-50% + ${mx}px))`;
     }
+    const ambient = document.getElementById('heroAmbient');
+    if (ambient) ambient.style.transform = `translate3d(0, ${Math.min(y * 0.055, 52)}px, 0)`;
     // petals parallax
     document.getElementById('heroPetals').style.transform = `translateY(${y * 0.1}px)`;
   }
@@ -2427,6 +2656,23 @@ function spawnPetals() {
   }
 }
 spawnPetals();
+
+// CSS-first hero glow follows a pointer on desktop and gently recenters after.
+// Mobile still gets the breathing glow, orbit, signals, and floating capability chips.
+(() => {
+  const hero = document.querySelector('.hero');
+  const glow = document.getElementById('heroGlow');
+  if (!hero || !glow || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  hero.addEventListener('pointermove', (event) => {
+    const rect = hero.getBoundingClientRect();
+    glow.style.setProperty('--gx', `${((event.clientX - rect.left) / rect.width) * 100}%`);
+    glow.style.setProperty('--gy', `${((event.clientY - rect.top) / rect.height) * 100}%`);
+  }, { passive: true });
+  hero.addEventListener('pointerleave', () => {
+    glow.style.setProperty('--gx', '72%');
+    glow.style.setProperty('--gy', '30%');
+  }, { passive: true });
+})();
 
 // ---------- DIFF CARD REVEAL ----------
 const io = new IntersectionObserver((entries) => {
@@ -2696,7 +2942,7 @@ function persist() {
 
   const pet = document.createElement('div');
   pet.id = 'landing-pet';
-  pet.style.cssText = 'position:fixed;bottom:12px;z-index:9999;cursor:pointer;user-select:none;transition:opacity .25s;';
+  pet.style.cssText = 'position:fixed;bottom:12px;z-index:9999;cursor:pointer;user-select:none;transition:opacity .22s ease;';
 
   const sprite = document.createElement('img');
   sprite.src = 'mascot-original.jpg';
@@ -2788,14 +3034,18 @@ function persist() {
   setInterval(() => {
     stateTimer++;
 
-    // Mobile collision-avoidance: yield to the docked journey step-pill so the
-    // sticker never overlaps the step-04 card / progress bar on small screens.
-    if (window.innerWidth <= 640) {
-      const jp = document.getElementById('journeyPill');
-      pet.style.display = (jp && jp.classList.contains('show')) ? 'none' : '';
-    } else if (pet.style.display === 'none') {
-      pet.style.display = '';
-    }
+    // Collision avoidance: the playful pet yields to journey navigation on
+    // phones and to the conversion footer on every viewport.
+    const jp = document.getElementById('journeyPill');
+    const footer = document.getElementById('adopt');
+    const footerRect = footer && footer.getBoundingClientRect();
+    const footerVisible = !!footerRect && footerRect.top < window.innerHeight && footerRect.bottom > 0;
+    const journeyDocked = window.innerWidth <= 640 && jp && jp.classList.contains('show');
+    const petShouldYield = footerVisible || journeyDocked;
+    pet.style.opacity = petShouldYield ? '0' : '1';
+    pet.style.pointerEvents = petShouldYield ? 'none' : 'auto';
+    pawContainer.style.opacity = petShouldYield ? '0' : '1';
+    if (petShouldYield) bubble.style.display = 'none';
 
     // CTA collision-avoidance: while the roaming sticker overlaps the hero
     // CTAs it turns see-through and click-through, so "Get started" is never
@@ -2807,8 +3057,9 @@ function persist() {
       const hit = cr.bottom > 0 && cr.top < window.innerHeight &&
                   pr.right > cr.left - 8 && pr.left < cr.right + 8 &&
                   pr.bottom > cr.top - 8 && pr.top < cr.bottom + 8;
-      pet.style.pointerEvents = hit ? 'none' : '';
-      pet.style.opacity = hit ? '0.4' : '1';
+      // Sparky priority: footer/journey beats CTA overlap.
+      pet.style.pointerEvents = (petShouldYield || hit) ? 'none' : 'auto';
+      pet.style.opacity = petShouldYield ? '0' : (hit ? '0.4' : '1');
     }
 
     if (state === 'walk') {
@@ -2946,7 +3197,7 @@ function persist() {
   tag('.card, .feature, .proto-card, .proto-col, .right', 'alt');
   tag('.stat, .browser-card', 'pop');
   tag('.gallery-item', 'pop');
-  tag('.footer-cta', 'pop');
+  tag('.footer-promo, .footer-nav-group, .footer-disclosure', 'up');
 
   function reveal(el){
     var dir = el.getAttribute('data-reveal') || 'up';

@@ -122,6 +122,90 @@ if grep -Eq '(^|[|[:space:]])strings[[:space:]]' \
 fi
 PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
 
+PETCLAW_LANGUAGE_FIXTURE="${PETCLAW_TEST_TMP}/language-release"
+mkdir -p "${PETCLAW_LANGUAGE_FIXTURE}/landing-assets" \
+  "${PETCLAW_LANGUAGE_FIXTURE}/web/src" \
+  "${PETCLAW_LANGUAGE_FIXTURE}/web/public"
+printf '%s\n' '<html lang="en">English landing</html>' \
+  > "${PETCLAW_LANGUAGE_FIXTURE}/landing-assets/index.html"
+printf '%s\n' 'export const greeting = "hello";' \
+  > "${PETCLAW_LANGUAGE_FIXTURE}/web/src/greeting.ts"
+printf '%s\n' 'English public documentation' \
+  > "${PETCLAW_LANGUAGE_FIXTURE}/web/public/readme.txt"
+# This real JPEG contains byte sequences that lossy UTF-8 decoding can mistake
+# for a Hangul code point. Binary media must not create a false deployment stop.
+cp "${PETCLAW_TEST_ROOT}/landing-assets/hero-mascot.jpg" \
+  "${PETCLAW_LANGUAGE_FIXTURE}/landing-assets/hero-mascot.jpg"
+petclaw_expect_success "English source and binary media pass language scan" \
+  node "${PETCLAW_TEST_ROOT}/deploy/scan-release-language.mjs" \
+    source "${PETCLAW_LANGUAGE_FIXTURE}"
+node -e 'require("node:fs").writeFileSync(process.argv[1], "\uAC00")' \
+  "${PETCLAW_LANGUAGE_FIXTURE}/web/src/hangul.ts"
+petclaw_expect_failure "Hangul syllable in app source fails language scan" \
+  node "${PETCLAW_TEST_ROOT}/deploy/scan-release-language.mjs" \
+    source "${PETCLAW_LANGUAGE_FIXTURE}"
+rm -f "${PETCLAW_LANGUAGE_FIXTURE}/web/src/hangul.ts"
+node -e 'require("node:fs").writeFileSync(process.argv[1], "\u1100")' \
+  "${PETCLAW_LANGUAGE_FIXTURE}/web/public/jamo.txt"
+petclaw_expect_failure "Hangul Jamo in public text fails language scan" \
+  node "${PETCLAW_TEST_ROOT}/deploy/scan-release-language.mjs" \
+    source "${PETCLAW_LANGUAGE_FIXTURE}"
+rm -f "${PETCLAW_LANGUAGE_FIXTURE}/web/public/jamo.txt"
+mkdir -p "${PETCLAW_TEST_TMP}/language-zip"
+node -e 'require("node:fs").writeFileSync(process.argv[1], "archive \uD7B0")' \
+  "${PETCLAW_TEST_TMP}/language-zip/content.txt"
+(cd "${PETCLAW_TEST_TMP}/language-zip" \
+  && zip -q "${PETCLAW_LANGUAGE_FIXTURE}/web/public/language.zip" content.txt)
+petclaw_expect_failure "Hangul Jamo inside public ZIP fails language scan" \
+  node "${PETCLAW_TEST_ROOT}/deploy/scan-release-language.mjs" \
+    source "${PETCLAW_LANGUAGE_FIXTURE}"
+rm -f "${PETCLAW_LANGUAGE_FIXTURE}/web/public/language.zip"
+petclaw_expect_failure "missing build trees fail built language scan" \
+  node "${PETCLAW_TEST_ROOT}/deploy/scan-release-language.mjs" \
+    built "${PETCLAW_LANGUAGE_FIXTURE}"
+mkdir -p "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/static" \
+  "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/server" \
+  "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/standalone"
+printf '%s\n' 'console.log("English static bundle")' \
+  > "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/static/app.js"
+printf '%s\n' 'module.exports = "English server bundle";' \
+  > "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/server/app.js"
+printf '%s\n' 'require("./server/app.js")' \
+  > "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/standalone/server.js"
+petclaw_expect_success "English source, static, and server bundles pass language scan" \
+  node "${PETCLAW_TEST_ROOT}/deploy/scan-release-language.mjs" \
+    built "${PETCLAW_LANGUAGE_FIXTURE}"
+node -e 'require("node:fs").writeFileSync(process.argv[1], "\u3131")' \
+  "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/static/bad.js"
+petclaw_expect_failure "compatibility Jamo in static bundle fails language scan" \
+  node "${PETCLAW_TEST_ROOT}/deploy/scan-release-language.mjs" \
+    built "${PETCLAW_LANGUAGE_FIXTURE}"
+rm -f "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/static/bad.js"
+node -e 'require("node:fs").writeFileSync(process.argv[1], "\uA960")' \
+  "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/server/bad.js"
+petclaw_expect_failure "extended Jamo in server bundle fails language scan" \
+  node "${PETCLAW_TEST_ROOT}/deploy/scan-release-language.mjs" \
+    built "${PETCLAW_LANGUAGE_FIXTURE}"
+rm -f "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/server/bad.js"
+mkdir -p "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/standalone/node_modules/example" \
+  "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/standalone/.next/node_modules"
+printf '%s\n' 'module.exports = "English package";' \
+  > "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/standalone/node_modules/example/index.js"
+ln -s ../../node_modules/example \
+  "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/standalone/.next/node_modules/example-build-id"
+petclaw_expect_success "in-artifact Next.js package symlink passes language scan" \
+  node "${PETCLAW_TEST_ROOT}/deploy/scan-release-language.mjs" \
+    built "${PETCLAW_LANGUAGE_FIXTURE}"
+rm -f "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/standalone/.next/node_modules/example-build-id"
+mkdir -p "${PETCLAW_TEST_TMP}/outside-standalone"
+printf '%s\n' 'outside' > "${PETCLAW_TEST_TMP}/outside-standalone/file.txt"
+ln -s "${PETCLAW_TEST_TMP}/outside-standalone" \
+  "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/standalone/.next/node_modules/escape"
+petclaw_expect_failure "standalone symlink escape fails language scan" \
+  node "${PETCLAW_TEST_ROOT}/deploy/scan-release-language.mjs" \
+    built "${PETCLAW_LANGUAGE_FIXTURE}"
+rm -f "${PETCLAW_LANGUAGE_FIXTURE}/web/.next/standalone/.next/node_modules/escape"
+
 petclaw_expect_success "all release scripts parse" /bin/bash -n \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" \
   "${PETCLAW_TEST_ROOT}/deploy/release-rollback-watchdog.sh" \
@@ -156,7 +240,7 @@ if (ordered.some((index) => index < 0)
 }
 NODE
 
-petclaw_expect_success "nginx frame and release-header trust boundaries pass" \
+petclaw_expect_success "nginx frame, cache, language, and release-header trust boundaries pass" \
   node - "${PETCLAW_TEST_ROOT}/deploy/nginx-petclaw.conf.template" <<'NODE'
 const fs = require("node:fs");
 const source = fs.readFileSync(process.argv[2], "utf8");
@@ -165,6 +249,14 @@ const locationBlocks = [...source.matchAll(/location\s+(?:=\s+\/product-demo\.ht
 const demo = locationBlocks.filter(({ declaration }) => declaration === "location = /product-demo.html");
 const staticAssets = locationBlocks.filter(({ declaration }) => declaration === "location /_next/static/");
 const proxied = locationBlocks.filter(({ body }) => body.includes("proxy_pass "));
+const exactBlock = (uri) => [...source.matchAll(new RegExp(`location\\s+=\\s+${uri}\\s*\\{([^{}]*)\\}`, "g"))]
+  .map((match) => match[1]);
+const prefixBlock = (uri) => [...source.matchAll(new RegExp(`location\\s+${uri}\\s*\\{([^{}]*)\\}`, "g"))]
+  .map((match) => match[1]);
+const compatLanding = exactBlock("\\/landing\\/");
+const compatIndex = exactBlock("\\/landing\\/index\\.html");
+const compatDemo = exactBlock("\\/landing\\/product-demo\\.html");
+const compatMedia = prefixBlock("\\/landing\\/");
 const exactDemoContracts = [
   'alias __CURRENT_ROOT__/landing-assets/product-demo.html;',
   'add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;',
@@ -188,6 +280,22 @@ if (proxied.length !== 2
 if (staticAssets.length !== 1
   || countIn(staticAssets[0].body, 'add_header X-Petclaw-Release "__RELEASE_ID__" always;') !== 1
   || count('add_header X-Petclaw-Release "__RELEASE_ID__" always;') !== 2) process.exit(1);
+if (compatLanding.length !== 1
+  || !compatLanding[0].includes("alias __CURRENT_ROOT__/landing-assets/;")
+  || !compatLanding[0].includes("index index.html;")
+  || !compatLanding[0].includes("expires -1;")
+  || compatLanding[0].includes("landing-assets/index.html")) process.exit(1);
+if (compatIndex.length !== 1
+  || !compatIndex[0].includes("alias __CURRENT_ROOT__/landing-assets/index.html;")
+  || !compatIndex[0].includes("expires -1;")) process.exit(1);
+if (compatDemo.length !== 1
+  || !compatDemo[0].includes("alias __CURRENT_ROOT__/landing-assets/product-demo.html;")
+  || !compatDemo[0].includes("expires -1;")) process.exit(1);
+if (compatMedia.length !== 1
+  || !compatMedia[0].includes("alias __CURRENT_ROOT__/landing-assets/;")
+  || !compatMedia[0].includes("expires 7d;")) process.exit(1);
+if (!source.includes("map $sent_http_content_type $petclaw_content_language")
+  || count("add_header Content-Language $petclaw_content_language always;") !== 3) process.exit(1);
 function countIn(haystack, needle) {
   return haystack.split(needle).length - 1;
 }
@@ -238,6 +346,7 @@ for PETCLAW_CONTRACT in \
   'ec2-release.sh:-perm /007' \
   'ec2-release.sh:REFERRALS_ENABLED' \
   'ec2-release.sh:npm run test:ui-contract' \
+  'ec2-release.sh:node "${PETCLAW_RELEASE_SOURCE}/deploy/scan-release-language.mjs"' \
   'ec2-release.sh:/bin/bash "${PETCLAW_RELEASE_SOURCE}/deploy/release-smoke.sh"' \
   'ec2-release.sh:"${PETCLAW_RELEASE_SOURCE}/deploy/release-boot-guard.sh"' \
   'ec2-release.sh:"${PETCLAW_RELEASE_SOURCE}/deploy/petclaw-release-boot-guard.service"' \
@@ -251,12 +360,15 @@ for PETCLAW_CONTRACT in \
   'release-smoke.sh:expect_env_exact AGENT_CHANNELS_ENABLED false' \
   'release-smoke.sh:expect_env_exact PET_LORA_ENABLED false' \
   'release-smoke.sh:expect_env_exact BLOCKCHAIN_ENABLED false' \
+  'release-smoke.sh:PETCLAW_EXPECTED_EXTENSION_VERSION="2.3.3"' \
+  'release-smoke.sh:built "${PETCLAW_RELEASE_ROOT}"' \
   'release-boot-guard.sh:--ensure-lock' \
   'release-boot-guard.sh:stale boot rollback intent refused' \
   'build-release-artifact.sh:--detach-sign' \
   'build-release-artifact.sh:PETCLAW_REQUIRED_NODE_MIN_MINOR=18' \
   'build-release-artifact.sh:npm_config_engine_strict=true' \
   'build-release-artifact.sh:npm ci --dry-run --ignore-scripts --no-audit --no-fund' \
+  'build-release-artifact.sh:source "${PETCLAW_STAGE}/tree"' \
   'build-release-artifact.sh::(exclude)deploy/setup-rds.sh' \
   'verify-release-artifact.sh:PETCLAW_TRUSTED_VERIFIER' \
   'verify-release-artifact.sh:PETCLAW_VERIFIED_DIR="/opt/petclaw/verified"' \
@@ -364,18 +476,21 @@ awk '/^petclaw_verify_landing_body\(\) \{/{copy=1} copy{print} copy && /^\}$/{ex
   "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" > "${PETCLAW_LANDING_FUNCTION}"
 # shellcheck source=/dev/null
 source "${PETCLAW_LANDING_FUNCTION}"
+petclaw_valid_landing_fixture() {
+  printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" /api/petclaw/demo-chat 19 CONNECTORS · 18 SKILLS · 6 LIVE Two legacy BNB Smart Chain contracts are deployed. Live app integration is off. Both contracts returned <code>paused() = false</code> class="footer-disclosure" product-demo.html?v=20260720-en-only launch reel — starts as you scroll animation: heroGlowBreathe Sparky priority: footer/journey beats CTA overlap. href="https://app.myaipet.ai/contracts"'
+}
 if ! {
-  printf '%s' '/api/petclaw/demo-chat ON-CHAIN · INTEGRATION OFF'
+  petclaw_valid_landing_fixture
   awk 'BEGIN { for (i = 0; i < 200000; i += 1) printf "x" }'
 } | petclaw_verify_landing_body; then
   echo "FAIL: landing verifier cannot stream a body above Linux single-argument limits" >&2
   exit 1
 fi
-if printf '%s' '/api/petclaw/demo-chat ON-CHAIN · INTEGRATION OFF Hangul: 한' | petclaw_verify_landing_body; then
+if { petclaw_valid_landing_fixture; printf '%b' ' Hangul: \355\225\234'; } | petclaw_verify_landing_body; then
   echo "FAIL: streaming landing verifier accepts Hangul" >&2
   exit 1
 fi
-if printf '%s' 'ON-CHAIN · INTEGRATION OFF English landing without the demo endpoint' | petclaw_verify_landing_body; then
+if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" 19 CONNECTORS · 18 SKILLS · 6 LIVE Two legacy BNB Smart Chain contracts are deployed. Live app integration is off. Both contracts returned <code>paused() = false</code> class="footer-disclosure" product-demo.html?v=20260720-en-only launch reel — starts as you scroll animation: heroGlowBreathe Sparky priority: footer/journey beats CTA overlap. href="https://app.myaipet.ai/contracts"' | petclaw_verify_landing_body; then
   echo "FAIL: streaming landing verifier accepts a missing demo endpoint" >&2
   exit 1
 fi
@@ -394,6 +509,43 @@ if ! grep -Fq '|| "${PETCLAW_LANDING_CODE}" != "200" ]]' \
   echo "FAIL: landing body verification is not preceded by an exact HTTP 200 gate" >&2
   exit 1
 fi
+
+PETCLAW_APP_LANGUAGE_FUNCTION="${PETCLAW_TEST_TMP}/app-language-function.sh"
+awk '/^petclaw_verify_no_hangul_body\(\) \{/{copy=1} copy{print} copy && /^\}$/{exit}' \
+  "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" > "${PETCLAW_APP_LANGUAGE_FUNCTION}"
+# shellcheck source=/dev/null
+source "${PETCLAW_APP_LANGUAGE_FUNCTION}"
+if ! printf '%s' '<html lang="en">English app</html>' | petclaw_verify_no_hangul_body; then
+  echo "FAIL: app language verifier rejects English HTML" >&2
+  exit 1
+fi
+if node -e 'process.stdout.write("app \u1100")' | petclaw_verify_no_hangul_body; then
+  echo "FAIL: app language verifier accepts Hangul Jamo" >&2
+  exit 1
+fi
+if ! grep -Fq 'petclaw_verify_no_hangul_body < "${PETCLAW_SMOKE_BODY}"' \
+  "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh"; then
+  echo "FAIL: release smoke does not scan served app HTML" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 3))"
+
+PETCLAW_PRODUCT_DEMO_FUNCTION="${PETCLAW_TEST_TMP}/product-demo-body-function.sh"
+awk '/^petclaw_verify_product_demo_body\(\) \{/{copy=1} copy{print} copy && /^\}$/{exit}' \
+  "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" > "${PETCLAW_PRODUCT_DEMO_FUNCTION}"
+# shellcheck source=/dev/null
+source "${PETCLAW_PRODUCT_DEMO_FUNCTION}"
+PETCLAW_GOOD_PRODUCT_DEMO='<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" id="playBtn" id="replayBtn" position:absolute; left:50%; top:50%; width:1280px; height:720px transform:translate(-50%,-50%) scale(var(--s,1))'
+if ! printf '%s' "${PETCLAW_GOOD_PRODUCT_DEMO}" | petclaw_verify_product_demo_body; then
+  echo "FAIL: centered mobile product demo fixture is rejected" >&2
+  exit 1
+fi
+if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" id="playBtn" id="replayBtn" transform:scale(var(--s,1))' \
+  | petclaw_verify_product_demo_body; then
+  echo "FAIL: off-canvas mobile product demo fixture is accepted" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 2))"
 
 PETCLAW_CONTRACT_DISCLOSURE_FUNCTION="${PETCLAW_TEST_TMP}/contract-disclosure-function.sh"
 awk '/^petclaw_verify_contract_disclosure\(\) \{/{copy=1} copy{print} copy && /^\}$/{exit}' \
@@ -456,7 +608,7 @@ PETCLAW_SMOKE_HOST=127.0.0.1
 PETCLAW_SMOKE_BODY="${PETCLAW_TEST_TMP}/partial-landing"
 PETCLAW_SMOKE_HEADERS="${PETCLAW_TEST_TMP}/partial-landing-headers"
 curl() {
-  printf '%s' '/api/petclaw/demo-chat ON-CHAIN · INTEGRATION OFF' > "${PETCLAW_SMOKE_BODY}"
+  petclaw_valid_landing_fixture > "${PETCLAW_SMOKE_BODY}"
   printf '%s' '200'
   return 18
 }
@@ -641,6 +793,31 @@ if [[ ! "${PETCLAW_CLEAN_INSTALL_LINE}" =~ ^[0-9]+$ \
   exit 1
 fi
 PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
+
+PETCLAW_SOURCE_LANGUAGE_SCAN_LINE="$(grep -nF \
+  'node "${PETCLAW_STAGE}/tree/deploy/scan-release-language.mjs"' \
+  "${PETCLAW_TEST_ROOT}/deploy/build-release-artifact.sh" | cut -d: -f1)"
+if [[ ! "${PETCLAW_SOURCE_LANGUAGE_SCAN_LINE}" =~ ^[0-9]+$ \
+  || "${PETCLAW_SOURCE_LANGUAGE_SCAN_LINE}" -ge "${PETCLAW_ARTIFACT_WRITE_LINE}" ]]; then
+  echo "FAIL: source language scan does not precede signed artifact creation" >&2
+  exit 1
+fi
+PETCLAW_BUILD_LINE="$(grep -nF 'npm run build' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | head -n 1 | cut -d: -f1)"
+PETCLAW_BUILT_LANGUAGE_SCAN_LINE="$(grep -nF \
+  'node "${PETCLAW_RELEASE_SOURCE}/deploy/scan-release-language.mjs"' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | cut -d: -f1)"
+PETCLAW_TRAFFIC_SWITCH_LINE="$(grep -nF 'PETCLAW_SWITCH_STARTED=1' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | tail -n 1 | cut -d: -f1)"
+if [[ ! "${PETCLAW_BUILD_LINE}" =~ ^[0-9]+$ \
+  || ! "${PETCLAW_BUILT_LANGUAGE_SCAN_LINE}" =~ ^[0-9]+$ \
+  || ! "${PETCLAW_TRAFFIC_SWITCH_LINE}" =~ ^[0-9]+$ \
+  || "${PETCLAW_BUILD_LINE}" -ge "${PETCLAW_BUILT_LANGUAGE_SCAN_LINE}" \
+  || "${PETCLAW_BUILT_LANGUAGE_SCAN_LINE}" -ge "${PETCLAW_TRAFFIC_SWITCH_LINE}" ]]; then
+  echo "FAIL: built language scan is not between production build and traffic switch" >&2
+  exit 1
+fi
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 2))"
 
 PETCLAW_BOOT_LOCK_LINE="$(grep -nF 'petclaw_ensure_lock' \
   "${PETCLAW_TEST_ROOT}/deploy/release-boot-guard.sh" | tail -n 1 | cut -d: -f1)"
