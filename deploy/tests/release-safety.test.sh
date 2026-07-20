@@ -452,18 +452,21 @@ awk '/^petclaw_verify_landing_body\(\) \{/{copy=1} copy{print} copy && /^\}$/{ex
   "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" > "${PETCLAW_LANDING_FUNCTION}"
 # shellcheck source=/dev/null
 source "${PETCLAW_LANDING_FUNCTION}"
+petclaw_valid_landing_fixture() {
+  printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" /api/petclaw/demo-chat 19 CONNECTORS · 18 SKILLS · 6 LIVE BNB Smart Chain · 2 Deployed · App integration off Contracts returned paused() = false at 2026-07-18 review product-demo.html?v=20260720-en-only href="https://app.myaipet.ai/contracts"'
+}
 if ! {
-  printf '%s' '/api/petclaw/demo-chat ON-CHAIN · INTEGRATION OFF'
+  petclaw_valid_landing_fixture
   awk 'BEGIN { for (i = 0; i < 200000; i += 1) printf "x" }'
 } | petclaw_verify_landing_body; then
   echo "FAIL: landing verifier cannot stream a body above Linux single-argument limits" >&2
   exit 1
 fi
-if printf '%b' '/api/petclaw/demo-chat ON-CHAIN · INTEGRATION OFF Hangul: \355\225\234' | petclaw_verify_landing_body; then
+if { petclaw_valid_landing_fixture; printf '%b' ' Hangul: \355\225\234'; } | petclaw_verify_landing_body; then
   echo "FAIL: streaming landing verifier accepts Hangul" >&2
   exit 1
 fi
-if printf '%s' 'ON-CHAIN · INTEGRATION OFF English landing without the demo endpoint' | petclaw_verify_landing_body; then
+if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" 19 CONNECTORS · 18 SKILLS · 6 LIVE BNB Smart Chain · 2 Deployed · App integration off Contracts returned paused() = false at 2026-07-18 review product-demo.html?v=20260720-en-only href="https://app.myaipet.ai/contracts"' | petclaw_verify_landing_body; then
   echo "FAIL: streaming landing verifier accepts a missing demo endpoint" >&2
   exit 1
 fi
@@ -564,7 +567,7 @@ PETCLAW_SMOKE_HOST=127.0.0.1
 PETCLAW_SMOKE_BODY="${PETCLAW_TEST_TMP}/partial-landing"
 PETCLAW_SMOKE_HEADERS="${PETCLAW_TEST_TMP}/partial-landing-headers"
 curl() {
-  printf '%s' '/api/petclaw/demo-chat ON-CHAIN · INTEGRATION OFF' > "${PETCLAW_SMOKE_BODY}"
+  petclaw_valid_landing_fixture > "${PETCLAW_SMOKE_BODY}"
   printf '%s' '200'
   return 18
 }

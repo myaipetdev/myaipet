@@ -8,6 +8,7 @@ PETCLAW_SMOKE_PORT="${PETCLAW_SMOKE_PORT:-443}"
 PETCLAW_EXPECTED_RELEASE_ID="${PETCLAW_EXPECTED_RELEASE_ID:-}"
 PETCLAW_RELEASE_ROOT="${PETCLAW_RELEASE_ROOT:-}"
 PETCLAW_EXPECTED_EXTENSION_VERSION="2.3.3"
+PETCLAW_EXPECTED_LANDING_REVISION="20260720-en-only"
 PETCLAW_SMOKE_BODY="$(mktemp)"
 PETCLAW_SMOKE_HEADERS="$(mktemp)"
 trap 'rm -f "${PETCLAW_SMOKE_BODY}" "${PETCLAW_SMOKE_HEADERS}"' EXIT
@@ -123,18 +124,29 @@ petclaw_exact_frame_ancestors() {
 }
 
 petclaw_verify_landing_body() {
+  local expected_revision="${PETCLAW_EXPECTED_LANDING_REVISION:-20260720-en-only}"
   node -e '
     let body = "";
     process.stdin.setEncoding("utf8");
     process.stdin.on("data", (chunk) => { body += chunk; });
     process.stdin.on("end", () => {
+      const revision = process.argv[1];
       const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
+      const required = [
+        `<html lang="en" translate="no" class="notranslate">`,
+        `<meta name="google" content="notranslate"`,
+        "/api/petclaw/demo-chat",
+        "19 CONNECTORS · 18 SKILLS · 6 LIVE",
+        "BNB Smart Chain · 2 Deployed · App integration off",
+        "Contracts returned paused() = false at 2026-07-18 review",
+        `product-demo.html?v=${revision}`,
+        `href="https://app.myaipet.ai/contracts"`,
+      ];
       if (hangul.test(body)
-        || !body.includes("/api/petclaw/demo-chat")
-        || !body.includes("ON-CHAIN · INTEGRATION OFF")
+        || required.some((value) => !body.includes(value))
         || body.includes("2 Deployed · 2 Paused")) process.exitCode = 1;
     });
-  '
+  ' "${expected_revision}"
 }
 
 petclaw_verify_product_demo_body() {
@@ -144,9 +156,21 @@ petclaw_verify_product_demo_body() {
     process.stdin.on("data", (chunk) => { body += chunk; });
     process.stdin.on("end", () => {
       const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
-      if (hangul.test(body) || !body.includes("id=\"playBtn\"") || !body.includes("id=\"replayBtn\"")) process.exitCode = 1;
+      const required = [
+        `<html lang="en" translate="no" class="notranslate">`,
+        `<meta name="google" content="notranslate"`,
+        `id="playBtn"`,
+        `id="replayBtn"`,
+      ];
+      if (hangul.test(body) || required.some((value) => !body.includes(value))) process.exitCode = 1;
     });
   '
+}
+
+petclaw_verify_revalidated_english_html_headers() {
+  local headers_file="$1"
+  petclaw_exact_header_value "${headers_file}" content-language en \
+    && petclaw_header_contains_token "${headers_file}" cache-control no-cache
 }
 
 petclaw_verify_no_hangul_body() {
@@ -345,6 +369,7 @@ fi
 if [[ "${PETCLAW_LANDING_CURL_OK}" != "1" \
   || "${PETCLAW_LANDING_CODE}" != "200" ]] \
   || ! petclaw_verify_landing_body < "${PETCLAW_SMOKE_BODY}" \
+  || ! petclaw_verify_revalidated_english_html_headers "${PETCLAW_SMOKE_HEADERS}" \
   || ! petclaw_exact_header_value "${PETCLAW_SMOKE_HEADERS}" x-frame-options DENY \
   || ! petclaw_exact_frame_ancestors "${PETCLAW_SMOKE_HEADERS}" "'none'"; then
   echo "ERROR: landing smoke did not return exact English launch HTML." >&2
@@ -358,9 +383,50 @@ fi
 if [[ "${PETCLAW_PRODUCT_DEMO_CURL_OK}" != "1" \
   || "${PETCLAW_PRODUCT_DEMO_CODE}" != "200" ]] \
   || ! petclaw_verify_product_demo_body < "${PETCLAW_SMOKE_BODY}" \
+  || ! petclaw_verify_revalidated_english_html_headers "${PETCLAW_SMOKE_HEADERS}" \
   || ! petclaw_exact_header_value "${PETCLAW_SMOKE_HEADERS}" x-frame-options SAMEORIGIN \
   || ! petclaw_exact_frame_ancestors "${PETCLAW_SMOKE_HEADERS}" "'self'"; then
   echo "ERROR: same-origin product demo frame contract failed." >&2
+  exit 1
+fi
+
+PETCLAW_COMPAT_LANDING_CURL_OK=1
+if ! PETCLAW_COMPAT_LANDING_CODE="$(petclaw_curl \
+  -D "${PETCLAW_SMOKE_HEADERS}" -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
+  "${PETCLAW_SMOKE_BASE}/landing/?v=${PETCLAW_EXPECTED_LANDING_REVISION}")"; then
+  PETCLAW_COMPAT_LANDING_CURL_OK=0
+fi
+PETCLAW_COMPAT_LANDING_RELEASE_OK=1
+if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]] \
+  && ! petclaw_exact_release_header "${PETCLAW_SMOKE_HEADERS}"; then
+  PETCLAW_COMPAT_LANDING_RELEASE_OK=0
+fi
+if [[ "${PETCLAW_COMPAT_LANDING_CURL_OK}" != "1" \
+  || "${PETCLAW_COMPAT_LANDING_CODE}" != "200" \
+  || "${PETCLAW_COMPAT_LANDING_RELEASE_OK}" != "1" ]] \
+  || ! petclaw_verify_landing_body < "${PETCLAW_SMOKE_BODY}" \
+  || ! petclaw_verify_revalidated_english_html_headers "${PETCLAW_SMOKE_HEADERS}"; then
+  echo "ERROR: app landing compatibility path is not cache-safe English HTML." >&2
+  exit 1
+fi
+
+PETCLAW_COMPAT_DEMO_CURL_OK=1
+if ! PETCLAW_COMPAT_DEMO_CODE="$(petclaw_curl \
+  -D "${PETCLAW_SMOKE_HEADERS}" -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
+  "${PETCLAW_SMOKE_BASE}/landing/product-demo.html?v=${PETCLAW_EXPECTED_LANDING_REVISION}")"; then
+  PETCLAW_COMPAT_DEMO_CURL_OK=0
+fi
+PETCLAW_COMPAT_DEMO_RELEASE_OK=1
+if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]] \
+  && ! petclaw_exact_release_header "${PETCLAW_SMOKE_HEADERS}"; then
+  PETCLAW_COMPAT_DEMO_RELEASE_OK=0
+fi
+if [[ "${PETCLAW_COMPAT_DEMO_CURL_OK}" != "1" \
+  || "${PETCLAW_COMPAT_DEMO_CODE}" != "200" \
+  || "${PETCLAW_COMPAT_DEMO_RELEASE_OK}" != "1" ]] \
+  || ! petclaw_verify_product_demo_body < "${PETCLAW_SMOKE_BODY}" \
+  || ! petclaw_verify_revalidated_english_html_headers "${PETCLAW_SMOKE_HEADERS}"; then
+  echo "ERROR: app product-demo compatibility path is not cache-safe English HTML." >&2
   exit 1
 fi
 
