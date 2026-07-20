@@ -76,7 +76,10 @@ server {
     # to cache the whole landing tree for seven days, so a mobile browser could
     # keep pre-release copy even after the current release pointer changed.
     location = /landing/ {
-        alias __CURRENT_ROOT__/landing-assets/index.html;
+        # A trailing-slash URI must alias the directory. Aliasing the file here
+        # makes nginx's index module append index.html a second time.
+        alias __CURRENT_ROOT__/landing-assets/;
+        index index.html;
         expires -1;
     }
 

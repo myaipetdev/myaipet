@@ -240,7 +240,7 @@ if (ordered.some((index) => index < 0)
 }
 NODE
 
-petclaw_expect_success "nginx frame and release-header trust boundaries pass" \
+petclaw_expect_success "nginx frame, cache, language, and release-header trust boundaries pass" \
   node - "${PETCLAW_TEST_ROOT}/deploy/nginx-petclaw.conf.template" <<'NODE'
 const fs = require("node:fs");
 const source = fs.readFileSync(process.argv[2], "utf8");
@@ -249,6 +249,14 @@ const locationBlocks = [...source.matchAll(/location\s+(?:=\s+\/product-demo\.ht
 const demo = locationBlocks.filter(({ declaration }) => declaration === "location = /product-demo.html");
 const staticAssets = locationBlocks.filter(({ declaration }) => declaration === "location /_next/static/");
 const proxied = locationBlocks.filter(({ body }) => body.includes("proxy_pass "));
+const exactBlock = (uri) => [...source.matchAll(new RegExp(`location\\s+=\\s+${uri}\\s*\\{([^{}]*)\\}`, "g"))]
+  .map((match) => match[1]);
+const prefixBlock = (uri) => [...source.matchAll(new RegExp(`location\\s+${uri}\\s*\\{([^{}]*)\\}`, "g"))]
+  .map((match) => match[1]);
+const compatLanding = exactBlock("\\/landing\\/");
+const compatIndex = exactBlock("\\/landing\\/index\\.html");
+const compatDemo = exactBlock("\\/landing\\/product-demo\\.html");
+const compatMedia = prefixBlock("\\/landing\\/");
 const exactDemoContracts = [
   'alias __CURRENT_ROOT__/landing-assets/product-demo.html;',
   'add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;',
@@ -272,6 +280,22 @@ if (proxied.length !== 2
 if (staticAssets.length !== 1
   || countIn(staticAssets[0].body, 'add_header X-Petclaw-Release "__RELEASE_ID__" always;') !== 1
   || count('add_header X-Petclaw-Release "__RELEASE_ID__" always;') !== 2) process.exit(1);
+if (compatLanding.length !== 1
+  || !compatLanding[0].includes("alias __CURRENT_ROOT__/landing-assets/;")
+  || !compatLanding[0].includes("index index.html;")
+  || !compatLanding[0].includes("expires -1;")
+  || compatLanding[0].includes("landing-assets/index.html")) process.exit(1);
+if (compatIndex.length !== 1
+  || !compatIndex[0].includes("alias __CURRENT_ROOT__/landing-assets/index.html;")
+  || !compatIndex[0].includes("expires -1;")) process.exit(1);
+if (compatDemo.length !== 1
+  || !compatDemo[0].includes("alias __CURRENT_ROOT__/landing-assets/product-demo.html;")
+  || !compatDemo[0].includes("expires -1;")) process.exit(1);
+if (compatMedia.length !== 1
+  || !compatMedia[0].includes("alias __CURRENT_ROOT__/landing-assets/;")
+  || !compatMedia[0].includes("expires 7d;")) process.exit(1);
+if (!source.includes("map $sent_http_content_type $petclaw_content_language")
+  || count("add_header Content-Language $petclaw_content_language always;") !== 3) process.exit(1);
 function countIn(haystack, needle) {
   return haystack.split(needle).length - 1;
 }
