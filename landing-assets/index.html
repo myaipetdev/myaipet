@@ -251,14 +251,15 @@
   @keyframes heroFoilShift { to { background-position: 260% 0; } }
   @media (prefers-reduced-motion: reduce){ .hero h1 .gold { animation: none; } }
   .hero-sub {
-    margin-top: 28px; font-size: 19px; line-height: 1.55; max-width: 460px;
-    color: rgba(255, 248, 230, 0.85);
+    margin-top: 28px; font-size: 21px; line-height: 1.55; max-width: 540px;
+    color: rgba(255, 248, 230, 0.92);
   }
-  .hero-ctas { margin-top: 34px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .hero-ctas { margin-top: 34px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
   .btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 14px 22px; border-radius: 999px;
-    font-size: 14px; font-weight: 600; letter-spacing: 0.01em;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 16px 30px; border-radius: 999px;
+    border: 1px solid transparent; /* ghost adds a visible border — keep both CTAs the exact same height */
+    font-size: 16px; font-weight: 600; letter-spacing: 0.01em; line-height: 1;
     transition: transform .2s ease, background .2s, box-shadow .2s;
   }
   .btn-primary {
@@ -1412,7 +1413,7 @@
       <a href="https://app.myaipet.ai" class="btn btn-primary">Get started</a>
       <a href="#journey" class="btn btn-ghost">▶ See how it works</a>
     </div>
-    <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.45);">
+    <div style="margin-top:14px;font-family:var(--mono);font-size:15px;letter-spacing:0.02em;color:rgba(255,248,230,0.68);">
       Connect wallet → adopt in 30 seconds · No gas required
     </div>
   </div>
@@ -1496,7 +1497,7 @@
          onclick="playDemo(this)"
          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();playDemo(this)}">
       <div class="jv-play" aria-hidden="true"></div>
-      <div class="jv-cap"><span class="pill">Demo</span> tap to play the launch reel</div>
+      <div class="jv-cap"><span class="pill">Demo</span> launch reel — starts as you scroll</div>
     </div>
     <script>
       function playDemo(el){
@@ -1507,6 +1508,25 @@
         el.setAttribute('role','group'); el.removeAttribute('tabindex');
         el.innerHTML=''; el.appendChild(f);
       }
+      // Auto-play the launch reel once ~35% of it scrolls into view — no tap
+      // needed. Plain rect math on scroll (IntersectionObserver initial
+      // callbacks proved unreliable in embedded browsers). Reduced-motion
+      // users keep the explicit tap-to-play affordance.
+      (function(){
+        var jv=document.getElementById('journeyVideo');
+        if(!jv) return;
+        if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        function off(){ window.removeEventListener('scroll',check); window.removeEventListener('resize',check); }
+        function check(){
+          if(jv.dataset.on){ off(); return; }
+          var r=jv.getBoundingClientRect(), vh=window.innerHeight||document.documentElement.clientHeight;
+          var vis=Math.min(r.bottom,vh)-Math.max(r.top,0);
+          if(r.height>0 && vis>r.height*0.35){ off(); playDemo(jv); }
+        }
+        window.addEventListener('scroll',check,{passive:true});
+        window.addEventListener('resize',check);
+        check();
+      })();
     </script>
 
     <!-- The timeline -->
@@ -2676,7 +2696,7 @@ function persist() {
 
   const pet = document.createElement('div');
   pet.id = 'landing-pet';
-  pet.style.cssText = 'position:fixed;bottom:12px;z-index:9999;cursor:pointer;user-select:none;';
+  pet.style.cssText = 'position:fixed;bottom:12px;z-index:9999;cursor:pointer;user-select:none;transition:opacity .25s;';
 
   const sprite = document.createElement('img');
   sprite.src = 'mascot-original.jpg';
@@ -2777,6 +2797,20 @@ function persist() {
       pet.style.display = '';
     }
 
+    // CTA collision-avoidance: while the roaming sticker overlaps the hero
+    // CTAs it turns see-through and click-through, so "Get started" is never
+    // covered or click-blocked on short viewports where the buttons sit low.
+    const heroCtas = document.querySelector('.hero-ctas');
+    if (heroCtas) {
+      const cr = heroCtas.getBoundingClientRect();
+      const pr = pet.getBoundingClientRect();
+      const hit = cr.bottom > 0 && cr.top < window.innerHeight &&
+                  pr.right > cr.left - 8 && pr.left < cr.right + 8 &&
+                  pr.bottom > cr.top - 8 && pr.top < cr.bottom + 8;
+      pet.style.pointerEvents = hit ? 'none' : '';
+      pet.style.opacity = hit ? '0.4' : '1';
+    }
+
     if (state === 'walk') {
       // Bob animation while walking
       if (stateTimer % 8 === 0) {
@@ -2867,6 +2901,25 @@ function persist() {
   if (!('IntersectionObserver' in window) || typeof Element.prototype.animate !== 'function') return;
   var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   root.classList.add('js');
+  // IO health canary — some embedded webviews (in-app browsers) expose
+  // IntersectionObserver but never deliver callbacks, which would leave every
+  // scroll-revealed element at opacity 0 (a blank page below the hero).
+  // document.body always intersects, so a healthy IO fires immediately; if it
+  // hasn't within 1.6s, fall back to everything-visible, animations off.
+  (function(){
+    var ok = false;
+    try {
+      var canary = new IntersectionObserver(function(){ ok = true; canary.disconnect(); });
+      canary.observe(document.body);
+    } catch (e) {}
+    setTimeout(function(){
+      if (ok) return;
+      root.classList.remove('js');
+      document.querySelectorAll('.diff-card').forEach(function(el){ el.classList.add('in'); });
+      var bf = document.getElementById('bondFill'); if (bf) bf.style.width = '85%';
+      if (typeof renderChat === 'function') { try { renderChat(); } catch (e) {} }
+    }, 1600);
+  })();
   var EASE = 'cubic-bezier(0.16,1,0.3,1)';
   var FROM = {
     up:'translateY(28px)', left:'translateX(-44px) rotate(-1.2deg)', right:'translateX(44px) rotate(1.2deg)',
