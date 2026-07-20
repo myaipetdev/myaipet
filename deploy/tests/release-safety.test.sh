@@ -477,7 +477,7 @@ awk '/^petclaw_verify_landing_body\(\) \{/{copy=1} copy{print} copy && /^\}$/{ex
 # shellcheck source=/dev/null
 source "${PETCLAW_LANDING_FUNCTION}"
 petclaw_valid_landing_fixture() {
-  printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" /api/petclaw/demo-chat 19 CONNECTORS · 18 SKILLS · 6 LIVE BNB Smart Chain · 2 Deployed · App integration off Contracts returned paused() = false at 2026-07-18 review product-demo.html?v=20260720-en-only href="https://app.myaipet.ai/contracts"'
+  printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" /api/petclaw/demo-chat 19 CONNECTORS · 18 SKILLS · 6 LIVE Two legacy BNB Smart Chain contracts are deployed. Live app integration is off. Both contracts returned <code>paused() = false</code> class="footer-disclosure" product-demo.html?v=20260720-en-only href="https://app.myaipet.ai/contracts"'
 }
 if ! {
   petclaw_valid_landing_fixture
@@ -490,7 +490,7 @@ if { petclaw_valid_landing_fixture; printf '%b' ' Hangul: \355\225\234'; } | pet
   echo "FAIL: streaming landing verifier accepts Hangul" >&2
   exit 1
 fi
-if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" 19 CONNECTORS · 18 SKILLS · 6 LIVE BNB Smart Chain · 2 Deployed · App integration off Contracts returned paused() = false at 2026-07-18 review product-demo.html?v=20260720-en-only href="https://app.myaipet.ai/contracts"' | petclaw_verify_landing_body; then
+if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" 19 CONNECTORS · 18 SKILLS · 6 LIVE Two legacy BNB Smart Chain contracts are deployed. Live app integration is off. Both contracts returned <code>paused() = false</code> class="footer-disclosure" product-demo.html?v=20260720-en-only href="https://app.myaipet.ai/contracts"' | petclaw_verify_landing_body; then
   echo "FAIL: streaming landing verifier accepts a missing demo endpoint" >&2
   exit 1
 fi

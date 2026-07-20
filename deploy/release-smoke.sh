@@ -137,8 +137,10 @@ petclaw_verify_landing_body() {
         `<meta name="google" content="notranslate"`,
         "/api/petclaw/demo-chat",
         "19 CONNECTORS · 18 SKILLS · 6 LIVE",
-        "BNB Smart Chain · 2 Deployed · App integration off",
-        "Contracts returned paused() = false at 2026-07-18 review",
+        "Two legacy BNB Smart Chain contracts are deployed.",
+        "Live app integration is off.",
+        "Both contracts returned <code>paused() = false</code>",
+        `class="footer-disclosure"`,
         `product-demo.html?v=${revision}`,
         `href="https://app.myaipet.ai/contracts"`,
       ];
