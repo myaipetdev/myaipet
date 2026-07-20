@@ -80,12 +80,12 @@ const requiredUiContracts = [
   {
     file: "web/src/app/contracts/page.tsx",
     description: "PETContent disclosure must include its exact address, disabled integration status, and zero supply",
-    pattern: /name: "PETContent \(NFT\)"[^\n]*0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c[^\n]*status: "Deployed \(integration off\)"[^\n]*paused\(\) was false and totalSupply\(\) = 0/,
+    pattern: /name: "PETContent \(NFT\)"[^\n]*0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c[^\n]*status: "DEPLOYED \(INTEGRATION OFF\)"[^\n]*paused\(\) was false and totalSupply\(\) = 0/,
   },
   {
     file: "web/src/app/contracts/page.tsx",
     description: "PetaGenTracker disclosure must include its exact address, disabled integration status, and zero counters",
-    pattern: /name: "PetaGenTracker"[^\n]*0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a[^\n]*status: "Deployed \(integration off\)"[^\n]*paused\(\) was false, totalUsers\(\) = 0, and totalGenerations\(\) = 0/,
+    pattern: /name: "PetaGenTracker"[^\n]*0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a[^\n]*status: "DEPLOYED \(INTEGRATION OFF\)"[^\n]*paused\(\) was false, totalUsers\(\) = 0, and totalGenerations\(\) = 0/,
   },
   {
     file: "web/src/app/contracts/page.tsx",

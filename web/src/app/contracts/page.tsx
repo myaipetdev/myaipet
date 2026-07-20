@@ -20,8 +20,8 @@ type Contract = {
 const LAUNCH_DISCLOSURE = "The production app has all blockchain integration disabled.";
 
 const CONTRACTS: Contract[] = [
-  { name: "PETContent (NFT)", kind: "NFT provenance", address: "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c", state: "deployed", status: "Deployed (integration off)", summary: "Build-era provenance contract. The live app does not mint or write to it.", reviewNote: "Production integration is disabled. On-chain paused() was false and totalSupply() = 0 at the 2026-07-18 launch review.", checks: ["paused() = false", "totalSupply() = 0"] },
-  { name: "PetaGenTracker", kind: "Generation provenance", address: "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a", state: "deployed", status: "Deployed (integration off)", summary: "Build-era generation tracker. Production recording is disabled.", reviewNote: "Production integration is disabled. On-chain paused() was false, totalUsers() = 0, and totalGenerations() = 0 at the 2026-07-18 launch review.", checks: ["paused() = false", "totalUsers() = 0", "totalGenerations() = 0"] },
+  { name: "PETContent (NFT)", kind: "NFT provenance", address: "0xB31B656D3790bFB3b3331D6A6BF0abf3dd6b0d9c", state: "deployed", status: "DEPLOYED (INTEGRATION OFF)", summary: "Build-era provenance contract. The live app does not mint or write to it.", reviewNote: "Production integration is disabled. On-chain paused() was false and totalSupply() = 0 at the 2026-07-18 launch review.", checks: ["paused() = false", "totalSupply() = 0"] },
+  { name: "PetaGenTracker", kind: "Generation provenance", address: "0x590D3b2CD0AB9aEE0e0d7Fd48E8810b20ec8Ac0a", state: "deployed", status: "DEPLOYED (INTEGRATION OFF)", summary: "Build-era generation tracker. Production recording is disabled.", reviewNote: "Production integration is disabled. On-chain paused() was false, totalUsers() = 0, and totalGenerations() = 0 at the 2026-07-18 launch review.", checks: ["paused() = false", "totalUsers() = 0", "totalGenerations() = 0"] },
   {
     name: "PETActivity",
     kind: "Activity recorder",
