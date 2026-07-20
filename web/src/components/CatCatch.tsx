@@ -12,6 +12,7 @@
  */
 
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
@@ -71,7 +72,7 @@ export default function CatCatch() {
   const [pendingImg, setPendingImg] = useState<string | null>(null); // captured image awaiting the throw
   const [view, setView] = useState<"catch" | "map" | "battle">("catch");
   const [camErr, setCamErr] = useState<string | null>(null);
-  const [result, setResult] = useState<{ caught: boolean; cat?: Cat; reason?: string; antiCheat?: boolean; pointsAwarded?: number } | null>(null);
+  const [result, setResult] = useState<{ caught: boolean; cat?: Cat; reason?: string; antiCheat?: boolean; pointsAwarded?: number; newSpecies?: boolean } | null>(null);
   const [collection, setCollection] = useState<Cat[]>([]);
   const [sort, setSort] = useState<"recent" | "rarity">("recent");
   const [notAuthed, setNotAuthed] = useState(false);
@@ -141,7 +142,10 @@ export default function CatCatch() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setResult({ caught: false, reason: data?.error || "Something went wrong — try again." }); }
       else {
-        setResult(data);
+        // "New species" = REAL first-of-its-kind check against the collection
+        // as it stood before this catch (guide-normalized: kitten counts as cat).
+        const newSpecies = !!(data.caught && data.cat?.kind) && !collection.some((c) => guideKey(c.kind) === guideKey(data.cat.kind));
+        setResult({ ...data, newSpecies });
         if (data.caught && data.cat) setCollection((c) => [data.cat, ...c]);
       }
     } catch {
@@ -183,7 +187,7 @@ export default function CatCatch() {
   const done = () => { setResult(null); stopCamera(); setPhase("intro"); };
 
   if (notAuthed) {
-    return <Shell><Empty>Connect your wallet to start catching.</Empty></Shell>;
+    return <Shell><GuestGate /></Shell>;
   }
 
   return (
@@ -298,7 +302,7 @@ export default function CatCatch() {
 
         {phase === "result" && result && (
           result.caught && result.cat ? (
-            <RevealCard cat={result.cat} points={result.pointsAwarded || 0} onAgain={again} onDone={done} />
+            <RevealCard cat={result.cat} points={result.pointsAwarded || 0} newSpecies={!!result.newSpecies} onAgain={again} onDone={done} />
           ) : (
             <div style={{ position: "absolute", inset: 0, background: PAPER, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: 20, textAlign: "center", overflowY: "auto" }}>
               <Icon name={result.antiCheat ? "shield" : "footprints"} size={52} />
@@ -316,6 +320,13 @@ export default function CatCatch() {
       {/* ── Field Journal dashboard — rises in on scroll ── */}
       <Reveal dir="up">
         <FieldJournal collection={collection} />
+      </Reveal>
+
+      {/* ── Field Guide — the 7 wild-map species as a checklist board.
+             Uncaught species show as ink silhouettes ("???"), the collection
+             drive. Counts are REAL (derived from the caught collection). ── */}
+      <Reveal dir="up" delay={60}>
+        <FieldGuide collection={collection} />
       </Reveal>
 
       {/* ── Album ── */}
@@ -360,6 +371,9 @@ export default function CatCatch() {
         @keyframes ccPulse{0%,100%{transform:translateX(-50%) scale(1);opacity:.9}50%{transform:translateX(-50%) scale(1.12);opacity:.55}}
         @keyframes ccFade{from{opacity:0}to{opacity:1}}
         @keyframes ccPop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+        /* Wax Press — the seal drops from above, overshoots, seats with a tiny recoil. */
+        @keyframes ccSealDrop{0%{opacity:0;transform:translateY(-44px) scale(1.6) rotate(-16deg)}58%{opacity:1;transform:translateY(3px) scale(.92) rotate(2deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(-7deg)}}
+        @keyframes ccThunk{0%,100%{transform:translateY(0)}45%{transform:translateY(3px)}}
       `}</style>
     </Shell>
   );
@@ -417,14 +431,33 @@ function ThrowCan({ image, onThrow, onCancel }: { image: string; onThrow: () => 
 
 /** The "ANIMAL FOUND" reveal — the caught animal is presented as a foil-stamped
  *  CollectibleFrame (holo + gold rarity seal) on a warm-ink editorial plate. */
-function RevealCard({ cat, points, onAgain, onDone }: { cat: Cat; points: number; onAgain: () => void; onDone: () => void }) {
+function RevealCard({ cat, points, newSpecies, onAgain, onDone }: { cat: Cat; points: number; newSpecies?: boolean; onAgain: () => void; onDone: () => void }) {
   const stock = rarityStock(rarityRank(cat.rarity));
   return (
     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg,#1B1308,#2A2014)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 11, padding: "30px 18px 18px", textAlign: "center", overflowY: "auto", animation: "ccFade .35s ease" }}>
-      {/* Caught animal as a foil-stamped collectible */}
-      <div style={{ animation: "ccPop .5s cubic-bezier(.2,1.3,.4,1)" }}>
-        <CollectibleFrame photoUrl={cat.photo_path} level={stock.seal.glyph} speciesLabel={cat.kind} elementLabel={cat.element} width={186} tilt={-2.4} holo seal float />
+      {/* Caught animal as a foil-stamped collectible — pops in, then a terracotta
+          wax seal drops and stamps it CAUGHT (the card recoils under the press). */}
+      <div style={{ position: "relative", animation: "ccThunk .18s ease-out 780ms both" }}>
+        <div style={{ animation: "ccPop .5s cubic-bezier(.2,1.3,.4,1)" }}>
+          <CollectibleFrame photoUrl={cat.photo_path} level={stock.seal.glyph} speciesLabel={cat.kind} elementLabel={cat.element} width={186} tilt={-2.4} holo seal float />
+        </div>
+        <div aria-hidden style={{
+          position: "absolute", bottom: -10, left: -12, width: 56, height: 56, zIndex: 6, borderRadius: "50%",
+          background: "radial-gradient(circle at 36% 30%, #E4703F, #BE4F28 46%, #8A3616)",
+          border: "2.5px solid #FBF6EC",
+          boxShadow: "0 8px 16px -5px rgba(80,30,6,.55), inset 0 2px 3px rgba(255,220,200,.5), inset 0 -3px 5px rgba(90,30,8,.6)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          animation: "ccSealDrop .5s cubic-bezier(.2,.85,.25,1) 700ms both",
+        }}>
+          <span style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: ".1em", color: "#FBE3D2", textShadow: "0 1px 1px rgba(80,20,0,.5)" }}>CAUGHT</span>
+        </div>
       </div>
+      {/* First-of-its-kind — REAL check against the pre-catch collection. */}
+      {newSpecies && (
+        <div style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 700, letterSpacing: ".16em", color: "#1B1308", background: "linear-gradient(180deg,#FFF0C0,#EBB84E)", borderRadius: 999, padding: "4px 13px", boxShadow: "0 4px 10px -4px rgba(0,0,0,.5)", whiteSpace: "nowrap", animation: "ccPop .4s cubic-bezier(.2,1.3,.4,1) 900ms both" }}>
+          ✦ NEW GUIDE SPECIES
+        </div>
+      )}
       <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: "#F2CD86", letterSpacing: ".12em" }}>ANIMAL FOUND</div>
       <div style={{ fontFamily: DISP, fontSize: 28, fontWeight: 800, color: "#FBF6EC", lineHeight: 1, letterSpacing: "-0.01em" }}>{cat.name}</div>
       <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: "rgba(251,246,236,0.7)", textTransform: "uppercase", letterSpacing: ".14em" }}>{cat.rarityLabel} · {cat.kind}</div>
@@ -548,6 +581,41 @@ function isToday(iso?: string): boolean {
   return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
 }
 
+/** Consecutive-day catch streak from REAL caught_at timestamps. The streak may
+ *  end today or yesterday (you haven't necessarily caught yet today). */
+function catchStreak(collection: Cat[]): number {
+  const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  const days = new Set(collection.filter((c) => c.caught_at).map((c) => dayKey(new Date(c.caught_at!))));
+  if (days.size === 0) return 0;
+  const cur = new Date();
+  if (!days.has(dayKey(cur))) cur.setDate(cur.getDate() - 1); // streak alive until midnight
+  let streak = 0;
+  while (days.has(dayKey(cur))) { streak++; cur.setDate(cur.getDate() - 1); }
+  return streak;
+}
+
+// ── Field Guide — the 7 species that roam the wild map (SPAWN_KINDS in
+// lib/catch/spawns.ts). Camera catches of ANY real animal still collect;
+// kinds beyond these seven show as bonus guide entries. ──
+const GUIDE_SPECIES: Array<{ key: string; label: string; icon: string }> = [
+  { key: "cat", label: "Cat", icon: "cat" },
+  { key: "dog", label: "Dog", icon: "dog" },
+  { key: "bird", label: "Bird", icon: "parrot" },
+  { key: "duck", label: "Duck", icon: "chicken" },
+  { key: "rabbit", label: "Rabbit", icon: "rabbit" },
+  { key: "squirrel", label: "Squirrel", icon: "hamster" },
+  { key: "fox", label: "Fox", icon: "fox" },
+];
+const GUIDE_ALIAS: Record<string, string> = {
+  kitten: "cat", puppy: "dog",
+  sparrow: "bird", parrot: "bird", crow: "bird", seagull: "bird", pigeon: "bird",
+  goose: "duck", bunny: "rabbit", hare: "rabbit", chipmunk: "squirrel",
+};
+function guideKey(kind?: string): string {
+  const k = (kind || "").toLowerCase().trim();
+  return GUIDE_ALIAS[k] || k;
+}
+
 /** "Field Journal" dashboard — real counts derived from the collection. */
 function FieldJournal({ collection }: { collection: Cat[] }) {
   const collected = collection.length;
@@ -560,6 +628,7 @@ function FieldJournal({ collection }: { collection: Cat[] }) {
       <div style={{ fontSize: 17, fontWeight: 700, color, fontFamily: DISP, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{value}</div>
     </div>
   );
+  const streak = catchStreak(collection);
   return (
     <div style={{ background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 16, boxShadow: "var(--ed-shadow-card)", padding: "18px 20px", marginTop: 4 }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${OUTLINE}` }}>
@@ -569,11 +638,100 @@ function FieldJournal({ collection }: { collection: Cat[] }) {
         </div>
         <div style={{ fontSize: 46, fontWeight: 800, color: INK, lineHeight: 0.9, fontFamily: DISP, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{collected}</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(104px, 1fr))", gap: 8 }}>
         {note("Rarest", rarest ? rarest.rarityLabel : "—", rarest ? rarest.rarityColor : MUTED)}
         {note("Today", String(today), INK)}
+        {note("Streak", streak > 0 ? `${streak} day${streak === 1 ? "" : "s"}` : "—", streak > 0 ? TEAL : MUTED)}
         {note("Species", String(kinds), INK)}
       </div>
+    </div>
+  );
+}
+
+/** Field Guide checklist board — silhouettes for uncaught wild-map species.
+ *  All counts are REAL (derived from the collection); the seven-slot universe
+ *  is the honest wild-spawn species list, and any other real animal caught on
+ *  camera is shown as a bonus entry, never hidden. */
+function FieldGuide({ collection }: { collection: Cat[] }) {
+  const counts = new Map<string, number>();
+  for (const c of collection) {
+    const k = guideKey(c.kind);
+    if (k) counts.set(k, (counts.get(k) || 0) + 1);
+  }
+  const found = GUIDE_SPECIES.filter((s) => (counts.get(s.key) || 0) > 0).length;
+  // Real animals caught beyond the wild-map seven (e.g. a turtle on camera).
+  const bonus = [...counts.keys()].filter((k) => !GUIDE_SPECIES.some((s) => s.key === k)).sort();
+  return (
+    <div style={{ background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 16, boxShadow: "var(--ed-shadow-card)", padding: "18px 20px", marginTop: 14 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${OUTLINE}` }}>
+        <div>
+          <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, letterSpacing: ".14em", color: TEAL, textTransform: "uppercase" }}>Field Guide</div>
+          <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, letterSpacing: ".08em", color: MUTED, textTransform: "uppercase", marginTop: 4 }}>Wild-map species</div>
+        </div>
+        <div style={{ fontFamily: DISP, fontSize: 24, fontWeight: 800, color: found === GUIDE_SPECIES.length ? TEAL : INK, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+          {found}<span style={{ fontSize: 15, color: MUTED, fontWeight: 700 }}>/{GUIDE_SPECIES.length}</span>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(74px, 1fr))", gap: 8 }}>
+        {GUIDE_SPECIES.map((s) => {
+          const n = counts.get(s.key) || 0;
+          const got = n > 0;
+          return (
+            <div key={s.key} title={got ? `${s.label} · ${n} caught` : `${s.label} — not caught yet`} style={{
+              position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+              padding: "11px 6px 9px", borderRadius: 10, textAlign: "center",
+              background: got ? INSET : "transparent",
+              border: got ? `1px solid ${OUTLINE}` : `1px dashed ${OUTLINE}`,
+            }}>
+              {/* uncaught = die-cut ink silhouette (the "gotta find it" cue) */}
+              <Icon name={s.icon} size={30} alt={got ? s.label : "Unknown species"} style={got ? undefined : { filter: "brightness(0)", opacity: 0.22 }} />
+              <div style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: got ? INK : MUTED }}>
+                {got ? s.label : "???"}
+              </div>
+              {got && (
+                <span style={{ position: "absolute", top: 4, right: 4, fontFamily: MONO, fontSize: 10.5, fontWeight: 700, color: TEAL, background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 999, padding: "1px 6px", fontVariantNumeric: "tabular-nums" }}>×{n}</span>
+              )}
+            </div>
+          );
+        })}
+        {bonus.map((k) => (
+          <div key={k} title={`${k} · ${counts.get(k)} caught — beyond the wild-map guide`} style={{
+            position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+            padding: "11px 6px 9px", borderRadius: 10, textAlign: "center",
+            background: INSET, border: `1px solid ${OUTLINE}`,
+          }}>
+            <Icon name={kindIcon(k)} size={30} alt={k} />
+            <div style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: INK, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{k}</div>
+            <span style={{ position: "absolute", top: 4, right: 4, fontFamily: MONO, fontSize: 10.5, fontWeight: 700, color: "#9A4E1E", background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 999, padding: "1px 6px", fontVariantNumeric: "tabular-nums" }}>×{counts.get(k)}</span>
+          </div>
+        ))}
+      </div>
+      <p style={{ fontFamily: BODY, fontSize: 13, color: MUTED, margin: "12px 0 0", lineHeight: 1.5 }}>
+        These seven roam the wild map — any other real animal you photograph still counts, and joins the guide as a bonus entry.
+      </p>
+    </div>
+  );
+}
+
+/** Guest gate — what Catch IS and one clear way in, instead of a bare line. */
+function GuestGate() {
+  const { openConnectModal } = useConnectModal();
+  return (
+    <div style={{ borderRadius: 18, border: `1px dashed ${OUTLINE}`, background: INSET, padding: "34px 24px", textAlign: "center", maxWidth: 460, margin: "8px auto 0" }}>
+      <div style={{ display: "flex", justifyContent: "center" }}><CameraIcon size={40} /></div>
+      <h3 style={{ fontFamily: DISP, fontSize: 22, fontWeight: 800, color: INK, margin: "12px 0 6px", letterSpacing: "-0.01em" }}>Your field kit is packed</h3>
+      <p style={{ fontFamily: BODY, fontSize: 14, color: MUTED, margin: "0 auto 18px", maxWidth: 340, lineHeight: 1.55 }}>
+        Photograph real street animals and collect them — every catch is vision-verified, graded a rarity, and filed into your field guide.
+      </p>
+      <button
+        type="button"
+        onClick={() => openConnectModal?.()}
+        disabled={!openConnectModal}
+        className="ed-card-hover"
+        style={{ ...bigBtn, background: TEAL, border: `1px solid ${TEAL}`, opacity: openConnectModal ? 1 : 0.6 }}
+      >
+        Connect wallet to start
+      </button>
     </div>
   );
 }

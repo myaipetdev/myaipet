@@ -34,6 +34,7 @@
  */
 
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { api, getAuthHeaders } from "@/lib/api";
 import PetCard, { TOPO_MASK, rarityTopo } from "@/components/PetCard";
 import { CODEX_VARIANTS, codexPrompt } from "@/lib/codex";
@@ -299,6 +300,23 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
 
   const openPet = openId != null ? pets.find((p) => p.id === openId) || null : null;
 
+  // ── "Next grade" progression — the pet CLOSEST to its next rarity tier, from
+  // the REAL computeRarity score vs the REAL threshold (never fabricated).
+  // Null when every pet is already Legendary. ──
+  const nextGrade = useMemo(() => {
+    let best: { name: string; score: number; threshold: number; tier: Rarity } | null = null;
+    for (const p of pets) {
+      const up = (Object.entries(RARITY_THRESHOLD) as Array<[Exclude<Rarity, "Common">, number]>)
+        .filter(([, t]) => t > p.score)
+        .sort((a, b) => a[1] - b[1])[0];
+      if (!up) continue; // already Legendary
+      if (!best || up[1] - p.score < best.threshold - best.score) {
+        best = { name: p.name, score: p.score, threshold: up[1], tier: up[0] };
+      }
+    }
+    return best;
+  }, [pets]);
+
   // Tabs — mono-labelled editorial pills, active = ink. Album · Catch · Battle.
   const tabStrip = (
     <div role="group" aria-label="Cards section" style={{ display: "flex", gap: 8, marginBottom: 20 }}>
@@ -334,7 +352,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
   if (notAuthed) return (
     <Shell owned={0}>
       {tabStrip}
-      {tab === "catch" ? catchTab : <Empty>Connect your wallet to see your cards.</Empty>}
+      {tab === "catch" ? catchTab : <GuestGate onCatch={() => switchTab("catch")} />}
     </Shell>
   );
 
@@ -432,6 +450,29 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
               Sort: {sort === "rarity" ? "Rarity ↓" : "A → Z"}
             </button>
           </div>
+
+          {/* "Next grade" strip — REAL score vs the REAL next-tier threshold for
+              the closest pet (computeRarity), so progression is visible without
+              opening a card. Hidden when every card is already Legendary. */}
+          {filter === "All" && nextGrade && (
+            <Reveal dir="up">
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 14, padding: "12px 16px", marginBottom: 18, boxShadow: "var(--ed-shadow-card)" }}>
+                <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: T.mono, flexShrink: 0 }}>Next grade</span>
+                <span style={{ fontFamily: T.body, fontSize: 13.5, color: T.ink70, flexShrink: 0 }}>
+                  <strong style={{ fontFamily: T.disp, color: T.ink }}>{nextGrade.name}</strong>
+                  {" "}is closest to{" "}
+                  <strong style={{ color: rarityColor(nextGrade.tier) }}>{nextGrade.tier}</strong>
+                </span>
+                <div style={{ flex: 1, minWidth: 140, display: "flex", alignItems: "center", gap: 10 }}>
+                  <div role="progressbar" aria-valuemin={0} aria-valuemax={nextGrade.threshold} aria-valuenow={nextGrade.score} aria-label={`${nextGrade.name}: ${nextGrade.score} of ${nextGrade.threshold} to ${nextGrade.tier}`} style={{ flex: 1, height: 8, borderRadius: 999, background: T.inset, border: `1px solid ${T.hair}`, overflow: "hidden" }}>
+                    <div style={{ width: `${Math.min(100, Math.round((nextGrade.score / nextGrade.threshold) * 100))}%`, height: "100%", borderRadius: 999, background: rarityColor(nextGrade.tier), transition: "width .6s cubic-bezier(.2,.8,.2,1)" }} />
+                  </div>
+                  <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.04em", color: T.muted2, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{nextGrade.score}/{nextGrade.threshold}</span>
+                </div>
+                <span style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, flexBasis: "100%" }}>Grades rise from real care — level, bond, streak and stats. No chance, no purchases.</span>
+              </div>
+            </Reveal>
+          )}
 
           {/* Album grid — cards FLY IN from below as they scroll into view
               (viewport-triggered <Reveal>, stagger capped at 8 steps); the
@@ -908,6 +949,44 @@ function ZeroState({ onAdopt, onCatch }: { onAdopt?: (e: React.MouseEvent) => vo
           <a href="/?section=my%20pet" onClick={onAdopt} className="ed-wipe" style={{ ...btn, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>Adopt a pet ▸</a>
           <button type="button" onClick={onCatch} className="ed-wipe" style={{ ...ghost, display: "inline-flex", alignItems: "center", gap: 6 }}>
             <CameraGlyph size={14} /> Catch in the wild
+          </button>
+        </div>
+      </div>
+    </Reveal>
+  );
+}
+
+// Guest gate — a real editorial welcome instead of a bare one-liner. No fake
+// sample inventory: the mini frames are OBVIOUSLY empty sleeves (dashed, "—"),
+// there to show the album's physical language, never presented as owned cards.
+function GuestGate({ onCatch }: { onCatch: () => void }) {
+  const { openConnectModal } = useConnectModal();
+  return (
+    <Reveal dir="up">
+      <div style={{ borderRadius: 20, border: `1px dashed ${T.hair}`, background: T.inset, padding: "36px 28px", textAlign: "center", maxWidth: 560, margin: "16px auto 0" }}>
+        {/* three empty album sleeves — the binder language, honestly empty */}
+        <div aria-hidden style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 18 }}>
+          {[-5, 0, 5].map((rot, i) => (
+            <div key={i} style={{
+              width: 64, aspectRatio: "5 / 7", borderRadius: 8, background: T.paper,
+              border: `1px dashed ${T.hair}`, transform: `rotate(${rot}deg)`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: i === 1 ? "var(--ed-shadow-card)" : "none",
+            }}>
+              <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted, opacity: 0.6 }}>—</span>
+            </div>
+          ))}
+        </div>
+        <h3 style={{ fontFamily: T.disp, fontSize: 24, fontWeight: 800, color: T.ink, margin: "0 0 6px", letterSpacing: "-0.01em" }}>Your album is waiting</h3>
+        <p style={{ fontFamily: T.body, fontSize: 14, color: T.muted2, margin: "0 auto 20px", maxWidth: 400, lineHeight: 1.55 }}>
+          Connect to see every pet you raise as a foil-stamped trading card — graded by real care, ready to duel and share. New here? Adopting your first pet mints your first card.
+        </p>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+          <button type="button" onClick={() => openConnectModal?.()} disabled={!openConnectModal} className="ed-wipe" style={{ ...btn, padding: "11px 22px", opacity: openConnectModal ? 1 : 0.6 }}>
+            Connect wallet ▸
+          </button>
+          <button type="button" onClick={onCatch} className="ed-wipe" style={{ ...ghost, display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <CameraGlyph size={14} /> See how Catch works
           </button>
         </div>
       </div>
