@@ -14,7 +14,7 @@ const DISP = "var(--ed-disp, 'Bricolage Grotesque'), 'Bricolage Grotesque', syst
 const BODY = "var(--ed-body, 'Hanken Grotesk'), 'Hanken Grotesk', system-ui, sans-serif";
 const MONO = "var(--ed-m, 'Space Mono'), 'Space Mono', ui-monospace, monospace";
 const ctaPill: React.CSSProperties = {
-  background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontFamily: BODY,
+  background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontFamily: BODY,
   fontWeight: 800, fontSize: 14.5, padding: "12px 22px", borderRadius: 999, textDecoration: "none",
   boxShadow: "0 10px 20px -12px rgba(226,125,12,.7)",
 };

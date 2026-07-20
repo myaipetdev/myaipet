@@ -22,15 +22,21 @@ Server capabilities and endpoints.
   "sovereignty": {
     "dataOwnership": "user",
     "exportFormat": "petclaw-soul-v1",
-    "deletionProof": true,
+    "deletionProof": false,
+    "deletionReceipt": "sha256-metadata",
     "portability": true,
-    "inheritance": true
+    "inheritance": false
   }
 }
 ```
 
 `soulNFT` is `false` while production on-chain mint integration is disabled. Exported SOUL data
 can still preserve legacy off-chain or previously recorded NFT state.
+
+`deletionProof` is `false`: deletion returns a SHA-256 receipt of the deletion-request
+metadata (`deletionReceipt: "sha256-metadata"`) — it is not a signed proof and not a hash of
+the deleted content. `inheritance` is `false`: successor designation exists in the API, but
+automated transfer is not scheduled in this release.
 
 > Note: `version` here is the **protocol** version (`petclaw-v1`, semver `1.0.0`) — it is distinct from, and not pinned to, the npm **SDK package** version (currently `1.6.1`).
 
@@ -113,7 +119,11 @@ Import a pet from SOUL export data.
 ```
 
 ### DELETE `/api/petclaw/delete?petId=1`
-Permanently delete all pet data with cryptographic proof.
+Remove pet-scoped data and owned media from active systems. Returns a SHA-256
+receipt (`deletionHash`) computed over the deletion-request metadata (pet id,
+name, owner, timestamp, protocol) — it is not a signed proof and not a hash of
+the deleted content. Backup copies expire under the published retention schedule
+(no later than 90 days); public on-chain records cannot be erased.
 
 **Response:**
 ```json
@@ -121,7 +131,8 @@ Permanently delete all pet data with cryptographic proof.
   "success": true,
   "deletionHash": "a1b2c3d4...",
   "deletedAt": "2026-04-15T00:00:00Z",
-  "message": "All pet data has been permanently deleted"
+  "mediaCleanup": { "processed": 4, "deleted": 4, "retained": 0, "failed": 0 },
+  "message": "Pet-scoped data and owned media were removed from active systems. Backup copies expire under the published retention schedule; public on-chain records cannot be erased."
 }
 ```
 

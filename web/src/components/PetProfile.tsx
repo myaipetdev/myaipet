@@ -1636,7 +1636,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
           onClick={() => { setLoading(true); loadPets(); }}
           style={{
             padding: "11px 22px", border: 0, borderRadius: 12, cursor: "pointer",
-            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
             fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 700,
           }}
         >
@@ -2140,7 +2140,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                       } catch (e: any) { showError(e.message); }
                     }} style={{
                       padding: "4px 12px", borderRadius: 6, border: "none",
-                      background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontFamily: "var(--ed-m)", fontSize: 13, cursor: "pointer",
+                      background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontFamily: "var(--ed-m)", fontSize: 13, cursor: "pointer",
                     }}>Save</button>
                     <button type="button" onClick={() => setEditingDesc(false)} style={{
                       padding: "4px 12px", borderRadius: 6, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",

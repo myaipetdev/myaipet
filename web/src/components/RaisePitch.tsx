@@ -21,7 +21,7 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { getAuthHeaders } from "@/lib/api";
-import { seasonTier } from "@/lib/season";
+import { seasonTier, SEASON_START_MS, SEASON_END_MS } from "@/lib/season";
 import { pluralize } from "@/lib/pluralize";
 import Icon from "@/components/Icon";
 import Reveal, { MaskedTitle, useInvert } from "@/components/Reveal";
@@ -100,8 +100,13 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
   const cdDays = Math.floor(remaining / 86_400_000);
   const cdHours = Math.floor((remaining % 86_400_000) / 3_600_000);
   const cdMins = Math.floor((remaining % 3_600_000) / 60_000);
-  const seasonStarted = data?.started ?? false;
-  const seasonClosed = data?.seasonClosed ?? false;
+  // Season phase — the API answer wins once loaded, but until then (and if the
+  // fetch fails, e.g. signed-out visitors) derive it from the season window
+  // constants instead of defaulting to "not started". The old `?? false`
+  // default flashed stale pre-season copy ("SEASON 1 · OPENS JUL 1" /
+  // "STARTS IN") on every load while the season was actually live.
+  const seasonStarted = data?.started ?? now >= SEASON_START_MS;
+  const seasonClosed = data?.seasonClosed ?? now >= SEASON_END_MS;
   const cdLabel = seasonClosed ? "SEASON 1 STATUS" : seasonStarted ? "SEASON 1 CLOSES IN" : "SEASON 1 STARTS IN";
   const cdWhen = seasonClosed
     ? (data?.final ? "Final standings frozen" : "Final standings being confirmed")
@@ -207,7 +212,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
                 </div>
                 <button onClick={() => onNavigate?.("my pet")} style={{
                   padding: "6px 14px", borderRadius: 8, border: "none",
-                  background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontWeight: 700, fontSize: 13, cursor: "pointer",
+                  background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontWeight: 700, fontSize: 13, cursor: "pointer",
                   fontFamily: "var(--ed-disp)",
                 }}>Raise <ArrowSwap /></button>
               </div>
@@ -219,13 +224,22 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
             <div>
               <div style={miniLabel}>{seasonClosed ? "SEASON 1 · FINAL POINTS" : seasonStarted ? "SEASON 1 · POINTS IN PLAY" : "SEASON 1 · OPENS JUL 1"}</div>
               {seasonStarted ? (
-                <>
-                  <div style={{ ...bigNumber, color: "#F49B2A" }}>
-                    {(data?.pool.points ?? 0).toLocaleString()}
-                    <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
-                  </div>
-                  <div style={mini}>{data?.pool.participants ?? 0} {pluralize(data?.pool.participants ?? 0, "raiser")} · {seasonClosed ? "season total" : "grows as players raise & create"}</div>
-                </>
+                data ? (
+                  <>
+                    <div style={{ ...bigNumber, color: "#F49B2A" }}>
+                      {(data.pool.points ?? 0).toLocaleString()}
+                      <span style={{ fontSize: 18, color: "rgba(255,255,255,0.55)", marginLeft: 6 }}>pts</span>
+                    </div>
+                    <div style={mini}>{data.pool.participants ?? 0} {pluralize(data.pool.participants ?? 0, "raiser")} · {seasonClosed ? "season total" : "grows as players raise & create"}</div>
+                  </>
+                ) : (
+                  // Pool still loading — placeholder, never a fake/zeroed total
+                  // (mirrors the countdown's "—" placeholder above).
+                  <>
+                    <div style={{ ...bigNumber, color: "rgba(255,255,255,0.35)" }}>—</div>
+                    <div style={mini}>Loading the live pool…</div>
+                  </>
+                )
               ) : (
                 <>
                   <div style={{ ...bigNumber, color: "#F49B2A", fontSize: 30 }}>Get ready</div>

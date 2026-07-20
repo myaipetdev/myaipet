@@ -6,7 +6,7 @@
  *
  *   1) the pet's collectible sticker (REAL avatar) stands center
  *   2) it flips away and a warm-dark laptop swings in, lid opening
- *   3) the screen boots petclaw-mcp — typed lines end on "● {NAME} is online"
+ *   3) the screen boots the petclaw console — typed lines end on "● {NAME} is online"
  *   4) capability chips (connectors + MCP tools) fly OUT of the screen and
  *      hover around it, with gold dust rising
  *
@@ -155,10 +155,10 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
         <div className="pchi-laptop">
           <div className="pchi-lid">
             <div className="pchi-screen">
-              <div className="pchi-bar"><i /><i /><i /><b>petclaw — mcp · v1</b></div>
+              <div className="pchi-bar"><i /><i /><i /><b>petclaw — console · v1</b></div>
               <div className="pchi-term">
-                <span className="pchi-ln l1 m">$ npx petclaw-mcp</span>
-                <span className="pchi-ln l2">initializing petclaw-mcp · protocol v1 · SDK 1.6.1</span>
+                <span className="pchi-ln l1 m">$ petclaw-sdk talk</span>
+                <span className="pchi-ln l2">initializing petclaw · protocol v1 · SDK 1.6.1</span>
                 <span className="pchi-ln l3 c">connectors ▸ 19 &nbsp; tools ▸ 6 &nbsp; skills ▸ 18</span>
                 <span className="pchi-ln l4 c">soul ▸ portable · consent ▸ enforced</span>
                 <span className="pchi-ln l5 g">● {name} is online<span className="pchi-caret" /></span>

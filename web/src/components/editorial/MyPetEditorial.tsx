@@ -369,7 +369,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
             The connection failed — your pet is safe. Try again.
           </p>
           <button onClick={load} style={{
-            border: "none", cursor: "pointer", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+            border: "none", cursor: "pointer", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
             fontFamily: T.disp, fontWeight: 700, fontSize: 14, borderRadius: 12, padding: "11px 28px",
             boxShadow: "var(--ed-shadow-card)",
           }}>Retry</button>

@@ -23,7 +23,7 @@ import { PETCLAW_EXTENSION_STEPS, PETCLAW_EXTENSION_VERSION } from "@/lib/petcla
 
 const PILLARS = [
   { icon: "scroll", eyebrow: "01 · EXPORT", title: "Export your pet's soul", body: "Memories, personality, skills — as portable JSON. Take it anywhere, anytime." },
-  { icon: "fire", eyebrow: "02 · DELETE", title: "Delete with a receipt", body: "Wipe everything and get a signed SHA-256 receipt of exactly what was removed." },
+  { icon: "fire", eyebrow: "02 · DELETE", title: "Delete with a receipt", body: "Remove your pet's data from active systems with a SHA-256 receipt of the request. Backups expire within 90 days; public on-chain records can't be erased." },
   { icon: "crystal-ball", eyebrow: "03 · INSPECT", title: "See what we hold", body: "Every memory, fact, and connection we keep about your pet — in the open." },
   { icon: "footprints", eyebrow: "04 · INHERIT", title: "Pass it on", body: "Name a successor wallet. Your pet's soul outlives any single device." },
 ];

@@ -167,7 +167,7 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
             ? "We couldn't get your location. Allow location access (and try again) to see the Wild Encounters and catches around you."
             : "Enable location and we'll drop game spawns right around you to catch — plus any real catches nearby. Camera catches appear on the shared map at an approximate location (~110 m)."}
         </p>
-        <button onClick={() => setPhase("loading")} style={{ padding: "12px 24px", borderRadius: 999, border: `3px solid ${INK}`, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 0 rgba(33,26,18,0.25)" }}>
+        <button onClick={() => setPhase("loading")} style={{ padding: "12px 24px", borderRadius: 999, border: `3px solid ${INK}`, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 0 rgba(33,26,18,0.25)" }}>
           {denied ? "Try again" : "Enable location"}
         </button>
         <div style={{ fontSize: 13, color: MUTED, marginTop: 12 }}>Wild Encounters are game spawns (not real animals); they refresh hourly.</div>

@@ -181,7 +181,7 @@ export default function ModelsPanel() {
   };
 
   const inputStyle: React.CSSProperties = { width: "100%", padding: "10px 12px", borderRadius: 10, border: `1px solid ${LINE}`, fontSize: 14, color: INK, background: INSET, boxSizing: "border-box", fontFamily: BODY };
-  const btn: React.CSSProperties = { padding: "11px 20px", borderRadius: 12, border: "none", background: CTA, color: "#FFF8EE", fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: BODY, boxShadow: "0 8px 18px -10px rgba(226,125,12,.7)" };
+  const btn: React.CSSProperties = { padding: "11px 20px", borderRadius: 12, border: "none", background: CTA, color: "#211A12", fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: BODY, boxShadow: "0 8px 18px -10px rgba(226,125,12,.7)" };
 
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "8px 0 20px", fontFamily: BODY }}>

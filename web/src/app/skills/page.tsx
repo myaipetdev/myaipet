@@ -55,8 +55,8 @@ export default function SkillsPage() {
             maxWidth: 640, margin: 0,
           }}>
             Built-in skill manifests, one-command install. Every skill is a markdown +
-            JSON schema definition — no proprietary format, no lock-in. Plug them into
-            any MCP-compatible client.
+            JSON schema definition — no proprietary format, no lock-in. MCP client
+            support ships in SDK 1.6.2.
           </p>
         </div>
 
@@ -229,9 +229,10 @@ export default function SkillsPage() {
         <div style={{
           marginTop: 36, fontSize: 13, color: "rgba(33,26,18,0.55)", lineHeight: 1.6,
         }}>
-          MCP-compatible clients (Claude Code, Cursor, OpenClaw, Gemini CLI) can list
-          and invoke these as tools. See <a href="/api-docs" style={{ color: "#9A4E1E" }}>/api-docs</a> →
-          Ecosystem → MCP Compatibility, or run <code style={{ fontFamily: "var(--ed-m, ui-monospace, monospace)" }}>petclaw-sdk mcp</code>.
+          MCP client support (Claude Code, Cursor, and other MCP stdio clients) ships in
+          SDK 1.6.2 — until then, invoke skills via the REST API or CLI. See{" "}
+          <a href="/api-docs" style={{ color: "#9A4E1E" }}>/api-docs</a> →
+          Ecosystem → MCP Compatibility.
         </div>
       </div>
     </div>

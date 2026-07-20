@@ -266,6 +266,16 @@ export default function CatCatch() {
               <input type="file" accept="image/*" onChange={onUpload} style={{ display: "none" }} />
             </label>
             <div style={{ fontFamily: BODY, fontSize: 13, color: "rgba(252,233,207,.6)", maxWidth: 300 }}>Uploads are verified the same way.</div>
+            {/* Honest cost disclosure BEFORE any commit — mirrors the server
+                billing in lib/economyGuards.consumeCatchVerify: 3 free vision
+                scans/day/wallet (CATCH_FREE_VERIFY_PER_DAY), then 1 credit per
+                scan (CATCH_VERIFY_CREDIT_COST), billed on the ATTEMPT (we pay
+                the vision vendor per attempt, catch or not). Keep these numbers
+                in sync with that guard. */}
+            <div style={{ fontFamily: BODY, fontSize: 13, color: "rgba(252,233,207,.78)", maxWidth: 320, lineHeight: 1.45 }}>
+              <strong style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase" }}>3 free scans a day · then 1 credit per scan</strong>
+              {" "}— charged per scan, even if nothing is caught.
+            </div>
           </div>
         )}
 
@@ -419,6 +429,9 @@ function ThrowCan({ image, onThrow, onCancel }: { image: string; onThrow: () => 
         <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#FCE9CF" }} />
       </div>
       {!flying && <div style={{ position: "absolute", top: 16, left: 0, right: 0, textAlign: "center", color: "#FCE9CF", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,.6)", pointerEvents: "none" }}>Hold &amp; drag the can — release to throw</div>}
+      {/* Last pre-commit moment: the throw is what bills the scan, so restate
+          the honest cost here (numbers mirror economyGuards.consumeCatchVerify). */}
+      {!flying && <div style={{ position: "absolute", top: 38, left: 0, right: 0, textAlign: "center", color: "rgba(252,233,207,.85)", fontFamily: MONO, fontWeight: 700, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,.6)", pointerEvents: "none" }}>1 scan per throw · 3 free a day, then 1 credit — catch or not</div>}
       <div onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
         style={{ position: "absolute", bottom: 26, left: "50%", width: 84, height: 84, cursor: "grab", touchAction: "none", display: "flex", alignItems: "center", justifyContent: "center", ...canStyle }} aria-label="Throw the can">
         <CanGraphic />

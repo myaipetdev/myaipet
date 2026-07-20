@@ -1,23 +1,37 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import useCountUp from "@/hooks/useCountUp";
 
 const LOGO_SRC = "/mascot.jpg";
 
-const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
+type NavItem = { key: string; label: string; url?: string };
+
+// ── Primary tabs — always visible, mobile included (DD P2: Home / My Pet /
+// Create(Studio) / Community). Everything else lives under "More" so the
+// mobile strip never horizontally scrolls (DD P1: 9 tabs overflowed and
+// Community/PetClaw/Agent Office/Season were hidden behind a scroll with only
+// a decorative chevron).
+const PRIMARY_ITEMS: NavItem[] = [
   { key: "home", label: "Home" },
   { key: "my pet", label: "My Pet" },
-  // Game features grouped right after My Pet. (Catch lives inside Cards as a
-  // tab now — /?section=catch still aliases to the Cards screen's Catch tab.)
-  { key: "cards", label: "Cards" },
-  // Evergreen "Favorites Bracket" — pick-your-favorite pet
-  // tournament. Keeps the "worldcup" section key so old deep links still land;
-  // the seasonal national-flag World Cup is a small hideable module inside it.
-  { key: "worldcup", label: "Bracket" },
+  // The Create surface — same Studio as /?section=create, served at /studio.
   { key: "studio", label: "Studio", url: "/studio" },
   { key: "community", label: "Community" },
+];
+
+// ── "More" group — play + power surfaces. Rendered inline on wide desktop
+// (≥1360px, where all nine fit without scrolling) and as an accessible
+// dropdown menu everywhere else.
+const MORE_ITEMS: NavItem[] = [
+  // Game features. (Catch lives inside Cards as a tab — /?section=catch still
+  // aliases to the Cards screen's Catch tab.)
+  { key: "cards", label: "Cards" },
+  // Evergreen "Favorites Bracket" — pick-your-favorite pet tournament. Keeps
+  // the "worldcup" section key so old deep links still land; the seasonal
+  // national-flag World Cup is a small hideable module inside it.
+  { key: "worldcup", label: "Bracket" },
   { key: "sovereignty", label: "PetClaw" },
   // Agent Office — the Mission-Control dashboard (5 pillars / kanban / staff / crons).
   { key: "office", label: "Agent Office" },
@@ -33,7 +47,10 @@ const NAV_ITEMS: { key: string; label: string; url?: string }[] = [
 export default function Nav({ section, setSection, credits }: any) {
   const [balanceOpen, setBalanceOpen] = useState(false);
   const balanceRef = useRef<HTMLDivElement>(null);
-  const navWrapRef = useRef<HTMLDivElement>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+  const moreBtnRef = useRef<HTMLButtonElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -52,31 +69,47 @@ export default function Nav({ section, setSection, credits }: any) {
     }
   }, [balanceOpen]);
 
-  // Mobile: the tab strip scrolls horizontally — keep the active tab in view
-  // when the section changes (block:"nearest" so the page itself never moves).
+  // "More" menu — click-outside closes; Escape closes AND returns focus to the
+  // trigger button (keyboard operability, WAI-ARIA menu-button pattern).
   useEffect(() => {
-    navWrapRef.current
-      ?.querySelector('[aria-current="page"]')
-      ?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
-  }, [section]);
-
-  // Mobile: only 3–4 of 9 tabs fit, so surface a right-edge chevron hint while
-  // the strip can still scroll right — it fades out once the end is reached.
-  const [showScrollHint, setShowScrollHint] = useState(false);
-  useEffect(() => {
-    const el = navWrapRef.current;
-    if (!el) return;
-    const update = () => {
-      setShowScrollHint(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-    };
-    update();
-    el.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
+    if (!moreOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setMoreOpen(false);
+        moreBtnRef.current?.focus();
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKey);
     return () => {
-      el.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKey);
     };
-  }, [section]);
+  }, [moreOpen]);
+
+  // Move focus into the menu when it opens (so ArrowUp/Down work immediately).
+  useEffect(() => {
+    if (moreOpen) {
+      moreMenuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    }
+  }, [moreOpen]);
+
+  const handleMenuKey = useCallback((e: React.KeyboardEvent) => {
+    const items = Array.from(
+      moreMenuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []
+    );
+    if (!items.length) return;
+    const idx = items.indexOf(document.activeElement as HTMLElement);
+    if (e.key === "ArrowDown") { e.preventDefault(); items[(idx + 1) % items.length]?.focus(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); items[(idx - 1 + items.length) % items.length]?.focus(); }
+    else if (e.key === "Home") { e.preventDefault(); items[0]?.focus(); }
+    else if (e.key === "End") { e.preventDefault(); items[items.length - 1]?.focus(); }
+  }, []);
 
   // Count the REAL credit balance toward its new value (up or down) and flash
   // the chip once on change so spends/purchases are felt without a hard cut.
@@ -93,53 +126,124 @@ export default function Nav({ section, setSection, credits }: any) {
     }
   }, [credits]);
 
+  // URL items (e.g. /studio) match on pathname; section items on the section
+  // key. "catch" survives only as a deep-link alias for the Cards screen
+  // (Catch tab) — highlight Cards for it.
+  const isItemActive = (item: NavItem) =>
+    item.url
+      ? typeof window !== "undefined" && window.location.pathname === item.url
+      : section === item.key || (item.key === "cards" && section === "catch");
+  const moreActive = MORE_ITEMS.some(isItemActive);
+
+  const goPricing = () => {
+    setBalanceOpen(false);
+    setMoreOpen(false);
+    setSection("home");
+    setTimeout(() => { document.querySelector(".pricing-root")?.scrollIntoView({ behavior: "smooth" }); }, 600);
+  };
+
+  const itemStyle = (isActive: boolean): React.CSSProperties => ({
+    background: "transparent",
+    border: "none", cursor: "pointer",
+    borderRadius: 0, padding: "20px 2px",
+    fontFamily: "var(--ed-body)",
+    fontSize: 14, fontWeight: isActive ? 600 : 500,
+    color: isActive ? "#211A12" : "#7A6E5A",
+    transition: "color 180ms ease, transform 120ms ease",
+    position: "relative", whiteSpace: "nowrap", flexShrink: 0,
+    textDecoration: "none",
+    display: "inline-block",
+  });
+
+  const activeBar = (
+    <div style={{
+      position: "absolute", bottom: -1, left: 0, right: 0,
+      height: 2, background: "#211A12",
+      transformOrigin: "left",
+      animation: "edUnderlineIn 220ms cubic-bezier(.2,.8,.2,1) both",
+    }} />
+  );
+
+  const renderItem = (item: NavItem, extraClass = "") => {
+    const isActive = isItemActive(item);
+    const inner = (
+      <>
+        {item.label}
+        {isActive && activeBar}
+      </>
+    );
+    return item.url ? (
+      <a key={item.key} className={`nav-btn ${extraClass}`} href={item.url} aria-current={isActive ? "page" : undefined} style={itemStyle(isActive)}>
+        {inner}
+      </a>
+    ) : (
+      <button key={item.key} className={`nav-btn ${extraClass}`} onClick={() => setSection(item.key)} aria-current={isActive ? "page" : undefined} style={itemStyle(isActive)}>
+        {inner}
+      </button>
+    );
+  };
+
   return (
     <>
       <style>{`
-        /* DD report flagged header overlap at ~774px — earlier breakpoint
-           wasn't dropping the ← Landing button or shrinking wallet, so
-           the items+credits+landing+wallet collided. Cascaded breakpoints. */
         .nav-btn:active { transform: translateY(1px); }
         .nav-credits:hover { border-color: rgba(154,78,30,.5) !important; background: #F5EFE2 !important; }
-        @media (max-width: 1024px) {
-          .nav-landing-btn { display: none !important; }
+        .nav-more-item:hover, .nav-more-item:focus-visible { background: #F5EFE2 !important; }
+        /* Wide desktop: every section fits inline without scrolling — show the
+           full strip and hide the More menu. Below 1360px the overflow tabs
+           collapse into More (NO horizontal scroll strip anywhere — the old
+           scroller hid 5 of 9 tabs on mobile behind a decorative chevron). */
+        @media (min-width: 1360px) {
+          .nav-more-wrap { display: none !important; }
         }
-        @media (max-width: 1360px) {
-          .nav-items-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; justify-content: flex-start !important; mask-image: linear-gradient(to right, black 88%, transparent); -webkit-mask-image: linear-gradient(to right, black 88%, transparent); }
-          .nav-items-wrap::-webkit-scrollbar { display: none; }
+        @media (max-width: 1359.98px) {
+          /* Double selector: must out-rank the later ".nav-btn { display:… }"
+             mobile rule (equal specificity + !important would lose on order). */
+          .nav-btn.nav-inline-more { display: none !important; }
         }
-        /* Hide the COMPANION PROTOCOL badge WELL BEFORE the item strip runs out
-           of room. The nav grew (Bracket, Agent Office, Season Rewards), so the
-           decorative badge must clear out by ~1520px or it collides with the
-           first item (the "COMPANION PROTOHome" overlap). */
+        /* Hide the decorative COMPANION PROTOCOL badge before it can collide
+           with the item strip on mid-width screens. */
         @media (max-width: 1520px) {
           .nav-desktop-badge { display: none !important; }
         }
-        /* Scroll affordance for the mobile tab strip — hidden on desktop, a
-           right-edge chevron hint appears only when the strip can scroll right. */
-        .nav-scroll-hint { display: none; }
-        @keyframes navHintNudge {
-          0%, 100% { transform: translateX(0); }
-          50% { transform: translateX(3px); }
-        }
+        /* The balance row inside the More menu only appears when the chip in
+           the strip is hidden (very narrow screens, see 520px rule below). */
+        .nav-more-credits { display: none !important; }
         @media (max-width: 768px) {
           .nav-desktop-logo-text { display: none !important; }
-          .nav-container { padding: 8px 12px !important; }
-          /* Fixed-px right fade + reserved trailing padding so the active label
-             (esp. the last tab) can scroll clear of the fade and never sits
-             hidden under the Connect Wallet button. */
-          .nav-items-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; mask-image: linear-gradient(to right, black calc(100% - 32px), transparent); -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent); padding-right: 44px; scroll-padding-right: 44px; }
-          .nav-items-wrap::-webkit-scrollbar { display: none; }
-          /* ~44px tap target (13px text + 2×14px vertical padding). */
-          .nav-btn { padding: 14px 10px !important; font-size: 13px !important; line-height: 1.15; white-space: nowrap; flex-shrink: 0; }
+          .nav-container { padding: 8px 12px !important; gap: 10px !important; }
+          .nav-items-wrap { justify-content: flex-start !important; gap: 2px !important; }
+          /* ≥44px touch targets. */
+          .nav-btn { padding: 13px 7px !important; font-size: 13px !important; line-height: 1.15; min-height: 44px; display: inline-flex !important; align-items: center; }
           .nav-credits { font-size: 13px !important; padding: 4px 8px !important; }
-          .nav-scroll-hint { display: flex !important; }
+        }
+        @media (max-width: 520px) {
+          /* The strip is at its tightest — the credit chip moves into the More
+             menu (same balance, same Credits & Points jump) so the 4 primary
+             tabs + More never overflow the viewport. Wallet button gets REAL
+             compact sizing (the old scale(0.8) transform shrank it visually
+             but its full layout width still squeezed the tab strip until the
+             More button sat underneath the wallet button). */
+          .nav-credits-wrap { display: none !important; }
+          .nav-more-credits { display: flex !important; }
+          .nav-wallet [data-rk] button { font-size: 13px !important; padding: 8px 10px !important; }
         }
         @media (max-width: 480px) {
           .nav-container { padding: 6px 8px !important; gap: 6px !important; }
           .nav-logo-img { width: 30px !important; height: 30px !important; }
-          .nav-btn { padding: 14px 8px !important; font-size: 13px !important; }
-          .nav-wallet { transform: scale(0.8); transform-origin: right center; }
+          .nav-btn { padding: 13px 5px !important; font-size: 12.5px !important; }
+        }
+        @media (max-width: 430px) {
+          .nav-container { gap: 4px !important; }
+          .nav-btn { padding: 13px 4px !important; font-size: 12px !important; }
+          /* Phone width: the mascot chip yields its slot to the tabs — the
+             Home tab (and the wallet CTA) keep every destination reachable. */
+          .nav-logo-btn { display: none !important; }
+        }
+        @media (max-width: 360px) {
+          .nav-btn { padding: 13px 2px !important; font-size: 11px !important; }
+          .nav-items-wrap { gap: 0 !important; }
+          .nav-wallet [data-rk] button { font-size: 12px !important; padding: 7px 8px !important; }
         }
       `}</style>
       <nav
@@ -159,6 +263,7 @@ export default function Nav({ section, setSection, credits }: any) {
         {/* Logo */}
         <button
           type="button"
+          className="nav-logo-btn"
           aria-label="Go to home"
           style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0, border: 0, padding: 0, background: "transparent", color: "inherit", font: "inherit" }}
           onClick={() => setSection("home")}>
@@ -186,58 +291,103 @@ export default function Nav({ section, setSection, credits }: any) {
           </span>
         </button>
 
-        {/* Nav items — scrollable on mobile. Relative wrapper hosts the mobile
-            scroll-hint chevron; the inner div is the actual scroller (ref). */}
-        <div style={{ position: "relative", display: "flex", flex: 1, minWidth: 0 }}>
-        <div ref={navWrapRef} className="nav-items-wrap" style={{
+        {/* Nav items — 4 primary tabs + More (all nine inline on wide desktop).
+            No horizontal scrolling in any viewport. */}
+        <div className="nav-items-wrap" style={{
           display: "flex", gap: 17, alignItems: "center", justifyContent: "center",
           flex: 1, minWidth: 0,
         }}>
-          {NAV_ITEMS.map((item) => {
-            // URL items (e.g. /studio) navigate; otherwise set in-page section.
-            // "catch" survives only as a deep-link alias for the Cards screen
-            // (Catch tab) — highlight Cards for it.
-            const isActive = item.url
-              ? typeof window !== "undefined" && window.location.pathname === item.url
-              : section === item.key || (item.key === "cards" && section === "catch");
-            const sharedStyle: React.CSSProperties = {
-              background: "transparent",
-              border: "none", cursor: "pointer",
-              borderRadius: 0, padding: "20px 2px",
-              fontFamily: "var(--ed-body)",
-              fontSize: 14, fontWeight: isActive ? 600 : 500,
-              color: isActive ? "#211A12" : "#7A6E5A",
-              transition: "color 180ms ease, transform 120ms ease",
-              position: "relative", whiteSpace: "nowrap", flexShrink: 0,
-              textDecoration: "none",
-              display: "inline-block",
-            };
-            const inner = (
-              <>
-                {item.label}
-                {isActive && (
-                  <div style={{
-                    position: "absolute", bottom: -1, left: 0, right: 0,
-                    height: 2, background: "#211A12",
-                    transformOrigin: "left",
-                    animation: "edUnderlineIn 220ms cubic-bezier(.2,.8,.2,1) both",
-                  }} />
+          {PRIMARY_ITEMS.map((item) => renderItem(item))}
+          {MORE_ITEMS.map((item) => renderItem(item, "nav-inline-more"))}
+
+          {/* More — a real, keyboard-operable menu button (replaces the old
+              decorative "›" scroll hint that wasn't interactive). */}
+          <div ref={moreRef} className="nav-more-wrap" style={{ position: "relative", flexShrink: 0 }}>
+            <button
+              ref={moreBtnRef}
+              className="nav-btn"
+              aria-haspopup="menu"
+              aria-expanded={moreOpen}
+              aria-controls="nav-more-menu"
+              onClick={() => setMoreOpen((v) => !v)}
+              style={itemStyle(moreActive)}
+            >
+              More <span aria-hidden="true" style={{ fontSize: 10, verticalAlign: 1 }}>{moreOpen ? "▴" : "▾"}</span>
+              {moreActive && activeBar}
+            </button>
+            {moreOpen && (
+              <div
+                id="nav-more-menu"
+                ref={moreMenuRef}
+                role="menu"
+                aria-label="More sections"
+                onKeyDown={handleMenuKey}
+                style={{
+                  position: "absolute", top: "calc(100% + 8px)", right: -8, zIndex: 200,
+                  background: "var(--ed-paper, #FBF6EC)",
+                  borderRadius: 14, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                  boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
+                  padding: 6, minWidth: 212,
+                  animation: "slideIn 0.18s ease",
+                }}
+              >
+                {MORE_ITEMS.map((item) => {
+                  const isActive = isItemActive(item);
+                  return (
+                    <button
+                      key={item.key}
+                      role="menuitem"
+                      className="nav-more-item"
+                      aria-current={isActive ? "page" : undefined}
+                      onClick={() => { setMoreOpen(false); setSection(item.key); }}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        width: "100%", minHeight: 44, padding: "10px 14px",
+                        background: "transparent", border: "none", borderRadius: 10,
+                        cursor: "pointer", textAlign: "left",
+                        fontFamily: "var(--ed-body)", fontSize: 14,
+                        fontWeight: isActive ? 700 : 500,
+                        color: isActive ? "#211A12" : "#5C5140",
+                        transition: "background 140ms ease",
+                      }}
+                    >
+                      {item.label}
+                      {isActive && (
+                        <span aria-hidden="true" style={{
+                          width: 6, height: 6, borderRadius: "50%",
+                          background: "#BE4F28", flexShrink: 0, marginLeft: 10,
+                        }} />
+                      )}
+                    </button>
+                  );
+                })}
+                {credits !== null && credits !== undefined && (
+                  <div className="nav-more-credits" style={{ flexDirection: "column" }}>
+                    <div style={{ height: 1, background: "var(--ed-hair, rgba(33,26,18,.13))", margin: "6px 8px" }} />
+                    <button
+                      role="menuitem"
+                      className="nav-more-item"
+                      onClick={goPricing}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        width: "100%", minHeight: 44, padding: "10px 14px",
+                        background: "transparent", border: "none", borderRadius: 10,
+                        cursor: "pointer", textAlign: "left",
+                        fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
+                        color: "#9A4E1E",
+                      }}
+                    >
+                      <span>◎ {displayCredits.toLocaleString()} <span style={{ opacity: 0.7 }}>cr</span></span>
+                      <span style={{ fontFamily: "var(--ed-body)", fontWeight: 600, color: "#7A6E5A" }}>Credits &amp; Points</span>
+                    </button>
+                  </div>
                 )}
-              </>
-            );
-            return item.url ? (
-              <a key={item.key} className="nav-btn" href={item.url} aria-current={isActive ? "page" : undefined} style={sharedStyle}>
-                {inner}
-              </a>
-            ) : (
-              <button key={item.key} className="nav-btn" onClick={() => setSection(item.key)} aria-current={isActive ? "page" : undefined} style={sharedStyle}>
-                {inner}
-              </button>
-            );
-          })}
+              </div>
+            )}
+          </div>
 
           {credits !== null && credits !== undefined && (
-            <div ref={balanceRef} style={{ position: "relative", flexShrink: 0, marginLeft: 4 }}>
+            <div ref={balanceRef} className="nav-credits-wrap" style={{ position: "relative", flexShrink: 0, marginLeft: 4 }}>
               <button
                 className="nav-credits"
                 aria-label={`Credit balance: ${credits}`}
@@ -293,7 +443,7 @@ export default function Nav({ section, setSection, credits }: any) {
                   }} />
                   <button
                     className="ed-press"
-                    onClick={() => { setBalanceOpen(false); setSection("home"); setTimeout(() => { document.querySelector(".pricing-root")?.scrollIntoView({ behavior: "smooth" }); }, 600); }}
+                    onClick={goPricing}
                     style={{
                       width: "100%", padding: "11px 14px", borderRadius: 12, border: "none",
                       background: "linear-gradient(180deg, #F49B2A, #E27D0C)",
@@ -310,28 +460,15 @@ export default function Nav({ section, setSection, credits }: any) {
             </div>
           )}
         </div>
-          <span
-            className="nav-scroll-hint"
-            aria-hidden="true"
-            style={{
-              position: "absolute", top: 0, bottom: 0, right: 0,
-              alignItems: "center", paddingLeft: 16, paddingRight: 1,
-              pointerEvents: "none",
-              color: "#BE4F28",
-              fontFamily: "var(--ed-m)", fontSize: 17, fontWeight: 800,
-              opacity: showScrollHint ? 1 : 0,
-              transition: "opacity 200ms ease",
-              animation: showScrollHint ? "navHintNudge 1.4s ease-in-out infinite" : "none",
-            }}
-          >
-            ›
-          </span>
-        </div>
 
         {/* "← Landing" button removed — /landing/ doesn't exist, the home itself is the landing. */}
 
         <div className="nav-wallet" style={{ flexShrink: 0 }}>
+          {/* "Connect" (not "Connect Wallet") — the shorter label is what lets
+              the 4 primary tabs + More fit a 360-430px viewport with no
+              horizontal scrolling. */}
           <ConnectButton
+            label="Connect"
             chainStatus="icon"
             showBalance={false}
             accountStatus={{ smallScreen: "avatar", largeScreen: "address" }}

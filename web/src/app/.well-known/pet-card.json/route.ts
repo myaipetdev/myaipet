@@ -35,7 +35,9 @@ export async function GET(req: NextRequest) {
       soulNFT: false,
       memoryExport: true,
       consentManagement: true,
-      protocols: ["petclaw-v1", "mcp"],
+      // MCP is not advertised while the SDK's MCP path is broken; it returns
+      // with SDK 1.6.2.
+      protocols: ["petclaw-v1"],
       multimodal: ["text", "image"],
     },
 
@@ -67,10 +69,17 @@ export async function GET(req: NextRequest) {
     sovereignty: {
       dataOwnership: "user",
       exportFormat: "petclaw-soul-v1",
-      deletionProof: true,
+      // Deletion returns a SHA-256 receipt of the deletion-request metadata —
+      // it is NOT a signed proof and NOT a hash of the deleted content, so
+      // this field must stay false. `deletionReceipt` describes what exists.
+      deletionProof: false,
+      deletionReceipt: "sha256-metadata",
       consentRequired: true,
       portability: true,
-      inheritance: true,
+      // Successor designation exists in the API, but the automated transfer
+      // job is not scheduled in this release — do not advertise inheritance
+      // as an operating protocol guarantee.
+      inheritance: false,
     },
   };
 

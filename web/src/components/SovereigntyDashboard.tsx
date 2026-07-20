@@ -2466,9 +2466,9 @@ export default function SovereigntyDashboard() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 28 }}>
                 {[
                   { icon: "crystal-ball", title: "Persistent Memory", desc: "Context survives sessions, restarts, and platform switches — no re-explaining yourself" },
-                  { icon: "electric", title: "Real-time Sync", desc: "State changes on Telegram reflect instantly on Discord, Web, and wherever Claw runs" },
-                  { icon: "lock", title: "Encrypted Sessions", desc: "AES-256 session keys. Only your pet can read its own history" },
-                  { icon: "extension-icon", title: "MCP Compatible", desc: "Plug into any Model Context Protocol client in under 5 minutes" },
+                  { icon: "electric", title: "One State Everywhere", desc: "Web and the Chrome extension share one pet state today; messaging channels join when channel delivery launches" },
+                  { icon: "lock", title: "Owner-Scoped Access", desc: "TLS in transit, owner-scoped authorization on every memory read. BYOK model keys are encrypted at rest (AES-256-GCM)" },
+                  { icon: "extension-icon", title: "MCP Compatible", desc: "6 MCP tools defined in the SDK — the working MCP path ships in SDK 1.6.2" },
                   { icon: "scroll", title: "SOUL.md", desc: "Your pet's personality definition file — define its values and voice in plain markdown" },
                   { icon: "sparkling", title: "Self-improving", desc: "Skills evolve as interactions accumulate. The more your pet knows you, the better it converses" },
                 ].map(({ icon, title, desc }) => (
@@ -2533,7 +2533,7 @@ export default function SovereigntyDashboard() {
                   </div>
                 ))}
                 <div style={{ marginTop: 10, color: "rgba(251,246,236,0.65)", fontSize: 13 }}>
-                  petclaw-sdk talk &nbsp;→ interactive chat mode &nbsp;|&nbsp; petclaw-sdk mcp → start MCP server
+                  petclaw-sdk talk &nbsp;→ interactive chat mode &nbsp;|&nbsp; petclaw-sdk mcp → MCP server (fix ships in SDK 1.6.2)
                 </div>
               </div>
 
@@ -2579,7 +2579,7 @@ export default function SovereigntyDashboard() {
                 Memory ledger, channel connections, SOUL export &amp; delete all manage a real
                 pet&apos;s data — this page is showing a demo preview.
               </div>
-              <a href="/?section=my+pet" style={{ display: "inline-block", marginTop: 14, padding: "11px 22px", borderRadius: 12, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontFamily: DISP, fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
+              <a href="/?section=my+pet" style={{ display: "inline-block", marginTop: 14, padding: "11px 22px", borderRadius: 12, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontFamily: DISP, fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
                 Adopt your pet →
               </a>
             </div>
@@ -2707,20 +2707,22 @@ export default function SovereigntyDashboard() {
                 fontSize: 13, padding: "3px 9px", borderRadius: 999,
                 background: "rgba(190,79,40,0.1)", color: TERRA_SUB,
                 fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
-              }}>19 CONNECTORS · 6 LIVE</span>
+              }}>19 CONNECTORS · 3 LIVE</span>
             </div>
             <p style={{
               fontSize: 15, color: MUTED2, marginBottom: 20,
               fontFamily: BODY, lineHeight: 1.65,
             }}>
-              19 connectors in the registry; 6 are live today. Planned connectors are marked below.
+              19 connectors in the registry; 3 are live today. Telegram, Twitter/X and Discord
+              channel delivery is launch-paused — matching the Agent screen. Planned connectors
+              are marked below.
             </p>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 8 }}>
               {[
-                { icon: "T", name: "Telegram", color: "#2AABEE", live: true },
-                { icon: "𝕏", name: "Twitter/X", color: "#000", live: true },
-                { icon: "D", name: "Discord", color: "#5865F2", live: true },
+                { icon: "T", name: "Telegram", color: "#2AABEE", paused: true },
+                { icon: "𝕏", name: "Twitter/X", color: "#000", paused: true },
+                { icon: "D", name: "Discord", color: "#5865F2", paused: true },
                 { icon: "S", name: "Slack", color: "#4A154B" },
                 { icon: "W", name: "WhatsApp", color: "#25D366" },
                 { icon: "L", name: "LINE", color: "#06C755" },
@@ -2737,7 +2739,7 @@ export default function SovereigntyDashboard() {
                 { icon: "🧠", name: "Memory", color: "#8B5CF6", live: true },
                 { icon: "🦎", name: "CoinGecko", color: "#8BC53F" },
                 { icon: "⛓", name: "BscScan", color: "#F0B90B" },
-              ].map((c) => (
+              ].map((c: { icon: string; name: string; color: string; live?: boolean; paused?: boolean }) => (
                 <div key={c.name} style={{
                   display: "flex", alignItems: "center", gap: 8,
                   padding: "8px 10px", borderRadius: 10,
@@ -2753,8 +2755,8 @@ export default function SovereigntyDashboard() {
                   }}>{c.icon}</div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, fontFamily: BODY, color: c.live ? INK : MUTED }}>{c.name}</div>
-                    <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.08em", color: c.live ? GOOD : MONO_CLR }}>
-                      {c.live ? "● live" : "○ soon"}
+                    <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.08em", color: c.live ? GOOD : c.paused ? DANGER : MONO_CLR }}>
+                      {c.live ? "● live" : c.paused ? "◌ launch-paused" : "○ soon"}
                     </div>
                   </div>
                 </div>

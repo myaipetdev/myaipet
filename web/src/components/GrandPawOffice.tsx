@@ -55,6 +55,20 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
   const [pane, setPane] = useState<"lobby" | "board">("lobby");
   const [now, setNow] = useState(() => new Date());
 
+  // Mobile: the fixed "1fr + 330px rail" grid and the 620px diorama shot past
+  // a phone viewport. Under 880px the rail stacks below the diorama, the 3D
+  // canvas (width is already fluid) drops to a phone-friendly height, and the
+  // keyboard-shortcut chrome (⌘K) hides.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 880px)");
+    const apply = () => setNarrow(mq.matches);
+    apply();
+    mq.addEventListener?.("change", apply);
+    return () => mq.removeEventListener?.("change", apply);
+  }, []);
+
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(t);
@@ -115,7 +129,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
   const eyebrow = `${now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase()}, ${now.toLocaleDateString("en-US", { month: "short", day: "2-digit" }).toUpperCase()} · ${String(hour).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} · AGENT OFFICE`;
 
   return (
-    <div style={{ background: BG, borderRadius: 22, border: `1px solid ${HAIR}`, padding: "22px 24px 26px", margin: "0 -4px" }}>
+    <div style={{ background: BG, borderRadius: 22, border: `1px solid ${HAIR}`, padding: narrow ? "18px 14px 20px" : "22px 24px 26px", margin: "0 -4px" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
       <style>{`@keyframes gpPulse{0%,100%{opacity:1}50%{opacity:.45}}`}</style>
 
@@ -140,7 +154,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
                 <button key={p} onClick={() => setPane(p)}
                   style={{ fontFamily: SANS, fontSize: 12.5, fontWeight: pane === p ? 700 : 500, textTransform: "capitalize", padding: "4px 13px", borderRadius: 999, border: "none", cursor: "pointer",
                     background: pane === p ? "#F1E7CC" : "transparent", color: pane === p ? INK : MUT2 }}>
-                  {p} <span style={{ fontFamily: MONO, fontSize: 10, color: MUT2 }}>⌘{p === "lobby" ? 1 : 2}</span>
+                  {p}{!narrow && <> <span style={{ fontFamily: MONO, fontSize: 10, color: MUT2 }}>⌘{p === "lobby" ? 1 : 2}</span></>}
                 </button>
               ))}
             </span>
@@ -166,7 +180,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
           placeholder={`Ask the hotel to do anything — ${petName} takes it`}
           maxLength={600}
           style={{ flex: 1, minWidth: 160, border: "none", outline: "none", background: "transparent", fontFamily: SANS, fontSize: 15, color: INK, padding: "8px 12px" }} />
-        <span style={{ fontFamily: MONO, fontSize: 11, color: MUT2, border: `1px solid ${CHIP_BR}`, borderRadius: 7, padding: "3px 7px", marginRight: 8 }}>⌘K</span>
+        {!narrow && <span style={{ fontFamily: MONO, fontSize: 11, color: MUT2, border: `1px solid ${CHIP_BR}`, borderRadius: 7, padding: "3px 7px", marginRight: 8 }}>⌘K</span>}
         <button onClick={onDispatch} disabled={goal.trim().length < 3 || running}
           style={{ fontFamily: SANS, fontSize: 14.5, fontWeight: 700, color: "#FFF9EC", padding: "11px 22px", borderRadius: 12, border: "none",
             cursor: goal.trim().length >= 3 && !running ? "pointer" : "not-allowed",
@@ -176,12 +190,12 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
       </div>
 
       {tab === "overview" && (
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 330px", gap: 18, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0,1fr)" : "minmax(0,1fr) 330px", gap: 18, alignItems: "start" }}>
           {/* main pane: lobby diorama or board */}
           <div style={{ minWidth: 0 }}>
             {pane === "lobby" ? (
               <div style={{ position: "relative" }}>
-                <GrandPaw3D live={live3d} height={620} />
+                <GrandPaw3D live={live3d} height={narrow ? 400 : 620} />
                 <div style={chipFloat({ left: 14, bottom: 14 })}>
                   ● PETS {Math.min(pets.length, 3) || 1} · {runningCount} WORKING
                 </div>

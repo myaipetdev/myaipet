@@ -24,7 +24,7 @@ export default function NotFound() {
         </p>
         <a href="/" style={{
           display: "inline-block", padding: "11px 24px", borderRadius: 12, textDecoration: "none",
-          background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+          background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
           fontFamily: "var(--ed-disp, sans-serif)", fontWeight: 700, fontSize: 14,
         }}>
           Back to MY AI PET →

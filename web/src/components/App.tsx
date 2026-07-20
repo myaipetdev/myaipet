@@ -16,7 +16,7 @@ import Stats from "@/components/Stats";
 import Pricing from "@/components/Pricing";
 import OrchestrationExplainer from "@/components/OrchestrationExplainer";
 import RaisePitch from "@/components/RaisePitch";
-import WalletGate from "@/components/WalletGate";
+import WalletGate, { TourBanner } from "@/components/WalletGate";
 import ToastHost from "@/components/Toast";
 import DialogHost from "@/components/Dialog";
 import { seasonTier, SEASON_START_MS, SEASON_END_MS } from "@/lib/season";
@@ -354,6 +354,21 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
   );
 }
 
+// The EXACT in-SPA section keys that App renders below (note: "worldcup"/
+// "workbench" are single words, and Studio is the "create" section — "studio"
+// is only a header URL nav, never a section value).
+const VALID_SECTIONS = ["home", "my pet", "cards", "catch", "create", "community", "agent", "office", "workbench", "sovereignty", "worldcup", "season", "chat"];
+
+// Shared by the initial deep link AND the popstate (Back/Forward) handler.
+// Season Rewards hub — the canonical section key is "season". The legacy
+// "airdrop"/"leaderboard" keys (token-flavoured, contradict the no-token
+// posture) are kept as inbound aliases so old deep links still resolve.
+// Unknown section values used to render nav + an empty body — fall back home.
+function normalizeSection(raw: string | null): string {
+  if (raw === "leaderboard" || raw === "airdrop") return "season";
+  return raw && VALID_SECTIONS.includes(raw) ? raw : "home";
+}
+
 export default function App() {
   const { isConnected } = useAccount();
   const { user, isAuthenticated, refreshUser } = useAuth();
@@ -369,19 +384,16 @@ export default function App() {
   // (Studio is a separate route and routes back here with ?section=...)
   const [section, setSection] = useState(() => {
     if (typeof window === "undefined") return "home";
-    const fromUrl = new URLSearchParams(window.location.search).get("section");
-    // Season Rewards hub — the canonical section key is "season". The legacy
-    // "airdrop"/"leaderboard" keys (token-flavoured, contradict the no-token
-    // posture) are kept as inbound aliases so old deep links still resolve.
-    if (fromUrl === "leaderboard" || fromUrl === "airdrop") return "season";
-    // Unknown section values used to render nav + an empty body — fall back home.
-    // These are the EXACT in-SPA section keys that App renders below (note:
-    // "worldcup"/"workbench" are single words, and Studio is the "create" section
-    // — "studio" is only a header URL nav, never a section value).
-    const VALID = ["home", "my pet", "cards", "catch", "create", "community", "agent", "office", "workbench", "sovereignty", "worldcup", "season", "chat"];
-    return fromUrl && VALID.includes(fromUrl) ? fromUrl : "home";
+    return normalizeSection(new URLSearchParams(window.location.search).get("section"));
   });
-  // Keep the URL in sync when the user clicks nav inside the SPA.
+  // Where the current section value came from — decides how the history effect
+  // below writes the URL. "init" (first paint) and "pop" (Back/Forward) must
+  // NOT push a new entry; only in-app navigation ("nav") does.
+  const sectionNavSource = useRef<"init" | "nav" | "pop">("init");
+  // Keep the URL in sync when the user clicks nav inside the SPA. pushState
+  // (not replaceState) so the browser Back button walks back through sections
+  // instead of exiting the site (DD P1); the popstate listener below restores
+  // the section when the user actually presses Back/Forward.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -389,12 +401,35 @@ export default function App() {
     else params.set("section", section);
     const next = params.toString();
     const url = next ? `/?${next}` : "/";
-    window.history.replaceState({}, "", url);
+    const source = sectionNavSource.current;
+    sectionNavSource.current = "nav";
+    if (source === "nav") {
+      window.history.pushState({}, "", url);
+    } else {
+      // First load or Back/Forward: the entry already exists — just normalize
+      // aliases (airdrop/leaderboard → season) in place, never add an entry.
+      window.history.replaceState({}, "", url);
+    }
     // Section switches used to inherit the previous tab's scroll offset (users
     // landed mid-page/at the footer). Reset to top; the Pricing deep-links
     // below fire 100–150ms later, so they still win over this reset.
     window.scrollTo({ top: 0 });
   }, [section]);
+
+  // Back/Forward: restore the section encoded in the URL of the history entry
+  // the browser moved to (same aliases/validation as the initial deep link).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPop = () => {
+      const target = normalizeSection(new URLSearchParams(window.location.search).get("section"));
+      setSection((prev: string) => {
+        if (prev !== target) sectionNavSource.current = "pop";
+        return target;
+      });
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   // Stuck-entrance safety: the section outlet enters via a CSS keyframe that
   // STARTS at opacity 0. If the animation clock stalls (hidden/background tab,
@@ -510,10 +545,13 @@ export default function App() {
         ::selection { background: rgba(190,79,40,0.18) }
         textarea::placeholder { color: rgba(33,26,18,0.25) }
         /* Guest-tour: reserve room for the fixed DEMO-TOUR banner so it never
-           overlaps the last strip of content/footer. The banner wraps taller
-           on narrow screens, so mobile reserves more. */
-        .tour-pad { padding-bottom: 72px; }
-        @media (max-width: 640px) { .tour-pad { padding-bottom: 124px; } }
+           overlaps the last strip of content (e.g. the "Connect wallet to
+           adopt" CTA) — safe-area aware to clear the iOS home indicator. The
+           banner may wrap to two rows on mid widths, so reserve generously;
+           on ≤640px the banner is a compact single fixed-height row (see
+           TourBanner in WalletGate.tsx), so its height is known. */
+        .tour-pad { padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); }
+        @media (max-width: 640px) { .tour-pad { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
         @media (max-width: 768px) {
           .desktop-grid { grid-template-columns: 1fr !important; }
           .desktop-two-col { grid-template-columns: 1fr !important; }
@@ -726,6 +764,13 @@ export default function App() {
       )}
       </div>
 
+      {/* Guest-tour DEMO banner — must live OUTSIDE the animated section
+          outlet above: the outlet's entrance animation (fill-mode both) keeps
+          a transform applied forever, which turns it into the containing
+          block for position:fixed children. Rendered inside it (as WalletGate
+          used to), the "fixed" banner anchored to the SECTION bottom and
+          covered the tour page's closing "Connect wallet to adopt" CTA. */}
+      {showTourBanner && <TourBanner />}
 
       {/* Footer — only show in app mode */}
       <footer style={{ padding: "48px 24px 36px", textAlign: "center", borderTop: "1px solid var(--ed-hair, rgba(33,26,18,.13))", background: "rgba(33,26,18,0.02)" }}>
@@ -789,7 +834,7 @@ export default function App() {
           <a href="/?section=sovereignty#petclaw-extension" style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "12px 22px", borderRadius: 12,
-            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
             border: "none",
             fontFamily: "var(--ed-body)", fontSize: 15, fontWeight: 700,
             textDecoration: "none", transition: "transform 0.15s, box-shadow 0.15s",

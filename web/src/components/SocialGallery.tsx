@@ -193,14 +193,14 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
           }}
           placeholder="Write a comment…"
           style={{
-            flex: 1, padding: "9px 12px", borderRadius: 8,
+            flex: 1, padding: "9px 12px", minHeight: 44, borderRadius: 8,
             background: T.inset, border: `1px solid ${T.hair}`,
             fontFamily: T.body, fontSize: 13, color: T.ink,
             outline: "none", boxSizing: "border-box",
           }}
         />
         <button type="button" aria-busy={submitting} onClick={handleSubmit} disabled={!newComment.trim() || submitting} style={{
-          padding: "9px 14px", borderRadius: 8, border: "none", cursor: "pointer",
+          padding: "9px 14px", minHeight: 44, minWidth: 44, borderRadius: 8, border: "none", cursor: "pointer",
           background: newComment.trim() ? `linear-gradient(135deg,${T.cta1},${T.cta2})` : T.inset,
           color: newComment.trim() ? "#fff" : T.mono,
           fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em",
@@ -255,6 +255,18 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
     };
   }, []);
   const [copied, setCopied] = useState(false);
+  // Mobile: the 58/42 side-by-side layout squeezed both panes into unusable
+  // slivers on a phone. Under 700px the modal stacks — media on top, details
+  // scrolling below — and action targets grow to ≥44px.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 700px)");
+    const apply = () => setNarrow(mq.matches);
+    apply();
+    mq.addEventListener?.("change", apply);
+    return () => mq.removeEventListener?.("change", apply);
+  }, []);
   if (!item) return null;
 
   return (
@@ -264,16 +276,17 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
     }} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <style>{`@keyframes modalIn { from { opacity:0; transform:scale(0.96) } to { opacity:1; transform:scale(1) } }`}</style>
       <div ref={panelRef} role="dialog" aria-modal="true" aria-label="Creation details" onMouseDown={e => e.stopPropagation()} style={{
-        display: "flex", maxWidth: 1000, width: "92vw", maxHeight: "88vh",
+        display: "flex", flexDirection: narrow ? "column" : "row",
+        maxWidth: 1000, width: narrow ? "94vw" : "92vw", maxHeight: "88vh",
         background: T.paper, borderRadius: 16, overflow: "hidden",
         boxShadow: "var(--ed-shadow-float)",
         animation: "modalIn 0.25s ease-out",
       }}>
         {/* Media */}
         <div style={{
-          flex: "1 1 58%", position: "relative", overflow: "hidden",
+          flex: narrow ? "0 0 auto" : "1 1 58%", position: "relative", overflow: "hidden",
           background: T.inset, display: "flex", alignItems: "center", justifyContent: "center",
-          minHeight: 400,
+          minHeight: narrow ? 0 : 400, height: narrow ? "42vh" : undefined,
         }}>
           {item.video_url || item.video_path ? (
             <>
@@ -284,7 +297,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
                 const v = document.getElementById("detail-video") as HTMLVideoElement;
                 if (v) v.muted = !v.muted;
               }} style={{
-                position: "absolute", bottom: 14, right: 14, width: 36, height: 36,
+                position: "absolute", bottom: 14, right: 14, width: 44, height: 44,
                 borderRadius: "50%", border: `2px solid ${T.paper}`, background: T.ink,
                 cursor: "pointer", display: "flex",
                 alignItems: "center", justifyContent: "center", fontSize: 16, color: "white",
@@ -300,13 +313,13 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
             </>
           ) : item.photo_url || item.photo_path ? (
             // Foil-stamped collectible reveal — the creation presented as an artifact.
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", padding: "40px 28px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", padding: narrow ? "16px 14px" : "40px 28px" }}>
               <CollectibleFrame
                 photoUrl={item.photo_url || item.photo_path}
                 level={item.generation_id || item.id || 0}
                 speciesLabel={(item.gen_type === "video" ? "MOTION" : "STILL")}
                 elementLabel={`FILE №${item.generation_id || item.id || "—"}`}
-                width={330}
+                width={narrow ? 210 : 330}
                 tilt={-2.4}
                 seal={false}
               />
@@ -327,7 +340,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
         </div>
 
         {/* Info */}
-        <div style={{ flex: "1 1 42%", padding: "24px 26px", display: "flex", flexDirection: "column", overflow: "auto" }}>
+        <div style={{ flex: narrow ? "1 1 auto" : "1 1 42%", minHeight: 0, padding: narrow ? "16px 16px 18px" : "24px 26px", display: "flex", flexDirection: "column", overflow: "auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{
@@ -354,8 +367,8 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
             </div>
             <button type="button" data-modal-close="true" aria-label="Close creation details" onClick={onClose} style={{
               background: T.inset, border: "none", color: T.muted,
-              cursor: "pointer", width: 30, height: 30, borderRadius: 8,
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15,
+              cursor: "pointer", width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
             }}>✕</button>
           </div>
 
@@ -370,14 +383,17 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
             </div>
           </div>
 
+          {/* Action row — every control keeps a ≥44px touch target (minHeight
+              44 on the buttons; the row's vertical padding shrinks to hold the
+              overall rhythm). */}
           <div style={{
-            display: "flex", gap: 12, padding: "10px 0", marginBottom: 12,
+            display: "flex", gap: 12, padding: "2px 0", marginBottom: 12, alignItems: "center",
             borderTop: `1px solid ${T.hair}`,
             borderBottom: `1px solid ${T.hair}`,
           }}>
             <button type="button" aria-label={item.is_liked ? "Unlike this creation" : "Like this creation"} aria-pressed={!!item.is_liked} onClick={() => onLike(item.generation_id || item.id, index)} style={{
               display: "flex", alignItems: "center", gap: 5, background: "none",
-              border: "none", cursor: "pointer", padding: 0,
+              border: "none", cursor: "pointer", padding: "0 4px", minHeight: 44, minWidth: 44,
             }}>
               <span style={{
                 fontSize: 15, color: item.is_liked ? T.happy : T.muted,
@@ -415,7 +431,8 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
               title="Copy link to this creation"
               style={{
                 display: "flex", alignItems: "center", gap: 5, background: "none",
-                border: "none", cursor: "pointer", padding: 0, marginRight: 14,
+                border: "none", cursor: "pointer", padding: "0 4px", marginRight: 10,
+                minHeight: 44, minWidth: 44,
                 fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.04em",
                 color: copied ? T.rareCommon : T.ink70,
               }}
@@ -438,7 +455,8 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
               title="Share on X"
               style={{
                 display: "flex", alignItems: "center", gap: 5, background: "none",
-                border: "none", cursor: "pointer", padding: 0,
+                border: "none", cursor: "pointer", padding: "0 4px",
+                minHeight: 44, minWidth: 44,
                 fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.04em", color: T.ink70,
               }}
             ><span style={{ fontSize: 13 }}>𝕏</span> Share</button>
@@ -459,7 +477,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
                 window.location.href = "/?section=create";
               }}
               style={{
-                width: "100%", padding: "11px", borderRadius: 10, border: "none", cursor: "pointer",
+                width: "100%", padding: "11px", minHeight: 44, borderRadius: 10, border: "none", cursor: "pointer",
                 background: `linear-gradient(135deg,${T.cta1},${T.cta2})`, color: "white",
                 fontFamily: T.body, fontSize: 14, fontWeight: 700,
                 marginBottom: 12, boxShadow: "var(--ed-shadow-card)",

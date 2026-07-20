@@ -96,7 +96,7 @@ function PreviewLightbox({ item, onJoin, onClose }: {
               modal). Closes the lightbox and scrolls the CTA into view. */}
           <button onClick={onJoin} style={{
             border: "none", cursor: "pointer", borderRadius: 999, padding: "8px 18px",
-            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
             fontFamily: "var(--ed-body)", fontSize: 13, fontWeight: 700,
             boxShadow: "0 10px 22px -12px rgba(226,125,12,.6)",
           }}>Join</button>
@@ -181,7 +181,7 @@ export default function CommunityPreview({ cta, ctaNote }: { cta?: ReactNode; ct
       )}
 
       {/* CTA */}
-      <div id="community-preview-cta" style={{ marginTop: 22, padding: "20px 22px", borderRadius: 18, textAlign: "center", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))", scrollMarginTop: 88 }}>
+      <div id="community-preview-cta" style={{ marginTop: 22, padding: "20px 22px", borderRadius: 18, textAlign: "center", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))", scrollMarginTop: 88 }}>
         <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 18, marginBottom: 6 }}>Like, comment &amp; post your own</div>
         <div style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "rgba(255,248,238,0.85)", marginBottom: 16 }}>
           Connect your wallet — no gas, identity only. Join the pets.

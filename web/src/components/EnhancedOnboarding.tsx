@@ -256,7 +256,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   // Style helpers
   const primaryBtn: React.CSSProperties = {
     width: "100%", padding: "14px 24px", borderRadius: 14, border: "none",
-    background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+    background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
     fontSize: 15, fontWeight: 800, cursor: "pointer",
     fontFamily: "var(--ed-disp)", marginTop: 18, letterSpacing: "0.01em",
     boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
@@ -396,7 +396,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
     return (
       <Shell>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          {eyebrow(`Step 1 of 2 · Q${quizIndex + 1}/${QUIZ_QUESTIONS.length}`)}
+          {eyebrow(`Step 1 of 3 · Q${quizIndex + 1}/${QUIZ_QUESTIONS.length}`)}
           <h3 style={{ fontSize: 22, fontWeight: 800, color: "#211A12", margin: "0 0 4px", letterSpacing: "-0.02em", fontFamily: "var(--ed-disp)" }}>
             {q.question}
           </h3>
@@ -462,7 +462,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
     return (
       <Shell>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          {eyebrow("Step 2 of 2")}
+          {eyebrow("Step 2 of 3")}
           <h3 style={{ fontSize: 24, fontWeight: 800, color: "#211A12", margin: "0 0 6px", letterSpacing: "-0.02em", fontFamily: "var(--ed-disp)" }}>
             Where should {pet.name} live?
           </h3>
@@ -561,7 +561,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           <div style={{ marginBottom: 12 }}>
             <PetAvatar pet={pet} size={72} />
           </div>
-          {eyebrow("Say hi 👋")}
+          {eyebrow("Step 3 of 3 · Say hi 👋")}
           <h3 style={{ fontSize: 22, fontWeight: 800, color: "#211A12", margin: "0 0 6px", letterSpacing: "-0.02em", fontFamily: "var(--ed-disp)" }}>
             {pet.name} just learned about you
           </h3>

@@ -96,7 +96,7 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
           <div style={{ background: T.paper, borderRadius: 22, padding: "48px 28px", textAlign: "center", boxShadow: "var(--ed-shadow-card)", maxWidth: 460, margin: "40px auto" }}>
             <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 24, color: T.ink }}>No companion yet</div>
             <p style={{ fontFamily: T.body, fontSize: 14.5, color: T.muted2, margin: "10px 0 18px", lineHeight: 1.5 }}>Adopt a pet first — then you can talk to it here, and it remembers everything.</p>
-            <button onClick={() => onNavigate?.("my pet")} style={{ border: "none", cursor: "pointer", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontFamily: T.disp, fontWeight: 700, fontSize: 14, borderRadius: 12, padding: "12px 22px", boxShadow: "0 12px 22px -12px rgba(226,125,12,.7)" }}>Adopt your pet →</button>
+            <button onClick={() => onNavigate?.("my pet")} style={{ border: "none", cursor: "pointer", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontFamily: T.disp, fontWeight: 700, fontSize: 14, borderRadius: 12, padding: "12px 22px", boxShadow: "0 12px 22px -12px rgba(226,125,12,.7)" }}>Adopt your pet →</button>
           </div>
         ) : (
           <div className="chat-grid" style={{ display: "grid", gridTemplateColumns: "0.82fr 1.18fr", gap: 22, alignItems: "start" }}>
@@ -189,7 +189,7 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
                 />
                 <button onClick={send} disabled={busy || !input.trim()} aria-label="Send" style={{
                   flexShrink: 0, width: 44, height: 44, borderRadius: 12, border: "none", cursor: busy || !input.trim() ? "default" : "pointer",
-                  background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontSize: 19, fontWeight: 700,
+                  background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontSize: 19, fontWeight: 700,
                   opacity: busy || !input.trim() ? 0.5 : 1, boxShadow: "0 10px 20px -12px rgba(226,125,12,.7)",
                 }}>→</button>
               </div>

@@ -943,7 +943,7 @@ function ZeroState({ onAdopt, onCatch }: { onAdopt?: (e: React.MouseEvent) => vo
           No cards yet
         </h3>
         <p style={{ fontFamily: T.body, fontSize: 14, color: T.muted2, margin: "0 auto 20px", maxWidth: 380, lineHeight: 1.55 }}>
-          Cards are minted from pets you actually raise or catch — adopt one to start your album, or head into Catch to find one in the wild.
+          Cards are created from pets you actually raise or catch — adopt one to start your album, or head into Catch to find one in the wild.
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
           <a href="/?section=my%20pet" onClick={onAdopt} className="ed-wipe" style={{ ...btn, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>Adopt a pet ▸</a>
@@ -1029,7 +1029,7 @@ function CatchTile({ onClick }: { onClick?: () => void }) {
       </div>
       <span style={{
         marginTop: 4, padding: "8px 16px", borderRadius: 999,
-        background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+        background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
         fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase",
       }}>Go catch ▸</span>
       <div style={{ fontFamily: T.m, fontSize: 11.5, color: "rgba(251,246,236,.5)", letterSpacing: ".04em" }}>
@@ -1175,7 +1175,7 @@ function Shell({ children, owned, rarityCounts }: { children: React.ReactNode; o
               @media (hover:hover){ .cd-explain-card:hover{ transform: translateY(-3px); border-color: rgba(190,79,40,.4); box-shadow: var(--ed-shadow-card); } }
             `}</style>
             {[
-              { n: "01", title: "Collect", body: "Every pet you raise is minted as a trading card — real stats, real rarity." },
+              { n: "01", title: "Collect", body: "Every pet you raise is created as an off-chain collectible card — real stats, real rarity." },
               { n: "02", title: "Catch", body: "Point your camera at real animals outside — they fill the Catch tab's field album." },
               { n: "03", title: "Battle & share", body: "Duel any card, illustrate it in Studio, or share it with friends." },
             ].map((s) => (

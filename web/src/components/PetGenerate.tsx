@@ -290,7 +290,7 @@ export default function PetGenerate() {
     return (
       <div style={{ padding: "120px 40px", textAlign: "center", maxWidth: 500, margin: "0 auto" }}>
         <div role="alert" style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#9A4E1E", lineHeight: 1.6 }}>{petsError}</div>
-        <button type="button" onClick={loadPets} style={{ marginTop: 16, padding: "10px 18px", borderRadius: 10, border: "none", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontWeight: 700, cursor: "pointer" }}>
+        <button type="button" onClick={loadPets} style={{ marginTop: 16, padding: "10px 18px", borderRadius: 10, border: "none", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontWeight: 700, cursor: "pointer" }}>
           Retry
         </button>
       </div>

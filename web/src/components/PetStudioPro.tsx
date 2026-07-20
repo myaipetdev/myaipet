@@ -203,8 +203,28 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   // WalletGate, so we also drive the SIWE signature + workspace reload here.
   const { openConnectModal } = useConnectModal();
   const { isConnected, address } = useAccount();
-  const { isAuthenticated, isAuthenticating, authenticate } = useAuth();
-  const openSignIn = () => openConnectModal?.();
+  const { isAuthenticated, isAuthenticating, authenticate, error: authError } = useAuth();
+  // Sign-in must never be a dead button. RainbowKit's openConnectModal is
+  // UNDEFINED while a wallet is already connected — so for a connected user
+  // with no app session (SIWE signature rejected, or session expired) the old
+  // `openConnectModal?.()` was a silent no-op. In that state, re-trigger the
+  // SIWE signature directly; `signInFlow` gates the visible progress/failure
+  // feedback so it only shows for user-initiated sign-ins.
+  const [signInFlow, setSignInFlow] = useState(false);
+  const openSignIn = () => {
+    setSignInFlow(true);
+    if (isConnected && address) {
+      // Connected wallet, but the user is looking at a Sign-in control — the
+      // session is missing, expired, or stale. Re-run the SIWE signature and
+      // reload the workspace on completion: a stale token can keep
+      // `isAuthenticated` true throughout, so the auth-flip reload effect
+      // below would never fire for this path.
+      void authenticate().then(() => loadWorkspace());
+    } else {
+      openConnectModal?.();
+    }
+  };
+  useEffect(() => { if (isAuthenticated && !isAuthenticating && !authError) setSignInFlow(false); }, [isAuthenticated, isAuthenticating, authError]);
 
   const [pets, setPets] = useState<Pet[] | null>(null);
   const [petId, setPetId] = useState<number | null>(null);
@@ -2574,6 +2594,37 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Sign-in progress / failure feedback — a click on any "Sign in" control
+          must produce a visible state change. Shows while the SIWE signature is
+          pending in the wallet, and stays up with a Retry if it was rejected
+          or failed, until dismissed or signed in. */}
+      {signInFlow && (isAuthenticating || !!authError) && (
+        <div role="status" style={{
+          position: "fixed", left: "50%", bottom: 22, transform: "translateX(-50%)", zIndex: 320,
+          display: "flex", alignItems: "center", gap: 12, maxWidth: "min(92vw, 500px)",
+          background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12,
+          boxShadow: "var(--ed-shadow-card)", padding: "12px 14px 12px 16px",
+          fontFamily: T.body, fontSize: 13.5, color: T.ink,
+        }}>
+          {isAuthenticating ? (
+            <span style={{ minWidth: 0 }}>Check your wallet — approve the signature to sign in.</span>
+          ) : (
+            <>
+              <span style={{ minWidth: 0, color: T.terra }}>Sign-in didn&apos;t complete — the wallet signature was rejected or failed.</span>
+              <button type="button" onClick={openSignIn} style={{
+                flexShrink: 0, padding: "8px 14px", borderRadius: 9, border: "none", cursor: "pointer",
+                background: T.studio, color: "#fff", fontFamily: T.m, fontWeight: 700,
+                fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase",
+              }}>Retry</button>
+            </>
+          )}
+          <button type="button" aria-label="Dismiss sign-in notice" onClick={() => setSignInFlow(false)} style={{
+            flexShrink: 0, width: 30, height: 30, borderRadius: 8, border: "none", cursor: "pointer",
+            background: T.inset, color: T.muted, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+          }}>✕</button>
         </div>
       )}
 
