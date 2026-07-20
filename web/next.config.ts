@@ -31,6 +31,16 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // RainbowKit's runtime locale switch creates a chunk for every supported
+  // language even though this release pins RainbowKitProvider to English.
+  // Replace the locked dependency's unreachable Korean locale module before
+  // Turbopack emits public/server chunks. The shim preserves the module shape
+  // without shipping Korean copy that the product can never select.
+  turbopack: {
+    resolveAlias: {
+      "./ko_KR-FR54RFUG.js": "./src/lib/rainbowkitEnglishLocale.ts",
+    },
+  },
   // Compile the public, non-secret browser kill-switch from the authoritative
   // server flag so direct wallet-write UI cannot drift from relayer policy.
   env: {

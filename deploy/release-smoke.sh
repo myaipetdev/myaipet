@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+PETCLAW_SMOKE_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 PETCLAW_SMOKE_BASE="${PETCLAW_SMOKE_BASE:-https://app.myaipet.ai}"
 PETCLAW_SMOKE_HOST="${PETCLAW_SMOKE_HOST:-}"
 PETCLAW_SMOKE_PORT="${PETCLAW_SMOKE_PORT:-443}"
 PETCLAW_EXPECTED_RELEASE_ID="${PETCLAW_EXPECTED_RELEASE_ID:-}"
+PETCLAW_RELEASE_ROOT="${PETCLAW_RELEASE_ROOT:-}"
+PETCLAW_EXPECTED_EXTENSION_VERSION="2.3.3"
 PETCLAW_SMOKE_BODY="$(mktemp)"
 PETCLAW_SMOKE_HEADERS="$(mktemp)"
 trap 'rm -f "${PETCLAW_SMOKE_BODY}" "${PETCLAW_SMOKE_HEADERS}"' EXIT
@@ -146,6 +149,18 @@ petclaw_verify_product_demo_body() {
   '
 }
 
+petclaw_verify_no_hangul_body() {
+  node -e '
+    let body = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", (chunk) => { body += chunk; });
+    process.stdin.on("end", () => {
+      const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
+      if (hangul.test(body)) process.exitCode = 1;
+    });
+  '
+}
+
 petclaw_verify_contract_disclosure() {
   node -e '
     let body = "";
@@ -198,6 +213,15 @@ expect_env_exact PET_LORA_ENABLED false
 expect_env_exact BLOCKCHAIN_ENABLED false
 expect_env_exact REFERRALS_ENABLED false
 
+if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" || -n "${PETCLAW_RELEASE_ROOT}" ]]; then
+  PETCLAW_RELEASE_ROOT="${PETCLAW_RELEASE_ROOT:-/opt/petclaw/current}"
+  if ! node "${PETCLAW_SMOKE_SCRIPT_DIR}/scan-release-language.mjs" \
+      built "${PETCLAW_RELEASE_ROOT}"; then
+    echo "ERROR: active release contains Hangul/Jamo in source or built output." >&2
+    exit 1
+  fi
+fi
+
 if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
   if [[ ! "${PETCLAW_EXPECTED_RELEASE_ID}" =~ ^[A-Za-z0-9._-]{6,80}$ \
     || "${PETCLAW_SMOKE_BASE}" != "https://app.myaipet.ai" \
@@ -248,6 +272,11 @@ if [[ "${STORAGE_PROVIDER:-local}" == "local" ]]; then
 fi
 
 expect_code 200 GET "/api/health"
+expect_code 200 GET "/"
+if ! petclaw_verify_no_hangul_body < "${PETCLAW_SMOKE_BODY}"; then
+  echo "ERROR: app HTML contains Hangul/Jamo." >&2
+  exit 1
+fi
 PAYMENT_CONFIG_BODY="$(petclaw_curl "${PETCLAW_SMOKE_BASE}/api/config")"
 node -e 'const d=JSON.parse(process.argv[1]); if(d?.payments_enabled!==false||d?.treasury!==""||d?.usdt!==""||d?.blockchain_enabled!==false||typeof d?.contracts!=="object"||d.contracts===null||Array.isArray(d.contracts)||Object.keys(d.contracts).length!==0||d?.oauth_connections_enabled!==false||d?.agent_channels_enabled!==false) process.exit(1)' "${PAYMENT_CONFIG_BODY}"
 expect_code 200 GET "/contracts"
@@ -286,7 +315,8 @@ if [[ -n "${PETCLAW_EXTENSION_SHA256:-}" ]]; then
   fi
 fi
 PETCLAW_EXTENSION_MANIFEST="$(unzip -p "${PETCLAW_SMOKE_BODY}" manifest.json)"
-node -e 'const m=JSON.parse(process.argv[1]); if(m.manifest_version!==3 || m.version!=="2.3.2") process.exit(1)' "${PETCLAW_EXTENSION_MANIFEST}"
+node -e 'const m=JSON.parse(process.argv[1]); if(m.manifest_version!==3 || m.version!==process.argv[2]) process.exit(1)' \
+  "${PETCLAW_EXTENSION_MANIFEST}" "${PETCLAW_EXPECTED_EXTENSION_VERSION}"
 expect_code 204 OPTIONS "/api/petclaw/skills" -H "Origin: https://myaipet.ai" -H "Access-Control-Request-Method: POST"
 expect_code 403 OPTIONS "/api/petclaw/skills" -H "Origin: https://evil.example" -H "Access-Control-Request-Method: POST"
 expect_code 204 OPTIONS "/api/pets" -H "Origin: https://myaipet.ai" -H "Access-Control-Request-Method: GET"

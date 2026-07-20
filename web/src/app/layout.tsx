@@ -32,6 +32,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: "MY AI PET — Your AI Companion, Portable & Yours",
   description: "The first AI companion you actually own. Persistent memory, data sovereignty, and cross-platform presence — powered by PetClaw Protocol.",
+  other: {
+    google: "notranslate",
+  },
   icons: {
     // Keep both declarations on a file that is part of this release. The old
     // The legacy favicon URL survived on the EC2 host from a previous deploy but was not
@@ -68,7 +71,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" translate="no" className="notranslate">
       <body
         className={`${spaceGrotesk.variable} ${bricolage.variable} ${hanken.variable} ${spaceMono.variable}`}
         style={{ background: "#ECE4D4" }}

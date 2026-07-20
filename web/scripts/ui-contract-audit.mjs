@@ -119,8 +119,13 @@ const requiredUiContracts = [
   },
   {
     file: "landing-assets/index.html",
-    description: "launch demo must replace its launcher with the local titled product-demo iframe",
-    pattern: /function\s+playDemo\(el\)\s*\{[\s\S]*?document\.createElement\(['"]iframe['"]\)[\s\S]*?f\.src\s*=\s*['"]product-demo\.html['"][\s\S]*?f\.title\s*=\s*['"]MY AI PET launch demo['"][\s\S]*?el\.innerHTML\s*=\s*['"]{2}[\s\S]*?el\.appendChild\(f\)/,
+    description: "launch demo must replace its launcher with the cache-rotated local titled product-demo iframe",
+    pattern: /function\s+playDemo\(el\)\s*\{[\s\S]*?document\.createElement\(['"]iframe['"]\)[\s\S]*?f\.src\s*=\s*['"]product-demo\.html\?v=20260720-en-only['"][\s\S]*?f\.title\s*=\s*['"]MY AI PET launch demo['"][\s\S]*?el\.innerHTML\s*=\s*['"]{2}[\s\S]*?el\.appendChild\(f\)/,
+  },
+  {
+    file: "web/src/components/LandingPage.tsx",
+    description: "app landing iframe must rotate the legacy seven-day HTML cache key",
+    pattern: /const LANDING_CACHE_REVISION = "20260720-en-only";[\s\S]*?src=\{`\/landing\/\?v=\$\{LANDING_CACHE_REVISION\}`\}/,
   },
 ];
 

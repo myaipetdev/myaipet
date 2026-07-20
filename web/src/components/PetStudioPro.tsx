@@ -2490,7 +2490,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   const isVid = !!g.video_path && /\.(mp4|webm)$/i.test(g.video_path);
                   const failed = g.status === "failed";
                   const inFlight = g.status === "pending" || g.status === "running";
-                  const dateStr = new Date(g.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+                  const dateStr = new Date(g.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
                   return (
                     <div key={g.id} className="mp-enter" style={{
                       background: T.inset, borderRadius: 12, overflow: "hidden",

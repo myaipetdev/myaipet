@@ -22,6 +22,14 @@ if ! grep -Fq "export const PETCLAW_EXTENSION_VERSION = \"$VERSION\";" "$PROJECT
   echo "Extension version mismatch: manifest is $VERSION but the dashboard is not." >&2
   exit 1
 fi
+if ! grep -Fq "const EXT_VERSION = \"$VERSION\";" "$SOURCE_DIR/popup.js"; then
+  echo "Extension version mismatch: manifest is $VERSION but the popup fallback is not." >&2
+  exit 1
+fi
+if ! grep -Fq "PETCLAW_EXPECTED_EXTENSION_VERSION=\"$VERSION\"" "$PROJECT_ROOT/deploy/release-smoke.sh"; then
+  echo "Extension version mismatch: manifest is $VERSION but the release smoke is not." >&2
+  exit 1
+fi
 
 mkdir -p "$BUILD_TEMP/package/icons"
 for file in manifest.json background.js content.js popup.html popup.js styles.css; do

@@ -11,11 +11,15 @@ interface Props {
   onGetStarted: () => void;
 }
 
+// One-time cache-key rotation for clients that received the legacy seven-day
+// /landing/ HTML policy. Future navigations revalidate under the nginx policy.
+const LANDING_CACHE_REVISION = "20260720-en-only";
+
 export default function LandingPage({ onGetStarted }: Props) {
   return (
     <div style={{ position: "relative" }}>
       <iframe
-        src="/landing/"
+        src={`/landing/?v=${LANDING_CACHE_REVISION}`}
         style={{
           width: "100%",
           height: "100vh",

@@ -463,7 +463,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                   FILE № {String(active.id).padStart(4, "0")}
                   <div style={{ height: 22, width: 96, margin: "5px 0 4px auto", background: "repeating-linear-gradient(90deg,#FCE9CF 0 1px,transparent 1px 3px,#FCE9CF 3px 5px,transparent 5px 6px,#FCE9CF 6px 9px,transparent 9px 11px)" }} />
                   {estYear !== null && (
-                    <span title={new Date(active.created_at as string).toLocaleDateString()}>EST. {estYear}</span>
+                    <span title={new Date(active.created_at as string).toLocaleDateString("en-US")}>EST. {estYear}</span>
                   )}
                 </div>
               </div>

@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" translate="no" class="notranslate">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="google" content="notranslate" />
 <title>MY AI PET — Your Portable AI Companion</title>
 <meta name="description" content="Raise an AI companion that remembers you, grows with you, and stays portable through a downloadable identity and memory export. Wallet sign-in uses no gas; payments and new on-chain anchoring are disabled." />
 <meta name="theme-color" content="#BE4F28" />
@@ -1502,7 +1503,9 @@
       function playDemo(el){
         if(el.dataset.on) return; el.dataset.on='1';
         var f=document.createElement('iframe');
-        f.src='product-demo.html'; f.title='MY AI PET launch demo'; f.loading='eager';
+        // Rotate the cache key once for mobile browsers that received the
+        // legacy seven-day HTML policy. New responses always revalidate.
+        f.src='product-demo.html?v=20260720-en-only'; f.title='MY AI PET launch demo'; f.loading='eager';
         f.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:inherit;display:block;';
         el.setAttribute('role','group'); el.removeAttribute('tabindex');
         el.innerHTML=''; el.appendChild(f);
