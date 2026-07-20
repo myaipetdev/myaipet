@@ -40,10 +40,33 @@ model User {
   pet_dates                 PetDate[]
   subscription              UserSubscription?
   arena_match_challenges    ArenaMatchChallenge[]
+  referrals_made            Referral[]               @relation("ReferralsMade")
+  referral_received         Referral?                @relation("ReferralReceived")
   agent_credit_reservations AgentCreditReservation[]
   avatar_media_objects      AvatarMediaObject[]
 
   @@map("users")
+}
+
+// ── Referral program ──
+// A referrer's stable code (derived from their user id, no stored secret) is
+// embedded in ?ref=<code> links. When the referred user is credited (their
+// first pet adopt — see the TODO in pets/route.ts POST), this row flips
+// credited=true and both sides get a small one-time credit grant.
+model Referral {
+  id          Int       @id @default(autoincrement())
+  referrer_id Int
+  referred_id Int       @unique // a user can only ever be "referred" once
+  ref_code    String    @db.VarChar(16)
+  credited    Boolean   @default(false)
+  credited_at DateTime?
+  created_at  DateTime  @default(now())
+
+  referrer User @relation("ReferralsMade", fields: [referrer_id], references: [id], onDelete: Cascade)
+  referred User @relation("ReferralReceived", fields: [referred_id], references: [id], onDelete: Cascade)
+
+  @@index([referrer_id])
+  @@map("referrals")
 }
 
 // Durable, idempotent physical-media cleanup. Pet deletion commits ownership

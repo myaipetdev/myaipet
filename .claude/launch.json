@@ -13,6 +13,31 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8787", "--directory", "landing-assets"],
       "port": 8787
+    },
+    {
+      "name": "village-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8791", "--directory", "/private/tmp/claude-501/-Users-max-Documents----aipet-project-2/fb0162cb-2c11-450b-b221-317765b6fa79/scratchpad"],
+      "port": 8791
+    },
+    {
+      "name": "landing-health",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8899", "--directory", "/Users/max/Documents/개발/ai-health-journal 2/landing-deploy"],
+      "port": 8899
+    },
+    {
+      "name": "enterprise-health",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8890", "--directory", "/Users/max/Documents/개발/ai-health-journal 2/enterprise-deploy"],
+      "port": 8890
+    },
+    {
+      "name": "web-health",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "export PATH=/Users/max/.nvm/versions/node/v24.14.1/bin:$PATH && export DATABASE_URL='postgresql://postgres:localdev@localhost:5433/health_local' && export CRON_SECRET='localcron' && cd \"/Users/max/Documents/개발/ai-health-journal 2/apps/web\" && npx next dev -p ${PORT:-3300}"],
+      "port": 3300,
+      "autoPort": true
     }
   ]
 }
