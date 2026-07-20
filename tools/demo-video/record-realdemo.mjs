@@ -104,7 +104,7 @@ await wait(700);
 await cap("Or tell the Director your idea — it asks, then writes the script");
 const idea = page.locator('input[placeholder*="One-line idea"]').first();
 await idea.click();
-await idea.pressSequentially("Mochi drives a supercar to work — CEO morning vlog", { delay: 42 });
+await idea.pressSequentially("Dordor drives a supercar to work — CEO morning vlog", { delay: 42 });
 await wait(1800);
 
 // ════ 3 · PETCLAW cinematic (the product's own masthead) ════

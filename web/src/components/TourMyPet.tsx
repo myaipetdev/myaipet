@@ -4,7 +4,7 @@
  * TourMyPet — the READ-ONLY, DEMO-badged "My Pet" preview shown in guest tour
  * mode (?tour=1, no wallet). A compact editorial poster holding the framed
  * collectible (CollectibleFrame) + the ambient PetPond, driven by the same demo
- * subject PetStudioPro uses (Mochi, /mascot.jpg, level 5). Every value here is a
+ * subject PetStudioPro uses (Dordor, /mascot.jpg, level 5). Every value here is a
  * fixed DEMO placeholder — clearly badged, never presented as the visitor's own
  * data. Care buttons never hit the server: they fire an honest "connect to do
  * this" toast (zero writes, zero credit spends).
@@ -17,7 +17,7 @@ import CollectibleFrame, { Motes } from "@/components/editorial/CollectibleFrame
 const PetPond = lazy(() => import("@/components/PetPond"));
 
 // Same demo subject as PetStudioPro's try-before-signup mode — on-brand mascot.
-const DEMO = { name: "Mochi", avatar: "/mascot.jpg", level: 5, element: "light", happy: 80, energy: 66, fullness: 74, bond: 42 };
+const DEMO = { name: "Dordor", avatar: "/mascot.jpg", level: 5, element: "light", happy: 80, energy: 66, fullness: 74, bond: 42 };
 
 const T = {
   field: "#ECE4D4", paper: "#FBF6EC", ink: "#211A12", ink70: "#3A3024", muted: "#7A6E5A", muted2: "#5C5140",

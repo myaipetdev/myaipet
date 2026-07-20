@@ -234,7 +234,7 @@ function HeroShowcase({ txToday }: { txToday?: number }) {
             </TiltCard>
           </Reveal>
         </div>
-        <div className="ed-foil-text" style={{ position: "relative", zIndex: 2, fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 33, lineHeight: 0.9, letterSpacing: "-0.03em" }}>Mochi</div>
+        <div className="ed-foil-text" style={{ position: "relative", zIndex: 2, fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 33, lineHeight: 0.9, letterSpacing: "-0.03em" }}>Dordor</div>
         <div style={{ position: "relative", zIndex: 2, fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: ".22em", color: "rgba(252,233,207,.7)", marginTop: 6, textTransform: "uppercase" }}>Adopt · Remember · Own</div>
       </div>
     </div>

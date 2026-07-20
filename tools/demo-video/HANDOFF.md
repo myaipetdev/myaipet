@@ -92,7 +92,7 @@ template videos), marketing `https://myaipet.ai/`.
 **Guest tour mode (deployed to prod):** append `?tour=1` — renders read-only
 DEMO-badged previews instead of the connect-wall. Persists via sessionStorage
 (`aipet_tour`), so subsequent in-session navigation stays in tour mode.
-- `https://app.myaipet.ai/?section=my%20pet&tour=1` — demo pet "Mochi" + care tiles (Feed/Play/Pet are no-op toasts) + Mochi's Pond
+- `https://app.myaipet.ai/?section=my%20pet&tour=1` — demo pet "Dordor" + care tiles (Feed/Play/Pet are no-op toasts) + Dordor's Pond
 - `https://app.myaipet.ai/?section=community&tour=1` — walkable Pet Square (ArrowKeys/WASD walk, click-to-walk, `E` to greet)
 - `https://app.myaipet.ai/?section=worldcup&tour=1` — Favorites Bracket + community-prediction podium
 

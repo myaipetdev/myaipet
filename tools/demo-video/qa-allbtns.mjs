@@ -1,0 +1,13 @@
+import { chromium } from 'playwright';
+const OUT='/private/tmp/claude-501/-Users-max-Documents----aipet-project-2/fb0162cb-2c11-450b-b221-317765b6fa79/scratchpad/qa';
+const browser=await chromium.launch({args:['--enable-gpu','--use-angle=metal']});
+const ctx=await browser.newContext({viewport:{width:1440,height:900}});
+const p=await ctx.newPage();
+const neterr=[]; p.on('response',r=>{if(r.status()>=400)neterr.push(r.status()+' '+r.url().replace('https://app.myaipet.ai',''));});
+await p.goto('https://app.myaipet.ai/studio',{waitUntil:'networkidle',timeout:60000});
+await p.waitForTimeout(2500);
+await p.evaluate(()=>{const ta=document.querySelector('textarea');const set=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value').set;set.call(ta,'Dordor surfing a giant rainbow wave');ta.dispatchEvent(new Event('input',{bubbles:true}));});
+await p.waitForTimeout(1200);
+const all=await p.evaluate(()=>[...document.querySelectorAll('button')].map((b,i)=>({i,txt:(b.innerText||'').replace(/\n/g,'|').trim().slice(0,50),dis:b.disabled,aria:b.getAttribute('aria-label')||'',y:Math.round(b.getBoundingClientRect().top),h:Math.round(b.getBoundingClientRect().height)})));
+console.log(JSON.stringify(all.filter(b=>b.h>30&&(b.txt||b.aria)),null,0));
+await browser.close();

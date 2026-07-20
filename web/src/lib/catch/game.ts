@@ -70,7 +70,7 @@ export function pickElement(mood: string): string {
 }
 
 const CAT_NAMES = [
-  "Mochi", "Biscuit", "Shadow", "Pumpkin", "Tiger", "Luna", "Oreo", "Smokey",
+  "Dordor", "Biscuit", "Shadow", "Pumpkin", "Tiger", "Luna", "Oreo", "Smokey",
   "Ginger", "Pepper", "Bean", "Noodle", "Pickle", "Waffle", "Sushi", "Miso",
   "Pixel", "Gizmo", "Bandit", "Cleo", "Nori", "Dumpling", "Marble", "Toast",
 ];

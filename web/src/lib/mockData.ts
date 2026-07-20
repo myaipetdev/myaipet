@@ -15,7 +15,7 @@ export const MOCK_STATS = {
 
 export const MOCK_ACTIVITIES = [
   { icon: "🎬", wallet: "0x1a2b...3c4d", chain: "Base", text: "Generated cinematic video of Luna the cat", time: "12s ago" },
-  { icon: "🐕", wallet: "0x5e6f...7a8b", chain: "BNB", text: "Adopted a new pet: Mochi the Dog", time: "45s ago" },
+  { icon: "🐕", wallet: "0x5e6f...7a8b", chain: "BNB", text: "Adopted a new pet: Dordor the Dog", time: "45s ago" },
   { icon: "❤️", wallet: "0x9c0d...1e2f", chain: "Base", text: "Liked 'Noodle in Space' by CryptoKitty", time: "1m ago" },
   { icon: "🎨", wallet: "0x3a4b...5c6d", chain: "Base", text: "Generated watercolor art of Pixel the Fox", time: "2m ago" },
   { icon: "💬", wallet: "0x7e8f...9a0b", chain: "BNB", text: "Commented on 'Storm's Adventure'", time: "3m ago" },
@@ -33,7 +33,7 @@ export const MOCK_PETS = [
     total_interactions: 47, current_mood: "happy", is_active: true,
   },
   {
-    id: 2, name: "Mochi", species: 1, personality_type: "friendly", level: 3,
+    id: 2, name: "Dordor", species: 1, personality_type: "friendly", level: 3,
     experience: 180, happiness: 92, energy: 60, hunger: 30, bond_level: 55,
     total_interactions: 28, current_mood: "ecstatic", is_active: true,
   },

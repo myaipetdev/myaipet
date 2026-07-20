@@ -227,7 +227,7 @@ await cap("Dispatch a goal — the right pet takes it, live");
 await wait(3200);
 
 // ════ 6 · STUDIO (real client-side flow) ════
-await scene("https://app.myaipet.ai/studio", { ready: "text=Make Mochi a star" });
+await scene("https://app.myaipet.ai/studio", { ready: "text=Make Dordor a star" });
 await wait(500);
 await cap("Studio — turn your pet into viral video");
 await wait(1300);
@@ -257,7 +257,7 @@ await cap(null); await wait(200);
 await cap("Or tell the Director your idea — it asks, then writes the script");
 const idea = page.locator('input[placeholder*="One-line idea"]').first();
 await idea.click();
-await idea.pressSequentially("Mochi drives a supercar to work — CEO morning vlog", { delay: 42 });
+await idea.pressSequentially("Dordor drives a supercar to work — CEO morning vlog", { delay: 42 });
 await wait(900);
 await cap("Connect a wallet to shoot it for real"); // honest guest-mode close
 await wait(1300);

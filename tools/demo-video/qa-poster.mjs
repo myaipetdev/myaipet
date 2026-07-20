@@ -1,0 +1,12 @@
+import { chromium } from 'playwright';
+const OUT='/private/tmp/claude-501/-Users-max-Documents----aipet-project-2/fb0162cb-2c11-450b-b221-317765b6fa79/scratchpad/qa';
+const b=await chromium.launch({args:['--enable-gpu','--use-angle=metal']});
+const ctx=await b.newContext({viewport:{width:1440,height:900}});
+const p=await ctx.newPage();
+await p.goto('https://app.myaipet.ai/?section=my+pet',{waitUntil:'networkidle',timeout:60000});
+await p.waitForTimeout(2500);
+const el=await p.$('button[aria-label="Boop Dordor"]');
+const box=await el.boundingBox();
+console.log('POSTER BOX',JSON.stringify(box));
+await p.screenshot({path:OUT+'/poster-zoom.png', clip:{x:box.x-10,y:box.y-10,width:box.width+20,height:box.height+20}});
+await b.close();

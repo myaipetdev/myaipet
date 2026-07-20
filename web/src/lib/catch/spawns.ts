@@ -38,7 +38,7 @@ export const WILD_POINTS: Record<CatRarity, number> = {
 
 const CAT_SPECIES = ["Tabby", "Calico", "Tuxedo", "Siamese", "Ginger", "Black", "Tortie", "Maine Coon", "Bombay", "Ragdoll"];
 const DOG_SPECIES = ["Mutt", "Shiba", "Corgi", "Pug", "Husky", "Beagle", "Poodle", "Retriever", "Terrier", "Spitz"];
-const CAT_NAMES = ["Mochi", "Biscuit", "Shadow", "Pumpkin", "Luna", "Oreo", "Bean", "Noodle", "Pixel", "Nori", "Marble", "Sushi"];
+const CAT_NAMES = ["Dordor", "Biscuit", "Shadow", "Pumpkin", "Luna", "Oreo", "Bean", "Noodle", "Pixel", "Nori", "Marble", "Sushi"];
 const DOG_NAMES = ["Rocky", "Bella", "Cooper", "Max", "Daisy", "Rex", "Coco", "Nala", "Duke", "Maple", "Scout", "Pretzel"];
 const ELEMENTS = ["fire", "water", "grass", "electric", "normal"];
 

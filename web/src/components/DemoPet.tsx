@@ -17,7 +17,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Icon from "@/components/Icon";
 
-const NAME = "Mochi";
+const NAME = "Dordor";
 const clamp = (n: number) => Math.max(0, Math.min(100, n));
 
 const INK = "#211A12";

@@ -772,7 +772,7 @@ export default function Arena() {
               total_interactions: 47, current_mood: "happy", is_active: true, element: "normal",
             },
             {
-              id: 2, name: "Mochi", species: 10, personality_type: "brave", level: 8,
+              id: 2, name: "Dordor", species: 10, personality_type: "brave", level: 8,
               experience: 580, happiness: 78, energy: 60, hunger: 30, bond_level: 55,
               total_interactions: 28, current_mood: "focused", is_active: true, element: "fire",
             },
