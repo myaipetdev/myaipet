@@ -342,7 +342,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
             background: "linear-gradient(180deg,#FFE6A8 0%,#E8C77E 44%,#C8932F 100%)",
             WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
           }}>PETCLAW</div>
-          <TaglineTyper text="your AI pet, sovereign & portable — across every surface you use" color={MUTED} />
+          <TaglineTyper text="one companion, projected across web · chrome · terminal — it grows closer every chat, and it's yours" color={MUTED} />
           </>
           )}
 

@@ -13,6 +13,13 @@
  * Pure CSS keyframes (one-shot on mount) + a static gold-shine wordmark.
  * prefers-reduced-motion collapses every animation to its final state.
  * All class names are pchi-* to avoid collisions.
+ *
+ * Layout note: the wordmark block is in NORMAL FLOW above the animation rig
+ * (never absolutely stacked over it), and the rig's height derives from its
+ * own width (aspect-ratio), so the laptop/chips can never ride up into the
+ * headline at any viewport width. Chip fly-out distances are read from
+ * stylesheet-level --x/--y (inline only sets --xs/--ys), so the narrow-screen
+ * pull-in media queries actually win over the inline style.
  */
 
 import { useEffect, useRef } from "react";
@@ -25,8 +32,8 @@ interface Props {
 }
 
 const CHIPS: Array<{ label: string; mark: string; x: number; y: number; d: number }> = [
-  { label: "telegram", mark: "◈", x: -300, y: -150, d: 6.2 },
-  { label: "discord", mark: "◈", x: 300, y: -160, d: 6.35 },
+  { label: "telegram", mark: "◈", x: -300, y: -140, d: 6.2 },
+  { label: "discord", mark: "◈", x: 300, y: -148, d: 6.35 },
   { label: "claude", mark: "◈", x: -350, y: -10, d: 6.5 },
   { label: "cursor", mark: "◈", x: 352, y: -20, d: 6.65 },
   { label: "memory_recall", mark: "✦", x: -268, y: 120, d: 6.8 },
@@ -63,19 +70,24 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
   return (
     <div ref={stageRef} className="pchi-stage" aria-label={`PetClaw — ${petName}'s agent booting`}>
       <style>{`
-        .pchi-stage{position:relative;width:100%;height:clamp(430px,58vw,560px);perspective:1200px;overflow:hidden}
+        .pchi-stage{position:relative;width:100%;perspective:1200px;overflow:hidden;display:flex;flex-direction:column}
         .pchi-dust{position:absolute;border-radius:50%;background:radial-gradient(circle,#E8C77E,transparent 70%);pointer-events:none;animation:pchiRise linear infinite;opacity:0}
         @keyframes pchiRise{0%{transform:translateY(10px);opacity:0}15%{opacity:.7}100%{transform:translateY(-140px);opacity:0}}
 
-        .pchi-wm{position:absolute;top:4px;left:0;right:0;text-align:center;z-index:5}
+        /* Wordmark block sits in flow ABOVE the rig — no absolute stacking, so
+           the laptop/chips can never cover it at any width. */
+        .pchi-wm{position:relative;z-index:5;text-align:center;padding:6px 14px 0}
         .pchi-wm h2{margin:0;font-family:var(--ed-disp);font-size:clamp(38px,7vw,62px);letter-spacing:.05em;font-weight:800;
           background:linear-gradient(100deg,#8A5A1E,#C8932F 30%,#FFF4DC 50%,#E8C77E 70%,#8A5A1E);background-size:220% 100%;
           -webkit-background-clip:text;background-clip:text;color:transparent;animation:pchiShine 6s linear infinite;
           filter:drop-shadow(0 2px 0 rgba(0,0,0,.55)) drop-shadow(0 8px 22px rgba(232,199,126,.14))}
         @keyframes pchiShine{to{background-position:220% 0}}
-        .pchi-wm p{margin:6px 0 0;font-family:var(--ed-m);font-size:13px;color:rgba(251,246,236,.6);letter-spacing:.05em}
+        .pchi-wm p{margin:8px auto 0;max-width:620px;font-family:var(--ed-m);font-size:14.5px;line-height:1.55;color:rgba(251,246,236,.8);letter-spacing:.04em}
+        .pchi-wm .pchi-wm-sub{margin-top:4px;font-size:12.5px;color:rgba(251,246,236,.62)}
 
-        .pchi-rig{position:absolute;left:50%;top:57%;transform:translate(-50%,-50%);width:min(92%,560px);height:78%;z-index:3}
+        /* Height tracks width (560:440), so the 16/10.2 laptop + chip orbit
+           always fit inside the rig instead of riding up into the headline. */
+        .pchi-rig{position:relative;width:min(92%,560px);aspect-ratio:560/440;margin:14px auto 0;z-index:3}
 
         .pchi-sticker{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) rotateY(0);width:172px;border-radius:14px;
           background:#FBF6EC;padding:10px 10px 34px;box-shadow:0 30px 60px -24px rgba(0,0,0,.8),0 0 0 1px rgba(0,0,0,.3);
@@ -100,14 +112,14 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
         .pchi-bar{height:24px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#191008;border-bottom:1px solid rgba(231,197,124,.22)}
         .pchi-bar i{width:8px;height:8px;border-radius:50%;display:block}
         .pchi-bar i:nth-child(1){background:#D66}.pchi-bar i:nth-child(2){background:#DBA94E}.pchi-bar i:nth-child(3){background:#8FBF7F}
-        .pchi-bar b{margin-left:8px;font-family:var(--ed-m);font-size:10.5px;color:rgba(251,246,236,.6);letter-spacing:.14em;font-weight:600}
-        .pchi-term{padding:12px 14px;font-family:var(--ed-m);font-size:clamp(10.5px,1.7vw,12.5px);line-height:1.9;color:#E8C77E}
+        .pchi-bar b{margin-left:8px;font-family:var(--ed-m);font-size:12px;color:rgba(251,246,236,.6);letter-spacing:.1em;font-weight:600}
+        .pchi-term{padding:12px 14px;font-family:var(--ed-m);font-size:clamp(12px,1.7vw,13px);line-height:1.9;color:#E8C77E}
         .pchi-term .pchi-ln{display:block;white-space:nowrap;overflow:hidden;width:0;opacity:0}
         .pchi-term .c{color:#ECE0CE}.pchi-term .g{color:#9FC59A}.pchi-term .m{color:rgba(251,246,236,.6)}
-        .pchi-term .l1{animation:pchiType .5s 3.1s steps(28,end) forwards}
-        .pchi-term .l2{animation:pchiType .6s 3.7s steps(40,end) forwards}
-        .pchi-term .l3{animation:pchiType .55s 4.4s steps(34,end) forwards}
-        .pchi-term .l4{animation:pchiType .5s 5.0s steps(30,end) forwards}
+        .pchi-term .l1{animation:pchiType .5s 3.1s steps(18,end) forwards}
+        .pchi-term .l2{animation:pchiType .6s 3.7s steps(33,end) forwards}
+        .pchi-term .l3{animation:pchiType .55s 4.4s steps(29,end) forwards}
+        .pchi-term .l4{animation:pchiType .5s 5.0s steps(32,end) forwards}
         .pchi-term .l5{animation:pchiType .45s 5.6s steps(22,end) forwards}
         @keyframes pchiType{from{width:0;opacity:1}to{width:100%;opacity:1}}
         .pchi-caret{display:inline-block;width:7px;height:13px;background:#E8C77E;vertical-align:-2px;animation:pchiBlink 1s 6.1s steps(1) infinite;opacity:0}
@@ -120,6 +132,7 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
         @keyframes pchiFade{from{opacity:0}to{opacity:1}}
 
         .pchi-chip{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) scale(.2);opacity:0;z-index:4;
+          --x:var(--xs);--y:var(--ys);
           font-family:var(--ed-m);font-size:12px;font-weight:700;letter-spacing:.08em;padding:7px 13px;border-radius:999px;
           background:linear-gradient(180deg,rgba(252,233,207,.16),rgba(252,233,207,.06));border:1px solid rgba(232,199,126,.5);
           color:#FCE9CF;backdrop-filter:blur(4px);box-shadow:0 10px 26px -12px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,244,220,.25);
@@ -128,8 +141,10 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
         @keyframes pchiFly{0%{transform:translate(-50%,-50%) scale(.2);opacity:0}60%{opacity:1}100%{transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(1);opacity:1}}
         @keyframes pchiHover{from{margin-top:0}to{margin-top:-10px}}
 
-        /* narrow screens: pull chips inward so nothing clips */
-        @media (max-width:720px){ .pchi-chip{--x:calc(var(--xs, var(--x)) * .55);--y:calc(var(--ys, var(--y)) * .8)} }
+        /* narrow screens: pull chips inward so nothing clips or covers copy.
+           Inline style only sets --xs/--ys, so these --x/--y overrides win. */
+        @media (max-width:880px){ .pchi-chip{--x:calc(var(--xs) * .55);--y:calc(var(--ys) * .75)} }
+        @media (max-width:480px){ .pchi-chip{--x:calc(var(--xs) * .4);--y:calc(var(--ys) * .42)} }
         @media (prefers-reduced-motion:reduce){
           .pchi-stage *{animation-duration:.001s !important;animation-delay:0s !important}
           .pchi-dust{display:none}
@@ -138,7 +153,8 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
 
       <div className="pchi-wm">
         <h2>PETCLAW</h2>
-        <p>your AI pet, sovereign &amp; portable — across every surface you use</p>
+        <p>one companion, projected across every surface you live on — web · chrome · terminal · wallet-native identity</p>
+        <p className="pchi-wm-sub">the more you talk, the closer it grows — and everything it learns is yours</p>
       </div>
 
       <div className="pchi-rig">
@@ -158,9 +174,9 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
               <div className="pchi-bar"><i /><i /><i /><b>petclaw — console · v1</b></div>
               <div className="pchi-term">
                 <span className="pchi-ln l1 m">$ petclaw-sdk talk</span>
-                <span className="pchi-ln l2">initializing petclaw · protocol v1 · SDK 1.6.1</span>
-                <span className="pchi-ln l3 c">connectors ▸ 19 &nbsp; tools ▸ 6 &nbsp; skills ▸ 18</span>
-                <span className="pchi-ln l4 c">soul ▸ portable · consent ▸ enforced</span>
+                <span className="pchi-ln l2">petclaw · protocol v1 · SDK 1.6.1</span>
+                <span className="pchi-ln l3 c">conn 19 · tools 6 · skills 18</span>
+                <span className="pchi-ln l4 c">soul portable · consent enforced</span>
                 <span className="pchi-ln l5 g">● {name} is online<span className="pchi-caret" /></span>
               </div>
             </div>
@@ -174,7 +190,7 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
           <div
             key={c.label}
             className="pchi-chip"
-            style={{ "--x": `${c.x}px`, "--y": `${c.y}px`, "--xs": `${c.x}px`, "--ys": `${c.y}px`, "--d": `${c.d}s`, animationDelay: `${c.d}s` } as React.CSSProperties}
+            style={{ "--xs": `${c.x}px`, "--ys": `${c.y}px`, "--d": `${c.d}s`, animationDelay: `${c.d}s` } as React.CSSProperties}
           >
             <b>{c.mark}</b> {c.label}
           </div>

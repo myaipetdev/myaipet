@@ -44,30 +44,32 @@ const MORE_ITEMS: NavItem[] = [
   { key: "season", label: "Season Rewards" },
 ];
 
+// Gold-foil coin glyph for the credits chip — makes the balance read as a
+// spendable object (a real affordance into /account), not a passive stat.
+// Foil ramp stays inside the Collectible Editorial gold family (#C8932F legend
+// gold); hard highlights, no glow.
+function CoinGlyph({ size = 15, gid }: { size?: number; gid: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" style={{ flexShrink: 0, display: "block" }}>
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#EED688" />
+          <stop offset="45%" stopColor="#C8932F" />
+          <stop offset="100%" stopColor="#8F6318" />
+        </linearGradient>
+      </defs>
+      <circle cx="8" cy="8" r="7" fill={`url(#${gid})`} stroke="#7A5313" strokeWidth="1" />
+      <circle cx="8" cy="8" r="4.4" fill="none" stroke="rgba(255,248,230,.7)" strokeWidth="1.1" />
+      <circle cx="5.8" cy="5.2" r="1" fill="rgba(255,250,235,.9)" />
+    </svg>
+  );
+}
+
 export default function Nav({ section, setSection, credits }: any) {
-  const [balanceOpen, setBalanceOpen] = useState(false);
-  const balanceRef = useRef<HTMLDivElement>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
   const moreBtnRef = useRef<HTMLButtonElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (balanceRef.current && !balanceRef.current.contains(e.target as Node)) {
-        setBalanceOpen(false);
-      }
-    }
-    function handleKey(e: KeyboardEvent) { if (e.key === "Escape") setBalanceOpen(false); }
-    if (balanceOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("keydown", handleKey);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-        document.removeEventListener("keydown", handleKey);
-      };
-    }
-  }, [balanceOpen]);
 
   // "More" menu — click-outside closes; Escape closes AND returns focus to the
   // trigger button (keyboard operability, WAI-ARIA menu-button pattern).
@@ -135,12 +137,10 @@ export default function Nav({ section, setSection, credits }: any) {
       : section === item.key || (item.key === "cards" && section === "catch");
   const moreActive = MORE_ITEMS.some(isItemActive);
 
-  const goPricing = () => {
-    setBalanceOpen(false);
-    setMoreOpen(false);
-    setSection("home");
-    setTimeout(() => { document.querySelector(".pricing-root")?.scrollIntoView({ behavior: "smooth" }); }, 600);
-  };
+  // The credits chip is a link into /account (the member "my page": plan,
+  // credits, usage, billing) — highlight it there like any other nav item.
+  const onAccountPage =
+    typeof window !== "undefined" && window.location.pathname === "/account";
 
   const itemStyle = (isActive: boolean): React.CSSProperties => ({
     background: "transparent",
@@ -364,22 +364,27 @@ export default function Nav({ section, setSection, credits }: any) {
                 {credits !== null && credits !== undefined && (
                   <div className="nav-more-credits" style={{ flexDirection: "column" }}>
                     <div style={{ height: 1, background: "var(--ed-hair, rgba(33,26,18,.13))", margin: "6px 8px" }} />
-                    <button
+                    <a
                       role="menuitem"
                       className="nav-more-item"
-                      onClick={goPricing}
+                      href="/account"
+                      aria-current={onAccountPage ? "page" : undefined}
+                      onClick={() => setMoreOpen(false)}
                       style={{
                         display: "flex", alignItems: "center", justifyContent: "space-between",
                         width: "100%", minHeight: 44, padding: "10px 14px",
                         background: "transparent", border: "none", borderRadius: 10,
-                        cursor: "pointer", textAlign: "left",
+                        cursor: "pointer", textAlign: "left", textDecoration: "none",
                         fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
-                        color: "#9A4E1E",
+                        color: "#9A4E1E", boxSizing: "border-box",
                       }}
                     >
-                      <span>◎ {displayCredits.toLocaleString()} <span style={{ opacity: 0.7 }}>cr</span></span>
-                      <span style={{ fontFamily: "var(--ed-body)", fontWeight: 600, color: "#7A6E5A" }}>Credits &amp; Points</span>
-                    </button>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                        <CoinGlyph gid="navCoinFoilMenu" />
+                        {displayCredits.toLocaleString()} <span style={{ opacity: 0.7 }}>cr</span>
+                      </span>
+                      <span style={{ fontFamily: "var(--ed-body)", fontWeight: 600, color: "#7A6E5A" }}>Account</span>
+                    </a>
                   </div>
                 )}
               </div>
@@ -387,76 +392,34 @@ export default function Nav({ section, setSection, credits }: any) {
           </div>
 
           {credits !== null && credits !== undefined && (
-            <div ref={balanceRef} className="nav-credits-wrap" style={{ position: "relative", flexShrink: 0, marginLeft: 4 }}>
-              <button
+            <div className="nav-credits-wrap" style={{ position: "relative", flexShrink: 0, marginLeft: 4 }}>
+              {/* The chip is a real affordance now: it links to /account (plan,
+                  credits, usage, billing) instead of opening an info popover —
+                  the account page carries everything the popover used to say.
+                  SCRUM-99 note (in-app credits ≠ wallet balance) lives there. */}
+              <a
                 className="nav-credits"
-                aria-label={`Credit balance: ${credits}`}
-                aria-expanded={balanceOpen}
-                aria-haspopup="true"
-                onClick={() => setBalanceOpen((v: boolean) => !v)}
+                aria-label={`Credit balance: ${credits} credits — open account`}
+                aria-current={onAccountPage ? "page" : undefined}
+                href="/account"
                 style={{
-                  fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
+                  fontFamily: "var(--ed-m)", fontSize: 14, fontWeight: 700,
                   // One-shot change flash: real balance moved (spend or purchase).
                   color: creditsFlash ? "#BE4F28" : "#9A4E1E",
                   background: creditsFlash ? "rgba(190,79,40,.12)" : "transparent",
-                  padding: "5px 11px", borderRadius: 8,
-                  border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+                  padding: "6px 12px", borderRadius: 9,
+                  border: onAccountPage ? "1px solid rgba(154,78,30,.55)" : "1px solid rgba(154,78,30,.3)",
                   whiteSpace: "nowrap", cursor: "pointer",
-                  display: "inline-block",
+                  display: "inline-flex", alignItems: "center", gap: 6,
                   transition: "all 0.2s ease",
                   fontVariantNumeric: "tabular-nums",
+                  textDecoration: "none",
                 }}
               >
-                ◎ {displayCredits.toLocaleString()}
-                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", opacity: 0.7, marginLeft: 4 }}>cr</span>
-              </button>
-              {balanceOpen && (
-                <div style={{
-                  position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 200,
-                  background: "var(--ed-paper, #FBF6EC)",
-                  borderRadius: 16, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-                  boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
-                  padding: "20px", minWidth: 220,
-                  animation: "slideIn 0.2s ease",
-                }}>
-                  <div style={{
-                    fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
-                    letterSpacing: "0.14em", textTransform: "uppercase",
-                    color: "#9A7B4E", marginBottom: 8,
-                  }}>
-                    Platform Credits
-                  </div>
-                  <div style={{
-                    fontFamily: "var(--ed-disp)", fontSize: 30, fontWeight: 800,
-                    color: "#211A12", marginBottom: 4, letterSpacing: "-0.02em",
-                    fontVariantNumeric: "tabular-nums",
-                  }}>
-                    {credits.toLocaleString()} <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "#9A4E1E", letterSpacing: "0.06em" }}>credits</span>
-                  </div>
-                  {/* SCRUM-99: this is the in-app credit balance, NOT the connected
-                      wallet's on-chain balance — label it so users don't conflate them. */}
-                  <div style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#7A6E5A", lineHeight: 1.45 }}>
-                    In-app credits for AI generation — not your wallet balance.
-                  </div>
-                  <div style={{
-                    height: 1, background: "var(--ed-hair, rgba(33,26,18,.13))", margin: "14px 0",
-                  }} />
-                  <button
-                    className="ed-press"
-                    onClick={goPricing}
-                    style={{
-                      width: "100%", padding: "11px 14px", borderRadius: 12, border: "none",
-                      background: "linear-gradient(180deg, #F49B2A, #E27D0C)",
-                      color: "#FFF8EE", fontFamily: "var(--ed-body)", fontSize: 13.5,
-                      fontWeight: 600, cursor: "pointer", marginBottom: 0,
-                      boxShadow: "0 8px 18px -10px rgba(226,125,12,.7)",
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    Credits &amp; Points
-                  </button>
-                </div>
-              )}
+                <CoinGlyph gid="navCoinFoilChip" />
+                {displayCredits.toLocaleString()}
+                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", opacity: 0.7 }}>cr</span>
+              </a>
             </div>
           )}
         </div>

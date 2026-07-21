@@ -17,10 +17,10 @@ export default function PrivacyPage() {
       padding: "80px 24px",
     }}>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
-        <a href="https://myaipet.ai" style={{
+        <a href="/" style={{
           display: "inline-block", marginBottom: 24,
           fontSize: 13, color: "rgba(33,26,18,0.55)", textDecoration: "none",
-        }}>← Back to landing</a>
+        }}>← MY AI PET</a>
 
         <h1 style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 6 }}>
           Privacy Policy

@@ -33,6 +33,12 @@ const SANS = "var(--ed-body, -apple-system, sans-serif)";
 
 type Tab = "overview" | "runs" | "routines" | "memory" | "staff";
 
+// In local dev the api layer serves the office from its dev-mock fixture
+// (Sparky/Aqua) — label that cast DEMO instead of claiming it's the user's pet.
+const IS_DEMO = process.env.NODE_ENV === "development";
+
+type CastMember = { name: string; kind: "yours" | "staff"; role: string; room: string; task: string };
+
 function relTime(ts?: string | null): string {
   if (!ts) return "never";
   const s = Math.max(0, Math.floor((Date.now() - new Date(ts).getTime()) / 1000));
@@ -96,27 +102,44 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
   const runningCount = mc.kanban.working.length + (liveRun && !liveRun.done ? 1 : 0);
   const doneToday = mc.kanban.done.length;
 
-  // hotel cast: owner's real pets first (real names, real status), remaining
-  // slots are the hotel's own staff characters (fiction, clearly not user data)
+  // hotel cast: the owner's real pets first (real names, real status), remaining
+  // slots are the hotel's own staff characters — labeled STAFF · NPC everywhere
+  // so provenance is never ambiguous. In local dev the office runs on the
+  // dev-mock fixture, so the star is honestly labeled DEMO instead of YOUR PET.
   const cast = useMemo(() => {
-    const real = pets.slice(0, 3).map((p: any, i: number) => ({
-      name: (p.name || `Pet #${p.id}`) as string,
-      real: true,
-      role: i === 0 ? "the owner's pet" : "the owner's pet",
+    const real: CastMember[] = pets.slice(0, 3).map((p: any, i: number) => ({
+      name: ((p.name || `Pet #${p.id}`) as string).slice(0, 12),
+      kind: "yours" as const,
+      role: IS_DEMO ? "demo pet" : "your pet",
       room: i === 0 ? "FRONT DESK" : i === 1 ? "WORKSHOP" : "LOBBY",
       task: i === 0
         ? (workingTitle ? `working: ${workingTitle}` : "idle — awaiting a goal")
         : "off duty",
     }));
-    const staff = [
-      { name: "Mimi", real: false, role: "hotel courier", room: "WORKSHOP", task: "skills delivery!" },
-      { name: "Toto", real: false, role: "hotel housekeeper", room: "LOBBY", task: "tidy tidy~" },
+    if (real.length === 0) {
+      real.push({
+        name: (petName || "Your pet").slice(0, 12), kind: "yours", role: IS_DEMO ? "demo pet" : "your pet",
+        room: "FRONT DESK", task: workingTitle ? `working: ${workingTitle}` : "idle — awaiting a goal",
+      });
+    }
+    const staff: CastMember[] = [
+      { name: "Mimi", kind: "staff", role: "hotel courier · NPC", room: "WORKSHOP", task: "“Skills delivery!”" },
+      { name: "Toto", kind: "staff", role: "hotel housekeeper · NPC", room: "LOBBY", task: "“Tidy, tidy.”" },
     ];
     return [...real, ...staff].slice(0, 3);
-  }, [pets, workingTitle]);
+  }, [pets, petName, workingTitle]);
+
+  const yoursCount = cast.filter((c) => c.kind === "yours").length;
+  const staffCount = cast.filter((c) => c.kind === "staff").length;
 
   const live3d: GrandPawLive = useMemo(() => ({
-    pets: cast.map((c) => ({ name: c.name, task: c.task.replace(/^working: /, "") })),
+    // nameplates carry provenance into the diorama itself: the star wears the
+    // owner's real pet name (DEMO-suffixed on the dev fixture), staff NPCs are
+    // suffixed STAFF; bubbles are speech, so the rail's quote marks come off
+    pets: cast.map((c) => ({
+      name: c.kind === "staff" ? `${c.name} · STAFF` : IS_DEMO ? `${c.name} · DEMO` : c.name,
+      task: c.task.replace(/^working: /, "").replace(/[“”]/g, ""),
+    })),
     memory: { count: mc.pillars.memory.count, cap: mc.pillars.memory.cap },
     skills: mc.pillars.skills.total,
     soulLv: mc.pet.level || 1,
@@ -144,9 +167,10 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
           </button>
         ))}
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: MONO, fontSize: 12, padding: "5px 12px", borderRadius: 999, background: CHIP_BG, border: `1px solid ${CHIP_BR}`, color: MUT }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: MONO, fontSize: 12, letterSpacing: "0.06em", padding: "5px 12px", borderRadius: 999, background: CHIP_BG, border: `1px solid ${CHIP_BR}`, color: MUT }}>
             <span style={{ width: 7, height: 7, borderRadius: 99, background: isWorking ? GREEN : "rgba(34,29,18,0.25)", animation: isWorking ? "gpPulse 1.6s infinite" : undefined }} />
-            {petName} · {isWorking ? "working" : "idle"}
+            {IS_DEMO ? "DEMO PET" : "YOUR PET"}
+            {petName && petName !== "your pet" ? ` · ${petName.toUpperCase().slice(0, 14)}` : ""} · {isWorking ? "WORKING" : "IDLE"}
           </span>
           {tab === "overview" && (
             <span style={{ display: "inline-flex", background: CHIP_BG, border: `1px solid ${CHIP_BR}`, borderRadius: 999, padding: 3 }}>
@@ -197,9 +221,10 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
               <div style={{ position: "relative" }}>
                 <GrandPaw3D live={live3d} height={narrow ? 400 : 620} />
                 <div style={chipFloat({ left: 14, bottom: 14 })}>
-                  ● PETS {Math.min(pets.length, 3) || 1} · {runningCount} WORKING
+                  ● {IS_DEMO ? "DEMO PET" : yoursCount > 1 ? `YOUR ${yoursCount} PETS` : "YOUR PET"}
+                  {staffCount > 0 ? ` + ${staffCount} HOTEL STAFF` : ""} · {runningCount} WORKING
                 </div>
-                <div style={chipFloat({ right: 14, bottom: 14 })}>DRAG TO ORBIT · SCROLL TO ZOOM</div>
+                {!narrow && <div style={chipFloat({ right: 14, bottom: 14 })}>DRAG TO ORBIT · SCROLL TO ZOOM</div>}
               </div>
             ) : (
               <Board mc={mc} liveRun={liveRun} />
@@ -209,29 +234,40 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
           {/* right rail */}
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <RailCard title="Who's where" tag="LIVE">
-              {cast.map((c) => (
-                <div key={c.name} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 0", borderTop: `1px solid ${HAIR}` }}>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontFamily: SANS, fontSize: 14, color: INK }}>
-                      <b>{c.name}</b> <span style={{ fontFamily: MONO, fontSize: 12, color: MUT2 }}>{c.role}</span>
+              {(["yours", "staff"] as const).map((kind) => {
+                const rows = cast.filter((c) => c.kind === kind);
+                if (rows.length === 0) return null;
+                return (
+                  <div key={kind}>
+                    <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.14em", color: kind === "yours" ? GOLD : MUT2, margin: "10px 0 4px" }}>
+                      {kind === "yours" ? (IS_DEMO ? "DEMO PET" : rows.length > 1 ? "YOUR PETS" : "YOUR PET") : "HOTEL STAFF · NPC"}
                     </div>
-                    <div style={{ fontFamily: SANS, fontSize: 12.5, color: c.task.startsWith("working") ? GREEN : MUT, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {c.task.startsWith("working") && <span style={{ animation: "gpPulse 1.6s infinite" }}>● </span>}
-                      {c.task}
-                    </div>
+                    {rows.map((c) => (
+                      <div key={c.name} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 0", borderTop: `1px solid ${HAIR}` }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontFamily: SANS, fontSize: 14, color: INK }}>
+                            <b>{c.name}</b> <span style={{ fontFamily: MONO, fontSize: 12, color: MUT2 }}>{c.role}</span>
+                          </div>
+                          <div style={{ fontFamily: SANS, fontSize: 12.5, color: c.task.startsWith("working") ? GREEN : MUT, fontStyle: c.kind === "staff" ? "italic" : undefined, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {c.task.startsWith("working") && <span style={{ animation: "gpPulse 1.6s infinite" }}>● </span>}
+                            {c.task}
+                          </div>
+                        </div>
+                        <span style={{ flexShrink: 0, fontFamily: MONO, fontSize: 12, letterSpacing: "0.06em", color: c.kind === "yours" ? GOLD : MUT2, background: "#F5EDD8", borderRadius: 6, padding: "3px 8px" }}>{c.room}</span>
+                      </div>
+                    ))}
                   </div>
-                  <span style={{ flexShrink: 0, fontFamily: MONO, fontSize: 12, letterSpacing: "0.06em", color: c.real ? GOLD : MUT2, background: "#F5EDD8", borderRadius: 6, padding: "3px 8px" }}>{c.room}</span>
-                </div>
-              ))}
+                );
+              })}
             </RailCard>
 
             <RailCard title="Queue">
               {runningCount === 0 && mc.kanban.pending.length === 0 && doneToday === 0 && (
                 <div style={{ fontFamily: SANS, fontSize: 13, color: MUT, padding: "10px 0" }}>Quiet at the desk — dispatch a goal above.</div>
               )}
-              {liveRun && !liveRun.done && <QueueRow state="run" title={liveRun.title} right={`${liveRun.steps.length} steps`} />}
-              {mc.kanban.working.map((it) => <QueueRow key={String(it.id)} state="run" title={it.title} right="live" />)}
-              {mc.kanban.pending.slice(0, 3).map((it) => <QueueRow key={String(it.id)} state="queued" title={it.title} right="queued" />)}
+              {liveRun && !liveRun.done && <QueueRow state="run" title={liveRun.title} right={`${liveRun.steps.length} STEPS`} />}
+              {mc.kanban.working.map((it) => <QueueRow key={String(it.id)} state="run" title={it.title} right="LIVE" />)}
+              {mc.kanban.pending.slice(0, 3).map((it) => <QueueRow key={String(it.id)} state="queued" title={it.title} right="QUEUED" />)}
               {mc.kanban.done.slice(0, 4).map((it) => <QueueRow key={String(it.id)} state="done" title={it.title} right={clockOf(it.at)} />)}
             </RailCard>
 
@@ -379,7 +415,7 @@ function Board({ mc, liveRun, full }: { mc: MC; liveRun: LiveRun | null; full?: 
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {c.live && liveRun && !liveRun.done && (
-                <BoardCard accent={GREEN} title={liveRun.title} detail={liveRun.steps.map((s) => s.skill).join(" → ") || "planning…"} tag="live" pulse />
+                <BoardCard accent={GREEN} title={liveRun.title} detail={liveRun.steps.map((s) => s.skill).join(" → ") || "planning…"} tag="LIVE" pulse />
               )}
               {c.items.length + extra === 0 ? (
                 <div style={{ fontFamily: SANS, fontSize: 12.5, color: MUT, textAlign: "center", padding: "14px 8px", border: `1px dashed ${CHIP_BR}`, borderRadius: 10 }}>{c.empty}</div>

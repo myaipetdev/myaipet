@@ -688,8 +688,8 @@ function archedWall(name, width, height, thickness, arches, material) {
 
 const dfltStaff = [
   { name: 'Boss', task: 'welcoming guests\u2026' },
-  { name: 'Mimi', task: 'skills delivery!' },
-  { name: 'Toto', task: 'tidy tidy~' },
+  { name: 'Mimi \u00b7 STAFF', task: 'Skills delivery!' },
+  { name: 'Toto \u00b7 STAFF', task: 'Tidy, tidy.' },
 ];
 
 class AgentCafe3D extends HTMLElement {
@@ -697,11 +697,7 @@ class AgentCafe3D extends HTMLElement {
 
   liveData() {
     const dflt = {
-      pets: [
-        { name: 'Boss', task: 'welcoming guests\u2026' },
-        { name: 'Mimi', task: 'skills delivery!' },
-        { name: 'Toto', task: 'tidy tidy~' },
-      ],
+      pets: dfltStaff.map((p) => ({ ...p })),
       memory: { count: 0, cap: 40 }, skills: 0, soulLv: 1, goals: 0, next: '\u2014',
     };
     try {
@@ -2279,7 +2275,8 @@ class AgentCafe3D extends HTMLElement {
       cs.position.y = 0.015;
       cs.renderOrder = 2;
       g.add(cs);
-      const label = textSprite((LIVE.pets[0].name || 'Boss').toUpperCase().slice(0, 12), { fontSize: 36, scale: 0.5 });
+      // 24 chars leaves room for provenance suffixes ("NAME · DEMO") from the dashboard
+      const label = textSprite((LIVE.pets[0].name || 'Boss').toUpperCase().slice(0, 24), { fontSize: 36, scale: 0.5 });
       label.name = name + '_label';
       label.position.set(0, 1.3, 0);
       g.add(label);
@@ -2288,8 +2285,8 @@ class AgentCafe3D extends HTMLElement {
     };
     const catP = makeBossPom();
     catP.tiltBase = 0.09;
-    const mimiP = makePet({ name: (LIVE.pets[1].name || 'Mimi').slice(0, 12), base: '#E09154', belly: '#F8EDD8', dark: '#B06A32', noseCol: 0xC08573, earCol: '#B06A32', iris: '#3E8A5C', tabby: true, kerchief: '#A8473B' });
-    const totoP = makePet({ name: (LIVE.pets[2].name || 'Toto').slice(0, 12), base: '#4C4846', belly: '#F0EBE0', dark: '#35312F', noseCol: 0x77655C, earCol: '#35312F', iris: '#D9A441', tux: true, kerchief: '#5F7A52' });
+    const mimiP = makePet({ name: (LIVE.pets[1].name || 'Mimi · STAFF').slice(0, 24), base: '#E09154', belly: '#F8EDD8', dark: '#B06A32', noseCol: 0xC08573, earCol: '#B06A32', iris: '#3E8A5C', tabby: true, kerchief: '#A8473B' });
+    const totoP = makePet({ name: (LIVE.pets[2].name || 'Toto · STAFF').slice(0, 24), base: '#4C4846', belly: '#F0EBE0', dark: '#35312F', noseCol: 0x77655C, earCol: '#35312F', iris: '#D9A441', tux: true, kerchief: '#5F7A52' });
     [catP, mimiP, totoP].forEach((pp) => { toonifyPet(pp.group); });
 
     const ringGeo = new THREE.TorusGeometry(0.4, 0.03, 10, 36);
@@ -2500,6 +2497,11 @@ class AgentCafe3D extends HTMLElement {
 
       this._controls.update();
       this._composer.render();
+      if (!this._readyFired) {
+        // first painted frame — lets the React mount swap out its loading plaque
+        this._readyFired = true;
+        this.dispatchEvent(new CustomEvent('gp-ready', { bubbles: true }));
+      }
     };
     tick();
   }
@@ -2514,6 +2516,7 @@ class AgentCafe3D extends HTMLElement {
     if (this._ro) { this._ro.disconnect(); }
     if (this._renderer) { this._renderer.dispose(); }
     this._init = false;
+    this._readyFired = false;
   }
 }
 

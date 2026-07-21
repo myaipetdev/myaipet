@@ -314,7 +314,8 @@ export default function WalletGate({ children, section }: any) {
     agent: "the Agent dashboard",
     chat: "Chat",
     season: "Season Rewards",
-  };
+    account: "your Account",
+};
 
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", padding: "140px 24px 60px", textAlign: "center" }}>
