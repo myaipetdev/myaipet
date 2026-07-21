@@ -1645,7 +1645,7 @@
       <p>
         Most AI products forget you the moment the tab closes.
         PetClaw is built around the opposite assumption — that the
-        companion you raise should be yours to keep.
+        companion you raise should stay under your control.
       </p>
     </div>
 
@@ -1654,9 +1654,9 @@
         <div class="diff-glyph"><div class="gl-brain"><span></span></div></div>
         <h3>It remembers.</h3>
         <p>
-          Conversations in Chrome and in the dashboard —
-          all the same pet, with a single, growing memory.
-          Not session state. Not vector noise. A real throughline.
+          On supported Chrome sites and in the dashboard, selected details
+          you choose to retain can support continuity between sessions.
+          Review or remove that retained context whenever you need.
         </p>
         <span class="diff-tag">Persistent · Cross-platform</span>
       </article>
@@ -1677,7 +1677,7 @@
         <h3>Available where supported.</h3>
         <p>
           A desktop companion in your browser. A home on the web.
-          Same pet, same memories, anywhere you happen to be —
+          The same companion can use selected retained context on supported surfaces —
           Telegram delivery stays launch-paused for now.
         </p>
         <span class="diff-tag">Web · Chrome today · Messaging launch-paused</span>
@@ -1814,7 +1814,7 @@
           <div class="j-body">
             <span class="j-eyebrow">Step 05</span>
             <h3>Use supported surfaces</h3>
-            <p>Same pet, same memories — on the web and in Chrome today. MCP clients like Claude, Cursor, and OpenClaw connect when SDK 1.6.2 ships. Your companion is not locked to one model or one vendor.</p>
+            <p>The same companion can use selected retained context on the web and in Chrome today. MCP clients like Claude, Cursor, and OpenClaw connect when SDK 1.6.2 ships. Its documented profile format is not tied to one model vendor.</p>
             <span class="j-tag">Web · Chrome · MCP ships with SDK 1.6.2</span>
           </div>
         </div>
@@ -1992,7 +1992,7 @@
     </div>
 
     <p class="demo-foot">
-      Every interaction shapes who your pet becomes. <span class="gold">Not a character sheet — a life.</span>
+      Supported interactions can shape retained personality fields over time. <span class="gold">You can inspect what is kept.</span>
     </p>
   </div>
 </section>
@@ -2003,7 +2003,7 @@
     <div class="section-head">
       <span class="eyebrow">Community showcase</span>
       <h2>Every pet is a mirror of the person who raised it.</h2>
-      <p>Demo companions showcasing PetClaw's personality system. Each uniquely AI-generated with distinct traits and memories.</p>
+      <p>Synthetic demo companions showing sample personality states. These names, traits, quotes, and memory figures are illustrative data.</p>
     </div>
 
     <div class="gallery" id="gallery"></div>
@@ -2131,7 +2131,7 @@
     <div class="section-head">
       <span class="eyebrow">PetClaw protocol</span>
       <h2>Built on an open, exportable format.</h2>
-      <p>PetClaw is the open protocol for sovereign AI companions. Skills, networking, and memory — all portable by design.</p>
+      <p>PetClaw documents open formats for companion skills and supported memory fields. Portability depends on compatible clients and the import report.</p>
     </div>
 
     <div class="code-block">
@@ -2363,7 +2363,7 @@
           <img src="hero-mascot.jpg" alt="" />
           <span>MY AI PET</span>
         </div>
-        <p>A portable AI companion that remembers, grows, and stays yours.</p>
+        <p>A portable AI companion with selected memory and owner-scoped data controls.</p>
       </div>
 
       <nav class="footer-nav-group" aria-label="Product links">
@@ -3035,16 +3035,16 @@ function persist() {
   // Default phrases (context-agnostic)
   const phrases = [
     "Hey! Click me to chat 💬", "I recall what you choose to keep 🧠", "Your data = your rules 🛡",
-    "Try the playground below ⬇️", "Multi-channel, one pet 🔌",
+    "Try the playground below ⬇️", "Web + approved Chrome, one pet 🔌",
     "Made with PetClaw 🐾", "Relevant memories can carry forward ✨",
-    "Export your SOUL data anytime 📦",
+    "Export supported SOUL fields 📦",
   ];
 
   // SCRUM-74 §3-3: context-aware phrases — pick based on which section
   // is in view, so the same Dordor line doesn't repeat through the whole scroll.
   const sectionPhrases = {
-    companion:   ["This is how I remember 🧠", "Try the chat below!", "I learn from every turn"],
-    community:   ["Friends already here ✨", "Each one has their own memories", "Hover to see who we are 🎈"],
+    companion:   ["I retain details you choose 🧠", "Try the chat below!", "You can inspect what I keep"],
+    community:   ["Synthetic demos live here ✨", "Each card uses sample traits", "Hover to see the examples 🎈"],
     sovereignty: ["Your data, your rules 🛡", "You can export me anytime 📦", "Deleting me issues a SHA-256 receipt 🧾"],
     demo:        ["I appear on sites you allow 🌐", "Per-site access, under your control", "No gas to install!"],
     protocol:    ["MCP-ready when SDK 1.6.2 lands 🔌", "petclaw-sdk on npm 📦", "Open standard, not a SaaS"],

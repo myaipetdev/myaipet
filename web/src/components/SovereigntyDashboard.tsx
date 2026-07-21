@@ -914,6 +914,13 @@ function ChromeExtensionSection() {
             </svg>
             Download Extension
           </a>
+          <a
+            href="/petclaw-extension.zip.sha256"
+            download
+            style={{ display: "inline-block", marginTop: 10, fontFamily: MONO, fontSize: 12, fontWeight: 700, color: MUTED2, textUnderlineOffset: 3 }}
+          >
+            Verify SHA-256
+          </a>
           <div style={{ marginTop: 8, fontFamily: MONO, fontSize: 13, color: MONO_CLR, letterSpacing: "0.1em" }}>
             Developer-mode install
           </div>

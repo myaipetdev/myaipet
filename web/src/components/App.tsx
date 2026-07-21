@@ -841,7 +841,7 @@ export default function App() {
           land on the Cards screen with the Catch tab pre-selected. */}
       {(section === "cards" || section === "catch") && (
         <div style={{ paddingTop: 96, paddingLeft: 20, paddingRight: 20 }}>
-          <WalletGate section="cards">
+          <WalletGate section={section}>
             <Suspense fallback={<Loader />}>
               <CardDeck onNavigate={setSection} initialTab={section === "catch" ? "catch" : undefined} />
             </Suspense>

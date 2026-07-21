@@ -157,6 +157,9 @@ export default function PetClawPreview({ cta, ctaNote }: { cta?: ReactNode; ctaN
             <a href="/petclaw-extension.zip" download="myaipet-extension.zip" style={{ display: "inline-flex", alignItems: "center", padding: "11px 20px", borderRadius: 12, background: "#BE4F28", color: "#FFF8EE", textDecoration: "none", fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 800 }}>
               Download Extension
             </a>
+            <a href="/petclaw-extension.zip.sha256" download style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#5C5140", textUnderlineOffset: 3 }}>
+              Verify SHA-256
+            </a>
             <span style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#7A6E5A" }}>
               Developer / unpacked install · not yet on the Chrome Web Store
             </span>

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { access, readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,6 +8,8 @@ const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = resolve(webRoot, "..");
 const readWeb = (relative) => readFile(resolve(webRoot, relative), "utf8");
 const readRepo = (relative) => readFile(resolve(repoRoot, relative), "utf8");
+const extensionZip = await readFile(resolve(webRoot, "public/petclaw-extension.zip"));
+const extensionChecksum = await readWeb("public/petclaw-extension.zip.sha256");
 
 const [
   status,
@@ -35,6 +38,10 @@ const [
   sovereignty,
   quickstart,
   ecosystem,
+  appShell,
+  walletGate,
+  cardDeck,
+  catCatch,
 ] = await Promise.all([
   readWeb("src/lib/releaseStatus.ts"),
   readWeb("src/lib/petclaw/connectors/index.ts"),
@@ -62,6 +69,10 @@ const [
   readWeb("src/components/SovereigntyDashboard.tsx"),
   readWeb("public/api-docs/QUICKSTART.md"),
   readWeb("public/api-docs/ECOSYSTEM.md"),
+  readWeb("src/components/App.tsx"),
+  readWeb("src/components/WalletGate.tsx"),
+  readWeb("src/components/CardDeck.tsx"),
+  readWeb("src/components/CatCatch.tsx"),
 ]);
 
 assert.match(status, /registry:\s*19/);
@@ -132,6 +143,12 @@ for (const claim of [
   /npx petclaw-mcp/i,
   /any MCP stdio client/i,
   /you actually own/i,
+  /all the same pet, with a single, growing memory/i,
+  /same pet, same memories/i,
+  /every interaction shapes who your pet becomes/i,
+  /skills, networking, and memory — all portable by design/i,
+  /remembers, grows, and stays yours/i,
+  /i learn from every turn/i,
 ]) {
   assert.doesNotMatch(publicCopy, claim);
 }
@@ -175,6 +192,23 @@ assert.match(mediaRoute, /source: "camera"/);
 assert.match(mediaRoute, /map_public: true/);
 assert.match(mediaRoute, /publicCaughtOwnsObject/);
 assert.match(nearbyMap, /escapeHtml\(c\.photo_path\)/);
+
+assert.match(appShell, /<WalletGate section=\{section\}>[\s\S]*?<CardDeck[\s\S]*?initialTab=\{section === "catch" \? "catch" : undefined\}/);
+assert.doesNotMatch(appShell, /<WalletGate section="cards">[\s\S]*?<CardDeck/);
+assert.match(walletGate, /if \(!isConnected && section === "catch"\) return children/);
+assert.match(cardDeck, /useState<DeckTab>\(initialTab \?\? "collection"\)/);
+assert.match(cardDeck, /tab === "catch" \? catchTab : <GuestGate/);
+assert.match(catCatch, /return <Shell><PurposeHero \/><GuestGate \/><\/Shell>/);
+assert.match(catCatch, /The catch loop/);
+assert.match(catCatch, /Your field kit is packed/);
+assert.equal(
+  extensionChecksum,
+  `${createHash("sha256").update(extensionZip).digest("hex")}  petclaw-extension.zip\n`,
+);
+for (const onboarding of [petClawPreview, sovereignty]) {
+  assert.match(onboarding, /href="\/petclaw-extension\.zip\.sha256"/);
+  assert.match(onboarding, /Verify SHA-256/);
+}
 
 assert.match(docs, /docs-toc-mobile/);
 assert.match(docs, /@media \(max-width: 768px\)/);

@@ -19,7 +19,7 @@ separate, future migration and requires its own tested backup/restore plan.
 5. Build a clean committed release archive with `deploy/build-release-artifact.sh <exact-commit> <off-worktree-output-dir>`. It uses `git archive`, rejects the unapproved Referral migration, scans extracted content for credentials, checks the destructive-migration checksum allowlist, and signs a canonical archive manifest with the pinned operator signing subkey.
 6. Upload the archive, manifest, detached manifest signature, SHA-256, and signed backup evidence set via the production PEM. Run the root-installed `/usr/local/sbin/petclaw-verify-release-artifact.sh` against the three artifact files. It verifies the pinned signature and SHA before extraction, rejects unsafe tar members, runs the trusted scanner and migration gate, then atomically seals one release below root-owned `/opt/petclaw/verified`. `/opt/petclaw/incoming` is only an untrusted upload spool.
 7. Run `/usr/local/sbin/petclaw-ec2-release.sh` as `ubuntu` with `PETCLAW_RELEASE_SOURCE` set to that verifier output, `PETCLAW_BACKUP_EVIDENCE` set, and live LLM smoke enabled. Uploaded copies of the controller are deliberately rejected.
-8. Install `deploy/crontab.example`, verify mode-600 cron logs, run external/API/browser/extension smoke, then reboot once and verify PM2/nginx recovery.
+8. Install `deploy/crontab.example`, verify the cron and PM2 log directories are mode 700 and leaf logs are mode 600, run external/API/browser/extension smoke, then reboot once and verify PM2/nginx recovery.
 
 One-time EC2 trust bootstrap must happen over the pinned production SSH host key.
 Before installing anything as root, compare remote SHA-256 values for the public

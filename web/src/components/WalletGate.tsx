@@ -122,6 +122,12 @@ export default function WalletGate({ children, section }: any) {
     return section === "my pet" ? <TourMyPet /> : children;
   }
 
+  // Catch has a purpose-led guest state of its own. Let only a fully
+  // disconnected visitor reach CardDeck/CatCatch so the active Catch Safari
+  // deep link explains the loop before asking for a wallet. A connected wallet
+  // still stays here until SIWE succeeds, preserving the owner-data boundary.
+  if (!isConnected && section === "catch") return children;
+
   // ── Preview-before-wall: cold visitors should experience the value (a living
   // demo pet; the PetClaw sovereignty showcase) BEFORE being asked for a wallet,
   // with the right next-step (Connect / Sign In) inline. ──

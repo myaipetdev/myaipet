@@ -207,6 +207,15 @@ const rejectAny = (body, values) => values.some((value) => body.includes(value))
 const app = read("web/src/components/App.tsx");
 if (!app.includes("STARTING SOON") || rejectAny(app, ["Jul 1", "Aug 1"])) process.exit(1);
 
+const walletGate = read("web/src/components/WalletGate.tsx");
+const cardDeck = read("web/src/components/CardDeck.tsx");
+const catCatch = read("web/src/components/CatCatch.tsx");
+if (!app.includes('<WalletGate section={section}>')
+  || app.includes('<WalletGate section="cards">')
+  || !walletGate.includes('if (!isConnected && section === "catch") return children;')
+  || !cardDeck.includes('tab === "catch" ? catchTab : <GuestGate')
+  || !catCatch.includes('<PurposeHero /><GuestGate />')) process.exit(1);
+
 const season = read("web/src/components/SeasonRewardsHub.tsx");
 if (!requireAll(season, ["function TodayStrip", "/api/checkin", 'method: "POST"',
   "onClaimed", "Claim +"])) process.exit(1);
@@ -266,6 +275,12 @@ const forbiddenClaims = [
   /npx petclaw-mcp/i,
   /any MCP stdio client/i,
   /you actually own/i,
+  /all the same pet, with a single, growing memory/i,
+  /same pet, same memories/i,
+  /every interaction shapes who your pet becomes/i,
+  /skills, networking, and memory — all portable by design/i,
+  /remembers, grows, and stays yours/i,
+  /i learn from every turn/i,
 ];
 if (forbiddenClaims.some((pattern) => pattern.test(publicCopy))) process.exit(1);
 
@@ -490,8 +505,8 @@ if ! unzip -tq "${PETCLAW_SMOKE_BODY}" >/dev/null; then
   echo "ERROR: extension download is not a valid ZIP." >&2
   exit 1
 fi
+PETCLAW_DOWNLOADED_EXTENSION_SHA="$(sha256sum "${PETCLAW_SMOKE_BODY}" | awk '{print $1}')"
 if [[ -n "${PETCLAW_EXTENSION_SHA256:-}" ]]; then
-  PETCLAW_DOWNLOADED_EXTENSION_SHA="$(sha256sum "${PETCLAW_SMOKE_BODY}" | awk '{print $1}')"
   if [[ "${PETCLAW_DOWNLOADED_EXTENSION_SHA}" != "${PETCLAW_EXTENSION_SHA256}" ]]; then
     echo "ERROR: extension download hash differs from the release artifact." >&2
     exit 1
@@ -500,6 +515,11 @@ fi
 PETCLAW_EXTENSION_MANIFEST="$(unzip -p "${PETCLAW_SMOKE_BODY}" manifest.json)"
 node -e 'const m=JSON.parse(process.argv[1]); if(m.manifest_version!==3 || m.version!==process.argv[2]) process.exit(1)' \
   "${PETCLAW_EXTENSION_MANIFEST}" "${PETCLAW_EXPECTED_EXTENSION_VERSION}"
+expect_code 200 GET "/petclaw-extension.zip.sha256"
+if [[ "$(cat "${PETCLAW_SMOKE_BODY}")" != "${PETCLAW_DOWNLOADED_EXTENSION_SHA}  petclaw-extension.zip" ]]; then
+  echo "ERROR: published extension checksum does not match the downloadable ZIP." >&2
+  exit 1
+fi
 expect_code 204 OPTIONS "/api/petclaw/skills" -H "Origin: https://myaipet.ai" -H "Access-Control-Request-Method: POST"
 expect_code 403 OPTIONS "/api/petclaw/skills" -H "Origin: https://evil.example" -H "Access-Control-Request-Method: POST"
 expect_code 204 OPTIONS "/api/pets" -H "Origin: https://myaipet.ai" -H "Access-Control-Request-Method: GET"
@@ -525,8 +545,14 @@ PETCLAW_LANDING_CURL_OK=1
 if ! PETCLAW_LANDING_CODE="$(petclaw_fetch_landing /)"; then
   PETCLAW_LANDING_CURL_OK=0
 fi
+PETCLAW_LANDING_RELEASE_OK=1
+if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]] \
+  && ! petclaw_exact_release_header "${PETCLAW_SMOKE_HEADERS}"; then
+  PETCLAW_LANDING_RELEASE_OK=0
+fi
 if [[ "${PETCLAW_LANDING_CURL_OK}" != "1" \
-  || "${PETCLAW_LANDING_CODE}" != "200" ]] \
+  || "${PETCLAW_LANDING_CODE}" != "200" \
+  || "${PETCLAW_LANDING_RELEASE_OK}" != "1" ]] \
   || ! petclaw_verify_landing_body < "${PETCLAW_SMOKE_BODY}" \
   || ! petclaw_verify_revalidated_english_html_headers "${PETCLAW_SMOKE_HEADERS}" \
   || ! petclaw_exact_header_value "${PETCLAW_SMOKE_HEADERS}" x-frame-options DENY \
@@ -539,8 +565,14 @@ PETCLAW_PRODUCT_DEMO_CURL_OK=1
 if ! PETCLAW_PRODUCT_DEMO_CODE="$(petclaw_fetch_landing /product-demo.html)"; then
   PETCLAW_PRODUCT_DEMO_CURL_OK=0
 fi
+PETCLAW_PRODUCT_DEMO_RELEASE_OK=1
+if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]] \
+  && ! petclaw_exact_release_header "${PETCLAW_SMOKE_HEADERS}"; then
+  PETCLAW_PRODUCT_DEMO_RELEASE_OK=0
+fi
 if [[ "${PETCLAW_PRODUCT_DEMO_CURL_OK}" != "1" \
-  || "${PETCLAW_PRODUCT_DEMO_CODE}" != "200" ]] \
+  || "${PETCLAW_PRODUCT_DEMO_CODE}" != "200" \
+  || "${PETCLAW_PRODUCT_DEMO_RELEASE_OK}" != "1" ]] \
   || ! petclaw_verify_product_demo_body < "${PETCLAW_SMOKE_BODY}" \
   || ! petclaw_verify_revalidated_english_html_headers "${PETCLAW_SMOKE_HEADERS}" \
   || ! petclaw_exact_header_value "${PETCLAW_SMOKE_HEADERS}" x-frame-options SAMEORIGIN \

@@ -257,8 +257,12 @@ const compatLanding = exactBlock("\\/landing\\/");
 const compatIndex = exactBlock("\\/landing\\/index\\.html");
 const compatDemo = exactBlock("\\/landing\\/product-demo\\.html");
 const compatMedia = prefixBlock("\\/landing\\/");
+const marketingStart = source.indexOf("server_name myaipet.ai www.myaipet.ai;");
+const appStart = source.indexOf("server_name app.myaipet.ai;");
+const marketing = source.slice(marketingStart, appStart);
 const exactDemoContracts = [
   'alias __CURRENT_ROOT__/landing-assets/product-demo.html;',
+  'add_header X-Petclaw-Release "__RELEASE_ID__" always;',
   'add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;',
   'add_header X-Content-Type-Options "nosniff" always;',
   'add_header X-Frame-Options "SAMEORIGIN" always;',
@@ -279,7 +283,9 @@ if (proxied.length !== 2
   || proxied.some(({ body }) => countIn(body, 'proxy_hide_header X-Petclaw-Release;') !== 1)) process.exit(1);
 if (staticAssets.length !== 1
   || countIn(staticAssets[0].body, 'add_header X-Petclaw-Release "__RELEASE_ID__" always;') !== 1
-  || count('add_header X-Petclaw-Release "__RELEASE_ID__" always;') !== 2) process.exit(1);
+  || marketingStart < 0 || appStart <= marketingStart
+  || countIn(marketing, 'add_header X-Petclaw-Release "__RELEASE_ID__" always;') !== 2
+  || count('add_header X-Petclaw-Release "__RELEASE_ID__" always;') !== 4) process.exit(1);
 if (compatLanding.length !== 1
   || !compatLanding[0].includes("alias __CURRENT_ROOT__/landing-assets/;")
   || !compatLanding[0].includes("index index.html;")
@@ -355,6 +361,8 @@ for PETCLAW_CONTRACT in \
   'ec2-release.sh:"${PETCLAW_RELEASE_SOURCE}/deploy/petclaw-release-boot-guard.service"' \
   'ec2-release.sh:"${PETCLAW_RELEASE_SOURCE}/deploy/release-rollback-watchdog.sh"' \
   'ec2-release.sh:"${PETCLAW_RELEASE_SOURCE}/deploy/petclaw-logrotate.conf"' \
+  'ec2-release.sh:petclaw_harden_pm2_logs' \
+  'ec2-release.sh:-perm /077' \
   'release-rollback-watchdog.sh:flock -w 900' \
   'release-rollback-watchdog.sh:exec 9<>"${PETCLAW_RELEASE_LOCK}"' \
   'release-rollback-watchdog.sh:stale watchdog generation refused' \
@@ -506,8 +514,10 @@ if grep -Fq '"${LANDING_BODY}"' "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh"; 
   echo "FAIL: landing smoke still passes the full HTML body through argv" >&2
   exit 1
 fi
-if ! grep -Fq '|| "${PETCLAW_LANDING_CODE}" != "200" ]]' \
+if ! grep -Fq '|| "${PETCLAW_LANDING_CODE}" != "200" \' \
   "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" \
+  || ! grep -Fq '|| "${PETCLAW_LANDING_RELEASE_OK}" != "1" ]]' \
+    "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" \
   || ! grep -Fq 'if ! PETCLAW_LANDING_CODE="$(petclaw_fetch_landing /)"; then' \
     "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" \
   || ! grep -Fq 'PETCLAW_LANDING_CURL_OK=0' \

@@ -41,6 +41,24 @@ petclaw_runtime_versions_supported() {
   [[ "${PETCLAW_RUNTIME_NPM_VERSION}" == "${PETCLAW_REQUIRED_NPM_VERSION}" ]]
 }
 
+petclaw_harden_pm2_logs() {
+  local PETCLAW_PM2_LOG_DIR="${PETCLAW_PM2_HOME}/logs"
+  install -d -m 700 "${PETCLAW_PM2_LOG_DIR}"
+  if [[ -L "${PETCLAW_PM2_LOG_DIR}" \
+    || "$(realpath -e "${PETCLAW_PM2_LOG_DIR}")" != "${PETCLAW_PM2_LOG_DIR}" \
+    || "$(stat -c '%U:%G:%a' "${PETCLAW_PM2_LOG_DIR}")" != "ubuntu:ubuntu:700" ]] \
+    || find "${PETCLAW_PM2_LOG_DIR}" -maxdepth 1 -type l -print -quit | grep -q .; then
+    echo "ERROR: PM2 logs must remain an ubuntu-owned mode-700 real directory without symlinks." >&2
+    return 1
+  fi
+  find "${PETCLAW_PM2_LOG_DIR}" -maxdepth 1 -type f -name '*.log' -exec chmod 600 {} +
+  if find "${PETCLAW_PM2_LOG_DIR}" -maxdepth 1 -type f -name '*.log' \
+    \( ! -user ubuntu -o ! -group ubuntu -o -perm /077 \) -print -quit | grep -q .; then
+    echo "ERROR: PM2 leaf logs must be ubuntu-owned with no group/other permissions." >&2
+    return 1
+  fi
+}
+
 petclaw_seal_release_tree() {
   local PETCLAW_SEAL_RELEASE_DIR="$1"
   local PETCLAW_SEAL_WEB="$2"
@@ -101,6 +119,7 @@ if [[ -L "${PETCLAW_PM2_HOME}" \
   echo "ERROR: pinned PM2 home must be an ubuntu-owned mode-700 real directory." >&2
   exit 2
 fi
+petclaw_harden_pm2_logs
 export PM2_HOME="${PETCLAW_PM2_HOME}"
 if ! sudo systemctl is-enabled pm2-ubuntu.service >/dev/null 2>&1; then
   echo "ERROR: pinned pm2-ubuntu.service must be installed and enabled." >&2
@@ -1163,6 +1182,7 @@ if [[ "${PETCLAW_LOCAL_OK}" -ne 1 ]]; then
   echo "ERROR: candidate did not become healthy." >&2
   exit 1
 fi
+petclaw_harden_pm2_logs
 PETCLAW_CANDIDATE_PID="$(pm2 jlist | node -e '
   let raw = "";
   process.stdin.on("data", chunk => raw += chunk);
@@ -1291,6 +1311,7 @@ fi
 
 pm2 save
 chmod 600 "${PETCLAW_PM2_HOME}/dump.pm2"
+petclaw_harden_pm2_logs
 sudo install -o root -g root -m 644 \
   "${PETCLAW_RELEASE_SOURCE}/deploy/petclaw-logrotate.conf" \
   /etc/logrotate.d/petclaw
