@@ -52,6 +52,7 @@ type PetMemory = { id?: number; content: string; memory_type?: string; importanc
 type PetRequest = { type: string; message?: string; expiresAt?: string; reward?: { happiness?: number; bond?: number; exp?: number } };
 type ComboToast = { id: number; name: string; description: string; emoji?: string };
 
+const SPECIES_DEFAULT_NAMES = ["Cat", "Dog", "Parrot", "Turtle", "Hamster", "Rabbit", "Fox", "Pomeranian"];
 const T = {
   field: "#ECE4D4", paper: "#FBF6EC", ink: "#211A12", ink70: "#3A3024", muted: "#7A6E5A", muted2: "#5C5140",
   mono: "#9A7B4E", hair: "rgba(33,26,18,.13)", terra: "#BE4F28", creamOn: "#FCE9CF",
@@ -890,7 +891,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
             <Reveal dir="right" delay={315}>
             <div style={{ background: T.paper, borderRadius: 22, padding: "18px 18px 20px", boxShadow: "var(--ed-shadow-card)" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
-                <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>{active.name}&apos;s Pond</div>
+                <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>{SPECIES_DEFAULT_NAMES.includes(active.name) ? "Pet Pond" : `${active.name}\u2019s Pond`}</div>
                 <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: T.muted }}>LO-FI · LIVE</div>
               </div>
               <div style={{ marginTop: 14 }}>
@@ -899,7 +900,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                 </Suspense>
               </div>
               <div style={{ marginTop: 13, textAlign: "center", fontFamily: T.m, fontSize: 12.5, color: T.muted, letterSpacing: ".04em" }}>
-                tap to feed · {active.name}&apos;s koi gather where you touch
+                tap to feed · {SPECIES_DEFAULT_NAMES.includes(active.name) ? "your pet\u2019s" : `${active.name}\u2019s`} koi gather where you touch
               </div>
             </div>
             </Reveal>

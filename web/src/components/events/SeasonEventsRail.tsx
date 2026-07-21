@@ -10,8 +10,8 @@
  *     fabricated live event;
  *   - reward lines come from the registry, which only claims server-paid
  *     values (or a real non-point prize);
- *   - no season dates/countdowns unless the founder schedules Season 1
- *     (SEASON_SCHEDULED) — while unscheduled the header says STARTING SOON.
+ *   - no season dates/countdowns; the header stays quiet — the SeasonBanner
+ *     above is the single season-phase announcer (dedupe, founder feedback).
  *
  * Best in Show state is resolved against the REAL pet pool
  * (GET /api/worldcup/bracket) — until confirmed open it shows the honest
@@ -20,7 +20,6 @@
 
 import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
-import { SEASON_SCHEDULED, seasonPhase } from "@/lib/season";
 import { getSeasonEvents, type SeasonEvent, type SeasonEventState } from "@/lib/seasonEvents";
 
 // ── Collectible Editorial tokens ──
@@ -58,13 +57,6 @@ function WaxSeal({ state }: { state: SeasonEventState }) {
   );
 }
 
-function seasonLabel(): string {
-  if (!SEASON_SCHEDULED) return "SEASON 1 · STARTING SOON";
-  const phase = seasonPhase();
-  if (phase === "upcoming") return "SEASON 1 · SCHEDULED";
-  if (phase === "live") return "SEASON 1 · LIVE";
-  return "SEASON 1 · ENDED";
-}
 
 function PosterCard({ ev }: { ev: SeasonEvent }) {
   const ended = ev.state === "ended";
@@ -126,15 +118,18 @@ function PosterCard({ ev }: { ev: SeasonEvent }) {
       )}
 
       {/* Blurb */}
-      <p style={{ fontFamily: T.body, fontSize: 13, color: T.muted2, lineHeight: 1.5, margin: 0, flex: 1 }}>
+      <p style={{ fontFamily: T.body, fontSize: 13, color: T.muted2, lineHeight: 1.5, margin: 0 }}>
         {ev.blurb}
       </p>
+
+      {/* Spacer pins the reward + CTA rows to a shared baseline across cards */}
+      <div style={{ flex: 1, minHeight: 8 }} />
 
       {/* Honest reward strip — only rendered when the registry claims one */}
       {ev.reward && (
         <div
           style={{
-            display: "flex", alignItems: "flex-start", gap: 6, marginTop: 10,
+            display: "flex", alignItems: "flex-start", gap: 6, marginTop: 10, minHeight: 38,
             paddingTop: 9, borderTop: `1px dashed ${T.hair}`,
             fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".04em",
             color: T.gold, textTransform: "uppercase", lineHeight: 1.45,
@@ -180,20 +175,14 @@ export default function SeasonEventsRail() {
         @media (prefers-reduced-motion: reduce){.ser-card:hover{transform:none}}
       `}</style>
 
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+      {/* Header — deliberately quiet: the SeasonBanner above already announces
+          the season phase; repeating "SEASON 1 · STARTING SOON" here read as
+          duplication (founder feedback). */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", paddingLeft: 2 }}>
         <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".18em", color: T.terraSub, textTransform: "uppercase" }}>
           Season Events
         </span>
-        <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: T.mono, border: `1px solid ${T.hair}`, borderRadius: 999, padding: "2px 9px" }}>
-          {seasonLabel()}
-        </span>
       </div>
-      {!SEASON_SCHEDULED && (
-        <div style={{ fontFamily: T.body, fontSize: 13, color: T.muted, marginTop: 4 }}>
-          Points earned now are pre-season points — they carry into Season 1.
-        </div>
-      )}
 
       {/* Poster rail */}
       <div className="ser-rail">
