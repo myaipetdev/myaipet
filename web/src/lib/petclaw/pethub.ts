@@ -75,7 +75,7 @@ export const BUILTIN_SKILLS: PetSkillManifest[] = [
     author: "petclaw",
     protocol: PETCLAW_PROTOCOL,
     category: "emotional",
-    description: "Personality-driven conversation with persistent memory. Your pet remembers everything and responds in character.",
+    description: "Personality-driven conversation that recalls relevant retained memories and responds in character.",
     tags: ["chat", "memory", "personality", "core"],
     requires: { env: ["GROK_API_KEY"] },
     handler: "llm-prompt",
@@ -105,7 +105,7 @@ export const BUILTIN_SKILLS: PetSkillManifest[] = [
     author: "petclaw",
     protocol: PETCLAW_PROTOCOL,
     category: "knowledge",
-    description: "Retrieve and reason over past conversations. Your pet never forgets.",
+    description: "Retrieve and reason over retained memories and searchable conversation history.",
     tags: ["memory", "recall", "knowledge", "search"],
     handler: "api-call",
     apiUrl: "/api/pets/{petId}/memories",
@@ -120,7 +120,7 @@ export const BUILTIN_SKILLS: PetSkillManifest[] = [
     author: "petclaw",
     protocol: PETCLAW_PROTOCOL,
     category: "utility",
-    description: "Export complete pet identity as portable SOUL data. Take your pet anywhere.",
+    description: "Export a signed SOUL snapshot of supported pet data with documented exclusions.",
     tags: ["export", "sovereignty", "portability", "backup"],
     handler: "api-call",
     apiUrl: "/api/petclaw/export",
@@ -547,7 +547,7 @@ async function executeLLMSkill(
   let systemPrompt: string;
 
   if (skill.id === "companion-chat" || skill.id === "persona-mirror") {
-    // Full memory-aware prompt for chat skills
+    // Memory-aware prompt using the bounded retained context selected above.
     systemPrompt = await memory.buildSystemPrompt(pet.name, pet.personality_type, platform, userMessage);
   } else {
     // Basic prompt for other skills

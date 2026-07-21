@@ -2866,9 +2866,9 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                 fontSize: 13, color: "#5C5140", lineHeight: 1.55, fontFamily: "var(--ed-body)",
                 maxWidth: 360, margin: "0 auto",
               }}>
-                Every conversation, every moment you spend together is woven into
-                a private ledger only the two of you can see. Start chatting to
-                make the first one.
+                Selected durable facts and session memories can be added to a
+                private ledger only you can access. Start chatting to make the
+                first one.
               </div>
             </div>
           )}

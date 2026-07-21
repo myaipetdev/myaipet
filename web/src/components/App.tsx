@@ -715,7 +715,7 @@ export default function App() {
                       fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A",
                       fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
                     }}>
-                      Your data — yours · export &amp; delete anytime
+                      Owner-scoped data controls · export &amp; delete
                     </span>
                   </div>
                 )}
@@ -881,7 +881,7 @@ export default function App() {
           fontFamily: "var(--ed-body)", fontSize: 16, color: "#5C5140",
           maxWidth: 560, margin: "0 auto 26px", lineHeight: 1.6, fontWeight: 500,
         }}>
-          Your AI. Your data. Your companion. An open protocol for AI pets you actually own — across every surface you use.
+          Your AI. Your data controls. Your companion. An open protocol for portable AI pets across supported surfaces.
         </p>
 
         {/* Social buttons */}

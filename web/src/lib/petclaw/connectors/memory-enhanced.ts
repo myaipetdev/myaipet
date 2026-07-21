@@ -56,7 +56,7 @@ export class MemoryConnector {
     }
   }
 
-  // Export full memory for sovereignty
+  // Export the bounded portable memory set for owner data controls.
   async exportAll(): Promise<ConnectorResult> {
     try {
       const manager = createMemoryManager(this.petId);

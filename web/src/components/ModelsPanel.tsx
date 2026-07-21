@@ -204,7 +204,7 @@ export default function ModelsPanel() {
 
       <div style={{ height: 20 }} />
 
-      <Card id="connect-cli" title="Connect PetClaw clients" sub="Use a one-year CLI token for your terminal, or a 30-day, limited-scope extension token for Chrome. Both are revocable and shown only once.">
+      <Card title="Connect PetClaw clients" sub="Use a one-year CLI token for your terminal, or a 30-day, limited-scope extension token for Chrome. Both are revocable and shown only once.">
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button onClick={() => genToken("extension")} disabled={genLoading} style={{ ...btn, opacity: genLoading ? 0.6 : 1 }}>
             {genLoading ? "Generating…" : "Generate extension token"}

@@ -1670,7 +1670,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
     const tick = () => {
       const d = new Date();
       setNow(
-        d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
       );
     };
     tick();

@@ -32,14 +32,14 @@ interface Props {
 }
 
 const CHIPS: Array<{ label: string; mark: string; x: number; y: number; d: number }> = [
-  { label: "telegram", mark: "◈", x: -300, y: -140, d: 6.2 },
-  { label: "discord", mark: "◈", x: 300, y: -148, d: 6.35 },
-  { label: "claude", mark: "◈", x: -350, y: -10, d: 6.5 },
-  { label: "cursor", mark: "◈", x: 352, y: -20, d: 6.65 },
+  { label: "web · live", mark: "◈", x: -300, y: -140, d: 6.2 },
+  { label: "chrome · live", mark: "◈", x: 300, y: -148, d: 6.35 },
+  { label: "terminal · live", mark: "◈", x: -350, y: -10, d: 6.5 },
+  { label: "channels · paused", mark: "◈", x: 352, y: -20, d: 6.65 },
   { label: "memory_recall", mark: "✦", x: -268, y: 120, d: 6.8 },
   { label: "soul_export", mark: "✦", x: 272, y: 112, d: 6.95 },
   { label: "petclaw_chat", mark: "✦", x: -368, y: -90, d: 7.1 },
-  { label: "chrome", mark: "◈", x: 196, y: 186, d: 7.25 },
+  { label: "mcp · SDK 1.6.2", mark: "◈", x: 196, y: 186, d: 7.25 },
 ];
 
 export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Props) {
@@ -153,8 +153,8 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
 
       <div className="pchi-wm">
         <h2>PETCLAW</h2>
-        <p>one companion, projected across every surface you live on — web · chrome · terminal · wallet-native identity</p>
-        <p className="pchi-wm-sub">the more you talk, the closer it grows — and everything it learns is yours</p>
+        <p>one companion on supported surfaces — web · approved chrome sites · terminal · wallet-native identity</p>
+        <p className="pchi-wm-sub">selected retained context stays owner-scoped; delivery channels remain launch-paused</p>
       </div>
 
       <div className="pchi-rig">
@@ -174,8 +174,8 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
               <div className="pchi-bar"><i /><i /><i /><b>petclaw — console · v1</b></div>
               <div className="pchi-term">
                 <span className="pchi-ln l1 m">$ petclaw-sdk talk</span>
-                <span className="pchi-ln l2">petclaw · protocol v1 · SDK 1.6.1</span>
-                <span className="pchi-ln l3 c">conn 19 · tools 6 · skills 18</span>
+                <span className="pchi-ln l2">protocol v1 · SDK 1.6.1 · MCP 1.6.2</span>
+                <span className="pchi-ln l3 c">19 registry · 3 live · 6 MCP defined</span>
                 <span className="pchi-ln l4 c">soul portable · consent enforced</span>
                 <span className="pchi-ln l5 g">● {name} is online<span className="pchi-caret" /></span>
               </div>

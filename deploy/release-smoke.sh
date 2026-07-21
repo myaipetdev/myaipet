@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+PETCLAW_SMOKE_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 PETCLAW_SMOKE_BASE="${PETCLAW_SMOKE_BASE:-https://app.myaipet.ai}"
 PETCLAW_SMOKE_HOST="${PETCLAW_SMOKE_HOST:-}"
 PETCLAW_SMOKE_PORT="${PETCLAW_SMOKE_PORT:-443}"
 PETCLAW_EXPECTED_RELEASE_ID="${PETCLAW_EXPECTED_RELEASE_ID:-}"
+PETCLAW_RELEASE_ROOT="${PETCLAW_RELEASE_ROOT:-}"
+PETCLAW_EXPECTED_EXTENSION_VERSION="2.3.3"
+PETCLAW_EXPECTED_LANDING_REVISION="20260720-en-only"
 PETCLAW_SMOKE_BODY="$(mktemp)"
 PETCLAW_SMOKE_HEADERS="$(mktemp)"
 trap 'rm -f "${PETCLAW_SMOKE_BODY}" "${PETCLAW_SMOKE_HEADERS}"' EXIT
@@ -120,18 +124,45 @@ petclaw_exact_frame_ancestors() {
 }
 
 petclaw_verify_landing_body() {
+  local expected_revision="${PETCLAW_EXPECTED_LANDING_REVISION:-20260720-en-only}"
   node -e '
     let body = "";
     process.stdin.setEncoding("utf8");
     process.stdin.on("data", (chunk) => { body += chunk; });
     process.stdin.on("end", () => {
+      const revision = process.argv[1];
       const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
+      const required = [
+        `<html lang="en" translate="no" class="notranslate">`,
+        `<meta name="google" content="notranslate"`,
+        "/api/petclaw/demo-chat",
+        "19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS",
+        "MCP clients like Claude, Cursor, and OpenClaw connect when SDK 1.6.2 ships.",
+        "+47 Play Points today",
+        "SAMPLE",
+        "Two legacy BNB Smart Chain contracts are deployed.",
+        "Live app integration is off.",
+        "Both contracts returned <code>paused() = false</code>",
+        `class="footer-disclosure"`,
+        `product-demo.html?v=${revision}`,
+        `launch reel — starts as you scroll`,
+        `animation: heroGlowBreathe`,
+        `Sparky priority: footer/journey beats CTA overlap.`,
+        `href="https://app.myaipet.ai/contracts"`,
+      ];
+      const forbidden = [
+        "19 CONNECTORS · 18 SKILLS · 6 LIVE",
+        `href="/stats"`,
+        `>Metrics<`,
+        "belongs to you — forever",
+        "Web · Chrome · MCP</span>",
+      ];
       if (hangul.test(body)
-        || !body.includes("/api/petclaw/demo-chat")
-        || !body.includes("ON-CHAIN · INTEGRATION OFF")
+        || required.some((value) => !body.includes(value))
+        || forbidden.some((value) => body.includes(value))
         || body.includes("2 Deployed · 2 Paused")) process.exitCode = 1;
     });
-  '
+  ' "${expected_revision}"
 }
 
 petclaw_verify_product_demo_body() {
@@ -141,7 +172,161 @@ petclaw_verify_product_demo_body() {
     process.stdin.on("data", (chunk) => { body += chunk; });
     process.stdin.on("end", () => {
       const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
-      if (hangul.test(body) || !body.includes("id=\"playBtn\"") || !body.includes("id=\"replayBtn\"")) process.exitCode = 1;
+      const required = [
+        `<html lang="en" translate="no" class="notranslate">`,
+        `<meta name="google" content="notranslate"`,
+        `id="playBtn"`,
+        `id="replayBtn"`,
+        `position:absolute; left:50%; top:50%; width:1280px; height:720px`,
+        `transform:translate(-50%,-50%) scale(var(--s,1))`,
+        `<a class="cta" href="https://app.myaipet.ai" target="_top">`,
+        `MCP runtime ships with SDK 1.6.2 · messaging launch-paused.`,
+      ];
+      const forbidden = [
+        "document.querySelector(\u0027.s8 .cta\u0027)",
+        `Web · Chrome · MCP — Claude, Cursor, and beyond.`,
+      ];
+      if (hangul.test(body)
+        || required.some((value) => !body.includes(value))
+        || forbidden.some((value) => body.includes(value))) process.exitCode = 1;
+    });
+  '
+}
+
+petclaw_verify_release_source_contracts() {
+  local release_root="$1"
+  node - "${release_root}" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+const root = process.argv[2];
+const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
+const exists = (relative) => fs.existsSync(path.join(root, relative));
+const requireAll = (body, values) => values.every((value) => body.includes(value));
+const rejectAny = (body, values) => values.some((value) => body.includes(value));
+
+const app = read("web/src/components/App.tsx");
+if (!app.includes("STARTING SOON") || rejectAny(app, ["Jul 1", "Aug 1"])) process.exit(1);
+
+const season = read("web/src/components/SeasonRewardsHub.tsx");
+if (!requireAll(season, ["function TodayStrip", "/api/checkin", 'method: "POST"',
+  "onClaimed", "Claim +"])) process.exit(1);
+
+const studio = read("web/src/components/PetStudioPro.tsx");
+if (!requireAll(studio, ["ZONE 1 — TEMPLATE LIBRARY", "ZONE 2 — THE STAGE",
+  "ZONE 3 — INSPECTOR", "TEMPLATE LIBRARY", "▸ PREVIEW", '<Panel label="RUN"'])) process.exit(1);
+
+const landing = read("landing-assets/index.html");
+const pitch = read("landing-assets/pitch-deck.html");
+if (!requireAll(landing, ["19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS",
+  "MCP client support ships with SDK 1.6.2", "+47 Play Points today", "SAMPLE"])
+  || rejectAny(landing, ['href="/stats"', ">Metrics<", "6 LIVE"])
+  || rejectAny(pitch, ["6 live today", "registry, 6 live", "any MCP client"])) process.exit(1);
+
+const demo = read("landing-assets/product-demo.html");
+const demoSource = read("tools/demo-video/product-demo.html");
+for (const body of [demo, demoSource]) {
+  if (!requireAll(body, ['<a class="cta" href="https://app.myaipet.ai" target="_top">',
+    "MCP runtime ships with SDK 1.6.2 · messaging launch-paused."])
+    || body.includes("document.querySelector('.s8 .cta')")) process.exit(1);
+}
+
+const publicCopy = [
+  landing,
+  pitch,
+  demo,
+  demoSource,
+  read("web/src/app/layout.tsx"),
+  read("web/src/app/api-docs/page.tsx"),
+  read("web/src/app/account/AccountOverview.tsx"),
+  read("web/src/components/Hero.tsx"),
+  read("web/src/components/PetClawConsole.tsx"),
+  read("web/src/components/PetClawHeroIntro.tsx"),
+  read("web/src/components/PetClawPreview.tsx"),
+  read("web/src/components/PremiumTeaser.tsx"),
+  read("web/src/components/SovereigntyDashboard.tsx"),
+  read("web/public/api-docs/QUICKSTART.md"),
+  read("web/public/api-docs/ECOSYSTEM.md"),
+].join("\n");
+const forbiddenClaims = [
+  /free forever/i,
+  /unlimited chat/i,
+  /full memory/i,
+  /remember(?:s)? everything/i,
+  /remember it forever/i,
+  /true memory of every chat/i,
+  /remembers it all/i,
+  /everything it learns (?:is|stays) yours/i,
+  /every memory, every bond/i,
+  /fully exportable/i,
+  /entire identity/i,
+  /complete (?:SOUL data|pet identity)/i,
+  /(?:zero|no) lock-in/i,
+  /across every surface/i,
+  /lives everywhere/i,
+  /npx petclaw-mcp/i,
+  /any MCP stdio client/i,
+  /you actually own/i,
+];
+if (forbiddenClaims.some((pattern) => pattern.test(publicCopy))) process.exit(1);
+
+const apiDocs = read("web/src/app/api-docs/page.tsx");
+if (!requireAll(apiDocs, ["bundled MCP tools", "MCP runtime ·", "Messaging ·"])) process.exit(1);
+if (!landing.includes("Import is a reported reconstruction")) process.exit(1);
+if (!read("web/src/components/PremiumTeaser.tsx").includes("Chat subject to published rate limits")) process.exit(1);
+if (!read("web/src/components/PetClawHeroIntro.tsx").includes("channels · paused")) process.exit(1);
+if (!read("web/public/api-docs/QUICKSTART.md").includes("Competitive state, media, external connections, credentials, and consent are excluded")) process.exit(1);
+
+const releaseStatus = read("web/src/lib/releaseStatus.ts");
+if (!requireAll(releaseStatus, ["registry: 19", "live: 3", "skills: 18",
+  "mcpTools: 6", 'mcp: "ships with SDK 1.6.2"', 'channels: "launch-paused"'])) process.exit(1);
+
+const schema = read("web/prisma/schema.prisma");
+const migration = "web/prisma/migrations/20260722000000_catch_map_consent_photo_hash/migration.sql";
+const catchRoute = read("web/src/app/api/catch/route.ts");
+const catchOwnerRoute = read("web/src/app/api/catch/[id]/route.ts");
+const catchNearbyRoute = read("web/src/app/api/catch/nearby/route.ts");
+const mediaRoute = read("web/src/app/api/media/[...key]/route.ts");
+const nearbyMap = read("web/src/components/NearbyMap.tsx");
+if (!requireAll(schema, ["photo_hash", "map_public", "CatchPhotoReservation"])
+  || !exists(migration)
+  || !exists("web/src/app/api/catch/[id]/route.ts")
+  || exists("web/src/app/stats/page.tsx")
+  || exists("web/prisma/migrations/20260709000000_referral_program")) process.exit(1);
+if (!requireAll(catchRoute, ["photo_hash: privatePhotoHash",
+  "where: { reserved_at: { lt: reservationCutoff } }", "Number.isFinite(body.lat)"])
+  || !requireAll(catchOwnerRoute, ["Deletion is temporarily unavailable",
+    "enqueueMediaDeletionReference", "caughtCat.delete"])
+  || catchOwnerRoute.indexOf("await enqueueMediaDeletionReference") >= catchOwnerRoute.lastIndexOf("await prisma.caughtCat.delete")
+  || !requireAll(catchNearbyRoute, ['source: "camera", map_public: true',
+    "latParam !== null && lngParam !== null"])
+  || !requireAll(mediaRoute, ['source: "camera"', "map_public: true", "publicCaughtOwnsObject"])
+  || !nearbyMap.includes("escapeHtml(c.photo_path)")) process.exit(1);
+
+const connectors = read("web/src/app/api/petclaw/connectors/route.ts");
+if (!requireAll(connectors, ["agentChannelsEnabled", "agentChannelsUnavailableResponse",
+  '["telegram", "slack", "discord", "twitter"]'])) process.exit(1);
+
+const docs = read("web/src/app/docs/page.tsx");
+if (!requireAll(docs, ["docs-toc-mobile", "@media (max-width: 768px)",
+  "display: block !important"])
+  || !requireAll(apiDocs, ["apidocs-mobile-toc", "@media (max-width: 820px)"])) process.exit(1);
+NODE
+}
+
+petclaw_verify_revalidated_english_html_headers() {
+  local headers_file="$1"
+  petclaw_exact_header_value "${headers_file}" content-language en \
+    && petclaw_header_contains_token "${headers_file}" cache-control no-cache
+}
+
+petclaw_verify_no_hangul_body() {
+  node -e '
+    let body = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", (chunk) => { body += chunk; });
+    process.stdin.on("end", () => {
+      const hangul = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
+      if (hangul.test(body)) process.exitCode = 1;
     });
   '
 }
@@ -198,6 +383,19 @@ expect_env_exact PET_LORA_ENABLED false
 expect_env_exact BLOCKCHAIN_ENABLED false
 expect_env_exact REFERRALS_ENABLED false
 
+if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" || -n "${PETCLAW_RELEASE_ROOT}" ]]; then
+  PETCLAW_RELEASE_ROOT="${PETCLAW_RELEASE_ROOT:-/opt/petclaw/current}"
+  if ! node "${PETCLAW_SMOKE_SCRIPT_DIR}/scan-release-language.mjs" \
+      built "${PETCLAW_RELEASE_ROOT}"; then
+    echo "ERROR: active release contains Hangul/Jamo in source or built output." >&2
+    exit 1
+  fi
+  if ! petclaw_verify_release_source_contracts "${PETCLAW_RELEASE_ROOT}"; then
+    echo "ERROR: release source contracts do not match the approved launch state." >&2
+    exit 1
+  fi
+fi
+
 if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
   if [[ ! "${PETCLAW_EXPECTED_RELEASE_ID}" =~ ^[A-Za-z0-9._-]{6,80}$ \
     || "${PETCLAW_SMOKE_BASE}" != "https://app.myaipet.ai" \
@@ -248,6 +446,20 @@ if [[ "${STORAGE_PROVIDER:-local}" == "local" ]]; then
 fi
 
 expect_code 200 GET "/api/health"
+expect_code 200 GET "/"
+if ! petclaw_verify_no_hangul_body < "${PETCLAW_SMOKE_BODY}"; then
+  echo "ERROR: app HTML contains Hangul/Jamo." >&2
+  exit 1
+fi
+expect_code 200 GET "/account"
+expect_code 200 GET "/studio"
+expect_code 200 GET "/docs"
+expect_code 200 GET "/api-docs"
+expect_code 404 GET "/stats"
+expect_code 401 GET "/api/checkin"
+expect_code 401 POST "/api/checkin" -H "Content-Type: application/json" -d '{}'
+expect_code 401 PATCH "/api/catch/1" -H "Content-Type: application/json" -d '{"map_public":true}'
+expect_code 401 DELETE "/api/catch/1"
 PAYMENT_CONFIG_BODY="$(petclaw_curl "${PETCLAW_SMOKE_BASE}/api/config")"
 node -e 'const d=JSON.parse(process.argv[1]); if(d?.payments_enabled!==false||d?.treasury!==""||d?.usdt!==""||d?.blockchain_enabled!==false||typeof d?.contracts!=="object"||d.contracts===null||Array.isArray(d.contracts)||Object.keys(d.contracts).length!==0||d?.oauth_connections_enabled!==false||d?.agent_channels_enabled!==false) process.exit(1)' "${PAYMENT_CONFIG_BODY}"
 expect_code 200 GET "/contracts"
@@ -286,7 +498,8 @@ if [[ -n "${PETCLAW_EXTENSION_SHA256:-}" ]]; then
   fi
 fi
 PETCLAW_EXTENSION_MANIFEST="$(unzip -p "${PETCLAW_SMOKE_BODY}" manifest.json)"
-node -e 'const m=JSON.parse(process.argv[1]); if(m.manifest_version!==3 || m.version!=="2.3.2") process.exit(1)' "${PETCLAW_EXTENSION_MANIFEST}"
+node -e 'const m=JSON.parse(process.argv[1]); if(m.manifest_version!==3 || m.version!==process.argv[2]) process.exit(1)' \
+  "${PETCLAW_EXTENSION_MANIFEST}" "${PETCLAW_EXPECTED_EXTENSION_VERSION}"
 expect_code 204 OPTIONS "/api/petclaw/skills" -H "Origin: https://myaipet.ai" -H "Access-Control-Request-Method: POST"
 expect_code 403 OPTIONS "/api/petclaw/skills" -H "Origin: https://evil.example" -H "Access-Control-Request-Method: POST"
 expect_code 204 OPTIONS "/api/pets" -H "Origin: https://myaipet.ai" -H "Access-Control-Request-Method: GET"
@@ -315,6 +528,7 @@ fi
 if [[ "${PETCLAW_LANDING_CURL_OK}" != "1" \
   || "${PETCLAW_LANDING_CODE}" != "200" ]] \
   || ! petclaw_verify_landing_body < "${PETCLAW_SMOKE_BODY}" \
+  || ! petclaw_verify_revalidated_english_html_headers "${PETCLAW_SMOKE_HEADERS}" \
   || ! petclaw_exact_header_value "${PETCLAW_SMOKE_HEADERS}" x-frame-options DENY \
   || ! petclaw_exact_frame_ancestors "${PETCLAW_SMOKE_HEADERS}" "'none'"; then
   echo "ERROR: landing smoke did not return exact English launch HTML." >&2
@@ -328,9 +542,50 @@ fi
 if [[ "${PETCLAW_PRODUCT_DEMO_CURL_OK}" != "1" \
   || "${PETCLAW_PRODUCT_DEMO_CODE}" != "200" ]] \
   || ! petclaw_verify_product_demo_body < "${PETCLAW_SMOKE_BODY}" \
+  || ! petclaw_verify_revalidated_english_html_headers "${PETCLAW_SMOKE_HEADERS}" \
   || ! petclaw_exact_header_value "${PETCLAW_SMOKE_HEADERS}" x-frame-options SAMEORIGIN \
   || ! petclaw_exact_frame_ancestors "${PETCLAW_SMOKE_HEADERS}" "'self'"; then
   echo "ERROR: same-origin product demo frame contract failed." >&2
+  exit 1
+fi
+
+PETCLAW_COMPAT_LANDING_CURL_OK=1
+if ! PETCLAW_COMPAT_LANDING_CODE="$(petclaw_curl \
+  -D "${PETCLAW_SMOKE_HEADERS}" -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
+  "${PETCLAW_SMOKE_BASE}/landing/?v=${PETCLAW_EXPECTED_LANDING_REVISION}")"; then
+  PETCLAW_COMPAT_LANDING_CURL_OK=0
+fi
+PETCLAW_COMPAT_LANDING_RELEASE_OK=1
+if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]] \
+  && ! petclaw_exact_release_header "${PETCLAW_SMOKE_HEADERS}"; then
+  PETCLAW_COMPAT_LANDING_RELEASE_OK=0
+fi
+if [[ "${PETCLAW_COMPAT_LANDING_CURL_OK}" != "1" \
+  || "${PETCLAW_COMPAT_LANDING_CODE}" != "200" \
+  || "${PETCLAW_COMPAT_LANDING_RELEASE_OK}" != "1" ]] \
+  || ! petclaw_verify_landing_body < "${PETCLAW_SMOKE_BODY}" \
+  || ! petclaw_verify_revalidated_english_html_headers "${PETCLAW_SMOKE_HEADERS}"; then
+  echo "ERROR: app landing compatibility path is not cache-safe English HTML." >&2
+  exit 1
+fi
+
+PETCLAW_COMPAT_DEMO_CURL_OK=1
+if ! PETCLAW_COMPAT_DEMO_CODE="$(petclaw_curl \
+  -D "${PETCLAW_SMOKE_HEADERS}" -o "${PETCLAW_SMOKE_BODY}" -w '%{http_code}' \
+  "${PETCLAW_SMOKE_BASE}/landing/product-demo.html?v=${PETCLAW_EXPECTED_LANDING_REVISION}")"; then
+  PETCLAW_COMPAT_DEMO_CURL_OK=0
+fi
+PETCLAW_COMPAT_DEMO_RELEASE_OK=1
+if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]] \
+  && ! petclaw_exact_release_header "${PETCLAW_SMOKE_HEADERS}"; then
+  PETCLAW_COMPAT_DEMO_RELEASE_OK=0
+fi
+if [[ "${PETCLAW_COMPAT_DEMO_CURL_OK}" != "1" \
+  || "${PETCLAW_COMPAT_DEMO_CODE}" != "200" \
+  || "${PETCLAW_COMPAT_DEMO_RELEASE_OK}" != "1" ]] \
+  || ! petclaw_verify_product_demo_body < "${PETCLAW_SMOKE_BODY}" \
+  || ! petclaw_verify_revalidated_english_html_headers "${PETCLAW_SMOKE_HEADERS}"; then
+  echo "ERROR: app product-demo compatibility path is not cache-safe English HTML." >&2
   exit 1
 fi
 

@@ -120,7 +120,7 @@ const PACK = [
   { k: "invoke", v: "disabled · dedicated consent + caller funding required" },
 ];
 const SOVEREIGNTY: { k: string; v: React.ReactNode }[] = [
-  { k: "export", v: "full memory ledger, JSON + SHA-256 integrity hash" },
+  { k: "export", v: "portable memory + persona archive, JSON + SHA-256 integrity hash" },
   { k: "consent", v: "public / sharing / AI-training / interact" },
   { k: "delete", v: "active-systems wipe · SHA-256 receipt · backups expire ≤90d" },
   { k: "on-chain", v: <>SOUL anchor + inheritance <span style={{ color: MUTED }}>○ planned · not live</span></> },
@@ -148,9 +148,9 @@ const BOOT: Line[] = [
 ];
 
 const DEMO_REPLIES = [
-  "hehe hi! i'm a *demo* of how your pet sounds — adopt one and i'll remember everything about you.",
-  "*wags* adopt me and give me a name — then this chat becomes really yours, across every channel.",
-  "ooh you typed something! once you adopt, i reply from real memory (the petclaw_chat tool). want to try?",
+  "hehe hi! i'm a *demo* of how your pet sounds — adopt one and selected facts and session memories can shape later replies.",
+  "*wags* adopt me and give me a name — then we can build a shared history on web and approved Chrome sites.",
+  "ooh you typed something! once you adopt, relevant retained memory can shape my replies (the petclaw_chat tool). want to try?",
 ];
 
 export default function PetClawConsole({ pet, petId, demo = false, variant = "full" }: Props) {

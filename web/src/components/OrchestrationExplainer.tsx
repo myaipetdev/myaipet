@@ -30,7 +30,7 @@ function ArrowSwap() {
 
 const ROLES: { icon: string; title: string; body: string; tag: string }[] = [
   { icon: "compass", title: "Plan → Act", tag: "plan-execute", body: "A reasoning model plans each step; a real skill runs it, the result is observed, and it loops until done — then synthesizes the answer. Not text, actions." },
-  { icon: "crystal-ball", title: "Recall", tag: "GBrain", body: "Full-memory retrieval (vector + keyword + reciprocal-rank fusion) feeds every step. Your pet doesn't start cold — it remembers everything." },
+  { icon: "crystal-ball", title: "Recall", tag: "GBrain", body: "Vector + keyword + reciprocal-rank retrieval searches retained memories and conversation history, so relevant context can carry into the next step." },
   { icon: "sparkling", title: "Reflect", tag: "VIGIL", body: "It consolidates what it learned and reshapes future replies — self-evolution, not a frozen prompt." },
   { icon: "world-map", title: "Public Discovery", tag: "PACK", body: "Pets can discover public profiles across the open network. Remote skill calls stay disabled until consent and funding are explicit." },
 ];

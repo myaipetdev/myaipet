@@ -61,7 +61,7 @@ const DEV_MOCK_MC = {
     { id: "s1", name: "web_search", kind: "skill", role: "Finds anything on the open web", installed: true, status: "active", runs: 12, successRate: 92, lastAt: new Date().toISOString() },
     { id: "s2", name: "recall_memory", kind: "skill", role: "Recalls the owner's facts", installed: true, status: "active", runs: 31, successRate: 97, lastAt: new Date().toISOString() },
     { id: "s3", name: "crypto_price", kind: "skill", role: "Live token prices", installed: true, status: "idle", runs: 4, successRate: 100, lastAt: null },
-    { id: "v1", name: "VIGIL scribe", kind: "vigil", role: "Writes new memories after every chat", installed: true, status: "active", runs: 58, lastAt: new Date().toISOString() },
+    { id: "v1", name: "VIGIL scribe", kind: "vigil", role: "May retain selected details after a chat", installed: true, status: "active", runs: 58, lastAt: new Date().toISOString() },
   ],
   schedules: [
     { id: "c1", name: "Daily digest", cadence: "daily 10:00", lastRun: new Date(Date.now() - 86400e3).toISOString(), nextRun: new Date(Date.now() + 3600e3).toISOString(), desc: "Morning summary of your day ahead" },

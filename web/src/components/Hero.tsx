@@ -391,9 +391,9 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
 
           {/* Description */}
           <p className="mp-enter mp-enter-2" style={{ fontFamily: "var(--ed-body)", fontSize: 18, color: "#5C5140", maxWidth: 500, margin: "0 0 28px", lineHeight: 1.6, fontWeight: 500 }}>
-            Not another chatbot with a cute avatar. An AI pet that remembers you,
-            grows with you, and lives across every surface you do — fully exportable,
-            deletable, yours.
+            Not another chatbot with a cute avatar. An AI pet that can retain selected context,
+            grows with you, and works on web and approved Chrome sites today — with
+            owner-scoped export and deletion controls.
           </p>
 
           {/* CTA */}
@@ -725,7 +725,7 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
             }}>𝕏 Follow</span>
           </div>
           <div style={{ fontFamily: "var(--ed-body)", fontSize: 14.5, color: "rgba(33,26,18,0.72)", marginTop: 14, lineHeight: 1.55 }}>
-            Building the first AI companion you actually own — it remembers you, you own the data, and it lives everywhere. Follow along, built in public. 🐾
+            Building an AI companion with selected memory, owner-scoped data controls, and live web + approved-Chrome surfaces. Follow along, built in public. 🐾
           </div>
         </a>
         </Reveal>

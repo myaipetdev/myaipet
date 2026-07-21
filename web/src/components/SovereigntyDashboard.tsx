@@ -849,7 +849,7 @@ function ChromeExtensionSection() {
           <span style={{ fontSize: 16, lineHeight: 1.4, display: "inline-flex", color: TERRA }}><Icon name="lock" size={16} /></span>
           <p style={{ fontFamily: BODY, fontSize: 13, color: INK70, lineHeight: 1.6, margin: 0 }}>
             <strong>To see YOUR pet:</strong> generate a <strong>30-day extension token</strong> in{" "}
-            <a href="#connect-cli" style={{ color: TERRA, fontWeight: 700, textDecoration: "underline" }}>&ldquo;Connect PetClaw clients&rdquo;</a>, paste it in extension <strong>Settings</strong>. Extension-scoped · revocable anytime.
+            <a href="#extension-token" style={{ color: TERRA, fontWeight: 700, textDecoration: "underline" }}>&ldquo;Connect PetClaw clients&rdquo;</a>, paste it in extension <strong>Settings</strong>. Extension-scoped · revocable anytime.
           </p>
         </div>
       </Reveal>
@@ -1377,16 +1377,16 @@ export default function SovereigntyDashboard() {
             What is PetClaw?
           </h2>
           <p style={{ fontFamily: BODY, fontSize: 14.5, lineHeight: 1.65, color: INK70, margin: "0 0 14px" }}>
-            A companion that <strong>actually remembers you</strong> — it grows closer with every chat.
+            A companion that can retain <strong>selected facts and session memories</strong> — it grows closer as you interact.
             PetClaw projects <strong>one pet across web · Chrome · terminal</strong>, anchored to your
-            wallet-native identity. Everything it learns is yours: inspect, export, delete.
+            wallet-native identity. Retained pet data stays owner-scoped: inspect, export, delete.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {[
-              ["heart", "Grows closer", "Bond deepens with every chat — real state, not a script"],
-              ["crystal-ball", "Remembers you", "A durable, growing memory ledger — key facts + session logs, private to you"],
-              ["chat", "Projected everywhere", "Web · Chrome · terminal — one memory"],
-              ["lock", "Your data, yours", "Wallet-native — export or delete anytime"],
+              ["heart", "Grows closer", "Bond state changes with eligible interactions — real state, not a scripted counter"],
+              ["crystal-ball", "Retains context", "Selected durable facts + session logs, owner-scoped"],
+              ["chat", "Supported surfaces", "Web · approved Chrome sites · terminal"],
+              ["lock", "Owner controls", "Inspect, export, or delete retained pet data"],
             ].map(([icon, title, sub]) => (
               <div key={title} style={{
                 flex: "1 1 180px", minWidth: 0, padding: "12px 14px", borderRadius: 12,
@@ -1423,10 +1423,13 @@ export default function SovereigntyDashboard() {
         </div>
 
         {/* Bring your own model — merged into the PetClaw (developer) screen.
-            Connection is a CLI/SDK action; the web form is a manual fallback. */}
-        <Reveal dir="up" threshold={0.1} style={{ marginBottom: 40 }}>
-          <ModelsPanel />
-        </Reveal>
+            This unique anchor is owned by the wrapper so the extension guide
+            lands at the token controls without relying on a child-file id. */}
+        <div id="extension-token">
+          <Reveal dir="up" threshold={0.1} style={{ marginBottom: 40 }}>
+            <ModelsPanel />
+          </Reveal>
+        </div>
 
         {/* Big two-column hero */}
         <div className="sov-2col sov-hero-grid" style={{ gap: 48, alignItems: "center" }}>
@@ -1455,17 +1458,17 @@ export default function SovereigntyDashboard() {
             </div>
             <MaskedTitle
               as="h1"
-              lines={["Your Pet.", <span key="truly-yours" style={{ color: TERRA }}>Truly Yours.</span>]}
+              lines={["Your Pet.", <span key="under-control" style={{ color: TERRA }}>Under Your Control.</span>]}
               style={{ fontFamily: DISP, fontSize: 52, fontWeight: 800, letterSpacing: "-0.04em", color: INK, lineHeight: 1.0, margin: "0 0 16px" }}
             />
             <p style={{ fontFamily: BODY, fontSize: 16, color: MUTED2, lineHeight: 1.7, margin: "0 0 28px", maxWidth: 380 }}>
-              Every memory, every bond — owned by you, not us. Export the full soul anytime; carry it across web, extension, and CLI. On-chain anchoring and inheritance are planned, not live.
+              Export a portable SOUL archive of supported memory, persona, and history fields. Import is a reported reconstruction: media, competitive state, consent, and external connections do not transfer. On-chain anchoring and inheritance are planned, not live.
             </p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               {[
-                { n: "4", l: "Channels" },
-                { n: "Yours", l: "Export · Import · Delete" },
-                { n: "Durable", l: "Memory Ledger" },
+                { n: "2", l: "Live Surfaces" },
+                { n: "Scoped", l: "Export · Import · Delete" },
+                { n: "Selected", l: "Memory + Sessions" },
               ].map(({ n, l }, i) => (
                 <Reveal key={l} dir="up" delay={i * 90} style={{ textAlign: "center" }}>
                   <div style={{ fontFamily: DISP, fontSize: 26, fontWeight: 800, color: INK, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{n}</div>
@@ -2500,7 +2503,7 @@ export default function SovereigntyDashboard() {
                 <span style={{ fontSize: 13, padding: "3px 9px", borderRadius: 999, background: "rgba(92,138,78,0.1)", color: GOOD, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>v{SDK_VERSION}</span>
               </div>
               <p style={{ fontSize: 15, color: MUTED2, fontFamily: BODY, lineHeight: 1.7, marginBottom: 24 }}>
-                Not a generic AI wrapper — a <strong style={{ color: INK }}>memory &amp; session framework</strong>. Context survives platform switches, restarts, and devices. Your pet remembers you everywhere.
+                Not a generic AI wrapper — a <strong style={{ color: INK }}>memory &amp; session framework</strong>. Selected retained context can survive restarts and appear on supported surfaces.
               </p>
 
               {/* Why PetClaw — 6 cards */}

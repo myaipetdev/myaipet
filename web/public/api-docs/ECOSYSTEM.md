@@ -2,12 +2,16 @@
 
 PetClaw is an open protocol for companion AI. SDK: **`@myaipet/petclaw-sdk`** (npm, public).
 
+Current release: SDK 1.6.1, 19 registered connectors with 3 live, 18 built-in
+skills, and 6 bundled MCP tools. The working MCP runtime ships with SDK 1.6.2;
+messaging channels are launch-paused.
+
 ## Architecture
 
 ```
                     ┌─────────────────────┐
                     │   PetClaw Protocol   │
-                    │   v1 · SDK 1.6.1     │
+                    │ SDK 1.6.1 · 3 LIVE   │
                     └──────────┬──────────┘
                                │
         ┌──────────────┬───────┼───────┬──────────────┐
@@ -24,9 +28,9 @@ PetClaw is an open protocol for companion AI. SDK: **`@myaipet/petclaw-sdk`** (n
 |-------|----------|-------------|
 | 💬 `companion-chat` | Emotional | Personality-driven conversation with persistent memory |
 | 🪞 `persona-mirror` | Social | Mirror owner's speech patterns across platforms |
-| 🧠 `memory-recall` | Knowledge | Cross-platform memory search and reasoning |
+| 🧠 `memory-recall` | Knowledge | Search and reason over retained pet memories |
 | 🎯 `vibe-check` | Emotional | Read a message/post → emotional vibe + one-line take |
-| 📦 `soul-export` | Utility | Export complete identity as portable data |
+| 📦 `soul-export` | Utility | Export a signed SOUL snapshot with documented exclusions |
 | 📓 `daily-mood` | Emotional | AI-generated daily mood journal |
 | 📄 `summarize-page` | Knowledge | Summarize page text in the pet's voice (Chrome ext) |
 | 📸 `image-gen` | Creative | AI pet selfie / artwork generation |
@@ -86,7 +90,7 @@ skills via the REST API or CLI instead.
 | Claude Desktop / Claude Code | ⏳ Shipping in SDK 1.6.2 |
 | Cursor | ⏳ Shipping in SDK 1.6.2 |
 | Gemini CLI | ⏳ Shipping in SDK 1.6.2 |
-| Any MCP stdio client | ⏳ Standard protocol · shipping in SDK 1.6.2 |
+| Supported MCP stdio clients | ⏳ Standard protocol · shipping in SDK 1.6.2 |
 
 ```bash
 petclaw-sdk mcp   # broken in 1.6.1 — fixed in SDK 1.6.2
@@ -109,8 +113,8 @@ The two deployed BSC contracts are non-upgradeable. Their production integration
 
 | Right | Endpoint | Description |
 |-------|----------|-------------|
-| 📦 Export | `GET /api/petclaw/export` | Download complete SOUL data (JSON) |
-| 📥 Import | `POST /api/petclaw/import` | Restore pet from SOUL export |
+| 📦 Export | `GET /api/petclaw/export` | Download a signed snapshot of supported SOUL data |
+| 📥 Import | `POST /api/petclaw/import` | Restore supported portable fields; the response reports skipped server-authoritative and external data |
 | 🗑️ Delete | `DELETE /api/petclaw/delete` | Active-systems removal + SHA-256 receipt of the request (backups expire ≤90 days; on-chain records can't be erased) |
 | ✅ Consent | `PATCH /api/pets/{id}` | Toggle: public profile, data sharing, AI training, interactions |
 | 🔍 Verify | `POST /api/petclaw/verify` | Prove pet ownership by wallet |

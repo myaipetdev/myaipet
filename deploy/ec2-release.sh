@@ -290,6 +290,20 @@ for PETCLAW_DISABLED_LAUNCH_FLAG in \
   REFERRALS_ENABLED; do
   petclaw_require_launch_flag_false "${PETCLAW_DISABLED_LAUNCH_FLAG}"
 done
+petclaw_require_launch_assignment_absent() {
+  local PETCLAW_ABSENT_NAME="$1"
+  local PETCLAW_ASSIGNMENT_COUNT
+  PETCLAW_ASSIGNMENT_COUNT="$(grep -Ec "^[[:space:]]*(export[[:space:]]+)?${PETCLAW_ABSENT_NAME}[[:space:]]*=" "${PETCLAW_ENV_SOURCE}" || true)"
+  if [[ "${PETCLAW_ASSIGNMENT_COUNT}" != "0" ]]; then
+    echo "ERROR: production env must not set ${PETCLAW_ABSENT_NAME} in the STARTING SOON release." >&2
+    exit 2
+  fi
+}
+for PETCLAW_ABSENT_SEASON_VALUE in \
+  NEXT_PUBLIC_SEASON1_START_MS \
+  NEXT_PUBLIC_SEASON1_END_MS; do
+  petclaw_require_launch_assignment_absent "${PETCLAW_ABSENT_SEASON_VALUE}"
+done
 petclaw_require_launch_value() {
   local PETCLAW_VALUE_NAME="$1"
   local PETCLAW_EXPECTED_VALUE="$2"
@@ -404,6 +418,8 @@ if [[ ! -f "${PETCLAW_RELEASE_SOURCE}/web/package-lock.json" \
   || -L "${PETCLAW_RELEASE_SOURCE}/deploy/petclaw-release-boot-guard.service" \
   || ! -f "${PETCLAW_RELEASE_SOURCE}/deploy/release-rollback-watchdog.sh" \
   || -L "${PETCLAW_RELEASE_SOURCE}/deploy/release-rollback-watchdog.sh" \
+  || ! -f "${PETCLAW_RELEASE_SOURCE}/deploy/scan-release-language.mjs" \
+  || -L "${PETCLAW_RELEASE_SOURCE}/deploy/scan-release-language.mjs" \
   || ! -f "${PETCLAW_RELEASE_SOURCE}/deploy/destructive-migrations.allowlist" \
   || -L "${PETCLAW_RELEASE_SOURCE}/deploy/destructive-migrations.allowlist" \
   || ! -f "${PETCLAW_ENV_SOURCE}" ]]; then
@@ -835,6 +851,8 @@ install -d -m 755 .next/standalone/.next/static .next/standalone/public
 cp -a .next/static/. .next/standalone/.next/static/
 cp -a public/. .next/standalone/public/
 npm run verify:artifact
+node "${PETCLAW_RELEASE_SOURCE}/deploy/scan-release-language.mjs" \
+  built "${PETCLAW_RELEASE_DIR}"
 
 PETCLAW_PRESWITCH_MIN_FREE_BYTES=$((3 * 1024 * 1024 * 1024))
 PETCLAW_AVAILABLE_BYTES="$(df --output=avail -B1 /opt/petclaw | tail -n 1 | tr -d '[:space:]')"
@@ -1266,6 +1284,7 @@ export PETCLAW_EXTENSION_SHA256
 if ! PETCLAW_SMOKE_BASE="https://app.myaipet.ai" \
   PETCLAW_SMOKE_HOST="127.0.0.1" PETCLAW_SMOKE_PORT="443" \
   PETCLAW_EXPECTED_RELEASE_ID="${PETCLAW_RELEASE_ID}" \
+  PETCLAW_RELEASE_ROOT="${PETCLAW_RELEASE_DIR}" \
   /bin/bash "${PETCLAW_RELEASE_SOURCE}/deploy/release-smoke.sh"; then
   exit 1
 fi

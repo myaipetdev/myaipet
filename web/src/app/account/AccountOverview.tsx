@@ -292,7 +292,7 @@ export default function AccountOverview({
               padding: "4px 10px",
             }}
           >
-            FREE FOREVER
+            CURRENT PLAN · $0
           </div>
           <p style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#5C5140", lineHeight: 1.6, margin: "12px 0 0" }}>
             Raise your pet, catch, battle, and earn season points — all included.

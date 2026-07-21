@@ -95,7 +95,7 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
         {pets && pets.length === 0 ? (
           <div style={{ background: T.paper, borderRadius: 22, padding: "48px 28px", textAlign: "center", boxShadow: "var(--ed-shadow-card)", maxWidth: 460, margin: "40px auto" }}>
             <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 24, color: T.ink }}>No companion yet</div>
-            <p style={{ fontFamily: T.body, fontSize: 14.5, color: T.muted2, margin: "10px 0 18px", lineHeight: 1.5 }}>Adopt a pet first — then you can talk to it here, and it remembers everything.</p>
+            <p style={{ fontFamily: T.body, fontSize: 14.5, color: T.muted2, margin: "10px 0 18px", lineHeight: 1.5 }}>Adopt a pet first — then talk here and let relevant retained memories shape future replies.</p>
             <button onClick={() => onNavigate?.("my pet")} style={{ border: "none", cursor: "pointer", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontFamily: T.disp, fontWeight: 700, fontSize: 14, borderRadius: 12, padding: "12px 22px", boxShadow: "0 12px 22px -12px rgba(226,125,12,.7)" }}>Adopt your pet →</button>
           </div>
         ) : (
@@ -128,7 +128,7 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
                     </div>
                   </div>
                   <p style={{ fontFamily: T.body, fontSize: 13, color: "rgba(252,233,207,.85)", marginTop: 12, lineHeight: 1.5 }}>
-                    Every chat grows your Bond — and {active?.name || "your pet"} remembers it all.
+                    Eligible chats grow your Bond — and relevant retained details can shape later replies from {active?.name || "your pet"}.
                   </p>
                 </Reveal>
 

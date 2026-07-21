@@ -325,7 +325,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           </div>
           <p style={{ color: "#5C5140", fontSize: 15, lineHeight: 1.55, margin: 0, padding: "0 8px" }}>
             {pet.name} is a companion that <strong>remembers you</strong> — a private memory that
-            grows every chat, in a voice you tune. Let&apos;s spend a minute setting it up.
+            builds a bond through interaction, in a voice you tune. Let&apos;s spend a minute setting it up.
           </p>
         </div>
 
@@ -693,7 +693,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           {/* Capability welcome (VIGIL "what your companion can do") */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, maxWidth: 430, margin: "0 auto 22px", textAlign: "left" }}>
             {([
-              ["crystal-ball", "Remembers you", "grows every chat"],
+              ["crystal-ball", "Retains context", "selected details can shape later chats"],
               ["compass", "Give it a goal", "it plans & acts"],
               ["lock", "Yours to own", "your data & model"],
             ] as const).map(([icon, t, s]) => (

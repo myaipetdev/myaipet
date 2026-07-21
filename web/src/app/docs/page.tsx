@@ -415,7 +415,7 @@ export default function DocsPage() {
           maxWidth: 560, margin: "0 auto", lineHeight: 1.8,
         }}>
           Everything you need to know about MY AI PET — the Companion Protocol
-          where AI companionship creates real value.
+          for portable AI companionship, creative tools, and non-financial progression.
         </p>
       </div>
 

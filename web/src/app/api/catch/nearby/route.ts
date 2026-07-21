@@ -17,9 +17,27 @@ export async function GET(req: NextRequest) {
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const lat = Number(req.nextUrl.searchParams.get("lat"));
-  const lng = Number(req.nextUrl.searchParams.get("lng"));
-  const hasPoint = Number.isFinite(lat) && Number.isFinite(lng);
+  const latParam = req.nextUrl.searchParams.get("lat");
+  const lngParam = req.nextUrl.searchParams.get("lng");
+  if ((latParam === null) !== (lngParam === null)) {
+    return NextResponse.json({ error: "Send both lat and lng, or neither" }, { status: 400 });
+  }
+  const hasPoint = latParam !== null && lngParam !== null;
+  const lat = hasPoint ? Number(latParam) : Number.NaN;
+  const lng = hasPoint ? Number(lngParam) : Number.NaN;
+  if (
+    hasPoint
+    && (
+      !Number.isFinite(lat)
+      || !Number.isFinite(lng)
+      || lat < -90
+      || lat > 90
+      || lng < -180
+      || lng > 180
+    )
+  ) {
+    return NextResponse.json({ error: "Invalid coordinates" }, { status: 400 });
+  }
   const D = 0.25; // ~27km bounding box
 
   // Only REAL camera catches on this layer — wild game spawns have their own

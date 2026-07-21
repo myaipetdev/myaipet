@@ -56,9 +56,8 @@ export default function SkillsPage() {
             fontSize: 17, color: "rgba(33,26,18,0.7)", lineHeight: 1.6,
             maxWidth: 640, margin: 0,
           }}>
-            Built-in skill manifests, one-command install. Every skill is a markdown +
-            JSON schema definition — no proprietary format, no lock-in. MCP client
-            support ships in SDK 1.6.2.
+            Built-in skill manifests, one-command install. Every skill uses a documented
+            markdown + JSON schema definition. MCP client support ships in SDK 1.6.2.
           </p>
         </div>
 

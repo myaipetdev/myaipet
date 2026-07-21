@@ -80,7 +80,7 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
 
       {empty && (
         <div style={{ padding: "14px 12px", textAlign: "center", fontFamily: "var(--ed-body)", fontSize: 13, color: "#9A7B4E", fontStyle: "italic" }}>
-          Talk and care daily — {petName} is still getting to know you. Every chat teaches them something.
+          Talk and care daily — {petName} is still getting to know you. Relevant details may be retained for later chats.
         </div>
       )}
 

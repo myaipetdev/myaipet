@@ -2,7 +2,7 @@
  * Public runtime config — exposes intentionally-public protocol values.
  *
  * SCRUM-70 note: yes, this is unauthenticated by design. The treasury wallet
- * + contract addresses are already on BSCScan and on /contracts /stats pages —
+ * + contract addresses are already on BSCScan and the /contracts page —
  * pretending they're secret would be security theatre. We rate-limit instead
  * to prevent enumeration / scraping abuse.
  */

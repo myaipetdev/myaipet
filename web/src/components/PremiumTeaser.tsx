@@ -3,7 +3,7 @@
 /**
  * Membership teaser — the relationship/creation tiers as a collectible set.
  *
- *   Companion  (cream paper)      — the whole relationship loop, free forever.
+ *   Companion  (cream paper)      — the launch relationship loop, currently included.
  *   Companion+ (foil-edged        — proactive memory / preservation / phone
  *              unreleased           presence. NOT BUILT YET → wax-sealed
  *              specimen)            "ON THE ROADMAP", stamped "Not for sale".
@@ -54,19 +54,19 @@ export default function PremiumTeaser() {
           Keep your companion — and make it real
         </div>
         <div style={{ fontSize: 13.5, color: "#5C5140", marginBottom: 18, fontFamily: "var(--ed-body)", lineHeight: 1.55 }}>
-          Free forever. Pay only to deepen it — or create with it.
+          Companion is currently included. Studio creations use credits.
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12, alignItems: "stretch" }}>
           {/* Companion — cream paper */}
           <Tier
             name="Companion"
-            sub="Free forever"
+            sub="Included at launch"
             seal={onFree ? "CURRENT" : "INCLUDED"}
             sealVariant="current"
             features={[
-              "Unlimited chat, evolving persona",
-              "Full memory, recall on request",
+              "Chat subject to published rate limits",
+              "Selected memory + session recall",
               "Missions, streaks, season standing",
             ]}
             cta={onFree ? "You're on Companion" : "Included"}

@@ -83,7 +83,7 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
             .addTo(map)
             .bindPopup(
               `<div style="text-align:center;font-family:system-ui;min-width:120px">
-                 <img src="${c.photo_path}" alt="" style="width:120px;height:90px;object-fit:cover;border-radius:8px;display:block;margin:0 auto 6px"/>
+                 <img src="${escapeHtml(c.photo_path)}" alt="" style="width:120px;height:90px;object-fit:cover;border-radius:8px;display:block;margin:0 auto 6px"/>
                  <div style="font-weight:800">${escapeHtml(c.name)}</div>
                  <div style="font-size: 13px;color:#7A6E5A">${escapeHtml(c.breed)}</div>
                  <div style="font-size: 13px;font-weight:700;color:${c.rarityColor}">${escapeHtml(c.rarityLabel)}</div>

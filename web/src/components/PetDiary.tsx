@@ -28,7 +28,7 @@ export default function PetDiary({
   if (!entry) return null;
 
   const week = weekOf
-    ? new Date(weekOf).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    ? new Date(weekOf).toLocaleDateString("en-US", { month: "short", day: "numeric" })
     : null;
 
   return (

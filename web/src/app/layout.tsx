@@ -30,8 +30,11 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://app.myaipet.ai";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
-  title: "MY AI PET — Your AI Companion, Portable & Yours",
-  description: "The first AI companion you actually own. Persistent memory, data sovereignty, and cross-platform presence — powered by PetClaw Protocol.",
+  title: "MY AI PET — Your Portable AI Companion",
+  description: "An AI companion with selected persistent memory, owner-scoped data controls, and supported web and Chrome surfaces — powered by PetClaw Protocol.",
+  other: {
+    google: "notranslate",
+  },
   icons: {
     // Keep both declarations on a file that is part of this release. The old
     // The legacy favicon URL survived on the EC2 host from a previous deploy but was not
@@ -40,8 +43,8 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
-    title: "MY AI PET — Your AI Companion, Portable & Yours",
-    description: "The first AI companion you actually own. Your data, your memories, your rules.",
+    title: "MY AI PET — Your Portable AI Companion",
+    description: "Selected persistent memory with inspect, export, and deletion controls for supported pet data.",
     url: APP_URL,
     siteName: "MY AI PET",
     images: [
@@ -56,8 +59,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "MY AI PET — Your AI Companion, Portable & Yours",
-    description: "The first AI companion you actually own. Powered by PetClaw Protocol.",
+    title: "MY AI PET — Your Portable AI Companion",
+    description: "An AI companion with selected memory and owner-scoped data controls. Powered by PetClaw Protocol.",
     images: [`${APP_URL}/og-image.jpg`],
   },
 };
@@ -68,7 +71,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" translate="no" className="notranslate">
       <body
         className={`${spaceGrotesk.variable} ${bricolage.variable} ${hanken.variable} ${spaceMono.variable}`}
         style={{ background: "#ECE4D4" }}

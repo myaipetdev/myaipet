@@ -46,7 +46,7 @@ export default function TrustStrip() {
           <TrustColumn
             emoji="🔐"
             title="Your pet, your data"
-            sub="SOUL export ships your full memory ledger off-platform."
+            sub="SOUL export carries supported memory and persona fields in a portable archive."
             rows={[
               { label: "Sovereignty controls", value: "Open →", href: "/sovereignty" },
             ]}

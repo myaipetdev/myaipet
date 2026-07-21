@@ -9,6 +9,10 @@ import { AVAILABLE_CONNECTORS } from "@/lib/petclaw/connectors";
 import { getUser } from "@/lib/auth";
 import { ownsPet } from "@/lib/authz";
 import { rateLimit } from "@/lib/rateLimit";
+import {
+  agentChannelsEnabled,
+  agentChannelsUnavailableResponse,
+} from "@/lib/oauth/availability";
 
 // GET — List available connectors
 export async function GET() {
@@ -34,6 +38,14 @@ export async function POST(req: NextRequest) {
 
   if (!connector || !action) {
     return NextResponse.json({ error: "connector and action required" }, { status: 400 });
+  }
+
+  // Raw-token channel execution is part of the same launch-paused surface as
+  // stored agent connections. Do not let this generic connector endpoint
+  // bypass AGENT_CHANNELS_ENABLED while public messaging is advertised as off.
+  if (["telegram", "slack", "discord", "twitter"].includes(connector)
+    && !agentChannelsEnabled()) {
+    return agentChannelsUnavailableResponse();
   }
 
   // Memory connector reads/writes a specific pet's private store — require ownership.

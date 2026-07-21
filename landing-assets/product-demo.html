@@ -1,6 +1,10 @@
+<!doctype html>
+<html lang="en" translate="no" class="notranslate">
+<head>
 <meta charset="utf-8">
 <title>MY AI PET — Launch Reel</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="google" content="notranslate">
 <style>
 /* ============================================================= *
  *  MY AI PET — self-playing launch reel   (fixed 1280x720 stage) *
@@ -33,8 +37,8 @@ body{
 
 /* the fixed-size stage, scaled to fit */
 .stage{
-  position:relative; width:1280px; height:720px; border-radius:22px; overflow:hidden;
-  transform:scale(var(--s,1)); transform-origin:center center;
+  position:absolute; left:50%; top:50%; width:1280px; height:720px; border-radius:22px; overflow:hidden;
+  transform:translate(-50%,-50%) scale(var(--s,1)); transform-origin:center center;
   background:linear-gradient(180deg,#FCFAF4 0%,#F4EFF7 60%,#ECE6F4 100%);
   box-shadow:0 50px 120px -50px rgba(60,40,90,.6), 0 2px 0 rgba(255,255,255,.7) inset, 0 0 0 1px var(--hair);
 }
@@ -328,6 +332,8 @@ body{
    (Freezing every css animation trapped entrance animations at opacity:0 and
    blanked the frame — so we deliberately do NOT pause visual motion.) */
 </style>
+</head>
+<body>
 
 <div class="viewport">
 <div class="stage" id="stage">
@@ -541,7 +547,7 @@ body{
               <div class="row" style="animation-delay:.55s">- likes · matcha, late-night code</div>
               <div class="row" style="animation-delay:.75s">- remembers · <b style="color:var(--tealD)">142 moments</b></div>
               <div class="row" style="animation-delay:.95s">- persona · warm, a little cheeky</div>
-              <div class="row" style="animation-delay:1.15s;color:var(--tealD)">✓ synced · web · chrome · mcp<span class="caret"></span></div>
+              <div class="row" style="animation-delay:1.15s;color:var(--tealD)">✓ synced · web · chrome · mcp with SDK 1.6.2<span class="caret"></span></div>
             </div>
           </div>
         </div>
@@ -735,9 +741,9 @@ body{
       <div class="layer">
         <div class="wm">
           <h1>MY&nbsp;AI&nbsp;PET</h1>
-          <div class="tag">Your AI companion — truly yours.</div>
+          <div class="tag">Your AI companion — with portable data controls.</div>
           <div class="url">myaipet.ai</div>
-          <a class="cta" href="https://app.myaipet.ai">Adopt yours <span aria-hidden="true">→</span></a>
+          <a class="cta" href="https://app.myaipet.ai" target="_top">Adopt yours <span aria-hidden="true">→</span></a>
         </div>
       </div>
       <div class="confetti" data-confetti="18" style="--cd:3.4s"></div>
@@ -853,10 +859,10 @@ body{
     {tag:'Studio',     kick:'Studio',     num:'02', h:'Turn it into viral video.',           p:'One tap in Studio and your pet stars in a 9:16 hit.',        dur:3900, accent:'#C1502A'},
     {tag:'PetClaw',    kick:'PetClaw',    num:'03', h:'It joins you on supported sites.',    p:'Install PetClaw, then grant only the site access you choose.', dur:3900, accent:'#20A386'},
     {tag:'Soul',       kick:'Soul',       num:'04', h:'Give it your Soul.',                  p:'Persistent memory & persona — it actually remembers you.',   dur:4400, accent:'#C8932F'},
-    {tag:'Everywhere', kick:'Everywhere', num:'05', h:'Across every surface you use.',       p:'Web · Chrome · MCP — Claude, Cursor, and beyond.',           dur:3900, accent:'#8168CE'},
+    {tag:'Surfaces',   kick:'Supported', num:'05', h:'Web and Chrome today.',               p:'MCP runtime ships with SDK 1.6.2 · messaging launch-paused.',dur:3900, accent:'#8168CE'},
     {tag:'Community',  kick:'Community',  num:'06', h:'Meet the neighbors.',                 p:'A cozy square where your pets gather, chat and play.',        dur:3900, accent:'#20A386'},
     {tag:'Bracket',    kick:'Bracket',    num:'07', h:'Crown your favorite.',               p:'Vote the bracket and crown a champion.',                     dur:4600, accent:'#C8932F'},
-    {tag:'Outro',      kick:'Adopt yours',num:'08', h:'Your AI companion — truly yours.',    p:'myaipet.ai',                                                 dur:5400, accent:'#8168CE'}
+    {tag:'Outro',      kick:'Adopt yours',num:'08', h:'Your AI companion, under your control.',p:'myaipet.ai',                                               dur:5400, accent:'#8168CE'}
   ];
   var HEADLINES = SCENES.map(function(s){return s.h;});
 
@@ -998,3 +1004,5 @@ body{
   requestAnimationFrame(loop);
 })();
 </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import fs from "fs";
 import path from "path";
+import { RELEASE_STATUS } from "@/lib/releaseStatus";
 
 export const metadata: Metadata = {
   title: "API Docs — MY AI PET",
@@ -8,10 +9,6 @@ export const metadata: Metadata = {
 };
 
 const DOCS_DIR = path.join(process.cwd(), "public", "api-docs");
-
-// Kept in lockstep with PetClawConsole SDK_VERSION (hardcoded here to avoid
-// importing a "use client" module into this server component).
-const SDK_VER = "1.6.1";
 
 const TABS: { slug: string; title: string; file: string }[] = [
   { slug: "quickstart", title: "Quickstart", file: "QUICKSTART.md" },
@@ -158,10 +155,10 @@ function extractToc(md: string): { level: number; text: string; slug: string }[]
 
 // Honest inventory — kept in lockstep with PetClawConsole (no inflation).
 const STAT_STRIP = [
-  { n: "18", l: "SDK skills" },
-  { n: "6", l: "MCP tools" },
-  { n: "19", l: "connectors" },
-  { n: "5", l: "VIGIL stages" },
+  { n: String(RELEASE_STATUS.skills), l: "built-in skills" },
+  { n: String(RELEASE_STATUS.mcpTools), l: "bundled MCP tools" },
+  { n: String(RELEASE_STATUS.connectors.registry), l: "registered connectors" },
+  { n: String(RELEASE_STATUS.connectors.live), l: "live connectors" },
 ];
 
 export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?: string }> }) {
@@ -196,8 +193,8 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
             PetClaw&nbsp;API
           </h1>
           <p style={{ fontSize: 16, color: "rgba(236,224,206,0.72)", margin: "12px 0 0", maxWidth: 640, lineHeight: 1.55 }}>
-            Build on the same protocol your pet runs on. One SDK, one HTTP API — memory-aware chat,
-            skills, and portable SOUL across every surface.
+            Build with the HTTP API and SDK {RELEASE_STATUS.sdkVersion}: memory-aware chat,
+            {" "}{RELEASE_STATUS.skills} built-in skills, and signed SOUL export with documented import limits.
           </p>
 
           {/* Stat strip — honest inventory */}
@@ -219,7 +216,13 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
               server · https://app.myaipet.ai
             </span>
             <span style={{ background: "rgba(236,224,206,0.06)", border: "1px solid rgba(236,224,206,0.16)", borderRadius: 999, padding: "5px 12px", color: "rgba(236,224,206,0.75)" }}>
-              SDK v{SDK_VER}
+              SDK v{RELEASE_STATUS.sdkVersion}
+            </span>
+            <span style={{ background: "rgba(236,224,206,0.06)", border: "1px solid rgba(236,224,206,0.16)", borderRadius: 999, padding: "5px 12px", color: "rgba(236,224,206,0.75)" }}>
+              MCP runtime · {RELEASE_STATUS.mcp}
+            </span>
+            <span style={{ background: "rgba(236,224,206,0.06)", border: "1px solid rgba(236,224,206,0.16)", borderRadius: 999, padding: "5px 12px", color: "rgba(236,224,206,0.75)" }}>
+              Messaging · {RELEASE_STATUS.channels}
             </span>
           </div>
         </div>

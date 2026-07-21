@@ -156,7 +156,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // Talk to the pet via pethub — full memory injection on the companion-chat skill.
+  // Talk to the pet via pethub — bounded retained context on companion-chat.
   try {
     const { executeSkill } = await import("@/lib/petclaw/pethub");
     const result = await executeSkill(match.pet_id, "companion-chat", {

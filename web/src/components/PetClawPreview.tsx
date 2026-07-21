@@ -24,7 +24,7 @@ import { PETCLAW_EXTENSION_STEPS, PETCLAW_EXTENSION_VERSION } from "@/lib/petcla
 const PILLARS = [
   { icon: "scroll", eyebrow: "01 · EXPORT", title: "Export your pet's soul", body: "Memories, personality, skills — as portable JSON. Take it anywhere, anytime." },
   { icon: "fire", eyebrow: "02 · DELETE", title: "Delete with a receipt", body: "Remove your pet's data from active systems with a SHA-256 receipt of the request. Backups expire within 90 days; public on-chain records can't be erased." },
-  { icon: "crystal-ball", eyebrow: "03 · INSPECT", title: "See what we hold", body: "Every memory, fact, and connection we keep about your pet — in the open." },
+  { icon: "crystal-ball", eyebrow: "03 · INSPECT", title: "See what we hold", body: "Review the retained memory, facts, and supported connections associated with your pet." },
   { icon: "footprints", eyebrow: "04 · INHERIT", title: "Pass it on", body: "Name a successor wallet. Your pet's soul outlives any single device." },
 ];
 
@@ -90,7 +90,7 @@ export default function PetClawPreview({ cta, ctaNote }: { cta?: ReactNode; ctaN
               Your pet. Your data.<br /><span style={{ color: "#E8C77E" }}>Your rules.</span>
             </h1>
             <p style={{ fontFamily: "var(--ed-body)", fontSize: 15.5, color: "rgba(255,248,238,0.82)", maxWidth: 520, margin: 0, lineHeight: 1.6 }}>
-              Most AI forgets you the moment the tab closes — and owns whatever it learns. Here, the more you talk, the closer your pet grows — and its memory stays <strong style={{ color: "#FFF8EE" }}>yours</strong>: exportable, deletable, inheritable. One companion, projected across web, Chrome extension, and terminal — anchored to your wallet-native identity.
+              PetClaw can retain selected details beyond one session. Review, export, or delete supported pet data; inheritance remains planned, not live. One companion is available on web, approved Chrome sites, and terminal tools — anchored to your wallet-native identity.
             </p>
           </div>
         </div>
@@ -212,7 +212,7 @@ export default function PetClawPreview({ cta, ctaNote }: { cta?: ReactNode; ctaN
         <div style={{ marginTop: 18, padding: "20px 22px", borderRadius: 18, textAlign: "center", background: "#1E1710", color: "#FFF8EE", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
           <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 18, marginBottom: 6 }}>Adopt a pet to claim <span style={{ color: "#E8C77E" }}>your sovereign space</span></div>
           <div style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "rgba(255,248,238,0.7)", marginBottom: 16 }}>
-            Connect your wallet — no gas, identity only. Your pet grows closer with every chat, and everything it learns stays yours.
+            Connect your wallet — no gas, identity only. Selected retained memories can shape future chats, and you can inspect, export, or delete supported pet data.
           </div>
           <div style={{ display: "inline-block" }}>{cta}</div>
         </div>

@@ -42,6 +42,7 @@ model User {
   arena_match_challenges    ArenaMatchChallenge[]
   agent_credit_reservations AgentCreditReservation[]
   avatar_media_objects      AvatarMediaObject[]
+  catch_photo_reservations  CatchPhotoReservation[]
 
   @@map("users")
 }
@@ -464,8 +465,15 @@ model CaughtCat {
   spd           Int
   level         Int      @default(1)
   photo_path    String   @db.Text
+  // sha256 hex of the uploaded photo bytes — exact-duplicate farming guard
+  // (same wallet, same bytes, 7 days). pHash for near-duplicates = future work.
+  photo_hash    String?  @db.VarChar(64)
   lat           Float?
   lng           Float?
+  // Community-map consent — default PRIVATE. Browser geolocation permission is
+  // NOT consent to publish; only an explicit per-catch opt-in flips this on,
+  // and /api/catch/nearby serves ONLY map_public=true rows (rounded coords).
+  map_public    Boolean  @default(false)
   caught_at     DateTime @default(now())
   // Track 1 = "camera" (real animal, vision-verified). Track 2 = "wild" (a
   // tap-to-catch game spawn — see lib/catch/spawns.ts). spawn_key dedups a
@@ -476,7 +484,24 @@ model CaughtCat {
   @@unique([owner_user_id, spawn_key], map: "caught_cats_owner_spawn_key")
   @@index([owner_user_id])
   @@index([lat, lng])
+  @@index([map_public, lat, lng])
+  @@index([owner_user_id, photo_hash])
   @@map("caught_cats")
+}
+
+// Atomic, pre-billing exact-photo reservation. The compound primary key makes
+// concurrent submissions of the same bytes by one owner mutually exclusive;
+// successful catches retain the reservation for seven days, while failed
+// verification attempts release it in a finally block.
+model CatchPhotoReservation {
+  owner_user_id Int
+  photo_hash    String   @db.VarChar(64)
+  reserved_at   DateTime @default(now())
+  owner         User     @relation(fields: [owner_user_id], references: [id], onDelete: Cascade)
+
+  @@id([owner_user_id, photo_hash])
+  @@index([reserved_at])
+  @@map("catch_photo_reservations")
 }
 
 // World Cup 2026 champion prediction — one per user, upsertable. Community

@@ -61,7 +61,7 @@ async function mediaAccess(key: string, req: NextRequest): Promise<"public" | "o
     ],
   };
 
-  const [publicGeneration, publicPet, publicProfile] = await Promise.all([
+  const [publicGeneration, publicPet, publicProfile, publicCaught] = await Promise.all([
     prisma.generation.findFirst({
       where: await publicGenerationWhere(pathWhere),
       select: { id: true, user_id: true },
@@ -76,6 +76,14 @@ async function mediaAccess(key: string, req: NextRequest): Promise<"public" | "o
       where: { avatar_url: { in: references } },
       select: { id: true, user_id: true },
     }),
+    prisma.caughtCat.findFirst({
+      where: {
+        source: "camera",
+        map_public: true,
+        photo_path: { in: references },
+      },
+      select: { id: true, owner_user_id: true },
+    }),
   ]);
   const relative = `/uploads/${key}`;
   const publicPetOwnsObject = publicPet
@@ -84,7 +92,10 @@ async function mediaAccess(key: string, req: NextRequest): Promise<"public" | "o
   const publicProfileOwnsObject = publicProfile
     ? await userOwnsApplicationMedia(publicProfile.user_id, relative)
     : false;
-  if (publicGeneration || publicPetOwnsObject || publicProfileOwnsObject) return "public";
+  const publicCaughtOwnsObject = publicCaught
+    ? await userOwnsApplicationMedia(publicCaught.owner_user_id, relative)
+    : false;
+  if (publicGeneration || publicPetOwnsObject || publicProfileOwnsObject || publicCaughtOwnsObject) return "public";
 
   // Browser media elements authenticate with the HttpOnly session cookie.
   // Trusted clients such as the extension may instead fetch the object with a

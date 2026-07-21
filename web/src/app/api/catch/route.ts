@@ -25,8 +25,10 @@ import { enqueueMediaDeletionReference } from "@/lib/mediaDeletion";
 export const runtime = "nodejs";
 
 function withRarity(cat: any) {
+  const { photo_hash: privatePhotoHash, ...publicCat } = cat;
+  void privatePhotoHash;
   const m = rarityMeta(cat.rarity);
-  return { ...cat, rarityLabel: m.label, rarityColor: m.color };
+  return { ...publicCat, rarityLabel: m.label, rarityColor: m.color };
 }
 
 export async function POST(req: NextRequest) {
@@ -47,8 +49,28 @@ export async function POST(req: NextRequest) {
   // Size guard (~8MB of base64 ≈ 6MB image).
   if (match[2].length > 8_500_000) return NextResponse.json({ error: "Photo too large" }, { status: 413 });
 
-  const lat = typeof body?.lat === "number" ? body.lat : null;
-  const lng = typeof body?.lng === "number" ? body.lng : null;
+  const hasLat = body?.lat !== undefined && body?.lat !== null;
+  const hasLng = body?.lng !== undefined && body?.lng !== null;
+  if (hasLat !== hasLng) {
+    return NextResponse.json({ error: "Send both lat and lng, or neither" }, { status: 400 });
+  }
+  if (
+    hasLat
+    && (
+      typeof body.lat !== "number"
+      || typeof body.lng !== "number"
+      || !Number.isFinite(body.lat)
+      || !Number.isFinite(body.lng)
+      || body.lat < -90
+      || body.lat > 90
+      || body.lng < -180
+      || body.lng > 180
+    )
+  ) {
+    return NextResponse.json({ error: "Invalid coordinates" }, { status: 400 });
+  }
+  const lat = hasLat ? body.lat as number : null;
+  const lng = hasLng ? body.lng as number : null;
 
   // ── Exact-duplicate farming guard (BEFORE billing, so a repeat never burns
   // a free scan or a credit) — sha256 the photo bytes and reject the same
@@ -57,136 +79,158 @@ export async function POST(req: NextRequest) {
   // re-cropped near-duplicates is future work. ──
   const photoBytes = Buffer.from(match[2], "base64");
   const photoHash = createHash("sha256").update(photoBytes).digest("hex");
+  const reservationCutoff = new Date(Date.now() - 7 * 24 * 60 * 60_000);
   try {
-    const dup = await prisma.caughtCat.findFirst({
-      where: {
-        owner_user_id: user.id,
-        photo_hash: photoHash,
-        caught_at: { gte: new Date(Date.now() - 7 * 24 * 60 * 60_000) },
-      },
-      select: { id: true },
+    // Prune all expired reservations through the indexed timestamp, then race
+    // on the compound primary key. This keeps successful keys for seven days
+    // without leaking one permanent row per unique photo. Exactly one
+    // concurrent request can reserve a key before any billing/provider call.
+    await prisma.$transaction(async (tx) => {
+      await tx.catchPhotoReservation.deleteMany({
+        where: { reserved_at: { lt: reservationCutoff } },
+      });
+      await tx.catchPhotoReservation.create({
+        data: { owner_user_id: user.id, photo_hash: photoHash },
+      });
     });
-    if (dup) {
+  } catch (error) {
+    if (error && typeof error === "object" && (error as { code?: string }).code === "P2002") {
       return NextResponse.json(
         { caught: false, reason: "You already caught this exact photo — find a new animal (or a new angle)." },
         { status: 409 },
       );
     }
-  } catch (e) {
-    // Non-fatal: if the dedup lookup fails, proceed — billing caps still hold.
-    console.error("Catch dedup lookup failed:", e);
-  }
-
-  // ── Metering (POINTS-ECONOMY §2.4, knob #2) ──
-  // We pay Grok on ATTEMPT, so we charge on attempt: 3 free verifies/day/wallet,
-  // then 1 credit each. Every actual fallback model attempt reserves the same
-  // transactionally paired owner/global vision budget. Refund the credit if a
-  // budget trips so a paying user isn't charged for a call we refused to finish.
-  const bill = await consumeCatchVerify(user.id);
-  if (!bill.ok) {
-    return NextResponse.json({ caught: false, error: bill.error, needsCredits: true }, { status: bill.status });
-  }
-  let verdict;
-  try {
-    verdict = await verifyAndDescribeAnimal(
-      dataUrl,
-      () => consumeVisionBudget(user.id),
+    console.error("Catch dedup reservation failed:", error);
+    return NextResponse.json(
+      { caught: false, reason: "The duplicate-photo guard is temporarily unavailable. Please try again later." },
+      { status: 503 },
     );
-  } catch (e) {
-    if (bill.mode === "credit") await refundCatchCredit(user.id);
-    if (isLLMBudgetError(e)) {
-      return NextResponse.json({
-        caught: false,
-        reason: "The wildlife scanner is resting for today — come back tomorrow and try again. 🐾",
-      }, { status: 429 });
-    }
-    if (isLLMBudgetStoreError(e)) {
-      return NextResponse.json({
-        caught: false,
-        reason: "The wildlife scanner is temporarily unavailable. Please try again later.",
-      }, { status: 503 });
-    }
-    throw e;
   }
 
-  // ── Anti-cheat: verify a real live animal BEFORE storing anything ──
-  if (!verdict) {
-    return NextResponse.json({ caught: false, reason: "Couldn't read that photo — try again with more light." });
-  }
-  if (!verdict.isAnimal) {
-    return NextResponse.json({ caught: false, reason: verdict.reason || "No animal in frame — point your camera at a real one." });
-  }
-  if (!verdict.isLivePhoto) {
-    return NextResponse.json({
-      caught: false,
-      antiCheat: true,
-      reason: verdict.reason || "That looks like a screen or a printed/illustrated image — go find a REAL cat! 🕵️",
-    });
-  }
-
-  // ── Real catch — store the photo, roll the creature ──
-  let photoPath = "";
+  let keepPhotoReservation = false;
   try {
-    const captureMime = match[1] === "image/jpg" ? "image/jpeg" : match[1];
-    const captureExt = captureMime === "image/png" ? "png" : captureMime === "image/webp" ? "webp" : "jpg";
-    const up = await uploadFile(
-      `catches/${user.id}-${randomUUID()}.${captureExt}`,
-      photoBytes,
-      captureMime,
-    );
-    photoPath = up.url;
-  } catch {
-    return NextResponse.json({ error: "Couldn't save the photo — try again" }, { status: 500 });
-  }
-
-  const kind = (verdict.kind || "other").slice(0, 16); // real animal type (cat/dog mostly, but anything)
-  const rarity = rollRarity(verdict.confidence);
-  const stats = rollStats(rarity);
-  let cat;
-  try {
-    cat = await prisma.caughtCat.create({
-      data: {
-        owner_user_id: user.id,
-        kind,
-        name: pickName(kind),
-        breed: verdict.breed,
-        rarity,
-        element: pickElement(verdict.mood),
-        hp: stats.hp, atk: stats.atk, def: stats.def, spd: stats.spd,
-        photo_path: photoPath,
-        photo_hash: photoHash,
-        lat, lng,
-        // map_public stays at its default (false) — publishing to the
-        // community map is a separate, explicit per-catch opt-in.
-      },
-    });
-  } catch (error) {
-    console.error("Catch DB finalize failed after storage write:", error);
-    // Prefer the durable, reference-aware outbox. If PostgreSQL itself is the
-    // failure, fall back to an immediate idempotent storage delete.
+    // ── Metering (POINTS-ECONOMY §2.4, knob #2) ──
+    // We pay Grok on ATTEMPT, so we charge on attempt: 3 free verifies/day/wallet,
+    // then 1 credit each. Every actual fallback model attempt reserves the same
+    // transactionally paired owner/global vision budget. Refund the credit if a
+    // budget trips so a paying user isn't charged for a call we refused to finish.
+    const bill = await consumeCatchVerify(user.id);
+    if (!bill.ok) {
+      return NextResponse.json({ caught: false, error: bill.error, needsCredits: true }, { status: bill.status });
+    }
+    let verdict;
     try {
-      await enqueueMediaDeletionReference(photoPath, {
-        ownerUserId: user.id,
-        reason: "Catch database finalize failed after storage write",
-      });
-    } catch (enqueueError) {
-      console.error("Catch cleanup enqueue failed; deleting object directly:", enqueueError);
-      await deleteStoredFile(photoPath).catch((deleteError) => {
-        console.error("Catch direct storage cleanup failed:", deleteError);
+      verdict = await verifyAndDescribeAnimal(
+        dataUrl,
+        () => consumeVisionBudget(user.id),
+      );
+    } catch (e) {
+      if (bill.mode === "credit") await refundCatchCredit(user.id);
+      if (isLLMBudgetError(e)) {
+        return NextResponse.json({
+          caught: false,
+          reason: "The wildlife scanner is resting for today — come back tomorrow and try again. 🐾",
+        }, { status: 429 });
+      }
+      if (isLLMBudgetStoreError(e)) {
+        return NextResponse.json({
+          caught: false,
+          reason: "The wildlife scanner is temporarily unavailable. Please try again later.",
+        }, { status: 503 });
+      }
+      throw e;
+    }
+
+    // ── Anti-cheat: verify a real live animal BEFORE storing anything ──
+    if (!verdict) {
+      return NextResponse.json({ caught: false, reason: "Couldn't read that photo — try again with more light." });
+    }
+    if (!verdict.isAnimal) {
+      return NextResponse.json({ caught: false, reason: verdict.reason || "No animal in frame — point your camera at a real one." });
+    }
+    if (!verdict.isLivePhoto) {
+      return NextResponse.json({
+        caught: false,
+        antiCheat: true,
+        reason: verdict.reason || "That looks like a screen or a printed/illustrated image — go find a REAL cat! 🕵️",
       });
     }
-    return NextResponse.json({ error: "Couldn't save the catch — try again" }, { status: 500 });
+
+    // ── Real catch — store the photo, roll the creature ──
+    let photoPath = "";
+    try {
+      const captureMime = match[1] === "image/jpg" ? "image/jpeg" : match[1];
+      const captureExt = captureMime === "image/png" ? "png" : captureMime === "image/webp" ? "webp" : "jpg";
+      const up = await uploadFile(
+        `catches/${user.id}-${randomUUID()}.${captureExt}`,
+        photoBytes,
+        captureMime,
+      );
+      photoPath = up.url;
+    } catch {
+      return NextResponse.json({ error: "Couldn't save the photo — try again" }, { status: 500 });
+    }
+
+    const kind = (verdict.kind || "other").slice(0, 16); // real animal type (cat/dog mostly, but anything)
+    const rarity = rollRarity(verdict.confidence);
+    const stats = rollStats(rarity);
+    let cat;
+    try {
+      cat = await prisma.caughtCat.create({
+        data: {
+          owner_user_id: user.id,
+          kind,
+          name: pickName(kind),
+          breed: verdict.breed,
+          rarity,
+          element: pickElement(verdict.mood),
+          hp: stats.hp, atk: stats.atk, def: stats.def, spd: stats.spd,
+          photo_path: photoPath,
+          photo_hash: photoHash,
+          lat, lng,
+          // map_public stays at its default (false) — publishing to the
+          // community map is a separate, explicit per-catch opt-in.
+        },
+      });
+      keepPhotoReservation = true;
+    } catch (error) {
+      console.error("Catch DB finalize failed after storage write:", error);
+      // Prefer the durable, reference-aware outbox. If PostgreSQL itself is the
+      // failure, fall back to an immediate idempotent storage delete.
+      try {
+        await enqueueMediaDeletionReference(photoPath, {
+          ownerUserId: user.id,
+          reason: "Catch database finalize failed after storage write",
+        });
+      } catch (enqueueError) {
+        console.error("Catch cleanup enqueue failed; deleting object directly:", enqueueError);
+        await deleteStoredFile(photoPath).catch((deleteError) => {
+          console.error("Catch direct storage cleanup failed:", deleteError);
+        });
+      }
+      return NextResponse.json({ error: "Couldn't save the catch — try again" }, { status: 500 });
+    }
+
+    // Season points for a real catch, scaled by rarity, daily-capped (anti-farm).
+    const pts = await awardPointsCapped(user.id, "catch", CATCH_POINTS[rarity], DAILY_POINT_CAPS.catch);
+
+    return NextResponse.json({
+      caught: true,
+      cat: withRarity(cat),
+      pointsAwarded: pts.points || 0,
+      verdict: { kind, breed: verdict.breed, furColor: verdict.furColor, mood: verdict.mood },
+    });
+  } finally {
+    if (!keepPhotoReservation) {
+      await prisma.catchPhotoReservation.deleteMany({
+        where: { owner_user_id: user.id, photo_hash: photoHash },
+      }).catch((error) => {
+        // Fail closed: a leaked reservation blocks this exact image until the
+        // seven-day expiry rather than allowing duplicate spend/rewards.
+        console.error("Catch dedup reservation cleanup failed:", error);
+      });
+    }
   }
-
-  // Season points for a real catch, scaled by rarity, daily-capped (anti-farm).
-  const pts = await awardPointsCapped(user.id, "catch", CATCH_POINTS[rarity], DAILY_POINT_CAPS.catch);
-
-  return NextResponse.json({
-    caught: true,
-    cat: withRarity(cat),
-    pointsAwarded: pts.points || 0,
-    verdict: { kind, breed: verdict.breed, furColor: verdict.furColor, mood: verdict.mood },
-  });
 }
 
 export async function GET(req: NextRequest) {

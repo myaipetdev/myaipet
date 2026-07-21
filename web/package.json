@@ -41,6 +41,7 @@
     "test:agent-credits": "tsx scripts/agent-channel-credit.integration.ts",
     "test:generation-settlement": "tsx scripts/generation-settlement.integration.ts",
     "test:ui-contract": "node scripts/ui-contract-audit.mjs",
+    "test:release-readiness": "node scripts/release-readiness-contract.test.mjs",
     "test:paywall-effects": "tsx scripts/paywall-effect-atomicity.integration.ts",
     "test:memory-mint": "tsx scripts/memory-mint-idempotency.integration.ts"
   },

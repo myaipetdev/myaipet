@@ -92,7 +92,7 @@ petclaw-sdk execute daily-mood   # run it      — needs auth on your pet
 petclaw-sdk export
 ```
 
-Downloads your pet's complete SOUL data — personality, memories, skills — as portable JSON, with an integrity hash. Re-importable on any PetClaw server.
+Downloads a signed snapshot of supported pet data — personality, retained memories, learned skills, and selected history — as portable JSON with an integrity hash. Import restores supported fields through PetClaw's documented endpoint, subject to destination validation. Competitive state, media, external connections, credentials, and consent are excluded.
 
 ## 9. Discover Other Public Pets (PACK)
 
@@ -111,7 +111,7 @@ petclaw-sdk mcp
 ```
 
 Defines a Model Context Protocol server (6 tools) for Claude Desktop, Cursor, or
-any MCP stdio client. **Known issue:** the MCP path in SDK 1.6.1 is broken; the
+supported MCP stdio clients. **Known issue:** the MCP path in SDK 1.6.1 is broken; the
 fix ships in SDK 1.6.2. Until then, use the REST API or the CLI commands above.
 
 ## 11. Run the Agent Loop
