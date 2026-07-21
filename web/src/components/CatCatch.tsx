@@ -16,7 +16,7 @@ import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
-import { kindIcon } from "@/lib/catch/game";
+import { kindIcon, CATCH_POINTS, RARITY_TIERS } from "@/lib/catch/game";
 import { rarityStock } from "@/components/Sticker";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 
@@ -65,6 +65,54 @@ type Cat = {
 
 type Phase = "intro" | "camera" | "throw" | "catching" | "result";
 
+/** Server-truth mission meters (GET /api/catch `meta`) — read from the same
+ *  counters the billing/award paths write ("vision:free", "ap:catch"). */
+type CatchMeta = {
+  freeScansLeft: number; freeScansPerDay: number;
+  catchPointsToday: number; catchPointsCap: number;
+};
+
+// REAL reward bounds — derived from CATCH_POINTS, the exact per-rarity amounts
+// /api/catch pays through awardPointsCapped. Never hand-type a "+N pts" here:
+// deriving from the server's own table means the promise can't drift.
+const CATCH_PT_MIN = Math.min(...Object.values(CATCH_POINTS));
+const CATCH_PT_MAX = Math.max(...Object.values(CATCH_POINTS));
+
+// ── Client-side downscale/compress — kills the "Photo too large" dead-end.
+// Longest edge ≤2000px, re-encoded as JPEG, quality stepped down until the
+// payload is ~1.5MB (well under the server's ~6MB guard). Only files the
+// browser truly cannot decode reject. ──
+const UPLOAD_MAX_DIM = 2000;
+const UPLOAD_MAX_B64 = 2_000_000; // base64 chars ≈ 1.5MB binary
+async function downscalePhoto(file: File): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error("unreadable"));
+      i.src = url;
+    });
+    const w = img.naturalWidth, h = img.naturalHeight;
+    if (!w || !h) throw new Error("empty-image");
+    const scale = Math.min(1, UPLOAD_MAX_DIM / Math.max(w, h));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("no-canvas");
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    let out = "";
+    for (const q of [0.85, 0.7, 0.55, 0.4]) {
+      out = canvas.toDataURL("image/jpeg", q);
+      if (out.length <= UPLOAD_MAX_B64) break;
+    }
+    return out;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export default function CatCatch() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -76,11 +124,13 @@ export default function CatCatch() {
   const [collection, setCollection] = useState<Cat[]>([]);
   const [sort, setSort] = useState<"recent" | "rarity">("recent");
   const [notAuthed, setNotAuthed] = useState(false);
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
+  const [meta, setMeta] = useState<CatchMeta | null>(null);
 
   const loadCollection = useCallback(() => {
     fetch("/api/catch", { headers: getAuthHeaders() })
       .then((r) => (r.status === 401 ? (setNotAuthed(true), null) : r.ok ? r.json() : null))
-      .then((d) => { if (d?.cats) setCollection(d.cats); })
+      .then((d) => { if (d?.cats) setCollection(d.cats); if (d?.meta) setMeta(d.meta); })
       .catch(() => {});
   }, []);
 
@@ -152,6 +202,9 @@ export default function CatCatch() {
       setResult({ caught: false, reason: "Network error — try again." });
     }
     setPhase("result");
+    // A scan was consumed whether or not anything was caught — refresh the
+    // server-truth mission meters (scans left, catch points today).
+    loadCollection();
   };
 
   const capture = () => {
@@ -170,14 +223,21 @@ export default function CatCatch() {
 
   // Desktop / no-camera fallback. The SAME vision anti-cheat runs on uploads,
   // so screenshots, photos of screens, drawings and memes are still rejected.
-  const onUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Oversized photos are downscaled/compressed client-side (downscalePhoto) so
+  // "Photo too large" can never dead-end a real catch — the only error left is
+  // a file the browser genuinely cannot decode.
+  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => { if (typeof reader.result === "string") { setPendingImg(reader.result); setPhase("throw"); } };
-      reader.readAsDataURL(file);
-    }
     e.target.value = "";
+    if (!file) return;
+    setUploadErr(null);
+    try {
+      const dataUrl = await downscalePhoto(file);
+      setPendingImg(dataUrl);
+      setPhase("throw");
+    } catch {
+      setUploadErr("Couldn't read that file — use a regular photo (JPEG, PNG or WebP).");
+    }
   };
 
   // After an upload there's no live camera stream to return to — going to
@@ -187,7 +247,8 @@ export default function CatCatch() {
   const done = () => { setResult(null); stopCamera(); setPhase("intro"); };
 
   if (notAuthed) {
-    return <Shell><GuestGate /></Shell>;
+    // Guests get the full "why this page exists" loop before the gate.
+    return <Shell><PurposeHero /><GuestGate /></Shell>;
   }
 
   return (
@@ -230,6 +291,11 @@ export default function CatCatch() {
       )}
 
       {view === "catch" && (<>
+      {/* ── PURPOSE HERO — why this page exists, as one visual loop ── */}
+      <Reveal dir="up">
+        <PurposeHero />
+      </Reveal>
+
       {/* ── Viewfinder card — pops in as one block; every phase (camera /
              throw / reveal) lives inside untouched. ── */}
       <Reveal dir="pop">
@@ -265,7 +331,8 @@ export default function CatCatch() {
               <UploadIcon size={18} /> Upload a photo
               <input type="file" accept="image/*" onChange={onUpload} style={{ display: "none" }} />
             </label>
-            <div style={{ fontFamily: BODY, fontSize: 13, color: "rgba(252,233,207,.6)", maxWidth: 300 }}>Uploads are verified the same way.</div>
+            <div style={{ fontFamily: BODY, fontSize: 13, color: "rgba(252,233,207,.6)", maxWidth: 300 }}>Uploads are verified the same way — big photos are resized for you.</div>
+            {uploadErr && <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: ".06em", color: "#F2B8A0", maxWidth: 300 }}>{uploadErr}</div>}
             {/* Honest cost disclosure BEFORE any commit — mirrors the server
                 billing in lib/economyGuards.consumeCatchVerify: 3 free vision
                 scans/day/wallet (CATCH_FREE_VERIFY_PER_DAY), then 1 credit per
@@ -327,6 +394,16 @@ export default function CatCatch() {
       </div>
       </Reveal>
 
+      {/* ── Today's missions — real loops with server-paid payoffs only ── */}
+      <Reveal dir="up">
+        <MissionStrip collection={collection} meta={meta} />
+      </Reveal>
+
+      {/* ── Rarity provenance — "who decides?" answered with the real mechanics ── */}
+      <Reveal dir="up" delay={40}>
+        <RarityProvenance pointsCap={meta?.catchPointsCap ?? null} />
+      </Reveal>
+
       {/* ── Field Journal dashboard — rises in on scroll ── */}
       <Reveal dir="up">
         <FieldJournal collection={collection} />
@@ -384,6 +461,8 @@ export default function CatCatch() {
         /* Wax Press — the seal drops from above, overshoots, seats with a tiny recoil. */
         @keyframes ccSealDrop{0%{opacity:0;transform:translateY(-44px) scale(1.6) rotate(-16deg)}58%{opacity:1;transform:translateY(3px) scale(.92) rotate(2deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(-7deg)}}
         @keyframes ccThunk{0%,100%{transform:translateY(0)}45%{transform:translateY(3px)}}
+        .ccHow summary::-webkit-details-marker{display:none}
+        .ccHow[open] .ccHowChev{transform:rotate(45deg)}
       `}</style>
     </Shell>
   );
@@ -629,32 +708,211 @@ function guideKey(kind?: string): string {
   return GUIDE_ALIAS[k] || k;
 }
 
-/** "Field Journal" dashboard — real counts derived from the collection. */
+/** Real per-guide-key counts derived from the collection (shared by the
+ *  missions strip and the Field Guide board so they can never disagree). */
+function guideCounts(collection: Cat[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const c of collection) {
+    const k = guideKey(c.kind);
+    if (k) counts.set(k, (counts.get(k) || 0) + 1);
+  }
+  return counts;
+}
+
+/** PURPOSE HERO — one visual statement of the loop: see a real animal → snap →
+ *  AI verifies → rarity rolls → it joins your collection (+pts). The point
+ *  range is derived from CATCH_POINTS (exactly what /api/catch pays, daily-
+ *  capped server-side) — never a hand-typed promise. */
+function PurposeHero() {
+  const steps: Array<{ n: string; art: React.ReactNode; title: string; copy: React.ReactNode }> = [
+    { n: "01", art: <Icon name="paw" size={28} alt="" />, title: "Spot", copy: <>See a <strong style={{ color: INK }}>REAL animal</strong> out in the world</> },
+    { n: "02", art: <CameraIcon size={26} />, title: "Snap", copy: "Photograph it live with your field camera" },
+    { n: "03", art: <Icon name="shield" size={28} alt="" />, title: "Verify", copy: "AI vision confirms it's real — screens & drawings bounce" },
+    { n: "04", art: <Icon name="treasure-chest" size={28} alt="" />, title: "Collect", copy: <>Rarity rolls, it joins your album — <strong style={{ color: "#9A4E1E", whiteSpace: "nowrap" }}>+{CATCH_PT_MIN}–{CATCH_PT_MAX} pts</strong></> },
+  ];
+  return (
+    <div style={{ position: "relative", background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 16, boxShadow: "var(--ed-shadow-card)", padding: "16px 18px 15px", marginBottom: 16, overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 5 }}>
+        <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: TEAL, textTransform: "uppercase" }}>The catch loop</div>
+        {/* stamped "real animals only" seal — the page's one non-negotiable rule */}
+        <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: PAPER, background: TEAL, borderRadius: 4, padding: "3px 9px", transform: "rotate(-1.6deg)", boxShadow: "2px 2px 0 rgba(33,26,18,.22)" }}>Real animals only</div>
+      </div>
+      <div style={{ fontFamily: DISP, fontSize: "clamp(19px,3.4vw,24px)", fontWeight: 800, color: INK, letterSpacing: "-0.01em", lineHeight: 1.15, marginBottom: 13 }}>
+        Photograph a real animal — it becomes a collectible.
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(118px, 1fr))", gap: 8 }}>
+        {steps.map((s) => (
+          <div key={s.n} style={{ background: INSET, border: `1px solid ${OUTLINE}`, borderRadius: 10, padding: "10px 10px 9px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+              <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: MUTED, letterSpacing: ".08em", fontVariantNumeric: "tabular-nums" }}>{s.n}</span>
+              {s.art}
+              <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: TEAL }}>{s.title}</span>
+            </div>
+            <div style={{ fontFamily: BODY, fontSize: 13, color: "#5C5140", lineHeight: 1.45 }}>{s.copy}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** TODAY'S MISSIONS — every chip is a real loop with a REAL payoff. The scan
+ *  and points meters come from GET /api/catch `meta` (the server's own
+ *  "vision:free" / "ap:catch" counters); point amounts are CATCH_POINTS — the
+ *  exact values /api/catch grants. No invented bonuses, ever. */
+function MissionStrip({ collection, meta }: { collection: Cat[]; meta: CatchMeta | null }) {
+  const caughtToday = collection.filter((c) => isToday(c.caught_at)).length;
+  const counts = guideCounts(collection);
+  const found = GUIDE_SPECIES.filter((s) => (counts.get(s.key) || 0) > 0).length;
+  const streak = catchStreak(collection);
+  const capped = !!meta && meta.catchPointsToday >= meta.catchPointsCap;
+
+  const seal = (done: boolean) => (
+    <span aria-hidden style={{
+      width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+      border: done ? `1.5px solid ${TEAL}` : `1.5px dashed rgba(33,26,18,.35)`,
+      background: done ? TEAL : "transparent",
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      color: "#FCE9CF", fontFamily: MONO, fontSize: 12, fontWeight: 700,
+    }}>{done ? "✓" : ""}</span>
+  );
+  const ptsPill = (text: string) => (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: INK, fontFamily: MONO, fontWeight: 700, fontSize: 12, letterSpacing: ".04em", borderRadius: 999, padding: "3px 10px", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{text} <Icon name="coin" size={12} alt="" /></span>
+  );
+  const flatPill = (text: string) => (
+    <span style={{ background: INSET, border: `1px solid ${OUTLINE}`, color: "#5C5140", fontFamily: MONO, fontWeight: 700, fontSize: 12, letterSpacing: ".04em", borderRadius: 999, padding: "3px 10px", whiteSpace: "nowrap" }}>{text}</span>
+  );
+  const row = (done: boolean, label: React.ReactNode, reward: React.ReactNode) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", flexWrap: "wrap" }}>
+      {seal(done)}
+      <div style={{ fontFamily: BODY, fontSize: 14, color: done ? MUTED : INK, flex: 1, minWidth: 150, lineHeight: 1.4 }}>{label}</div>
+      {reward}
+    </div>
+  );
+
+  return (
+    <div style={{ background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 16, boxShadow: "var(--ed-shadow-card)", padding: "15px 18px 13px", marginTop: 4 }}>
+      <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: TEAL, textTransform: "uppercase", paddingBottom: 9, borderBottom: `1px solid ${OUTLINE}` }}>Today&apos;s missions</div>
+      <div style={{ display: "grid" }}>
+        {/* First catch of the day — pays the normal rarity-scaled catch points
+            (no invented bonus) and is what keeps the streak stat alive. */}
+        {row(
+          caughtToday > 0,
+          caughtToday > 0
+            ? <>First catch of the day — logged{streak > 1 ? <> · <b style={{ color: TEAL }}>{streak}-day streak</b></> : null}</>
+            : <>Make your first catch of the day{streak > 0 ? <> — keeps your <b style={{ color: TEAL }}>{streak}-day streak</b> alive</> : " — starts a streak"}</>,
+          ptsPill(`+${CATCH_PT_MIN}–${CATCH_PT_MAX} pts by rarity`),
+        )}
+        {/* New guide species — the payoff is the guide sticker; the points are
+            the same rarity-scaled catch points, stated honestly. */}
+        {row(
+          found >= GUIDE_SPECIES.length,
+          found >= GUIDE_SPECIES.length
+            ? <>Field Guide complete — all {GUIDE_SPECIES.length} wild-map species logged</>
+            : <>Log a new Field Guide species ({found}/{GUIDE_SPECIES.length})</>,
+          flatPill("guide sticker + catch pts"),
+        )}
+      </div>
+      {/* Server-truth meters. The free/credit numbers mirror
+          economyGuards.consumeCatchVerify (3 free/day, then 1 credit). */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 4, paddingTop: 11, borderTop: `1px solid ${OUTLINE}` }}>
+        <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "#5C5140", background: INSET, border: `1px solid ${OUTLINE}`, borderRadius: 999, padding: "4px 11px", fontVariantNumeric: "tabular-nums" }}>
+          Scans · {meta ? `${meta.freeScansLeft}/${meta.freeScansPerDay} free left` : "3 free/day"} · then 1 credit
+        </span>
+        {meta && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: capped ? "#9A4E1E" : "#5C5140", background: INSET, border: `1px solid ${OUTLINE}`, borderRadius: 999, padding: "4px 11px", fontVariantNumeric: "tabular-nums" }}>
+            Catch pts today · {meta.catchPointsToday}/{meta.catchPointsCap}
+            <span aria-hidden style={{ width: 44, height: 5, borderRadius: 999, background: "rgba(33,26,18,.12)", overflow: "hidden", display: "inline-block" }}>
+              <span style={{ display: "block", width: `${Math.min(100, Math.round((meta.catchPointsToday / Math.max(1, meta.catchPointsCap)) * 100))}%`, height: "100%", background: capped ? "#9A4E1E" : TEAL }} />
+            </span>
+            {capped && "· resumes tomorrow"}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** "Rarest — who decides??" answered in the UI with the REAL mechanics. The
+ *  odds are derived from RARITY_TIERS.weight — the exact table the server's
+ *  rollRarity uses — and the points from CATCH_POINTS, so this disclosure can
+ *  never show invented odds. */
+function RarityProvenance({ pointsCap }: { pointsCap: number | null }) {
+  const total = RARITY_TIERS.reduce((s, t) => s + t.weight, 0);
+  const pct = (w: number) => { const p = (w / total) * 100; return `${p % 1 === 0 ? p : p.toFixed(1)}%`; };
+  return (
+    <details className="ccHow" style={{ background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 14, boxShadow: "var(--ed-shadow-card)", marginTop: 14 }}>
+      <summary style={{ cursor: "pointer", padding: "13px 16px", fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: TEAL, listStyle: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <span>How rarity works — who decides?</span>
+        <span className="ccHowChev" aria-hidden style={{ color: MUTED, fontSize: 15, lineHeight: 1, transition: "transform .18s ease" }}>+</span>
+      </summary>
+      <div style={{ padding: "0 16px 15px" }}>
+        <ol style={{ margin: 0, padding: "0 0 0 18px", fontFamily: BODY, fontSize: 13, color: "#5C5140", lineHeight: 1.6, display: "grid", gap: 6 }}>
+          <li><b style={{ color: INK }}>AI vision verifies the photo</b> — it must be a real, live animal. Screenshots, photos of screens, prints, drawings and memes are rejected. No human judges, no favorites.</li>
+          <li><b style={{ color: INK }}>The server rolls rarity at catch time</b> from this fixed table — the same odds for every player:</li>
+        </ol>
+        <div style={{ margin: "10px 0 0", border: `1px solid ${OUTLINE}`, borderRadius: 10, overflow: "hidden" }}>
+          {RARITY_TIERS.map((t, i) => (
+            <div key={t.key} style={{ display: "flex", alignItems: "center", gap: 9, padding: "7px 12px", background: i % 2 ? "transparent" : INSET, borderTop: i ? `1px solid ${OUTLINE}` : "none" }}>
+              <span aria-hidden style={{ width: 10, height: 10, borderRadius: "50%", background: t.color, border: `1px solid ${INK}`, flexShrink: 0 }} />
+              <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: INK, width: 88 }}>{t.label}</span>
+              <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: MUTED, fontVariantNumeric: "tabular-nums" }}>{pct(t.weight)}</span>
+              <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 12, fontWeight: 700, color: "#9A4E1E", fontVariantNumeric: "tabular-nums" }}>+{CATCH_POINTS[t.key]} pts</span>
+            </div>
+          ))}
+        </div>
+        <p style={{ fontFamily: BODY, fontSize: 13, color: MUTED, margin: "10px 0 0", lineHeight: 1.55 }}>
+          A very clear, well-framed sighting gives a small luck nudge toward Rare, Epic and Legendary.
+          Points are non-financial Season Rewards{pointsCap ? ` — catch points cap at ${pointsCap}/day` : " and are daily-capped"}.
+        </p>
+      </div>
+    </details>
+  );
+}
+
+/** "Field Journal" dashboard — a naturalist's logbook. All counts are REAL
+ *  (derived from the collection); the RAREST tile carries its provenance
+ *  (highest rarity ROLLED so far — see RarityProvenance for the mechanics). */
 function FieldJournal({ collection }: { collection: Cat[] }) {
   const collected = collection.length;
   const rarest = collection.reduce<Cat | null>((best, c) => (!best || rarityRank(c.rarity) > rarityRank(best.rarity) ? c : best), null);
   const today = collection.filter((c) => isToday(c.caught_at)).length;
   const kinds = new Set(collection.map((c) => c.kind)).size;
-  const note = (label: string, value: string, color: string) => (
-    <div style={{ background: INSET, border: `1px solid ${OUTLINE}`, borderRadius: 10, padding: "9px 11px" }}>
-      <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, letterSpacing: ".12em", color: MUTED, textTransform: "uppercase" }}>{label}</div>
-      <div style={{ fontSize: 17, fontWeight: 700, color, fontFamily: DISP, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{value}</div>
+  // Logbook entry tile: big numeral on a ruled baseline; optional provenance
+  // tooltip (title) + sub-caption. All values real, derived above.
+  const note = (label: string, value: string, color: string, opts?: { title?: string; sub?: string; size?: number }) => (
+    <div title={opts?.title} style={{ background: INSET, border: `1px solid ${OUTLINE}`, borderRadius: 10, padding: "10px 12px 9px", cursor: opts?.title ? "help" : undefined }}>
+      <div style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, letterSpacing: ".12em", color: MUTED, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 4 }}>
+        {label}
+        {opts?.title && <span aria-hidden style={{ width: 14, height: 14, borderRadius: "50%", border: "1px solid rgba(33,26,18,.3)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: MUTED, lineHeight: 1 }}>?</span>}
+      </div>
+      <div style={{ fontSize: opts?.size ?? 26, fontWeight: 800, color, fontFamily: DISP, marginTop: 4, letterSpacing: "-0.01em", lineHeight: 1.05, fontVariantNumeric: "tabular-nums", borderBottom: "1px dashed rgba(33,26,18,.18)", paddingBottom: 4 }}>{value}</div>
+      {opts?.sub && <div style={{ fontSize: 12, fontFamily: BODY, color: MUTED, marginTop: 4, lineHeight: 1.35 }}>{opts.sub}</div>}
     </div>
   );
   const streak = catchStreak(collection);
   return (
-    <div style={{ background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 16, boxShadow: "var(--ed-shadow-card)", padding: "18px 20px", marginTop: 4 }}>
+    <div style={{
+      background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 16, boxShadow: "var(--ed-shadow-card)", padding: "18px 20px", marginTop: 4,
+      // faint ruled journal lines — logbook paper, not decoration
+      backgroundImage: "repeating-linear-gradient(180deg, transparent, transparent 25px, rgba(33,26,18,.045) 25px, rgba(33,26,18,.045) 26px)",
+    }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${OUTLINE}` }}>
         <div>
           <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, letterSpacing: ".14em", color: TEAL, textTransform: "uppercase" }}>Field Journal</div>
           <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, letterSpacing: ".08em", color: MUTED, textTransform: "uppercase", marginTop: 4 }}>Animals collected</div>
         </div>
-        <div style={{ fontSize: 46, fontWeight: 800, color: INK, lineHeight: 0.9, fontFamily: DISP, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{collected}</div>
+        <div style={{ fontSize: 54, fontWeight: 800, color: INK, lineHeight: 0.9, fontFamily: DISP, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{collected}</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(104px, 1fr))", gap: 8 }}>
-        {note("Rarest", rarest ? rarest.rarityLabel : "—", rarest ? rarest.rarityColor : MUTED)}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(112px, 1fr))", gap: 8 }}>
+        {note("Rarest", rarest ? rarest.rarityLabel : "—", rarest ? rarest.rarityColor : MUTED, {
+          // RAREST provenance — answers "who decides?" right on the tile.
+          title: "Highest rarity rolled so far across your catches. Rarity is rolled server-side at catch time — open 'How rarity works' above for the exact odds.",
+          sub: "highest roll so far",
+          size: 20,
+        })}
         {note("Today", String(today), INK)}
-        {note("Streak", streak > 0 ? `${streak} day${streak === 1 ? "" : "s"}` : "—", streak > 0 ? TEAL : MUTED)}
+        {note("Streak", streak > 0 ? `${streak}d` : "—", streak > 0 ? TEAL : MUTED, { sub: streak > 0 ? "consecutive days" : "catch today to start" })}
         {note("Species", String(kinds), INK)}
       </div>
     </div>
@@ -666,11 +924,7 @@ function FieldJournal({ collection }: { collection: Cat[] }) {
  *  is the honest wild-spawn species list, and any other real animal caught on
  *  camera is shown as a bonus entry, never hidden. */
 function FieldGuide({ collection }: { collection: Cat[] }) {
-  const counts = new Map<string, number>();
-  for (const c of collection) {
-    const k = guideKey(c.kind);
-    if (k) counts.set(k, (counts.get(k) || 0) + 1);
-  }
+  const counts = guideCounts(collection);
   const found = GUIDE_SPECIES.filter((s) => (counts.get(s.key) || 0) > 0).length;
   // Real animals caught beyond the wild-map seven (e.g. a turtle on camera).
   const bonus = [...counts.keys()].filter((k) => !GUIDE_SPECIES.some((s) => s.key === k)).sort();
@@ -679,43 +933,49 @@ function FieldGuide({ collection }: { collection: Cat[] }) {
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${OUTLINE}` }}>
         <div>
           <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, letterSpacing: ".14em", color: TEAL, textTransform: "uppercase" }}>Field Guide</div>
-          <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, letterSpacing: ".08em", color: MUTED, textTransform: "uppercase", marginTop: 4 }}>Wild-map species</div>
+          <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, letterSpacing: ".08em", color: MUTED, textTransform: "uppercase", marginTop: 4 }}>Wild-map species · collected get their sticker</div>
         </div>
-        <div style={{ fontFamily: DISP, fontSize: 24, fontWeight: 800, color: found === GUIDE_SPECIES.length ? TEAL : INK, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-          {found}<span style={{ fontSize: 15, color: MUTED, fontWeight: 700 }}>/{GUIDE_SPECIES.length}</span>
+        <div style={{ fontFamily: DISP, fontSize: 34, fontWeight: 800, color: found === GUIDE_SPECIES.length ? TEAL : INK, fontVariantNumeric: "tabular-nums", lineHeight: 0.9 }}>
+          {found}<span style={{ fontSize: 17, color: MUTED, fontWeight: 700 }}>/{GUIDE_SPECIES.length}</span>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(74px, 1fr))", gap: 8 }}>
-        {GUIDE_SPECIES.map((s) => {
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(76px, 1fr))", gap: 10 }}>
+        {GUIDE_SPECIES.map((s, i) => {
           const n = counts.get(s.key) || 0;
           const got = n > 0;
           return (
             <div key={s.key} title={got ? `${s.label} · ${n} caught` : `${s.label} — not caught yet`} style={{
               position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-              padding: "11px 6px 9px", borderRadius: 10, textAlign: "center",
-              background: got ? INSET : "transparent",
-              border: got ? `1px solid ${OUTLINE}` : `1px dashed ${OUTLINE}`,
+              padding: "12px 6px 10px", borderRadius: got ? 12 : 10, textAlign: "center",
+              // collected = die-cut sticker (hard offset shadow, slight tilt);
+              // uncaught = dashed empty slot with the ink silhouette
+              background: got ? "#FFFDF7" : "transparent",
+              border: got ? `1.5px solid ${INK}` : `1px dashed ${OUTLINE}`,
+              boxShadow: got ? "3px 3px 0 rgba(33,26,18,.16)" : "none",
+              transform: got ? `rotate(${i % 2 ? 1.4 : -1.6}deg)` : "none",
             }}>
               {/* uncaught = die-cut ink silhouette (the "gotta find it" cue) */}
-              <Icon name={s.icon} size={30} alt={got ? s.label : "Unknown species"} style={got ? undefined : { filter: "brightness(0)", opacity: 0.22 }} />
+              <Icon name={s.icon} size={32} alt={got ? s.label : "Unknown species"} style={got ? undefined : { filter: "brightness(0)", opacity: 0.22 }} />
               <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: got ? INK : MUTED }}>
                 {got ? s.label : "???"}
               </div>
               {got && (
-                <span style={{ position: "absolute", top: 4, right: 4, fontFamily: MONO, fontSize: 12, fontWeight: 700, color: TEAL, background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 999, padding: "1px 6px", fontVariantNumeric: "tabular-nums" }}>×{n}</span>
+                <span style={{ position: "absolute", top: -6, right: -5, fontFamily: MONO, fontSize: 12, fontWeight: 700, color: "#FCE9CF", background: TEAL, border: `1.5px solid ${PAPER}`, borderRadius: 999, padding: "1px 7px", fontVariantNumeric: "tabular-nums", boxShadow: "2px 2px 0 rgba(33,26,18,.18)" }}>×{n}</span>
               )}
             </div>
           );
         })}
-        {bonus.map((k) => (
+        {bonus.map((k, i) => (
           <div key={k} title={`${k} · ${counts.get(k)} caught — beyond the wild-map guide`} style={{
             position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-            padding: "11px 6px 9px", borderRadius: 10, textAlign: "center",
-            background: INSET, border: `1px solid ${OUTLINE}`,
+            padding: "12px 6px 10px", borderRadius: 12, textAlign: "center",
+            background: "#FFFDF7", border: `1.5px solid ${INK}`,
+            boxShadow: "3px 3px 0 rgba(33,26,18,.16)",
+            transform: `rotate(${i % 2 ? -1.4 : 1.6}deg)`,
           }}>
-            <Icon name={kindIcon(k)} size={30} alt={k} />
+            <Icon name={kindIcon(k)} size={32} alt={k} />
             <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: INK, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{k}</div>
-            <span style={{ position: "absolute", top: 4, right: 4, fontFamily: MONO, fontSize: 12, fontWeight: 700, color: "#9A4E1E", background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 999, padding: "1px 6px", fontVariantNumeric: "tabular-nums" }}>×{counts.get(k)}</span>
+            <span style={{ position: "absolute", top: -6, right: -5, fontFamily: MONO, fontSize: 12, fontWeight: 700, color: "#FCE9CF", background: "#9A4E1E", border: `1.5px solid ${PAPER}`, borderRadius: 999, padding: "1px 7px", fontVariantNumeric: "tabular-nums", boxShadow: "2px 2px 0 rgba(33,26,18,.18)" }}>×{counts.get(k)}</span>
           </div>
         ))}
       </div>

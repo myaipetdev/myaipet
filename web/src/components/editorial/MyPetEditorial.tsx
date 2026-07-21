@@ -20,6 +20,7 @@ import CollectibleFrame, { Motes } from "@/components/editorial/CollectibleFrame
 import PaywallModal, { type PaywallInfo } from "@/components/PaywallModal";
 import useCountUp from "@/hooks/useCountUp";
 import { CODEX_VARIANTS } from "@/lib/codex";
+import { SEASON_SCHEDULED, seasonPhase } from "@/lib/season";
 
 const PetProfile = lazy(() => import("@/components/PetProfile"));
 const PetPond = lazy(() => import("@/components/PetPond"));
@@ -30,7 +31,19 @@ type Pet = {
   id: number; name: string; level: number; element?: string; species?: number;
   happiness?: number; energy?: number; hunger?: number; bond_level?: number;
   experience?: number; created_at?: string;
+  care_streak?: number; last_care_at?: string | null;
   avatar_url?: string | null; codex_url?: string | null; evolution_name?: string | null; species_name?: string | null;
+};
+
+// Real daily counters from GET/POST /interact — every number is read from the
+// same rows the server writes when it actually pays (see route todaySnapshot).
+type TodayCounts = {
+  day: string;
+  care_points: number; care_points_cap: number;
+  chat_points: number; chat_points_cap: number;
+  creations: number;
+  feed_free_used: number; feed_free_cap: number;
+  play_free_used: number; play_free_cap: number;
 };
 
 type CareFlash = { id: number; text: string; error?: boolean; pts?: number; levelUp?: boolean; fulfilled?: boolean };
@@ -100,7 +113,7 @@ const CareIcon = ({ d }: { d: string }) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={T.ink70} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ display: "block", margin: "0 auto 5px" }}>{<path d={d} />}</svg>
 );
 
-function CareTile({ label, icon, onClick, busy }: { label: string; icon: React.ReactNode; onClick: () => void; busy?: boolean }) {
+function CareTile({ label, sub, icon, onClick, busy }: { label: string; sub?: string; icon: React.ReactNode; onClick: () => void; busy?: boolean }) {
   return (
     <button onClick={onClick} disabled={busy} className="mp-caretile" style={{
       flex: 1, background: "#FCE9CF", border: "1px solid rgba(190,79,40,0.22)", borderRadius: 14,
@@ -108,7 +121,10 @@ function CareTile({ label, icon, onClick, busy }: { label: string; icon: React.R
       fontFamily: T.body,
     }}>
       {icon}
-      <span style={{ fontSize: 13, fontWeight: 600, color: T.ink70 }}>{label}</span>
+      <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: T.ink70 }}>{label}</span>
+      {sub && (
+        <span style={{ display: "block", marginTop: 2, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: "#9A7B4E" }}>{sub}</span>
+      )}
     </button>
   );
 }
@@ -126,6 +142,8 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
   const [lvPop, setLvPop] = useState(0);            // increments on level-up → frame/seal pop
   const [reqGlow, setReqGlow] = useState(0);         // increments on request_fulfilled → box pulse
   const [request, setRequest] = useState<PetRequest | null>(null);
+  const [today, setToday] = useState<TodayCounts | null>(null);
+  const [ptsPop, setPtsPop] = useState<{ id: number; n: number } | null>(null);
   const [memory, setMemory] = useState<PetMemory | null>(null);
   const [memoryLoaded, setMemoryLoaded] = useState(false);
   const [paywall, setPaywall] = useState<PaywallInfo | null>(null);
@@ -175,7 +193,12 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
     setRequest(null);
     fetch(`/api/pets/${id}/interact`, { headers: getAuthHeaders() })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (!cancelled && d) setRequest(d.request || null); })
+      .then((d) => {
+        if (cancelled || !d) return;
+        setRequest(d.request || null);
+        // real daily mission counters — user-scoped, so they survive pet switches
+        if (d.today) setToday(d.today);
+      })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [active?.id]);
@@ -261,6 +284,14 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
         levelUp: !!it.leveled_up,
         fulfilled: !!it.request_fulfilled,
       });
+      // real daily counters straight from the server (same payload that paid)
+      if (r?.today) setToday(r.today);
+      // sticker-pop the REAL granted points over the care meter (server value only)
+      if (typeof it.points_earned === "number" && it.points_earned > 0) {
+        const popId = ++seq.current;
+        setPtsPop({ id: popId, n: it.points_earned });
+        later(() => setPtsPop((cur) => (cur && cur.id === popId ? null : cur)), 1300);
+      }
       // floating stat-delta pops over the matching rows (hunger shown as Fullness)
       const fx = it.effects || {};
       const now = Date.now();
@@ -403,6 +434,29 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
        request.reward.exp ? `+${request.reward.exp} XP` : null].filter(Boolean).join(" ")
     : "";
   const showMemoryBox = !!(request?.type || memoryLoaded);
+
+  // ── Daily missions — derived ONLY from server-paid counters (todaySnapshot).
+  //    ap:interact stores points (5/free care), ap:pet_chat stores points
+  //    (2/message), creations counts completed generations. If the fetch failed
+  //    (today === null) the panel simply doesn't render — no fabricated zeros. ──
+  const cares = today ? Math.floor(today.care_points / 5) : 0;
+  const chats = today ? Math.floor(today.chat_points / 2) : 0;
+  const carePtsCapped = !!today && today.care_points >= today.care_points_cap;
+  const missions = today ? [
+    { key: "care", label: `Care for ${active.name} ×3`, note: null as string | null, payoff: "+5 PTS EACH", done: cares >= 3, progress: Math.min(cares, 3), target: 3, go: null as string | null },
+    { key: "chat", label: "Chat ×3 messages", note: null as string | null, payoff: "+2 PTS EACH", done: chats >= 3, progress: Math.min(chats, 3), target: 3, go: "chat" as string | null },
+    { key: "create", label: "Make 1 creation", note: "uses credits" as string | null, payoff: "+10 PTS", done: today.creations >= 1, progress: Math.min(today.creations, 1), target: 1, go: "create" as string | null },
+  ] : null;
+  const missionsDone = missions ? missions.filter((m) => m.done).length : 0;
+  // Season context — NEVER dates/countdowns while unscheduled (SEASON_SCHEDULED).
+  const phase = SEASON_SCHEDULED ? seasonPhase() : "upcoming";
+  const seasonNote = phase === "live" ? "SEASON 1 · LIVE" : phase === "ended" ? "SEASON 1 · ENDED" : "SEASON 1 · STARTING SOON";
+  // Care streak — real per-pet counter (advanced server-side by Feed, milestone
+  // recorded every 7 days). "Feed today" freshness is client-local-day guidance.
+  const streakDays = active.care_streak ?? 0;
+  const lastCare = active.last_care_at ? new Date(active.last_care_at) : null;
+  const nowD = new Date();
+  const fedToday = !!lastCare && lastCare.getFullYear() === nowD.getFullYear() && lastCare.getMonth() === nowD.getMonth() && lastCare.getDate() === nowD.getDate();
   // Fixed per-slot mount delays for the FIRST-VIEWPORT cards only (chips → care).
   // Lower cards now scroll-reveal via <Reveal> with equally static delays, so a
   // late-mounting card (memory box after fetch) never shifts its siblings.
@@ -425,6 +479,10 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               .mp-poster-wrap > div { max-height: none !important; }
             }
             @keyframes mpDeltaRise { 0% { opacity: 0; transform: translateY(3px); } 18% { opacity: 1; } 100% { opacity: 0; transform: translateY(-16px); } }
+            /* editorial sticker-pop for the REAL "+N PTS" grant — die-cut paper
+               chip with a hard offset shadow that lifts off the care meter.
+               No confetti, no glow: one crisp settle then rise-fade. */
+            @keyframes mpPtsStick { 0% { opacity: 0; transform: translateY(6px) rotate(-8deg) scale(.7); } 22% { opacity: 1; transform: translateY(-2px) rotate(-3deg) scale(1.06); } 38% { transform: translateY(0) rotate(-3deg) scale(1); } 100% { opacity: 0; transform: translateY(-22px) rotate(-3deg) scale(.96); } }
             @keyframes mpSealPopA { 0% { transform: scale(1); } 35% { transform: scale(1.045); } 100% { transform: scale(1); } }
             @keyframes mpSealPopB { 0% { transform: scale(1); } 35% { transform: scale(1.045); } 100% { transform: scale(1); } }
             @keyframes mpReqPulseA { 0% { background-color: rgba(190,79,40,.16); } 100% { background-color: rgba(255,250,235,.5); } }
@@ -567,13 +625,61 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               <StatRow label="Bond" value={bond} pct={bond} color={T.bond} pop={pops.bond} />
             </div>
 
-            {/* care */}
+            {/* care — every tap shows its mission context + REAL reward. The +5
+                tile hint mirrors the server grant (awardPointsCapped interact 5,
+                150/day); it flips to an honest cap note once the pool is spent. */}
             <div className="ed-rise" style={{ ...rise(5), background: T.paper, borderRadius: 22, padding: 20, boxShadow: "var(--ed-shadow-card)" }}>
-              <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Care</div>
-              <div style={{ display: "flex", gap: 9, marginTop: 14 }}>
-                <CareTile label="Feed" busy={!!busy} onClick={() => care("feed")} icon={<CareIcon d="M5 3v8a3 3 0 0 0 6 0V3M8 3v18M19 3c-1.5 0-3 2-3 5s1.5 4 3 4v9" />} />
-                <CareTile label="Play" busy={!!busy} onClick={() => care("play")} icon={<CareIcon d="M6 12h4M8 10v4M15 11h.01M18 13h.01M7 7h10a4 4 0 0 1 4 4v1a4 4 0 0 1-7 2.8 3 3 0 0 1-4 0A4 4 0 0 1 3 12v-1a4 4 0 0 1 4-4Z" />} />
-                <CareTile label="Pet" busy={!!busy} onClick={() => care("pet")} icon={<CareIcon d="M9 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM15 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM6 15a2 2 0 1 0 0-4M18 15a2 2 0 1 0 0-4M8.5 14c-1.5 1-2 2.2-2 3.4C6.5 18.8 7.7 20 9.2 20c1 0 1.6-.5 2.8-.5s1.8.5 2.8.5c1.5 0 2.7-1.2 2.7-2.6 0-1.2-.5-2.4-2-3.4" />} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Care</div>
+                <span style={{
+                  fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", borderRadius: 999, padding: "3px 9px",
+                  color: streakDays > 0 && fedToday ? "#A9712B" : T.muted,
+                  border: `1px solid ${streakDays > 0 && fedToday ? "rgba(200,147,47,.5)" : T.hair}`,
+                  background: streakDays > 0 && fedToday ? "rgba(200,147,47,.1)" : "transparent",
+                }}>
+                  {streakDays > 0
+                    ? `🔥 ${streakDays}-DAY STREAK${fedToday ? "" : " · FEED TODAY TO KEEP IT"}`
+                    : "🔥 FEED TODAY TO START A STREAK"}
+                </span>
+              </div>
+              <div style={{ marginTop: 5, fontSize: 13, color: T.muted2, lineHeight: 1.45 }}>
+                Every free care grows {active.name}&apos;s stats and Bond{carePtsCapped ? "" : " — and banks +5 pts"}.
+              </div>
+              <div style={{ display: "flex", gap: 9, marginTop: 12 }}>
+                <CareTile label="Feed" sub={carePtsCapped ? undefined : "+5 PTS"} busy={!!busy} onClick={() => care("feed")} icon={<CareIcon d="M5 3v8a3 3 0 0 0 6 0V3M8 3v18M19 3c-1.5 0-3 2-3 5s1.5 4 3 4v9" />} />
+                <CareTile label="Play" sub={carePtsCapped ? undefined : "+5 PTS"} busy={!!busy} onClick={() => care("play")} icon={<CareIcon d="M6 12h4M8 10v4M15 11h.01M18 13h.01M7 7h10a4 4 0 0 1 4 4v1a4 4 0 0 1-7 2.8 3 3 0 0 1-4 0A4 4 0 0 1 3 12v-1a4 4 0 0 1 4-4Z" />} />
+                <CareTile label="Pet" sub={carePtsCapped ? undefined : "+5 PTS"} busy={!!busy} onClick={() => care("pet")} icon={<CareIcon d="M9 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM15 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM6 15a2 2 0 1 0 0-4M18 15a2 2 0 1 0 0-4M8.5 14c-1.5 1-2 2.2-2 3.4C6.5 18.8 7.7 20 9.2 20c1 0 1.6-.5 2.8-.5s1.8.5 2.8.5c1.5 0 2.7-1.2 2.7-2.6 0-1.2-.5-2.4-2-3.4" />} />
+              </div>
+              {today && (
+                <div style={{ position: "relative", marginTop: 14 }}>
+                  {ptsPop && (
+                    <span key={ptsPop.id} aria-hidden style={{
+                      position: "absolute", right: 0, top: -16, zIndex: 3, fontFamily: T.m, fontSize: 13, fontWeight: 700,
+                      letterSpacing: ".08em", color: "#9A4E1E", background: T.paper, border: "1px solid rgba(154,123,78,.5)",
+                      borderRadius: 8, padding: "3px 8px", boxShadow: "3px 4px 0 rgba(33,26,18,.15)",
+                      animation: "mpPtsStick 1.25s cubic-bezier(.2,.8,.2,1) both", pointerEvents: "none",
+                    }}>+{ptsPop.n} PTS</span>
+                  )}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: T.mono }}>
+                    <span>CARE PTS TODAY</span>
+                    <span style={{ color: carePtsCapped ? T.terra : T.mono }}>{today.care_points}/{today.care_points_cap}</span>
+                  </div>
+                  <div style={{ height: 3, borderRadius: 2, background: "rgba(33,26,18,.1)", marginTop: 6, overflow: "hidden" }}>
+                    <div style={{ height: "100%", borderRadius: 2, width: `${Math.min(100, (today.care_points / Math.max(1, today.care_points_cap)) * 100)}%`, background: carePtsCapped ? T.terra : "#A9712B", transition: "width .6s ease" }} />
+                  </div>
+                  <div style={{ display: "flex", gap: 12, marginTop: 7, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: T.muted }}>
+                    <span>FEED {today.feed_free_used}/{today.feed_free_cap} FREE</span>
+                    <span>PLAY {today.play_free_used}/{today.play_free_cap} FREE</span>
+                  </div>
+                  {carePtsCapped && (
+                    <div style={{ marginTop: 6, fontSize: 12, color: T.muted2, lineHeight: 1.45 }}>
+                      Daily care-points cap reached — care still feeds stats and Bond; points resume tomorrow.
+                    </div>
+                  )}
+                </div>
+              )}
+              <div style={{ marginTop: 10, fontSize: 12, color: T.muted, lineHeight: 1.45 }}>
+                Tip: Pet ×3 in a row triggers the Cuddle Marathon combo — +20 Bond, +5 Happy, +5 pts.
               </div>
               {flash && (
                 <div key={flash.id} style={{ marginTop: 12, display: "flex", alignItems: "flex-start", gap: 8, flexWrap: "wrap", animation: "edRiseIn .3s cubic-bezier(.22,.9,.3,1) both" }}>
@@ -596,6 +702,53 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                 </div>
               )}
             </div>
+
+            {/* daily missions — a 3-item checklist derived ONLY from real server
+                counters (today snapshot). Payoffs mirror exactly what the server
+                pays: 5 pts/care, 2 pts/chat message, 10 pts/completed creation.
+                Hidden entirely if the counters couldn't load — never fake zeros. */}
+            {missions && (
+              <div className="ed-rise" style={{ ...rise(6), background: T.paper, borderRadius: 22, padding: 20, boxShadow: "var(--ed-shadow-card)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>
+                    Daily Missions · {missionsDone}/3
+                  </div>
+                  <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: phase === "live" ? T.thrive : T.mono }}>{seasonNote}</span>
+                </div>
+                {missions.map((m) => (
+                  <div key={m.key} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
+                    <span aria-hidden style={{
+                      width: 24, height: 24, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                      background: m.done ? "radial-gradient(circle at 32% 30%, #D96A41, #BE4F28)" : "transparent",
+                      border: m.done ? "none" : "1.5px solid rgba(33,26,18,.25)",
+                      color: "#FCE9CF", fontSize: 13, fontWeight: 700,
+                      boxShadow: m.done ? "2px 3px 0 rgba(33,26,18,.15)" : "none",
+                      transform: m.done ? "rotate(-8deg)" : "none",
+                    }}>{m.done ? "✓" : ""}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: m.done ? T.muted : T.ink70 }}>
+                        {m.label}
+                        {m.note && <span style={{ fontWeight: 400, color: T.muted }}> · {m.note}</span>}
+                      </div>
+                    </div>
+                    <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: T.muted, flexShrink: 0 }}>{m.progress}/{m.target}</span>
+                    <span style={{ flexShrink: 0, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: "#9A7B4E", border: "1px solid rgba(154,123,78,.35)", borderRadius: 8, padding: "3px 8px" }}>{m.payoff}</span>
+                    {m.go && !m.done && (
+                      <button onClick={() => onNavigate?.(m.go as string)} aria-label={`Go to ${m.go}`} style={{
+                        flexShrink: 0, border: `1px solid ${T.hair}`, background: T.field, borderRadius: 8, padding: "3px 9px",
+                        fontFamily: T.m, fontSize: 12, fontWeight: 700, color: T.muted2, cursor: "pointer",
+                      }}>→</button>
+                    )}
+                  </div>
+                ))}
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px dashed ${T.hair}`, fontSize: 12, color: T.muted2, lineHeight: 1.5 }}>
+                  All three done → +31 pts banked today.{" "}
+                  {phase === "upcoming"
+                    ? "Season 1 hasn't opened yet — points bank now and carry into Season 1."
+                    : "Season points are non-financial loyalty rewards."}
+                </div>
+              </div>
+            )}
 
             {/* memory / live request — the file-record box, wired to real endpoints.
                 Scroll-reveals from the right; the fulfill-pulse lives on the keyed

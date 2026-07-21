@@ -7,6 +7,7 @@ import Reveal from "@/components/Reveal";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import PetSquare from "@/components/PetSquare";
 import { isTourActive } from "@/lib/tour";
+import { SEASON_SCHEDULED } from "@/lib/season";
 
 // ── Collectible Editorial tokens ──
 const T = {
@@ -101,13 +102,13 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
       {/* Comment list */}
       <div style={{ flex: 1, overflowY: "auto", marginBottom: 10, maxHeight: 200 }}>
         {loading ? (
-          <div role="status" aria-live="polite" style={{ fontFamily: T.m, fontSize: 13, color: T.mono, padding: 8, letterSpacing: "0.04em" }}>Loading comments…</div>
+          <div role="status" aria-live="polite" style={{ fontFamily: T.m, fontSize: 13, color: T.muted2, padding: 8, letterSpacing: "0.04em" }}>Loading comments…</div>
         ) : comments.length === 0 ? (
           <div style={{
-            fontFamily: T.m, fontSize: 13, color: T.mono,
+            fontFamily: T.m, fontSize: 13, color: T.muted2,
             textAlign: "center", padding: "16px 0", letterSpacing: "0.04em",
           }}>
-            No comments yet. Be the first!
+            No comments yet. Be the first — a comment earns +3 pts.
           </div>
         ) : (
           comments.map((c: any) => (
@@ -191,7 +192,7 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
               handleSubmit();
             }
           }}
-          placeholder="Write a comment…"
+          placeholder="Write a comment… (+3 pts)"
           style={{
             flex: 1, padding: "9px 12px", minHeight: 44, borderRadius: 8,
             background: T.inset, border: `1px solid ${T.hair}`,
@@ -202,7 +203,7 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
         <button type="button" aria-busy={submitting} onClick={handleSubmit} disabled={!newComment.trim() || submitting} style={{
           padding: "9px 14px", minHeight: 44, minWidth: 44, borderRadius: 8, border: "none", cursor: "pointer",
           background: newComment.trim() ? `linear-gradient(135deg,${T.cta1},${T.cta2})` : T.inset,
-          color: newComment.trim() ? "#fff" : T.mono,
+          color: newComment.trim() ? T.ink : T.mono,
           fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em",
           boxShadow: newComment.trim() ? "var(--ed-shadow-card)" : "none",
         }}>
@@ -478,16 +479,25 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
               }}
               style={{
                 width: "100%", padding: "11px", minHeight: 44, borderRadius: 10, border: "none", cursor: "pointer",
-                background: `linear-gradient(135deg,${T.cta1},${T.cta2})`, color: "white",
+                background: `linear-gradient(135deg,${T.cta1},${T.cta2})`, color: T.ink,
                 fontFamily: T.body, fontSize: 14, fontWeight: 700,
-                marginBottom: 12, boxShadow: "var(--ed-shadow-card)",
+                marginBottom: 6, boxShadow: "var(--ed-shadow-card)",
               }}
             ><Icon name="sparkling" size={15} style={{ marginRight: 4 }} /> Make one like this →</button>
+          )}
+          {/* REAL grant: /api/studio/generate → studio_gen image +10 / video +20 (daily-capped) */}
+          {!item.__mock && (
+            <div style={{
+              fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted2,
+              textAlign: "center", marginBottom: 12, letterSpacing: "0.04em",
+            }}>
+              A finished make earns +10 pts (image) · +20 (motion)
+            </div>
           )}
 
           {/* Comments */}
           {item.__mock
-            ? <div style={{ fontFamily: T.m, fontSize: 13, color: T.mono, padding: "12px 2px", letterSpacing: "0.04em" }}>Sample post — comments open up on real creations.</div>
+            ? <div style={{ fontFamily: T.m, fontSize: 13, color: T.muted2, padding: "12px 2px", letterSpacing: "0.04em" }}>Sample post — comments open up on real creations.</div>
             : <CommentSection generationId={item.generation_id || item.id} onAdded={onCommentAdded} />}
         </div>
       </div>
@@ -1326,7 +1336,7 @@ export default function SocialGallery() {
             </h2>
             {showChrome && (
               <span style={{
-                fontFamily: T.m, fontSize: 13, color: T.mono, fontWeight: 700, letterSpacing: "0.08em",
+                fontFamily: T.m, fontSize: 13, color: T.muted, fontWeight: 700, letterSpacing: "0.08em",
               }}>
                 {filteredItems.length} works
               </span>
@@ -1433,10 +1443,11 @@ export default function SocialGallery() {
               onClick={() => { window.location.href = "/?section=create"; }}
               className="ed-card-hover"
               aria-label="Create your own"
+              title="A finished make earns +10 pts (image) / +20 (motion)"
               style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
                 padding: "7px 16px", borderRadius: 999, border: "none", cursor: "pointer",
-                background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: "#FFF8EE",
+                background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: T.ink,
                 fontFamily: T.body, fontSize: 13, fontWeight: 700,
                 boxShadow: "0 10px 22px -12px rgba(226,125,12,.6)",
               }}
@@ -1451,7 +1462,7 @@ export default function SocialGallery() {
               background: "transparent", border: "none", padding: "8px 16px",
               fontFamily: T.m, fontSize: 13, cursor: "pointer",
               letterSpacing: "0.1em", textTransform: "uppercase",
-              color: sort === t.key ? T.ink : T.mono,
+              color: sort === t.key ? T.ink : T.muted,
               fontWeight: 700,
               borderBottom: sort === t.key ? `2px solid ${T.ink}` : "2px solid transparent",
               marginBottom: -1,
@@ -1517,9 +1528,27 @@ export default function SocialGallery() {
           }}>
             {search ? "No results found" : feedFailed ? "Couldn't load the feed" : "No creations yet"}
           </h3>
-          <p style={{ fontFamily: T.m, fontSize: 13, color: T.mono, letterSpacing: "0.06em" }}>
+          <p style={{ fontFamily: T.m, fontSize: 13, color: T.muted2, letterSpacing: "0.06em" }}>
             {search ? "Try different keywords" : feedFailed ? "Check your connection and try again" : "Be the first to create something"}
           </p>
+          {/* REAL first-creation grant (/api/studio/generate → studio_gen: image +10 / video +20) */}
+          {!search && !feedFailed && (
+            <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+              {["+10 pts · image", "+20 pts · motion"].map(c => (
+                <span key={c} style={{
+                  fontFamily: T.m, fontSize: 13, fontWeight: 800, letterSpacing: "0.06em",
+                  textTransform: "uppercase", color: T.terraSub, background: "rgba(190,79,40,.09)",
+                  border: "1px solid rgba(190,79,40,.32)", borderRadius: 999, padding: "5px 12px",
+                }}>{c}</span>
+              ))}
+            </div>
+          )}
+          {/* No dates/countdowns while Season 1 is unscheduled — carry-in note only. */}
+          {!search && !feedFailed && !SEASON_SCHEDULED && (
+            <div style={{ marginTop: 10, fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted2, letterSpacing: "0.04em" }}>
+              Season 1 starts soon — points you earn now carry in.
+            </div>
+          )}
           {feedFailed && !search && (
             <button onClick={() => loadFeed()} className="ed-wipe" style={{
               marginTop: 16, padding: "9px 22px", borderRadius: 8,
@@ -1531,7 +1560,7 @@ export default function SocialGallery() {
           {!search && !feedFailed && (
             <button onClick={() => { window.location.href = "/?section=create"; }} style={{
               marginTop: 16, padding: "11px 26px", borderRadius: 10, border: "none", cursor: "pointer",
-              background: `linear-gradient(135deg,${T.cta1},${T.cta2})`, color: "white",
+              background: `linear-gradient(135deg,${T.cta1},${T.cta2})`, color: T.ink,
               fontFamily: T.body, fontSize: 14, fontWeight: 700, boxShadow: "var(--ed-shadow-card)",
             }}><Icon name="sparkling" size={15} style={{ marginRight: 4 }} /> Create the first one</button>
           )}

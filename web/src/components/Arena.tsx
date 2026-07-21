@@ -525,8 +525,11 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
 }
 
 // ── Victory / Defeat Overlay V2 (dramatic animation) ──
-function ResultOverlay({ won, points, expGained, skillDrop, onClose }: {
-  won: boolean; points: number; expGained: number; skillDrop: string | null; onClose: () => void;
+// `points` is the SERVER-granted season-point amount (null = grant still
+// settling). Practice bouts (no server match) pay nothing and say so — the
+// overlay never invents a number the server didn't pay.
+function ResultOverlay({ won, points, expGained, skillDrop, serverMatched, onClose }: {
+  won: boolean; points: number | null; expGained: number; skillDrop: string | null; serverMatched: boolean; onClose: () => void;
 }) {
   const dropSkill = skillDrop ? SKILL_MAP[skillDrop] : null;
   return (
@@ -581,12 +584,12 @@ function ResultOverlay({ won, points, expGained, skillDrop, onClose }: {
             <div style={{
               fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(255,255,255,0.4)",
               marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.1em",
-            }}>Points</div>
+            }}>Season Points</div>
             <div style={{
               fontFamily: "var(--ed-disp)", fontSize: 22,
               color: "#E7A15C", fontWeight: 800,
             }}>
-              +{points}
+              {serverMatched ? (points === null ? "…" : `+${points}`) : "+0"}
             </div>
           </GlassPanel>
           <GlassPanel style={{ padding: "10px 20px" }}>
@@ -601,6 +604,16 @@ function ResultOverlay({ won, points, expGained, skillDrop, onClose }: {
               +{expGained}
             </div>
           </GlassPanel>
+        </div>
+
+        {/* Honest grant provenance — real server schedule, never a promise */}
+        <div style={{
+          fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(255,255,255,0.45)",
+          maxWidth: 360, margin: "0 auto 20px", lineHeight: 1.5,
+        }}>
+          {serverMatched
+            ? "Server-verified Season Rewards grant — win +35 · loss +10."
+            : "Practice bout — season points are paid on server-matched battles only (win +35 · loss +10)."}
         </div>
 
         {/* Skill drop */}
@@ -687,7 +700,10 @@ export default function Arena() {
   const [battleLog, setBattleLog] = useState<BattleLogEntry[]>([]);
   const [battleOver, setBattleOver] = useState(false);
   const [playerWon, setPlayerWon] = useState(false);
-  const [earnedPoints, setEarnedPoints] = useState(0);
+  // Season points GRANTED BY THE SERVER for this battle (null = settling).
+  // Practice bouts (no match challenge) pay 0 — the client never invents pts.
+  const [earnedPoints, setEarnedPoints] = useState<number | null>(null);
+  const [serverMatched, setServerMatched] = useState(false);
   const [earnedExp, setEarnedExp] = useState(0);
   const [skillDrop, setSkillDrop] = useState<string | null>(null);
   const [animating, setAnimating] = useState(false);
@@ -889,6 +905,10 @@ export default function Arena() {
     setPlayerWon(false);
     setSkillDrop(null);
     setEarnedExp(0);
+    // Matched battles settle their real grant from the server response;
+    // practice bouts (no challenge issued) honestly pay 0.
+    setServerMatched(matchChallengeRef.current !== null);
+    setEarnedPoints(matchChallengeRef.current !== null ? null : 0);
     setPlayerDodging(false);
     setOpponentDodging(false);
     setPlayerDefBuff(0);
@@ -911,10 +931,12 @@ export default function Arena() {
       api.arena
         .reportResult(selectedPet.id, opponent.pet.id || 0, matchChallenge)
         .then((res: any) => {
+          // The server's grant is the ONLY number we show (+35 win / +10 loss).
+          setEarnedPoints(typeof res.points_earned === "number" ? res.points_earned : 0);
           if (res.exp_gained) setEarnedExp(res.exp_gained);
           if (res.skill_drop) setSkillDrop(res.skill_drop);
         })
-        .catch(() => {});
+        .catch(() => setEarnedPoints(0));
     }
   }, [phase]);
 
@@ -1089,8 +1111,8 @@ export default function Arena() {
       setOpponent((prev) => {
         if (prev && prev.hp <= 0) {
           setOpponentFaint(true);
-          const pts = 25 + (prev.pet.level * 3);
-          setEarnedPoints(pts);
+          // Points are NOT set here — the server grant (result effect) is the
+          // only source; practice bouts were already initialized to 0.
           setBattleOver(true);
           setPlayerWon(true);
           addLog(`${prev.pet.name} fainted! You win!`, "system");
@@ -1159,7 +1181,6 @@ export default function Arena() {
             setPlayerFaint(true);
             setBattleOver(true);
             setPlayerWon(false);
-            setEarnedPoints(5);
             addLog(`${opponent.pet.name} used ${skill.emoji} ${skill.name}! -${damage} HP`, "opponent");
             addLog(`${prev.pet.name} fainted... You lost.`, "system");
             setTimeout(() => setPhase("result"), 1500);
@@ -1215,6 +1236,8 @@ export default function Arena() {
     setOpponent(null);
     setBattleLog([]);
     setBattleOver(false);
+    setEarnedPoints(null);
+    setServerMatched(false);
     setSelectedPet(null);
     setPlayerFaint(false);
     setOpponentFaint(false);
@@ -1309,10 +1332,36 @@ export default function Arena() {
             </div>
             <div style={{
               fontFamily: "var(--ed-m)", fontSize: 13,
-              color: "#7A6E5A", marginBottom: 32,
+              color: "#7A6E5A", marginBottom: 12,
               textAlign: "center",
             }}>
               4-skill element battle -- type advantages matter!
+            </div>
+
+            {/* Mission + reward — REAL server values only (api/arena/result:
+                +35 win / +10 loss, DAILY_BATTLE_CAP 30/day; practice pays 0). */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              gap: 8, flexWrap: "wrap", marginBottom: 30,
+            }}>
+              <span style={{
+                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+                letterSpacing: ".1em", textTransform: "uppercase", color: "#9A7B4E",
+              }}>
+                Mission — prove your pet against a real rival
+              </span>
+              <span style={{
+                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+                letterSpacing: ".08em", textTransform: "uppercase",
+                color: "#9A4E1E", background: "rgba(190,79,40,.08)",
+                border: "1px solid rgba(190,79,40,.22)", borderRadius: 999,
+                padding: "3px 10px",
+              }}>
+                Win +35 · Loss +10 season pts
+              </span>
+              <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A" }}>
+                Server-verified matched battles · up to 30/day · practice bouts pay none
+              </span>
             </div>
 
             {loading ? (
@@ -1691,6 +1740,7 @@ export default function Arena() {
                 points={earnedPoints}
                 expGained={earnedExp}
                 skillDrop={skillDrop}
+                serverMatched={serverMatched}
                 onClose={resetBattle}
               />
             )}

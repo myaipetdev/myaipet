@@ -16,6 +16,7 @@ import Stats from "@/components/Stats";
 import Pricing from "@/components/Pricing";
 import OrchestrationExplainer from "@/components/OrchestrationExplainer";
 import RaisePitch from "@/components/RaisePitch";
+import SeasonEventsRail from "@/components/events/SeasonEventsRail";
 import WalletGate, { TourBanner } from "@/components/WalletGate";
 import ToastHost from "@/components/Toast";
 import DialogHost from "@/components/Dialog";
@@ -724,6 +725,8 @@ export default function App() {
               {/* Pitch: why raise + how to earn (closes the gap between Hero and Pricing) */}
               <div className="home-beat-join">
                 <RaisePitch onNavigate={setSection} />
+                {/* Season event posters — Best in Show · Streak Festival · Catch Safari */}
+                <SeasonEventsRail />
               </div>
               {/* How the agent infrastructure orchestrates (Trinity-style explainer) */}
               <div className="home-beat-join">

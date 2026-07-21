@@ -13,8 +13,15 @@
  *
  * SECONDARY / seasonal: the old national-flag "World Cup 2026" content
  * (reimagine your pet as a country's animal + community champion-prediction
- * poll) is demoted to a compact, collapsible, clearly-ephemeral module that
- * can be hidden once the real tournament is over.
+ * poll). The real tournament is OVER, so the module is gated OFF by the
+ * single WORLD_CUP_MODULE_ENABLED flag in lib/seasonEvents.ts — code kept
+ * intact for a future cup.
+ *
+ * The bracket is framed as the recurring season event "BEST IN SHOW"
+ * (lib/seasonEvents.ts best-in-show). Its only claimed prize is the real
+ * one: the gold-foil champion card rendered + shared below. The bracket pays
+ * NO season points today — never add a "+N pts" claim here without first
+ * adding the server grant.
  */
 
 import { useEffect, useState } from "react";
@@ -24,6 +31,7 @@ import { api, getAuthHeaders } from "@/lib/api";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import useCountUp from "@/hooks/useCountUp";
 import { WORLD_CUP_COUNTRIES, buildCountryPromptFragment, flagUrl, type WorldCupCountry } from "@/lib/worldcup/countries";
+import { WORLD_CUP_MODULE_ENABLED } from "@/lib/seasonEvents";
 
 // ── Collectible Editorial tokens ──
 const T = {
@@ -71,7 +79,8 @@ export default function WorldCupPet() {
   return (
     <Shell>
       <FavoritesBracket />
-      <SeasonalWorldCup />
+      {/* World Cup 2026 is over — module gated OFF (code retained). */}
+      {WORLD_CUP_MODULE_ENABLED && <SeasonalWorldCup />}
     </Shell>
   );
 }
@@ -189,7 +198,7 @@ function FavoritesBracket() {
 
   const shareChampion = () => {
     if (!champion) return;
-    const text = `${champion.name} is my Favorites Bracket champion! 🏆 Vote your own at My AI Pet`;
+    const text = `${champion.name} just won Best in Show in my bracket! 🏆 Crown your own at My AI Pet`;
     const url = "https://app.myaipet.ai/?section=worldcup";
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=MyAIPet`, "_blank", "width=600,height=420");
   };
@@ -207,16 +216,37 @@ function FavoritesBracket() {
     );
   }
 
-  // Honest low-data state: not enough public pets to fill a bracket.
+  // Honest low-data state, staged as the season-event poster. Same truth as
+  // before (real pets only, opens at 4) — now it reads like a coming
+  // attraction instead of an apology. NO point claim: the bracket's only
+  // real prize today is the gold-foil champion card rendered below.
   if (startSize < 4) {
     return (
       <BracketFrame>
-        <div style={{ background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 14, padding: "22px 20px", boxShadow: "var(--ed-shadow-card)" }}>
-          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase", marginBottom: 8 }}>Not enough pets yet</div>
-          <p style={{ fontFamily: T.body, fontSize: 14.5, color: T.muted2, margin: "0 0 14px", lineHeight: 1.55 }}>
-            The Favorites Bracket needs at least four public pets to run. We only ever seed it with real community pets — none are made up — so it opens for real as more players adopt and give their pet an avatar.
+        <div style={{ position: "relative", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 18, padding: "26px 22px 24px", boxShadow: "var(--ed-shadow-card)", overflow: "visible", textAlign: "center" }}>
+          {/* Wax seal — OPENS SOON */}
+          <span style={{
+            position: "absolute", top: -11, right: 16,
+            display: "inline-flex", alignItems: "center", padding: "5px 12px", borderRadius: 999,
+            background: `radial-gradient(circle at 32% 28%, rgba(255,248,238,.28), rgba(33,26,18,.12) 78%), ${T.gold}`,
+            color: T.creamOn, transform: "rotate(-4deg)",
+            boxShadow: "0 2px 0 rgba(33,26,18,.4), inset 0 0 0 1.5px rgba(252,233,207,.5)",
+            fontFamily: T.m, fontSize: 12, fontWeight: 800, letterSpacing: ".12em",
+          }}>OPENS SOON</span>
+
+          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".16em", color: T.mono, textTransform: "uppercase", marginBottom: 6 }}>Season Event · Best in Show</div>
+          <div style={{ fontFamily: T.disp, fontSize: "clamp(24px,6vw,32px)", fontWeight: 800, color: T.ink, letterSpacing: "-.02em", lineHeight: 1.05, marginBottom: 10 }}>
+            Opens at 4 public pets
+          </div>
+          <p style={{ fontFamily: T.body, fontSize: 14.5, color: T.muted2, margin: "0 auto 14px", lineHeight: 1.55, maxWidth: 460 }}>
+            Best in Show only ever seeds with real community pets — none are made up — so the bracket opens for real as more players adopt and give their pet an avatar.
           </p>
-          <a href="/?section=my%20pet" className="wc-press" style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, padding: "0 20px", borderRadius: 10, background: T.ink, color: T.creamOn, fontFamily: T.disp, fontWeight: 700, fontSize: 14, letterSpacing: ".01em", textDecoration: "none", boxShadow: "var(--ed-shadow-card)" }}>Adopt a pet &amp; make yours eligible <span aria-hidden>▸</span></a>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: T.gold, textTransform: "uppercase", borderTop: `1px dashed ${T.hair}`, paddingTop: 12, marginBottom: 16 }}>
+            <Icon name="trophy" size={14} /> The prize — your champion crowned on a gold-foil winner card
+          </div>
+          <div>
+            <a href="/?section=my%20pet" className="wc-press" style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, padding: "0 20px", borderRadius: 10, background: T.ink, color: T.creamOn, fontFamily: T.disp, fontWeight: 700, fontSize: 14, letterSpacing: ".01em", textDecoration: "none", boxShadow: "var(--ed-shadow-card)" }}>Adopt a pet &amp; make yours eligible <span aria-hidden>▸</span></a>
+          </div>
         </div>
       </BracketFrame>
     );
@@ -231,7 +261,7 @@ function FavoritesBracket() {
             <div className="ed-glow" /><div className="ed-vignette" />
             <div style={{ position: "relative", zIndex: 2 }}>
               <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".16em", color: T.gold, textTransform: "uppercase", margin: "16px 0 4px", display: "inline-flex", alignItems: "center", gap: 7 }}>
-                <Icon name="trophy" size={15} /> Your Champion
+                <Icon name="trophy" size={15} /> Best in Show
               </div>
               <h2 style={{ fontFamily: T.disp, fontSize: "clamp(26px,7vw,38px)", fontWeight: 800, color: T.ink, margin: "0 0 4px", letterSpacing: "-.02em" }}>{champion.name}</h2>
               <div style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted2, marginBottom: 18 }}>Crowned by your picks across {startSize} pets.</div>
@@ -265,6 +295,15 @@ function FavoritesBracket() {
   const curKey = stageKey(field.length);
   return (
     <BracketFrame>
+      {/* Mission + prize — every action states why it exists and what it pays.
+          The bracket pays NO season points today, so the only claimed prize is
+          the real gold-foil champion card. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", marginBottom: 10, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase" }}>
+        <span style={{ color: T.mono }}>Mission — crown your Best in Show</span>
+        <span aria-hidden style={{ width: 4, height: 4, borderRadius: "50%", background: T.hair }} />
+        <span style={{ color: T.gold, display: "inline-flex", alignItems: "center", gap: 5 }}><Icon name="trophy" size={13} /> Prize — a gold-foil winner card</span>
+      </div>
+
       {/* Round + progress */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
         <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.terraSub, textTransform: "uppercase", background: "rgba(190,79,40,.08)", border: `1px solid rgba(190,79,40,.22)`, borderRadius: 999, padding: "5px 12px" }}>
@@ -963,7 +1002,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           .wc-pick:not(:disabled):hover{transform:none}
         }
       `}</style>
-      {/* ── editorial hero: FAVORITES BRACKET — evergreen ── */}
+      {/* ── editorial hero: BEST IN SHOW — the recurring season event ── */}
       <div className="wc-rise" style={{
         position: "relative", overflow: "hidden", borderRadius: 22, padding: "34px 28px 30px", marginBottom: 24,
         background: T.field, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)", textAlign: "center",
@@ -971,15 +1010,19 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
         <div aria-hidden style={{ position: "absolute", right: -8, top: -16, opacity: 0.08, lineHeight: 1, zIndex: 1 }}><Icon name="trophy" size={130} /></div>
         <div style={{ position: "relative", zIndex: 2 }}>
-          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", color: T.terraSub, textTransform: "uppercase" }}>Favorites Bracket</div>
-          <h1 style={{ fontFamily: T.disp, fontSize: "clamp(34px,8vw,50px)", fontWeight: 800, color: T.ink, margin: "10px 0 0", letterSpacing: "-0.03em", lineHeight: 0.96 }}>Pick your favorite pet</h1>
+          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", color: T.terraSub, textTransform: "uppercase" }}>Season Event · Favorites Bracket</div>
+          <h1 style={{ fontFamily: T.disp, fontSize: "clamp(34px,8vw,50px)", fontWeight: 800, color: T.ink, margin: "10px 0 0", letterSpacing: "-0.03em", lineHeight: 0.96 }}>Best in Show</h1>
           <p style={{ fontFamily: T.body, fontSize: 15.5, color: T.muted2, margin: "16px auto 0", lineHeight: 1.6, maxWidth: 580 }}>
-            Two community pets appear at a time — tap the one you love and it advances. Round of 16 → Final, until one pet is your <strong style={{ color: T.terra, fontWeight: 600 }}>Champion</strong>. Real pets, your personal bracket.
+            Two community pets appear at a time — tap the one you love and it advances. Round of 16 → Final, until one pet is crowned <strong style={{ color: T.terra, fontWeight: 600 }}>Best in Show</strong> on a gold-foil winner card. Real pets, your personal bracket.
           </p>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 12, margin: "18px 0 0", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: T.mono, flexWrap: "wrap", justifyContent: "center" }}>
             <button onClick={() => jump("wc-bracket")} className="wc-press" style={{ ...chipStyle, color: T.terraSub, borderBottomColor: "rgba(154,78,30,.55)" }}>Play the bracket</button>
-            <span aria-hidden style={{ width: 4, height: 4, borderRadius: "50%", background: T.hair }} />
-            <button onClick={() => jump("wc-seasonal")} className="wc-press" style={chipStyle}>Seasonal: World Cup</button>
+            {WORLD_CUP_MODULE_ENABLED && (
+              <>
+                <span aria-hidden style={{ width: 4, height: 4, borderRadius: "50%", background: T.hair }} />
+                <button onClick={() => jump("wc-seasonal")} className="wc-press" style={chipStyle}>Seasonal: World Cup</button>
+              </>
+            )}
           </div>
         </div>
       </div>

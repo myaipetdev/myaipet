@@ -168,5 +168,34 @@ export async function GET(req: NextRequest) {
     orderBy: { caught_at: "desc" },
     take: 200,
   });
-  return NextResponse.json({ cats: cats.map(withRarity) });
+
+  // ADDITIVE mission meters — server truth for the client's "Today's missions"
+  // strip, read from the SAME counters the billing/award paths write:
+  //   "vision:free" ← economyGuards.consumeCatchVerify (3 free scans/day default)
+  //   "ap:catch"    ← awardPointsCapped("catch", …) vs DAILY_POINT_CAPS.catch
+  // Optional: on any read error `meta` is null and the collection still returns.
+  let meta: {
+    freeScansLeft: number; freeScansPerDay: number;
+    catchPointsToday: number; catchPointsCap: number;
+  } | null = null;
+  try {
+    const day = new Date().toISOString().slice(0, 10);
+    // Same env override + default as economyGuards.consumeCatchVerify.
+    const envFree = Number(process.env.CATCH_FREE_VERIFY_PER_DAY);
+    const freePerDay = Number.isFinite(envFree) && envFree > 0 ? Math.floor(envFree) : 3;
+    const rows = await prisma.dailyActionCount.findMany({
+      where: { user_id: user.id, day, action_key: { in: ["vision:free", "ap:catch"] } },
+    });
+    const count = (k: string) => rows.find((r) => r.action_key === k)?.count ?? 0;
+    meta = {
+      freeScansPerDay: freePerDay,
+      freeScansLeft: Math.max(0, freePerDay - count("vision:free")),
+      catchPointsToday: Math.min(count("ap:catch"), DAILY_POINT_CAPS.catch),
+      catchPointsCap: DAILY_POINT_CAPS.catch,
+    };
+  } catch (e) {
+    console.error("Catch meta read error:", e);
+  }
+
+  return NextResponse.json({ cats: cats.map(withRarity), meta });
 }

@@ -26,7 +26,11 @@
  * (never a fabricated "/ TOTAL" denominator) and a rarity breakdown computed
  * from each pet's REAL grind stats. The only placeholder slots shown are the
  * user's REAL remaining pet slots (pet_slots − owned), labelled as empty
- * adoption slots — never fake card numbers presented as owned inventory.
+ * adoption slots — never fake card numbers presented as owned inventory. The
+ * guest gate's two showcase cards are permanently stamped SAMPLE, and every
+ * "+N pts" figure printed anywhere on this screen is the server's actual
+ * grant (verified against /api/card/battle and /api/catch — never promise a
+ * reward the server doesn't pay).
  *
  * Reuses: api.pets.list, /api/card/[id] (via <PetCard>), /api/studio/generate
  * (grok-imagine) for art, /api/petclaw/network/discover for opponents, and the
@@ -59,6 +63,12 @@ const INK = T.ink;
 const MUTED = T.muted;
 const LINE = T.hair;
 const GOLD = T.terra;
+/* Shared foil materials — HOLO_LINEAR is the iridescent gradient the card face
+ * masks through TOPO_MASK (also used by RipStub + the Rare guest sample);
+ * FOIL_GOLD mirrors PetCard's Rare border ring exactly so the guest sample
+ * speaks the deck's REAL rarity language, not an approximation. */
+const HOLO_LINEAR = "linear-gradient(118deg,#ff5e8a,#ffd36e,#54ffc8,#5e8aff,#ff5eef,#ff5e8a)";
+const FOIL_GOLD = "linear-gradient(100deg,#FFF7E6,#F2CD86 32%,#FFFBF0 50%,#E8B257 68%,#FFF7E6)";
 
 // Rarity colors come from the single locked source in lib/tcg/theme (Uncommon
 // rides with Common in the album filter — the card seal already distinguishes
@@ -579,6 +589,13 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
               </button>
             </Reveal>
           </div>
+          {/* Mission + REAL reward, stated BEFORE the action — verified against
+              /api/card/battle: awardPointsCapped grants 5 pts per duel (win or
+              lose), DAILY_POINT_CAPS.card_battle = 40; no credits charged. */}
+          <div style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, margin: "-6px 0 16px" }}>
+            Free to duel — deterministic from real card stats, and every duel pays{" "}
+            <strong style={{ color: T.terraSub }}>+5 season points</strong> (cap 40/day).
+          </div>
           {/* Honest opponent states: pending / retryable error / real empty —
               a failed discover fetch must never read as "no opponents exist". */}
           {oppList.length === 0 && (
@@ -765,7 +782,6 @@ function RipStub({ petId, rarity, onRip }: { petId: number; rarity: Rarity; onRi
   const dragging = useRef(false);
   const progRef = useRef(0);
   const firedRef = useRef(false);
-  const HOLO_LINEAR = "linear-gradient(118deg,#ff5e8a,#ffd36e,#54ffc8,#5e8aff,#ff5eef,#ff5e8a)";
   const moved = useRef(false);
 
   const moveTo = (clientX: number) => {
@@ -956,30 +972,36 @@ function ZeroState({ onAdopt, onCatch }: { onAdopt?: (e: React.MouseEvent) => vo
   );
 }
 
-// Guest gate — a real editorial welcome instead of a bare one-liner. No fake
-// sample inventory: the mini frames are OBVIOUSLY empty sleeves (dashed, "—"),
-// there to show the album's physical language, never presented as owned cards.
+// Guest gate — built around a two-card SAMPLE showcase: the SAME sample pet at
+// two grades, so one glance teaches "rarity changes the card". Common is clean
+// matte paper; Rare wears the deck's REAL foil language (PetCard's gold-foil
+// ring + pointer-trailing holo topo/sheen/glare) with a different pose of the
+// same cat and visibly higher stat chips. Both cards are stamped SAMPLE —
+// never presented as owned inventory — and the connect CTA states the real
+// deal: your pets become cards automatically, no purchase.
 function GuestGate({ onCatch }: { onCatch: () => void }) {
   const { openConnectModal } = useConnectModal();
   return (
     <Reveal dir="up">
-      <div style={{ borderRadius: 20, border: `1px dashed ${T.hair}`, background: T.inset, padding: "36px 28px", textAlign: "center", maxWidth: 560, margin: "16px auto 0" }}>
-        {/* three empty album sleeves — the binder language, honestly empty */}
-        <div aria-hidden style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 18 }}>
-          {[-5, 0, 5].map((rot, i) => (
-            <div key={i} style={{
-              width: 64, aspectRatio: "5 / 7", borderRadius: 8, background: T.paper,
-              border: `1px dashed ${T.hair}`, transform: `rotate(${rot}deg)`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: i === 1 ? "var(--ed-shadow-card)" : "none",
-            }}>
-              <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted, opacity: 0.6 }}>—</span>
-            </div>
-          ))}
+      <div style={{ borderRadius: 20, border: `1px dashed ${T.hair}`, background: T.inset, padding: "36px 28px", textAlign: "center", maxWidth: 640, margin: "16px auto 0" }}>
+        {/* SAMPLE showcase — Common vs Rare of the same pet, honestly labelled */}
+        <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.mono, marginBottom: 14 }}>
+          Sample cards · what a grade changes
         </div>
+        <div style={{ display: "flex", gap: 16, justifyContent: "center", alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
+          <SampleCard grade="Common" />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }}>
+            <span aria-hidden style={{ fontFamily: T.disp, fontSize: 20, fontWeight: 800, color: T.terra, lineHeight: 1 }}>→</span>
+            <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: T.mono }}>Real care</span>
+          </div>
+          <SampleCard grade="Rare" />
+        </div>
+        <p style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, margin: "0 auto 20px", maxWidth: 440, lineHeight: 1.5 }}>
+          Same pet, two grades. Care raises the grade — from Rare up the card is printed with a gold-foil edge and holographic contours, and its real stats climb with it. No chance, no packs.
+        </p>
         <h3 style={{ fontFamily: T.disp, fontSize: 24, fontWeight: 800, color: T.ink, margin: "0 0 6px", letterSpacing: "-0.01em" }}>Your album is waiting</h3>
         <p style={{ fontFamily: T.body, fontSize: 14, color: T.muted2, margin: "0 auto 20px", maxWidth: 400, lineHeight: 1.55 }}>
-          Connect to see every pet you raise as a foil-stamped trading card — graded by real care, ready to duel and share. New here? Adopting your first pet mints your first card.
+          Connect and every pet you raise or catch becomes a trading card like these automatically — graded by real care, ready to duel and share.
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
           <button type="button" onClick={() => openConnectModal?.()} disabled={!openConnectModal} className="ed-wipe" style={{ ...btn, padding: "11px 22px", opacity: openConnectModal ? 1 : 0.6 }}>
@@ -989,8 +1011,157 @@ function GuestGate({ onCatch }: { onCatch: () => void }) {
             <CameraGlyph size={14} /> See how Catch works
           </button>
         </div>
+        {/* The connect CTA's REAL reward, stated plainly (no purchase exists) */}
+        <div style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, marginTop: 12 }}>
+          Free — no purchase, no packs. Your pets become cards automatically.
+        </div>
       </div>
     </Reveal>
+  );
+}
+
+/** One SAMPLE card for the guest showcase. `Rare` reuses the deck's REAL
+ *  rarity treatments — PetCard's gold-foil border ring, the TOPO_MASK holo
+ *  contours + .ed-holo-sheen layer, and the exact fine-pointer tilt/glare
+ *  math — while `Common` stays clean matte paper, so the pair teaches the
+ *  grade system at a glance. Fixed demo figures on art from the public
+ *  gallery set (two poses of the same orange cat), permanently stamped
+ *  SAMPLE — never presented as owned inventory. */
+function SampleCard({ grade }: { grade: "Common" | "Rare" }) {
+  const rare = grade === "Rare";
+  const rc = rarityColor(grade);
+  const ref = useRef<HTMLDivElement>(null);
+  const [tiltOn, setTiltOn] = useState(false);
+  useEffect(() => {
+    if (rare && typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches) setTiltOn(true);
+  }, [rare]);
+  // Same handler math as PetCard — the Rare sample must BEHAVE rare on hover,
+  // not just say it (holo sheen + glare trail the pointer via --holo-x/--px).
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = ref.current;
+    if (!tiltOn || !el) return;
+    const r = el.getBoundingClientRect();
+    const nx = ((e.clientX - r.left) / r.width) * 2 - 1;
+    const ny = ((e.clientY - r.top) / r.height) * 2 - 1;
+    el.classList.add("ed-holo-live");
+    el.style.transition = "transform 80ms linear";
+    el.style.setProperty("--rx", nx.toFixed(3));
+    el.style.setProperty("--ry", (-ny).toFixed(3));
+    el.style.setProperty("--px", `${(((nx + 1) / 2) * 100).toFixed(1)}%`);
+    el.style.setProperty("--py", `${(((ny + 1) / 2) * 100).toFixed(1)}%`);
+    el.style.setProperty("--hl", "1");
+    el.style.setProperty("--holo-x", `${Math.round(50 + nx * 60)}%`);
+    el.style.setProperty("--holo-y", `${Math.round(50 + ny * 60)}%`);
+  };
+  const onLeave = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.classList.remove("ed-holo-live");
+    el.style.transition = "transform 450ms cubic-bezier(0.2,0.8,0.2,1)";
+    el.style.setProperty("--rx", "0");
+    el.style.setProperty("--ry", "0");
+    el.style.setProperty("--hl", "0");
+  };
+  const stats = rare
+    ? ([["ATK", 24], ["DEF", 19], ["SPD", 22]] as const)
+    : ([["ATK", 7], ["DEF", 6], ["SPD", 5]] as const);
+  return (
+    <div style={{ width: 172, flexShrink: 0, perspective: 700 }}>
+      <div
+        ref={ref}
+        onPointerMove={rare ? onMove : undefined}
+        onPointerLeave={rare ? onLeave : undefined}
+        style={{
+          position: "relative", borderRadius: 14, padding: rare ? 3 : 2,
+          background: rare ? FOIL_GOLD : "#E4D9C4",
+          boxShadow: "var(--ed-shadow-card)",
+          transform: "rotateX(calc(var(--ry, 0) * 6deg)) rotateY(calc(var(--rx, 0) * 8deg))",
+          willChange: tiltOn ? "transform" : undefined,
+        }}
+      >
+        <div style={{ position: "relative", overflow: "hidden", borderRadius: rare ? 11 : 12, background: T.paper, textAlign: "left" }}>
+          {/* header */}
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6, padding: "8px 10px 6px" }}>
+            <span style={{ fontFamily: T.disp, fontSize: 15, fontWeight: 800, color: T.ink, letterSpacing: "-0.02em" }}>Dordor</span>
+            <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, color: T.muted2, fontVariantNumeric: "tabular-nums" }}>Lv {rare ? 21 : 2}</span>
+          </div>
+          {/* photo well — Rare gets the gold inset keyline + holo topo + sheen,
+              and a different action pose/crop of the same cat */}
+          <div style={{ position: "relative", margin: "0 10px", borderRadius: 6, overflow: "hidden", boxShadow: rare ? "inset 0 0 0 2px rgba(184,130,44,.5)" : `inset 0 0 0 1px ${T.hair}` }}>
+            <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", background: "#fff" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={rare ? "/gallery/cat_astro.jpg" : "/gallery/pet_cat.jpg"}
+                alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: rare ? "47% 32%" : "50% 42%", display: "block" }}
+              />
+              {rare && <div className="ed-holo-sheen" aria-hidden style={{ opacity: 0.16 }} />}
+              {rare && (
+                <div aria-hidden style={{
+                  position: "absolute", inset: 0, pointerEvents: "none",
+                  background: HOLO_LINEAR, backgroundSize: "300% 300%",
+                  backgroundPosition: "var(--holo-x, 50%) var(--holo-y, 50%)",
+                  WebkitMaskImage: TOPO_MASK, maskImage: TOPO_MASK,
+                  WebkitMaskSize: "150px 150px", maskSize: "150px 150px",
+                  mixBlendMode: "screen", opacity: 0.32,
+                }} />
+              )}
+              {/* SAMPLE stamp — airtight honesty on the art itself */}
+              <span style={{
+                position: "absolute", left: 6, bottom: 6, fontFamily: T.m, fontSize: 12, fontWeight: 700,
+                letterSpacing: "0.12em", color: T.ink70, background: "rgba(251,246,236,.9)",
+                border: `1px solid ${T.hair}`, borderRadius: 5, padding: "1px 6px",
+              }}>SAMPLE</span>
+            </div>
+            {/* circular rarity seal — same language as the real card face */}
+            <span aria-hidden style={{
+              position: "absolute", top: 6, right: 6, width: 24, height: 24, borderRadius: "50%",
+              background: T.paper, border: `2px solid ${rc}`, display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 2px 6px -1px rgba(40,20,0,.4)",
+            }}>
+              <span style={{ fontFamily: T.m, fontWeight: 700, fontSize: 12, color: rc }}>{grade[0]}</span>
+            </span>
+          </div>
+          {/* stat chips — Rare's figures and gold keylines differ on sight */}
+          <div style={{ display: "flex", gap: 5, padding: "7px 10px 6px" }}>
+            {stats.map(([lab, val]) => (
+              <span key={lab} style={{
+                flex: 1, display: "flex", flexDirection: "column", alignItems: "center", background: "#fff",
+                borderRadius: 7, border: rare ? "1px solid rgba(184,130,44,.45)" : `1px solid ${T.hair}`, padding: "4px 2px",
+              }}>
+                <span style={{ fontFamily: T.disp, fontSize: 14, fontWeight: 700, color: T.ink, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{val}</span>
+                <span style={{ fontFamily: T.m, fontSize: 12, color: T.muted, letterSpacing: 1, marginTop: 2 }}>{lab}</span>
+              </span>
+            ))}
+          </div>
+          {/* footer — grade name; Rare adds the mini topo-foil patch (the same
+              chip the ticket stub wears), Common a matte cream one */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, padding: "0 10px 8px" }}>
+            <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", color: rc }}>{grade.toUpperCase()}</span>
+            <span aria-hidden style={rare ? {
+              width: 26, height: 16, borderRadius: 4,
+              background: `${HOLO_LINEAR} 50% 50% / 300% 300%`,
+              WebkitMaskImage: TOPO_MASK, maskImage: TOPO_MASK,
+              WebkitMaskSize: "46px 46px", maskSize: "46px 46px",
+              opacity: 0.75, boxShadow: `inset 0 0 0 1px ${T.hair}`,
+            } : {
+              width: 26, height: 16, borderRadius: 4, background: "#E4D9C4", boxShadow: `inset 0 0 0 1px ${T.hair}`,
+            }} />
+          </div>
+        </div>
+        {/* pointer-following glare — same screen-blend highlight as PetCard */}
+        {rare && (
+          <div aria-hidden style={{
+            position: "absolute", inset: 0, borderRadius: 14, pointerEvents: "none", mixBlendMode: "screen",
+            opacity: "var(--hl, 0)" as unknown as number, transition: "opacity .3s ease",
+            background: "radial-gradient(180px circle at var(--px, 50%) var(--py, 50%), rgba(255,246,220,.5), transparent 65%)",
+          }} />
+        )}
+      </div>
+      <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: rare ? T.terraSub : T.muted, marginTop: 8, textAlign: "center" }}>
+        {rare ? "Weeks of real care" : "Day one"}
+      </div>
+    </div>
   );
 }
 
@@ -1020,12 +1191,17 @@ function CatchTile({ onClick }: { onClick?: () => void }) {
       width: "100%", aspectRatio: "5 / 7", borderRadius: 18,
       background: "radial-gradient(120% 90% at 50% 120%, #4A2A12 0%, #241206 55%, #17100A 100%)",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      gap: 12, textAlign: "center", padding: 16, boxShadow: "var(--ed-shadow-card)",
+      gap: 9, textAlign: "center", padding: 16, boxShadow: "var(--ed-shadow-card)",
     }}>
       <Icon name="paw" size={26} style={{ opacity: 0.9 }} />
       <div style={{ fontFamily: T.disp, fontSize: 17, fontWeight: 800, color: "#FBF6EC", lineHeight: 1.15 }}>Catch more<br />in the wild</div>
       <div style={{ fontFamily: T.body, fontSize: 12.5, color: "rgba(251,246,236,.72)", lineHeight: 1.4, maxWidth: 190 }}>
         Snap a real animal outside — it becomes a collectible card.
+      </div>
+      {/* REAL reward, stated before the action — /api/catch grants
+          CATCH_POINTS 10–80 by rarity, daily-capped (anti-farm). */}
+      <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, color: "rgba(251,246,236,.78)", letterSpacing: ".04em", fontVariantNumeric: "tabular-nums" }}>
+        +10–80 season pts a catch · daily-capped
       </div>
       <span style={{
         marginTop: 4, padding: "8px 16px", borderRadius: 999,
@@ -1166,27 +1342,43 @@ function Shell({ children, owned, rarityCounts }: { children: React.ReactNode; o
           </div>
           {/* hairline rule under the title */}
           <div style={{ height: 1, background: T.hair, margin: "16px 0 0" }} />
-          {/* What this page IS — three verbs, one glance; they map 1:1 to the
-              ALBUM / CATCH / BATTLE tabs so a first visit self-explains. */}
-          <div className="cd-explain-row" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginTop: 14 }}>
+          {/* WHAT CARDS ARE FOR — the page's mission strip: four verbs, each
+              stating its real mission AND (where one exists) its REAL reward.
+              Point figures are the server's actual grants, verified in code:
+              /api/card/battle → awardPointsCapped(…, 5, cap 40/day);
+              /api/catch → CATCH_POINTS 10–80 by rarity (cap 300/day).
+              Never print a number the server doesn't pay. */}
+          <div className="cd-explain-row" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginTop: 14 }}>
             <style>{`
-              @media (max-width: 640px){ .cd-explain-row{ grid-template-columns: 1fr !important; } }
+              @media (max-width: 900px){ .cd-explain-row{ grid-template-columns: repeat(2, 1fr) !important; } }
+              @media (max-width: 520px){ .cd-explain-row{ grid-template-columns: 1fr !important; } }
               .cd-explain-card{ transition: transform .16s var(--ed-ease,cubic-bezier(.16,1,.3,1)), border-color .16s ease, box-shadow .16s ease; }
               @media (hover:hover){ .cd-explain-card:hover{ transform: translateY(-3px); border-color: rgba(190,79,40,.4); box-shadow: var(--ed-shadow-card); } }
             `}</style>
-            {[
-              { n: "01", title: "Collect", body: "Every pet you raise is created as an off-chain collectible card — real stats, real rarity." },
-              { n: "02", title: "Catch", body: "Point your camera at real animals outside — they fill the Catch tab's field album." },
-              { n: "03", title: "Battle & share", body: "Duel any card, illustrate it in Studio, or share it with friends." },
-            ].map((s) => (
-              <div key={s.n} className="cd-explain-card" style={{ display: "flex", gap: 10, alignItems: "flex-start", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "11px 13px" }}>
-                <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.terra, letterSpacing: ".08em", flexShrink: 0, marginTop: 1 }}>{s.n}</span>
-                <span style={{ fontFamily: T.body, fontSize: 13.5, lineHeight: 1.45, color: T.muted2 }}>
-                  <strong style={{ color: T.ink, fontFamily: T.disp }}>{s.title}</strong> — {s.body}
-                </span>
+            {([
+              { n: "01", title: "Collect", body: "Every pet you raise or catch becomes a card automatically — no packs, no purchases.", chip: null },
+              { n: "02", title: "Battle", body: "Duel any collector's card free — caught fighters brawl in Alley Clash too.", chip: "+5 season pts a duel · cap 40/day" },
+              { n: "03", title: "Share", body: "Each card is its own page — send the link anywhere. Public only if you opt your pet in.", chip: null },
+              { n: "04", title: "Grade", body: "Rarity and stats read from real care — level, bond, streak, ATK·DEF·SPD. No chance.", chip: null },
+            ] as Array<{ n: string; title: string; body: string; chip: string | null }>).map((s) => (
+              <div key={s.n} className="cd-explain-card" style={{ display: "flex", flexDirection: "column", gap: 7, background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "11px 13px" }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.terra, letterSpacing: ".08em", flexShrink: 0, marginTop: 1 }}>{s.n}</span>
+                  <span style={{ fontFamily: T.body, fontSize: 13.5, lineHeight: 1.45, color: T.muted2 }}>
+                    <strong style={{ color: T.ink, fontFamily: T.disp }}>{s.title}</strong> — {s.body}
+                  </span>
+                </div>
+                {s.chip && (
+                  <span style={{ alignSelf: "flex-start", marginLeft: 23, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".05em", color: "#211A12", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", borderRadius: 999, padding: "3px 10px", fontVariantNumeric: "tabular-nums" }}>{s.chip}</span>
+                )}
               </div>
             ))}
           </div>
+          {/* Non-financial loyalty framing; no dates/countdowns — Season 1 is
+              unscheduled (SEASON_SCHEDULED gate), pre-season points carry in. */}
+          <p style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, margin: "8px 0 0" }}>
+            Season points are non-financial Season Rewards — points you earn now carry into Season 1.
+          </p>
         </div>
         {children}
       </div>

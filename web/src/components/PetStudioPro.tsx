@@ -36,8 +36,8 @@ import { useAccount } from "wagmi";
 import { useAuth } from "@/hooks/useAuth";
 import { getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
-import Reveal from "@/components/Reveal";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
+import { SEASON_SCHEDULED, seasonPhase } from "@/lib/season";
 import PetLoraPanel from "@/components/PetLoraPanel";
 import StudioEditor, { type EditorSourceClip } from "@/components/StudioEditor";
 import useCountUp from "@/hooks/useCountUp";
@@ -303,6 +303,12 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   // Terracotta flash when the balance drops (item #20).
   const [creditFlash, setCreditFlash] = useState(false);
   const prevCreditsRef = useRef<number | null>(null);
+  // Gold-foil highlight on the template card whose scene is currently loaded.
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
+  // Season Rewards actually granted by the server for the current result
+  // (pointsAwarded from the generate/poll response). null = server didn't
+  // report (nothing is shown) — we never fabricate a grant client-side.
+  const [lastPointsAwarded, setLastPointsAwarded] = useState<number | null>(null);
 
   // Single write-path for the balance so the host page (StudioWithNav → Nav)
   // stays in sync with every spend (item #20-6).
@@ -365,6 +371,14 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   const SPECIES_DEFAULT_NAMES = ["Cat", "Dog", "Parrot", "Turtle", "Hamster", "Rabbit", "Fox", "Pomeranian"];
   const petDisplayName = pet?.name && !SPECIES_DEFAULT_NAMES.includes(pet.name) ? pet.name : "your pet";
 
+  // Season status label for the mission strip — NEVER a date or countdown
+  // while SEASON_SCHEDULED is false (an unscheduled season has no real dates).
+  const seasonChipLabel = (() => {
+    if (!SEASON_SCHEDULED) return "SEASON 1 · STARTING SOON";
+    const p = seasonPhase();
+    return p === "live" ? "SEASON 1 · LIVE" : p === "ended" ? "SEASON 1 · ENDED" : "SEASON 1 · SCHEDULED";
+  })();
+
   // One-tap starting points: build a full scene prompt from the pet's context
   // and flip to video (where templates shine). User can still edit after.
   const applyTemplate = (t: StudioTemplate) => {
@@ -377,6 +391,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
       avatarUrl: pet?.avatar_url || undefined,
     };
     setPrompt(t.buildPrompt(ctx));
+    setActiveTemplateId(t.id);
     setOutputKind("video");
     setStyleId("cinematic");
     if (t.aspect) setAspect(t.aspect);
@@ -504,6 +519,27 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
       .catch(() => {});
     loadWorkspace();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Scroll-overlap fix: the global Nav is FIXED and grows taller when its
+  // items wrap (~85px at ≤1240px viewports vs the 60px this page used to
+  // assume) — so the header + sticky rails were sliding UNDER the nav while
+  // scrolling. Measure the real nav height and drive every clearance
+  // (root padding, sticky offsets) off the --studio-nav-h CSS var.
+  useEffect(() => {
+    const nav = document.querySelector("nav");
+    if (!nav) return;
+    const sync = () => {
+      document.documentElement.style.setProperty(
+        "--studio-nav-h",
+        `${Math.ceil(nav.getBoundingClientRect().height)}px`,
+      );
+    };
+    sync();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(sync) : null;
+    ro?.observe(nav);
+    window.addEventListener("resize", sync);
+    return () => { ro?.disconnect(); window.removeEventListener("resize", sync); };
   }, []);
 
   // In-place sign-in flow (no WalletGate on /studio): once a wallet connects,
@@ -707,6 +743,12 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   // Item #8: out-of-credits is a purchase moment, not a dead end.
   const runCost = chosenModel?.creditsPerRun ?? null;
   const insufficient = !isDemo && credits != null && runCost != null && credits < runCost;
+  // Season Rewards the server ACTUALLY pays per completed run — mirrors
+  // awardPointsCapped("studio_gen", kind==="video" ? 20 : 10, DAILY_POINT_CAPS.
+  // studio_gen) in /api/studio/generate (immediate path) and its poll route
+  // (queued path). Change those routes first if these numbers ever move.
+  const runReward = chosenModel?.kind === "video" ? 20 : 10;
+  const STUDIO_PTS_DAILY_CAP = 120; // mirrors DAILY_POINT_CAPS.studio_gen
 
   // Per-generation sentinel + mount guard. Every async write in generate()
   // checks it's still the active job AND still mounted before applying, so
@@ -723,7 +765,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
     jobId: number,
     kind: "image" | "video",
     isActive: () => boolean,
-  ): Promise<{ status: "completed"; url: string } | { status: "failed"; error: string } | { status: "timeout" } | null> => {
+  ): Promise<{ status: "completed"; url: string; pointsAwarded?: number } | { status: "failed"; error: string } | { status: "timeout" } | null> => {
     // Grok video can run past the stated "~30–90s"; poll longer for video so a
     // slow-but-valid job isn't surfaced as a timeout failure while it actually
     // finishes (and lands in History). Image stays at 180s — plenty.
@@ -737,7 +779,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
       try { d2 = await r2.json(); } catch { continue; } // tolerate one bad body, keep polling
       if (!isActive()) return null;
       if (typeof d2.progress === "number") setGenProgress(d2.progress);
-      if (d2.status === "completed") return { status: "completed", url: d2.url };
+      if (d2.status === "completed") return { status: "completed", url: d2.url, pointsAwarded: typeof d2.pointsAwarded === "number" ? d2.pointsAwarded : undefined };
       if (d2.status === "failed")    return { status: "failed", error: d2.error || "Generation failed" };
     }
     return { status: "timeout" };
@@ -760,6 +802,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
     setResultUrl(null);
     setResultIsDemo(false);
     setLastGenId(null);
+    setLastPointsAwarded(null);
     setVariations([]);
     setVarRunning(false);
 
@@ -793,6 +836,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
       if (typeof data.generationId === "number") setLastGenId(data.generationId);
 
       if (data.status === "completed" && data.url) {
+        if (typeof data.pointsAwarded === "number") setLastPointsAwarded(data.pointsAwarded);
         setResultUrl(data.url); setView("done"); refreshHistory(); return;
       }
 
@@ -803,6 +847,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
       if (!out) return; // superseded/unmounted — entry stays stored for restore
       if (out.status === "completed") {
         clearActiveJob();
+        if (typeof out.pointsAwarded === "number") setLastPointsAwarded(out.pointsAwarded);
         setResultUrl(out.url); setView("done"); refreshHistory(); return;
       }
       if (out.status === "failed") {
@@ -864,6 +909,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
       if (!out) return;
       if (out.status === "completed") {
         clearActiveJob();
+        if (typeof out.pointsAwarded === "number") setLastPointsAwarded(out.pointsAwarded);
         setResultUrl(out.url); setView("done"); refreshHistory(); return;
       }
       if (out.status === "failed") {
@@ -893,6 +939,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
       setError(null);
       setErrorIs402(false);
       setVariations([]);
+      // An old creation reopened from History earned its points when it was
+      // made — never re-show a stale "+pts recorded" chip on it.
+      setLastPointsAwarded(null);
       // g.id IS the generationId — without this, Share silently vanishes for
       // anything reopened from the Recent strip (item #11-3).
       setLastGenId(g.id);
@@ -1036,17 +1085,18 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   };
 
   return (
-    <div style={{
+    <div className="studio-root" style={{
       position: "relative",
       minHeight: "calc(100vh - 60px)",
       background: T.field, color: T.ink,
       fontFamily: T.body,
-      // Top: clear the fixed nav (60px) + breathing room.
-      padding: "100px 24px 60px",
+      // Top/side padding lives in the .studio-root CSS rule so it can track the
+      // MEASURED fixed-nav height (--studio-nav-h) — the nav wraps taller at
+      // narrow widths and used to overlap this page while scrolling.
     }}>
       {/* editorial surface dressing (absolute layers; content sits above at zIndex 2) */}
       <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
-      <div style={{ position: "relative", zIndex: 2, maxWidth: 1180, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ position: "relative", zIndex: 2, maxWidth: 1460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
 
         {/* ── Header ── */}
         <div className="mp-enter" style={{
@@ -1127,40 +1177,186 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           />
         </div>
 
-        {/* ── Two-column workspace ── */}
-        <div className="studio-pro-grid" style={{
-          display: "grid", gap: 16, alignItems: "start",
-          gridTemplateColumns: "minmax(0, 1fr) 340px",
+        {/* ── Mission strip: why you're here + what every action pays. The pts
+            values mirror what the server actually grants (see runReward);
+            no season dates or countdowns render while unscheduled. ── */}
+        <div className="mp-enter-1" style={{
+          display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+          background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 14,
+          boxShadow: "var(--ed-shadow-card)", padding: "10px 14px",
         }}>
-          {/* LEFT column = preview + prompt (the two things you edit in sequence),
-              so the short preview no longer strands an empty gap beside the taller
-              controls column. */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
-          {/* PREVIEW — the collectible plate: an indigo studio scene on a cream
-              paper mount with a soft floating shadow (never a hard offset). */}
-          <div className="mp-enter-1" style={{
-            position: "relative",
-            background: T.paper, borderRadius: 18, padding: 13,
-            border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
-          }}>
-            {/* PREVIEW mono label, top-left on the mount */}
+          <span style={{
+            fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.14em",
+            color: T.studio, textTransform: "uppercase", flexShrink: 0,
+          }}>Studio mission</span>
+          <span style={{ fontFamily: T.body, fontSize: 13, color: T.ink70, flex: "1 1 240px", minWidth: 0, lineHeight: 1.45 }}>
+            Put {petDisplayName} in scenes worth sharing — every completed generation pays Season Rewards points.
+          </span>
+          <span title={`Per completed image · daily cap ${STUDIO_PTS_DAILY_CAP} studio pts · non-financial loyalty points`} style={missionChip}>+10 pts / image</span>
+          <span title={`Per completed video · daily cap ${STUDIO_PTS_DAILY_CAP} studio pts · non-financial loyalty points`} style={missionChip}>+20 pts / video</span>
+          <span title="Points earned now are pre-season points — they carry into Season 1" style={{
+            ...missionChip, background: "rgba(200,147,47,0.16)", color: "#8A6420",
+          }}>{seasonChipLabel}</span>
+        </div>
+
+        {/* ── PRO workspace: template rail · canvas stage · inspector ── */}
+        <div className="studio-workspace">
+          {/* ═══ ZONE 1 — TEMPLATE LIBRARY (browse rail, sticky on desktop;
+              stacks LAST on mobile so the canvas leads) ═══ */}
+          <aside className="studio-zone-rail mp-enter-2">
             <div style={{
-              position: "absolute", top: 22, left: 26, zIndex: 5,
-              fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.14em",
-              color: "rgba(252,233,207,.85)", textTransform: "uppercase",
-              pointerEvents: "none",
-            }}>PREVIEW</div>
+              background: T.paper, borderRadius: 16, padding: 12,
+              border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
+              display: "flex", flexDirection: "column", gap: 10,
+            }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+                <span style={{ ...panelLabel, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  <Icon name="sparkling" size={12} /> TEMPLATE LIBRARY
+                </span>
+                <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted2 }}>{TEMPLATES.length}</span>
+              </div>
+              <div style={{ fontSize: 13, color: T.muted2, fontFamily: T.body, lineHeight: 1.45 }}>
+                One tap loads a full scene for {petDisplayName} — then hit Generate.
+              </div>
+              <div className="studio-template-list">
+                {TEMPLATES.map((t) => {
+                  const ex = TEMPLATE_EXAMPLES[t.id];
+                  const vid = TEMPLATE_EXAMPLE_VIDEOS[t.id];
+                  const isActive = activeTemplateId === t.id;
+                  const catLabel = t.category === "trending"
+                    ? (TRENDING_BADGE_IDS.has(t.id) ? "🔥 trending" : "")
+                    : t.category;
+                  const tooltip = t.beats?.length ? `${t.title} — ${t.beats.join(" → ")}` : t.description;
+                  return (
+                    <button
+                      key={t.id}
+                      className="ed-card-hover"
+                      onClick={() => applyTemplate(t)}
+                      title={tooltip}
+                      // Motion previews on fine-pointer hover only; touch keeps the poster.
+                      onPointerEnter={vid ? (e) => {
+                        if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
+                        e.currentTarget.querySelector("video")?.play().catch(() => {});
+                      } : undefined}
+                      onPointerLeave={vid ? (e) => {
+                        const v = e.currentTarget.querySelector("video");
+                        if (v) { v.pause(); v.currentTime = 0; }
+                      } : undefined}
+                      style={{
+                        width: "100%", textAlign: "left", padding: 0, borderRadius: 12,
+                        overflow: "hidden", background: T.paper, cursor: "pointer",
+                        display: "flex", flexDirection: "column",
+                        // gold-foil ring marks the template currently in use
+                        border: isActive ? `1.5px solid ${T.foilDeep}` : `1px solid ${T.hair}`,
+                        boxShadow: isActive
+                          ? "0 0 0 3px rgba(200,147,47,0.20), var(--ed-shadow-card)"
+                          : "var(--ed-shadow-card)",
+                      }}
+                    >
+                      {vid ? (
+                        <div style={{ position: "relative", height: 86, overflow: "hidden" }}>
+                          <video
+                            src={vid} poster={ex} loop muted playsInline preload="metadata"
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                          />
+                          <span style={{ ...cardTag, position: "absolute", top: 6, right: 6 }}>▸ MOTION</span>
+                          {catLabel && <span style={{ ...cardTag, position: "absolute", left: 6, bottom: 6 }}>{catLabel}</span>}
+                        </div>
+                      ) : ex ? (
+                        <div style={{ position: "relative", height: 86, background: `url(${ex}) center/cover no-repeat` }}>
+                          {catLabel && <span style={{ ...cardTag, position: "absolute", left: 6, bottom: 6 }}>{catLabel}</span>}
+                        </div>
+                      ) : t.swatch ? (
+                        <TemplateMnemonic swatch={t.swatch} emoji={t.emoji} catLabel={catLabel} height={86} />
+                      ) : (
+                        <div style={{
+                          position: "relative", height: 86, background: T.inset,
+                          borderBottom: `1px solid ${T.hair}`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          <span aria-hidden style={{
+                            fontSize: 30, lineHeight: 1,
+                            filter: "grayscale(1) sepia(.6) saturate(2.4) hue-rotate(-16deg) opacity(.92)",
+                          }}>{t.emoji}</span>
+                          <span aria-hidden style={{
+                            position: "absolute", left: 0, right: 0, bottom: 0, height: 8,
+                            background: t.swatch || CATEGORY_BAND[t.category],
+                          }} />
+                        </div>
+                      )}
+                      <div style={{ padding: "8px 10px 10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{
+                            fontSize: 13, fontFamily: T.disp, fontWeight: 700,
+                            color: isActive ? T.terra : T.ink,
+                            flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          }}>{t.emoji} {t.title}</span>
+                          {isActive && (
+                            <span style={{
+                              fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em",
+                              color: "#8A6420", background: "rgba(200,147,47,0.16)",
+                              padding: "2px 6px", borderRadius: 999, flexShrink: 0,
+                            }}>IN USE</span>
+                          )}
+                        </div>
+                        <div style={{
+                          fontSize: 13, color: T.muted2, marginTop: 3, lineHeight: 1.4,
+                          display: "-webkit-box", WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical", overflow: "hidden",
+                        }}>{t.description}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </aside>
+
+          {/* ═══ ZONE 2 — THE STAGE: dark canvas + film-strip + prompt console
+              + the Generate action (canvas-first on mobile) ═══ */}
+          <div className="studio-zone-stage" style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
+          {/* STAGE — the screening room: a deep ink-navy mount with gold-foil
+              registration marks so previews pop like projected film. The only
+              dark surface in the app (intentional; everything else is paper). */}
+          <div className="mp-enter-1 studio-stage" style={{
+            position: "relative",
+            background: "linear-gradient(175deg,#241D45 0%,#191334 58%,#120E26 100%)",
+            borderRadius: 20, padding: 16,
+            border: "1px solid rgba(232,199,126,.30)",
+            boxShadow: "0 30px 60px -38px rgba(18,14,38,.85), inset 0 1px 0 rgba(252,233,207,.06)",
+          }}>
+            {/* monitor bar: live readout of the frame you're about to render */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              gap: 10, marginBottom: 12, paddingInline: 2, flexWrap: "wrap",
+            }}>
+              <span style={{
+                fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.16em",
+                color: T.foil, textTransform: "uppercase",
+                display: "inline-flex", alignItems: "center", gap: 7,
+              }}>
+                <span aria-hidden className={view === "generating" ? "studio-pulse" : undefined} style={{
+                  width: 8, height: 8, borderRadius: 999, display: "inline-block",
+                  background: view === "generating" ? T.cta1 : "rgba(232,199,126,.75)",
+                }} />
+                STAGE · {aspect}
+              </span>
+              <span style={{
+                fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.08em",
+                color: "rgba(252,233,207,.72)", textTransform: "uppercase",
+              }}>{chosenModel?.displayName || "—"} · {outputKind}</span>
+            </div>
             <div style={{
               position: "relative",
               aspectRatio: aspect.replace(":", " / "), borderRadius: 12, overflow: "hidden",
               background: `radial-gradient(120% 100% at 50% 30%, ${T.studioDeep}, ${T.studioInk})`,
-              boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)",
+              boxShadow: "inset 0 0 0 1px rgba(232,199,126,.22)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               {view === "idle" && (
                 <PreviewIdle pet={pet} isDemo={isDemo} />
               )}
-              {view === "generating" && <PreviewGenerating kind={outputKind} progress={genProgress} />}
+              {view === "generating" && <PreviewGenerating kind={outputKind} progress={genProgress} isDemo={isDemo} />}
               {view === "done" && resultUrl && resultUrl !== "__demo__" && (
                 /\.(mp4|webm)$/i.test(resultUrl)
                   ? <video src={resultUrl} controls autoPlay loop playsInline style={{ width: "100%", height: "100%", objectFit: "contain", animation: "studioPop .5s cubic-bezier(.2,1.3,.4,1)" }} />
@@ -1188,14 +1384,14 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                     {errorIs402 && (
                       <a href="/?section=home&scroll=pricing" style={{
                         padding: "9px 18px", borderRadius: 10, border: "none", cursor: "pointer",
-                        background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: "#FFF8EE",
+                        background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: T.ink,
                         fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.04em",
                         textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
                       }}>Credit purchases are paused →</a>
                     )}
                     <button onClick={() => generate()} style={errorIs402 ? btnGhostOnDark : {
                       padding: "9px 18px", borderRadius: 10, border: "none", cursor: "pointer",
-                      background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: "#FFF8EE",
+                      background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: T.ink,
                       fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.04em",
                       display: "inline-flex", alignItems: "center", gap: 6,
                     }}><RetryGlyph size={13} /> Try again</button>
@@ -1208,6 +1404,27 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             {/* Result actions */}
             {view === "done" && resultUrl && resultUrl !== "__demo__" && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12, alignItems: "center" }}>
+                {/* Reward receipt — the server-confirmed Season pts this run
+                    actually granted (0 = daily cap reached; never fabricated). */}
+                {lastPointsAwarded != null && (
+                  <span
+                    role="status"
+                    title={lastPointsAwarded > 0
+                      ? "Season Rewards recorded for this generation (non-financial loyalty points)"
+                      : `Daily studio cap (${STUDIO_PTS_DAILY_CAP} pts) reached — this run earned 0 today`}
+                    style={{
+                      padding: "7px 12px", borderRadius: 999,
+                      fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.06em",
+                      background: lastPointsAwarded > 0 ? "rgba(92,138,78,0.22)" : "rgba(252,233,207,0.12)",
+                      color: lastPointsAwarded > 0 ? "#BFE3AF" : "rgba(252,233,207,.85)",
+                      border: `1px solid ${lastPointsAwarded > 0 ? "rgba(146,196,125,.45)" : "rgba(252,233,207,.30)"}`,
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                    }}
+                  >
+                    <SparkGlyph size={11} />
+                    {lastPointsAwarded > 0 ? `+${lastPointsAwarded} pts recorded` : "Daily pts cap reached"}
+                  </span>
+                )}
                 <button
                   onClick={() => remix()}
                   aria-label="Remix this in a new style"
@@ -1215,7 +1432,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   className="mp-enter"
                   style={{
                     padding: "9px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                    background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: "#FFF8EE",
+                    background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: T.ink,
                     fontFamily: T.body, fontSize: 13, fontWeight: 700,
                     boxShadow: "var(--ed-shadow-card)",
                     display: "inline-flex", alignItems: "center", gap: 7,
@@ -1349,12 +1566,12 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                       }}
                       title={varInsufficient
                         ? `4 variations cost ${varCost} credits — you have ${credits}`
-                        : `Generate 4 fresh takes of this prompt (costs ${varCost} credits)`}
+                        : `4 separate paid image runs (${varCost} cr) — each completed one earns +10 Season pts, up to the daily cap of ${STUDIO_PTS_DAILY_CAP}`}
                     ><SparkGlyph size={12} /> {varRunning
                       ? "Generating…"
                       : varInsufficient
                       ? `4 variations — needs ${varCost} cr, you have ${credits}`
-                      : `4 variations · ${varCost} cr`}</button>
+                      : `4 variations · ${varCost} cr · up to +40 pts`}</button>
                   );
                 })()}
                 <div style={{ flex: 1 }} />
@@ -1366,7 +1583,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
             {/* Variations grid — each tile swaps into the main result on click */}
             {view === "done" && (varRunning || variations.length > 0 || error) && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 13, fontFamily: T.m, letterSpacing: "0.14em", color: T.mono, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ fontSize: 13, fontFamily: T.m, letterSpacing: "0.14em", color: T.foil, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
                   <SparkGlyph size={11} /> VARIATIONS{varRunning ? ` · ${variations.length}/4…` : ""}
                 </div>
                 {/* Item #11-1: a mid-run failure used to be swallowed (view stays
@@ -1408,11 +1625,60 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               </div>
             )}
 
+            {/* ── FILM STRIP — recent takes as frames on the stage. Click a
+                frame to reload it; VIEW ALL opens the full album. ── */}
+            <div style={{ marginTop: 14 }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 8, paddingInline: 2 }}>
+                <span style={{
+                  fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.16em",
+                  color: T.foil, textTransform: "uppercase",
+                }}>FILM STRIP · RECENT TAKES</span>
+                {!isDemo && history.length > 0 && (
+                  <button onClick={openGallery} className="ed-underline-slide" style={{
+                    background: "none", border: "none", cursor: "pointer", padding: 0,
+                    fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
+                    color: T.foil, textTransform: "uppercase",
+                  }}>VIEW ALL →</button>
+                )}
+              </div>
+              <div className="studio-filmstrip">
+                {history.length > 0 ? history.map(g => (
+                  <button
+                    key={g.id}
+                    onClick={() => reusePrompt(g)}
+                    title={g.prompt || "(no prompt)"}
+                    aria-label={g.prompt ? `View: ${g.prompt}` : "View creation"}
+                    style={{
+                      width: 118, height: 64, borderRadius: 6, overflow: "hidden",
+                      border: "1px solid rgba(252,233,207,.24)", background: "#191334",
+                      cursor: "pointer", padding: 0, display: "block", flexShrink: 0,
+                    }}
+                  >
+                    {g.video_path && /\.(mp4|webm)$/i.test(g.video_path)
+                      ? <video src={g.video_path} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : (g.photo_path || g.video_path)
+                      ? <img src={g.photo_path || g.video_path || ""} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : <span style={{
+                          width: "100%", height: "100%",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em",
+                          color: (g.status === "pending" || g.status === "running") ? "rgba(252,233,207,.8)" : "#F0A282",
+                        }} className={(g.status === "pending" || g.status === "running") ? "studio-pulse" : undefined}>
+                          {(g.status === "pending" || g.status === "running") ? "RENDERING" : g.status === "failed" ? "FAILED" : "?"}
+                        </span>}
+                  </button>
+                )) : (
+                  <span style={{
+                    color: "rgba(252,233,207,.78)", fontFamily: T.m, fontSize: 13,
+                    padding: "10px 6px", whiteSpace: "nowrap",
+                  }}>No takes yet — every completed generation lands on this strip.</span>
+                )}
+              </div>
+            </div>
           </div>
 
-        {/* ── Prompt block — lives in the LEFT column under the preview, so the
-              two things you touch in order (see the pet → say what to make) stack
-              together and don't strand a gap beside the taller controls. ── */}
+        {/* ── Prompt console — under the stage, so the order you work in is
+              see the frame → say what to make → generate. ── */}
         <div className="mp-enter-3" style={{
           background: T.paper, borderRadius: 16, padding: 18,
           border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
@@ -1466,12 +1732,13 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                 marginTop: 8, fontSize: 13, fontFamily: T.body, color: T.muted,
                 display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6,
               }}>
-                <span>No sign-in needed to preview.</span>
+                <span>No sign-in needed to preview — previews are free and earn no points.</span>
                 <button type="button" onClick={openSignIn} style={{
                   border: "none", background: "none", padding: 0, cursor: "pointer",
                   fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.06em",
                   color: T.terra, textTransform: "uppercase",
                 }}>Sign in to generate for real →</button>
+                <span>Real generations earn Season Rewards: +10 / image · +20 / video.</span>
               </div>
             </div>
           )}
@@ -1605,163 +1872,121 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           {/* Pet-LoRA: train this pet's exact face (renders only when the
               feature is enabled server-side and a real pet is selected). */}
           {pet && !isDemo && (
-            <Reveal dir="left">
-              <PetLoraPanel petId={pet.id} petName={pet.name} />
-            </Reveal>
+            <PetLoraPanel petId={pet.id} petName={pet.name} />
           )}
+        </div>{/* /prompt console */}
 
-          {/* Templates — one tap loads a full, pet-anchored scene + flips to
-              video. The card art previews the vibe; tap, then hit Generate. */}
-          <div style={{ marginTop: 16 }}>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
+        {/* ── Generate (authed) — the real spend, right under the console so
+            mobile reads canvas → prompt → action. Guest demo CTA lives up by
+            the prompt. Cost AND reward are stated on the action itself. ── */}
+        {!isDemo && (insufficient && runCost != null && view !== "generating" ? (
+          // Out of credits links to the honest credit-options section. Purchase
+          // rails are currently paused, so the CTA must not promise a checkout.
+          <a
+            href="/?section=home&scroll=pricing"
+            className="mp-enter-4 studio-cta"
+            style={{
+              ...generateBtn,
+              display: "block", textAlign: "center", textDecoration: "none",
+              background: `linear-gradient(180deg,${T.cta1},${T.cta2})`,
+              color: T.ink,
+              boxShadow: "0 20px 40px -22px rgba(226,125,12,.8)",
+            }}
+          >
+            Not enough credits — purchases are paused →
+            <span style={{
+              display: "block", fontSize: 13, fontFamily: T.m, fontWeight: 700,
+              letterSpacing: "0.06em", marginTop: 4,
+            }}>this run costs {runCost} cr, you have {credits}</span>
+          </a>
+        ) : !!pet && !!chosenModel && view !== "generating" && !prompt.trim() ? (
+          // The ONLY blocker is the empty prompt — that's guidance, not a
+          // disabled action. Full-opacity "start here" bar (never a washed
+          // 45%-opacity button); clicking it focuses the prompt box.
+          <button
+            onClick={() => {
+              const el = promptRef.current;
+              if (!el) return;
+              el.focus({ preventScroll: true });
+              el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }}
+            className="mp-enter-4 studio-start-here"
+            aria-label="Write a prompt to enable Generate"
+            style={{
+              width: "100%", padding: "16px 22px", borderRadius: 16,
+              background: T.paper, cursor: "pointer",
+              border: `1.5px dashed ${T.studio}`,
+              boxShadow: "var(--ed-shadow-card)",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 14,
+              textAlign: "left", fontFamily: T.body,
+            }}
+          >
+            <span aria-hidden style={{
+              width: 38, height: 38, borderRadius: 11, flexShrink: 0,
+              background: "rgba(190,79,40,0.12)", color: T.studio,
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+            }}><PencilGlyph size={17} /></span>
+            <span style={{ minWidth: 0 }}>
               <span style={{
-                fontSize: 13, fontFamily: T.m,
-                letterSpacing: "0.14em", color: T.studio, fontWeight: 700, textTransform: "uppercase",
-                display: "inline-flex", alignItems: "center", gap: 5,
-              }}><Icon name="sparkling" size={12} /> TEMPLATES</span>
-              <span style={{ fontSize: 13, fontFamily: T.m, color: T.muted2 }}>
-                one tap → a full scene · 🔥 trending up top
+                display: "block", fontFamily: T.m, fontSize: 13, fontWeight: 700,
+                letterSpacing: "0.16em", color: T.studio, textTransform: "uppercase",
+                marginBottom: 3,
+              }}>START HERE</span>
+              <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: T.ink, lineHeight: 1.4 }}>
+                Write what {petDisplayName} should be doing — or tap a template in the library
               </span>
-            </div>
-            <div style={{
-              display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(236px, 1fr))", gap: 14,
-            }}>
-              {TEMPLATES.map((t, i) => {
-                const ex = TEMPLATE_EXAMPLES[t.id];
-                const vid = TEMPLATE_EXAMPLE_VIDEOS[t.id];
-                // Cream paper chip for the emoji mark — printed, not floating.
-                const emojiChip: React.CSSProperties = {
-                  fontSize: 13, lineHeight: 1, background: T.paper,
-                  border: `1px solid ${T.hair}`, borderRadius: 8, padding: "3px 6px",
-                };
-                const catLabel = t.category === "trending"
-                  ? (TRENDING_BADGE_IDS.has(t.id) ? "🔥 trending" : "")
-                  : t.category;
-                // Hover tooltip: the shot-by-shot beats when we have them, else
-                // fall back to the card's own concrete description.
-                const tooltip = t.beats?.length ? `${t.title} — ${t.beats.join(" → ")}` : t.description;
-                return (
-                  <Reveal key={t.id} dir="up" delay={Math.min(i, 8) * 70}>
-                  <button
-                    className="ed-card-hover"
-                    onClick={() => applyTemplate(t)}
-                    title={tooltip}
-                    // Item #25-4: no autoplaying wall of videos — motion previews
-                    // on a fine-pointer hover only; touch keeps the poster.
-                    onPointerEnter={vid ? (e) => {
-                      if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
-                      e.currentTarget.querySelector("video")?.play().catch(() => {});
-                    } : undefined}
-                    onPointerLeave={vid ? (e) => {
-                      const v = e.currentTarget.querySelector("video");
-                      if (v) { v.pause(); v.currentTime = 0; }
-                    } : undefined}
-                    style={{
-                      width: "100%", height: "100%",
-                      textAlign: "left", padding: 0, borderRadius: 14, overflow: "hidden",
-                      border: `1px solid ${T.hair}`, background: T.paper, cursor: "pointer",
-                      boxShadow: "var(--ed-shadow-card)",
-                      display: "flex", flexDirection: "column",
-                    }}
-                  >
-                    {vid ? (
-                      <div style={{ position: "relative", height: 140, overflow: "hidden" }}>
-                        <video
-                          src={vid} poster={ex} loop muted playsInline preload="metadata"
-                          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                        />
-                        <span style={{ ...emojiChip, position: "absolute", left: 9, bottom: 7 }}>{t.emoji}</span>
-                        <span style={{ ...cardTag, position: "absolute", top: 7, right: 8 }}>▸ MOTION</span>
-                        {catLabel && (
-                        <span style={{ ...cardTag, position: "absolute", right: 9, bottom: 8 }}>{catLabel}</span>
-                        )}
-                      </div>
-                    ) : ex ? (
-                      <div style={{
-                        height: 140, background: `url(${ex}) center/cover no-repeat`,
-                        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
-                        padding: "8px 9px",
-                      }}>
-                        <span style={emojiChip}>{t.emoji}</span>
-                        {catLabel && (
-                        <span style={cardTag}>{catLabel}</span>
-                        )}
-                      </div>
-                    ) : t.swatch ? (
-                      // No captured example yet — a looping motion-mnemonic in the
-                      // template's own palette, so the card previews the vibe as
-                      // MOTION instead of a dead poster.
-                      <TemplateMnemonic swatch={t.swatch} emoji={t.emoji} catLabel={catLabel} />
-                    ) : (
-                      // No example art yet — a designed paper fallback (never a
-                      // gray void): big die-cut duotone sticker glyph on cream
-                      // stock + the template's swatch as a printed color band.
-                      <div style={{
-                        position: "relative", height: 140,
-                        background: T.paper, borderBottom: `1px solid ${T.hair}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                      }}>
-                        <span aria-hidden style={{
-                          display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          width: 66, height: 66, borderRadius: 18,
-                          background: "#FFFDF6", border: `1px solid ${T.hair}`,
-                          boxShadow: "3px 4px 0 rgba(33,26,18,.12)",
-                          transform: "rotate(-4deg)",
-                        }}>
-                          <span style={{
-                            fontSize: 32, lineHeight: 1,
-                            // duotone: strip the emoji's own palette, re-ink it warm
-                            filter: "grayscale(1) sepia(.6) saturate(2.4) hue-rotate(-16deg) opacity(.92)",
-                          }}>{t.emoji}</span>
-                        </span>
-                        {catLabel && (
-                          <span style={{
-                            position: "absolute", top: 7, right: 8,
-                            fontSize: 13, fontFamily: T.m,
-                            letterSpacing: "0.1em", fontWeight: 700, textTransform: "uppercase",
-                            color: T.muted2,
-                          }}>{catLabel}</span>
-                        )}
-                        {/* printed swatch color band */}
-                        <span aria-hidden style={{
-                          position: "absolute", left: 0, right: 0, bottom: 0, height: 10,
-                          background: t.swatch || CATEGORY_BAND[t.category],
-                        }} />
-                      </div>
-                    )}
-                    <div style={{ padding: "9px 11px 11px" }}>
-                      <div style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700, color: T.ink, letterSpacing: "-0.01em" }}>
-                        {t.title}
-                      </div>
-                      <div style={{
-                        fontSize: 13, color: T.muted2, marginTop: 3, lineHeight: 1.45,
-                        // clamp to 2 clean lines — no mid-word truncation
-                        display: "-webkit-box", WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical", overflow: "hidden",
-                      }}>
-                        {t.description}
-                      </div>
-                      {t.beats && t.beats.length > 0 && (
-                        <div style={{
-                          fontSize: 13, color: T.studio, marginTop: 6, fontFamily: T.m, fontWeight: 700,
-                          letterSpacing: "0.02em",
-                          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                        }} title={t.beats.join(" → ")}>
-                          ▸ {t.beats.length} beats · {t.beats[0]}
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                  </Reveal>
-                );
-              })}
-            </div>
+            </span>
+          </button>
+        ) : (
+        <div className="mp-enter-4">
+        <button onClick={generate} disabled={!canGenerate} className="studio-cta" style={{
+          ...generateBtn,
+          cursor: canGenerate ? "pointer" : view === "generating" ? "progress" : "not-allowed",
+          // Never fade the whole button: a genuinely-disabled state keeps
+          // FULL-opacity text on a muted (deeper) surface so the label stays
+          // readable — no grey-on-grey wash.
+          ...(canGenerate || view === "generating" ? {} : {
+            background: "#8C4A2E", color: "rgba(252,233,207,.95)",
+            boxShadow: "0 12px 24px -18px rgba(140,74,46,.5)",
+          }),
+        }}>
+          {view === "generating"
+            ? (outputKind === "image" ? "Generating…" : "Generating… ~1–2 min")
+            : !chosenModel
+            // Item #25-2: never advertise a 0-credit run while engines load.
+            ? "Loading engines…"
+            : !pet
+            ? "Loading pets…"
+            : (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
+                <PlayGlyph size={16} />
+                {/* Cost AND reward on the action itself — the reward mirrors
+                    exactly what the server grants (runReward). */}
+                <span>Generate · {chosenModel.creditsPerRun} cr · earns +{runReward} pts</span>
+              </span>
+            )}
+        </button>
+        {/* Honest reward footnote for the spend action */}
+        {!!chosenModel && !!pet && view !== "generating" && (
+          <div style={{
+            marginTop: 8, fontSize: 13, fontFamily: T.m, color: T.muted2,
+            display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center",
+            textAlign: "center", lineHeight: 1.5,
+          }}>
+            <span>Season Rewards: +10 / image · +20 / video per completed run</span>
+            <span>· daily cap {STUDIO_PTS_DAILY_CAP} pts</span>
+            {credits != null && credits >= chosenModel.creditsPerRun && (
+              <span>· balance covers {Math.floor(credits / Math.max(1, chosenModel.creditsPerRun))} run{Math.floor(credits / Math.max(1, chosenModel.creditsPerRun)) === 1 ? "" : "s"}</span>
+            )}
           </div>
+        )}
         </div>
-          </div>{/* /studio-left */}
+        ))}
+          </div>{/* /studio-zone-stage */}
 
-          {/* CONTROLS */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* ═══ ZONE 3 — INSPECTOR: generation settings + run card + live
+              queue (sticky on desktop, like a real tool's right panel) ═══ */}
+          <aside className="studio-zone-inspector mp-enter-3" style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
             {/* Pet */}
             <Panel label="SUBJECT" className="mp-enter-2">
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -2015,205 +2240,48 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                 </div>
               )}
             </Panel>
-          </div>
-        </div>
 
-        {/* ── Generate (authed) ── The guest's "Preview a demo" CTA lives up by
-            the prompt/preview instead; this bottom action is the real spend. ── */}
-        {!isDemo && (insufficient && runCost != null && view !== "generating" ? (
-          // Out of credits links to the honest credit-options section. Purchase
-          // rails are currently paused, so the CTA must not promise a checkout.
-          <a
-            href="/?section=home&scroll=pricing"
-            className="mp-enter-4 studio-cta"
-            style={{
-              ...generateBtn,
-              display: "block", textAlign: "center", textDecoration: "none",
-              background: `linear-gradient(180deg,${T.cta1},${T.cta2})`,
-              color: "#FFF8EE",
-              boxShadow: "0 20px 40px -22px rgba(226,125,12,.8)",
-            }}
-          >
-            Not enough credits — purchases are paused →
-            <span style={{
-              display: "block", fontSize: 13, fontFamily: T.m, fontWeight: 700,
-              letterSpacing: "0.06em", marginTop: 4,
-            }}>this run costs {runCost} cr, you have {credits}</span>
-          </a>
-        ) : !!pet && !!chosenModel && view !== "generating" && !prompt.trim() ? (
-          // The ONLY blocker is the empty prompt — that's guidance, not a
-          // disabled action. Full-opacity "start here" bar (never a washed
-          // 45%-opacity button); clicking it focuses the prompt box.
-          <button
-            onClick={() => {
-              const el = promptRef.current;
-              if (!el) return;
-              el.focus({ preventScroll: true });
-              el.scrollIntoView({ behavior: "smooth", block: "center" });
-            }}
-            className="mp-enter-4 studio-start-here"
-            aria-label="Write a prompt to enable Generate"
-            style={{
-              width: "100%", padding: "16px 22px", borderRadius: 16,
-              background: T.paper, cursor: "pointer",
-              border: `1.5px dashed ${T.studio}`,
-              boxShadow: "var(--ed-shadow-card)",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 14,
-              textAlign: "left", fontFamily: T.body,
-            }}
-          >
-            <span aria-hidden style={{
-              width: 38, height: 38, borderRadius: 11, flexShrink: 0,
-              background: "rgba(190,79,40,0.12)", color: T.studio,
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-            }}><PencilGlyph size={17} /></span>
-            <span style={{ minWidth: 0 }}>
-              <span style={{
-                display: "block", fontFamily: T.m, fontSize: 13, fontWeight: 700,
-                letterSpacing: "0.16em", color: T.studio, textTransform: "uppercase",
-                marginBottom: 3,
-              }}>START HERE</span>
-              <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: T.ink, lineHeight: 1.4 }}>
-                Write what {petDisplayName} should be doing — or tap a template above
-              </span>
-            </span>
-          </button>
-        ) : (
-        <button onClick={generate} disabled={!canGenerate} className="mp-enter-4 studio-cta" style={{
-          ...generateBtn,
-          cursor: canGenerate ? "pointer" : view === "generating" ? "progress" : "not-allowed",
-          // Never fade the whole button: a genuinely-disabled state keeps
-          // FULL-opacity text on a muted (deeper) surface so the label stays
-          // readable — no grey-on-grey wash.
-          ...(canGenerate || view === "generating" ? {} : {
-            background: "#8C4A2E", color: "rgba(252,233,207,.95)",
-            boxShadow: "0 12px 24px -18px rgba(140,74,46,.5)",
-          }),
-        }}>
-          {view === "generating"
-            ? (outputKind === "image" ? "Generating…" : "Generating… ~1–2 min")
-            : !chosenModel
-            // Item #25-2: never advertise a 0-credit run while engines load.
-            ? "Loading engines…"
-            : !pet
-            ? "Loading pets…"
-            : (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
-                <PlayGlyph size={16} />
-                <span>
-                  Generate · {chosenModel.creditsPerRun} credits
-                  {credits != null && credits >= chosenModel.creditsPerRun
-                    ? ` · you have ${creditAnim} (enough for ${Math.floor(credits / Math.max(1, chosenModel.creditsPerRun))} run${Math.floor(credits / Math.max(1, chosenModel.creditsPerRun)) === 1 ? "" : "s"})`
-                    : ""}
-                </span>
-              </span>
-            )}
-        </button>
-        ))}
-
-        {/* ── Render queue: live progress for the in-flight job + any pending
-            server jobs. Real backend state, never faked. ── */}
-        {!isDemo && (view === "generating" || history.some(g => g.status === "pending" || g.status === "running")) && (
-          <RenderQueue
-            generating={view === "generating"}
-            kind={outputKind}
-            progress={genProgress}
-            pending={history.filter(g => g.status === "pending" || g.status === "running")}
-          />
-        )}
-
-        {/* ── Recent history strip — scroll-reveals from below ── */}
-        {history.length > 0 ? (
-          <Reveal dir="up" style={{ marginTop: 6 }}>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
-              <div style={panelLabel}>RECENT</div>
-              {!isDemo && (
-                <button onClick={openGallery} className="ed-underline-slide" style={{
-                  background: "none", border: "none", cursor: "pointer", padding: 0,
-                  fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
-                  color: T.studio, textTransform: "uppercase",
-                }}>VIEW ALL →</button>
-              )}
-            </div>
-            <div style={{
-              display: "flex", gap: 10, overflowX: "auto",
-              paddingBottom: 8,
-            }}>
-              {history.map(g => (
-                <div key={g.id} style={{ position: "relative", flexShrink: 0 }}>
-                  <button onClick={() => reusePrompt(g)} className="mp-lift" style={{
-                    width: 140, height: 80, borderRadius: 12, overflow: "hidden",
-                    border: `1px solid ${T.hair}`, background: T.paper,
-                    cursor: "pointer", padding: 0, display: "block",
-                    boxShadow: "var(--ed-shadow-card)",
-                  }} title={g.prompt || "(no prompt)"} aria-label={g.prompt ? `View: ${g.prompt}` : "View creation"}>
-                    {g.video_path && /\.(mp4|webm)$/i.test(g.video_path)
-                      ? <video src={g.video_path} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      : (g.photo_path || g.video_path)
-                      ? <img src={g.photo_path || g.video_path || ""} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      : <div style={{
-                          width: "100%", height: "100%",
-                          background: T.inset,
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 18, color: T.mono,
-                        }}>{(g.status === "pending" || g.status === "running")
-                          ? <svg width={20} height={20} viewBox="0 0 24 24" fill="none"
-                              stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"
-                              className="studio-pulse" aria-label="Pending">
-                              <path d="M6 3h12" /><path d="M6 21h12" />
-                              <path d="M7 3c0 4 3.5 6 5 9-1.5 3-5 5-5 9" />
-                              <path d="M17 3c0 4-3.5 6-5 9 1.5 3 5 5 5 9" />
-                            </svg>
-                          : g.status === "failed"
-                          ? <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: T.terra }}>FAILED</span>
-                          : "?"}</div>}
-                  </button>
-                  {g.prompt && (
-                    <button
-                      onClick={() => remix(g.prompt)}
-                      aria-label="Remix in a new style"
-                      title="Remix — same prompt, new style"
-                      style={{
-                        position: "absolute", top: 4, right: 4,
-                        width: 24, height: 24, borderRadius: 8, border: "none",
-                        background: T.studio, color: T.creamOn,
-                        fontSize: 13, cursor: "pointer", padding: 0, lineHeight: 1,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: "0 4px 10px -4px rgba(190,79,40,.55)",
-                      }}
-                    ><svg width={14} height={14} viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
-                        aria-hidden="true">
-                        <path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M21 3v5h-5" />
-                        <path d="M21 12a9 9 0 0 1-15 6.7L3 16" /><path d="M3 21v-5h5" />
-                      </svg></button>
-                  )}
+            {/* ── RUN CARD: exactly what this run will cost and pay. Cost comes
+                from providers.ts via the API; the reward mirrors the server's
+                awardPointsCapped grant (runReward) — never a made-up number. ── */}
+            <Panel label="RUN CARD" className="mp-enter-5">
+              {isDemo ? (
+                <div style={{ fontSize: 13, color: T.muted2, fontFamily: T.body, lineHeight: 1.5 }}>
+                  Demo mode — previews are free and earn no points. Sign in to
+                  generate for real and earn Season Rewards (+10 image · +20 video).
                 </div>
-              ))}
-            </div>
-          </Reveal>
-        ) : (
-          <Reveal dir="up" style={{
-            marginTop: 6, padding: "22px 24px",
-            background: T.paper,
-            border: `1px dashed ${T.hair}`,
-            borderRadius: 14,
-            display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
-          }}>
-            <div style={{ display: "flex" }}><Icon name="film-reel" size={28} /></div>
-            <div style={{ flex: "1 1 200px" }}>
-              <div style={{ ...panelLabel, marginBottom: 4 }}>RECENT</div>
-              <div style={{ fontSize: 14, color: T.muted2, fontWeight: 500 }}>
-                Your generations will appear here. Click any to reuse the prompt.
-              </div>
-            </div>
-          </Reveal>
-        )}
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <RunCardRow k="Engine" v={chosenModel?.displayName || "—"} />
+                  <RunCardRow k="Cost" v={runCost != null ? `${runCost} cr` : "—"} />
+                  <RunCardRow k="Reward" v={`+${runReward} pts`} accent="thrive" note={`cap ${STUDIO_PTS_DAILY_CAP}/day`} />
+                  <RunCardRow k="Balance" v={credits != null ? `${credits} cr` : "—"} accent={insufficient ? "terra" : undefined} />
+                  <div style={{ fontSize: 13, color: T.muted, fontFamily: T.body, lineHeight: 1.45, marginTop: 2 }}>
+                    Points are non-financial Season Rewards standing.
+                    {!SEASON_SCHEDULED && " Season 1 is starting soon — points earned now carry in."}
+                  </div>
+                </div>
+              )}
+            </Panel>
+
+            {/* ── Render queue: live progress for the in-flight job + any
+                pending server jobs. Real backend state, never faked. ── */}
+            {!isDemo && (view === "generating" || history.some(g => g.status === "pending" || g.status === "running")) && (
+              <RenderQueue
+                generating={view === "generating"}
+                kind={outputKind}
+                progress={genProgress}
+                pending={history.filter(g => g.status === "pending" || g.status === "running")}
+              />
+            )}
+          </aside>
+        </div>{/* /studio-workspace */}
 
         {/* ── Exploration notes: honest research directions — no dates, no
             commitments (D5). Below the actionable flow so it doesn't push the
-            Generate CTA + recent work down on first load. Pops in on scroll. ── */}
-        <Reveal dir="pop" style={{
+            Generate CTA + recent work down on first load. Static — a pro tool
+            doesn't scroll-animate its panels over each other. ── */}
+        <div style={{
           marginTop: 12,
           background: T.paper,
           color: T.ink, borderRadius: 18, padding: "22px 24px",
@@ -2262,7 +2330,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               body="Studying whether owners could ever share or license their pet's trained identity model. Idea stage only."
             />
           </div>
-        </Reveal>
+        </div>
       </div>
 
       {/* ── Director question sheet (phase:"questions" → phase:"final"): the
@@ -2275,7 +2343,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           aria-modal="true"
           aria-label="Director — decide the shots"
           style={{
-            position: "fixed", inset: 0, zIndex: 85,
+            // Above the fixed Nav (zIndex 100) — at 85 the nav bar painted OVER
+            // this sheet and overlapped its content while scrolling it.
+            position: "fixed", inset: 0, zIndex: 112,
             background: "rgba(0,0,0,.5)",
             backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
             display: "flex", alignItems: "flex-start", justifyContent: "center",
@@ -2458,7 +2528,9 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
         <div
           onClick={() => setGalleryOpen(false)}
           style={{
-            position: "fixed", inset: 0, zIndex: 80,
+            // Above the fixed Nav (zIndex 100) — at 80 the nav bar painted OVER
+            // the gallery and overlapped its content while scrolling it.
+            position: "fixed", inset: 0, zIndex: 110,
             background: "rgba(0,0,0,.5)",
             backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -2648,15 +2720,72 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
         @keyframes studioQueueIndet { 0% { transform: translateX(-60%); } 100% { transform: translateX(260%); } }
         .studio-queue-indet { animation: studioQueueIndet 1.4s ease-in-out infinite; }
         @keyframes studioMnemonicDrift { 0%,100% { transform: translate3d(0,0,0); } 50% { transform: translate3d(0,-6%,0); } }
+        @keyframes studioSafelight { 0%,100% { opacity: .5; } 50% { opacity: .8; } }
+        .studio-safelight { animation: studioSafelight 2.8s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) {
           .studio-cta::after { animation: none; }
           .studio-cta:hover:not(:disabled), .studio-cta:active:not(:disabled) { transform: none; }
           .studio-start-here:hover, .studio-start-here:active { transform: none; }
           .studio-queue-indet { animation: none; }
           .studio-mnemonic { animation: none !important; }
+          .studio-safelight { animation: none; }
         }
-        @media (max-width: 880px) {
-          .studio-pro-grid { grid-template-columns: 1fr !important; }
+
+        /* ── Nav clearance: the fixed nav wraps TALLER at narrow widths, so
+           every offset tracks the MEASURED height (--studio-nav-h) instead of
+           a hardcoded 60px that let content slide under the bar. ── */
+        .studio-root { padding: calc(var(--studio-nav-h, 60px) + 34px) 24px 60px; }
+        @media (max-width: 640px) { .studio-root { padding-left: 14px; padding-right: 14px; } }
+
+        /* ── PRO workspace: template rail · canvas stage · inspector ── */
+        .studio-workspace {
+          display: grid;
+          grid-template-columns: 248px minmax(0, 1fr) 332px;
+          gap: 18px; align-items: start;
+        }
+        .studio-zone-rail, .studio-zone-inspector {
+          position: sticky;
+          top: calc(var(--studio-nav-h, 60px) + 16px);
+          max-height: calc(100vh - var(--studio-nav-h, 60px) - 32px);
+          overflow-y: auto; overscroll-behavior: contain;
+          scrollbar-width: thin; min-width: 0;
+        }
+        .studio-template-list { display: flex; flex-direction: column; gap: 10px; }
+        @media (max-width: 1320px) {
+          .studio-workspace { grid-template-columns: 212px minmax(0, 1fr) 300px; }
+        }
+        @media (max-width: 1080px) {
+          /* Stacked, canvas-first: stage → inspector → template library */
+          .studio-workspace { grid-template-columns: 1fr; gap: 16px; }
+          .studio-zone-rail, .studio-zone-inspector { position: static; max-height: none; overflow: visible; }
+          .studio-zone-stage { order: 1; }
+          .studio-zone-inspector { order: 2; }
+          .studio-zone-rail { order: 3; }
+          .studio-template-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); }
+        }
+
+        /* gold-foil registration marks on the stage corners */
+        .studio-stage::before, .studio-stage::after {
+          content: ""; position: absolute; width: 14px; height: 14px;
+          border: 1.5px solid rgba(232,199,126,.55); pointer-events: none;
+        }
+        .studio-stage::before { top: 8px; left: 8px; border-right: none; border-bottom: none; border-top-left-radius: 6px; }
+        .studio-stage::after { bottom: 8px; right: 8px; border-left: none; border-top: none; border-bottom-right-radius: 6px; }
+
+        /* film-strip: sprocket rows are painted on the CONTAINER background
+           (not the scrolling content) so they frame the strip at any scroll */
+        .studio-filmstrip {
+          display: flex; gap: 9px; overflow-x: auto; align-items: center;
+          padding: 17px 12px; border-radius: 12px;
+          background-color: #0D0A1C;
+          background-image:
+            repeating-linear-gradient(90deg, rgba(252,233,207,.20) 0 7px, transparent 7px 18px),
+            repeating-linear-gradient(90deg, rgba(252,233,207,.20) 0 7px, transparent 7px 18px);
+          background-size: 100% 5px, 100% 5px;
+          background-position: 0 6px, 0 calc(100% - 6px);
+          background-repeat: no-repeat;
+          box-shadow: inset 0 0 0 1px rgba(232,199,126,.18);
+          scrollbar-width: thin;
         }
       `}</style>
     </div>
@@ -2722,7 +2851,7 @@ function PreviewIdle({ pet, isDemo }: { pet: Pet | null; isDemo?: boolean }) {
   );
 }
 
-function PreviewGenerating({ kind, progress }: { kind: "image" | "video"; progress?: number | null }) {
+function PreviewGenerating({ kind, progress, isDemo }: { kind: "image" | "video"; progress?: number | null; isDemo?: boolean }) {
   const [secs, setSecs] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setSecs((s) => s + 1), 1000);
@@ -2742,23 +2871,42 @@ function PreviewGenerating({ kind, progress }: { kind: "image" | "video"; progre
   const est = Math.min(95, Math.round((secs / total) * 100));
   const pct = real ?? est;
   return (
-    <div style={{ color: "#FCE9CF", textAlign: "center", padding: 28, width: "100%", maxWidth: 320 }}>
-      <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 13, letterSpacing: "0.16em", color: "rgba(252,233,207,.85)", textTransform: "uppercase" }}>Developing</div>
-      <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 22, marginTop: 6, letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums" }}>Generating · {secs}s</div>
-      <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,.95)", marginTop: 6 }}>{line}</div>
-      {/* Determinate strip on the developing plate. The ONLY motion: this bar
-          advancing and the status line swapping. */}
-      <div style={{ marginTop: 16, height: 12, borderRadius: 999, background: "rgba(252,233,207,0.14)", border: "1px solid rgba(252,233,207,0.4)", overflow: "hidden", maxWidth: 260, marginInline: "auto" }}>
-        <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#F49B2A,#E27D0C)", transition: "width 1s linear" }} />
-      </div>
-      <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,.85)", marginTop: 8, fontVariantNumeric: "tabular-nums" }}>
-        {real != null ? `${pct}%` : `≈${pct}% · est.`} · {kind === "video" ? "keep this page open" : "rendering"}
-      </div>
-      {real == null && (
-        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,.85)", marginTop: 3 }}>
-          time estimate, not job progress
+    <div style={{
+      position: "relative", width: "100%", height: "100%",
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      {/* darkroom safelight: a slow amber-red wash over the plate while the
+          print develops — decorative only, killed by prefers-reduced-motion */}
+      <div aria-hidden className="studio-safelight" style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        background: "radial-gradient(120% 95% at 50% 18%, rgba(190,64,30,.34), rgba(120,34,18,.10) 55%, transparent 78%)",
+      }} />
+      <div style={{ position: "relative", color: "#FCE9CF", textAlign: "center", padding: 28, width: "100%", maxWidth: 330 }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 13, letterSpacing: "0.18em", color: "rgba(252,233,207,.85)", textTransform: "uppercase" }}>Darkroom · Developing</div>
+        <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 22, marginTop: 6, letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums" }}>Generating · {secs}s</div>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,.95)", marginTop: 6 }}>{line}</div>
+        {/* Determinate strip on the developing plate. The ONLY motion: this bar
+            advancing, the status line swapping, and the safelight breathing. */}
+        <div style={{ marginTop: 16, height: 12, borderRadius: 999, background: "rgba(252,233,207,0.14)", border: "1px solid rgba(252,233,207,0.4)", overflow: "hidden", maxWidth: 260, marginInline: "auto" }}>
+          <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#F49B2A,#E27D0C)", transition: "width 1s linear" }} />
         </div>
-      )}
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,.85)", marginTop: 8, fontVariantNumeric: "tabular-nums" }}>
+          {real != null ? `${pct}%` : `≈${pct}% · est.`} · {kind === "video" ? "keep this page open" : "rendering"}
+        </div>
+        {real == null && (
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,.85)", marginTop: 3 }}>
+            time estimate, not job progress
+          </div>
+        )}
+        {/* Reward context on the develop plate: what this run pays when it
+            lands — same numbers the server grants (see runReward). A DEMO
+            preview is free and pays nothing, so it says exactly that. */}
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(232,199,126,.9)", marginTop: 10, fontWeight: 700, letterSpacing: "0.06em" }}>
+          {isDemo
+            ? "Demo preview — free · earns no points"
+            : `Pays +${kind === "video" ? 20 : 10} Season pts on completion · daily cap applies`}
+        </div>
+      </div>
     </div>
   );
 }
@@ -2838,7 +2986,7 @@ function PreviewDemo({ pet, prompt, onSignIn }: { pet: Pet | null; prompt: strin
         alignSelf: "flex-start", border: "none", cursor: "pointer",
         padding: "10px 18px", borderRadius: 10,
         background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
-        color: "#FFF8EE", fontWeight: 800, fontSize: 13,
+        color: "#211A12", fontWeight: 800, fontSize: 13,
         fontFamily: "var(--ed-disp)",
         boxShadow: "0 14px 26px -14px rgba(226,125,12,.8)",
         display: "inline-flex", alignItems: "center", gap: 7,
@@ -2877,7 +3025,7 @@ function RoadmapItem({ icon, title, body }: { icon: string; title: string; body:
 // travelling light sweep, so the card reads as motion (a preview of the vibe)
 // rather than a dead poster. Purely decorative CSS — killed under
 // prefers-reduced-motion via the .studio-mnemonic rule in the style block.
-function TemplateMnemonic({ swatch, emoji, catLabel }: { swatch: string; emoji: string; catLabel: string }) {
+function TemplateMnemonic({ swatch, emoji, catLabel, height = 140 }: { swatch: string; emoji: string; catLabel: string; height?: number }) {
   const drifters = [
     { left: "18%", top: "24%", size: 16, delay: "0s", dur: "3.2s" },
     { left: "66%", top: "18%", size: 12, delay: "0.5s", dur: "3.8s" },
@@ -2885,7 +3033,7 @@ function TemplateMnemonic({ swatch, emoji, catLabel }: { swatch: string; emoji: 
     { left: "80%", top: "58%", size: 14, delay: "0.9s", dur: "4.1s" },
   ];
   return (
-    <div style={{ position: "relative", height: 140, background: swatch, overflow: "hidden" }}>
+    <div style={{ position: "relative", height, background: swatch, overflow: "hidden" }}>
       {/* travelling light sweep */}
       <span aria-hidden className="studio-mnemonic" style={{
         position: "absolute", inset: "-20%",
@@ -3015,6 +3163,23 @@ function ModelSpecStrip({ model }: { model: StudioModel }) {
   );
 }
 
+// One line of the RUN CARD — a printed spec row: mono key, bold value.
+function RunCardRow({ k, v, note, accent }: { k: string; v: string; note?: string; accent?: "thrive" | "terra" }) {
+  const valueColor = accent === "thrive" ? T.thrive : accent === "terra" ? T.terra : T.ink;
+  return (
+    <div style={{
+      display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10,
+      padding: "7px 10px", borderRadius: 9, background: T.inset, border: `1px solid ${T.hair}`,
+    }}>
+      <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: T.mono, textTransform: "uppercase", flexShrink: 0 }}>{k}</span>
+      <span style={{ display: "inline-flex", alignItems: "baseline", gap: 6, minWidth: 0 }}>
+        <span style={{ fontFamily: T.disp, fontSize: 14, fontWeight: 700, color: valueColor, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v}</span>
+        {note && <span style={{ fontFamily: T.m, fontSize: 12, color: T.muted2, flexShrink: 0 }}>{note}</span>}
+      </span>
+    </div>
+  );
+}
+
 function Panel({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={className} style={{
@@ -3059,6 +3224,16 @@ const panelLabel: React.CSSProperties = {
   fontSize: 13, fontWeight: 700, letterSpacing: "0.14em",
   textTransform: "uppercase", color: T.mono,
   fontFamily: T.m,
+};
+
+// Reward chips on the mission strip — printed mono tags, values mirror the
+// server grant (see runReward).
+const missionChip: React.CSSProperties = {
+  fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.06em",
+  padding: "4px 10px", borderRadius: 999,
+  background: "#F5EFE2", color: "#3A3024",
+  border: "1px solid rgba(33,26,18,.13)",
+  flexShrink: 0,
 };
 
 // Corner tag over template imagery (▸ MOTION / category / ▸ PREVIEW). A solid

@@ -593,7 +593,9 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
     <div
       onMouseDown={() => { if (!exporting) onClose(); }}
       style={{
-        position: "fixed", inset: 0, zIndex: 90,
+        // Above the fixed global Nav (zIndex 100) — at 90 the nav bar painted
+        // OVER this fullscreen editor and overlapped its header while scrolling.
+        position: "fixed", inset: 0, zIndex: 114,
         background: "rgba(15,11,28,.62)",
         backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)",
         display: "flex", alignItems: "flex-start", justifyContent: "center",
