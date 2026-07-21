@@ -278,7 +278,7 @@ export default function WalletGate({ children, section }: any) {
               />
               <span style={{
                 position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)",
-                fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700, letterSpacing: ".1em",
+                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: ".1em",
                 color: "#BE4F28", background: "#FCE9CF", borderRadius: 6, padding: "3px 8px",
                 whiteSpace: "nowrap", boxShadow: "3px 4px 0 rgba(33,26,18,.14)",
               }}>{s.label}</span>

@@ -172,7 +172,7 @@ export default function DailyPetCard({ petId, petName }: { petId: number; petNam
                 &ldquo;{insight.insight}&rdquo;
               </div>
               <div style={{
-                marginTop: 8, fontFamily: ED.m, fontSize: 11.5,
+                marginTop: 8, fontFamily: ED.m, fontSize: 12,
                 letterSpacing: "0.1em", textTransform: "uppercase", color: ED.terracotta,
               }}>
                 {petName} · {insight.mood}{insight.wasNew ? " · new" : ""}

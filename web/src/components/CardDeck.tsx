@@ -677,7 +677,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                 display: "flex", alignItems: "center", justifyContent: "center",
                 animation: "cdSealDrop .5s cubic-bezier(.2,.85,.25,1) 560ms both",
               }}>
-                <span style={{ fontFamily: T.m, fontSize: 10, fontWeight: 700, letterSpacing: ".1em", color: "#FBE3D2", textShadow: "0 1px 1px rgba(80,20,0,.5)" }}>OWNED</span>
+                <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: "#FBE3D2", textShadow: "0 1px 1px rgba(80,20,0,.5)" }}>OWNED</span>
               </div>
             </div>
             {/* Holographic-ticket stub — grab the glowing dot and rip along the
@@ -1032,7 +1032,7 @@ function CatchTile({ onClick }: { onClick?: () => void }) {
         background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
         fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase",
       }}>Go catch ▸</span>
-      <div style={{ fontFamily: T.m, fontSize: 11.5, color: "rgba(251,246,236,.5)", letterSpacing: ".04em" }}>
+      <div style={{ fontFamily: T.m, fontSize: 12, color: "rgba(251,246,236,.5)", letterSpacing: ".04em" }}>
         📱 Best on mobile — or upload a photo
       </div>
     </button>

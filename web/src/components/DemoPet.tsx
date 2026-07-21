@@ -158,7 +158,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
             transition: "border-color .5s ease, box-shadow .5s ease",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "var(--ed-m)", fontSize: 10.5, letterSpacing: "0.12em", color: MUTED, padding: "0 3px 8px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.12em", color: MUTED, padding: "0 3px 8px" }}>
             <span>COMPANION</span><span>FILE №0742</span>
           </div>
           <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: "#F5EFE2" }}>
@@ -171,7 +171,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "10px 3px 0" }}>
             <span style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 19, color: INK, letterSpacing: "-0.01em" }}>{NAME}</span>
-            <span style={{ fontFamily: "var(--ed-m)", fontSize: 10.5, letterSpacing: "0.1em", color: MUTED }}>POMERANIAN · ✦</span>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.1em", color: MUTED }}>POMERANIAN · ✦</span>
           </div>
         </button>
       </div>

@@ -474,13 +474,13 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
       {/* Element + type tag */}
       <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
         <span style={{
-          fontFamily: "var(--ed-m)", fontSize: 10,
+          fontFamily: "var(--ed-m)", fontSize: 12,
           color: el.color, fontWeight: 600,
         }}>
           <Icon name={ELEMENT_ICONS[skill.element] || "normal"} size={10} />
         </span>
         <span style={{
-          fontFamily: "var(--ed-m)", fontSize: 10,
+          fontFamily: "var(--ed-m)", fontSize: 12,
           color: typeColor, fontWeight: 600, textTransform: "uppercase",
           padding: "1px 4px", borderRadius: 3,
           background: `${typeColor}12`,
@@ -517,7 +517,7 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
         )}
       </div>
       {/* Skill level stars */}
-      <div style={{ fontSize: 10, letterSpacing: 1, color: "#BE4F28" }}>
+      <div style={{ fontSize: 12, letterSpacing: 1, color: "#BE4F28" }}>
         {"★".repeat(skillLevel)}{"☆".repeat(Math.max(0, skill.maxLevel - skillLevel))}
       </div>
     </button>

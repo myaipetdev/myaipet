@@ -572,7 +572,7 @@ export default function Marketplace() {
               {/* Rarity badge */}
               <div style={{
                 position: "absolute", top: 12, right: 12,
-                fontFamily: "monospace", fontSize: 10, fontWeight: 700,
+                fontFamily: "monospace", fontSize: 12, fontWeight: 700,
                 textTransform: "uppercase", letterSpacing: "0.1em",
                 padding: "3px 10px", borderRadius: 8,
                 color: rarity.text, background: `${rarity.text}12`,
@@ -633,7 +633,7 @@ export default function Marketplace() {
               </div>
               <div style={{
                 marginTop: 6, textAlign: "right", fontFamily: "monospace",
-                fontSize: 11, color: "rgba(255,255,255,0.3)",
+                fontSize: 12, color: "rgba(255,255,255,0.3)",
               }}>
                 {item.price} item + {burnAmount} credit sink
               </div>

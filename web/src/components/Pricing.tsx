@@ -436,9 +436,9 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--ed-m)", fontSize: 13 }}>
             <thead>
               <tr style={{ background: "#ECE4D4" }}>
-                <th style={{ padding: "7px 14px", textAlign: "left", color: "#7A6E5A", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>Pack</th>
-                <th style={{ padding: "7px 14px", textAlign: "right", color: "#7A6E5A", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>Credits</th>
-                <th style={{ padding: "7px 14px", textAlign: "right", color: "#7A6E5A", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>Price</th>
+                <th style={{ padding: "7px 14px", textAlign: "left", color: "#7A6E5A", fontWeight: 700, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase" }}>Pack</th>
+                <th style={{ padding: "7px 14px", textAlign: "right", color: "#7A6E5A", fontWeight: 700, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase" }}>Credits</th>
+                <th style={{ padding: "7px 14px", textAlign: "right", color: "#7A6E5A", fontWeight: 700, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase" }}>Price</th>
               </tr>
             </thead>
             <tbody>

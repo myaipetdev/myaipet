@@ -431,7 +431,7 @@ function ThrowCan({ image, onThrow, onCancel }: { image: string; onThrow: () => 
       {!flying && <div style={{ position: "absolute", top: 16, left: 0, right: 0, textAlign: "center", color: "#FCE9CF", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,.6)", pointerEvents: "none" }}>Hold &amp; drag the can — release to throw</div>}
       {/* Last pre-commit moment: the throw is what bills the scan, so restate
           the honest cost here (numbers mirror economyGuards.consumeCatchVerify). */}
-      {!flying && <div style={{ position: "absolute", top: 38, left: 0, right: 0, textAlign: "center", color: "rgba(252,233,207,.85)", fontFamily: MONO, fontWeight: 700, fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,.6)", pointerEvents: "none" }}>1 scan per throw · 3 free a day, then 1 credit — catch or not</div>}
+      {!flying && <div style={{ position: "absolute", top: 38, left: 0, right: 0, textAlign: "center", color: "rgba(252,233,207,.85)", fontFamily: MONO, fontWeight: 700, fontSize: 12, letterSpacing: ".08em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,.6)", pointerEvents: "none" }}>1 scan per throw · 3 free a day, then 1 credit — catch or not</div>}
       <div onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
         style={{ position: "absolute", bottom: 26, left: "50%", width: 84, height: 84, cursor: "grab", touchAction: "none", display: "flex", alignItems: "center", justifyContent: "center", ...canStyle }} aria-label="Throw the can">
         <CanGraphic />
@@ -462,7 +462,7 @@ function RevealCard({ cat, points, newSpecies, onAgain, onDone }: { cat: Cat; po
           display: "flex", alignItems: "center", justifyContent: "center",
           animation: "ccSealDrop .5s cubic-bezier(.2,.85,.25,1) 700ms both",
         }}>
-          <span style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: ".1em", color: "#FBE3D2", textShadow: "0 1px 1px rgba(80,20,0,.5)" }}>CAUGHT</span>
+          <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: "#FBE3D2", textShadow: "0 1px 1px rgba(80,20,0,.5)" }}>CAUGHT</span>
         </div>
       </div>
       {/* First-of-its-kind — REAL check against the pre-catch collection. */}
@@ -698,11 +698,11 @@ function FieldGuide({ collection }: { collection: Cat[] }) {
             }}>
               {/* uncaught = die-cut ink silhouette (the "gotta find it" cue) */}
               <Icon name={s.icon} size={30} alt={got ? s.label : "Unknown species"} style={got ? undefined : { filter: "brightness(0)", opacity: 0.22 }} />
-              <div style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: got ? INK : MUTED }}>
+              <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: got ? INK : MUTED }}>
                 {got ? s.label : "???"}
               </div>
               {got && (
-                <span style={{ position: "absolute", top: 4, right: 4, fontFamily: MONO, fontSize: 10.5, fontWeight: 700, color: TEAL, background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 999, padding: "1px 6px", fontVariantNumeric: "tabular-nums" }}>×{n}</span>
+                <span style={{ position: "absolute", top: 4, right: 4, fontFamily: MONO, fontSize: 12, fontWeight: 700, color: TEAL, background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 999, padding: "1px 6px", fontVariantNumeric: "tabular-nums" }}>×{n}</span>
               )}
             </div>
           );
@@ -714,8 +714,8 @@ function FieldGuide({ collection }: { collection: Cat[] }) {
             background: INSET, border: `1px solid ${OUTLINE}`,
           }}>
             <Icon name={kindIcon(k)} size={30} alt={k} />
-            <div style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: INK, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{k}</div>
-            <span style={{ position: "absolute", top: 4, right: 4, fontFamily: MONO, fontSize: 10.5, fontWeight: 700, color: "#9A4E1E", background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 999, padding: "1px 6px", fontVariantNumeric: "tabular-nums" }}>×{counts.get(k)}</span>
+            <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: INK, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{k}</div>
+            <span style={{ position: "absolute", top: 4, right: 4, fontFamily: MONO, fontSize: 12, fontWeight: 700, color: "#9A4E1E", background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 999, padding: "1px 6px", fontVariantNumeric: "tabular-nums" }}>×{counts.get(k)}</span>
           </div>
         ))}
       </div>

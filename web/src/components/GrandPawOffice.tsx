@@ -154,7 +154,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
                 <button key={p} onClick={() => setPane(p)}
                   style={{ fontFamily: SANS, fontSize: 12.5, fontWeight: pane === p ? 700 : 500, textTransform: "capitalize", padding: "4px 13px", borderRadius: 999, border: "none", cursor: "pointer",
                     background: pane === p ? "#F1E7CC" : "transparent", color: pane === p ? INK : MUT2 }}>
-                  {p}{!narrow && <> <span style={{ fontFamily: MONO, fontSize: 10, color: MUT2 }}>⌘{p === "lobby" ? 1 : 2}</span></>}
+                  {p}{!narrow && <> <span style={{ fontFamily: MONO, fontSize: 12, color: MUT2 }}>⌘{p === "lobby" ? 1 : 2}</span></>}
                 </button>
               ))}
             </span>
@@ -164,7 +164,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
 
       {/* ── hero ── */}
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontFamily: MONO, fontSize: 11.5, letterSpacing: "0.22em", color: MUT2, marginBottom: 8 }}>{eyebrow}</div>
+        <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.22em", color: MUT2, marginBottom: 8 }}>{eyebrow}</div>
         <h1 style={{ fontFamily: SERIF, fontWeight: 400, fontSize: "clamp(28px,4.4vw,44px)", color: INK, margin: 0, lineHeight: 1.08, letterSpacing: "0.005em" }}>
           {greet}. Welcome to The Grand Paw.
         </h1>
@@ -180,7 +180,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
           placeholder={`Ask the hotel to do anything — ${petName} takes it`}
           maxLength={600}
           style={{ flex: 1, minWidth: 160, border: "none", outline: "none", background: "transparent", fontFamily: SANS, fontSize: 15, color: INK, padding: "8px 12px" }} />
-        {!narrow && <span style={{ fontFamily: MONO, fontSize: 11, color: MUT2, border: `1px solid ${CHIP_BR}`, borderRadius: 7, padding: "3px 7px", marginRight: 8 }}>⌘K</span>}
+        {!narrow && <span style={{ fontFamily: MONO, fontSize: 12, color: MUT2, border: `1px solid ${CHIP_BR}`, borderRadius: 7, padding: "3px 7px", marginRight: 8 }}>⌘K</span>}
         <button onClick={onDispatch} disabled={goal.trim().length < 3 || running}
           style={{ fontFamily: SANS, fontSize: 14.5, fontWeight: 700, color: "#FFF9EC", padding: "11px 22px", borderRadius: 12, border: "none",
             cursor: goal.trim().length >= 3 && !running ? "pointer" : "not-allowed",
@@ -213,14 +213,14 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
                 <div key={c.name} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 0", borderTop: `1px solid ${HAIR}` }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontFamily: SANS, fontSize: 14, color: INK }}>
-                      <b>{c.name}</b> <span style={{ fontFamily: MONO, fontSize: 11, color: MUT2 }}>{c.role}</span>
+                      <b>{c.name}</b> <span style={{ fontFamily: MONO, fontSize: 12, color: MUT2 }}>{c.role}</span>
                     </div>
                     <div style={{ fontFamily: SANS, fontSize: 12.5, color: c.task.startsWith("working") ? GREEN : MUT, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {c.task.startsWith("working") && <span style={{ animation: "gpPulse 1.6s infinite" }}>● </span>}
                       {c.task}
                     </div>
                   </div>
-                  <span style={{ flexShrink: 0, fontFamily: MONO, fontSize: 10, letterSpacing: "0.06em", color: c.real ? GOLD : MUT2, background: "#F5EDD8", borderRadius: 6, padding: "3px 8px" }}>{c.room}</span>
+                  <span style={{ flexShrink: 0, fontFamily: MONO, fontSize: 12, letterSpacing: "0.06em", color: c.real ? GOLD : MUT2, background: "#F5EDD8", borderRadius: 6, padding: "3px 8px" }}>{c.room}</span>
                 </div>
               ))}
             </RailCard>
@@ -240,7 +240,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
                 <div style={{ padding: "8px 0" }}>
                   <div style={{ fontFamily: SANS, fontSize: 14.5, fontWeight: 700, color: INK }}>{nextSchedule.name}</div>
                   <div style={{ fontFamily: SANS, fontSize: 12.5, color: MUT, marginTop: 3 }}>{nextSchedule.desc}</div>
-                  <div style={{ fontFamily: MONO, fontSize: 11.5, color: MUT2, marginTop: 6 }}>{nextSchedule.cadence} · last {relTime(nextSchedule.lastRun)}</div>
+                  <div style={{ fontFamily: MONO, fontSize: 12, color: MUT2, marginTop: 6 }}>{nextSchedule.cadence} · last {relTime(nextSchedule.lastRun)}</div>
                 </div>
               ) : (
                 <div style={{ fontFamily: SANS, fontSize: 13, color: MUT, padding: "8px 0" }}>No routines yet.</div>
@@ -284,10 +284,10 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ width: 7, height: 7, borderRadius: 99, background: s.status === "active" ? GREEN : "rgba(34,29,18,0.2)" }} />
                 <span style={{ fontFamily: SANS, fontSize: 14, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</span>
-                <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 10, color: s.kind === "vigil" ? TERRA : GOLD, letterSpacing: "0.06em" }}>{s.kind.toUpperCase()}</span>
+                <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 12, color: s.kind === "vigil" ? TERRA : GOLD, letterSpacing: "0.06em" }}>{s.kind.toUpperCase()}</span>
               </div>
               <div style={{ fontFamily: SANS, fontSize: 12.5, color: MUT, marginTop: 5, minHeight: 32, lineHeight: 1.4 }}>{s.role}</div>
-              <div style={{ fontFamily: MONO, fontSize: 11.5, color: MUT2, marginTop: 6 }}>
+              <div style={{ fontFamily: MONO, fontSize: 12, color: MUT2, marginTop: 6 }}>
                 {s.runs} runs{typeof s.successRate === "number" ? ` · ${s.successRate}%` : ""}{s.lastAt ? ` · ${relTime(s.lastAt)}` : ""}
               </div>
             </div>
@@ -295,7 +295,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
         </div>
       )}
 
-      <div style={{ fontFamily: MONO, fontSize: 11.5, color: "rgba(34,29,18,0.4)", marginTop: 18, textAlign: "center" }}>
+      <div style={{ fontFamily: MONO, fontSize: 12, color: "rgba(34,29,18,0.4)", marginTop: 18, textAlign: "center" }}>
         Costs {cost} credits per dispatch · refunded if no real skill runs · live from PetClaw, refreshed every 7s
       </div>
     </div>
@@ -305,7 +305,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
 // ── pieces ──
 
 function chipFloat(pos: React.CSSProperties): React.CSSProperties {
-  return { position: "absolute", ...pos, fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.08em", color: "#5E5340",
+  return { position: "absolute", ...pos, fontFamily: MONO, fontSize: 12, letterSpacing: "0.08em", color: "#5E5340",
     background: "rgba(252,248,238,0.92)", border: "1px solid #D9C9A8", borderRadius: 999, padding: "6px 12px", pointerEvents: "none" };
 }
 
@@ -314,7 +314,7 @@ function RailCard({ title, tag, right, children }: { title: string; tag?: string
     <div style={{ background: CHIP_BG, border: `1px solid ${CHIP_BR}`, borderRadius: 16, padding: "14px 16px", boxShadow: "0 14px 30px -26px rgba(80,55,20,.4)" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
         <div style={{ fontFamily: SERIF, fontSize: 17, color: INK }}>{title}</div>
-        {tag && <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.14em", color: MUT2 }}>{tag}</span>}
+        {tag && <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.14em", color: MUT2 }}>{tag}</span>}
         {right && <span style={{ fontFamily: MONO, fontSize: 12, color: GOLD, fontWeight: 600 }}>{right}</span>}
       </div>
       {children}
@@ -328,10 +328,10 @@ function QueueRow({ state, title, right }: { state: "run" | "queued" | "done"; t
     : <span style={{ color: MUT2 }}>✓</span>;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 0", borderTop: `1px solid ${HAIR}` }}>
-      <span style={{ flexShrink: 0, fontSize: 11 }}>{mark}</span>
+      <span style={{ flexShrink: 0, fontSize: 12 }}>{mark}</span>
       <span style={{ flex: 1, minWidth: 0, fontFamily: SANS, fontSize: 13.5, color: state === "done" ? MUT : INK, fontWeight: state === "run" ? 700 : 500,
         textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</span>
-      {right && <span style={{ flexShrink: 0, fontFamily: MONO, fontSize: 11, color: state === "run" ? GREEN : MUT2 }}>{right}</span>}
+      {right && <span style={{ flexShrink: 0, fontFamily: MONO, fontSize: 12, color: state === "run" ? GREEN : MUT2 }}>{right}</span>}
     </div>
   );
 }
@@ -347,7 +347,7 @@ function Empty({ text }: { text: string }) {
 function MemCard({ label, value, sub, fill }: { label: string; value: string; sub: string; fill?: number }) {
   return (
     <div style={{ background: CHIP_BG, border: `1px solid ${CHIP_BR}`, borderRadius: 14, padding: "14px 15px" }}>
-      <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.16em", color: GOLD }}>{label}</div>
+      <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.16em", color: GOLD }}>{label}</div>
       <div style={{ fontFamily: SERIF, fontSize: 21, color: INK, margin: "6px 0 3px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</div>
       <div style={{ fontFamily: SANS, fontSize: 12.5, color: MUT, lineHeight: 1.4 }}>{sub}</div>
       {typeof fill === "number" && (
@@ -375,7 +375,7 @@ function Board({ mc, liveRun, full }: { mc: MC; liveRun: LiveRun | null; full?: 
           <div key={c.title} style={{ background: "#F3EBD6", borderRadius: 14, border: `1px solid ${HAIR}`, padding: 11, minHeight: 120 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 9, padding: "0 3px" }}>
               <span style={{ fontFamily: SERIF, fontSize: 15, color: INK }}>{c.title}</span>
-              <span style={{ fontFamily: MONO, fontSize: 11.5, color: MUT, background: CHIP_BG, border: `1px solid ${CHIP_BR}`, borderRadius: 99, padding: "0 8px" }}>{c.items.length + extra}</span>
+              <span style={{ fontFamily: MONO, fontSize: 12, color: MUT, background: CHIP_BG, border: `1px solid ${CHIP_BR}`, borderRadius: 99, padding: "0 8px" }}>{c.items.length + extra}</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {c.live && liveRun && !liveRun.done && (
@@ -401,10 +401,10 @@ function BoardCard({ title, detail, tag, sub, accent, pulse }: { title: string; 
     <div style={{ background: CHIP_BG, borderRadius: 11, border: `1px solid ${CHIP_BR}`, borderLeft: `3px solid ${accent}`, padding: "10px 11px", animation: pulse ? "gpPulse 2s infinite" : undefined }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
         <span style={{ fontFamily: SANS, fontSize: 13.5, fontWeight: 700, color: INK, lineHeight: 1.35, minWidth: 0 }}>{title}</span>
-        {tag && <span style={{ flexShrink: 0, fontFamily: MONO, fontSize: 10.5, color: accent, background: "#F5EDD8", borderRadius: 6, padding: "1px 7px", height: "fit-content" }}>{tag}</span>}
+        {tag && <span style={{ flexShrink: 0, fontFamily: MONO, fontSize: 12, color: accent, background: "#F5EDD8", borderRadius: 6, padding: "1px 7px", height: "fit-content" }}>{tag}</span>}
       </div>
       {detail && <div style={{ fontFamily: SANS, fontSize: 12.5, color: MUT, marginTop: 4, lineHeight: 1.4, wordBreak: "break-word" }}>{detail}</div>}
-      {sub && <div style={{ fontFamily: MONO, fontSize: 11, color: MUT2, marginTop: 4 }}>{sub}</div>}
+      {sub && <div style={{ fontFamily: MONO, fontSize: 12, color: MUT2, marginTop: 4 }}>{sub}</div>}
     </div>
   );
 }

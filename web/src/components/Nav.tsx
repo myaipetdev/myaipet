@@ -312,7 +312,7 @@ export default function Nav({ section, setSection, credits }: any) {
               onClick={() => setMoreOpen((v) => !v)}
               style={itemStyle(moreActive)}
             >
-              More <span aria-hidden="true" style={{ fontSize: 10, verticalAlign: 1 }}>{moreOpen ? "▴" : "▾"}</span>
+              More <span aria-hidden="true" style={{ fontSize: 12, verticalAlign: 1 }}>{moreOpen ? "▴" : "▾"}</span>
               {moreActive && activeBar}
             </button>
             {moreOpen && (
@@ -408,7 +408,7 @@ export default function Nav({ section, setSection, credits }: any) {
                 }}
               >
                 ◎ {displayCredits.toLocaleString()}
-                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", opacity: 0.7, marginLeft: 4 }}>cr</span>
+                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", opacity: 0.7, marginLeft: 4 }}>cr</span>
               </button>
               {balanceOpen && (
                 <div style={{

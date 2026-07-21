@@ -492,9 +492,9 @@ function Chibi({ cx, cy, scale, ear, pal, active, delay }: { cx: number; cy: num
 function Chip({ k, v, small, gold }: { k: string; v: string; small?: string; gold?: boolean }) {
   return (
     <div style={chipStyle}>
-      <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.16em", color: MUTED, textTransform: "uppercase" }}>{k}</span>
+      <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.16em", color: MUTED, textTransform: "uppercase" }}>{k}</span>
       <span style={gold ? { ...chipVal, ...chipGold } : chipVal}>
-        {v}{small && <small style={{ fontWeight: 600, fontSize: 11, color: MUTED }}>{small}</small>}
+        {v}{small && <small style={{ fontWeight: 600, fontSize: 12, color: MUTED }}>{small}</small>}
       </span>
     </div>
   );
@@ -639,7 +639,7 @@ const chipStyle: React.CSSProperties = {
 };
 const chipVal: React.CSSProperties = { fontFamily: DISP, fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em", color: INK, marginTop: 1 };
 const chipGold: React.CSSProperties = { background: "linear-gradient(#EAC978,#C8932F)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" };
-const footStyle: React.CSSProperties = { position: "absolute", left: 30, bottom: 22, zIndex: 8, fontFamily: MONO, fontSize: 11.5, letterSpacing: "0.03em", color: MUTED };
+const footStyle: React.CSSProperties = { position: "absolute", left: 30, bottom: 22, zIndex: 8, fontFamily: MONO, fontSize: 12, letterSpacing: "0.03em", color: MUTED };
 const legendRow: React.CSSProperties = { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 };
 const squareGrid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 };
 const villagerGrid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 12 };
