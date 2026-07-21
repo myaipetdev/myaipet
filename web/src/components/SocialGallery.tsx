@@ -1095,6 +1095,69 @@ function MasonryGrid({ items, onLike, onCardClick, columnCount }: any) {
   );
 }
 
+// ── Sample showcase (genuine-zero empty state only) ──
+// REAL static product assets from /public/gallery — art that ships with the
+// product. We deliberately removed fabricated community posts, so this strip
+// is the honest stand-in: every print is permanently stamped SAMPLE, carries
+// no author / likes / comments, and is NOT clickable into a post detail. It
+// exists purely to show what the wall becomes once real creations land.
+const SAMPLE_SHOWCASE = [
+  { src: "/gallery/cat_astro.jpg", label: "Astro cat" },
+  { src: "/gallery/fox_witch.jpg", label: "Witch fox" },
+  { src: "/gallery/rabbit_samurai.jpg", label: "Samurai rabbit" },
+  { src: "/gallery/hamster_sushi.jpg", label: "Sushi hamster" },
+  { src: "/gallery/owl_library.jpg", label: "Library owl" },
+];
+
+function SampleShowcase() {
+  return (
+    <div style={{ marginBottom: 40 }}>
+      <div style={{
+        fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em",
+        textTransform: "uppercase", color: T.terra, marginBottom: 6,
+      }}>
+        Sample showcase
+      </div>
+      <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted2, letterSpacing: "0.04em" }}>
+        What creations look like — these are samples, not community posts.
+      </div>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", gap: 16, flexWrap: "wrap", marginTop: 20 }}>
+        {SAMPLE_SHOWCASE.map((s, i) => (
+          <figure key={s.src} style={{
+            margin: 0, width: 148, background: T.paper, borderRadius: 10, padding: 7,
+            boxShadow: "var(--ed-shadow-card)",
+            transform: `rotate(${[-2.2, 1.6, -1.2, 2, -1.8][i % 5]}deg)`,
+          }}>
+            {/* print well — gold inset keyline, same language as the real cards */}
+            <div style={{
+              position: "relative", width: "100%", aspectRatio: "1 / 1",
+              borderRadius: 6, overflow: "hidden", background: T.inset,
+              boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)",
+            }}>
+              <img src={s.src} alt={`Sample creation: ${s.label}`} loading="lazy"
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              {/* SAMPLE stamp — same treatment as CardDeck's guest samples,
+                  rotated so it reads as a stamp, permanent on the art */}
+              <span style={{
+                position: "absolute", left: 6, bottom: 8, fontFamily: T.m, fontSize: 12, fontWeight: 700,
+                letterSpacing: "0.12em", color: T.ink70, background: "rgba(251,246,236,.9)",
+                border: `1px solid ${T.hair}`, borderRadius: 5, padding: "1px 6px",
+                transform: "rotate(-6deg)", transformOrigin: "left bottom",
+              }}>SAMPLE</span>
+            </div>
+            <figcaption style={{
+              fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em",
+              textTransform: "uppercase", color: T.muted2, marginTop: 7,
+            }}>
+              {s.label}
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Main ──
 export default function SocialGallery() {
   const [items, setItems] = useState<any[]>([]);
@@ -1496,7 +1559,10 @@ export default function SocialGallery() {
           ))}
         </div>
       ) : filteredItems.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "100px 40px" }}>
+        <div style={{ textAlign: "center", padding: zeroWorks && !search ? "48px 20px 100px" : "100px 40px" }}>
+          {/* Genuine zero (not a search miss, not an outage): show what the
+              wall becomes — real product assets, SAMPLE-stamped, no fake posts. */}
+          {zeroWorks && !search && <SampleShowcase />}
           {search ? (
             <div style={{ marginBottom: 14, opacity: 0.35, display: "flex", justifyContent: "center" }}>
               <svg width={44} height={44} viewBox="0 0 24 24" fill="none"

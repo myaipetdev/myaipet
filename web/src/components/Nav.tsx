@@ -193,9 +193,6 @@ export default function Nav({ section, setSection, credits }: any) {
            full strip and hide the More menu. Below 1360px the overflow tabs
            collapse into More (NO horizontal scroll strip anywhere — the old
            scroller hid 5 of 9 tabs on mobile behind a decorative chevron). */
-        @media (min-width: 1360px) {
-          .nav-more-wrap { display: none !important; }
-        }
         @media (max-width: 1359.98px) {
           /* Double selector: must out-rank the later ".nav-btn { display:… }"
              mobile rule (equal specificity + !important would lose on order). */
@@ -291,14 +288,16 @@ export default function Nav({ section, setSection, credits }: any) {
           </span>
         </button>
 
-        {/* Nav items — 4 primary tabs + More (all nine inline on wide desktop).
-            No horizontal scrolling in any viewport. */}
+        {/* Nav items — 4 primary tabs + More. Wide desktop inlines the rest
+            EXCEPT Bracket (founder: it reads as an unexplained menu while the
+            event is gated) — Bracket lives in More at every width; the home
+            Season-Events rail is its promoted entry. No horizontal scrolling. */}
         <div className="nav-items-wrap" style={{
           display: "flex", gap: 17, alignItems: "center", justifyContent: "center",
           flex: 1, minWidth: 0,
         }}>
           {PRIMARY_ITEMS.map((item) => renderItem(item))}
-          {MORE_ITEMS.map((item) => renderItem(item, "nav-inline-more"))}
+          {MORE_ITEMS.filter((i) => i.key !== "worldcup").map((item) => renderItem(item, "nav-inline-more"))}
 
           {/* More — a real, keyboard-operable menu button (replaces the old
               decorative "›" scroll hint that wasn't interactive). */}

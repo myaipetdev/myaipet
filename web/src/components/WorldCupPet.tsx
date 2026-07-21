@@ -7,9 +7,11 @@
  * community pets. The player is shown two pets at a time and taps their
  * favorite; the winner advances Round of 16 → QF → SF → Final → Champion. The
  * pet pool is real (GET /api/worldcup/bracket → active, avatar-bearing pets
- * ranked by a real signal) — no fabricated contestants, and if there aren't
- * enough public pets yet the bracket shows an honest low-data state. The pick
- * flow is client-managed and PERSONAL: we do not invent global vote tallies.
+ * ranked by a real signal) — no fabricated contestants. While there are <4
+ * public pets the ONE hero poster carries the honest gate ("opens at 4 public
+ * pets — N/4 so far", real count) with an adopt CTA and NO Play button; at ≥4
+ * the same poster flips ACTIVE and "Play the bracket" is the single CTA. The
+ * pick flow is client-managed and PERSONAL: we do not invent global tallies.
  *
  * SECONDARY / seasonal: the old national-flag "World Cup 2026" content
  * (reimagine your pet as a country's animal + community champion-prediction
@@ -76,9 +78,32 @@ function RefreshIcon({ size = 14, color = "currentColor" }: { size?: number; col
 }
 
 export default function WorldCupPet() {
+  // The REAL public-pet pool (/api/worldcup/bracket) is fetched HERE so the
+  // one hero poster and the bracket share the same count — previously the
+  // hero said "PLAY THE BRACKET" while a second card below said "OPENS
+  // SOON", because only the bracket knew the pool. One fetch, one truth.
+  const [pool, setPool] = useState<BracketPet[] | null>(null);
+  const [fetchErr, setFetchErr] = useState(false);
+
+  const load = () => {
+    setFetchErr(false);
+    fetch("/api/worldcup/bracket?size=24", { headers: { ...getAuthHeaders() } })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`status ${r.status}`))))
+      .then((d) => {
+        const list: BracketPet[] = (Array.isArray(d?.pets) ? d.pets : [])
+          .filter((p: any) => p && typeof p.id === "number" && p.avatar_url)
+          .map((p: any) => ({ id: p.id, name: p.name || "Pet", avatar_url: p.avatar_url, level: p.level }));
+        setPool(list);
+      })
+      .catch(() => setFetchErr(true));
+  };
+  useEffect(load, []);
+
   return (
-    <Shell>
-      <FavoritesBracket />
+    <Shell pool={pool} fetchErr={fetchErr} onRetry={load}>
+      {/* Bracket mounts only when the event is genuinely open (≥4 real pets);
+          gated / loading / error live on the single poster above. */}
+      {pool !== null && pool.length >= 4 && <FavoritesBracket pool={pool} />}
       {/* World Cup 2026 is over — module gated OFF (code retained). */}
       {WORLD_CUP_MODULE_ENABLED && <SeasonalWorldCup />}
     </Shell>
@@ -130,10 +155,9 @@ function stageKey(fieldLen: number): string {
   return fieldLen >= 16 ? "R16" : fieldLen === 8 ? "QF" : fieldLen === 4 ? "SF" : "FINAL";
 }
 
-function FavoritesBracket() {
-  const [pool, setPool] = useState<BracketPet[] | null>(null);
-  const [fetchErr, setFetchErr] = useState(false);
-
+/** Only mounted by the parent once the REAL pool has ≥4 public pets — the
+    gated / loading / error states live on the single hero poster (Shell). */
+function FavoritesBracket({ pool }: { pool: BracketPet[] }) {
   // Bracket state (personal / client-managed).
   const [field, setField] = useState<BracketPet[]>([]); // contestants this round
   const [winners, setWinners] = useState<BracketPet[]>([]); // picked so far this round
@@ -141,20 +165,6 @@ function FavoritesBracket() {
   const [startSize, setStartSize] = useState(0);
   const [pickedId, setPickedId] = useState<number | null>(null); // pop animation target
   const [locking, setLocking] = useState(false);
-
-  const load = () => {
-    setFetchErr(false);
-    fetch("/api/worldcup/bracket?size=24", { headers: { ...getAuthHeaders() } })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`status ${r.status}`))))
-      .then((d) => {
-        const list: BracketPet[] = (Array.isArray(d?.pets) ? d.pets : [])
-          .filter((p: any) => p && typeof p.id === "number" && p.avatar_url)
-          .map((p: any) => ({ id: p.id, name: p.name || "Pet", avatar_url: p.avatar_url, level: p.level }));
-        setPool(list);
-      })
-      .catch(() => setFetchErr(true));
-  };
-  useEffect(load, []);
 
   const seed = (list: BracketPet[]) => {
     const size = bracketSizeFor(list.length);
@@ -166,8 +176,8 @@ function FavoritesBracket() {
     setPickedId(null);
   };
 
-  // Seed once the pool arrives (and on Play again).
-  useEffect(() => { if (pool) seed(pool); }, [pool]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Seed on mount / whenever the pool refreshes (and on Play again).
+  useEffect(() => { seed(pool); }, [pool]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const matchIdx = winners.length;
   const home = field[matchIdx * 2];
@@ -203,55 +213,6 @@ function FavoritesBracket() {
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=MyAIPet`, "_blank", "width=600,height=420");
   };
 
-  // ── states ──
-  if (pool === null) {
-    return (
-      <BracketFrame>
-        {fetchErr ? (
-          <RetryRow label="Couldn't load the pet pool" onRetry={load} />
-        ) : (
-          <div style={loadingPill}>Gathering contenders…</div>
-        )}
-      </BracketFrame>
-    );
-  }
-
-  // Honest low-data state, staged as the season-event poster. Same truth as
-  // before (real pets only, opens at 4) — now it reads like a coming
-  // attraction instead of an apology. NO point claim: the bracket's only
-  // real prize today is the gold-foil champion card rendered below.
-  if (startSize < 4) {
-    return (
-      <BracketFrame>
-        <div style={{ position: "relative", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 18, padding: "26px 22px 24px", boxShadow: "var(--ed-shadow-card)", overflow: "visible", textAlign: "center" }}>
-          {/* Wax seal — OPENS SOON */}
-          <span style={{
-            position: "absolute", top: -11, right: 16,
-            display: "inline-flex", alignItems: "center", padding: "5px 12px", borderRadius: 999,
-            background: `radial-gradient(circle at 32% 28%, rgba(255,248,238,.28), rgba(33,26,18,.12) 78%), ${T.gold}`,
-            color: T.creamOn, transform: "rotate(-4deg)",
-            boxShadow: "0 2px 0 rgba(33,26,18,.4), inset 0 0 0 1.5px rgba(252,233,207,.5)",
-            fontFamily: T.m, fontSize: 12, fontWeight: 800, letterSpacing: ".12em",
-          }}>OPENS SOON</span>
-
-          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".16em", color: T.mono, textTransform: "uppercase", marginBottom: 6 }}>Season Event · Best in Show</div>
-          <div style={{ fontFamily: T.disp, fontSize: "clamp(24px,6vw,32px)", fontWeight: 800, color: T.ink, letterSpacing: "-.02em", lineHeight: 1.05, marginBottom: 10 }}>
-            Opens at 4 public pets
-          </div>
-          <p style={{ fontFamily: T.body, fontSize: 14.5, color: T.muted2, margin: "0 auto 14px", lineHeight: 1.55, maxWidth: 460 }}>
-            Best in Show only ever seeds with real community pets — none are made up — so the bracket opens for real as more players adopt and give their pet an avatar.
-          </p>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: T.gold, textTransform: "uppercase", borderTop: `1px dashed ${T.hair}`, paddingTop: 12, marginBottom: 16 }}>
-            <Icon name="trophy" size={14} /> The prize — your champion crowned on a gold-foil winner card
-          </div>
-          <div>
-            <a href="/?section=my%20pet" className="wc-press" style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, padding: "0 20px", borderRadius: 10, background: T.ink, color: T.creamOn, fontFamily: T.disp, fontWeight: 700, fontSize: 14, letterSpacing: ".01em", textDecoration: "none", boxShadow: "var(--ed-shadow-card)" }}>Adopt a pet &amp; make yours eligible <span aria-hidden>▸</span></a>
-          </div>
-        </div>
-      </BracketFrame>
-    );
-  }
-
   // ── champion screen ──
   if (champion) {
     return (
@@ -281,7 +242,7 @@ function FavoritesBracket() {
         </Reveal>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 16, justifyContent: "center" }}>
           <button onClick={shareChampion} className="wc-press" style={{ ...primaryBtn, display: "inline-flex", alignItems: "center", gap: 8 }}><XLogo size={14} /> Share the winner</button>
-          <button onClick={() => pool && seed(pool)} className="wc-press ed-wipe" style={{ ...ghostBtn, display: "inline-flex", alignItems: "center", gap: 7 }}><RefreshIcon size={14} /> Play again</button>
+          <button onClick={() => seed(pool)} className="wc-press ed-wipe" style={{ ...ghostBtn, display: "inline-flex", alignItems: "center", gap: 7 }}><RefreshIcon size={14} /> Play again</button>
         </div>
         <div style={{ fontFamily: T.body, fontSize: 13, color: T.muted, marginTop: 10, textAlign: "center" }}>
           This is your personal bracket — picks are yours, not a global vote tally.
@@ -351,7 +312,7 @@ function FavoritesBracket() {
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
         <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: T.mono, textTransform: "uppercase" }}>Real community pets · personal bracket</span>
-        <button onClick={() => pool && seed(pool)} className="wc-press ed-wipe" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.terra, background: "transparent", border: "1px solid rgba(190,79,40,.4)", borderRadius: 999, padding: "5px 14px", cursor: "pointer", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 6 }}>
+        <button onClick={() => seed(pool)} className="wc-press ed-wipe" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.terra, background: "transparent", border: "1px solid rgba(190,79,40,.4)", borderRadius: 999, padding: "5px 14px", cursor: "pointer", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 6 }}>
           <RefreshIcon size={13} /> Reshuffle
         </button>
       </div>
@@ -981,12 +942,32 @@ function ChampionPrediction() {
 const primaryBtn: React.CSSProperties = { padding: "10px 18px", borderRadius: 10, border: "none", background: T.ink, color: T.creamOn, fontFamily: T.disp, fontWeight: 700, fontSize: 14, cursor: "pointer" };
 const ghostBtn: React.CSSProperties = { padding: "10px 16px", borderRadius: 10, border: `1px solid ${T.hair}`, background: T.paper, color: T.ink70, fontFamily: T.body, fontWeight: 600, fontSize: 14, cursor: "pointer" };
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children, pool, fetchErr, onRetry }: {
+  children: React.ReactNode; pool: BracketPet[] | null; fetchErr: boolean; onRetry: () => void;
+}) {
   const jump = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   const chipStyle: React.CSSProperties = {
     background: "transparent", border: "none", borderBottom: "1px dotted rgba(154,123,78,.55)",
     padding: "0 0 1px", cursor: "pointer", fontFamily: T.m, fontSize: 13, fontWeight: 700,
     letterSpacing: ".1em", textTransform: "uppercase", color: T.mono,
+  };
+  // One poster, one truth: the REAL public-pet count decides which face shows.
+  const count = pool?.length ?? 0;
+  const open = pool !== null && count >= 4;
+  const gated = pool !== null && count < 4;
+  const heroCta: React.CSSProperties = {
+    display: "inline-flex", alignItems: "center", gap: 8, minHeight: 46, padding: "0 24px",
+    borderRadius: 10, background: T.ink, color: T.creamOn, fontFamily: T.disp, fontWeight: 700,
+    fontSize: 15, letterSpacing: ".01em", textDecoration: "none", border: "none", cursor: "pointer",
+    boxShadow: "var(--ed-shadow-card)",
+  };
+  const sealStyle: React.CSSProperties = {
+    position: "absolute", top: 14, right: 14, zIndex: 3,
+    display: "inline-flex", alignItems: "center", padding: "6px 13px", borderRadius: 999,
+    background: `radial-gradient(circle at 32% 28%, rgba(255,248,238,.28), rgba(33,26,18,.12) 78%), ${T.gold}`,
+    color: T.creamOn, transform: "rotate(3deg)",
+    boxShadow: "0 2px 0 rgba(33,26,18,.4), inset 0 0 0 1.5px rgba(252,233,207,.5)",
+    fontFamily: T.m, fontSize: 12, fontWeight: 800, letterSpacing: ".12em",
   };
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "8px 0 40px", fontFamily: T.body, color: T.ink }}>
@@ -1002,28 +983,85 @@ function Shell({ children }: { children: React.ReactNode }) {
           .wc-pick:not(:disabled):hover{transform:none}
         }
       `}</style>
-      {/* ── editorial hero: BEST IN SHOW — the recurring season event ── */}
+      {/* ── THE event poster: BEST IN SHOW — one state-aware card.
+          Gated (<4 real public pets): the poster itself is the announcement —
+          wax seal OPENS SOON, honest N/4 progress from the same bracket API
+          the rail uses, and ONE CTA (adopt) — no Play button that leads
+          nowhere. Open (≥4): the same poster flips ACTIVE and "Play the
+          bracket" becomes the single CTA. */}
       <div className="wc-rise" style={{
-        position: "relative", overflow: "hidden", borderRadius: 22, padding: "34px 28px 30px", marginBottom: 24,
+        position: "relative", overflow: "hidden", borderRadius: 22, padding: "36px 28px 30px", marginBottom: 24,
         background: T.field, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)", textAlign: "center",
       }}>
         <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
         <div aria-hidden style={{ position: "absolute", right: -8, top: -16, opacity: 0.08, lineHeight: 1, zIndex: 1 }}><Icon name="trophy" size={130} /></div>
+        {gated && <span style={sealStyle}>OPENS SOON</span>}
+        {open && <span style={sealStyle}>OPEN NOW</span>}
         <div style={{ position: "relative", zIndex: 2 }}>
           <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", color: T.terraSub, textTransform: "uppercase" }}>Season Event · Favorites Bracket</div>
           <h1 style={{ fontFamily: T.disp, fontSize: "clamp(34px,8vw,50px)", fontWeight: 800, color: T.ink, margin: "10px 0 0", letterSpacing: "-0.03em", lineHeight: 0.96 }}>Best in Show</h1>
-          <p style={{ fontFamily: T.body, fontSize: 15.5, color: T.muted2, margin: "16px auto 0", lineHeight: 1.6, maxWidth: 580 }}>
-            Two community pets appear at a time — tap the one you love and it advances. Round of 16 → Final, until one pet is crowned <strong style={{ color: T.terra, fontWeight: 600 }}>Best in Show</strong> on a gold-foil winner card. Real pets, your personal bracket.
+          {/* One line: what this menu IS. */}
+          <p style={{ fontFamily: T.body, fontSize: 15.5, color: T.muted2, margin: "14px auto 0", lineHeight: 1.6, maxWidth: 560 }}>
+            A recurring community-favorite vote — two real pets face off, you tap the one you love, and the last pet standing is crowned <strong style={{ color: T.terra, fontWeight: 600 }}>Best in Show</strong>.
           </p>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 12, margin: "18px 0 0", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: T.mono, flexWrap: "wrap", justifyContent: "center" }}>
-            <button onClick={() => jump("wc-bracket")} className="wc-press" style={{ ...chipStyle, color: T.terraSub, borderBottomColor: "rgba(154,78,30,.55)" }}>Play the bracket</button>
-            {WORLD_CUP_MODULE_ENABLED && (
-              <>
-                <span aria-hidden style={{ width: 4, height: 4, borderRadius: "50%", background: T.hair }} />
-                <button onClick={() => jump("wc-seasonal")} className="wc-press" style={chipStyle}>Seasonal: World Cup</button>
-              </>
+          {/* Compressed honesty line — real community pets only, never invented. */}
+          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.mono, textTransform: "uppercase", marginTop: 10 }}>
+            Seeded only with real community pets — never made-up contestants
+          </div>
+
+          {/* Honest gate progress — REAL count from /api/worldcup/bracket. */}
+          {gated && (
+            <div style={{ margin: "16px auto 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }} aria-hidden>
+                {[0, 1, 2, 3].map((i) => (
+                  <span key={i} style={{
+                    width: 11, height: 11, borderRadius: "50%",
+                    background: i < Math.min(count, 4) ? T.terra : "transparent",
+                    border: `2px solid ${i < Math.min(count, 4) ? T.terra : "rgba(33,26,18,.35)"}`,
+                  }} />
+                ))}
+              </div>
+              <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 800, letterSpacing: ".1em", color: T.ink70, textTransform: "uppercase" }}>
+                Opens at 4 public pets — {count}/4 so far
+              </div>
+            </div>
+          )}
+          {open && (
+            <div style={{ margin: "14px auto 0", fontFamily: T.m, fontSize: 13, fontWeight: 800, letterSpacing: ".1em", color: T.ink70, textTransform: "uppercase" }}>
+              {count} public pets in the pool
+            </div>
+          )}
+
+          {/* Gold-foil champion-card prize line — the ONLY claimed prize
+              (the bracket pays NO season points; never add "+N pts" here
+              without a server grant). */}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.gold, textTransform: "uppercase", borderTop: `1px dashed ${T.hair}`, paddingTop: 12, margin: "14px 0 18px" }}>
+            <Icon name="trophy" size={14} /> The prize — your champion crowned on a gold-foil winner card
+          </div>
+
+          {/* ONE CTA, matched to the real state. */}
+          <div>
+            {pool === null ? (
+              fetchErr ? (
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "center", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.muted2, textTransform: "uppercase" }}>
+                  <span>Couldn&apos;t load the pet pool</span>
+                  <button onClick={onRetry} className="wc-press ed-wipe" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.terra, background: "transparent", border: "1px solid rgba(190,79,40,.4)", borderRadius: 999, padding: "4px 12px", cursor: "pointer", textTransform: "uppercase" }}>Retry</button>
+                </div>
+              ) : (
+                <div role="status" aria-live="polite" style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.mono, textTransform: "uppercase" }}>Gathering contenders…</div>
+              )
+            ) : open ? (
+              <button onClick={() => jump("wc-bracket")} className="wc-press" style={heroCta}>Play the bracket <span aria-hidden>▸</span></button>
+            ) : (
+              <a href="/?section=my%20pet" className="wc-press" style={heroCta}>Adopt a pet &amp; make yours eligible <span aria-hidden>▸</span></a>
             )}
           </div>
+
+          {WORLD_CUP_MODULE_ENABLED && (
+            <div style={{ marginTop: 14 }}>
+              <button onClick={() => jump("wc-seasonal")} className="wc-press" style={chipStyle}>Seasonal: World Cup</button>
+            </div>
+          )}
         </div>
       </div>
       {children}
