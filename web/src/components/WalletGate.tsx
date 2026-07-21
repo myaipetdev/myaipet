@@ -309,7 +309,7 @@ export default function WalletGate({ children, section }: any) {
     create: "Create",
     community: "Community",
     workbench: "the Agent Workbench",
-    worldcup: "the World Cup event",
+    worldcup: "the Best in Show bracket",
     cards: "your card deck",
     agent: "the Agent dashboard",
     chat: "Chat",
