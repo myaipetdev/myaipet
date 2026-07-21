@@ -16,6 +16,7 @@ import { pollBackend } from "@/lib/studio/backend";
 import { MODELS } from "@/lib/studio/providers";
 import { persistGenerationMediaExactlyOnce } from "@/lib/services/generation-media";
 import { failGenerationAndRefund } from "@/lib/generationSettlement";
+import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 
 export async function GET(
   req: NextRequest,
@@ -108,6 +109,26 @@ export async function GET(
       }
       if (persisted.status === "busy") {
         return NextResponse.json({ status: "running", generationId: gen.id });
+      }
+      // Season Rewards: queued jobs (all videos + queued images) used to finish
+      // here WITHOUT the points the immediate-completion path pays — the UI's
+      // "+20 pts video" promise was a lie for every polled job. Award on the
+      // exactly-once completion transition (`newlyCompleted` is true only for
+      // the poll that actually flipped the row), same values + daily cap as
+      // the POST route: image +10 / video +20, capped via studio_gen.
+      if (persisted.newlyCompleted) {
+        const genPts = await awardPointsCapped(
+          user.id,
+          "studio_gen",
+          model.kind === "video" ? 20 : 10,
+          DAILY_POINT_CAPS.studio_gen,
+        );
+        return NextResponse.json({
+          status: "completed",
+          url: persisted.url,
+          generationId: gen.id,
+          pointsAwarded: genPts.points || 0,
+        });
       }
       return NextResponse.json({ status: "completed", url: persisted.url, generationId: gen.id });
     }

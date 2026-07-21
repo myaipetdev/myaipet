@@ -29,26 +29,51 @@ function friendlyError(raw: string): string {
 
 // Slim fixed DEMO-TOUR banner — shown over allowlisted sections in tour mode
 // while no wallet is connected. Editorial terracotta chip; the inline Connect
-// button is the "make it yours" exit. It vanishes the moment a wallet connects
-// (this whole branch only renders when !isConnected).
-function TourBanner() {
+// button is the "make it yours" exit. It vanishes the moment a wallet connects.
+//
+// Rendered by App.tsx OUTSIDE the ".ed-section-enter" section outlet — NOT
+// here. The outlet's entrance animation (fill-mode: both) keeps applying its
+// final keyframe transform forever, which makes the animated div the containing
+// block for position:fixed descendants: rendered inside it, this "fixed" banner
+// silently anchored to the SECTION's bottom edge instead of the viewport and
+// sat directly on top of the tour page's closing "Connect wallet to adopt" CTA.
+export function TourBanner() {
   return (
-    <div style={{
-      position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 140,
-      display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap",
-      padding: "10px 18px", background: "rgba(190,79,40,.96)",
-      borderTop: "1px solid rgba(252,233,207,.35)", boxShadow: "0 -10px 30px -18px rgba(80,40,10,.7)",
-      backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
-    }}>
-      <span style={{ display: "flex", alignItems: "center", gap: 9, fontFamily: "var(--ed-body)", fontSize: 13.5, color: "#FFF8EE", lineHeight: 1.35, textAlign: "center" }}>
-        <span style={{
-          fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: ".1em",
-          color: "#BE4F28", background: "#FCE9CF", borderRadius: 7, padding: "3px 8px", whiteSpace: "nowrap",
-        }}>DEMO TOUR</span>
-        <span>You&apos;re browsing a live sample — connect a wallet to make it yours.</span>
-      </span>
-      <ConnectButton chainStatus="none" showBalance={false} label="Connect wallet" />
-    </div>
+    <>
+      <style>{`
+        /* Safe-area aware so the banner (and anything reserved for it) clears
+           the iOS home indicator instead of eating into the page's last rows. */
+        .tour-banner { padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important; }
+        /* Mobile: the wrapped two-row banner grew taller than the space the
+           page reserved for it and sat over the "Connect wallet to adopt" CTA.
+           Collapse to ONE compact fixed-height row (chip + connect button —
+           the tour pages themselves already carry the "sample data" copy) so
+           its height is known and .tour-pad in App.tsx always clears it. */
+        @media (max-width: 640px) {
+          .tour-banner {
+            flex-wrap: nowrap !important; justify-content: space-between !important;
+            gap: 10px !important; padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+          }
+          .tour-banner-copy { display: none !important; }
+        }
+      `}</style>
+      <div className="tour-banner" style={{
+        position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 140,
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap",
+        padding: "10px 18px", background: "rgba(190,79,40,.96)",
+        borderTop: "1px solid rgba(252,233,207,.35)", boxShadow: "0 -10px 30px -18px rgba(80,40,10,.7)",
+        backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+      }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 9, fontFamily: "var(--ed-body)", fontSize: 13.5, color: "#FFF8EE", lineHeight: 1.35, textAlign: "center" }}>
+          <span style={{
+            fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: ".1em",
+            color: "#BE4F28", background: "#FCE9CF", borderRadius: 7, padding: "3px 8px", whiteSpace: "nowrap",
+          }}>DEMO TOUR</span>
+          <span className="tour-banner-copy">You&apos;re browsing a live sample — connect a wallet to make it yours.</span>
+        </span>
+        <ConnectButton chainStatus="none" showBalance={false} label="Connect wallet" />
+      </div>
+    </>
   );
 }
 
@@ -92,12 +117,9 @@ export default function WalletGate({ children, section }: any) {
   // the gate. Once a wallet connects, this branch stops matching and the banner
   // disappears on its own. ──
   if (!isConnected && tourOn && TOUR_ALLOWLIST.has(section)) {
-    return (
-      <>
-        {section === "my pet" ? <TourMyPet /> : children}
-        <TourBanner />
-      </>
-    );
+    // (The fixed DEMO-TOUR banner itself is rendered by App.tsx outside the
+    // animated section outlet — see the TourBanner comment above.)
+    return section === "my pet" ? <TourMyPet /> : children;
   }
 
   // ── Preview-before-wall: cold visitors should experience the value (a living
@@ -114,7 +136,7 @@ export default function WalletGate({ children, section }: any) {
   if (section === "my pet" || section === "sovereignty" || section === "community") {
     const ctaBtnStyle: React.CSSProperties = {
       padding: "13px 30px", borderRadius: 13, border: "none",
-      background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+      background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
       fontFamily: "var(--ed-disp)", fontSize: 15, fontWeight: 800,
       cursor: isAuthenticating ? "wait" : "pointer", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
     };
@@ -256,7 +278,7 @@ export default function WalletGate({ children, section }: any) {
               />
               <span style={{
                 position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)",
-                fontFamily: "var(--ed-m)", fontSize: 10, fontWeight: 700, letterSpacing: ".1em",
+                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: ".1em",
                 color: "#BE4F28", background: "#FCE9CF", borderRadius: 6, padding: "3px 8px",
                 whiteSpace: "nowrap", boxShadow: "3px 4px 0 rgba(33,26,18,.14)",
               }}>{s.label}</span>
@@ -270,7 +292,7 @@ export default function WalletGate({ children, section }: any) {
           Your card deck
         </h2>
         <p style={{ fontFamily: "var(--ed-body)", fontSize: 16, color: "#7A6E5A", lineHeight: 1.8, marginBottom: 24 }}>
-          Cards are minted from the pets you actually raise and catch. Connect your wallet to open your deck.
+          Cards are created from the pets you actually raise and catch — off-chain collectibles, not NFTs. Connect your wallet to open your deck.
         </p>
         <div style={{ display: "inline-block" }}>
           <ConnectButton chainStatus="none" showBalance={false} label="Connect Wallet" />
@@ -292,7 +314,8 @@ export default function WalletGate({ children, section }: any) {
     agent: "the Agent dashboard",
     chat: "Chat",
     season: "Season Rewards",
-  };
+    account: "your Account",
+};
 
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", padding: "140px 24px 60px", textAlign: "center" }}>

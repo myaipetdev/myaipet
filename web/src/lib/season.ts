@@ -6,11 +6,32 @@
  * Pure + dependency-free so both server routes and client components can import.
  */
 
-// ── Season 1 window (single source of truth; mirrors SeasonBanner in App.tsx) ──
-// Season 1 runs Jul 1 → Aug 1 2026 (UTC).
+// ── Season 1 window (single source of truth for every season surface) ──────
+// Season 1 opens WITH the public launch. Until the founder schedules it
+// (NEXT_PUBLIC_SEASON1_START_MS = epoch ms, optional NEXT_PUBLIC_SEASON1_END_MS,
+// default close = start + 31 days), every surface shows "STARTING SOON" and no
+// countdown. Points earned before the start are honest pre-season points that
+// carry into Season 1 — say so wherever points are shown pre-start.
+//
+// While unscheduled, the exported window numbers use a far-future sentinel so
+// arithmetic consumers (projection, snapshot cron) stay dormant without
+// touching them. UI MUST check SEASON_SCHEDULED before rendering any date or
+// countdown — a sentinel countdown would be fabricated data.
 export const SEASON_KEY = "SEASON-1";
-export const SEASON_START_MS = Date.UTC(2026, 6, 1); // 2026-07-01 00:00 UTC
-export const SEASON_END_MS = Date.UTC(2026, 7, 1);   // 2026-08-01 00:00 UTC
+
+const UNSCHEDULED_SENTINEL_MS = Date.UTC(2099, 0, 1);
+const envMs = (v: string | undefined): number | null => {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
+const envStart = envMs(process.env.NEXT_PUBLIC_SEASON1_START_MS);
+const envEnd = envMs(process.env.NEXT_PUBLIC_SEASON1_END_MS);
+
+/** True once the founder has scheduled the real Season 1 window. */
+export const SEASON_SCHEDULED: boolean = envStart != null;
+export const SEASON_START_MS = envStart ?? UNSCHEDULED_SENTINEL_MS;
+export const SEASON_END_MS =
+  envEnd ?? (envStart != null ? envStart + 31 * 24 * 3600 * 1000 : UNSCHEDULED_SENTINEL_MS + 31 * 24 * 3600 * 1000);
 
 export type SeasonPhase = "upcoming" | "live" | "ended";
 

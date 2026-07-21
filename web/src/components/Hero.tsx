@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { LOGO_SRC } from "./Nav";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import Icon from "@/components/Icon";
-import { seasonPhase } from "@/lib/season";
+import { seasonPhase, SEASON_SCHEDULED, SEASON_START_MS } from "@/lib/season";
 import Reveal, { MaskedTitle, useMagnet } from "@/components/Reveal";
 import PawField from "@/components/PawField";
 
@@ -401,7 +401,7 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
             .hero-cta-primary {
               background: linear-gradient(180deg,#F49B2A,#E27D0C); border: none;
               border-radius: 12px; padding: 14px 36px;
-              font-family: var(--ed-disp); font-size: 14px; font-weight: 600; color: #FFF8EE; cursor: pointer;
+              font-family: var(--ed-disp); font-size: 14px; font-weight: 600; color: #211A12; cursor: pointer;
               box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5));
               transition: all 0.3s;
             }
@@ -525,7 +525,15 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
             fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
             color: "#9A4E1E", letterSpacing: "0.08em", textTransform: "uppercase",
           }}>
-            {seasonPhase() === "live" ? "Season 1 · Live" : seasonPhase() === "upcoming" ? "Season 1 · Starts Jul 1" : "Season 1 · Ended"}
+            {/* Dates come from lib/season.ts ONLY — while unscheduled the
+                window is a sentinel, so the badge says "Starting Soon". */}
+            {seasonPhase() === "live"
+              ? "Season 1 · Live"
+              : seasonPhase() === "upcoming"
+                ? SEASON_SCHEDULED
+                  ? `Season 1 · Starts ${new Date(SEASON_START_MS).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`
+                  : "Season 1 · Starting Soon"
+                : "Season 1 · Ended"}
           </span>
         </div>
         </Reveal>
@@ -553,7 +561,7 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
         {/* Infrastructure evidence chips */}
         <Reveal dir="up" delay={180}>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, marginBottom: 18 }}>
-          {["Open SDK", "MCP-native", "19-connector registry · 6 live", "Your data, portable"].map((c) => (
+          {["Open SDK", "MCP in SDK 1.6.2", "19-connector registry · 3 live", "Your data, portable"].map((c) => (
             <span key={c} style={{
               fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
               padding: "6px 14px", borderRadius: 999, color: "#7A6E5A",
@@ -583,7 +591,7 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
             fontFamily: "var(--ed-m)", fontSize: 13, color: "#5C5140",
             textAlign: "left",
           }}>
-            Open protocol · MCP server · 18 skills · build on the pet layer ·{" "}
+            Open protocol · MCP in SDK 1.6.2 · 18 skills · build on the pet layer ·{" "}
             <a href="/api-docs" className="ed-underline-slide" style={{ color: "#9A4E1E", fontWeight: 700, textDecoration: "none" }}>docs <ArrowSwap /></a>
           </div>
         </div>

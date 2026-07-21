@@ -84,7 +84,7 @@ export default function ReferralPanel() {
         <span
           style={{
             fontFamily: "var(--ed-m, 'Space Mono', ui-monospace, monospace)",
-            fontSize: 11,
+            fontSize: 12,
             padding: "2px 8px",
             borderRadius: 999,
             background: "#BE4F28",
@@ -157,7 +157,7 @@ export default function ReferralPanel() {
               <div
                 style={{
                   fontFamily: "var(--ed-m, 'Space Mono', ui-monospace, monospace)",
-                  fontSize: 10,
+                  fontSize: 12,
                   letterSpacing: "0.1em",
                   color: "rgba(33,26,18,0.5)",
                   textTransform: "uppercase",
@@ -174,7 +174,7 @@ export default function ReferralPanel() {
                 <div
                   style={{
                     fontFamily: "var(--ed-m, 'Space Mono', ui-monospace, monospace)",
-                    fontSize: 10,
+                    fontSize: 12,
                     letterSpacing: "0.1em",
                     color: "rgba(33,26,18,0.5)",
                     textTransform: "uppercase",

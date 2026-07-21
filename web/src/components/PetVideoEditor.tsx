@@ -172,7 +172,7 @@ export default function PetVideoEditor({ videoUrl, onClose }: { videoUrl: string
               <label style={miniLabel}>CAPTION</label>
               <input type="text" aria-label="Video caption" value={state.caption}
                 onChange={e => setState(s => ({ ...s, caption: e.target.value }))}
-                placeholder="e.g. Happy Birthday, Sparky!"
+                placeholder="e.g. Happy Birthday, Dordor!"
                 style={inputStyle} />
               <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
                 {(["bottom", "center", "top"] as const).map(p => (

@@ -48,7 +48,7 @@ Under the skills is a coordinated agent loop:
 Owners can connect their own provider keys (OpenAI, Anthropic, Google, OpenRouter); keys are encrypted at rest and used by the LLM router.
 
 ```bash
-petclaw-sdk auth <jwt>
+petclaw-sdk auth pck_your_token_here   # mint in the web app: Sovereignty → Connect PetClaw clients
 petclaw-sdk models connect openai sk-...
 petclaw-sdk models list
 ```
@@ -57,30 +57,35 @@ Endpoints: `GET/POST/DELETE /api/petclaw/models` (owner-auth).
 
 ## Connectors (19 across 5 categories — examples)
 
-| Platform | Type | Capabilities |
+| Platform | Type | Status · Capabilities |
 |----------|------|-------------|
-| **Telegram** | Messaging | Send/receive messages, photos, webhooks, bot management |
-| **Twitter/X** | Social | Post/reply, own timeline, recent search, likes, profile lookup |
-| **Discord** | Community | Send/read channel messages, reactions, guild list, bot profile |
-| **Slack** | Workspace | Channel messages, threads, reactions, history |
-| **Web Search** | Knowledge | DuckDuckGo instant-answer search; server-side page summarization is unavailable |
-| **Enhanced Memory** | Internal | Semantic search, timeline, cross-platform recall |
+| **Telegram** | Messaging | Launch-paused — channel delivery returns 503 in this release |
+| **Twitter/X** | Social | Launch-paused — channel delivery returns 503 in this release |
+| **Discord** | Community | Launch-paused — channel delivery returns 503 in this release |
+| **Slack** | Workspace | Launch-paused — channel delivery returns 503 in this release |
+| **Web Search** | Knowledge | Live — DuckDuckGo instant-answer search; server-side page summarization is unavailable |
+| **Enhanced Memory** | Internal | Live — semantic search, timeline, cross-platform recall |
+
+Persistent channel subscriptions (Telegram/Twitter/Discord bot delivery) are
+fail-closed behind a launch kill-switch and return `503` — the same state shown
+on the Agent screen ("Platform Connections · unavailable for launch").
 
 ## MCP Compatibility
 
-Any MCP-compatible client can invoke PetClaw skills (6 tools exposed):
+The SDK defines 6 MCP tools for stdio clients (Claude Desktop, Claude Code,
+Cursor, Gemini CLI). **Known issue:** the MCP path in the published SDK 1.6.1 is
+broken; the fix ships in SDK 1.6.2. Do not rely on MCP until then — invoke
+skills via the REST API or CLI instead.
 
 | Client | Status |
 |--------|--------|
-| Claude Desktop / Claude Code | ✅ Tested |
-| Cursor | ✅ Compatible |
-| Gemini CLI | ✅ Compatible |
-| Any MCP stdio client | ✅ Standard protocol |
+| Claude Desktop / Claude Code | ⏳ Shipping in SDK 1.6.2 |
+| Cursor | ⏳ Shipping in SDK 1.6.2 |
+| Gemini CLI | ⏳ Shipping in SDK 1.6.2 |
+| Any MCP stdio client | ⏳ Standard protocol · shipping in SDK 1.6.2 |
 
 ```bash
-petclaw-sdk mcp
-# or via npx
-npx @myaipet/petclaw-sdk mcp --url https://app.myaipet.ai --pet-id 1
+petclaw-sdk mcp   # broken in 1.6.1 — fixed in SDK 1.6.2
 ```
 
 ## On-Chain (planned · not live)
@@ -102,7 +107,7 @@ The two deployed BSC contracts are non-upgradeable. Their production integration
 |-------|----------|-------------|
 | 📦 Export | `GET /api/petclaw/export` | Download complete SOUL data (JSON) |
 | 📥 Import | `POST /api/petclaw/import` | Restore pet from SOUL export |
-| 🗑️ Delete | `DELETE /api/petclaw/delete` | Permanent erasure + SHA-256 proof |
+| 🗑️ Delete | `DELETE /api/petclaw/delete` | Active-systems removal + SHA-256 receipt of the request (backups expire ≤90 days; on-chain records can't be erased) |
 | ✅ Consent | `PATCH /api/pets/{id}` | Toggle: public profile, data sharing, AI training, interactions |
 | 🔍 Verify | `POST /api/petclaw/verify` | Prove pet ownership by wallet |
 
@@ -131,7 +136,7 @@ petclaw-sdk install <id>          # Install skill
 petclaw-sdk execute <id>          # Run skill
 petclaw-sdk export                # Download SOUL
 petclaw-sdk discover              # Find pets
-petclaw-sdk mcp                   # Start MCP server
+petclaw-sdk mcp                   # MCP server (broken in 1.6.1 — fixed in SDK 1.6.2)
 ```
 
 ## Integration

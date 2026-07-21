@@ -31,10 +31,12 @@ export default function SkillsPage() {
       padding: "60px 24px 100px",
     }}>
       <div style={{ maxWidth: 980, margin: "0 auto" }}>
-        <a href="https://myaipet.ai" style={{
+        <a href="/" style={{
           display: "inline-block", marginBottom: 24, fontSize: 13,
           color: "rgba(33,26,18,0.65)", textDecoration: "none",
-        }}>← Back to landing</a>
+          fontFamily: "var(--ed-m, ui-monospace, monospace)",
+          letterSpacing: "0.12em", fontWeight: 700,
+        }}>← MY AI PET</a>
 
         {/* Hero */}
         <div style={{ marginBottom: 40 }}>
@@ -55,10 +57,77 @@ export default function SkillsPage() {
             maxWidth: 640, margin: 0,
           }}>
             Built-in skill manifests, one-command install. Every skill is a markdown +
-            JSON schema definition — no proprietary format, no lock-in. Plug them into
-            any MCP-compatible client.
+            JSON schema definition — no proprietary format, no lock-in. MCP client
+            support ships in SDK 1.6.2.
           </p>
         </div>
+
+        {/* What skills actually do for you */}
+        <section style={{ marginBottom: 40 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <span style={{
+              fontFamily: "var(--ed-m, ui-monospace, monospace)", fontSize: 13,
+              fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase",
+              color: "#BE4F28",
+            }}>What skills actually do for you</span>
+            <span style={{ flex: 1, height: 1, background: "rgba(33,26,18,0.13)" }} />
+            <span style={{
+              fontFamily: "var(--ed-m, ui-monospace, monospace)", fontSize: 13,
+              fontWeight: 700, color: "#211A12",
+              padding: "3px 10px", borderRadius: 999,
+              background: "#E8C77E", border: "1px solid #211A12",
+            }}>{BUILTIN_SKILLS.length} built-in</span>
+          </div>
+
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+            gap: 14,
+          }}>
+            {[
+              {
+                icon: "chat",
+                verb: "Answer with memory",
+                body: "Your pet runs companion-chat + memory-recall in every conversation — replies draw on its memory ledger, not a blank prompt.",
+              },
+              {
+                icon: "extension-icon",
+                verb: "Summarize pages as you browse",
+                body: "The Chrome extension runs summarize-page on sites you allow — consent-gated, in your pet's voice.",
+              },
+              {
+                icon: "compass",
+                verb: "Plan, then act with real tools",
+                body: "In the agent loop your pet chains skills — daily-mood, pet-diary, image-gen, video-gen — into plan→act steps.",
+              },
+              {
+                icon: "scroll",
+                verb: "Carry its learning anywhere",
+                body: "Skills your pet self-promotes from your chats leave with soul-export — portable to MCP clients (SDK 1.6.2).",
+              },
+            ].map((u) => (
+              <div key={u.verb} style={{
+                padding: "18px 18px 16px", borderRadius: 14,
+                background: "#FBF6EC",
+                border: "1.5px solid #211A12",
+                boxShadow: "4px 4px 0 #211A12",
+                display: "flex", flexDirection: "column", gap: 8,
+              }}>
+                <span style={{
+                  width: 38, height: 38, borderRadius: 10,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  background: "rgba(190,79,40,0.12)", border: "1px solid rgba(33,26,18,0.15)",
+                }}><Icon name={u.icon} size={22} /></span>
+                <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, letterSpacing: "-0.01em" }}>
+                  {u.verb}
+                </h3>
+                <p style={{ fontSize: 13, color: "rgba(33,26,18,0.7)", lineHeight: 1.55, margin: 0 }}>
+                  {u.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
 
         {/* Quick-install banner */}
         <div style={{
@@ -229,9 +298,10 @@ export default function SkillsPage() {
         <div style={{
           marginTop: 36, fontSize: 13, color: "rgba(33,26,18,0.55)", lineHeight: 1.6,
         }}>
-          MCP-compatible clients (Claude Code, Cursor, OpenClaw, Gemini CLI) can list
-          and invoke these as tools. See <a href="/api-docs" style={{ color: "#9A4E1E" }}>/api-docs</a> →
-          Ecosystem → MCP Compatibility, or run <code style={{ fontFamily: "var(--ed-m, ui-monospace, monospace)" }}>petclaw-sdk mcp</code>.
+          MCP client support (Claude Code, Cursor, and other MCP stdio clients) ships in
+          SDK 1.6.2 — until then, invoke skills via the REST API or CLI. See{" "}
+          <a href="/api-docs" style={{ color: "#9A4E1E" }}>/api-docs</a> →
+          Ecosystem → MCP Compatibility.
         </div>
       </div>
     </div>

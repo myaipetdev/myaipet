@@ -11,7 +11,7 @@ import {
   type InteractionType,
 } from "@/lib/petMechanics";
 import { rateLimit } from "@/lib/rateLimit";
-import { executePetActionWithPaywall } from "@/lib/paywall";
+import { executePetActionWithPaywall, getDailyUsage } from "@/lib/paywall";
 import { NextRequest, NextResponse } from "next/server";
 
 // Feed/play use a daily free allowance and paid overflow. Emotional actions stay free.
@@ -35,6 +35,43 @@ type InteractionDomainFailure =
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Real, owner-scoped daily counters for the My Pet mission checklist. Every
+ * number is read from rows the server already writes when it PAYS the reward
+ * (DailyActionCount for capped season points + free-care quotas, Generation for
+ * creations) — nothing here is fabricated or estimated. `ap:interact` /
+ * `ap:pet_chat` counters store POINTS granted today (5 per care, 2 per chat),
+ * so the client derives action counts by dividing by the per-action grant.
+ */
+async function todaySnapshot(userId: number) {
+  const day = new Date().toISOString().slice(0, 10);
+  const dayStart = new Date(`${day}T00:00:00.000Z`);
+  const [apRows, feedFree, playFree, creations] = await Promise.all([
+    prisma.dailyActionCount.findMany({
+      where: { user_id: userId, day, action_key: { in: ["ap:interact", "ap:pet_chat"] } },
+      select: { action_key: true, count: true },
+    }),
+    getDailyUsage(userId, "feed_extra"),
+    getDailyUsage(userId, "play_extra"),
+    prisma.generation.count({
+      where: { user_id: userId, status: "completed", created_at: { gte: dayStart } },
+    }),
+  ]);
+  const ap = (key: string) => apRows.find((r) => r.action_key === key)?.count ?? 0;
+  return {
+    day,
+    care_points: ap("ap:interact"),          // season pts from cares today (5/care, +5 combo)
+    care_points_cap: DAILY_POINT_CAPS.interact,
+    chat_points: ap("ap:pet_chat"),          // season pts from pet chat today (2/message)
+    chat_points_cap: DAILY_POINT_CAPS.pet_chat,
+    creations,                               // completed generations today (pet + studio)
+    feed_free_used: feedFree.used,
+    feed_free_cap: feedFree.cap,
+    play_free_used: playFree.used,
+    play_free_cap: playFree.cap,
+  };
 }
 
 function generateResponse(
@@ -352,8 +389,17 @@ export async function POST(
     }
   }
 
+  // Post-commit, read-only mission counters — must never fail the committed care.
+  let today: Awaited<ReturnType<typeof todaySnapshot>> | null = null;
+  try {
+    today = await todaySnapshot(user.id);
+  } catch (error) {
+    console.error("[interact] today snapshot failed:", error);
+  }
+
   return NextResponse.json({
     pet: updatedPet,
+    today,
     interaction: {
       type: interactionType,
       response: responseText,
@@ -410,10 +456,18 @@ export async function GET(
     }
   }
 
+  let today: Awaited<ReturnType<typeof todaySnapshot>> | null = null;
+  try {
+    today = await todaySnapshot(user.id);
+  } catch (error) {
+    console.error("[interact] today snapshot failed:", error);
+  }
+
   return NextResponse.json({
     pet_id: pet.id,
     request,
     combos_unlocked: mods.combos_unlocked || [],
     history: mods.interaction_history || [],
+    today,
   });
 }

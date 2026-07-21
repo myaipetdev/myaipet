@@ -20,11 +20,84 @@ const EARN_METHODS = [
 
 const BSC_CHAIN_ID = 56;
 
-// Purchases are paused platform-wide right now. Three grey "Coming soon" cards
-// read abandoned, so the checkout grid collapses into one spec-sheet strip.
-// Flip this to true to restore the full three-card USDT flow — the card markup
-// below is kept intact behind this flag.
-const SHOW_PURCHASE_CARDS: boolean = false;
+// ── Studio credit costs (mirrors lib/studio/providers.ts — runnable models only,
+// comingSoon engines excluded). Used for the honest "what this pack makes" math:
+//   pet portrait  = 5 cr  (grok-imagine, the free-tier default image engine)
+//   video clip    = 25 cr (grok-imagine-video / wan-2.1, the cheapest clip engines)
+// If providers.ts reprices, update these two numbers.
+const PORTRAIT_CR = 5;
+const CLIP_CR = 25;
+
+// ── Pack catalog. Credits MUST match what /api/credits/purchase actually grants
+// (PLANS there: 100/500/2000 for 5/20/50 USDT) — the cards previously advertised
+// 5× and under-delivered. Kept at the server's lower grants on purpose to stay
+// margin-positive over Grok generation costs.
+const PLANS = [
+  { name: "Explorer", key: "starter", credits: 100, price: 5, desc: "Try the ecosystem", emoji: "grass" },
+  { name: "Creator", key: "creator", credits: 500, price: 20, desc: "Full raise & create", emoji: "paw" },
+  { name: "Breeder", key: "pro", credits: 2000, price: 50, desc: "Power user tier", emoji: "crown" },
+];
+
+// Derived, honest numbers — computed, never hand-typed, so they can't drift.
+const BASE_UNIT = PLANS[0].price / PLANS[0].credits; // Explorer sets the base rate ($0.05/cr)
+const BEST_UNIT = Math.min(...PLANS.map(p => p.price / p.credits));
+const packs = PLANS.map(p => {
+  const unit = p.price / p.credits;
+  return {
+    ...p,
+    usdtPrice: `${p.price} USDT`,
+    // "5¢" / "4¢" / "2.5¢" per credit
+    unitLabel: `${(unit * 100).toFixed(1).replace(/\.0$/, "")}¢ / credit`,
+    saving: Math.round((1 - unit / BASE_UNIT) * 100),
+    portraits: Math.floor(p.credits / PORTRAIT_CR),
+    clips: Math.floor(p.credits / CLIP_CR),
+    // Wax-seal BEST VALUE only where the unit math actually supports it: the
+    // strictly cheapest ¢/credit, and only if it genuinely undercuts the base.
+    best: unit === BEST_UNIT && unit < BASE_UNIT,
+  };
+});
+
+/** Wax-seal BEST VALUE stamp — terracotta seal, gold inner ring, hard offset
+ *  shadow, hand-stamped rotation. Sits over the pack card's top-right die-cut. */
+function BestValueSeal() {
+  return (
+    <div
+      role="img"
+      aria-label="Best value pack"
+      style={{
+        position: "absolute", top: -18, right: -12, width: 68, height: 68,
+        borderRadius: "50%", background: "#BE4F28", border: "2px solid #9A4E1E",
+        boxShadow: "2px 3px 0 rgba(33,26,18,.28), inset 0 0 0 3px #C8932F, inset 0 2px 0 rgba(255,255,255,.22)",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        transform: "rotate(8deg)", zIndex: 2,
+      }}
+    >
+      <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800, color: "#FFF8EE", letterSpacing: "0.04em", lineHeight: 1.1 }}>BEST</span>
+      <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800, color: "#FFF8EE", letterSpacing: "0.04em", lineHeight: 1.1 }}>VALUE</span>
+    </div>
+  );
+}
+
+/** Wax-seal PAUSED stamp (decorative — the ink text beside it carries meaning). */
+function PausedSeal() {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        width: 58, height: 58, borderRadius: "50%", flexShrink: 0,
+        background: "#BE4F28", border: "2px solid #9A4E1E",
+        boxShadow: "2px 3px 0 rgba(33,26,18,.28), inset 0 0 0 3px #C8932F, inset 0 2px 0 rgba(255,255,255,.22)",
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        color: "#FFF8EE", transform: "rotate(-8deg)",
+      }}
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <rect x="7" y="5" width="3.5" height="14" rx="1.2" />
+        <rect x="13.5" y="5" width="3.5" height="14" rx="1.2" />
+      </svg>
+    </span>
+  );
+}
 
 export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
   const { address, isConnected, chainId } = useAccount();
@@ -37,20 +110,10 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
   // Note: legacy on-chain $PET purchase flow has been retired. The flow is now
   // strictly USDT → /api/credits/purchase → in-game credits (points-based).
 
-  const plans = [
-    // Credits MUST match what /api/credits/purchase actually grants (PLANS there:
-    // 100/500/2000) — the cards previously advertised 5× and under-delivered.
-    // Kept at the server's lower grants on purpose to stay margin-positive over
-    // Grok generation costs.
-    { name: "Explorer", key: "starter", cookies: 100, price: 5, usdtPrice: "5 USDT", pop: false, desc: "Try the ecosystem", emoji: "grass" },
-    { name: "Creator", key: "creator", cookies: 500, price: 20, usdtPrice: "20 USDT", pop: true, desc: "Full raise & create", emoji: "paw" },
-    { name: "Breeder", key: "pro", cookies: 2000, price: 50, usdtPrice: "50 USDT", pop: false, desc: "Power user tier", emoji: "crown" },
-  ];
-
   // Direct USDT pay (BSC-USD → treasury → server verifies → grants credits)
   const directPay = useDirectUsdtPay();
 
-  const handlePurchase = async (plan: any) => {
+  const handlePurchase = async (plan: (typeof packs)[number]) => {
     setError(null);
     setSuccess(null);
 
@@ -128,9 +191,12 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
     }
   };
 
+  // Payments kill-switch: while the treasury is unconfigured, purchases are
+  // paused platform-wide. The packs stay on display at full fidelity (this is
+  // the shop window), the buy slot becomes an "Opens at launch" letterpress
+  // strip, and one wax-seal PAUSED plaque presides over the section.
   const paused = !directPay.treasuryConfigured;
   const getButtonLabel = (planKey: string) => {
-    if (paused) return "Coming soon";
     if (purchasing !== planKey) return "Pay with USDT →";
     if (step === "purchase") return "Confirm in wallet...";
     if (step === "confirm") return "Verifying tx...";
@@ -148,7 +214,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         .pricing-earn-grid .earn-card > span:first-child { font-size: 16px !important; }
         .pricing-earn-grid .earn-card div > div:first-child { font-size: 13px !important; }
         .pricing-earn-grid .earn-card div > div:nth-child(2) { font-size: 13px !important; }
-          .pricing-cards-grid { grid-template-columns: 1fr !important; max-width: 400px !important; margin-left: auto !important; margin-right: auto !important; }
+          .pack-grid { grid-template-columns: 1fr !important; max-width: 380px !important; margin-left: auto !important; margin-right: auto !important; row-gap: 26px !important; }
         }
         @media (max-width: 480px) {
           .pricing-root { padding: 32px 12px !important; }
@@ -188,27 +254,6 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         </p>
         </Reveal>
       </div>
-
-      {/* Duplicate pause banner only when the full cards show — the compact
-          strip below carries its own wax-seal pause badge. */}
-      {SHOW_PURCHASE_CARDS && paused && (
-        <div style={{
-          maxWidth: 620, margin: "0 auto 32px", padding: "14px 20px", borderRadius: 14,
-          background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-          display: "flex", alignItems: "center", gap: 12, textAlign: "left",
-        }}>
-          <span style={{ fontSize: 20, flexShrink: 0, display: "inline-flex", color: "#BE4F28" }} aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="5" width="20" height="14" rx="2.5" />
-              <path d="M2 9.5h20" />
-              <path d="M6 14.5h3" />
-            </svg>
-          </span>
-          <div style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#9A4E1E", lineHeight: 1.5 }}>
-            <strong>Credit purchases are paused right now.</strong> Existing credits remain usable. The activities below earn Season points, not generation credits.
-          </div>
-        </div>
-      )}
 
       <div style={{
         fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
@@ -253,22 +298,53 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         ))}
       </div>
 
-      {/* Purchase section */}
+      {/* ── Credit packs — Collectible Editorial commerce ── */}
       <Reveal dir="fade">
       <div style={{ textAlign: "center", marginBottom: 24 }}>
+        <div style={{
+          fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+          letterSpacing: "0.14em", textTransform: "uppercase", color: "#9A4E1E", marginBottom: 8,
+        }}>
+          Credit packs · USDT
+        </div>
         <h3 style={{
-          fontFamily: "var(--ed-disp)", fontSize: 22, fontWeight: 700,
-          color: "#211A12", marginBottom: 6,
+          fontFamily: "var(--ed-disp)", fontSize: 24, fontWeight: 700,
+          color: "#211A12", marginBottom: 6, letterSpacing: "-0.02em",
         }}>
           Credits &amp; Season points
         </h3>
-        <p style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#7A6E5A", marginBottom: 10 }}>
-          {SHOW_PURCHASE_CARDS && paused
-            ? "Purchases are paused; existing credits remain usable"
-            : "Credits power AI image & video creation with your pet"}
+        <p style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#7A6E5A", fontWeight: 500 }}>
+          Credits power AI image &amp; video creation — points are earned, never sold.
         </p>
       </div>
       </Reveal>
+
+      {/* Wax-seal PAUSED plaque — payments are kill-switched, and that is stated
+          calmly on the record: one stamp, one line, no fake open date. */}
+      {paused && (
+        <Reveal dir="up">
+        <div style={{
+          maxWidth: 560, margin: "0 auto 34px", padding: "16px 20px",
+          background: "#F5EFE2", borderRadius: 14,
+          border: "1.5px solid rgba(33,26,18,.18)",
+          boxShadow: "4px 5px 0 rgba(33,26,18,.10)",
+          display: "flex", alignItems: "center", gap: 16, textAlign: "left",
+        }}>
+          <PausedSeal />
+          <div>
+            <div style={{
+              fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+              letterSpacing: "0.16em", textTransform: "uppercase", color: "#BE4F28", marginBottom: 3,
+            }}>
+              Purchases paused
+            </div>
+            <div style={{ fontFamily: "var(--ed-body)", fontSize: 15, color: "#211A12", fontWeight: 600, lineHeight: 1.5 }}>
+              Purchases open at launch — existing credits stay usable.
+            </div>
+          </div>
+        </div>
+        </Reveal>
+      )}
 
       {error && (
         <div style={{
@@ -294,180 +370,260 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
       )}
 
       <style>{`
-        .pricing-card {
-          border-radius: 16px;
-          padding: 28px 22px; position: relative; text-align: center;
-          box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5));
-          transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-        }
-        .pricing-cards-grid:hover .pricing-card {
-          opacity: 0.5;
-          filter: saturate(0.6);
-        }
-        .pricing-cards-grid:hover .pricing-card:hover {
-          opacity: 1;
-          filter: saturate(1);
-          transform: translateY(-6px);
-          box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5));
-        }
-        .pricing-card:hover {
-          transform: translateY(-6px);
-          box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5));
-        }
-        .pricing-card.popular {
-          background: #F5EFE2;
-          border: 1px solid rgba(190,79,40,0.30);
-        }
-        .pricing-card.popular:hover {
-          border-color: rgba(190,79,40,0.50);
-          box-shadow: var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5));
-        }
-        .pricing-card:not(.popular) {
+        /* Die-cut pack card: ink keyline, cream die-cut margin (the inset ring),
+           ONE hard zero-blur offset shadow. Depth is static; hover is a peel. */
+        .pack-card {
+          position: relative;
           background: #FBF6EC;
-          border: 1px solid var(--ed-hair, rgba(33,26,18,.13));
+          border: 2px solid #211A12;
+          border-radius: 18px;
+          padding: 24px 22px 20px;
+          text-align: left;
+          height: 100%;
+          box-shadow: inset 0 0 0 5px var(--pk-margin, #FFFDF6), 6px 7px 0 rgba(33,26,18,.14);
+          transition: transform 0.18s ease, box-shadow 0.18s ease;
         }
-        .pricing-card:not(.popular):hover {
-          border-color: rgba(190,79,40,0.30);
-          background: #F5EFE2;
+        .pack-card:hover {
+          transform: translate(-2px, -3px);
+          box-shadow: inset 0 0 0 5px var(--pk-margin, #FFFDF6), 9px 11px 0 rgba(33,26,18,.16);
         }
-        .pricing-card:hover .pricing-btn-default,
-        .pricing-card.popular:hover .pricing-btn-default {
-          background: linear-gradient(180deg,#E68A2E,#BE4F28) !important;
-          color: #FCE9CF !important;
-          border-color: transparent !important;
+        .pack-buy-btn {
+          width: 100%;
+          background: linear-gradient(180deg, #E68A2E, #BE4F28);
+          color: #211A12; /* ink on orange — WCAG mandate, never cream */
+          border: 2px solid #211A12;
+          border-radius: 11px;
+          padding: 12px;
+          font-family: var(--ed-disp);
+          font-size: 14px;
+          font-weight: 800;
+          letter-spacing: 0.01em;
+          box-shadow: 3px 4px 0 rgba(33,26,18,.22);
+          cursor: pointer;
+          transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
         }
+        .pack-buy-btn:hover:not(:disabled) {
+          transform: translate(-1px, -2px);
+          box-shadow: 5px 7px 0 rgba(33,26,18,.24);
+        }
+        .pack-buy-btn:active:not(:disabled) {
+          transform: translate(1px, 2px);
+          box-shadow: 1px 1px 0 rgba(33,26,18,.22);
+        }
+        .pack-buy-btn:disabled { cursor: wait; opacity: 0.6; }
       `}</style>
-      {SHOW_PURCHASE_CARDS ? (
-      <div className="pricing-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, maxWidth: 860, margin: "0 auto" }}>
-        {plans.map((p, i) => (
-          <Reveal key={p.name} dir="up" delay={Math.min(i, 8) * 90}>
-          <div className={`pricing-card${p.pop ? " popular" : ""}`} style={{ height: "100%" }}>
-            {p.pop && (
-              <div style={{
-                position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)",
-                background: "#BE4F28",
-                padding: "3px 14px", borderRadius: 16,
-                fontFamily: "var(--ed-m)", fontSize: 13, color: "#FFF8EE", fontWeight: 600,
+
+      {/* The three pack cards — always on display (this is the shop window),
+          numbers mirror the server grant map exactly. */}
+      <div className="pack-grid" style={{
+        display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18,
+        maxWidth: 920, margin: "0 auto", alignItems: "stretch",
+      }}>
+        {packs.map((p, i) => (
+          <Reveal key={p.key} dir="up" delay={Math.min(i, 3) * 80}>
+          <div
+            className="pack-card"
+            style={{
+              // Breeder earns a gold-foil die-cut margin — rarity is carried by
+              // stock + seal, never by glow.
+              ["--pk-margin" as any]: p.best ? "#F6E3B4" : "#FFFDF6",
+            }}
+          >
+            {p.best && <BestValueSeal />}
+
+            {/* Eyebrow: pack name + tier icon */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <span style={{
+                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+                letterSpacing: "0.16em", textTransform: "uppercase", color: "#9A4E1E",
               }}>
-                MOST POPULAR
-              </div>
-            )}
-            <div style={{ marginBottom: 8 }}><Icon name={p.emoji} size={32} /></div>
-            <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em" }}>
-              {p.name}
+                {p.name}
+              </span>
+              <Icon name={p.emoji} size={24} />
             </div>
+
+            {/* Big credit numeral */}
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 10 }}>
+              <span style={{
+                fontFamily: "var(--ed-disp)", fontSize: 46, fontWeight: 800,
+                color: "#211A12", letterSpacing: "-0.03em", lineHeight: 1,
+              }}>
+                {p.credits.toLocaleString()}
+              </span>
+              <span style={{
+                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+                letterSpacing: "0.14em", color: "#7A6E5A",
+              }}>
+                CREDITS
+              </span>
+            </div>
+
+            {/* Price + BEP-20 badge */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <span style={{ fontFamily: "var(--ed-disp)", fontSize: 21, fontWeight: 800, color: "#211A12" }}>
+                {p.usdtPrice}
+              </span>
+              <span style={{
+                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#5C5140",
+                padding: "2px 8px", borderRadius: 6, background: "#ECE4D4",
+                border: "1px solid rgba(33,26,18,.18)", letterSpacing: "0.06em",
+              }}>
+                BEP-20
+              </span>
+            </div>
+
+            {/* Per-credit unit price + computed savings */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A", fontWeight: 600 }}>
+                {p.unitLabel}
+              </span>
+              {p.saving > 0 && (
+                <span style={{
+                  fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800, color: "#BE4F28",
+                  padding: "2px 8px", borderRadius: 6,
+                  background: "rgba(190,79,40,0.08)", border: "1px solid rgba(190,79,40,0.28)",
+                  letterSpacing: "0.04em", textTransform: "uppercase",
+                }}>
+                  Save {p.saving}%
+                </span>
+              )}
+            </div>
+
+            {/* Perforation divider */}
+            <div aria-hidden="true" style={{ borderTop: "1.5px dashed rgba(33,26,18,.22)", margin: "0 0 12px" }} />
+
+            {/* What this pack makes — computed from the Studio catalog rates */}
             <div style={{
-              fontFamily: "var(--ed-disp)", fontSize: 36, fontWeight: 700,
-              color: "#211A12", marginBottom: 3,
+              fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+              letterSpacing: "0.14em", textTransform: "uppercase", color: "#9A7B4E", marginBottom: 8,
             }}>
-              {p.usdtPrice}
+              Makes about
             </div>
-            <div style={{ fontFamily: "var(--ed-m)", fontSize: 14, color: "#9A4E1E", marginBottom: 4, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>
-              <Icon name="coin" size={16} /> {p.cookies.toLocaleString()} credits
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+              <Icon name="sparkling" size={17} />
+              <span style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#5C5140", fontWeight: 500 }}>
+                <strong style={{ color: "#211A12", fontWeight: 700 }}>{p.portraits.toLocaleString()}</strong> pet portraits
+              </span>
             </div>
-            <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E", marginBottom: 18 }}>
-              {p.desc}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <Icon name="film-reel" size={17} />
+              <span style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#5C5140", fontWeight: 500 }}>
+                or <strong style={{ color: "#211A12", fontWeight: 700 }}>{p.clips.toLocaleString()}</strong> video clips
+              </span>
             </div>
-            <button
-              onClick={() => handlePurchase(p)}
-              disabled={!!purchasing || paused}
-              /* every card's button gets the terracotta hover fill — the popular
-                 card was excluded before, so its button never lit up on hover */
-              className="pricing-btn-default"
-              style={{
-                width: "100%",
-                background: paused ? "rgba(33,26,18,0.25)"
-                  : purchasing === p.key ? "rgba(190,79,40,0.5)"
-                  : p.pop ? "linear-gradient(180deg,#E68A2E,#BE4F28)" : "#211A12",
-                border: "none",
-                borderRadius: 10, padding: "13px",
-                fontFamily: "var(--ed-disp)", fontSize: 14,
-                color: p.pop && !paused ? "#FCE9CF" : "#fff",
-                cursor: paused ? "not-allowed" : purchasing ? "wait" : "pointer", fontWeight: 700,
-                transition: "all 0.3s ease",
-                boxShadow: "none",
-                opacity: paused ? 0.85 : (purchasing && purchasing !== p.key ? 0.5 : 1),
-              }}
-            >
-              {getButtonLabel(p.key)}
-            </button>
-            {/* "Buy with Card" (Coinbase onramp) was REMOVED: it onramped
-                USDC-on-Base while the only purchase path verifies USDT-on-BSC —
-                fiat spent through it could never buy the plan. Card payments
-                return via the Paddle rail (feat/card-email-paddle-auth). */}
+
+            {/* Buy slot: live USDT flow when open; letterpress strip when paused
+                (a dead grey button reads abandoned — a stamped date-line doesn't). */}
+            {paused ? (
+              <div style={{
+                border: "1.5px dashed rgba(33,26,18,.30)", borderRadius: 10,
+                padding: "12px", textAlign: "center", background: "#F5EFE2",
+                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+                letterSpacing: "0.16em", textTransform: "uppercase", color: "#9A4E1E",
+              }}>
+                Opens at launch
+              </div>
+            ) : (
+              <button
+                className="pack-buy-btn"
+                onClick={() => handlePurchase(p)}
+                disabled={!!purchasing}
+                style={purchasing && purchasing !== p.key ? { opacity: 0.5 } : undefined}
+              >
+                {getButtonLabel(p.key)}
+              </button>
+            )}
           </div>
           </Reveal>
         ))}
       </div>
-      ) : (
-      /* Compact spec-sheet strip — same REAL rates the server grants
-         (100/500/2000 credits for 5/20/50 USDT), no dead buy buttons. */
-      <Reveal dir="up">
-      <div style={{
-        maxWidth: 620, margin: "0 auto", background: "#FBF6EC", borderRadius: 16,
-        border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-        boxShadow: "3px 4px 0 rgba(33,26,18,.12)", padding: "20px 22px 22px",
+
+      {/* Rate footnote — the "makes about" basis, straight from providers.ts */}
+      <Reveal dir="fade" delay={120}>
+      <p style={{
+        fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", textAlign: "center",
+        margin: "18px auto 0", maxWidth: 560, lineHeight: 1.6, fontWeight: 500,
       }}>
-        {/* Wax-seal pause badge */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <span aria-hidden="true" style={{
-            width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
-            background: "#BE4F28", border: "2px solid #E8C77E",
-            boxShadow: "2px 3px 0 rgba(33,26,18,.18), inset 0 0 0 3px #C8932F",
-            display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#FCE9CF",
+        Studio rates: pet portrait 5 cr · video clip from 25 cr · premium engines up to 50 cr.
+      </p>
+      </Reveal>
+
+      {/* Trust strip — every claim is live in production (RpcUsdtVerifier). */}
+      <Reveal dir="fade" delay={160}>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap",
+        gap: "8px 18px", margin: "20px auto 8px", padding: "12px 18px", maxWidth: 640,
+        borderTop: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+        borderBottom: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+      }}>
+        {[
+          {
+            label: "USDT (BEP-20)",
+            icon: (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M8 9h8M12 9v7" />
+              </svg>
+            ),
+          },
+          {
+            label: "On-chain verification",
+            icon: (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
+            ),
+          },
+          {
+            label: "No card required",
+            icon: (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="6" width="18" height="13" rx="2" />
+                <path d="M3 10h18M4 4l16 17" />
+              </svg>
+            ),
+          },
+        ].map((t) => (
+          <span key={t.label} style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#5C5140",
           }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <rect x="7" y="5" width="3.5" height="14" rx="1.2" />
-              <rect x="13.5" y="5" width="3.5" height="14" rx="1.2" />
-            </svg>
+            <span style={{ display: "inline-flex", color: "#9A4E1E" }}>{t.icon}</span>
+            {t.label}
           </span>
-          <div>
-            <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: "#BE4F28" }}>
-              Purchases paused
-            </div>
-            <div style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#7A6E5A", fontWeight: 500 }}>
-              Existing credits remain usable; no purchase date is announced
-            </div>
-          </div>
-        </div>
+        ))}
+      </div>
+      </Reveal>
 
-        {/* Rate sheet — mono table, kept on the record for when buying reopens */}
-        <div style={{ border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", borderRadius: 10, overflow: "hidden", marginBottom: 16 }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--ed-m)", fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: "#ECE4D4" }}>
-                <th style={{ padding: "7px 14px", textAlign: "left", color: "#7A6E5A", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>Pack</th>
-                <th style={{ padding: "7px 14px", textAlign: "right", color: "#7A6E5A", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>Credits</th>
-                <th style={{ padding: "7px 14px", textAlign: "right", color: "#7A6E5A", fontWeight: 700, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              {plans.map((p) => (
-                <tr key={p.key} style={{ borderTop: "1px solid var(--ed-hair, rgba(33,26,18,.13))" }}>
-                  <td style={{ padding: "9px 14px", color: "#211A12", fontWeight: 700 }}>{p.name}</td>
-                  <td style={{ padding: "9px 14px", textAlign: "right", color: "#9A4E1E", fontWeight: 600 }}>{p.cookies.toLocaleString()}</td>
-                  <td style={{ padding: "9px 14px", textAlign: "right", color: "#211A12" }}>{p.usdtPrice}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Compliance line, kept on the record and designed, not buried. */}
+      <Reveal dir="fade" delay={200}>
+      <p style={{
+        fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", textAlign: "center",
+        margin: "0 auto 26px", maxWidth: 560, lineHeight: 1.6, fontWeight: 500,
+      }}>
+        Season points are a loyalty score earned through care — never purchasable, never a financial product.
+      </p>
+      </Reveal>
 
+      {/* Studio CTA — ink text on the orange gradient (WCAG mandate). */}
+      <Reveal dir="up" delay={220}>
+      <div style={{ textAlign: "center" }}>
         <a
           href="/studio"
           style={{
-            display: "block", textAlign: "center",
-            background: "linear-gradient(180deg,#E68A2E,#BE4F28)", color: "#FCE9CF",
-            fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 700,
-            padding: "13px", borderRadius: 10, textDecoration: "none",
-            boxShadow: "3px 4px 0 rgba(33,26,18,.12)",
+            display: "inline-block",
+            background: "linear-gradient(180deg,#E68A2E,#BE4F28)", color: "#211A12",
+            fontFamily: "var(--ed-disp)", fontSize: 15, fontWeight: 800,
+            padding: "14px 34px", borderRadius: 12, textDecoration: "none",
+            border: "2px solid #211A12",
+            boxShadow: "4px 5px 0 rgba(33,26,18,.18)",
           }}
         >
           Open the Studio →
         </a>
       </div>
       </Reveal>
-      )}
 
       {/* Spacer */}
       <div style={{ height: 20 }} />

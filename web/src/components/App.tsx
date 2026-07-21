@@ -16,10 +16,11 @@ import Stats from "@/components/Stats";
 import Pricing from "@/components/Pricing";
 import OrchestrationExplainer from "@/components/OrchestrationExplainer";
 import RaisePitch from "@/components/RaisePitch";
-import WalletGate from "@/components/WalletGate";
+import SeasonEventsRail from "@/components/events/SeasonEventsRail";
+import WalletGate, { TourBanner } from "@/components/WalletGate";
 import ToastHost from "@/components/Toast";
 import DialogHost from "@/components/Dialog";
-import { seasonTier, SEASON_START_MS, SEASON_END_MS } from "@/lib/season";
+import { seasonPhase, SEASON_SCHEDULED, SEASON_START_MS, SEASON_END_MS } from "@/lib/season";
 import SeasonRewardsHub from "@/components/SeasonRewardsHub";
 import PetOfTheWeek from "@/components/PetOfTheWeek";
 import { isTourActive, TOUR_ALLOWLIST } from "@/lib/tour";
@@ -127,7 +128,9 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
   return (
     // Scroll-revealed (was mount-time mp-enter-2). The check-in ceremony
     // animations inside (sealPress, slideIn) are untouched.
-    <Reveal dir="up" delay={90} className="home-section-pad home-beat" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 0" }}>
+    // No home-beat here: check-in is part of the tight season cluster
+    // (banner → check-in → protocol footnote), so only a 10px seam below.
+    <Reveal dir="up" delay={90} className="home-section-pad" style={{ padding: "0 40px", maxWidth: 1060, margin: "0 auto 10px" }}>
       <div id="daily-checkin" style={{
         borderRadius: 16, padding: "14px 20px", marginBottom: 8,
         background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -147,7 +150,11 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
               Daily Check-in
             </div>
             <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A" }}>
-              {checkedIn ? `Day ${streak} streak active 🔥` : "Check in to collect Season Rewards points"}
+              {checkedIn
+                ? `Day ${streak} streak active 🔥`
+                : SEASON_SCHEDULED
+                  ? "Check in to collect Season Rewards points"
+                  : "Collect Season Rewards points — pre-season points carry into Season 1"}
             </div>
           </div>
         </div>
@@ -220,16 +227,26 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
 }
 
 // ── Season 1 Rewards Banner ──
-function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
-  // Single source of truth for the season window (shared with lib/season.ts),
-  // so the banner countdown can't drift from the tier/phase logic.
-  const SEASON_START = SEASON_START_MS;
-  const SEASON_END = SEASON_END_MS;
-  const SEASON_TOTAL = SEASON_END - SEASON_START;
+// Season 1 opens WITH the public launch. Until the founder schedules it
+// (SEASON_SCHEDULED, lib/season.ts) the banner is a launch-energy ticket:
+// "STARTING SOON" + the real earn-rate chips, and NO dates/countdown — the
+// unscheduled window holds a 2099 sentinel, so rendering it would fabricate
+// a date. Scheduled → the real countdown returns: to the start while
+// upcoming, to the close while live, frozen standings after the end.
 
+// Real earn rates ONLY — mirrors RaisePitch + lib/seasonRewards.ts (care +5,
+// image +10 / video +20, check-in ladder D1→D7 = +5→+50). Never invent rates.
+const EARN_CHIPS = [
+  { icon: "heart", label: "Care +5" },
+  { icon: "sparkling", label: "Create +10–20" },
+  { icon: "fire", label: "Streak +5→50" },
+] as const;
+
+function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
+    if (!SEASON_SCHEDULED) return; // no clock to tick while unscheduled
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
@@ -249,19 +266,19 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
     }
   }, [seasonPoints]);
 
-  const notStarted = now < SEASON_START;
-  const seasonOver = now >= SEASON_END;
-  // Before the season opens, count down to the START; once running, to the END.
-  const remaining = Math.max(0, (notStarted ? SEASON_START : SEASON_END) - now);
+  const scheduled = SEASON_SCHEDULED;
+  const phase = seasonPhase(now); // unscheduled → always "upcoming"
+  // Real countdown (scheduled only): to the START while upcoming, then to the close.
+  const remaining = Math.max(0, (phase === "upcoming" ? SEASON_START_MS : SEASON_END_MS) - now);
   const days = Math.floor(remaining / 86_400_000);
   const hours = Math.floor((remaining % 86_400_000) / 3_600_000);
   const minutes = Math.floor((remaining % 3_600_000) / 60_000);
   const seconds = Math.floor((remaining % 60_000) / 1000);
-  const progress = Math.min(1, Math.max(0, (now - SEASON_START) / SEASON_TOTAL));
-  // Tier standing — climbs with the user's loyalty points (non-financial status).
-  const { tier, next, toNext, progress: tierProgress } = seasonTier(seasonPoints);
 
   const pad = (n: number) => String(n).padStart(2, "0");
+  // UTC-pinned so server + client print the same date string (no hydration drift).
+  const fmtDay = (ms: number) =>
+    new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 
   return (
     // Full-width terracotta ticket — scroll-revealed with the "pop" grammar
@@ -287,43 +304,76 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
           cursor: "default",
         }}
       >
-        {/* Left: title + standing — with a perforated cream tear line after it */}
+        {/* Left: title + phase badge — with a perforated cream tear line after it */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, paddingRight: 16, borderRight: "2px dashed rgba(252,233,207,0.4)" }}>
           <Icon name="trophy" size={26} />
           <div style={{ minWidth: 0 }}>
-            <h1 className="season-banner-title" style={{
-              fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 18,
-              color: "#FFF8EE", letterSpacing: "-0.02em", whiteSpace: "nowrap", margin: 0,
-            }}>
-              Season 1 Rewards
-            </h1>
-            {/* Tier/points/progress were stripped: MyCard, the RaisePitch standing
-                bar and SeasonTierCard already show them — the banner's ONE job
-                is the countdown. */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <h1 className="season-banner-title" style={{
+                fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 18,
+                color: "#FFF8EE", letterSpacing: "-0.02em", whiteSpace: "nowrap", margin: 0,
+              }}>
+                Season 1 Rewards
+              </h1>
+              {/* Gold-foil phase seal — launch energy pre-schedule, LIVE once running */}
+              {(!scheduled || phase === "live") && (
+                <span style={{
+                  background: "linear-gradient(180deg,#D9A83C,#C8932F)", color: "#211A12",
+                  borderRadius: 999, padding: "3px 9px",
+                  fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+                  letterSpacing: "0.08em", whiteSpace: "nowrap",
+                  boxShadow: "0 1px 0 rgba(33,26,18,0.25)",
+                }}>
+                  {scheduled ? "LIVE" : "STARTING SOON"}
+                </span>
+              )}
+            </div>
+            {/* Dates render ONLY once the real window is scheduled — the
+                unscheduled sentinel must never leak into copy. */}
             <div style={{
-              fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,0.85)",
-              marginTop: 2, whiteSpace: "nowrap",
+              fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(252,233,207,0.85)",
+              marginTop: 3, whiteSpace: "nowrap", letterSpacing: "0.06em", textTransform: "uppercase",
             }}>
-              Jul 1 – Aug 1 · recognition only
+              {scheduled
+                ? `${fmtDay(SEASON_START_MS)} – ${fmtDay(SEASON_END_MS)} · recognition only`
+                : "Opens with public launch · recognition only"}
             </div>
           </div>
         </div>
 
-        {/* Center: countdown (or a season-over badge once it ends) */}
-        {seasonOver ? (
+        {/* Center: unscheduled → launch hook + real earn-rate chips (this is
+            what fills the old dead middle); scheduled → the real countdown
+            (to start while upcoming, to close while live), frozen when over. */}
+        {!scheduled ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, flex: 1, minWidth: 240 }}>
+            <div style={{ fontFamily: "var(--ed-body)", fontSize: 14, fontWeight: 700, color: "#FFF8EE", textAlign: "center" }}>
+              Raise now — pre-season points carry into Season 1
+            </div>
+            <div className="season-chips" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 6 }}>
+              {EARN_CHIPS.map((c) => (
+                <span key={c.label} style={{
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                  background: "#FBF6EC", borderRadius: 999, padding: "4px 10px",
+                  fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#9A4E1E",
+                  whiteSpace: "nowrap",
+                }}>
+                  <Icon name={c.icon} size={14} /> {c.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : phase === "ended" ? (
           <div style={{
-            display: "flex", alignItems: "center", gap: 8,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flex: 1,
             fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 14, color: "#FFF8EE",
           }}>
-            Season 1 wrapped · <span style={{ opacity: 0.75, fontWeight: 700 }}>Season 2 soon</span>
+            Season 1 wrapped · <span style={{ opacity: 0.75, fontWeight: 700 }}>standings frozen · Season 2 soon</span>
           </div>
         ) : (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-          {notStarted && (
-            <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 13, color: "#FFF8EE", whiteSpace: "nowrap", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-              STARTS JUL 1 — GET READY
-            </div>
-          )}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flex: 1 }}>
+          <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 12, color: "#FFF8EE", whiteSpace: "nowrap", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            {phase === "upcoming" ? "STARTS IN" : "CLOSES IN"}
+          </div>
           <div className="season-banner-countdown" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           {[
             { val: pad(days), label: "D" },
@@ -349,9 +399,47 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
         </div>
         )}
 
+        {/* Right: the user's REAL points — labeled as pre-season carry-over
+            before the start (never hidden, never zeroed, never re-branded). */}
+        {seasonPoints > 0 && (
+          <div style={{
+            background: "#FBF6EC", borderRadius: 12, padding: "8px 14px", textAlign: "center",
+            boxShadow: ptsFlash ? "0 0 0 3px rgba(200,147,47,0.55)" : "0 0 0 0 rgba(200,147,47,0)",
+            transition: "box-shadow .3s ease", flexShrink: 0,
+          }}>
+            <div style={{
+              fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 18, color: "#BE4F28",
+              fontVariantNumeric: "tabular-nums", lineHeight: 1,
+            }}>
+              {displayPoints.toLocaleString()}
+            </div>
+            <div style={{
+              fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A", marginTop: 3,
+              fontWeight: 700, letterSpacing: "0.08em", whiteSpace: "nowrap",
+            }}>
+              {phase === "upcoming" ? "PRE-SEASON PTS" : phase === "live" ? "SEASON PTS" : "FINAL PTS"}
+            </div>
+          </div>
+        )}
+
       </div>
     </Reveal>
   );
+}
+
+// The EXACT in-SPA section keys that App renders below (note: "worldcup"/
+// "workbench" are single words, and Studio is the "create" section — "studio"
+// is only a header URL nav, never a section value).
+const VALID_SECTIONS = ["home", "my pet", "cards", "catch", "create", "community", "agent", "office", "workbench", "sovereignty", "worldcup", "season", "chat"];
+
+// Shared by the initial deep link AND the popstate (Back/Forward) handler.
+// Season Rewards hub — the canonical section key is "season". The legacy
+// "airdrop"/"leaderboard" keys (token-flavoured, contradict the no-token
+// posture) are kept as inbound aliases so old deep links still resolve.
+// Unknown section values used to render nav + an empty body — fall back home.
+function normalizeSection(raw: string | null): string {
+  if (raw === "leaderboard" || raw === "airdrop") return "season";
+  return raw && VALID_SECTIONS.includes(raw) ? raw : "home";
 }
 
 export default function App() {
@@ -369,19 +457,16 @@ export default function App() {
   // (Studio is a separate route and routes back here with ?section=...)
   const [section, setSection] = useState(() => {
     if (typeof window === "undefined") return "home";
-    const fromUrl = new URLSearchParams(window.location.search).get("section");
-    // Season Rewards hub — the canonical section key is "season". The legacy
-    // "airdrop"/"leaderboard" keys (token-flavoured, contradict the no-token
-    // posture) are kept as inbound aliases so old deep links still resolve.
-    if (fromUrl === "leaderboard" || fromUrl === "airdrop") return "season";
-    // Unknown section values used to render nav + an empty body — fall back home.
-    // These are the EXACT in-SPA section keys that App renders below (note:
-    // "worldcup"/"workbench" are single words, and Studio is the "create" section
-    // — "studio" is only a header URL nav, never a section value).
-    const VALID = ["home", "my pet", "cards", "catch", "create", "community", "agent", "office", "workbench", "sovereignty", "worldcup", "season", "chat"];
-    return fromUrl && VALID.includes(fromUrl) ? fromUrl : "home";
+    return normalizeSection(new URLSearchParams(window.location.search).get("section"));
   });
-  // Keep the URL in sync when the user clicks nav inside the SPA.
+  // Where the current section value came from — decides how the history effect
+  // below writes the URL. "init" (first paint) and "pop" (Back/Forward) must
+  // NOT push a new entry; only in-app navigation ("nav") does.
+  const sectionNavSource = useRef<"init" | "nav" | "pop">("init");
+  // Keep the URL in sync when the user clicks nav inside the SPA. pushState
+  // (not replaceState) so the browser Back button walks back through sections
+  // instead of exiting the site (DD P1); the popstate listener below restores
+  // the section when the user actually presses Back/Forward.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -389,12 +474,35 @@ export default function App() {
     else params.set("section", section);
     const next = params.toString();
     const url = next ? `/?${next}` : "/";
-    window.history.replaceState({}, "", url);
+    const source = sectionNavSource.current;
+    sectionNavSource.current = "nav";
+    if (source === "nav") {
+      window.history.pushState({}, "", url);
+    } else {
+      // First load or Back/Forward: the entry already exists — just normalize
+      // aliases (airdrop/leaderboard → season) in place, never add an entry.
+      window.history.replaceState({}, "", url);
+    }
     // Section switches used to inherit the previous tab's scroll offset (users
     // landed mid-page/at the footer). Reset to top; the Pricing deep-links
     // below fire 100–150ms later, so they still win over this reset.
     window.scrollTo({ top: 0 });
   }, [section]);
+
+  // Back/Forward: restore the section encoded in the URL of the history entry
+  // the browser moved to (same aliases/validation as the initial deep link).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPop = () => {
+      const target = normalizeSection(new URLSearchParams(window.location.search).get("section"));
+      setSection((prev: string) => {
+        if (prev !== target) sectionNavSource.current = "pop";
+        return target;
+      });
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   // Stuck-entrance safety: the section outlet enters via a CSS keyframe that
   // STARTS at opacity 0. If the animation clock stalls (hidden/background tab,
@@ -510,10 +618,13 @@ export default function App() {
         ::selection { background: rgba(190,79,40,0.18) }
         textarea::placeholder { color: rgba(33,26,18,0.25) }
         /* Guest-tour: reserve room for the fixed DEMO-TOUR banner so it never
-           overlaps the last strip of content/footer. The banner wraps taller
-           on narrow screens, so mobile reserves more. */
-        .tour-pad { padding-bottom: 72px; }
-        @media (max-width: 640px) { .tour-pad { padding-bottom: 124px; } }
+           overlaps the last strip of content (e.g. the "Connect wallet to
+           adopt" CTA) — safe-area aware to clear the iOS home indicator. The
+           banner may wrap to two rows on mid widths, so reserve generously;
+           on ≤640px the banner is a compact single fixed-height row (see
+           TourBanner in WalletGate.tsx), so its height is known. */
+        .tour-pad { padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); }
+        @media (max-width: 640px) { .tour-pad { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
         @media (max-width: 768px) {
           .desktop-grid { grid-template-columns: 1fr !important; }
           .desktop-two-col { grid-template-columns: 1fr !important; }
@@ -530,8 +641,9 @@ export default function App() {
         .home-beat-join { margin-bottom: 24px; }             /* between two self-padded sections */
         @media (max-width: 640px) {
           .home-section-pad { padding-left: 16px !important; padding-right: 16px !important; }
-          .season-banner { padding: 10px 16px !important; }
-          .season-banner-title { font-size: 13px !important; }
+          .season-banner { padding: 12px 16px !important; }
+          .season-banner-title { font-size: 15px !important; }
+          .season-chips { gap: 4px !important; }
           .season-banner-countdown { gap: 4px !important; }
           .season-banner-countdown > div > div:first-child { font-size: 14px !important; }
           .home-beat { margin-bottom: 80px !important; }
@@ -574,10 +686,10 @@ export default function App() {
                 onNavigate={(s: string) => setSection(s)}
                 txToday={platformStats?.tx_today || 0}
               />
-              {/* home-beat / home-beat-half wrappers: the guest home's shared
-                  vertical rhythm (see the CSS block above) — one consistent
-                  beat between sections instead of uniform card stacking. */}
-              <div className="home-beat">
+              {/* Season cluster — banner, check-in and the protocol footnote
+                  read as ONE tight block (10px seams, no dead voids); the big
+                  home-beat rhythm resumes below the footnote row. */}
+              <div style={{ marginBottom: 10 }}>
                 <SeasonBanner seasonPoints={seasonPoints} />
               </div>
               <CheckinCard isAuthenticated={isAuthenticated} onPointsChanged={refreshUser} />
@@ -585,20 +697,26 @@ export default function App() {
                 {hasRealStats ? (
                   <Stats stats={stats} />
                 ) : (
-                  // The old PROTOCOL / YOUR DATA two-card Stats split, merged
-                  // into two quiet mono footnote lines (same always-true facts).
-                  <div style={{ display: "grid", gap: 6 }}>
-                    {[
-                      "Protocol — PetClaw v1 · open data standard",
-                      "Your data — yours · export & delete anytime",
-                    ].map((line) => (
-                      <div key={line} style={{
-                        fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A",
-                        fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
-                      }}>
-                        {line}
-                      </div>
-                    ))}
+                  // The old PROTOCOL / YOUR DATA two-card Stats split — now ONE
+                  // designed colophon row closing the season cluster (hairline
+                  // rule + mono footnotes) instead of lines floating in a void.
+                  <div style={{
+                    display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 12px",
+                    borderTop: "1px solid var(--ed-hair, rgba(33,26,18,.13))", paddingTop: 12,
+                  }}>
+                    <span style={{
+                      fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A",
+                      fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
+                    }}>
+                      Protocol — PetClaw v1 · open data standard
+                    </span>
+                    <span aria-hidden style={{ color: "#B9AB8F", fontSize: 12 }}>◆</span>
+                    <span style={{
+                      fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A",
+                      fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
+                    }}>
+                      Your data — yours · export &amp; delete anytime
+                    </span>
                   </div>
                 )}
               </Reveal>
@@ -607,6 +725,8 @@ export default function App() {
               {/* Pitch: why raise + how to earn (closes the gap between Hero and Pricing) */}
               <div className="home-beat-join">
                 <RaisePitch onNavigate={setSection} />
+                {/* Season event posters — Best in Show · Streak Festival · Catch Safari */}
+                <SeasonEventsRail />
               </div>
               {/* How the agent infrastructure orchestrates (Trinity-style explainer) */}
               <div className="home-beat-join">
@@ -726,6 +846,13 @@ export default function App() {
       )}
       </div>
 
+      {/* Guest-tour DEMO banner — must live OUTSIDE the animated section
+          outlet above: the outlet's entrance animation (fill-mode both) keeps
+          a transform applied forever, which turns it into the containing
+          block for position:fixed children. Rendered inside it (as WalletGate
+          used to), the "fixed" banner anchored to the SECTION bottom and
+          covered the tour page's closing "Connect wallet to adopt" CTA. */}
+      {showTourBanner && <TourBanner />}
 
       {/* Footer — only show in app mode */}
       <footer style={{ padding: "48px 24px 36px", textAlign: "center", borderTop: "1px solid var(--ed-hair, rgba(33,26,18,.13))", background: "rgba(33,26,18,0.02)" }}>
@@ -789,7 +916,7 @@ export default function App() {
           <a href="/?section=sovereignty#petclaw-extension" style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "12px 22px", borderRadius: 12,
-            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
             border: "none",
             fontFamily: "var(--ed-body)", fontSize: 15, fontWeight: 700,
             textDecoration: "none", transition: "transform 0.15s, box-shadow 0.15s",
@@ -810,7 +937,6 @@ export default function App() {
         }}>
           {[
             { href: "/skills", label: "Skills" },
-            { href: "/stats", label: "Stats" },
             { href: "/api-docs", label: "API Docs" },
             { href: "/terms", label: "Terms" },
             { href: "/privacy", label: "Privacy" },

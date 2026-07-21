@@ -162,7 +162,7 @@ function Spinner() {
 
 const primaryBtn: React.CSSProperties = {
   marginTop: 10, padding: "9px 16px", borderRadius: 10, border: "none",
-  background: "linear-gradient(180deg, #F49B2A, #E27D0C)", color: "#FFF8EE",
+  background: "linear-gradient(180deg, #F49B2A, #E27D0C)", color: "#211A12",
   fontSize: 13, fontWeight: 700, cursor: "pointer",
   fontFamily: "var(--ed-body), 'Hanken Grotesk', system-ui, sans-serif",
   boxShadow: "0 10px 20px -12px rgba(226,125,12,.7)",

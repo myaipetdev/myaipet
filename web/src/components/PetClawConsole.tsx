@@ -6,7 +6,9 @@
  * petclaw_chat tool, live). Dark terminal panel on the app's light pages.
  *
  * Inventory is the REAL thing (kept honest):
- *   • 19-connector registry (6 live)  • 18 SDK skills  • 6 MCP tools  • VIGIL (5-stage harness)  • PACK (A2A)  • sovereignty
+ *   • 19-connector registry (3 live · messaging launch-paused)  • 18 SDK skills
+ *   • 6 MCP tool definitions (working MCP path ships in SDK 1.6.2)
+ *   • VIGIL (5-stage harness)  • PACK (A2A)  • sovereignty
  *
  * variant="full"    → manifest + LIVE terminal (boot effect + chat). Needs petId.
  * variant="compact" → banner + channels only, static (onboarding intro).
@@ -77,10 +79,12 @@ const MONO = "var(--ed-m)";    // Space Mono
 // (console boot line, manifest header, SovereigntyDashboard SDK card).
 export const SDK_VERSION = "1.6.1";
 
-// Always-on surfaces + the 19-connector registry (six currently live).
-const RUNS_ON = "web · chrome-extension · mcp clients (Claude · Cursor · any)";
+// Always-on surfaces + the 19-connector registry (three currently live).
+// Messaging channel delivery is launch-paused (matches the Agent screen);
+// MCP clients connect once the fixed MCP path ships in SDK 1.6.2.
+const RUNS_ON = "web · chrome-extension · mcp clients (via SDK 1.6.2)";
 const CONNECTORS = [
-  { k: "messaging (3/8 live)", v: "telegram · discord · x live; whatsapp · slack · line · instagram · gmail planned" },
+  { k: "messaging (0/8 live)", v: "telegram · discord · x launch-paused; whatsapp · slack · line · instagram · gmail planned" },
   { k: "productivity (0/3 live)", v: "notion · google-calendar · github planned" },
   { k: "media (0/2 live)", v: "spotify · youtube planned" },
   { k: "knowledge (3/4 live)", v: "web-search · wikipedia · memory live; brave planned" },
@@ -114,9 +118,9 @@ const PACK = [
   { k: "invoke", v: "disabled · dedicated consent + caller funding required" },
 ];
 const SOVEREIGNTY: { k: string; v: React.ReactNode }[] = [
-  { k: "export", v: "full memory ledger, signed JSON" },
+  { k: "export", v: "full memory ledger, JSON + SHA-256 integrity hash" },
   { k: "consent", v: "public / sharing / AI-training / interact" },
-  { k: "delete", v: "erase everything, cryptographic proof" },
+  { k: "delete", v: "active-systems wipe · SHA-256 receipt · backups expire ≤90d" },
   { k: "on-chain", v: <>SOUL anchor + inheritance <span style={{ color: MUTED }}>○ planned · not live</span></> },
 ];
 
@@ -136,8 +140,8 @@ const liveTag = <span style={{ color: GREEN }}>● live</span>;
 interface Line { role: "sys" | "you" | "pet"; text: string }
 
 const BOOT: Line[] = [
-  { role: "sys", text: `initializing petclaw-mcp · protocol v1 · SDK ${SDK_VERSION}` },
-  { role: "sys", text: "connectors ▸ 19 registry / 6 live   tools ▸ 6 ready   skills ▸ 18 loaded   VIGIL ▸ 5 · PACK ▸ A2A" },
+  { role: "sys", text: `initializing petclaw console · protocol v1 · SDK ${SDK_VERSION}` },
+  { role: "sys", text: "connectors ▸ 19 registry / 3 live · messaging launch-paused   tools ▸ 6 defined (mcp in 1.6.2)   skills ▸ 18 loaded   VIGIL ▸ 5 · PACK ▸ A2A" },
   { role: "sys", text: "soul ▸ portable · consent ▸ enforced · on-chain ▸ planned / not live" },
 ];
 
@@ -338,14 +342,14 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
             background: "linear-gradient(180deg,#FFE6A8 0%,#E8C77E 44%,#C8932F 100%)",
             WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
           }}>PETCLAW</div>
-          <TaglineTyper text="your AI pet, sovereign & portable — across every surface you use" color={MUTED} />
+          <TaglineTyper text="one companion, projected across web · chrome · terminal — it grows closer every chat, and it's yours" color={MUTED} />
           </>
           )}
 
           {/* manifest — prints out top→bottom like terminal output (pc-unroll) */}
           <div className="pc-unroll" style={{ border: `1px solid ${LINE}`, borderRadius: 12, padding: compact ? "18px 20px" : "20px 24px" }}>
             <div style={{ color: GOLD, fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
-              PetClaw Protocol v1 · SDK v{SDK_VERSION} <span style={{ color: MUTED, fontWeight: 400 }}>· npx petclaw-mcp · MIT</span>
+              PetClaw Protocol v1 · SDK v{SDK_VERSION} <span style={{ color: MUTED, fontWeight: 400 }}>· @myaipet/petclaw-sdk · MIT</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: "0 40px" }}>
               <div>
@@ -366,7 +370,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
               </div>
               {!compact && (
                 <div>
-                  <SectionHead>MCP tools — any agent can call</SectionHead>
+                  <SectionHead>MCP tools — 6 defined · working MCP path ships in SDK 1.6.2</SectionHead>
                   {MCP_TOOLS.map((t) => <Row key={t.k} k={t.k} v={t.v} />)}
                   <SectionHead>VIGIL — agentic harness · every chat turn</SectionHead>
                   {HARNESS.map((h) => <Row key={h.k} k={h.k} v={h.v} kw={120} />)}

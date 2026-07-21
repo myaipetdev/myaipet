@@ -16,6 +16,13 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Icon from "@/components/Icon";
+import { SEASON_SCHEDULED, seasonPhase } from "@/lib/season";
+
+// Real signed-in reward values (verified against the server: interact pays 5 pts
+// per free care via awardPointsCapped, chat pays 2 pts per message, a completed
+// creation pays 10 pts). The demo can't bank points — it only shows, honestly
+// labeled, what the same actions pay once signed in.
+const PTS_PER_CARE = 5;
 
 const NAME = "Dordor";
 const clamp = (n: number) => Math.max(0, Math.min(100, n));
@@ -39,12 +46,33 @@ const CARE: Record<CareType, { label: string; icon: ReactNode; burst: string; an
 
 const BOND_TRUST = 22; // demo milestone: the frame earns its foil edge
 
+// Rotating in-character reaction lines — pure demo flavor (the real pet's lines
+// come from the server on every care).
+const SAY: Record<CareType, string[]> = {
+  feed: [
+    `${NAME} gobbles it up — tail at maximum wag.`,
+    "Crunch crunch. Zero crumbs survive.",
+    `${NAME} licks the bowl, then looks up for seconds.`,
+  ],
+  play: [
+    `${NAME} does three victory laps around you.`,
+    "Zoomies engaged. Happiness rising.",
+    `${NAME} pounces the toy like it owes them treats.`,
+  ],
+  pet: [
+    `${NAME} melts into your hand.`,
+    "Little sigh. Total bliss.",
+    `${NAME} leans in for one more scritch.`,
+  ],
+};
+
 export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: string }) {
   const [stats, setStats] = useState({ happiness: 58, energy: 66, hunger: 45, bond: 14 });
   const [react, setReact] = useState<{ anim: string; burst: string; n: number } | null>(null);
-  const [pops, setPops] = useState<Array<{ id: number; text: string; color: string }>>([]);
+  const [pops, setPops] = useState<Array<{ id: number; text: string; color: string; chip?: boolean }>>([]);
   const [memory, setMemory] = useState<string[]>([]);
   const [cares, setCares] = useState(0);
+  const [say, setSay] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [barsLive, setBarsLive] = useState(false); // bars fill AFTER their reveal lands
   const rootRef = useRef<HTMLDivElement>(null);
@@ -67,6 +95,9 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
 
   const trusted = stats.bond >= BOND_TRUST;
   const moodEmote = stats.happiness >= 85 ? "✨" : stats.happiness >= 55 ? "💖" : stats.hunger >= 75 ? "🍖" : "·";
+  // Season context — no dates/countdowns while Season 1 is unscheduled.
+  const phase = SEASON_SCHEDULED ? seasonPhase() : "upcoming";
+  const seasonNote = phase === "live" ? "SEASON 1 · LIVE" : phase === "ended" ? "SEASON 1 · ENDED" : "SEASON 1 · STARTING SOON";
 
   const care = (type: CareType) => {
     const fx = CARE[type];
@@ -80,10 +111,16 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
     setReact({ anim: fx.anim, burst: fx.burst, n: Date.now() });
     setTimeout(() => setReact(null), 900);
     const crossed = before < BOND_TRUST && clamp(before + fx.bond) >= BOND_TRUST;
-    const pop = { id: Date.now(), text: crossed ? `${NAME} trusts you 💛` : `+${fx.happiness}💖`, color: crossed ? GOLD : TERRA };
+    // The pop shows the WOULD-BE reward: +5 pts is the real signed-in grant per
+    // free care; the running caption below the buttons carries the "not banked
+    // in demo" honesty so the pop itself can stay a clean sticker.
+    const pop = crossed
+      ? { id: Date.now(), text: `${NAME} trusts you 💛`, color: GOLD }
+      : { id: Date.now(), text: `+${PTS_PER_CARE} PTS`, color: "#9A4E1E", chip: true };
     setPops((p) => [...p, pop]);
     setTimeout(() => setPops((p) => p.filter((x) => x.id !== pop.id)), crossed ? 2200 : 1500);
     setMemory((m) => [fx.mem, ...m].slice(0, 3));
+    setSay(SAY[type][cares % SAY[type].length]); // rotate through in-character lines
     setCares((c) => c + 1);
   };
 
@@ -126,9 +163,18 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
         {pops.map((p, i) => (
           <div key={p.id} style={{
             position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)",
-            fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: p.text.includes("trusts") ? 17 : 20, color: p.color,
-            zIndex: 11, pointerEvents: "none", textShadow: "0 2px 8px rgba(252,246,236,0.9)", whiteSpace: "nowrap",
+            zIndex: 11, pointerEvents: "none", whiteSpace: "nowrap",
             animation: "dpPop 1.6s ease-out forwards", marginLeft: i * 4,
+            ...(p.chip
+              ? { // die-cut sticker chip — editorial, hard offset shadow, no glow
+                  fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 13, letterSpacing: "0.08em", color: p.color,
+                  background: PAPER, border: "1px solid rgba(154,123,78,.5)", borderRadius: 8, padding: "3px 8px",
+                  boxShadow: "3px 4px 0 rgba(33,26,18,.15)",
+                }
+              : {
+                  fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 17, color: p.color,
+                  textShadow: "0 2px 8px rgba(252,246,236,0.9)",
+                }),
           }}>{p.text}</div>
         ))}
         {moodEmote !== "·" && (
@@ -158,7 +204,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
             transition: "border-color .5s ease, box-shadow .5s ease",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "var(--ed-m)", fontSize: 10.5, letterSpacing: "0.12em", color: MUTED, padding: "0 3px 8px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.12em", color: MUTED, padding: "0 3px 8px" }}>
             <span>COMPANION</span><span>FILE №0742</span>
           </div>
           <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: "#F5EFE2" }}>
@@ -171,9 +217,14 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "10px 3px 0" }}>
             <span style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 19, color: INK, letterSpacing: "-0.01em" }}>{NAME}</span>
-            <span style={{ fontFamily: "var(--ed-m)", fontSize: 10.5, letterSpacing: "0.1em", color: MUTED }}>POMERANIAN · ✦</span>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.1em", color: MUTED }}>POMERANIAN · ✦</span>
           </div>
         </button>
+      </div>
+
+      {/* ── Reaction line — rotating, in-character (fixed height, no shift) ── */}
+      <div aria-live="polite" style={{ minHeight: 22, margin: "-14px auto 20px", maxWidth: 320, fontFamily: "var(--ed-body)", fontSize: 13, fontStyle: "italic", color: "#5C5140", lineHeight: 1.5 }}>
+        {say ?? ""}
       </div>
 
       {/* ── Vitals (fill animates on reveal) ── */}
@@ -200,7 +251,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
       </div>
 
       {/* ── Care buttons ── */}
-      <div style={{ ...rv(6), display: "flex", gap: 10, justifyContent: "center", marginBottom: 30 }}>
+      <div style={{ ...rv(6), display: "flex", gap: 10, justifyContent: "center", marginBottom: 10 }}>
         {(Object.keys(CARE) as CareType[]).map((k) => (
           <button key={k} onClick={() => care(k)} className="dp-care" style={{
             padding: "11px 20px", borderRadius: 13, border: `1px solid ${HAIR}`, background: PAPER,
@@ -210,6 +261,14 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
             <span style={{ fontSize: 16, display: "inline-flex" }}>{CARE[k].icon}</span>{CARE[k].label}
           </button>
         ))}
+      </div>
+
+      {/* ── Would-be reward honesty: the demo banks nothing; signed-in raisers
+             really do get +5 pts per free care (server-verified). ── */}
+      <div style={{ ...rv(6), fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.06em", color: MUTED, margin: "0 auto 26px", maxWidth: 330, lineHeight: 1.6 }}>
+        {cares > 0
+          ? <>+{cares * PTS_PER_CARE} PTS would be banked by now — demo care isn&apos;t saved. Sign in: every free care pays +{PTS_PER_CARE} pts.</>
+          : <>Each care here would pay +{PTS_PER_CARE} pts — sign in to bank points.</>}
       </div>
 
       {/* ── Memory ticker — the "it remembers" moat ── */}
@@ -230,9 +289,37 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
         ))}
       </div>
 
-      {/* ── Adopt CTA ── normal flow (never overlaps the care buttons above) ── */}
+      {/* ── Mission strip — what raisers really earn daily (server-verified
+             values: 5 pts/free care, 2 pts/chat message, 10 pts/creation). ── */}
       <div style={{
         ...rv(8),
+        maxWidth: 320, margin: "0 auto 36px", padding: "14px 16px", borderRadius: 14,
+        background: PAPER, border: `1px solid ${HAIR}`, boxShadow: "4px 5px 0 rgba(33,26,18,.08)", textAlign: "left",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 9 }}>
+          <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", color: "#9A4E1E", textTransform: "uppercase" }}>Daily missions — raisers</span>
+          <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: MUTED }}>{seasonNote}</span>
+        </div>
+        {([
+          ["Care ×3", "+5 PTS EACH"],
+          ["Chat with your pet", "+2 PTS EACH"],
+          ["Make 1 creation", "+10 PTS"],
+        ] as const).map(([label, payoff]) => (
+          <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "5px 0" }}>
+            <span style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#3A3024" }}>{label}</span>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", color: "#9A7B4E", border: "1px solid rgba(154,123,78,.35)", borderRadius: 8, padding: "2px 8px", flexShrink: 0 }}>{payoff}</span>
+          </div>
+        ))}
+        <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px dashed ${HAIR}`, fontFamily: "var(--ed-body)", fontSize: 12, color: MUTED, lineHeight: 1.5 }}>
+          {phase === "upcoming"
+            ? "The real values signed-in raisers earn — points bank now and carry into Season 1."
+            : "The real values signed-in raisers earn — Season points are non-financial loyalty rewards."}
+        </div>
+      </div>
+
+      {/* ── Adopt CTA ── normal flow (never overlaps the care buttons above) ── */}
+      <div style={{
+        ...rv(9),
         padding: "18px 20px", borderRadius: 18,
         background: "linear-gradient(135deg, #211A12, #1E1710)", color: "#FFF8EE",
         boxShadow: SHADOW, border: "1px solid rgba(232,199,126,.22)",

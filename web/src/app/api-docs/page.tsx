@@ -248,7 +248,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
       <div style={{ maxWidth: 1080, margin: "0 auto", padding: "34px 24px 0", display: "grid", gridTemplateColumns: "232px minmax(0,1fr)", gap: 40 }} className="apidocs-grid">
         {/* Sidebar */}
         <aside className="apidocs-aside" style={{ position: "sticky", top: 76, alignSelf: "start", maxHeight: "calc(100vh - 96px)", overflowY: "auto" }}>
-          <div style={{ fontSize: 11.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 10 }}>Documents</div>
+          <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 10 }}>Documents</div>
           <nav style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 26 }}>
             {TABS.map(t => (
               <a key={t.slug} href={`/api-docs?tab=${t.slug}`} style={{
@@ -263,7 +263,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
 
           {toc.length > 0 && (
             <>
-              <div style={{ fontSize: 11.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 10 }}>On this page</div>
+              <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 10 }}>On this page</div>
               <nav style={{ display: "flex", flexDirection: "column", gap: 1, borderLeft: "1px solid rgba(33,26,18,0.13)", paddingLeft: 12 }}>
                 {toc.map((h, idx) => (
                   <a key={idx} href={`#${h.slug}`} style={{

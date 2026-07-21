@@ -96,7 +96,7 @@ function PetHpCard({ pet, buffs, side }: { pet: PetStatus; buffs: BuffIcons; sid
           fontFamily: "'Space Grotesk', sans-serif",
         }}>{pet.name}</span>
         <span style={{
-          fontSize: 10, padding: "1px 5px", borderRadius: 8,
+          fontSize: 12, padding: "1px 5px", borderRadius: 8,
           background: `${el.color}15`, border: `1px solid ${el.color}25`,
           color: el.color, fontFamily: "monospace", fontWeight: 700,
           display: "inline-flex", alignItems: "center", gap: 2,
@@ -110,7 +110,7 @@ function PetHpCard({ pet, buffs, side }: { pet: PetStatus; buffs: BuffIcons; sid
 
       {/* HP Bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 3 }}>
-        <span style={{ fontFamily: "monospace", fontSize: 10, color: "#666", fontWeight: 700 }}>HP</span>
+        <span style={{ fontFamily: "monospace", fontSize: 12, color: "#666", fontWeight: 700 }}>HP</span>
         <div style={{
           flex: 1, height: 8, borderRadius: 4, overflow: "hidden",
           background: "rgba(255,255,255,0.08)",
@@ -125,13 +125,13 @@ function PetHpCard({ pet, buffs, side }: { pet: PetStatus; buffs: BuffIcons; sid
           }} />
         </div>
       </div>
-      <div style={{ fontFamily: "monospace", fontSize: 10, color: "#555", textAlign: "right", marginTop: 1 }}>
+      <div style={{ fontFamily: "monospace", fontSize: 12, color: "#555", textAlign: "right", marginTop: 1 }}>
         {Math.max(0, pet.hp)}/{pet.maxHp}
       </div>
 
       {/* EP Bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 2 }}>
-        <span style={{ fontFamily: "monospace", fontSize: 10, color: "#555", fontWeight: 700 }}>EP</span>
+        <span style={{ fontFamily: "monospace", fontSize: 12, color: "#555", fontWeight: 700 }}>EP</span>
         <div style={{
           flex: 1, height: 4, borderRadius: 2, overflow: "hidden",
           background: "rgba(255,255,255,0.06)",
@@ -142,7 +142,7 @@ function PetHpCard({ pet, buffs, side }: { pet: PetStatus; buffs: BuffIcons; sid
             transition: "width 0.4s ease", borderRadius: 2,
           }} />
         </div>
-        <span style={{ fontFamily: "monospace", fontSize: 10, color: "#555" }}>
+        <span style={{ fontFamily: "monospace", fontSize: 12, color: "#555" }}>
           {pet.energy}/{pet.maxEnergy}
         </span>
       </div>

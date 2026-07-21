@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AlbumCarousel } from "@/components/SocialGallery";
 import Reveal from "@/components/Reveal";
+import { SEASON_SCHEDULED } from "@/lib/season";
 
 interface Item { id: number; url: string; isVideo: boolean; likes: number; }
 
@@ -88,15 +89,16 @@ function PreviewLightbox({ item, onJoin, onClose }: {
           <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: "#BE4F28" }}>
             ♥ {item.likes_count || 0}
           </span>
-          <span style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#7A6E5A", flex: 1, minWidth: 140 }}>
-            Connect your wallet to like, comment &amp; post your own.
+          {/* +3 pts is the REAL comment grant (/api/social/comment → community +3, daily-capped) */}
+          <span style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#5C5140", flex: 1, minWidth: 140 }}>
+            Connect your wallet to like, comment (+3 pts) &amp; post your own.
           </span>
           {/* Route to the single canonical wallet control below rather than
               re-mounting it here (a second copy could double-bind the connect
               modal). Closes the lightbox and scrolls the CTA into view. */}
           <button onClick={onJoin} style={{
             border: "none", cursor: "pointer", borderRadius: 999, padding: "8px 18px",
-            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
             fontFamily: "var(--ed-body)", fontSize: 13, fontWeight: 700,
             boxShadow: "0 10px 22px -12px rgba(226,125,12,.6)",
           }}>Join</button>
@@ -150,8 +152,47 @@ export default function CommunityPreview({ cta, ctaNote }: { cta?: ReactNode; ct
       {items === null ? (
         <div style={{ textAlign: "center", padding: 40, color: "#9A7B4E", fontFamily: "var(--ed-body)" }}>Loading the gallery…</div>
       ) : items.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "32px 20px", borderRadius: 16, border: "1px dashed var(--ed-hair, rgba(33,26,18,.13))", color: "#7A6E5A", fontFamily: "var(--ed-body)", fontSize: 14 }}>
-          The gallery is just getting started — be the first to create.
+        // Designed invitation — the first record sleeve in the crate, reserved.
+        // Reward chips carry the REAL server grants (/api/studio/generate →
+        // awardPointsCapped "studio_gen": image +10, motion +20, daily-capped).
+        <div style={{ textAlign: "center", padding: "8px 0 4px" }}>
+          <div style={{
+            width: 216, margin: "0 auto 18px", padding: 10, borderRadius: 10,
+            border: "2px dashed rgba(154,123,78,.6)", background: "rgba(251,246,236,.7)",
+          }}>
+            <div style={{
+              aspectRatio: "1 / 1", borderRadius: 6, background: "#F5EFE2",
+              boxShadow: "inset 0 0 0 2px rgba(184,130,44,.35)",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4,
+            }}>
+              <span style={{ fontFamily: "var(--ed-disp)", fontSize: 24, fontWeight: 800, color: "#9A7B4E" }}>№ 001</span>
+              <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: "#9A7B4E" }}>RESERVED</span>
+            </div>
+            <div style={{ marginTop: 8, fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", color: "#7A6E5A", textTransform: "uppercase" }}>
+              First sleeve in the crate
+            </div>
+          </div>
+          <h3 style={{ fontFamily: "var(--ed-disp)", fontSize: 20, fontWeight: 800, color: "#211A12", letterSpacing: "-0.02em", margin: "0 0 6px" }}>
+            The gallery is just getting started
+          </h3>
+          <p style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#5C5140", margin: "0 0 12px", lineHeight: 1.55 }}>
+            Your first creation hangs here — and it earns real season points.
+          </p>
+          <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginBottom: SEASON_SCHEDULED ? 0 : 10 }}>
+            {["+10 pts · image", "+20 pts · motion"].map((c) => (
+              <span key={c} style={{
+                fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 800, letterSpacing: "0.06em",
+                textTransform: "uppercase", color: "#9A4E1E", background: "rgba(190,79,40,.09)",
+                border: "1px solid rgba(190,79,40,.32)", borderRadius: 999, padding: "5px 12px",
+              }}>{c}</span>
+            ))}
+          </div>
+          {/* No dates/countdowns while Season 1 is unscheduled — honest carry-in note only. */}
+          {!SEASON_SCHEDULED && (
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "#7A6E5A", letterSpacing: "0.04em" }}>
+              Season 1 starts soon — points you earn now carry in.
+            </div>
+          )}
         </div>
       ) : (
         // One decisive CTA (the orange card below) — the redundant ghost
@@ -180,15 +221,39 @@ export default function CommunityPreview({ cta, ctaNote }: { cta?: ReactNode; ct
         />
       )}
 
-      {/* CTA */}
-      <div id="community-preview-cta" style={{ marginTop: 22, padding: "20px 22px", borderRadius: 18, textAlign: "center", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))", scrollMarginTop: 88 }}>
-        <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 18, marginBottom: 6 }}>Like, comment &amp; post your own</div>
-        <div style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "rgba(255,248,238,0.85)", marginBottom: 16 }}>
-          Connect your wallet — no gas, identity only. Join the pets.
+      {/* CTA — cream editorial card, not a flat orange slab. The wallet control
+          in the `cta` slot is already ink-on-orange (WalletGate). Reward chips
+          carry the REAL server grants (/api/social/*: comment +3, your work
+          liked +1, new follower +2 — all daily-capped). */}
+      <div id="community-preview-cta" style={{
+        marginTop: 22, position: "relative", overflow: "hidden", padding: "26px 22px 22px",
+        borderRadius: 18, textAlign: "center", background: "#FBF6EC",
+        border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+        boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))", scrollMarginTop: 88,
+      }}>
+        <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "linear-gradient(90deg,#B8822C,#F2D289,#B8822C)" }} />
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: "#BE4F28", marginBottom: 8 }}>
+          Join the community
+        </div>
+        <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 20, color: "#211A12", marginBottom: 6, letterSpacing: "-0.01em" }}>
+          Like, comment &amp; post your own
+        </div>
+        <div style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#5C5140", marginBottom: 12 }}>
+          Connect your wallet — no gas, identity only. Every contribution earns season points:
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+          {["Comment +3 pts", "Your work liked +1 pt", "New follower +2 pts"].map((c) => (
+            <span key={c} style={{
+              fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.04em",
+              color: "#3A3024", background: "#F5EFE2",
+              border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
+              borderRadius: 999, padding: "5px 12px",
+            }}>{c}</span>
+          ))}
         </div>
         <div style={{ display: "inline-block" }}>{cta}</div>
         {ctaNote && (
-          <div style={{ marginTop: 10, fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(255,248,238,0.8)" }}>{ctaNote}</div>
+          <div style={{ marginTop: 10, fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "#7A6E5A" }}>{ctaNote}</div>
         )}
       </div>
     </div>

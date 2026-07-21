@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description: "Privacy Policy for the PetClaw Protocol and MY AI PET.",
 };
 
-const LAST_UPDATED = "2026-07-17";
+const LAST_UPDATED = "2026-07-21";
 
 export default function PrivacyPage() {
   return (
@@ -17,10 +17,10 @@ export default function PrivacyPage() {
       padding: "80px 24px",
     }}>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
-        <a href="https://myaipet.ai" style={{
+        <a href="/" style={{
           display: "inline-block", marginBottom: 24,
           fontSize: 13, color: "rgba(33,26,18,0.55)", textDecoration: "none",
-        }}>← Back to landing</a>
+        }}>← MY AI PET</a>
 
         <h1 style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 6 }}>
           Privacy Policy
@@ -63,9 +63,16 @@ export default function PrivacyPage() {
           a future Base deployment is planned but has no announced activation date.
         </Section>
 
-        <Section title="5. Cookies & Local Storage">
-          We use an HttpOnly, SameSite session cookie for SIWE authentication and local browser
-          storage for UX preferences. We do not use cross-site advertising trackers.
+        <Section title="5. Authentication, Cookies & Local Storage">
+          Signing in with your wallet (SIWE) issues a short-lived session token (a JWT valid for
+          8 hours) that the web app stores in browser local storage and sends as an Authorization
+          header. Logging out invalidates every previously issued session token server-side and
+          clears local storage. A parallel HttpOnly, SameSite cookie carries the same short-lived
+          session and is used only for protected media requests. External clients (CLI, SDK,
+          browser extension) never use the web session: they authenticate with separate scoped
+          access tokens (prefixed <code>pck_</code>) that you mint in the app and can revoke
+          individually at any time. We also use local browser storage for UX preferences. We do
+          not use cross-site advertising trackers.
         </Section>
 
         <Section title="6. Your Rights (GDPR / PIPA / CCPA)">

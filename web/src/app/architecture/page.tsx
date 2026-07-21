@@ -15,10 +15,12 @@ export default function ArchitecturePage() {
       padding: "80px 24px",
     }}>
       <div style={{ maxWidth: 880, margin: "0 auto" }}>
-        <a href="https://myaipet.ai" style={{
+        <a href="/" style={{
           display: "inline-block", marginBottom: 24,
           fontSize: 13, color: "rgba(33,26,18,0.55)", textDecoration: "none",
-        }}>← Back to landing</a>
+          fontFamily: "var(--ed-m, ui-monospace, monospace)",
+          letterSpacing: "0.12em", fontWeight: 700,
+        }}>← MY AI PET</a>
 
         <h1 style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 6 }}>
           Memory Architecture

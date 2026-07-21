@@ -69,7 +69,7 @@ export default async function Image({ params }: { params: Promise<{ petId: strin
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
               <div style={{ display: "flex", fontSize: 15, fontWeight: 800, color: rc }}>{card.rarity.toUpperCase()}</div>
               {card.topPercent != null && card.topPercent <= 50 && (
-                <div style={{ display: "flex", fontSize: 11, color: MUTED }}>{`TOP ${card.topPercent}%`}</div>
+                <div style={{ display: "flex", fontSize: 12, color: MUTED }}>{`TOP ${card.topPercent}%`}</div>
               )}
             </div>
           </div>

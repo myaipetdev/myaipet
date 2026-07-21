@@ -37,19 +37,22 @@ petclaw-sdk status
 > with **no auth** — `status`, `skills` (list), `chat`/`talk` and `execute` against
 > the **demo pet** (`petId 1`). Anything that mutates *your own* pet —
 > `install`, `execute` on your pet, `export`, `models connect` — needs an owner
-> token. Get one from the web app (logged in): copy `localStorage['petagen_jwt']`,
-> then run `petclaw-sdk auth <jwt>` once. Do this **before** the install/execute
-> steps below so you don't hit a `401`.
+> token. Mint one in the web app (logged in): **Sovereignty → Connect PetClaw
+> clients** issues a scoped access token starting with `pck_` (shown once,
+> revocable any time), then run `petclaw-sdk auth pck_...` once. Do this
+> **before** the install/execute steps below so you don't hit a `401`.
 
 ## 4. Authenticate (for your own pet)
 
 ```bash
-petclaw-sdk auth <your-jwt>
+petclaw-sdk auth pck_your_token_here
 ```
 
 Saves the owner token to `~/.petclaw.json`. Skip this only if you're just
-chatting with the demo pet. The JWT comes from the web app while logged in
-(`localStorage['petagen_jwt']`).
+chatting with the demo pet. Mint the token in the web app while logged in:
+**Sovereignty → Connect PetClaw clients** → create a CLI token (`pck_` prefix).
+It is long-lived (1 year), scoped to your account, and you can revoke it from
+the same screen. Never paste your browser session into the CLI.
 
 ## 5. Chat
 
@@ -107,7 +110,9 @@ execution protocol is available.
 petclaw-sdk mcp
 ```
 
-Starts a Model Context Protocol server (6 tools) for Claude Desktop, Cursor, or any MCP stdio client.
+Defines a Model Context Protocol server (6 tools) for Claude Desktop, Cursor, or
+any MCP stdio client. **Known issue:** the MCP path in SDK 1.6.1 is broken; the
+fix ships in SDK 1.6.2. Until then, use the REST API or the CLI commands above.
 
 ## 11. Run the Agent Loop
 
@@ -117,7 +122,7 @@ runs a real skill, observes, iterates, then reports:
 
 ```bash
 curl -X POST https://app.myaipet.ai/api/pets/1/agent \
-  -H "Authorization: Bearer <jwt>" \
+  -H "Authorization: Bearer pck_your_token_here" \
   -H "Content-Type: application/json" \
   -d '{"goal":"Check my mood from recent chats and suggest one thing for today","maxSteps":4}'
 ```

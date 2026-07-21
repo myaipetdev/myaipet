@@ -34,7 +34,7 @@ export default function Error({ error, reset }: { error: Error; reset: () => voi
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
           <button onClick={reset} style={{
             padding: "11px 22px", borderRadius: 12, border: "none", cursor: "pointer",
-            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
             fontFamily: "var(--ed-disp, sans-serif)", fontWeight: 700, fontSize: 14,
           }}>
             Try again

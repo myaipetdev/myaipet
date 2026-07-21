@@ -426,7 +426,7 @@ export default function PetSquare() {
               {/* name tag: subtle always; highlighted when near */}
               <div style={{
                 position: "absolute", top: "100%", left: "50%", transform: "translate(-50%,4px)",
-                whiteSpace: "nowrap", fontFamily: T.m, fontSize: 10.5, fontWeight: 700, letterSpacing: ".04em",
+                whiteSpace: "nowrap", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".04em",
                 padding: "1px 7px", borderRadius: 999,
                 background: near ? T.ink : "rgba(251,246,236,.9)",
                 color: near ? T.creamOn : T.ink70,
@@ -462,7 +462,7 @@ export default function PetSquare() {
           </div>
           <div style={{
             position: "absolute", top: "100%", left: "50%", transform: "translate(-50%,4px)",
-            whiteSpace: "nowrap", fontFamily: T.m, fontSize: 10.5, fontWeight: 700, letterSpacing: ".04em",
+            whiteSpace: "nowrap", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".04em",
             padding: "1px 8px", borderRadius: 999, background: T.terra, color: T.creamOn,
           }}>{player.name} · you</div>
           {emotes.filter((em) => em.petId === "player").map((em) => (
@@ -498,7 +498,7 @@ export default function PetSquare() {
               <img src={openPet.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
             <div style={{ fontFamily: T.disp, fontSize: 24, fontWeight: 800, color: T.ink, letterSpacing: "-.02em" }}>{openPet.name}</div>
-            <div style={{ fontFamily: T.m, fontSize: 11.5, color: T.mono, letterSpacing: ".08em", textTransform: "uppercase", marginTop: 3 }}>
+            <div style={{ fontFamily: T.m, fontSize: 12, color: T.mono, letterSpacing: ".08em", textTransform: "uppercase", marginTop: 3 }}>
               {openPet.level ? `Lv ${openPet.level} · ` : ""}Neighbor · recent community pet
             </div>
 
@@ -511,7 +511,7 @@ export default function PetSquare() {
                 }}>{ch}</button>
               ))}
             </div>
-            <div style={{ fontFamily: T.m, fontSize: 11, color: T.mono, letterSpacing: ".03em", lineHeight: 1.5 }}>
+            <div style={{ fontFamily: T.m, fontSize: 12, color: T.mono, letterSpacing: ".03em", lineHeight: 1.5 }}>
               A friendly wave, just between the two of you — emotes stay local and aren’t posted anywhere.
             </div>
 

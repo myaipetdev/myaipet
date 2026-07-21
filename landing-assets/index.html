@@ -264,8 +264,8 @@
     transition: transform .2s ease, background .2s, box-shadow .2s;
   }
   .btn-primary {
-    /* app CTA rail — warm gradient + cream text (ink-on-terracotta was only 3.66:1) */
-    background: linear-gradient(180deg, var(--cta1), var(--cta2)); color: #FFF8EE;
+    /* app CTA rail — warm gradient + ink text (cream-on-orange was ~2.1–2.8:1, fails WCAG) */
+    background: linear-gradient(180deg, var(--cta1), var(--cta2)); color: #211A12;
     box-shadow: 0 10px 30px rgba(226,125,12,0.4), inset 0 0 0 1px rgba(255,255,255,0.22);
   }
   .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 34px rgba(226,125,12,0.45); }
@@ -593,7 +593,7 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.65), 0 1px 2px rgba(33,26,18,0.35);
   }
   .g-plaque .nm { display: block; font-family: var(--serif); font-weight: 700; font-size: 13.5px; color: #4A2E08; letter-spacing: 0.03em; text-shadow: 0 1px 0 rgba(255,255,255,0.35); }
-  .g-plaque .sb { display: block; margin-top: 1px; font-family: var(--mono); font-size: 10px; color: #6A4712; letter-spacing: 0.16em; text-transform: uppercase; }
+  .g-plaque .sb { display: block; margin-top: 1px; font-family: var(--mono); font-size: 13px; color: #6A4712; letter-spacing: 0.16em; text-transform: uppercase; }
   .g-plaque::after { /* brass glint on hover */
     content: ""; position: absolute; inset: 0;
     background: linear-gradient(115deg, transparent 32%, rgba(255,255,255,0.75) 50%, transparent 66%);
@@ -603,12 +603,12 @@
   .g-label { margin: 16px auto 0; max-width: 90%; text-align: center; }
   .g-bdg {
     display: inline-block;
-    font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase;
     padding: 3px 9px; border: 1.5px solid rgba(154,78,30,0.55); border-radius: 3px;
     color: var(--gold-deep); transform: rotate(-1.5deg);
   }
   .g-quote { margin-top: 9px; font-size: 13px; line-height: 1.5; color: var(--ink-70); font-style: italic; }
-  .g-wallet { margin-top: 7px; font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
+  .g-wallet { margin-top: 7px; font-family: var(--mono); font-size: 13px; color: var(--muted); letter-spacing: 0.08em; }
 
   /* DATA SOVEREIGNTY (dark) — the four rights are STAMPED DOCUMENTS: paper
      cards with a perforated (hole-punched) binding edge, an embossed foil wax
@@ -661,7 +661,7 @@
     background-size: 9px 24px; background-repeat: repeat-y;
   }
   .right .doc-no {
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase;
     color: var(--muted); padding: 0 44px 9px 0; /* clear the wax seal */
     border-bottom: 1px solid rgba(33,26,18,0.18); white-space: nowrap;
   }
@@ -682,12 +682,12 @@
   }
   .right:hover .right-seal { transform: rotate(-4deg) scale(1.06); }
   .right h4 { font-size: 22px; font-weight: 700; color: var(--ink); }
-  .right p { font-size: 14px; line-height: 1.55; color: var(--ink-70); }
+  .right p { font-size: 15px; line-height: 1.55; color: var(--ink-70); }
   .right-receipt {
     margin: auto -22px 0 -30px; padding: 12px 18px 13px 30px; /* margin-top:auto pins to card bottom */
     border-top: 1.5px dashed rgba(33,26,18,0.4);
     display: flex; align-items: center; gap: 7px; white-space: nowrap; overflow: hidden;
-    font-family: var(--mono); font-size: 11px; color: var(--ink); letter-spacing: 0.02em;
+    font-family: var(--mono); font-size: 13px; color: var(--ink); letter-spacing: 0.02em;
     background: repeating-linear-gradient(180deg, rgba(33,26,18,0.035) 0 2px, transparent 2px 5px);
     border-radius: 0 0 4px 4px;
   }
@@ -1216,7 +1216,7 @@
     display: inline-flex; align-items: center; justify-content: center;
     background: radial-gradient(circle at 38% 34%, #FFF7E6, #F2CD86 44%, #C8932F 78%, #9A4E1E);
     box-shadow: 0 3px 8px rgba(154,78,30,0.35), inset 0 0 0 1px rgba(255,255,255,0.45), inset 0 -3px 6px rgba(154,78,30,0.4);
-    font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: #3a1e0c;
+    font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: 0.1em; color: #3a1e0c;
     transform: rotate(-6deg);
   }
 
@@ -1254,7 +1254,7 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     SKILLS SHOWCASE — solid navy band. Sparky = archival SPECIMEN POSTER
+     SKILLS SHOWCASE — solid navy band. Dordor = archival SPECIMEN POSTER
      (paper file card, FILE eyebrow, stamped trait tags, wax DEMO seal,
      tilt + foil sheen on hover). Skills = die-cut sticker-chip cards that
      deal out with a stagger. Hard seam, zero mid-gradients.
@@ -1285,7 +1285,7 @@
   .spec-head {
     display: flex; justify-content: space-between; align-items: center; gap: 10px;
     padding: 2px 2px 11px; border-bottom: 1px solid rgba(33,26,18,0.22);
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.12em;
     text-transform: uppercase; color: var(--ink-70); white-space: nowrap;
   }
   .spec-head b { color: var(--terra); font-weight: 700; }
@@ -1307,10 +1307,10 @@
     display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
     font-family: var(--serif); font-size: 27px; font-weight: 700; color: var(--ink);
   }
-  .spec-name .latin { font-family: var(--mono); font-size: 11px; font-weight: 400; font-style: italic; letter-spacing: 0.05em; color: var(--muted); }
+  .spec-name .latin { font-family: var(--mono); font-size: 13px; font-weight: 400; font-style: italic; letter-spacing: 0.05em; color: var(--muted); }
   .spec-tags { margin-top: 12px; display: flex; gap: 9px; flex-wrap: wrap; }
   .spec-tag {
-    font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase;
     padding: 4px 10px; border: 1.5px solid var(--terra); border-radius: 3px; color: var(--terra);
     transform: rotate(-2deg); box-shadow: 1px 2px 0 rgba(33,26,18,0.25);
   }
@@ -1319,7 +1319,7 @@
   .spec-note {
     margin-top: 14px; padding-top: 11px; border-top: 1px dashed rgba(33,26,18,0.28);
     display: flex; justify-content: space-between; gap: 8px; white-space: nowrap;
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; color: var(--muted);
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; color: var(--muted);
   }
   .skills-copy > p { margin-top: 14px; font-size: 16px; line-height: 1.6; color: rgba(255,248,230,0.6); max-width: 520px; }
   .skill-cards { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -1340,7 +1340,7 @@
   .skill-card:hover { transform: rotate(0deg) translateY(-4px); box-shadow: 6px 9px 0 rgba(0,0,0,0.5); }
   .skill-card .stk-chip { box-shadow: 0 0 0 3px #FFFDF7, 2px 3px 0 3px rgba(33,26,18,0.35); }
   .skill-card .sk-t { font-family: var(--serif); font-size: 15px; font-weight: 700; color: var(--ink); }
-  .skill-card .sk-s { margin-top: 3px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--muted); line-height: 1.5; }
+  .skill-card .sk-s { margin-top: 3px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em; color: var(--muted); line-height: 1.5; }
   @media (max-width: 1020px) {
     .skills-wrap { grid-template-columns: 1fr; gap: 56px; justify-items: center; }
     .skills-copy { width: 100%; max-width: 560px; }
@@ -1625,6 +1625,7 @@
     <button type="button" class="vdot" aria-label="Show hero video 3" aria-pressed="false" style="width:44px;height:44px;padding:0;border:0;background:transparent;display:grid;place-items:center;cursor:pointer;" onclick="switchVideo(2)"><span aria-hidden="true" style="display:block;width:12px;height:4px;border-radius:2px;background:rgba(255,255,255,0.3);transition:all .4s;"></span></button>
     <button type="button" class="vdot" aria-label="Show hero video 4" aria-pressed="false" style="width:44px;height:44px;padding:0;border:0;background:transparent;display:grid;place-items:center;cursor:pointer;" onclick="switchVideo(3)"><span aria-hidden="true" style="display:block;width:12px;height:4px;border-radius:2px;background:rgba(255,255,255,0.3);transition:all .4s;"></span></button>
     <button type="button" class="vdot" aria-label="Show hero video 5" aria-pressed="false" style="width:44px;height:44px;padding:0;border:0;background:transparent;display:grid;place-items:center;cursor:pointer;" onclick="switchVideo(4)"><span aria-hidden="true" style="display:block;width:12px;height:4px;border-radius:2px;background:rgba(255,255,255,0.3);transition:all .4s;"></span></button>
+    <button type="button" id="heroVideoPause" aria-label="Pause background videos" style="width:44px;height:44px;padding:0;border:0;background:transparent;display:grid;place-items:center;cursor:pointer;margin-left:2px;"><span id="heroVideoPauseIcon" aria-hidden="true" style="display:grid;place-items:center;width:26px;height:26px;border-radius:50%;border:1px solid rgba(255,255,255,0.5);background:rgba(33,26,18,0.35);color:rgba(255,255,255,0.9);"></span></button>
   </div>
 
   <div class="scroll-ind"><span>scroll</span><div class="arrow"></div></div>
@@ -1660,8 +1661,8 @@
         <h3>You own it.</h3>
         <p>
           Export your pet's personality, memories, and skills as
-          portable data. Delete with cryptographic proof. There is
-          no lock-in — only your choice to stay.
+          portable data. Delete from live systems with a SHA-256
+          receipt. There is no lock-in — only your choice to stay.
         </p>
         <span class="diff-tag">Portable · Sovereign</span>
       </article>
@@ -1858,7 +1859,7 @@
   <div class="container">
     <div class="skills-wrap">
 
-      <!-- Specimen poster — Sparky's archival file card -->
+      <!-- Specimen poster — Dordor's archival file card -->
       <figure class="specimen" data-reveal="left">
         <span class="demo-seal" title="Demo companion — sample data">DEMO</span>
         <div class="spec-head">
@@ -1866,11 +1867,11 @@
           <span>Archive</span>
         </div>
         <div class="spec-photo">
-          <img src="mascot-original.jpg" alt="Sparky — PetClaw demo companion" />
+          <img src="mascot-original.jpg" alt="Dordor — PetClaw demo companion" />
           <span class="spec-sheen" aria-hidden="true"></span>
         </div>
         <figcaption class="spec-caption">
-          <div class="spec-name">Sparky <span class="latin">companio pomeranius</span></div>
+          <div class="spec-name">Dordor <span class="latin">companio pomeranius</span></div>
           <div class="spec-tags" aria-label="Traits">
             <span class="spec-tag">LV. 15</span>
             <span class="spec-tag">Playful</span>
@@ -1914,10 +1915,10 @@
           </div>
         </div>
 
-        <div style="margin-top:22px; display:flex; gap:8px; flex-wrap:wrap;">
-          <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(226,125,12,0.12); color:var(--gold-soft); letter-spacing:0.1em;">PETCLAW v1</span>
-          <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">6 MCP TOOLS</span>
-          <span style="font-family:var(--mono); font-size:13px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.05); color:rgba(255,248,230,0.4); letter-spacing:0.1em;">19 CONNECTORS · 18 SKILLS · 6 LIVE</span>
+        <div style="margin:28px 0 14px; display:flex; gap:8px; flex-wrap:wrap;">
+          <span style="font-family:var(--mono); font-size:14px; padding:5px 12px; border-radius:6px; background:rgba(226,125,12,0.12); color:var(--gold-soft); letter-spacing:0.1em;">PETCLAW v1</span>
+          <span style="font-family:var(--mono); font-size:14px; padding:5px 12px; border-radius:6px; background:rgba(255,255,255,0.08); color:rgba(255,248,230,0.62); letter-spacing:0.1em;">6 MCP TOOLS</span>
+          <span style="font-family:var(--mono); font-size:14px; padding:5px 12px; border-radius:6px; background:rgba(255,255,255,0.08); color:rgba(255,248,230,0.62); letter-spacing:0.1em;">19 CONNECTORS · 18 SKILLS · 6 LIVE</span>
         </div>
       </div>
     </div>
@@ -1930,7 +1931,7 @@
     <div class="section-head">
       <span class="eyebrow" style="color:var(--gold-soft);">Meet your companion</span>
       <h2 style="color:var(--cream);">A pet that actually picks up where you left off.</h2>
-      <p style="color:rgba(255,248,230,0.6);">Meet Sparky, our demo companion — sample data showing what a pet keeps track of as it grows with you.</p>
+      <p style="color:rgba(255,248,230,0.6);">Meet Dordor, our demo companion — sample data showing what a pet keeps track of as it grows with you.</p>
     </div>
 
     <div class="demo-wrap">
@@ -1938,15 +1939,15 @@
         <div class="chat-head">
           <div class="chat-avatar"></div>
           <div>
-            <h4>Sparky</h4>
+            <h4>Dordor</h4>
             <div class="sub">LVL 15 · online · last seen: just now</div>
           </div>
           <span class="demo-seal" title="Demo companion — sample data">DEMO</span>
         </div>
         <div class="msgs" id="msgs"></div>
         <div class="chat-input">
-          <label for="hero-chat-input" class="visually-hidden">Message to Sparky</label>
-          <input id="hero-chat-input" type="text" placeholder="Say something to Sparky…" aria-label="Message to Sparky" />
+          <label for="hero-chat-input" class="visually-hidden">Message to Dordor</label>
+          <input id="hero-chat-input" type="text" placeholder="Say something to Dordor…" aria-label="Message to Dordor" />
           <button type="button" class="send" aria-label="Send message">↑</button>
         </div>
       </div>
@@ -1956,7 +1957,7 @@
           <div class="pet-id">
             <div class="pet-avatar" style="background-image:url('pet-sparky-card.jpg');background-size:cover;background-position:center;color:transparent;">.</div>
             <div>
-              <div class="pet-name">Sparky</div>
+              <div class="pet-name">Dordor</div>
               <div class="pet-tag">#0x…8f42 · Pomeranian</div>
             </div>
           </div>
@@ -2022,7 +2023,7 @@
         <div class="doc-no">Right 01/04 · Passport</div>
         <h4>Export</h4>
         <p>Download your pet's entire identity as portable JSON — personality, memories, skills, history.</p>
-        <div class="right-receipt copy-cmd" data-copy="petclaw export" role="button" tabindex="0" aria-label="Copy command: petclaw export"><span class="rr-prompt">$</span><span class="rr-cmd">petclaw export</span><span class="rr-bar" aria-hidden="true"></span></div>
+        <div class="right-receipt copy-cmd" data-copy="petclaw-sdk export" role="button" tabindex="0" aria-label="Copy command: petclaw-sdk export"><span class="rr-prompt">$</span><span class="rr-cmd">petclaw-sdk export</span><span class="rr-bar" aria-hidden="true"></span></div>
       </article>
       <article class="right">
         <span class="right-seal" aria-hidden="true">IMP</span>
@@ -2035,7 +2036,7 @@
         <span class="right-seal" aria-hidden="true">DEL</span>
         <div class="doc-no">Right 03/04 · Passport</div>
         <h4>Delete</h4>
-        <p>Permanent erasure with SHA-256 cryptographic proof. When it's gone, it's gone — verifiably.</p>
+        <p>Deletes your data from live systems and issues a SHA-256 deletion receipt (a hash of the deletion record's metadata). Encrypted backups expire within 90 days; public on-chain records cannot be erased.</p>
         <div class="right-receipt copy-cmd" data-copy="DELETE /api/petclaw/delete?petId=PET_ID" role="button" tabindex="0" aria-label="Copy API endpoint: DELETE /api/petclaw/delete"><span class="rr-prompt">API</span><span class="rr-cmd">DELETE /api/petclaw/delete</span><span class="rr-bar" aria-hidden="true"></span></div>
       </article>
       <article class="right">
@@ -2075,7 +2076,7 @@
         <div class="browser-bar">
           <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
           <div class="url">myaipet.ai · most standard web pages</div>
-          <div class="browser-tab">🐾 Sparky · active</div>
+          <div class="browser-tab">🐾 Dordor · active</div>
         </div>
         <div class="browser-body">
           <div class="fake-content">
@@ -2089,7 +2090,7 @@
           </div>
           <div class="points-badge">+47 pts today</div>
           <div class="pet-walker" id="petWalker">
-            <img class="mp" src="mascot-original.jpg" alt="Sparky, walking across the page" />
+            <img class="mp" src="mascot-original.jpg" alt="Dordor, walking across the page" />
           </div>
           <div class="callout" style="top: 70px; right: 30px;"><span class="num">1</span>Click to chat</div>
           <div class="callout" style="top: 180px; left: 30px;"><span class="num">2</span>Right-click for skills</div>
@@ -2202,7 +2203,7 @@
       <div class="il-card" style="padding:28px 16px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid var(--line);">
         <div class="stk-chip r-d" style="margin-bottom:14px;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.6l7 2.5v5.4c0 4.4-2.9 7.4-7 8.9-4.1-1.5-7-4.5-7-8.9V6.1z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M12 3.6l7 2.5v5.4c0 4.4-2.9 7.4-7 8.9z" fill="#E8C77E" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/></svg></div>
         <h4 style="font-size:16px;margin-bottom:6px;">Own</h4>
-        <p style="font-size:13px;color:var(--muted);line-height:1.5;">Export your pet's soul as portable JSON. Delete with cryptographic proof. Zero lock-in.</p>
+        <p style="font-size:13px;color:var(--muted);line-height:1.5;">Export your pet's soul as portable JSON. Delete from live systems with a SHA-256 receipt. Zero lock-in.</p>
         <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:var(--gold-deep);">
           <a href="https://app.myaipet.ai/architecture" target="_blank" style="color:inherit;text-decoration:underline;" rel="noopener noreferrer">SOUL spec →</a>
         </div>
@@ -2228,8 +2229,8 @@
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:48px;">
       <div style="padding:24px 20px;border-radius:16px;background:rgba(226,125,12,0.08);border:1px solid rgba(226,125,12,0.2);">
         <div style="font-family:var(--mono);font-size:13px;color:var(--gold-soft);letter-spacing:0.1em;margin-bottom:8px;">NOW · LIVE</div>
-        <h4 style="font-size:15px;color:var(--cream);margin-bottom:8px;">Companion AI</h4>
-        <ul style="font-size:13px;color:rgba(255,248,230,0.5);line-height:1.8;list-style:none;padding:0;">
+        <h4 style="font-size:17px;color:var(--cream);margin-bottom:8px;">Companion AI</h4>
+        <ul style="font-size:14px;color:rgba(255,248,230,0.72);line-height:1.85;list-style:none;padding:0;">
           <li>✅ Persistent memory</li>
           <li>✅ PetClaw SDK + CLI</li>
           <li>✅ Chrome Extension</li>
@@ -2238,9 +2239,9 @@
         </ul>
       </div>
       <div style="padding:24px 20px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid var(--line-dk);">
-        <div style="font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.4);letter-spacing:0.1em;margin-bottom:8px;">Q3 2026</div>
-        <h4 style="font-size:15px;color:var(--cream);margin-bottom:8px;">Multi-Agent</h4>
-        <ul style="font-size:13px;color:rgba(255,248,230,0.4);line-height:1.8;list-style:none;padding:0;">
+        <div style="font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.55);letter-spacing:0.1em;margin-bottom:8px;">Q3 2026</div>
+        <h4 style="font-size:17px;color:var(--cream);margin-bottom:8px;">Multi-Agent</h4>
+        <ul style="font-size:14px;color:rgba(255,248,230,0.6);line-height:1.85;list-style:none;padding:0;">
           <li>○ Autonomous Twitter/X posting</li>
           <li>○ Pet-to-Pet economy</li>
           <li>○ Community skill marketplace</li>
@@ -2248,9 +2249,9 @@
         </ul>
       </div>
       <div style="padding:24px 20px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid var(--line-dk);">
-        <div style="font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.4);letter-spacing:0.1em;margin-bottom:8px;">Q4 2026</div>
-        <h4 style="font-size:15px;color:var(--cream);margin-bottom:8px;">Create &amp; Grow</h4>
-        <ul style="font-size:13px;color:rgba(255,248,230,0.4);line-height:1.8;list-style:none;padding:0;">
+        <div style="font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.55);letter-spacing:0.1em;margin-bottom:8px;">Q4 2026</div>
+        <h4 style="font-size:17px;color:var(--cream);margin-bottom:8px;">Create &amp; Grow</h4>
+        <ul style="font-size:14px;color:rgba(255,248,230,0.6);line-height:1.85;list-style:none;padding:0;">
           <li>○ Creator marketplace</li>
           <li>○ Skill creator revenue share</li>
           <li>○ Cross-platform AI identity</li>
@@ -2258,9 +2259,9 @@
         </ul>
       </div>
       <div style="padding:24px 20px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid var(--line-dk);">
-        <div style="font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.4);letter-spacing:0.1em;margin-bottom:8px;">2027+</div>
-        <h4 style="font-size:15px;color:var(--cream);margin-bottom:8px;">Open Standard</h4>
-        <ul style="font-size:13px;color:rgba(255,248,230,0.4);line-height:1.8;list-style:none;padding:0;">
+        <div style="font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.55);letter-spacing:0.1em;margin-bottom:8px;">2027+</div>
+        <h4 style="font-size:17px;color:var(--cream);margin-bottom:8px;">Open Standard</h4>
+        <ul style="font-size:14px;color:rgba(255,248,230,0.6);line-height:1.85;list-style:none;padding:0;">
           <li>○ PetClaw as industry standard</li>
           <li>○ Interoperable AI identity</li>
           <li>○ Decentralized pet network</li>
@@ -2291,16 +2292,16 @@
         <div style="display:flex; gap:10px; margin-bottom:16px;">
           <img src="pet-sparky-card.jpg" alt="" style="width:36px;height:36px;border-radius:10px;object-fit:cover;border:2px solid rgba(226,125,12,0.3);flex-shrink:0;" />
           <div style="background:rgba(255,255,255,0.06); padding:10px 14px; border-radius:4px 14px 14px 14px; max-width:80%;">
-            <div style="font-size:13px; color:var(--cream); line-height:1.5;">Hey! I'm Sparky, a synthetic PetClaw preview. I don't access a real pet and nothing here is remembered. 🐾</div>
+            <div style="font-size:13px; color:var(--cream); line-height:1.5;">Hey! I'm Dordor, a synthetic PetClaw preview. I don't access a real pet and nothing here is remembered. 🐾</div>
           </div>
         </div>
       </div>
 
       <!-- Input -->
       <div style="display:flex; gap:8px; padding:12px 16px; background:rgba(0,0,0,0.4); border-radius:0 0 16px 16px; border:1px solid rgba(255,255,255,0.06); border-top:none;">
-        <label for="playgroundInput" class="visually-hidden">Message to Sparky</label>
-        <input id="playgroundInput" type="text" maxlength="500" placeholder="Say something to Sparky..."
-          aria-label="Message to Sparky"
+        <label for="playgroundInput" class="visually-hidden">Message to Dordor</label>
+        <input id="playgroundInput" type="text" maxlength="500" placeholder="Say something to Dordor..."
+          aria-label="Message to Dordor"
           style="flex:1; padding:12px 16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);
           background:rgba(255,255,255,0.04); color:var(--cream); font-size:14px; font-family:var(--sans);
           outline:none; transition:border-color .2s;"
@@ -2361,7 +2362,6 @@
         <h3>Product</h3>
         <a href="https://app.myaipet.ai">Launch app</a>
         <a href="https://app.myaipet.ai/?section=sovereignty#petclaw-extension">Chrome setup</a>
-        <a href="https://app.myaipet.ai/stats">Live stats</a>
       </nav>
 
       <nav class="footer-nav-group" aria-label="Developer links">
@@ -2404,7 +2404,7 @@
      show only when ?tweaks=1 query param is present (still useful for design QA) -->
 <script>
 (function(){
-  if (!new URLSearchParams(location.search).has("tweaks")) {
+  if (!new URLSearchParams(location.search).has("tweaks") || !/^(localhost|127\.)/.test(location.hostname)) {
     document.documentElement.style.setProperty("--tweaks-display", "none");
   }
 })();
@@ -2541,6 +2541,28 @@ let heroCurrentVideo = 0;
 let heroInterval = null;
 const heroVideos = document.querySelectorAll('.hero-vid');
 const heroDots = document.querySelectorAll('.vdot');
+const heroPauseBtn = document.getElementById('heroVideoPause');
+const heroReducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+// Reduced motion: start paused on the poster frame — the Play control opts in.
+let heroPaused = heroReducedMotion;
+
+const HERO_ICON_PAUSE = '<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="1.6" y="1" width="3.2" height="10" rx="1"/><rect x="7.2" y="1" width="3.2" height="10" rx="1"/></svg>';
+const HERO_ICON_PLAY = '<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M3 1.7a1 1 0 0 1 1.53-.85l6.6 4.3a1 1 0 0 1 0 1.7l-6.6 4.3A1 1 0 0 1 3 10.3z"/></svg>';
+
+function heroSyncPauseBtn() {
+  if (!heroPauseBtn) return;
+  const icon = document.getElementById('heroVideoPauseIcon');
+  if (icon) icon.innerHTML = heroPaused ? HERO_ICON_PLAY : HERO_ICON_PAUSE;
+  heroPauseBtn.setAttribute('aria-label', heroPaused ? 'Play background videos' : 'Pause background videos');
+}
+
+function heroStartRotation() {
+  clearInterval(heroInterval);
+  heroInterval = null;
+  // Never auto-rotate while paused or when the visitor prefers reduced motion.
+  if (heroPaused || heroReducedMotion || !heroVideos.length) return;
+  heroInterval = setInterval(() => switchVideo((heroCurrentVideo + 1) % heroVideos.length), 8000);
+}
 
 function switchVideo(idx) {
   if (idx === heroCurrentVideo || !heroVideos.length) return;
@@ -2550,9 +2572,15 @@ function switchVideo(idx) {
   heroVideos[prev].style.opacity = '0';
   heroVideos[idx].style.opacity = '0.75';
   heroVideos[idx].currentTime = 0;
-  heroVideos[idx].play().catch(() => {});
+  if (heroPaused) {
+    // Show the selected scene's first frame without starting playback.
+    heroVideos[idx].preload = 'auto';
+    heroVideos[idx].load();
+  } else {
+    heroVideos[idx].play().catch(() => {});
+    heroVideos[(idx + 1) % heroVideos.length].load(); // pre-warm the next clip
+  }
   setTimeout(() => { heroVideos[prev].pause(); }, 1600);
-  heroVideos[(idx + 1) % heroVideos.length].load(); // pre-warm the next clip
 
   // Update dots
   heroDots.forEach((d, i) => {
@@ -2564,33 +2592,56 @@ function switchVideo(idx) {
     d.setAttribute('aria-pressed', String(i === idx));
   });
 
-  // Reset timer
-  clearInterval(heroInterval);
-  heroInterval = setInterval(() => switchVideo((heroCurrentVideo + 1) % heroVideos.length), 8000);
+  // Reset timer (no-op while paused / reduced motion)
+  heroStartRotation();
+}
+
+if (heroPauseBtn) {
+  heroPauseBtn.addEventListener('click', () => {
+    heroPaused = !heroPaused;
+    const v = heroVideos[heroCurrentVideo];
+    if (heroPaused) {
+      clearInterval(heroInterval);
+      heroInterval = null;
+      if (v) v.pause();
+    } else {
+      if (v) { v.preload = 'auto'; v.play().catch(() => {}); }
+      heroStartRotation();
+    }
+    heroSyncPauseBtn();
+  });
 }
 
 // Init
 if (heroVideos.length > 0) {
-  // Autoplay can be blocked on load (readyState stays 4 but paused at frame 0,
-  // so the poster shows forever). Retry the play() until it takes, and again on
-  // the first user gesture / when enough data is buffered.
+  heroSyncPauseBtn();
   const v0 = heroVideos[0];
-  let heroKicked = false;
-  const kickHero = () => {
-    if (heroKicked) return;
-    v0.play().then(() => {
-      if (!v0.paused) {
-        heroKicked = true;
-        ["pointerdown", "touchstart", "keydown", "scroll"].forEach((e) => window.removeEventListener(e, kickHero));
-      }
-    }).catch(() => {});
-  };
-  kickHero();
-  v0.addEventListener("canplay", kickHero);
-  ["pointerdown", "touchstart", "keydown", "scroll"].forEach((e) => window.addEventListener(e, kickHero, { passive: true }));
-  setTimeout(kickHero, 400);  // second attempt after first paint settles
-  setTimeout(() => { if (heroVideos[1]) heroVideos[1].load(); }, 3500); // warm clip 2 after first paint
-  heroInterval = setInterval(() => switchVideo((heroCurrentVideo + 1) % heroVideos.length), 8000);
+  if (heroReducedMotion) {
+    // prefers-reduced-motion: no autoplay, no rotation — poster stays until
+    // the visitor presses Play.
+    v0.removeAttribute('autoplay');
+    v0.pause();
+  } else {
+    // Autoplay can be blocked on load (readyState stays 4 but paused at frame 0,
+    // so the poster shows forever). Retry the play() until it takes, and again on
+    // the first user gesture / when enough data is buffered.
+    let heroKicked = false;
+    const kickHero = () => {
+      if (heroKicked || heroPaused) return;
+      v0.play().then(() => {
+        if (!v0.paused) {
+          heroKicked = true;
+          ["pointerdown", "touchstart", "keydown", "scroll"].forEach((e) => window.removeEventListener(e, kickHero));
+        }
+      }).catch(() => {});
+    };
+    kickHero();
+    v0.addEventListener("canplay", kickHero);
+    ["pointerdown", "touchstart", "keydown", "scroll"].forEach((e) => window.addEventListener(e, kickHero, { passive: true }));
+    setTimeout(kickHero, 400);  // second attempt after first paint settles
+    setTimeout(() => { if (heroVideos[1] && !heroPaused) heroVideos[1].load(); }, 3500); // warm clip 2 after first paint
+    heroStartRotation();
+  }
 }
 
 // ---------- CONFIG ----------
@@ -2769,7 +2820,7 @@ const petPreviewReplies = [
   "Ooh, tell me more when we're for real. (Demo preview — adopt me in the app and I'll actually remember.)",
   "You've got my attention! The real me lives in the app, with true memory of every chat. ✨",
   "Noted! …well, I *would* note it — this demo can't remember yet. Launch the app and I will.",
-  "Ha, I like you already. Full Sparky (with memory + skills) is one wallet-connect away. 🐕",
+  "Ha, I like you already. Full Dordor (with memory + skills) is one wallet-connect away. 🐕",
 ];
 let petReplyIdx = 0;
 function nowClock() {
@@ -2946,12 +2997,12 @@ function persist() {
 
   const sprite = document.createElement('img');
   sprite.src = 'mascot-original.jpg';
-  sprite.alt = 'Sparky';
+  sprite.alt = 'Dordor';
   sprite.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:50%;border:3px solid rgba(232,199,126,0.6);box-shadow:3px 4px 0 rgba(33,26,18,0.45);transition:transform 0.15s;';
   pet.appendChild(sprite);
 
   const nameTag = document.createElement('div');
-  nameTag.textContent = 'Sparky';
+  nameTag.textContent = 'Dordor';
   nameTag.style.cssText = 'position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:13px;color:rgba(0,0,0,0.5);white-space:nowrap;background:rgba(255,255,255,0.85);padding:1px 6px;border-radius:6px;backdrop-filter:blur(4px);';
   pet.appendChild(nameTag);
 
@@ -2982,11 +3033,11 @@ function persist() {
   ];
 
   // SCRUM-74 §3-3: context-aware phrases — pick based on which section
-  // is in view, so the same Sparky line doesn't repeat through the whole scroll.
+  // is in view, so the same Dordor line doesn't repeat through the whole scroll.
   const sectionPhrases = {
     companion:   ["This is how I remember 🧠", "Try the chat below!", "I learn from every turn"],
     community:   ["Friends already here ✨", "Each one has their own memories", "Hover to see who we are 🎈"],
-    sovereignty: ["Your data, your rules 🛡", "You can export me anytime 📦", "Delete = proof, not promise"],
+    sovereignty: ["Your data, your rules 🛡", "You can export me anytime 📦", "Deleting me issues a SHA-256 receipt 🧾"],
     demo:        ["I appear on sites you allow 🌐", "Per-site access, under your control", "No gas to install!"],
     protocol:    ["MCP-compatible, by the way 🔌", "petclaw-sdk on npm 📦", "Open standard, not a SaaS"],
   };
@@ -3070,7 +3121,7 @@ function persist() {
       posX += dir * 0.8;
       pet.style.left = posX + 'px';
       pet.style.transform = dir === -1 ? 'scaleX(-1)' : 'scaleX(1)';
-      // counter-flip the name label so "Sparky" never renders mirrored
+      // counter-flip the name label so "Dordor" never renders mirrored
       nameTag.style.transform = dir === -1 ? 'translateX(-50%) scaleX(-1)' : 'translateX(-50%)';
 
       // Paw prints
@@ -3111,7 +3162,7 @@ function persist() {
       if (greeted || window.scrollY <= window.innerHeight) return;
       greeted = true;
       window.removeEventListener('scroll', greet);
-      setTimeout(() => showBubble("Hey! I'm Sparky 🐾 Click me!", 5000), 400);
+      setTimeout(() => showBubble("Hey! I'm Dordor 🐾 Click me!", 5000), 400);
     }
     window.addEventListener('scroll', greet, { passive: true });
     greet();

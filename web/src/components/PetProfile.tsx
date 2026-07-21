@@ -1636,7 +1636,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
           onClick={() => { setLoading(true); loadPets(); }}
           style={{
             padding: "11px 22px", border: 0, borderRadius: 12, cursor: "pointer",
-            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE",
+            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
             fontFamily: "var(--ed-disp)", fontSize: 14, fontWeight: 700,
           }}
         >
@@ -2140,7 +2140,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                       } catch (e: any) { showError(e.message); }
                     }} style={{
                       padding: "4px 12px", borderRadius: 6, border: "none",
-                      background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#FFF8EE", fontFamily: "var(--ed-m)", fontSize: 13, cursor: "pointer",
+                      background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontFamily: "var(--ed-m)", fontSize: 13, cursor: "pointer",
                     }}>Save</button>
                     <button type="button" onClick={() => setEditingDesc(false)} style={{
                       padding: "4px 12px", borderRadius: 6, border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
@@ -2355,7 +2355,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                       filter: a.earned ? "none" : "grayscale(1)", opacity: a.earned ? 1 : 0.45,
                     }}>
                       <Icon name={a.icon} size={17} />
-                      <span style={{ fontSize: 10, fontFamily: "var(--ed-m)", fontWeight: 700, color: a.earned ? "#6B4FA0" : "#7A6E5A", letterSpacing: "-0.02em", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.label}</span>
+                      <span style={{ fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700, color: a.earned ? "#6B4FA0" : "#7A6E5A", letterSpacing: "-0.02em", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.label}</span>
                     </div>
                   ))}
                 </div>
@@ -2528,7 +2528,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                     {!blocked && (i as any).purpose && (
                       <div style={{
                         position: "absolute", top: 4, left: 4,
-                        fontSize: 10, padding: "2px 5px", borderRadius: 4,
+                        fontSize: 12, padding: "2px 5px", borderRadius: 4,
                         background: "rgba(33,26,18,0.05)", color: "#7A6E5A",
                         fontFamily: "var(--ed-m)",
                         fontWeight: 700, letterSpacing: "0.06em",
@@ -2691,14 +2691,14 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                           {isPast ? "✓" : s.icon}
                         </div>
                         <div style={{
-                          fontFamily: "var(--ed-m)", fontSize: 10, marginTop: 4,
+                          fontFamily: "var(--ed-m)", fontSize: 12, marginTop: 4,
                           color: isCurrent ? "#9A4E1E" : isPast ? "#5C8A4E" : "#9A7B4E",
                           fontWeight: isCurrent ? 700 : 400,
                         }}>
                           {s.name}
                         </div>
                         <div style={{
-                          fontFamily: "var(--ed-m)", fontSize: 10,
+                          fontFamily: "var(--ed-m)", fontSize: 12,
                           color: "#9A7B4E",
                         }}>
                           Lv.{s.minLevel}

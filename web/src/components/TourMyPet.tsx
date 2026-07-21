@@ -13,6 +13,7 @@
 import { Suspense, lazy, useCallback, useRef, useState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import CollectibleFrame, { Motes } from "@/components/editorial/CollectibleFrame";
+import { SEASON_SCHEDULED, seasonPhase } from "@/lib/season";
 
 const PetPond = lazy(() => import("@/components/PetPond"));
 
@@ -42,14 +43,17 @@ function StatRow({ label, value, color }: { label: string; value: number; color:
   );
 }
 
-function CareTile({ label, icon, onClick }: { label: string; icon: React.ReactNode; onClick: () => void }) {
+function CareTile({ label, sub, icon, onClick }: { label: string; sub?: string; icon: React.ReactNode; onClick: () => void }) {
   return (
     <button onClick={onClick} style={{
       flex: 1, background: "#FCE9CF", border: "1px solid rgba(190,79,40,0.22)", borderRadius: 14,
       padding: "13px 6px", textAlign: "center", cursor: "pointer", fontFamily: T.body,
     }}>
       {icon}
-      <span style={{ fontSize: 13, fontWeight: 600, color: T.ink70 }}>{label}</span>
+      <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: T.ink70 }}>{label}</span>
+      {sub && (
+        <span style={{ display: "block", marginTop: 2, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: T.mono }}>{sub}</span>
+      )}
     </button>
   );
 }
@@ -67,12 +71,16 @@ export default function TourMyPet() {
   // wallet. NO API write, NO credit spend, NO fabricated success.
   const demoToast = useCallback((verb: string) => {
     const id = ++seq.current;
-    setToast({ id, text: `Demo tour — connect a wallet to ${verb} your own pet.` });
+    // +5 pts is the REAL per-free-care grant signed-in raisers get (server-verified).
+    setToast({ id, text: `Demo tour — connect a wallet to ${verb} your own pet. Every free care banks +5 pts.` });
     if (timer.current) clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setToast((cur) => (cur && cur.id === id ? null : cur)), 3200);
   }, []);
 
   const element = DEMO.element.toUpperCase();
+  // Season context — no dates/countdowns while Season 1 is unscheduled.
+  const phase = SEASON_SCHEDULED ? seasonPhase() : "upcoming";
+  const seasonNote = phase === "live" ? "SEASON 1 · LIVE" : phase === "ended" ? "SEASON 1 · ENDED" : "SEASON 1 · STARTING SOON";
 
   return (
     <div style={{ position: "relative", fontFamily: T.body, color: T.ink, paddingTop: 78 }}>
@@ -128,17 +136,45 @@ export default function TourMyPet() {
               <StatRow label="Bond" value={DEMO.bond} color={T.bond} />
             </div>
 
-            {/* care — read-only in tour, no-op with honest toast */}
+            {/* care — read-only in tour, no-op with honest toast. The +5 pts tile
+                hint is the REAL signed-in per-free-care grant (server-verified). */}
             <div style={{ background: T.paper, borderRadius: 22, padding: 20, boxShadow: "var(--ed-shadow-card)" }}>
               <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Care</div>
               <div style={{ display: "flex", gap: 9, marginTop: 14 }}>
-                <CareTile label="Feed" onClick={() => demoToast("feed")} icon={<CareIcon d="M5 3v8a3 3 0 0 0 6 0V3M8 3v18M19 3c-1.5 0-3 2-3 5s1.5 4 3 4v9" />} />
-                <CareTile label="Play" onClick={() => demoToast("play with")} icon={<CareIcon d="M6 12h4M8 10v4M15 11h.01M18 13h.01M7 7h10a4 4 0 0 1 4 4v1a4 4 0 0 1-7 2.8 3 3 0 0 1-4 0A4 4 0 0 1 3 12v-1a4 4 0 0 1 4-4Z" />} />
-                <CareTile label="Pet" onClick={() => demoToast("pet")} icon={<CareIcon d="M9 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM15 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM6 15a2 2 0 1 0 0-4M18 15a2 2 0 1 0 0-4M8.5 14c-1.5 1-2 2.2-2 3.4C6.5 18.8 7.7 20 9.2 20c1 0 1.6-.5 2.8-.5s1.8.5 2.8.5c1.5 0 2.7-1.2 2.7-2.6 0-1.2-.5-2.4-2-3.4" />} />
+                <CareTile label="Feed" sub="+5 PTS" onClick={() => demoToast("feed")} icon={<CareIcon d="M5 3v8a3 3 0 0 0 6 0V3M8 3v18M19 3c-1.5 0-3 2-3 5s1.5 4 3 4v9" />} />
+                <CareTile label="Play" sub="+5 PTS" onClick={() => demoToast("play with")} icon={<CareIcon d="M6 12h4M8 10v4M15 11h.01M18 13h.01M7 7h10a4 4 0 0 1 4 4v1a4 4 0 0 1-7 2.8 3 3 0 0 1-4 0A4 4 0 0 1 3 12v-1a4 4 0 0 1 4-4Z" />} />
+                <CareTile label="Pet" sub="+5 PTS" onClick={() => demoToast("pet")} icon={<CareIcon d="M9 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM15 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM6 15a2 2 0 1 0 0-4M18 15a2 2 0 1 0 0-4M8.5 14c-1.5 1-2 2.2-2 3.4C6.5 18.8 7.7 20 9.2 20c1 0 1.6-.5 2.8-.5s1.8.5 2.8.5c1.5 0 2.7-1.2 2.7-2.6 0-1.2-.5-2.4-2-3.4" />} />
               </div>
               {toast && (
                 <div key={toast.id} style={{ marginTop: 12, fontSize: 13, color: T.terra, fontStyle: "italic", lineHeight: 1.4 }}>{toast.text}</div>
               )}
+            </div>
+
+            {/* daily missions — DEMO strip: the real payoff values raisers see on
+                their own My Pet checklist (5/care, 2/chat msg, 10/creation). No
+                fabricated progress — this account has none. */}
+            <div style={{ background: T.paper, borderRadius: 22, padding: 20, boxShadow: "var(--ed-shadow-card)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Daily Missions <span style={{ color: T.terra }}>· demo</span></div>
+                <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: T.muted }}>{seasonNote}</span>
+              </div>
+              {([
+                ["Care ×3", "+5 PTS EACH"],
+                ["Chat ×3 messages", "+2 PTS EACH"],
+                ["Make 1 creation", "+10 PTS"],
+              ] as const).map(([label, payoff]) => (
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginTop: 11 }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 13, color: T.ink70 }}>
+                    <span aria-hidden style={{ width: 18, height: 18, borderRadius: "50%", border: "1.5px solid rgba(33,26,18,.25)", flexShrink: 0 }} />
+                    {label}
+                  </span>
+                  <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: T.mono, border: "1px solid rgba(154,123,78,.35)", borderRadius: 8, padding: "2px 8px", flexShrink: 0 }}>{payoff}</span>
+                </div>
+              ))}
+              <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px dashed ${T.hair}`, fontSize: 12, color: T.muted2, lineHeight: 1.5 }}>
+                Real reward values — connect a wallet to start banking them.
+                {phase === "upcoming" ? " Points earned now carry into Season 1." : ""}
+              </div>
             </div>
 
             {/* pond — ambient, zero-cost, driven by the demo values */}

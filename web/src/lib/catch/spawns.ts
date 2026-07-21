@@ -24,7 +24,9 @@ export interface WildSpawn {
 
 // Spawn kinds — cats & dogs dominate, with the occasional other critter so the
 // wild track reflects "real animals", not only cats/dogs.
-const SPAWN_KINDS = ["cat", "cat", "cat", "cat", "dog", "dog", "dog", "dog", "bird", "rabbit", "squirrel", "duck", "fox"];
+// Exported so lib/seasonEvents.ts can derive the weekly Catch Safari spotlight
+// from the REAL spawn table (never a parallel hand-typed species list).
+export const SPAWN_KINDS = ["cat", "cat", "cat", "cat", "dog", "dog", "dog", "dog", "bird", "rabbit", "squirrel", "duck", "fox"];
 
 const CELL = 0.01;               // ~1.1km grid cell
 const SPAWN_RADIUS_DEG = 0.0045; // spawns sit within ~500m of cell centre
