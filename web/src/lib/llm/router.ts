@@ -62,12 +62,12 @@ const PROVIDERS: Record<ProviderId, ProviderConfig> = {
 };
 
 /**
- * Platform default (Grok) per task — mirrors what the code uses TODAY so the
- * fallback path is a no-op change. (chat→grok-3-mini as in chat/route.ts;
- * judge/persona→grok-3-mini-fast as in pethub.ts/best-of-n.ts; reason→grok-3.)
+ * Platform default per task — mirrors platform-resilience.ts. Chat runs on the
+ * cheap OpenAI mini (founder cost call, 2026-07-21) with Grok as fallback;
+ * every other task stays Grok-first.
  */
 export const TASK_MODEL_MAP: Record<LLMTask, { provider: ProviderId; model: string }> = {
-  chat: { provider: "xai", model: "grok-3-mini" },
+  chat: { provider: "openai", model: "gpt-4o-mini" },
   reason: { provider: "xai", model: "grok-4-1-fast-non-reasoning" },
   judge: { provider: "xai", model: "grok-3-mini-fast" },
   summarize: { provider: "xai", model: "grok-3-mini-fast" },
@@ -434,7 +434,7 @@ export async function getLLMDailyCounters(): Promise<{
  * overrides are accepted only when they match the explicit provider allowlist.
  */
 function resolvePlatformTargets(task: LLMTask, budgetUserId?: number): ResolvedTarget[] {
-  const targets = getPlatformProviderOrder()
+  const targets = getPlatformProviderOrder(task)
     .map((id: PlatformProviderId): ResolvedTarget => ({
       provider: PROVIDERS[id],
       model: getPlatformModel(id, task),

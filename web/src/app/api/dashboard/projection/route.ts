@@ -7,9 +7,10 @@
  *         me?: { rank, points, petId, petName, petAvatar, petLevel, pointsToNextRank, inTop100 },
  *         topThree: [{ rank, petId, name, level, avatar, points }] }
  *
- * Points are non-financial loyalty, earned by caring + creating (see lib/airdrop).
- * Season 1 runs Jul 1 → Aug 1 2026 — mirrors the SeasonBanner window in App.tsx.
- * Before the season opens the countdown targets the START; once running, the END.
+ * Points are non-financial loyalty, earned by caring + creating (lib/seasonRewards).
+ * The Season 1 window comes from lib/season.ts: unscheduled until the founder
+ * sets NEXT_PUBLIC_SEASON1_START_MS (then `scheduled:true` and closesAtIso is a
+ * real date; before that closesAtIso is null — clients show "starting soon").
  *
  * (Replaces the old battle-power / weekly-USDT-pool projection: battles + Power
  * Training were retired, so ranking by combined power and a battle_entry pool no
@@ -20,7 +21,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
-import { SEASON_START_MS as SEASON_START, SEASON_END_MS as SEASON_END, seasonPhase } from "@/lib/season";
+import { SEASON_START_MS as SEASON_START, SEASON_END_MS as SEASON_END, SEASON_SCHEDULED, seasonPhase } from "@/lib/season";
 import { readSeasonSnapshot, computeFinalStandings } from "@/lib/seasonSnapshot";
 import { publicPetWhere } from "@/lib/publicPet";
 
@@ -32,7 +33,8 @@ export async function GET(req: NextRequest) {
   const started = now >= SEASON_START;
   const phase = seasonPhase(now);
   const closed = phase === "ended";
-  const closesAtIso = new Date(started ? SEASON_END : SEASON_START).toISOString();
+  // Unscheduled season holds a far-future sentinel — never ship it as a date.
+  const closesAtIso = SEASON_SCHEDULED ? new Date(started ? SEASON_END : SEASON_START).toISOString() : null;
 
   // ── Season ended: report CLOSED with final standings ──────────────────────
   // Prefer the durable snapshot frozen by the season-close cron; if the cron
@@ -71,6 +73,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({
+      scheduled: SEASON_SCHEDULED,
       signedIn: !!user,
       started: true,
       seasonClosed: true,
@@ -117,7 +120,7 @@ export async function GET(req: NextRequest) {
   const user = await getUser(req).catch(() => null);
   if (!user) {
     return NextResponse.json({
-      signedIn: false, started, seasonClosed: false,
+      signedIn: false, started, scheduled: SEASON_SCHEDULED, seasonClosed: false,
       pool: { points: poolPoints, participants, closesAtIso },
       topThree,
     });
@@ -142,7 +145,7 @@ export async function GET(req: NextRequest) {
   const pointsToNextRank = above ? Math.max(1, above.season_points - myPoints) : 0;
 
   return NextResponse.json({
-    signedIn: true, started, seasonClosed: false,
+    signedIn: true, started, scheduled: SEASON_SCHEDULED, seasonClosed: false,
     pool: { points: poolPoints, participants, closesAtIso },
     me: {
       rank,

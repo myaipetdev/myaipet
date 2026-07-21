@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { SEASON_TIERS } from "@/lib/season";
+import { SEASON_TIERS, SEASON_SCHEDULED, seasonPhase } from "@/lib/season";
 import Reveal from "@/components/Reveal";
 
 const EVOLUTION_STAGES: Record<string, { name: string; color: string }> = {
@@ -115,7 +115,14 @@ export default function Leaderboard() {
       }}>
         {[
           { label: "Total Participants", value: loading ? "..." : entries.length.toLocaleString() },
-          { label: "Season", value: "Season 1" },
+          // Phase-honest label: while the founder hasn't scheduled Season 1,
+          // it's "Starting soon" — never a date (lib/season.ts UI law).
+          {
+            label: "Season 1",
+            value: !SEASON_SCHEDULED || seasonPhase() === "upcoming"
+              ? "Starting soon"
+              : seasonPhase() === "live" ? "Live" : "Ended",
+          },
           { label: "Tiers", value: `${SEASON_TIERS.length} ranks` },
         ].map((s, i) => (
           <div key={i} style={{

@@ -27,7 +27,9 @@ const PLATFORM_DEFAULT_MODELS: Readonly<Record<PlatformProviderId, Readonly<Reco
     persona: "grok-3-mini-fast",
   },
   openai: {
-    chat: "gpt-5.6-luna",
+    // Founder cost call (2026-07-21): companion chat runs on the cheap GPT
+    // mini tier; Grok stays the fallback + the default for every other task.
+    chat: "gpt-4o-mini",
     reason: "gpt-5.6-luna",
     judge: "gpt-5.6-luna",
     summarize: "gpt-5.6-luna",
@@ -38,7 +40,21 @@ const PLATFORM_DEFAULT_MODELS: Readonly<Record<PlatformProviderId, Readonly<Reco
 
 export const PLATFORM_ALLOWED_MODEL_IDS: Readonly<Record<PlatformProviderId, readonly string[]>> = {
   xai: ["grok-3-mini", "grok-3-mini-fast", "grok-4-1-fast-non-reasoning"],
-  openai: ["gpt-5.6-luna"],
+  openai: ["gpt-5.6-luna", "gpt-4o-mini"],
+};
+
+/**
+ * Per-task platform PRIMARY provider. Chat defaults to OpenAI (cheaper mini
+ * model) with Grok as fallback; every other task stays Grok-first. Overridable
+ * per task via LLM_<TASK>_PLATFORM_PROVIDER, globally via LLM_PLATFORM_PROVIDER.
+ */
+const PLATFORM_DEFAULT_TASK_PROVIDER: Readonly<Record<PlatformLLMTask, PlatformProviderId>> = {
+  chat: "openai",
+  reason: "xai",
+  judge: "xai",
+  summarize: "xai",
+  extract: "xai",
+  persona: "xai",
 };
 
 export class LLMPlatformConfigError extends Error {
@@ -153,12 +169,20 @@ function parseProvider(value: string | undefined, envName: string, fallback: Pla
   throw new LLMPlatformConfigError(`${envName} must be 'xai' or 'openai'`);
 }
 
-/** Default order is xAI first, OpenAI second. Set fallback to "none" to disable it. */
-export function getPlatformProviderOrder(env: NodeJS.ProcessEnv = process.env): PlatformProviderId[] {
-  const primary = parseProvider(env.LLM_PLATFORM_PROVIDER, "LLM_PLATFORM_PROVIDER", "xai");
-  const fallbackRaw = (env.LLM_PLATFORM_FALLBACK_PROVIDER || "openai").trim().toLowerCase();
+/**
+ * Provider order, task-aware. Primary resolution: LLM_<TASK>_PLATFORM_PROVIDER
+ * → LLM_PLATFORM_PROVIDER → per-task default (chat→openai, rest→xai). The
+ * other platform provider is the fallback unless LLM_PLATFORM_FALLBACK_PROVIDER
+ * pins it or "none" disables it.
+ */
+export function getPlatformProviderOrder(task?: PlatformLLMTask, env: NodeJS.ProcessEnv = process.env): PlatformProviderId[] {
+  const taskDefault: PlatformProviderId = task ? PLATFORM_DEFAULT_TASK_PROVIDER[task] : "xai";
+  const taskEnv = task ? env[`LLM_${task.toUpperCase()}_PLATFORM_PROVIDER`] : undefined;
+  const primary = parseProvider(taskEnv || env.LLM_PLATFORM_PROVIDER, "LLM_PLATFORM_PROVIDER", taskDefault);
+  const otherProvider: PlatformProviderId = primary === "xai" ? "openai" : "xai";
+  const fallbackRaw = (env.LLM_PLATFORM_FALLBACK_PROVIDER || otherProvider).trim().toLowerCase();
   if (fallbackRaw === "none") return [primary];
-  const fallback = parseProvider(fallbackRaw, "LLM_PLATFORM_FALLBACK_PROVIDER", "openai");
+  const fallback = parseProvider(fallbackRaw, "LLM_PLATFORM_FALLBACK_PROVIDER", otherProvider);
   return primary === fallback ? [primary] : [primary, fallback];
 }
 

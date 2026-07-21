@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { LOGO_SRC } from "./Nav";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import Icon from "@/components/Icon";
-import { seasonPhase } from "@/lib/season";
+import { seasonPhase, SEASON_SCHEDULED, SEASON_START_MS } from "@/lib/season";
 import Reveal, { MaskedTitle, useMagnet } from "@/components/Reveal";
 import PawField from "@/components/PawField";
 
@@ -525,7 +525,15 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
             fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
             color: "#9A4E1E", letterSpacing: "0.08em", textTransform: "uppercase",
           }}>
-            {seasonPhase() === "live" ? "Season 1 · Live" : seasonPhase() === "upcoming" ? "Season 1 · Starts Jul 1" : "Season 1 · Ended"}
+            {/* Dates come from lib/season.ts ONLY — while unscheduled the
+                window is a sentinel, so the badge says "Starting Soon". */}
+            {seasonPhase() === "live"
+              ? "Season 1 · Live"
+              : seasonPhase() === "upcoming"
+                ? SEASON_SCHEDULED
+                  ? `Season 1 · Starts ${new Date(SEASON_START_MS).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`
+                  : "Season 1 · Starting Soon"
+                : "Season 1 · Ended"}
           </span>
         </div>
         </Reveal>
