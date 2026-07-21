@@ -1,10 +1,10 @@
 # Writing PetClaw Skills
 
-This guide explains how to create custom skills for PetClaw companion AI pets.
+> **Current status:** the registry currently installs the **18 built-in skills**; custom skill authoring is on the roadmap and **not installable yet**. `install` with any non-built-in skill ID returns `Skill not found`. This guide documents the SKILL.md manifest format the built-ins use today — the same format community skills will use when publishing opens.
 
 ## What is a Skill?
 
-A skill is a capability your pet can learn and execute. Skills are defined as `SKILL.md` files with YAML frontmatter (inspired by [ClawHub](https://github.com/openclaw/clawhub)).
+A skill is a capability your pet can learn and execute. Skills are defined as `SKILL.md` files with YAML frontmatter (inspired by [ClawHub](https://github.com/openclaw/clawhub)). Browse the built-in set with `petclaw-sdk skills` or `GET /api/petclaw/skills`; fetch any built-in's manifest as SKILL.md via `GET /api/petclaw/skills?id=<skillId>&format=md`.
 
 ## SKILL.md Format
 
@@ -20,7 +20,7 @@ tags: [tag1, tag2]
 price: 0               # 0 = free, >0 = credits per use
 currency: credits
 requires:
-  env: [API_KEY_NAME]  # environment variables needed
+  env: [API_KEY_NAME]  # SERVER-side env vars the skill needs (never user-supplied)
   bins: [curl]         # system binaries needed (optional)
   minLevel: 5          # minimum pet level to install
 ---
@@ -85,7 +85,17 @@ handler: api-call
 apiUrl: /api/pets/{petId}/memories
 ```
 
-## Example: Daily Horoscope Skill
+## Secrets never go in skill config
+
+Skill install `config` is stored as plaintext with the pet and is for non-secret
+preferences only. The API rejects (`400`) any config field whose name or value
+looks like a credential. Provider API keys belong in the encrypted BYOK vault:
+`POST /api/petclaw/models` (or `petclaw-sdk models connect ...`).
+
+## Format example: Daily Horoscope Skill
+
+This is an **illustrative manifest only** — `daily-horoscope` is not a built-in
+skill and cannot be installed today.
 
 ```yaml
 ---
@@ -116,33 +126,40 @@ Your pet reads the stars and tells your fortune for today.
 { "type": "object", "properties": { "horoscope": { "type": "string" }, "luckyNumber": { "type": "number" } } }
 ```
 
-## Installing Skills
+## Installing Skills (built-ins only today)
+
+Install works for the 18 built-in skill IDs and needs an owner token (`pck_...`,
+minted in the web app under **Sovereignty → Connect PetClaw clients**):
 
 ```bash
-# Via curl
-curl -X POST https://server.com/api/petclaw/skills \
+# Via curl — a real built-in skill
+curl -X POST https://app.myaipet.ai/api/petclaw/skills \
   -H "Content-Type: application/json" \
-  -d '{"action":"install","petId":1,"skillId":"daily-horoscope"}'
+  -H "Authorization: Bearer pck_your_token_here" \
+  -d '{"action":"install","petId":1,"skillId":"daily-mood"}'
 
 # Via SDK
-import { PetClawClient } from "@petclaw/sdk";
-const client = new PetClawClient({ baseUrl: "https://server.com" });
-await client.skills.install(1, "daily-horoscope");
+import { PetClawClient } from "@myaipet/petclaw-sdk";
+const client = new PetClawClient({ baseUrl: "https://app.myaipet.ai" });
+await client.skills.install(1, "daily-mood");
 ```
 
 ## Executing Skills
 
 ```bash
 # Via curl
-curl -X POST https://server.com/api/petclaw/skills \
+curl -X POST https://app.myaipet.ai/api/petclaw/skills \
   -H "Content-Type: application/json" \
-  -d '{"action":"execute","petId":1,"skillId":"daily-horoscope","input":{}}'
+  -H "Authorization: Bearer pck_your_token_here" \
+  -d '{"action":"execute","petId":1,"skillId":"daily-mood","input":{}}'
 
 # Via SDK
-const result = await client.skills.execute(1, "daily-horoscope", {});
+const result = await client.skills.execute(1, "daily-mood", {});
 console.log(result.output);
 ```
 
 ## Publishing Skills
 
-Currently, skills are built-in. Community skill publishing will be available in PetClaw v2 via PetHub registry.
+Not available yet. The registry currently installs the 18 built-in skills;
+community skill publishing (custom SKILL.md upload via the PetHub registry) is
+on the roadmap and there is no working install path for custom skills today.

@@ -54,7 +54,8 @@ export default function ArchitecturePage() {
           title="Session Log — Cross-Platform Trail"
           tag="every message · platform-tagged"
           desc="The complete conversation transcript stored in the petMemory table, tagged by
-                platform (web, chrome-ext, telegram, discord). Recent N messages flow into the
+                platform — web and chrome-ext today; the telegram and discord tags are reserved
+                for those channels, which are launch-paused. Recent N messages flow into the
                 system prompt; older ones are retrievable via the SDK. Same memory across every
                 surface."
         />
@@ -83,7 +84,7 @@ export default function ArchitecturePage() {
           <li><strong>Auditability.</strong> The owner can read MEMORY.md and see exactly what the pet remembers. Vector blobs are opaque.</li>
           <li><strong>Portability.</strong> SOUL Export ships the memory as a single JSON file the next runtime can load — no embedding format lock-in.</li>
           <li><strong>Sovereignty.</strong> &quot;Delete with proof&quot; means a SHA-256 of the deleted contents — that requires a deterministic textual representation.</li>
-          <li><strong>Cross-platform consistency.</strong> The same MEMORY.md serves Chrome ext, Telegram, web — without re-embedding per surface.</li>
+          <li><strong>Cross-platform consistency.</strong> The same MEMORY.md serves web and the Chrome ext today — and the launch-paused Telegram/Discord channels when they open — without re-embedding per surface.</li>
         </ul>
         <p style={{ fontSize: 13, color: "rgba(33,26,18,0.55)", marginTop: 14, lineHeight: 1.65 }}>
           Embedding-based recall is on the roadmap as an <em>optional</em> layer 6 for very long

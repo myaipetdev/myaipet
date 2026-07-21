@@ -4,7 +4,8 @@
  * NearbyMap — the Catch map hub. Location-FIRST: we don't show a zoomed-out
  * world map. We ask for location consent, and once granted we center on the
  * user and surface what's around them:
- *   1. Your real camera catches near you (rarity-colored dots).
+ *   1. Camera catches whose owners explicitly opted them onto the map
+ *      (map_public — default OFF), at server-rounded ~110 m coordinates.
  *   2. Wild Encounters — tap-to-catch GAME SPAWNS (clearly labelled as game
  *      content, not real animals). Deterministic per ~1km cell + hour,
  *      validated server-side (see /api/catch/spawns).
@@ -68,7 +69,7 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
 
       const pts: [number, number][] = [];
 
-      // ── Layer 1: your real camera catches ──
+      // ── Layer 1: opted-in camera catches (map_public only, rounded coords) ──
       try {
         const res = await fetch(`/api/catch/nearby?lat=${geo.lat}&lng=${geo.lng}`, { headers: getAuthHeaders() });
         const data = await res.json().catch(() => ({}));
@@ -165,7 +166,7 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
         <p style={{ fontSize: 13.5, color: MUTED, margin: "8px auto 16px", maxWidth: 340, lineHeight: 1.55 }}>
           {denied
             ? "We couldn't get your location. Allow location access (and try again) to see the Wild Encounters and catches around you."
-            : "Enable location and we'll drop game spawns right around you to catch — plus any real catches nearby. Camera catches appear on the shared map at an approximate location (~110 m)."}
+            : "Enable location and we'll drop game spawns right around you to catch — plus catches other players chose to share (shown at an approximate location, ~110 m). Your own catches stay private unless you share them."}
         </p>
         <button onClick={() => setPhase("loading")} style={{ padding: "12px 24px", borderRadius: 999, border: `3px solid ${INK}`, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 0 rgba(33,26,18,0.25)" }}>
           {denied ? "Try again" : "Enable location"}
@@ -180,7 +181,7 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
       {phase === "loading" && <div style={{ textAlign: "center", fontSize: 13, color: MUTED, marginBottom: 10 }}>Finding what&apos;s around you…</div>}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginBottom: 12, fontSize: 13, color: MUTED }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#9E72E8", border: `2px solid ${INK}` }} /> Real camera catches
+          <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#9E72E8", border: `2px solid ${INK}` }} /> Shared camera catches
         </span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
           <span style={{ width: 14, height: 14, borderRadius: "50%", background: "#FBF6EC", border: "2px solid #BE4F28", boxShadow: "0 0 0 3px rgba(190,79,40,0.25)" }} /> Wild Encounters — tap to catch
@@ -193,7 +194,7 @@ export default function NearbyMap({ onCaught }: { onCaught?: (cat: any) => void 
         </div>
       )}
       <div style={{ textAlign: "center", fontSize: 13, color: MUTED, marginTop: 8, lineHeight: 1.5 }}>
-        {count != null && <span>{count} real catches nearby. </span>}
+        {count != null && <span>{count} shared catches nearby. </span>}
         {spawnCount != null && <span>{spawnCount} wild encounters this hour — tap one to catch it (no camera needed).</span>}
         <br />
         <span style={{ opacity: 0.8 }}>Wild Encounters are game spawns (not real animals); they refresh hourly.</span>

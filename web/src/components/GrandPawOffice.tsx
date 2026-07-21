@@ -67,6 +67,18 @@ const IS_DEMO = process.env.NODE_ENV === "development";
 
 type CastMember = { name: string; kind: "yours" | "staff"; role: string; room: string; status: Status; line: string };
 
+// DONE always beats WORKING (audit P1): after a live run finishes, the ~7s
+// mission-control poll can still list the same item under `working` (sometimes
+// while it already sits in `done`), which flickered finished work back to
+// WORKING. Drop anything the payload marks done — or that matches the finished
+// live run — from the working set before ANY surface renders it.
+function workingSansDone(kanban: MC["kanban"], liveRun: LiveRun | null): KItem[] {
+  const doneIds = new Set(kanban.done.map((it) => String(it.id)));
+  const doneTitles = new Set(kanban.done.map((it) => it.title));
+  if (liveRun?.done) doneTitles.add(liveRun.title);
+  return kanban.working.filter((it) => !doneIds.has(String(it.id)) && !doneTitles.has(it.title));
+}
+
 function relTime(ts?: string | null): string {
   if (!ts) return "never";
   const s = Math.max(0, Math.floor((Date.now() - new Date(ts).getTime()) / 1000));
@@ -126,9 +138,14 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
     return withNext[0] || mc.schedules[0] || null;
   }, [mc.schedules]);
 
-  const workingTitle = liveRun && !liveRun.done ? liveRun.title : mc.kanban.working[0]?.title;
-  const runningCount = mc.kanban.working.length + (liveRun && !liveRun.done ? 1 : 0);
+  // Working items with anything already DONE filtered out (see workingSansDone).
+  const workingItems = useMemo(() => workingSansDone(mc.kanban, liveRun), [mc.kanban, liveRun]);
+  const workingTitle = liveRun && !liveRun.done ? liveRun.title : workingItems[0]?.title;
+  const runningCount = workingItems.length + (liveRun && !liveRun.done ? 1 : 0);
   const doneToday = mc.kanban.done.length;
+  // Recomputed locally (not the isWorking prop) so the header chip can never
+  // say WORKING off a stale payload row that is actually DONE.
+  const busyNow = runningCount > 0 || running;
 
   // hotel cast: the owner's real pets first (real names, real status), remaining
   // slots are the hotel's own staff characters — labeled NPC everywhere so
@@ -201,9 +218,9 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
         ))}
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
           <span style={{ ...labelStyle(12.5), display: "inline-flex", alignItems: "center", gap: 7, padding: "5px 12px", borderRadius: 999, background: CHIP_BG, border: `1px solid ${CHIP_BR}` }}>
-            <span style={{ width: 7, height: 7, borderRadius: 99, background: isWorking ? GREEN : DIM, animation: isWorking ? "gpPulse 1.6s infinite" : undefined }} />
+            <span style={{ width: 7, height: 7, borderRadius: 99, background: busyNow ? GREEN : DIM, animation: busyNow ? "gpPulse 1.6s infinite" : undefined }} />
             {IS_DEMO ? "DEMO PET" : "YOUR PET"}
-            {petName && petName !== "your pet" ? ` · ${petName.toUpperCase().slice(0, 14)}` : ""} · {isWorking ? "WORKING" : "IDLE"}
+            {petName && petName !== "your pet" ? ` · ${petName.toUpperCase().slice(0, 14)}` : ""} · {busyNow ? "WORKING" : "IDLE"}
           </span>
           {tab === "overview" && (
             <span style={{ display: "inline-flex", background: CHIP_BG, border: `1px solid ${CHIP_BR}`, borderRadius: 999, padding: 3 }}>
@@ -300,7 +317,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
                 <div style={{ fontFamily: SANS, fontSize: 13, color: BODY_C, padding: "10px 0" }}>Quiet at the desk — dispatch a goal above.</div>
               )}
               {liveRun && !liveRun.done && <QueueRow state="run" title={liveRun.title} right="LIVE" />}
-              {mc.kanban.working.map((it) => <QueueRow key={String(it.id)} state="run" title={it.title} right="WORKING" />)}
+              {workingItems.map((it) => <QueueRow key={String(it.id)} state="run" title={it.title} right="WORKING" />)}
               {mc.kanban.pending.slice(0, 3).map((it) => <QueueRow key={String(it.id)} state="queued" title={it.title} right="QUEUED" />)}
               {mc.kanban.done.slice(0, 4).map((it) => <QueueRow key={String(it.id)} state="done" title={it.title} right={`DONE ${clockOf(it.at)}`} />)}
             </RailCard>
@@ -436,7 +453,8 @@ function MemCard({ label, value, sub, fill }: { label: string; value: string; su
 function Board({ mc, liveRun, full }: { mc: MC; liveRun: LiveRun | null; full?: boolean }) {
   const cols: { title: string; items: KItem[]; accent: string; live?: boolean; empty: string }[] = [
     { title: "Queued", items: mc.kanban.pending, accent: LABEL, empty: "Nothing is queued." },
-    { title: "Working", items: mc.kanban.working, accent: GREEN, live: true, empty: "Nothing is running — dispatch a goal." },
+    // workingSansDone: a finished item must never sit in Working and Done at once.
+    { title: "Working", items: workingSansDone(mc.kanban, liveRun), accent: GREEN, live: true, empty: "Nothing is running — dispatch a goal." },
     { title: "Blocked", items: mc.kanban.blocked, accent: TERRA, empty: "Nothing is blocked." },
     { title: "Done today", items: mc.kanban.done, accent: GOLD, empty: "Nothing has finished yet today." },
   ];

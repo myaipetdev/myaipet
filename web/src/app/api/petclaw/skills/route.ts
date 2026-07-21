@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getAllSkills, getSkill, searchSkills, generateSkillMd,
   installSkill, uninstallSkill, getInstalledSkills, executeSkill,
+  configContainsSecret, SECRET_CONFIG_ERROR,
 } from "@/lib/petclaw/pethub";
 import { getUser, isExtensionToken } from "@/lib/auth";
 import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
@@ -95,6 +96,17 @@ export async function POST(req: NextRequest) {
     switch (action) {
       case "install": {
         if (!skillId) return NextResponse.json({ error: "skillId required" }, { status: 400 });
+        if (config !== undefined) {
+          if (!config || typeof config !== "object" || Array.isArray(config)) {
+            return NextResponse.json({ error: "config must be a flat object of strings" }, { status: 400 });
+          }
+          // Config is stored as plaintext JSON in the pet row and returned to the
+          // owner — never accept credentials here. (Checked again inside
+          // installSkill as defense in depth; values are never logged.)
+          if (configContainsSecret(config as Record<string, unknown>)) {
+            return NextResponse.json({ error: SECRET_CONFIG_ERROR }, { status: 400 });
+          }
+        }
         const result = await installSkill(pid, skillId, config);
         return NextResponse.json({ success: true, installed: result });
       }

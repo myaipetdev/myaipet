@@ -544,8 +544,10 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
         </div>
 
         {saveError && <div role="alert" style={{ color: "#9A4E1E", fontSize: 13, lineHeight: 1.45, marginTop: 10 }}>{saveError}</div>}
+        {/* Honest label: this saves and advances to the test-drive chat — the
+            celebratory "all set" copy belongs to the FINAL (done) step only. */}
         <button onClick={saveAndComplete} disabled={saving} style={primaryBtn}>
-          {saving ? "Saving…" : "Finish — all set 🎉"}
+          {saving ? "Saving…" : "Continue to test drive ▸"}
         </button>
       </Shell>
     );

@@ -101,7 +101,6 @@ export async function POST(req: NextRequest) {
     const hpLeft = sim.player_hp_left;
     const baseExp = won ? 30 : 12;
     const requestedExp = Math.min(Math.floor(baseExp * growthMul), DAILY_EXP_CAP);
-    const airdropIncrement = won ? 35 : 10;
 
     const claim = await claimArenaBattle(tx, {
       userId: user.id,
@@ -109,6 +108,24 @@ export async function POST(req: NextRequest) {
       date: today,
       requestedExp,
     });
+
+    // ── Duel-farm guard (audit P1): a given player↔opponent pairing pays season
+    // points ONCE per calendar day. Replaying the same matchup is honest
+    // practice — exp still follows its own daily caps, but points are 0 and the
+    // response says so. Runs AFTER claimArenaBattle so the per-pet daily-log row
+    // lock serializes concurrent battles of the same pair (no double-pay race).
+    const paidToday = await tx.battleHistory.findFirst({
+      where: {
+        player_pet_id: petId,
+        opponent_pet_id: opponentPet.id,
+        battle_type: "pvp",
+        points_earned: { gt: 0 },
+        created_at: { gte: today },
+      },
+      select: { id: true },
+    });
+    const repeatMatchup = paidToday !== null;
+    const airdropIncrement = repeatMatchup ? 0 : won ? 35 : 10;
 
     // Every reward runs only after the locked daily claim succeeds. Keeping the
     // skill read/create under the pet lock also makes its unique grant stable.
@@ -131,10 +148,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    await tx.user.update({
-      where: { id: user.id },
-      data: { season_points: { increment: airdropIncrement } },
-    });
+    if (airdropIncrement > 0) {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { season_points: { increment: airdropIncrement } },
+      });
+    }
     await recordArenaLevelUpRecognition(tx, user.id, claim.leveledUp);
     await tx.battleHistory.create({
       data: {
@@ -151,7 +170,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return { ...claim, skillDrop, sim, won, airdropIncrement };
+    return { ...claim, skillDrop, sim, won, airdropIncrement, repeatMatchup };
   }, { maxWait: 10_000, timeout: 20_000 });
 
   return NextResponse.json({
@@ -167,6 +186,9 @@ export async function POST(req: NextRequest) {
     },
     won: reward.won,
     points_earned: reward.airdropIncrement,
+    // True when this exact player↔opponent pairing already paid season points
+    // today — the client labels the bout "practice rematch — no points".
+    repeat_matchup: reward.repeatMatchup,
     exp_gained: reward.expGain,
     growth_multiplier: growthMul,
     leveled_up: reward.leveledUp,
@@ -174,7 +196,9 @@ export async function POST(req: NextRequest) {
     skill_drop: reward.skillDrop,
     daily_battles: reward.dailyBattles,
     daily_battle_cap: DAILY_BATTLE_CAP,
-    message: reward.won ? "Victory! Great battle!" : "Defeat... Train harder!",
+    message: reward.repeatMatchup
+      ? "Practice rematch — this matchup already paid season points today."
+      : reward.won ? "Victory! Great battle!" : "Defeat... Train harder!",
   });
   } catch (error) {
     if (error instanceof InvalidArenaMatchChallengeError) {

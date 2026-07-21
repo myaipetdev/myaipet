@@ -281,6 +281,50 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
 
         {/* Content — die-cut paper card */}
         <main style={{ minWidth: 0 }}>
+          {/* Mobile (≤820px): collapsible TOC — the sticky sidebar is hidden
+              there, so this details block keeps Documents + on-page anchors
+              reachable. Native details/summary: works in this server component
+              with no JS. Hidden on desktop. */}
+          <details className="apidocs-mobile-toc">
+            <summary style={{
+              cursor: "pointer", fontSize: 12, letterSpacing: "0.14em",
+              textTransform: "uppercase", color: "rgba(33,26,18,0.6)",
+              fontFamily: "var(--ed-m, monospace)", fontWeight: 700,
+              listStyle: "none",
+            }}>
+              Contents ▾
+            </summary>
+            <div style={{ paddingTop: 12 }}>
+              <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 8 }}>Documents</div>
+              <nav style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 16 }}>
+                {TABS.map(t => (
+                  <a key={t.slug} href={`/api-docs?tab=${t.slug}`} style={{
+                    fontSize: 14, fontWeight: t.slug === activeSlug ? 700 : 500,
+                    padding: "6px 10px", borderRadius: 7, textDecoration: "none",
+                    color: t.slug === activeSlug ? "#9A4E1E" : "rgba(33,26,18,0.7)",
+                    background: t.slug === activeSlug ? "rgba(190,79,40,0.10)" : "transparent",
+                    borderLeft: t.slug === activeSlug ? "2px solid #BE4F28" : "2px solid transparent",
+                  }}>{t.title}</a>
+                ))}
+              </nav>
+              {toc.length > 0 && (
+                <>
+                  <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 8 }}>On this page</div>
+                  <nav style={{ display: "flex", flexDirection: "column", gap: 1, borderLeft: "1px solid rgba(33,26,18,0.13)", paddingLeft: 12 }}>
+                    {toc.map((h, idx) => (
+                      <a key={idx} href={`#${h.slug}`} style={{
+                        fontSize: h.level === 2 ? 13 : 12.5,
+                        fontWeight: h.level === 2 ? 600 : 400,
+                        padding: "3px 0", paddingLeft: h.level === 3 ? 12 : 0,
+                        textDecoration: "none",
+                        color: h.level === 2 ? "rgba(33,26,18,0.78)" : "rgba(33,26,18,0.55)",
+                      }}>{h.text}</a>
+                    ))}
+                  </nav>
+                </>
+              )}
+            </div>
+          </details>
           <div style={{
             background: "#FBF6EC", border: "1px solid rgba(33,26,18,0.14)", borderRadius: 14,
             boxShadow: "5px 6px 0 rgba(33,26,18,0.07)", padding: "clamp(22px, 4vw, 44px)",
@@ -314,9 +358,20 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
         .apidocs-tab:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 rgba(33,26,18,0.16); }
         .apidocs-aside::-webkit-scrollbar { width: 6px; }
         .apidocs-aside::-webkit-scrollbar-thumb { background: rgba(33,26,18,0.16); border-radius: 3px; }
+        .apidocs-mobile-toc { display: none; }
+        .apidocs-mobile-toc > summary::-webkit-details-marker { display: none; }
         @media (max-width: 820px) {
           .apidocs-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
           .apidocs-aside { display: none !important; }
+          .apidocs-mobile-toc {
+            display: block;
+            margin: 0 0 18px;
+            background: #FBF6EC;
+            border: 1px solid rgba(33,26,18,0.14);
+            border-radius: 12px;
+            box-shadow: 3px 4px 0 rgba(33,26,18,0.07);
+            padding: 12px 16px;
+          }
         }
         .md-content { font-size: 15.5px; line-height: 1.72; color: #211A12; }
         .md-content h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin: 32px 0 12px; }

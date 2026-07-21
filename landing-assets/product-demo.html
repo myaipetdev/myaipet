@@ -305,8 +305,9 @@ body{
 @keyframes foilrun{to{background-position:240% 0}}
 .s8 .wm .tag{margin-top:20px;font-size:22px;font-weight:600;color:var(--ink2);letter-spacing:.01em}
 .s8 .wm .url{margin-top:6px;font-family:ui-monospace,Menlo,monospace;font-size:15px;letter-spacing:.2em;color:var(--violetD);text-transform:uppercase}
-.s8 .cta{margin-top:26px;display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:999px;font-weight:800;font-size:18px;color:#5A3A0C;cursor:pointer;
+.s8 .cta{margin-top:26px;display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:999px;font-weight:800;font-size:18px;color:#5A3A0C;cursor:pointer;text-decoration:none;
   background:linear-gradient(160deg,#FFF6DE,#E8C77E);border:1px solid rgba(255,255,255,.75);box-shadow:0 20px 44px -18px rgba(200,147,47,1), inset 0 1px 0 rgba(255,255,255,.9);animation:ctaPulse 2.2s ease-in-out infinite}
+.s8 .cta:focus-visible{outline:3px solid #5A3A0C;outline-offset:3px}
 @keyframes ctaPulse{0%,100%{transform:translateY(0);box-shadow:0 20px 44px -18px rgba(200,147,47,1), inset 0 1px 0 rgba(255,255,255,.9)}50%{transform:translateY(-3px);box-shadow:0 26px 54px -16px rgba(200,147,47,1), 0 0 0 8px rgba(232,199,126,.18), inset 0 1px 0 rgba(255,255,255,.9)}}
 .on.s8 .wm h1{animation:foilrun 4s linear infinite, capUp .6s .05s cubic-bezier(.2,.9,.3,1) both}
 .on.s8 .wm .tag{animation:capUp .55s .22s cubic-bezier(.2,.9,.3,1) both}
@@ -736,7 +737,7 @@ body{
           <h1>MY&nbsp;AI&nbsp;PET</h1>
           <div class="tag">Your AI companion — truly yours.</div>
           <div class="url">myaipet.ai</div>
-          <div class="cta">Adopt yours <span aria-hidden="true">→</span></div>
+          <a class="cta" href="https://app.myaipet.ai">Adopt yours <span aria-hidden="true">→</span></a>
         </div>
       </div>
       <div class="confetti" data-confetti="18" style="--cd:3.4s"></div>
@@ -978,7 +979,9 @@ body{
     else if(e.code==='ArrowLeft'){ prev(); }
     else if(e.key==='r'||e.key==='R'){ replay(); }
   });
-  document.querySelector('.s8 .cta') && document.querySelector('.s8 .cta').addEventListener('click', function(){ replay(); });
+  /* End-card CTA is a real link to https://app.myaipet.ai — no JS hijack.
+     (It used to be a div that replayed the reel; keyboard users couldn't
+     reach it and clickers expecting "Adopt yours" got a rewind.) */
 
   /* fit the 1280x720 stage into the viewport */
   function fit(){

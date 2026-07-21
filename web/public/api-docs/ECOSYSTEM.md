@@ -55,7 +55,7 @@ petclaw-sdk models list
 
 Endpoints: `GET/POST/DELETE /api/petclaw/models` (owner-auth).
 
-## Connectors (19 across 5 categories — examples)
+## Connectors (19-connector registry · 3 live — examples)
 
 | Platform | Type | Status · Capabilities |
 |----------|------|-------------|
@@ -64,11 +64,15 @@ Endpoints: `GET/POST/DELETE /api/petclaw/models` (owner-auth).
 | **Discord** | Community | Launch-paused — channel delivery returns 503 in this release |
 | **Slack** | Workspace | Launch-paused — channel delivery returns 503 in this release |
 | **Web Search** | Knowledge | Live — DuckDuckGo instant-answer search; server-side page summarization is unavailable |
+| **Wikipedia** | Knowledge | Live — article search + page summaries |
 | **Enhanced Memory** | Internal | Live — semantic search, timeline, cross-platform recall |
 
-Persistent channel subscriptions (Telegram/Twitter/Discord bot delivery) are
-fail-closed behind a launch kill-switch and return `503` — the same state shown
-on the Agent screen ("Platform Connections · unavailable for launch").
+3 of the 19 registered connectors are live today (`web-search`, `wikipedia`,
+`memory`); the rest are registered but launch-paused or planned. Persistent
+channel subscriptions (Telegram/Twitter/Discord bot delivery) are fail-closed
+behind a launch kill-switch and return `503` — the same state shown on the
+Agent screen ("Platform Connections · unavailable for launch"). Canonical
+status lives in `web/src/lib/releaseStatus.ts` — keep this file in sync.
 
 ## MCP Compatibility
 

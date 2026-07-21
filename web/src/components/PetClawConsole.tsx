@@ -17,6 +17,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "@/lib/api";
 import PetClawHeroIntro from "@/components/PetClawHeroIntro";
+import { RELEASE_STATUS } from "@/lib/releaseStatus";
 
 // Terminal typewriter — reveals a line char-by-char once on mount; a blinking
 // caret trails until done. prefers-reduced-motion shows it instantly (no shift).
@@ -75,14 +76,15 @@ const GREEN = "#9FC59A";       // warm sage (live)
 const LINE = "rgba(231,197,124,0.20)"; // warm gold hairline
 const MONO = "var(--ed-m)";    // Space Mono
 
-// Single source of truth for the SDK version shown across surfaces
-// (console boot line, manifest header, SovereigntyDashboard SDK card).
-export const SDK_VERSION = "1.6.1";
+// Status strings source from lib/releaseStatus.ts (single source of truth —
+// landing + docs must match it). Re-exported here so existing consumers
+// (SovereigntyDashboard SDK card) keep importing SDK_VERSION from this file.
+export const SDK_VERSION = RELEASE_STATUS.sdkVersion;
 
-// Always-on surfaces + the 19-connector registry (three currently live).
+// Always-on surfaces + the connector registry (three currently live).
 // Messaging channel delivery is launch-paused (matches the Agent screen);
 // MCP clients connect once the fixed MCP path ships in SDK 1.6.2.
-const RUNS_ON = "web · chrome-extension · mcp clients (via SDK 1.6.2)";
+const RUNS_ON = `web · chrome-extension · mcp clients (${RELEASE_STATUS.mcp})`;
 const CONNECTORS = [
   { k: "messaging (0/8 live)", v: "telegram · discord · x launch-paused; whatsapp · slack · line · instagram · gmail planned" },
   { k: "productivity (0/3 live)", v: "notion · google-calendar · github planned" },
@@ -141,7 +143,7 @@ interface Line { role: "sys" | "you" | "pet"; text: string }
 
 const BOOT: Line[] = [
   { role: "sys", text: `initializing petclaw console · protocol v1 · SDK ${SDK_VERSION}` },
-  { role: "sys", text: "connectors ▸ 19 registry / 3 live · messaging launch-paused   tools ▸ 6 defined (mcp in 1.6.2)   skills ▸ 18 loaded   VIGIL ▸ 5 · PACK ▸ A2A" },
+  { role: "sys", text: `connectors ▸ ${RELEASE_STATUS.connectors.registry} registry / ${RELEASE_STATUS.connectors.live} live · messaging ${RELEASE_STATUS.channels}   tools ▸ ${RELEASE_STATUS.mcpTools} defined (mcp ${RELEASE_STATUS.mcp})   skills ▸ ${RELEASE_STATUS.skills} loaded   VIGIL ▸ 5 · PACK ▸ A2A` },
   { role: "sys", text: "soul ▸ portable · consent ▸ enforced · on-chain ▸ planned / not live" },
 ];
 
@@ -353,14 +355,14 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
             </div>
             <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: "0 40px" }}>
               <div>
-                <SectionHead>Connectors — 19 integrations</SectionHead>
+                <SectionHead>Connectors — {RELEASE_STATUS.connectors.registry} registry · {RELEASE_STATUS.connectors.live} live</SectionHead>
                 {CONNECTORS.map((c) => <Row key={c.k} k={c.k} v={c.v} kw={112} />)}
                 <div style={{ display: "flex", gap: 10, fontSize: 15, lineHeight: 1.8, marginTop: 4 }}>
                   <span style={{ color: AMBER_DIM, minWidth: 112, flexShrink: 0 }}>runs on</span>
                   <span style={{ color: MUTED }}>{RUNS_ON}</span>
                 </div>
                 {!compact && (<>
-                  <SectionHead>Skills (18)</SectionHead>{SKILLS.map((s) => <Row key={s.k} k={s.k} v={s.v} kw={100} />)}
+                  <SectionHead>Skills ({RELEASE_STATUS.skills})</SectionHead>{SKILLS.map((s) => <Row key={s.k} k={s.k} v={s.v} kw={100} />)}
                   {/* Sovereignty lives in the LEFT column: the right column's
                       long wrapping rows run taller, and ending the left early
                       left a dead dark void under the skills list. */}
@@ -370,7 +372,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
               </div>
               {!compact && (
                 <div>
-                  <SectionHead>MCP tools — 6 defined · working MCP path ships in SDK 1.6.2</SectionHead>
+                  <SectionHead>MCP tools — {RELEASE_STATUS.mcpTools} defined · working MCP path {RELEASE_STATUS.mcp}</SectionHead>
                   {MCP_TOOLS.map((t) => <Row key={t.k} k={t.k} v={t.v} />)}
                   <SectionHead>VIGIL — agentic harness · every chat turn</SectionHead>
                   {HARNESS.map((h) => <Row key={h.k} k={h.k} v={h.v} kw={120} />)}

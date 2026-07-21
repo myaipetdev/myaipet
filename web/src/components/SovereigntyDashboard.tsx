@@ -1384,7 +1384,7 @@ export default function SovereigntyDashboard() {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {[
               ["heart", "Grows closer", "Bond deepens with every chat — real state, not a script"],
-              ["crystal-ball", "Remembers you", "Private memory from every conversation"],
+              ["crystal-ball", "Remembers you", "A durable, growing memory ledger — key facts + session logs, private to you"],
               ["chat", "Projected everywhere", "Web · Chrome · terminal — one memory"],
               ["lock", "Your data, yours", "Wallet-native — export or delete anytime"],
             ].map(([icon, title, sub]) => (
@@ -1402,8 +1402,12 @@ export default function SovereigntyDashboard() {
           </p>
         </div>
 
-        {/* PetClaw agentic-harness console — the headline of this tab */}
-        <div id="connect-cli" style={{ marginBottom: 40, scrollMarginTop: 88 }}>
+        {/* PetClaw agentic-harness console — the headline of this tab.
+            NOTE: no id here. "#connect-cli" is owned by the token card inside
+            ModelsPanel below ("Connect PetClaw clients") — a duplicate id on
+            this earlier wrapper made every token deep link (extension popup,
+            in-page anchor) land on the console instead of the token card. */}
+        <div style={{ marginBottom: 40 }}>
           <PetClawConsole
             key={selectedPet?.id ?? "none"}
             petId={selectedPet?.id}
@@ -1460,8 +1464,8 @@ export default function SovereigntyDashboard() {
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               {[
                 { n: "4", l: "Channels" },
-                { n: "100%", l: "Data Ownership" },
-                { n: "∞", l: "Memory" },
+                { n: "Yours", l: "Export · Import · Delete" },
+                { n: "Durable", l: "Memory Ledger" },
               ].map(({ n, l }, i) => (
                 <Reveal key={l} dir="up" delay={i * 90} style={{ textAlign: "center" }}>
                   <div style={{ fontFamily: DISP, fontSize: 26, fontWeight: 800, color: INK, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{n}</div>
@@ -2220,7 +2224,7 @@ export default function SovereigntyDashboard() {
               fontFamily: BODY, lineHeight: 1.65,
             }}>
               Your pet, your data, your rules. <strong>Export SOUL Data</strong> — a portable JSON bundle
-              of identity, memory, skills, and consent. <strong>Delete Pet Data</strong> — removes pet-scoped
+              of identity, memory, skills (installed and learned), catches, and consent. <strong>Delete Pet Data</strong> — removes pet-scoped
               records and owned media from active systems immediately. Backups expire under the published
               retention schedule; public on-chain records cannot be erased.
             </p>

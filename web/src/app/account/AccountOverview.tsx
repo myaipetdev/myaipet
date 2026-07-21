@@ -453,7 +453,10 @@ export default function AccountOverview({
                     style={{ width: 8, height: 8, borderRadius: "50%", background: statusColor(g.status), flexShrink: 0 }}
                   />
                   <span style={{ flex: 1, minWidth: 0 }}>
-                    Pet video{g.duration > 0 ? ` · ${g.duration}s` : ""}
+                    {/* duration is the real discriminator: every image path
+                        writes duration 0, every video path writes its clip
+                        length — don't call an image a "Pet video". */}
+                    {g.duration > 0 ? `Pet video · ${g.duration}s` : "Pet image"}
                     <span style={{ color: "#7A6E5A" }}> · {g.status}</span>
                   </span>
                   <span style={{ fontFamily: "var(--ed-m)", fontSize: 12.5, fontWeight: 700, color: "#9A4E1E", whiteSpace: "nowrap" }}>

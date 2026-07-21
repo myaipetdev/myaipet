@@ -527,9 +527,10 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
 // ── Victory / Defeat Overlay V2 (dramatic animation) ──
 // `points` is the SERVER-granted season-point amount (null = grant still
 // settling). Practice bouts (no server match) pay nothing and say so — the
-// overlay never invents a number the server didn't pay.
-function ResultOverlay({ won, points, expGained, skillDrop, serverMatched, onClose }: {
-  won: boolean; points: number | null; expGained: number; skillDrop: string | null; serverMatched: boolean; onClose: () => void;
+// overlay never invents a number the server didn't pay. `repeatMatchup` is the
+// server's duel-farm flag: this pairing already paid its points today.
+function ResultOverlay({ won, points, expGained, skillDrop, serverMatched, repeatMatchup, onClose }: {
+  won: boolean; points: number | null; expGained: number; skillDrop: string | null; serverMatched: boolean; repeatMatchup: boolean; onClose: () => void;
 }) {
   const dropSkill = skillDrop ? SKILL_MAP[skillDrop] : null;
   return (
@@ -612,7 +613,9 @@ function ResultOverlay({ won, points, expGained, skillDrop, serverMatched, onClo
           maxWidth: 360, margin: "0 auto 20px", lineHeight: 1.5,
         }}>
           {serverMatched
-            ? "Server-verified Season Rewards grant — win +35 · loss +10."
+            ? repeatMatchup
+              ? "Practice rematch — this pairing already paid its season points today (each pairing pays once per day)."
+              : "Server-verified Season Rewards grant — win +35 · loss +10. Each pairing pays once per day."
             : "Practice bout — season points are paid on server-matched battles only (win +35 · loss +10)."}
         </div>
 
@@ -704,6 +707,8 @@ export default function Arena() {
   // Practice bouts (no match challenge) pay 0 — the client never invents pts.
   const [earnedPoints, setEarnedPoints] = useState<number | null>(null);
   const [serverMatched, setServerMatched] = useState(false);
+  // Server duel-farm flag: this exact pairing already paid points today.
+  const [repeatMatchup, setRepeatMatchup] = useState(false);
   const [earnedExp, setEarnedExp] = useState(0);
   const [skillDrop, setSkillDrop] = useState<string | null>(null);
   const [animating, setAnimating] = useState(false);
@@ -909,6 +914,7 @@ export default function Arena() {
     // practice bouts (no challenge issued) honestly pay 0.
     setServerMatched(matchChallengeRef.current !== null);
     setEarnedPoints(matchChallengeRef.current !== null ? null : 0);
+    setRepeatMatchup(false);
     setPlayerDodging(false);
     setOpponentDodging(false);
     setPlayerDefBuff(0);
@@ -931,8 +937,10 @@ export default function Arena() {
       api.arena
         .reportResult(selectedPet.id, opponent.pet.id || 0, matchChallenge)
         .then((res: any) => {
-          // The server's grant is the ONLY number we show (+35 win / +10 loss).
+          // The server's grant is the ONLY number we show (+35 win / +10 loss;
+          // 0 with repeat_matchup=true when this pairing already paid today).
           setEarnedPoints(typeof res.points_earned === "number" ? res.points_earned : 0);
+          setRepeatMatchup(res.repeat_matchup === true);
           if (res.exp_gained) setEarnedExp(res.exp_gained);
           if (res.skill_drop) setSkillDrop(res.skill_drop);
         })
@@ -1339,7 +1347,8 @@ export default function Arena() {
             </div>
 
             {/* Mission + reward — REAL server values only (api/arena/result:
-                +35 win / +10 loss, DAILY_BATTLE_CAP 30/day; practice pays 0). */}
+                +35 win / +10 loss, DAILY_BATTLE_CAP 30/day; each pairing pays
+                once per day, rematches are practice; practice pays 0). */}
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "center",
               gap: 8, flexWrap: "wrap", marginBottom: 30,
@@ -1360,7 +1369,7 @@ export default function Arena() {
                 Win +35 · Loss +10 season pts
               </span>
               <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A" }}>
-                Server-verified matched battles · up to 30/day · practice bouts pay none
+                Server-verified matched battles · up to 30/day · each pairing pays once a day · practice bouts pay none
               </span>
             </div>
 
@@ -1741,6 +1750,7 @@ export default function Arena() {
                 expGained={earnedExp}
                 skillDrop={skillDrop}
                 serverMatched={serverMatched}
+                repeatMatchup={repeatMatchup}
                 onClose={resetBattle}
               />
             )}

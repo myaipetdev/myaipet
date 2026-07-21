@@ -3,7 +3,9 @@
 /**
  * SOS feed (Save Our Streak) + Buddy panel — community-facing rescue surface.
  *
- *   LEFT: live SOS requests (last 24h)        → click "Help (50 cr)"
+ *   LEFT: live SOS requests (last 24h)        → "Help · costs 50 cr" arms an
+ *   inline confirm stating the full trade (spend 50 cr → +20 Savior recognition)
+ *   BEFORE anything is charged — no surprise spends.
  *   RIGHT: my buddy state — invites in/out + active partnership
  */
 import { useEffect, useState } from "react";
@@ -27,6 +29,9 @@ export default function SosFeedAndBuddy() {
   const [busy, setBusy] = useState<number | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [inviteWallet, setInviteWallet] = useState("");
+  // No surprise spends: "Help" arms a per-row confirm step that states the full
+  // cost/benefit (spend 50 credits → +20 Savior recognition) BEFORE any charge.
+  const [confirmId, setConfirmId] = useState<number | null>(null);
 
   const load = async () => {
     try {
@@ -44,6 +49,7 @@ export default function SosFeedAndBuddy() {
   // network reject or a non-JSON error page (e.g. 502) would otherwise skip the
   // reset and leave the button spinning/disabled forever.
   const help = async (id: number) => {
+    setConfirmId(null);
     setBusy(id);
     try {
       const r = await fetch(`/api/sos/${id}/help`, {
@@ -143,32 +149,59 @@ export default function SosFeedAndBuddy() {
               </div>
             )}
             {feed.map(item => (
-              <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 18px" }}>
-                {item.sender.pet?.avatar_url
-                  ? <img src={item.sender.pet.avatar_url} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />
-                  : <img src="/mascot.jpg" alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, fontFamily: "var(--ed-disp)" }}>
-                    {item.sender.pet?.name || "—"} <span style={{ color: "#9A4E1E", fontFamily: "var(--ed-m)", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 4 }}>·
-                      <svg width={11} height={11} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "inline-block" }}>
-                        <path d="M12 3c1 3 4 4 4 8a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5C10 8 11 6 12 3Z" stroke="#BE4F28" strokeWidth="1.8" strokeLinejoin="round" />
-                      </svg>
-                      {item.sender_streak}d</span>
+              <div key={item.id} style={{ padding: "10px 18px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  {item.sender.pet?.avatar_url
+                    ? <img src={item.sender.pet.avatar_url} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />
+                    : <img src="/mascot.jpg" alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, fontFamily: "var(--ed-disp)" }}>
+                      {item.sender.pet?.name || "—"} <span style={{ color: "#9A4E1E", fontFamily: "var(--ed-m)", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 4 }}>·
+                        <svg width={11} height={11} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ display: "inline-block" }}>
+                          <path d="M12 3c1 3 4 4 4 8a4 4 0 0 1-8 0c0-1.5.5-2.5 1.5-3.5C10 8 11 6 12 3Z" stroke="#BE4F28" strokeWidth="1.8" strokeLinejoin="round" />
+                        </svg>
+                        {item.sender_streak}d</span>
+                    </div>
+                    {item.message && (
+                      <div style={{ fontSize: 13, color: "#7A6E5A", marginTop: 1, fontFamily: "var(--ed-body)" }}>{item.message}</div>
+                    )}
                   </div>
-                  {item.message && (
-                    <div style={{ fontSize: 13, color: "#7A6E5A", marginTop: 1, fontFamily: "var(--ed-body)" }}>{item.message}</div>
+                  {authed === false ? (
+                    <button disabled style={{
+                      ...primaryBtn, padding: "7px 12px", fontSize: 13,
+                      opacity: 0.5, cursor: "default",
+                    }}>Sign in to help</button>
+                  ) : confirmId === item.id ? null : (
+                    /* Cost is on the label; the click only ARMS the confirm row
+                       below — nothing is spent until "Spend 50 cr" is pressed. */
+                    <button onClick={() => setConfirmId(item.id)} disabled={busy === item.id} style={{
+                      ...primaryBtn, padding: "7px 12px", fontSize: 13,
+                      opacity: busy === item.id ? 0.5 : 1,
+                    }}>Help · costs 50 cr</button>
                   )}
                 </div>
-                {authed === false ? (
-                  <button disabled style={{
-                    ...primaryBtn, padding: "7px 12px", fontSize: 13,
-                    opacity: 0.5, cursor: "default",
-                  }}>Sign in to help</button>
-                ) : (
-                  <button onClick={() => help(item.id)} disabled={busy === item.id} style={{
-                    ...primaryBtn, padding: "7px 12px", fontSize: 13,
-                    opacity: busy === item.id ? 0.5 : 1,
-                  }}>Help · 50cr</button>
+                {confirmId === item.id && authed !== false && (
+                  <div style={{
+                    marginTop: 8, marginLeft: 44, padding: "8px 10px",
+                    background: "rgba(190,79,40,0.06)", border: "1px solid rgba(190,79,40,0.22)",
+                    borderRadius: 10, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
+                  }}>
+                    <span style={{ fontSize: 12.5, color: "#5C5140", fontFamily: "var(--ed-body)", flex: 1, minWidth: 180, lineHeight: 1.45 }}>
+                      Spend <strong style={{ color: "#211A12" }}>50 credits</strong> to gift them a streak shield —
+                      you get <strong style={{ color: "#211A12" }}>+20 Savior recognition</strong> (lifetime ledger, not season rank).
+                    </span>
+                    <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                      <button onClick={() => help(item.id)} disabled={busy === item.id} style={{
+                        ...primaryBtn, padding: "6px 12px", fontSize: 12.5,
+                        opacity: busy === item.id ? 0.5 : 1,
+                      }}>{busy === item.id ? "Helping…" : "Spend 50 cr"}</button>
+                      <button onClick={() => setConfirmId(null)} disabled={busy === item.id} style={{
+                        background: "transparent", border: "1px solid #E5DABC", borderRadius: 9,
+                        padding: "6px 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+                        color: "#5C5140", fontFamily: "var(--ed-body)",
+                      }}>Cancel</button>
+                    </div>
+                  </div>
                 )}
               </div>
             ))}
@@ -334,7 +367,7 @@ const primaryBtn: React.CSSProperties = {
   padding: "9px 16px", borderRadius: 10,
   border: "none",
   background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
-  color: "#FFF8EE", fontWeight: 800, fontSize: 13,
+  color: "#211A12", fontWeight: 800, fontSize: 13, // ink on orange (design system)
   cursor: "pointer", fontFamily: "var(--ed-disp)",
   whiteSpace: "nowrap",
 };

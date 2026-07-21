@@ -1,7 +1,10 @@
 /**
  * GET /api/catch/nearby?lat=&lng= — recent catches near a point, for the map.
- * Coordinates are rounded (~110m) before returning so exact locations aren't
- * exposed. Falls back to recent global catches when no point is given.
+ * CONSENT-GATED: only rows the owner explicitly opted in (map_public=true) are
+ * ever returned — catches are private by default, and browser geolocation
+ * permission is not publication consent. Coordinates are rounded (~110m)
+ * before returning so exact locations aren't exposed. Falls back to recent
+ * global (opted-in) catches when no point is given.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
@@ -21,9 +24,12 @@ export async function GET(req: NextRequest) {
 
   // Only REAL camera catches on this layer — wild game spawns have their own
   // (clearly-labelled) layer, so they must not masquerade as real sightings.
+  // And ONLY rows the owner opted onto the map (map_public=true): existing
+  // catches default to false, so the map honestly shows nothing until owners
+  // opt in per catch.
   const where = hasPoint
-    ? { source: "camera", lat: { gte: lat - D, lte: lat + D }, lng: { gte: lng - D, lte: lng + D } }
-    : { source: "camera", lat: { not: null } };
+    ? { source: "camera", map_public: true, lat: { gte: lat - D, lte: lat + D }, lng: { gte: lng - D, lte: lng + D } }
+    : { source: "camera", map_public: true, lat: { not: null } };
 
   const rows = await prisma.caughtCat.findMany({
     where: where as any,

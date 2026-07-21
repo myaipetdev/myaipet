@@ -505,9 +505,29 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
   );
 }
 
+// Touch targets (audit P2): on hover-less devices (media hover:none) the card's
+// Copy/X share buttons must be ALWAYS visible at >=44px; on pointer devices
+// they reveal on hover at >=28px. Hover-only 22px buttons were unreachable on
+// touch and below every touch-target guideline.
+function useCoarsePointer() {
+  const [coarse, setCoarse] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(hover: none)");
+    const apply = () => setCoarse(mq.matches);
+    apply();
+    mq.addEventListener?.("change", apply);
+    return () => mq.removeEventListener?.("change", apply);
+  }, []);
+  return coarse;
+}
+
 // ── Gallery Card (Midjourney/Leonardo style) ──
 function GalleryCard({ item, index, onLike, onClick }: any) {
   const [hovered, setHovered] = useState(false);
+  const coarse = useCoarsePointer();
+  const showShare = hovered || coarse; // always-on for touch, hover-reveal for pointer
+  const shareSize = coarse ? 44 : 28;  // >=44px touch targets, >=28px desktop
   const [copied, setCopied] = useState(false);
   const [shareError, setShareError] = useState("");
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -700,7 +720,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
         {/* Bottom bar */}
         <div style={{
           display: "flex", justifyContent: "space-between", alignItems: "center",
-          opacity: hovered ? 1 : 0.7,
+          opacity: hovered || coarse ? 1 : 0.7,
           transition: "opacity 0.3s",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -766,7 +786,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
               </span>
             )}
 
-            {hovered && (
+            {showShare && (
               <button
                 type="button"
                 onClick={async e => {
@@ -784,14 +804,14 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
                 style={{
                   background: copied ? "rgba(92,138,78,0.9)" : "rgba(33,26,18,0.5)", border: "none", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  width: 22, height: 22, borderRadius: 6, padding: 0,
+                  width: shareSize, height: shareSize, borderRadius: coarse ? 10 : 8, padding: 0,
                   animation: "fadeUp 0.15s ease-out", flexShrink: 0, pointerEvents: "auto",
                 }}
                 title={copied ? "Copied!" : "Copy link"}
                 aria-label="Copy link"
               >
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", fontWeight: 700, lineHeight: 1, display: "inline-flex" }}>{copied ? "✓" : (
-                  <svg width={11} height={11} viewBox="0 0 24 24" fill="none"
+                <span style={{ fontSize: coarse ? 17 : 13, color: "rgba(255,255,255,0.85)", fontWeight: 700, lineHeight: 1, display: "inline-flex" }}>{copied ? "✓" : (
+                  <svg width={coarse ? 17 : 13} height={coarse ? 17 : 13} viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M9.5 14.5a4 4 0 0 0 5.66 0l3-3a4 4 0 1 0-5.66-5.66l-1.2 1.2" />
                     <path d="M14.5 9.5a4 4 0 0 0-5.66 0l-3 3a4 4 0 1 0 5.66 5.66l1.2-1.2" />
@@ -799,7 +819,7 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
                 )}</span>
               </button>
             )}
-            {hovered && (
+            {showShare && (
               <button
                 type="button"
                 onClick={e => {
@@ -812,13 +832,13 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
                 style={{
                   background: "rgba(33,26,18,0.5)", border: "none", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  width: 22, height: 22, borderRadius: 6, padding: 0,
+                  width: shareSize, height: shareSize, borderRadius: coarse ? 10 : 8, padding: 0,
                   animation: "fadeUp 0.15s ease-out", flexShrink: 0, pointerEvents: "auto",
                 }}
                 title="Share on X"
                 aria-label="Share on X"
               >
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 700, lineHeight: 1 }}>𝕏</span>
+                <span style={{ fontSize: coarse ? 17 : 13, color: "rgba(255,255,255,0.7)", fontWeight: 700, lineHeight: 1 }}>𝕏</span>
               </button>
             )}
           </div>

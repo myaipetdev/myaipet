@@ -44,7 +44,8 @@ const LINKED_DATA_CATEGORIES = new Set([
   "autonomousActions", "trainingLogs", "pveProgress", "battleHistory",
   "equippedItems", "platformConnections", "agentMessages", "agentSchedule",
   "conversations", "inheritanceEvents", "agentReactions", "likes", "comments",
-  "paidActions", "linkedGenerations", "petDates",
+  "paidActions", "linkedGenerations", "petDates", "installedSkills",
+  "catchRecords",
 ]);
 
 function asRecord(value: unknown): JsonRecord | null {
@@ -444,6 +445,40 @@ export async function exportPetData(petId: number, userId: number): Promise<Soul
     }),
   ]);
 
+  // "Skills travel with SOUL": installed PetClaw skills — marketplace installs
+  // AND learned (auto-promoted) skills with their example-response prompts —
+  // are part of the exported bundle. sanitizePortableJson strips any
+  // credential-shaped config values (API keys, tokens) at every depth.
+  const installedSkillsSource = asRecord(pet.personality_modifiers)?.installed_skills;
+  const installedSkills = sanitizePortableJson(
+    Array.isArray(installedSkillsSource) ? installedSkillsSource : [],
+  ) ?? [];
+
+  // The owner's Catch collection travels with the bundle too. Raw GPS stays
+  // private: coordinates are included ONLY for catches the owner explicitly
+  // opted onto the public map (map_public), the same rule /api/catch/nearby
+  // enforces. Internal anti-farming fields (photo_hash, spawn_key) stay local.
+  const catchRecords = (await prisma.caughtCat.findMany({
+    where: { owner_user_id: userId },
+    orderBy: { caught_at: "asc" },
+  })).map((row) => ({
+    kind: row.kind,
+    name: row.name,
+    breed: row.breed,
+    rarity: row.rarity,
+    element: row.element,
+    hp: row.hp,
+    atk: row.atk,
+    def: row.def,
+    spd: row.spd,
+    level: row.level,
+    photo_path: row.photo_path,
+    source: row.source,
+    map_public: row.map_public,
+    caught_at: row.caught_at,
+    ...(row.map_public ? { lat: row.lat, lng: row.lng } : {}),
+  }));
+
   const linkedGenerationIds = Array.from(new Set([
     ...insights.map((row) => row.video_generation_id),
     ...autonomousActions.map((row) => row.generation_id),
@@ -599,6 +634,8 @@ export async function exportPetData(petId: number, userId: number): Promise<Soul
     paidActions,
     linkedGenerations,
     petDates,
+    installedSkills,
+    catchRecords,
   })) as Record<string, unknown>;
 
   const completeExport: Omit<SoulExport, "integrityHash"> = {
@@ -676,6 +713,7 @@ export async function importSoulData(
   addSkipped(report, "linkedData.paidActions", sourceCount(linkedData.paidActions), "Payment and transaction claims are never recreated by import");
   addSkipped(report, "linkedData.linkedGenerations", sourceCount(linkedData.linkedGenerations), "Media ownership cannot be proven; re-upload or regenerate assets under the new owner");
   addSkipped(report, "linkedData.petDates", sourceCount(linkedData.petDates), "Other pets and initiating-user ownership cannot be transferred by import");
+  addSkipped(report, "linkedData.catchRecords", sourceCount(linkedData.catchRecords), "Catches are vision-verified, owner-scoped records; photo ownership and anti-farming ledgers cannot be transferred by import");
   addSkipped(report, "pet.progression", 1, "Level, experience, happiness, bond, evolution and combat state are server-authoritative and start from new-pet defaults");
   addSkipped(report, "skills", soulData.skills.length, "Skills and equipped slots are server-authoritative and cannot be granted by a portable file");
   addSkipped(report, "linkedData.interactions", sourceCount(linkedData.interactions), "Interaction ledgers can affect missions and rewards, so they are not restored");
@@ -721,6 +759,21 @@ export async function importSoulData(
     restoredMods.learned_patterns = sanitizePortableJson(learningData.patterns) || [];
     addRestored(report, "learningData.patterns", learningData.patterns.length);
   }
+  // Learned (auto-promoted) skills are the pet's own hard-won expertise and are
+  // restored with the pet. Marketplace installs are server-authoritative
+  // (level gates, registry versions) and must be reinstalled from PetHub.
+  const installedSkillRows = rowsFrom(linkedData.installedSkills);
+  const learnedSkillRows = installedSkillRows.filter((row) => row.isLearned === true);
+  if (learnedSkillRows.length > 0) {
+    restoredMods.installed_skills = sanitizePortableJson(learnedSkillRows) || [];
+    addRestored(report, "linkedData.installedSkills.learned", learnedSkillRows.length);
+  }
+  addSkipped(
+    report,
+    "linkedData.installedSkills",
+    installedSkillRows.length - learnedSkillRows.length,
+    "Marketplace skill installs are server-authoritative; reinstall them from PetHub",
+  );
   // Consent is destination-specific and must be opted into again. An import can
   // never silently publish a pet or authorize training/interaction.
   restoredMods.consent_public_profile = false;

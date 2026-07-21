@@ -128,6 +128,30 @@ export default function Nav({ section, setSection, credits }: any) {
     }
   }, [credits]);
 
+  // Mirrors the ≥1360px CSS breakpoint where the non-Bracket More items render
+  // inline. There the More MENU lists only Bracket — no destination appears
+  // both inline and in the menu (DD round-2 P1: duplicated items read as two
+  // different places). Below 1360px the menu lists all five, as before.
+  // State (not CSS-hide) so arrow-key traversal only visits visible items.
+  const [wideInline, setWideInline] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1360px)");
+    const update = () => setWideInline(mq.matches);
+    update();
+    // Both signals: matchMedia change is the semantic one; the resize
+    // fallback covers environments (webviews/emulation) that resize the
+    // viewport without dispatching media-query change events.
+    mq.addEventListener("change", update);
+    window.addEventListener("resize", update);
+    return () => {
+      mq.removeEventListener("change", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+  const moreMenuItems = wideInline
+    ? MORE_ITEMS.filter((i) => i.key === "worldcup")
+    : MORE_ITEMS;
+
   // URL items (e.g. /studio) match on pathname; section items on the section
   // key. "catch" survives only as a deep-link alias for the Cards screen
   // (Catch tab) — highlight Cards for it.
@@ -135,7 +159,9 @@ export default function Nav({ section, setSection, credits }: any) {
     item.url
       ? typeof window !== "undefined" && window.location.pathname === item.url
       : section === item.key || (item.key === "cards" && section === "catch");
-  const moreActive = MORE_ITEMS.some(isItemActive);
+  // Only items actually inside the menu light the More trigger — on wide
+  // desktop an active inline tab (e.g. Cards) shouldn't also highlight More.
+  const moreActive = moreMenuItems.some(isItemActive);
 
   // The credits chip is a link into /account (the member "my page": plan,
   // credits, usage, billing) — highlight it there like any other nav item.
@@ -330,7 +356,7 @@ export default function Nav({ section, setSection, credits }: any) {
                   animation: "slideIn 0.18s ease",
                 }}
               >
-                {MORE_ITEMS.map((item) => {
+                {moreMenuItems.map((item) => {
                   const isActive = isItemActive(item);
                   return (
                     <button

@@ -2,13 +2,16 @@
  * PetClaw Persistent Memory System
  * VIGIL — agent-curated memory with sovereignty
  *
- * Architecture:
- * 1. MEMORY.md — Pet's accumulated knowledge/facts (auto-managed, ~2000 chars)
- * 2. USER.md — Owner profile/preferences (auto-managed, ~1400 chars)
- * 3. Session Log — Full conversation history with FTS search
- * 4. Pre-turn Prefetch — Relevant memories injected into system prompt
- * 5. Post-turn Retention — Extract facts/entities after each response
- * 6. Cross-platform — Same memory across Chrome Extension, Telegram, Web
+ * Architecture (honest bounds — this is a CAPPED durable ledger, not "∞"):
+ * 1. MEMORY.md — pet's distilled facts (auto-managed, decay-weighted cap:
+ *    40 entries / ~4000 chars — see MAX_MEMORY_ENTRIES)
+ * 2. USER.md — owner profile/preferences (cap: 25 entries / ~2400 chars)
+ * 3. Session Log — per-turn chat rows in pet_memories (uncapped growth;
+ *    export returns the most recent 1000)
+ * 4. Pre-turn Prefetch — lexical relevance retrieval (token/bigram overlap +
+ *    importance + decay; no FTS index) injected into the system prompt
+ * 5. Post-turn Retention — extract facts/entities after each response
+ * 6. Cross-platform — same memory across Chrome Extension, Telegram, Web
  *
  * Sovereignty: All memory data is exportable, deletable, and owned by user.
  */

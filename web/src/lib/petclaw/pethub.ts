@@ -329,11 +329,76 @@ export function searchSkills(query: string, category?: string): PetSkillManifest
   return results;
 }
 
+// ── Skill-config secret hygiene ──
+// Skill config lives as plaintext JSON inside the pet row (personality_modifiers)
+// and is returned to the owner by the skills API — it must NEVER hold secrets.
+// Real provider keys belong in the encrypted BYOK vault (/api/petclaw/models).
+
+export const SECRET_CONFIG_ERROR =
+  "Secrets cannot be stored in skill config — connect models via the encrypted BYOK vault (/api/petclaw/models) instead.";
+
+const SECRET_KEY_RE = /key|secret|token|password|credential/i;
+// Well-known credential prefixes (OpenAI, xAI, GitHub, Stripe, PetClaw CLI, AWS, Google…).
+const SECRET_VALUE_PREFIX_RE = /^(sk-|xai-|ghp_|gho_|github_pat_|pk_|rk_|pck_|glpat-|hf_|AKIA|ASIA|AIza|ya29\.)/;
+
+function shannonEntropyBits(s: string): number {
+  const freq = new Map<string, number>();
+  for (const ch of s) freq.set(ch, (freq.get(ch) || 0) + 1);
+  let bits = 0;
+  for (const n of freq.values()) {
+    const p = n / s.length;
+    bits -= p * Math.log2(p);
+  }
+  return bits;
+}
+
+// True when a config entry's NAME or VALUE looks like a credential.
+export function looksLikeSecretConfigEntry(key: string, value: unknown): boolean {
+  if (SECRET_KEY_RE.test(key)) return true;
+  if (typeof value !== "string") return false;
+  const v = value.trim();
+  if (SECRET_VALUE_PREFIX_RE.test(v)) return true;
+  // 40+ char single-token high-entropy blobs (API keys, JWTs, hex/base64) — not
+  // prose or slugs. Require key-like composition: digits + letters and either
+  // mixed case (base64-ish) or a pure lowercase-hex shape (sha/hex keys).
+  if (v.length >= 40 && !/\s/.test(v) && shannonEntropyBits(v) >= 3.5) {
+    const keyLike = /\d/.test(v) && /[a-zA-Z]/.test(v) && (/[A-Z]/.test(v) || /^[0-9a-f]{40,}$/.test(v));
+    if (keyLike) return true;
+  }
+  return false;
+}
+
+export function configContainsSecret(config: Record<string, unknown> | undefined | null): boolean {
+  if (!config || typeof config !== "object") return false;
+  return Object.entries(config).some(([k, v]) => looksLikeSecretConfigEntry(k, v));
+}
+
+// Strip secret-looking fields from stored installs. Returns the cleaned list and
+// whether anything was removed. Values are never logged anywhere.
+function scrubInstalledSkillSecrets(installs: PetSkillInstall[]): { cleaned: PetSkillInstall[]; changed: boolean } {
+  let changed = false;
+  const cleaned = installs.map((inst) => {
+    if (!inst || typeof inst !== "object" || !inst.config || typeof inst.config !== "object") return inst;
+    const entries = Object.entries(inst.config);
+    const safe = entries.filter(([k, v]) => !looksLikeSecretConfigEntry(k, v));
+    if (safe.length === entries.length) return inst;
+    changed = true;
+    const next: PetSkillInstall = { ...inst };
+    if (safe.length === 0) delete next.config;
+    else next.config = Object.fromEntries(safe) as Record<string, string>;
+    return next;
+  });
+  return { cleaned, changed };
+}
+
 // ── Install/Uninstall (stored in pet's personality_modifiers) ──
 
 export async function installSkill(petId: number, skillId: string, config?: Record<string, string>): Promise<PetSkillInstall> {
   const skill = getSkill(skillId);
   if (!skill) throw new Error(`Skill not found: ${skillId}`);
+
+  // Reject secrets at the write boundary — config is stored as plaintext JSON.
+  if (configContainsSecret(config)) throw new Error(SECRET_CONFIG_ERROR);
 
   const pet = await prisma.pet.findUnique({ where: { id: petId } });
   if (!pet) throw new Error("Pet not found");
@@ -394,7 +459,23 @@ export async function getInstalledSkills(petId: number): Promise<PetSkillInstall
   if (!pet) return [];
 
   const mods = (pet.personality_modifiers as Record<string, unknown>) || {};
-  return (mods.installed_skills as PetSkillInstall[]) || [];
+  const installed = (mods.installed_skills as PetSkillInstall[]) || [];
+
+  // Read-time scrub + self-heal: any legacy row written before the install-time
+  // secret rejection may still carry plaintext credentials in config. Strip
+  // secret-looking fields before returning AND lazily rewrite the stored JSON
+  // without them, so the row stops carrying the secret at all. Values are never
+  // logged; a failed rewrite still returns only the scrubbed view.
+  const { cleaned, changed } = scrubInstalledSkillSecrets(installed);
+  if (changed) {
+    await prisma.pet.update({
+      where: { id: petId },
+      data: {
+        personality_modifiers: { ...mods, installed_skills: cleaned as any } as any,
+      },
+    }).catch(() => {});
+  }
+  return cleaned;
 }
 
 // ── Skill Execution ──

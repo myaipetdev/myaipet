@@ -10,7 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
@@ -49,6 +49,33 @@ export async function POST(req: NextRequest) {
 
   const lat = typeof body?.lat === "number" ? body.lat : null;
   const lng = typeof body?.lng === "number" ? body.lng : null;
+
+  // ── Exact-duplicate farming guard (BEFORE billing, so a repeat never burns
+  // a free scan or a credit) — sha256 the photo bytes and reject the same
+  // wallet resubmitting the exact same bytes within 7 days. This only stops
+  // byte-identical resubmits; perceptual hashing (pHash) for re-encoded /
+  // re-cropped near-duplicates is future work. ──
+  const photoBytes = Buffer.from(match[2], "base64");
+  const photoHash = createHash("sha256").update(photoBytes).digest("hex");
+  try {
+    const dup = await prisma.caughtCat.findFirst({
+      where: {
+        owner_user_id: user.id,
+        photo_hash: photoHash,
+        caught_at: { gte: new Date(Date.now() - 7 * 24 * 60 * 60_000) },
+      },
+      select: { id: true },
+    });
+    if (dup) {
+      return NextResponse.json(
+        { caught: false, reason: "You already caught this exact photo — find a new animal (or a new angle)." },
+        { status: 409 },
+      );
+    }
+  } catch (e) {
+    // Non-fatal: if the dedup lookup fails, proceed — billing caps still hold.
+    console.error("Catch dedup lookup failed:", e);
+  }
 
   // ── Metering (POINTS-ECONOMY §2.4, knob #2) ──
   // We pay Grok on ATTEMPT, so we charge on attempt: 3 free verifies/day/wallet,
@@ -100,12 +127,11 @@ export async function POST(req: NextRequest) {
   // ── Real catch — store the photo, roll the creature ──
   let photoPath = "";
   try {
-    const buf = Buffer.from(match[2], "base64");
     const captureMime = match[1] === "image/jpg" ? "image/jpeg" : match[1];
     const captureExt = captureMime === "image/png" ? "png" : captureMime === "image/webp" ? "webp" : "jpg";
     const up = await uploadFile(
       `catches/${user.id}-${randomUUID()}.${captureExt}`,
-      buf,
+      photoBytes,
       captureMime,
     );
     photoPath = up.url;
@@ -128,7 +154,10 @@ export async function POST(req: NextRequest) {
         element: pickElement(verdict.mood),
         hp: stats.hp, atk: stats.atk, def: stats.def, spd: stats.spd,
         photo_path: photoPath,
+        photo_hash: photoHash,
         lat, lng,
+        // map_public stays at its default (false) — publishing to the
+        // community map is a separate, explicit per-catch opt-in.
       },
     });
   } catch (error) {

@@ -982,7 +982,7 @@ function ZeroState({ onAdopt, onCatch }: { onAdopt?: (e: React.MouseEvent) => vo
           No cards yet
         </h3>
         <p style={{ fontFamily: T.body, fontSize: 14, color: T.muted2, margin: "0 auto 20px", maxWidth: 380, lineHeight: 1.55 }}>
-          Cards are created from pets you actually raise or catch — adopt one to start your album, or head into Catch to find one in the wild.
+          Cards are created from pets you actually raise — adopt one to start your album. Animals you catch in the wild live in your Field Guide over in Catch, and brawl in Alley Clash.
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
           <a href="/?section=my%20pet" onClick={onAdopt} className="ed-wipe" style={{ ...btn, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>Adopt a pet ▸</a>
@@ -1024,7 +1024,7 @@ function GuestGate({ onCatch }: { onCatch: () => void }) {
         </p>
         <h3 style={{ fontFamily: T.disp, fontSize: 24, fontWeight: 800, color: T.ink, margin: "0 0 6px", letterSpacing: "-0.01em" }}>Your album is waiting</h3>
         <p style={{ fontFamily: T.body, fontSize: 14, color: T.muted2, margin: "0 auto 20px", maxWidth: 400, lineHeight: 1.55 }}>
-          Connect and every pet you raise or catch becomes a trading card like these automatically — graded by real care, ready to duel and share.
+          Connect and every pet you raise becomes a trading card like these automatically — graded by real care, ready to duel and share. Animals you catch build their own Field Guide in the Catch tab.
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
           <button type="button" onClick={() => openConnectModal?.()} disabled={!openConnectModal} className="ed-wipe" style={{ ...btn, padding: "11px 22px", opacity: openConnectModal ? 1 : 0.6 }}>
@@ -1410,7 +1410,7 @@ function Shell({ children, owned, rarityCounts, verbs }: { children: React.React
               @media (hover:hover){ .cd-explain-card:hover{ transform: translateY(-3px); border-color: rgba(190,79,40,.4); box-shadow: var(--ed-shadow-card); } }
             `}</style>
             {([
-              { k: "collect", n: "01", title: "Collect", body: "Every pet you raise or catch becomes a card automatically — no packs, no purchases.", chip: null, act: "Adopt a pet ▸" },
+              { k: "collect", n: "01", title: "Collect", body: "Every pet you raise becomes a card automatically — no packs, no purchases. Caught animals fill the Field Guide in Catch.", chip: null, act: "Adopt a pet ▸" },
               { k: "battle", n: "02", title: "Battle", body: "Duel any collector's card free — caught fighters brawl in Alley Clash too.", chip: "+5 season pts a duel · cap 40/day", act: "Open Battle ▸" },
               { k: "share", n: "03", title: "Share", body: "Each card is its own page — send the link anywhere. Public only if you opt your pet in.", chip: null, act: "Share your top card ▸" },
               { k: "grade", n: "04", title: "Grade", body: "Rarity and stats read from real care — level, bond, streak, ATK·DEF·SPD. No chance.", chip: null, act: "See next grade ▸" },

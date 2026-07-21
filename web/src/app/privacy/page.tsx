@@ -36,13 +36,27 @@ export default function PrivacyPage() {
           card numbers, or biometric data.
         </Section>
 
-        <Section title="2. How We Use Data">
+        <Section title="2. Location & Wild Catches">
+          The Catch feature stores the photo you submit and — only if you grant your browser&apos;s
+          location permission — the GPS coordinates where the catch was made. A catch works without
+          location. Granting browser location permission is not consent to publish: every catch is
+          private by default and visible only to you. A catch appears on the community map only
+          after you explicitly opt that specific catch in (&quot;Show this catch on the community
+          map&quot;), and other signed-in users then see its coordinates rounded to roughly 110 m —
+          never the exact position. You can unpublish a catch from the map at any time, or delete
+          the catch entirely from your album; deletion removes the record (including its
+          coordinates) and queues the stored photo for removal. Location data is retained only as
+          part of the catch record and is deleted with it, under the retention rules in the Data
+          Retention section below.
+        </Section>
+
+        <Section title="3. How We Use Data">
           To run the Service, generate AI responses, persist your pet&apos;s memory, render the social
           feed, and prevent abuse. We do not sell personal data. We do not use your data to train
           third-party models without explicit consent (see &quot;AI Training&quot; toggle in Sovereignty).
         </Section>
 
-        <Section title="3. AI Processing">
+        <Section title="4. AI Processing">
           Pet conversations, relevant memory context, and image/video prompts are sent to
           third-party AI providers under their respective data processing terms. Platform-funded
           text processing uses xAI Grok first and may send the same prompt and context to OpenAI
@@ -57,13 +71,13 @@ export default function PrivacyPage() {
           them to retain your data for model training.
         </Section>
 
-        <Section title="4. On-Chain Data">
+        <Section title="5. On-Chain Data">
           Existing on-chain records on BSC are public and permanent. We cannot delete them. Avoid
           putting sensitive personal information into on-chain fields. New anchoring is disabled;
           a future Base deployment is planned but has no announced activation date.
         </Section>
 
-        <Section title="5. Authentication, Cookies & Local Storage">
+        <Section title="6. Authentication, Cookies & Local Storage">
           Signing in with your wallet (SIWE) issues a short-lived session token (a JWT valid for
           8 hours) that the web app stores in browser local storage and sends as an Authorization
           header. Logging out invalidates every previously issued session token server-side and
@@ -75,7 +89,7 @@ export default function PrivacyPage() {
           not use cross-site advertising trackers.
         </Section>
 
-        <Section title="6. Your Rights (GDPR / PIPA / CCPA)">
+        <Section title="7. Your Rights (GDPR / PIPA / CCPA)">
           You can: (a) export your pet&apos;s portable SOUL bundle and linked activity data via
           Sovereignty → Export SOUL Data; (b) remove pet-scoped records and owned media from active
           systems via Sovereignty → Delete Pet Data, which produces a SHA-256 deletion receipt;
@@ -84,7 +98,7 @@ export default function PrivacyPage() {
           support@myaipet.ai.
         </Section>
 
-        <Section title="7. Data Retention">
+        <Section title="8. Data Retention">
           Active pets and memory are stored as long as your account is active. Security and
           application logs are retained for up to 90 days. Encrypted, access-restricted off-host
           backup sets are retained for up to 90 days and are restore-tested at creation.
@@ -94,27 +108,27 @@ export default function PrivacyPage() {
           than 90 days; cloud lifecycle removal may complete asynchronously after eligibility.
         </Section>
 
-        <Section title="8. International Transfers">
+        <Section title="9. International Transfers">
           The Service is hosted on AWS infrastructure. Your data may be processed outside your
           country of residence. By using the Service you consent to such transfer.
         </Section>
 
-        <Section title="9. Children">
+        <Section title="10. Children">
           The Service is not directed to children under 18. We do not knowingly collect data from
           minors.
         </Section>
 
-        <Section title="10. Security">
+        <Section title="11. Security">
           We use TLS (HTTPS), owner-scoped authorization, restricted filesystem permissions,
           encrypted off-host backups, and one-time wallet login challenges. No system is perfectly
           secure — please use a hardware wallet for high-value assets.
         </Section>
 
-        <Section title="11. Changes">
+        <Section title="12. Changes">
           We will announce material changes via the Service. Continued use after changes is acceptance.
         </Section>
 
-        <Section title="12. Contact">
+        <Section title="13. Contact">
           support@myaipet.ai
         </Section>
       </div>

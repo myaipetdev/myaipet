@@ -61,6 +61,8 @@ type Cat = {
   id: number; kind?: string; name: string; breed: string; rarity: string; rarityLabel: string; rarityColor: string;
   element: string; hp: number; atk: number; def: number; spd: number; photo_path: string; caught_at?: string;
   source?: string; // "camera" (real) | "wild" (game spawn)
+  lat?: number | null; lng?: number | null;
+  map_public?: boolean; // community-map consent — default false (private)
 };
 
 type Phase = "intro" | "camera" | "throw" | "catching" | "result";
@@ -132,6 +134,32 @@ export default function CatCatch() {
       .then((r) => (r.status === 401 ? (setNotAuthed(true), null) : r.ok ? r.json() : null))
       .then((d) => { if (d?.cats) setCollection(d.cats); if (d?.meta) setMeta(d.meta); })
       .catch(() => {});
+  }, []);
+
+  // ── Community-map consent (owner-scoped, default OFF) ──
+  // PATCH /api/catch/[id] { map_public } — resolves true on success so the
+  // reveal checkbox can reflect server truth, never optimistic.
+  const setMapPublic = useCallback(async (id: number, val: boolean): Promise<boolean> => {
+    try {
+      const r = await fetch(`/api/catch/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ map_public: val }),
+      });
+      if (!r.ok) return false;
+      setCollection((c) => c.map((x) => (x.id === id ? { ...x, map_public: val } : x)));
+      return true;
+    } catch { return false; }
+  }, []);
+
+  // Hard-delete one of YOUR catches (row + stored photo, via the server's
+  // reference-aware cleanup queue). Plain confirm — no dark patterns either way.
+  const deleteCatch = useCallback(async (cat: Cat) => {
+    if (!window.confirm(`Delete ${cat.name} permanently? The catch and its photo are removed for good.`)) return;
+    try {
+      const r = await fetch(`/api/catch/${cat.id}`, { method: "DELETE", headers: getAuthHeaders() });
+      if (r.ok) setCollection((c) => c.filter((x) => x.id !== cat.id));
+    } catch { /* leave the card in place on failure */ }
   }, []);
 
   useEffect(() => { loadCollection(); }, [loadCollection]);
@@ -321,8 +349,10 @@ export default function CatCatch() {
             <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: "rgba(252,233,207,.62)", textTransform: "uppercase" }}>Field camera · vision-verified</div>
             <div style={{ fontFamily: DISP, fontSize: "clamp(22px,4vw,30px)", fontWeight: 800, color: "#FCE9CF", maxWidth: 340, lineHeight: 1.16, letterSpacing: "-0.01em" }}>See an animal out in the world? Point your camera and catch it.</div>
             <div style={{ fontFamily: BODY, fontSize: 14, color: "rgba(252,233,207,.85)", maxWidth: 310, lineHeight: 1.5 }}>Mostly cats &amp; dogs — but any real animal counts. Screenshots and photos of screens won&apos;t work.</div>
-            {/* Geo disclosure BEFORE the photo is taken — matches /api/catch/nearby's ~110m rounding. */}
-            <div style={{ fontFamily: BODY, fontSize: 13, color: "rgba(252,233,207,.6)", maxWidth: 310, lineHeight: 1.5 }}>Camera catches appear on the shared map at an approximate location (~110 m).</div>
+            {/* Geo disclosure BEFORE the photo is taken — catches are PRIVATE by
+                default; the community map only ever shows a catch after the
+                explicit per-catch opt-in on the reveal (rounded ~110 m). */}
+            <div style={{ fontFamily: BODY, fontSize: 13, color: "rgba(252,233,207,.6)", maxWidth: 310, lineHeight: 1.5 }}>Catches are private by default. You can choose, per catch, to share it on the community map at an approximate location (~110 m).</div>
             <button onClick={startCamera} className="ed-press ed-card-hover" style={{ padding: "13px 26px", borderRadius: 999, border: "none", background: "#FCE9CF", color: "#123029", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".12em", textTransform: "uppercase", cursor: "pointer", boxShadow: "var(--ed-shadow-card)", display: "inline-flex", alignItems: "center", gap: 8 }}>
               <CameraIcon size={20} /> Open camera
             </button>
@@ -379,7 +409,7 @@ export default function CatCatch() {
 
         {phase === "result" && result && (
           result.caught && result.cat ? (
-            <RevealCard cat={result.cat} points={result.pointsAwarded || 0} newSpecies={!!result.newSpecies} onAgain={again} onDone={done} />
+            <RevealCard cat={result.cat} points={result.pointsAwarded || 0} newSpecies={!!result.newSpecies} onAgain={again} onDone={done} onMapPublicChange={setMapPublic} />
           ) : (
             <div style={{ position: "absolute", inset: 0, background: PAPER, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: 20, textAlign: "center", overflowY: "auto" }}>
               <Icon name={result.antiCheat ? "shield" : "footprints"} size={52} />
@@ -443,7 +473,7 @@ export default function CatCatch() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 14 }}>
           {sortCollection(collection, sort).map((c, i) => (
             <Reveal key={c.id} dir="up" delay={Math.min(i, 8) * 60}>
-              <CatCard cat={c} compact />
+              <CatCard cat={c} compact onToggleMap={setMapPublic} onDelete={deleteCatch} />
             </Reveal>
           ))}
         </div>
@@ -522,9 +552,22 @@ function ThrowCan({ image, onThrow, onCancel }: { image: string; onThrow: () => 
 }
 
 /** The "ANIMAL FOUND" reveal — the caught animal is presented as a foil-stamped
- *  CollectibleFrame (holo + gold rarity seal) on a warm-ink editorial plate. */
-function RevealCard({ cat, points, newSpecies, onAgain, onDone }: { cat: Cat; points: number; newSpecies?: boolean; onAgain: () => void; onDone: () => void }) {
+ *  CollectibleFrame (holo + gold rarity seal) on a warm-ink editorial plate.
+ *  Includes the community-map consent toggle: default UNCHECKED, plain
+ *  checkbox, server-confirmed — nothing is published unless the user opts in. */
+function RevealCard({ cat, points, newSpecies, onAgain, onDone, onMapPublicChange }: { cat: Cat; points: number; newSpecies?: boolean; onAgain: () => void; onDone: () => void; onMapPublicChange?: (id: number, val: boolean) => Promise<boolean> }) {
   const stock = rarityStock(rarityRank(cat.rarity));
+  const [mapOn, setMapOn] = useState(!!cat.map_public); // fresh catches → false
+  const [mapBusy, setMapBusy] = useState(false);
+  const [mapErr, setMapErr] = useState(false);
+  const hasGeo = cat.lat != null && cat.lng != null;
+  const toggleMap = async (next: boolean) => {
+    if (mapBusy || !onMapPublicChange) return;
+    setMapBusy(true); setMapErr(false);
+    const ok = await onMapPublicChange(cat.id, next);
+    if (ok) setMapOn(next); else setMapErr(true); // reflect server truth only
+    setMapBusy(false);
+  };
   return (
     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg,#1B1308,#2A2014)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 11, padding: "30px 18px 18px", textAlign: "center", overflowY: "auto", animation: "ccFade .35s ease" }}>
       {/* Caught animal as a foil-stamped collectible — pops in, then a terracotta
@@ -562,6 +605,27 @@ function RevealCard({ cat, points, newSpecies, onAgain, onDone }: { cat: Cat; po
         {points > 0 && <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".06em", borderRadius: 999, padding: "5px 12px", fontVariantNumeric: "tabular-nums" }}>+{points} season points <Icon name="coin" size={14} /></span>}
         <span style={{ color: "rgba(251,246,236,0.55)", fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", fontVariantNumeric: "tabular-nums" }}>{`FILE № ${String(cat.id).padStart(6, "0")}`}</span>
       </div>
+      {/* Community-map consent — explicit per-catch opt-in, default UNCHECKED.
+          Only offered when the catch has a location; the server publishes the
+          rounded (~110 m) coordinate, never the exact one. No dark patterns:
+          plain checkbox, private stays the default, undo anytime in the album. */}
+      {hasGeo && onMapPublicChange && (
+        <div style={{ marginTop: 6, maxWidth: 320 }}>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 9, textAlign: "left", cursor: mapBusy ? "wait" : "pointer", fontFamily: BODY, fontSize: 13, lineHeight: 1.45, color: "rgba(251,246,236,0.85)" }}>
+            <input
+              type="checkbox"
+              checked={mapOn}
+              disabled={mapBusy}
+              onChange={(e) => toggleMap(e.target.checked)}
+              style={{ width: 16, height: 16, marginTop: 1, accentColor: TEAL, flexShrink: 0 }}
+            />
+            <span>Show this catch on the community map (rounded location, ~110 m)</span>
+          </label>
+          <div style={{ fontFamily: BODY, fontSize: 12, color: mapErr ? "#F2B8A0" : "rgba(251,246,236,0.5)", marginTop: 4, paddingLeft: 25 }}>
+            {mapErr ? "Couldn't update — try again." : mapOn ? "Shared. Remove it anytime from your album." : "Private by default — only you see it."}
+          </div>
+        </div>
+      )}
       <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
         <button onClick={onAgain} className="ed-card-hover" style={bigBtn}>Catch another</button>
         <button onClick={onDone} className="ed-wipe" style={{ ...ghostBtn, borderColor: "rgba(251,246,236,0.4)", color: "#FBF6EC" }}>Done</button>
@@ -1021,10 +1085,26 @@ function Thumb({ cat }: { cat: Cat }) {
   );
 }
 
-function CatCard({ cat, compact }: { cat: Cat; compact?: boolean }) {
+function CatCard({ cat, compact, onToggleMap, onDelete }: { cat: Cat; compact?: boolean; onToggleMap?: (id: number, val: boolean) => Promise<boolean>; onDelete?: (cat: Cat) => void }) {
   const wild = cat.source === "wild";
   // Rarity seal letter in the rarity color (C/R/E/L)
   const rarityLetter = ["C", "U", "R", "E", "L"][rarityRank(cat.rarity)] || "C";
+  // Owner controls (album only): per-catch map consent + hard delete. The map
+  // toggle exists only for camera catches that carry a location.
+  const [mapBusy, setMapBusy] = useState(false);
+  const canMap = !!onToggleMap && !wild && cat.lat != null && cat.lng != null;
+  const onMap = !!cat.map_public;
+  const toggle = async () => {
+    if (!onToggleMap || mapBusy) return;
+    setMapBusy(true);
+    await onToggleMap(cat.id, !onMap); // parent state refresh flips the label
+    setMapBusy(false);
+  };
+  const ctrlBtn: React.CSSProperties = {
+    padding: "4px 9px", borderRadius: 999, cursor: "pointer", fontFamily: MONO,
+    fontWeight: 700, fontSize: 12, letterSpacing: ".05em", textTransform: "uppercase",
+    background: INSET, border: `1px solid ${OUTLINE}`, color: "#5C5140",
+  };
   return (
     <div style={{
       position: "relative",
@@ -1057,6 +1137,21 @@ function CatCard({ cat, compact }: { cat: Cat; compact?: boolean }) {
               <span key={k} style={{ background: INSET, borderRadius: 5, padding: "2px 7px", border: `1px solid ${OUTLINE}` }}>{k} {v}</span>
             ))}
           </div>
+          {/* Owner controls — map consent state is always visible and reversible
+              ("Remove from map"); Delete hard-deletes the catch + its photo. */}
+          {(canMap || onDelete) && (
+            <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 8 }}>
+              {canMap && (
+                <button onClick={toggle} disabled={mapBusy} title={onMap ? "Shared on the community map at a rounded (~110 m) location — click to remove" : "Private — click to share on the community map at a rounded (~110 m) location"} style={{
+                  ...ctrlBtn, opacity: mapBusy ? 0.6 : 1,
+                  ...(onMap ? { background: TEAL, border: `1px solid ${TEAL}`, color: "#FCE9CF" } : {}),
+                }}>{onMap ? "On map · remove" : "Share to map"}</button>
+              )}
+              {onDelete && (
+                <button onClick={() => onDelete(cat)} title="Delete this catch and its photo permanently" style={{ ...ctrlBtn, color: "#B14A2C", borderColor: "rgba(177,74,44,.45)" }}>Delete</button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

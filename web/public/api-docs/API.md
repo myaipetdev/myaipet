@@ -75,7 +75,7 @@ List all available skills.
 - `format=md` — Return SKILL.md format (with `id` param)
 
 ### POST `/api/petclaw/skills`
-Install, uninstall, or execute a skill.
+Install, uninstall, or execute a skill. `install` accepts the **18 built-in skill IDs only** — custom skill IDs are rejected with `Skill not found` (custom skill authoring is on the roadmap and not installable yet).
 
 **Body:**
 ```json
@@ -84,9 +84,18 @@ Install, uninstall, or execute a skill.
   "petId": 1,
   "skillId": "companion-chat",
   "input": { "message": "hello" },
-  "config": { "API_KEY": "..." }
+  "config": { "style": "casual" }
 }
 ```
+
+`config` is optional and holds **non-secret preferences only**. It is stored as
+plaintext alongside the pet, so the API rejects (`400`) any config field whose
+name or value looks like a credential — names matching
+`key / secret / token / password / credential`, values with known key prefixes
+(`sk-`, `xai-`, `ghp_`, `pk_`, …), or long high-entropy strings. To use your own
+model key, connect it via the encrypted BYOK vault instead:
+`POST /api/petclaw/models` (see **Models** below). Never put API keys in skill
+config.
 
 **Execute response:**
 ```json

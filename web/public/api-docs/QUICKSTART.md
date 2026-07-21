@@ -143,7 +143,7 @@ const { nodes } = await client.network.discover();
 
 ## Next Steps
 
-- [API Reference](API.md)
-- [Ecosystem](ECOSYSTEM.md)
-- [Write Custom Skills](SKILL-AUTHORING.md)
-- [GitHub](https://github.com/myaipetdev/petclaw)
+- [API Reference](https://app.myaipet.ai/api-docs?tab=api)
+- [Ecosystem](https://app.myaipet.ai/api-docs?tab=ecosystem)
+- [Skill Manifest Format](https://app.myaipet.ai/api-docs?tab=skills) (built-ins only today — custom skills are roadmap)
+- [SDK on npm](https://www.npmjs.com/package/@myaipet/petclaw-sdk)

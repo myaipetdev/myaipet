@@ -200,19 +200,9 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
   },
 ];
 
-function TableOfContents() {
+function TocLinks() {
   return (
-    <nav style={{
-      position: "sticky", top: 80, alignSelf: "start",
-      padding: "20px 0", minWidth: 200,
-    }}>
-      <div style={{
-        fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.35)",
-        textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14,
-        fontWeight: 600,
-      }}>
-        Contents
-      </div>
+    <>
       {SECTIONS.map((s) => (
         <a key={s.id} href={`#${s.id}`} style={{
           display: "block", padding: "6px 0",
@@ -224,7 +214,52 @@ function TableOfContents() {
           {s.title}
         </a>
       ))}
+    </>
+  );
+}
+
+// Desktop: sticky left rail. Hidden ≤768px (see the media query in DocsPage) —
+// the fixed 200px rail crushed the body to ~47px at 375px viewports.
+function TableOfContents() {
+  return (
+    <nav className="docs-toc-desktop" aria-label="Contents" style={{
+      position: "sticky", top: 80, alignSelf: "start",
+      padding: "20px 0", minWidth: 200,
+    }}>
+      <div style={{
+        fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.35)",
+        textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14,
+        fontWeight: 600,
+      }}>
+        Contents
+      </div>
+      <TocLinks />
     </nav>
+  );
+}
+
+// Mobile (≤768px): collapsible TOC — native details/summary, no JS needed in
+// this server component. Hidden on desktop.
+function MobileTableOfContents() {
+  return (
+    <details className="docs-toc-mobile" style={{
+      margin: "0 0 24px",
+      border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12,
+      background: "rgba(0,0,0,0.02)",
+      padding: "12px 16px",
+    }}>
+      <summary style={{
+        cursor: "pointer",
+        fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.55)",
+        textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600,
+        listStyle: "none",
+      }}>
+        Contents ▾
+      </summary>
+      <nav aria-label="Contents" style={{ paddingTop: 12 }}>
+        <TocLinks />
+      </nav>
+    </details>
   );
 }
 
@@ -304,8 +339,28 @@ export default function DocsPage() {
     <div style={{
       minHeight: "100vh", background: "#faf7f2", color: "#1a1a2e",
     }}>
+      <style>{`
+        /* ≤768px: single column — the sticky 200px rail + 48px gap + 40px
+           page padding crushed the body column (451px scroll width at 375px).
+           Mobile gets a collapsible details TOC instead; no horizontal scroll. */
+        .docs-toc-mobile { display: none; }
+        .docs-toc-mobile > summary::-webkit-details-marker { display: none; }
+        @media (max-width: 768px) {
+          .docs-layout {
+            display: block !important;
+            padding: 24px 16px 60px !important;
+            max-width: 100% !important;
+          }
+          .docs-toc-desktop { display: none !important; }
+          .docs-toc-mobile { display: block; }
+          .docs-header { padding: 14px 16px !important; }
+          .docs-hero { padding: 40px 16px 28px !important; }
+          .docs-hero h1 { font-size: 30px !important; }
+          .docs-main { max-width: 100%; overflow-wrap: break-word; }
+        }
+      `}</style>
       {/* Header */}
-      <header style={{
+      <header className="docs-header" style={{
         padding: "20px 40px",
         borderBottom: "1px solid rgba(0,0,0,0.06)",
         background: "rgba(250,247,242,0.95)",
@@ -345,7 +400,7 @@ export default function DocsPage() {
       </header>
 
       {/* Hero */}
-      <div style={{
+      <div className="docs-hero" style={{
         textAlign: "center", padding: "60px 40px 40px",
         borderBottom: "1px solid rgba(0,0,0,0.04)",
       }}>
@@ -365,13 +420,14 @@ export default function DocsPage() {
       </div>
 
       {/* Content */}
-      <div style={{
+      <div className="docs-layout" style={{
         display: "flex", gap: 48, maxWidth: 1060,
         margin: "0 auto", padding: "40px 40px 80px",
         alignItems: "flex-start",
       }}>
         <TableOfContents />
-        <main style={{ flex: 1, minWidth: 0 }}>
+        <main className="docs-main" style={{ flex: 1, minWidth: 0 }}>
+          <MobileTableOfContents />
           {SECTIONS.map((s) => (
             <DocSection key={s.id} {...s} />
           ))}

@@ -797,6 +797,11 @@
     display: flex; align-items: center; gap: 8px;
   }
   .points-badge::before { content:""; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+  .points-badge .sample-stamp {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.14em;
+    padding: 1px 6px; border-radius: 4px;
+    color: var(--gold-soft); border: 1px solid rgba(232,199,126,0.55);
+  }
   .callout {
     position: absolute; display: flex; align-items: center; gap: 10px;
     font-family: var(--mono); font-size: 13px; letter-spacing: 0.06em;
@@ -1449,7 +1454,7 @@
         <div class="diff-glyph"><div class="gl-brain"><span></span></div></div>
         <h3>It remembers.</h3>
         <p>
-          Conversations in Chrome, on Telegram, in the dashboard —
+          Conversations in Chrome and in the dashboard —
           all the same pet, with a single, growing memory.
           Not session state. Not vector noise. A real throughline.
         </p>
@@ -1471,11 +1476,11 @@
         <div class="diff-glyph"><div class="gl-web"></div></div>
         <h3>It lives everywhere.</h3>
         <p>
-          A desktop companion in your browser. A pocket friend on
-          Telegram. A home on the web. Same pet, same memories,
-          anywhere you happen to be.
+          A desktop companion in your browser. A home on the web.
+          Same pet, same memories, anywhere you happen to be —
+          Telegram delivery stays launch-paused for now.
         </p>
-        <span class="diff-tag">Chrome · Telegram · Web</span>
+        <span class="diff-tag">Chrome · Web · Telegram launch-paused</span>
       </article>
     </div>
   </div>
@@ -1607,8 +1612,8 @@
           <div class="j-body">
             <span class="j-eyebrow">Step 05</span>
             <h3>Use it everywhere</h3>
-            <p>Same pet, same memories — on the web, in Chrome, and in MCP clients like Claude, Cursor, and OpenClaw. Your companion is not locked to one model or one vendor.</p>
-            <span class="j-tag">Web · Chrome · MCP (Claude · Cursor · OpenClaw)</span>
+            <p>Same pet, same memories — on the web and in Chrome today. MCP clients like Claude, Cursor, and OpenClaw connect when SDK 1.6.2 ships. Your companion is not locked to one model or one vendor.</p>
+            <span class="j-tag">Web · Chrome · MCP ships with SDK 1.6.2</span>
           </div>
         </div>
         <div class="j-node" aria-hidden="true">5</div>
@@ -1709,14 +1714,14 @@
           </div>
           <div class="skill-card" data-reveal="pop" data-delay="320">
             <div class="stk-chip r-e" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="8.3" cy="15.7" rx="4.6" ry="3.3" transform="rotate(-45 8.3 15.7)" fill="#BE4F28" stroke="#211A12" stroke-width="2"/><ellipse cx="15.7" cy="8.3" rx="4.6" ry="3.3" transform="rotate(-45 15.7 8.3)" fill="#E8C77E" stroke="#211A12" stroke-width="2"/></svg></div>
-            <div><div class="sk-t">MCP Compatible</div><div class="sk-s">Claude · Cursor · OpenClaw · Any client</div></div>
+            <div><div class="sk-t">MCP Compatible</div><div class="sk-s">Claude · Cursor · OpenClaw — ships with SDK 1.6.2</div></div>
           </div>
         </div>
 
         <div style="margin:28px 0 14px; display:flex; gap:8px; flex-wrap:wrap;">
           <span style="font-family:var(--mono); font-size:14px; padding:5px 12px; border-radius:6px; background:rgba(226,125,12,0.12); color:var(--gold-soft); letter-spacing:0.1em;">PETCLAW v1</span>
-          <span style="font-family:var(--mono); font-size:14px; padding:5px 12px; border-radius:6px; background:rgba(255,255,255,0.08); color:rgba(255,248,230,0.62); letter-spacing:0.1em;">6 MCP TOOLS</span>
-          <span style="font-family:var(--mono); font-size:14px; padding:5px 12px; border-radius:6px; background:rgba(255,255,255,0.08); color:rgba(255,248,230,0.62); letter-spacing:0.1em;">19 CONNECTORS · 18 SKILLS · 6 LIVE</span>
+          <span style="font-family:var(--mono); font-size:14px; padding:5px 12px; border-radius:6px; background:rgba(255,255,255,0.08); color:rgba(255,248,230,0.62); letter-spacing:0.1em;">6 MCP TOOLS · SHIPS WITH SDK 1.6.2</span>
+          <span style="font-family:var(--mono); font-size:14px; padding:5px 12px; border-radius:6px; background:rgba(255,255,255,0.08); color:rgba(255,248,230,0.62); letter-spacing:0.1em;">19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS</span>
         </div>
       </div>
     </div>
@@ -1886,7 +1891,7 @@
             <div class="fake-l w1"></div>
             <div class="fake-l w2"></div>
           </div>
-          <div class="points-badge">+47 pts today</div>
+          <div class="points-badge" title="Sample figure — local Play Points never leave your browser">+47 Play Points today <span class="sample-stamp">SAMPLE</span></div>
           <div class="pet-walker" id="petWalker">
             <img class="mp" src="mascot-original.jpg" alt="Dordor, walking across the page" />
           </div>
@@ -1900,9 +1905,11 @@
         <h3>A quiet friend on the sites you choose.</h3>
         <p>
           Allow access one standard site at a time. Your pet marks active browsing
-          and celebrates local streaks — recognition only, non-financial.
+          and celebrates streaks with local Play Points — a playful, non-financial
+          score that never leaves your browser.
         </p>
         <div class="points-list">
+          <div style="grid-column:1 / -1; font-family:var(--mono); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted);">Local Play Points — never leave your browser</div>
           <div class="row"><span class="k">Connected chat</span><span class="v">+3 pts</span></div>
           <div class="row"><span class="k">Active browsing</span><span class="v">+1 / 10min</span></div>
           <div class="row"><span class="k">Daily login</span><span class="v">+10 pts</span></div>
@@ -1947,8 +1954,8 @@
       <div class="proto-col">
         <div class="num">03 / CLIENTS</div>
         <h4>MCP compatible</h4>
-        <p>Runs with Claude, Cursor, OpenClaw, and any MCP client. Your companion is not locked to a single model or a single vendor.</p>
-        <span class="tag">mcp</span>
+        <p>Speaks the MCP standard for Claude, Cursor, OpenClaw, and other clients. The working MCP path ships with SDK 1.6.2 — today, use the REST API or CLI.</p>
+        <span class="tag">ships with SDK 1.6.2</span>
       </div>
     </div>
 
@@ -1990,7 +1997,7 @@
         <div class="stk-chip r-b" style="margin-bottom:14px;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 5h15A1.5 1.5 0 0 1 21 6.5v8a1.5 1.5 0 0 1-1.5 1.5H11l-4.5 3.5V16H4.5A1.5 1.5 0 0 1 3 14.5v-8A1.5 1.5 0 0 1 4.5 5z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><circle cx="8.2" cy="10.5" r="1.1" fill="#FBF6EC"/><circle cx="12" cy="10.5" r="1.1" fill="#FBF6EC"/><circle cx="15.8" cy="10.5" r="1.1" fill="#FBF6EC"/></svg></div>
         <h4 style="font-size:16px;margin-bottom:6px;">Chat</h4>
         <p style="font-size:13px;color:var(--muted);line-height:1.5;">Talk to your pet. Every conversation builds memory and shapes personality.</p>
-        <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:var(--gold-deep);">+3 pts per chat</div>
+        <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:var(--gold-deep);">+2 pts per chat · capped daily</div>
       </div>
       <div class="il-card" style="padding:28px 16px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid var(--line);">
         <div class="stk-chip r-c" style="margin-bottom:14px;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M11.6 4.6c-1.9 0-3.4 1.4-3.5 3.2-1.4.4-2.4 1.7-2.4 3.1 0 .9.4 1.7 1 2.3-.4.5-.6 1.1-.6 1.8 0 1.9 1.6 3.4 3.5 3.4.6.8 1.5 1.3 2 1.3V4.6z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M12.4 4.6c1.9 0 3.4 1.4 3.5 3.2 1.4.4 2.4 1.7 2.4 3.1 0 .9-.4 1.7-1 2.3.4.5.6 1.1.6 1.8 0 1.9-1.6 3.4-3.5 3.4-.6.8-1.5 1.3-2 1.3V4.6z" fill="#E8C77E" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/></svg></div>
@@ -2033,7 +2040,8 @@
           <li>✅ PetClaw SDK + CLI</li>
           <li>✅ Chrome Extension</li>
           <li>✅ Data sovereignty</li>
-          <li>✅ 19-connector registry · 6 live · 18 skills · 6 MCP tools</li>
+          <li>✅ 19-connector registry · 3 live · 18 skills</li>
+          <li>⏳ 6 MCP tools — ship with SDK 1.6.2</li>
         </ul>
       </div>
       <div style="padding:24px 20px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid var(--line-dk);">
@@ -2793,7 +2801,7 @@ function persist() {
     community:   ["Friends already here ✨", "Each one has their own memories", "Hover to see who we are 🎈"],
     sovereignty: ["Your data, your rules 🛡", "You can export me anytime 📦", "Deleting me issues a SHA-256 receipt 🧾"],
     demo:        ["I appear on sites you allow 🌐", "Per-site access, under your control", "No gas to install!"],
-    protocol:    ["MCP-compatible, by the way 🔌", "petclaw-sdk on npm 📦", "Open standard, not a SaaS"],
+    protocol:    ["MCP-ready when SDK 1.6.2 lands 🔌", "petclaw-sdk on npm 📦", "Open standard, not a SaaS"],
   };
 
   function getContextSection() {
