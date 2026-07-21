@@ -21,20 +21,39 @@ const check = (name, fn) => {
   console.log(`  ✓ ${name}`);
 };
 
-check("defaults to xAI then OpenAI", () => {
-  assert.deepEqual(getPlatformProviderOrder({}), ["xai", "openai"]);
+check("chat defaults to OpenAI then xAI", () => {
+  assert.deepEqual(getPlatformProviderOrder("chat", {}), ["openai", "xai"]);
+});
+check("non-chat tasks default to xAI then OpenAI", () => {
+  assert.deepEqual(getPlatformProviderOrder("reason", {}), ["xai", "openai"]);
 });
 check("env can choose OpenAI and disable fallback", () => {
-  assert.deepEqual(getPlatformProviderOrder({ LLM_PLATFORM_PROVIDER: "openai", LLM_PLATFORM_FALLBACK_PROVIDER: "none" }), ["openai"]);
+  assert.deepEqual(
+    getPlatformProviderOrder("reason", { LLM_PLATFORM_PROVIDER: "openai", LLM_PLATFORM_FALLBACK_PROVIDER: "none" }),
+    ["openai"],
+  );
+});
+check("task-specific env overrides the global provider", () => {
+  assert.deepEqual(
+    getPlatformProviderOrder("chat", { LLM_PLATFORM_PROVIDER: "openai", LLM_CHAT_PLATFORM_PROVIDER: "xai" }),
+    ["xai", "openai"],
+  );
 });
 check("duplicate providers are attempted once", () => {
-  assert.deepEqual(getPlatformProviderOrder({ LLM_PLATFORM_PROVIDER: "xai", LLM_PLATFORM_FALLBACK_PROVIDER: "xai" }), ["xai"]);
+  assert.deepEqual(
+    getPlatformProviderOrder("reason", { LLM_PLATFORM_PROVIDER: "xai", LLM_PLATFORM_FALLBACK_PROVIDER: "xai" }),
+    ["xai"],
+  );
 });
 check("unknown providers fail closed", () => {
-  assert.throws(() => getPlatformProviderOrder({ LLM_PLATFORM_PROVIDER: "arbitrary" }), LLMPlatformConfigError);
+  assert.throws(
+    () => getPlatformProviderOrder("chat", { LLM_PLATFORM_PROVIDER: "arbitrary" }),
+    LLMPlatformConfigError,
+  );
 });
 check("platform models are explicit, task-specific allowlist entries", () => {
   assert.equal(getPlatformModel("xai", "chat"), "grok-3-mini");
+  assert.equal(getPlatformModel("openai", "chat"), "gpt-4o-mini");
   assert.equal(getPlatformModel("openai", "reason"), "gpt-5.6-luna");
   assert.equal(getPlatformModel("openai", "chat", { LLM_OPENAI_MODEL: "gpt-5.6-luna" }), "gpt-5.6-luna");
   assert.throws(() => getPlatformModel("openai", "chat", { LLM_OPENAI_MODEL: "arbitrary" }), LLMPlatformConfigError);
