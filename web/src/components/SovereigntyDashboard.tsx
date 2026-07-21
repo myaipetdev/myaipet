@@ -950,7 +950,7 @@ function ChromeExtensionSection() {
                 <img src="/mascot.jpg" alt="pet" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 3 }}>Sparky</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 3 }}>Dordor</div>
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                   {["⚡ Adult", "😄 Happy", "🔥 Fire"].map((tag) => (
                     <span key={tag} style={{ fontSize: 12, padding: "2px 6px", borderRadius: 5, background: "rgba(255,255,255,0.06)", color: "#cbb" }}>{tag}</span>
@@ -1100,7 +1100,7 @@ export default function SovereigntyDashboard() {
         setIsDemo(false);
       } else {
         // Authed but no pet yet — still demo the console (no real pet to chat).
-        const demo = { id: 1, name: "Sparky", species: 7, personality_type: "playful", level: 15, element: "fire" };
+        const demo = { id: 1, name: "Dordor", species: 7, personality_type: "playful", level: 15, element: "fire" };
         setPets([demo]); setSelectedPet(demo); setIsDemo(true);
       }
     }).catch(() => {
@@ -1110,10 +1110,10 @@ export default function SovereigntyDashboard() {
         api.pets.list().then((d: any) => {
           const list = d.pets || d || [];
           if (list.length > 0) { setPets(list); setSelectedPet(list[0]); setIsDemo(false); return; }
-          const demo = { id: 1, name: "Sparky", species: 7, personality_type: "playful", level: 15, element: "fire" };
+          const demo = { id: 1, name: "Dordor", species: 7, personality_type: "playful", level: 15, element: "fire" };
           setPets([demo]); setSelectedPet(demo); setIsDemo(true);
         }).catch(() => {
-          const demo = { id: 1, name: "Sparky", species: 7, personality_type: "playful", level: 15, element: "fire" };
+          const demo = { id: 1, name: "Dordor", species: 7, personality_type: "playful", level: 15, element: "fire" };
           setPets([demo]); setSelectedPet(demo); setIsDemo(true);
         });
       }, 1500);
@@ -2490,8 +2490,8 @@ export default function SovereigntyDashboard() {
               <div style={{ flex: "0 1 auto", minWidth: 0, maxWidth: "100%" }}>
                 <div style={{ fontSize: 13, fontFamily: MONO, color: TERRA_SUB, letterSpacing: "0.12em", marginBottom: 8, fontWeight: 700 }}>SOUL.md — A living definition of your pet</div>
                 <div className="sov-soul-block" style={{ background: "#211A12", borderRadius: 10, padding: "14px 18px", fontFamily: "monospace", fontSize: 13, color: "#F5EFE2", lineHeight: 1.85, minWidth: 280, maxWidth: "100%", overflowX: "auto" }}>
-                  <div style={{ color: "#F49B2A", fontWeight: 700 }}># SOUL — Sparky</div>
-                  <div style={{ color: "rgba(251,246,236,0.65)", marginTop: 4 }}>{"> A living definition of who Sparky is."}</div>
+                  <div style={{ color: "#F49B2A", fontWeight: 700 }}># SOUL — Dordor</div>
+                  <div style={{ color: "rgba(251,246,236,0.65)", marginTop: 4 }}>{"> A living definition of who Dordor is."}</div>
                   <div style={{ marginTop: 10, color: "#E8A86A" }}>## Core Values</div>
                   <div>{"- Loyalty to their owner above all else"}</div>
                   <div>{"- Grows through every meaningful conversation"}</div>
@@ -2524,7 +2524,7 @@ export default function SovereigntyDashboard() {
                   { prompt: "$", cmd: "petclaw-sdk status", comment: "# ✓ Server Online · Skills: 18 · Ownership: user" },
                   { prompt: "$", cmd: "petclaw-sdk soul init", comment: "# generates SOUL.md — your pet's personality file" },
                   { prompt: "$", cmd: "petclaw-sdk chat \"hello\"", comment: "# 🐾 Hey! What's up? — 1234ms · grok-3-mini" },
-                  { prompt: "$", cmd: "petclaw-sdk export", comment: "# Sparky_SOUL_1713200000.json saved" },
+                  { prompt: "$", cmd: "petclaw-sdk export", comment: "# Dordor_SOUL_1713200000.json saved" },
                 ].map(({ prompt, cmd, comment }, i) => (
                   <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <span style={{ color: "#7CB36A", userSelect: "none", flexShrink: 0 }}>{prompt}</span>
