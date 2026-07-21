@@ -327,6 +327,24 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
     return best;
   }, [pets]);
 
+  // ── Verb-strip DOORS — the highest-graded card (share target) + handlers.
+  // Each of the header's 4 verbs performs its real action instead of only
+  // describing it: Collect → adopt flow, Battle → battle tab, Share → tweet
+  // the top card, Grade → scroll to the Next-grade strip. ──
+  const topCard = useMemo(() => pets.length === 0 ? null
+    : pets.slice().sort((a, b) => (rarityTier(b.rarity) - rarityTier(a.rarity)) || b.score - a.score)[0], [pets]);
+  const goAdopt = () => {
+    if (onNavigate) onNavigate("my pet");
+    else if (typeof window !== "undefined") window.location.href = "/?section=my%20pet";
+  };
+  const goNextGrade = () => {
+    switchTab("collection");
+    setFilter("All");
+    // Strip renders on the collection tab's unfiltered view — wait a beat for
+    // the tab/filter flip to commit before scrolling to it.
+    setTimeout(() => document.getElementById("cd-next-grade")?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
+  };
+
   // Tabs — mono-labelled editorial pills, active = ink. Album · Catch · Battle.
   const tabStrip = (
     <div role="group" aria-label="Cards section" style={{ display: "flex", gap: 8, marginBottom: 20 }}>
@@ -412,7 +430,12 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
   const oppList = opps.filter((o) => !pets.some((p) => p.id === o.petId));
 
   return (
-    <Shell owned={pets.length} rarityCounts={rarityCounts}>
+    <Shell owned={pets.length} rarityCounts={rarityCounts} verbs={{
+      collect: goAdopt,
+      battle: () => switchTab("battle"),
+      share: topCard ? () => shareCard(topCard.id, topCard.name) : undefined,
+      grade: nextGrade ? goNextGrade : undefined,
+    }}>
       {tabStrip}
 
       {/* Component-local keyframes (binder flip lives only here, not in globals).
@@ -466,7 +489,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
               opening a card. Hidden when every card is already Legendary. */}
           {filter === "All" && nextGrade && (
             <Reveal dir="up">
-              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 14, padding: "12px 16px", marginBottom: 18, boxShadow: "var(--ed-shadow-card)" }}>
+              <div id="cd-next-grade" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 14, padding: "12px 16px", marginBottom: 18, boxShadow: "var(--ed-shadow-card)" }}>
                 <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: T.mono, flexShrink: 0 }}>Next grade</span>
                 <span style={{ fontFamily: T.body, fontSize: 13.5, color: T.ink70, flexShrink: 0 }}>
                   <strong style={{ fontFamily: T.disp, color: T.ink }}>{nextGrade.name}</strong>
@@ -479,7 +502,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                   </div>
                   <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.04em", color: T.muted2, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{nextGrade.score}/{nextGrade.threshold}</span>
                 </div>
-                <span style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, flexBasis: "100%" }}>Grades rise from real care — level, bond, streak and stats. No chance, no purchases.</span>
+                <span style={{ fontFamily: T.body, fontSize: 13, color: T.muted2, flexBasis: "100%" }}>Grades rise from real care — level, bond, streak and stats. No chance, no purchases.</span>
               </div>
             </Reveal>
           )}
@@ -592,7 +615,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
           {/* Mission + REAL reward, stated BEFORE the action — verified against
               /api/card/battle: awardPointsCapped grants 5 pts per duel (win or
               lose), DAILY_POINT_CAPS.card_battle = 40; no credits charged. */}
-          <div style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, margin: "-6px 0 16px" }}>
+          <div style={{ fontFamily: T.body, fontSize: 13, color: T.muted2, margin: "-6px 0 16px" }}>
             Free to duel — deterministic from real card stats, and every duel pays{" "}
             <strong style={{ color: T.terraSub }}>+5 season points</strong> (cap 40/day).
           </div>
@@ -729,7 +752,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
             {err && (
               <div role="alert" style={{ background: T.creamOn, color: T.terraSub, border: `1px solid ${T.hair}`, borderRadius: 10, padding: "9px 12px", fontFamily: T.body, fontSize: 13, marginTop: 12, textAlign: "center" }}>{err}</div>
             )}
-            <p style={{ fontFamily: T.body, fontSize: 13, color: T.muted, textAlign: "center", margin: "12px auto 0", maxWidth: 268, lineHeight: 1.5 }}>
+            <p style={{ fontFamily: T.body, fontSize: 13, color: T.muted2, textAlign: "center", margin: "12px auto 0", maxWidth: 268, lineHeight: 1.5 }}>
               Codex turns {openPet.name}{" "}into a collectible creature sticker — you preview &amp; confirm before it becomes the card art. Your photo is always kept. Costs 5 credits.
             </p>
           </div>
@@ -992,11 +1015,11 @@ function GuestGate({ onCatch }: { onCatch: () => void }) {
           <SampleCard grade="Common" />
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }}>
             <span aria-hidden style={{ fontFamily: T.disp, fontSize: 20, fontWeight: 800, color: T.terra, lineHeight: 1 }}>→</span>
-            <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: T.mono }}>Real care</span>
+            <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: T.terraSub }}>Real care</span>
           </div>
           <SampleCard grade="Rare" />
         </div>
-        <p style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, margin: "0 auto 20px", maxWidth: 440, lineHeight: 1.5 }}>
+        <p style={{ fontFamily: T.body, fontSize: 13, color: T.muted2, margin: "0 auto 20px", maxWidth: 440, lineHeight: 1.5 }}>
           Same pet, two grades. Care raises the grade — from Rare up the card is printed with a gold-foil edge and holographic contours, and its real stats climb with it. No chance, no packs.
         </p>
         <h3 style={{ fontFamily: T.disp, fontSize: 24, fontWeight: 800, color: T.ink, margin: "0 0 6px", letterSpacing: "-0.01em" }}>Your album is waiting</h3>
@@ -1012,7 +1035,7 @@ function GuestGate({ onCatch }: { onCatch: () => void }) {
           </button>
         </div>
         {/* The connect CTA's REAL reward, stated plainly (no purchase exists) */}
-        <div style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, marginTop: 12 }}>
+        <div style={{ fontFamily: T.body, fontSize: 13, color: T.muted2, marginTop: 12 }}>
           Free — no purchase, no packs. Your pets become cards automatically.
         </div>
       </div>
@@ -1130,7 +1153,7 @@ function SampleCard({ grade }: { grade: "Common" | "Rare" }) {
                 borderRadius: 7, border: rare ? "1px solid rgba(184,130,44,.45)" : `1px solid ${T.hair}`, padding: "4px 2px",
               }}>
                 <span style={{ fontFamily: T.disp, fontSize: 14, fontWeight: 700, color: T.ink, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{val}</span>
-                <span style={{ fontFamily: T.m, fontSize: 12, color: T.muted, letterSpacing: 1, marginTop: 2 }}>{lab}</span>
+                <span style={{ fontFamily: T.m, fontSize: 12, color: T.muted2, letterSpacing: 1, marginTop: 2 }}>{lab}</span>
               </span>
             ))}
           </div>
@@ -1165,51 +1188,77 @@ function SampleCard({ grade }: { grade: "Common" | "Rare" }) {
   );
 }
 
-// Empty adoption slot — a REAL remaining pet slot (paw silhouette), never a
-// fabricated "card number". Clicking it goes to the adopt flow.
+// ── The album-shelf "slot family": SlotTile (empty, dashed) and CatchTile
+// (dark field-note) share the REAL card's structural rhythm — the same 5/7
+// footprint, radius-18 frame, and header → photo-well → hairline-footer rows —
+// so [card][empty slot][catch] reads as one shelf, not three visual languages.
+
+// Empty adoption slot — a REAL remaining pet slot (never a fabricated card
+// number). Drawn as an empty card sleeve: dashed frame, blank portrait well,
+// footer holds the door to the adopt flow.
 function SlotTile() {
   return (
     <div style={{
       width: "100%", aspectRatio: "5 / 7", borderRadius: 18, background: T.inset,
-      border: `1px dashed ${T.hair}`, display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "center", gap: 10, textAlign: "center", padding: 14,
+      border: "1.5px dashed rgba(33,26,18,.3)", display: "flex", flexDirection: "column",
+      padding: "11px 14px 9px", textAlign: "left",
     }}>
-      <Icon name="paw" size={30} style={{ opacity: 0.32 }} />
-      <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: T.muted }}>Empty slot</div>
-      <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: T.mono }}>Adopt ▸</div>
+      {/* header rhythm — where a card's name / Lv row sits */}
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+        <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: T.muted2 }}>Empty slot</span>
+        <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted2, fontVariantNumeric: "tabular-nums" }}>Lv —</span>
+      </div>
+      {/* photo-well rhythm — dashed frame where the portrait will print */}
+      <div style={{ flex: 1, minHeight: 34, margin: "9px 0 8px", borderRadius: 8, border: "1.5px dashed rgba(33,26,18,.22)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Icon name="paw" size={28} style={{ opacity: 0.32 }} />
+      </div>
+      <span style={{ fontFamily: T.body, fontSize: 13, color: T.muted2, lineHeight: 1.45 }}>
+        Your next card prints here.
+      </span>
+      {/* footer rhythm — the card's baseline strip, holding the door */}
+      <div style={{ borderTop: "1px dashed rgba(33,26,18,.22)", marginTop: 9, paddingTop: 9, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: T.terraSub }}>Adopt a pet ▸</span>
+        <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted2 }}>№ —</span>
+      </div>
     </div>
   );
 }
 
-// "Catch more in the wild" — dark tile that flips to the Catch tab in-place
-// (Catch is a tab of this screen now, so no href / cross-section navigation).
-// Entrance now comes from the <Reveal> wrapper at the call site.
+// "Catch in the wild" — the shelf's dark FIELD-NOTE slot; flips to this
+// screen's Catch tab in-place. Same card rhythm as its neighbours, toned to
+// night-expedition ink (no saturated orange slab — the CTA is a cream chip).
+// Entrance comes from the <Reveal> wrapper at the call site.
 function CatchTile({ onClick }: { onClick?: () => void }) {
   return (
     <button type="button" onClick={onClick} className="ed-card-hover" style={{
       border: "none", font: "inherit", cursor: "pointer",
       width: "100%", aspectRatio: "5 / 7", borderRadius: 18,
-      background: "radial-gradient(120% 90% at 50% 120%, #4A2A12 0%, #241206 55%, #17100A 100%)",
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      gap: 9, textAlign: "center", padding: 16, boxShadow: "var(--ed-shadow-card)",
+      background: "linear-gradient(180deg,#2C2114,#1A120A)",
+      display: "flex", flexDirection: "column", alignItems: "stretch",
+      padding: "11px 14px 9px", textAlign: "left", color: "#FBF6EC",
+      boxShadow: "var(--ed-shadow-card)",
     }}>
-      <Icon name="paw" size={26} style={{ opacity: 0.9 }} />
-      <div style={{ fontFamily: T.disp, fontSize: 17, fontWeight: 800, color: "#FBF6EC", lineHeight: 1.15 }}>Catch more<br />in the wild</div>
-      <div style={{ fontFamily: T.body, fontSize: 12.5, color: "rgba(251,246,236,.72)", lineHeight: 1.4, maxWidth: 190 }}>
-        Snap a real animal outside — it becomes a collectible card.
+      {/* header rhythm — a card's name row, field-note flavored */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <span style={{ fontFamily: T.disp, fontSize: 16.5, fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.01em" }}>Catch in the wild</span>
+        <CameraGlyph size={16} />
       </div>
+      {/* photo-well rhythm — keyline frame like the card's portrait well */}
+      <div style={{ flex: 1, minHeight: 34, margin: "9px 0 8px", borderRadius: 8, border: "1px solid rgba(251,246,236,.25)", background: "rgba(251,246,236,.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Icon name="paw" size={26} style={{ opacity: 0.85 }} />
+      </div>
+      <span style={{ fontFamily: T.body, fontSize: 13, color: "rgba(251,246,236,.94)", lineHeight: 1.45 }}>
+        Snap a real animal outside — it becomes a collectible card.
+      </span>
       {/* REAL reward, stated before the action — /api/catch grants
           CATCH_POINTS 10–80 by rarity, daily-capped (anti-farm). */}
-      <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, color: "rgba(251,246,236,.78)", letterSpacing: ".04em", fontVariantNumeric: "tabular-nums" }}>
+      <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: "rgba(251,246,236,.88)", letterSpacing: ".03em", fontVariantNumeric: "tabular-nums", marginTop: 5 }}>
         +10–80 season pts a catch · daily-capped
-      </div>
-      <span style={{
-        marginTop: 4, padding: "8px 16px", borderRadius: 999,
-        background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
-        fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase",
-      }}>Go catch ▸</span>
-      <div style={{ fontFamily: T.m, fontSize: 12, color: "rgba(251,246,236,.5)", letterSpacing: ".04em" }}>
-        📱 Best on mobile — or upload a photo
+      </span>
+      {/* footer rhythm — baseline strip with the door */}
+      <div style={{ borderTop: "1px solid rgba(251,246,236,.22)", marginTop: 9, paddingTop: 9, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+        <span style={{ background: T.creamOn, color: T.ink, borderRadius: 999, padding: "6px 13px", fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase" }}>Go catch ▸</span>
+        <span style={{ fontFamily: T.body, fontSize: 12.5, color: "rgba(251,246,236,.8)" }}>or upload a photo</span>
       </div>
     </button>
   );
@@ -1301,7 +1350,12 @@ function RarityCount({ rarity, n }: { rarity: Rarity; n: number }) {
   );
 }
 
-function Shell({ children, owned, rarityCounts }: { children: React.ReactNode; owned: number; rarityCounts?: Record<string, number> }) {
+/** Actions wired into the 4-verb mission strip — each verb card is a DOOR
+ *  (jump to adopt / battle tab / share the top card / scroll to Next grade),
+ *  not a paragraph. Omitted on guest/loading shells → cards render static. */
+type VerbActions = Partial<Record<"collect" | "battle" | "share" | "grade", (() => void) | undefined>>;
+
+function Shell({ children, owned, rarityCounts, verbs }: { children: React.ReactNode; owned: number; rarityCounts?: Record<string, number>; verbs?: VerbActions }) {
   const ownedC = useCountUp(owned, 600);
   return (
     <div style={{ position: "relative", fontFamily: T.body, color: T.ink }}>
@@ -1356,27 +1410,42 @@ function Shell({ children, owned, rarityCounts }: { children: React.ReactNode; o
               @media (hover:hover){ .cd-explain-card:hover{ transform: translateY(-3px); border-color: rgba(190,79,40,.4); box-shadow: var(--ed-shadow-card); } }
             `}</style>
             {([
-              { n: "01", title: "Collect", body: "Every pet you raise or catch becomes a card automatically — no packs, no purchases.", chip: null },
-              { n: "02", title: "Battle", body: "Duel any collector's card free — caught fighters brawl in Alley Clash too.", chip: "+5 season pts a duel · cap 40/day" },
-              { n: "03", title: "Share", body: "Each card is its own page — send the link anywhere. Public only if you opt your pet in.", chip: null },
-              { n: "04", title: "Grade", body: "Rarity and stats read from real care — level, bond, streak, ATK·DEF·SPD. No chance.", chip: null },
-            ] as Array<{ n: string; title: string; body: string; chip: string | null }>).map((s) => (
-              <div key={s.n} className="cd-explain-card" style={{ display: "flex", flexDirection: "column", gap: 7, background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "11px 13px" }}>
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.terra, letterSpacing: ".08em", flexShrink: 0, marginTop: 1 }}>{s.n}</span>
-                  <span style={{ fontFamily: T.body, fontSize: 13.5, lineHeight: 1.45, color: T.muted2 }}>
-                    <strong style={{ color: T.ink, fontFamily: T.disp }}>{s.title}</strong> — {s.body}
-                  </span>
-                </div>
-                {s.chip && (
-                  <span style={{ alignSelf: "flex-start", marginLeft: 23, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".05em", color: "#211A12", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", borderRadius: 999, padding: "3px 10px", fontVariantNumeric: "tabular-nums" }}>{s.chip}</span>
-                )}
-              </div>
-            ))}
+              { k: "collect", n: "01", title: "Collect", body: "Every pet you raise or catch becomes a card automatically — no packs, no purchases.", chip: null, act: "Adopt a pet ▸" },
+              { k: "battle", n: "02", title: "Battle", body: "Duel any collector's card free — caught fighters brawl in Alley Clash too.", chip: "+5 season pts a duel · cap 40/day", act: "Open Battle ▸" },
+              { k: "share", n: "03", title: "Share", body: "Each card is its own page — send the link anywhere. Public only if you opt your pet in.", chip: null, act: "Share your top card ▸" },
+              { k: "grade", n: "04", title: "Grade", body: "Rarity and stats read from real care — level, bond, streak, ATK·DEF·SPD. No chance.", chip: null, act: "See next grade ▸" },
+            ] as Array<{ k: "collect" | "battle" | "share" | "grade"; n: string; title: string; body: string; chip: string | null; act: string }>).map((s) => {
+              const onAct = verbs?.[s.k];
+              const cardStyle: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 7, background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12, padding: "11px 13px" };
+              const inner = (
+                <>
+                  <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.terra, letterSpacing: ".08em", flexShrink: 0, marginTop: 1 }}>{s.n}</span>
+                    <span style={{ fontFamily: T.body, fontSize: 13.5, lineHeight: 1.45, color: T.muted2 }}>
+                      <strong style={{ color: T.ink, fontFamily: T.disp }}>{s.title}</strong> — {s.body}
+                    </span>
+                  </div>
+                  {s.chip && (
+                    /* Standard editorial chip — ink on a soft terracotta tint with a
+                       border (never a saturated orange slab). Figure stays the
+                       server's REAL grant. */
+                    <span style={{ alignSelf: "flex-start", marginLeft: 23, fontFamily: T.m, fontSize: 12.5, fontWeight: 700, letterSpacing: ".05em", color: T.ink, background: "rgba(190,79,40,.12)", border: "1px solid rgba(190,79,40,.38)", borderRadius: 999, padding: "3px 10px", fontVariantNumeric: "tabular-nums" }}>{s.chip}</span>
+                  )}
+                  {onAct && (
+                    <span style={{ marginTop: "auto", marginLeft: 23, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: T.terraSub }}>{s.act}</span>
+                  )}
+                </>
+              );
+              return onAct ? (
+                <button type="button" key={s.n} onClick={onAct} className="cd-explain-card" style={{ ...cardStyle, font: "inherit", textAlign: "left", cursor: "pointer", width: "100%", margin: 0 }}>{inner}</button>
+              ) : (
+                <div key={s.n} className="cd-explain-card" style={cardStyle}>{inner}</div>
+              );
+            })}
           </div>
           {/* Non-financial loyalty framing; no dates/countdowns — Season 1 is
               unscheduled (SEASON_SCHEDULED gate), pre-season points carry in. */}
-          <p style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, margin: "8px 0 0" }}>
+          <p style={{ fontFamily: T.body, fontSize: 13, color: T.muted2, margin: "8px 0 0" }}>
             Season points are non-financial Season Rewards — points you earn now carry into Season 1.
           </p>
         </div>

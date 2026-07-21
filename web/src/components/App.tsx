@@ -742,15 +742,19 @@ export default function App() {
       {/* Season Rewards — the merged "my status + earn + compete + connect" hub.
           The old standalone Leaderboard tab folds in here under the tabs. */}
       {section === "season" && (
-        <SeasonRewardsHub banner={<SeasonBanner seasonPoints={seasonPoints} />} />
+        <div style={{ paddingTop: 90 }}>
+          <SeasonRewardsHub banner={<SeasonBanner seasonPoints={seasonPoints} />} />
+        </div>
       )}
 
       {section === "my pet" && (
+        <div style={{ paddingTop: 90 }}>
         <WalletGate section="my pet">
           <Suspense fallback={<Loader />}>
             <MyPetEditorial onNavigate={setSection} />
           </Suspense>
         </WalletGate>
+        </div>
       )}
 
       {section === "chat" && (

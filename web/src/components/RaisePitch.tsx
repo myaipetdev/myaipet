@@ -158,7 +158,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
       <div style={{ textAlign: "center", marginBottom: 22 }}>
         <Reveal dir="fade">
           <span style={pill}>
-            {seasonClosed ? "SEASON 1 · FINAL" : preSeason ? "SEASON 1 · STARTING SOON" : "SEASON 1 · LIVE"}
+            {seasonClosed ? "SEASON 1 · FINAL" : preSeason ? "PRE-SEASON · FOUNDING WINDOW" : "SEASON 1 · LIVE"}
           </span>
         </Reveal>
         <MaskedTitle as="h2" lines={[

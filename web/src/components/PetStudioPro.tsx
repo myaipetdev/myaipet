@@ -196,6 +196,106 @@ const DEMO_PET: Pet = { id: -1, name: "Dordor", avatar_url: "/mascot.jpg", speci
 
 type View = "idle" | "generating" | "done" | "error";
 
+// ── Styles ── (declared BEFORE the component: bindings referenced during
+// render must precede it, or a Turbopack hot-update fragment can orphan
+// them — "missionChip is not defined" crashed Studio into its error
+// boundary on every interaction after an HMR pass)
+
+const tag: React.CSSProperties = {
+  padding: "3px 9px", borderRadius: 999,
+  background: "rgba(190,79,40,0.10)", color: T.terra,
+  fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
+  fontFamily: T.m,
+};
+
+const panelLabel: React.CSSProperties = {
+  fontSize: 13, fontWeight: 700, letterSpacing: "0.14em",
+  textTransform: "uppercase", color: T.mono,
+  fontFamily: T.m,
+};
+
+// Reward chips on the mission strip — printed mono tags, values mirror the
+// server grant (see runReward).
+const missionChip: React.CSSProperties = {
+  fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.06em",
+  padding: "4px 10px", borderRadius: 999,
+  background: "#F5EFE2", color: "#3A3024",
+  border: "1px solid rgba(33,26,18,.13)",
+  flexShrink: 0,
+};
+
+// Corner tag over template imagery (▸ MOTION / category / ▸ PREVIEW). A solid
+// ink scrim chip — a bare drop-shadow washed out over light photography.
+const cardTag: React.CSSProperties = {
+  fontSize: 12, fontFamily: T.m, letterSpacing: "0.1em", fontWeight: 700,
+  textTransform: "uppercase", color: "#FCE9CF",
+  background: "rgba(33,26,18,.72)", padding: "3px 7px", borderRadius: 7,
+  lineHeight: 1.1,
+};
+
+const petChip: React.CSSProperties = {
+  display: "flex", alignItems: "center", gap: 8,
+  padding: "6px 10px 6px 6px", borderRadius: 12,
+  cursor: "pointer", color: T.ink,
+  fontFamily: T.body,
+  transition: "all 140ms ease",
+};
+
+const engineBtn: React.CSSProperties = {
+  width: "100%", display: "flex", alignItems: "center",
+  padding: "12px 14px", borderRadius: 12,
+  background: T.paper, border: `1px solid ${T.hair}`,
+  cursor: "pointer", fontFamily: T.body,
+  color: T.ink, textAlign: "left",
+};
+
+const suggestionChip: React.CSSProperties = {
+  padding: "5px 10px", borderRadius: 999,
+  border: `1px solid ${T.hair}`,
+  background: T.paper, fontSize: 13, fontWeight: 600,
+  color: T.ink70, cursor: "pointer",
+  fontFamily: T.body,
+};
+
+const btnGhost: React.CSSProperties = {
+  display: "inline-block",
+  padding: "9px 14px", borderRadius: 10,
+  border: `1px solid ${T.hair}`, background: T.paper,
+  color: T.ink70, fontWeight: 700, fontSize: 13, cursor: "pointer",
+  fontFamily: T.body, textDecoration: "none",
+};
+
+// Ghost variant readable on the dark error plate (used when the primary slot
+// is taken by the Get-credits purchase CTA).
+const btnGhostOnDark: React.CSSProperties = {
+  display: "inline-flex", alignItems: "center", gap: 6,
+  padding: "9px 18px", borderRadius: 10,
+  border: "1px solid rgba(252,233,207,0.4)", background: "transparent",
+  color: "#FCE9CF", fontWeight: 700, fontSize: 13, cursor: "pointer",
+  fontFamily: T.m, letterSpacing: "0.04em",
+};
+
+// Compact action chip used on gallery-overlay cards.
+const galleryActionBtn: React.CSSProperties = {
+  padding: "5px 9px", borderRadius: 8,
+  border: `1px solid ${T.hair}`, background: T.paper,
+  color: T.ink70, fontWeight: 700, fontSize: 13, cursor: "pointer",
+  fontFamily: T.body, textDecoration: "none", lineHeight: 1.2,
+};
+
+// THE commit button — ink on the orange CTA ramp (Collectible Editorial), so
+// the one Generate action outshines every terracotta control around it.
+const generateBtn: React.CSSProperties = {
+  width: "100%", padding: "16px 22px",
+  borderRadius: 14, border: "none",
+  background: `linear-gradient(180deg,${T.cta1},${T.cta2})`,
+  color: T.ink, fontWeight: 800, fontSize: 19,
+  fontFamily: "var(--ed-disp)",
+  boxShadow: "0 18px 36px -18px rgba(226,125,12,.8)",
+  letterSpacing: "0.01em",
+  transition: "transform 140ms ease, box-shadow 140ms ease",
+};
+
 export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c: number | null) => void } = {}) {
   // In-place sign-in: open the app's wallet/SIWE connect modal without leaving
   // Studio (the header pill / demo prompts used to navigate to "/" and dump the
@@ -364,6 +464,24 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   // Focus target for the "START HERE" guidance bar (empty-prompt state) —
   // clicking it jumps the user straight into the prompt box.
   const promptRef = useRef<HTMLTextAreaElement>(null);
+  // Jump the user INTO the prompt box (focus + scroll) — shared by the
+  // START-HERE bar and every control that fills the prompt for them.
+  // Instant (not smooth) scroll: smooth animation is suspended in throttled/
+  // occluded tabs, which reads as "the click did nothing".
+  const jumpToPrompt = () => {
+    const el = promptRef.current;
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    el.scrollIntoView({ block: "center" });
+  };
+  // TRY chips + memory seeds: silently setting state is invisible when the
+  // WHAT-TO-MAKE box is off-screen — fill it, focus it, and land the eye on it.
+  // Synchronous on purpose: rAF/timeout deferral is throttled to death in
+  // background/occluded tabs, and the textarea already exists.
+  const applyPromptIdea = (idea: string) => {
+    setPrompt(idea);
+    jumpToPrompt();
+  };
   const pet = pets?.find(p => p.id === petId) || null;
   // An un-renamed pet still carries its species default name ("Cat", "Dog"…),
   // which reads as a hardcoded placeholder in the header — fall back to a
@@ -1833,7 +1951,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               alignSelf: "center", marginRight: 4,
             }}>TRY:</span>
             {promptIdeasFor(pet).map((idea, i) => (
-              <button key={i} onClick={() => setPrompt(idea)} style={suggestionChip}>
+              <button key={i} type="button" onClick={() => applyPromptIdea(idea)} style={suggestionChip}>
                 {idea}
               </button>
             ))}
@@ -1858,7 +1976,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                 </svg>FROM {(pet?.name || "YOUR PET").toUpperCase()}'S MEMORY</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {memorySeeds.map((seed, i) => (
-                  <button key={i} onClick={() => setPrompt(seed)} style={{
+                  <button key={i} type="button" onClick={() => applyPromptIdea(seed)} style={{
                     textAlign: "left", padding: "9px 12px", borderRadius: 10,
                     background: T.paper, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
                     fontSize: 13, color: T.ink, cursor: "pointer", lineHeight: 1.45,
@@ -1876,196 +1994,20 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           )}
         </div>{/* /prompt console */}
 
-        {/* ── Generate (authed) — the real spend, right under the console so
-            mobile reads canvas → prompt → action. Guest demo CTA lives up by
-            the prompt. Cost AND reward are stated on the action itself. ── */}
-        {!isDemo && (insufficient && runCost != null && view !== "generating" ? (
-          // Out of credits links to the honest credit-options section. Purchase
-          // rails are currently paused, so the CTA must not promise a checkout.
-          <a
-            href="/?section=home&scroll=pricing"
-            className="mp-enter-4 studio-cta"
-            style={{
-              ...generateBtn,
-              display: "block", textAlign: "center", textDecoration: "none",
-              background: `linear-gradient(180deg,${T.cta1},${T.cta2})`,
-              color: T.ink,
-              boxShadow: "0 20px 40px -22px rgba(226,125,12,.8)",
-            }}
-          >
-            Not enough credits — purchases are paused →
-            <span style={{
-              display: "block", fontSize: 13, fontFamily: T.m, fontWeight: 700,
-              letterSpacing: "0.06em", marginTop: 4,
-            }}>this run costs {runCost} cr, you have {credits}</span>
-          </a>
-        ) : !!pet && !!chosenModel && view !== "generating" && !prompt.trim() ? (
-          // The ONLY blocker is the empty prompt — that's guidance, not a
-          // disabled action. Full-opacity "start here" bar (never a washed
-          // 45%-opacity button); clicking it focuses the prompt box.
-          <button
-            onClick={() => {
-              const el = promptRef.current;
-              if (!el) return;
-              el.focus({ preventScroll: true });
-              el.scrollIntoView({ behavior: "smooth", block: "center" });
-            }}
-            className="mp-enter-4 studio-start-here"
-            aria-label="Write a prompt to enable Generate"
-            style={{
-              width: "100%", padding: "16px 22px", borderRadius: 16,
-              background: T.paper, cursor: "pointer",
-              border: `1.5px dashed ${T.studio}`,
-              boxShadow: "var(--ed-shadow-card)",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 14,
-              textAlign: "left", fontFamily: T.body,
-            }}
-          >
-            <span aria-hidden style={{
-              width: 38, height: 38, borderRadius: 11, flexShrink: 0,
-              background: "rgba(190,79,40,0.12)", color: T.studio,
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-            }}><PencilGlyph size={17} /></span>
-            <span style={{ minWidth: 0 }}>
-              <span style={{
-                display: "block", fontFamily: T.m, fontSize: 13, fontWeight: 700,
-                letterSpacing: "0.16em", color: T.studio, textTransform: "uppercase",
-                marginBottom: 3,
-              }}>START HERE</span>
-              <span style={{ display: "block", fontSize: 15, fontWeight: 600, color: T.ink, lineHeight: 1.4 }}>
-                Write what {petDisplayName} should be doing — or tap a template in the library
-              </span>
-            </span>
-          </button>
-        ) : (
-        <div className="mp-enter-4">
-        <button onClick={generate} disabled={!canGenerate} className="studio-cta" style={{
-          ...generateBtn,
-          cursor: canGenerate ? "pointer" : view === "generating" ? "progress" : "not-allowed",
-          // Never fade the whole button: a genuinely-disabled state keeps
-          // FULL-opacity text on a muted (deeper) surface so the label stays
-          // readable — no grey-on-grey wash.
-          ...(canGenerate || view === "generating" ? {} : {
-            background: "#8C4A2E", color: "rgba(252,233,207,.95)",
-            boxShadow: "0 12px 24px -18px rgba(140,74,46,.5)",
-          }),
-        }}>
-          {view === "generating"
-            ? (outputKind === "image" ? "Generating…" : "Generating… ~1–2 min")
-            : !chosenModel
-            // Item #25-2: never advertise a 0-credit run while engines load.
-            ? "Loading engines…"
-            : !pet
-            ? "Loading pets…"
-            : (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
-                <PlayGlyph size={16} />
-                {/* Cost AND reward on the action itself — the reward mirrors
-                    exactly what the server grants (runReward). */}
-                <span>Generate · {chosenModel.creditsPerRun} cr · earns +{runReward} pts</span>
-              </span>
-            )}
-        </button>
-        {/* Honest reward footnote for the spend action */}
-        {!!chosenModel && !!pet && view !== "generating" && (
-          <div style={{
-            marginTop: 8, fontSize: 13, fontFamily: T.m, color: T.muted2,
-            display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center",
-            textAlign: "center", lineHeight: 1.5,
-          }}>
-            <span>Season Rewards: +10 / image · +20 / video per completed run</span>
-            <span>· daily cap {STUDIO_PTS_DAILY_CAP} pts</span>
-            {credits != null && credits >= chosenModel.creditsPerRun && (
-              <span>· balance covers {Math.floor(credits / Math.max(1, chosenModel.creditsPerRun))} run{Math.floor(credits / Math.max(1, chosenModel.creditsPerRun)) === 1 ? "" : "s"}</span>
-            )}
-          </div>
-        )}
-        </div>
-        ))}
+        {/* Authed Generate now lives in the RUN panel (inspector, top) — the
+            ONE commit surface next to the engine + cost + reward it spends.
+            On mobile the inspector stacks directly under this console, so
+            prompt → Generate stays adjacent. Guest demo CTA stays by the
+            prompt above. */}
           </div>{/* /studio-zone-stage */}
 
-          {/* ═══ ZONE 3 — INSPECTOR: generation settings + run card + live
-              queue (sticky on desktop, like a real tool's right panel) ═══ */}
+          {/* ═══ ZONE 3 — INSPECTOR: ONE run panel first (output → engine →
+              spec → reward/balance → Generate), then subject/style refinements.
+              The engine and its cost each appear exactly once. ═══ */}
           <aside className="studio-zone-inspector mp-enter-3" style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
-            {/* Pet */}
-            <Panel label="SUBJECT" className="mp-enter-2">
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {(pets || []).map(p => {
-                  const selected = p.id === petId;
-                  return (
-                    <button key={p.id} onClick={() => setPetId(p.id)} style={{
-                      ...petChip,
-                      background: selected ? "rgba(200,147,47,0.10)" : T.paper,
-                      // gold-foil ring marks the selection
-                      border: selected ? `1.5px solid ${T.foilDeep}` : `1px solid ${T.hair}`,
-                      boxShadow: selected ? "0 0 0 3px rgba(200,147,47,0.18)" : "none",
-                    }}>
-                      {p.avatar_url
-                        ? <img src={p.avatar_url} alt={p.name} style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover", boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)" }} />
-                        : <img src="/mascot.jpg" alt="" style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover", opacity: 0.9, boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)" }} />}
-                      <span style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700 }}>{p.name}</span>
-                      {selected ? (
-                        <span style={{
-                          fontSize: 13, color: T.terra, fontWeight: 700, letterSpacing: "0.08em",
-                          fontFamily: T.m,
-                        }}>✓ SELECTED</span>
-                      ) : (
-                        <span style={{
-                          fontSize: 13, color: T.muted2,
-                          fontFamily: T.m,
-                        }}>Lv{p.level}</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </Panel>
-
-            {/* Style */}
-            <Panel label="STYLE" className="mp-enter-3">
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-                {STYLES.map(s => {
-                  const sel = s.id === styleId;
-                  const ex = STYLE_EXAMPLES[s.id];
-                  return (
-                    <button
-                      key={s.id}
-                      onClick={() => setStyleId(s.id)}
-                      style={{
-                        padding: 3, borderRadius: 12, cursor: "pointer",
-                        background: T.paper,
-                        border: `1px solid ${T.hair}`,
-                        // selected = gold-foil ring (soft), never a hard offset shadow
-                        boxShadow: sel ? `0 0 0 2px ${T.foilDeep}, var(--ed-shadow-card)` : "var(--ed-shadow-card)",
-                        transition: "box-shadow 140ms ease",
-                      }}>
-                      {/* Real Grok example art (gradient fallback) framed as a
-                          printed sample chip: gold keyline, cream margin. */}
-                      <div style={{
-                        height: 58, borderRadius: 8, overflow: "hidden",
-                        boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)",
-                        background: ex ? `url(${ex}) center/cover no-repeat` : s.swatch,
-                        display: "flex", alignItems: "flex-end", justifyContent: "flex-end",
-                        padding: 6,
-                      }}>
-                        <span style={{
-                          display: "inline-flex",
-                          filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.55))",
-                        }}><Icon name={s.icon} size={ex ? 18 : 26} /></span>
-                      </div>
-                      <div style={{
-                        padding: "6px 4px 2px", textAlign: "center",
-                        fontSize: 13, fontFamily: T.disp, fontWeight: 700, lineHeight: 1.2,
-                        color: sel ? T.terra : T.ink,
-                      }}>{s.label}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </Panel>
-
-            {/* Output type toggle */}
-            <Panel label="OUTPUT" className="mp-enter-4">
+            {/* ── RUN — everything the commit needs, ending in the one CTA ── */}
+            <Panel label="RUN" className="mp-enter-2">
+              {/* Output kind — decides which engines are offered */}
               <div style={{
                 display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6,
                 padding: 4, borderRadius: 12, background: T.inset, border: `1px solid ${T.hair}`,
@@ -2089,62 +2031,17 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   );
                 })}
               </div>
-            </Panel>
 
-            {/* Aspect ratio — only the fal engines (Kling/Seedance/Wan/FLUX) honor
-                aspect_ratio; Grok renders a fixed ratio, so don't show a dead control. */}
-            {chosenModel?.backend === "fal" && (
-            <Panel label="ASPECT" className="mp-enter-4">
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: 4, borderRadius: 12, background: T.inset, border: `1px solid ${T.hair}` }}>
-                {(["16:9", "9:16", "1:1"] as const).map(a => {
-                  const sel = aspect === a;
-                  return (
-                    <button key={a} onClick={() => setAspect(a)} style={{
-                      padding: "9px 0", borderRadius: 9, border: "none",
-                      background: sel ? T.terra : "transparent",
-                      color: sel ? T.creamOn : T.muted2,
-                      fontWeight: 700, fontSize: 13, cursor: "pointer",
-                      fontFamily: T.m, letterSpacing: "0.04em",
-                      boxShadow: sel ? "var(--ed-shadow-card)" : "none",
-                    }}>{a === "16:9" ? "▭ 16:9" : a === "9:16" ? "▯ 9:16" : "◻ 1:1"}</button>
-                  );
-                })}
-              </div>
-            </Panel>
-            )}
-
-            {/* Duration — honest: every current engine renders a FIXED native
-                clip length (the backend ignores a custom duration), so this is
-                surfaced as a locked spec, never a slider that lies. */}
-            {outputKind === "video" && chosenModel && (
-              <Panel label="CLIP LENGTH" className="mp-enter-5">
-                <div style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
-                  padding: "10px 12px", borderRadius: 12, background: T.inset, border: `1px solid ${T.hair}`,
-                }}>
-                  <span style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 20, color: T.ink }}>
-                    {chosenModel.maxDurationSec}s
-                  </span>
-                  <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted2, textAlign: "right", lineHeight: 1.4 }}>
-                    per clip on {chosenModel.displayName} —<br />chain clips in Assemble for longer reels
-                  </span>
-                </div>
-              </Panel>
-            )}
-
-            {/* Engine (model picker) */}
-            <Panel label="ENGINE" className="mp-enter-5">
-              <div style={{ position: "relative" }} ref={modelMenuRef}>
-                <button onClick={() => setModelOpen(o => !o)} style={engineBtn}>
+              {/* Engine picker — the ONLY place the engine is named */}
+              <div style={{ position: "relative", marginTop: 8 }} ref={modelMenuRef}>
+                <button onClick={() => setModelOpen(o => !o)} style={engineBtn} aria-label="Change engine">
                   <div style={{ textAlign: "left", flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontFamily: T.disp, fontWeight: 700, color: T.ink }}>
+                    <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: T.mono }}>ENGINE</div>
+                    <div style={{ fontSize: 15, fontFamily: T.disp, fontWeight: 700, color: T.ink, marginTop: 2 }}>
                       {chosenModel?.displayName || "—"}
                     </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 5 }}>
-                      {chosenModel && <ModelBadges model={chosenModel} compact />}
-                    </div>
                   </div>
-                  <span style={{ fontSize: 13, color: T.muted, marginLeft: 8 }}>{modelOpen ? "▴" : "▾"}</span>
+                  <span style={{ fontSize: 13, fontFamily: T.m, fontWeight: 700, color: T.muted2, marginLeft: 8, flexShrink: 0 }}>{modelOpen ? "▴ close" : "▾ change"}</span>
                 </button>
 
                 {modelOpen && (
@@ -2227,7 +2124,20 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   </div>
                 )}
               </div>
-              {chosenModel && <ModelSpecStrip model={chosenModel} />}
+
+              {/* THE spec line — resolution · output · cost, stated once.
+                  Values pull straight from providers.ts via the API, so they
+                  never drift from what the server actually charges. */}
+              {chosenModel && (
+                <div style={{
+                  marginTop: 8, padding: "9px 12px", borderRadius: 9,
+                  background: T.inset, border: `1px solid ${T.hair}`,
+                  fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.ink70,
+                  letterSpacing: "0.02em", lineHeight: 1.5,
+                }}>
+                  {chosenModel.maxResolution} · {chosenModel.kind === "video" ? `${chosenModel.maxDurationSec}s clip (fixed)` : "still image"} · {chosenModel.creditsPerRun} cr per run
+                </div>
+              )}
               {chosenModel?.supportsImageRef && pet?.avatar_url && (
                 <div style={{
                   marginTop: 8, padding: "7px 10px", borderRadius: 8,
@@ -2239,33 +2149,113 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   ✓ uses {pet.name}'s photo to guide the look
                 </div>
               )}
-            </Panel>
 
-            {/* ── RUN CARD: exactly what this run will cost and pay. Cost comes
-                from providers.ts via the API; the reward mirrors the server's
-                awardPointsCapped grant (runReward) — never a made-up number. ── */}
-            <Panel label="RUN CARD" className="mp-enter-5">
               {isDemo ? (
-                <div style={{ fontSize: 13, color: T.muted2, fontFamily: T.body, lineHeight: 1.5 }}>
+                <div style={{ marginTop: 10, fontSize: 13, color: T.muted2, fontFamily: T.body, lineHeight: 1.5 }}>
                   Demo mode — previews are free and earn no points. Sign in to
                   generate for real and earn Season Rewards (+10 image · +20 video).
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <RunCardRow k="Engine" v={chosenModel?.displayName || "—"} />
-                  <RunCardRow k="Cost" v={runCost != null ? `${runCost} cr` : "—"} />
-                  <RunCardRow k="Reward" v={`+${runReward} pts`} accent="thrive" note={`cap ${STUDIO_PTS_DAILY_CAP}/day`} />
-                  <RunCardRow k="Balance" v={credits != null ? `${credits} cr` : "—"} accent={insufficient ? "terra" : undefined} />
-                  <div style={{ fontSize: 13, color: T.muted, fontFamily: T.body, lineHeight: 1.45, marginTop: 2 }}>
+                <>
+                  {/* Reward + balance — the reward mirrors the server's
+                      awardPointsCapped grant (runReward), never a made-up number. */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
+                    <RunCardRow k="Reward" v={`+${runReward} pts`} accent="thrive" note={`cap ${STUDIO_PTS_DAILY_CAP}/day`} />
+                    <RunCardRow k="Balance" v={credits != null ? `${credits} cr` : "—"} accent={insufficient ? "terra" : undefined}
+                      note={credits != null && runCost != null && runCost > 0 && credits >= runCost
+                        ? `covers ${Math.floor(credits / runCost)} run${Math.floor(credits / runCost) === 1 ? "" : "s"}`
+                        : undefined} />
+                  </div>
+                  <div style={{ fontSize: 13, color: T.muted, fontFamily: T.body, lineHeight: 1.45, marginTop: 8 }}>
                     Points are non-financial Season Rewards standing.
                     {!SEASON_SCHEDULED && " Season 1 is starting soon — points earned now carry in."}
                   </div>
-                </div>
+
+                  {/* ── THE Generate CTA — the only commit button in Studio ── */}
+                  <div style={{ marginTop: 12 }}>
+                    {insufficient && runCost != null && view !== "generating" ? (
+                      // Out of credits links to the honest credit-options section.
+                      // Purchase rails are paused — never promise a checkout.
+                      <a
+                        href="/?section=home&scroll=pricing"
+                        className="studio-cta"
+                        style={{
+                          ...generateBtn,
+                          display: "block", textAlign: "center", textDecoration: "none",
+                          fontSize: 15, padding: "14px 18px",
+                        }}
+                      >
+                        Not enough credits — purchases are paused →
+                        <span style={{
+                          display: "block", fontSize: 13, fontFamily: T.m, fontWeight: 700,
+                          letterSpacing: "0.06em", marginTop: 4,
+                        }}>this run costs {runCost} cr, you have {credits}</span>
+                      </a>
+                    ) : !!pet && !!chosenModel && view !== "generating" && !prompt.trim() ? (
+                      // The ONLY blocker is the empty prompt — that's guidance,
+                      // not a disabled action. Clicking jumps into the prompt box.
+                      <button
+                        onClick={jumpToPrompt}
+                        className="studio-start-here"
+                        aria-label="Write a prompt to enable Generate"
+                        style={{
+                          width: "100%", padding: "13px 16px", borderRadius: 14,
+                          background: T.paper, cursor: "pointer",
+                          border: `1.5px dashed ${T.studio}`,
+                          boxShadow: "var(--ed-shadow-card)",
+                          display: "flex", alignItems: "center", gap: 10,
+                          textAlign: "left", fontFamily: T.body,
+                        }}
+                      >
+                        <span aria-hidden style={{
+                          width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                          background: "rgba(190,79,40,0.12)", color: T.studio,
+                          display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        }}><PencilGlyph size={15} /></span>
+                        <span style={{ minWidth: 0 }}>
+                          <span style={{
+                            display: "block", fontFamily: T.m, fontSize: 12, fontWeight: 700,
+                            letterSpacing: "0.14em", color: T.studio, textTransform: "uppercase",
+                            marginBottom: 2,
+                          }}>START HERE</span>
+                          <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: T.ink, lineHeight: 1.4 }}>
+                            Write what {petDisplayName} should be doing — tap to jump to the prompt box
+                          </span>
+                        </span>
+                      </button>
+                    ) : (
+                      <button onClick={generate} disabled={!canGenerate} className="studio-cta" style={{
+                        ...generateBtn,
+                        cursor: canGenerate ? "pointer" : view === "generating" ? "progress" : "not-allowed",
+                        // Never fade the whole button: a genuinely-disabled state
+                        // keeps FULL-opacity ink on a muted sand surface — no
+                        // grey-on-grey wash.
+                        ...(canGenerate || view === "generating" ? {} : {
+                          background: "#E3C79A", color: T.ink70, boxShadow: "none",
+                        }),
+                      }}>
+                        {view === "generating"
+                          ? (outputKind === "image" ? "Generating…" : "Generating… ~1–2 min")
+                          : !chosenModel
+                          // Item #25-2: never advertise a run while engines load.
+                          ? "Loading engines…"
+                          : !pet
+                          ? "Loading pets…"
+                          : (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
+                              <PlayGlyph size={17} />
+                              <span>Generate</span>
+                            </span>
+                          )}
+                      </button>
+                    )}
+                  </div>
+                </>
               )}
             </Panel>
 
-            {/* ── Render queue: live progress for the in-flight job + any
-                pending server jobs. Real backend state, never faked. ── */}
+            {/* ── Render queue: live progress right under the CTA that started
+                it + any pending server jobs. Real backend state, never faked. ── */}
             {!isDemo && (view === "generating" || history.some(g => g.status === "pending" || g.status === "running")) && (
               <RenderQueue
                 generating={view === "generating"}
@@ -2274,6 +2264,106 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                 pending={history.filter(g => g.status === "pending" || g.status === "running")}
               />
             )}
+
+            {/* Pet */}
+            <Panel label="SUBJECT" className="mp-enter-3">
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {(pets || []).map(p => {
+                  const selected = p.id === petId;
+                  return (
+                    <button key={p.id} onClick={() => setPetId(p.id)} style={{
+                      ...petChip,
+                      background: selected ? "rgba(200,147,47,0.10)" : T.paper,
+                      // gold-foil ring marks the selection
+                      border: selected ? `1.5px solid ${T.foilDeep}` : `1px solid ${T.hair}`,
+                      boxShadow: selected ? "0 0 0 3px rgba(200,147,47,0.18)" : "none",
+                    }}>
+                      {p.avatar_url
+                        ? <img src={p.avatar_url} alt={p.name} style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover", boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)" }} />
+                        : <img src="/mascot.jpg" alt="" style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover", opacity: 0.9, boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)" }} />}
+                      <span style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700 }}>{p.name}</span>
+                      {selected ? (
+                        <span style={{
+                          fontSize: 13, color: T.terra, fontWeight: 700, letterSpacing: "0.08em",
+                          fontFamily: T.m,
+                        }}>✓ SELECTED</span>
+                      ) : (
+                        <span style={{
+                          fontSize: 13, color: T.muted2,
+                          fontFamily: T.m,
+                        }}>Lv{p.level}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </Panel>
+
+            {/* Style */}
+            <Panel label="STYLE" className="mp-enter-3">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                {STYLES.map(s => {
+                  const sel = s.id === styleId;
+                  const ex = STYLE_EXAMPLES[s.id];
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setStyleId(s.id)}
+                      style={{
+                        padding: 3, borderRadius: 12, cursor: "pointer",
+                        background: T.paper,
+                        border: `1px solid ${T.hair}`,
+                        // selected = gold-foil ring (soft), never a hard offset shadow
+                        boxShadow: sel ? `0 0 0 2px ${T.foilDeep}, var(--ed-shadow-card)` : "var(--ed-shadow-card)",
+                        transition: "box-shadow 140ms ease",
+                      }}>
+                      {/* Real Grok example art (gradient fallback) framed as a
+                          printed sample chip: gold keyline, cream margin. */}
+                      <div style={{
+                        height: 58, borderRadius: 8, overflow: "hidden",
+                        boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)",
+                        background: ex ? `url(${ex}) center/cover no-repeat` : s.swatch,
+                        display: "flex", alignItems: "flex-end", justifyContent: "flex-end",
+                        padding: 6,
+                      }}>
+                        <span style={{
+                          display: "inline-flex",
+                          filter: "drop-shadow(0 1px 0 rgba(0,0,0,0.55))",
+                        }}><Icon name={s.icon} size={ex ? 18 : 26} /></span>
+                      </div>
+                      <div style={{
+                        padding: "6px 4px 2px", textAlign: "center",
+                        fontSize: 13, fontFamily: T.disp, fontWeight: 700, lineHeight: 1.2,
+                        color: sel ? T.terra : T.ink,
+                      }}>{s.label}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </Panel>
+
+            {/* Aspect ratio — only the fal engines (Kling/Seedance/Wan/FLUX) honor
+                aspect_ratio; Grok renders a fixed ratio, so don't show a dead control. */}
+            {chosenModel?.backend === "fal" && (
+            <Panel label="ASPECT" className="mp-enter-4">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: 4, borderRadius: 12, background: T.inset, border: `1px solid ${T.hair}` }}>
+                {(["16:9", "9:16", "1:1"] as const).map(a => {
+                  const sel = aspect === a;
+                  return (
+                    <button key={a} onClick={() => setAspect(a)} style={{
+                      padding: "9px 0", borderRadius: 9, border: "none",
+                      background: sel ? T.terra : "transparent",
+                      color: sel ? T.creamOn : T.muted2,
+                      fontWeight: 700, fontSize: 13, cursor: "pointer",
+                      fontFamily: T.m, letterSpacing: "0.04em",
+                      boxShadow: sel ? "var(--ed-shadow-card)" : "none",
+                    }}>{a === "16:9" ? "▭ 16:9" : a === "9:16" ? "▯ 9:16" : "◻ 1:1"}</button>
+                  );
+                })}
+              </div>
+            </Panel>
+            )}
+
           </aside>
         </div>{/* /studio-workspace */}
 
@@ -3139,31 +3229,7 @@ function ModelBadges({ model, compact }: { model: StudioModel; compact?: boolean
   );
 }
 
-// Compact, honest spec read-out for the chosen engine — pulls straight from
-// providers.ts so quality/cost never drift from what the server actually charges.
-function ModelSpecStrip({ model }: { model: StudioModel }) {
-  const cells: { k: string; v: string }[] = [
-    { k: "Resolution", v: model.maxResolution },
-    { k: model.kind === "video" ? "Clip length" : "Output", v: model.kind === "video" ? `${model.maxDurationSec}s` : "Still image" },
-    { k: "Cost", v: `${model.creditsPerRun} cr` },
-  ];
-  return (
-    <div style={{
-      marginTop: 8, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6,
-    }}>
-      {cells.map(c => (
-        <div key={c.k} style={{
-          padding: "7px 9px", borderRadius: 9, background: T.inset, border: `1px solid ${T.hair}`,
-        }}>
-          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", color: T.mono, textTransform: "uppercase" }}>{c.k}</div>
-          <div style={{ fontFamily: T.disp, fontSize: 14, fontWeight: 700, color: T.ink, marginTop: 1 }}>{c.v}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// One line of the RUN CARD — a printed spec row: mono key, bold value.
+// One line of the RUN panel — a printed spec row: mono key, bold value.
 function RunCardRow({ k, v, note, accent }: { k: string; v: string; note?: string; accent?: "thrive" | "terra" }) {
   const valueColor = accent === "thrive" ? T.thrive : accent === "terra" ? T.terra : T.ink;
   return (
@@ -3210,98 +3276,3 @@ function Pill({ label, value, valueColor }: { label: string; value: string; valu
     </div>
   );
 }
-
-// ── Styles ──
-
-const tag: React.CSSProperties = {
-  padding: "3px 9px", borderRadius: 999,
-  background: "rgba(190,79,40,0.10)", color: T.terra,
-  fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
-  fontFamily: T.m,
-};
-
-const panelLabel: React.CSSProperties = {
-  fontSize: 13, fontWeight: 700, letterSpacing: "0.14em",
-  textTransform: "uppercase", color: T.mono,
-  fontFamily: T.m,
-};
-
-// Reward chips on the mission strip — printed mono tags, values mirror the
-// server grant (see runReward).
-const missionChip: React.CSSProperties = {
-  fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.06em",
-  padding: "4px 10px", borderRadius: 999,
-  background: "#F5EFE2", color: "#3A3024",
-  border: "1px solid rgba(33,26,18,.13)",
-  flexShrink: 0,
-};
-
-// Corner tag over template imagery (▸ MOTION / category / ▸ PREVIEW). A solid
-// ink scrim chip — a bare drop-shadow washed out over light photography.
-const cardTag: React.CSSProperties = {
-  fontSize: 12, fontFamily: T.m, letterSpacing: "0.1em", fontWeight: 700,
-  textTransform: "uppercase", color: "#FCE9CF",
-  background: "rgba(33,26,18,.72)", padding: "3px 7px", borderRadius: 7,
-  lineHeight: 1.1,
-};
-
-const petChip: React.CSSProperties = {
-  display: "flex", alignItems: "center", gap: 8,
-  padding: "6px 10px 6px 6px", borderRadius: 12,
-  cursor: "pointer", color: T.ink,
-  fontFamily: T.body,
-  transition: "all 140ms ease",
-};
-
-const engineBtn: React.CSSProperties = {
-  width: "100%", display: "flex", alignItems: "center",
-  padding: "12px 14px", borderRadius: 12,
-  background: T.paper, border: `1px solid ${T.hair}`,
-  cursor: "pointer", fontFamily: T.body,
-  color: T.ink, textAlign: "left",
-};
-
-const suggestionChip: React.CSSProperties = {
-  padding: "5px 10px", borderRadius: 999,
-  border: `1px solid ${T.hair}`,
-  background: T.paper, fontSize: 13, fontWeight: 600,
-  color: T.ink70, cursor: "pointer",
-  fontFamily: T.body,
-};
-
-const btnGhost: React.CSSProperties = {
-  display: "inline-block",
-  padding: "9px 14px", borderRadius: 10,
-  border: `1px solid ${T.hair}`, background: T.paper,
-  color: T.ink70, fontWeight: 700, fontSize: 13, cursor: "pointer",
-  fontFamily: T.body, textDecoration: "none",
-};
-
-// Ghost variant readable on the dark error plate (used when the primary slot
-// is taken by the Get-credits purchase CTA).
-const btnGhostOnDark: React.CSSProperties = {
-  display: "inline-flex", alignItems: "center", gap: 6,
-  padding: "9px 18px", borderRadius: 10,
-  border: "1px solid rgba(252,233,207,0.4)", background: "transparent",
-  color: "#FCE9CF", fontWeight: 700, fontSize: 13, cursor: "pointer",
-  fontFamily: T.m, letterSpacing: "0.04em",
-};
-
-// Compact action chip used on gallery-overlay cards.
-const galleryActionBtn: React.CSSProperties = {
-  padding: "5px 9px", borderRadius: 8,
-  border: `1px solid ${T.hair}`, background: T.paper,
-  color: T.ink70, fontWeight: 700, fontSize: 13, cursor: "pointer",
-  fontFamily: T.body, textDecoration: "none", lineHeight: 1.2,
-};
-
-const generateBtn: React.CSSProperties = {
-  width: "100%", padding: "18px 24px",
-  borderRadius: 16, border: "none",
-  background: "linear-gradient(135deg,#D2643A,#BE4F28)",
-  color: "#FCE9CF", fontWeight: 800, fontSize: 19,
-  fontFamily: "var(--ed-disp)",
-  boxShadow: "0 20px 40px -22px rgba(190,79,40,.6)",
-  letterSpacing: "0.01em",
-  transition: "transform 140ms ease, box-shadow 140ms ease",
-};
