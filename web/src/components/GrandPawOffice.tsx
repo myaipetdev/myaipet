@@ -62,7 +62,7 @@ type Tab = "overview" | "runs" | "routines" | "memory" | "staff";
 type Status = "IDLE" | "WORKING" | "QUEUED" | "DONE" | "LIVE"; // register 5
 
 // In local dev the api layer serves the office from its dev-mock fixture
-// (Sparky/Aqua) — label that cast DEMO instead of claiming it's the user's pet.
+// (Dordor/Aqua) — label that cast DEMO instead of claiming it's the user's pet.
 const IS_DEMO = process.env.NODE_ENV === "development";
 
 type CastMember = { name: string; kind: "yours" | "staff"; role: string; room: string; status: Status; line: string };
@@ -418,7 +418,7 @@ function QueueRow({ state, title, right }: { state: "run" | "queued" | "done"; t
     : <span style={{ color: LABEL }}>✓</span>;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 0", borderTop: `1px solid ${HAIR}` }}>
-      <span style={{ flexShrink: 0, fontSize: 12 }}>{mark}</span>
+      <span style={{ flexShrink: 0, fontSize: 13 }}>{mark}</span>
       <span style={{ flex: 1, minWidth: 0, fontFamily: SANS, fontSize: 13.5, color: state === "done" ? BODY_C : INK, fontWeight: state === "run" ? 700 : 500,
         textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</span>
       {right && <span style={{ ...labelStyle(12), flexShrink: 0 }}>{right}</span>}

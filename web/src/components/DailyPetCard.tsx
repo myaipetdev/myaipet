@@ -114,13 +114,13 @@ export default function DailyPetCard({ petId, petName }: { petId: number; petNam
       {/* Masthead */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <div style={{
-          fontFamily: ED.m, fontWeight: 700, fontSize: 12, letterSpacing: "0.14em",
+          fontFamily: ED.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.14em",
           textTransform: "uppercase", color: ED.terracotta,
         }}>
           Daily Dispatch
         </div>
         <div style={{
-          fontFamily: ED.m, fontSize: 12, letterSpacing: "0.06em", color: ED.muted,
+          fontFamily: ED.m, fontSize: 13, letterSpacing: "0.06em", color: ED.muted,
         }}>
           {insight ? fmtDate(insight.created_at) : ""}
         </div>
@@ -172,7 +172,7 @@ export default function DailyPetCard({ petId, petName }: { petId: number; petNam
                 &ldquo;{insight.insight}&rdquo;
               </div>
               <div style={{
-                marginTop: 8, fontFamily: ED.m, fontSize: 12,
+                marginTop: 8, fontFamily: ED.m, fontSize: 13,
                 letterSpacing: "0.1em", textTransform: "uppercase", color: ED.terracotta,
               }}>
                 {petName} · {insight.mood}{insight.wasNew ? " · new" : ""}

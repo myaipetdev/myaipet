@@ -474,13 +474,13 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
       {/* Element + type tag */}
       <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
         <span style={{
-          fontFamily: "var(--ed-m)", fontSize: 12,
+          fontFamily: "var(--ed-m)", fontSize: 13,
           color: el.color, fontWeight: 600,
         }}>
           <Icon name={ELEMENT_ICONS[skill.element] || "normal"} size={10} />
         </span>
         <span style={{
-          fontFamily: "var(--ed-m)", fontSize: 12,
+          fontFamily: "var(--ed-m)", fontSize: 13,
           color: typeColor, fontWeight: 600, textTransform: "uppercase",
           padding: "1px 4px", borderRadius: 3,
           background: `${typeColor}12`,
@@ -517,7 +517,7 @@ function SkillButtonV2({ skill, skillLevel, onClick, disabled, energyAvailable }
         )}
       </div>
       {/* Skill level stars */}
-      <div style={{ fontSize: 12, letterSpacing: 1, color: "#BE4F28" }}>
+      <div style={{ fontSize: 13, letterSpacing: 1, color: "#BE4F28" }}>
         {"★".repeat(skillLevel)}{"☆".repeat(Math.max(0, skill.maxLevel - skillLevel))}
       </div>
     </button>
@@ -609,7 +609,7 @@ function ResultOverlay({ won, points, expGained, skillDrop, serverMatched, repea
 
         {/* Honest grant provenance — real server schedule, never a promise */}
         <div style={{
-          fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(255,255,255,0.45)",
+          fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(255,255,255,0.45)",
           maxWidth: 360, margin: "0 auto 20px", lineHeight: 1.5,
         }}>
           {serverMatched
@@ -1354,13 +1354,13 @@ export default function Arena() {
               gap: 8, flexWrap: "wrap", marginBottom: 30,
             }}>
               <span style={{
-                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+                fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
                 letterSpacing: ".1em", textTransform: "uppercase", color: "#9A7B4E",
               }}>
                 Mission — prove your pet against a real rival
               </span>
               <span style={{
-                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+                fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
                 letterSpacing: ".08em", textTransform: "uppercase",
                 color: "#9A4E1E", background: "rgba(190,79,40,.08)",
                 border: "1px solid rgba(190,79,40,.22)", borderRadius: 999,
@@ -1368,7 +1368,7 @@ export default function Arena() {
               }}>
                 Win +35 · Loss +10 season pts
               </span>
-              <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A" }}>
+              <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A" }}>
                 Server-verified matched battles · up to 30/day · each pairing pays once a day · practice bouts pay none
               </span>
             </div>

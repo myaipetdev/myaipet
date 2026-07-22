@@ -804,7 +804,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                           {stage.name}
                         </div>
                         <div style={{
-                          fontSize: 12, color: stage.unlocked ? "#777" : "#333",
+                          fontSize: 13, color: stage.unlocked ? "#777" : "#333",
                           fontFamily: "var(--ed-m)", marginTop: 1,
                         }}>
                           Lv.{stage.level}
@@ -989,7 +989,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                 {meetsLevel && pet.level >= selectedStage.level && (
                   <div style={{
                     position: "absolute", top: 4, right: 4,
-                    fontSize: 12, padding: "1px 5px", borderRadius: 6,
+                    fontSize: 13, padding: "1px 5px", borderRadius: 6,
                     background: "rgba(74,222,128,0.15)", color: "#4ade80",
                     fontFamily: "var(--ed-m)", fontWeight: 700,
                   }}>OK</div>
@@ -997,7 +997,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                 {meetsLevel && pet.level < selectedStage.level && (
                   <div style={{
                     position: "absolute", top: 4, right: 4,
-                    fontSize: 12, padding: "1px 5px", borderRadius: 6,
+                    fontSize: 13, padding: "1px 5px", borderRadius: 6,
                     background: "rgba(248,113,113,0.15)", color: "#f87171",
                     fontFamily: "var(--ed-m)", fontWeight: 700,
                   }}>RISK</div>
@@ -1025,10 +1025,10 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                 </div>
                 {/* Mini stat bar */}
                 <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 6 }}>
-                  <span style={{ fontSize: 12, color: "#555", fontFamily: "var(--ed-m)" }}>
+                  <span style={{ fontSize: 13, color: "#555", fontFamily: "var(--ed-m)" }}>
                     HP:{Math.floor((pet.level * 10 + pet.happiness) * getPersonalityMods(pet.personality_type).hp)}
                   </span>
-                  <span style={{ fontSize: 12, color: "#555", fontFamily: "var(--ed-m)" }}>
+                  <span style={{ fontSize: 13, color: "#555", fontFamily: "var(--ed-m)" }}>
                     ATK:{Math.floor((10 + pet.level * 3) * getPersonalityMods(pet.personality_type).atk)}
                   </span>
                 </div>
@@ -1370,7 +1370,7 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                 lineHeight: 1.6,
                 animation: i === battleLog.length - 1 ? "pve-fadeIn 0.3s ease" : "none",
               }}>
-                <span style={{ color: "#333", fontSize: 12, marginRight: 6 }}>
+                <span style={{ color: "#333", fontSize: 13, marginRight: 6 }}>
                   {i === 0 ? ">" : `T${Math.ceil(i / 2)}`}
                 </span>
                 {msg}
@@ -1419,17 +1419,17 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
 
                     <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 3 }}>
                       <span style={{
-                        fontSize: 12, padding: "1px 4px", borderRadius: 4,
+                        fontSize: 13, padding: "1px 4px", borderRadius: 4,
                         background: `${el.color}15`, color: el.color,
                         fontFamily: "var(--ed-m)", fontWeight: 700,
                       }}><Icon name={ELEMENT_ICONS[s.element] || "normal"} size={8} /></span>
-                      <span style={{ fontSize: 12, color: "#666", fontFamily: "var(--ed-m)" }}>
+                      <span style={{ fontSize: 13, color: "#666", fontFamily: "var(--ed-m)" }}>
                         {s.power > 0 ? `PWR ${s.power}` : "STATUS"}
                       </span>
                     </div>
 
                     <div style={{
-                      fontSize: 12, color: cantAfford ? "#f87171" : "#555",
+                      fontSize: 13, color: cantAfford ? "#f87171" : "#555",
                       fontFamily: "var(--ed-m)", fontWeight: 700, marginTop: 2,
                     }}>EP:{s.energyCost}</div>
                   </button>
@@ -1586,8 +1586,8 @@ export default function PveMode({ initialStage, onBack }: { initialStage?: numbe
                   animation: "pve-fadeIn 0.5s ease 1.5s both",
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#555" }}>EXP</span>
-                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#a78bfa" }}>+{resultData.exp_gained}</span>
+                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#555" }}>EXP</span>
+                    <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#a78bfa" }}>+{resultData.exp_gained}</span>
                   </div>
                   <div style={{
                     width: "100%", height: 6, borderRadius: 3, overflow: "hidden",

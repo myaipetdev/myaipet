@@ -1863,7 +1863,7 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
           <button type="button" aria-pressed={showMinimap} onClick={() => setShowMinimap(v => !v)} style={{ background: "none", border: "1px solid #555", borderRadius: 3, color: "#aaa", fontSize: 13, fontFamily: "monospace", cursor: "pointer", padding: "2px 5px" }}>
             {showMinimap ? "MAP ON" : "MAP OFF"} (M)
           </button>
-          <span style={{ fontFamily: "monospace", fontSize: 12, color: "#555" }}>WASD move / SPACE interact</span>
+          <span style={{ fontFamily: "monospace", fontSize: 13, color: "#555" }}>WASD move / SPACE interact</span>
         </div>
       </div>
 
@@ -1971,7 +1971,7 @@ export default function GameWorld({ onBattle, onWildEncounter, onNavigate, hasPe
                       background: dialogue.npc.type === "boss" ? "#cc0000" : dialogue.npc.type === "trainer" ? "#0066aa" : "#446688",
                       color: "#fff",
                       fontFamily: "'Press Start 2P', monospace",
-                      fontSize: 12,
+                      fontSize: 13,
                       padding: "3px 8px",
                       borderRadius: 4,
                       border: "2px solid #111",

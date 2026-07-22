@@ -359,7 +359,7 @@ function Header({ petName, pets, petId, setPetId, isWorking, view, setView }: { 
           <div role="group" aria-label="Agent Office view" style={{ display: "inline-flex", background: FIELD, borderRadius: 99, padding: 3, border: `1px solid ${HAIR}` }}>
             {(["hotel", "classic"] as const).map((v) => (
               <button type="button" key={v} onClick={() => setView(v)} aria-pressed={view === v}
-                style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", padding: "5px 13px", borderRadius: 99, border: "none", cursor: "pointer",
+                style={{ fontFamily: MONO, fontSize: 13, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", padding: "5px 13px", borderRadius: 99, border: "none", cursor: "pointer",
                   background: view === v ? PAPER : "transparent",
                   color: view === v ? PURPLE : MUTED,
                   boxShadow: view === v ? SHADOW_CARD : "none" }}>

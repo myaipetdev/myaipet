@@ -254,19 +254,19 @@ export default function Nav({ section, setSection, credits }: any) {
         @media (max-width: 480px) {
           .nav-container { padding: 6px 8px !important; gap: 6px !important; }
           .nav-logo-img { width: 30px !important; height: 30px !important; }
-          .nav-btn { padding: 13px 5px !important; font-size: 12.5px !important; }
+          .nav-btn { padding: 13px 5px !important; font-size: 13px !important; }
         }
         @media (max-width: 430px) {
           .nav-container { gap: 4px !important; }
-          .nav-btn { padding: 13px 4px !important; font-size: 12px !important; }
+          .nav-btn { padding: 13px 4px !important; font-size: 13px !important; }
           /* Phone width: the mascot chip yields its slot to the tabs — the
              Home tab (and the wallet CTA) keep every destination reachable. */
           .nav-logo-btn { display: none !important; }
         }
         @media (max-width: 360px) {
-          .nav-btn { padding: 13px 2px !important; font-size: 11px !important; }
+          .nav-btn { padding: 13px 2px !important; font-size: 13px !important; }
           .nav-items-wrap { gap: 0 !important; }
-          .nav-wallet [data-rk] button { font-size: 12px !important; padding: 7px 8px !important; }
+          .nav-wallet [data-rk] button { font-size: 13px !important; padding: 7px 8px !important; }
         }
       `}</style>
       <nav
@@ -337,7 +337,7 @@ export default function Nav({ section, setSection, credits }: any) {
               onClick={() => setMoreOpen((v) => !v)}
               style={itemStyle(moreActive)}
             >
-              More <span aria-hidden="true" style={{ fontSize: 12, verticalAlign: 1 }}>{moreOpen ? "▴" : "▾"}</span>
+              More <span aria-hidden="true" style={{ fontSize: 13, verticalAlign: 1 }}>{moreOpen ? "▴" : "▾"}</span>
               {moreActive && activeBar}
             </button>
             {moreOpen && (
@@ -443,7 +443,7 @@ export default function Nav({ section, setSection, credits }: any) {
               >
                 <CoinGlyph gid="navCoinFoilChip" />
                 {displayCredits.toLocaleString()}
-                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", opacity: 0.7 }}>cr</span>
+                <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", opacity: 0.7 }}>cr</span>
               </a>
             </div>
           )}

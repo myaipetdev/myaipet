@@ -2355,7 +2355,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                       filter: a.earned ? "none" : "grayscale(1)", opacity: a.earned ? 1 : 0.45,
                     }}>
                       <Icon name={a.icon} size={17} />
-                      <span style={{ fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700, color: a.earned ? "#6B4FA0" : "#7A6E5A", letterSpacing: "-0.02em", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.label}</span>
+                      <span style={{ fontSize: 13, fontFamily: "var(--ed-m)", fontWeight: 700, color: a.earned ? "#6B4FA0" : "#7A6E5A", letterSpacing: "-0.02em", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.label}</span>
                     </div>
                   ))}
                 </div>
@@ -2528,7 +2528,7 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                     {!blocked && (i as any).purpose && (
                       <div style={{
                         position: "absolute", top: 4, left: 4,
-                        fontSize: 12, padding: "2px 5px", borderRadius: 4,
+                        fontSize: 13, padding: "2px 5px", borderRadius: 4,
                         background: "rgba(33,26,18,0.05)", color: "#7A6E5A",
                         fontFamily: "var(--ed-m)",
                         fontWeight: 700, letterSpacing: "0.06em",
@@ -2691,14 +2691,14 @@ export default function PetProfile({ compact = false, initialShowCreate = false 
                           {isPast ? "✓" : s.icon}
                         </div>
                         <div style={{
-                          fontFamily: "var(--ed-m)", fontSize: 12, marginTop: 4,
+                          fontFamily: "var(--ed-m)", fontSize: 13, marginTop: 4,
                           color: isCurrent ? "#9A4E1E" : isPast ? "#5C8A4E" : "#9A7B4E",
                           fontWeight: isCurrent ? 700 : 400,
                         }}>
                           {s.name}
                         </div>
                         <div style={{
-                          fontFamily: "var(--ed-m)", fontSize: 12,
+                          fontFamily: "var(--ed-m)", fontSize: 13,
                           color: "#9A7B4E",
                         }}>
                           Lv.{s.minLevel}

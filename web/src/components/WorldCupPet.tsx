@@ -259,7 +259,7 @@ function FavoritesBracket({ pool }: { pool: BracketPet[] }) {
       {/* Mission + prize — every action states why it exists and what it pays.
           The bracket pays NO season points today, so the only claimed prize is
           the real gold-foil champion card. */}
-      <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", marginBottom: 10, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", marginBottom: 10, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase" }}>
         <span style={{ color: T.mono }}>Mission — crown your Best in Show</span>
         <span aria-hidden style={{ width: 4, height: 4, borderRadius: "50%", background: T.hair }} />
         <span style={{ color: T.gold, display: "inline-flex", alignItems: "center", gap: 5 }}><Icon name="trophy" size={13} /> Prize — a gold-foil winner card</span>
@@ -967,7 +967,7 @@ function Shell({ children, pool, fetchErr, onRetry }: {
     background: `radial-gradient(circle at 32% 28%, rgba(255,248,238,.28), rgba(33,26,18,.12) 78%), ${T.gold}`,
     color: T.creamOn, transform: "rotate(3deg)",
     boxShadow: "0 2px 0 rgba(33,26,18,.4), inset 0 0 0 1.5px rgba(252,233,207,.5)",
-    fontFamily: T.m, fontSize: 12, fontWeight: 800, letterSpacing: ".12em",
+    fontFamily: T.m, fontSize: 13, fontWeight: 800, letterSpacing: ".12em",
   };
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "8px 0 40px", fontFamily: T.body, color: T.ink }}>

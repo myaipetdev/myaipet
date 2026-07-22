@@ -197,7 +197,7 @@ function EvolutionSection() {
                 <div style={{ marginBottom: 4 }}><Icon name={stage.icon} size={28} /></div>
                 <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>{stage.name}</div>
                 <div style={{ fontFamily: "mono", fontSize: 13, color: "#b45309" }}>Lv.{stage.lv}+</div>
-                <div style={{ fontFamily: "mono", fontSize: 12, color: "rgba(26,26,46,0.4)", marginTop: 4 }}>{stage.reward}</div>
+                <div style={{ fontFamily: "mono", fontSize: 13, color: "rgba(26,26,46,0.4)", marginTop: 4 }}>{stage.reward}</div>
               </div>
               {i < arr.length - 1 && <span style={{ fontSize: 16, color: "#d97706" }}>→</span>}
             </div>

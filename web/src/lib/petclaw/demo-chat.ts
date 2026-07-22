@@ -8,13 +8,13 @@
 
 export interface SyntheticDemoReply {
   reply: string;
-  petName: "Sparky";
+  petName: "Dordor";
   synthetic: true;
   persisted: false;
 }
 
 const GENERAL_REPLIES = [
-  "I'm Sparky, a synthetic preview of PetClaw. A linked pet can build private memory and grow with you; this demo does not save messages.",
+  "I'm Dordor, a synthetic preview of PetClaw. A linked pet can build private memory and grow with you; this demo does not save messages.",
   "In the full app, your own pet can learn routines, use skills, and keep owner-controlled memory. I'm only the stateless launch preview.",
   "I can show the shape of a PetClaw conversation, but I don't access a real pet or account. Nothing from this demo is remembered.",
 ] as const;
@@ -38,12 +38,12 @@ export function buildSyntheticDemoReply(message: string): SyntheticDemoReply {
   } else if (/\b(skill|skills|can you do|what do you do|capabilit)/.test(normalized)) {
     reply = "A linked PetClaw companion can chat, use installed skills, connect to approved services, and grow from owner-controlled memory. This preview is intentionally stateless.";
   } else if (/\b(hello|hey|hi|morning|afternoon|evening)\b/.test(normalized)) {
-    reply = "Hey! I'm Sparky, the synthetic launch preview. We can say hello here, but I don't access a real pet and this message won't be saved. 🐾";
+    reply = "Hey! I'm Dordor, the synthetic launch preview. We can say hello here, but I don't access a real pet and this message won't be saved. 🐾";
   } else if (/\b(wallet|connect|adopt|start|signup|sign up)\b/.test(normalized)) {
     reply = "Open the app to create or link your own pet. Only an authenticated owner session can use that pet's skills or memory; this preview stays separate.";
   } else {
     reply = GENERAL_REPLIES[stableIndex(normalized, GENERAL_REPLIES.length)];
   }
 
-  return { reply, petName: "Sparky", synthetic: true, persisted: false };
+  return { reply, petName: "Dordor", synthetic: true, persisted: false };
 }

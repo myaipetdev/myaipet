@@ -371,7 +371,7 @@ for PETCLAW_CONTRACT in \
   'release-smoke.sh:expect_env_exact AGENT_CHANNELS_ENABLED false' \
   'release-smoke.sh:expect_env_exact PET_LORA_ENABLED false' \
   'release-smoke.sh:expect_env_exact BLOCKCHAIN_ENABLED false' \
-  'release-smoke.sh:PETCLAW_EXPECTED_EXTENSION_VERSION="2.3.3"' \
+  'release-smoke.sh:PETCLAW_EXPECTED_EXTENSION_VERSION="2.4.0"' \
   'release-smoke.sh:built "${PETCLAW_RELEASE_ROOT}"' \
   'release-smoke.sh:petclaw_verify_release_source_contracts' \
   'release-smoke.sh:expect_code 200 GET "/account"' \

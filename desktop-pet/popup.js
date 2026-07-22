@@ -12,7 +12,7 @@ let latestConfig = null;
 // initializer that messages the service worker would throw on load. Guard on this
 // flag and render a calm placeholder instead. Inside a real installed extension
 // chrome.* exists and everything behaves as before.
-const EXT_VERSION = "2.3.3"; // build-time fallback; keep in sync with manifest version
+const EXT_VERSION = "2.4.0"; // build-time fallback; keep in sync with manifest version
 const HAS_CHROME =
   typeof chrome !== "undefined" &&
   !!chrome.runtime &&

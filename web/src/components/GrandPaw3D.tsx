@@ -100,11 +100,11 @@ export default function GrandPaw3D({ live, autoRotate = true, showLabels = true,
             @keyframes gp3dSweep{0%{transform:translateX(-46px)}100%{transform:translateX(132px)}}
           `}</style>
           <div style={{ textAlign: "center", background: "#FFFDF6", border: "1px solid #D9C9A8", borderRadius: 14, padding: "22px 30px 24px", boxShadow: "3px 3px 0 rgba(58,50,42,0.10)" }}>
-            <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.22em", color: MUT2, marginBottom: 8 }}>THE GRAND PAW · LOBBY</div>
+            <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.22em", color: MUT2, marginBottom: 8 }}>THE GRAND PAW · LOBBY</div>
             {phase === "failed" ? (
               <>
                 <div style={{ fontFamily: SERIF, fontSize: 20, color: INK }}>The lobby couldn&rsquo;t open.</div>
-                <div style={{ fontFamily: MONO, fontSize: 12, color: MUT2, marginTop: 8 }}>3D VIEW NEEDS WEBGL — LIVE DATA STAYS ON THE DASHBOARD</div>
+                <div style={{ fontFamily: MONO, fontSize: 13, color: MUT2, marginTop: 8 }}>3D VIEW NEEDS WEBGL — LIVE DATA STAYS ON THE DASHBOARD</div>
               </>
             ) : (
               <>
@@ -117,7 +117,7 @@ export default function GrandPaw3D({ live, autoRotate = true, showLabels = true,
                 <div style={{ margin: "14px auto 0", width: 132, height: 3, borderRadius: 99, background: "rgba(34,29,18,0.08)", overflow: "hidden" }}>
                   <div style={{ width: 46, height: "100%", borderRadius: 99, background: GOLD, animation: "gp3dSweep 1.4s linear infinite" }} />
                 </div>
-                <div style={{ fontFamily: MONO, fontSize: 12, color: MUT2, marginTop: 10 }}>3D SCENE · BUILDS ONCE PER VISIT</div>
+                <div style={{ fontFamily: MONO, fontSize: 13, color: MUT2, marginTop: 10 }}>3D SCENE · BUILDS ONCE PER VISIT</div>
               </>
             )}
           </div>

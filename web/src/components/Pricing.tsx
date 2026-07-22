@@ -72,8 +72,8 @@ function BestValueSeal() {
         transform: "rotate(8deg)", zIndex: 2,
       }}
     >
-      <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800, color: "#FFF8EE", letterSpacing: "0.04em", lineHeight: 1.1 }}>BEST</span>
-      <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800, color: "#FFF8EE", letterSpacing: "0.04em", lineHeight: 1.1 }}>VALUE</span>
+      <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 800, color: "#FFF8EE", letterSpacing: "0.04em", lineHeight: 1.1 }}>BEST</span>
+      <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 800, color: "#FFF8EE", letterSpacing: "0.04em", lineHeight: 1.1 }}>VALUE</span>
     </div>
   );
 }
@@ -256,7 +256,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
       </div>
 
       <div style={{
-        fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+        fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 800,
         letterSpacing: "0.14em", textTransform: "uppercase", color: "#9A4E1E",
         textAlign: "center", marginBottom: 14,
       }}>
@@ -302,7 +302,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
       <Reveal dir="fade">
       <div style={{ textAlign: "center", marginBottom: 24 }}>
         <div style={{
-          fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+          fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 800,
           letterSpacing: "0.14em", textTransform: "uppercase", color: "#9A4E1E", marginBottom: 8,
         }}>
           Credit packs · USDT
@@ -333,7 +333,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           <PausedSeal />
           <div>
             <div style={{
-              fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+              fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 800,
               letterSpacing: "0.16em", textTransform: "uppercase", color: "#BE4F28", marginBottom: 3,
             }}>
               Purchases paused
@@ -434,7 +434,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
             {/* Eyebrow: pack name + tier icon */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <span style={{
-                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+                fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 800,
                 letterSpacing: "0.16em", textTransform: "uppercase", color: "#9A4E1E",
               }}>
                 {p.name}
@@ -451,7 +451,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
                 {p.credits.toLocaleString()}
               </span>
               <span style={{
-                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+                fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 800,
                 letterSpacing: "0.14em", color: "#7A6E5A",
               }}>
                 CREDITS
@@ -464,7 +464,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
                 {p.usdtPrice}
               </span>
               <span style={{
-                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#5C5140",
+                fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "#5C5140",
                 padding: "2px 8px", borderRadius: 6, background: "#ECE4D4",
                 border: "1px solid rgba(33,26,18,.18)", letterSpacing: "0.06em",
               }}>
@@ -479,7 +479,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
               </span>
               {p.saving > 0 && (
                 <span style={{
-                  fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800, color: "#BE4F28",
+                  fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 800, color: "#BE4F28",
                   padding: "2px 8px", borderRadius: 6,
                   background: "rgba(190,79,40,0.08)", border: "1px solid rgba(190,79,40,0.28)",
                   letterSpacing: "0.04em", textTransform: "uppercase",
@@ -494,7 +494,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
 
             {/* What this pack makes — computed from the Studio catalog rates */}
             <div style={{
-              fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+              fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 800,
               letterSpacing: "0.14em", textTransform: "uppercase", color: "#9A7B4E", marginBottom: 8,
             }}>
               Makes about
@@ -518,7 +518,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
               <div style={{
                 border: "1.5px dashed rgba(33,26,18,.30)", borderRadius: 10,
                 padding: "12px", textAlign: "center", background: "#F5EFE2",
-                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+                fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 800,
                 letterSpacing: "0.16em", textTransform: "uppercase", color: "#9A4E1E",
               }}>
                 Opens at launch
@@ -541,7 +541,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
       {/* Rate footnote — the "makes about" basis, straight from providers.ts */}
       <Reveal dir="fade" delay={120}>
       <p style={{
-        fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", textAlign: "center",
+        fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E", textAlign: "center",
         margin: "18px auto 0", maxWidth: 560, lineHeight: 1.6, fontWeight: 500,
       }}>
         Studio rates: pet portrait 5 cr · video clip from 25 cr · premium engines up to 50 cr.
@@ -587,7 +587,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
         ].map((t) => (
           <span key={t.label} style={{
             display: "inline-flex", alignItems: "center", gap: 6,
-            fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#5C5140",
+            fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "#5C5140",
           }}>
             <span style={{ display: "inline-flex", color: "#9A4E1E" }}>{t.icon}</span>
             {t.label}
@@ -599,7 +599,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
       {/* Compliance line, kept on the record and designed, not buried. */}
       <Reveal dir="fade" delay={200}>
       <p style={{
-        fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", textAlign: "center",
+        fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E", textAlign: "center",
         margin: "0 auto 26px", maxWidth: 560, lineHeight: 1.6, fontWeight: 500,
       }}>
         Season points are a loyalty score earned through care — never purchasable, never a financial product.

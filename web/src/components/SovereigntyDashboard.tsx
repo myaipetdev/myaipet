@@ -917,7 +917,7 @@ function ChromeExtensionSection() {
           <a
             href="/petclaw-extension.zip.sha256"
             download
-            style={{ display: "inline-block", marginTop: 10, fontFamily: MONO, fontSize: 12, fontWeight: 700, color: MUTED2, textUnderlineOffset: 3 }}
+            style={{ display: "inline-block", marginTop: 10, fontFamily: MONO, fontSize: 13, fontWeight: 700, color: MUTED2, textUnderlineOffset: 3 }}
           >
             Verify SHA-256
           </a>
@@ -959,13 +959,13 @@ function ChromeExtensionSection() {
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 3 }}>Dordor</div>
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                   {["⚡ Adult", "😄 Happy", "🔥 Fire"].map((tag) => (
-                    <span key={tag} style={{ fontSize: 12, padding: "2px 6px", borderRadius: 5, background: "rgba(255,255,255,0.06)", color: "#cbb" }}>{tag}</span>
+                    <span key={tag} style={{ fontSize: 13, padding: "2px 6px", borderRadius: 5, background: "rgba(255,255,255,0.06)", color: "#cbb" }}>{tag}</span>
                   ))}
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: 18, fontWeight: 800, color: "#F49B2A" }}>2,841</div>
-                <div style={{ fontSize: 12, color: "#9a8", fontFamily: "monospace" }}>Play pts (local)</div>
+                <div style={{ fontSize: 13, color: "#9a8", fontFamily: "monospace" }}>Play pts (local)</div>
               </div>
             </div>
 
@@ -975,7 +975,7 @@ function ChromeExtensionSection() {
                 const active = t === "Mood";
                 return (
                 <div key={t} style={{
-                  flex: 1, padding: "8px 0", textAlign: "center", fontSize: 12, fontWeight: 600,
+                  flex: 1, padding: "8px 0", textAlign: "center", fontSize: 13, fontWeight: 600,
                   color: active ? "#F49B2A" : "#6a635a",
                   borderBottom: active ? "2px solid #F49B2A" : "2px solid transparent",
                 }}>{t}</div>
@@ -987,8 +987,8 @@ function ChromeExtensionSection() {
               {/* Mood bar */}
               <div style={{ marginBottom: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                  <span style={{ fontSize: 12, color: "#9a8" }}>😄 Happy</span>
-                  <span style={{ fontSize: 12, color: "#F49B2A", fontFamily: "monospace" }}>78%</span>
+                  <span style={{ fontSize: 13, color: "#9a8" }}>😄 Happy</span>
+                  <span style={{ fontSize: 13, color: "#F49B2A", fontFamily: "monospace" }}>78%</span>
                 </div>
                 <div style={{ height: 5, borderRadius: 3, background: "rgba(255,255,255,0.06)" }}>
                   <div style={{ height: "100%", width: "78%", borderRadius: 3, background: "linear-gradient(90deg, #F49B2A, #E27D0C)" }} />
@@ -1001,8 +1001,8 @@ function ChromeExtensionSection() {
               ].map(({ label, val, color }) => (
                 <div key={label} style={{ marginBottom: 8 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                    <span style={{ fontSize: 12, color: "#7a736a" }}>{label}</span>
-                    <span style={{ fontSize: 12, color, fontFamily: "monospace" }}>{val}%</span>
+                    <span style={{ fontSize: 13, color: "#7a736a" }}>{label}</span>
+                    <span style={{ fontSize: 13, color, fontFamily: "monospace" }}>{val}%</span>
                   </div>
                   <div style={{ height: 3, borderRadius: 2, background: "rgba(255,255,255,0.05)" }}>
                     <div style={{ height: "100%", width: `${val}%`, borderRadius: 2, background: color }} />
@@ -1016,7 +1016,7 @@ function ChromeExtensionSection() {
                   <div key={a} style={{
                     padding: "8px 0", borderRadius: 8, textAlign: "center",
                     background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)",
-                    color: "#cbb", fontSize: 12,
+                    color: "#cbb", fontSize: 13,
                   }}>{a}</div>
                 ))}
               </div>
@@ -1025,16 +1025,16 @@ function ChromeExtensionSection() {
               <div style={{ marginTop: 12, padding: "8px 10px", borderRadius: 8, background: "rgba(244,155,42,0.08)", border: "1px solid rgba(244,155,42,0.16)", display: "flex", gap: 8, alignItems: "flex-start" }}>
                 <span style={{ fontSize: 14 }}>⚡</span>
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#F49B2A" }}>Evolved! Adult stage unlocked</div>
-                  <div style={{ fontSize: 12, color: "#7a736a", fontFamily: "monospace" }}>+50 local Play Points earned</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#F49B2A" }}>Evolved! Adult stage unlocked</div>
+                  <div style={{ fontSize: 13, color: "#7a736a", fontFamily: "monospace" }}>+50 local Play Points earned</div>
                 </div>
               </div>
             </div>
 
             {/* Footer */}
             <div style={{ padding: "8px 16px 12px", borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, fontFamily: "monospace", color: "#5a544c" }}>v{PETCLAW_EXTENSION_VERSION} · PetClaw enabled</span>
-              <span style={{ fontSize: 12, color: "#7CB36A", fontFamily: "monospace" }}>● connected</span>
+              <span style={{ fontSize: 13, fontFamily: "monospace", color: "#5a544c" }}>v{PETCLAW_EXTENSION_VERSION} · PetClaw enabled</span>
+              <span style={{ fontSize: 13, color: "#7CB36A", fontFamily: "monospace" }}>● connected</span>
             </div>
           </div>
           <div style={{ marginTop: 10, fontFamily: MONO, fontSize: 13, color: MONO_CLR, textAlign: "center" }}>

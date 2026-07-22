@@ -279,7 +279,7 @@ export default function FocusSession() {
         }
         .fs-streak {
           font-family: var(--ed-m, "Space Mono", monospace);
-          font-size: 0.8rem;
+          font-size: 0.8125rem;
           color: var(--ed-terra, #be4f28);
         }
         .fs-hair {
@@ -296,7 +296,7 @@ export default function FocusSession() {
         }
         .fs-group-label {
           font-family: var(--ed-m, "Space Mono", monospace);
-          font-size: 0.7rem;
+          font-size: 0.8125rem;
           text-transform: uppercase;
           letter-spacing: 0.06em;
           color: var(--ed-muted, #7a6e5a);
@@ -304,7 +304,7 @@ export default function FocusSession() {
         }
         .fs-chip {
           font-family: var(--ed-m, "Space Mono", monospace);
-          font-size: 0.8rem;
+          font-size: 0.8125rem;
           padding: 0.35rem 0.7rem;
           border-radius: 999px;
           border: 1px solid var(--ed-hair, rgba(33, 26, 18, 0.13));
@@ -403,7 +403,7 @@ export default function FocusSession() {
         }
         .fs-phase-label {
           font-family: var(--ed-m, "Space Mono", monospace);
-          font-size: 0.78rem;
+          font-size: 0.8125rem;
           text-transform: uppercase;
           letter-spacing: 0.05em;
           color: var(--ed-muted, #7a6e5a);
@@ -444,7 +444,7 @@ export default function FocusSession() {
         }
         .fs-footer {
           font-family: var(--ed-m, "Space Mono", monospace);
-          font-size: 0.78rem;
+          font-size: 0.8125rem;
           color: var(--ed-muted, #7a6e5a);
         }
         .fs-celebrate {

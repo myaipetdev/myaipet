@@ -10,7 +10,7 @@ let _token: string | null = null;
 
 // ── Dev Mock Data ──
 const DEV_MOCK_PET = {
-  id: 1, user_id: 1, name: "Sparky", species: 7, personality_type: "brave",
+  id: 1, user_id: 1, name: "Dordor", species: 7, personality_type: "brave",
   level: 15, experience: 2400, happiness: 85, energy: 90, hunger: 30,
   bond_level: 5, total_interactions: 120, avatar_url: null,
   element: "fire", evolution_stage: 2, evolution_name: "Blaze Fox",
@@ -40,7 +40,7 @@ const DEV_MOCK_SKILLS = {
 // Dev fixture for the Agent Office (local DB is offline in dev) — mirrors the
 // mission-control route's response shape so the hotel renders locally.
 const DEV_MOCK_MC = {
-  pet: { id: 1, name: "Sparky", level: 5 },
+  pet: { id: 1, name: "Dordor", level: 5 },
   pillars: {
     soul: { set: true, persona: "warm, a little cheeky", checkpoints: 2 },
     memory: { count: 18, cap: 40, lastFact: "owner codes late at night", updatedAt: new Date(Date.now() - 3600e3).toISOString() },

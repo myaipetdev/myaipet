@@ -83,7 +83,7 @@ const statusColor = (s: string) => STATUS_COLORS[s?.toLowerCase()] ?? "#7A6E5A";
 // ── Shared editorial atoms ──
 const eyebrow: React.CSSProperties = {
   fontFamily: "var(--ed-m)",
-  fontSize: 12,
+  fontSize: 13,
   fontWeight: 700,
   letterSpacing: "0.16em",
   textTransform: "uppercase",
@@ -138,7 +138,7 @@ function WaxSeal() {
           alignItems: "center",
           justifyContent: "center",
           fontFamily: "var(--ed-m)",
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: 700,
           letterSpacing: "0.04em",
           color: "#FCE9CF",
@@ -241,7 +241,7 @@ export default function AccountOverview({
         .acct-link { color: #9A4E1E; font-weight: 700; text-decoration: none; }
         .acct-link:hover { text-decoration: underline; }
         .acct-table { width: 100%; border-collapse: collapse; font-family: var(--ed-body); font-size: 13.5px; color: #211A12; }
-        .acct-table th { font-family: var(--ed-m); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #9A7B4E; text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--ed-hair, rgba(33,26,18,.13)); white-space: nowrap; }
+        .acct-table th { font-family: var(--ed-m); font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #9A7B4E; text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--ed-hair, rgba(33,26,18,.13)); white-space: nowrap; }
         .acct-table td { padding: 10px; border-bottom: 1px solid var(--ed-hair, rgba(33,26,18,.13)); white-space: nowrap; font-variant-numeric: tabular-nums; }
         .acct-table tr:last-child td { border-bottom: none; }
       `}</style>
@@ -282,7 +282,7 @@ export default function AccountOverview({
               display: "inline-block",
               marginTop: 10,
               fontFamily: "var(--ed-m)",
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: 700,
               letterSpacing: "0.1em",
               color: "#3D5C33",
@@ -299,7 +299,7 @@ export default function AccountOverview({
           </p>
           <div style={{ height: 1, background: "var(--ed-hair, rgba(33,26,18,.13))", margin: "16px 0 12px" }} />
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-            <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: "#9A4E1E" }}>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", color: "#9A4E1E" }}>
               COMPANION+
             </span>
             <span style={{ fontFamily: "var(--ed-body)", fontSize: 13.5, color: "#7A6E5A" }}>
@@ -327,7 +327,7 @@ export default function AccountOverview({
           )}
           {CREDIT_EXAMPLES.length > 0 && (
             <>
-              <div style={{ ...eyebrow, fontSize: 12, margin: "16px 0 8px" }}>What a credit makes</div>
+              <div style={{ ...eyebrow, fontSize: 13, margin: "16px 0 8px" }}>What a credit makes</div>
               <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
                 {CREDIT_EXAMPLES.map((ex) => (
                   <li
@@ -394,7 +394,7 @@ export default function AccountOverview({
                 <span
                   style={{
                     fontFamily: "var(--ed-m)",
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: 700,
                     letterSpacing: "0.1em",
                     color: "#BE4F28",
@@ -459,10 +459,10 @@ export default function AccountOverview({
                     {g.duration > 0 ? `Pet video · ${g.duration}s` : "Pet image"}
                     <span style={{ color: "#7A6E5A" }}> · {g.status}</span>
                   </span>
-                  <span style={{ fontFamily: "var(--ed-m)", fontSize: 12.5, fontWeight: 700, color: "#9A4E1E", whiteSpace: "nowrap" }}>
+                  <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "#9A4E1E", whiteSpace: "nowrap" }}>
                     −{g.credits_charged} cr
                   </span>
-                  <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", whiteSpace: "nowrap" }}>
+                  <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E", whiteSpace: "nowrap" }}>
                     {fmtDate(g.created_at)}
                   </span>
                 </li>
@@ -487,7 +487,7 @@ export default function AccountOverview({
                 alignItems: "center",
                 gap: 6,
                 fontFamily: "var(--ed-m)",
-                fontSize: 12.5,
+                fontSize: 13,
                 fontWeight: 700,
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
@@ -565,7 +565,7 @@ export default function AccountOverview({
                       <td>
                         {p.credits.toLocaleString()} cr
                         {p.chain ? (
-                          <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E" }}> · {p.chain}</span>
+                          <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E" }}> · {p.chain}</span>
                         ) : null}
                       </td>
                       <td>${p.amount_usd.toFixed(2)}</td>
@@ -573,7 +573,7 @@ export default function AccountOverview({
                         <span
                           style={{
                             fontFamily: "var(--ed-m)",
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: 700,
                             letterSpacing: "0.08em",
                             textTransform: "uppercase",
@@ -590,7 +590,7 @@ export default function AccountOverview({
             </div>
           )}
           {!data.payments_enabled && (
-            <p style={{ fontFamily: "var(--ed-body)", fontSize: 12.5, color: "#9A7B4E", margin: "14px 0 0" }}>
+            <p style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#9A7B4E", margin: "14px 0 0" }}>
               Payment rails are paused pre-launch — this ledger only ever shows real recorded purchases.
             </p>
           )}

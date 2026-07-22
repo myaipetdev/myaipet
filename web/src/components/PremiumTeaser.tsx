@@ -112,7 +112,7 @@ export default function PremiumTeaser() {
           />
         </div>
 
-        <div style={{ marginTop: 16, fontSize: 12.5, color: "#7A6E5A", fontFamily: "var(--ed-m)", lineHeight: 1.55 }}>
+        <div style={{ marginTop: 16, fontSize: 13, color: "#7A6E5A", fontFamily: "var(--ed-m)", lineHeight: 1.55 }}>
           Companion+ ships before it&apos;s sold — benefits &amp; pricing published at launch.
           Season points stay non-financial recognition: no token, no cash value.
         </div>
@@ -136,7 +136,7 @@ function SealChip({ label, variant, onDark }: {
       display: "inline-block", padding: "3px 10px", borderRadius: 999,
       transform: "rotate(-3deg)",
       boxShadow: onDark ? "2px 3px 0 rgba(0,0,0,0.35)" : "2px 3px 0 rgba(33,26,18,0.22)",
-      fontSize: 12, fontWeight: 800, fontFamily: "var(--ed-m)",
+      fontSize: 13, fontWeight: 800, fontFamily: "var(--ed-m)",
       letterSpacing: "0.07em", textTransform: "uppercase", lineHeight: 1.3,
       whiteSpace: "nowrap",
     }}>{label}</span>
@@ -174,7 +174,7 @@ function Tier({
         <SealChip label={seal} variant={sealVariant} onDark={dark} />
       </div>
       {sub && (
-        <div style={{ fontSize: 12, color: dark ? "#F8CBA8" : "#9A7B4E", fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.04em", marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: dark ? "#F8CBA8" : "#9A7B4E", fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.04em", marginBottom: 12 }}>
           {sub}
         </div>
       )}
@@ -183,7 +183,7 @@ function Tier({
           alignSelf: "flex-start", transform: "rotate(-2deg)",
           border: "1.5px solid #9A4E1E", color: "#9A4E1E", borderRadius: 6,
           padding: "3px 8px", marginBottom: 12,
-          fontSize: 12, fontWeight: 700, fontFamily: "var(--ed-m)",
+          fontSize: 13, fontWeight: 700, fontFamily: "var(--ed-m)",
           letterSpacing: "0.05em", textTransform: "uppercase", lineHeight: 1.35,
         }}>{stamp}</div>
       )}

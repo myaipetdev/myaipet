@@ -84,7 +84,7 @@ export default function ReferralPanel() {
         <span
           style={{
             fontFamily: "var(--ed-m, 'Space Mono', ui-monospace, monospace)",
-            fontSize: 12,
+            fontSize: 13,
             padding: "2px 8px",
             borderRadius: 999,
             background: "#BE4F28",
@@ -125,7 +125,7 @@ export default function ReferralPanel() {
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
                 fontFamily: "var(--ed-m, 'Space Mono', ui-monospace, monospace)",
-                fontSize: 12,
+                fontSize: 13,
                 color: "#211A12",
               }}
             >
@@ -141,7 +141,7 @@ export default function ReferralPanel() {
                 background: copied ? "#9FC59A" : "#211A12",
                 color: copied ? "#211A12" : "#FBF6EC",
                 fontFamily: "var(--ed-disp, sans-serif)",
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: 700,
                 cursor: "pointer",
                 textTransform: "uppercase",
@@ -157,7 +157,7 @@ export default function ReferralPanel() {
               <div
                 style={{
                   fontFamily: "var(--ed-m, 'Space Mono', ui-monospace, monospace)",
-                  fontSize: 12,
+                  fontSize: 13,
                   letterSpacing: "0.1em",
                   color: "rgba(33,26,18,0.5)",
                   textTransform: "uppercase",
@@ -174,7 +174,7 @@ export default function ReferralPanel() {
                 <div
                   style={{
                     fontFamily: "var(--ed-m, 'Space Mono', ui-monospace, monospace)",
-                    fontSize: 12,
+                    fontSize: 13,
                     letterSpacing: "0.1em",
                     color: "rgba(33,26,18,0.5)",
                     textTransform: "uppercase",

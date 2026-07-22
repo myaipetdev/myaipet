@@ -52,7 +52,7 @@ function CareTile({ label, sub, icon, onClick }: { label: string; sub?: string; 
       {icon}
       <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: T.ink70 }}>{label}</span>
       {sub && (
-        <span style={{ display: "block", marginTop: 2, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: T.mono }}>{sub}</span>
+        <span style={{ display: "block", marginTop: 2, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".06em", color: T.mono }}>{sub}</span>
       )}
     </button>
   );
@@ -113,7 +113,7 @@ export default function TourMyPet() {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {/* demo notice */}
             <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(190,79,40,.08)", border: "1px solid rgba(190,79,40,.28)", borderRadius: 12, padding: "10px 13px" }}>
-              <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: "#FFF8EE", background: T.terra, borderRadius: 7, padding: "3px 8px" }}>DEMO</span>
+              <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: "#FFF8EE", background: T.terra, borderRadius: 7, padding: "3px 8px" }}>DEMO</span>
               <span style={{ fontSize: 13, color: T.muted2, lineHeight: 1.4 }}>Sample pet — not your data. Connect a wallet to adopt your own.</span>
             </div>
 
@@ -156,7 +156,7 @@ export default function TourMyPet() {
             <div style={{ background: T.paper, borderRadius: 22, padding: 20, boxShadow: "var(--ed-shadow-card)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
                 <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Daily Missions <span style={{ color: T.terra }}>· demo</span></div>
-                <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: T.muted }}>{seasonNote}</span>
+                <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.muted }}>{seasonNote}</span>
               </div>
               {([
                 ["Care ×3", "+5 PTS EACH"],
@@ -168,10 +168,10 @@ export default function TourMyPet() {
                     <span aria-hidden style={{ width: 18, height: 18, borderRadius: "50%", border: "1.5px solid rgba(33,26,18,.25)", flexShrink: 0 }} />
                     {label}
                   </span>
-                  <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: T.mono, border: "1px solid rgba(154,123,78,.35)", borderRadius: 8, padding: "2px 8px", flexShrink: 0 }}>{payoff}</span>
+                  <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".06em", color: T.mono, border: "1px solid rgba(154,123,78,.35)", borderRadius: 8, padding: "2px 8px", flexShrink: 0 }}>{payoff}</span>
                 </div>
               ))}
-              <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px dashed ${T.hair}`, fontSize: 12, color: T.muted2, lineHeight: 1.5 }}>
+              <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px dashed ${T.hair}`, fontSize: 13, color: T.muted2, lineHeight: 1.5 }}>
                 Real reward values — connect a wallet to start banking them.
                 {phase === "upcoming" ? " Points earned now carry into Season 1." : ""}
               </div>
@@ -181,7 +181,7 @@ export default function TourMyPet() {
             <div style={{ background: T.paper, borderRadius: 22, padding: "18px 18px 20px", boxShadow: "var(--ed-shadow-card)" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
                 <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>{DEMO.name}&apos;s Pond</div>
-                <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: T.muted }}>LO-FI · DEMO</div>
+                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.muted }}>LO-FI · DEMO</div>
               </div>
               <div style={{ marginTop: 14 }}>
                 <Suspense fallback={<div style={{ width: "100%", maxWidth: 340, aspectRatio: "1 / 1", margin: "0 auto", borderRadius: "50%", background: "rgba(26,126,104,.14)" }} />}>

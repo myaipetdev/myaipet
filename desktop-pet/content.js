@@ -49,6 +49,67 @@
   let evolution = { stage: 0, xp: 0 };
   let preferences = { particles: true, autoTalk: false, pageAwareness: false, sound: false };
 
+  // ── Mascot (Dordor the pomeranian) — the default cute companion when there's
+  // no paired-pet avatar. Pure SVG, rendered from our own trusted static markup
+  // (parsed via DOMParser, never innerHTML of untrusted input), animated by the
+  // CSS in styles.css. Expressions swap via the data-mood attribute.
+  const MASCOT_SVG = `
+<svg class="m-svg" data-mood="happy" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dordor">
+  <ellipse cx="60" cy="112" rx="30" ry="6" fill="rgba(33,26,18,.12)"/>
+  <g class="m-tail"><path d="M26 74 q-16 -6 -12 -22 q10 8 20 10 q-2 8 -8 12z" fill="#F0E4CB" stroke="#E4D2AC" stroke-width="1.5"/></g>
+  <path d="M60 58 q26 0 30 26 q3 24 -30 26 q-33 2 -30 -26 q4 -26 30 -26z" fill="#FDF8EF" stroke="#E4D2AC" stroke-width="2"/>
+  <ellipse cx="48" cy="108" rx="8" ry="6" fill="#FDF8EF" stroke="#E4D2AC" stroke-width="1.5"/>
+  <ellipse cx="72" cy="108" rx="8" ry="6" fill="#FDF8EF" stroke="#E4D2AC" stroke-width="1.5"/>
+  <g class="m-ear"><path d="M34 40 q-6 -20 10 -24 q6 14 4 26z" fill="#F0E4CB" stroke="#E4D2AC" stroke-width="2"/><path d="M40 38 q-2 -12 6 -18 q2 10 1 18z" fill="#E9B08A"/></g>
+  <g class="m-ear r"><path d="M86 40 q6 -20 -10 -24 q-6 14 -4 26z" fill="#F0E4CB" stroke="#E4D2AC" stroke-width="2"/><path d="M80 38 q2 -12 -6 -18 q-2 10 -1 18z" fill="#E9B08A"/></g>
+  <path d="M60 22 q13 0 18 8 q10 2 12 13 q9 5 6 16 q4 10 -6 15 q-3 11 -15 11 q-8 6 -15 0 q-12 0 -15 -11 q-10 -5 -6 -15 q-3 -11 6 -16 q2 -11 12 -13 q5 -8 18 -8z" fill="#FDF8EF" stroke="#E4D2AC" stroke-width="2.4"/>
+  <ellipse cx="60" cy="70" rx="20" ry="15" fill="#FFFDF8"/>
+  <path d="M40 30 q20 -12 40 0 q-4 6 -20 6 q-16 0 -20 -6z" fill="#F2C94C" stroke="#D9A82F" stroke-width="1.6"/>
+  <rect x="52" y="18" width="16" height="12" rx="4" fill="#F2C94C" stroke="#D9A82F" stroke-width="1.6"/>
+  <ellipse class="m-blush" cx="40" cy="66" rx="6" ry="4" fill="#F2A98C" opacity=".6"/>
+  <ellipse class="m-blush" cx="80" cy="66" rx="6" ry="4" fill="#F2A98C" opacity=".6"/>
+  <g><g class="m-eye-open"><ellipse cx="49" cy="56" rx="6.5" ry="7.5" fill="#241B12"/><circle cx="47" cy="53.5" r="2.2" fill="#fff"/><circle cx="51" cy="58" r="1" fill="#fff" opacity=".7"/></g><rect class="m-lid" x="42" y="48" width="14" height="9" rx="4" fill="#FDF8EF"/></g>
+  <g><g class="m-eye-open"><ellipse cx="71" cy="56" rx="6.5" ry="7.5" fill="#241B12"/><circle cx="69" cy="53.5" r="2.2" fill="#fff"/><circle cx="73" cy="58" r="1" fill="#fff" opacity=".7"/></g><rect class="m-lid" x="64" y="48" width="14" height="9" rx="4" fill="#FDF8EF"/></g>
+  <ellipse cx="60" cy="66" rx="3.4" ry="2.6" fill="#3A2A20"/>
+  <path d="M60 68 q-4 5 -8 3 M60 68 q4 5 8 3" fill="none" stroke="#7A5A44" stroke-width="1.6" stroke-linecap="round"/>
+  <path class="m-tongue" d="M56 71 q4 7 8 0 q-1 6 -4 6 q-3 0 -4 -6z" fill="#F27D8A"/>
+  <ellipse class="m-mouth-o" cx="60" cy="73" rx="4" ry="3.4" fill="#7A3A34"/>
+  <g class="m-spark" fill="#F2C94C"><path d="M92 40 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5z"/><path d="M28 34 l1 2.6 2.6 1 -2.6 1 -1 2.6 -1 -2.6 -2.6 -1 2.6 -1z"/></g>
+  <text class="m-z" x="90" y="40" fill="#9A7B4E" font-size="12" font-weight="800">z</text>
+</svg>`;
+
+  // App emotion name → mascot expression. Defaults to a happy face.
+  function mascotMoodFor(name) {
+    const n = String(name || "").toLowerCase();
+    if (/sleep|tired|drows|rest/.test(n)) return "sleepy";
+    if (/excit|play|happy joy|hyper|energ/.test(n)) return "excited";
+    if (/listen|think|curio/.test(n)) return "listening";
+    return "happy";
+  }
+
+  // Build the mascot node from the trusted static markup (SVG parse, not
+  // innerHTML of any external string).
+  function buildMascotNode(mood) {
+    const doc = new DOMParser().parseFromString(MASCOT_SVG.trim(), "image/svg+xml");
+    const svg = doc.documentElement;
+    if (svg && svg.setAttribute) svg.setAttribute("data-mood", mascotMoodFor(mood) === mood ? mood : (mood || "happy"));
+    return document.importNode(svg, true);
+  }
+
+  // Flash a temporary expression (reaction), then settle back to the mood
+  // derived from the current dominant emotion.
+  let mascotReactionTimer = null;
+  function reactMascot(mood, ms = 1800) {
+    const svg = shadowRoot && shadowRoot.querySelector(".m-svg");
+    if (!svg) return;
+    svg.setAttribute("data-mood", mood);
+    if (mascotReactionTimer) clearTimeout(mascotReactionTimer);
+    mascotReactionTimer = setTimeout(() => {
+      const s = shadowRoot && shadowRoot.querySelector(".m-svg");
+      if (s) s.setAttribute("data-mood", mascotMoodFor(dominant && dominant.name));
+    }, ms);
+  }
+
   // 2-D autonomous roaming: pick a target on screen, walk to it, pause, pick another.
   // The previous walk used fixed-duration random shuffles that
   // never covered much ground before flipping direction.
@@ -239,6 +300,9 @@
     if (res.dominant) {
       dominant = res.dominant;
       moodEl.textContent = dominant.emoji;
+      // Keep the mascot face in sync with the pet's dominant emotion.
+      const mSvg = shadowRoot.querySelector(".m-svg");
+      if (mSvg && !mascotReactionTimer) mSvg.setAttribute("data-mood", mascotMoodFor(dominant.name));
     }
     if (res.evolution) {
       evolution = res.evolution;
@@ -272,6 +336,7 @@
       }
     }
     if (safeUrl) {
+      emojiEl.classList.remove("aipet-has-mascot");
       const img = document.createElement("img");
       img.id = "aipet-avatar";
       img.src = safeUrl;
@@ -279,7 +344,9 @@
       img.alt = String(config.petName || "pet");
       emojiEl.appendChild(img);
     } else {
-      emojiEl.textContent = config.petEmoji;
+      // No paired-pet avatar → the cute Dordor mascot is the companion.
+      emojiEl.classList.add("aipet-has-mascot");
+      emojiEl.appendChild(buildMascotNode(mascotMoodFor(dominant && dominant.name)));
     }
     nameEl.textContent = config.petName;
     levelEl.textContent = `Lv.${config.level}`;
@@ -585,6 +652,7 @@
     bubble.classList.remove("hidden");
     bubble.replaceChildren();
     bubble.removeAttribute("aria-label");
+    reactMascot("listening", 6000);
     const label = document.createElement("label");
     label.style.cssText = "font-size:11px;color:#999;margin-bottom:4px";
     label.textContent = `${dominant.emoji} ${config.petName} is listening...`;
@@ -803,6 +871,7 @@
           dominant = res.dominant;
           showBubble("\uD83C\uDF56 Yum yum! That was delicious!", 3000);
           burstParticles(["\uD83C\uDF56", "\uD83E\uDDB4", "\uD83C\uDF1F"], 5);
+          reactMascot("excited");
           body.classList.add("jumping");
           scheduleTimeout(() => body.classList.remove("jumping"), 500);
           updateEmotionBar();
@@ -820,6 +889,7 @@
           dominant = res.dominant;
           showBubble("\uD83C\uDFBE Wheee! That was fun!", 3000);
           burstParticles(["\uD83C\uDFBE", "\u2B50", "\uD83C\uDF89"], 6);
+          reactMascot("excited");
           body.classList.add("jumping");
           scheduleTimeout(() => body.classList.remove("jumping"), 500);
           updateEmotionBar();
@@ -837,6 +907,7 @@
           dominant = res.dominant;
           showBubble("\uD83D\uDC95 Purrrr... I love you!", 3000);
           burstParticles(["\u2764\uFE0F", "\uD83D\uDC95", "\uD83E\uDE77", "\u2728"], 8);
+          reactMascot("excited");
           body.classList.add("jumping");
           scheduleTimeout(() => body.classList.remove("jumping"), 500);
           updateEmotionBar();

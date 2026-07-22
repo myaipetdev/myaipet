@@ -69,7 +69,7 @@ export default async function Image({ params }: { params: Promise<{ petId: strin
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
               <div style={{ display: "flex", fontSize: 15, fontWeight: 800, color: rc }}>{card.rarity.toUpperCase()}</div>
               {card.topPercent != null && card.topPercent <= 50 && (
-                <div style={{ display: "flex", fontSize: 12, color: MUTED }}>{`TOP ${card.topPercent}%`}</div>
+                <div style={{ display: "flex", fontSize: 13, color: MUTED }}>{`TOP ${card.topPercent}%`}</div>
               )}
             </div>
           </div>
@@ -79,7 +79,7 @@ export default async function Image({ params }: { params: Promise<{ petId: strin
             {stats.map(([lab, val]) => (
               <div key={lab} style={{ display: "flex", flexDirection: "column", alignItems: "center", flexGrow: 1, background: INSET, borderRadius: 10, padding: "8px 4px", marginLeft: 4, marginRight: 4 }}>
                 <div style={{ display: "flex", fontSize: 24, fontWeight: 800, color: INK }}>{String(val)}</div>
-                <div style={{ display: "flex", fontSize: 12, color: MUTED }}>{lab}</div>
+                <div style={{ display: "flex", fontSize: 13, color: MUTED }}>{lab}</div>
               </div>
             ))}
           </div>
@@ -95,7 +95,7 @@ export default async function Image({ params }: { params: Promise<{ petId: strin
           {card.moves.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", padding: "2px 14px" }}>
               {card.moves.map((m, i) => (
-                <div key={i} style={{ display: "flex", fontSize: 12, color: "#3A3024", background: INSET, borderRadius: 6, padding: "4px 10px", marginLeft: 4, marginBottom: 6 }}>{m}</div>
+                <div key={i} style={{ display: "flex", fontSize: 13, color: "#3A3024", background: INSET, borderRadius: 6, padding: "4px 10px", marginLeft: 4, marginBottom: 6 }}>{m}</div>
               ))}
             </div>
           )}
@@ -103,7 +103,7 @@ export default async function Image({ params }: { params: Promise<{ petId: strin
           {/* Footer — warm ink bar with foil-gold brand */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto", padding: "10px 16px", background: INK }}>
             <div style={{ display: "flex", fontSize: 13, fontWeight: 800, color: FOIL }}>MY AI PET</div>
-            <div style={{ display: "flex", fontSize: 12, color: "rgba(251,246,236,0.65)" }}>{`${card.evolutionName || card.speciesName} · ${card.personality}`}</div>
+            <div style={{ display: "flex", fontSize: 13, color: "rgba(251,246,236,0.65)" }}>{`${card.evolutionName || card.speciesName} · ${card.personality}`}</div>
           </div>
 
         </div>
