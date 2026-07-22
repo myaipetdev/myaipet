@@ -623,12 +623,12 @@ awk '/^petclaw_verify_product_demo_body\(\) \{/{copy=1} copy{print} copy && /^\}
   "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" > "${PETCLAW_PRODUCT_DEMO_FUNCTION}"
 # shellcheck source=/dev/null
 source "${PETCLAW_PRODUCT_DEMO_FUNCTION}"
-PETCLAW_GOOD_PRODUCT_DEMO='<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" id="playBtn" id="replayBtn" position:absolute; left:50%; top:50%; width:1280px; height:720px transform:translate(-50%,-50%) scale(var(--s,1)) <a class="cta" href="https://app.myaipet.ai" target="_top"> MCP runtime ships with SDK 1.6.2 · messaging launch-paused.'
+PETCLAW_GOOD_PRODUCT_DEMO='<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" id="playBtn" id="replayBtn" position:absolute; left:50%; top:50%; width:1280px; height:720px transform:translate(-50%,-50%) scale(var(--s,1)) <a class="cta" href="https://app.myaipet.ai" target="_top"> 7-tool MCP path is an unpublished SDK 1.6.2 candidate · messaging launch-paused.'
 if ! printf '%s' "${PETCLAW_GOOD_PRODUCT_DEMO}" | petclaw_verify_product_demo_body; then
   echo "FAIL: centered mobile product demo fixture is rejected" >&2
   exit 1
 fi
-if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" id="playBtn" id="replayBtn" transform:scale(var(--s,1)) <a class="cta" href="https://app.myaipet.ai" target="_top"> MCP runtime ships with SDK 1.6.2 · messaging launch-paused.' \
+if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" id="playBtn" id="replayBtn" transform:scale(var(--s,1)) <a class="cta" href="https://app.myaipet.ai" target="_top"> 7-tool MCP path is an unpublished SDK 1.6.2 candidate · messaging launch-paused.' \
   | petclaw_verify_product_demo_body; then
   echo "FAIL: off-canvas mobile product demo fixture is accepted" >&2
   exit 1

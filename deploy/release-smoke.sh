@@ -180,7 +180,7 @@ petclaw_verify_product_demo_body() {
         `position:absolute; left:50%; top:50%; width:1280px; height:720px`,
         `transform:translate(-50%,-50%) scale(var(--s,1))`,
         `<a class="cta" href="https://app.myaipet.ai" target="_top">`,
-        `MCP runtime ships with SDK 1.6.2 · messaging launch-paused.`,
+        `7-tool MCP path is an unpublished SDK 1.6.2 candidate · messaging launch-paused.`,
       ];
       const forbidden = [
         "document.querySelector(\u0027.s8 .cta\u0027)",
