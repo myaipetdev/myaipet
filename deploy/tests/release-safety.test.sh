@@ -393,6 +393,8 @@ for PETCLAW_CONTRACT in \
   'pull-production-backup.sh:exec 9<>"${PETCLAW_RELEASE_LOCK}"' \
   'pull-production-backup.sh:PETCLAW_REMOTE_STAGE_ROOT=/opt/petclaw/backup-staging' \
   'pull-production-backup.sh:PETCLAW_EXPECTED_ENV_STAT=root:ubuntu:640' \
+  'pull-production-backup.sh:PGPASSWORD="${PGPASSWORD}" PGDATABASE="${PGDATABASE}" PGSSLMODE="${PGSSLMODE}"' \
+  'pull-production-backup.sh:unset DATABASE_URL PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE PGSSLMODE' \
   'verify-backup-snapshot.sh:exec 8<>"${PETCLAW_VERIFY_LOCK}"' \
   'release-smoke.sh:x-petclaw-release:'; do
   PETCLAW_CONTRACT_FILE="${PETCLAW_CONTRACT%%:*}"

@@ -314,8 +314,8 @@ install -d -m 700 "$HOME/.local/libexec/petclaw-backup" \
   "$HOME/Library/Logs/PetClaw"
 install -m 700 deploy/{pull-production-backup.sh,prune-offhost-backups.sh,verify-backup-snapshot.sh} \
   "$HOME/.local/libexec/petclaw-backup/"
-install -m 600 deploy/backup-verification-public-key.asc \
-  "$HOME/.local/libexec/petclaw-backup/backup-verification-public-key.asc"
+install -m 600 deploy/{backup-verification-public-key.asc,parse-database-url.mjs} \
+  "$HOME/.local/libexec/petclaw-backup/"
 install -m 600 /absolute/path/to/production.pem \
   "$HOME/.config/petclaw-backup-runtime/production.pem"
 ```

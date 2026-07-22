@@ -41,6 +41,13 @@ assert.equal(publicSchema.fields.PORT, "6543");
 assert.equal(publicSchema.fields.PASSWORD, "");
 assert.equal(publicSchema.fields.SSLMODE, "verify-full");
 
+const prismaOptions = parse(
+  "postgresql://pet:p%26ss%3Dword@db.example/petclaw?schema=public&connection_limit=20&pool_timeout=10&socket_timeout=5&pgbouncer=true&statement_cache_size=0",
+);
+assert.equal(prismaOptions.status, 0);
+assert.equal(prismaOptions.fields.PASSWORD, "p&ss=word");
+assert.equal(prismaOptions.fields.DATABASE, "petclaw");
+
 const ipv6 = parse("postgresql://pet:secret@[2001:db8::7]:5433/petclaw?schema=public&sslmode=require");
 assert.equal(ipv6.status, 0);
 assert.equal(ipv6.fields.HOST, "2001:db8::7");

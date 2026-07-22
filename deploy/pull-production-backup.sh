@@ -18,6 +18,7 @@ PETCLAW_BACKUP_SIGNING_FINGERPRINT="0B286A30DC9C53D08CE5ABC72E2A4FDD17382A1F"
 PETCLAW_SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 PETCLAW_VERIFY_HELPER="${PETCLAW_SCRIPT_DIR}/verify-backup-snapshot.sh"
 PETCLAW_PUBLIC_KEY="${PETCLAW_SCRIPT_DIR}/backup-verification-public-key.asc"
+PETCLAW_DB_URL_PARSER="${PETCLAW_SCRIPT_DIR}/parse-database-url.mjs"
 
 if [[ -z "${PETCLAW_OFFHOST_DIR}" || -z "${PETCLAW_SSH_KEY}" \
   || -z "${PETCLAW_BACKUP_GPG_HOME}" || -z "${PETCLAW_BACKUP_GPG_RECIPIENT}" ]]; then
@@ -37,8 +38,9 @@ if [[ ! -d "${PETCLAW_BACKUP_GPG_HOME}" || -L "${PETCLAW_BACKUP_GPG_HOME}" ]]; t
   exit 2
 fi
 if [[ ! -f "${PETCLAW_VERIFY_HELPER}" || -L "${PETCLAW_VERIFY_HELPER}" \
-  || ! -f "${PETCLAW_PUBLIC_KEY}" || -L "${PETCLAW_PUBLIC_KEY}" ]]; then
-  echo "ERROR: backup restore-verification helper or public key is missing." >&2
+  || ! -f "${PETCLAW_PUBLIC_KEY}" || -L "${PETCLAW_PUBLIC_KEY}" \
+  || ! -f "${PETCLAW_DB_URL_PARSER}" || -L "${PETCLAW_DB_URL_PARSER}" ]]; then
+  echo "ERROR: backup helper, public key, or database URL parser is missing." >&2
   exit 2
 fi
 if [[ ! "${PETCLAW_BACKUP_RETENTION_DAYS}" =~ ^[0-9]+$ ]] \
@@ -145,9 +147,11 @@ PETCLAW_RESTORE_LIST="${PETCLAW_PARTIAL}/petclaw-postgres.restore-list.txt"
 PETCLAW_SNAPSHOT_VERIFICATION="${PETCLAW_PARTIAL}/snapshot-verification.env"
 PETCLAW_REMOTE_HELPER="/tmp/petclaw-backup-verify-${PETCLAW_STAMP}.sh"
 PETCLAW_REMOTE_PUBLIC_KEY="/tmp/petclaw-backup-key-${PETCLAW_STAMP}.asc"
+PETCLAW_REMOTE_DB_URL_PARSER="/tmp/petclaw-db-url-parser-${PETCLAW_STAMP}.mjs"
 
 "${PETCLAW_SCP[@]}" "${PETCLAW_VERIFY_HELPER}" "${PETCLAW_SSH_HOST}:${PETCLAW_REMOTE_HELPER}"
 "${PETCLAW_SCP[@]}" "${PETCLAW_PUBLIC_KEY}" "${PETCLAW_SSH_HOST}:${PETCLAW_REMOTE_PUBLIC_KEY}"
+"${PETCLAW_SCP[@]}" "${PETCLAW_DB_URL_PARSER}" "${PETCLAW_SSH_HOST}:${PETCLAW_REMOTE_DB_URL_PARSER}"
 
 # One remote session owns the release lock, quiesces every online PetClaw app
 # process, captures DB + media, resumes the app, performs an actual temporary-DB
@@ -155,13 +159,14 @@ PETCLAW_REMOTE_PUBLIC_KEY="/tmp/petclaw-backup-key-${PETCLAW_STAMP}.asc"
 # removes plaintext staging even if the SSH connection breaks.
 "${PETCLAW_SSH[@]}" bash -s -- \
   "${PETCLAW_REMOTE_HELPER}" "${PETCLAW_REMOTE_PUBLIC_KEY}" \
-  "${PETCLAW_BACKUP_SIGNING_FINGERPRINT}" <<'REMOTE_SNAPSHOT' \
+  "${PETCLAW_REMOTE_DB_URL_PARSER}" "${PETCLAW_BACKUP_SIGNING_FINGERPRINT}" <<'REMOTE_SNAPSHOT' \
   | tar -C "${PETCLAW_PARTIAL}" -xf -
 set -euo pipefail
 umask 077
 PETCLAW_REMOTE_HELPER="$1"
 PETCLAW_REMOTE_PUBLIC_KEY="$2"
-PETCLAW_BACKUP_RECIPIENT="$3"
+PETCLAW_REMOTE_DB_URL_PARSER="$3"
+PETCLAW_BACKUP_RECIPIENT="$4"
 PETCLAW_RELEASE_LOCK=/run/petclaw-release/release.lock
 PETCLAW_BOOT_GUARD=/usr/local/sbin/petclaw-release-boot-guard.sh
 PETCLAW_REMOTE_STAGE_ROOT=/opt/petclaw/backup-staging
@@ -230,17 +235,20 @@ petclaw_remote_cleanup() {
   rm -rf -- "${PETCLAW_REMOTE_STAGE}"
   rm -f -- "${PETCLAW_REMOTE_HELPER}"
   rm -f -- "${PETCLAW_REMOTE_PUBLIC_KEY}"
+  rm -f -- "${PETCLAW_REMOTE_DB_URL_PARSER}"
   exit "${PETCLAW_REMOTE_EXIT}"
 }
 trap petclaw_remote_cleanup EXIT HUP INT TERM
 
 if [[ ! -f "${PETCLAW_REMOTE_HELPER}" || -L "${PETCLAW_REMOTE_HELPER}" \
-  || ! -f "${PETCLAW_REMOTE_PUBLIC_KEY}" || -L "${PETCLAW_REMOTE_PUBLIC_KEY}" ]]; then
-  echo "ERROR: remote verification helper or public key is missing." >&2
+  || ! -f "${PETCLAW_REMOTE_PUBLIC_KEY}" || -L "${PETCLAW_REMOTE_PUBLIC_KEY}" \
+  || ! -f "${PETCLAW_REMOTE_DB_URL_PARSER}" || -L "${PETCLAW_REMOTE_DB_URL_PARSER}" ]]; then
+  echo "ERROR: remote verification helper, public key, or database URL parser is missing." >&2
   exit 2
 fi
 chmod 700 "${PETCLAW_REMOTE_HELPER}"
 chmod 600 "${PETCLAW_REMOTE_PUBLIC_KEY}"
+chmod 700 "${PETCLAW_REMOTE_DB_URL_PARSER}"
 
 mapfile -t PETCLAW_ONLINE_APPS < <(pm2 jlist | node -e '
   let raw = "";
@@ -356,8 +364,30 @@ if [[ ! -d /opt/petclaw/uploads || -L /opt/petclaw/uploads ]]; then
   echo "ERROR: local upload directory is missing or is a symlink." >&2
   exit 2
 fi
-pg_dump -Fc --no-owner --no-acl --dbname="$DATABASE_URL" \
+PGPASSWORD=
+while IFS=$'\t' read -r PETCLAW_DB_FIELD PETCLAW_DB_VALUE_B64; do
+  PETCLAW_DB_VALUE="$(printf '%s' "${PETCLAW_DB_VALUE_B64}" | base64 -d)"
+  case "${PETCLAW_DB_FIELD}" in
+    HOST) PGHOST="${PETCLAW_DB_VALUE}" ;;
+    PORT) PGPORT="${PETCLAW_DB_VALUE}" ;;
+    USER) PGUSER="${PETCLAW_DB_VALUE}" ;;
+    PASSWORD) PGPASSWORD="${PETCLAW_DB_VALUE}" ;;
+    DATABASE) PGDATABASE="${PETCLAW_DB_VALUE}" ;;
+    SSLMODE) PGSSLMODE="${PETCLAW_DB_VALUE}" ;;
+    *) echo "ERROR: database URL parser returned an unknown field." >&2; exit 2 ;;
+  esac
+done < <(DATABASE_URL="${DATABASE_URL}" node "${PETCLAW_REMOTE_DB_URL_PARSER}")
+if [[ -z "${PGHOST:-}" || -z "${PGPORT:-}" || -z "${PGUSER:-}" \
+  || -z "${PGDATABASE:-}" || -z "${PGSSLMODE:-}" ]]; then
+  echo "ERROR: database URL parser returned incomplete connection fields." >&2
+  exit 2
+fi
+PGHOST="${PGHOST}" PGPORT="${PGPORT}" PGUSER="${PGUSER}" \
+PGPASSWORD="${PGPASSWORD}" PGDATABASE="${PGDATABASE}" PGSSLMODE="${PGSSLMODE}" \
+  pg_dump -Fc --no-owner --no-acl \
   > "${PETCLAW_REMOTE_STAGE}/petclaw-postgres.dump"
+unset DATABASE_URL PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE PGSSLMODE \
+  PETCLAW_DB_FIELD PETCLAW_DB_VALUE PETCLAW_DB_VALUE_B64
 tar -C /opt/petclaw --numeric-owner -czf \
   "${PETCLAW_REMOTE_STAGE}/petclaw-uploads.tar.gz" uploads
 chmod 600 "${PETCLAW_REMOTE_STAGE}/petclaw-postgres.dump" \
