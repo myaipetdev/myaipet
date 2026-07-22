@@ -36,6 +36,7 @@ import {
   type Vibe,
   type LengthTarget,
 } from "@/lib/studio/shortsPlan";
+import { getAuthHeaders } from "@/lib/api";
 
 // ── Editorial tokens (mirrors the studio chrome) ─────────────────────────────
 const T = {
@@ -88,12 +89,24 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
   const [currentIdx, setCurrentIdx] = useState(0);
   const [copied, setCopied] = useState<string | null>(null);
 
+  // Optional AI caption polish (signed-in, metered like the Director). Holds
+  // per-scene rewritten captions keyed by scene id; the base plan stays free.
+  const [polish, setPolish] = useState<Record<string, string>>({});
+  const [polishBusy, setPolishBusy] = useState(false);
+  const [polishMsg, setPolishMsg] = useState<string | null>(null);
+
   // Live plan: once the user has planned once, the plan tracks script/target/vibe
   // so tweaking the vibe or length re-plans instantly (all client-side, no cost).
   const plan: ShortsPlan | null = useMemo(() => {
     if (!hasPlanned || script.trim().length === 0) return null;
-    return buildShortsPlan({ script, target, vibe, subject: subjectSeed || undefined });
-  }, [hasPlanned, script, target, vibe, subjectSeed]);
+    const base = buildShortsPlan({ script, target, vibe, subject: subjectSeed || undefined });
+    if (!Object.keys(polish).length) return base;
+    // Overlay AI-polished captions without touching timing / shots / structure.
+    return { ...base, scenes: base.scenes.map((s) => (polish[s.id] ? { ...s, caption: polish[s.id] } : s)) };
+  }, [hasPlanned, script, target, vibe, subjectSeed, polish]);
+
+  // Any change to the base plan inputs invalidates stale polished captions.
+  useEffect(() => { setPolish({}); setPolishMsg(null); }, [script, target, vibe]);
 
   // Keep the selected scene in range as the plan changes.
   useEffect(() => {
@@ -133,6 +146,36 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
     if (script.trim().length === 0) return;
     setHasPlanned(true);
     setCurrentIdx(0);
+  };
+
+  // AI polish: rewrite each scene's on-screen caption. Timing/shots/structure
+  // stay exactly as the free planner produced them.
+  const doPolish = async () => {
+    if (!plan || polishBusy) return;
+    setPolishBusy(true);
+    setPolishMsg(null);
+    try {
+      const res = await fetch("/api/studio/shorts-polish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({
+          scenes: plan.scenes.map((s) => ({ id: s.id, role: s.role, caption: s.caption, direction: s.direction })),
+          vibe: plan.vibe,
+          subject: plan.subject,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) { setPolishMsg("Sign in on the Video Prompt tab to use AI polish."); return; }
+      if (!res.ok) { setPolishMsg(data?.error || "AI polish is unavailable right now."); return; }
+      const map: Record<string, string> = {};
+      for (const c of data?.captions ?? []) if (c?.id && c?.caption) map[c.id] = String(c.caption);
+      if (Object.keys(map).length) { setPolish(map); setPolishMsg("Captions polished ✓"); }
+      else setPolishMsg("No captions came back — the free plan is still perfect.");
+    } catch {
+      setPolishMsg("Network error — try again.");
+    } finally {
+      setPolishBusy(false);
+    }
   };
 
   const current = plan ? plan.scenes[Math.min(currentIdx, plan.scenes.length - 1)] : null;
@@ -191,6 +234,33 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
           Turn an idea into a timecoded shot list — hook, body, payoff — with captions and shot types.
           It <strong style={{ color: T.muted2 }}>plans the sequence</strong>; it doesn&rsquo;t assemble the final video.
         </p>
+
+        {/* Intended two-step workflow — the planner is the fast skeleton; the
+            Director turns any one scene into a full cinematic prompt. */}
+        <div style={{
+          marginTop: 14, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "stretch",
+        }}>
+          {[
+            { n: "1", t: "Plan the skeleton here", d: "Free & instant — hook, body, payoff with timecodes, captions and shot types.", tag: "This tab" },
+            { n: "2", t: "Send a scene → Video Prompt", d: "The Director expands that one scene into a full cinematic, model-ready prompt.", tag: "→ Director" },
+            { n: "3", t: "Generate & assemble", d: "Render each scene in the Video Prompt tab, then cut them together in your editor.", tag: "You / editor" },
+          ].map((step) => (
+            <div key={step.n} style={{
+              flex: "1 1 180px", minWidth: 0, background: T.inset, border: `1px solid ${T.hair}`,
+              borderRadius: 12, padding: "12px 14px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <span style={{
+                  width: 22, height: 22, borderRadius: 7, background: T.terra, color: T.creamOn,
+                  fontFamily: T.m, fontWeight: 800, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center",
+                }}>{step.n}</span>
+                <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: T.terraSub, textTransform: "uppercase" }}>{step.tag}</span>
+              </div>
+              <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 14, color: T.ink, marginBottom: 3 }}>{step.t}</div>
+              <div style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, lineHeight: 1.45 }}>{step.d}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ── Controls ── */}
@@ -492,18 +562,49 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
                 Sequence plan only — no rendering, no fabricated view counts.
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => copyText(planToText(plan), "plan")}
-              style={{
-                minHeight: 48, padding: "13px 22px", borderRadius: 12, border: "none",
-                background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: T.ink,
-                fontFamily: T.disp, fontWeight: 800, fontSize: 15, letterSpacing: "0.01em",
-                cursor: "pointer", boxShadow: "3px 3px 0 rgba(154,78,30,.32)", whiteSpace: "nowrap",
-              }}
-            >
-              {copied === "plan" ? "Plan copied ✓" : "Copy shorts plan"}
-            </button>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+              <button
+                type="button"
+                onClick={doPolish}
+                disabled={polishBusy}
+                title="Rewrite each on-screen caption with AI — timing and shots stay the same"
+                style={{
+                  minHeight: 48, padding: "13px 18px", borderRadius: 12,
+                  border: `1px solid ${T.terra}`, background: T.paper, color: T.terraSub,
+                  fontFamily: T.m, fontWeight: 700, fontSize: 12.5, letterSpacing: "0.06em",
+                  textTransform: "uppercase", cursor: polishBusy ? "default" : "pointer",
+                  opacity: polishBusy ? 0.65 : 1, whiteSpace: "nowrap",
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                }}
+              >
+                <span aria-hidden style={{ fontSize: 14 }}>✨</span>
+                {polishBusy ? "Polishing…" : Object.keys(polish).length ? "Re-polish captions" : "AI polish captions · beta"}
+              </button>
+              <button
+                type="button"
+                onClick={() => copyText(planToText(plan), "plan")}
+                style={{
+                  minHeight: 48, padding: "13px 22px", borderRadius: 12, border: "none",
+                  background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: T.ink,
+                  fontFamily: T.disp, fontWeight: 800, fontSize: 15, letterSpacing: "0.01em",
+                  cursor: "pointer", boxShadow: "3px 3px 0 rgba(154,78,30,.32)", whiteSpace: "nowrap",
+                }}
+              >
+                {copied === "plan" ? "Plan copied ✓" : "Copy shorts plan"}
+              </button>
+            </div>
+          </div>
+
+          {/* AI polish status + honest note */}
+          <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+            {polishMsg && (
+              <span style={{ fontFamily: T.body, fontSize: 13, color: /✓/.test(polishMsg) ? T.thrive : T.terra }}>
+                {polishMsg}
+              </span>
+            )}
+            <span style={{ fontFamily: T.m, fontSize: 12, color: T.mono, letterSpacing: "0.02em" }}>
+              AI polish rewrites only the captions (timing &amp; shots stay); signed-in, free in beta.
+            </span>
           </div>
 
           {/* Clipboard-blocked soft hint */}
