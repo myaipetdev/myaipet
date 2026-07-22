@@ -128,6 +128,7 @@ export async function GET(
         ) p ON true
        WHERE g.status = 'completed'
          AND g.visibility = 'public'
+         AND g.source_kind = 'user'
          AND NOT EXISTS (SELECT 1 FROM pet_insights pi WHERE pi.video_generation_id = g.id)
          AND (
            g.pet_id IS NULL OR EXISTS (

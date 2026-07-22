@@ -56,13 +56,38 @@ petclaw_expect_failure() {
 
 PETCLAW_FIXTURE="${PETCLAW_TEST_TMP}/release"
 mkdir -p "${PETCLAW_FIXTURE}/web/prisma/migrations/20260101000000_safe" \
+  "${PETCLAW_FIXTURE}/web/prisma/migrations/20260615000000_memory_fts" \
+  "${PETCLAW_FIXTURE}/web/prisma/baseline" \
   "${PETCLAW_FIXTURE}/deploy"
 printf '%s\n' 'CREATE TABLE "safe_table" ("id" INTEGER PRIMARY KEY);' \
   > "${PETCLAW_FIXTURE}/web/prisma/migrations/20260101000000_safe/migration.sql"
+printf '%s\n' 'ALTER TABLE "pet_memories" ADD COLUMN "content_tsv" tsvector;' \
+  > "${PETCLAW_FIXTURE}/web/prisma/migrations/20260615000000_memory_fts/migration.sql"
+printf '%s\n' '20260615000000_memory_fts' \
+  > "${PETCLAW_FIXTURE}/web/prisma/baseline/20260717_migrations.txt"
+printf '%s\n' \
+  '    "content_tsv" tsvector GENERATED ALWAYS AS (to_tsvector('\''simple'\''::regconfig, COALESCE("content", '\'''\''::text))) STORED,' \
+  'CREATE INDEX "pet_memories_content_tsv_idx" ON "pet_memories" USING GIN ("content_tsv");' \
+  'CREATE INDEX "pet_memories_pet_id_created_at_idx" ON "pet_memories"("pet_id", "created_at" DESC);' \
+  > "${PETCLAW_FIXTURE}/web/prisma/baseline/20260717_production.sql"
+printf '%s\n' \
+  '  @@index([content_tsv], type: Gin)' \
+  '  @@index([pet_id, created_at(sort: Desc)])' \
+  > "${PETCLAW_FIXTURE}/web/prisma/schema.prisma"
 printf '%s\n' '# sha256|repository-relative migration path|operator-reviewed reason' \
   > "${PETCLAW_FIXTURE}/deploy/destructive-migrations.allowlist"
 petclaw_expect_success "safe migration passes" /bin/bash \
   "${PETCLAW_TEST_ROOT}/deploy/check-release-migrations.sh" "${PETCLAW_FIXTURE}"
+cp "${PETCLAW_FIXTURE}/web/prisma/baseline/20260717_production.sql" \
+  "${PETCLAW_FIXTURE}/web/prisma/baseline/20260717_production.sql.good"
+printf '%s\n' \
+  '    "content_tsv" tsvector GENERATED ALWAYS AS (to_tsvector('\''simple'\''::regconfig, COALESCE("content", '\'''\''::text))) STORED,' \
+  'CREATE INDEX "pet_memories_content_tsv_idx" ON "pet_memories" USING GIN ("content_tsv");' \
+  > "${PETCLAW_FIXTURE}/web/prisma/baseline/20260717_production.sql"
+petclaw_expect_failure "falsely resolved baseline object fails" /bin/bash \
+  "${PETCLAW_TEST_ROOT}/deploy/check-release-migrations.sh" "${PETCLAW_FIXTURE}"
+mv "${PETCLAW_FIXTURE}/web/prisma/baseline/20260717_production.sql.good" \
+  "${PETCLAW_FIXTURE}/web/prisma/baseline/20260717_production.sql"
 
 mkdir -p "${PETCLAW_FIXTURE}/web/prisma/migrations/20260102000000_delete"
 printf '%s\n' 'DELETE FROM "users" WHERE "id" < 0;' \
@@ -82,6 +107,19 @@ printf '%s|%s|%s\n' "${PETCLAW_DELETE_SHA}" \
   'web/prisma/migrations/20260102000000_delete/migration.sql' 'fixture approval' \
   >> "${PETCLAW_FIXTURE}/deploy/destructive-migrations.allowlist"
 petclaw_expect_success "exact destructive checksum passes" /bin/bash \
+  "${PETCLAW_TEST_ROOT}/deploy/check-release-migrations.sh" "${PETCLAW_FIXTURE}"
+mkdir -p "${PETCLAW_FIXTURE}/web/prisma/migrations/20260102500000_update_backfill"
+printf '%s\n' 'UPDATE "safe_table" SET "id" = "id" WHERE "id" < 0;' \
+  > "${PETCLAW_FIXTURE}/web/prisma/migrations/20260102500000_update_backfill/migration.sql"
+petclaw_expect_failure "unapproved release-path UPDATE fails" /bin/bash \
+  "${PETCLAW_TEST_ROOT}/deploy/check-release-migrations.sh" "${PETCLAW_FIXTURE}"
+PETCLAW_UPDATE_SHA="$(petclaw_sha256 \
+  "${PETCLAW_FIXTURE}/web/prisma/migrations/20260102500000_update_backfill/migration.sql")"
+printf '%s|%s|%s\n' "${PETCLAW_UPDATE_SHA}" \
+  'web/prisma/migrations/20260102500000_update_backfill/migration.sql' \
+  'fixture data-mutation approval' \
+  >> "${PETCLAW_FIXTURE}/deploy/destructive-migrations.allowlist"
+petclaw_expect_success "exact release-path UPDATE checksum passes" /bin/bash \
   "${PETCLAW_TEST_ROOT}/deploy/check-release-migrations.sh" "${PETCLAW_FIXTURE}"
 mkdir -p "${PETCLAW_FIXTURE}/web/prisma/migrations/20260103000000_drop_index"
 printf '%s\n' 'DROP INDEX "safe_table_id_idx";' \
@@ -248,7 +286,13 @@ const fs = require("node:fs");
 const path = require("node:path");
 const root = process.argv[2];
 const pkg = JSON.parse(fs.readFileSync(path.join(root, "web/package.json"), "utf8"));
-for (const name of ["test:release-readiness", "test:community-fallback"]) {
+for (const name of [
+  "test:ui-contract",
+  "test:release-readiness",
+  "test:community-fallback",
+  "verify:artifact",
+  "test:llm-router-live",
+]) {
   const script = pkg.scripts[name];
   const match = script?.match(/scripts\/([^\s]+)/);
   if (!match || match[1].includes(".test.")
@@ -391,7 +435,7 @@ for PETCLAW_CONTRACT in \
   'release-smoke.sh:expect_env_exact AGENT_CHANNELS_ENABLED false' \
   'release-smoke.sh:expect_env_exact PET_LORA_ENABLED false' \
   'release-smoke.sh:expect_env_exact BLOCKCHAIN_ENABLED false' \
-  'release-smoke.sh:PETCLAW_EXPECTED_EXTENSION_VERSION="2.4.0"' \
+  'release-smoke.sh:PETCLAW_EXPECTED_EXTENSION_VERSION="2.4.1"' \
   'release-smoke.sh:built "${PETCLAW_RELEASE_ROOT}"' \
   'release-smoke.sh:petclaw_verify_release_source_contracts' \
   'release-smoke.sh:expect_code 200 GET "/account"' \

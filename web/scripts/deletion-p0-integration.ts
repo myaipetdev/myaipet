@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -39,15 +39,22 @@ async function main() {
   const { userCanAssignApplicationMedia, userOwnsApplicationMedia } = await import("../src/lib/mediaOwnership");
   const { persistGenerationMediaWithLease } = await import("../src/lib/services/generation-media-core");
   const { PETCLAW_PROTOCOL } = await import("../src/lib/petclaw/petclaw");
+  const {
+    markPetAgentRunRunningWithDb,
+    PetAgentRunActiveError,
+    reservePetAgentRunWithDb,
+    settlePetAgentRunWithDb,
+  } = await import("../src/lib/petclaw/agent/run-ledger");
   const { deleteStoredFile, storedFileExists, uploadFile } = await import("../src/lib/storage");
 
   let sharedArchiveRef = "";
   try {
+    const randomWallet = () => `0x${(randomUUID().replaceAll("-", "") + randomUUID().replaceAll("-", "")).slice(0, 40)}`;
     const owner = await prisma.user.create({
-      data: { wallet_address: "0x1111111111111111111111111111111111111111", nonce: "owner-nonce" },
+      data: { wallet_address: randomWallet(), nonce: randomUUID().replaceAll("-", "") },
     });
     const survivor = await prisma.user.create({
-      data: { wallet_address: "0x2222222222222222222222222222222222222222", nonce: "survivor-nonce" },
+      data: { wallet_address: randomWallet(), nonce: randomUUID().replaceAll("-", "") },
     });
     const deletedPet = await prisma.pet.create({
       data: { user_id: owner.id, name: "Private Rival", species: 0 },
@@ -55,6 +62,204 @@ async function main() {
     const playerPet = await prisma.pet.create({
       data: { user_id: survivor.id, name: "Replay Owner", species: 1 },
     });
+
+    // A reserved run may still start provider inference, which deletion cannot
+    // cancel. Full deletion therefore fails atomically with a typed conflict:
+    // pet, wallet, reservation, and private run payload all stay unchanged.
+    await prisma.user.update({ where: { id: owner.id }, data: { credits: 100 } });
+    const creditVictim = await prisma.pet.create({
+      data: { user_id: owner.id, name: "Blocked Delete", species: 0 },
+    });
+    const creditRunId = randomUUID();
+    const creditRun = await reservePetAgentRunWithDb(prisma, {
+      runId: creditRunId,
+      userId: owner.id,
+      petId: creditVictim.id,
+      petName: creditVictim.name,
+      goal: "private active goal",
+      maxSteps: 4,
+      amount: 5,
+    });
+    assert.equal(creditRun.kind, "created");
+    const activeBeforeDelete = await prisma.petAgentRun.findFirstOrThrow({ where: { run_id: creditRunId } });
+    const reservationBeforeDelete = await prisma.agentCreditReservation.findUniqueOrThrow({
+      where: { id: activeBeforeDelete.reservation_id! },
+    });
+    await assert.rejects(
+      deletePetData(creditVictim.id, owner.id),
+      (error: unknown) => error instanceof PetAgentRunActiveError
+        && error.code === "agent_run_in_progress"
+        && error.runId === creditRunId
+        && error.state === "reserved",
+    );
+    assert.ok(await prisma.pet.findUnique({ where: { id: creditVictim.id } }));
+    assert.equal((await prisma.user.findUniqueOrThrow({ where: { id: owner.id } })).credits, 95);
+    const untouchedActive = await prisma.petAgentRun.findFirstOrThrow({ where: { run_id: creditRunId } });
+    assert.equal(untouchedActive.state, "reserved");
+    assert.equal(untouchedActive.started_at, null, "blocked deletion cannot start inference");
+    assert.equal(untouchedActive.pet_name, creditVictim.name);
+    assert.equal(untouchedActive.goal, "private active goal");
+    assert.equal(untouchedActive.updated_at.getTime(), activeBeforeDelete.updated_at.getTime());
+    const untouchedReservation = await prisma.agentCreditReservation.findUniqueOrThrow({ where: { id: untouchedActive.reservation_id! } });
+    assert.equal(untouchedReservation.status, "reserved");
+    assert.equal(untouchedReservation.settled_at, reservationBeforeDelete.settled_at);
+
+    // A refunded terminal receipt survives deletion, but private content does
+    // not. Pet cascade removes the reservation and sets receipt linkage null.
+    await settlePetAgentRunWithDb(prisma, {
+      userId: owner.id,
+      petId: creditVictim.id,
+      runId: creditRunId,
+      outcome: "refunded",
+      completed: false,
+      answer: "private answer must be scrubbed",
+      steps: [{ output: "private trace must be scrubbed" }],
+      stoppedReason: "planner_error",
+      billing: {
+        outcome: "refunded",
+        creditsCharged: 0,
+        reason: "run_not_completed",
+        successfulToolCalls: 0,
+        failedToolCalls: 0,
+        committedSideEffects: 0,
+        usageKnown: true,
+        modelCalls: 0,
+        orchestratorModelCalls: 0,
+        skillModelCalls: 0,
+      },
+    });
+    const refundedDeletion = await deletePetData(creditVictim.id, owner.id);
+    assert.deepEqual(refundedDeletion.agentReceipts, { scrubbedReceipts: 1 });
+    assert.equal((await prisma.user.findUniqueOrThrow({ where: { id: owner.id } })).credits, 100);
+    const refundedReceipt = await prisma.petAgentRun.findFirstOrThrow({ where: { run_id: creditRunId } });
+    assert.equal(await prisma.petAgentRun.count({ where: { run_id: creditRunId } }), 1);
+    assert.equal(refundedReceipt.state, "terminal");
+    assert.equal(refundedReceipt.user_id, owner.id);
+    assert.equal(refundedReceipt.pet_id, creditVictim.id);
+    assert.ok(refundedReceipt.created_at instanceof Date && refundedReceipt.terminal_at instanceof Date);
+    assert.equal((refundedReceipt.billing as any)?.outcome, "refunded");
+    assert.equal(refundedReceipt.credits_remaining, 100);
+    assert.equal(refundedReceipt.pet_name, "Deleted Pet");
+    assert.equal(refundedReceipt.goal, "[deleted]");
+    assert.equal(refundedReceipt.answer, "");
+    assert.deepEqual(refundedReceipt.steps, []);
+    assert.equal(refundedReceipt.reservation_id, null);
+
+    // Settlement-first deletion preserves one charged financial receipt and
+    // the exact charged balance while scrubbing every private text/trace field.
+    const chargedVictim = await prisma.pet.create({
+      data: { user_id: owner.id, name: "Charged Delete", species: 0 },
+    });
+    const chargedRunId = randomUUID();
+    assert.equal((await reservePetAgentRunWithDb(prisma, {
+      runId: chargedRunId,
+      userId: owner.id,
+      petId: chargedVictim.id,
+      petName: chargedVictim.name,
+      goal: "private charged goal",
+      maxSteps: 4,
+      amount: 5,
+    })).kind, "created");
+    await markPetAgentRunRunningWithDb(prisma, owner.id, chargedVictim.id, chargedRunId);
+    await assert.rejects(
+      markPetAgentRunRunningWithDb(prisma, owner.id, chargedVictim.id, chargedRunId),
+      /could not transition from reserved to running/,
+    );
+    await settlePetAgentRunWithDb(prisma, {
+      userId: owner.id,
+      petId: chargedVictim.id,
+      runId: chargedRunId,
+      outcome: "charged",
+      completed: true,
+      answer: "private charged answer",
+      steps: [{ output: "private charged trace" }],
+      stoppedReason: "completed",
+      billing: {
+        outcome: "charged", creditsCharged: 5, reason: "completed_with_direct_answer",
+        successfulToolCalls: 0, failedToolCalls: 0, committedSideEffects: 0,
+        usageKnown: true, modelCalls: 1, orchestratorModelCalls: 1, skillModelCalls: 0,
+      },
+    });
+    const chargedDeletion = await deletePetData(chargedVictim.id, owner.id);
+    assert.deepEqual(chargedDeletion.agentReceipts, { scrubbedReceipts: 1 });
+    assert.equal((await prisma.user.findUniqueOrThrow({ where: { id: owner.id } })).credits, 95);
+    const chargedReceipt = await prisma.petAgentRun.findFirstOrThrow({ where: { run_id: chargedRunId } });
+    assert.equal(await prisma.petAgentRun.count({ where: { run_id: chargedRunId } }), 1);
+    assert.equal(chargedReceipt.user_id, owner.id);
+    assert.equal(chargedReceipt.pet_id, chargedVictim.id);
+    assert.ok(chargedReceipt.created_at instanceof Date && chargedReceipt.terminal_at instanceof Date);
+    assert.equal((chargedReceipt.billing as any)?.outcome, "charged");
+    assert.equal(chargedReceipt.credits_remaining, 95);
+    assert.equal(chargedReceipt.pet_name, "Deleted Pet");
+    assert.equal(chargedReceipt.goal, "[deleted]");
+    assert.equal(chargedReceipt.answer, "");
+    assert.deepEqual(chargedReceipt.steps, []);
+    assert.equal(chargedReceipt.reservation_id, null);
+
+    // PostgreSQL deletion-vs-settlement has two safe linearizations: terminal
+    // settlement wins and deletion succeeds, or active detection wins and
+    // deletion returns 409 while settlement completes. A retry then scrubs.
+    for (let iteration = 0; iteration < 8; iteration += 1) {
+      await prisma.user.update({ where: { id: owner.id }, data: { credits: 100 } });
+      const raceVictim = await prisma.pet.create({
+        data: { user_id: owner.id, name: `Credit Race ${iteration}`, species: 0 },
+      });
+      const raceRunId = randomUUID();
+      const reservedRace = await reservePetAgentRunWithDb(prisma, {
+        runId: raceRunId,
+        userId: owner.id,
+        petId: raceVictim.id,
+        petName: raceVictim.name,
+        goal: "settle or erase atomically",
+        maxSteps: 4,
+        amount: 5,
+      });
+      assert.equal(reservedRace.kind, "created");
+      await markPetAgentRunRunningWithDb(prisma, owner.id, raceVictim.id, raceRunId);
+      const [deletedRace, settledRace] = await Promise.allSettled([
+        deletePetData(raceVictim.id, owner.id),
+        settlePetAgentRunWithDb(prisma, {
+          userId: owner.id,
+          petId: raceVictim.id,
+          runId: raceRunId,
+          outcome: "charged",
+          completed: true,
+          answer: "done",
+          steps: [],
+          stoppedReason: "completed",
+          billing: {
+            outcome: "charged",
+            creditsCharged: 5,
+            reason: "completed_with_direct_answer",
+            successfulToolCalls: 0,
+            failedToolCalls: 0,
+            committedSideEffects: 0,
+            usageKnown: true,
+            modelCalls: 1,
+            orchestratorModelCalls: 1,
+            skillModelCalls: 0,
+          },
+        }),
+      ]);
+      assert.equal(settledRace.status, "fulfilled", "active deletion can never erase settlement state");
+      if (deletedRace.status === "rejected") {
+        assert.ok(deletedRace.reason instanceof PetAgentRunActiveError);
+        assert.ok(await prisma.pet.findUnique({ where: { id: raceVictim.id } }));
+        await deletePetData(raceVictim.id, owner.id);
+      } else {
+        assert.deepEqual(deletedRace.value.agentReceipts, { scrubbedReceipts: 1 });
+      }
+      assert.equal((await prisma.user.findUniqueOrThrow({ where: { id: owner.id } })).credits, 95);
+      assert.equal(await prisma.pet.findUnique({ where: { id: raceVictim.id } }), null);
+      const raceReceipt = await prisma.petAgentRun.findFirstOrThrow({ where: { run_id: raceRunId } });
+      assert.equal((raceReceipt.billing as any)?.outcome, "charged");
+      assert.equal(raceReceipt.pet_name, "Deleted Pet");
+      assert.equal(raceReceipt.goal, "[deleted]");
+      assert.equal(raceReceipt.answer, "");
+      assert.deepEqual(raceReceipt.steps, []);
+      assert.equal(raceReceipt.reservation_id, null);
+      assert.equal(await prisma.agentCreditReservation.count({ where: { pet_id: raceVictim.id } }), 0);
+    }
 
     const sharedArchive = await uploadFile(
       `lora-train/pet-${deletedPet.id}-1000.zip`,
@@ -107,7 +312,7 @@ async function main() {
         pet_id: deletedPet.id,
         action_key: "feed_extra",
         amount_usd: 0.1,
-        tx_hash: `0x${"de".repeat(32)}`,
+        tx_hash: `0x${(randomUUID().replaceAll("-", "") + randomUUID().replaceAll("-", "")).slice(0, 64)}`,
       },
     });
 
@@ -470,6 +675,7 @@ async function main() {
       triggerRedacted: true,
       archiveOutbox: true,
       snapshotRaces: 3,
+      agentCreditDeletionRaces: 8,
       arenaLockOrder: true,
       moodScope: true,
       fairOutbox: true,

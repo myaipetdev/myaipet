@@ -60,6 +60,11 @@ for PETCLAW_REQUIRED_PATH in \
   web/package-lock.json \
   web/package.json \
   web/public/petclaw-extension.zip \
+  web/scripts/community-fallback-contract.ts \
+  web/scripts/llm-router-smoke.ts \
+  web/scripts/release-readiness-contract.mjs \
+  web/scripts/ui-contract-audit.mjs \
+  web/scripts/verify-standalone-artifact.mjs \
   web/src/lib/petclaw-extension.ts \
   deploy/ec2-release.sh \
   deploy/parse-database-url.mjs \
@@ -143,6 +148,10 @@ if [[ "$(grep -Fxc \
     "PETCLAW_EXPECTED_EXTENSION_VERSION=\"${PETCLAW_EXTENSION_VERSION}\"" \
     "${PETCLAW_STAGE}/tree/deploy/release-smoke.sh" || true)" != "1" ]]; then
   echo "ERROR: committed extension manifest, dashboard, and release smoke versions differ." >&2
+  exit 2
+fi
+if ! /bin/bash "${PETCLAW_STAGE}/tree/scripts/build-petclaw-extension.sh" --check; then
+  echo "ERROR: committed extension archives are stale or differ from their source." >&2
   exit 2
 fi
 for PETCLAW_EXTENSION_ARCHIVE in \

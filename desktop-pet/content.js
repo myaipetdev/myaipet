@@ -809,7 +809,7 @@
       <div class="aipet-menu-divider"></div>
       <button type="button" role="menuitem" class="aipet-menu-item" data-action="skills"><span class="icon">\u2728</span> Skills</button>
       <button type="button" role="menuitem" class="aipet-menu-item" data-action="selfie" disabled title="Coming soon"><span class="icon">\uD83D\uDCF8</span> Selfie — Coming soon</button>
-      <button type="button" role="menuitem" class="aipet-menu-item" data-action="export"><span class="icon">\uD83D\uDCE6</span> Export SOUL</button>
+      <button type="button" role="menuitem" class="aipet-menu-item" data-action="export"><span class="icon">\uD83D\uDCE6</span> Manage SOUL in dashboard</button>
       <div class="aipet-menu-divider"></div>
       <button type="button" role="menuitem" class="aipet-menu-item" data-action="sleep"><span class="icon">\uD83D\uDCA4</span> Sleep</button>
       <button type="button" role="menuitem" class="aipet-menu-item" data-action="hide"><span class="icon">\u23F8</span> Pause on this site</button>
@@ -939,29 +939,13 @@
         break;
 
       case "export":
-        if (!config.paired) {
-          showBubble("Pair your pet in extension Settings before exporting SOUL data.", 4000);
-          break;
-        }
-        showBubble("\uD83D\uDCE6 Exporting SOUL data...", 2000);
-        chrome.runtime.sendMessage({ type: "exportSoul" }, (res) => {
+        // Broad SOUL export/import is intentionally outside the reduced pex_
+        // token. Open the first-party dashboard where the owner's web session
+        // can authorize the sensitive operation.
+        chrome.runtime.sendMessage({ type: "openSovereignty" }, (res) => {
           const runtimeError = chrome.runtime.lastError;
-          if (res?.data) {
-            const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            const safeName = String(config.petName || "pet").replace(/[^A-Za-z0-9._-]+/g, "_").slice(0, 80) || "pet";
-            a.download = `${safeName}_SOUL.json`;
-            shadowRoot.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-            showBubble("\u2705 SOUL exported! Your data, your rules.", 4000);
-            burstParticles(["\uD83D\uDCE6", "\u2705"], 3);
-          } else {
-            showBubble(runtimeError ? "\u274C PetClaw is unavailable right now." : "\u274C Export failed. Check your pairing in Settings.", 3500);
-          }
+          if (runtimeError || !res?.success) showBubble("\u274C I couldn't open the secure dashboard.", 3500);
+          else showBubble("\uD83D\uDD10 Opened the secure SOUL dashboard in a new tab.", 4000);
         });
         break;
 

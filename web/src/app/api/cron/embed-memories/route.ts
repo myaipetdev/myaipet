@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { callEmbedding } from "@/lib/llm/router";
+import { isProviderSafeRetainedText } from "@/lib/petclaw/memory/persistent-memory";
 
 const PER_PET_CAP = 300; // memories embedded per pet per run
 const BATCH = 64;
@@ -44,7 +45,13 @@ export async function POST(req: NextRequest) {
       orderBy: { created_at: "desc" },
       take: 1000,
     });
-    const todo = mems.filter((m) => !m.embedding && m.content?.trim()).slice(0, PER_PET_CAP);
+    const todo = mems
+      .filter((memory) =>
+        !memory.embedding
+        && memory.content?.trim()
+        && isProviderSafeRetainedText(`embedding_memory ${memory.content}`),
+      )
+      .slice(0, PER_PET_CAP);
     for (let i = 0; i < todo.length; i += BATCH) {
       const chunk = todo.slice(i, i + BATCH);
       const vecs = await callEmbedding(chunk.map((m) => m.content), pet.id).catch(() => null);

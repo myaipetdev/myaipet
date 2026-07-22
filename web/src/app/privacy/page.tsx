@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description: "Privacy Policy for the PetClaw Protocol and MY AI PET.",
 };
 
-const LAST_UPDATED = "2026-07-21";
+const LAST_UPDATED = "2026-07-22";
 
 export default function PrivacyPage() {
   return (
@@ -31,9 +31,10 @@ export default function PrivacyPage() {
 
         <Section title="1. Data We Collect">
           (a) Wallet address (public). (b) Pet metadata, interaction history, and AI-generated
-          memory entries you create. (c) Uploaded pet photos. (d) Server logs (IP, user agent,
-          timestamps) for security and abuse prevention. We do not collect government IDs, payment
-          card numbers, or biometric data.
+          memory entries you create. (c) Uploaded pet photos. (d) Paid agent-run records, including
+          the client run ID, processing state, credit reservation or charge outcome, and timestamps.
+          (e) Server logs (IP, user agent, timestamps) for security and abuse prevention. We do not
+          collect government IDs, payment card numbers, or biometric data.
         </Section>
 
         <Section title="2. Location & Wild Catches">
@@ -59,14 +60,18 @@ export default function PrivacyPage() {
         <Section title="4. AI Processing">
           Pet conversations, relevant memory context, and image/video prompts are sent to
           third-party AI providers under their respective data processing terms. Platform-funded
-          text processing uses xAI Grok first and may send the same prompt and context to OpenAI
-          after a transient, rate-limit, or provider-spend failure. Uploaded pet images are sent to
+          chat uses OpenAI first and may send the same prompt and relevant retained context to xAI
+          Grok after an eligible transient, rate-limit, or provider-spend failure. Other text tasks
+          use their configured task route and may use the documented provider fallback. Uploaded pet images are sent to
           xAI for animal validation and appearance description and may be retried with OpenAI after
           eligible provider failures. Pet avatar, personal image, and Pet video generation use xAI;
           Studio generation uses FAL. Private reference images are sent as verified inline bytes
           rather than public storage links. If you connect your own model for a task, that provider
           processes the task with your
           key; a broken matching connection is not replaced with a platform provider. These
+          owner-model scopes cover chat, agent reasoning, and judging; an empty selection means
+          those three tasks, not internal extraction, summarization, or persona processing. Tasks
+          without a matching owner-model scope use the platform-managed route described above. These
           providers may process your input transiently to produce a response. We do not authorize
           them to retain your data for model training.
         </Section>
@@ -93,7 +98,10 @@ export default function PrivacyPage() {
           You can: (a) export your pet&apos;s portable SOUL bundle and linked activity data via
           Sovereignty → Export SOUL Data; (b) remove pet-scoped records and owned media from active
           systems via Sovereignty → Delete Pet Data, which produces a SHA-256 deletion receipt;
-          and (c) change consent settings at any time. Public on-chain records cannot be erased.
+          and (c) change consent settings at any time. Deletion is blocked while that pet has a
+          reserved or running paid agent task, so the owner can reconcile the task first. Once it
+          reaches a terminal state, deletion removes its pet name, goal, answer, and step trace but
+          keeps the minimal owner-scoped financial receipt described below. Public on-chain records cannot be erased.
           For account-level requests or records that cannot yet be linked to one pet, contact
           support@myaipet.ai.
         </Section>
@@ -103,7 +111,10 @@ export default function PrivacyPage() {
           application logs are retained for up to 90 days. Encrypted, access-restricted off-host
           backup sets are retained for up to 90 days and are restore-tested at creation.
           A completed in-product pet deletion removes linked records and owned media from active
-          systems immediately. Backup copies are isolated from active product serving. Retention
+          systems immediately, except for a minimal owner-scoped paid-run receipt used for credit
+          reconciliation, accounting, fraud or dispute handling, and legal obligations. That
+          retained receipt contains the run ID, terminal and billing outcome, credit result, and
+          timestamps; the pet name, goal, answer, and steps are scrubbed. Backup copies are isolated from active product serving. Retention
           policies make backup and versioned-storage residual copies eligible for deletion no later
           than 90 days; cloud lifecycle removal may complete asynchronously after eligibility.
         </Section>

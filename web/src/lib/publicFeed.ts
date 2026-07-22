@@ -2,10 +2,10 @@
  * Canonical privacy guard for every public Generation query.
  *
  * Two independent controls must be honoured before a creation can be public:
- *   1. Daydream-to-video rows are derived from private pet memories. Their
- *      generation ids are linked from pet_insights.video_generation_id and are
- *      never public unless a future, explicit share workflow copies them into a
- *      separately-marked public row.
+ *   1. Generation.source_kind must be exactly "user". This durable provenance
+ *      remains fail-closed even if a mutable link row is missing. Historical
+ *      rows start "unclassified" and stay private until an off-release,
+ *      measured backfill can prove their source.
  *   2. Every row is private unless its owner explicitly publishes it. Pet-linked
  *      output additionally requires that exact pet's Public Profile consent;
  *      generic Studio output is governed by the row-level publish action.
@@ -21,15 +21,6 @@ interface PublicGenerationExtraWhere {
   [key: string]: unknown;
 }
 
-/** Ids of generations that were auto-created from private daydream insights. */
-export async function privateAutoGenIds(): Promise<number[]> {
-  const rows = await prisma.petInsight.findMany({
-    where: { video_generation_id: { not: null } },
-    select: { video_generation_id: true },
-  });
-  return rows.map((r) => r.video_generation_id!).filter((n) => Number.isInteger(n));
-}
-
 /**
  * Build the single fail-closed predicate for a publicly visible creation.
  *
@@ -40,18 +31,18 @@ export async function privateAutoGenIds(): Promise<number[]> {
 export async function publicGenerationWhere(
   extra?: PublicGenerationExtraWhere,
 ): Promise<Record<string, unknown>> {
-  const privateIds = await privateAutoGenIds();
-
   const privacyClauses: Record<string, unknown>[] = [
     { status: "completed" },
     { visibility: "public" },
+    // Generic publication is allowlisted, not denylisted. Any future or
+    // unknown provenance stays private until a dedicated share policy exists.
+    { source_kind: "user" },
     {
       OR: [
         { photo_path: { not: "" } },
         { video_path: { not: null } },
       ],
     },
-    { id: { notIn: privateIds } },
     {
       OR: [
         // Generic Studio output has no pet. Publishing that one item is the

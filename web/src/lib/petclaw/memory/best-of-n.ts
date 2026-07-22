@@ -6,7 +6,8 @@
  * the current mood. Cost is N× the base chat call, so it's gated by env flag
  * and only enabled for high-value paths.
  *
- * Scoring (heuristic, no second LLM call to keep cost ≤N):
+ * The normal selector is a separate LLM judge. If that judge is unavailable,
+ * the following deterministic scoring fallback selects a candidate:
  *   - In-character: matches personality_voice keywords for pet.personality_type
  *   - Length-fit: closer to target_length (Twitter=≤280, default=80) wins
  *   - Pattern-match: if any learned pattern's exemplars share token overlap
@@ -15,6 +16,7 @@
 
 import type { LearnedPattern } from "./self-learning";
 import { callLLM } from "@/lib/llm/router";
+import { isProviderSafeRetainedText } from "./persistent-memory";
 
 export interface ReplyCandidate {
   text: string;
@@ -113,6 +115,17 @@ export function pickBest(candidates: ReplyCandidate[], ctx: {
 
 export const BEST_OF_N_ENABLED = process.env.PETCLAW_BEST_OF_N === "true";
 
+export function isProviderSafeBestOfNContext(
+  candidates: ReplyCandidate[],
+  ctx: { userMessage: string; systemPrompt: string },
+): boolean {
+  return isProviderSafeRetainedText(`judge_system ${ctx.systemPrompt}`)
+    && isProviderSafeRetainedText(`judge_owner_turn ${ctx.userMessage}`)
+    && candidates.every((candidate) =>
+      isProviderSafeRetainedText(`judge_candidate ${candidate.text}`),
+    );
+}
+
 /**
  * CHORUS v2 — LLM-judge selection.
  *
@@ -133,6 +146,10 @@ export async function pickBestLLM(
 ): Promise<{ chosen: ReplyCandidate; reason: string } | null> {
   if (candidates.length === 0) return null;
   if (candidates.length === 1) return { chosen: candidates[0], reason: "only candidate" };
+  // Judging can route to a provider different from chat. Never fan out a
+  // credential-bearing/non-English current turn, retained context, or echoed
+  // candidate to that secondary task.
+  if (!isProviderSafeBestOfNContext(candidates, ctx)) return null;
   const labeled = candidates.map((c, i) => `[${i}]: ${c.text}`).join("\n\n");
   try {
     // Routed via the model router (task:"judge") so a pet-owner's connected model

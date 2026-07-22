@@ -10,7 +10,7 @@
  *                 client-held live SSE run may render LIVE/WORKING today.
  *   - roster    : BUILTIN_SKILLS + learned patterns as "staff", with run counts
  *                 derived from PetAutonomousAction.result.skills frequency, plus the
- *                 5 VIGIL memory stages as always-on staff.
+ *                 VIGIL memory capabilities as an inspectable roster.
  *   - schedules : the 4 cron routines with a human cadence + best-effort last run.
  *
  * Owner-auth via requirePetOwner(?petId). Rate-limited, try/catch, cheap indexed reads
@@ -144,23 +144,8 @@ export async function GET(req: NextRequest) {
       lastAt: skillLastAt[sk.id] || null,
     }));
 
-    // Learned patterns promoted to skills = additional staff (honest, self-taught).
-    const learnedStaff = learnedPatterns
-      .filter((p: any) => p && p.promotedToSkill)
-      .map((p: any) => ({
-        id: `learned:${p.id || p.topic}`,
-        name: p.topic || "Learned skill",
-        kind: "skill" as const,
-        role: "learned",
-        installed: true,
-        status: "idle" as const,
-        runs: p.frequency || 0,
-        successRate: typeof p.successRate === "number" ? Math.round(p.successRate * 100) : undefined,
-        lastAt: p.lastUsedAt || null,
-      }));
-
-    // VIGIL crew — the 5 always-on memory stages. Run counts are derived from
-    // stored artifacts (honest where derivable, 0 otherwise).
+    // VIGIL capabilities. Learned patterns remain retained metadata; they are
+    // deliberately not inserted into the executable skill roster.
     const latestMemAt = memories
       .map((m: any) => m.updatedAt || m.createdAt)
       .filter(Boolean)
@@ -174,8 +159,6 @@ export async function GET(req: NextRequest) {
               100,
           )
         : undefined;
-    const totalPatternFreq = learnedPatterns.reduce((s: number, p: any) => s + (p.frequency || 0), 0);
-    const vigilActive = false;
     const vigilStaff = [
       {
         id: "vigil:memory-ledger",
@@ -183,7 +166,7 @@ export async function GET(req: NextRequest) {
         kind: "vigil" as const,
         role: "curates MEMORY.md / USER.md",
         installed: true,
-        status: (vigilActive ? "active" : "idle") as "active" | "idle",
+        status: "idle" as const,
         runs: memories.length + userProfile.length,
         lastAt: latestMemAt,
       },
@@ -201,17 +184,17 @@ export async function GET(req: NextRequest) {
         id: "vigil:feedback",
         name: "Feedback",
         kind: "vigil" as const,
-        role: "scores each turn's helpfulness",
+        role: "best-effort signal from a later owner reaction",
         installed: true,
         status: "idle" as const,
-        runs: totalPatternFreq,
+        runs: 0,
         lastAt: null,
       },
       {
         id: "vigil:self-learn",
-        name: "Self-Learn",
+        name: "Pattern Retention",
         kind: "vigil" as const,
-        role: "promotes patterns to skills",
+        role: "retains recurring-topic metadata; not executable code",
         installed: true,
         status: "idle" as const,
         runs: learnedPatterns.length,
@@ -222,7 +205,7 @@ export async function GET(req: NextRequest) {
         id: "vigil:chorus",
         name: "Chorus",
         kind: "vigil" as const,
-        role: "best-of-N consensus on replies",
+        role: "optional best-of-N selection; disabled by default",
         installed: true,
         status: "idle" as const,
         runs: 0,
@@ -230,7 +213,7 @@ export async function GET(req: NextRequest) {
       },
     ];
 
-    const roster = [...skillStaff, ...learnedStaff, ...vigilStaff];
+    const roster = [...skillStaff, ...vigilStaff];
 
     // ── Schedules: the 4 cron routines, human cadence + best-effort last run ──
     const embeddedCount = memories.filter((m: any) => m.embedding).length;
@@ -292,8 +275,9 @@ export async function GET(req: NextRequest) {
       },
       skills: {
         installed: installedSkills.length,
-        learned: learnedPatterns.filter((p: any) => p.promotedToSkill).length,
-        total: BUILTIN_SKILLS.length + learnedStaff.length,
+        // Learned-pattern rows are retained metadata, not executable skills.
+        learned: 0,
+        total: BUILTIN_SKILLS.length,
       },
       crons: {
         routines: schedules.length,

@@ -82,14 +82,14 @@ export async function generateMetadata(
   if (!g) {
     return {
       title: "Create your own AI pet — MY AI PET",
-      description: "Raise an AI pet that grows, evolves, and remembers you. Create your own in 30 seconds.",
+      description: "Raise an AI pet that progresses with care and can use selected retained context. Create your own in about 30 seconds.",
     };
   }
   const title = g.prompt
     ? `“${truncate(g.prompt, 70)}” — MY AI PET`
     : "An AI pet creation — MY AI PET";
   const description =
-    "Made on MY AI PET — raise an AI pet that grows, evolves, and remembers you. Create your own in 30 seconds.";
+    "Made on MY AI PET — raise an AI pet that progresses with care and can use selected retained context. Create your own in about 30 seconds.";
   const image = abs(g.photo_path) || `${APP_URL}/og-image.jpg`;
   const url = `${APP_URL}/c/${g.id}`;
   return {
@@ -243,7 +243,7 @@ export default async function CreationPage(
       <div style={{ marginTop: 30, textAlign: "center" }}>
         <a href={LANDING_URL} style={cta}>Create your own AI pet →</a>
         <p style={{ fontSize: 13, color: ED.muted, marginTop: 14 }}>
-          Raise an AI pet that grows, evolves, and remembers you.
+          Raise an AI pet that progresses with care and can use selected retained context.
         </p>
       </div>
 

@@ -8,6 +8,29 @@ const IS_DEV = typeof window !== "undefined" && process.env.NODE_ENV === "develo
 
 let _token: string | null = null;
 
+function newWebChatSessionId(petId: number): string {
+  const random = typeof globalThis.crypto?.randomUUID === "function"
+    ? globalThis.crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
+  return `web-${petId}-${random}`.slice(0, 128);
+}
+
+function webChatSessionId(petId: number): string {
+  // sessionStorage is scoped to the current browser tab. On the server, use a
+  // one-request id rather than a process-global value that could cross users.
+  if (typeof window === "undefined") return newWebChatSessionId(petId);
+  const key = `petclaw:web-chat-session:${petId}`;
+  try {
+    const existing = window.sessionStorage.getItem(key);
+    if (existing && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(existing)) return existing;
+    const created = newWebChatSessionId(petId);
+    window.sessionStorage.setItem(key, created);
+    return created;
+  } catch {
+    return newWebChatSessionId(petId);
+  }
+}
+
 // ── Dev Mock Data ──
 const DEV_MOCK_PET = {
   id: 1, user_id: 1, name: "Dordor", species: 7, personality_type: "brave",
@@ -208,6 +231,8 @@ async function request(path: string, options: any = {}) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     const e: any = new Error(err.detail || err.error || err.details || `HTTP ${res.status}`);
     e.status = res.status; // let callers distinguish 401 (re-auth) from other failures
+    e.code = typeof err.code === "string" ? err.code : undefined;
+    e.details = err;
     throw e;
   }
 
@@ -335,18 +360,23 @@ export const api = {
     chat: (petId: number, message: string) =>
       request(`/api/pets/${petId}/chat`, {
         method: "POST",
-        body: { message },
+        body: { message, surface: "web", sessionId: webChatSessionId(petId) },
       }),
-    chatHistory: (petId: number) => request(`/api/pets/${petId}/chat`),
+    chatHistory: (petId: number) => {
+      const query = new URLSearchParams({ surface: "web", sessionId: webChatSessionId(petId) });
+      return request(`/api/pets/${petId}/chat?${query.toString()}`);
+    },
     // Proactive recall: the pet reaches out first when you return (real memory callback).
     greeting: (petId: number) => request(`/api/pets/${petId}/greeting`),
     // Recent surfaced daydream insights (grounded in real memories, never fabricated).
     daydream: (petId: number) => request(`/api/pets/${petId}/daydream`),
-    runAgent: (petId: number, goal: string, maxSteps?: number) =>
+    runAgent: (petId: number, runId: string, goal: string, confirmCostCredits: 5, maxSteps?: number) =>
       request(`/api/pets/${petId}/agent`, {
         method: "POST",
-        body: { goal, ...(maxSteps ? { maxSteps } : {}) },
+        body: { runId, goal, confirmCostCredits, ...(maxSteps ? { maxSteps } : {}) },
       }),
+    agentRunStatus: (petId: number, runId: string) =>
+      request(`/api/pets/${petId}/agent/runs/${encodeURIComponent(runId)}`),
     memories: (petId: number, params: any = {}) => {
       const qs = new URLSearchParams();
       if (params.memory_type) qs.set("memory_type", params.memory_type);
@@ -521,9 +551,9 @@ export const api = {
     delete: (petId: number) =>
       request(`/api/petclaw/delete?petId=${petId}`, { method: "DELETE" }),
     consent: {
-      get: (petId: number) => request(`/api/pets/${petId}?fields=consent`),
+      get: (petId: number) => request(`/api/petclaw/consent?petId=${petId}`),
       update: (petId: number, consent: any) =>
-        request(`/api/pets/${petId}`, { method: "PATCH", body: { personality_modifiers: consent } }),
+        request("/api/petclaw/consent", { method: "POST", body: { petId, consent } }),
     },
     // BYO model connections (FEATURE 1)
     models: {
@@ -532,7 +562,8 @@ export const api = {
         request("/api/petclaw/models", { method: "POST", body: { provider, apiKey, ...opts } }),
       remove: (id: number) => request(`/api/petclaw/models?id=${id}`, { method: "DELETE" }),
     },
-    // CLI personal access tokens — mint here, paste into `petclaw-sdk auth <token>`
+    // CLI personal access tokens — mint here, then enter once at the hidden
+    // `petclaw-sdk auth` prompt (never put the token in argv).
     cliTokens: {
       list: () => request("/api/petclaw/cli/token"),
       create: (label?: string, purpose: "cli" | "extension" = "cli") =>

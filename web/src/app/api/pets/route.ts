@@ -265,6 +265,7 @@ export async function POST(req: NextRequest) {
         photo_path: avatar_url,
         status: "completed",
         visibility: "private",
+        source_kind: "user",
         credits_charged: 0,
         completed_at: new Date(),
       },

@@ -46,7 +46,7 @@ aipet-project/
 │   ├── contracts/              # 6 .sol files (2 deployed with paused()==false at review, 2 planned, 2 legacy)
 │   └── hardhat.config.cjs      # Hardhat configuration
 │
-├── packages/petclaw/           # @myaipet/petclaw-sdk — SDK + `petclaw` CLI (git submodule)
+├── packages/petclaw/           # vendored @myaipet/petclaw-sdk — SDK + CLI + MCP
 ├── desktop-pet/                # Chrome extension (desktop pet → capped season points)
 ├── deploy/                     # signed-artifact EC2 release, verification, backup, env checklist
 ├── landing-assets/             # Marketing source included in each immutable release
@@ -218,7 +218,7 @@ There is a **single API surface**: ~150 route handlers under `web/src/app/api/`,
 ### Agent stack
 
 - `POST /api/pets/{petId}/agent` runs the pet as an agent; responds with SSE when `Accept: text/event-stream` or `?stream=1`.
-- `runToolAgent` (`lib/petclaw/agent/tool-agent.ts`) does native tool-calling via `callLLMWithTools` with connector tools: `web_search`, `wikipedia_lookup`, `crypto_price`, and `recall_memory`. `web_read` is declared and SSRF-guarded but currently returns an unavailable response.
+- `runToolAgent` (`lib/petclaw/agent/tool-agent.ts`) does native tool-calling via `callLLMWithTools` with eligible in-process skills and private `recall_memory`. Outbound web/market connectors are excluded from memory-bearing runs until an explicit approval and data-taint policy exists.
 - A plan-execute loop (`lib/petclaw/agent/plan-execute.ts`) and GBrain memory retrieval (`lib/petclaw/memory/retrieval.ts`) back longer tasks.
 - Core text paths (pet/adoption chat, Pet Date, connected-platform replies,
   persona analysis, daydream/consolidation, skills and agent loops) route through
@@ -253,7 +253,7 @@ The canonical skill set is **18 skills** — only skills backed by a real handle
 
 ### Chrome extension
 
-Version 2.3.2 of the desktop-pet extension reports care actions to `POST /api/petclaw/engagement`; grants are server-authoritative and daily-capped (`ext_care` shared pool 20 pts/day for pet+treat, `ext_welcome` 1 pt/day), landing in the same `season_points` score. It is currently distributed as a direct ZIP for Chrome Developer mode (Load unpacked), not through the Chrome Web Store.
+Version 2.3.3 of the desktop-pet extension reports care actions to `POST /api/petclaw/engagement`; grants are server-authoritative and daily-capped (`ext_care` shared pool 20 pts/day for pet+treat, `ext_welcome` 1 pt/day), landing in the same `season_points` score. It is currently distributed as a direct ZIP for Chrome Developer mode (Load unpacked), not through the Chrome Web Store.
 
 ### Credits & payments
 

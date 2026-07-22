@@ -31,6 +31,7 @@ export async function POST(
       photo_path: true,
       video_path: true,
       pet_id: true,
+      source_kind: true,
       pet: { select: { personality_modifiers: true } },
     },
   });
@@ -39,8 +40,15 @@ export async function POST(
     return NextResponse.json({ error: "Only completed creations can be shared" }, { status: 409 });
   }
 
-  // Daydream videos are derived from private memories and cannot be converted
-  // into public rows through the generic Studio share control.
+  // Fail closed on durable provenance, independently of the mutable insight
+  // link below. Only explicit user-created output may use generic sharing.
+  if (generation.source_kind !== "user") {
+    return NextResponse.json({ error: "Memory-derived creations cannot be shared" }, { status: 403 });
+  }
+
+  // Defense in depth for historical links. The release default is
+  // "unclassified" and the off-release classifier marks exact links as
+  // memory_daydream, but this check also protects against operator mistakes.
   const privateInsight = await prisma.petInsight.findFirst({
     where: { video_generation_id: id },
     select: { id: true },

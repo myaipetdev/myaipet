@@ -1,0 +1,64 @@
+{
+  "name": "@myaipet/petclaw-sdk",
+  "version": "1.6.2",
+  "description": "PetClaw Protocol SDK — Memory & Session-Specialized Companion AI with Data Sovereignty",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "petclaw": "bin/petclaw.js",
+    "petclaw-sdk": "bin/petclaw.js",
+    "petclaw-mcp": "mcp/server.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "mcp",
+    "skills",
+    "README.md",
+    "LICENSE",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test test/*.test.cjs",
+    "pack-check": "npm pack --dry-run",
+    "mcp": "node mcp/server.js",
+    "prepublishOnly": "npm test"
+  },
+  "keywords": [
+    "ai",
+    "pet",
+    "companion",
+    "sovereignty",
+    "web4",
+    "mcp",
+    "petclaw",
+    "agent"
+  ],
+  "author": "MY AI PET",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/myaipetdev/myaipet.git",
+    "directory": "packages/petclaw"
+  },
+  "homepage": "https://app.myaipet.ai/api-docs",
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^5.0.0"
+  }
+}

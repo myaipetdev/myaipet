@@ -4,6 +4,7 @@ import { SlackConnector } from "@/lib/petclaw/connectors/slack";
 import { DiscordConnector } from "@/lib/petclaw/connectors/discord";
 import { TwitterConnector } from "@/lib/petclaw/connectors/twitter";
 import { WebSearchConnector } from "@/lib/petclaw/connectors/web-search";
+import { WikipediaConnector } from "@/lib/petclaw/connectors/wikipedia";
 import { MemoryConnector } from "@/lib/petclaw/connectors/memory-enhanced";
 import { AVAILABLE_CONNECTORS } from "@/lib/petclaw/connectors";
 import { getUser } from "@/lib/auth";
@@ -33,8 +34,21 @@ export async function POST(req: NextRequest) {
   const rl = rateLimit(req, { key: "petclaw-connectors", limit: 30, windowMs: 60_000 });
   if (!rl.ok) return rl.response;
 
-  const body = await req.json();
+  const declaredLength = Number(req.headers.get("content-length") || 0);
+  if (Number.isFinite(declaredLength) && declaredLength > 32 * 1024) {
+    return NextResponse.json({ error: "Request body too large" }, { status: 413 });
+  }
+  const rawBody = await req.text();
+  if (new TextEncoder().encode(rawBody).byteLength > 32 * 1024) {
+    return NextResponse.json({ error: "Request body too large" }, { status: 413 });
+  }
+  let body: any = null;
+  try { body = JSON.parse(rawBody); } catch { /* handled below */ }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const { connector, action, petId, token, params } = body;
+  const safeParams = params && typeof params === "object" && !Array.isArray(params) ? params : {};
 
   if (!connector || !action) {
     return NextResponse.json({ error: "connector and action required" }, { status: 400 });
@@ -103,7 +117,7 @@ export async function POST(req: NextRequest) {
 
       case "web-search": {
         const ws = new WebSearchConnector();
-        if (action === "search") return NextResponse.json(await ws.search(params.query, params.maxResults));
+        if (action === "search") return NextResponse.json(await ws.search(safeParams.query, safeParams.maxResults));
         if (action === "summarize") {
           // Server-side arbitrary-page fetch is disabled for launch. A URL
           // guard on only the first hop is insufficient because redirects and
@@ -116,11 +130,22 @@ export async function POST(req: NextRequest) {
         break;
       }
 
+      case "wikipedia": {
+        const wiki = new WikipediaConnector();
+        if (action === "search") {
+          return NextResponse.json(await wiki.search(String(safeParams.query || "").slice(0, 300), Number(safeParams.limit) || 5));
+        }
+        if (action === "summary") {
+          return NextResponse.json(await wiki.getSummary(String(safeParams.title || "").slice(0, 300)));
+        }
+        break;
+      }
+
       case "memory": {
         if (!petId) return NextResponse.json({ error: "petId required" }, { status: 400 });
         const mem = new MemoryConnector(Number(petId));
-        if (action === "search") return NextResponse.json(await mem.search(params.query, params.limit));
-        if (action === "timeline") return NextResponse.json(await mem.timeline(params.limit));
+        if (action === "search") return NextResponse.json(await mem.search(safeParams.query, safeParams.limit));
+        if (action === "timeline") return NextResponse.json(await mem.timeline(safeParams.limit));
         if (action === "export") return NextResponse.json(await mem.exportAll());
         if (action === "clear") return NextResponse.json(await mem.clear());
         break;

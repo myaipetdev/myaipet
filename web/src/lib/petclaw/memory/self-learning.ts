@@ -1,16 +1,17 @@
 /**
  * PetClaw Self-Learning System
- * Pet learns from experience and creates new skills autonomously
+ * Pet records feedback-derived patterns and prompt hints
  *
- * VIGIL — PetClaw's self-improvement learning loop:
- * 1. After N conversations on a topic → pet creates a skill for it
- * 2. Skills improve based on user feedback (positive/negative)
- * 3. Learned skills are exportable via SOUL export
+ * VIGIL pattern loop:
+ * 1. Repeated topics can become owner-inspectable learned patterns
+ * 2. Pattern scores incorporate later positive/negative feedback
+ * 3. Promoted records remain prompt metadata, not executable registry skills
  */
 
 import { prisma } from "@/lib/prisma";
 import { callLLM } from "@/lib/llm/router";
-import type { MemoryEntry } from "./persistent-memory";
+import { withLockedPetModifiers } from "@/lib/petclaw/modifier-store";
+import { isProviderSafeRetainedText } from "./persistent-memory";
 
 export interface LearnedPattern {
   id: string;
@@ -28,14 +29,24 @@ const PATTERN_THRESHOLD = 3;  // promote to skill after 3 occurrences
 
 /**
  * Surface the pet's strongest learned patterns as a chat-prompt block, so what
- * VIGIL learns actually shapes the conversation (self-evolution), not just the
- * opt-in best-of-N selection. Picks the top patterns by successRate × frequency.
+ * Selected high-confidence patterns can shape the prompt, rather than remaining
+ * display-only. This is bounded prompt adaptation, not executable self-modifying
+ * code. Picks the top patterns by successRate × frequency.
  * Returns "" when there's nothing learned yet.
  */
 export function learnedPatternsBlock(pet: any): string {
   const patterns: LearnedPattern[] = (pet?.personality_modifiers?.learned_patterns) || [];
   const strong = patterns
-    .filter((p) => p && p.successRate > 0.5 && p.frequency >= 2)
+    // Legacy non-English patterns remain owner-visible/deletable in the
+    // inspector, but are quarantined from prompts until the owner reviews them.
+    .filter((pattern) =>
+      pattern
+      && isProviderSafeRetainedText(
+        `${pattern.id} ${pattern.topic} ${pattern.description}`,
+      )
+      && pattern.successRate > 0.5
+      && pattern.frequency >= 2,
+    )
     .sort((a, b) => b.successRate * b.frequency - a.successRate * a.frequency)
     .slice(0, 3);
   if (!strong.length) return "";
@@ -57,18 +68,6 @@ export class SelfLearner {
     return (mods.learned_patterns as LearnedPattern[]) || [];
   }
 
-  private async savePatterns(patterns: LearnedPattern[]): Promise<void> {
-    const pet = await prisma.pet.findUnique({ where: { id: this.petId } });
-    if (!pet) return;
-    const mods = (pet.personality_modifiers as Record<string, unknown>) || {};
-    await prisma.pet.update({
-      where: { id: this.petId },
-      data: {
-        personality_modifiers: { ...mods, learned_patterns: patterns } as any,
-      },
-    });
-  }
-
   /**
    * Observe a conversation and detect patterns.
    * @param helpfulness  -1..+1 continuous score from feedback.ts (boolean
@@ -77,67 +76,123 @@ export class SelfLearner {
   async observeConversation(
     userMessage: string,
     petResponse: string,
-    helpfulness: boolean | number = 0.5
+    helpfulness: boolean | number = 0.5,
+    expectedEpoch?: number,
+    onProviderAttempt?: () => void,
+    signal?: AbortSignal,
   ): Promise<{ patternDetected: boolean; skillCreated: boolean; pattern?: LearnedPattern }> {
+    signal?.throwIfAborted();
+    // Capture the deletion/edit generation before topic classification. The
+    // classifier may call an LLM, so an owner mutation can finish while it runs.
+    const initialPet = await prisma.pet.findUnique({
+      where: { id: this.petId },
+      select: { memory_epoch: true },
+    });
+    signal?.throwIfAborted();
+    if (!initialPet) return { patternDetected: false, skillCreated: false };
+    const startEpoch = expectedEpoch ?? initialPet.memory_epoch;
+    if (initialPet.memory_epoch !== startEpoch) {
+      return { patternDetected: false, skillCreated: false };
+    }
+    // Topic classification is a secondary provider call. Never fan out a
+    // credential-bearing/non-English turn, and never retain its reply as a
+    // learned exemplar. Owner-local conversation history remains untouched.
+    if (
+      !isProviderSafeRetainedText(`owner_turn ${userMessage}`)
+      || !isProviderSafeRetainedText(`pet_turn ${petResponse}`)
+    ) {
+      return { patternDetected: false, skillCreated: false };
+    }
+
     const score = typeof helpfulness === "boolean"
       ? (helpfulness ? 0.8 : -0.5)
       : Math.max(-1, Math.min(1, helpfulness));
     // Normalize -1..+1 → 0..1 for successRate math
     const success01 = (score + 1) / 2;
 
-    const topic = await this.detectTopic(userMessage);
+    const topic = await this.detectTopic(userMessage, onProviderAttempt, signal);
+    signal?.throwIfAborted();
     if (!topic) return { patternDetected: false, skillCreated: false };
 
-    const patterns = await this.getPatterns();
-    let existing = patterns.find(p => p.topic === topic);
+    const outcome = await withLockedPetModifiers(this.petId, async ({ tx, pet, modifiers }) => {
+      // Full/partial owner memory mutation completed during topic detection.
+      // Discard this pre-mutation observation rather than recreating learned data.
+      if (pet.memory_epoch !== startEpoch) return null;
+      if (signal?.aborted) return null;
 
-    if (existing) {
-      existing.frequency++;
-      existing.lastUsedAt = new Date().toISOString();
-      // Only collect as exemplar when score is clearly positive (>= 0.4 of the
-      // 0..1 normalized scale, i.e. score >= -0.2). Negative reactions don't
-      // pollute the example pool.
-      if (success01 >= 0.4 && petResponse.length > 10) {
-        existing.examples.push(petResponse.slice(0, 200));
-        if (existing.examples.length > 5) existing.examples = existing.examples.slice(-5);
+      const patterns: LearnedPattern[] = Array.isArray(modifiers.learned_patterns)
+        ? (modifiers.learned_patterns as LearnedPattern[]).map((pattern) => ({
+            ...pattern,
+            examples: Array.isArray(pattern.examples) ? [...pattern.examples] : [],
+          }))
+        : [];
+      let existing = patterns.find((pattern) => pattern.topic === topic);
+      const now = new Date().toISOString();
+
+      if (existing) {
+        existing.frequency++;
+        existing.lastUsedAt = now;
+        // Only collect as exemplar when score is clearly positive (>= 0.4 of the
+        // 0..1 normalized scale, i.e. score >= -0.2). Negative reactions don't
+        // pollute the example pool.
+        if (success01 >= 0.4 && petResponse.length > 10) {
+          existing.examples.push(petResponse.slice(0, 200));
+          if (existing.examples.length > 5) existing.examples = existing.examples.slice(-5);
+        }
+        // Running average — every turn contributes its actual score.
+        existing.successRate = (existing.successRate * (existing.frequency - 1) + success01) / existing.frequency;
+      } else {
+        existing = {
+          id: `pattern_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          topic,
+          description: `Learned from conversations about: ${topic}`,
+          frequency: 1,
+          successRate: success01,
+          examples: success01 >= 0.4 ? [petResponse.slice(0, 200)] : [],
+          createdAt: now,
+          lastUsedAt: now,
+          promotedToSkill: false,
+        };
+        patterns.push(existing);
       }
-      // Running average — every turn contributes its actual score
-      existing.successRate = (existing.successRate * (existing.frequency - 1) + success01) / existing.frequency;
-    } else {
-      existing = {
-        id: `pattern_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        topic,
-        description: `Learned from conversations about: ${topic}`,
-        frequency: 1,
-        successRate: success01,
-        examples: success01 >= 0.4 ? [petResponse.slice(0, 200)] : [],
-        createdAt: new Date().toISOString(),
-        lastUsedAt: new Date().toISOString(),
-        promotedToSkill: false,
-      };
-      patterns.push(existing);
-    }
 
-    // Check if should promote to skill
-    let skillCreated = false;
-    if (existing.frequency >= PATTERN_THRESHOLD && !existing.promotedToSkill && existing.successRate > 0.5) {
-      existing.promotedToSkill = true;
-      await this.createSkillFromPattern(existing);
-      skillCreated = true;
-    }
+      // `promotedToSkill` is a legacy serialized field. It now means only that
+      // the pattern crossed the prompt-adaptation threshold; no executable code
+      // or unregistered skill is created from private conversation examples.
+      const installedSkills = Array.isArray(modifiers.installed_skills)
+        ? (modifiers.installed_skills as any[]).filter((skill) => skill?.isLearned !== true)
+        : [];
+      if (existing.frequency >= PATTERN_THRESHOLD && !existing.promotedToSkill && existing.successRate > 0.5) {
+        existing.promotedToSkill = true;
+      }
 
-    // Keep max 30 patterns
-    const trimmed = patterns
-      .sort((a, b) => b.frequency - a.frequency)
-      .slice(0, 30);
+      const trimmed = patterns
+        .sort((a, b) => b.frequency - a.frequency)
+        .slice(0, 30);
+      await tx.pet.update({
+        where: { id: this.petId },
+        data: {
+          // Merge only learning-owned fields into the current modifier document.
+          personality_modifiers: {
+            ...modifiers,
+            learned_patterns: trimmed,
+            installed_skills: installedSkills,
+          } as any,
+        },
+      });
 
-    await this.savePatterns(trimmed);
+      return { patternDetected: true, skillCreated: false, pattern: existing };
+    });
 
-    return { patternDetected: true, skillCreated, pattern: existing };
+    return outcome || { patternDetected: false, skillCreated: false };
   }
 
   // ── Detect conversation topic ──
-  private async detectTopic(message: string): Promise<string | null> {
+  private async detectTopic(
+    message: string,
+    onProviderAttempt?: () => void,
+    signal?: AbortSignal,
+  ): Promise<string | null> {
     // Simple keyword-based topic detection (fast, no API call)
     const msgLower = message.toLowerCase();
 
@@ -160,13 +215,17 @@ export class SelfLearner {
 
     // Only call LLM for longer, ambiguous messages
     if (message.length > 50) {
-      return this.detectTopicWithLLM(message);
+      return this.detectTopicWithLLM(message, onProviderAttempt, signal);
     }
 
     return null;
   }
 
-  private async detectTopicWithLLM(message: string): Promise<string | null> {
+  private async detectTopicWithLLM(
+    message: string,
+    onProviderAttempt?: () => void,
+    signal?: AbortSignal,
+  ): Promise<string | null> {
     // POINTS-ECONOMY §2.3 knob #7: routed through callLLM (task:"extract") so this
     // classification fan-out counts against the LLM daily budget instead of hitting
     // api.x.ai raw. On a budget breach callLLM throws; we swallow it (best-effort).
@@ -183,61 +242,15 @@ export class SelfLearner {
         ],
         max_tokens: 20,
         temperature: 0,
+        onProviderAttempt,
+        signal,
       });
       const topic = out.text?.trim().toLowerCase().replace(/[^a-z_]/g, "");
       return topic || null;
-    } catch {
+    } catch (error) {
+      if (signal?.aborted) throw error;
       return null;
     }
-  }
-
-  // ── Create a skill from learned pattern ──
-  private async createSkillFromPattern(pattern: LearnedPattern): Promise<void> {
-    const pet = await prisma.pet.findUnique({ where: { id: this.petId } });
-    if (!pet) return;
-
-    const mods = (pet.personality_modifiers as Record<string, unknown>) || {};
-    const installedSkills = (mods.installed_skills as any[]) || [];
-
-    const skillId = `learned_${pattern.topic}`;
-
-    // Don't duplicate
-    if (installedSkills.some((s: any) => s.skillId === skillId)) return;
-
-    const bestExamples = pattern.examples.slice(0, 3).join("\n---\n");
-
-    installedSkills.push({
-      skillId,
-      petId: this.petId,
-      installedAt: new Date().toISOString(),
-      version: "1.0.0",
-      isLearned: true,
-      config: {
-        topic: pattern.topic,
-        description: pattern.description,
-        systemPrompt: `You are ${pet.name}. You've learned to help with "${pattern.topic}" from past conversations. Here are examples of good responses you've given:\n\n${bestExamples}\n\nRespond in a similar helpful way.`,
-        frequency: pattern.frequency,
-        successRate: pattern.successRate,
-      },
-    });
-
-    await prisma.pet.update({
-      where: { id: this.petId },
-      data: {
-        personality_modifiers: { ...mods, installed_skills: installedSkills } as any,
-      },
-    });
-
-    // Log as milestone memory
-    await prisma.petMemory.create({
-      data: {
-        pet_id: this.petId,
-        memory_type: "milestone",
-        content: `I learned a new skill: "${pattern.topic}" after ${pattern.frequency} conversations! Success rate: ${Math.round(pattern.successRate * 100)}%`,
-        emotion: "proud",
-        importance: 4,
-      },
-    });
   }
 
   // ── Get all learned patterns ──
@@ -248,10 +261,10 @@ export class SelfLearner {
   // ── Export for sovereignty ──
   async exportLearning(): Promise<{
     patterns: LearnedPattern[];
-    stats: { totalPatterns: number; skillsCreated: number; topTopics: string[] };
+    stats: { totalPatterns: number; thresholdPatterns: number; topTopics: string[] };
   }> {
     const patterns = await this.getPatterns();
-    const skillsCreated = patterns.filter(p => p.promotedToSkill).length;
+    const thresholdPatterns = patterns.filter(p => p.promotedToSkill).length;
     const topTopics = patterns
       .sort((a, b) => b.frequency - a.frequency)
       .slice(0, 5)
@@ -259,7 +272,7 @@ export class SelfLearner {
 
     return {
       patterns,
-      stats: { totalPatterns: patterns.length, skillsCreated, topTopics },
+      stats: { totalPatterns: patterns.length, thresholdPatterns, topTopics },
     };
   }
 }

@@ -345,10 +345,24 @@ async function saveConfig(config) {
   const current = await getConfig();
   const requested = config && typeof config === "object" ? config : {};
   const merged = { ...current, ...requested, apiUrl: API_URL };
+  delete merged.ownedPets;
+  const tokenChanged = Object.prototype.hasOwnProperty.call(requested, "authToken")
+    && String(requested.authToken || "") !== String(current.authToken || "");
   if (merged.authToken && !EXTENSION_TOKEN_PATTERN.test(String(merged.authToken))) {
     merged.authToken = "";
     merged.petId = null;
     merged.needsPairing = true;
+  }
+  // A pet choice is scoped to the token that proved ownership. Never carry a
+  // previous account's pet id across a credential change.
+  if (tokenChanged) {
+    merged.petId = null;
+    merged.needsPairing = true;
+    merged.needsPetSelection = false;
+  } else if (!Number.isSafeInteger(Number(merged.petId)) || Number(merged.petId) <= 0) {
+    merged.petId = null;
+  } else {
+    merged.petId = Number(merged.petId);
   }
   merged.preferences = { ...DEFAULT_CONFIG.preferences, ...(current.preferences || {}), ...(requested.preferences || {}) };
   await chrome.storage.local.set({ petConfig: merged });
@@ -1028,12 +1042,8 @@ async function chatWithPet(message) {
       skillId: "companion-chat",
       input: {
         message,
-        mood: dominant.name.toLowerCase(),
-        emotions: {
-          happiness: Math.round(emotions.happiness),
-          energy: Math.round(emotions.energy),
-          hunger: Math.round(emotions.hunger),
-        },
+        surface: "chrome-ext",
+        sessionId: `chrome-ext-${config.petId}`,
       },
     }),
   });
@@ -1087,7 +1097,7 @@ async function summarizePage(title, text) {
       action: "execute",
       petId: config.petId,
       skillId: "summarize-page",
-      input: { message: `<page_content title="${safeTitle}">\n${pageText}\n</page_content>`, platform: "chrome-extension" },
+      input: { message: `<page_content title="${safeTitle}">\n${pageText}\n</page_content>` },
     }),
   });
   if (result?.success && result.output?.reply) return { reply: result.output.reply };
@@ -1115,7 +1125,7 @@ async function generateAutonomousMessage() {
 }
 
 // ══════════════════════════════════════
-// ── SKILLS & EXPORT ──
+// ── SKILLS & SECURE DASHBOARD HANDOFF ──
 // ══════════════════════════════════════
 
 async function executeSkill(skillId, input = {}) {
@@ -1142,10 +1152,12 @@ async function fetchSkillsList() {
   return await callPetClawAPI(`/api/petclaw/skills?petId=${config.petId}`);
 }
 
-async function exportSoul() {
-  const config = await getConfig();
-  if (!config.authToken || !config.petId) return null;
-  return callPetClawAPI(`/api/petclaw/export?petId=${config.petId}`);
+async function openSovereigntyDashboard() {
+  // SOUL export/import contains the owner's broad private data and deliberately
+  // sits outside the reduced pex_ token scope. Hand off to the first-party web
+  // session instead of widening a 30-day browser-extension credential.
+  const tab = await chrome.tabs.create({ url: `${API_URL}/?section=sovereignty` });
+  return { success: Boolean(tab?.id) };
 }
 
 // Tick daily streak — called by content script on page load. Returns current
@@ -1190,29 +1202,6 @@ function tickStreak() {
   return streakTickInFlight;
 }
 
-// SCRUM-20: import a SOUL JSON exported from the app
-async function importSoul(soul) {
-  const config = await getConfig();
-  if (!config.authToken) {
-    return { success: false, error: "Pair the extension before importing SOUL data" };
-  }
-  if (!soul || typeof soul !== "object") {
-    return { success: false, error: "Empty soul payload" };
-  }
-  // Server-side schema validation (zod) will catch malformed payloads
-  const result = await callPetClawAPI("/api/petclaw/import", {
-    method: "POST",
-    body: JSON.stringify(soul),
-  });
-  if (!result) return { success: false, error: "Network or auth failure — set your auth token in Settings" };
-  if (result.error) return { success: false, error: result.error };
-  return {
-    success: !!result.success,
-    petName: result.message?.match(/"([^"]+)"/)?.[1] || soul.pet?.name,
-    petId: result.petId,
-  };
-}
-
 async function fetchPetInfo() {
   const config = await getConfig();
 
@@ -1227,21 +1216,46 @@ async function fetchPetInfo() {
   }
 
   const data = await callPetClawAPI(`/api/pets`);
-  const pets = (data && data.pets) || [];
-  // Prefer the configured petId if it's actually one the owner holds, else the
-  // most recent. Never fall back to a pet the user doesn't own.
-  const pet = pets.find(p => p.id === config.petId) || pets[0];
+  const pets = Array.isArray(data?.pets)
+    ? data.pets
+      .filter((pet) => Number.isSafeInteger(Number(pet?.id)) && Number(pet.id) > 0)
+      .map((pet) => ({
+        id: Number(pet.id),
+        name: String(pet.name || `Pet ${pet.id}`).slice(0, 80),
+        species: Number(pet.species) || 0,
+        level: Math.max(1, Number(pet.level) || 1),
+        personality_type: String(pet.personality_type || "playful").slice(0, 60),
+        avatar_url: typeof pet.avatar_url === "string" ? pet.avatar_url : "",
+      }))
+    : [];
+  let pet = pets.find((candidate) => candidate.id === config.petId) || null;
 
-  if (!pet) {
+  if (!pets.length) {
     // Token present but no pets returned (no pet yet, or token expired/invalid).
-    const updated = { ...config, petId: null, needsPairing: true };
+    const updated = { ...config, petId: null, needsPairing: true, needsPetSelection: false };
     await saveConfig(updated);
-    return updated;
+    return { ...updated, ownedPets: [] };
   }
+
+  // A single-pet account has no meaningful choice. Multi-pet accounts must
+  // choose explicitly; silently taking pets[0] makes the companion appear to
+  // belong to the wrong identity and breaks developer testing across pets.
+  if (!pet && pets.length > 1) {
+    const updated = {
+      ...config,
+      petId: null,
+      needsPairing: true,
+      needsPetSelection: true,
+    };
+    await saveConfig(updated);
+    return { ...updated, ownedPets: pets };
+  }
+  if (!pet) pet = pets[0];
 
   const updated = {
     ...config,
     needsPairing: false,
+    needsPetSelection: false,
     petId: pet.id,
     petName: pet.name,
     petEmoji: ["🐱","🐕","🦜","🐢","🐹","🐰","🦊","🐶"][pet.species] || "🐾",
@@ -1250,7 +1264,7 @@ async function fetchPetInfo() {
     level: pet.level || 1,
   };
   await saveConfig(updated);
-  return updated;
+  return { ...updated, ownedPets: pets };
 }
 
 // ══════════════════════════════════════
@@ -1415,7 +1429,7 @@ const __welcomeDateReady = chrome.storage.local.get("aipetWelcomeDate").then((r)
 
 const PAGE_MESSAGE_TYPES = new Set([
   "chat", "summarizePage", "getSitePolicy", "pauseCurrentSite", "userActivity",
-  "autonomousMessage", "fetchSkills", "exportSoul", "tickStreak", "affection",
+  "autonomousMessage", "fetchSkills", "openSovereignty", "tickStreak", "affection",
   "treat", "welcome", "emotionAction", "getFullState", "getEmotions", "getEvolution",
 ]);
 
@@ -1511,8 +1525,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
     fetchSkills: () => fetchSkillsList().then((data) => sendResponse({ data })),
 
-    exportSoul: () => exportSoul().then((data) => sendResponse({ data })),
-    importSoul: () => importSoul(msg.soul).then((res) => sendResponse(res)),
+    openSovereignty: () => openSovereigntyDashboard()
+      .then(sendResponse)
+      .catch(() => sendResponse({ success: false, error: "Could not open the PetClaw dashboard" })),
     tickStreak: () => tickStreak().then((res) => sendResponse(res)),
 
     getPoints: () => getPoints().then((points) => sendResponse({ points })),
@@ -1744,9 +1759,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     await chrome.storage.local.set({ petSecurityDefaultsV230: true });
     await applyAutoTalkAlarm();
   }
-  await fetchPetInfo();
+  await fetchPetInfo().catch(() => null);
   if (details.reason === "install") {
-    await chrome.tabs.create({ url: "https://app.myaipet.ai/sovereignty#petclaw-extension" });
+    await chrome.tabs.create({ url: `${API_URL}/?section=sovereignty#petclaw-extension` });
   }
   const version = chrome.runtime.getManifest().version;
   const installed = details.reason === "install";

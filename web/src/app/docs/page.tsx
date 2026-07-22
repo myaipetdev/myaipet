@@ -9,9 +9,9 @@ const SECTIONS = [
   {
     id: "overview",
     title: "Overview",
-    content: `MY AI PET is a Companion Protocol that combines AI-powered virtual pet companionship with a sovereign, portable identity. Users adopt, raise, and bond with unique AI pets that remember them, grow, evolve, and create shareable AI content.
+    content: `MY AI PET is a companion product built on an owner-controlled identity, retained-memory, and consent layer. Users adopt, raise, and bond with AI pets that can use selected retained context, progress through in-app stages, and create shareable AI content.
 
-Every pet has a distinct personality shaped by user interactions. The platform uses state-of-the-art generative AI to create images and videos starring your pet — each piece of content is a unique creative asset.`,
+Each pet has a configurable personality and owner-scoped history. The platform uses routed generative models to create images and videos starring your pet; outputs are creative media, not automatically on-chain assets.`,
   },
   {
     id: "getting-started",
@@ -141,24 +141,25 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
   {
     id: "agent-infra",
     title: "Agent Infrastructure",
-    content: `Under the consumer experience is a real, coordinated agent loop — not a single stateless prompt. Every piece below maps to running code.
+    content: `PetClaw is the owner-controlled companion identity, memory, and consent layer. It includes a bounded goal runner, but it is not a general-purpose coding-agent runtime or an autonomous operating system.
 
-**VIGIL — always-on self-improvement**
-- Runs on every chat turn: a memory ledger (fact extraction), implicit feedback estimation, and self-learning pattern promotion
-- A bond / self-reflect pass runs periodically and reshapes future replies — self-evolution, not a frozen prompt
-- CHORUS (best-of-N candidate selection) is opt-in
+**VIGIL — bounded memory and adaptation**
+- Canonical chat can retain selected durable facts and normalized session messages; retention is best-effort and owner-editable
+- Feedback needs a later reaction, periodic bond reflection can no-op, and learned patterns are not executable skills
+- CHORUS (best-of-N candidate selection) is optional and disabled by default
 
 **Plan to Act — the agent loop**
-- A reasoning model plans each step, a real skill is invoked, the result is observed, and it iterates until done — then a chat model synthesizes the answer
-- Owner-authenticated and credit-metered: it runs real skills, not just text
+- An owner-authenticated, credit-metered runner plans up to six steps, invokes reviewed in-process skills, observes results, and returns an explicit stop reason
+- A run can complete, hit its step/deadline bound, or report a planner error; arbitrary shell, filesystem, git, and browser control are not PetClaw capabilities
 
 **Agent Workbench**
-- Give your pet a goal and watch the loop run as work packages: a preflight check, plan/act/observe per step, a final report, retry/recover on failure, and the session persists across reloads
+- Give your pet a goal and inspect its plan/act/observe trace and final stop reason
+- Reloading can show a saved result in the UI; this release does not checkpoint or resume an interrupted run
 - Reachable from the home page or at ?section=workbench
 
 **Recall — memory retrieval**
-- Every turn pulls the most relevant memories via reciprocal-rank fusion over keyword (full-text) + recency + importance
-- Semantic (vector) recall activates when you connect an embedding-capable model key (OpenAI / Google) via BYOK
+- Relevant selected context is ranked with TF-IDF/recency/importance signals; reciprocal-rank fusion combines available retrieval channels
+- Semantic recall is conditional on an embedding-capable model connection; not every turn has vectors or injects the full history
 
 **PACK — pet-to-pet (A2A)**
 - Public pet discovery is live; remote skill invocation is disabled until it has dedicated consent, public-only context, and caller-funded execution
@@ -166,8 +167,8 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 **Build on it — the open SDK**
 - Published on npm: npm i @myaipet/petclaw-sdk
 - CLI flow: petclaw-sdk init, then install a skill, then models connect for your own model (BYOK)
-- MCP: 6 tools are defined in the SDK; the working MCP path ships in SDK 1.6.2 — until then use the REST API or CLI
-- 18 skills, a 19-connector registry (3 live today; messaging channel delivery launch-paused), and data-sovereignty exports — see /api-docs for the reference`,
+- MCP: the reviewed SDK 1.6.2 candidate defines 7 owner-authenticated stdio tools; npm 1.6.1 MCP is not a working path, so use REST or CLI until 1.6.2 is published
+- 18 built-in skill manifests, a 19-connector registry (3 live today; messaging delivery launch-paused), and bounded data-sovereignty export/import — see /api-docs for the exact contract`,
   },
   {
     id: "roadmap",

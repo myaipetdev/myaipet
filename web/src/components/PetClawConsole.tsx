@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * PetClawConsole — a VIGIL-style terminal that surfaces the PetClaw
- * agentic harness AND lets you actually talk to your pet through it (the
+ * PetClawConsole — a terminal that surfaces PetClaw's bounded memory/agent
+ * capabilities AND lets you actually talk to your pet through it (the
  * petclaw_chat tool, live). Dark terminal panel on the app's light pages.
  *
  * Inventory is the REAL thing (kept honest):
  *   • 19-connector registry (3 live · messaging launch-paused)  • 18 SDK skills
- *   • 6 MCP tool definitions (working MCP path ships in SDK 1.6.2)
- *   • VIGIL (5-stage harness)  • PACK (A2A)  • sovereignty
+ *   • 6 MCP tool definitions in published 1.6.1; reviewed 1.6.2 candidate has 7
+ *   • bounded VIGIL memory capabilities  • discovery-only network preview
  *
  * variant="full"    → manifest + LIVE terminal (boot effect + chat). Needs petId.
  * variant="compact" → banner + channels only, static (onboarding intro).
@@ -18,6 +18,13 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "@/lib/api";
 import PetClawHeroIntro from "@/components/PetClawHeroIntro";
 import { RELEASE_STATUS } from "@/lib/releaseStatus";
+import {
+  createAgentRunId,
+  forgetPendingAgentRun,
+  latestPendingAgentRun,
+  recheckAgentRunReceiptOnNotFound,
+  rememberPendingAgentRun,
+} from "@/lib/petclaw/agent-run-client";
 
 // Terminal typewriter — reveals a line char-by-char once on mount; a blinking
 // caret trails until done. prefers-reduced-motion shows it instantly (no shift).
@@ -75,16 +82,17 @@ const MUTED = "rgba(251,246,236,0.65)"; // warm muted — kept ≥.65 alpha for 
 const GREEN = "#9FC59A";       // warm sage (live)
 const LINE = "rgba(231,197,124,0.20)"; // warm gold hairline
 const MONO = "var(--ed-m)";    // Space Mono
+const AGENT_COST = 5;
 
 // Status strings source from lib/releaseStatus.ts (single source of truth —
 // landing + docs must match it). Re-exported here so existing consumers
 // (SovereigntyDashboard SDK card) keep importing SDK_VERSION from this file.
 export const SDK_VERSION = RELEASE_STATUS.sdkVersion;
 
-// Always-on surfaces + the connector registry (three currently live).
+// Supported surfaces + the connector registry (three currently live).
 // Messaging channel delivery is launch-paused (matches the Agent screen);
-// MCP clients connect once the fixed MCP path ships in SDK 1.6.2.
-const RUNS_ON = `web · chrome-extension · mcp clients (${RELEASE_STATUS.mcp})`;
+// MCP clients require the unpublished, reviewed SDK 1.6.2 candidate.
+const RUNS_ON = `web · approved chrome sites · MCP (${RELEASE_STATUS.mcp})`;
 const CONNECTORS = [
   { k: "messaging (0/8 live)", v: "telegram · discord · x launch-paused; whatsapp · slack · line · instagram · gmail planned" },
   { k: "productivity (0/3 live)", v: "notion · google-calendar · github planned" },
@@ -93,9 +101,13 @@ const CONNECTORS = [
   { k: "crypto (0/2 live)", v: "coingecko · bscscan planned" },
 ];
 const MCP_TOOLS = [
-  { k: "petclaw_chat", v: "memory-aware chat" }, { k: "persona_mirror", v: "mirror your tone" },
-  { k: "memory_recall", v: "retrieve past context" }, { k: "summarize_page", v: "summarize a page in pet's voice" },
-  { k: "soul_export", v: "portable SOUL (SHA-256)" }, { k: "discover_pets", v: "find pets on the net" },
+  { k: "petclaw_chat", v: "owner chat + normalized session metadata" },
+  { k: "petclaw_agent_run", v: "PAID 5 credits · requires confirmCostCredits=5" },
+  { k: "petclaw_persona_mirror", v: "owner-context style draft" },
+  { k: "petclaw_memory_recall", v: "inspect + select retained context" },
+  { k: "petclaw_summarize_page", v: "summarize explicitly approved page text" },
+  { k: "petclaw_soul_export", v: "supported SOUL fields + SHA-256 checksum" },
+  { k: "petclaw_discover_pets", v: "read-only public discovery" },
 ];
 const SKILLS = [
   { k: "emotional", v: "companion-chat · daily-mood · daydream · pet-thought · pet-diary · vibe-check" },
@@ -104,17 +116,16 @@ const SKILLS = [
   { k: "knowledge", v: "memory-recall · memory-consolidate · summarize-page" },
   { k: "utility", v: "soul-export · soul-import · consent · evolve · memory-anchor" },
 ];
-// VIGIL — the always-on self-improvement loop. Runs every companion-chat turn
-// (lib/petclaw/memory/*). Adapted from the agentic-harness playbook:
-// memory-feedback-pattern + learning loop.
+// VIGIL is the product name for bounded memory/learning capabilities. Stages
+// are conditional: feedback needs a later turn and CHORUS is opt-in.
 const HARNESS = [
-  { k: "memory-ledger", v: "per-turn fact extraction → portable MEMORY" },
-  { k: "self-reflect", v: "compounding read on how to be your companion" },
-  { k: "feedback", v: "estimates how the last reply landed" },
-  { k: "self-learn", v: "promotes recurring topics into learned patterns" },
-  { k: "chorus", v: "best-of-N: most in-character of N drafts · Fusion-family (opt-in)" },
+  { k: "memory-ledger", v: "selected facts → capped, owner-editable memory" },
+  { k: "session-log", v: "normalized continuity across approved surfaces" },
+  { k: "feedback", v: "best-effort signal from the next owner turn" },
+  { k: "self-learn", v: "recurring-topic patterns · not executable code" },
+  { k: "chorus", v: "optional best-of-N response selection" },
 ];
-// PACK public discovery is live; remote invocation remains fail-closed.
+// Public discovery is live; remote invocation remains fail-closed.
 const PACK = [
   { k: "discover", v: "find pets by element / skill" },
   { k: "invoke", v: "disabled · dedicated consent + caller funding required" },
@@ -143,7 +154,7 @@ interface Line { role: "sys" | "you" | "pet"; text: string }
 
 const BOOT: Line[] = [
   { role: "sys", text: `initializing petclaw console · protocol v1 · SDK ${SDK_VERSION}` },
-  { role: "sys", text: `connectors ▸ ${RELEASE_STATUS.connectors.registry} registry / ${RELEASE_STATUS.connectors.live} live · messaging ${RELEASE_STATUS.channels}   tools ▸ ${RELEASE_STATUS.mcpTools} defined (mcp ${RELEASE_STATUS.mcp})   skills ▸ ${RELEASE_STATUS.skills} loaded   VIGIL ▸ 5 · PACK ▸ A2A` },
+  { role: "sys", text: `connectors ▸ ${RELEASE_STATUS.connectors.registry} registry / ${RELEASE_STATUS.connectors.live} live · messaging ${RELEASE_STATUS.channels}   mcp ▸ ${RELEASE_STATUS.mcpTools} broken published definitions / ${RELEASE_STATUS.mcpCandidateTools} reviewed candidate tools   skills ▸ ${RELEASE_STATUS.skills} manifests   memory ▸ bounded + owner-controlled` },
   { role: "sys", text: "soul ▸ portable · consent ▸ enforced · on-chain ▸ planned / not live" },
 ];
 
@@ -216,21 +227,74 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [lines]);
 
-  // /goal — run the plan-execute agent loop on a real (owned) pet, stream steps.
+  const reconcileAgentReceipt = async () => {
+    const pending = latestPendingAgentRun();
+    if (!pending) { pushLine({ role: "sys", text: "no paid run is awaiting reconciliation" }); return; }
+    try {
+      const receipt = await recheckAgentRunReceiptOnNotFound(
+        () => api.pets.agentRunStatus(pending.petId, pending.runId),
+      );
+      if (receipt.state !== "terminal" || !receipt.billing) {
+        pushLine({ role: "sys", text: `run ${pending.runId} is still ${receipt.state} — do not start another paid run` });
+        return;
+      }
+      forgetPendingAgentRun(pending.runId);
+      pushLine({ role: "sys", text: `reconciled ${pending.runId} ▸ ${receipt.billing.outcome} · ${receipt.billing.creditsCharged || 0} credits · ${receipt.creditsRemaining ?? "?"} left` });
+    } catch (e: any) {
+      if (e?.status === 404) {
+        forgetPendingAgentRun(pending.runId);
+        pushLine({ role: "sys", text: `no durable receipt found for ${pending.runId} after two checks — local marker cleared; the server per-pet guard prevents an overlapping paid run; check Account credits before retrying` });
+        return;
+      }
+      pushLine({ role: "sys", text: `receipt lookup failed — ${e?.message || "try again shortly"}; paid-run lock remains` });
+    }
+  };
+
+  // /goal --confirm-5 — explicit authorization for one paid, bounded run.
   const runGoal = async (goalText: string) => {
     const g = goalText.trim();
-    if (!g) { pushLine({ role: "sys", text: "usage: /goal <what you want your pet to do>" }); return; }
+    if (!g) { pushLine({ role: "sys", text: "usage: /goal --confirm-5 <task> · authorizes one 5-credit run" }); return; }
     if (isSim || !petId) { pushLine({ role: "sys", text: "agent loop needs your own pet — adopt one to unlock it" }); return; }
+    try {
+      if (latestPendingAgentRun()) {
+        pushLine({ role: "sys", text: "paid-run safety lock — reconcile the previous run in /account or with /goal-status before another run" });
+        return;
+      }
+    } catch { /* continue when storage is unavailable; the server still enforces confirmation */ }
+    const runId = createAgentRunId();
+    try { rememberPendingAgentRun({ runId, petId, petName, goal: g, surface: "console", at: Date.now() }); } catch { /* storage unavailable */ }
     pushLine({ role: "sys", text: `agent ▸ planning · "${g}"` });
     setBusy(true);
     try {
-      const r = await api.pets.runAgent(petId as number, g);
+      const r = await api.pets.runAgent(petId as number, runId, g, AGENT_COST);
+      const billing = r?.billing;
+      if (
+        !billing
+        || (billing.outcome !== "charged" && billing.outcome !== "refunded")
+        || typeof billing.creditsCharged !== "number"
+        || !(billing.usageKnown === false ? billing.modelCalls == null : typeof billing.modelCalls === "number")
+        || r?.runId !== runId
+      ) {
+        pushLine({ role: "sys", text: `settlement receipt missing for ${runId} — do not retry. Check /account or use /goal-status` });
+        return;
+      }
+      try { forgetPendingAgentRun(runId); } catch { /* storage unavailable */ }
       (r?.steps || []).forEach((s: any) =>
         pushLine({ role: "sys", text: `  ${s.skill === "finish" ? "✓ done" : "→ " + s.skill}${s.thought ? " · " + s.thought : ""}` })
       );
+      pushLine({
+        role: "sys",
+        text: `settled ▸ ${r?.completed === true ? "completed" : r?.stoppedReason || "stopped"} · ${billing.outcome === "charged" ? `${billing.creditsCharged} credits charged` : "credits refunded"} · ${billing.usageKnown === false ? "usage unknown (recovered)" : `${billing.modelCalls} model attempt${billing.modelCalls === 1 ? "" : "s"}`}${typeof r?.creditsRemaining === "number" ? ` · ${r.creditsRemaining} left` : ""}`,
+      });
       typeReply(r?.answer || `*${petName} blinks*`);
     } catch (e: any) {
-      pushLine({ role: "sys", text: `agent error — ${e?.message || "try again in a moment"}` });
+      const message = e?.message || "the connection ended";
+      if (/not enough credits/i.test(message)) {
+        try { forgetPendingAgentRun(runId); } catch { /* storage unavailable */ }
+        pushLine({ role: "sys", text: `agent rejected before starting — ${message}` });
+      } else {
+        pushLine({ role: "sys", text: `agent connection error — ${message}. Run ${runId} may have reached the server; use /goal-status before any new paid run` });
+      }
     } finally {
       setBusy(false);
     }
@@ -238,16 +302,25 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
 
   const runCommand = (cmd: string): boolean => {
     const c = cmd.trim().toLowerCase();
-    if (c.startsWith("/goal")) { runGoal(cmd.trim().replace(/^\/goal\s*/i, "")); return true; }
+    if (c === "/goal-status" || c === "/goal-unlock") { reconcileAgentReceipt(); return true; }
+    if (c.startsWith("/goal")) {
+      const confirmed = cmd.trim().match(/^\/goal\s+--confirm-5\s+([\s\S]+)$/i);
+      if (!confirmed) {
+        pushLine({ role: "sys", text: "paid command — use /goal --confirm-5 <task> to authorize exactly one 5-credit run" });
+        return true;
+      }
+      runGoal(confirmed[1]);
+      return true;
+    }
     if (c === "/help") {
-      pushLine({ role: "sys", text: "commands: /goal <task>  /channels  /tools  /skills  /vigil  /pack  /clear  — or type to chat" });
+      pushLine({ role: "sys", text: "commands: /goal --confirm-5 <task> (paid)  /goal-status (reconcile receipt)  /channels  /tools  /skills  /vigil  /pack  /clear  — or type to chat" });
       return true;
     }
     if (c === "/channels" || c === "/connectors") { pushLine({ role: "sys", text: "connectors: " + CONNECTORS.map((x) => x.k).join(" · ") }); return true; }
     if (c === "/tools") { pushLine({ role: "sys", text: "mcp tools: " + MCP_TOOLS.map((x) => x.k).join(" · ") }); return true; }
     if (c === "/skills") { pushLine({ role: "sys", text: "skills: " + SKILLS.map((x) => x.v).join(", ") }); return true; }
-    if (c === "/vigil" || c === "/harness") { pushLine({ role: "sys", text: "VIGIL (every turn): " + HARNESS.map((x) => x.k).join(" → ") }); return true; }
-    if (c === "/pack") { pushLine({ role: "sys", text: "PACK (A2A): " + PACK.map((x) => x.k).join(" · ") + " — pets delegate to other pets" }); return true; }
+    if (c === "/vigil" || c === "/harness") { pushLine({ role: "sys", text: "VIGIL (capability-dependent): " + HARNESS.map((x) => x.k).join(" · ") }); return true; }
+    if (c === "/pack") { pushLine({ role: "sys", text: "Network launch scope: public discovery only · remote invoke disabled" }); return true; }
     if (c === "/clear") { setLines([]); return true; }
     return false;
   };
@@ -344,7 +417,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
             background: "linear-gradient(180deg,#FFE6A8 0%,#E8C77E 44%,#C8932F 100%)",
             WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
           }}>PETCLAW</div>
-          <TaglineTyper text="one companion, projected across web · chrome · terminal — it grows closer every chat, and it's yours" color={MUTED} />
+          <TaglineTyper text="one companion across web · chrome · terminal — retained context stays inspectable and yours to control" color={MUTED} />
           </>
           )}
 
@@ -372,11 +445,11 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
               </div>
               {!compact && (
                 <div>
-                  <SectionHead>MCP tools — {RELEASE_STATUS.mcpTools} defined · working MCP path {RELEASE_STATUS.mcp}</SectionHead>
+                  <SectionHead>MCP tools — {RELEASE_STATUS.mcpCandidateTools} in reviewed candidate · {RELEASE_STATUS.mcp}</SectionHead>
                   {MCP_TOOLS.map((t) => <Row key={t.k} k={t.k} v={t.v} />)}
-                  <SectionHead>VIGIL — agentic harness · every chat turn</SectionHead>
+                  <SectionHead>VIGIL — bounded memory capabilities</SectionHead>
                   {HARNESS.map((h) => <Row key={h.k} k={h.k} v={h.v} kw={120} />)}
-                  <SectionHead>PACK — pet-to-pet (A2A)</SectionHead>
+                  <SectionHead>Network — launch scope</SectionHead>
                   {PACK.map((p) => <Row key={p.k} k={p.k} v={p.v} kw={120} />)}
                   <SectionHead>MODELS — bring your own (BYOK)</SectionHead>
                   <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter · Nous (Hermes) — powers chat + agent reasoning + judging" kw={120} />
@@ -388,7 +461,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
               )}
             </div>
             {/* closing rule so the panel finishes crisp instead of trailing into dark */}
-            <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${LINE}`, color: MUTED, fontSize: 15 }}>100% your data — export or delete any time below.</div>
+            <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${LINE}`, color: MUTED, fontSize: 15 }}>Inspect, correct, export or delete supported retained data below.</div>
           </div>
 
           {/* LIVE terminal */}

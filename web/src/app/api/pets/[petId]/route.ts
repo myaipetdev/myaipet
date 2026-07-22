@@ -16,6 +16,7 @@ import {
   EXTENSION_PET_DETAIL_SELECT,
   toExtensionPetDetailView,
 } from "@/lib/extensionPetView";
+import { withLockedPetModifiers } from "@/lib/petclaw/modifier-store";
 
 function visionBudgetResponse(error: unknown): NextResponse | null {
   const status = getLLMBudgetFailureStatus(error);
@@ -62,21 +63,12 @@ export async function GET(
     return NextResponse.json(toExtensionPetDetailView({ ...pet, ...decayed }));
   }
 
-  const pet = await prisma.pet.findFirst({
+  const ownedPet = await prisma.pet.findFirst({
     where: { id: Number(petId), user_id: user.id },
-    include: {
-      memories: {
-        // The Memory Timeline shows curated milestones/emotions — NOT raw chat.
-        // Exclude session_* turns (the "[user]/[pet]" lines, which may be legacy
-        // Korean) so they never surface here. Mirrors retrieval.ts.
-        where: { NOT: { memory_type: { startsWith: "session_" } } },
-        orderBy: { created_at: "desc" },
-        take: 10,
-      },
-    },
+    select: { id: true },
   });
 
-  if (!pet) {
+  if (!ownedPet) {
     return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   }
 
@@ -86,34 +78,58 @@ export async function GET(
   // from the most recent meaningful event. It NEVER writes last_interaction_at —
   // that timestamp drives neglect detection ("Pet Wants") and active-pet crons,
   // so merely viewing the pet must not look like an interaction.
-  const mods = (pet.personality_modifiers as Record<string, any>) || {};
-  const lastDecay = mods.last_decay_at ? new Date(mods.last_decay_at).getTime() : 0;
-  const lastInteract = pet.last_interaction_at ? new Date(pet.last_interaction_at).getTime() : 0;
-  const decayClockMs = Math.max(lastDecay, lastInteract, new Date(pet.updated_at).getTime());
-  const elapsedMs = Date.now() - decayClockMs;
-  const decayed = applyDecay(
-    { happiness: pet.happiness, energy: pet.energy, hunger: pet.hunger },
-    elapsedMs
-  );
+  const pet = await withLockedPetModifiers(ownedPet.id, async ({ tx, modifiers }) => {
+    const current = await tx.pet.findFirst({
+      where: { id: ownedPet.id, user_id: user.id },
+      include: {
+        memories: {
+          // The Memory Timeline shows curated milestones/emotions — NOT raw chat.
+          // Exclude session_* turns (the "[user]/[pet]" lines, which may be legacy
+          // Korean) so they never surface here. Mirrors retrieval.ts.
+          where: { NOT: { memory_type: { startsWith: "session_" } } },
+          orderBy: { created_at: "desc" },
+          take: 10,
+        },
+      },
+    });
+    if (!current) return null;
 
-  if (decayed.changed) {
-    try {
-      await prisma.pet.update({
-        where: { id: pet.id },
+    const lastDecay = typeof modifiers.last_decay_at === "string"
+      ? new Date(modifiers.last_decay_at).getTime()
+      : 0;
+    const lastInteract = current.last_interaction_at?.getTime() || 0;
+    const decayClockMs = Math.max(lastDecay, lastInteract, current.updated_at.getTime());
+    const decayed = applyDecay(
+      { happiness: current.happiness, energy: current.energy, hunger: current.hunger },
+      Date.now() - decayClockMs,
+    );
+
+    if (decayed.changed) {
+      // The general stat fields and the JSON decay clock are one atomic update;
+      // another modifier writer can observe neither half on its own.
+      await tx.pet.update({
+        where: { id: ownedPet.id },
         data: {
           happiness: decayed.happiness,
           energy: decayed.energy,
           hunger: decayed.hunger,
           // Advance the dedicated decay clock — does NOT touch last_interaction_at.
-          personality_modifiers: { ...mods, last_decay_at: new Date().toISOString() },
+          personality_modifiers: {
+            ...modifiers,
+            last_decay_at: new Date().toISOString(),
+          } as any,
         },
       });
-    } catch {
-      // Best-effort persistence; still serve the decayed view below.
     }
-    pet.happiness = decayed.happiness;
-    pet.energy = decayed.energy;
-    pet.hunger = decayed.hunger;
+    return {
+      ...current,
+      happiness: decayed.happiness,
+      energy: decayed.energy,
+      hunger: decayed.hunger,
+    };
+  });
+  if (!pet) {
+    return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   }
 
   // Calculate mood based on (decayed) stats

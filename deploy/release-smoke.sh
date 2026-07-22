@@ -7,7 +7,7 @@ PETCLAW_SMOKE_HOST="${PETCLAW_SMOKE_HOST:-}"
 PETCLAW_SMOKE_PORT="${PETCLAW_SMOKE_PORT:-443}"
 PETCLAW_EXPECTED_RELEASE_ID="${PETCLAW_EXPECTED_RELEASE_ID:-}"
 PETCLAW_RELEASE_ROOT="${PETCLAW_RELEASE_ROOT:-}"
-PETCLAW_EXPECTED_EXTENSION_VERSION="2.4.0"
+PETCLAW_EXPECTED_EXTENSION_VERSION="2.4.1"
 PETCLAW_EXPECTED_LANDING_REVISION="20260720-en-only"
 PETCLAW_SMOKE_BODY="$(mktemp)"
 PETCLAW_SMOKE_HEADERS="$(mktemp)"
@@ -262,13 +262,15 @@ if (!requireAll(agentOffice, [
     'type OfficeStatus = "IDLE" | "WORKING" | "QUEUED" | "DONE" | "LIVE"',
     '{isWorking ? "WORKING" : "IDLE"}',
     '<Column mono="QUEUED"', '<Column mono="WORKING"', '<Column mono="DONE"',
-    '{running ? "WORKING" : "▶ Dispatch"}',
+    'disabled={goal.trim().length < 3 || running || receiptMissing || petId == null}',
+    '{running ? "WORKING" : receiptMissing ? "Check Account first" : `Authorize ${COST} credits & dispatch`}',
     '{active ? "WORKING" : "IDLE"}',
   ])
   || !requireAll(grandPawOffice, [
     'type Status = "IDLE" | "WORKING" | "QUEUED" | "DONE" | "LIVE"',
     'title: "QUEUED"', 'title: "WORKING"', 'title: "DONE"',
-    '{running ? "WORKING" : "Dispatch"}',
+    'disabled={goal.trim().length < 3 || running || receiptMissing}',
+    '{running ? "WORKING" : receiptMissing ? "Check Account first" : `Authorize ${cost} credits & dispatch`}',
     's.kind === "skill" && s.id === liveSkill',
     '{active ? "WORKING" : "IDLE"}',
     "task: c.status",
@@ -301,7 +303,7 @@ if (!requireAll(studio, ["ZONE 1 — TEMPLATE LIBRARY", "ZONE 2 — THE STAGE",
 const landing = read("landing-assets/index.html");
 const pitch = read("landing-assets/pitch-deck.html");
 if (!requireAll(landing, ["19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS",
-  "MCP client support ships with SDK 1.6.2", "+47 Play Points today", "SAMPLE"])
+  "7 MCP TOOLS · REVIEWED SDK 1.6.2 CANDIDATE", "+47 Play Points today", "SAMPLE"])
   || rejectAny(landing, ['href="/stats"', ">Metrics<", "6 LIVE"])
   || rejectAny(pitch, ["6 live today", "registry, 6 live", "any MCP client"])) process.exit(1);
 
@@ -309,7 +311,7 @@ const demo = read("landing-assets/product-demo.html");
 const demoSource = read("tools/demo-video/product-demo.html");
 for (const body of [demo, demoSource]) {
   if (!requireAll(body, ['<a class="cta" href="https://app.myaipet.ai" target="_top">',
-    "MCP runtime ships with SDK 1.6.2 · messaging launch-paused."])
+    "7-tool MCP path is an unpublished SDK 1.6.2 candidate · messaging launch-paused."])
     || body.includes("document.querySelector('.s8 .cta')")) process.exit(1);
 }
 
@@ -359,7 +361,7 @@ const forbiddenClaims = [
 if (forbiddenClaims.some((pattern) => pattern.test(publicCopy))) process.exit(1);
 
 const apiDocs = read("web/src/app/api-docs/page.tsx");
-if (!requireAll(apiDocs, ["bundled MCP tools", "MCP runtime ·", "Messaging ·"])) process.exit(1);
+if (!requireAll(apiDocs, ["MCP tools · 1.6.2 candidate", "MCP runtime ·", "Messaging ·"])) process.exit(1);
 if (!landing.includes("Import is a reported reconstruction")) process.exit(1);
 if (!read("web/src/components/PremiumTeaser.tsx").includes("Chat subject to published rate limits")) process.exit(1);
 if (!read("web/src/components/PetClawHeroIntro.tsx").includes("channels · paused")) process.exit(1);
@@ -367,7 +369,8 @@ if (!read("web/public/api-docs/QUICKSTART.md").includes("Competitive state, medi
 
 const releaseStatus = read("web/src/lib/releaseStatus.ts");
 if (!requireAll(releaseStatus, ["registry: 19", "live: 3", "skills: 18",
-  "mcpTools: 6", 'mcp: "ships with SDK 1.6.2"', 'channels: "launch-paused"'])) process.exit(1);
+  "mcpTools: 6", "mcpCandidateTools: 7",
+  'mcp: "7-tool SDK 1.6.2 candidate · not published"', 'channels: "launch-paused"'])) process.exit(1);
 
 const schema = read("web/prisma/schema.prisma");
 const migration = "web/prisma/migrations/20260722000000_catch_map_consent_photo_hash/migration.sql";

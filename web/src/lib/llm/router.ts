@@ -3,12 +3,13 @@
  *
  * All platform-funded text inference routes through this module so persistent
  * attempt caps, owner BYOK isolation, request-shape validation, and bounded
- * xAI→OpenAI fallback apply consistently. Direct vendor chat fetches are kept
+ * task-selected OpenAI/xAI fallback applies consistently. Direct vendor chat fetches are kept
  * only in the separately metered catch-vision referee.
  *
  * Design contract:
- *   - The DEFAULT (no owner-connected model) path remains xAI Grok. Platform
- *     calls can fail over once to OpenAI for transient/provider-spend failures;
+ *   - The default is task-specific: chat is OpenAI-first with xAI fallback;
+ *     other text tasks are xAI-first with OpenAI fallback. Platform calls can
+ *     fail over once for transient/provider-spend failures;
  *     owner BYOK calls never spill into a platform key or another provider.
  *   - A pet owner may connect their OWN model (BYOK) via /api/petclaw/models.
  *     The key is stored ENCRYPTED at rest with the existing src/lib/crypto.ts
@@ -33,7 +34,9 @@ import {
   getPlatformApiKey,
   getPlatformModel,
   getPlatformProviderOrder,
+  ownerTaskScopeMatches,
   runWithProviderFallback,
+  throwIfLLMAborted,
   validateOwnerModelConfig,
   type ConnectableLLMTask,
   type PlatformProviderId,
@@ -91,6 +94,20 @@ export interface CallLLMArgs {
   max_tokens?: number;
   /** Structured JSON request. The adapters currently support json_object. */
   response_format?: { type: string };
+  /**
+   * Called immediately before each vendor network request, including a
+   * platform fallback attempt. This is request-local accounting only: it never
+   * receives prompts, keys, or response content.
+   */
+  onProviderAttempt?: (attempt: LLMProviderAttempt) => void;
+  /** Cooperative caller cancellation; the provider HTTP request consumes it. */
+  signal?: AbortSignal;
+}
+
+export interface LLMProviderAttempt {
+  provider: ProviderId;
+  model: string;
+  source: "owner" | "platform";
 }
 
 const MAX_LLM_MESSAGES = 64;
@@ -225,14 +242,17 @@ async function incrementUncappedUsage(tx: any, usageDate: string, scopeKey: stri
 }
 
 /** Atomically reserve one platform-funded provider attempt. Fails closed on DB errors. */
-async function consumeLLMBudget(target: ResolvedTarget): Promise<void> {
+async function consumeLLMBudget(target: ResolvedTarget, signal?: AbortSignal): Promise<void> {
   if (target.source !== "platform") return;
+  throwIfLLMAborted(signal);
   const today = new Date().toISOString().slice(0, 10);
   try {
     await prisma.$transaction(async (tx: any) => {
+      throwIfLLMAborted(signal);
       if (!await incrementCappedUsage(tx, today, "global", envCap("LLM_DAILY_CALL_CAP", 2000))) {
         throw new LLMBudgetError();
       }
+      throwIfLLMAborted(signal);
       if (target.budgetUserId && !await incrementCappedUsage(
         tx,
         today,
@@ -241,13 +261,19 @@ async function consumeLLMBudget(target: ResolvedTarget): Promise<void> {
       )) {
         throw new LLMBudgetError();
       }
+      throwIfLLMAborted(signal);
       await incrementUncappedUsage(tx, today, `provider:${target.provider.id}`);
+      // An abort while a non-cancellable SQL statement was running rolls the
+      // whole reservation transaction back before any vendor request starts.
+      throwIfLLMAborted(signal);
     }, { maxWait: 5_000, timeout: 10_000 });
   } catch (error) {
+    throwIfLLMAborted(signal);
     if (error instanceof LLMBudgetError) throw error;
     console.error(`[llm] persistent spend guard unavailable (${error instanceof Error ? error.name : "unknown"})`);
     throw new LLMBudgetStoreError();
   }
+  throwIfLLMAborted(signal);
 }
 
 // ── Grok-vision global budget (POINTS-ECONOMY §2.4/§2.5, knobs #2/#11) ──
@@ -452,8 +478,10 @@ function resolvePlatformTargets(task: LLMTask, budgetUserId?: number): ResolvedT
 /**
  * Resolve provider+model+key. Preference: the pet-owner's active ModelConnection
  * whose task_scopes include this task (most-recently-updated wins), else the
- * platform provider chain. Owner calls return exactly one target, so an owner
- * key failure can never leak their prompt to a platform fallback.
+ * platform provider chain. An empty legacy scope means the three documented
+ * connectable tasks only (chat/reason/judge), never hidden secondary tasks.
+ * Owner calls return exactly one target, so an owner key failure can never leak
+ * their prompt to a platform fallback.
  */
 async function resolveTargets(task: LLMTask, petId?: number, budgetUserId?: number): Promise<ResolvedTarget[]> {
   if (petId == null) {
@@ -492,10 +520,7 @@ async function resolveTargets(task: LLMTask, petId?: number, budgetUserId?: numb
     throw new LLMOwnerConfigError();
   }
 
-  const match = conns.find((conn) => {
-    const scopes = (Array.isArray(conn.task_scopes) ? conn.task_scopes : []) as string[];
-    return scopes.length === 0 || scopes.includes(task);
-  });
+  const match = conns.find((conn) => ownerTaskScopeMatches(task, conn.task_scopes));
   // This is the sole condition that authorizes platform inference for a
   // pet-scoped call: the owner has no active connection matching this task.
   if (!match) return resolvePlatformTargets(task, pet.user_id);
@@ -519,17 +544,35 @@ async function resolveTargets(task: LLMTask, petId?: number, budgetUserId?: numb
   return [{ provider: PROVIDERS[validated.provider], model: validated.model, apiKey, source: "owner" }];
 }
 
-async function requestProviderJSON(target: ResolvedTarget, url: string, init: RequestInit): Promise<any> {
+async function requestProviderJSON(
+  target: ResolvedTarget,
+  url: string,
+  init: RequestInit,
+  callerSignal?: AbortSignal,
+): Promise<any> {
+  throwIfLLMAborted(callerSignal);
   const timeoutMs = getLLMRequestTimeoutMs();
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let requestTimedOut = false;
+  const abortFromCaller = () => {
+    if (!controller.signal.aborted) controller.abort(callerSignal?.reason);
+  };
+  callerSignal?.addEventListener("abort", abortFromCaller, { once: true });
+  const timer = setTimeout(() => {
+    requestTimedOut = true;
+    if (!controller.signal.aborted) controller.abort();
+  }, timeoutMs);
   let res: Response;
   let body: string;
   try {
     res = await fetch(url, { ...init, signal: controller.signal });
     body = await res.text();
+    throwIfLLMAborted(callerSignal);
   } catch (error: any) {
-    const timedOut = controller.signal.aborted || error?.name === "AbortError";
+    // A caller deadline/cancel is terminal. Do not turn it into a retryable
+    // upstream timeout, otherwise the router could start a paid fallback.
+    throwIfLLMAborted(callerSignal);
+    const timedOut = requestTimedOut || error?.name === "AbortError";
     throw new LLMUpstreamError(
       target.provider.id,
       `${target.provider.id} ${timedOut ? `timed out after ${timeoutMs}ms` : "network failure"}`,
@@ -539,6 +582,7 @@ async function requestProviderJSON(target: ResolvedTarget, url: string, init: Re
     );
   } finally {
     clearTimeout(timer);
+    callerSignal?.removeEventListener("abort", abortFromCaller);
   }
 
   if (!res.ok) {
@@ -551,6 +595,7 @@ async function requestProviderJSON(target: ResolvedTarget, url: string, init: Re
       policy.reason,
     );
   }
+  throwIfLLMAborted(callerSignal);
   try {
     return JSON.parse(body);
   } catch {
@@ -581,7 +626,8 @@ async function callTextTarget(
   target: ResolvedTarget,
   args: Omit<CallLLMArgs, "task" | "petId"> & Required<Pick<CallLLMArgs, "temperature" | "max_tokens">>,
 ): Promise<LLMResult> {
-  const { messages, temperature, max_tokens, response_format } = args;
+  const { messages, temperature, max_tokens, response_format, signal } = args;
+  throwIfLLMAborted(signal);
   if (response_format && response_format.type !== "json_object") {
     throw new LLMPlatformConfigError(`Unsupported response_format '${response_format.type}'`);
   }
@@ -605,7 +651,7 @@ async function callTextTarget(
         messages: turns,
         ...(response_format ? { tools: [jsonTool], tool_choice: { type: "tool", name: jsonTool.name } } : {}),
       }),
-    });
+    }, signal);
     const blocks: any[] = Array.isArray(raw?.content) ? raw.content : [];
     const jsonBlock = response_format
       ? blocks.find((block) => block?.type === "tool_use" && block?.name === jsonTool.name)
@@ -636,7 +682,7 @@ async function callTextTarget(
           ...(response_format ? { responseMimeType: "application/json" } : {}),
         },
       }),
-    });
+    }, signal);
     const text = (raw?.candidates?.[0]?.content?.parts?.map((p: any) => p.text).join("") || "").trim();
     if (!text) throw new LLMUpstreamError(target.provider.id, "google returned an empty text response", true, 200, "response");
     return { text, model: target.model, provider: target.provider.id, source: target.source, raw };
@@ -653,7 +699,7 @@ async function callTextTarget(
       temperature,
       ...(response_format ? { response_format } : {}),
     }),
-  });
+  }, signal);
   const text = (raw?.choices?.[0]?.message?.content || "").trim();
   if (!text) throw new LLMUpstreamError(target.provider.id, `${target.provider.id} returned an empty text response`, true, 200, "response");
   return { text, model: raw?.model || target.model, provider: target.provider.id, source: target.source, raw };
@@ -665,18 +711,37 @@ async function callTextTarget(
  * Returns normalized { text, model, provider, source, raw }.
  */
 export async function callLLM(args: CallLLMArgs): Promise<LLMResult> {
-  const { task, messages, petId, budgetUserId, temperature = 0.7, max_tokens = 300, response_format } = args;
+  const {
+    task,
+    messages,
+    petId,
+    budgetUserId,
+    temperature = 0.7,
+    max_tokens = 300,
+    response_format,
+    onProviderAttempt,
+    signal,
+  } = args;
+  throwIfLLMAborted(signal);
   validateTextMessages(messages);
   const safeMaxTokens = boundedOutputTokens(max_tokens);
   if (!Number.isFinite(temperature) || temperature < 0 || temperature > 2) {
     throw new LLMInputError("AI temperature must be between 0 and 2.");
   }
   const targets = await resolveTargets(task, petId, budgetUserId);
+  // Target resolution may perform local Prisma reads. They are deliberately
+  // awaited (never raced), then fenced before any budget/vendor attempt.
+  throwIfLLMAborted(signal);
   return runWithProviderFallback(
     targets,
-    (target) => callTextTarget(target, { messages, temperature, max_tokens: safeMaxTokens, response_format }),
+    (target) => {
+      throwIfLLMAborted(signal);
+      onProviderAttempt?.({ provider: target.provider.id, model: target.model, source: target.source });
+      return callTextTarget(target, { messages, temperature, max_tokens: safeMaxTokens, response_format, signal });
+    },
     logProviderFallback,
-    consumeLLMBudget,
+    (target) => consumeLLMBudget(target, signal),
+    signal,
   );
 }
 
@@ -731,6 +796,10 @@ export interface CallLLMWithToolsArgs {
   budgetUserId?: number;
   temperature?: number;
   maxTokens?: number;
+  /** See CallLLMArgs.onProviderAttempt. */
+  onProviderAttempt?: (attempt: LLMProviderAttempt) => void;
+  /** See CallLLMArgs.signal. */
+  signal?: AbortSignal;
 }
 
 export interface ToolCallResult {
@@ -830,7 +899,8 @@ async function callToolTarget(
   target: ResolvedTarget,
   args: Omit<CallLLMWithToolsArgs, "task" | "petId"> & Required<Pick<CallLLMWithToolsArgs, "temperature" | "maxTokens">>,
 ): Promise<ToolCallResult> {
-  const { messages, tools, toolChoice, temperature, maxTokens } = args;
+  const { messages, tools, toolChoice, temperature, maxTokens, signal } = args;
+  throwIfLLMAborted(signal);
   if (target.provider.flavor === "google") {
     throw new Error(
       "tool-calling not supported for provider 'google' — connect an OpenAI-compatible (xAI/OpenAI/OpenRouter/Nous) or Anthropic model at /api/petclaw/models",
@@ -851,7 +921,7 @@ async function callToolTarget(
         tools: tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.parameters })),
         ...(toAnthropicToolChoice(toolChoice) ? { tool_choice: toAnthropicToolChoice(toolChoice) } : {}),
       }),
-    });
+    }, signal);
     const blocks: any[] = Array.isArray(raw?.content) ? raw.content : [];
     const content = blocks.filter((b) => b?.type === "text").map((b) => b.text).join("") || null;
     const toolCalls: ToolCall[] = blocks
@@ -868,7 +938,8 @@ async function callToolTarget(
     };
   }
 
-  // OpenAI-shaped (xai / openai / openrouter / nous) — the primary path (Grok).
+  // OpenAI-shaped transport (xai / openai / openrouter / nous). Which provider
+  // is primary is task/config dependent.
   const raw = await requestProviderJSON(target, `${target.provider.baseUrl}/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${target.apiKey}` },
@@ -880,7 +951,7 @@ async function callToolTarget(
       tools: tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.parameters } })),
       ...(toOpenAIToolChoice(toolChoice) ? { tool_choice: toOpenAIToolChoice(toolChoice) } : {}),
     }),
-  });
+  }, signal);
   const msg = raw?.choices?.[0]?.message;
   const content = (msg?.content ?? null) as string | null;
   const toolCalls: ToolCall[] = (Array.isArray(msg?.tool_calls) ? msg.tool_calls : [])
@@ -987,7 +1058,19 @@ export async function validateOwnerModelConnection(
  * rejected because this adapter does not implement Gemini tool calls.
  */
 export async function callLLMWithTools(args: CallLLMWithToolsArgs): Promise<ToolCallResult> {
-  const { task, messages, tools, toolChoice, petId, budgetUserId, temperature = 0.4, maxTokens = 800 } = args;
+  const {
+    task,
+    messages,
+    tools,
+    toolChoice,
+    petId,
+    budgetUserId,
+    temperature = 0.4,
+    maxTokens = 800,
+    onProviderAttempt,
+    signal,
+  } = args;
+  throwIfLLMAborted(signal);
   validateTextMessages(messages.map((message) => ({
     role: message.role === "tool" ? "user" : message.role,
     content: message.content ?? "",
@@ -1000,11 +1083,17 @@ export async function callLLMWithTools(args: CallLLMWithToolsArgs): Promise<Tool
     throw new LLMInputError("AI temperature must be between 0 and 2.");
   }
   const targets = await resolveTargets(task, petId, budgetUserId);
+  throwIfLLMAborted(signal);
   return runWithProviderFallback(
     targets,
-    (target) => callToolTarget(target, { messages, tools, toolChoice, temperature, maxTokens: safeMaxTokens }),
+    (target) => {
+      throwIfLLMAborted(signal);
+      onProviderAttempt?.({ provider: target.provider.id, model: target.model, source: target.source });
+      return callToolTarget(target, { messages, tools, toolChoice, temperature, maxTokens: safeMaxTokens, signal });
+    },
     logProviderFallback,
-    consumeLLMBudget,
+    (target) => consumeLLMBudget(target, signal),
+    signal,
   );
 }
 

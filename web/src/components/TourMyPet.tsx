@@ -194,7 +194,7 @@ export default function TourMyPet() {
             <div style={{ background: "linear-gradient(180deg,#F49B2A,#E27D0C)", borderRadius: 18, padding: "18px 18px 20px", color: "#FFF8EE", boxShadow: "0 12px 24px -14px rgba(226,125,12,.7)" }}>
               <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 18 }}>Make one yours</div>
               <p style={{ fontFamily: T.body, fontSize: 13, color: "#FCE9CF", margin: "4px 0 14px", lineHeight: 1.5 }}>
-                Connect a wallet to adopt a real pet — it remembers your care, levels up, and becomes a numbered collectible. No gas, identity only.
+                Connect a wallet to adopt a real pet — eligible care updates its progression, and selected chat context can support later replies. No gas, identity only; production on-chain minting is disabled.
               </p>
               <ConnectButton chainStatus="none" showBalance={false} label="Connect wallet to adopt" />
             </div>

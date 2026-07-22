@@ -1,6 +1,6 @@
 /**
  * GET  /api/pets/[petId]/daydream
- *   → recent surfaced insights (marks them seen). Public for owned pet + demo.
+ *   → recent surfaced insights (marks them seen). Owner-only.
  *
  * POST /api/pets/[petId]/daydream
  *   → runs one daydream cycle (owner-gated, or cron via x-cron-secret).
@@ -9,8 +9,11 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ownsPet } from "@/lib/authz";
-import { daydream } from "@/lib/petclaw/memory/daydream";
+import { requirePetOwner } from "@/lib/authz";
+import {
+  daydream,
+  persistDaydreamInsights,
+} from "@/lib/petclaw/memory/daydream";
 import { containsHangul } from "@/lib/generatedLanguage";
 
 const COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6h between cycles per pet
@@ -21,10 +24,19 @@ export async function GET(
 ) {
   const { petId } = await params;
   const id = Number(petId);
-  if (!id) return NextResponse.json({ error: "Bad petId" }, { status: 400 });
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    return NextResponse.json({ error: "Bad petId" }, { status: 400 });
+  }
+
+  // Insights can contain private retained-memory inferences. Authenticate and
+  // prove ownership before either reading them or mutating their seen state.
+  const auth = await requirePetOwner(req, id);
+  if (auth.error) return auth.error;
 
   const rows = await prisma.petInsight.findMany({
-    where: { pet_id: id },
+    // Linked tombstones are retained only as structural privacy markers for
+    // their generated media. They are not owner-facing memory.
+    where: { pet_id: id, mood: { not: "deleted" } },
     orderBy: { created_at: "desc" },
     take: 5,
   });
@@ -51,20 +63,30 @@ export async function POST(
 ) {
   const { petId } = await params;
   const id = Number(petId);
-  if (!id) return NextResponse.json({ error: "Bad petId" }, { status: 400 });
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    return NextResponse.json({ error: "Bad petId" }, { status: 400 });
+  }
 
   // Auth: either the owner, or a cron call with the shared secret.
   const cronSecret = req.headers.get("x-cron-secret");
   const isCron = !!cronSecret && cronSecret === process.env.CRON_SECRET;
-  if (!isCron) {
-    if (!(await ownsPet(req, id))) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  let expectedMemoryEpoch: number;
+  if (isCron) {
+    const pet = await prisma.pet.findUnique({
+      where: { id },
+      select: { memory_epoch: true },
+    });
+    if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+    expectedMemoryEpoch = pet.memory_epoch;
+  } else {
+    const auth = await requirePetOwner(req, id);
+    if (auth.error) return auth.error;
+    expectedMemoryEpoch = auth.pet.memory_epoch;
   }
 
   // Cooldown — skip if we daydreamed recently (unless forced by cron).
   const last = await prisma.petInsight.findFirst({
-    where: { pet_id: id },
+    where: { pet_id: id, mood: { not: "deleted" } },
     orderBy: { created_at: "desc" },
     select: { created_at: true },
   });
@@ -72,28 +94,34 @@ export async function POST(
     return NextResponse.json({ ok: true, skipped: "cooldown" });
   }
 
-  const insights = await daydream(id);
-  if (insights.length === 0) {
-    return NextResponse.json({ ok: true, created: 0, note: "Not enough memories yet — keep chatting." });
-  }
+  const insights = await daydream(id, expectedMemoryEpoch);
 
   const safeInsights = insights.filter(
     (ins) => !containsHangul(ins.insight) && !containsHangul(ins.rationale),
   );
-  if (safeInsights.length === 0) {
-    return NextResponse.json({ ok: true, created: 0, note: "No English insight was generated this time." });
+  // Persist even an empty result: the locked epoch check is what lets the API
+  // distinguish a genuine no-op from provider work invalidated by deletion.
+  const persisted = await persistDaydreamInsights(
+    id,
+    expectedMemoryEpoch,
+    safeInsights,
+  );
+  if (persisted.discarded) {
+    return NextResponse.json({
+      ok: false,
+      code: "daydream_stale",
+      created: 0,
+      discarded: true,
+      error: "Memory changed while the daydream was running; the stale result was discarded.",
+    }, { status: 409 });
   }
 
-  await prisma.petInsight.createMany({
-    data: safeInsights.map(ins => ({
-      pet_id: id,
-      insight: ins.insight,
-      rationale: ins.rationale,
-      mood: ins.mood,
-      score: Math.round(ins.score),
-      source_keys: ins.sourceKeys as any,
-    })),
-  });
+  if (insights.length === 0) {
+    return NextResponse.json({ ok: true, created: 0, discarded: false, note: "Not enough memories yet — keep chatting." });
+  }
+  if (safeInsights.length === 0) {
+    return NextResponse.json({ ok: true, created: 0, discarded: false, note: "No English insight was generated this time." });
+  }
 
-  return NextResponse.json({ ok: true, created: safeInsights.length });
+  return NextResponse.json({ ok: true, created: persisted.created, discarded: false });
 }

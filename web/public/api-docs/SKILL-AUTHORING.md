@@ -66,7 +66,8 @@ Description of what your skill does.
 ## Handler Types
 
 ### `llm-prompt`
-Uses LLM (Grok/GPT) to generate response. Provide a `systemPrompt`:
+Uses the server-managed model route or an owner's scoped BYOK connection.
+Provide a `systemPrompt`:
 
 ```yaml
 handler: llm-prompt
@@ -78,12 +79,15 @@ Template variables:
 - `{personality}` — Pet's personality type
 
 ### `api-call`
-Calls an API endpoint:
+Resolves to an API endpoint:
 
 ```yaml
 handler: api-call
 apiUrl: /api/pets/{petId}/memories
 ```
+
+The generic executor returns an `invoke_via_endpoint` descriptor for this
+handler type; it does not claim the endpoint already ran.
 
 ## Secrets never go in skill config
 
@@ -109,7 +113,6 @@ tags: [horoscope, fun, daily]
 price: 2
 currency: credits
 requires:
-  env: [GROK_API_KEY]
   minLevel: 3
 handler: llm-prompt
 systemPrompt: "You are {petName}, a mystical {personality} pet fortune teller. Give a fun, personality-appropriate daily horoscope in 2 sentences."
@@ -132,17 +135,30 @@ Install works for the 18 built-in skill IDs and needs an owner token (`pck_...`,
 minted in the web app under **Sovereignty → Connect PetClaw clients**):
 
 ```bash
-# Via curl — a real built-in skill
+# Via curl — choose an id returned by `petclaw-sdk pets` first.
+PETCLAW_PET_ID="<owned pet id>"
 curl -X POST https://app.myaipet.ai/api/petclaw/skills \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer pck_your_token_here" \
-  -d '{"action":"install","petId":1,"skillId":"daily-mood"}'
+  -H "Authorization: Bearer ${PETCLAW_TOKEN}" \
+  -d "{\"action\":\"install\",\"petId\":${PETCLAW_PET_ID},\"skillId\":\"persona-mirror\"}"
 
-# Via SDK
+# Via SDK (server-side Node.js only; never expose the pck_ token in a browser)
 import { PetClawClient } from "@myaipet/petclaw-sdk";
-const client = new PetClawClient({ baseUrl: "https://app.myaipet.ai" });
-await client.skills.install(1, "daily-mood");
+const authToken = process.env.PETCLAW_TOKEN;
+if (!authToken) throw new Error("PETCLAW_TOKEN is required");
+const client = new PetClawClient({
+  baseUrl: "https://app.myaipet.ai",
+  authToken,
+});
+const petId = Number(process.env.PETCLAW_PET_ID);
+const { pets } = await client.pets.list();
+if (!pets.some((pet) => pet.id === petId)) throw new Error("Select an owned pet");
+await client.skills.install(petId, "persona-mirror");
 ```
+
+`companion-chat` and `summarize-page` are core runtime skills, so they execute
+without installation. Installing or uninstalling one changes only its saved
+preferences/version record; it does not toggle the core capability.
 
 ## Executing Skills
 
@@ -150,11 +166,11 @@ await client.skills.install(1, "daily-mood");
 # Via curl
 curl -X POST https://app.myaipet.ai/api/petclaw/skills \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer pck_your_token_here" \
-  -d '{"action":"execute","petId":1,"skillId":"daily-mood","input":{}}'
+  -H "Authorization: Bearer ${PETCLAW_TOKEN}" \
+  -d "{\"action\":\"execute\",\"petId\":${PETCLAW_PET_ID},\"skillId\":\"companion-chat\",\"input\":{\"message\":\"hello\"}}"
 
 # Via SDK
-const result = await client.skills.execute(1, "daily-mood", {});
+const result = await client.skills.execute(petId, "companion-chat", { message: "hello" });
 console.log(result.output);
 ```
 

@@ -8,6 +8,7 @@ const read = (path) => readFile(resolve(root, path), "utf8");
 const [
   schema, migration, fairQueueMigration, sovereignty, lora, mediaRoute, battleRoute,
   generationMediaCore, petGenerateRoute, petPatchRoute, battleSpriteRoute, mockupRoute,
+  runLedger, fullDeleteRoute,
 ] = await Promise.all([
   read("prisma/schema.prisma"),
   read("prisma/migrations/20260717163000_lora_archive_battle_redaction/migration.sql"),
@@ -21,6 +22,8 @@ const [
   read("src/app/api/pets/[petId]/route.ts"),
   read("src/app/api/battle-sprite/route.ts"),
   read("src/app/api/rewards/mockup/route.ts"),
+  read("src/lib/petclaw/agent/run-ledger.ts"),
+  read("src/app/api/petclaw/delete/route.ts"),
 ]);
 
 assert.match(schema, /training_archive_ref\s+String\?/);
@@ -55,5 +58,10 @@ assert.match(petPatchRoute, /FROM "pets"[\s\S]*FOR UPDATE[\s\S]*tx\.pet\.update/
 assert.match(battleSpriteRoute, /saveRemoteFile[\s\S]*prisma\.generation\.create/);
 assert.match(mockupRoute, /saveRemoteFile[\s\S]*tx\.generation\.create/);
 assert.doesNotMatch(mediaRoute, /battle-sprites\/[\s\S]*startsWith|reward-mockups\/[\s\S]*startsWith/);
+assert.match(runLedger, /ORDER BY "id"[\s\S]*FOR UPDATE/);
+assert.match(runLedger, /throw new PetAgentRunActiveError\(petId, active\.run_id, active\.state\)/);
+assert.doesNotMatch(runLedger, /refundAndDeletePetAgentRunsWithDb/);
+assert.match(runLedger, /pet_name:\s*"Deleted Pet"[\s\S]*goal:\s*"\[deleted\]"[\s\S]*answer:\s*""[\s\S]*steps:\s*\[\]/);
+assert.match(fullDeleteRoute, /e instanceof PetAgentRunActiveError[\s\S]*code:\s*e\.code[\s\S]*statusUrl[\s\S]*status:\s*409/);
 
 console.log("deletion_p0_contract=PASS");

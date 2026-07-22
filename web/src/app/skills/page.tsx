@@ -57,7 +57,8 @@ export default function SkillsPage() {
             maxWidth: 640, margin: 0,
           }}>
             Built-in skill manifests, one-command install. Every skill uses a documented
-            markdown + JSON schema definition. MCP client support ships in SDK 1.6.2.
+            markdown + JSON schema definition. The reviewed seven-tool MCP path
+            becomes available only after SDK 1.6.2 is published.
           </p>
         </div>
 
@@ -86,23 +87,23 @@ export default function SkillsPage() {
             {[
               {
                 icon: "chat",
-                verb: "Answer with memory",
-                body: "Your pet runs companion-chat + memory-recall in every conversation — replies draw on its memory ledger, not a blank prompt.",
+                verb: "Use selected retained context",
+                body: "Canonical companion chat can include a bounded selection from the owner-controlled memory ledger; explicit recall is also available through supported clients.",
               },
               {
                 icon: "extension-icon",
                 verb: "Summarize pages as you browse",
-                body: "The Chrome extension runs summarize-page on sites you allow — consent-gated, in your pet's voice.",
+                body: "On sites you allow, the Chrome extension previews an excerpt and asks again before sending the approved text for non-memory summarization.",
               },
               {
                 icon: "compass",
-                verb: "Plan, then act with real tools",
-                body: "In the agent loop your pet chains skills — daily-mood, pet-diary, image-gen, video-gen — into plan→act steps.",
+                verb: "Run a bounded goal",
+                body: "The owner-authenticated runner invokes eligible reviewed in-process skills for up to six steps and reports its trace, credit use, and stop reason.",
               },
               {
                 icon: "scroll",
-                verb: "Carry its learning anywhere",
-                body: "Skills your pet self-promotes from your chats leave with soul-export — portable to MCP clients (SDK 1.6.2).",
+                verb: "Export supported retained state",
+                body: "SOUL export includes supported memory and pattern metadata with a checksum. Compatible imports report restored and skipped fields; retained patterns are not executable skills.",
               },
             ].map((u) => (
               <div key={u.verb} style={{
@@ -143,7 +144,7 @@ export default function SkillsPage() {
           </div>
         </div>
 
-        {/* Learned-skills explainer — VIGIL self-improvement */}
+        {/* Retained-pattern explainer — bounded VIGIL adaptation */}
         <div style={{
           padding: 22, borderRadius: 16, marginBottom: 36,
           background: "linear-gradient(135deg, rgba(158,114,232,0.06), rgba(190,79,40,0.06))",
@@ -152,7 +153,7 @@ export default function SkillsPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
             <span style={{ fontSize: 20 }}><Icon name="grass" size={20} /></span>
             <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, letterSpacing: "-0.01em" }}>
-              Pets grow new skills on their own
+              Retained patterns are data, not executable skills
             </h2>
             <span style={{
               fontSize: 13, padding: "3px 10px", borderRadius: 999,
@@ -161,13 +162,13 @@ export default function SkillsPage() {
             }}>VIGIL</span>
           </div>
           <p style={{ fontSize: 14, color: "rgba(33,26,18,0.7)", lineHeight: 1.65, margin: "0 0 10px" }}>
-            Every conversation feeds a topic detector. After three similar exchanges with positive
-            outcomes, your pet auto-promotes the pattern into a private skill — saved with example
-            responses that worked. These travel with your pet via SOUL export, so when your pet
-            migrates to another app, its hard-won expertise comes with it.
+            Best-effort analysis can retain recurring-topic metadata and examples after enough
+            successful interactions. These records may shape later replies, but they do not create,
+            install, or run new code. Owners can inspect or clear them; SOUL export includes supported
+            pattern metadata, while a compatible import reports what it restored or skipped.
           </p>
           <p style={{ fontSize: 13, color: "rgba(33,26,18,0.55)", lineHeight: 1.55, margin: 0 }}>
-            See your pet's learned skills in <a href="/?section=sovereignty" style={{ color: "#9E72E8", fontWeight: 700 }}>Sovereignty → Memory Ledger</a>.
+            See retained patterns in <a href="/?section=sovereignty" style={{ color: "#9E72E8", fontWeight: 700 }}>Sovereignty → Memory Ledger</a>.
           </p>
         </div>
 
@@ -297,8 +298,8 @@ export default function SkillsPage() {
         <div style={{
           marginTop: 36, fontSize: 13, color: "rgba(33,26,18,0.55)", lineHeight: 1.6,
         }}>
-          MCP client support (Claude Code, Cursor, and other MCP stdio clients) ships in
-          SDK 1.6.2 — until then, invoke skills via the REST API or CLI. See{" "}
+          The reviewed SDK 1.6.2 candidate adds seven owner-authenticated MCP tools.
+          Until npm publishes it, invoke skills via the REST API or CLI. See{" "}
           <a href="/api-docs" style={{ color: "#9A4E1E" }}>/api-docs</a> →
           Ecosystem → MCP Compatibility.
         </div>

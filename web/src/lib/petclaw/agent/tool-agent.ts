@@ -1,19 +1,15 @@
 /**
- * Native Function-Calling Agent Loop (Hermes / oh-my-opencode / Claude-Code grade)
+ * Native function-calling agent loop.
  *
- * Where plan-execute.ts asks a reasoning model to emit JSON-in-prose "plans",
- * THIS loop uses the model's NATIVE tool-calling: the pet's runnable skills are
- * handed to the model as function tools, the model DECIDES which to call (and may
- * call several in parallel), we EXECUTE each via the real executeSkill (pethub.ts)
- * with RETRY + per-call timeout, feed structured results back, and iterate until
- * the model answers with no further tool calls. A chat model then SYNTHESIZES the
- * final answer IN THE PET'S VOICE. Every step can STREAM via onEvent.
- *
- * plan-execute.ts is intentionally kept intact as a fallback — this is additive.
+ * The pet's runnable skills are handed to the configured reasoning model as
+ * function tools. The model can request more than one tool in a response; those
+ * calls are executed sequentially, with structured observations fed into the
+ * next reasoning round. A separate chat call then writes the final answer in the
+ * pet's voice. Events can be streamed via onEvent.
  *
  * Grounding (verified against the codebase):
- *   - Transport: callLLMWithTools/callLLM in @/lib/llm/router (native tools;
- *     owner-BYOK routing or platform Grok default; Grok supports tools).
+ *   - Transport: callLLMWithTools/callLLM in @/lib/llm/router (the active
+ *     provider route is configuration-dependent).
  *   - Skills + executor: web/src/lib/petclaw/pethub.ts (BUILTIN_SKILLS,
  *     executeSkill(petId, skillId, input), getSkill()).
  *   - Only llm-prompt skills run IN-PROCESS and return real chainable text, so
@@ -22,12 +18,12 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { lookup } from "node:dns/promises";
-import { isIP } from "node:net";
 import {
   BUILTIN_SKILLS,
   executeSkill,
+  getExecutableSkillsForPet,
   getSkill,
+  isSkillPolicyError,
   type PetSkillManifest,
 } from "../pethub";
 import {
@@ -39,25 +35,26 @@ import {
   type ToolMessage,
 } from "@/lib/llm/router";
 import type { ConnectorResult } from "../connectors";
-import { WebSearchConnector } from "../connectors/web-search";
-import { WikipediaConnector } from "../connectors/wikipedia";
-import { CoinGeckoConnector } from "../connectors/coingecko";
 import { MemoryConnector } from "../connectors/memory-enhanced";
 import {
   generatedEnglishOrFallback,
   generatedEnglishOrNull,
 } from "@/lib/generatedLanguage";
+import { isProviderSafeRetainedText } from "../memory/persistent-memory";
+import {
+  awaitAgentWork,
+  createAgentDeadlineScope,
+  isAgentAbort,
+  throwIfAgentAborted,
+} from "./deadline";
 
 // ── Config ──
 
 const DEFAULT_MAX_STEPS = 6;
 const MIN_STEPS = 1;
 const HARD_MAX_STEPS = 8;
-const WALLCLOCK_MS = 60_000; // hard wall-clock guard for the whole loop
-const PER_CALL_TIMEOUT_MS = 20_000; // per skill execution
-const SKILL_RETRIES = 2; // => up to 3 attempts total
+const WALLCLOCK_MS = 60_000; // hard wall-clock guard, including final synthesis
 const RESULT_CLIP = 4000; // chars of skill output fed back to the model
-const CONNECTOR_TIMEOUT_MS = 10_000; // per connector (external API) call — single attempt, no retry
 const AGENT_REPLY_FALLBACK = "I tried, but I couldn't pull together an English answer this time.";
 
 // Only these handlers run in-process (real, chainable output). Mirrors the
@@ -73,25 +70,42 @@ export interface AgentStep {
   input: Record<string, unknown>; // arguments the model supplied
   output: unknown; // executeSkill output (or a structured error)
   ok: boolean; // whether the skill call succeeded
+  sideEffectCommitted: boolean; // confirmed durable mutation, never inferred from an attempt
+  /** Exact vendor attempts made inside this skill; connectors report 0. */
+  modelCalls: number;
 }
 
 export type ToolKind = "skill" | "connector";
 
+export type AgentStoppedReason =
+  | "completed"
+  | "max_steps"
+  | "timeout"
+  | "planner_error";
+
 export type AgentEvent =
   | { type: "thought"; text: string }
   | { type: "tool_call"; id: string; skill: string; input: Record<string, unknown>; kind: ToolKind }
-  | { type: "tool_result"; id: string; skill: string; ok: boolean; output: unknown; kind: ToolKind }
+  | { type: "tool_result"; id: string; skill: string; ok: boolean; output: unknown; sideEffectCommitted: boolean; kind: ToolKind }
   | { type: "error"; skill?: string; message: string }
-  | { type: "final"; answer: string };
+  | { type: "final"; answer: string; completed: boolean; stoppedReason: AgentStoppedReason };
 
 export interface RunToolAgentResult {
   answer: string;
   trace: AgentStep[];
+  completed: boolean;
+  stoppedReason: AgentStoppedReason;
   usage: {
     promptTokens: number;
     completionTokens: number;
     totalTokens: number;
     reasoningCalls: number;
+    /** Exact vendor network attempts, including fallback + LLM-skill fan-out. */
+    modelCalls: number;
+    /** Planner/final-synthesis vendor attempts. */
+    orchestratorModelCalls: number;
+    /** Vendor attempts made inside executed LLM skills. */
+    skillModelCalls: number;
     steps: number;
   };
 }
@@ -99,6 +113,8 @@ export interface RunToolAgentResult {
 export interface RunToolAgentOpts {
   maxSteps?: number;
   onEvent?: (e: AgentEvent) => void;
+  /** Optional parent cancellation (for example an HTTP request disconnect). */
+  signal?: AbortSignal;
 }
 
 // ── Tool catalog: the pet's runnable (in-process) skills as function tools ──
@@ -117,22 +133,22 @@ function toParameters(inputSchema: Record<string, unknown>): Record<string, unkn
   };
 }
 
-function buildTools(): ToolDef[] {
-  return BUILTIN_SKILLS.filter(isRunnable).map((s) => ({
+async function buildTools(petId: number): Promise<ToolDef[]> {
+  const eligible = await getExecutableSkillsForPet(petId);
+  return eligible.filter(isRunnable).map((s) => ({
     name: s.id,
     description: s.description,
     parameters: toParameters(s.inputSchema),
   }));
 }
 
-// ── Connector tools: REAL, keyless, READ-ONLY external look-ups ──
+// ── Connector tools: owner-private, READ-ONLY recall ──
 //
-// These are NOT pet skills — they are genuine read-only calls to public,
-// no-key APIs (DuckDuckGo Instant Answer, Wikipedia REST, CoinGecko free v3)
-// plus the pet's own persistent memory. Every tool below is backed by a real
-// working fetch/DB call — no stubs, no fabricated results. They are exposed to
-// the model ALONGSIDE the skill tools so the pet can actually look things up
-// in-loop, then feed real observations back to the synthesizer.
+// These are NOT pet skills. Only owner-private recall is exposed here. External
+// search/connectors MUST NOT be combined with private memory until the agent has
+// an explicit owner approval + data-taint policy; otherwise a planner could put
+// recalled private text into an outbound query. Public look-ups remain available
+// on their dedicated, non-memory surfaces.
 
 type StringRecord = Record<string, unknown>;
 
@@ -145,155 +161,7 @@ function asStr(v: unknown): string {
   return typeof v === "string" ? v : v == null ? "" : String(v);
 }
 
-// ── SSRF guard for web_read (model supplies the URL) ─────────────────────────
-// web_read fetches an arbitrary model-chosen URL server-side, so a prompt
-// injection could aim it at internal services / cloud metadata. Block non-
-// http(s) schemes, localhost, and any host that is (or resolves to) a private /
-// reserved / link-local IP. Residual: a redirect from a public host to a private
-// one isn't re-checked here (the connector's fetch follows redirects), so this
-// closes the direct-address vector, not redirect-based SSRF.
-function ipv4IsPrivate(ip: string): boolean {
-  const p = ip.split(".").map(Number);
-  if (p.length !== 4 || p.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return true;
-  const [a, b, c] = p;
-  if (a === 0 || a === 10 || a === 127) return true;        // this-net / private / loopback
-  if (a === 169 && b === 254) return true;                  // link-local (+ 169.254.169.254 metadata)
-  if (a === 172 && b >= 16 && b <= 31) return true;         // private
-  if (a === 192 && b === 168) return true;                  // private
-  if (a === 192 && b === 0 && c === 0) return true;         // IETF protocol assignments
-  if (a === 100 && b >= 64 && b <= 127) return true;        // CGNAT
-  if (a === 198 && (b === 18 || b === 19)) return true;     // benchmarking
-  if (a >= 224) return true;                                // multicast + reserved
-  return false;
-}
-function ipIsPrivate(ip: string): boolean {
-  const fam = isIP(ip);
-  if (fam === 4) return ipv4IsPrivate(ip);
-  if (fam === 6) {
-    const s = ip.toLowerCase();
-    if (s === "::1" || s === "::") return true;
-    if (/^fe[89ab]/.test(s)) return true;                   // fe80::/10 link-local
-    if (/^f[cd]/.test(s)) return true;                      // fc00::/7 ULA
-    const m = s.match(/::ffff:(\d+\.\d+\.\d+\.\d+)$/);       // IPv4-mapped
-    if (m) return ipv4IsPrivate(m[1]);
-    return false;
-  }
-  return true; // not a valid IP post-resolution → block
-}
-async function assertPublicHttpUrl(raw: string): Promise<void> {
-  let u: URL;
-  try { u = new URL(raw); } catch { throw new Error("invalid URL"); }
-  if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("only http(s) URLs are allowed");
-  const host = u.hostname.replace(/^\[|\]$/g, "");
-  const lower = host.toLowerCase();
-  if (!host) throw new Error("no host");
-  if (lower === "localhost" || lower.endsWith(".localhost") || lower === "metadata.google.internal") {
-    throw new Error("blocked host");
-  }
-  if (isIP(host)) {
-    if (ipIsPrivate(host)) throw new Error("blocked private/reserved address");
-    return;
-  }
-  const addrs = await lookup(host, { all: true }).catch(() => null);
-  if (!addrs || !addrs.length) throw new Error("dns resolution failed");
-  for (const a of addrs) if (ipIsPrivate(a.address)) throw new Error("blocked private/reserved address");
-}
-
 const CONNECTOR_TOOLS: ConnectorTool[] = [
-  {
-    def: {
-      name: "web_search",
-      description:
-        "Best-effort keyless web look-up via DuckDuckGo's Instant Answer API. Returns an abstract + related topics when one exists; can be empty for long-tail queries (it is an instant-answer box, not a full search index). Read-only.",
-      parameters: {
-        type: "object",
-        properties: { query: { type: "string", description: "What to look up" } },
-        required: ["query"],
-      },
-    },
-    run: (_petId, args) => new WebSearchConnector().search(asStr(args.query), 5),
-  },
-  {
-    def: {
-      name: "web_read",
-      description:
-        "Fetch ONE public http(s) URL and return its stripped page text (first ~2000 chars). Read-only. Use to read a page you already have a URL for.",
-      parameters: {
-        type: "object",
-        properties: { url: { type: "string", description: "The http(s) URL to read" } },
-        required: ["url"],
-      },
-    },
-    run: async (_petId, args) => {
-      const url = asStr(args.url);
-      await assertPublicHttpUrl(url); // SSRF guard — block internal/metadata targets
-      return new WebSearchConnector().summarize(url);
-    },
-  },
-  {
-    def: {
-      name: "wikipedia_lookup",
-      description:
-        "Look up a topic on Wikipedia (keyless). Finds the best-matching article and returns a short factual summary. Read-only.",
-      parameters: {
-        type: "object",
-        properties: { topic: { type: "string", description: "Topic or article title to look up" } },
-        required: ["topic"],
-      },
-    },
-    run: async (_petId, args) => {
-      const topic = asStr(args.topic);
-      const wiki = new WikipediaConnector();
-      const found = await wiki.search(topic, 3);
-      const hits = Array.isArray(found.data) ? (found.data as any[]) : [];
-      const title = hits[0]?.title || topic;
-      const summary = await wiki.getSummary(title);
-      if (summary.success) {
-        return {
-          success: true,
-          platform: "wikipedia",
-          data: {
-            title,
-            ...(summary.data as object),
-            alternatives: hits.slice(1, 3).map((h) => h?.title).filter(Boolean),
-          },
-        };
-      }
-      // Summary endpoint failed — fall back to the raw search hits (still real).
-      return found;
-    },
-  },
-  {
-    def: {
-      name: "crypto_price",
-      description:
-        "Get the current USD price + 24h change + market cap for a cryptocurrency by name or symbol (e.g. 'bitcoin', 'eth', 'solana'). Keyless CoinGecko. Read-only.",
-      parameters: {
-        type: "object",
-        properties: { coin: { type: "string", description: "Coin name or ticker symbol" } },
-        required: ["coin"],
-      },
-    },
-    run: async (_petId, args) => {
-      const coin = asStr(args.coin);
-      const cg = new CoinGeckoConnector();
-      // Resolve a free-text coin to a canonical CoinGecko id first (handles
-      // symbols like 'btc' that /simple/price won't accept directly).
-      const found = await cg.search(coin);
-      const coins = Array.isArray(found.data) ? (found.data as any[]) : [];
-      const id = coins[0]?.id || coin.toLowerCase();
-      const price = await cg.getPrice([id]);
-      if (price.success) {
-        const priceData = (price.data as any)?.[id] ?? null;
-        return {
-          success: true,
-          platform: "coingecko",
-          data: { id, name: coins[0]?.name || id, symbol: coins[0]?.symbol ?? null, usd: priceData },
-        };
-      }
-      return price;
-    },
-  },
   {
     def: {
       name: "recall_memory",
@@ -312,87 +180,79 @@ const CONNECTOR_TOOLS: ConnectorTool[] = [
 const CONNECTOR_TOOL_MAP = new Map(CONNECTOR_TOOLS.map((t) => [t.def.name, t]));
 
 /**
- * Execute a connector tool with a per-call timeout. SINGLE attempt (no retry —
- * these hit rate-limited public APIs, and retrying would only make throttling
- * worse). Never throws — returns a structured {ok, output} so the loop can feed
- * a recoverable error back to the model.
+ * Execute a connector tool once. Ordinary failures become structured output;
+ * the shared agent cancellation remains terminal and is rethrown.
  */
 async function executeConnector(
   petId: number,
   name: string,
   args: StringRecord,
-  deadline: number,
+  signal: AbortSignal,
 ): Promise<{ ok: boolean; output: unknown }> {
   const tool = CONNECTOR_TOOL_MAP.get(name);
   if (!tool) {
     return { ok: false, output: { error: `Unknown connector '${name}'. Choose an offered tool.` } };
   }
-  if (Date.now() > deadline) {
-    return { ok: false, output: { error: "time budget exhausted before execution" } };
-  }
+  throwIfAgentAborted(signal);
   try {
-    const result = await withTimeout(tool.run(petId, args), CONNECTOR_TIMEOUT_MS);
+    // This connector is a local Prisma read. Prisma does not accept an
+    // AbortSignal, so await it to terminal state and fence the result afterward
+    // instead of racing it and leaking a dangling query.
+    const result = await tool.run(petId, args);
+    throwIfAgentAborted(signal);
     if (result.success) return { ok: true, output: result.data };
     return { ok: false, output: { error: result.error || "connector call failed", platform: result.platform } };
   } catch (e: any) {
+    if (isAgentAbort(e, signal)) throw e;
     return { ok: false, output: { error: e?.message || "connector call threw" } };
   }
 }
 
 // ── Helpers ──
 
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
 function clip(value: unknown, max: number): string {
   const str = typeof value === "string" ? value : JSON.stringify(value);
   return (str ?? "").slice(0, max);
 }
 
-function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`skill timeout after ${ms}ms`)), ms);
-    p.then(
-      (v) => {
-        clearTimeout(t);
-        resolve(v);
-      },
-      (e) => {
-        clearTimeout(t);
-        reject(e);
-      },
-    );
-  });
-}
-
 /**
- * Execute a skill with RETRY (exponential backoff ~250ms→1s) + per-call timeout.
- * Never throws — returns a structured {ok, output} so the loop can feed a
- * recoverable error back to the model.
+ * Execute one skill exactly once and await its terminal result.
+ *
+ * The shared AbortSignal reaches every nested provider call. Local Prisma work
+ * remains single-attempt and awaited, so settlement cannot overtake a late
+ * write or observe a half-finished skill.
  */
-async function executeWithRetry(
+async function executeSkillOnce(
   petId: number,
   skillId: string,
   input: Record<string, unknown>,
-  deadline: number,
-): Promise<{ ok: boolean; output: unknown }> {
+  signal: AbortSignal,
+): Promise<{ ok: boolean; output: unknown; sideEffectCommitted: boolean; modelCalls: number }> {
   const manifest = getSkill(skillId);
   if (!manifest) {
-    return { ok: false, output: { error: `Unknown skill '${skillId}'. Choose an offered tool.` } };
+    return { ok: false, output: { error: `Unknown skill '${skillId}'. Choose an offered tool.` }, sideEffectCommitted: false, modelCalls: 0 };
   }
-  const attempts = SKILL_RETRIES + 1;
-  let lastOutput: unknown = { error: "skill not executed" };
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    if (Date.now() > deadline) return { ok: false, output: { error: "time budget exhausted before execution" } };
-    try {
-      const result = await withTimeout(executeSkill(petId, skillId, input), PER_CALL_TIMEOUT_MS);
-      if (result.success) return { ok: true, output: result.output };
-      lastOutput = result.output; // executeSkill swallows errors into {success:false, output:{error}}
-    } catch (e: any) {
-      lastOutput = { error: e?.message || "skill execution threw" };
+  throwIfAgentAborted(signal);
+  try {
+    const result = await executeSkill(petId, skillId, input, {
+      countProviderAttempts: true,
+      readOnly: true,
+      noRetention: true,
+      signal,
+    });
+    return {
+      ok: result.success,
+      output: result.output,
+      sideEffectCommitted: result.sideEffectCommitted === true,
+      modelCalls: result.modelCalls ?? 0,
+    };
+  } catch (e: any) {
+    if (isAgentAbort(e, signal)) throw e;
+    if (isSkillPolicyError(e)) {
+      return { ok: false, output: { error: e.message, code: e.code }, sideEffectCommitted: false, modelCalls: 0 };
     }
-    if (attempt < attempts - 1) await sleep(Math.min(1000, 250 * 2 ** attempt));
+    return { ok: false, output: { error: e?.message || "skill execution threw" }, sideEffectCommitted: false, modelCalls: 0 };
   }
-  return { ok: false, output: lastOutput };
 }
 
 // ── Synthesizer: final answer in the pet's voice (reuses the chat task) ──
@@ -402,62 +262,120 @@ async function synthesize(
   goal: string,
   trace: AgentStep[],
   terminalContent: string | null,
-): Promise<string> {
-  const pet = await prisma.pet
-    .findUnique({ where: { id: petId }, select: { name: true, personality_type: true } })
-    .catch(() => null);
-  const name = pet?.name ?? "your pet";
-  const personality = pet?.personality_type ?? "friendly";
+  signal: AbortSignal,
+  onProviderAttempt: () => void,
+): Promise<{ answer: string; timedOut: boolean; modelCalled: boolean; usage?: unknown }> {
+  let timedOut = signal.aborted;
+  // A valid no-tool terminal answer is already the planner's final answer. Do
+  // not fan the owner's goal out to a second provider call just to rephrase it.
+  if (trace.length === 0) {
+    const directAnswer = generatedEnglishOrNull(terminalContent);
+    if (directAnswer) return { answer: directAnswer, timedOut, modelCalled: false };
+  }
+  let pet: { name: string | null; personality_type: string | null } | null = null;
+  if (!timedOut) {
+    try {
+      // Prisma work is not abortable. Await it, then fence synthesis before any
+      // provider request rather than abandoning a query behind a timeout race.
+      pet = await prisma.pet.findUnique({
+        where: { id: petId },
+        select: { name: true, personality_type: true },
+      });
+      throwIfAgentAborted(signal);
+    } catch (error) {
+      timedOut = isAgentAbort(error, signal);
+    }
+  }
+  const name = pet?.name && isProviderSafeRetainedText(`pet_name ${pet.name}`)
+    ? pet.name
+    : "your pet";
+  const personality = pet?.personality_type
+    && isProviderSafeRetainedText(`pet_personality ${pet.personality_type}`)
+    ? pet.personality_type
+    : "friendly";
+
+  const safeGoal = isProviderSafeRetainedText(`agent_goal ${goal}`)
+    ? goal
+    : "Complete the owner's private goal using only the non-sensitive observations below.";
+  const safeTerminalContent = terminalContent
+    && isProviderSafeRetainedText(`agent_terminal ${terminalContent}`)
+    ? terminalContent
+    : null;
+
+  const safeObservation = (step: AgentStep, index: number): string => {
+    const clipped = step.ok ? clip(step.output, 500) : `(failed: ${clip(step.output, 150)})`;
+    return isProviderSafeRetainedText(`agent_observation ${clipped}`)
+      ? `${index + 1}. ${step.skill}: ${clipped}`
+      : `${index + 1}. ${step.skill}: [sensitive observation omitted before synthesis]`;
+  };
 
   const observations = trace.length
-    ? trace
-        .map((s, i) => `${i + 1}. ${s.skill}: ${s.ok ? clip(s.output, 500) : `(failed: ${clip(s.output, 150)})`}`)
-        .join("\n")
-    : terminalContent
-      ? `Reasoning: ${terminalContent}`
+    ? trace.map(safeObservation).join("\n")
+    : safeTerminalContent
+      ? `Reasoning: ${safeTerminalContent}`
       : "(no tool results)";
 
   const system = `You are ${name}, a ${personality} AI pet, writing the FINAL answer to your owner's goal. Always answer in English and never output Hangul, even if the goal or observations use another language. Use the observations you gathered from your tools. Be in-character, warm, and concise (2-4 sentences). Do NOT mention "skills", "tools", "JSON", or that you are an AI.`;
-  const user = `GOAL: ${goal}
+  const user = `GOAL: ${safeGoal}
 
 WHAT YOU GATHERED:
 ${observations}
-${terminalContent ? `\nYOUR DRAFT THOUGHT: ${terminalContent}` : ""}
+${safeTerminalContent ? `\nYOUR DRAFT THOUGHT: ${safeTerminalContent}` : ""}
 
 Write the final answer:`;
 
-  try {
-    const out = await callLLM({
-      task: "chat",
-      petId,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      max_tokens: 220,
-      temperature: 0.8,
-    });
-    const safe = generatedEnglishOrNull(out.text);
-    if (safe) return safe;
-  } catch {
-    // fall through to a non-LLM fallback so the gathered work is never lost
+  let modelCalled = false;
+  if (!timedOut) {
+    try {
+      modelCalled = true;
+      const out = await callLLM({
+        task: "chat",
+        petId,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        max_tokens: 220,
+        temperature: 0.8,
+        onProviderAttempt,
+        signal,
+      });
+      const safe = generatedEnglishOrNull(out.text);
+      if (safe) return { answer: safe, timedOut: false, modelCalled, usage: out.raw?.usage };
+    } catch (error) {
+      timedOut = isAgentAbort(error, signal);
+      // Fall through to a deterministic answer so gathered work is not lost.
+    }
   }
   const safeTerminal = generatedEnglishOrNull(terminalContent);
-  if (safeTerminal) return safeTerminal;
+  if (safeTerminal) return { answer: safeTerminal, timedOut, modelCalled };
   const lastOk = [...trace].reverse().find((s) => s.ok);
   if (lastOk) {
     const out = lastOk.output as any;
-    if (out?.reply) return generatedEnglishOrFallback(out.reply, AGENT_REPLY_FALLBACK);
-    return generatedEnglishOrFallback(`Here's what I found: ${clip(lastOk.output, 300)}`, AGENT_REPLY_FALLBACK);
+    if (out?.reply) {
+      return {
+        answer: generatedEnglishOrFallback(out.reply, AGENT_REPLY_FALLBACK),
+        timedOut,
+        modelCalled,
+      };
+    }
+    return {
+      answer: generatedEnglishOrFallback(
+        `Here's what I found: ${clip(lastOk.output, 300)}`,
+        AGENT_REPLY_FALLBACK,
+      ),
+      timedOut,
+      modelCalled,
+    };
   }
-  return AGENT_REPLY_FALLBACK;
+  return { answer: AGENT_REPLY_FALLBACK, timedOut, modelCalled };
 }
 
 // ── The Loop ──
 
 const AGENT_SYSTEM = `You are an AI pet's autonomous agent, working toward your owner's GOAL.
 
-You have TOOLS (your pet skills). To make progress, CALL the tools that help — you may call several. Read each tool's result, then decide whether to call more or to STOP.
+You have TOOLS (your pet skills). To make progress, CALL the tools that help. You may request more than one tool in a round; they run sequentially. Read each result, then decide whether to call more or to STOP.
 
 Rules:
 - Write all assistant text in English and never output Hangul, even if the goal uses another language.
@@ -465,7 +383,7 @@ Rules:
 - Do NOT repeat the same tool with the same arguments.
 - Most goals need 1-3 tool calls. When you have enough to answer, reply with a short plain-text answer and NO tool calls — that ends the loop.
 - Only call the tools you were given. Never invent tool names or arguments.
-- Some tools are LOOK-UP tools (web_search, web_read, wikipedia_lookup, crypto_price, recall_memory) that fetch REAL external or remembered facts — prefer them over guessing whenever the goal needs a fact you don't already know. If a look-up comes back empty or errors, try a different tool or answer with what you have.`;
+- recall_memory searches only retained context belonging to this pet's owner. Use it when the goal depends on prior context. No outbound web connector is available in this private-memory run.`;
 
 /**
  * Run the native tool-calling agent loop. Returns the final in-character answer,
@@ -479,18 +397,32 @@ export async function runToolAgent(
 ): Promise<RunToolAgentResult> {
   const maxSteps = Math.max(MIN_STEPS, Math.min(HARD_MAX_STEPS, Math.floor(opts?.maxSteps ?? DEFAULT_MAX_STEPS)));
   const onEvent = opts?.onEvent ?? (() => {});
-  const deadline = Date.now() + WALLCLOCK_MS;
-  // Skill tools + real keyless read-only connector tools (additive). Connector
-  // names are checked first at execution time, so they always win a collision.
-  const tools = [...buildTools(), ...CONNECTOR_TOOLS.map((t) => t.def)];
+  const deadlineScope = createAgentDeadlineScope(WALLCLOCK_MS, opts?.signal);
+  const { signal, deadline } = deadlineScope;
+  try {
+  // Skill tools + private read-only recall. Connector names are checked first
+  // at execution time, so they always win a collision.
+  throwIfAgentAborted(signal);
+  const tools = [...await buildTools(petId), ...CONNECTOR_TOOLS.map((t) => t.def)];
+  throwIfAgentAborted(signal);
 
   const messages: ToolMessage[] = [
     { role: "system", content: AGENT_SYSTEM },
     { role: "user", content: goal },
   ];
   const trace: AgentStep[] = [];
-  const usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0, reasoningCalls: 0, steps: 0 };
+  const usage = {
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens: 0,
+    reasoningCalls: 0,
+    modelCalls: 0,
+    orchestratorModelCalls: 0,
+    skillModelCalls: 0,
+    steps: 0,
+  };
   let terminalContent: string | null = null;
+  let stoppedReason: AgentStoppedReason = "max_steps";
 
   const addUsage = (u: any) => {
     usage.reasoningCalls += 1;
@@ -501,22 +433,32 @@ export async function runToolAgent(
     usage.completionTokens += ct;
     usage.totalTokens += u.total_tokens ?? pt + ct;
   };
+  const recordOrchestratorAttempt = () => {
+    usage.modelCalls += 1;
+    usage.orchestratorModelCalls += 1;
+  };
 
-  for (let step = 0; step < maxSteps; step++) {
-    if (Date.now() > deadline) break;
+  reasoningLoop: for (let step = 0; step < maxSteps; step++) {
+    if (signal.aborted || Date.now() >= deadline) {
+      stoppedReason = "timeout";
+      break;
+    }
 
     let res;
     try {
-      res = await callLLMWithTools({
-        task: "reason",
-        messages,
-        tools,
-        toolChoice: "auto",
-        petId,
-        temperature: 0.3,
-        maxTokens: 700,
-      });
+      res = await awaitAgentWork(signal, (runSignal) => callLLMWithTools({
+          task: "reason",
+          messages,
+          tools,
+          toolChoice: "auto",
+          petId,
+          temperature: 0.3,
+          maxTokens: 700,
+          onProviderAttempt: recordOrchestratorAttempt,
+          signal: runSignal,
+        }));
     } catch (e: any) {
+      stoppedReason = isAgentAbort(e, signal) ? "timeout" : "planner_error";
       onEvent({ type: "error", message: e?.message || "reasoning call failed" });
       break;
     }
@@ -526,6 +468,7 @@ export async function runToolAgent(
     if (!res.toolCalls || res.toolCalls.length === 0) {
       terminalContent = generatedEnglishOrNull(res.content);
       if (terminalContent) onEvent({ type: "thought", text: terminalContent });
+      stoppedReason = "completed";
       break;
     }
 
@@ -536,40 +479,97 @@ export async function runToolAgent(
 
     const results: Array<{ tool_call_id: string; name: string; content: string }> = [];
     for (const call of res.toolCalls) {
+      if (signal.aborted || Date.now() >= deadline) {
+        stoppedReason = "timeout";
+        break reasoningLoop;
+      }
       const isConnector = CONNECTOR_TOOL_MAP.has(call.name);
       const kind: ToolKind = isConnector ? "connector" : "skill";
       onEvent({ type: "tool_call", id: call.id, skill: call.name, input: call.arguments, kind });
-      const exec = isConnector
-        ? await executeConnector(petId, call.name, call.arguments, deadline)
-        : await executeWithRetry(petId, call.name, call.arguments, deadline);
+      let exec;
+      try {
+        exec = isConnector
+          ? await executeConnector(petId, call.name, call.arguments, signal)
+          : await executeSkillOnce(petId, call.name, call.arguments, signal);
+      } catch (error) {
+        if (isAgentAbort(error, signal)) {
+          stoppedReason = "timeout";
+          break reasoningLoop;
+        }
+        throw error;
+      }
+      const rawSkillModelCalls: unknown = "modelCalls" in exec
+        ? exec.modelCalls
+        : undefined;
+      const skillModelCalls = typeof rawSkillModelCalls === "number"
+        ? rawSkillModelCalls
+        : 0;
       trace.push({
         thought: safeThought ?? undefined,
         skill: call.name,
         input: call.arguments,
         output: exec.output,
         ok: exec.ok,
+        sideEffectCommitted: "sideEffectCommitted" in exec && exec.sideEffectCommitted === true,
+        modelCalls: skillModelCalls,
       });
-      onEvent({ type: "tool_result", id: call.id, skill: call.name, ok: exec.ok, output: exec.output, kind });
+      usage.skillModelCalls += skillModelCalls;
+      usage.modelCalls += skillModelCalls;
+      onEvent({
+        type: "tool_result",
+        id: call.id,
+        skill: call.name,
+        ok: exec.ok,
+        output: exec.output,
+        sideEffectCommitted: "sideEffectCommitted" in exec && exec.sideEffectCommitted === true,
+        kind,
+      });
       if (!exec.ok) {
         onEvent({ type: "error", skill: call.name, message: clip((exec.output as any)?.error ?? exec.output, 200) });
       }
       results.push({ tool_call_id: call.id, name: call.name, content: clip(exec.output, RESULT_CLIP) });
+      if (signal.aborted || Date.now() >= deadline) {
+        stoppedReason = "timeout";
+        break reasoningLoop;
+      }
     }
     appendToolResults(messages, results);
   }
 
   usage.steps = trace.length;
-  const answer = await synthesize(petId, goal, trace, terminalContent);
-  onEvent({ type: "final", answer });
-  return { answer, trace, usage };
+  const synthesis = await synthesize(
+    petId,
+    goal,
+    trace,
+    terminalContent,
+    signal,
+    recordOrchestratorAttempt,
+  );
+  if (synthesis.modelCalled) addUsage(synthesis.usage);
+  if (synthesis.timedOut && stoppedReason !== "planner_error") stoppedReason = "timeout";
+  // A terminal planner answer is not task success when every attempted tool
+  // failed. Direct-answer runs (no tools) may still complete successfully.
+  const completed =
+    stoppedReason === "completed" &&
+    (trace.length === 0 || trace.some((step) => step.ok));
+  onEvent({ type: "final", answer: synthesis.answer, completed, stoppedReason });
+  return { answer: synthesis.answer, trace, completed, stoppedReason, usage };
+  } finally {
+    // Clearing the timer happens before the returned promise settles. Because
+    // every child task above is awaited, there is no provider/skill promise left
+    // able to mutate accounting after the route starts credit settlement.
+    deadlineScope.close();
+  }
 }
 
 /** Exposed for the route + tests: which skills are offered as executable tools. */
 export function runnableToolIds(): string[] {
+  // Registry-level candidate ids. A concrete run additionally filters these by
+  // the pet's core/install/level/personality policy in buildTools(petId).
   return BUILTIN_SKILLS.filter(isRunnable).map((s) => s.id);
 }
 
-/** Exposed for the route + tests: the real keyless read-only connector tools. */
+/** Exposed for the route + tests: private read-only connector tools. */
 export function connectorToolIds(): string[] {
   return CONNECTOR_TOOLS.map((t) => t.def.name);
 }

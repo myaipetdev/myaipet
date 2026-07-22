@@ -13,7 +13,15 @@ import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
 import { callLLM } from "@/lib/llm/router";
 import { interactablePetWhere } from "@/lib/publicPet";
-import { containsHangul } from "@/lib/generatedLanguage";
+import { providerSafeStoredText } from "@/lib/petclaw/provider-safe-text";
+import { readBoundedJsonBody } from "@/lib/petclaw/bounded-json-body";
+import {
+  commitAgentCreditsWithDb,
+  refundAgentCreditsOnce,
+  reserveAgentCredits,
+  type AgentCreditReservation,
+} from "@/lib/agentCreditReservation";
+import { runReservedPetDate } from "@/lib/petDateContract";
 
 const COST_CREDITS = 20;
 
@@ -25,18 +33,37 @@ export async function POST(req: NextRequest) {
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { myPetId, theirPetId } = await req.json().catch(() => ({}));
-  if (!myPetId || !theirPetId) return NextResponse.json({ error: "myPetId + theirPetId required" }, { status: 400 });
-  if (myPetId === theirPetId) return NextResponse.json({ error: "Pick a different pet" }, { status: 400 });
+  const parsedBody = await readBoundedJsonBody(req, 2 * 1024);
+  if (parsedBody.ok === false) {
+    return NextResponse.json(
+      { error: parsedBody.reason === "too_large" ? "Request body too large" : "Invalid JSON body" },
+      { status: parsedBody.reason === "too_large" ? 413 : 400 },
+    );
+  }
+  const body = parsedBody.value && typeof parsedBody.value === "object" && !Array.isArray(parsedBody.value)
+    ? parsedBody.value as Record<string, unknown>
+    : {};
+  const { myPetId, theirPetId } = body;
+  const myPetIdNumber = Number(myPetId);
+  const theirPetIdNumber = Number(theirPetId);
+  if ((typeof myPetId !== "number" && typeof myPetId !== "string")
+    || (typeof theirPetId !== "number" && typeof theirPetId !== "string")
+    || !Number.isSafeInteger(myPetIdNumber) || myPetIdNumber <= 0
+    || !Number.isSafeInteger(theirPetIdNumber) || theirPetIdNumber <= 0) {
+    return NextResponse.json({ error: "myPetId + theirPetId must be positive integers" }, { status: 400 });
+  }
+  if (myPetIdNumber === theirPetIdNumber) {
+    return NextResponse.json({ error: "Pick a different pet" }, { status: 400 });
+  }
 
   const mine = await prisma.pet.findFirst({
-    where: { id: Number(myPetId), user_id: user.id, is_active: true },
+    where: { id: myPetIdNumber, user_id: user.id, is_active: true },
   });
   if (!mine) return NextResponse.json({ error: "Your pet not found" }, { status: 404 });
 
   const theirs = await prisma.pet.findFirst({
     where: {
-      id: Number(theirPetId),
+      id: theirPetIdNumber,
       OR: [
         { user_id: user.id, is_active: true },
         interactablePetWhere(),
@@ -46,21 +73,26 @@ export async function POST(req: NextRequest) {
   });
   if (!theirs) return NextResponse.json({ error: "Their pet not found" }, { status: 404 });
 
-  const u = await prisma.user.findUnique({ where: { id: user.id }, select: { credits: true } });
-  if (!u || u.credits < COST_CREDITS) {
-    return NextResponse.json({ error: "Not enough credits", needed: COST_CREDITS }, { status: 402 });
-  }
+  // Stored identity metadata remains visible to its owners, but untrusted
+  // legacy text that resembles secrets or violates the provider language
+  // boundary is never copied into a third-party model prompt.
+  const providerMineName = providerSafeStoredText(mine.name, "pet_name", 50) || "Pet A";
+  const providerTheirName = providerSafeStoredText(theirs.name, "pet_name", 50) || "Pet B";
+  const providerMinePersonality = providerSafeStoredText(mine.personality_type, "personality", 20) || "friendly";
+  const providerTheirPersonality = providerSafeStoredText(theirs.personality_type, "personality", 20) || "friendly";
+  const providerMineElement = providerSafeStoredText(mine.element, "element", 10) || "normal";
+  const providerTheirElement = providerSafeStoredText(theirs.element, "element", 10) || "normal";
 
   // Build a compact system prompt for the LLM
   const system = `You are simulating a short, natural conversation between two pets meeting. Always write the dialogue in English.
 
-PET A: ${mine.name}
-  - personality: ${mine.personality_type}
-  - level: ${mine.level} · element: ${mine.element || "normal"}
+PET A: ${providerMineName}
+  - personality: ${providerMinePersonality}
+  - level: ${mine.level} · element: ${providerMineElement}
 
-PET B: ${theirs.name}
-  - personality: ${theirs.personality_type}
-  - level: ${theirs.level} · element: ${theirs.element || "normal"}
+PET B: ${providerTheirName}
+  - personality: ${providerTheirPersonality}
+  - level: ${theirs.level} · element: ${providerTheirElement}
 
 OUTPUT FORMAT (strict):
 A short JSON object:
@@ -75,78 +107,71 @@ RULES:
 - "friendship" reflects how the date went: hostile = negative, fine = small positive, great = high positive.
 - Output JSON only, nothing else.`;
 
-  try {
-    const out = await callLLM({
-      task: "chat",
-      petId: mine.id,
-      messages: [{ role: "system", content: system }, { role: "user", content: "Begin the date." }],
-      max_tokens: 500,
-      temperature: 0.85,
-      response_format: { type: "json_object" },
-    });
-    const raw = out.text;
-    const match = raw.match(/\{[\s\S]+\}/);
-    if (!match) return NextResponse.json({ error: "Bad AI output" }, { status: 502 });
-
-    let parsed: { log: { speaker: string; text: string }[]; vibe: string; friendship: number };
-    try { parsed = JSON.parse(match[0]); }
-    catch { return NextResponse.json({ error: "AI output not JSON" }, { status: 502 }); }
-
-    if (!Array.isArray(parsed.log) || parsed.log.length < 4) {
-      return NextResponse.json({ error: "AI output too short" }, { status: 502 });
-    }
-    // Do not debit or persist a provider/BYOK response that ignored the English
-    // contract. A retry would spend a second model call, so fail closed instead.
-    if (containsHangul(parsed)) {
-      return NextResponse.json({ error: "AI output was not English" }, { status: 502 });
-    }
-
-    // Debit + persist atomically. Guarded decrement (audit H17): the early
-    // balance check above is advisory only — concurrent requests could both
-    // pass it, so the debit itself re-checks the balance atomically.
-    const friendship = Math.max(-30, Math.min(50, Math.round(parsed.friendship || 0)));
-    const vibe = String(parsed.vibe || "playful").slice(0, 40);
-
-    const settled = await prisma.$transaction(async (tx) => {
-      const dec = await tx.user.updateMany({
-        where: { id: user.id, credits: { gte: COST_CREDITS } },
-        data: { credits: { decrement: COST_CREDITS } },
+  const run = await runReservedPetDate<
+    AgentCreditReservation,
+    { row: { id: number }; creditsRemaining: number }
+  >({
+    // Reservation and guarded debit commit together before the provider call,
+    // so concurrent requests cannot spend an already-exhausted wallet on LLMs.
+    reserve: () => reserveAgentCredits(user.id, mine.id, COST_CREDITS, "pet_date"),
+    invokeProvider: async () => {
+      const out = await callLLM({
+        task: "chat",
+        petId: mine.id,
+        messages: [{ role: "system", content: system }, { role: "user", content: "Begin the date." }],
+        max_tokens: 500,
+        temperature: 0.85,
+        response_format: { type: "json_object" },
       });
-      if (dec.count === 0) return null;
+      return out.text;
+    },
+    // PetDate creation and reserved → committed are one DB transaction. A
+    // failed insert cannot leave a charge, and a commit cannot lack its row.
+    settle: (reservation, output) => prisma.$transaction(async (tx) => {
       const row = await tx.petDate.create({
         data: {
           pet_a_id: mine.id,
           pet_b_id: theirs.id,
           initiator_id: user.id,
-          log: JSON.stringify(parsed.log),
-          vibe, friendship,
+          log: JSON.stringify(output.log),
+          vibe: output.vibe,
+          friendship: output.friendship,
         },
       });
-      const balance = await tx.user.findUniqueOrThrow({
-        where: { id: user.id },
-        select: { credits: true },
-      });
-      return { row, creditsRemaining: balance.credits };
-    });
-    if (!settled) {
-      return NextResponse.json({ error: "Not enough credits", needed: COST_CREDITS }, { status: 402 });
-    }
+      const creditsRemaining = await commitAgentCreditsWithDb(tx, reservation);
+      return { row, creditsRemaining };
+    }),
+    refund: refundAgentCreditsOnce,
+  });
 
-    return NextResponse.json({
-      ok: true, id: settled.row.id,
-      pet_a: { name: mine.name, avatar_url: mine.avatar_url },
-      pet_b: { name: theirs.name, avatar_url: theirs.avatar_url },
-      log: parsed.log, vibe, friendship,
-      creditsRemaining: settled.creditsRemaining,
-    });
-  } catch (e: any) {
-    // A pet may be deleted while the LLM is running. The PetDate foreign keys
-    // reject a stale insert and the surrounding transaction rolls the credit
-    // debit back; surface that normal race as a conflict, not a server fault.
-    if (e?.code === "P2003") {
+  if (run.kind === "insufficient") {
+    return NextResponse.json({ error: "Not enough credits", needed: COST_CREDITS }, { status: 402 });
+  }
+  if (run.kind === "invalid_output") {
+    return NextResponse.json({ error: "AI output did not match the Pet Date contract" }, { status: 502 });
+  }
+  if (run.kind === "failed") {
+    const original = run.originalError ?? run.error;
+    if (run.phase === "settlement"
+      && typeof original === "object"
+      && original !== null
+      && "code" in original
+      && original.code === "P2003") {
       return NextResponse.json({ error: "One of these pets is no longer available" }, { status: 409 });
     }
-    console.error("pet-date threw:", e?.message || e);
-    return NextResponse.json({ error: "internal" }, { status: 500 });
+    console.error("pet-date failed:", run.phase, original instanceof Error ? original.message : "unknown");
+    const status = run.phase === "provider" ? 502 : 503;
+    return NextResponse.json({ error: run.phase === "provider" ? "Pet Date generation failed" : "Pet Date settlement failed" }, { status });
   }
+
+  return NextResponse.json({
+    ok: true,
+    id: run.settlement.row.id,
+    pet_a: { name: mine.name, avatar_url: mine.avatar_url },
+    pet_b: { name: theirs.name, avatar_url: theirs.avatar_url },
+    log: run.output.log,
+    vibe: run.output.vibe,
+    friendship: run.output.friendship,
+    creditsRemaining: run.settlement.creditsRemaining,
+  });
 }

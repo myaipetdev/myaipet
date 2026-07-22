@@ -15,6 +15,7 @@ import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { isExpressionKey } from "@/lib/moodPortraits";
 import { applicationMediaKey, userCanAssignApplicationMedia } from "@/lib/mediaOwnership";
+import { withLockedPetModifiers } from "@/lib/petclaw/modifier-store";
 
 async function ownedPet(req: NextRequest, petIdStr: string) {
   const user = await getUser(req);
@@ -25,16 +26,24 @@ async function ownedPet(req: NextRequest, petIdStr: string) {
   return { user, petId, pet };
 }
 
-// Mutate ONLY mood_portraits inside a transaction that re-reads the row first —
+// Mutate ONLY mood_portraits under the shared modifier advisory lock —
 // personality_modifiers also holds the memory moat (persistent_memories,
-// user_profile), so a stale read-modify-write here could erase a concurrently
-// written memory. The fresh in-transaction read keeps that window minimal.
+// user_profile), so an ordinary transaction read alone cannot prevent a lost
+// update under PostgreSQL READ COMMITTED isolation.
 async function updateMoodPortraits(petId: number, mutate: (cur: Record<string, string>) => Record<string, string>) {
-  return prisma.$transaction(async (tx) => {
-    const fresh = await tx.pet.findUnique({ where: { id: petId }, select: { personality_modifiers: true } });
-    const mods = (fresh?.personality_modifiers as any) || {};
-    const portraits = mutate({ ...(mods.mood_portraits || {}) });
-    await tx.pet.update({ where: { id: petId }, data: { personality_modifiers: { ...mods, mood_portraits: portraits } } });
+  return withLockedPetModifiers(petId, async ({ tx, modifiers }) => {
+    const current = modifiers.mood_portraits;
+    const portraits = mutate({
+      ...(current && typeof current === "object" && !Array.isArray(current)
+        ? current as Record<string, string>
+        : {}),
+    });
+    await tx.pet.update({
+      where: { id: petId },
+      data: {
+        personality_modifiers: { ...modifiers, mood_portraits: portraits } as any,
+      },
+    });
     return portraits;
   });
 }

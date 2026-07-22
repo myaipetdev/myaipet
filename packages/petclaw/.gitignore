@@ -1,0 +1,6 @@
+node_modules/
+dist/
+# Owner exports can contain private conversation/profile data. Never vendor or
+# publish local SOUL artifacts created by `petclaw-sdk export`.
+*_SOUL_*.json
+.petclaw.json

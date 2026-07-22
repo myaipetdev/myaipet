@@ -13,6 +13,8 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { withLockedPetModifiers } from "@/lib/petclaw/modifier-store";
+import { rateLimit } from "@/lib/rateLimit";
 
 // allowX (UI/API) → flat personality_modifiers key (enforced) + default
 const CONSENT_MAP = {
@@ -35,10 +37,12 @@ function readConsent(mods: any) {
 }
 
 export async function GET(req: NextRequest) {
+  const rl = rateLimit(req, { key: "petclaw-consent-read", limit: 60, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const petId = Number(req.nextUrl.searchParams.get("petId"));
-  if (!petId) return NextResponse.json({ error: "petId required" }, { status: 400 });
+  if (!Number.isInteger(petId) || petId <= 0) return NextResponse.json({ error: "valid petId required" }, { status: 400 });
   const pet = await prisma.pet.findFirst({ where: { id: petId, user_id: user.id } });
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   const mods = (pet.personality_modifiers as any) || {};
@@ -46,26 +50,58 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(req, { key: "petclaw-consent-write", limit: 20, windowMs: 60_000 });
+  if (!rl.ok) return rl.response;
   const user = await getUser(req);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const body = await req.json();
+  const declaredLength = Number(req.headers.get("content-length") || 0);
+  if (Number.isFinite(declaredLength) && declaredLength > 8 * 1024) {
+    return NextResponse.json({ error: "Request body too large" }, { status: 413 });
+  }
+  const rawBody = await req.text();
+  if (new TextEncoder().encode(rawBody).byteLength > 8 * 1024) {
+    return NextResponse.json({ error: "Request body too large" }, { status: 413 });
+  }
+  let body: any = null;
+  try { body = JSON.parse(rawBody); } catch { /* handled below */ }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const { petId, consent } = body;
-  if (!petId) return NextResponse.json({ error: "petId required" }, { status: 400 });
-  if (!consent || typeof consent !== "object") {
+  const pid = Number(petId);
+  if (!Number.isInteger(pid) || pid <= 0) return NextResponse.json({ error: "valid petId required" }, { status: 400 });
+  if (!consent || typeof consent !== "object" || Array.isArray(consent)) {
     return NextResponse.json({ error: "consent object required" }, { status: 400 });
   }
-  const pet = await prisma.pet.findFirst({ where: { id: Number(petId), user_id: user.id } });
-  if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
-  const mods = (pet.personality_modifiers as any) || {};
-  // Write the FLAT keys that enforcement reads. Drop any stale nested object.
-  const next: Record<string, any> = { ...mods };
-  delete next.consent;
-  for (const [allowKey, { flat }] of Object.entries(CONSENT_MAP)) {
-    next[flat] = !!consent[allowKey];
+  const allowedConsentKeys = new Set(Object.keys(CONSENT_MAP));
+  const suppliedConsentKeys = Object.keys(consent);
+  if (
+    suppliedConsentKeys.length !== allowedConsentKeys.size ||
+    suppliedConsentKeys.some((key) => !allowedConsentKeys.has(key) || typeof consent[key] !== "boolean")
+  ) {
+    return NextResponse.json(
+      { error: "consent must provide exactly four boolean allow* fields" },
+      { status: 400 },
+    );
   }
-  await prisma.pet.update({
-    where: { id: pet.id },
-    data: { personality_modifiers: next as any },
+  const pet = await prisma.pet.findFirst({
+    where: { id: pid, user_id: user.id },
+    select: { id: true },
+  });
+  if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  const next = await withLockedPetModifiers(pet.id, async ({ tx, modifiers }) => {
+    // Write only the enforced flat keys into the latest modifier document so a
+    // simultaneous memory/skill update cannot be overwritten by a stale read.
+    const merged: Record<string, any> = { ...modifiers };
+    delete merged.consent;
+    for (const [allowKey, { flat }] of Object.entries(CONSENT_MAP)) {
+      merged[flat] = !!consent[allowKey];
+    }
+    await tx.pet.update({
+      where: { id: pet.id },
+      data: { personality_modifiers: merged as any },
+    });
+    return merged;
   });
   return NextResponse.json({ consent: readConsent(next), saved_at: new Date().toISOString() });
 }

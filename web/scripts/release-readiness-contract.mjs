@@ -10,6 +10,8 @@ const readWeb = (relative) => readFile(resolve(webRoot, relative), "utf8");
 const readRepo = (relative) => readFile(resolve(repoRoot, relative), "utf8");
 const extensionZip = await readFile(resolve(webRoot, "public/petclaw-extension.zip"));
 const extensionChecksum = await readWeb("public/petclaw-extension.zip.sha256");
+const extensionBuilder = await readRepo("scripts/build-petclaw-extension.sh");
+const releaseBuilder = await readRepo("deploy/build-release-artifact.sh");
 
 const [
   status,
@@ -47,6 +49,11 @@ const [
   agentOffice,
   grandPawOffice,
   grandPawScene,
+  baselineManifest,
+  baselineSql,
+  memoryFtsMigration,
+  bootstrapEmptyDatabase,
+  ec2Release,
 ] = await Promise.all([
   readWeb("src/lib/releaseStatus.ts"),
   readWeb("src/lib/petclaw/connectors/index.ts"),
@@ -83,6 +90,11 @@ const [
   readWeb("src/components/AgentOffice.tsx"),
   readWeb("src/components/GrandPawOffice.tsx"),
   readWeb("src/lib/grandpaw/agent-cafe-3d.js"),
+  readWeb("prisma/baseline/20260717_migrations.txt"),
+  readWeb("prisma/baseline/20260717_production.sql"),
+  readWeb("prisma/migrations/20260615000000_memory_fts/migration.sql"),
+  readRepo("deploy/bootstrap-empty-database.sh"),
+  readRepo("deploy/ec2-release.sh"),
 ]);
 
 assert.match(status, /registry:\s*19/);
@@ -90,7 +102,8 @@ assert.match(status, /live:\s*3/);
 assert.match(status, /liveIds:\s*\["web-search", "wikipedia", "memory"\]/);
 assert.match(status, /skills:\s*18/);
 assert.match(status, /mcpTools:\s*6/);
-assert.match(status, /mcp:\s*"ships with SDK 1\.6\.2"/);
+assert.match(status, /mcpCandidateTools:\s*7/);
+assert.match(status, /mcp:\s*"7-tool SDK 1\.6\.2 candidate · not published"/);
 assert.match(status, /channels:\s*"launch-paused"/);
 
 const connectorRegistry = connectors.match(/export const AVAILABLE_CONNECTORS\s*=\s*\[([\s\S]*?)\n\]\s+as const;/)?.[1] ?? "";
@@ -104,16 +117,16 @@ for (const text of [landing, pitch]) {
   assert.doesNotMatch(text, /registry, 6 live/i);
 }
 assert.match(landing, /19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS/);
-assert.match(landing, /MCP client support ships with SDK 1\.6\.2/);
+assert.match(landing, /7 MCP TOOLS · REVIEWED SDK 1\.6\.2 CANDIDATE/);
 assert.match(landing, /\+47 Play Points today[\s\S]*SAMPLE/);
 assert.doesNotMatch(landing, /href=["']\/stats/);
 assert.doesNotMatch(landing, />Metrics</);
 assert.match(pitch, /19-connector registry with 3 live today/);
-assert.match(pitch, /working MCP path ships with SDK 1\.6\.2/i);
+assert.match(pitch, /reviewed seven-tool MCP 1\.6\.2 candidate/i);
 
 for (const text of [demo, demoSource]) {
   assert.match(text, /<a class="cta" href="https:\/\/app\.myaipet\.ai" target="_top">/);
-  assert.match(text, /MCP runtime ships with SDK 1\.6\.2 · messaging launch-paused\./);
+  assert.match(text, /7-tool MCP path is an unpublished SDK 1\.6\.2 candidate · messaging launch-paused\./);
   assert.doesNotMatch(text, /document\.querySelector\('\.s8 \.cta'\)/);
 }
 
@@ -162,17 +175,52 @@ for (const claim of [
 ]) {
   assert.doesNotMatch(publicCopy, claim);
 }
-assert.match(apiDocs, /bundled MCP tools/);
+assert.match(apiDocs, /MCP tools · 1\.6\.2 candidate/);
 assert.match(apiDocs, /MCP runtime ·/);
 assert.match(apiDocs, /Messaging ·/);
 assert.match(landing, /Import is a reported reconstruction/);
 assert.match(premium, /Chat subject to published rate limits/);
 assert.match(petClawHero, /channels · paused/);
-assert.match(quickstart, /Competitive state, media, external connections, credentials, and consent are excluded/);
+assert.match(quickstart, /Persistent[\s\S]*require owner authentication/i);
+assert.match(quickstart, /SHA-256 integrity checksum, not a publisher signature/i);
 
 assert.match(connectorRoute, /\["telegram", "slack", "discord", "twitter"\]/);
 assert.match(connectorRoute, /!agentChannelsEnabled\(\)/);
 assert.match(connectorRoute, /return agentChannelsUnavailableResponse\(\)/);
+assert.match(connectorRoute, /case "wikipedia"/);
+assert.match(connectorRoute, /wiki\.search/);
+assert.match(connectorRoute, /wiki\.getSummary/);
+
+// The production baseline SQL already contains this FK. Marking its migration
+// applied is required or a clean disaster-recovery bootstrap fails with
+// `constraint already exists` before newer migrations can run.
+assert.match(baselineManifest, /^20260718001000_subscription_owner_fk$/m);
+
+// A baselined migration will never replay. Its material objects must exist in
+// the snapshot, and both disaster-recovery bootstrap and live release paths
+// must fail closed if that invariant is broken.
+assert.match(baselineManifest, /^20260615000000_memory_fts$/m);
+assert.match(schema, /content_tsv\s+Unsupported\("tsvector"\)/);
+assert.match(schema, /@@index\(\[content_tsv\], type: Gin\)/);
+assert.match(schema, /@@index\(\[pet_id, created_at\(sort: Desc\)\]\)/);
+assert.match(memoryFtsMigration, /GENERATED ALWAYS AS \(to_tsvector\('simple'/);
+assert.match(baselineSql,
+  /"content_tsv" tsvector GENERATED ALWAYS AS \(to_tsvector\('simple'::regconfig, COALESCE\("content", ''::text\)\)\) STORED/);
+assert.match(baselineSql,
+  /CREATE INDEX "pet_memories_content_tsv_idx" ON "pet_memories" USING GIN \("content_tsv"\)/);
+assert.match(baselineSql,
+  /CREATE INDEX "pet_memories_pet_id_created_at_idx" ON "pet_memories"\("pet_id", "created_at" DESC\)/);
+for (const guard of [bootstrapEmptyDatabase, ec2Release]) {
+  assert.match(guard, /attribute\.attgenerated = 's'/);
+  assert.match(guard, /invalid_gin_index/);
+  assert.match(guard, /invalid_compound_index/);
+  assert.match(guard, /pg_get_indexdef\(index_class\.oid\)/);
+}
+assert.ok(
+  ec2Release.indexOf("PETCLAW_MEMORY_FTS_STATE=")
+    < ec2Release.indexOf("npx prisma migrate deploy"),
+  "memory FTS preflight must block before migrations and candidate traffic",
+);
 
 assert.match(schema, /photo_hash\s+String\?/);
 assert.match(schema, /map_public\s+Boolean\s+@default\(false\)/);
@@ -267,8 +315,10 @@ for (const visibleStatusEscape of [
   assert.doesNotMatch(agentOffice, visibleStatusEscape);
   assert.doesNotMatch(grandPawOffice, visibleStatusEscape);
 }
-assert.match(agentOffice, /\{running \? "WORKING" : "▶ Dispatch"\}/);
-assert.match(grandPawOffice, /\{running \? "WORKING" : "Dispatch"\}/);
+assert.match(agentOffice, /disabled=\{goal\.trim\(\)\.length < 3 \|\| running \|\| receiptMissing \|\| petId == null\}/);
+assert.match(agentOffice, /\{running \? "WORKING" : receiptMissing \? "Check Account first" : `Authorize \$\{COST\} credits & dispatch`\}/);
+assert.match(grandPawOffice, /disabled=\{goal\.trim\(\)\.length < 3 \|\| running \|\| receiptMissing\}/);
+assert.match(grandPawOffice, /\{running \? "WORKING" : receiptMissing \? "Check Account first" : `Authorize \$\{cost\} credits & dispatch`\}/);
 assert.match(agentOffice, /\{active \? "WORKING" : "IDLE"\}/);
 assert.match(agentOffice, /steps\.push\(\{ skill: evt\.skill, ok: true, complete: false \}\)/);
 assert.match(agentOffice, /ok: !!evt\.ok, complete: true/);
@@ -291,6 +341,10 @@ assert.equal(
   extensionChecksum,
   `${createHash("sha256").update(extensionZip).digest("hex")}  petclaw-extension.zip\n`,
 );
+assert.match(extensionBuilder, /--check\) CHECK_ONLY=true/);
+assert.match(extensionBuilder, /Committed extension ZIPs do not match the deterministic source build/);
+assert.match(extensionBuilder, /printf '%s\\n' "\$EXPECTED_CHECKSUM" > "\$PUBLIC_CHECKSUM"/);
+assert.match(releaseBuilder, /scripts\/build-petclaw-extension\.sh" --check/);
 for (const onboarding of [petClawPreview, sovereignty]) {
   assert.match(onboarding, /href="\/petclaw-extension\.zip\.sha256"/);
   assert.match(onboarding, /Verify SHA-256/);

@@ -610,13 +610,18 @@
       <label for="apiUrl">API Server</label>
       <input type="text" id="apiUrl" class="mono" value="https://app.myaipet.ai" readonly />
       <div style="height:6px"></div>
-      <label for="petId">Pet ID</label>
-      <input type="number" id="petId" class="mono" placeholder="Selected automatically" min="1" readonly />
+      <label for="petId">Companion pet</label>
+      <select id="petId" class="mono" aria-describedby="petChoiceHint">
+        <option value="">Verify your token to load owned pets</option>
+      </select>
+      <div id="petChoiceHint" style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px;line-height:1.4">
+        One-pet accounts link automatically. If you own several pets, choose the identity this browser should use.
+      </div>
       <div style="height:6px"></div>
       <label for="authToken">Extension token (30 days · limited scope)</label>
       <input type="password" id="authToken" class="mono" placeholder="pex_… · generate in the PetClaw dashboard" autocomplete="off" autocapitalize="none" spellcheck="false" />
       <div id="syncStatus" style="font-family:var(--mono);font-size:11px; color:var(--muted); margin-top:6px;"></div>
-      <a href="https://app.myaipet.ai/sovereignty#connect-cli" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:7px;font-size:11px;color:var(--terracotta-ink);font-weight:700">Generate or revoke an extension token</a>
+      <a href="https://app.myaipet.ai/?section=sovereignty#extension-token" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:7px;font-size:11px;color:var(--terracotta-ink);font-weight:700">Generate or revoke an extension token</a>
     </div>
 
     <div class="section">
@@ -664,9 +669,8 @@
 
     <button type="button" class="btn btn-primary" id="saveBtn">Pair Extension</button>
     <button type="button" class="btn btn-secondary" id="disconnectBtn" disabled>Disconnect Local Pairing</button>
-    <button type="button" class="btn btn-secondary" id="exportBtn" disabled>📦 Export SOUL Data</button>
-    <button type="button" class="btn btn-secondary" id="importBtn" disabled>📥 Import SOUL JSON</button>
-    <input type="file" id="importFile" accept="application/json,.json" style="display:none" />
+    <button type="button" class="btn btn-secondary" id="exportBtn">📦 Open Secure SOUL Export</button>
+    <button type="button" class="btn btn-secondary" id="importBtn">📥 Open Secure SOUL Import</button>
     <button type="button" class="btn btn-secondary" id="refreshBtn" disabled>🔄 Refresh Pet Info</button>
     <button type="button" class="btn btn-secondary" id="resumeSitesBtn" disabled>▶ Resume on Paused Sites</button>
     <button type="button" class="btn btn-danger" id="resetBtn">🗑️ Reset Local Play Points</button>
@@ -676,7 +680,7 @@
 
   <div class="footer">
     <p id="version-line">MY AI PET — PetClaw</p>
-    <p><a href="https://app.myaipet.ai/sovereignty" target="_blank" rel="noopener noreferrer">Open PetClaw Dashboard</a></p>
+    <p><a href="https://app.myaipet.ai/?section=sovereignty" target="_blank" rel="noopener noreferrer">Open PetClaw Dashboard</a></p>
   </div>
 
   <script src="popup.js"></script>

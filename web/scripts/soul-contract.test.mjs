@@ -184,6 +184,18 @@ const validation = validateSoulExport(soulExport);
 assert.equal(validation.ok, true, validation.ok ? undefined : validation.error);
 assert.equal(validation.data.memories.length, 1_200, "exports with >500 memories must validate");
 
+const oversizedAppearanceSource = structuredClone(source);
+oversizedAppearanceSource.pet.appearanceDesc = "safe appearance ".repeat(200);
+const oversizedAppearance = {
+  ...oversizedAppearanceSource,
+  integrityHash: webProtocol.computeIntegrityHash(oversizedAppearanceSource),
+};
+assert.equal(
+  validateSoulExport(oversizedAppearance).ok,
+  false,
+  "SOUL appearanceDesc must match the 2000-character pet PATCH boundary",
+);
+
 const serialized = JSON.stringify(soulExport);
 const streamed = await readSoulImportJson(new Request("https://contract.invalid/import", {
   method: "POST",

@@ -6,7 +6,7 @@
  *
  *   1) the pet's collectible sticker (REAL avatar) stands center
  *   2) it flips away and a warm-dark laptop swings in, lid opening
- *   3) the screen boots the petclaw console — typed lines end on "● {NAME} is online"
+ *   3) the screen boots the PetClaw console — typed lines confirm the owner-scoped identity loaded
  *   4) capability chips (connectors + MCP tools) fly OUT of the screen and
  *      hover around it, with gold dust rising
  *
@@ -39,7 +39,7 @@ const CHIPS: Array<{ label: string; mark: string; x: number; y: number; d: numbe
   { label: "memory_recall", mark: "✦", x: -268, y: 120, d: 6.8 },
   { label: "soul_export", mark: "✦", x: 272, y: 112, d: 6.95 },
   { label: "petclaw_chat", mark: "✦", x: -368, y: -90, d: 7.1 },
-  { label: "mcp · SDK 1.6.2", mark: "◈", x: 196, y: 186, d: 7.25 },
+  { label: "mcp · 1.6.2 candidate", mark: "◈", x: 196, y: 186, d: 7.25 },
 ];
 
 export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Props) {
@@ -174,10 +174,10 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
               <div className="pchi-bar"><i /><i /><i /><b>petclaw — console · v1</b></div>
               <div className="pchi-term">
                 <span className="pchi-ln l1 m">$ petclaw-sdk talk</span>
-                <span className="pchi-ln l2">protocol v1 · SDK 1.6.1 · MCP 1.6.2</span>
-                <span className="pchi-ln l3 c">19 registry · 3 live · 6 MCP defined</span>
+                <span className="pchi-ln l2">protocol v1 · npm SDK 1.6.1 · MCP 1.6.2 candidate</span>
+                <span className="pchi-ln l3 c">19 registry · 3 live · 7-tool MCP candidate</span>
                 <span className="pchi-ln l4 c">soul portable · consent enforced</span>
-                <span className="pchi-ln l5 g">● {name} is online<span className="pchi-caret" /></span>
+                <span className="pchi-ln l5 g">● {name} identity loaded<span className="pchi-caret" /></span>
               </div>
             </div>
           </div>

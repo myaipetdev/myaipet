@@ -6,13 +6,14 @@
 const $ = (id) => document.getElementById(id);
 const EXTENSION_TOKEN_PATTERN = /^pex_[A-Za-z0-9_-]{32,128}$/;
 let latestConfig = null;
+let pairingTabAutoOpened = false;
 
 // popup.html can be opened outside an installed extension (packaging preview / QA
 // in a plain browser tab). There chrome.* is undefined, so every top-level
 // initializer that messages the service worker would throw on load. Guard on this
 // flag and render a calm placeholder instead. Inside a real installed extension
 // chrome.* exists and everything behaves as before.
-const EXT_VERSION = "2.4.0"; // build-time fallback; keep in sync with manifest version
+const EXT_VERSION = "2.4.1"; // build-time fallback; keep in sync with manifest version
 const HAS_CHROME =
   typeof chrome !== "undefined" &&
   !!chrome.runtime &&
@@ -40,28 +41,75 @@ function safeRenderAvatar(parent, url, name, fallback = "🐾") {
   parent.appendChild(img);
 }
 
+function renderOwnedPetOptions(pets, selectedId, selectedName) {
+  const select = $("petId");
+  if (!select) return;
+  const owned = Array.isArray(pets)
+    ? pets.filter((pet) => Number.isSafeInteger(Number(pet?.id)) && Number(pet.id) > 0)
+    : [];
+  const selected = Number(selectedId) || 0;
+  select.replaceChildren();
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = owned.length > 1
+    ? "Choose one of your pets…"
+    : "Verify your token to load owned pets";
+  select.appendChild(placeholder);
+
+  for (const pet of owned) {
+    const option = document.createElement("option");
+    option.value = String(Number(pet.id));
+    option.textContent = `${String(pet.name || `Pet ${pet.id}`).slice(0, 80)} · #${pet.id} · Lv.${Math.max(1, Number(pet.level) || 1)}`;
+    select.appendChild(option);
+  }
+  if (selected > 0 && !owned.some((pet) => Number(pet.id) === selected)) {
+    const option = document.createElement("option");
+    option.value = String(selected);
+    option.textContent = `${String(selectedName || `Pet ${selected}`).slice(0, 80)} · #${selected}`;
+    select.appendChild(option);
+  }
+  select.value = selected > 0 ? String(selected) : "";
+  select.disabled = owned.length === 0 && selected <= 0;
+}
+
 function renderPetConfig(c) {
   latestConfig = c;
   $("petName").textContent = c.petName || "Demo Pet";
   $("petLevel").textContent = `Lv.${c.level || 1}`;
   $("petPersonality").textContent = c.personality || "playful";
-  $("petId").value = c.petId || "";
+  renderOwnedPetOptions(c.ownedPets, c.petId, c.petName);
   safeRenderAvatar($("avatar"), c.avatarUrl, c.petName, c.petEmoji || "🐾");
   const demoBadge = $("demoBadge");
   const hasToken = EXTENSION_TOKEN_PATTERN.test(String(c.authToken || ""));
   const paired = Boolean(hasToken && c.petId && !c.needsPairing);
+  if (!paired && !pairingTabAutoOpened) {
+    const settingsTab = document.querySelector('[data-tab="settings"]');
+    if (settingsTab) activateTab(settingsTab);
+    pairingTabAutoOpened = true;
+  }
   if (demoBadge) demoBadge.style.display = paired ? "none" : "inline-block";
   if ($("syncStatus")) {
     $("syncStatus").textContent = hasToken
       ? (paired
           ? "✓ Linked — shows your pet and refreshes live stats every 3 minutes."
+          : c.needsPetSelection
+            ? "Token verified. Choose which owned pet this browser should use, then link again."
           : "Token saved, but pairing is unavailable. Check your connection or create a new token.")
       : "Not linked yet. Generate a limited extension token (pex_…) in the PetClaw dashboard.";
     $("syncStatus").style.color = paired ? "var(--terracotta)" : "var(--muted)";
   }
-  if (!$("saveBtn").hasAttribute("aria-busy")) $("saveBtn").textContent = paired ? "Update Pairing" : "Pair Extension";
-  $("exportBtn").disabled = !paired;
-  $("importBtn").disabled = !hasToken;
+  if (!$("saveBtn").hasAttribute("aria-busy")) {
+    $("saveBtn").textContent = paired
+      ? "Update Pairing"
+      : c.needsPetSelection
+        ? "Link Selected Pet"
+        : "Pair Extension";
+  }
+  // These open the first-party dashboard. The reduced pex_ credential never
+  // receives broad SOUL export/import authority inside the extension.
+  $("exportBtn").disabled = false;
+  $("importBtn").disabled = false;
   $("refreshBtn").disabled = !hasToken;
   $("disconnectBtn").disabled = !hasToken;
   $("resumeSitesBtn").disabled = !Array.isArray(c.pausedHosts) || c.pausedHosts.length === 0;
@@ -1002,17 +1050,8 @@ if (HAS_CHROME) chrome.runtime.sendMessage({ type: "getConfig" }, (res) => {
   const c = res.config;
 
   $("apiUrl").value = c.apiUrl || "https://app.myaipet.ai";
-  $("petId").value = c.petId || "";
   $("autoInterval").value = c.autoTalkInterval || 90;
   if ($("authToken")) $("authToken").value = c.authToken || "";
-  if ($("syncStatus")) {
-    $("syncStatus").textContent = c.authToken
-      ? (c.needsPairing
-          ? "Token saved, but no pet found — create a new extension token and try again."
-          : "✓ Linked — shows your pet, pulls live stats every 3 min")
-      : "Not linked yet. Generate a limited extension token (pex_…) in the PetClaw dashboard.";
-    $("syncStatus").style.color = (c.authToken && !c.needsPairing) ? "var(--terracotta)" : "var(--muted)";
-  }
   renderPetConfig(c);
 
   // Load preferences
@@ -1025,6 +1064,15 @@ if (HAS_CHROME) chrome.runtime.sendMessage({ type: "getConfig" }, (res) => {
   document.querySelectorAll(".toggle").forEach((toggle) => {
     toggle.setAttribute("aria-pressed", String(toggle.classList.contains("on")));
   });
+
+  // Refresh the owner-scoped list on every popup open. This makes switching a
+  // multi-pet account explicit without persisting the list or exposing it to
+  // host pages.
+  if (c.authToken) {
+    chrome.runtime.sendMessage({ type: "fetchPetInfo" }, (fresh) => {
+      if (!chrome.runtime.lastError && fresh?.config) renderPetConfig(fresh.config);
+    });
+  }
 });
 
 // Save
@@ -1034,7 +1082,7 @@ $("saveBtn").addEventListener("click", () => {
     return;
   }
   const apiUrl = "https://app.myaipet.ai";
-  const petId = parseInt($("petId").value) || null;
+  const petId = parseInt($("petId").value, 10) || null;
   const autoTalkInterval = Number($("autoInterval").value);
   const authToken = $("authToken") ? $("authToken").value.trim() : "";
   if (!EXTENSION_TOKEN_PATTERN.test(authToken)) {
@@ -1067,9 +1115,12 @@ $("saveBtn").addEventListener("click", () => {
       if (res?.success && res.config) {
         renderPetConfig(res.config);
         showStatus("✅ Linked! Your pet is loaded.");
+      } else if (res?.config?.needsPetSelection) {
+        renderPetConfig(res.config);
+        showStatus("Choose one of your owned pets, then click Link Selected Pet.", true);
       } else if (res?.config?.needsPairing) {
         renderPetConfig(res.config);
-        showStatus("⚠️ Couldn't pair — create a new extension token (pex_…)", true);
+        showStatus("⚠️ Couldn't pair — check that the token is active and your account has a pet.", true);
       } else {
         showStatus("⚠️ Saved, but couldn't reach the server", true);
       }
@@ -1104,89 +1155,23 @@ $("disconnectBtn").addEventListener("click", () => {
   });
 });
 
-// Export
+// Sensitive SOUL operations require the first-party web session. The extension
+// intentionally hands off instead of attempting them with its reduced pex_
+// token, which would be rejected by the server.
 $("exportBtn").addEventListener("click", () => {
-  setButtonBusy("exportBtn", true, "Exporting…");
-  showStatus("Exporting SOUL data...");
-  chrome.runtime.sendMessage({ type: "exportSoul" }, (res) => {
+  chrome.runtime.sendMessage({ type: "openSovereignty" }, (res) => {
     const runtimeError = chrome.runtime.lastError;
-    setButtonBusy("exportBtn", false);
-    if (runtimeError) {
-      showStatus("❌ Extension service is unavailable", true);
-      return;
-    }
-    if (res?.data) {
-      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      const safeName = String($("petName").textContent || "pet").replace(/[^A-Za-z0-9._-]+/g, "_").slice(0, 80) || "pet";
-      a.download = `${safeName}_SOUL.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showStatus("✅ SOUL exported!");
-    } else {
-      showStatus("❌ Export failed", true);
-    }
+    if (runtimeError || !res?.success) showStatus("❌ Couldn't open the secure dashboard", true);
+    else showStatus("Opened the secure SOUL dashboard in a new tab.");
   });
 });
 
-// SCRUM-20: Import SOUL JSON
 $("importBtn")?.addEventListener("click", () => {
-  $("importFile").click();
-});
-
-$("importFile")?.addEventListener("change", async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  // Reset immediately so choosing the same invalid/cancelled file again still
-  // fires `change` and gives the user a real retry path.
-  e.target.value = "";
-  if (file.size > 1500000) {
-    showStatus("❌ File too large (>1.5MB)", true);
-    return;
-  }
-  showStatus("Importing SOUL data...");
-  try {
-    const text = await file.text();
-    let soul;
-    try { soul = JSON.parse(text); } catch {
-      showStatus("❌ Not a valid JSON file", true);
-      return;
-    }
-    const importName = soul?.pet?.name || soul?.name || "this pet";
-    if (!confirm(`Import "${importName}" into your account? Review the file source before continuing.`)) {
-      showStatus("Import cancelled.");
-      return;
-    }
-    setButtonBusy("importBtn", true, "Importing…");
-    chrome.runtime.sendMessage({ type: "importSoul", soul }, (res) => {
-      const runtimeError = chrome.runtime.lastError;
-      setButtonBusy("importBtn", false);
-      if (runtimeError) {
-        showStatus("❌ Extension service is unavailable", true);
-        return;
-      }
-      if (res?.success) {
-        showStatus(`✅ Imported "${res.petName || "pet"}"`);
-        const selectImportedPet = res.petId
-          ? new Promise((resolve) => chrome.runtime.sendMessage({ type: "saveConfig", config: { petId: res.petId } }, resolve))
-          : Promise.resolve();
-        selectImportedPet.then(() => {
-          setTimeout(() => chrome.runtime.sendMessage({ type: "fetchPetInfo" }, (fresh) => {
-            if (fresh?.success && fresh.config) renderPetConfig(fresh.config);
-          }), 500);
-        });
-      } else {
-        showStatus("❌ " + (res?.error || "Import failed — server rejected payload"), true);
-      }
-    });
-  } catch (err) {
-    setButtonBusy("importBtn", false);
-    showStatus("❌ Import error: " + (err.message || "unknown"), true);
-  }
+  chrome.runtime.sendMessage({ type: "openSovereignty" }, (res) => {
+    const runtimeError = chrome.runtime.lastError;
+    if (runtimeError || !res?.success) showStatus("❌ Couldn't open the secure dashboard", true);
+    else showStatus("Opened the secure SOUL dashboard in a new tab.");
+  });
 });
 
 // Refresh
@@ -1204,6 +1189,12 @@ $("refreshBtn").addEventListener("click", () => {
       showStatus("✅ Refreshed!");
       loadEvolution();
       loadEmotions();
+    } else if (res?.config?.needsPetSelection) {
+      renderPetConfig(res.config);
+      showStatus("Choose one of your owned pets, then click Link Selected Pet.", true);
+    } else if (res?.config) {
+      renderPetConfig(res.config);
+      showStatus(res.error || "❌ Pairing needs attention", true);
     } else {
       showStatus("❌ Couldn't reach API", true);
     }

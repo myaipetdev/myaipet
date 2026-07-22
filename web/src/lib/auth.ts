@@ -43,9 +43,7 @@ function extensionTokenCanAccess(req: NextRequest): boolean {
   const method = req.method.toUpperCase();
   if (method === "GET" && (path === "/api/pets" || /^\/api\/pets\/\d+$/.test(path))) return true;
   if ((method === "GET" || method === "POST") && path === "/api/petclaw/skills") return true;
-  if (method === "GET" && path === "/api/petclaw/export") return true;
   if (method === "GET" && (/^\/api\/media\//.test(path) || /^\/uploads\//.test(path))) return true;
-  if (method === "POST" && path === "/api/petclaw/import") return true;
   if ((method === "GET" || method === "POST") && path === "/api/petclaw/engagement") return true;
   return false;
 }

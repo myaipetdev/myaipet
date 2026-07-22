@@ -22,10 +22,15 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
 import { callLLM } from "@/lib/llm/router";
-import { getPersona, buildPersonaContext } from "@/lib/services/persona";
-import { createMemoryManager } from "@/lib/petclaw/memory/persistent-memory";
+import { buildPersonaContext } from "@/lib/services/persona";
 import {
-  containsHangul,
+  createMemoryManager,
+  isProviderSafeRetainedText,
+} from "@/lib/petclaw/memory/persistent-memory";
+import { providerSafeGreetingMemories } from "@/lib/petclaw/memory/provider-context";
+import { withLockedPetModifiers } from "@/lib/petclaw/modifier-store";
+import { sanitizeStoredPersonaGeneratedFields } from "@/lib/personaGeneratedLanguage";
+import {
   generatedEnglishOrFallback,
   generatedEnglishOrNull,
 } from "@/lib/generatedLanguage";
@@ -34,6 +39,35 @@ const GAP_MIN_MS = 45 * 60 * 1000;                 // don't interrupt an active 
 const CALLBACK_MIN_AGE_MS = 12 * 60 * 60 * 1000;   // a callback should be genuinely older, not "you just said this"
 const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;      // never reuse a stale "away about X" line for days
 const GREETING_FALLBACK = "I'm so glad you're back! I missed you. 🐾";
+
+type GreetingMemory = { id: number; content: string; created_at: Date };
+type ProactiveCache = {
+  text?: string;
+  at?: number;
+  for?: number;
+  memory?: boolean;
+  memoryEpoch?: number;
+};
+
+function greetingSourceSnapshot(
+  pet: {
+    name: string;
+    personality_type: string;
+    level: number;
+    last_interaction_at: Date | null;
+  },
+  memories: GreetingMemory[],
+  persona: unknown,
+): string {
+  return JSON.stringify({
+    name: pet.name,
+    personality: pet.personality_type,
+    level: pet.level,
+    lastInteractionAt: pet.last_interaction_at?.toISOString() || null,
+    memories: memories.map((entry) => [entry.id, entry.content, entry.created_at.toISOString()]),
+    persona,
+  });
+}
 
 function humanGap(ms: number): string {
   const h = Math.floor(ms / 3_600_000);
@@ -60,7 +94,7 @@ export async function GET(
     where: { id: Number(petId), user_id: user.id, is_active: true },
     select: {
       id: true, name: true, personality_type: true, level: true,
-      last_interaction_at: true, personality_modifiers: true,
+      last_interaction_at: true, personality_modifiers: true, memory_epoch: true,
     },
   });
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
@@ -76,12 +110,13 @@ export async function GET(
   }
 
   const pm = (pet.personality_modifiers as Record<string, any>) || {};
-  const cached = pm.proactive as { text?: string; at?: number; for?: number } | undefined;
+  const cached = pm.proactive as ProactiveCache | undefined;
   // Already greeted since the owner last interacted → reuse it (don't re-spend).
   // Stamped with the `last` it was generated against + a 24h max age, so a
   // reused line can't describe a stale "away about 1 hour" days later.
   if (
     cached?.text && typeof cached.at === "number" &&
+    cached.memoryEpoch === pet.memory_epoch &&
     cached.at > last && cached.for === last &&
     now - cached.at < CACHE_MAX_AGE_MS
   ) {
@@ -101,19 +136,26 @@ export async function GET(
     },
     orderBy: [{ importance: "desc" }, { created_at: "desc" }],
     take: 8,
-    select: { content: true },
-  }).catch(() => [] as { content: string }[]);
-  // Legacy non-English memories remain in the owner's export, but are not fed
-  // into an English-only generated greeting.
-  const englishMems = mems.filter((entry) => !containsHangul(entry.content));
-  const memory = englishMems.length
-    ? englishMems[Math.floor(Math.random() * englishMems.length)]
+    select: { id: true, content: true, created_at: true },
+  }).catch(() => [] as GreetingMemory[]);
+  // Unsafe rows remain in owner inspect/export. Provider inference sees only a
+  // tiny safe subset of the already importance-ranked callback candidates.
+  const providerMems = providerSafeGreetingMemories(mems);
+  const memory = providerMems.length
+    ? providerMems[Math.floor(Math.random() * providerMems.length)]
     : null;
 
-  const persona = await getPersona(pet.id).catch(() => null);
-  const personaCtx = buildPersonaContext(persona);
+  const rawPersona = await prisma.petPersona.findUnique({ where: { pet_id: pet.id } }).catch(() => null);
+  const persona = rawPersona ? sanitizeStoredPersonaGeneratedFields(rawPersona) as any : null;
+  const personaCtx = buildPersonaContext(persona, "welcome back greeting tone");
+  const providerPetName = isProviderSafeRetainedText(`pet_name ${pet.name}`)
+    ? pet.name
+    : "your pet";
+  const startEpoch = pet.memory_epoch;
+  const sourceLedgerSnapshot = greetingSourceSnapshot(pet, mems, persona);
+  const cacheSnapshot = JSON.stringify(pm.proactive ?? null);
 
-  const system = `You are ${pet.name}, a ${pet.personality_type} AI pet companion (level ${pet.level}).
+  const system = `You are ${providerPetName}, a ${pet.personality_type} AI pet companion (level ${pet.level}).
 ${personaCtx ? `\n${personaCtx}\n` : ""}
 Your owner just came back after being away about ${humanGap(gap)}. Greet them FIRST — unprompted — warm and genuine, in YOUR voice.
 Always write in English, even if the owner's profile, name, or older memories use another language. Never output Hangul.
@@ -139,30 +181,99 @@ Keep it to 1–2 short sentences. Sound genuinely glad they're back.`;
     text = GREETING_FALLBACK;
   }
 
-  // Persist the cache TRANSACTIONALLY with a fresh in-transaction read of
-  // personality_modifiers, merging ONLY the `proactive` key. The snapshot read
-  // at the top of this handler is seconds stale after the LLM call — a whole-
-  // column overwrite from it could erase concurrently written memory-moat keys
-  // (persistent_memories / user_profile / learned_patterns). Mirrors the
-  // mood-portrait route's documented pattern.
-  await prisma.$transaction(async (tx) => {
-    const fresh = await tx.pet.findUnique({
-      where: { id: pet.id },
-      select: { personality_modifiers: true },
-    });
-    const mods = (fresh?.personality_modifiers as Record<string, any>) || {};
+  // A clear/edit or new interaction that lands while the model is running
+  // invalidates the output. Never persist or return text derived from a source
+  // snapshot the owner has already changed.
+  const commit = await withLockedPetModifiers(pet.id, async ({ tx, pet: lockedPet, modifiers }) => {
+    const [currentPet, currentMems, currentRawPersona] = await Promise.all([
+      tx.pet.findUnique({
+        where: { id: pet.id },
+        select: {
+          name: true,
+          personality_type: true,
+          level: true,
+          last_interaction_at: true,
+        },
+      }),
+      tx.petMemory.findMany({
+        where: {
+          pet_id: pet.id,
+          created_at: { lt: cutoff },
+          NOT: { memory_type: { startsWith: "session_" } },
+        },
+        orderBy: [{ importance: "desc" }, { created_at: "desc" }],
+        take: 8,
+        select: { id: true, content: true, created_at: true },
+      }),
+      tx.petPersona.findUnique({ where: { pet_id: pet.id } }),
+    ]);
+    const currentPersona = currentRawPersona
+      ? sanitizeStoredPersonaGeneratedFields(currentRawPersona) as any
+      : null;
+    const currentCache = modifiers.proactive as ProactiveCache | undefined;
+    if (
+      !currentPet
+      || lockedPet.memory_epoch !== startEpoch
+      || greetingSourceSnapshot(currentPet, currentMems, currentPersona) !== sourceLedgerSnapshot
+      || JSON.stringify(modifiers.proactive ?? null) !== cacheSnapshot
+    ) {
+      return {
+        committed: false as const,
+        currentCache,
+        currentEpoch: lockedPet.memory_epoch,
+        currentLast: currentPet?.last_interaction_at?.getTime() || 0,
+      };
+    }
     await tx.pet.update({
       where: { id: pet.id },
-      data: { personality_modifiers: { ...mods, proactive: { text, at: now, for: last, memory: !!memory } } },
+      data: {
+        personality_modifiers: {
+          ...modifiers,
+          proactive: { text, at: now, for: last, memory: !!memory, memoryEpoch: startEpoch },
+        },
+      },
     });
-  }).catch(() => {});
+    return {
+      committed: true as const,
+      currentCache: null,
+      currentEpoch: startEpoch,
+      currentLast: last,
+    };
+  }).catch(() => ({
+    committed: false as const,
+    currentCache: undefined,
+    currentEpoch: Number.NaN,
+    currentLast: 0,
+  }));
+
+  if (!commit.committed) {
+    const current = commit.currentCache;
+    if (
+      current?.text
+      && typeof current.at === "number"
+      && current.memoryEpoch === commit.currentEpoch
+      && current.at > commit.currentLast
+      && current.for === commit.currentLast
+      && Date.now() - current.at < CACHE_MAX_AGE_MS
+    ) {
+      return NextResponse.json({
+        greeting: generatedEnglishOrFallback(current.text, GREETING_FALLBACK),
+        cached: true,
+      });
+    }
+    return NextResponse.json({
+      greeting: GREETING_FALLBACK,
+      basedOnMemory: false,
+      staleDiscarded: true,
+    });
+  }
 
   // Log the outreach as a real pet-side turn in the conversation ledger — the
   // flagship moment breaks if the user replies and the chat context has no
   // record the pet ever said this (and the bubble would vanish on next load).
   // Only on generation (never on cached reuse), so it can't double-log.
   await createMemoryManager(pet.id)
-    .logMessage(text, "pet", "web", `web-${user.id}`)
+    .logMessage(text, "pet", "web", `web-${user.id}`, undefined, startEpoch)
     .catch(() => {});
 
   return NextResponse.json({ greeting: text, basedOnMemory: !!memory });

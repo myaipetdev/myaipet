@@ -17,7 +17,9 @@
 
 import { prisma } from "@/lib/prisma";
 import { callLLM } from "@/lib/llm/router";
-import { containsHangul, generatedEnglishOrNull } from "@/lib/generatedLanguage";
+import { generatedEnglishOrNull } from "@/lib/generatedLanguage";
+import { withLockedPetModifiers } from "@/lib/petclaw/modifier-store";
+import { isProviderSafeRetainedText } from "./persistent-memory";
 
 const MAX_REFLECTIONS = 12;       // keep the most recent dozen
 const REFLECT_EVERY_TURNS = 8;    // generate one roughly every 8 exchanges
@@ -29,19 +31,29 @@ export interface BondReflection {
 
 function ymd(d = new Date()) { return d.toISOString().slice(0, 10); }
 
+export function providerSafeBondReflections(reflections: BondReflection[]): BondReflection[] {
+  return reflections.filter((reflection) =>
+    !!reflection
+    && typeof reflection.note === "string"
+    && isProviderSafeRetainedText(`bond_reflection ${reflection.note}`),
+  );
+}
+
+export function formatProviderSafeBondNotes(reflections: BondReflection[]): string {
+  const recent = providerSafeBondReflections(reflections)
+    .slice(-6)
+    .map((reflection) => `- ${reflection.note}`)
+    .join("\n");
+  if (!recent) return "";
+  return `\nRELATIONSHIP NOTES (how to be a good companion to THIS owner — honor these):\n${recent}`;
+}
+
 /** Inject-ready block of recent relationship notes for the chat system prompt. */
 export async function getBondNotesBlock(petId: number): Promise<string> {
   const pet = await prisma.pet.findUnique({ where: { id: petId }, select: { personality_modifiers: true } });
   const mods = (pet?.personality_modifiers as Record<string, unknown>) || {};
   const refs = (mods.bond_reflections as BondReflection[]) || [];
-  if (refs.length === 0) return "";
-  const recent = refs
-    .filter((reflection) => !containsHangul(reflection.note))
-    .slice(-6)
-    .map(r => `- ${r.note}`)
-    .join("\n");
-  if (!recent) return "";
-  return `\nRELATIONSHIP NOTES (how to be a good companion to THIS owner — honor these):\n${recent}`;
+  return formatProviderSafeBondNotes(refs);
 }
 
 /**
@@ -53,22 +65,46 @@ export async function maybeReflectOnBond(
   petId: number,
   ownerMessage: string,
   petReply: string,
+  expectedEpoch?: number,
 ): Promise<void> {
   const pet = await prisma.pet.findUnique({
     where: { id: petId },
-    select: { name: true, personality_type: true, bond_level: true, total_interactions: true, personality_modifiers: true },
+    select: {
+      name: true,
+      personality_type: true,
+      bond_level: true,
+      total_interactions: true,
+      personality_modifiers: true,
+      memory_epoch: true,
+    },
   });
   if (!pet) return;
+  const startEpoch = expectedEpoch ?? pet.memory_epoch;
+  if (pet.memory_epoch !== startEpoch) return;
 
   // Gate: only every Nth interaction.
   if ((pet.total_interactions || 0) % REFLECT_EVERY_TURNS !== 0) return;
 
+  // Reflection is a secondary provider call. A secret-bearing or non-English
+  // current turn may remain owner-visible in the local ledger, but must not be
+  // fanned out to a second provider/task.
+  if (
+    !isProviderSafeRetainedText(`owner_turn ${ownerMessage}`)
+    || !isProviderSafeRetainedText(`pet_turn ${petReply}`)
+  ) return;
+
   const mods = (pet.personality_modifiers as Record<string, unknown>) || {};
   const existing = (mods.bond_reflections as BondReflection[]) || [];
-  const priorNotes = existing.slice(-4).map(r => `- ${r.note}`).join("\n") || "(none yet)";
+  const priorNotes = providerSafeBondReflections(existing)
+    .slice(-4)
+    .map((reflection) => `- ${reflection.note}`)
+    .join("\n") || "(none yet)";
+  const providerPetName = isProviderSafeRetainedText(`pet_name ${pet.name}`)
+    ? pet.name
+    : "your pet";
 
   const system =
-    `You are ${pet.name}'s inner sense of the relationship with their owner. ` +
+    `You are ${providerPetName}'s inner sense of the relationship with their owner. ` +
     `After this exchange, write ONE short note (<=160 chars, second person, ` +
     `addressed to your future self) about HOW to be a better companion to this ` +
     `specific owner — their emotional patterns, what helps, what to avoid. Not a ` +
@@ -86,18 +122,36 @@ export async function maybeReflectOnBond(
       petId,
       messages: [
         { role: "system", content: system },
-        { role: "user", content: `Owner: ${ownerMessage.slice(0, 300)}\n${pet.name}: ${petReply.slice(0, 300)}` },
+        { role: "user", content: `Owner: ${ownerMessage.slice(0, 300)}\n${providerPetName}: ${petReply.slice(0, 300)}` },
       ],
       max_tokens: 80,
       temperature: 0.7,
     });
     const note = generatedEnglishOrNull(out.text);
-    if (!note || note.toUpperCase().startsWith("SKIP") || note.length < 8) return;
+    if (
+      !note
+      || note.toUpperCase().startsWith("SKIP")
+      || note.length < 8
+      || !isProviderSafeRetainedText(`bond_reflection ${note}`)
+    ) return;
 
-    const next = [...existing, { date: ymd(), note: note.slice(0, 160) }].slice(-MAX_REFLECTIONS);
-    await prisma.pet.update({
-      where: { id: petId },
-      data: { personality_modifiers: { ...mods, bond_reflections: next } as any },
+    await withLockedPetModifiers(petId, async ({ tx, pet: lockedPet, modifiers }) => {
+      // A clear/edit that completed while the LLM was reflecting wins. Never
+      // restore a pre-delete relationship note after the owner's request.
+      if (lockedPet.memory_epoch !== startEpoch) return;
+
+      const current = Array.isArray(modifiers.bond_reflections)
+        ? modifiers.bond_reflections as BondReflection[]
+        : [];
+      const clippedNote = note.slice(0, 160);
+      if (current.some((reflection) => reflection?.note === clippedNote)) return;
+      const next = [...current, { date: ymd(), note: clippedNote }].slice(-MAX_REFLECTIONS);
+      await tx.pet.update({
+        where: { id: petId },
+        data: {
+          personality_modifiers: { ...modifiers, bond_reflections: next } as any,
+        },
+      });
     });
   } catch { /* non-fatal */ }
 }

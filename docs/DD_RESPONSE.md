@@ -100,7 +100,7 @@ The platform is built around a **portable, memory-rich, sovereign-AI companion**
 | 15 | **Cross-surface presence** | Web (primary) plus PetClaw Extension v2.3.2 as a downloadable developer/unpacked ZIP. Telegram and Discord integrations are built but disabled for launch. |
 | 16 | **Smart-contract security** | 1 internal security code review — 26+ findings remediated (full report in `docs/AUDIT_REPORT.md`). An external third-party audit is required before any on-chain reactivation. Contract-source security patterns do not substitute for deployment/owner evidence. |
 | 17 | **Pet Studio (live at `/studio`)** | The catalog has 12 model entries: 3 default-free entries, 6 membership-gated entries while memberships are not on sale, and 3 coming-soon entries. It also includes 22 templates (12 in the trending category), Prompt Director, and a client-side editor. Paid subscription checkout is disabled; displayed tier/pricing configuration is not a live settlement claim. |
-| 18 | **Native tool-calling pet agent** | `callLLMWithTools` and a tool-agent loop expose web_search, wikipedia_lookup, crypto_price, and recall_memory. `web_read` is declared but currently returns an unavailable response and must not be claimed as active. SSE streaming is available on the pet agent endpoint; owner BYOK routing is supported. |
+| 18 | **Native tool-calling pet agent** | `callLLMWithTools` and a bounded tool-agent loop expose eligible in-process skills plus private `recall_memory`. Outbound web/market connectors are deliberately excluded from memory-bearing runs until explicit approval and data-taint controls exist. SSE streaming is available on the pet agent endpoint; owner BYOK routing is supported. |
 | 19 | **Mini-games & community events** | TCG-style card duels, Cat/Dog Catch (map spawns + photo catch), World Cup Favorites Bracket (client-side personal picks) and an honest champion-prediction community poll (votes only — no fabricated results), plus lo-fi ambient scenes (Pet Village, Pet Pond, walkable Pet Square, focus sessions). All grant small, daily-capped season points. |
 
 ### 4.3 Configured pricing reference (not purchasable at launch)
@@ -256,7 +256,7 @@ Repo: petclaw-sdk (public)
 | 2026 Q2 | DD audit cleanup + public SDK staging for new GitHub org | Finished |
 | 2026 Q2–Q3 | **Pet Studio launched at `/studio`** — 12 catalog entries across available, membership-gated, and coming-soon states; 22 templates (12 trending), Prompt Director, client-side editor; paid tiers disabled | Finished (paid rail paused) |
 | 2026 Q2–Q3 | World Cup (Favorites Bracket + honest champion-prediction poll), TCG card duels, Cat/Dog Catch, Wild Encounters — all wired to daily-capped season points | Finished |
-| 2026 Q2–Q3 | **Native tool-calling pet agent** (web_search / wikipedia_lookup / crypto_price / recall_memory; SSE streaming) + LLM router with owner BYOK models; `web_read` remains unavailable | Finished (except web_read) |
+| 2026 Q2–Q3 | **Native tool-calling pet agent** (eligible in-process skills + private `recall_memory`; SSE streaming) + LLM router with owner BYOK models; outbound connectors excluded from memory-bearing runs | Finished within stated boundary |
 | 2026 Q3 | Guest tour mode (`?tour=1` read-only DEMO previews) + vision-based human-photo avatar guard | Finished |
 | **2026 Q3 (current)** | Lo-fi ambient scenes (Pet Village, Pet Pond, Pet Square, focus sessions) + ongoing DD upkeep | In progress |
 

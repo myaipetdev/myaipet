@@ -156,7 +156,7 @@ function extractToc(md: string): { level: number; text: string; slug: string }[]
 // Honest inventory — kept in lockstep with PetClawConsole (no inflation).
 const STAT_STRIP = [
   { n: String(RELEASE_STATUS.skills), l: "built-in skills" },
-  { n: String(RELEASE_STATUS.mcpTools), l: "bundled MCP tools" },
+  { n: String(RELEASE_STATUS.mcpCandidateTools), l: "MCP tools · 1.6.2 candidate" },
   { n: String(RELEASE_STATUS.connectors.registry), l: "registered connectors" },
   { n: String(RELEASE_STATUS.connectors.live), l: "live connectors" },
 ];
@@ -194,7 +194,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
           </h1>
           <p style={{ fontSize: 16, color: "rgba(236,224,206,0.72)", margin: "12px 0 0", maxWidth: 640, lineHeight: 1.55 }}>
             Build with the HTTP API and SDK {RELEASE_STATUS.sdkVersion}: memory-aware chat,
-            {" "}{RELEASE_STATUS.skills} built-in skills, and signed SOUL export with documented import limits.
+            {" "}{RELEASE_STATUS.skills} built-in skill manifests, and checksum-validated SOUL export with documented import limits.
           </p>
 
           {/* Stat strip — honest inventory */}

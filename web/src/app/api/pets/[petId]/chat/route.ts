@@ -2,7 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 import { NextRequest, NextResponse } from "next/server";
-import { createMemoryManager } from "@/lib/petclaw/memory/persistent-memory";
+import {
+  createMemoryManager,
+  isProviderSafeRetainedText,
+} from "@/lib/petclaw/memory/persistent-memory";
 import { getRelevantMemories } from "@/lib/petclaw/memory/retrieval";
 import { checkPendingApology } from "@/lib/missions/petEmotion";
 import { getBondNotesBlock, maybeReflectOnBond } from "@/lib/petclaw/memory/bond-loop";
@@ -14,9 +17,20 @@ import { estimateHelpfulness } from "@/lib/petclaw/memory/feedback";
 import { BEST_OF_N_ENABLED, pickBest, pickBestLLM } from "@/lib/petclaw/memory/best-of-n";
 import { callLLM } from "@/lib/llm/router";
 import { generatedEnglishOrFallback } from "@/lib/generatedLanguage";
+import { withLockedPetModifiers } from "@/lib/petclaw/modifier-store";
+import { normalizedChatSession } from "@/lib/petclaw/chat-session";
+import { readBoundedJsonBody } from "@/lib/petclaw/bounded-json-body";
 
 const GENERATED_REPLY_FALLBACK = "I'm happy to see you! Tell me more. 🐾";
 const LEGACY_REPLY_FALLBACK = "A previous pet reply is unavailable in this English-only release.";
+const MEMORY_CHANGED_REPLY = "Your memory settings changed while I was replying. Please send that again.";
+const CHAT_SURFACES = new Set(["web", "cli", "sdk", "mcp", "chrome-ext"]);
+const CHAT_BODY_MAX_BYTES = 4 * 1024;
+
+function normalizedChatSurface(value: unknown): string {
+  const candidate = typeof value === "string" ? value.trim().toLowerCase() : "";
+  return CHAT_SURFACES.has(candidate) ? candidate : "web";
+}
 
 const PERSONALITY_VOICES: Record<string, string> = {
   friendly: "You speak warmly, use lots of exclamation marks, and are always encouraging. You love your owner.",
@@ -61,7 +75,10 @@ export async function GET(
   });
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   const memory = createMemoryManager(pet.id);
-  const recent = await memory.getRecentMessages("all", 20).catch(() => []);
+  const surfaceParam = req.nextUrl.searchParams.get("surface");
+  const surface = surfaceParam ? normalizedChatSurface(surfaceParam) : "all";
+  const sessionId = req.nextUrl.searchParams.get("sessionId")?.trim() || undefined;
+  const recent = await memory.getRecentMessages(surface, 20, sessionId).catch(() => []);
   // Preserve owner-authored text exactly. Only assistant/generated turns cross
   // the English-only display boundary.
   const messages = recent.map((m) => ({
@@ -85,8 +102,22 @@ export async function POST(
   if (!rl.ok) return rl.response;
 
   const { petId } = await params;
-  const body = await req.json();
+  const parsedBody = await readBoundedJsonBody(req, CHAT_BODY_MAX_BYTES);
+  if (parsedBody.ok === false) {
+    return NextResponse.json(
+      { error: parsedBody.reason === "too_large" ? "Request body too large" : "Invalid JSON body" },
+      { status: parsedBody.reason === "too_large" ? 413 : 400 },
+    );
+  }
+  if (!parsedBody.value || typeof parsedBody.value !== "object" || Array.isArray(parsedBody.value)) {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  const body = parsedBody.value as Record<string, unknown>;
   const message = sanitizeText(body.message, 500);
+  // Authenticated client assertion: lineage metadata, not cryptographic proof
+  // that a particular third-party application produced the request.
+  const surface = normalizedChatSurface(body.surface);
+  const sessionId = normalizedChatSession(body.sessionId, surface);
 
   if (!message || message.trim().length === 0) {
     return NextResponse.json({ error: "Message required" }, { status: 400 });
@@ -96,6 +127,10 @@ export async function POST(
     where: { id: Number(petId), user_id: user.id, is_active: true },
   });
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  // This is the request's memory write capability. Every post-inference memory
+  // writer receives this exact generation; an owner correction/deletion that
+  // completes while the model is running revokes the whole request.
+  const requestMemoryEpoch = pet.memory_epoch;
 
   // Determine mood
   const mood = pet.happiness >= 80 ? "ecstatic"
@@ -109,7 +144,14 @@ export async function POST(
 
   const personalityVoice = PERSONALITY_VOICES[pet.personality_type] || PERSONALITY_VOICES.friendly;
   const moodContext = MOOD_CONTEXT[mood] || MOOD_CONTEXT.neutral;
-  const customTraits = (pet.personality_modifiers as any)?.custom_traits || "";
+  const rawCustomTraits = (pet.personality_modifiers as any)?.custom_traits;
+  const customTraits = typeof rawCustomTraits === "string"
+    && isProviderSafeRetainedText(`custom_traits ${rawCustomTraits}`)
+    ? rawCustomTraits.slice(0, 500)
+    : "";
+  const providerPetName = isProviderSafeRetainedText(`pet_name ${pet.name}`)
+    ? pet.name
+    : "your pet";
 
   // ── Persistent memory + persona context ──
   // PetMemoryManager pulls MEMORY.md, USER.md, recent cross-platform messages,
@@ -117,19 +159,19 @@ export async function POST(
   // saveOnboarding() flow into pet.personality_modifiers.user_profile so they
   // appear here automatically.
   const memory = createMemoryManager(pet.id);
-  const memCtx = await memory.buildContext(message.trim(), "web").catch(() => null);
+  const memCtx = await memory.buildContext(message.trim(), surface, sessionId).catch(() => null);
   // GBrain-style full-corpus recall: rank the top-K relevant rows over the
   // ENTIRE pet_memories table (not just the 40-entry capped ledger memCtx uses).
   // Lets the pet recall an old conversation/milestone that fell out of the ledger.
   const recalled = await getRelevantMemories(pet.id, message.trim(), 5).catch(() => []);
   const persona = await getPersona(pet.id).catch(() => null);
-  const personaCtx = buildPersonaContext(persona);
+  const personaCtx = buildPersonaContext(persona, message.trim());
 
   // Estimate how the LAST pet reply landed — feeds back into self-learning
   // successRate so good patterns rise and bad ones fade.
-  const helpfulnessSignal = await estimateHelpfulness(pet.id, message.trim(), "web").catch(() => null);
+  const helpfulnessSignal = await estimateHelpfulness(pet.id, message.trim(), surface).catch(() => null);
 
-  const systemPrompt = `You are ${pet.name}, a Level ${pet.level} pet companion.
+  const systemPrompt = `You are ${providerPetName}, a Level ${pet.level} pet companion.
 
 PERSONALITY: ${pet.personality_type}
 ${personalityVoice}
@@ -161,11 +203,11 @@ ${(() => {
   }
   return merged.length ? `\nRELEVANT TO THIS MESSAGE:\n${merged.map(c => `- ${c}`).join("\n")}` : "";
 })()}
-${memCtx?.recentMessages?.length ? `\nRECENT CONVERSATION:\n${memCtx.recentMessages.slice(-6).map(m => `${m.role === "user" ? "Owner" : pet.name}${m.platform !== "web" ? ` [${m.platform}]` : ""}: ${m.content}`).join("\n")}` : ""}
+${memCtx?.recentMessages?.length ? `\nRECENT CONVERSATION:\n${memCtx.recentMessages.slice(-6).map(m => `${m.role === "user" ? "Owner" : providerPetName}${m.platform !== surface ? ` [${m.platform}]` : ""}: ${m.content}`).join("\n")}` : ""}
 
 RULES:
 - ALWAYS respond in English. This is an English-language product; reply in English even if the owner writes in another language.
-- You ARE the pet. Respond in first person as ${pet.name}.
+- You ARE the pet. Respond in first person as ${providerPetName}.
 - Keep responses SHORT (1-3 sentences max).
 - Show your personality and current mood in every response.
 - React to your stats naturally (if hungry, mention food; if tired, yawn).
@@ -192,6 +234,7 @@ ${learnedPatternsBlock(pet)}
     });
 
     let reply: string;
+    let inference: { provider: string; model: string; source: string } | null = null;
     if (BEST_OF_N_ENABLED) {
       // Two routed candidates preserve owner BYOK and gain the same bounded
       // platform-provider fallback as the normal single-candidate path.
@@ -217,12 +260,24 @@ ${learnedPatternsBlock(pet)}
             targetMaxChars: 200,
             learnedPatterns,
           }).text;
+      const selected = results.find(
+        (result) => result.status === "fulfilled" && result.value.text === reply,
+      );
+      if (selected?.status === "fulfilled") {
+        inference = {
+          provider: selected.value.provider,
+          model: selected.value.model,
+          source: selected.value.source,
+        };
+      }
     } else {
       // Main reply path — routed through the model router (task:'chat'), so the
       // pet-owner's connected model (BYOK) answers if they've connected one for
-      // chat, else the env-selected platform route (xAI, then OpenAI by default).
+      // chat, else the env-selected platform route (OpenAI chat primary with
+      // xAI fallback by default; deployments may choose an audited override).
       const out = await callCandidate(0.9);
       reply = out.text || GENERATED_REPLY_FALLBACK;
+      inference = { provider: out.provider, model: out.model, source: out.source };
     }
 
     // Provider and BYOK models can ignore prompt language. Enforce the invariant
@@ -240,59 +295,99 @@ ${learnedPatternsBlock(pet)}
     // turn ever counted, so those missions were permanently stuck at 0 and their
     // points never awarded (SCRUM-101). "talk" from the /interact route is a
     // separate, deliberate affordance and is unaffected.
-    await prisma.petInteraction.create({
-      data: {
-        pet_id: pet.id,
-        user_id: user.id,
-        interaction_type: "chat",
-        response_text: reply,
-        happiness_change: 8,
-        energy_change: -3,
-        hunger_change: 2,
-        experience_gained: 8,
-      },
-    });
+    const interactionCommitted = await withLockedPetModifiers(
+      pet.id,
+      async ({ tx, pet: lockedPet }) => {
+        if (lockedPet.memory_epoch !== requestMemoryEpoch) return false;
+        const currentStats = await tx.pet.findUnique({
+          where: { id: pet.id },
+          select: {
+            happiness: true,
+            energy: true,
+            hunger: true,
+            experience: true,
+            bond_level: true,
+            total_interactions: true,
+          },
+        });
+        if (!currentStats) return false;
+        await tx.petInteraction.create({
+          data: {
+            pet_id: pet.id,
+            user_id: user.id,
+            interaction_type: "chat",
+            response_text: reply,
+            happiness_change: 8,
+            energy_change: -3,
+            hunger_change: 2,
+            experience_gained: 8,
+          },
+        });
 
-    // Apply talk effects
-    await prisma.pet.update({
-      where: { id: pet.id },
-      data: {
-        happiness: Math.min(100, pet.happiness + 8),
-        energy: Math.max(0, pet.energy - 3),
-        hunger: Math.min(100, pet.hunger + 2),
-        experience: pet.experience + 8,
-        bond_level: Math.min(100, pet.bond_level + 2),
-        total_interactions: pet.total_interactions + 1,
-        last_interaction_at: new Date(),
+        // Apply talk effects in the same memory-fenced transaction. A request
+        // revoked during inference must not leave a chat ledger row or effects.
+        await tx.pet.update({
+          where: { id: pet.id },
+          data: {
+            happiness: Math.min(100, currentStats.happiness + 8),
+            energy: Math.max(0, currentStats.energy - 3),
+            hunger: Math.min(100, currentStats.hunger + 2),
+            experience: currentStats.experience + 8,
+            bond_level: Math.min(100, currentStats.bond_level + 2),
+            total_interactions: currentStats.total_interactions + 1,
+            last_interaction_at: new Date(),
+          },
+        });
+        return true;
       },
-    });
+    );
+    if (!interactionCommitted) {
+      return NextResponse.json({
+        reply: MEMORY_CHANGED_REPLY,
+        mood,
+        degraded: true,
+        errorCode: "memory_state_changed",
+        inference: null,
+        memoryRetained: false,
+        session: { surface, sessionId },
+        effects: {},
+      });
+    }
 
-    await prisma.petMemory.create({
-      data: {
-        pet_id: pet.id,
-        memory_type: "conversation",
-        content: `Owner said: "${message.trim().slice(0, 100)}" — I replied: "${reply.slice(0, 100)}"`,
-        emotion: mood,
-        importance: 2,
-      },
-    });
-
-    // Persistent memory retention — extract durable facts + user-profile updates.
-    // Fire-and-forget (Grok call ~1s); we don't block the chat response on it.
-    memory.retainFromConversation(message.trim(), reply, "web", `web-${user.id}`, user.id)
-      .catch((e: any) => console.error("memory.retain failed:", e?.message));
+    // Persistent memory retention is part of the successful chat contract: wait
+    // until the normalized session rows and best-effort fact extraction finish.
+    // Otherwise a deploy/process exit immediately after sending the response can
+    // silently lose the turn. Extraction failure is logged but never hides the
+    // already-generated reply.
+    let memoryRetained = false;
+    await memory.retainFromConversation(
+      message.trim(),
+      reply,
+      surface,
+      sessionId,
+      user.id,
+      requestMemoryEpoch,
+    )
+      .then((result) => {
+        memoryRetained = result.retained;
+      })
+      .catch((e: any) => {
+        memoryRetained = false;
+        console.error("memory.retain failed:", e?.message);
+      });
 
     // Self-learning observer — topic detection + skill auto-promotion at 3 hits.
     // Uses the prev-turn helpfulness signal so successRate reflects real reactions.
     const helpfulness = helpfulnessSignal?.score ?? 0.5;
-    createSelfLearner(pet.id)
-      .observeConversation(message.trim(), reply, helpfulness)
+    await createSelfLearner(pet.id)
+      .observeConversation(message.trim(), reply, helpfulness, requestMemoryEpoch)
       .catch((e: any) => console.error("self-learning failed:", e?.message));
 
     // Bond Feedback Loop — every ~8 turns, the pet writes a one-line note on
     // HOW to be a better companion to this owner, which flows into future
-    // system prompts. Fire-and-forget.
-    maybeReflectOnBond(pet.id, message.trim(), reply)
+    // system prompts. Await it so a completed owner turn has a deterministic
+    // post-turn boundary across web, CLI and MCP.
+    await maybeReflectOnBond(pet.id, message.trim(), reply, requestMemoryEpoch)
       .catch((e: any) => console.error("bond-loop failed:", e?.message));
 
     // Record Web4 heartbeat + user activity (fire-and-forget)
@@ -310,6 +405,10 @@ ${learnedPatternsBlock(pet)}
     return NextResponse.json({
       reply,
       mood,
+      degraded: false,
+      inference,
+      memoryRetained,
+      session: { surface, sessionId },
       effects: { happiness: 8, energy: -3, hunger: 2, experience: 8, bond: 2 },
       pointsAwarded: sp.points || 0,
     });
@@ -331,8 +430,21 @@ ${learnedPatternsBlock(pet)}
 
     // Even on LLM failure, log the user's turn so cross-platform timeline doesn't
     // get holes. We skip extraction (no real reply to extract from).
-    memory.logTurnOnly(message.trim(), "web", `web-${user.id}`, user.id).catch(() => {});
+    let memoryRetained = false;
+    await memory
+      .logTurnOnly(message.trim(), surface, sessionId, user.id, requestMemoryEpoch)
+      .then((retained) => { memoryRetained = retained; })
+      .catch(() => { memoryRetained = false; });
 
-    return NextResponse.json({ reply, mood, effects: {} });
+    return NextResponse.json({
+      reply,
+      mood,
+      degraded: true,
+      errorCode: "llm_unavailable",
+      inference: null,
+      memoryRetained,
+      session: { surface, sessionId },
+      effects: {},
+    });
   }
 }

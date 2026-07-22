@@ -21,6 +21,7 @@ const MAX_NAME       = 50;
 const MAX_LEVEL      = 100;
 const MAX_EXP        = 1_000_000;
 const MAX_STAT       = 100;
+const MAX_APPEARANCE_DESC = 2_000;
 
 /**
  * One contract cap shared by schema validation and the HTTP body reader.
@@ -37,7 +38,7 @@ const safeText = (max: number, label: string) => z.string()
   .regex(SAFE_TEXT, `${label} contains invalid control chars`);
 
 const SafeName = safeText(MAX_NAME, "name").min(1, "name required");
-const SafeDesc = safeText(MAX_TEXT, "description").optional();
+const SafeDesc = safeText(MAX_APPEARANCE_DESC, "description").optional();
 const PortableMediaRef = safeText(2048, "media reference").refine((value) => {
   if (/^\/(?!\/)/.test(value)) return true;
   try {

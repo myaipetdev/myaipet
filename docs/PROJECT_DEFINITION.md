@@ -114,7 +114,7 @@
 - SOUL export (memories + persona + skills + SHA-256 무결성 해시 → 다른 서버로 이주)
 - MCP 서버 (`npx petclaw-mcp`), `/.well-known/pet-card.json` discovery
 - Pet Daydream (default-mode-network), Bond Feedback Loop (관계 회고 → 다음 대화 context)
-- 네이티브 tool-calling 에이전트 — `callLLMWithTools` (`lib/llm/router.ts`) + `runToolAgent` 커넥터 툴 (web_search, wikipedia_lookup, crypto_price, recall_memory — `lib/petclaw/agent/tool-agent.ts`), `/api/pets/[petId]/agent`에서 `?stream=1` SSE 스트리밍. `web_read`는 선언돼 있지만 현재 unavailable 응답만 반환.
+- 네이티브 tool-calling 에이전트 — `callLLMWithTools` (`lib/llm/router.ts`) + `runToolAgent`가 실행 가능한 in-process 스킬과 비공개 `recall_memory`만 제공하고, `/api/pets/[petId]/agent`에서 `?stream=1` SSE 스트리밍. 비공개 메모리를 읽는 실행에서 outbound web/market 커넥터는 명시적 승인·data-taint 정책 전까지 제외한다.
 - Plan-Execute 루프 (`lib/petclaw/agent/plan-execute.ts`) + GBrain 스타일 대용량 메모리 리트리벌 (`lib/petclaw/memory/retrieval.ts`)
 - LLM 라우터 + BYOK — 오너가 자기 모델 연결 (암호화 키, `/api/petclaw/models`)
 - 정직한 스킬 셋 18개 (실제 핸들러/엔드포인트가 있는 스킬만 집계)

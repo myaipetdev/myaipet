@@ -112,8 +112,8 @@ function clockOf(ts?: string | null): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-export default function GrandPawOffice({ mc, liveRun, running, petName, pets, goal, setGoal, onDispatch, cost }: {
-  mc: MC; liveRun: LiveRun | null; running: boolean; petName: string;
+export default function GrandPawOffice({ mc, liveRun, running, receiptMissing, petName, pets, goal, setGoal, onDispatch, cost }: {
+  mc: MC; liveRun: LiveRun | null; running: boolean; receiptMissing: boolean; petName: string;
   pets: any[]; goal: string; setGoal: (s: string) => void; onDispatch: () => void; cost: number;
 }) {
   const [tab, setTab] = useState<Tab>("overview");
@@ -284,11 +284,11 @@ export default function GrandPawOffice({ mc, liveRun, running, petName, pets, go
           maxLength={600}
           style={{ flex: 1, minWidth: 160, border: "none", outline: "none", background: "transparent", fontFamily: SANS, fontSize: 14, color: INK, padding: "8px 12px" }} />
         {!narrow && <span style={{ ...labelStyle(12), border: `1px solid ${CHIP_BR}`, borderRadius: 7, padding: "3px 7px", marginRight: 8 }}>⌘K</span>}
-        <button onClick={onDispatch} disabled={goal.trim().length < 3 || running} aria-busy={running}
+        <button onClick={onDispatch} disabled={goal.trim().length < 3 || running || receiptMissing} aria-busy={running}
           style={{ fontFamily: SANS, fontSize: 14.5, fontWeight: 700, color: "#FFF9EC", padding: "11px 22px", borderRadius: 12, border: "none",
-            cursor: goal.trim().length >= 3 && !running ? "pointer" : "not-allowed",
-            background: goal.trim().length >= 3 && !running ? INK : "rgba(33,26,18,0.25)" }}>
-          {running ? "WORKING" : "Dispatch"}
+            cursor: goal.trim().length >= 3 && !running && !receiptMissing ? "pointer" : "not-allowed",
+            background: goal.trim().length >= 3 && !running && !receiptMissing ? INK : "rgba(33,26,18,0.25)" }}>
+          {running ? "WORKING" : receiptMissing ? "Check Account first" : `Authorize ${cost} credits & dispatch`}
         </button>
       </div>
 
@@ -419,7 +419,7 @@ export default function GrandPawOffice({ mc, liveRun, running, petName, pets, go
       )}
 
       <div style={{ fontFamily: SANS, fontSize: 13, color: BODY_C, marginTop: 18, textAlign: "center" }}>
-        Each dispatch costs {cost} credits and is refunded if no real skill runs. Synced from PetClaw every 7 seconds.
+        Each dispatch costs {cost} credits for a completed direct answer or useful read-only skill run; failed or incomplete runs are refunded. Live from PetClaw, refreshed every 7 seconds.
       </div>
     </div>
   );

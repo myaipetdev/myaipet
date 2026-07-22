@@ -328,7 +328,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
           {cares >= 2 ? `Adopt to keep ${NAME} growing 🌱` : `Adopt your own pet`}
         </div>
         <div style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "rgba(255,248,238,0.7)", marginBottom: 15, lineHeight: 1.55 }}>
-          {ctaNote || "Sign in with your wallet — no gas, identity only. Your pet remembers you across every session."}
+          {ctaNote || "Sign in with your wallet — no gas, identity only. Selected retained details can support later chats, under your controls."}
         </div>
         <div style={{ display: "inline-block" }}>{cta}</div>
       </div>

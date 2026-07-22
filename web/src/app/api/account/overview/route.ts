@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const [userData, purchases, generationsTotal, recentGenerations] = await Promise.all([
+    const [userData, purchases, generationsTotal, recentGenerations, agentRuns] = await Promise.all([
       prisma.user.findUnique({
         where: { id: user.id },
         select: { credits: true, season_points: true, created_at: true },
@@ -53,6 +53,26 @@ export async function GET(req: NextRequest) {
           created_at: true,
         },
       }),
+      prisma.petAgentRun.findMany({
+        where: { user_id: user.id },
+        orderBy: { created_at: "desc" },
+        take: 20,
+        select: {
+          run_id: true,
+          pet_id: true,
+          pet_name: true,
+          goal: true,
+          state: true,
+          completed: true,
+          stopped_reason: true,
+          billing: true,
+          credits_remaining: true,
+          created_at: true,
+          started_at: true,
+          terminal_at: true,
+          updated_at: true,
+        },
+      }),
     ]);
 
     const seasonPoints = userData?.season_points ?? 0;
@@ -70,6 +90,28 @@ export async function GET(req: NextRequest) {
         total: generationsTotal,
         recent: recentGenerations,
       },
+      agent_runs: agentRuns.map((run) => {
+        // Full pet deletion keeps a minimal owner-only financial receipt, but
+        // the stored sentinel values are an implementation detail. Do not make
+        // the account client infer privacy state from "[deleted]" copy.
+        const petDeleted = run.pet_name === "Deleted Pet" && run.goal === "[deleted]";
+        return {
+          run_id: run.run_id,
+          pet_id: run.pet_id,
+          pet_deleted: petDeleted,
+          pet_name: petDeleted ? null : run.pet_name,
+          goal: petDeleted ? null : run.goal,
+          state: run.state,
+          completed: run.completed,
+          stopped_reason: run.stopped_reason,
+          billing: run.billing,
+          credits_remaining: run.credits_remaining,
+          created_at: run.created_at,
+          started_at: run.started_at,
+          terminal_at: run.terminal_at,
+          updated_at: run.updated_at,
+        };
+      }),
       season: {
         points: seasonPoints,
         tier: standing.tier,

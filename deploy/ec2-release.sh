@@ -954,8 +954,8 @@ if find "${PETCLAW_RELEASE_DIR}" ! -user root -print -quit | grep -q . \
 fi
 
 # Check the exact signed allowlist again only after the migration inputs are
-# immutable. Any destructive migration whose bytes changed or lacks an exact
-# approval fails closed.
+# immutable. Any destructive or release-path data-mutating migration whose
+# bytes changed or lacks an exact approval fails closed.
 /bin/bash "${PETCLAW_TRUSTED_MIGRATION_GATE}" \
   "${PETCLAW_RELEASE_DIR}" \
   "${PETCLAW_RELEASE_DIR}/deploy/destructive-migrations.allowlist"
@@ -1108,9 +1108,58 @@ case "${PETCLAW_SUBSCRIPTION_TABLE_STATE}" in
     exit 2
     ;;
 esac
+PETCLAW_MEMORY_FTS_STATE="$(petclaw_psql_readonly \
+  -X -qAt -v ON_ERROR_STOP=1 -c \
+  "SELECT CASE
+     WHEN to_regclass('public.pet_memories') IS NULL THEN 'missing_table'
+     WHEN NOT EXISTS (
+       SELECT 1
+       FROM pg_attribute AS attribute
+       JOIN pg_attrdef AS definition
+         ON definition.adrelid = attribute.attrelid
+        AND definition.adnum = attribute.attnum
+       WHERE attribute.attrelid = to_regclass('public.pet_memories')
+         AND attribute.attname = 'content_tsv'
+         AND NOT attribute.attisdropped
+         AND attribute.attgenerated = 's'
+         AND format_type(attribute.atttypid, attribute.atttypmod) = 'tsvector'
+         AND pg_get_expr(definition.adbin, definition.adrelid)
+           = 'to_tsvector(''simple''::regconfig, COALESCE(content, ''''::text))'
+     ) THEN 'invalid_column'
+     WHEN NOT EXISTS (
+       SELECT 1
+       FROM pg_class AS index_class
+       JOIN pg_index AS index_state ON index_state.indexrelid = index_class.oid
+       JOIN pg_am AS access_method ON access_method.oid = index_class.relam
+       WHERE index_class.oid = to_regclass('public.pet_memories_content_tsv_idx')
+         AND index_state.indrelid = to_regclass('public.pet_memories')
+         AND index_state.indisvalid
+         AND index_state.indisready
+         AND access_method.amname = 'gin'
+         AND pg_get_indexdef(index_class.oid) LIKE '% USING gin (content_tsv)'
+     ) THEN 'invalid_gin_index'
+     WHEN NOT EXISTS (
+       SELECT 1
+       FROM pg_class AS index_class
+       JOIN pg_index AS index_state ON index_state.indexrelid = index_class.oid
+       JOIN pg_am AS access_method ON access_method.oid = index_class.relam
+       WHERE index_class.oid = to_regclass('public.pet_memories_pet_id_created_at_idx')
+         AND index_state.indrelid = to_regclass('public.pet_memories')
+         AND index_state.indisvalid
+         AND index_state.indisready
+         AND access_method.amname = 'btree'
+         AND pg_get_indexdef(index_class.oid)
+           LIKE '% USING btree (pet_id, created_at DESC)'
+     ) THEN 'invalid_compound_index'
+     ELSE 'ready'
+   END")"
+if [[ "${PETCLAW_MEMORY_FTS_STATE}" != "ready" ]]; then
+  echo "ERROR: pet_memories FTS schema is ${PETCLAW_MEMORY_FTS_STATE}; restore it in a measured off-release maintenance window before deployment." >&2
+  exit 2
+fi
 unset PETCLAW_PSQL_HOST PETCLAW_PSQL_PORT PETCLAW_PSQL_USER \
   PETCLAW_PSQL_PASSWORD PETCLAW_PSQL_DATABASE PETCLAW_PSQL_SSLMODE \
-  PETCLAW_PSQL_FIELD_COUNT
+  PETCLAW_PSQL_FIELD_COUNT PETCLAW_MEMORY_FTS_STATE
 npx prisma migrate deploy
 PETCLAW_POSTMIGRATION_MIN_FREE_BYTES=$((3 * 1024 * 1024 * 1024))
 PETCLAW_AVAILABLE_BYTES="$(df --output=avail -B1 /opt/petclaw | tail -n 1 | tr -d '[:space:]')"

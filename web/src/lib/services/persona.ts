@@ -18,6 +18,11 @@ import {
   sanitizeStoredPersonaGeneratedFields,
   type ChatAnalysisResult,
 } from "@/lib/personaGeneratedLanguage";
+import { withLockedPetModifiers } from "@/lib/petclaw/modifier-store";
+import {
+  isProviderRelevantRetainedText,
+  isProviderSafeRetainedText,
+} from "@/lib/petclaw/memory/persistent-memory";
 
 export type { ChatAnalysisResult } from "@/lib/personaGeneratedLanguage";
 
@@ -75,57 +80,91 @@ async function callAnalytical(
 
 // ── Build persona context string for system prompts ──
 
-export function buildPersonaContext(persona: PersonaData | null): string {
+function providerSafePersonaValue(label: string, value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const bounded = value.trim().slice(0, 600);
+  if (!bounded || !isProviderSafeRetainedText(`${label} ${bounded}`)) return null;
+  return bounded;
+}
+
+function providerRelevantPersonaValue(
+  label: string,
+  value: unknown,
+  query: string,
+): string | null {
+  if (typeof value !== "string" || !query.trim()) return null;
+  const relevant = value
+    .slice(0, 1200)
+    .split(/(?<=[.!?])\s+|[,;|\n]+/)
+    .map((fragment) => providerSafePersonaValue(label, fragment))
+    .filter((fragment: string | null): fragment is string =>
+      !!fragment && isProviderRelevantRetainedText(`${label} ${fragment}`, query),
+    )
+    .slice(0, 5);
+  return relevant.length ? relevant.join(", ") : null;
+}
+
+/**
+ * Build the provider-bound persona subset. Stable style metadata is always
+ * useful; raw biography, interests, phrases, topics, and message samples are
+ * included only when they are safe AND lexically relevant to this turn.
+ * Complete stored persona data remains available to owner inspect/export.
+ */
+export function buildPersonaContext(persona: PersonaData | null, query = ""): string {
   if (!persona) return "";
 
   const sections: string[] = [];
 
   // Source 1: Onboarding answers
-  if (persona.owner_speech_style) {
-    sections.push(`- Speech style: ${persona.owner_speech_style}`);
-  }
-  if (persona.owner_interests) {
-    sections.push(`- Interests: ${persona.owner_interests}`);
-  }
-  if (persona.owner_expressions) {
-    sections.push(`- Favorite expressions: ${persona.owner_expressions}`);
-  }
-  if (persona.owner_tone) {
-    sections.push(`- Tone: ${persona.owner_tone}`);
-  }
-  if (persona.owner_language) {
-    sections.push(`- Language preference: ${persona.owner_language}`);
-  }
-  if (persona.owner_bio) {
-    sections.push(`- Owner self-description: ${persona.owner_bio}`);
-  }
+  const speechStyle = providerSafePersonaValue("owner_speech_style", persona.owner_speech_style);
+  if (speechStyle) sections.push(`- Speech style: ${speechStyle}`);
+  const interests = providerRelevantPersonaValue("owner_interests", persona.owner_interests, query);
+  if (interests) sections.push(`- Interests: ${interests}`);
+  const expressions = providerRelevantPersonaValue("owner_expressions", persona.owner_expressions, query);
+  if (expressions) sections.push(`- Favorite expressions: ${expressions}`);
+  const tone = providerSafePersonaValue("owner_tone", persona.owner_tone);
+  if (tone) sections.push(`- Tone: ${tone}`);
+  const language = providerSafePersonaValue("owner_language", persona.owner_language);
+  if (language) sections.push(`- Language preference: ${language}`);
+  const bio = providerRelevantPersonaValue("owner_bio", persona.owner_bio, query);
+  if (bio) sections.push(`- Owner self-description: ${bio}`);
 
   // Source 2: Chat analysis results
-  if (persona.vocabulary_style) {
-    sections.push(`- Vocabulary patterns: ${persona.vocabulary_style}`);
-  }
+  const vocabulary = providerSafePersonaValue("vocabulary_style", persona.vocabulary_style);
+  if (vocabulary) sections.push(`- Vocabulary patterns: ${vocabulary}`);
   if (persona.analyzed_patterns) {
     const p = persona.analyzed_patterns as any;
-    if (p.formality) sections.push(`- Formality level: ${p.formality}`);
-    if (p.emoji_usage) sections.push(`- Emoji usage: ${p.emoji_usage}`);
-    if (p.punctuation_style) sections.push(`- Punctuation style: ${p.punctuation_style}`);
+    const formality = providerSafePersonaValue("analyzed_patterns.formality", p.formality);
+    const emojiUsage = providerSafePersonaValue("analyzed_patterns.emoji_usage", p.emoji_usage);
+    const punctuation = providerSafePersonaValue("analyzed_patterns.punctuation_style", p.punctuation_style);
+    if (formality) sections.push(`- Formality level: ${formality}`);
+    if (emojiUsage) sections.push(`- Emoji usage: ${emojiUsage}`);
+    if (punctuation) sections.push(`- Punctuation style: ${punctuation}`);
   }
   if (Array.isArray(persona.sample_messages) && persona.sample_messages.length > 0) {
-    const examples = persona.sample_messages.slice(0, 5);
-    sections.push(`- Example owner messages:\n${examples.map((m: string) => `    "${m}"`).join("\n")}`);
+    const examples = persona.sample_messages
+      .map((message: unknown) => providerRelevantPersonaValue("sample_messages", message, query))
+      .filter((message: string | null): message is string => !!message)
+      .slice(0, 2);
+    if (examples.length) {
+      sections.push(`- Relevant owner message examples:\n${examples.map((m) => `    "${m}"`).join("\n")}`);
+    }
   }
 
   // Source 3: Connected platform observations
-  if (persona.observed_topics) {
-    const topics = Array.isArray(persona.observed_topics)
-      ? persona.observed_topics.join(", ")
-      : JSON.stringify(persona.observed_topics);
-    sections.push(`- Recent topics of interest: ${topics}`);
+  if (Array.isArray(persona.observed_topics)) {
+    const topics = persona.observed_topics
+      .map((topic: unknown) => providerRelevantPersonaValue("observed_topics", topic, query))
+      .filter((topic: string | null): topic is string => !!topic)
+      .slice(0, 5);
+    if (topics.length) sections.push(`- Relevant recent topics: ${topics.join(", ")}`);
   }
   if (persona.observed_style) {
     const style = persona.observed_style as any;
-    if (style.avg_message_length) sections.push(`- Avg message length: ${style.avg_message_length}`);
-    if (style.common_phrases) sections.push(`- Common phrases: ${style.common_phrases}`);
+    const averageLength = providerSafePersonaValue("observed_style.avg_message_length", style.avg_message_length);
+    const commonPhrases = providerRelevantPersonaValue("observed_style.common_phrases", style.common_phrases, query);
+    if (averageLength) sections.push(`- Avg message length: ${averageLength}`);
+    if (commonPhrases) sections.push(`- Relevant common phrases: ${commonPhrases}`);
   }
 
   if (sections.length === 0) return "";
@@ -137,8 +176,18 @@ IMPORTANT: Mirror the owner's speech patterns naturally while replying in Englis
 
 // ── Analyze chat history text and extract personality patterns ──
 
-export async function analyzeChatHistory(chatText: string): Promise<ChatAnalysisResult> {
+export function isPersonaAnalysisProviderSafe(chatText: string): boolean {
+  return isProviderSafeRetainedText(`persona_analysis ${chatText}`);
+}
+
+export async function analyzeChatHistory(
+  petId: number,
+  chatText: string,
+): Promise<ChatAnalysisResult> {
   const trimmed = chatText.slice(0, 50000);
+  if (!isPersonaAnalysisProviderSafe(trimmed)) {
+    throw new Error("Chat text contains content that cannot be sent for persona analysis.");
+  }
 
   const systemPrompt = `You are a linguistic analysis AI. Analyze the provided chat history and extract the writer's personality patterns. Return ONLY valid JSON with no markdown formatting, no code blocks.
 
@@ -162,7 +211,7 @@ For sampleMessages, copy 5-10 representative source messages verbatim. Never tra
 For vocabularyStyle, describe their word choices, slang, abbreviations, and expression patterns in English.
 For interests, extract topics they frequently discuss and label them in English.`;
 
-  const raw = await callAnalytical(systemPrompt, trimmed, 1000);
+  const raw = await callAnalytical(systemPrompt, trimmed, 1000, petId);
 
   // Parse JSON from response (handle potential markdown wrapping)
   let cleaned = raw;
@@ -180,10 +229,40 @@ For interests, extract topics they frequently discuss and label them in English.
 
 // ── Observe messages from connected platforms and update persona ──
 
-export async function observeAndUpdate(petId: number, messages: string[]): Promise<void> {
-  if (!messages.length) return;
+export function selectProviderSafePersonaObservations(messages: string[]): string[] {
+  return messages
+    .filter((message) =>
+      typeof message === "string"
+      && isProviderSafeRetainedText(`persona_observation ${message}`),
+    )
+    .slice(-40);
+}
 
-  const combined = messages.join("\n");
+export async function observeAndUpdate(petId: number, messages: string[]): Promise<void> {
+  const providerMessages = selectProviderSafePersonaObservations(messages);
+  if (!providerMessages.length) return;
+
+  // Observe against a deletion/edit generation and a specific persona version.
+  // The model call may take seconds; neither a cleared persona nor a newer
+  // observation may be overwritten when it returns.
+  let start: { memoryEpoch: number; personaVersion: number } | null = null;
+  try {
+    start = await withLockedPetModifiers(petId, async ({ tx, pet }) => {
+      const persona = await tx.petPersona.findUnique({
+        where: { pet_id: petId },
+        select: { persona_version: true },
+      });
+      return persona
+        ? { memoryEpoch: pet.memory_epoch, personaVersion: persona.persona_version }
+        : null;
+    });
+  } catch (err) {
+    console.error("[persona] observeAndUpdate snapshot error:", err);
+    return;
+  }
+  if (!start) return;
+
+  const combined = providerMessages.join("\n");
 
   const systemPrompt = `Analyze these recent messages and extract:
 1. Topics being discussed (as a JSON array of strings)
@@ -211,17 +290,28 @@ Return ONLY valid JSON:
 
     const observations = normalizePersonaObservation(JSON.parse(cleaned));
 
-    await prisma.petPersona.update({
-      where: { pet_id: petId },
-      data: {
-        observed_topics: observations.topics,
-        observed_style: observations.style,
-        last_observed_at: new Date(),
-        persona_version: { increment: 1 },
-      },
+    const committed = await withLockedPetModifiers(petId, async ({ tx, pet }) => {
+      if (pet.memory_epoch !== start.memoryEpoch) return false;
+      const current = await tx.petPersona.findUnique({
+        where: { pet_id: petId },
+        select: { persona_version: true },
+      });
+      if (!current || current.persona_version !== start.personaVersion) return false;
+      await tx.petPersona.update({
+        where: { pet_id: petId },
+        data: {
+          observed_topics: observations.topics,
+          observed_style: observations.style,
+          last_observed_at: new Date(),
+          persona_version: { increment: 1 },
+        },
+      });
+      return true;
     });
 
-    console.log(`[persona] Updated observations for pet ${petId}: ${observations.topics.length} topics`);
+    if (committed) {
+      console.log(`[persona] Updated observations for pet ${petId}: ${observations.topics.length} topics`);
+    }
   } catch (err) {
     console.error("[persona] observeAndUpdate error:", err);
   }
@@ -237,66 +327,65 @@ export async function getPersona(petId: number): Promise<PersonaData | null> {
 // ── Save onboarding answers ──
 
 export async function saveOnboarding(petId: number, data: OnboardingData): Promise<PersonaData> {
-  const result = await prisma.petPersona.upsert({
-    where: { pet_id: petId },
-    create: {
-      pet_id: petId,
-      owner_speech_style: data.speech_style ?? null,
-      owner_interests: data.interests ?? null,
-      owner_expressions: data.expressions ?? null,
-      owner_tone: data.tone ?? null,
-      owner_language: data.language ?? null,
-      owner_bio: data.bio ?? null,
-    },
-    update: {
-      ...(data.speech_style !== undefined && { owner_speech_style: data.speech_style }),
-      ...(data.interests !== undefined && { owner_interests: data.interests }),
-      ...(data.expressions !== undefined && { owner_expressions: data.expressions }),
-      ...(data.tone !== undefined && { owner_tone: data.tone }),
-      ...(data.language !== undefined && { owner_language: data.language }),
-      ...(data.bio !== undefined && { owner_bio: data.bio }),
-      persona_version: { increment: 1 },
-    },
-  });
-
   // ── Mirror into PetMemoryManager USER.md ──
   // PetMemoryManager reads pet.personality_modifiers.user_profile. By seeding it
   // at onboarding completion, the chat / skills layer sees owner context on the
   // very first turn — no "I don't know you yet" cold start.
-  try {
-    const pet = await prisma.pet.findUnique({ where: { id: petId } });
-    if (pet) {
-      const mods = (pet.personality_modifiers as any) || {};
-      const existing: any[] = Array.isArray(mods.user_profile) ? mods.user_profile : [];
-      // Build entry list from non-null answers (key namespaced "onboarding_*" so
-      // future retain runs don't overwrite — entries with same key get updated).
-      const now = new Date().toISOString();
-      const seed: any[] = [];
-      const add = (key: string, content: string | null | undefined, category: string) => {
-        if (!content) return;
-        seed.push({ key, content, category, source: "onboarding", updatedAt: now });
-      };
-      add("onboarding_tone",       data.tone        && `Prefers ${data.tone} tone`,                    "preference");
-      add("onboarding_speech",     data.speech_style && `Communication style: ${data.speech_style}`,   "communication");
-      add("onboarding_expressions", data.expressions && `Self-described role: ${data.expressions}`,    "preference");
-      add("onboarding_interests",  data.interests   && `Interests: ${data.interests}`,                 "interest");
-      add("onboarding_language",   data.language    && `Preferred language: ${data.language}`,         "communication");
-      add("onboarding_bio",        data.bio         && data.bio.slice(0, 400),                         "context");
+  const now = new Date().toISOString();
+  const seed: any[] = [];
+  const add = (key: string, content: string | null | undefined, category: string) => {
+    if (!content) return;
+    seed.push({ key, content, category, source: "onboarding", updatedAt: now });
+  };
+  add("onboarding_tone",       data.tone        && `Prefers ${data.tone} tone`,                    "preference");
+  add("onboarding_speech",     data.speech_style && `Communication style: ${data.speech_style}`,   "communication");
+  add("onboarding_expressions", data.expressions && `Self-described role: ${data.expressions}`,    "preference");
+  add("onboarding_interests",  data.interests   && `Interests: ${data.interests}`,                 "interest");
+  add("onboarding_language",   data.language    && `Preferred language: ${data.language}`,         "communication");
+  add("onboarding_bio",        data.bio         && data.bio.slice(0, 400),                         "context");
 
-      // Merge — replace entries with same key, keep others
-      const byKey = new Map<string, any>(existing.map((e: any) => [e.key, e]));
-      for (const s of seed) byKey.set(s.key, s);
-      const merged = Array.from(byKey.values());
+  const result = await withLockedPetModifiers(petId, async ({ tx, modifiers }) => {
+    const persona = await tx.petPersona.upsert({
+      where: { pet_id: petId },
+      create: {
+        pet_id: petId,
+        owner_speech_style: data.speech_style ?? null,
+        owner_interests: data.interests ?? null,
+        owner_expressions: data.expressions ?? null,
+        owner_tone: data.tone ?? null,
+        owner_language: data.language ?? null,
+        owner_bio: data.bio ?? null,
+      },
+      update: {
+        ...(data.speech_style !== undefined && { owner_speech_style: data.speech_style }),
+        ...(data.interests !== undefined && { owner_interests: data.interests }),
+        ...(data.expressions !== undefined && { owner_expressions: data.expressions }),
+        ...(data.tone !== undefined && { owner_tone: data.tone }),
+        ...(data.language !== undefined && { owner_language: data.language }),
+        ...(data.bio !== undefined && { owner_bio: data.bio }),
+        persona_version: { increment: 1 },
+      },
+    });
 
-      await prisma.pet.update({
-        where: { id: petId },
-        data: { personality_modifiers: { ...mods, user_profile: merged } as any },
-      });
-    }
-  } catch (e) {
-    console.error("saveOnboarding: USER.md mirror failed:", e);
-    // Non-fatal — persona table is still saved
-  }
+    const existing: any[] = Array.isArray(modifiers.user_profile)
+      ? modifiers.user_profile as any[]
+      : [];
+    const byKey = new Map<string, any>(existing.map((entry: any) => [entry.key, entry]));
+    for (const entry of seed) byKey.set(entry.key, entry);
+    await tx.pet.update({
+      where: { id: petId },
+      data: {
+        personality_modifiers: {
+          ...modifiers,
+          user_profile: Array.from(byKey.values()),
+        } as any,
+        // An explicit owner correction invalidates any in-flight analysis or
+        // generated cache that began with the prior persona.
+        memory_epoch: { increment: 1 },
+      },
+    });
+    return persona;
+  });
 
   return result as any;
 }
@@ -306,28 +395,43 @@ export async function saveOnboarding(petId: number, data: OnboardingData): Promi
 export async function saveChatAnalysis(
   petId: number,
   analysis: ChatAnalysisResult,
-): Promise<PersonaData> {
+  expectedEpoch: number,
+): Promise<PersonaData | null> {
   // Defense in depth: callers cannot bypass the generated-language boundary by
   // constructing ChatAnalysisResult directly. User sample excerpts are kept as-is.
   const safeAnalysis = normalizeChatAnalysis(analysis);
-  const persona = await prisma.petPersona.upsert({
-    where: { pet_id: petId },
-    create: {
-      pet_id: petId,
-      analyzed_patterns: safeAnalysis.patterns,
-      sample_messages: safeAnalysis.sampleMessages,
-      vocabulary_style: safeAnalysis.vocabularyStyle,
-      owner_tone: safeAnalysis.detectedTone,
-      owner_language: safeAnalysis.detectedLanguage,
-      owner_interests: safeAnalysis.interests.join(", "),
-    },
-    update: {
-      analyzed_patterns: safeAnalysis.patterns,
-      sample_messages: safeAnalysis.sampleMessages,
-      vocabulary_style: safeAnalysis.vocabularyStyle,
-      // Only update tone/language/interests if not already set by onboarding
-      persona_version: { increment: 1 },
-    },
+  const persona = await withLockedPetModifiers(petId, async ({ tx, pet }) => {
+    // The analysis provider call can outlive an owner clear/correction. That
+    // mutation advances memory_epoch under this same lock, so a result derived
+    // from the earlier ledger must be discarded instead of recreating the
+    // deleted PetPersona row.
+    if (pet.memory_epoch !== expectedEpoch) return null;
+
+    const saved = await tx.petPersona.upsert({
+      where: { pet_id: petId },
+      create: {
+        pet_id: petId,
+        analyzed_patterns: safeAnalysis.patterns,
+        sample_messages: safeAnalysis.sampleMessages,
+        vocabulary_style: safeAnalysis.vocabularyStyle,
+        owner_tone: safeAnalysis.detectedTone,
+        owner_language: safeAnalysis.detectedLanguage,
+        owner_interests: safeAnalysis.interests.join(", "),
+      },
+      update: {
+        analyzed_patterns: safeAnalysis.patterns,
+        sample_messages: safeAnalysis.sampleMessages,
+        vocabulary_style: safeAnalysis.vocabularyStyle,
+        // Only update tone/language/interests if not already set by onboarding
+        persona_version: { increment: 1 },
+      },
+    });
+    await tx.pet.update({
+      where: { id: petId },
+      data: { memory_epoch: { increment: 1 } },
+    });
+    return saved;
   });
+  if (!persona) return null;
   return sanitizeStoredPersonaGeneratedFields(persona) as PersonaData;
 }

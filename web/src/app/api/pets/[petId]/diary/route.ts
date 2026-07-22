@@ -16,10 +16,12 @@ import { rateLimit } from "@/lib/rateLimit";
 import { ownsPet } from "@/lib/authz";
 import { callLLM } from "@/lib/llm/router";
 import {
-  containsHangul,
   generatedEnglishOrFallback,
   generatedEnglishOrNull,
 } from "@/lib/generatedLanguage";
+import { withLockedPetModifiers } from "@/lib/petclaw/modifier-store";
+import { isProviderSafeRetainedText } from "@/lib/petclaw/memory/persistent-memory";
+import { buildDiaryProviderMemory } from "@/lib/petclaw/memory/provider-context";
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -46,25 +48,29 @@ interface CachedDiary {
   text: string;
   weekOf: string;       // ISO date of generation
   generatedAt: string;
+  memoryEpoch: number;
 }
 
-async function generateWithLLM(pet: any): Promise<string | null> {
-  const weekAgo = new Date(Date.now() - CACHE_TTL_MS);
-  const recent = await prisma.petMemory.findMany({
-    where: {
-      pet_id: pet.id,
-      created_at: { gte: weekAgo },
-      memory_type: { in: ["interaction", "conversation", "combo", "milestone"] },
-    },
-    orderBy: { created_at: "desc" },
-    take: 14,
-    select: { content: true },
+type DiaryMoment = {
+  id: number;
+  content: string;
+  created_at: Date;
+};
+
+function diarySourceSnapshot(pet: any, recent: DiaryMoment[]): string {
+  return JSON.stringify({
+    name: pet.name,
+    personality: pet.personality_type,
+    level: pet.level,
+    recent: recent.map((row) => [row.id, row.content, row.created_at.toISOString()]),
   });
-  const lines = recent
-    .filter((row) => !containsHangul(row.content))
-    .map(r => `- ${r.content}`)
-    .join("\n")
-    .slice(0, 1200);
+}
+
+async function generateWithLLM(pet: any, recent: DiaryMoment[]): Promise<string | null> {
+  const lines = buildDiaryProviderMemory(recent);
+  const providerPetName = isProviderSafeRetainedText(`pet_name ${pet.name}`)
+    ? pet.name
+    : "your pet";
 
   try {
     const result = await callLLM({
@@ -75,7 +81,7 @@ async function generateWithLLM(pet: any): Promise<string | null> {
       messages: [
         {
           role: "system",
-          content: `You are ${pet.name}, a ${pet.personality_type} pet at Lv.${pet.level} writing this week's short diary entry about your life with your owner. 2-3 sentences, first person, warm and specific, casual not formal. Reference the moments below if any. No preamble, no date header, no quotes. Always write in English.`,
+          content: `You are ${providerPetName}, a ${pet.personality_type} pet at Lv.${pet.level} writing this week's short diary entry about your life with your owner. 2-3 sentences, first person, warm and specific, casual not formal. Reference the moments below if any. No preamble, no date header, no quotes. Always write in English.`,
         },
         {
           role: "user",
@@ -111,7 +117,9 @@ export async function GET(
   const mods = (pet.personality_modifiers as any) || {};
   const cached: CachedDiary | undefined = mods.weekly_diary;
   const now = Date.now();
-  const isFresh = cached && (now - new Date(cached.generatedAt).getTime()) < CACHE_TTL_MS;
+  const isFresh = cached
+    && cached.memoryEpoch === pet.memory_epoch
+    && (now - new Date(cached.generatedAt).getTime()) < CACHE_TTL_MS;
 
   if (isFresh && cached) {
     return NextResponse.json({
@@ -121,15 +129,82 @@ export async function GET(
     });
   }
 
-  const llmText = await generateWithLLM(pet);
+  const weekAgo = new Date(Date.now() - CACHE_TTL_MS);
+  const recent = await prisma.petMemory.findMany({
+    where: {
+      pet_id: pet.id,
+      created_at: { gte: weekAgo },
+      memory_type: { in: ["interaction", "conversation", "combo", "milestone"] },
+    },
+    orderBy: { created_at: "desc" },
+    take: 14,
+    select: { id: true, content: true, created_at: true },
+  });
+  const startEpoch = pet.memory_epoch;
+  const sourceLedgerSnapshot = diarySourceSnapshot(pet, recent);
+  const cacheSnapshot = JSON.stringify(mods.weekly_diary ?? null);
+
+  const llmText = await generateWithLLM(pet, recent);
   const text = llmText || pickFallback(pet.personality_type);
   const weekOf = new Date().toISOString().slice(0, 10);
 
-  const fresh: CachedDiary = { text, weekOf, generatedAt: new Date().toISOString() };
-  await prisma.pet.update({
-    where: { id: pet.id },
-    data: { personality_modifiers: { ...mods, weekly_diary: fresh } as any },
+  const fresh: CachedDiary = {
+    text,
+    weekOf,
+    generatedAt: new Date().toISOString(),
+    memoryEpoch: startEpoch,
+  };
+  const commit = await withLockedPetModifiers(pet.id, async ({ tx, pet: lockedPet, modifiers }) => {
+    const [currentPet, currentRecent] = await Promise.all([
+      tx.pet.findUnique({ where: { id: pet.id } }),
+      tx.petMemory.findMany({
+        where: {
+          pet_id: pet.id,
+          created_at: { gte: weekAgo },
+          memory_type: { in: ["interaction", "conversation", "combo", "milestone"] },
+        },
+        orderBy: { created_at: "desc" },
+        take: 14,
+        select: { id: true, content: true, created_at: true },
+      }),
+    ]);
+    const currentCache = modifiers.weekly_diary as CachedDiary | undefined;
+    if (
+      !currentPet
+      || lockedPet.memory_epoch !== startEpoch
+      || diarySourceSnapshot(currentPet, currentRecent) !== sourceLedgerSnapshot
+      || JSON.stringify(modifiers.weekly_diary ?? null) !== cacheSnapshot
+    ) {
+      return { committed: false as const, currentCache, currentEpoch: lockedPet.memory_epoch };
+    }
+    await tx.pet.update({
+      where: { id: pet.id },
+      data: { personality_modifiers: { ...modifiers, weekly_diary: fresh } as any },
+    });
+    return { committed: true as const, currentCache: fresh, currentEpoch: startEpoch };
   });
+
+  if (!commit.committed) {
+    const current = commit.currentCache;
+    const currentAt = current ? new Date(current.generatedAt).getTime() : 0;
+    if (
+      current?.text
+      && current.memoryEpoch === commit.currentEpoch
+      && Date.now() - currentAt < CACHE_TTL_MS
+    ) {
+      return NextResponse.json({
+        entry: generatedEnglishOrFallback(current.text, pickFallback(pet.personality_type)),
+        weekOf: current.weekOf,
+        cached: true,
+      });
+    }
+    return NextResponse.json({
+      entry: pickFallback(pet.personality_type),
+      weekOf,
+      cached: false,
+      staleDiscarded: true,
+    });
+  }
 
   return NextResponse.json({ entry: text, weekOf, cached: false });
 }

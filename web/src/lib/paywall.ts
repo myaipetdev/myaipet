@@ -14,6 +14,7 @@ import {
   ONCHAIN,
   paymentsEnabled,
 } from "@/lib/onchain";
+import { lockPetModifiersInTransaction } from "@/lib/petclaw/modifier-store";
 
 export interface ActionConfig {
   freeCap: number;
@@ -177,9 +178,10 @@ function jsonOutcome(value: unknown): Prisma.InputJsonValue {
  * Execute one authoritative pet mutation with its access grant.
  *
  * Lock order is fixed for every caller:
- *   1. active owned `pets` row (`FOR UPDATE`)
- *   2. `daily_action_counts` row OR global ledger + `paid_actions` receipt
- *   3. pet effect, interaction log, and memory writes
+ *   1. sorted shared pet modifier advisory lock(s)
+ *   2. active owned `pets` row (`FOR UPDATE`)
+ *   3. `daily_action_counts` row OR global ledger + `paid_actions` receipt
+ *   4. pet effect, interaction log, and memory writes
  *
  * The validation hook observes the locked row, preventing stale cooldown,
  * ceiling, or resource-gate checks from consuming access.
@@ -201,6 +203,10 @@ export async function executePetActionWithPaywall<T, D = never>(
   const enabled = input.paymentsAreEnabled ?? paymentsEnabled;
 
   return db.$transaction<PetActionResult<T, D>>(async (tx) => {
+    // This must precede the row lock below. Pet actions can update both ordinary
+    // columns and personality_modifiers, so every writer shares one global lock
+    // order with memory, persona, and wallet transactions.
+    await lockPetModifiersInTransaction(tx, input.petId);
     const rows = await tx.$queryRaw<LockedActionPet[]>`
       SELECT
         "id", "user_id", "name", "species", "personality_type", "level",

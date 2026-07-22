@@ -41,6 +41,7 @@ model User {
   subscription              UserSubscription?
   arena_match_challenges    ArenaMatchChallenge[]
   agent_credit_reservations AgentCreditReservation[]
+  pet_agent_runs            PetAgentRun[]
   avatar_media_objects      AvatarMediaObject[]
   catch_photo_reservations  CatchPhotoReservation[]
 
@@ -103,6 +104,10 @@ model Generation {
   status          String             @default("pending") @db.VarChar(20)
   // Generated media is private until the owner explicitly publishes it.
   visibility      String             @default("private") @db.VarChar(12)
+  // Fail-closed provenance. Generic creation sites must explicitly write
+  // "user"; omitted and historical rows remain unclassified/private. Memory-
+  // derived output stays private even if a mutable link is removed or damaged.
+  source_kind     String             @default("unclassified") @db.VarChar(32)
   error_message   String?            @db.Text
   fal_request_id  String?            @db.VarChar(128)
   credits_charged Int
@@ -238,6 +243,10 @@ model Pet {
   is_active                    Boolean                  @default(true)
   soul_version                 Int                      @default(1)
   personality_modifiers        Json?                    @default("{}")
+  // Incremented by every owner memory correction/deletion. In-flight chat,
+  // retention, consolidation, bond, and learning work carries the request-start
+  // epoch and must not write after this value changes.
+  memory_epoch                 Int                      @default(0)
   last_dream_at                DateTime?
   last_interaction_at          DateTime?
   created_at                   DateTime                 @default(now())
@@ -293,6 +302,13 @@ model PetMemory {
   id            Int                      @id @default(autoincrement())
   pet_id        Int
   memory_type   String                   @db.VarChar(20)
+  // Normalized session metadata. Legacy rows encoded platform/role in
+  // memory_type/content; these nullable columns let new writes preserve the
+  // actual session boundary without making old rows unreadable.
+  session_id    String?                  @db.VarChar(128)
+  platform      String?                  @db.VarChar(20)
+  speaker_id    String?                  @db.VarChar(100)
+  role          String?                  @db.VarChar(10)
   content       String                   @db.Text
   emotion       String                   @default("calm") @db.VarChar(20)
   importance    Int                      @default(1)
@@ -313,6 +329,9 @@ model PetMemory {
   @@index([pet_id])
   @@index([content_tsv], type: Gin)
   @@index([pet_id, created_at(sort: Desc)])
+  // Add this compound index in a separate measured CREATE INDEX CONCURRENTLY
+  // operation once production cardinality is known. Existing pet_id/created_at
+  // indexes support the bounded per-pet reads introduced in this release.
   @@map("pet_memories")
 }
 
@@ -355,20 +374,28 @@ model DreamJournal {
 // connecting two memories about the owner (see lib/petclaw/memory/daydream.ts).
 // Surfaced proactively on My Pet so the pet feels like it thinks about you.
 model PetInsight {
-  id                  Int      @id @default(autoincrement())
-  pet_id              Int
-  insight             String   @db.Text // the caring observation, 1st person
-  rationale           String?  @db.Text // why the pet connected these memories
-  mood                String   @db.VarChar(20) // tender | playful | concerned | hopeful
-  score               Int      @default(5) // critic score 0-10
-  source_keys         Json? // memory keys that fed it
-  seen                Boolean  @default(false) // has the owner viewed it
-  reacted             Boolean  @default(false) // did the owner react (kept for feedback)
+  id                      Int       @id @default(autoincrement())
+  pet_id                  Int
+  insight                 String    @db.Text // the caring observation, 1st person
+  rationale               String?   @db.Text // why the pet connected these memories
+  mood                    String    @db.VarChar(20) // tender | playful | concerned | hopeful
+  score                   Int       @default(5) // critic score 0-10
+  source_keys             Json? // memory keys that fed it
+  seen                    Boolean   @default(false) // has the owner viewed it
+  reacted                 Boolean   @default(false) // did the owner react (kept for feedback)
   // Set when the daydream-to-video cron turns this insight into an auto-generated
   // video (generations.id) — doubles as the "already converted" marker.
-  video_generation_id Int?
-  created_at          DateTime @default(now())
-  pet                 Pet      @relation(fields: [pet_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "pet_insights_pet_fkey")
+  video_generation_id     Int?
+  // Durable daydream-video claim state. Provider work may start only after a
+  // claim and its private Generation reservation commit atomically.
+  conversion_status       String    @default("ready") @db.VarChar(20)
+  conversion_memory_epoch Int?
+  conversion_claimed_at   DateTime?
+  conversion_attempts     Int       @default(0)
+  conversion_retry_at     DateTime?
+  conversion_error        String?   @db.Text
+  created_at              DateTime  @default(now())
+  pet                     Pet       @relation(fields: [pet_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "pet_insights_pet_fkey")
 
   @@index([pet_id, created_at], map: "pet_insights_pet_created_idx")
   @@map("pet_insights")
@@ -942,31 +969,31 @@ model PersonaCheckpoint {
 }
 
 model MemoryNft {
-  id              Int       @id @default(autoincrement())
-  pet_id          Int
+  id               Int       @id @default(autoincrement())
+  pet_id           Int
   // One durable memory can be claimed for chain submission at most once.
   // PostgreSQL permits multiple NULLs, so auto-recorded milestones remain valid.
-  memory_id       Int?      @unique
-  soul_token_id   Int?
-  memory_token_id Int?
-  content_hash    String    @unique @db.VarChar(66)
-  memory_type     Int
-  importance      Int       @default(1)
-  title           String?   @db.VarChar(200)
-  description     String?   @db.Text
-  ipfs_cid        String?   @db.VarChar(128)
-  mint_tx_hash    String?   @db.VarChar(66)
+  memory_id        Int?      @unique
+  soul_token_id    Int?
+  memory_token_id  Int?
+  content_hash     String    @unique @db.VarChar(66)
+  memory_type      Int
+  importance       Int       @default(1)
+  title            String?   @db.VarChar(200)
+  description      String?   @db.Text
+  ipfs_cid         String?   @db.VarChar(128)
+  mint_tx_hash     String?   @db.VarChar(66)
   // Durable relayer lease: exactly one concurrent request may submit, failed
   // attempts are retryable, and a stored tx hash makes all replays read-only.
-  mint_status     String    @default("recorded") @db.VarChar(20)
-  mint_claim_token String?  @db.VarChar(36)
-  mint_claimed_at DateTime?
-  mint_attempts   Int       @default(0)
-  chain           String    @default("bsc") @db.VarChar(10)
-  owner_wallet    String    @db.VarChar(42)
-  minted_at       DateTime?
-  created_at      DateTime  @default(now())
-  pet             Pet       @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  mint_status      String    @default("recorded") @db.VarChar(20)
+  mint_claim_token String?   @db.VarChar(36)
+  mint_claimed_at  DateTime?
+  mint_attempts    Int       @default(0)
+  chain            String    @default("bsc") @db.VarChar(10)
+  owner_wallet     String    @db.VarChar(42)
+  minted_at        DateTime?
+  created_at       DateTime  @default(now())
+  pet              Pet       @relation(fields: [pet_id], references: [id], onDelete: Cascade)
 
   @@index([pet_id])
   @@index([owner_wallet])
@@ -1084,9 +1111,9 @@ model DailyActionCount {
   @@map("daily_action_counts")
 }
 
-// Durable debit state for paid Pet agent loops. A guarded user debit and the
-// `reserved` row are created together; terminal transitions make refunds
-// idempotent even when several error paths race or retry.
+// Durable debit state for paid Pet agent loops and media generations. A
+// guarded user debit and the `reserved` row are created together; terminal
+// transitions make refunds idempotent even when error paths race or retry.
 model AgentCreditReservation {
   id         String    @id @default(uuid()) @db.Uuid
   user_id    Int
@@ -1099,11 +1126,48 @@ model AgentCreditReservation {
   expires_at DateTime
   user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   pet        Pet       @relation(fields: [pet_id], references: [id], onDelete: Cascade)
+  agent_run  PetAgentRun?
 
   @@index([user_id, status])
   @@index([created_at])
   @@index([status, expires_at])
   @@map("agent_credit_reservations")
+}
+
+// Owner-scoped, idempotent receipt ledger for every credit-bearing PetClaw
+// agent run. `run_id` is generated by the caller before the request is sent;
+// the compound unique key makes a transport retry replay the same run instead
+// of reserving credits or invoking a provider again. Active runs block full
+// pet-data deletion; terminal rows retain the financial receipt after private
+// pet name, goal, answer, and step content are scrubbed.
+model PetAgentRun {
+  id                    String                  @id @default(uuid()) @db.Uuid
+  run_id                String                  @db.Uuid
+  user_id               Int
+  pet_id                 Int
+  pet_name               String                  @db.VarChar(50)
+  goal                   String                  @db.Text
+  max_steps              Int
+  state                  String                  @default("reserved") @db.VarChar(20)
+  reservation_id         String?                 @unique @db.Uuid
+  completed              Boolean?
+  answer                 String?                 @db.Text
+  steps                  Json?
+  stopped_reason         String?                 @db.VarChar(40)
+  billing                Json?
+  credits_remaining      Int?
+  created_at             DateTime                @default(now())
+  started_at             DateTime?
+  terminal_at            DateTime?
+  updated_at             DateTime                @default(now()) @updatedAt
+  user                    User                    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  credit_reservation     AgentCreditReservation? @relation(fields: [reservation_id], references: [id], onDelete: SetNull)
+
+  @@unique([user_id, pet_id, run_id])
+  @@index([user_id, created_at])
+  @@index([user_id, state, updated_at])
+  @@index([pet_id, created_at])
+  @@map("pet_agent_runs")
 }
 
 // ───────────────────────────────────────────────────────────────────────────

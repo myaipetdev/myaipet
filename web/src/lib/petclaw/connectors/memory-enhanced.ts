@@ -1,11 +1,44 @@
 /**
- * Enhanced Memory Connector for PetClaw
- * Knowledge graph + semantic search over pet's memories
- * Wraps the persistent memory system with advanced retrieval
+ * Bounded retained-memory connector for PetClaw.
+ * Recall uses direct lexical selection; complete owner inspection/export is a
+ * separate explicit action and never rides along with search results.
  */
 
 import type { ConnectorResult } from "./index";
-import { createMemoryManager } from "../memory/persistent-memory";
+import {
+  createMemoryManager,
+  type MemoryContext,
+  type MemoryEntry,
+  type UserProfile,
+} from "../memory/persistent-memory";
+
+export interface MemorySearchPayload {
+  query: string;
+  relevant: MemoryEntry[];
+  profile: UserProfile[];
+  count: number;
+  limit: number;
+}
+
+export function buildMemorySearchPayload(
+  context: MemoryContext,
+  query: string,
+  limit: number,
+): MemorySearchPayload {
+  const requestedLimit = Math.trunc(limit);
+  const boundedLimit = Number.isFinite(requestedLimit)
+    ? Math.max(1, Math.min(10, requestedLimit))
+    : 10;
+  const relevant = context.relevantMemories.slice(0, boundedLimit);
+  const profile = context.relevantUserProfile.slice(0, Math.max(0, boundedLimit - relevant.length));
+  return {
+    query: query.slice(0, 500),
+    relevant,
+    profile,
+    count: relevant.length + profile.length,
+    limit: boundedLimit,
+  };
+}
 
 export class MemoryConnector {
   private petId: number;
@@ -14,22 +47,19 @@ export class MemoryConnector {
     this.petId = petId;
   }
 
-  // Semantic search across all memories
+  // Bounded lexical selection over the capped retained ledgers.
   async search(query: string, limit = 10): Promise<ConnectorResult> {
     try {
       const manager = createMemoryManager(this.petId);
+      // No session is supplied for recall, so buildContext deliberately returns
+      // no raw conversation turns. The result contains only bounded matching
+      // rows, never the formatted/full retained ledgers.
       const context = await manager.buildContext(query, "search");
 
       return {
         success: true,
         platform: "memory",
-        data: {
-          query,
-          relevant: context.relevantMemories,
-          recentMessages: context.recentMessages.slice(-limit),
-          memoryMd: context.memoryMd,
-          userMd: context.userMd,
-        },
+        data: buildMemorySearchPayload(context, query, limit),
       };
     } catch (e: any) {
       return { success: false, platform: "memory", data: null, error: e.message };

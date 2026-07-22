@@ -107,7 +107,7 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
               <div style={{ position: "relative", zIndex: 2 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: T.creamOn, textTransform: "uppercase" }}>
                   <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#8FE6B0", boxShadow: "0 0 0 3px rgba(143,230,176,.25)", animation: "pulse 2s ease-in-out infinite" }} />
-                  Online · Remembers you
+                  Owner session · Selected retained context
                 </div>
                 <div style={{ marginTop: 16, borderRadius: 14, overflow: "hidden", border: "3px solid rgba(252,233,207,.5)", boxShadow: "0 18px 36px -18px rgba(40,12,2,.6)", aspectRatio: "1 / 1", background: "#1A140D" }}>
                   <img src={photo} alt={active?.name || "pet"} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />

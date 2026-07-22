@@ -4,7 +4,8 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { PETCLAW_PROTOCOL, buildPetDID, type PetClawSkill, DEFAULT_SKILLS } from "./petclaw";
+import { PETCLAW_PROTOCOL, buildPetDID, type PetClawSkill } from "./petclaw";
+import { getExecutableSkillsForPetSnapshot } from "./pethub";
 import { publicPetWhere } from "@/lib/publicPet";
 
 export interface RegisteredPet {
@@ -59,7 +60,7 @@ export async function getRegisteredPet(petId: number): Promise<RegisteredPet | n
     evolutionStage: pet.evolution_stage || 0,
     avatarUrl: pet.avatar_url || undefined,
     soulNftId: soul?.token_id || undefined,
-    skills: DEFAULT_SKILLS,
+    skills: getExecutableSkillsForPetSnapshot(pet),
     status: pet.is_active ? "active" : "inactive",
     totalInteractions: pet.total_interactions,
     createdAt: pet.created_at.toISOString(),
@@ -100,7 +101,7 @@ export async function getAllRegisteredPets(filters?: {
     bondLevel: pet.bond_level,
     evolutionStage: pet.evolution_stage || 0,
     avatarUrl: pet.avatar_url || undefined,
-    skills: DEFAULT_SKILLS,
+    skills: getExecutableSkillsForPetSnapshot(pet),
     status: "active" as const,
     totalInteractions: pet.total_interactions,
     createdAt: pet.created_at.toISOString(),
@@ -111,13 +112,7 @@ export function buildPetCard(pet: RegisteredPet, baseUrl: string): PetCard {
   return {
     protocol: PETCLAW_PROTOCOL,
     pet,
-    capabilities: [
-      "companion-chat",
-      "persona-mirror",
-      "memory-recall",
-      "soul-export",
-      "data-sovereignty",
-    ],
+    capabilities: pet.skills.map((skill) => skill.id),
     endpoints: {
       chat: `${baseUrl}/api/pets/${pet.id}/chat`,
       memories: `${baseUrl}/api/pets/${pet.id}/memories`,
@@ -129,21 +124,25 @@ export function buildPetCard(pet: RegisteredPet, baseUrl: string): PetCard {
 export async function getRegistryStats(): Promise<{
   totalPets: number;
   activePets: number;
-  totalInteractions: number;
-  totalMemories: number;
+  totalInteractions: null;
+  totalMemories: null;
   totalSoulNfts: number;
 }> {
-  const [totalPets, activePets, totalSoulNfts] = await Promise.all([
-    prisma.pet.count({ where: publicPetWhere() }),
+  const [discoverablePets, totalSoulNfts] = await Promise.all([
     prisma.pet.count({ where: publicPetWhere() }),
     prisma.petSoulNft.count(),
   ]);
 
   return {
-    totalPets,
-    activePets,
-    totalInteractions: 0,
-    totalMemories: 0,
+    // Both fields intentionally describe the same consent-filtered public
+    // population. Reuse one query rather than doubling database work on every
+    // manifest request.
+    totalPets: discoverablePets,
+    activePets: discoverablePets,
+    // These private-ledger aggregates are deliberately not published. `null`
+    // means unavailable; zero would falsely claim that no activity exists.
+    totalInteractions: null,
+    totalMemories: null,
     totalSoulNfts,
   };
 }

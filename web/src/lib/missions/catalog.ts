@@ -242,7 +242,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     id: "export_soul",
     category: "memory",
     title: "Export your pet's SOUL",
-    description: "Export a signed snapshot of supported memory and persona data.",
+    description: "Export supported memory and persona data with a SHA-256 integrity checksum.",
     points: 15, verifier: "manual",
     cta: { label: "Export SOUL", href: "/sovereignty" },
   },

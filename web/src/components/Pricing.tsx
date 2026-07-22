@@ -249,7 +249,7 @@ export default function Pricing({ isAuthenticated, onCreditsChange }: any) {
           maxWidth: 600, margin: "0 auto", lineHeight: 1.65, fontWeight: 500,
         }}>
           Credits power AI image &amp; video creation with your pet — the same
-          companion you raise, the same memory that travels with you. Spend on
+          owner-scoped companion identity, with selected retained context on supported surfaces. Spend on
           what serves the bond. Points details in the <a href="/docs" className="ed-underline-slide" style={{ color: "#9A4E1E", fontWeight: 700, textDecoration: "none" }}>docs</a>.
         </p>
         </Reveal>

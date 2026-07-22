@@ -150,8 +150,7 @@ export default function ModelsPanel() {
 
   const copyToken = () => {
     if (!newToken) return;
-    const value = newTokenPurpose === "extension" ? newToken : `petclaw-sdk auth ${newToken}`;
-    navigator.clipboard?.writeText(value).then(() => setCopied(true)).catch(() => {});
+    navigator.clipboard?.writeText(newToken).then(() => setCopied(true)).catch(() => {});
   };
 
   // Quick-pick: pre-fill provider + model. The owner still enters their own key.
@@ -189,14 +188,14 @@ export default function ModelsPanel() {
         <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase" }}>PetClaw protocol · bring your own model</div>
         <h1 style={{ fontFamily: DISP, fontSize: 28, fontWeight: 800, color: INK, margin: "6px 0 0", letterSpacing: "-0.02em" }}>Your model, your pet</h1>
         <p style={{ fontFamily: BODY, fontSize: 14.5, color: MUTED, margin: "8px 0 0", lineHeight: 1.55 }}>
-          A PetClaw-protocol (developer) feature — the intended path is the <strong style={{ color: INK, fontWeight: 600 }}>CLI / at install</strong>. Your pet then routes its chat replies, agent-loop reasoning, and best-of-N judging to your model; other background tasks use the platform default (Grok). Keys are encrypted at rest, never shown again.
+          A PetClaw-protocol (developer) feature — the intended path is the <strong style={{ color: INK, fontWeight: 600 }}>CLI / at install</strong>. Your pet then routes its chat replies, agent-loop reasoning, and best-of-N judging to your model; other tasks use the platform-managed provider route, which varies by task and fallback. Keys are encrypted at rest, never shown again.
         </p>
         {/* Primary path: connect via the CLI / on install. */}
         <div style={{ marginTop: 14, background: TERM_BG, borderRadius: 14, padding: "16px 18px", fontFamily: MONO, fontSize: 13, lineHeight: 1.7, color: TERM_CREAM, overflowX: "auto", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
           <div style={{ color: TERM_MUTED, marginBottom: 6 }}># install, authenticate, then connect a model</div>
           <div><span style={{ color: TERM_GREEN }}>npx @myaipet/petclaw-sdk init</span><span style={{ color: TERM_MUTED }}>            # guided: server · token · pick your pet · model</span></div>
-          <div><span style={{ color: TERM_GREEN }}>npx @myaipet/petclaw-sdk auth</span> <span style={{ color: TERM_GOLD }}>pck_…</span><span style={{ color: TERM_MUTED }}>        # the CLI token from "Connect your CLI" below</span></div>
-          <div><span style={{ color: TERM_GREEN }}>npx @myaipet/petclaw-sdk models connect</span> <span style={{ color: TERM_GOLD }}>openai sk-…</span></div>
+          <div><span style={{ color: TERM_GREEN }}>npx @myaipet/petclaw-sdk auth</span><span style={{ color: TERM_MUTED }}>        # paste the CLI token into the hidden prompt</span></div>
+          <div><span style={{ color: TERM_GREEN }}>npx @myaipet/petclaw-sdk models connect openai</span><span style={{ color: TERM_MUTED }}>  # paste the provider key into the hidden prompt</span></div>
         </div>
       </div>
 
@@ -218,10 +217,15 @@ export default function ModelsPanel() {
           <div style={{ marginTop: 16, background: TERM_BG, borderRadius: 14, padding: "14px 16px" }}>
             <div style={{ fontFamily: BODY, color: TERM_GREEN, fontSize: 13, marginBottom: 8 }}>Copy this now — it won&apos;t be shown again.</div>
             <div style={{ fontFamily: MONO, fontSize: 13, color: TERM_CREAM, wordBreak: "break-all", lineHeight: 1.6 }}>
-              {newTokenPurpose === "extension" ? newToken : `petclaw-sdk auth ${newToken}`}
+              {newToken}
             </div>
+            {newTokenPurpose === "cli" && (
+              <div style={{ fontFamily: BODY, color: TERM_MUTED, fontSize: 13, lineHeight: 1.5, marginTop: 8 }}>
+                Run <code style={{ fontFamily: MONO, color: TERM_CREAM }}>petclaw-sdk auth</code>, then paste this token into the hidden prompt. Never put it in a command argument.
+              </div>
+            )}
             <button onClick={copyToken} style={{ marginTop: 10, padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(236,224,206,0.18)", background: "transparent", color: copied ? TERM_GREEN : TERM_GOLD, fontSize: 13, cursor: "pointer", fontFamily: MONO }}>
-              {copied ? "Copied ✓" : newTokenPurpose === "extension" ? "Copy extension token" : "Copy command"}
+              {copied ? "Copied ✓" : newTokenPurpose === "extension" ? "Copy extension token" : "Copy CLI token"}
             </button>
           </div>
         )}
@@ -320,13 +324,13 @@ export default function ModelsPanel() {
         </button>
       </Card>
 
-      <Card title={`Connected models${conns.length ? ` (${conns.length})` : ""}`} sub={conns.length ? undefined : "None yet — your pet uses the platform Grok default."}>
+      <Card title={`Connected models${conns.length ? ` (${conns.length})` : ""}`} sub={conns.length ? undefined : "None yet — your pet uses the platform-managed provider route for each task."}>
         {conns.map((c) => (
           <div key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderTop: `1px solid ${LINE}` }}>
             <div>
               <div style={{ fontWeight: 600, color: INK, fontSize: 14.5 }}>{c.label} <span style={{ color: MUTED, fontWeight: 400 }}>· {c.model}</span></div>
               <div style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>
-                {c.provider} · {c.task_scopes?.length ? c.task_scopes.join(", ") : "all tasks"} · key {c.keyMask || "••••••"}
+                {c.provider} · {c.task_scopes?.length ? c.task_scopes.join(", ") : "chat, reason, judge"} · key {c.keyMask || "••••••"}
               </div>
             </div>
             <button

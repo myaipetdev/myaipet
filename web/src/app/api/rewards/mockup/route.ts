@@ -83,6 +83,7 @@ export async function POST(req: NextRequest) {
           photo_path: imageUrl,
           status: "completed",
           visibility: "private",
+          source_kind: "user",
           credits_charged: MOCKUP_CREDIT_COST,
           completed_at: new Date(),
         },

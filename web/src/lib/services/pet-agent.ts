@@ -21,6 +21,10 @@ import {
   generatedEnglishOrFallback,
   generatedEnglishOrNull,
 } from "@/lib/generatedLanguage";
+import {
+  isProviderRelevantRetainedText,
+  isProviderSafeRetainedText,
+} from "@/lib/petclaw/memory/persistent-memory";
 
 export { consumeAgentCredits } from "@/lib/agentCredits";
 
@@ -61,24 +65,61 @@ async function callPetText(
 
 // ── Conversation context ──
 
+export interface StoredAgentConversationMessage {
+  direction: string;
+  content: string;
+}
+
+export function selectProviderConversationContext(
+  messagesNewestFirst: StoredAgentConversationMessage[],
+  query: string,
+  limit = 8,
+): Array<Pick<LLMMessage, "role" | "content">> {
+  return messagesNewestFirst
+    .filter((message) =>
+      isProviderRelevantRetainedText(
+        `agent_${message.direction} ${message.content}`,
+        query,
+      ),
+    )
+    .slice(0, Math.max(0, Math.min(8, Math.trunc(limit) || 0)))
+    .reverse()
+    .map((message) => ({
+      role: (message.direction === "outgoing" ? "assistant" : "user") as "assistant" | "user",
+      content: message.content,
+    }));
+}
+
+export function selectProviderPetMemories(
+  memories: Array<{ content: string; emotion: string }>,
+  query: string,
+  limit = 5,
+): Array<{ content: string; emotion: string }> {
+  return memories
+    .filter((memory) =>
+      isProviderRelevantRetainedText(
+        `pet_memory ${memory.emotion} ${memory.content}`,
+        query,
+      ),
+    )
+    .slice(0, Math.max(0, Math.min(5, Math.trunc(limit) || 0)));
+}
+
 async function getConversationContext(
   petId: number,
   platform: string,
   chatId: string,
+  query: string,
   limit = 10,
 ): Promise<Array<Pick<LLMMessage, "role" | "content">>> {
   const messages = await prisma.petAgentMessage.findMany({
     where: { pet_id: petId, platform, chat_id: chatId },
     orderBy: { created_at: "desc" },
-    take: limit,
+    take: Math.max(limit, 40),
     select: { direction: true, content: true },
   });
 
-  // Reverse to chronological order; map direction -> provider-neutral role.
-  return messages.reverse().map((m) => ({
-    role: (m.direction === "outgoing" ? "assistant" : "user") as "assistant" | "user",
-    content: m.content,
-  }));
+  return selectProviderConversationContext(messages, query, limit);
 }
 
 // ── Respond to a message from any platform ──
@@ -101,7 +142,7 @@ export async function respondToMessage(
     prisma.petMemory.findMany({
       where: { pet_id: pet.id },
       orderBy: { created_at: "desc" },
-      take: 5,
+      take: 20,
       select: { content: true, emotion: true },
     }),
     getPersona(pet.id),
@@ -109,15 +150,16 @@ export async function respondToMessage(
 
   // Build context-aware prompt with persona
   const context = isGroupChat ? "group_chat" : "dm";
-  const personaCtx = buildPersonaContext(persona);
-  const systemPrompt = buildPetSystemPrompt(pet, recentMemories, {
+  const personaCtx = buildPersonaContext(persona, message);
+  const providerMemories = selectProviderPetMemories(recentMemories, message, 5);
+  const systemPrompt = buildPetSystemPrompt(pet, providerMemories, {
     platform,
     context,
     personaContext: personaCtx,
   });
 
   // Get conversation history for continuity
-  const history = await getConversationContext(petId, platform, chatId, 8);
+  const history = await getConversationContext(petId, platform, chatId, message, 8);
 
   // Build messages array with history
   const messages: LLMMessage[] = [
@@ -209,7 +251,7 @@ export async function generateAutonomousPost(
 
   // Load persona for owner-like content generation
   const persona = await getPersona(pet.id);
-  const personaCtx = buildPersonaContext(persona);
+  const personaCtx = buildPersonaContext(persona, mood);
   let systemPrompt = buildPetSystemPrompt(pet, [], {
     platform,
     context: "post",
@@ -291,7 +333,13 @@ export async function generateSelfie(
     PERSONALITY_IMAGE_PROMPTS.friendly;
 
   // Build image prompt
-  const appearanceDesc = pet.appearance_desc;
+  const appearanceDesc = pet.appearance_desc
+    && isProviderSafeRetainedText(`appearance_desc ${pet.appearance_desc}`)
+    ? pet.appearance_desc.slice(0, 600)
+    : null;
+  const providerPetName = isProviderSafeRetainedText(`pet_name ${pet.name}`)
+    ? pet.name
+    : "the pet";
   const scenePart = scene
     ? scene.replace(/[^\x00-\x7F]/g, " ").replace(/\s+/g, " ").trim()
     : "taking a cute selfie, looking at camera";
@@ -300,7 +348,7 @@ export async function generateSelfie(
   if (appearanceDesc) {
     imagePrompt = `A ${appearanceDesc}, ${scenePart}, ${personalityPrompt}, high quality, detailed, beautiful composition, DO NOT include any text, words, letters, watermarks, or writing in the image`;
   } else {
-    imagePrompt = `A cute ${speciesName} named ${pet.name}, ${scenePart}, ${personalityPrompt}, high quality, detailed, beautiful composition, DO NOT include any text, words, letters, watermarks, or writing in the image`;
+    imagePrompt = `A cute ${speciesName} named ${providerPetName}, ${scenePart}, ${personalityPrompt}, high quality, detailed, beautiful composition, DO NOT include any text, words, letters, watermarks, or writing in the image`;
   }
 
   try {
@@ -320,7 +368,7 @@ export async function generateSelfie(
       caption = await callPetText(
         pet.id,
         captionPrompt,
-        `Write a short selfie caption. You just took a photo of yourself ${scene || "looking cute"}. Your mood: ${mood}. Keep it fun and in character.`,
+        `Write a short selfie caption. You just took a photo of yourself ${scenePart}. Your mood: ${mood}. Keep it fun and in character.`,
         60,
       );
     } catch {

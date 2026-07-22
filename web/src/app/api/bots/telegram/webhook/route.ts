@@ -7,8 +7,9 @@
  *   1. Verify the X-Telegram-Bot-Api-Secret-Token header (set on setWebhook)
  *   2. Look up the user via pet_platform_connections (credentials.access_token =
  *      stringified telegram user_id at OAuth time — see /api/auth/oauth/telegram/callback)
- *   3. Run pethub.executeSkill(petId, "companion-chat", { message, platform: "telegram" })
- *      — this carries memory across web/extension/telegram per VIGIL design
+ *   3. Run pethub.executeSkill(petId, "companion-chat", { message, surface: "telegram" })
+ *      — if delivery is enabled, canonical chat can use selected owner-scoped
+ *        retained context and records Telegram session metadata
  *   4. Reply via Telegram sendMessage API
  *
  * To activate (one-time, ops):
@@ -109,13 +110,13 @@ export async function POST(req: NextRequest) {
   // Special commands
   if (text === "/start") {
     await sendTelegram(msg.chat.id,
-      "🐾 *MY AI PET* — your sovereign AI companion.\n\nTo link your pet, open the [Sovereignty Dashboard](https://app.myaipet.ai/?section=sovereignty) on web and connect Telegram via OAuth. Then chat here anytime — same memory everywhere.",
+      "🐾 *MY AI PET* — your owner-controlled AI companion.\n\nTelegram delivery is launch-paused. When it is enabled, link your pet from the [Sovereignty Dashboard](https://app.myaipet.ai/?section=sovereignty); selected retained context may support replies under the same owner controls.",
       botToken);
     return NextResponse.json({ ok: true });
   }
   if (text === "/help") {
     await sendTelegram(msg.chat.id,
-      "Just type anything — your pet will reply.\nMemory persists across web, Chrome extension, and Telegram.",
+      "Telegram delivery is launch-paused in this release. Use the web app or approved Chrome sites today; retained context is selected and owner-controlled.",
       botToken);
     return NextResponse.json({ ok: true });
   }
@@ -161,7 +162,8 @@ export async function POST(req: NextRequest) {
     const { executeSkill } = await import("@/lib/petclaw/pethub");
     const result = await executeSkill(match.pet_id, "companion-chat", {
       message: text,
-      platform: "telegram",
+      surface: "telegram",
+      sessionId: `telegram-${String(msg.chat.id).slice(0, 100)}`,
     });
     const reply = (result.output as any)?.reply || `*${match.pet.name} tilts head*`;
     await sendTelegram(msg.chat.id, reply, botToken);
