@@ -370,7 +370,7 @@ export default function CatCatch() {
                 the vision vendor per attempt, catch or not). Keep these numbers
                 in sync with that guard. */}
             <div style={{ fontFamily: BODY, fontSize: 13, color: "rgba(252,233,207,.78)", maxWidth: 320, lineHeight: 1.45 }}>
-              <strong style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase" }}>3 free scans a day · then 1 credit per scan</strong>
+              <strong style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase" }}>3 free scans a day · then 1 credit per scan</strong>
               {" "}— charged per scan, even if nothing is caught.
             </div>
           </div>
@@ -540,7 +540,7 @@ function ThrowCan({ image, onThrow, onCancel }: { image: string; onThrow: () => 
       {!flying && <div style={{ position: "absolute", top: 16, left: 0, right: 0, textAlign: "center", color: "#FCE9CF", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".1em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,.6)", pointerEvents: "none" }}>Hold &amp; drag the can — release to throw</div>}
       {/* Last pre-commit moment: the throw is what bills the scan, so restate
           the honest cost here (numbers mirror economyGuards.consumeCatchVerify). */}
-      {!flying && <div style={{ position: "absolute", top: 38, left: 0, right: 0, textAlign: "center", color: "rgba(252,233,207,.85)", fontFamily: MONO, fontWeight: 700, fontSize: 12, letterSpacing: ".08em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,.6)", pointerEvents: "none" }}>1 scan per throw · 3 free a day, then 1 credit — catch or not</div>}
+      {!flying && <div style={{ position: "absolute", top: 38, left: 0, right: 0, textAlign: "center", color: "rgba(252,233,207,.85)", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".08em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,.6)", pointerEvents: "none" }}>1 scan per throw · 3 free a day, then 1 credit — catch or not</div>}
       <div onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
         style={{ position: "absolute", bottom: 26, left: "50%", width: 84, height: 84, cursor: "grab", touchAction: "none", display: "flex", alignItems: "center", justifyContent: "center", ...canStyle }} aria-label="Throw the can">
         <CanGraphic />
@@ -584,12 +584,12 @@ function RevealCard({ cat, points, newSpecies, onAgain, onDone, onMapPublicChang
           display: "flex", alignItems: "center", justifyContent: "center",
           animation: "ccSealDrop .5s cubic-bezier(.2,.85,.25,1) 700ms both",
         }}>
-          <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: "#FBE3D2", textShadow: "0 1px 1px rgba(80,20,0,.5)" }}>CAUGHT</span>
+          <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: "#FBE3D2", textShadow: "0 1px 1px rgba(80,20,0,.5)" }}>CAUGHT</span>
         </div>
       </div>
       {/* First-of-its-kind — REAL check against the pre-catch collection. */}
       {newSpecies && (
-        <div style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 700, letterSpacing: ".16em", color: "#1B1308", background: "linear-gradient(180deg,#FFF0C0,#EBB84E)", borderRadius: 999, padding: "4px 13px", boxShadow: "0 4px 10px -4px rgba(0,0,0,.5)", whiteSpace: "nowrap", animation: "ccPop .4s cubic-bezier(.2,1.3,.4,1) 900ms both" }}>
+        <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".16em", color: "#1B1308", background: "linear-gradient(180deg,#FFF0C0,#EBB84E)", borderRadius: 999, padding: "4px 13px", boxShadow: "0 4px 10px -4px rgba(0,0,0,.5)", whiteSpace: "nowrap", animation: "ccPop .4s cubic-bezier(.2,1.3,.4,1) 900ms both" }}>
           ✦ NEW GUIDE SPECIES
         </div>
       )}
@@ -621,7 +621,7 @@ function RevealCard({ cat, points, newSpecies, onAgain, onDone, onMapPublicChang
             />
             <span>Show this catch on the community map (rounded location, ~110 m)</span>
           </label>
-          <div style={{ fontFamily: BODY, fontSize: 12, color: mapErr ? "#F2B8A0" : "rgba(251,246,236,0.5)", marginTop: 4, paddingLeft: 25 }}>
+          <div style={{ fontFamily: BODY, fontSize: 13, color: mapErr ? "#F2B8A0" : "rgba(251,246,236,0.5)", marginTop: 4, paddingLeft: 25 }}>
             {mapErr ? "Couldn't update — try again." : mapOn ? "Shared. Remove it anytime from your album." : "Private by default — only you see it."}
           </div>
         </div>
@@ -797,9 +797,9 @@ function PurposeHero() {
   return (
     <div style={{ position: "relative", background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 16, boxShadow: "var(--ed-shadow-card)", padding: "16px 18px 15px", marginBottom: 16, overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 5 }}>
-        <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: TEAL, textTransform: "uppercase" }}>The catch loop</div>
+        <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: TEAL, textTransform: "uppercase" }}>The catch loop</div>
         {/* stamped "real animals only" seal — the page's one non-negotiable rule */}
-        <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: PAPER, background: TEAL, borderRadius: 4, padding: "3px 9px", transform: "rotate(-1.6deg)", boxShadow: "2px 2px 0 rgba(33,26,18,.22)" }}>Real animals only</div>
+        <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: PAPER, background: TEAL, borderRadius: 4, padding: "3px 9px", transform: "rotate(-1.6deg)", boxShadow: "2px 2px 0 rgba(33,26,18,.22)" }}>Real animals only</div>
       </div>
       <div style={{ fontFamily: DISP, fontSize: "clamp(19px,3.4vw,24px)", fontWeight: 800, color: INK, letterSpacing: "-0.01em", lineHeight: 1.15, marginBottom: 13 }}>
         Photograph a real animal — it becomes a collectible.
@@ -808,9 +808,9 @@ function PurposeHero() {
         {steps.map((s) => (
           <div key={s.n} style={{ background: INSET, border: `1px solid ${OUTLINE}`, borderRadius: 10, padding: "10px 10px 9px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-              <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: MUTED, letterSpacing: ".08em", fontVariantNumeric: "tabular-nums" }}>{s.n}</span>
+              <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: MUTED, letterSpacing: ".08em", fontVariantNumeric: "tabular-nums" }}>{s.n}</span>
               {s.art}
-              <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: TEAL }}>{s.title}</span>
+              <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: TEAL }}>{s.title}</span>
             </div>
             <div style={{ fontFamily: BODY, fontSize: 13, color: "#5C5140", lineHeight: 1.45 }}>{s.copy}</div>
           </div>
@@ -837,14 +837,14 @@ function MissionStrip({ collection, meta }: { collection: Cat[]; meta: CatchMeta
       border: done ? `1.5px solid ${TEAL}` : `1.5px dashed rgba(33,26,18,.35)`,
       background: done ? TEAL : "transparent",
       display: "inline-flex", alignItems: "center", justifyContent: "center",
-      color: "#FCE9CF", fontFamily: MONO, fontSize: 12, fontWeight: 700,
+      color: "#FCE9CF", fontFamily: MONO, fontSize: 13, fontWeight: 700,
     }}>{done ? "✓" : ""}</span>
   );
   const ptsPill = (text: string) => (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: INK, fontFamily: MONO, fontWeight: 700, fontSize: 12, letterSpacing: ".04em", borderRadius: 999, padding: "3px 10px", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{text} <Icon name="coin" size={12} alt="" /></span>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: INK, fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".04em", borderRadius: 999, padding: "3px 10px", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{text} <Icon name="coin" size={12} alt="" /></span>
   );
   const flatPill = (text: string) => (
-    <span style={{ background: INSET, border: `1px solid ${OUTLINE}`, color: "#5C5140", fontFamily: MONO, fontWeight: 700, fontSize: 12, letterSpacing: ".04em", borderRadius: 999, padding: "3px 10px", whiteSpace: "nowrap" }}>{text}</span>
+    <span style={{ background: INSET, border: `1px solid ${OUTLINE}`, color: "#5C5140", fontFamily: MONO, fontWeight: 700, fontSize: 13, letterSpacing: ".04em", borderRadius: 999, padding: "3px 10px", whiteSpace: "nowrap" }}>{text}</span>
   );
   const row = (done: boolean, label: React.ReactNode, reward: React.ReactNode) => (
     <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", flexWrap: "wrap" }}>
@@ -856,7 +856,7 @@ function MissionStrip({ collection, meta }: { collection: Cat[]; meta: CatchMeta
 
   return (
     <div style={{ background: PAPER, border: `1px solid ${OUTLINE}`, borderRadius: 16, boxShadow: "var(--ed-shadow-card)", padding: "15px 18px 13px", marginTop: 4 }}>
-      <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: TEAL, textTransform: "uppercase", paddingBottom: 9, borderBottom: `1px solid ${OUTLINE}` }}>Today&apos;s missions</div>
+      <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: TEAL, textTransform: "uppercase", paddingBottom: 9, borderBottom: `1px solid ${OUTLINE}` }}>Today&apos;s missions</div>
       <div style={{ display: "grid" }}>
         {/* First catch of the day — pays the normal rarity-scaled catch points
             (no invented bonus) and is what keeps the streak stat alive. */}
@@ -880,11 +880,11 @@ function MissionStrip({ collection, meta }: { collection: Cat[]; meta: CatchMeta
       {/* Server-truth meters. The free/credit numbers mirror
           economyGuards.consumeCatchVerify (3 free/day, then 1 credit). */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 4, paddingTop: 11, borderTop: `1px solid ${OUTLINE}` }}>
-        <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "#5C5140", background: INSET, border: `1px solid ${OUTLINE}`, borderRadius: 999, padding: "4px 11px", fontVariantNumeric: "tabular-nums" }}>
+        <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: "#5C5140", background: INSET, border: `1px solid ${OUTLINE}`, borderRadius: 999, padding: "4px 11px", fontVariantNumeric: "tabular-nums" }}>
           Scans · {meta ? `${meta.freeScansLeft}/${meta.freeScansPerDay} free left` : "3 free/day"} · then 1 credit
         </span>
         {meta && (
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: capped ? "#9A4E1E" : "#5C5140", background: INSET, border: `1px solid ${OUTLINE}`, borderRadius: 999, padding: "4px 11px", fontVariantNumeric: "tabular-nums" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", color: capped ? "#9A4E1E" : "#5C5140", background: INSET, border: `1px solid ${OUTLINE}`, borderRadius: 999, padding: "4px 11px", fontVariantNumeric: "tabular-nums" }}>
             Catch pts today · {meta.catchPointsToday}/{meta.catchPointsCap}
             <span aria-hidden style={{ width: 44, height: 5, borderRadius: 999, background: "rgba(33,26,18,.12)", overflow: "hidden", display: "inline-block" }}>
               <span style={{ display: "block", width: `${Math.min(100, Math.round((meta.catchPointsToday / Math.max(1, meta.catchPointsCap)) * 100))}%`, height: "100%", background: capped ? "#9A4E1E" : TEAL }} />
@@ -919,9 +919,9 @@ function RarityProvenance({ pointsCap }: { pointsCap: number | null }) {
           {RARITY_TIERS.map((t, i) => (
             <div key={t.key} style={{ display: "flex", alignItems: "center", gap: 9, padding: "7px 12px", background: i % 2 ? "transparent" : INSET, borderTop: i ? `1px solid ${OUTLINE}` : "none" }}>
               <span aria-hidden style={{ width: 10, height: 10, borderRadius: "50%", background: t.color, border: `1px solid ${INK}`, flexShrink: 0 }} />
-              <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: INK, width: 88 }}>{t.label}</span>
-              <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: MUTED, fontVariantNumeric: "tabular-nums" }}>{pct(t.weight)}</span>
-              <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 12, fontWeight: 700, color: "#9A4E1E", fontVariantNumeric: "tabular-nums" }}>+{CATCH_POINTS[t.key]} pts</span>
+              <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: INK, width: 88 }}>{t.label}</span>
+              <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: MUTED, fontVariantNumeric: "tabular-nums" }}>{pct(t.weight)}</span>
+              <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 13, fontWeight: 700, color: "#9A4E1E", fontVariantNumeric: "tabular-nums" }}>+{CATCH_POINTS[t.key]} pts</span>
             </div>
           ))}
         </div>
@@ -946,12 +946,12 @@ function FieldJournal({ collection }: { collection: Cat[] }) {
   // tooltip (title) + sub-caption. All values real, derived above.
   const note = (label: string, value: string, color: string, opts?: { title?: string; sub?: string; size?: number }) => (
     <div title={opts?.title} style={{ background: INSET, border: `1px solid ${OUTLINE}`, borderRadius: 10, padding: "10px 12px 9px", cursor: opts?.title ? "help" : undefined }}>
-      <div style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, letterSpacing: ".12em", color: MUTED, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 4 }}>
+      <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, letterSpacing: ".12em", color: MUTED, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 4 }}>
         {label}
-        {opts?.title && <span aria-hidden style={{ width: 14, height: 14, borderRadius: "50%", border: "1px solid rgba(33,26,18,.3)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: MUTED, lineHeight: 1 }}>?</span>}
+        {opts?.title && <span aria-hidden style={{ width: 14, height: 14, borderRadius: "50%", border: "1px solid rgba(33,26,18,.3)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: MUTED, lineHeight: 1 }}>?</span>}
       </div>
       <div style={{ fontSize: opts?.size ?? 26, fontWeight: 800, color, fontFamily: DISP, marginTop: 4, letterSpacing: "-0.01em", lineHeight: 1.05, fontVariantNumeric: "tabular-nums", borderBottom: "1px dashed rgba(33,26,18,.18)", paddingBottom: 4 }}>{value}</div>
-      {opts?.sub && <div style={{ fontSize: 12, fontFamily: BODY, color: MUTED, marginTop: 4, lineHeight: 1.35 }}>{opts.sub}</div>}
+      {opts?.sub && <div style={{ fontSize: 13, fontFamily: BODY, color: MUTED, marginTop: 4, lineHeight: 1.35 }}>{opts.sub}</div>}
     </div>
   );
   const streak = catchStreak(collection);
@@ -1020,11 +1020,11 @@ function FieldGuide({ collection }: { collection: Cat[] }) {
             }}>
               {/* uncaught = die-cut ink silhouette (the "gotta find it" cue) */}
               <Icon name={s.icon} size={32} alt={got ? s.label : "Unknown species"} style={got ? undefined : { filter: "brightness(0)", opacity: 0.22 }} />
-              <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: got ? INK : MUTED }}>
+              <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: got ? INK : MUTED }}>
                 {got ? s.label : "???"}
               </div>
               {got && (
-                <span style={{ position: "absolute", top: -6, right: -5, fontFamily: MONO, fontSize: 12, fontWeight: 700, color: "#FCE9CF", background: TEAL, border: `1.5px solid ${PAPER}`, borderRadius: 999, padding: "1px 7px", fontVariantNumeric: "tabular-nums", boxShadow: "2px 2px 0 rgba(33,26,18,.18)" }}>×{n}</span>
+                <span style={{ position: "absolute", top: -6, right: -5, fontFamily: MONO, fontSize: 13, fontWeight: 700, color: "#FCE9CF", background: TEAL, border: `1.5px solid ${PAPER}`, borderRadius: 999, padding: "1px 7px", fontVariantNumeric: "tabular-nums", boxShadow: "2px 2px 0 rgba(33,26,18,.18)" }}>×{n}</span>
               )}
             </div>
           );
@@ -1038,8 +1038,8 @@ function FieldGuide({ collection }: { collection: Cat[] }) {
             transform: `rotate(${i % 2 ? -1.4 : 1.6}deg)`,
           }}>
             <Icon name={kindIcon(k)} size={32} alt={k} />
-            <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: INK, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{k}</div>
-            <span style={{ position: "absolute", top: -6, right: -5, fontFamily: MONO, fontSize: 12, fontWeight: 700, color: "#FCE9CF", background: "#9A4E1E", border: `1.5px solid ${PAPER}`, borderRadius: 999, padding: "1px 7px", fontVariantNumeric: "tabular-nums", boxShadow: "2px 2px 0 rgba(33,26,18,.18)" }}>×{counts.get(k)}</span>
+            <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: INK, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{k}</div>
+            <span style={{ position: "absolute", top: -6, right: -5, fontFamily: MONO, fontSize: 13, fontWeight: 700, color: "#FCE9CF", background: "#9A4E1E", border: `1.5px solid ${PAPER}`, borderRadius: 999, padding: "1px 7px", fontVariantNumeric: "tabular-nums", boxShadow: "2px 2px 0 rgba(33,26,18,.18)" }}>×{counts.get(k)}</span>
           </div>
         ))}
       </div>
@@ -1102,7 +1102,7 @@ function CatCard({ cat, compact, onToggleMap, onDelete }: { cat: Cat; compact?: 
   };
   const ctrlBtn: React.CSSProperties = {
     padding: "4px 9px", borderRadius: 999, cursor: "pointer", fontFamily: MONO,
-    fontWeight: 700, fontSize: 12, letterSpacing: ".05em", textTransform: "uppercase",
+    fontWeight: 700, fontSize: 13, letterSpacing: ".05em", textTransform: "uppercase",
     background: INSET, border: `1px solid ${OUTLINE}`, color: "#5C5140",
   };
   return (

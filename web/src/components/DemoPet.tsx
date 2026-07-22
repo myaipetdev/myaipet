@@ -204,7 +204,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
             transition: "border-color .5s ease, box-shadow .5s ease",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.12em", color: MUTED, padding: "0 3px 8px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "var(--ed-m)", fontSize: 13, letterSpacing: "0.12em", color: MUTED, padding: "0 3px 8px" }}>
             <span>COMPANION</span><span>FILE №0742</span>
           </div>
           <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: "#F5EFE2" }}>
@@ -217,7 +217,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "10px 3px 0" }}>
             <span style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 19, color: INK, letterSpacing: "-0.01em" }}>{NAME}</span>
-            <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.1em", color: MUTED }}>POMERANIAN · ✦</span>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, letterSpacing: "0.1em", color: MUTED }}>POMERANIAN · ✦</span>
           </div>
         </button>
       </div>
@@ -265,7 +265,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
 
       {/* ── Would-be reward honesty: the demo banks nothing; signed-in raisers
              really do get +5 pts per free care (server-verified). ── */}
-      <div style={{ ...rv(6), fontFamily: "var(--ed-m)", fontSize: 12, letterSpacing: "0.06em", color: MUTED, margin: "0 auto 26px", maxWidth: 330, lineHeight: 1.6 }}>
+      <div style={{ ...rv(6), fontFamily: "var(--ed-m)", fontSize: 13, letterSpacing: "0.06em", color: MUTED, margin: "0 auto 26px", maxWidth: 330, lineHeight: 1.6 }}>
         {cares > 0
           ? <>+{cares * PTS_PER_CARE} PTS would be banked by now — demo care isn&apos;t saved. Sign in: every free care pays +{PTS_PER_CARE} pts.</>
           : <>Each care here would pay +{PTS_PER_CARE} pts — sign in to bank points.</>}
@@ -277,7 +277,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
         maxWidth: 320, margin: "0 auto 40px", minHeight: 40, padding: "12px 15px", borderRadius: 12,
         background: "#F5EFE2", border: `1px solid ${HAIR}`, textAlign: "left",
       }}>
-        <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A4E1E", letterSpacing: "0.14em", marginBottom: memory.length ? 6 : 0, textTransform: "uppercase" }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A4E1E", letterSpacing: "0.14em", marginBottom: memory.length ? 6 : 0, textTransform: "uppercase" }}>
           {NAME.toUpperCase()} REMEMBERS
         </div>
         {memory.length === 0 ? (
@@ -297,8 +297,8 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
         background: PAPER, border: `1px solid ${HAIR}`, boxShadow: "4px 5px 0 rgba(33,26,18,.08)", textAlign: "left",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 9 }}>
-          <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", color: "#9A4E1E", textTransform: "uppercase" }}>Daily missions — raisers</span>
-          <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", color: MUTED }}>{seasonNote}</span>
+          <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: "#9A4E1E", textTransform: "uppercase" }}>Daily missions — raisers</span>
+          <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", color: MUTED }}>{seasonNote}</span>
         </div>
         {([
           ["Care ×3", "+5 PTS EACH"],
@@ -307,10 +307,10 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
         ] as const).map(([label, payoff]) => (
           <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "5px 0" }}>
             <span style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#3A3024" }}>{label}</span>
-            <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", color: "#9A7B4E", border: "1px solid rgba(154,123,78,.35)", borderRadius: 8, padding: "2px 8px", flexShrink: 0 }}>{payoff}</span>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", color: "#9A7B4E", border: "1px solid rgba(154,123,78,.35)", borderRadius: 8, padding: "2px 8px", flexShrink: 0 }}>{payoff}</span>
           </div>
         ))}
-        <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px dashed ${HAIR}`, fontFamily: "var(--ed-body)", fontSize: 12, color: MUTED, lineHeight: 1.5 }}>
+        <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px dashed ${HAIR}`, fontFamily: "var(--ed-body)", fontSize: 13, color: MUTED, lineHeight: 1.5 }}>
           {phase === "upcoming"
             ? "The real values signed-in raisers earn — points bank now and carry into Season 1."
             : "The real values signed-in raisers earn — Season points are non-financial loyalty rewards."}

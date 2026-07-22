@@ -320,7 +320,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
                 <span style={{
                   background: "linear-gradient(180deg,#D9A83C,#C8932F)", color: "#211A12",
                   borderRadius: 999, padding: "3px 9px",
-                  fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 800,
+                  fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 800,
                   letterSpacing: "0.08em", whiteSpace: "nowrap",
                   boxShadow: "0 1px 0 rgba(33,26,18,0.25)",
                 }}>
@@ -331,7 +331,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
             {/* Dates render ONLY once the real window is scheduled — the
                 unscheduled sentinel must never leak into copy. */}
             <div style={{
-              fontFamily: "var(--ed-m)", fontSize: 12, color: "rgba(252,233,207,0.85)",
+              fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,0.85)",
               marginTop: 3, whiteSpace: "nowrap", letterSpacing: "0.06em", textTransform: "uppercase",
             }}>
               {scheduled
@@ -354,7 +354,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
                 <span key={c.label} style={{
                   display: "inline-flex", alignItems: "center", gap: 5,
                   background: "#FBF6EC", borderRadius: 999, padding: "4px 10px",
-                  fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#9A4E1E",
+                  fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "#9A4E1E",
                   whiteSpace: "nowrap",
                 }}>
                   <Icon name={c.icon} size={14} /> {c.label}
@@ -371,7 +371,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
           </div>
         ) : (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flex: 1 }}>
-          <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 12, color: "#FFF8EE", whiteSpace: "nowrap", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 13, color: "#FFF8EE", whiteSpace: "nowrap", letterSpacing: "0.1em", textTransform: "uppercase" }}>
             {phase === "upcoming" ? "STARTS IN" : "CLOSES IN"}
           </div>
           <div className="season-banner-countdown" style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -414,7 +414,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
               {displayPoints.toLocaleString()}
             </div>
             <div style={{
-              fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A", marginTop: 3,
+              fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A", marginTop: 3,
               fontWeight: 700, letterSpacing: "0.08em", whiteSpace: "nowrap",
             }}>
               {phase === "upcoming" ? "PRE-SEASON PTS" : phase === "live" ? "SEASON PTS" : "FINAL PTS"}
@@ -705,14 +705,14 @@ export default function App() {
                     borderTop: "1px solid var(--ed-hair, rgba(33,26,18,.13))", paddingTop: 12,
                   }}>
                     <span style={{
-                      fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A",
+                      fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A",
                       fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
                     }}>
                       Protocol — PetClaw v1 · open data standard
                     </span>
-                    <span aria-hidden style={{ color: "#B9AB8F", fontSize: 12 }}>◆</span>
+                    <span aria-hidden style={{ color: "#B9AB8F", fontSize: 13 }}>◆</span>
                     <span style={{
-                      fontFamily: "var(--ed-m)", fontSize: 12, color: "#7A6E5A",
+                      fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A",
                       fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
                     }}>
                       Your data — yours · export &amp; delete anytime

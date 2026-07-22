@@ -182,10 +182,10 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
       <header style={{ background: "#1E1710", color: "#ECE0CE", padding: "28px 24px 26px", borderBottom: "3px solid #BE4F28" }}>
         <div style={{ maxWidth: 1080, margin: "0 auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-            <a href="/" style={{ fontSize: 12.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(232,199,126,0.85)", textDecoration: "none", fontFamily: "var(--ed-m, monospace)" }}>
+            <a href="/" style={{ fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(232,199,126,0.85)", textDecoration: "none", fontFamily: "var(--ed-m, monospace)" }}>
               ← MY AI PET
             </a>
-            <span style={{ fontSize: 12.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(236,224,206,0.55)", fontFamily: "var(--ed-m, monospace)" }}>
+            <span style={{ fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(236,224,206,0.55)", fontFamily: "var(--ed-m, monospace)" }}>
               Developer Documentation · Protocol v1
             </span>
           </div>
@@ -205,13 +205,13 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
             {STAT_STRIP.map(s => (
               <div key={s.l} style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
                 <span style={{ fontSize: 22, fontWeight: 800, color: "#E8C77E", fontFamily: "var(--ed-m, monospace)" }}>{s.n}</span>
-                <span style={{ fontSize: 12.5, color: "rgba(236,224,206,0.6)", letterSpacing: "0.02em" }}>{s.l}</span>
+                <span style={{ fontSize: 13, color: "rgba(236,224,206,0.6)", letterSpacing: "0.02em" }}>{s.l}</span>
               </div>
             ))}
           </div>
 
           {/* Meta row — npm + server + version */}
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20, fontSize: 12.5, fontFamily: "var(--ed-m, monospace)" }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20, fontSize: 13, fontFamily: "var(--ed-m, monospace)" }}>
             <span style={{ background: "rgba(232,199,126,0.12)", border: "1px solid rgba(232,199,126,0.28)", borderRadius: 999, padding: "5px 12px", color: "#E8C77E" }}>
               npm i @myaipet/petclaw-sdk
             </span>
@@ -248,7 +248,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
       <div style={{ maxWidth: 1080, margin: "0 auto", padding: "34px 24px 0", display: "grid", gridTemplateColumns: "232px minmax(0,1fr)", gap: 40 }} className="apidocs-grid">
         {/* Sidebar */}
         <aside className="apidocs-aside" style={{ position: "sticky", top: 76, alignSelf: "start", maxHeight: "calc(100vh - 96px)", overflowY: "auto" }}>
-          <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 10 }}>Documents</div>
+          <div style={{ fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 10 }}>Documents</div>
           <nav style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 26 }}>
             {TABS.map(t => (
               <a key={t.slug} href={`/api-docs?tab=${t.slug}`} style={{
@@ -263,7 +263,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
 
           {toc.length > 0 && (
             <>
-              <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 10 }}>On this page</div>
+              <div style={{ fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 10 }}>On this page</div>
               <nav style={{ display: "flex", flexDirection: "column", gap: 1, borderLeft: "1px solid rgba(33,26,18,0.13)", paddingLeft: 12 }}>
                 {toc.map((h, idx) => (
                   <a key={idx} href={`#${h.slug}`} style={{
@@ -287,7 +287,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
               with no JS. Hidden on desktop. */}
           <details className="apidocs-mobile-toc">
             <summary style={{
-              cursor: "pointer", fontSize: 12, letterSpacing: "0.14em",
+              cursor: "pointer", fontSize: 13, letterSpacing: "0.14em",
               textTransform: "uppercase", color: "rgba(33,26,18,0.6)",
               fontFamily: "var(--ed-m, monospace)", fontWeight: 700,
               listStyle: "none",
@@ -295,7 +295,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
               Contents ▾
             </summary>
             <div style={{ paddingTop: 12 }}>
-              <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 8 }}>Documents</div>
+              <div style={{ fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 8 }}>Documents</div>
               <nav style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 16 }}>
                 {TABS.map(t => (
                   <a key={t.slug} href={`/api-docs?tab=${t.slug}`} style={{
@@ -309,7 +309,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
               </nav>
               {toc.length > 0 && (
                 <>
-                  <div style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 8 }}>On this page</div>
+                  <div style={{ fontSize: 13, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(33,26,18,0.5)", fontFamily: "var(--ed-m, monospace)", marginBottom: 8 }}>On this page</div>
                   <nav style={{ display: "flex", flexDirection: "column", gap: 1, borderLeft: "1px solid rgba(33,26,18,0.13)", paddingLeft: 12 }}>
                     {toc.map((h, idx) => (
                       <a key={idx} href={`#${h.slug}`} style={{

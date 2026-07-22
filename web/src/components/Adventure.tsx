@@ -1920,7 +1920,7 @@ export default function Adventure({ onNavigate }: { onNavigate?: (section: strin
                         </div>
                       </div>
                       <div style={{
-                        color: "#50c87880", fontSize: 12, marginTop: 6,
+                        color: "#50c87880", fontSize: 13, marginTop: 6,
                         letterSpacing: 2, textAlign: "center",
                       }}>
                         {bootProgress < 100 ? "LOADING..." : "READY"}

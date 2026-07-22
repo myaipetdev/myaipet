@@ -124,7 +124,7 @@ function CareTile({ label, sub, icon, onClick, busy }: { label: string; sub?: st
       {icon}
       <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: T.ink70 }}>{label}</span>
       {sub && (
-        <span style={{ display: "block", marginTop: 2, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: "#9A7B4E" }}>{sub}</span>
+        <span style={{ display: "block", marginTop: 2, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".06em", color: "#9A7B4E" }}>{sub}</span>
       )}
     </button>
   );
@@ -633,7 +633,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>Care</div>
                 <span style={{
-                  fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", borderRadius: 999, padding: "3px 9px",
+                  fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", borderRadius: 999, padding: "3px 9px",
                   color: streakDays > 0 && fedToday ? "#A9712B" : T.muted,
                   border: `1px solid ${streakDays > 0 && fedToday ? "rgba(200,147,47,.5)" : T.hair}`,
                   background: streakDays > 0 && fedToday ? "rgba(200,147,47,.1)" : "transparent",
@@ -661,25 +661,25 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                       animation: "mpPtsStick 1.25s cubic-bezier(.2,.8,.2,1) both", pointerEvents: "none",
                     }}>+{ptsPop.n} PTS</span>
                   )}
-                  <div style={{ display: "flex", justifyContent: "space-between", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: T.mono }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: T.mono }}>
                     <span>CARE PTS TODAY</span>
                     <span style={{ color: carePtsCapped ? T.terra : T.mono }}>{today.care_points}/{today.care_points_cap}</span>
                   </div>
                   <div style={{ height: 3, borderRadius: 2, background: "rgba(33,26,18,.1)", marginTop: 6, overflow: "hidden" }}>
                     <div style={{ height: "100%", borderRadius: 2, width: `${Math.min(100, (today.care_points / Math.max(1, today.care_points_cap)) * 100)}%`, background: carePtsCapped ? T.terra : "#A9712B", transition: "width .6s ease" }} />
                   </div>
-                  <div style={{ display: "flex", gap: 12, marginTop: 7, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em", color: T.muted }}>
+                  <div style={{ display: "flex", gap: 12, marginTop: 7, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", color: T.muted }}>
                     <span>FEED {today.feed_free_used}/{today.feed_free_cap} FREE</span>
                     <span>PLAY {today.play_free_used}/{today.play_free_cap} FREE</span>
                   </div>
                   {carePtsCapped && (
-                    <div style={{ marginTop: 6, fontSize: 12, color: T.muted2, lineHeight: 1.45 }}>
+                    <div style={{ marginTop: 6, fontSize: 13, color: T.muted2, lineHeight: 1.45 }}>
                       Daily care-points cap reached — care still feeds stats and Bond; points resume tomorrow.
                     </div>
                   )}
                 </div>
               )}
-              <div style={{ marginTop: 10, fontSize: 12, color: T.muted, lineHeight: 1.45 }}>
+              <div style={{ marginTop: 10, fontSize: 13, color: T.muted, lineHeight: 1.45 }}>
                 Tip: Pet ×3 in a row triggers the Cuddle Marathon combo — +20 Bond, +5 Happy, +5 pts.
               </div>
               {flash && (
@@ -714,7 +714,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                   <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>
                     Daily Missions · {missionsDone}/3
                   </div>
-                  <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: phase === "live" ? T.thrive : T.mono }}>{seasonNote}</span>
+                  <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: phase === "live" ? T.thrive : T.mono }}>{seasonNote}</span>
                 </div>
                 {missions.map((m) => (
                   <div key={m.key} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
@@ -732,17 +732,17 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                         {m.note && <span style={{ fontWeight: 400, color: T.muted }}> · {m.note}</span>}
                       </div>
                     </div>
-                    <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: T.muted, flexShrink: 0 }}>{m.progress}/{m.target}</span>
-                    <span style={{ flexShrink: 0, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: "#9A7B4E", border: "1px solid rgba(154,123,78,.35)", borderRadius: 8, padding: "3px 8px" }}>{m.payoff}</span>
+                    <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".06em", color: T.muted, flexShrink: 0 }}>{m.progress}/{m.target}</span>
+                    <span style={{ flexShrink: 0, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".06em", color: "#9A7B4E", border: "1px solid rgba(154,123,78,.35)", borderRadius: 8, padding: "3px 8px" }}>{m.payoff}</span>
                     {m.go && !m.done && (
                       <button onClick={() => onNavigate?.(m.go as string)} aria-label={`Go to ${m.go}`} style={{
                         flexShrink: 0, border: `1px solid ${T.hair}`, background: T.field, borderRadius: 8, padding: "3px 9px",
-                        fontFamily: T.m, fontSize: 12, fontWeight: 700, color: T.muted2, cursor: "pointer",
+                        fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted2, cursor: "pointer",
                       }}>→</button>
                     )}
                   </div>
                 ))}
-                <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px dashed ${T.hair}`, fontSize: 12, color: T.muted2, lineHeight: 1.5 }}>
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px dashed ${T.hair}`, fontSize: 13, color: T.muted2, lineHeight: 1.5 }}>
                   All three done → +31 pts banked today.{" "}
                   {phase === "upcoming"
                     ? "Season 1 hasn't opened yet — points bank now and carry into Season 1."
@@ -814,7 +814,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                   <div style={{ display: "flex", gap: 4, background: "rgba(251,246,236,.08)", borderRadius: 999, padding: 3 }}>
                     {([["Sticker", false], ["Photo", true]] as const).map(([lab, ph]) => (
                       <button key={lab} onClick={() => setShowPhoto(ph)} style={{
-                        fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", padding: "4px 10px", borderRadius: 999, cursor: "pointer", border: "none",
+                        fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".06em", padding: "4px 10px", borderRadius: 999, cursor: "pointer", border: "none",
                         background: showPhoto === ph ? "#E8C77E" : "transparent", color: showPhoto === ph ? "#3A2A08" : "rgba(251,246,236,.7)",
                       }}>{lab}</button>
                     ))}
@@ -853,7 +853,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
                 }}>{codexBusy ? `Illustrating ${active.name}…` : `${codexUrl ? "Re-illustrate" : "Illustrate"} ${selVariant.label} · 5 credits`}</button>
                 {codexUrl && (
                   <button onClick={() => onNavigate?.("cards")} className="ed-wipe" style={{
-                    background: "transparent", color: "rgba(251,246,236,.75)", fontFamily: T.m, fontSize: 12.5, fontWeight: 700, letterSpacing: ".04em", border: "1px solid rgba(251,246,236,.2)", borderRadius: 11, padding: "9px 14px", cursor: "pointer",
+                    background: "transparent", color: "rgba(251,246,236,.75)", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".04em", border: "1px solid rgba(251,246,236,.2)", borderRadius: 11, padding: "9px 14px", cursor: "pointer",
                   }}>See the card →</button>
                 )}
               </div>
@@ -892,14 +892,14 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
             <div style={{ background: T.paper, borderRadius: 22, padding: "18px 18px 20px", boxShadow: "var(--ed-shadow-card)" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
                 <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>{SPECIES_DEFAULT_NAMES.includes(active.name) ? "Pet Pond" : `${active.name}\u2019s Pond`}</div>
-                <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: T.muted }}>LO-FI · LIVE</div>
+                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.muted }}>LO-FI · LIVE</div>
               </div>
               <div style={{ marginTop: 14 }}>
                 <Suspense fallback={<div style={{ width: "100%", maxWidth: 340, aspectRatio: "1 / 1", margin: "0 auto", borderRadius: "50%", background: "rgba(26,126,104,.14)" }} />}>
                   <PetPond mood={happy} level={active.level} element={active.element} name={active.name} />
                 </Suspense>
               </div>
-              <div style={{ marginTop: 13, textAlign: "center", fontFamily: T.m, fontSize: 12.5, color: T.muted, letterSpacing: ".04em" }}>
+              <div style={{ marginTop: 13, textAlign: "center", fontFamily: T.m, fontSize: 13, color: T.muted, letterSpacing: ".04em" }}>
                 tap to feed · {SPECIES_DEFAULT_NAMES.includes(active.name) ? "your pet\u2019s" : `${active.name}\u2019s`} koi gather where you touch
               </div>
             </div>

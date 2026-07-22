@@ -364,7 +364,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
                   <div style={{ fontSize: 13, color: "#7A6E5A", marginTop: 1 }}>{item.desc}</div>
                 </div>
                 <span style={{
-                  fontSize: 12, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap",
+                  fontSize: 13, padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap",
                   fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.04em",
                   background: item.tag === "Now" ? "rgba(92,138,78,0.14)" : "rgba(33,26,18,0.06)",
                   color: item.tag === "Now" ? "#5C8A4E" : "#9A7B4E",

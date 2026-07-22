@@ -22,7 +22,7 @@
  *      view / engagement numbers, ever.
  *
  * Collectible Editorial chrome (--ed-* tokens, hard offset shadows, no neon).
- * Min font 12px · 44px tap targets.
+ * Min font 13px · 44px tap targets.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -189,11 +189,11 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
     padding: 18,
   };
   const eyebrow: React.CSSProperties = {
-    fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: "0.16em",
+    fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.16em",
     textTransform: "uppercase", color: T.terraSub,
   };
   const labelStyle: React.CSSProperties = {
-    fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: "0.1em",
+    fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.1em",
     textTransform: "uppercase", color: T.mono, marginBottom: 8, display: "block",
   };
 
@@ -202,7 +202,7 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
     border: `1px solid ${active ? T.terra : T.hair}`,
     background: active ? T.terra : T.paper,
     color: active ? T.creamOn : T.muted2,
-    fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: "0.08em",
+    fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.08em",
     textTransform: "uppercase", cursor: "pointer", whiteSpace: "nowrap",
     boxShadow: active ? "2px 2px 0 rgba(154,78,30,.28)" : "none",
     transition: "background .12s ease, color .12s ease",
@@ -211,7 +211,7 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
   const actionBtn: React.CSSProperties = {
     minHeight: 40, padding: "9px 14px", borderRadius: 9,
     border: `1px solid ${T.hair}`, background: T.paper, color: T.ink70,
-    fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: "0.06em",
+    fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.06em",
     textTransform: "uppercase", cursor: "pointer", whiteSpace: "nowrap",
     display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
   };
@@ -252,12 +252,12 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                 <span style={{
                   width: 22, height: 22, borderRadius: 7, background: T.terra, color: T.creamOn,
-                  fontFamily: T.m, fontWeight: 800, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: T.m, fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center",
                 }}>{step.n}</span>
-                <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".06em", color: T.terraSub, textTransform: "uppercase" }}>{step.tag}</span>
+                <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".06em", color: T.terraSub, textTransform: "uppercase" }}>{step.tag}</span>
               </div>
               <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 14, color: T.ink, marginBottom: 3 }}>{step.t}</div>
-              <div style={{ fontFamily: T.body, fontSize: 12.5, color: T.muted, lineHeight: 1.45 }}>{step.d}</div>
+              <div style={{ fontFamily: T.body, fontSize: 13, color: T.muted, lineHeight: 1.45 }}>{step.d}</div>
             </div>
           ))}
         </div>
@@ -356,7 +356,7 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
           <div style={{ ...cardStyle, marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
               <span style={eyebrow}>Timeline · {plan.scenes.length} scenes</span>
-              <span style={{ fontFamily: T.m, fontSize: 12, color: T.muted, letterSpacing: "0.06em" }}>
+              <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted, letterSpacing: "0.06em" }}>
                 {formatTimecode(0)}–{formatTimecode(plan.totalSec)} · {plan.targetSec}s target
               </span>
             </div>
@@ -384,11 +384,11 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
                   >
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                       <span aria-hidden style={{ width: 7, height: 7, borderRadius: 999, background: c, flexShrink: 0 }} />
-                      <span style={{ fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: "0.04em", color: T.ink70, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <span style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.04em", color: T.ink70, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {s.role === "body" ? `B${s.roleIndex}` : s.role === "hook" ? "HK" : "PAY"}
                       </span>
                     </span>
-                    <span style={{ fontFamily: T.m, fontSize: 12, color: T.muted, whiteSpace: "nowrap" }}>
+                    <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted, whiteSpace: "nowrap" }}>
                       {s.endSec - s.startSec}s
                     </span>
                   </button>
@@ -410,13 +410,13 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
                 {/* top meta */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{
-                    fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: "0.1em",
+                    fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.1em",
                     color: T.stageInk, padding: "3px 8px", borderRadius: 999,
                     background: "rgba(0,0,0,.28)", border: `1px solid ${roleColor(current.role)}`,
                   }}>
                     {roleLabel(current)}
                   </span>
-                  <span style={{ fontFamily: T.m, fontSize: 12, color: T.stageMuted }}>
+                  <span style={{ fontFamily: T.m, fontSize: 13, color: T.stageMuted }}>
                     {formatTimecode(current.startSec)}–{formatTimecode(current.endSec)}
                   </span>
                 </div>
@@ -440,7 +440,7 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
                   }}>
                     {current.caption}
                   </div>
-                  <div style={{ marginTop: 8, fontFamily: T.m, fontSize: 12, letterSpacing: "0.06em", color: T.stageMuted }}>
+                  <div style={{ marginTop: 8, fontFamily: T.m, fontSize: 13, letterSpacing: "0.06em", color: T.stageMuted }}>
                     {current.shot}
                   </div>
                 </div>
@@ -517,12 +517,12 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                               <span style={{
-                                fontFamily: T.m, fontWeight: 700, fontSize: 12, letterSpacing: "0.06em",
+                                fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.06em",
                                 color: "#fff", background: c, padding: "2px 7px", borderRadius: 999,
                               }}>
                                 {roleLabel(s)}
                               </span>
-                              <span style={{ fontFamily: T.m, fontSize: 12, color: T.muted, letterSpacing: "0.04em" }}>
+                              <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted, letterSpacing: "0.04em" }}>
                                 {formatTimecode(s.startSec)}–{formatTimecode(s.endSec)} · {s.endSec - s.startSec}s
                               </span>
                             </div>
@@ -532,7 +532,7 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
                             <div style={{ fontFamily: T.body, fontSize: 13, color: T.muted, marginTop: 4, lineHeight: 1.4 }}>
                               {s.direction}
                             </div>
-                            <div style={{ fontFamily: T.m, fontSize: 12, color: T.mono, marginTop: 4, letterSpacing: "0.04em" }}>
+                            <div style={{ fontFamily: T.m, fontSize: 13, color: T.mono, marginTop: 4, letterSpacing: "0.04em" }}>
                               Shot · {s.shot}
                             </div>
                           </button>
@@ -558,7 +558,7 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
             <div style={{ flex: "1 1 260px", minWidth: 0 }}>
               <div style={{ ...eyebrow, marginBottom: 4 }}>BGM mood</div>
               <div style={{ fontFamily: T.body, fontSize: 14, color: T.ink70 }}>{plan.bgmMood}</div>
-              <div style={{ fontFamily: T.m, fontSize: 12, color: T.muted, marginTop: 6, letterSpacing: "0.02em" }}>
+              <div style={{ fontFamily: T.m, fontSize: 13, color: T.muted, marginTop: 6, letterSpacing: "0.02em" }}>
                 Sequence plan only — no rendering, no fabricated view counts.
               </div>
             </div>
@@ -571,7 +571,7 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
                 style={{
                   minHeight: 48, padding: "13px 18px", borderRadius: 12,
                   border: `1px solid ${T.terra}`, background: T.paper, color: T.terraSub,
-                  fontFamily: T.m, fontWeight: 700, fontSize: 12.5, letterSpacing: "0.06em",
+                  fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.06em",
                   textTransform: "uppercase", cursor: polishBusy ? "default" : "pointer",
                   opacity: polishBusy ? 0.65 : 1, whiteSpace: "nowrap",
                   display: "inline-flex", alignItems: "center", gap: 8,
@@ -602,7 +602,7 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
                 {polishMsg}
               </span>
             )}
-            <span style={{ fontFamily: T.m, fontSize: 12, color: T.mono, letterSpacing: "0.02em" }}>
+            <span style={{ fontFamily: T.m, fontSize: 13, color: T.mono, letterSpacing: "0.02em" }}>
               AI polish rewrites only the captions (timing &amp; shots stay); signed-in, free in beta.
             </span>
           </div>

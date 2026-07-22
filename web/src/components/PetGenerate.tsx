@@ -361,12 +361,12 @@ export default function PetGenerate() {
               </span>
               <div style={{ display: "flex", gap: 6, marginTop: 2 }}>
                 <span style={{
-                  fontSize: 12, padding: "2px 7px", borderRadius: 8,
+                  fontSize: 13, padding: "2px 7px", borderRadius: 8,
                   background: "rgba(190,79,40,0.09)", color: "#9A4E1E", fontFamily: "var(--ed-m)", fontWeight: 600,
                   border: "1px solid rgba(190,79,40,0.18)",
                 }}>AI IMAGE</span>
                 <span style={{
-                  fontSize: 12, padding: "2px 7px", borderRadius: 8,
+                  fontSize: 13, padding: "2px 7px", borderRadius: 8,
                   background: "rgba(107,79,160,0.08)", color: "#6B4FA0", fontFamily: "var(--ed-m)", fontWeight: 600,
                   border: "1px solid rgba(107,79,160,0.15)",
                 }}>AI VIDEO</span>
@@ -751,7 +751,7 @@ export default function PetGenerate() {
                         transition: "all 0.2s",
                       }}>
                         {d}s
-                        <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: "#9A7B4E", marginTop: 2 }}>
+                        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "#9A7B4E", marginTop: 2 }}>
                           <Icon name="coin" size={9} /> {d <= 3 ? 15 : d <= 5 ? 30 : 60}
                         </div>
                       </button>

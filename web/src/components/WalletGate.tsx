@@ -66,7 +66,7 @@ export function TourBanner() {
       }}>
         <span style={{ display: "flex", alignItems: "center", gap: 9, fontFamily: "var(--ed-body)", fontSize: 13.5, color: "#FFF8EE", lineHeight: 1.35, textAlign: "center" }}>
           <span style={{
-            fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: ".1em",
+            fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: ".1em",
             color: "#BE4F28", background: "#FCE9CF", borderRadius: 7, padding: "3px 8px", whiteSpace: "nowrap",
           }}>DEMO TOUR</span>
           <span className="tour-banner-copy">You&apos;re browsing a live sample — connect a wallet to make it yours.</span>
@@ -228,7 +228,7 @@ export default function WalletGate({ children, section }: any) {
   if (section === "office") {
     return (
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "132px 24px 60px", textAlign: "center" }}>
-        <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "#BE4F28", marginBottom: 12 }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "#BE4F28", marginBottom: 12 }}>
           Agent Office · Mission Control
         </div>
         <h2 style={{ fontFamily: "var(--ed-disp)", fontSize: 30, fontWeight: 800, color: "#211A12", marginBottom: 14, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
@@ -262,7 +262,7 @@ export default function WalletGate({ children, section }: any) {
   if (section === "cards") {
     return (
       <div style={{ maxWidth: 560, margin: "0 auto", padding: "116px 24px 60px", textAlign: "center" }}>
-        <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "#BE4F28", marginBottom: 20 }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "#BE4F28", marginBottom: 20 }}>
           Sample cards · yours appear here once you connect
         </div>
         <div style={{ display: "flex", gap: 22, justifyContent: "center", marginBottom: 36, flexWrap: "wrap" }}>
@@ -278,7 +278,7 @@ export default function WalletGate({ children, section }: any) {
               />
               <span style={{
                 position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)",
-                fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: ".1em",
+                fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: ".1em",
                 color: "#BE4F28", background: "#FCE9CF", borderRadius: 6, padding: "3px 8px",
                 whiteSpace: "nowrap", boxShadow: "3px 4px 0 rgba(33,26,18,.14)",
               }}>{s.label}</span>

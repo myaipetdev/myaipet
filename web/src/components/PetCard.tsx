@@ -238,13 +238,13 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320, placeho
             {([["ATK", card.atk], ["DEF", card.def], ["SPD", card.spd]] as const).map(([lab, val]) => (
               <div key={lab} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", background: "#fff", borderRadius: 9, border: `1px solid ${HAIR}`, padding: "7px 2px" }}>
                 <span style={{ fontFamily: "var(--ed-disp)", fontSize: 19, fontWeight: 700, color: INK, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{val}</span>
-                <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: MUTED, letterSpacing: 1, marginTop: 4 }}>{lab}</span>
+                <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: MUTED, letterSpacing: 1, marginTop: 4 }}>{lab}</span>
               </div>
             ))}
           </div>
 
           {/* Sub-stats */}
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 16px", fontFamily: "var(--ed-m)", fontSize: 12, color: MUTED, fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 16px", fontFamily: "var(--ed-m)", fontSize: 13, color: MUTED, fontVariantNumeric: "tabular-nums" }}>
             <span>PWR {card.power}</span>
             <span>BOND {card.bondLevel}</span>
             <span>STREAK {card.careStreak}d</span>
@@ -262,7 +262,7 @@ export default function PetCard({ card: cardProp, petId, maxWidth = 320, placeho
           {/* Footer */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: "auto", padding: "9px 14px", borderTop: `1px solid ${HAIR}` }}>
             <span style={{ fontFamily: "var(--ed-disp)", fontSize: 13, fontWeight: 800, color: t.color, letterSpacing: "0.01em" }}>MY AI PET</span>
-            <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, color: MUTED, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "60%" }}>№ {String(card.id).padStart(4, "0")} · {card.personality}</span>
+            <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: MUTED, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "60%" }}>№ {String(card.id).padStart(4, "0")} · {card.personality}</span>
           </div>
         </div>
 

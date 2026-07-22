@@ -823,7 +823,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                     </a>
                   )}
                   {HD_EXPORT_FREE_BETA && (
-                    <div style={{ marginTop: 10, fontSize: 12.5, color: T.muted2, fontFamily: T.m }}>
+                    <div style={{ marginTop: 10, fontSize: 13, color: T.muted2, fontFamily: T.m }}>
                       HD export is free while Studio is in beta.
                     </div>
                   )}

@@ -83,7 +83,7 @@ export default function AdminOpsPage() {
   if (!data) {
     return (
       <main style={{ minHeight: "100vh", background: PAPER, color: INK, display: "grid", placeItems: "center" }}>
-        <div style={{ fontFamily: MONO, fontSize: 12, color: MUTED }}>{error ? `retrying… (${error})` : "loading…"}</div>
+        <div style={{ fontFamily: MONO, fontSize: 13, color: MUTED }}>{error ? `retrying… (${error})` : "loading…"}</div>
       </main>
     );
   }
@@ -121,13 +121,13 @@ export default function AdminOpsPage() {
         {/* masthead */}
         <header style={{ display: "flex", alignItems: "baseline", gap: 12, borderBottom: `2px solid ${INK}`, paddingBottom: 14 }}>
           <span style={{
-            fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: "0.14em",
+            fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em",
             background: TERRA, color: PAPER, padding: "4px 10px", boxShadow: HARD_SM,
           }}>OPS</span>
           <h1 style={{ fontFamily: "var(--ed-disp, inherit)", fontSize: 30, fontWeight: 800, letterSpacing: "-0.02em", margin: 0 }}>
             Owner Console
           </h1>
-          <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 12, color: MUTED }}>
+          <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 13, color: MUTED }}>
             refreshed {new Date(data.generatedAt).toLocaleTimeString()} · every 30s{error ? ` · last poll failed (${error})` : ""}
           </span>
         </header>
@@ -142,15 +142,15 @@ export default function AdminOpsPage() {
               background: PAPER, border: `2px solid ${INK}`, boxShadow: HARD,
               padding: "14px 16px",
             }}>
-              <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", color: TERRA }}>{s.label}</div>
+              <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", color: TERRA }}>{s.label}</div>
               <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, marginTop: 6, lineHeight: 1 }}>{s.value}</div>
-              {s.sub && <div style={{ fontFamily: MONO, fontSize: 12, color: MUTED, marginTop: 6 }}>{s.sub}</div>}
+              {s.sub && <div style={{ fontFamily: MONO, fontSize: 13, color: MUTED, marginTop: 6 }}>{s.sub}</div>}
             </div>
           ))}
         </section>
 
         {/* credit breakdown strip */}
-        <section style={{ marginTop: 18, fontFamily: MONO, fontSize: 12, color: MUTED }}>
+        <section style={{ marginTop: 18, fontFamily: MONO, fontSize: 13, color: MUTED }}>
           <span style={{ color: INK, fontWeight: 700 }}>credits 7d · </span>
           {Object.entries(bd).map(([k, v]) => `${k} ${fmt(v)}`).join(" · ")}
           <span> · today = UTC day from {new Date(data.todayStartsAt).toLocaleTimeString()}</span>
@@ -179,7 +179,7 @@ export default function AdminOpsPage() {
           </ListCard>
         </section>
 
-        <footer style={{ marginTop: 40, fontFamily: MONO, fontSize: 12, color: MUTED }}>
+        <footer style={{ marginTop: 40, fontFamily: MONO, fontSize: 13, color: MUTED }}>
           real aggregates only — zeros are honest zeros. llm counter is per-process (resets on deploy).
         </footer>
       </div>
@@ -191,12 +191,12 @@ function ListCard({ title, empty, children }: { title: string; empty: boolean; c
   return (
     <div style={{ background: INSET, border: `2px solid ${INK}`, boxShadow: HARD }}>
       <div style={{
-        fontFamily: MONO, fontSize: 12, fontWeight: 700, letterSpacing: "0.12em",
+        fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em",
         padding: "10px 14px", borderBottom: `2px solid ${INK}`, background: PAPER,
       }}>{title}</div>
       <div>
         {empty
-          ? <div style={{ padding: "18px 14px", fontFamily: MONO, fontSize: 12, color: MUTED }}>none yet — honest zero.</div>
+          ? <div style={{ padding: "18px 14px", fontFamily: MONO, fontSize: 13, color: MUTED }}>none yet — honest zero.</div>
           : children}
       </div>
     </div>
@@ -207,11 +207,11 @@ function Row({ left, mid, right }: { left: React.ReactNode; mid: React.ReactNode
   return (
     <div style={{
       display: "flex", gap: 10, alignItems: "baseline", padding: "9px 14px",
-      borderBottom: `1px solid ${HAIR}`, fontSize: 12.5,
+      borderBottom: `1px solid ${HAIR}`, fontSize: 13,
     }}>
       <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{left}</span>
-      <span style={{ fontFamily: MONO, fontSize: 12, color: MUTED, flexShrink: 0 }}>{mid}</span>
-      <span style={{ fontFamily: MONO, fontSize: 12, color: MUTED, flexShrink: 0 }}>{right}</span>
+      <span style={{ fontFamily: MONO, fontSize: 13, color: MUTED, flexShrink: 0 }}>{mid}</span>
+      <span style={{ fontFamily: MONO, fontSize: 13, color: MUTED, flexShrink: 0 }}>{right}</span>
     </div>
   );
 }

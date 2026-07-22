@@ -418,7 +418,7 @@ function QueueRow({ state, title, right }: { state: "run" | "queued" | "done"; t
     : <span style={{ color: LABEL }}>✓</span>;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 0", borderTop: `1px solid ${HAIR}` }}>
-      <span style={{ flexShrink: 0, fontSize: 12 }}>{mark}</span>
+      <span style={{ flexShrink: 0, fontSize: 13 }}>{mark}</span>
       <span style={{ flex: 1, minWidth: 0, fontFamily: SANS, fontSize: 13.5, color: state === "done" ? BODY_C : INK, fontWeight: state === "run" ? 700 : 500,
         textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</span>
       {right && <span style={{ ...labelStyle(12), flexShrink: 0 }}>{right}</span>}

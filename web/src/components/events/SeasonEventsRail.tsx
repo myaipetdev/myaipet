@@ -48,7 +48,7 @@ function WaxSeal({ state }: { state: SeasonEventState }) {
         background: `radial-gradient(circle at 32% 28%, rgba(255,248,238,.28), rgba(33,26,18,.12) 78%), ${s.bg}`,
         color: T.creamOn, transform: "rotate(-4deg)",
         boxShadow: "0 2px 0 rgba(33,26,18,.4), inset 0 0 0 1.5px rgba(252,233,207,.5)",
-        fontFamily: T.m, fontSize: 12, fontWeight: 800, letterSpacing: ".12em",
+        fontFamily: T.m, fontSize: 13, fontWeight: 800, letterSpacing: ".12em",
         whiteSpace: "nowrap",
       }}
     >
@@ -95,7 +95,7 @@ function PosterCard({ ev }: { ev: SeasonEvent }) {
       </div>
 
       {/* Eyebrow + title */}
-      <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase", marginBottom: 3 }}>
+      <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase", marginBottom: 3 }}>
         {ev.cadence}
       </div>
       <div style={{ fontFamily: T.disp, fontSize: 19, fontWeight: 800, color: T.ink, letterSpacing: "-.02em", lineHeight: 1.1, marginBottom: 7 }}>
@@ -107,7 +107,7 @@ function PosterCard({ ev }: { ev: SeasonEvent }) {
         <span
           style={{
             alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6,
-            fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".08em",
+            fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em",
             color: T.terraSub, background: "rgba(190,79,40,.08)",
             border: "1px solid rgba(190,79,40,.24)", borderRadius: 999,
             padding: "3px 9px", marginBottom: 8, textTransform: "uppercase",
@@ -131,7 +131,7 @@ function PosterCard({ ev }: { ev: SeasonEvent }) {
           style={{
             display: "flex", alignItems: "flex-start", gap: 6, marginTop: 10, minHeight: 38,
             paddingTop: 9, borderTop: `1px dashed ${T.hair}`,
-            fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".04em",
+            fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".04em",
             color: T.gold, textTransform: "uppercase", lineHeight: 1.45,
           }}
         >
@@ -142,7 +142,7 @@ function PosterCard({ ev }: { ev: SeasonEvent }) {
 
       {/* CTA */}
       {!ended && (
-        <div style={{ marginTop: 9, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: T.terra, textTransform: "uppercase" }}>
+        <div style={{ marginTop: 9, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.terra, textTransform: "uppercase" }}>
           {ev.state === "opens-soon" ? "See the gate ▸" : "Open ▸"}
         </div>
       )}
@@ -179,7 +179,7 @@ export default function SeasonEventsRail() {
           the season phase; repeating "SEASON 1 · STARTING SOON" here read as
           duplication (founder feedback). */}
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", paddingLeft: 2 }}>
-        <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".18em", color: T.terraSub, textTransform: "uppercase" }}>
+        <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".18em", color: T.terraSub, textTransform: "uppercase" }}>
           Season Events
         </span>
       </div>

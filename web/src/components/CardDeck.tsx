@@ -717,7 +717,7 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                 display: "flex", alignItems: "center", justifyContent: "center",
                 animation: "cdSealDrop .5s cubic-bezier(.2,.85,.25,1) 560ms both",
               }}>
-                <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", color: "#FBE3D2", textShadow: "0 1px 1px rgba(80,20,0,.5)" }}>OWNED</span>
+                <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", color: "#FBE3D2", textShadow: "0 1px 1px rgba(80,20,0,.5)" }}>OWNED</span>
               </div>
             </div>
             {/* Holographic-ticket stub — grab the glowing dot and rip along the
@@ -1015,7 +1015,7 @@ function GuestGate({ onCatch }: { onCatch: () => void }) {
           <SampleCard grade="Common" />
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }}>
             <span aria-hidden style={{ fontFamily: T.disp, fontSize: 20, fontWeight: 800, color: T.terra, lineHeight: 1 }}>→</span>
-            <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: T.terraSub }}>Real care</span>
+            <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: T.terraSub }}>Real care</span>
           </div>
           <SampleCard grade="Rare" />
         </div>
@@ -1106,7 +1106,7 @@ function SampleCard({ grade }: { grade: "Common" | "Rare" }) {
           {/* header */}
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6, padding: "8px 10px 6px" }}>
             <span style={{ fontFamily: T.disp, fontSize: 15, fontWeight: 800, color: T.ink, letterSpacing: "-0.02em" }}>Dordor</span>
-            <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, color: T.muted2, fontVariantNumeric: "tabular-nums" }}>Lv {rare ? 21 : 2}</span>
+            <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted2, fontVariantNumeric: "tabular-nums" }}>Lv {rare ? 21 : 2}</span>
           </div>
           {/* photo well — Rare gets the gold inset keyline + holo topo + sheen,
               and a different action pose/crop of the same cat */}
@@ -1131,7 +1131,7 @@ function SampleCard({ grade }: { grade: "Common" | "Rare" }) {
               )}
               {/* SAMPLE stamp — airtight honesty on the art itself */}
               <span style={{
-                position: "absolute", left: 6, bottom: 6, fontFamily: T.m, fontSize: 12, fontWeight: 700,
+                position: "absolute", left: 6, bottom: 6, fontFamily: T.m, fontSize: 13, fontWeight: 700,
                 letterSpacing: "0.12em", color: T.ink70, background: "rgba(251,246,236,.9)",
                 border: `1px solid ${T.hair}`, borderRadius: 5, padding: "1px 6px",
               }}>SAMPLE</span>
@@ -1142,7 +1142,7 @@ function SampleCard({ grade }: { grade: "Common" | "Rare" }) {
               background: T.paper, border: `2px solid ${rc}`, display: "flex", alignItems: "center", justifyContent: "center",
               boxShadow: "0 2px 6px -1px rgba(40,20,0,.4)",
             }}>
-              <span style={{ fontFamily: T.m, fontWeight: 700, fontSize: 12, color: rc }}>{grade[0]}</span>
+              <span style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, color: rc }}>{grade[0]}</span>
             </span>
           </div>
           {/* stat chips — Rare's figures and gold keylines differ on sight */}
@@ -1153,14 +1153,14 @@ function SampleCard({ grade }: { grade: "Common" | "Rare" }) {
                 borderRadius: 7, border: rare ? "1px solid rgba(184,130,44,.45)" : `1px solid ${T.hair}`, padding: "4px 2px",
               }}>
                 <span style={{ fontFamily: T.disp, fontSize: 14, fontWeight: 700, color: T.ink, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{val}</span>
-                <span style={{ fontFamily: T.m, fontSize: 12, color: T.muted2, letterSpacing: 1, marginTop: 2 }}>{lab}</span>
+                <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted2, letterSpacing: 1, marginTop: 2 }}>{lab}</span>
               </span>
             ))}
           </div>
           {/* footer — grade name; Rare adds the mini topo-foil patch (the same
               chip the ticket stub wears), Common a matte cream one */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, padding: "0 10px 8px" }}>
-            <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", color: rc }}>{grade.toUpperCase()}</span>
+            <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: rc }}>{grade.toUpperCase()}</span>
             <span aria-hidden style={rare ? {
               width: 26, height: 16, borderRadius: 4,
               background: `${HOLO_LINEAR} 50% 50% / 300% 300%`,
@@ -1181,7 +1181,7 @@ function SampleCard({ grade }: { grade: "Common" | "Rare" }) {
           }} />
         )}
       </div>
-      <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: rare ? T.terraSub : T.muted, marginTop: 8, textAlign: "center" }}>
+      <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: rare ? T.terraSub : T.muted, marginTop: 8, textAlign: "center" }}>
         {rare ? "Weeks of real care" : "Day one"}
       </div>
     </div>
@@ -1258,7 +1258,7 @@ function CatchTile({ onClick }: { onClick?: () => void }) {
       {/* footer rhythm — baseline strip with the door */}
       <div style={{ borderTop: "1px solid rgba(251,246,236,.22)", marginTop: 9, paddingTop: 9, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
         <span style={{ background: T.creamOn, color: T.ink, borderRadius: 999, padding: "6px 13px", fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase" }}>Go catch ▸</span>
-        <span style={{ fontFamily: T.body, fontSize: 12.5, color: "rgba(251,246,236,.8)" }}>or upload a photo</span>
+        <span style={{ fontFamily: T.body, fontSize: 13, color: "rgba(251,246,236,.8)" }}>or upload a photo</span>
       </div>
     </button>
   );
@@ -1429,7 +1429,7 @@ function Shell({ children, owned, rarityCounts, verbs }: { children: React.React
                     /* Standard editorial chip — ink on a soft terracotta tint with a
                        border (never a saturated orange slab). Figure stays the
                        server's REAL grant. */
-                    <span style={{ alignSelf: "flex-start", marginLeft: 23, fontFamily: T.m, fontSize: 12.5, fontWeight: 700, letterSpacing: ".05em", color: T.ink, background: "rgba(190,79,40,.12)", border: "1px solid rgba(190,79,40,.38)", borderRadius: 999, padding: "3px 10px", fontVariantNumeric: "tabular-nums" }}>{s.chip}</span>
+                    <span style={{ alignSelf: "flex-start", marginLeft: 23, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".05em", color: T.ink, background: "rgba(190,79,40,.12)", border: "1px solid rgba(190,79,40,.38)", borderRadius: 999, padding: "3px 10px", fontVariantNumeric: "tabular-nums" }}>{s.chip}</span>
                   )}
                   {onAct && (
                     <span style={{ marginTop: "auto", marginLeft: 23, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: T.terraSub }}>{s.act}</span>

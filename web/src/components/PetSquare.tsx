@@ -345,15 +345,15 @@ export default function PetSquare() {
       {/* Header row + honesty note */}
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
         <div>
-          <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: T.terra, marginBottom: 6 }}>
+          <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: T.terra, marginBottom: 6 }}>
             The Pet Square
           </div>
-          <p style={{ margin: 0, fontFamily: T.m, fontSize: 12.5, color: T.mono, letterSpacing: ".02em", maxWidth: 560 }}>
+          <p style={{ margin: 0, fontFamily: T.m, fontSize: 13, color: T.mono, letterSpacing: ".02em", maxWidth: 560 }}>
             Walk your pet around and meet the neighbors — real, recent community pets. Not live presence:
             no one is “online.” Arrow keys / WASD, or click to walk. Get close and press <b style={{ color: T.ink }}>E</b> (or tap) to say hi.
           </p>
         </div>
-        <div style={{ fontFamily: T.m, fontSize: 12, color: T.mono, letterSpacing: ".06em", whiteSpace: "nowrap" }}>
+        <div style={{ fontFamily: T.m, fontSize: 13, color: T.mono, letterSpacing: ".06em", whiteSpace: "nowrap" }}>
           {loading ? "loading…" : `${pets.length} neighbor${pets.length === 1 ? "" : "s"}`}
         </div>
       </div>
@@ -387,7 +387,7 @@ export default function PetSquare() {
               <div style={{ fontFamily: T.disp, fontSize: 22, fontWeight: 800, color: T.ink, marginBottom: 6, letterSpacing: "-.02em" }}>
                 {loading ? "Opening the square…" : fetchErr ? "Couldn’t load the square" : "The square is quiet"}
               </div>
-              <div style={{ fontFamily: T.m, fontSize: 12.5, color: T.mono, letterSpacing: ".04em" }}>
+              <div style={{ fontFamily: T.m, fontSize: 13, color: T.mono, letterSpacing: ".04em" }}>
                 {loading ? "Gathering the neighbors" : fetchErr ? "Check your connection and try again"
                   : "No community pets to meet yet — adopt one and be the first on the block."}
               </div>
@@ -426,7 +426,7 @@ export default function PetSquare() {
               {/* name tag: subtle always; highlighted when near */}
               <div style={{
                 position: "absolute", top: "100%", left: "50%", transform: "translate(-50%,4px)",
-                whiteSpace: "nowrap", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".04em",
+                whiteSpace: "nowrap", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".04em",
                 padding: "1px 7px", borderRadius: 999,
                 background: near ? T.ink : "rgba(251,246,236,.9)",
                 color: near ? T.creamOn : T.ink70,
@@ -462,7 +462,7 @@ export default function PetSquare() {
           </div>
           <div style={{
             position: "absolute", top: "100%", left: "50%", transform: "translate(-50%,4px)",
-            whiteSpace: "nowrap", fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".04em",
+            whiteSpace: "nowrap", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".04em",
             padding: "1px 8px", borderRadius: 999, background: T.terra, color: T.creamOn,
           }}>{player.name} · you</div>
           {emotes.filter((em) => em.petId === "player").map((em) => (
@@ -474,7 +474,7 @@ export default function PetSquare() {
         {nearPet && !openPet && (
           <div style={{
             position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)",
-            fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".04em",
+            fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".04em",
             padding: "7px 14px", borderRadius: 999, background: T.ink, color: T.creamOn,
             boxShadow: "0 10px 24px -12px rgba(33,26,18,.7)", pointerEvents: "none",
           }}>Say hi to <b style={{ color: "#fff" }}>{nearPet.name}</b> — press E or tap them</div>
@@ -498,7 +498,7 @@ export default function PetSquare() {
               <img src={openPet.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
             <div style={{ fontFamily: T.disp, fontSize: 24, fontWeight: 800, color: T.ink, letterSpacing: "-.02em" }}>{openPet.name}</div>
-            <div style={{ fontFamily: T.m, fontSize: 12, color: T.mono, letterSpacing: ".08em", textTransform: "uppercase", marginTop: 3 }}>
+            <div style={{ fontFamily: T.m, fontSize: 13, color: T.mono, letterSpacing: ".08em", textTransform: "uppercase", marginTop: 3 }}>
               {openPet.level ? `Lv ${openPet.level} · ` : ""}Neighbor · recent community pet
             </div>
 
@@ -511,14 +511,14 @@ export default function PetSquare() {
                 }}>{ch}</button>
               ))}
             </div>
-            <div style={{ fontFamily: T.m, fontSize: 12, color: T.mono, letterSpacing: ".03em", lineHeight: 1.5 }}>
+            <div style={{ fontFamily: T.m, fontSize: 13, color: T.mono, letterSpacing: ".03em", lineHeight: 1.5 }}>
               A friendly wave, just between the two of you — emotes stay local and aren’t posted anywhere.
             </div>
 
             <button onClick={() => setOpenId(null)} style={{
               marginTop: 14, padding: "9px 22px", borderRadius: 999, cursor: "pointer",
               background: T.ink, color: T.creamOn, border: "none",
-              fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase",
+              fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase",
             }}>Wave goodbye</button>
           </div>
         </>

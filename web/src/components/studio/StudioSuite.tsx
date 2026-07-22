@@ -94,7 +94,7 @@ export default function StudioSuite({ onCreditsChange }: { onCreditsChange?: (c:
       {/* Suite header + tab bar. paddingTop clears the fixed global Nav (~72px)
           so the tab bar is never hidden under it. */}
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "104px 24px 0" }}>
-        <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".2em", color: T.terraSub, textTransform: "uppercase", marginBottom: 12 }}>
+        <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".2em", color: T.terraSub, textTransform: "uppercase", marginBottom: 12 }}>
           Studio · Creator Suite
         </div>
         <div className="studiosuite-tabbar" role="tablist" aria-label="Studio tools">
@@ -119,7 +119,7 @@ export default function StudioSuite({ onCreditsChange }: { onCreditsChange?: (c:
                   <span style={{ display: "block", fontFamily: T.disp, fontWeight: 800, fontSize: 15, color: T.ink, letterSpacing: "-.01em" }}>
                     {t.label}
                   </span>
-                  <span style={{ display: "block", fontFamily: T.m, fontSize: 12, letterSpacing: ".06em", color: t.free ? "#1A7E68" : T.mono2, textTransform: "uppercase", marginTop: 1 }}>
+                  <span style={{ display: "block", fontFamily: T.m, fontSize: 13, letterSpacing: ".06em", color: t.free ? "#1A7E68" : T.mono2, textTransform: "uppercase", marginTop: 1 }}>
                     {t.sub}
                   </span>
                 </span>

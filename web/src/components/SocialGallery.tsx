@@ -1159,14 +1159,14 @@ function SampleShowcase() {
               {/* SAMPLE stamp — same treatment as CardDeck's guest samples,
                   rotated so it reads as a stamp, permanent on the art */}
               <span style={{
-                position: "absolute", left: 6, bottom: 8, fontFamily: T.m, fontSize: 12, fontWeight: 700,
+                position: "absolute", left: 6, bottom: 8, fontFamily: T.m, fontSize: 13, fontWeight: 700,
                 letterSpacing: "0.12em", color: T.ink70, background: "rgba(251,246,236,.9)",
                 border: `1px solid ${T.hair}`, borderRadius: 5, padding: "1px 6px",
                 transform: "rotate(-6deg)", transformOrigin: "left bottom",
               }}>SAMPLE</span>
             </div>
             <figcaption style={{
-              fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.1em",
+              fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
               textTransform: "uppercase", color: T.muted2, marginTop: 7,
             }}>
               {s.label}

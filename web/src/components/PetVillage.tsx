@@ -492,9 +492,9 @@ function Chibi({ cx, cy, scale, ear, pal, active, delay }: { cx: number; cy: num
 function Chip({ k, v, small, gold }: { k: string; v: string; small?: string; gold?: boolean }) {
   return (
     <div style={chipStyle}>
-      <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.16em", color: MUTED, textTransform: "uppercase" }}>{k}</span>
+      <span style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.16em", color: MUTED, textTransform: "uppercase" }}>{k}</span>
       <span style={gold ? { ...chipVal, ...chipGold } : chipVal}>
-        {v}{small && <small style={{ fontWeight: 600, fontSize: 12, color: MUTED }}>{small}</small>}
+        {v}{small && <small style={{ fontWeight: 600, fontSize: 13, color: MUTED }}>{small}</small>}
       </span>
     </div>
   );
@@ -569,7 +569,7 @@ function Stall({ label, hint, accent, count, empty, children }: { label: string;
         <span style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.08em", color: accent, fontWeight: 700 }}>{label}</span>
         <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 800, color: INK, background: PAPER, borderRadius: 99, minWidth: 22, textAlign: "center", padding: "1px 7px", border: `1px solid ${HAIR}` }}>{count}</span>
       </div>
-      <div style={{ fontFamily: SANS, fontSize: 12, color: "rgba(33,26,18,0.4)", padding: "0 4px 8px", fontStyle: "italic" }}>{hint}</div>
+      <div style={{ fontFamily: SANS, fontSize: 13, color: "rgba(33,26,18,0.4)", padding: "0 4px 8px", fontStyle: "italic" }}>{hint}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
         {count > 0 ? children : (
           <div style={{ fontFamily: SANS, fontSize: 13, color: MUTED, lineHeight: 1.5, padding: "14px 10px", textAlign: "center", border: `1px dashed ${HAIR}`, borderRadius: 12 }}>
@@ -597,9 +597,9 @@ function VCard({ title, detail, sub, tag, accent, pulse }: { title: string; deta
 function Legend({ accent, name, value, sub }: { accent: string; name: string; value: string; sub: string }) {
   return (
     <div style={{ flex: "1 1 150px", minWidth: 0, padding: "10px 12px", background: PAPER, border: `1px solid ${HAIR}`, borderRadius: 12, borderTop: `3px solid ${accent}` }}>
-      <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.06em", color: accent, fontWeight: 700, textTransform: "uppercase" }}>{name}</div>
+      <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.06em", color: accent, fontWeight: 700, textTransform: "uppercase" }}>{name}</div>
       <div style={{ fontFamily: DISP, fontSize: 17, fontWeight: 800, color: INK, margin: "3px 0 2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</div>
-      <div style={{ fontFamily: SANS, fontSize: 12.5, color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub}</div>
+      <div style={{ fontFamily: SANS, fontSize: 13, color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub}</div>
     </div>
   );
 }
@@ -630,7 +630,7 @@ const frame: React.CSSProperties = {
 const headRow: React.CSSProperties = { position: "absolute", top: 26, left: 30, right: 30, zIndex: 8, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" };
 const titleStyle: React.CSSProperties = { fontFamily: DISP, fontWeight: 700, fontSize: "clamp(18px,2.3vw,23px)", letterSpacing: "-0.02em", lineHeight: 1.1, color: INK, textShadow: "0 1px 0 rgba(255,255,255,.5)" };
 const titleGrad: React.CSSProperties = { background: "linear-gradient(100deg,#8A72DA,#28B39A 55%,#C8932F)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" };
-const subStyle: React.CSSProperties = { marginTop: 4, fontFamily: SANS, fontSize: 12.5, color: MUTED, fontWeight: 500, maxWidth: 340 };
+const subStyle: React.CSSProperties = { marginTop: 4, fontFamily: SANS, fontSize: 13, color: MUTED, fontWeight: 500, maxWidth: 340 };
 const chipBar: React.CSSProperties = { display: "flex", gap: 9, flexWrap: "wrap", justifyContent: "flex-end" };
 const chipStyle: React.CSSProperties = {
   display: "flex", flexDirection: "column", gap: 1, padding: "9px 13px", borderRadius: 15, textAlign: "center",
@@ -639,7 +639,7 @@ const chipStyle: React.CSSProperties = {
 };
 const chipVal: React.CSSProperties = { fontFamily: DISP, fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em", color: INK, marginTop: 1 };
 const chipGold: React.CSSProperties = { background: "linear-gradient(#EAC978,#C8932F)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" };
-const footStyle: React.CSSProperties = { position: "absolute", left: 30, bottom: 22, zIndex: 8, fontFamily: MONO, fontSize: 12, letterSpacing: "0.03em", color: MUTED };
+const footStyle: React.CSSProperties = { position: "absolute", left: 30, bottom: 22, zIndex: 8, fontFamily: MONO, fontSize: 13, letterSpacing: "0.03em", color: MUTED };
 const legendRow: React.CSSProperties = { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 };
 const squareGrid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 };
 const villagerGrid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 12 };

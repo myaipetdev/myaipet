@@ -186,18 +186,18 @@ export default function SosFeedAndBuddy() {
                     background: "rgba(190,79,40,0.06)", border: "1px solid rgba(190,79,40,0.22)",
                     borderRadius: 10, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
                   }}>
-                    <span style={{ fontSize: 12.5, color: "#5C5140", fontFamily: "var(--ed-body)", flex: 1, minWidth: 180, lineHeight: 1.45 }}>
+                    <span style={{ fontSize: 13, color: "#5C5140", fontFamily: "var(--ed-body)", flex: 1, minWidth: 180, lineHeight: 1.45 }}>
                       Spend <strong style={{ color: "#211A12" }}>50 credits</strong> to gift them a streak shield —
                       you get <strong style={{ color: "#211A12" }}>+20 Savior recognition</strong> (lifetime ledger, not season rank).
                     </span>
                     <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                       <button onClick={() => help(item.id)} disabled={busy === item.id} style={{
-                        ...primaryBtn, padding: "6px 12px", fontSize: 12.5,
+                        ...primaryBtn, padding: "6px 12px", fontSize: 13,
                         opacity: busy === item.id ? 0.5 : 1,
                       }}>{busy === item.id ? "Helping…" : "Spend 50 cr"}</button>
                       <button onClick={() => setConfirmId(null)} disabled={busy === item.id} style={{
                         background: "transparent", border: "1px solid #E5DABC", borderRadius: 9,
-                        padding: "6px 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+                        padding: "6px 12px", fontSize: 13, fontWeight: 700, cursor: "pointer",
                         color: "#5C5140", fontFamily: "var(--ed-body)",
                       }}>Cancel</button>
                     </div>

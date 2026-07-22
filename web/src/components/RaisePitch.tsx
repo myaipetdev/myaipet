@@ -577,7 +577,7 @@ function ClimbTile({ step, icon, value, unit, title, line, cta, onClick, accent 
         }}>
           <Icon name={icon} size={28} />
         </span>
-        <span style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#9A7B4E", letterSpacing: "0.12em" }}>{step}</span>
+        <span style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "#9A7B4E", letterSpacing: "0.12em" }}>{step}</span>
       </div>
 
       {/* The hero: big point number on a sticker chip */}
@@ -590,7 +590,7 @@ function ClimbTile({ step, icon, value, unit, title, line, cta, onClick, accent 
         boxShadow: `4px 4px 0 ${accent}`,
       }}>{value}</span>
       <span style={{
-        fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "#7A6E5A",
+        fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "#7A6E5A",
         letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 2,
       }}>{unit}</span>
 

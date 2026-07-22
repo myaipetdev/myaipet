@@ -106,7 +106,7 @@ interface DropNow {
 // ── TODAY strip — bank a reward within 5 seconds of landing ─────────────────
 
 const EYEBROW: React.CSSProperties = {
-  fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+  fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
   textTransform: "uppercase", letterSpacing: "0.14em", color: RUST,
 };
 
@@ -211,7 +211,7 @@ function TodayStrip({ authed, me, onClaimed }: {
     color: INK, letterSpacing: "-0.01em", lineHeight: 1.2,
   };
   const subLine: React.CSSProperties = {
-    fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+    fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
     color: INK_SOFT, marginTop: 2, fontVariantNumeric: "tabular-nums",
   };
 
@@ -396,13 +396,13 @@ function HeaderTile({ label, value, sub }: { label: string; value: React.ReactNo
       border: "1px solid rgba(255,248,238,0.12)",
       minWidth: 88,
     }}>
-      <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.12em", color: "rgba(255,248,238,0.6)", textTransform: "uppercase" }}>
+      <div style={{ fontSize: 13, fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.12em", color: "rgba(255,248,238,0.6)", textTransform: "uppercase" }}>
         {label}
       </div>
       <div style={{ fontSize: 22, fontWeight: 800, color: TERRA, fontFamily: "var(--ed-m)", lineHeight: 1.1, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
         {value}
       </div>
-      {sub && <div style={{ fontSize: 12, color: "rgba(255,248,238,0.6)", marginTop: 1, fontFamily: "var(--ed-m)" }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 13, color: "rgba(255,248,238,0.6)", marginTop: 1, fontFamily: "var(--ed-m)" }}>{sub}</div>}
     </div>
   );
 }
@@ -438,7 +438,7 @@ function IdentityHeader({ me }: { me: MeSummary | null }) {
               }}
             />
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.14em", color: "rgba(255,248,238,0.55)", textTransform: "uppercase" }}>
+              <div style={{ fontSize: 13, fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.14em", color: "rgba(255,248,238,0.55)", textTransform: "uppercase" }}>
                 My Pet
               </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
@@ -447,7 +447,7 @@ function IdentityHeader({ me }: { me: MeSummary | null }) {
                 </span>
                 {me.pet && (
                   <span style={{
-                    fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em",
+                    fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
                     color: "rgba(255,248,238,0.75)", border: "1px solid rgba(255,248,238,0.25)",
                     borderRadius: 999, padding: "2px 9px", whiteSpace: "nowrap",
                   }}>
@@ -472,7 +472,7 @@ function IdentityHeader({ me }: { me: MeSummary | null }) {
 
         {/* Row 2 — SEASON TIER, labelled so it can never read as a name. */}
         <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(255,248,238,0.14)" }}>
-          <div style={{ fontSize: 12, fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.16em", color: "#DCB45F", textTransform: "uppercase" }}>
+          <div style={{ fontSize: 13, fontFamily: "var(--ed-m)", fontWeight: 700, letterSpacing: "0.16em", color: "#DCB45F", textTransform: "uppercase" }}>
             Season Tier
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
@@ -490,7 +490,7 @@ function IdentityHeader({ me }: { me: MeSummary | null }) {
               </span>
             </div>
             {st.next && (
-              <span style={{ marginLeft: "auto", fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, color: "rgba(255,248,238,0.6)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+              <span style={{ marginLeft: "auto", fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, color: "rgba(255,248,238,0.6)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                 {me.points.toLocaleString()} / {st.next.min.toLocaleString()}
               </span>
             )}
@@ -515,7 +515,7 @@ type Phase = ReturnType<typeof seasonPhase>;
 function StatusTag({ phase }: { phase: Phase }) {
   const base: React.CSSProperties = {
     display: "inline-flex", alignItems: "center",
-    fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700,
+    fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
     letterSpacing: "0.14em", textTransform: "uppercase",
     padding: "4px 11px", borderRadius: 999,
     transform: "rotate(-1.5deg)",
@@ -632,13 +632,13 @@ function SeasonMasthead({ refresh = 0 }: { refresh?: number }) {
             padding: "10px 18px 12px", transform: "rotate(1.6deg)",
             textAlign: "right", flexShrink: 0,
           }}>
-            <div style={{ fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.14em", color: RUST }}>
+            <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.14em", color: RUST }}>
               {chipLabel}
             </div>
             <div style={{ fontFamily: "var(--ed-m)", fontWeight: 800, fontSize: "clamp(26px,6vw,34px)", color: INK, lineHeight: 1.1, fontVariantNumeric: "tabular-nums" }}>
               {points.toLocaleString()}
             </div>
-            <div style={{ fontFamily: "var(--ed-body)", fontSize: 12, color: INK_SOFT, marginTop: 2 }}>
+            <div style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: INK_SOFT, marginTop: 2 }}>
               {preStart
                 ? "carry into Season 1"
                 : signedIn && rank != null
@@ -676,7 +676,7 @@ function SeasonMasthead({ refresh = 0 }: { refresh?: number }) {
                 </div>
                 {/* Threshold as a mini sticker chip */}
                 <span style={{
-                  fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums",
+                  fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, fontVariantNumeric: "tabular-nums",
                   color: reached ? INK : INK_SOFT,
                   background: reached ? CREAM : PAPER_DIM,
                   border: reached ? `1.5px solid ${INK}` : `1px solid ${HAIR}`,
@@ -688,7 +688,7 @@ function SeasonMasthead({ refresh = 0 }: { refresh?: number }) {
                 </span>
                 {current && (
                   <span style={{
-                    fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em",
+                    fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.12em",
                     color: CREAM, background: TERRA, borderRadius: 6, padding: "1px 7px",
                   }}>
                     YOU
@@ -724,7 +724,7 @@ function SeasonMasthead({ refresh = 0 }: { refresh?: number }) {
           display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
         }}>
           <span style={{
-            fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, textTransform: "uppercase",
+            fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, textTransform: "uppercase",
             letterSpacing: "0.12em", color: RUST,
             border: "1.5px solid rgba(154,78,30,0.5)", borderRadius: 999, padding: "4px 11px",
             transform: "rotate(-1deg)", whiteSpace: "nowrap",
