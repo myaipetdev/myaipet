@@ -167,7 +167,7 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 **Build on it — the open SDK**
 - Published on npm: npm i @myaipet/petclaw-sdk
 - CLI flow: petclaw-sdk init, then install a skill, then models connect for your own model (BYOK)
-- MCP: the reviewed SDK 1.6.2 candidate defines 7 owner-authenticated stdio tools; npm 1.6.1 MCP is not a working path, so use REST or CLI until 1.6.2 is published
+- MCP: SDK 1.6.2 publishes 7 owner-authenticated stdio tools; supported clients can run petclaw-sdk mcp after owner authentication
 - 18 built-in skill manifests, a 19-connector registry (3 live today; messaging delivery launch-paused), and bounded data-sovereignty export/import — see /api-docs for the exact contract`,
   },
   {

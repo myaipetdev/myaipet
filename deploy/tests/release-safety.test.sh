@@ -563,7 +563,7 @@ awk '/^petclaw_verify_landing_body\(\) \{/{copy=1} copy{print} copy && /^\}$/{ex
 # shellcheck source=/dev/null
 source "${PETCLAW_LANDING_FUNCTION}"
 petclaw_valid_landing_fixture() {
-  printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" /api/petclaw/demo-chat 19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS MCP clients like Claude, Cursor, and OpenClaw connect when SDK 1.6.2 ships. +47 Play Points today SAMPLE Two legacy BNB Smart Chain contracts are deployed. Live app integration is off. Both contracts returned <code>paused() = false</code> class="footer-disclosure" product-demo.html?v=20260720-en-only launch reel — starts as you scroll animation: heroGlowBreathe Dordor priority: footer/journey beats CTA overlap. href="https://app.myaipet.ai/contracts"'
+  printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" /api/petclaw/demo-chat 19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS Supported MCP clients like Claude, Cursor, and OpenClaw connect through published SDK 1.6.2. +47 Play Points today SAMPLE Two legacy BNB Smart Chain contracts are deployed. Live app integration is off. Both contracts returned <code>paused() = false</code> class="footer-disclosure" product-demo.html?v=20260720-en-only launch reel — starts as you scroll animation: heroGlowBreathe Dordor priority: footer/journey beats CTA overlap. href="https://app.myaipet.ai/contracts"'
 }
 if ! {
   petclaw_valid_landing_fixture
@@ -576,7 +576,7 @@ if { petclaw_valid_landing_fixture; printf '%b' ' Hangul: \355\225\234'; } | pet
   echo "FAIL: streaming landing verifier accepts Hangul" >&2
   exit 1
 fi
-if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" 19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS MCP clients like Claude, Cursor, and OpenClaw connect when SDK 1.6.2 ships. +47 Play Points today SAMPLE Two legacy BNB Smart Chain contracts are deployed. Live app integration is off. Both contracts returned <code>paused() = false</code> class="footer-disclosure" product-demo.html?v=20260720-en-only launch reel — starts as you scroll animation: heroGlowBreathe Dordor priority: footer/journey beats CTA overlap. href="https://app.myaipet.ai/contracts"' | petclaw_verify_landing_body; then
+if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" 19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS Supported MCP clients like Claude, Cursor, and OpenClaw connect through published SDK 1.6.2. +47 Play Points today SAMPLE Two legacy BNB Smart Chain contracts are deployed. Live app integration is off. Both contracts returned <code>paused() = false</code> class="footer-disclosure" product-demo.html?v=20260720-en-only launch reel — starts as you scroll animation: heroGlowBreathe Dordor priority: footer/journey beats CTA overlap. href="https://app.myaipet.ai/contracts"' | petclaw_verify_landing_body; then
   echo "FAIL: streaming landing verifier accepts a missing demo endpoint" >&2
   exit 1
 fi
@@ -623,12 +623,12 @@ awk '/^petclaw_verify_product_demo_body\(\) \{/{copy=1} copy{print} copy && /^\}
   "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" > "${PETCLAW_PRODUCT_DEMO_FUNCTION}"
 # shellcheck source=/dev/null
 source "${PETCLAW_PRODUCT_DEMO_FUNCTION}"
-PETCLAW_GOOD_PRODUCT_DEMO='<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" id="playBtn" id="replayBtn" position:absolute; left:50%; top:50%; width:1280px; height:720px transform:translate(-50%,-50%) scale(var(--s,1)) <a class="cta" href="https://app.myaipet.ai" target="_top"> 7-tool MCP path is an unpublished SDK 1.6.2 candidate · messaging launch-paused.'
+PETCLAW_GOOD_PRODUCT_DEMO='<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" id="playBtn" id="replayBtn" position:absolute; left:50%; top:50%; width:1280px; height:720px transform:translate(-50%,-50%) scale(var(--s,1)) <a class="cta" href="https://app.myaipet.ai" target="_top"> 7-tool MCP path is published in SDK 1.6.2 · messaging launch-paused.'
 if ! printf '%s' "${PETCLAW_GOOD_PRODUCT_DEMO}" | petclaw_verify_product_demo_body; then
   echo "FAIL: centered mobile product demo fixture is rejected" >&2
   exit 1
 fi
-if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" id="playBtn" id="replayBtn" transform:scale(var(--s,1)) <a class="cta" href="https://app.myaipet.ai" target="_top"> 7-tool MCP path is an unpublished SDK 1.6.2 candidate · messaging launch-paused.' \
+if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" id="playBtn" id="replayBtn" transform:scale(var(--s,1)) <a class="cta" href="https://app.myaipet.ai" target="_top"> 7-tool MCP path is published in SDK 1.6.2 · messaging launch-paused.' \
   | petclaw_verify_product_demo_body; then
   echo "FAIL: off-canvas mobile product demo fixture is accepted" >&2
   exit 1

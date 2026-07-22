@@ -101,9 +101,10 @@ assert.match(status, /registry:\s*19/);
 assert.match(status, /live:\s*3/);
 assert.match(status, /liveIds:\s*\["web-search", "wikipedia", "memory"\]/);
 assert.match(status, /skills:\s*18/);
-assert.match(status, /mcpTools:\s*6/);
-assert.match(status, /mcpCandidateTools:\s*7/);
-assert.match(status, /mcp:\s*"7-tool SDK 1\.6\.2 candidate · not published"/);
+assert.match(status, /sdkVersion:\s*"1\.6\.2"/);
+assert.match(status, /mcpTools:\s*7/);
+assert.doesNotMatch(status, /mcpCandidateTools/);
+assert.match(status, /mcp:\s*"7-tool SDK 1\.6\.2 · published"/);
 assert.match(status, /channels:\s*"launch-paused"/);
 
 const connectorRegistry = connectors.match(/export const AVAILABLE_CONNECTORS\s*=\s*\[([\s\S]*?)\n\]\s+as const;/)?.[1] ?? "";
@@ -117,16 +118,16 @@ for (const text of [landing, pitch]) {
   assert.doesNotMatch(text, /registry, 6 live/i);
 }
 assert.match(landing, /19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS/);
-assert.match(landing, /7 MCP TOOLS · REVIEWED SDK 1\.6\.2 CANDIDATE/);
+assert.match(landing, /7 MCP TOOLS · SDK 1\.6\.2 PUBLISHED/);
 assert.match(landing, /\+47 Play Points today[\s\S]*SAMPLE/);
 assert.doesNotMatch(landing, /href=["']\/stats/);
 assert.doesNotMatch(landing, />Metrics</);
 assert.match(pitch, /19-connector registry with 3 live today/);
-assert.match(pitch, /reviewed seven-tool MCP 1\.6\.2 candidate/i);
+assert.match(pitch, /seven MCP tools published in SDK 1\.6\.2/i);
 
 for (const text of [demo, demoSource]) {
   assert.match(text, /<a class="cta" href="https:\/\/app\.myaipet\.ai" target="_top">/);
-  assert.match(text, /7-tool MCP path is an unpublished SDK 1\.6\.2 candidate · messaging launch-paused\./);
+  assert.match(text, /7-tool MCP path is published in SDK 1\.6\.2 · messaging launch-paused\./);
   assert.doesNotMatch(text, /document\.querySelector\('\.s8 \.cta'\)/);
 }
 
@@ -147,6 +148,28 @@ const publicCopy = [
   quickstart,
   ecosystem,
 ].join("\n");
+const publicationTruthCopy = [
+  publicCopy,
+  await readRepo("README.md"),
+  await readRepo("docs/DD_RESPONSE.md"),
+  await readRepo("docs/PETCLAW-HERMES-DEVEX.md"),
+  await readRepo("packages/petclaw/README.md"),
+  await readRepo("packages/petclaw/docs/QUICKSTART.md"),
+  await readWeb("src/app/architecture/page.tsx"),
+  await readWeb("src/app/skills/page.tsx"),
+  await readWeb("src/components/OrchestrationExplainer.tsx"),
+].join("\n");
+for (const stalePublicationClaim of [
+  /SDK 1\.6\.2[^\n]*(?:candidate|unpublished|publish pending)/i,
+  /(?:candidate|unpublished|publish pending)[^\n]*(?:MCP|SDK 1\.6\.2)/i,
+  /@myaipet\/petclaw-sdk[^\n]*v?1\.6\.1/i,
+  /npm SDK 1\.6\.1/i,
+  /mcpCandidateTools/,
+  /MCP-ready when SDK 1\.6\.2 lands/i,
+  /when SDK 1\.6\.2 ships/i,
+]) {
+  assert.doesNotMatch(publicationTruthCopy, stalePublicationClaim);
+}
 for (const claim of [
   /free forever/i,
   /unlimited chat/i,
@@ -175,7 +198,7 @@ for (const claim of [
 ]) {
   assert.doesNotMatch(publicCopy, claim);
 }
-assert.match(apiDocs, /MCP tools · 1\.6\.2 candidate/);
+assert.match(apiDocs, /MCP tools · SDK 1\.6\.2/);
 assert.match(apiDocs, /MCP runtime ·/);
 assert.match(apiDocs, /Messaging ·/);
 assert.match(landing, /Import is a reported reconstruction/);

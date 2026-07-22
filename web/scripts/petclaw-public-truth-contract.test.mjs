@@ -90,8 +90,10 @@ for (const [file, source] of publicCopy) {
 const ecosystem = read("web/public/api-docs/ECOSYSTEM.md");
 assert.match(ecosystem, /owner-controlled companion identity, memory, and consent layer/i);
 assert.match(ecosystem, /provenance foundations/i);
-assert.match(ecosystem, /7 MCP tools/i);
-assert.match(ecosystem, /release candidate/i);
+assert.match(ecosystem, /7 owner-authenticated MCP tools/i);
+assert.match(ecosystem, /npm latest is SDK \*\*1\.6\.2\*\*/i);
+assert.match(ecosystem, /published package exposes seven stdio tools/i);
+assert.doesNotMatch(ecosystem, /release candidate|unpublished|publish pending/i);
 
 const telegram = read("web/src/app/api/bots/telegram/webhook/route.ts");
 assert.match(telegram, /Telegram delivery is launch-paused/);

@@ -46,7 +46,7 @@ The Dune dashboard will surface, at minimum:
 | **PETContent (ERC-721 NFT)** | **Deployed and verified on BSC; production integration disabled; `paused() = false` at review** | `0` supply at launch review | n/a | No current mint-fee revenue; this contract has no royalty interface | $0 observable mint revenue at zero supply |
 | **PetaGenTracker (activity contract)** | **Deployed and verified on BSC; production integration disabled; `paused() = false` at review** | `0` users and `0` generations at launch review | n/a | n/a (unused infrastructure) | $0 current |
 | **PETShop / PETToken / PETActivity** | Legacy PETShop/PETToken sources are outside the live flow and require deployment/owner evidence before any deployment claim; PETActivity is planned | n/a | n/a | None active | $0 current |
-| **PetClaw SDK** (open MCP protocol, npm `@myaipet/petclaw-sdk` v1.6.1) | **Published, open-source MIT** | n/a (off-platform SDK) | [TBD: npm download count + GitHub stars at submission] | None — public good (drives platform demand) | $0 (strategic distribution layer) |
+| **PetClaw SDK** (open MCP protocol, npm `@myaipet/petclaw-sdk` v1.6.2) | **Published, open-source MIT** | n/a (off-platform SDK) | [TBD: npm download count + GitHub stars at submission] | None — public good (drives platform demand) | $0 (strategic distribution layer) |
 | **PetClaw Browser Extension v2.3.2** | **Downloadable developer/unpacked ZIP; not yet in the Chrome Web Store** | Uses a 30-day PetClaw client token generated after sign-in | [TBD: verified download/install count] | No separate paywall | n/a |
 | **Telegram + Discord integrations** | **Built but launch-disabled** (`OAUTH_CONNECTIONS_ENABLED=false`; `AGENT_CHANNELS_ENABLED=false`) | No current-user claim | [TBD only after enablement] | No current revenue | n/a |
 | **Pet Studio (multi-model AI video studio + client-side editor)** | **Live at `/studio`** | shares web-app users | shares web-app users | Free/granted-credit use at launch; paid subscription and USDT settlement disabled | [TBD: finance-verified historical revenue only] |
@@ -95,7 +95,7 @@ The platform is built around a **portable, memory-rich, sovereign-AI companion**
 | 10 | **Guest tour mode** | `?tour=1` renders read-only DEMO previews of wallet-gated sections (my pet, community, World Cup) so first-touch users can explore before connecting a wallet. SIWE sign-in is live; the payment rail is disabled and the retired Coinbase Onramp prototype is not shipped. |
 | 11 | **Social layer** | Public gallery, likes, threaded comments (with orphan-prevention on parent delete), follow / following graph, weekly leaderboard. |
 | 12 | **Marketplace — credit catalog + configured premium shop** | Credit-priced catalog items can use granted in-app credits. Premium USDT purchasing is configured but unavailable while payments are disabled. |
-| 13 | **PetClaw SDK + MCP server (open, MIT)** | `@myaipet/petclaw-sdk` v1.6.1 on npm (with `petclaw-mcp` MCP server binary). Exposes companion-chat, persona-mirror, memory-recall, soul-export as MCP tools. Canonical skill registry: **18 skills, each backed by a real handler/endpoint**. CLI personal-access tokens (`pck_` prefix, revocable) authenticate SDK/CLI use. `/.well-known/pet-card.json` discovery file is conformant with the PetClaw spec. |
+| 13 | **PetClaw SDK + MCP server (open, MIT)** | `@myaipet/petclaw-sdk` v1.6.2 on npm (with `petclaw-mcp` MCP server binary). Exposes seven owner-authenticated tools for chat, bounded agent runs, persona, memory recall, approved page-text summary, SOUL export, and read-only discovery. Canonical skill registry: **18 skill manifests**. CLI personal-access tokens (`pck_` prefix, revocable) authenticate SDK/CLI use. `/.well-known/pet-card.json` discovery file is conformant with the PetClaw spec. |
 | 14 | **SOUL export — sovereign portability** | Canonical JSON bundle (memories + persona + skills + consent settings) with SHA-256 integrity hash. A pet raised on our server can move to another conformant server or run locally without losing identity. |
 | 15 | **Cross-surface presence** | Web (primary) plus PetClaw Extension v2.3.2 as a downloadable developer/unpacked ZIP. Telegram and Discord integrations are built but disabled for launch. |
 | 16 | **Smart-contract security** | 1 internal security code review — 26+ findings remediated (full report in `docs/AUDIT_REPORT.md`). An external third-party audit is required before any on-chain reactivation. Contract-source security patterns do not substitute for deployment/owner evidence. |
@@ -247,7 +247,7 @@ Repo: petclaw-sdk (public)
 | 2026 Q2 | **PvE Story Mode — 30 stages, 6 regions, boss progression (up to Dragon King Bahamut Lv.60)** | Finished |
 | 2026 Q2 | Telegram + Discord integrations built; OAuth/channel and legacy agent-channel gates remain disabled | Finished (launch-disabled) |
 | 2026 Q2 | Browser Extension — upgraded to v2.3.2, available as a downloadable developer/unpacked package; Chrome Web Store publication pending | Finished (direct distribution) |
-| 2026 Q2 | **PetClaw SDK published (npm, MIT, open)** + MCP server — current release `@myaipet/petclaw-sdk` v1.6.1, with CLI personal-access tokens (`pck_`) | Finished |
+| 2026 Q2 | **PetClaw SDK published (npm, MIT, open)** + MCP server — current release `@myaipet/petclaw-sdk` v1.6.2, with CLI personal-access tokens (`pck_`) | Finished |
 | 2026 Q2 | Admin analytics, mobile responsiveness, rate-limit hardening | Finished |
 | 2026 Q2 | AWS-only deployment stack (Vercel + Neon dual-stack retired) | Finished |
 | 2026 Q2 | Token-mint trace removal — explicit points-only economy | Finished |
@@ -387,7 +387,7 @@ Repo: petclaw-sdk (public)
 | PetaGenTracker contract | **Deployed & verified on BSC; `paused() = false`, owner-relayer active, counters 0; production integration disabled** |
 | PETToken / PETShop | **Legacy sources outside the live flow; deployment/address/owner evidence TBD** |
 | PETActivity | **Planned; not deployed** |
-| PetClaw SDK | **Live (npm, MIT, `@myaipet/petclaw-sdk` v1.6.1)** |
+| PetClaw SDK | **Live (npm, MIT, `@myaipet/petclaw-sdk` v1.6.2)** |
 | PetClaw MCP server | **Live (`petclaw-mcp` binary shipped with the SDK)** |
 | Browser extension v2.3.2 | **Downloadable developer/unpacked ZIP; not yet in the Chrome Web Store** |
 | Telegram + Discord integrations | **Built but launch-disabled** |
@@ -525,7 +525,7 @@ Our differentiation combines sovereign-portable companion memory, substantial Pv
 - **App:** https://app.myaipet.ai
 - **Protocol manifest:** https://app.myaipet.ai/.well-known/pet-card.json
 - **Twitter / X:** https://x.com/MYAIPETS
-- **PetClaw SDK (npm):** https://www.npmjs.com/package/@myaipet/petclaw-sdk (v1.6.1)
+- **PetClaw SDK (npm):** https://www.npmjs.com/package/@myaipet/petclaw-sdk (v1.6.2)
 - **PetClaw MCP server:** `petclaw-mcp` binary shipped with the SDK (`npx -p @myaipet/petclaw-sdk petclaw-mcp`)
 - **Support email:** support@myaipet.ai
 - **Security contact:** Available at https://app.myaipet.ai/.well-known/security.txt

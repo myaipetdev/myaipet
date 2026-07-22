@@ -2578,7 +2578,7 @@ export default function SovereigntyDashboard() {
                   { icon: "crystal-ball", title: "Selected Retention", desc: "Useful context can support later chats; owners can inspect or clear it" },
                   { icon: "electric", title: "Shared Owner Identity", desc: "Web + approved Chrome sites today; CLI/SDK sessions are normalized" },
                   { icon: "lock", title: "Owner-Scoped Access", desc: "TLS in transit · owner-scoped reads · BYOK keys AES-256-GCM at rest" },
-                  { icon: "extension-icon", title: "MCP Candidate", desc: "7 owner-authenticated stdio tools in reviewed SDK 1.6.2 candidate" },
+                  { icon: "extension-icon", title: "MCP · SDK 1.6.2", desc: "7 owner-authenticated stdio tools published in SDK 1.6.2" },
                   { icon: "scroll", title: "Local SOUL.md Draft", desc: "CLI-authored local personality file; live sync is not implemented" },
                   { icon: "sparkling", title: "Bounded Adaptation", desc: "Best-effort retained patterns can shape replies; they are not executable skills" },
                 ].map(({ icon, title, desc }) => (
@@ -2642,7 +2642,7 @@ export default function SovereigntyDashboard() {
                   </div>
                 ))}
                 <div style={{ marginTop: 10, color: "rgba(251,246,236,0.65)", fontSize: 13 }}>
-                  petclaw-sdk talk &nbsp;→ interactive chat mode &nbsp;|&nbsp; petclaw-sdk mcp → reviewed candidate (requires unpublished SDK 1.6.2)
+                  petclaw-sdk talk &nbsp;→ interactive chat mode &nbsp;|&nbsp; petclaw-sdk mcp → 7-tool runtime (SDK 1.6.2)
                 </div>
               </div>
 
@@ -2881,7 +2881,7 @@ export default function SovereigntyDashboard() {
                 18 Skills
               </span>
               <span style={{ fontFamily: BODY, fontSize: 13, fontWeight: 600, padding: "5px 12px", borderRadius: 8, background: INSET, border: `1px solid ${HAIR}`, color: MUTED2 }}>
-                7 MCP Tools · SDK 1.6.2 Candidate
+                7 MCP Tools · SDK 1.6.2 Published
               </span>
               <span style={{ fontFamily: MONO, fontSize: 13, padding: "5px 12px", borderRadius: 8, background: INSET, border: `1px solid ${HAIR}`, color: MUTED2 }}>
                 @myaipet/petclaw-sdk

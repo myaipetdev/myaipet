@@ -10,7 +10,7 @@ inspectable, portable within documented bounds, and owner-controlled. Built on *
 [![Status](https://img.shields.io/badge/status-beta-7c3aed)](https://app.myaipet.ai)
 [![Protocol](https://img.shields.io/badge/PetClaw-v1-f59e0b)](https://app.myaipet.ai/api-docs)
 [![SDK](https://img.shields.io/npm/v/@myaipet/petclaw-sdk?color=4ade80&label=@myaipet%2Fpetclaw-sdk)](https://www.npmjs.com/package/@myaipet/petclaw-sdk)
-[![MCP](https://img.shields.io/badge/MCP-preview-2563eb)](https://app.myaipet.ai/api-docs)
+[![MCP](https://img.shields.io/badge/MCP-7_tools-2563eb)](https://app.myaipet.ai/api-docs)
 [![License](https://img.shields.io/badge/license-MIT-94a3b8)](#license)
 
 **[Live app →](https://app.myaipet.ai)** · **[Docs →](https://app.myaipet.ai/api-docs)** · **[𝕏 @MYAIPETS](https://x.com/MYAIPETS)**
@@ -30,7 +30,7 @@ the memory, identity, and portability layer for AI companions.
 | ✕ Forgets you when the tab closes | ✓ Retains selected context across owner surfaces — inspect/edit/delete it |
 | ✕ Answers in text, can't take action | ✓ Plans + runs real skills, then observes |
 | ✕ Works alone, no review | ✓ Bounded learning patterns and owner-controlled memory (VIGIL) |
-| ✕ Locked inside one app | ✓ Checksummed supported-field JSON · REST/CLI now · seven-tool MCP candidate |
+| ✕ Locked inside one app | ✓ Checksummed supported-field JSON · REST/CLI · seven-tool MCP in SDK 1.6.2 |
 
 ---
 
@@ -46,7 +46,7 @@ Under the pet is a bounded goal loop and a separate persistent-chat path:
 | 🔁 | **Reflect** | Best-effort consolidation, feedback and learned patterns; owners control retained data. |
 | 🌐 | **Cross-surface** | Web, CLI, SDK and MCP share owner-scoped pet identity and normalized session metadata. |
 
-`18 skill manifests · 7 MCP tools in the 1.6.2 candidate · 19 registered connectors · open SDK`
+`18 skill manifests · 7 MCP tools in published SDK 1.6.2 · 19 registered connectors · open SDK`
 
 ---
 
@@ -62,7 +62,7 @@ Under the pet is a bounded goal loop and a separate persistent-chat path:
 ## ⚡ Quickstart (CLI)
 
 ```bash
-# 0. Candidate gate: continue only when npm reports 1.6.2 or newer.
+# 0. Verify the supported release before installing.
 npm view @myaipet/petclaw-sdk version
 
 # 1. Install (the agent and seven-tool MCP flow below require >=1.6.2)
@@ -142,7 +142,7 @@ console.log(res.reply, run.stoppedReason);
  │  MY AI PET (consumer)   Home · My Pet · Studio · Community    │
  │                         · PetClaw · Season Rewards           │
  ├─────────────────────────────────────────────────────────────┤
- │  PetClaw Protocol v1    SDK · MCP preview · connector registry │
+ │  PetClaw Protocol v1    SDK · 7-tool MCP · connector registry  │
  │  ─ Agent loop           plan → act → observe → reflect       │
  │  ─ Memory               conditional vector + TF-IDF + RRF    │
  │  ─ Sovereignty          inspect · edit · export · delete      │

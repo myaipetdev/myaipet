@@ -2,15 +2,15 @@
 
 PetClaw is an owner-controlled companion layer for web, SDK, CLI and MCP.
 
-## Release gate
+## Published release
 
 ```bash
 npm view @myaipet/petclaw-sdk version
 ```
 
-Do not rely on the repaired MCP/agent/secret-handling flow until npm reports
-`1.6.2` or later. The older published `1.6.1` has a broken MCP path. Never
-install the unrelated unscoped `petclaw-sdk` package.
+SDK `1.6.2` publishes the repaired MCP, agent, session-lineage and
+secret-handling flow documented here. Never install the unrelated unscoped
+`petclaw-sdk` package.
 
 ## 1. Install and authenticate
 
@@ -207,7 +207,7 @@ try {
 }
 ```
 
-The SDK 1.6.2 candidate sends owner credentials only to an HTTPS origin (HTTP is limited to
+SDK 1.6.2 sends owner credentials only to an HTTPS origin (HTTP is limited to
 loopback development), enforces its deadline even with an injected fetch, and
 caps response bodies: 2 MiB normally and 16 MiB for SOUL export, matching import.
 

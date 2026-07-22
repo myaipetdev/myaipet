@@ -55,7 +55,7 @@ export default function ArchitecturePage() {
           tag="canonical chat rows · session + platform metadata"
           desc="Successful canonical chat stores normalized owner and pet rows with session,
                 platform, role, and speaker metadata. Web and approved Chrome sites are supported
-                today; CLI, SDK, and the 1.6.2 MCP candidate can name their own sessions. Messaging
+                today; CLI, SDK, and the published 1.6.2 MCP runtime can name their own sessions. Messaging
                 channels are launch-paused. Raw recent context is limited to six safe turns from
                 the exact requested surface and session; no session means no raw-turn injection."
         />
@@ -84,7 +84,7 @@ export default function ArchitecturePage() {
           <li><strong>Auditability.</strong> The owner can read MEMORY.md and see exactly what the pet remembers. Vector blobs are opaque.</li>
           <li><strong>Bounded portability.</strong> SOUL Export packages documented supported fields as checksummed JSON; compatible imports report restored and skipped fields.</li>
           <li><strong>Owner control.</strong> Owners can inspect, edit, and clear recall-bearing data. A deletion receipt identifies the server request; it is not a signature or a hash of deleted content.</li>
-          <li><strong>Supported continuity.</strong> One owner-scoped pet identity and selected retained context can be used by supported web, Chrome, CLI, SDK, and candidate MCP clients.</li>
+          <li><strong>Supported continuity.</strong> One owner-scoped pet identity and selected retained context can be used by supported web, Chrome, CLI, SDK, and MCP clients.</li>
         </ul>
         <p style={{ fontSize: 13, color: "rgba(33,26,18,0.55)", marginTop: 14, lineHeight: 1.65 }}>
           Conditional embedding recall is available when an embedding-capable provider is connected.

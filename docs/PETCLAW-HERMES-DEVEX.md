@@ -1,7 +1,7 @@
 # PetClaw × Hermes developer boundary
 
-Status: implementation candidate, 2026-07-22
-Comparison baseline: Hermes Agent `v0.18.2` (`v2026.7.7.2`); PetClaw SDK `1.6.2` candidate
+Status: published integration baseline, 2026-07-23
+Comparison baseline: Hermes Agent `v0.18.2` (`v2026.7.7.2`); PetClaw SDK `1.6.2`
 
 ## Product decision
 
@@ -105,8 +105,8 @@ data; add it only when the caller is allowed to receive that data.
   on-chain state, full portability, or always-on memory claim;
 - expand-only database migration in the release path; measured data backfills
   and concurrent index work run separately;
-- candidate version is not documented as publicly usable until npm actually
-  serves it.
+- public documentation names SDK `1.6.2` only after npm serves that exact
+  version as the latest release.
 
 ### P1 — developer-grade operations
 

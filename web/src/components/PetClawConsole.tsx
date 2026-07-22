@@ -7,7 +7,7 @@
  *
  * Inventory is the REAL thing (kept honest):
  *   • 19-connector registry (3 live · messaging launch-paused)  • 18 SDK skills
- *   • 6 MCP tool definitions in published 1.6.1; reviewed 1.6.2 candidate has 7
+ *   • 7 owner-authenticated MCP tools published in SDK 1.6.2
  *   • bounded VIGIL memory capabilities  • discovery-only network preview
  *
  * variant="full"    → manifest + LIVE terminal (boot effect + chat). Needs petId.
@@ -91,7 +91,7 @@ export const SDK_VERSION = RELEASE_STATUS.sdkVersion;
 
 // Supported surfaces + the connector registry (three currently live).
 // Messaging channel delivery is launch-paused (matches the Agent screen);
-// MCP clients require the unpublished, reviewed SDK 1.6.2 candidate.
+// MCP clients use the seven-tool runtime published in SDK 1.6.2.
 const RUNS_ON = `web · approved chrome sites · MCP (${RELEASE_STATUS.mcp})`;
 const CONNECTORS = [
   { k: "messaging (0/8 live)", v: "telegram · discord · x launch-paused; whatsapp · slack · line · instagram · gmail planned" },
@@ -154,7 +154,7 @@ interface Line { role: "sys" | "you" | "pet"; text: string }
 
 const BOOT: Line[] = [
   { role: "sys", text: `initializing petclaw console · protocol v1 · SDK ${SDK_VERSION}` },
-  { role: "sys", text: `connectors ▸ ${RELEASE_STATUS.connectors.registry} registry / ${RELEASE_STATUS.connectors.live} live · messaging ${RELEASE_STATUS.channels}   mcp ▸ ${RELEASE_STATUS.mcpTools} broken published definitions / ${RELEASE_STATUS.mcpCandidateTools} reviewed candidate tools   skills ▸ ${RELEASE_STATUS.skills} manifests   memory ▸ bounded + owner-controlled` },
+  { role: "sys", text: `connectors ▸ ${RELEASE_STATUS.connectors.registry} registry / ${RELEASE_STATUS.connectors.live} live · messaging ${RELEASE_STATUS.channels}   mcp ▸ ${RELEASE_STATUS.mcpTools} published tools in SDK ${RELEASE_STATUS.sdkVersion}   skills ▸ ${RELEASE_STATUS.skills} manifests   memory ▸ bounded + owner-controlled` },
   { role: "sys", text: "soul ▸ portable · consent ▸ enforced · on-chain ▸ planned / not live" },
 ];
 
@@ -445,7 +445,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
               </div>
               {!compact && (
                 <div>
-                  <SectionHead>MCP tools — {RELEASE_STATUS.mcpCandidateTools} in reviewed candidate · {RELEASE_STATUS.mcp}</SectionHead>
+                  <SectionHead>MCP tools — {RELEASE_STATUS.mcpTools} published · {RELEASE_STATUS.mcp}</SectionHead>
                   {MCP_TOOLS.map((t) => <Row key={t.k} k={t.k} v={t.v} />)}
                   <SectionHead>VIGIL — bounded memory capabilities</SectionHead>
                   {HARNESS.map((h) => <Row key={h.k} k={h.k} v={h.v} kw={120} />)}

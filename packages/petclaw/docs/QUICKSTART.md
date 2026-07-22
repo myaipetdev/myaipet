@@ -11,15 +11,14 @@ npm install -g @myaipet/petclaw-sdk
 petclaw-sdk version
 ```
 
-Release gate:
+Verify npm and the installed CLI report `1.6.2` or later:
 
 ```bash
 npm view @myaipet/petclaw-sdk version
 ```
 
-The repaired MCP, agent, session-lineage and secret-handling flow requires
-`1.6.2` or later. Published `1.6.1` has a broken MCP path; wait until npm reports
-`1.6.2` before relying on this guide in production.
+SDK `1.6.2` publishes the repaired MCP, agent, session-lineage and
+secret-handling flow documented in this guide.
 
 The source package is `@myaipet/petclaw-sdk`. Do not install the unrelated,
 older unscoped `petclaw-sdk` package.

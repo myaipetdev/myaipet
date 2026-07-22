@@ -7,9 +7,9 @@ Built on one principle: **your pet, your data, your rules.**
 
 `18 skill manifests · 7 MCP tools · 19 registered connectors · MIT`
 
-> **1.6.2 release gate:** run `npm view @myaipet/petclaw-sdk version`. Do not
-> rely on the repaired MCP/agent/session-lineage flow while npm still reports
-> `1.6.1`; its MCP path is broken.
+> **Published release:** SDK `1.6.2` includes the repaired seven-tool MCP,
+> bounded agent, normalized session-lineage, and fail-closed secret handling.
+> Verify the installed version with `petclaw-sdk version`.
 
 ## How a PetClaw pet thinks
 
