@@ -118,7 +118,8 @@ export async function POST(req: NextRequest) {
         const { executeSkill } = await import("@/lib/petclaw/pethub");
         const result = await executeSkill(match.pet_id, "companion-chat", {
           message: String(messageArg).slice(0, 500),
-          platform: "discord",
+          surface: "discord",
+          sessionId: `discord-${String(interaction.channel_id || userId).slice(0, 100)}`,
         });
         const reply = (result.output as any)?.reply || "*The pet tilts its head*";
         return NextResponse.json({

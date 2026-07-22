@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUser } from "@/lib/auth";
 import { exportPetData } from "@/lib/petclaw/data-sovereignty";
 import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
+import {
+  getSoulExportByteLength,
+  SOUL_IMPORT_MAX_BYTES,
+  SOUL_IMPORT_MAX_MIB,
+} from "@/lib/petclaw/soul-schema";
 
 export async function GET(req: NextRequest) {
   // SCRUM-36: authentication is REQUIRED. Previously a "dev/extension fallback"
@@ -17,6 +22,17 @@ export async function GET(req: NextRequest) {
   try {
     // exportPetData internally verifies ownership against userId
     const soulExport = await exportPetData(Number(petId), user.id);
+    const exportBytes = getSoulExportByteLength(soulExport);
+    if (exportBytes > SOUL_IMPORT_MAX_BYTES) {
+      // Never award the sovereignty mission for a bundle that the documented
+      // importer and SDK/CLI/MCP clients cannot safely receive and restore.
+      return NextResponse.json({
+        error: `SOUL export exceeds the ${SOUL_IMPORT_MAX_MIB} MiB portable-format limit`,
+        code: "soul_export_too_large",
+        bytes: exportBytes,
+        maxBytes: SOUL_IMPORT_MAX_BYTES,
+      }, { status: 422 });
+    }
     // Exercising data sovereignty (SOUL export) feeds the season (capped).
     await awardPointsCapped(user.id, "petclaw", 10, DAILY_POINT_CAPS.petclaw).catch(() => {});
     return NextResponse.json(soulExport);

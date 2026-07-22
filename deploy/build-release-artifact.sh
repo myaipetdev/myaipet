@@ -145,6 +145,10 @@ if [[ "$(grep -Fxc \
   echo "ERROR: committed extension manifest, dashboard, and release smoke versions differ." >&2
   exit 2
 fi
+if ! /bin/bash "${PETCLAW_STAGE}/tree/scripts/build-petclaw-extension.sh" --check; then
+  echo "ERROR: committed extension archives are stale or differ from their source." >&2
+  exit 2
+fi
 for PETCLAW_EXTENSION_ARCHIVE in \
   "${PETCLAW_STAGE}/tree/petclaw-extension.zip" \
   "${PETCLAW_STAGE}/tree/web/public/petclaw-extension.zip"; do

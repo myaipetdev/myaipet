@@ -162,6 +162,7 @@ export async function POST(req: NextRequest) {
         user_id: user.id,
         pet_id: pet?.id,
         visibility: "private",
+        source_kind: "user",
         pet_type: pet?.species ?? 0,
         style: 0,
         prompt: finalPrompt,

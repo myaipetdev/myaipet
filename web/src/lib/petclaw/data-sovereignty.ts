@@ -16,6 +16,7 @@ import { publicPetWhere } from "@/lib/publicPet";
 import { lockAvailablePetSlot } from "@/lib/petSlots";
 import { isExpressionKey } from "@/lib/moodPortraits";
 import type { Prisma } from "@/generated/prisma/client";
+import { assertNoActiveAndScrubPetAgentRunsWithDb } from "./agent/run-ledger";
 import {
   PETCLAW_PROTOCOL,
   PETCLAW_VERSION,
@@ -1006,6 +1007,7 @@ async function transactionProvesUserMediaOwnership(
 export async function deletePetData(petId: number, userId: number): Promise<{
   deletionHash: string;
   deletedAt: string;
+  agentReceipts: { scrubbedReceipts: number };
   mediaCleanup: { processed: number; deleted: number; retained: number; failed: number };
 }> {
   // Cheap preflight before touching storage. Ownership is re-verified under the
@@ -1055,7 +1057,7 @@ export async function deletePetData(petId: number, userId: number): Promise<{
     }
     return [];
   };
-  const deletionHash = await prisma.$transaction(async (tx) => {
+  const deletionReceipt = await prisma.$transaction(async (tx) => {
     // Arena's global order is daily log -> Pet. Deletion uses the same order so
     // a reward transaction can never hold Pet while waiting on a daily row that
     // deletion already holds. Multiple rows are locked deterministically.
@@ -1075,6 +1077,11 @@ export async function deletePetData(petId: number, userId: number): Promise<{
     `;
     const pet = lockedPets[0];
     if (!pet) throw new Error("Pet not found or not owned by you");
+
+    // An in-flight provider cannot be reliably cancelled. Block full deletion
+    // until settlement is durable; then scrub private run content while keeping
+    // the minimum owner-scoped financial receipt through the Pet cascade.
+    const agentReceipts = await assertNoActiveAndScrubPetAgentRunsWithDb(tx, userId, petId, new Date(deletedAt));
 
     // Lock link rows before resolving Generation ids. Existing link updates can
     // otherwise slide between an unlocked snapshot and their later cascade.
@@ -1229,11 +1236,16 @@ export async function deletePetData(petId: number, userId: number): Promise<{
         },
       });
     }
-    return hash;
+    return { hash, agentReceipts };
   }, { maxWait: 20_000, timeout: 120_000 });
 
   const mediaCleanup = await processMediaDeletionTasks({ sourcePetId: petId, limit: 500 });
-  return { deletionHash, deletedAt, mediaCleanup };
+  return {
+    deletionHash: deletionReceipt.hash,
+    deletedAt,
+    agentReceipts: deletionReceipt.agentReceipts,
+    mediaCleanup,
+  };
 }
 
 // ── Consent Management ──
@@ -1255,22 +1267,24 @@ export async function updateConsent(
 ): Promise<ConsentSettings> {
   const pet = await prisma.pet.findFirst({
     where: { id: petId, user_id: userId },
-    select: { personality_modifiers: true },
+    select: { id: true },
   });
   if (!pet) throw new Error("Pet not found");
 
-  const mods = (pet.personality_modifiers as Record<string, unknown>) || {};
-  await prisma.pet.update({
-    where: { id: petId },
-    data: {
-      personality_modifiers: {
-        ...mods,
-        consent_public_profile: consent.allowPublicProfile,
-        consent_data_sharing: consent.allowDataSharing,
-        consent_ai_training: consent.allowAITraining,
-        consent_interaction: consent.allowInteraction,
+  const { withLockedPetModifiers } = await import("./modifier-store");
+  await withLockedPetModifiers(petId, async ({ tx, modifiers }) => {
+    await tx.pet.update({
+      where: { id: petId },
+      data: {
+        personality_modifiers: {
+          ...modifiers,
+          consent_public_profile: consent.allowPublicProfile,
+          consent_data_sharing: consent.allowDataSharing,
+          consent_ai_training: consent.allowAITraining,
+          consent_interaction: consent.allowInteraction,
+        },
       },
-    },
+    });
   });
 
   return consent;

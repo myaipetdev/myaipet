@@ -15,6 +15,14 @@ import { rateLimit } from "@/lib/rateLimit";
 import { deleteStoredFile, saveRemoteFile } from "@/lib/storage";
 import { enqueueMediaDeletionReference } from "@/lib/mediaDeletion";
 import { getLLMBudgetFailureStatus } from "@/lib/llm/router";
+import { readBoundedJsonBody } from "@/lib/petclaw/bounded-json-body";
+import { providerSafeStoredText } from "@/lib/petclaw/provider-safe-text";
+import {
+  commitAgentCreditsWithDb,
+  refundAgentCreditsOnce,
+  reserveAgentCredits,
+  type AgentCreditReservation,
+} from "@/lib/agentCreditReservation";
 
 function getVideoCreditCost(duration: number): number {
   if (duration <= 3) return 15;
@@ -69,10 +77,63 @@ export async function POST(
   }
 
   const { petId } = await params;
-  const body = await req.json();
-  const { style, duration, prompt: rawPrompt, type, signedMessage, signature, codexVariant } = body;
-  // Cap free-text prompt length before it reaches translation/moderation/providers.
-  const prompt = typeof rawPrompt === "string" ? rawPrompt.slice(0, 1000) : rawPrompt;
+  const parsedBody = await readBoundedJsonBody(req, 8 * 1024);
+  if (parsedBody.ok === false) {
+    return NextResponse.json(
+      { error: parsedBody.reason === "too_large" ? "Request body too large" : "Invalid JSON body" },
+      { status: parsedBody.reason === "too_large" ? 413 : 400 },
+    );
+  }
+  if (!parsedBody.value || typeof parsedBody.value !== "object" || Array.isArray(parsedBody.value)) {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  const body = parsedBody.value as Record<string, unknown>;
+  const allowedFields = new Set([
+    "style", "duration", "prompt", "type", "signedMessage", "signature", "codexVariant",
+  ]);
+  if (Object.keys(body).some((key) => !allowedFields.has(key))) {
+    return NextResponse.json({ error: "Request contains unsupported fields" }, { status: 400 });
+  }
+  const {
+    style: rawStyle,
+    duration: rawDuration,
+    prompt: rawPrompt,
+    type,
+    signedMessage: rawSignedMessage,
+    signature: rawSignature,
+    codexVariant: rawCodexVariant,
+  } = body;
+  if (type !== "image" && type !== "video") {
+    return NextResponse.json({ error: "type must be 'image' or 'video'" }, { status: 400 });
+  }
+  if (!Number.isInteger(rawStyle) || (rawStyle as number) < 0 || (rawStyle as number) > 6) {
+    return NextResponse.json({ error: "style must be an integer from 0 to 6" }, { status: 400 });
+  }
+  if (rawDuration !== undefined && (!Number.isInteger(rawDuration) || ![3, 5, 10].includes(rawDuration as number))) {
+    return NextResponse.json({ error: "duration must be 3, 5, or 10 seconds" }, { status: 400 });
+  }
+  if (type === "video" && rawDuration === undefined) {
+    return NextResponse.json({ error: "duration is required for video" }, { status: 400 });
+  }
+  if (rawPrompt !== undefined && (typeof rawPrompt !== "string" || rawPrompt.length > 1_000)) {
+    return NextResponse.json({ error: "prompt must be a string of at most 1000 characters" }, { status: 400 });
+  }
+  if (rawCodexVariant !== undefined && (typeof rawCodexVariant !== "string" || !isCodexVariant(rawCodexVariant))) {
+    return NextResponse.json({ error: "Invalid codexVariant" }, { status: 400 });
+  }
+  if (
+    (rawSignedMessage !== undefined && (typeof rawSignedMessage !== "string" || rawSignedMessage.length > 2_000))
+    || (rawSignature !== undefined && (typeof rawSignature !== "string" || rawSignature.length > 1_000))
+    || ((rawSignedMessage === undefined) !== (rawSignature === undefined))
+  ) {
+    return NextResponse.json({ error: "signedMessage and signature must be supplied together as bounded strings" }, { status: 400 });
+  }
+  const style = rawStyle as number;
+  const duration = rawDuration as number | undefined;
+  const prompt = rawPrompt as string | undefined;
+  const signedMessage = rawSignedMessage as string | undefined;
+  const signature = rawSignature as string | undefined;
+  const codexVariant = rawCodexVariant as string | undefined;
 
   // Wallet signature optional during on-chain hold period.
   // If provided, still verify; if not, allow auth-only.
@@ -86,19 +147,15 @@ export async function POST(
     }
   }
 
-  if (!type || !["image", "video"].includes(type)) {
-    return NextResponse.json(
-      { error: "type must be 'image' or 'video'" },
-      { status: 400 }
-    );
-  }
-
   const pet = await prisma.pet.findFirst({
     where: { id: Number(petId), user_id: user.id, is_active: true },
   });
 
   if (!pet) {
     return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  }
+  if (type === "image" && style === 0 && !pet.avatar_url) {
+    return NextResponse.json({ error: "Original style requires an existing pet photo" }, { status: 400 });
   }
 
   // Pricing tiers (credits cost):
@@ -141,11 +198,16 @@ export async function POST(
   // BEFORE translation (so translated text doesn't bypass) and BEFORE building
   // the personalized prompt (since the pet's stored fields could also carry
   // adversarial content).
-  const mods = (pet.personality_modifiers as any) || {};
+  const mods = (pet.personality_modifiers as Record<string, unknown> | null) || {};
+  const rawCustomTraits = typeof mods.custom_traits === "string"
+    ? mods.custom_traits
+    : undefined;
   const modCheck = moderateGeneration({
     prompt: typeof prompt === "string" ? prompt : "",
     petName: pet.name,
-    customTraits: mods.custom_traits,
+    // Moderation stays local and deliberately sees the original owner-facing
+    // metadata. Provider prompt filtering happens separately below.
+    customTraits: [pet.personality_type, rawCustomTraits].filter(Boolean).join("; "),
     appearanceDesc: appearanceDesc || undefined,
   });
   if (!modCheck.ok) {
@@ -169,34 +231,45 @@ export async function POST(
   // Codex sticker (style 6): a validated variant swaps the style fragment so one
   // slot serves all collectible sticker looks (classic/chibi/holo/retro/pixel/pop).
   const codexOverride = style === 6 && isCodexVariant(codexVariant) ? codexVariantDesc(codexVariant) : undefined;
+
+  // Never interpolate raw durable pet metadata into a provider-bound prompt.
+  // Neutral English fallbacks preserve generation availability without
+  // mutating the pet's owner-facing identity or stored source fields.
+  const providerPetName = providerSafeStoredText(pet.name, "pet_name", 50) || "Pet";
+  const providerPersonality = providerSafeStoredText(pet.personality_type, "personality", 20) || "friendly";
+  const providerAppearance = providerSafeStoredText(appearanceDesc, "appearance", 2_000);
+  const providerCustomTraits = providerSafeStoredText(rawCustomTraits, "custom_traits", 500);
+  const providerAppearanceDesc = providerAppearance
+    ? [providerAppearance, providerCustomTraits ? `distinctive traits: ${providerCustomTraits}` : null]
+      .filter(Boolean)
+      .join("; ")
+    : providerCustomTraits
+      ? `pet with these distinctive traits: ${providerCustomTraits}`
+      : undefined;
   const personalizedPrompt = buildPetPrompt(
-    pet.name,
+    providerPetName,
     pet.species,
-    pet.personality_type,
+    providerPersonality,
     style ?? 0,
     translatedPrompt,
     pet.avatar_url || undefined,
-    appearanceDesc || undefined,
+    providerAppearanceDesc,
     codexOverride
   );
 
-  // audit H13/H18: reserve credits with an atomic guarded decrement AFTER all
-  // validation/moderation (so rejects don't charge) but BEFORE the expensive
-  // image/video provider calls. `credits: { gte }` can't go negative under
-  // concurrency; the catch block refunds `reserved` if generation fails.
-  let reserved = 0;
+  // audit H13/H18: durably reserve credits AFTER validation/moderation (so
+  // rejects do not charge) but BEFORE expensive provider calls. The atomic
+  // guarded debit cannot take the wallet negative under concurrency. Success
+  // commits in the same transaction as Generation; failures refund by CAS.
+  let creditReservation: AgentCreditReservation | null = null;
   if (creditCost > 0) {
-    const dec = await prisma.user.updateMany({
-      where: { id: user.id, credits: { gte: creditCost } },
-      data: { credits: { decrement: creditCost } },
-    });
-    if (dec.count === 0) {
+    creditReservation = await reserveAgentCredits(user.id, pet.id, creditCost, "pet_generation");
+    if (!creditReservation) {
       return NextResponse.json(
         { error: "Insufficient credits", required: creditCost, available: user.credits },
         { status: 402 }
       );
     }
-    reserved = creditCost;
   }
 
   const newlyPersistedRefs: string[] = [];
@@ -234,8 +307,8 @@ export async function POST(
 
       const actualCost = isOriginal ? 0 : creditCost;
 
-      // Credits were already reserved atomically above (audit H13) — only
-      // persist the generation + memory here.
+      // Credits were already reserved atomically above (audit H13). Persist the
+      // generation and its terminal reservation state together.
       const generation = await prisma.$transaction(async (tx) => {
         const lockedPet = await tx.$queryRaw<Array<{ id: number }>>`
           SELECT "id"
@@ -257,6 +330,7 @@ export async function POST(
             photo_path: imageUrl,
             status: "completed",
             visibility: "private",
+            source_kind: "user",
             credits_charged: actualCost,
             completed_at: new Date(),
           },
@@ -270,12 +344,19 @@ export async function POST(
             importance: 2,
           },
         });
-      // Codex sticker (style 6): also pin it as the pet's collectible art so the
-      // card + My Pet hero switch to the illustration. Never touches avatar_url
-      // (the real photo). Latest codex generation wins.
-      if (style === 6 && !isOriginal) {
+        if (creditReservation) {
+          // Commit the debit in the same DB transaction as the durable
+          // Generation row. A crash can leave only a reserved row, which the
+          // recovery job refunds; it cannot leave a committed charge without
+          // the generation record.
+          await commitAgentCreditsWithDb(tx, creditReservation);
+        }
+        // Codex sticker (style 6): also pin it as the pet's collectible art so
+        // the card + My Pet hero switch to the illustration. Never touches
+        // avatar_url (the real photo). Latest codex generation wins.
+        if (style === 6 && !isOriginal) {
           await tx.pet.update({ where: { id: pet.id }, data: { codex_url: imageUrl } });
-      }
+        }
         return created;
       });
       mediaTransactionCommitted = true;
@@ -354,6 +435,7 @@ export async function POST(
           photo_path: imageUrl,
           status: "processing",
           visibility: "private",
+          source_kind: "user",
           credits_charged: creditCost,
           fal_request_id: requestId,
         },
@@ -367,6 +449,9 @@ export async function POST(
           importance: 2,
         },
       });
+      if (creditReservation) {
+        await commitAgentCreditsWithDb(tx, creditReservation);
+      }
       return created;
     });
     mediaTransactionCommitted = true;
@@ -409,11 +494,9 @@ export async function POST(
       await cleanupUncommittedGeneratedMedia(newlyPersistedRefs, user.id, pet.id);
     }
     // audit H18: refund the reserved credits if generation failed after reserving.
-    if (reserved > 0 && !mediaTransactionCommitted) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { credits: { increment: reserved } },
-      }).catch((e: unknown) => console.error("[generate] credit refund failed:", e));
+    if (creditReservation && !mediaTransactionCommitted) {
+      await refundAgentCreditsOnce(creditReservation)
+        .catch((e: unknown) => console.error("[generate] durable credit refund failed:", e));
     }
     // SCRUM-61/63: log full error server-side, never echo to client.
     // Previous behavior leaked xAI team UUID and Grok internals.

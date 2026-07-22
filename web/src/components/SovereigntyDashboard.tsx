@@ -71,17 +71,14 @@ interface NetworkNode {
   personality?: string;
   element?: string;
   level?: number;
-  status?: "online" | "offline" | "busy";
-  trustScore?: number;
-  totalInteractions?: number;
-  lastSeen?: string;
+  status?: "discoverable";
+  progressionScore?: number;
 }
 
 interface NetworkStats {
   totalNodes?: number;
-  onlineNodes?: number;
-  totalInvocations?: number;
-  avgTrustScore?: number;
+  discoverableNodes?: number;
+  remoteInvocations?: number;
 }
 
 // ── Collectible Editorial tokens (the warm die-cut print system) ──
@@ -345,11 +342,8 @@ function ChannelConnectionsCard({ petId }: { petId: number }) {
 // Shows the pet's MEMORY.md, USER.md, learned skills, session log, with per-entry
 // delete/edit. The pet's "self-improvement" surface is finally inspectable.
 
-// The product is English-only on shared/inspectable surfaces. Legacy session
-// turns may contain Korean (chats predating the English-only enforcement); we
-// hide those from the log rather than fabricating translations. Underlying data
-// is untouched and still exportable.
-const hasHangul = (s: string) => /[\u3130-\u318f\uac00-\ud7a3]/.test(s || "");
+// Legacy non-English values are masked by the API, but their rows remain here
+// with inspect/delete handles. Raw owner data remains available via SOUL export.
 // Strip the leading "[user]" / "[pet]" speaker tag for display.
 const stripSpeakerTag = (s: string) => (s || "").replace(/^\[(user(?::[^\]]+)?|pet)\]\s*/, "");
 
@@ -430,6 +424,19 @@ function PetSwitcher({ pets, selectedPet, onSelect }: { pets: any[]; selectedPet
   );
 }
 
+const MEMORY_RESET_WARNING =
+  "Because older facts and derived records do not identify their exact source turn, privacy safety also resets every unprovenanced memory row, agent message, conversation and persona record; clears retained/profile/learned/bond plus thought, diary and proactive caches; removes auto-learned skills; and revokes derived insights or in-flight daydream work. Owner settings and marketplace/core skills stay. Export SOUL first. This cannot be undone.";
+
+function memoryResetReceipt(result: any, action: string): string | null {
+  const scope = result?.resetScope;
+  if (!scope?.applied) return null;
+  const rows = scope.recallStoresRedacted || {};
+  const preserved = scope.preservedOtherNormalizedSessions
+    ? " Other normalized sessions were preserved."
+    : "";
+  return `${action}. Privacy reset: ${Number(rows.memoryRows) || 0} unprovenanced memory row(s), ${Number(rows.agentMessages) || 0} agent message(s), ${Number(rows.conversations) || 0} conversation(s), ${Number(rows.personaRows) || 0} persona row(s); ${Number(rows.insightsSanitized) || 0} insight(s) sanitized, ${Number(rows.daydreamClaimsRevoked) || 0} daydream job(s) revoked, ${Number(scope.autoLearnedSkillsRemoved) || 0} auto-learned skill(s) removed. Retained/profile/learned/bond/thought/diary/proactive caches were cleared.${preserved}`;
+}
+
 function MemoryInspectorCard({ petId }: { petId: number }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -454,7 +461,16 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
   useEffect(() => { load(); }, [load]);
 
   const del = async (entryType: string, keyOrId: string | number) => {
-    if (!(await confirmDialog({ title: `Delete this ${entryType} entry?` }))) return;
+    const isSession = entryType === "session";
+    const resetWarning = ["memory", "profile", "session", "learned"].includes(entryType)
+      ? `${isSession ? "Every turn in this normalized session will be deleted. Other normalized sessions stay, but " : ""}${MEMORY_RESET_WARNING}`
+      : undefined;
+    if (!(await confirmDialog({
+      title: isSession ? "Delete this session and reset unprovenanced memory?" : `Delete this ${entryType} entry?`,
+      body: resetWarning,
+      danger: !!resetWarning,
+      confirmLabel: isSession ? "Delete session + reset" : "Delete + reset",
+    }))) return;
     const k = entryType === "session" ? "id" : "key";
     setBusy(`${entryType}_${keyOrId}`);
     try {
@@ -462,26 +478,44 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
         method: "DELETE", headers: getAuthHeaders(),
       });
       if (!res.ok) toast("Couldn't delete that entry — try again.", "error");
-      else await load();
+      else {
+        const result = await res.json().catch(() => ({}));
+        const receipt = memoryResetReceipt(result, `Deleted ${Number(result.deleted) || 1} ${entryType} row(s)`);
+        if (receipt) toast(receipt, "info");
+        await load();
+      }
     } catch {}
     setBusy(null);
   };
 
   const clearAll = async (entryType: string) => {
-    if (!(await confirmDialog({ title: `Wipe ALL ${entryType} entries?`, body: "This is irreversible.", danger: true, confirmLabel: "Wipe" }))) return;
+    const resetWarning = ["memory", "profile", "session", "learned"].includes(entryType)
+      ? `All selected ${entryType} entries will be deleted. ${MEMORY_RESET_WARNING}`
+      : "This is irreversible.";
+    if (!(await confirmDialog({ title: `Wipe ALL ${entryType} entries and dependent memory?`, body: resetWarning, danger: true, confirmLabel: "Wipe + reset" }))) return;
     setBusy(`${entryType}_all`);
     try {
       const res = await fetch(`/api/petclaw/memory?petId=${petId}&entryType=${entryType}&all=1`, {
         method: "DELETE", headers: getAuthHeaders(),
       });
       if (!res.ok) toast("Couldn't clear those entries — try again.", "error");
-      else await load();
+      else {
+        const result = await res.json().catch(() => ({}));
+        const receipt = memoryResetReceipt(result, `Cleared ${Number(result.deleted) || 0} ${entryType} row(s)`);
+        if (receipt) toast(receipt, "info");
+        await load();
+      }
     } catch {}
     setBusy(null);
   };
 
   const editContent = async (entryType: string, key: string, current: string) => {
-    const next = await promptDialog({ title: "Edit content", defaultValue: current });
+    const next = await promptDialog({
+      title: "Edit content",
+      body: `Saving the correction triggers the same privacy reset so the old value cannot be relearned. ${MEMORY_RESET_WARNING}`,
+      defaultValue: current,
+      maxLength: 400,
+    });
     if (next == null || next === current) return;
     setBusy(`${entryType}_${key}`);
     try {
@@ -491,7 +525,12 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
         body: JSON.stringify({ key, content: next }),
       });
       if (!res.ok) toast("Couldn't save that edit — try again.", "error");
-      else await load();
+      else {
+        const result = await res.json().catch(() => ({}));
+        const receipt = memoryResetReceipt(result, "Saved the corrected entry");
+        if (receipt) toast(receipt, "info");
+        await load();
+      }
     } catch {}
     setBusy(null);
   };
@@ -530,8 +569,7 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
   const memories: any[] = data.memories || [];
   const userProfile: any[] = data.userProfile || [];
   const learned: any[] = data.learnedPatterns || [];
-  // English-only surface: drop legacy Korean turns from the visible log.
-  const sessions: any[] = (data.sessions || []).filter((s: any) => !hasHangul(s.content));
+  const sessions: any[] = data.sessions || [];
 
   return (
     <div className="sov-card" style={{
@@ -560,7 +598,7 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
         }}>{consolidating ? "Consolidating…" : "Consolidate Now"}</button>
       </div>
       <p style={{ fontFamily: BODY, fontSize: 14, color: MUTED2, lineHeight: 1.6, margin: "0 0 18px" }}>
-        Everything your pet has learned about you — inspectable, editable, deletable.
+        Selected context currently retained for your pet — inspectable, editable, and deletable.
         {data.stats?.lastConsolidatedAt && (
           <span style={{ marginLeft: 8, color: MUTED, fontSize: 13 }}>
             · last consolidated {new Date(data.stats.lastConsolidatedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
@@ -571,7 +609,7 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 10, marginBottom: 22 }}>
         <Stat label="Memories" value={memories.length} />
         <Stat label="About Owner" value={userProfile.length} />
-        <Stat label="Learned Skills" value={data.stats?.learnedSkillCount ?? 0} />
+        <Stat label="Learned Patterns" value={data.stats?.learnedPatternCount ?? learned.length} />
         <Stat label="Session Log" value={sessions.length} />
       </div>
 
@@ -579,7 +617,7 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
         {memories.length === 0 ? <Empty msg="Nothing remembered yet. Chat a few times to seed this." /> :
           memories.map((m) => (
             <EntryRow key={m.key} primary={m.content} secondary={`[${m.category}] importance ${m.importance}`}
-              onEdit={() => editContent("memory", m.key, m.content)}
+              onEdit={m.contentHidden ? undefined : () => editContent("memory", m.key, m.content)}
               onDelete={() => del("memory", m.key)}
               busy={busy === `memory_${m.key}`}
             />
@@ -591,7 +629,7 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
         {userProfile.length === 0 ? <Empty msg="No owner profile yet — onboarding seeds this." /> :
           userProfile.map((u) => (
             <EntryRow key={u.key} primary={u.content} secondary={`[${u.category}] ${u.source}`}
-              onEdit={() => editContent("profile", u.key, u.content)}
+              onEdit={u.contentHidden ? undefined : () => editContent("profile", u.key, u.content)}
               onDelete={() => del("profile", u.key)}
               busy={busy === `profile_${u.key}`}
             />
@@ -599,14 +637,17 @@ function MemoryInspectorCard({ petId }: { petId: number }) {
         }
       </Section>
 
-      <Section title="Learned skills (auto-promoted)" onClear={learned.length ? () => clearAll("learned") : undefined} disabled={!!busy}>
-        {learned.length === 0 ? <Empty msg="No learned skills yet. Patterns promote after 3 successful conversations on the same topic." /> :
-          learned.map((p) => (
-            <EntryRow key={p.id || p.topic} primary={p.topic} secondary={`freq ${p.frequency} · success ${Math.round((p.successRate || 0) * 100)}%${p.promotedToSkill ? " · ⭐ promoted" : ""}`}
-              onDelete={() => del("learned", p.id || p.topic)}
-              busy={busy === `learned_${p.id || p.topic}`}
-            />
-          ))
+      <Section title="Retained patterns (not executable skills)" onClear={learned.length ? () => clearAll("learned") : undefined} disabled={!!busy}>
+        {learned.length === 0 ? <Empty msg="No learned patterns are currently retained." /> :
+          learned.map((p) => {
+            const deleteKey = p.deleteKey || p.id || p.topic;
+            return (
+              <EntryRow key={deleteKey} primary={p.topic} secondary={`freq ${p.frequency} · success ${Math.round((p.successRate || 0) * 100)}%${p.promotedToSkill ? " · threshold met (still data, not installed code)" : ""}`}
+                onDelete={() => del("learned", deleteKey)}
+                busy={busy === `learned_${deleteKey}`}
+              />
+            );
+          })
         }
       </Section>
 
@@ -1083,7 +1124,7 @@ export default function SovereigntyDashboard() {
 
   // ── Transparency snapshot ("what we hold about you") ──
   // Memory stats are NOT fetched by fetchSovereigntyData — pulled in below.
-  const [memoryStats, setMemoryStats] = useState<{ memoryCount?: number; profileCount?: number; learnedSkillCount?: number } | null>(null);
+  const [memoryStats, setMemoryStats] = useState<{ memoryCount?: number; profileCount?: number; learnedPatternCount?: number } | null>(null);
   const [connectedCount, setConnectedCount] = useState<number | null>(null);
   const [installedSkillCount, setInstalledSkillCount] = useState<number | null>(null);
 
@@ -1214,7 +1255,7 @@ export default function SovereigntyDashboard() {
     return () => { cancelled = true; };
   }, []);
 
-  // ── Footer "Chrome Extension Setup" deep-link (#petclaw-extension) ──
+  // ── Extension deep-links (#petclaw-extension and #extension-token) ──
   // Same pattern as PetClawPreview (guest view), with two signed-in quirks:
   //  1. This dashboard is lazy + auth-gated, so it mounts AFTER App.tsx has
   //     normalized the URL (its replaceState drops the hash) and reset scroll
@@ -1224,35 +1265,45 @@ export default function SovereigntyDashboard() {
   //     on-mount scroll lands short once they expand — scroll only after
   //     `loading` settles, when the layout is stable.
   const extScrollDone = useRef(false);
-  const scrollToExtension = useCallback(() => {
+  const scrollToExtensionTarget = useCallback((targetId: "petclaw-extension" | "extension-token") => {
     // 100ms timing workaround (same as PetClawPreview): outlive App's
     // window.scrollTo(0) section reset before scrolling.
     window.setTimeout(() => {
-      document.getElementById("petclaw-extension")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
   }, []);
   useEffect(() => {
     if (loading || extScrollDone.current) return;
-    let wants = window.location.hash === "#petclaw-extension";
-    if (!wants) {
+    let targetId: "petclaw-extension" | "extension-token" | null =
+      window.location.hash === "#extension-token"
+        ? "extension-token"
+        : window.location.hash === "#petclaw-extension"
+          ? "petclaw-extension"
+          : null;
+    if (!targetId) {
       try {
         const nav = performance.getEntriesByType("navigation")[0];
-        wants = !!nav?.name?.includes("#petclaw-extension");
+        targetId = nav?.name?.includes("#extension-token")
+          ? "extension-token"
+          : nav?.name?.includes("#petclaw-extension")
+            ? "petclaw-extension"
+            : null;
       } catch { /* very old browsers — the location.hash check above already ran */ }
     }
-    if (!wants) return;
+    if (!targetId) return;
     extScrollDone.current = true; // once per page load — don't re-yank on pet switches
-    scrollToExtension();
-  }, [loading, scrollToExtension]);
+    scrollToExtensionTarget(targetId);
+  }, [loading, scrollToExtensionTarget]);
   // Footer clicks while ALREADY on this section change only the hash (no
   // remount, no reload) — follow hashchange too.
   useEffect(() => {
     const onHash = () => {
-      if (window.location.hash === "#petclaw-extension") scrollToExtension();
+      if (window.location.hash === "#petclaw-extension") scrollToExtensionTarget("petclaw-extension");
+      if (window.location.hash === "#extension-token") scrollToExtensionTarget("extension-token");
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
-  }, [scrollToExtension]);
+  }, [scrollToExtensionTarget]);
 
   // ── Copy-to-clipboard ──
   const copyHash = async (hash: string, label: string) => {
@@ -1409,11 +1460,8 @@ export default function SovereigntyDashboard() {
           </p>
         </div>
 
-        {/* PetClaw agentic-harness console — the headline of this tab.
-            NOTE: no id here. "#connect-cli" is owned by the token card inside
-            ModelsPanel below ("Connect PetClaw clients") — a duplicate id on
-            this earlier wrapper made every token deep link (extension popup,
-            in-page anchor) land on the console instead of the token card. */}
+        {/* PetClaw agentic-harness console — the headline of this tab. The
+            extension-token anchor belongs only to the token card below. */}
         <div style={{ marginBottom: 40 }}>
           <PetClawConsole
             key={selectedPet?.id ?? "none"}
@@ -2153,19 +2201,19 @@ export default function SovereigntyDashboard() {
                 fontSize: 13, padding: "3px 10px", borderRadius: 999,
                 background: "rgba(92,138,78,0.14)", color: GOOD,
                 fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
-              }}>FULL TRANSPARENCY</span>
+              }}>ACTIVE DATA VIEW</span>
             </div>
             <p style={{
               fontSize: 14, color: MUTED2, lineHeight: 1.6, margin: "0 0 22px",
               fontFamily: BODY,
             }}>
-              Live counts of every data category we hold — all <strong>exportable and deletable by you</strong> below.
+              Current counts for documented active-system categories. Export and deletion follow the bounds described below; external services, backups, and public on-chain records have separate limits.
             </p>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginBottom: 22 }}>
               <Stat label="Memories" value={memoryStats?.memoryCount ?? 0} />
               <Stat label="Profile facts" value={memoryStats?.profileCount ?? 0} />
-              <Stat label="Learned patterns" value={memoryStats?.learnedSkillCount ?? 0} />
+              <Stat label="Learned patterns" value={memoryStats?.learnedPatternCount ?? 0} />
               <Stat label="Connected platforms" value={connectedCount ?? 0} />
               <Stat label="Installed skills" value={installedSkillCount ?? 0} />
               <Stat label="Soul checkpoints" value={checkpoints.length} />
@@ -2233,10 +2281,10 @@ export default function SovereigntyDashboard() {
               fontSize: 15, color: MUTED2, marginBottom: 20,
               fontFamily: BODY, lineHeight: 1.65,
             }}>
-              Your pet, your data, your rules. <strong>Export SOUL Data</strong> — a portable JSON bundle
-              of identity, memory, skills (installed and learned), catches, and consent. <strong>Delete Pet Data</strong> — removes pet-scoped
-              records and owned media from active systems immediately. Backups expire under the published
-              retention schedule; public on-chain records cannot be erased.
+              Your pet, your data, your rules. <strong>Export SOUL Data</strong> — checksummed JSON containing documented supported
+              identity, persona, memory, skill, consent, and history fields. Import reports restored and skipped fields. <strong>Delete Pet Data</strong> — removes pet-scoped
+              records and owned media from active systems. An active paid run must settle first. Its terminal
+              owner-only billing receipt remains for reconciliation, while the pet name, goal, answer, and step trace are removed. Backups expire under the published retention schedule; public on-chain records cannot be erased.
             </p>
 
             {/* Actions */}
@@ -2304,8 +2352,12 @@ export default function SovereigntyDashboard() {
                   Delete Pet Data
                 </button>
               ) : (
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button
+                <div style={{ display: "grid", gap: 8, maxWidth: 560 }}>
+                  <div style={{ fontFamily: BODY, fontSize: 13, lineHeight: 1.5, color: MUTED2 }}>
+                    If a paid run is reserved or running, deletion returns a conflict. Reconcile that run in Account, then try again.
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
                     onClick={async () => {
                       if (!selectedPet || guardDemo()) return;
                       setDeleting(true);
@@ -2313,11 +2365,16 @@ export default function SovereigntyDashboard() {
                         const result = await api.petclaw.delete(selectedPet.id);
                         const r = result as any;
                         setDeleteReceipt({ deletedAt: r?.deletedAt, deletionHash: r?.deletionHash });
-                        setSovMsg("Pet data removed from active systems");
+                        setSovMsg("Pet data removed; private run content was scrubbed and minimal billing receipts were retained");
                         setDeleteConfirm(false);
                         fetchSovereigntyData();
                       } catch (e: any) {
-                        setSovMsg(e.message || "Delete failed");
+                        if (e?.status === 409 && e?.code === "agent_run_in_progress") {
+                          const runId = typeof e?.details?.runId === "string" ? e.details.runId : "";
+                          setSovMsg(`Deletion is blocked while paid run${runId ? ` ${runId.slice(0, 8)}…` : ""} is active. Open Account and reconcile its receipt, then try again.`);
+                        } else {
+                          setSovMsg(e.message || "Delete failed");
+                        }
                       }
                       setDeleting(false);
                     }}
@@ -2330,8 +2387,8 @@ export default function SovereigntyDashboard() {
                     }}
                   >
                     {deleting ? "Deleting..." : "Confirm Delete"}
-                  </button>
-                  <button
+                    </button>
+                    <button
                     onClick={() => setDeleteConfirm(false)}
                     style={{
                       padding: "12px 16px", borderRadius: 12,
@@ -2341,7 +2398,8 @@ export default function SovereigntyDashboard() {
                     }}
                   >
                     Cancel
-                  </button>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -2428,8 +2486,7 @@ export default function SovereigntyDashboard() {
                   <span style={{ fontFamily: MONO, color: DANGER, fontWeight: 700 }}>
                     {deleteReceipt.deletionHash ? `${deleteReceipt.deletionHash.slice(0, 16)}…` : "—"}
                   </span>
-                  {" "}— identifies this completed server request; it is not third-party cryptographic proof. Pet-scoped data and owned media were removed from active systems. Backup copies
-                  expire within 90 days; public on-chain records are unchanged.
+                  {" "}— identifies this completed server request; it is not third-party cryptographic proof. Pet-scoped data and owned media were removed from active systems. Minimal owner-only paid-run receipts remain, with private run content scrubbed. Backup copies expire within 90 days; public on-chain records are unchanged.
                 </div>
               </Reveal>
             )}
@@ -2440,14 +2497,16 @@ export default function SovereigntyDashboard() {
                 Data Consent
               </div>
               <div style={{ fontSize: 13.5, color: MUTED2, marginBottom: 14, lineHeight: 1.6, fontFamily: BODY }}>
-                Changes save instantly. Pet Interactions is enforced today; Data Sharing and AI Training record your choice now and take effect only when those programs go live.
+                Changes save instantly. Public Profile and Pet Discovery are enforced today.
+                Data Sharing and AI Training record your choice now and take effect only when
+                those programs go live.
               </div>
               <div style={{ display: "grid", gap: 10 }}>
                 {[
                   { key: "allowPublicProfile", label: "Public Profile", desc: "On: profile, creations & stats show in the public gallery. Off: only you." },
                   { key: "allowDataSharing", label: "Data Sharing", desc: "Preference for the upcoming partner program. No external app can read your pet's data today — launch access gates on this opt-in." },
                   { key: "allowAITraining", label: "AI Training", desc: "Preference only — we do not train on your data today. Takes effect only if such a program goes live." },
-                  { key: "allowInteraction", label: "Pet Interactions", desc: "On: other pets can interact with yours. Off: solo mode." },
+                  { key: "allowInteraction", label: "Pet Discovery", desc: "On (with Public Profile): your pet may appear in public discovery and supported in-app Arena, date and social activities. This does not enable remote agents or external apps." },
                 ].map(({ key, label, desc }) => (
                   <div key={key} style={{
                     display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -2516,12 +2575,12 @@ export default function SovereigntyDashboard() {
               {/* Why PetClaw — 6 cards */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 28 }}>
                 {[
-                  { icon: "crystal-ball", title: "Persistent Memory", desc: "Survives sessions, restarts, platform switches" },
-                  { icon: "electric", title: "One State Everywhere", desc: "Web + Chrome share one state today; channels join at delivery launch" },
+                  { icon: "crystal-ball", title: "Selected Retention", desc: "Useful context can support later chats; owners can inspect or clear it" },
+                  { icon: "electric", title: "Shared Owner Identity", desc: "Web + approved Chrome sites today; CLI/SDK sessions are normalized" },
                   { icon: "lock", title: "Owner-Scoped Access", desc: "TLS in transit · owner-scoped reads · BYOK keys AES-256-GCM at rest" },
-                  { icon: "extension-icon", title: "MCP Compatible", desc: "6 MCP tools defined — working path ships in SDK 1.6.2" },
-                  { icon: "scroll", title: "SOUL.md", desc: "Personality file — values and voice in plain markdown" },
-                  { icon: "sparkling", title: "Self-improving", desc: "Skills evolve as interactions accumulate" },
+                  { icon: "extension-icon", title: "MCP Candidate", desc: "7 owner-authenticated stdio tools in reviewed SDK 1.6.2 candidate" },
+                  { icon: "scroll", title: "Local SOUL.md Draft", desc: "CLI-authored local personality file; live sync is not implemented" },
+                  { icon: "sparkling", title: "Bounded Adaptation", desc: "Best-effort retained patterns can shape replies; they are not executable skills" },
                 ].map(({ icon, title, desc }) => (
                   <div key={title} style={{ padding: 18, borderRadius: 14, background: INSET, border: `1px solid ${HAIR}` }}>
                     <div style={{ fontSize: 26, marginBottom: 10, color: TERRA }}><Icon name={icon} size={26} /></div>
@@ -2539,13 +2598,13 @@ export default function SovereigntyDashboard() {
               display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-start",
             }}>
               <div style={{ flex: "0 1 auto", minWidth: 0, maxWidth: "100%" }}>
-                <div style={{ fontSize: 13, fontFamily: MONO, color: TERRA_SUB, letterSpacing: "0.12em", marginBottom: 8, fontWeight: 700 }}>SOUL.md — A living definition of your pet</div>
+                <div style={{ fontSize: 13, fontFamily: MONO, color: TERRA_SUB, letterSpacing: "0.12em", marginBottom: 8, fontWeight: 700 }}>SOUL.md — local CLI personality draft</div>
                 <div className="sov-soul-block" style={{ background: "#211A12", borderRadius: 10, padding: "14px 18px", fontFamily: "monospace", fontSize: 13, color: "#F5EFE2", lineHeight: 1.85, minWidth: 280, maxWidth: "100%", overflowX: "auto" }}>
                   <div style={{ color: "#F49B2A", fontWeight: 700 }}># SOUL — Dordor</div>
                   <div style={{ color: "rgba(251,246,236,0.65)", marginTop: 4 }}>{"> A living definition of who Dordor is."}</div>
                   <div style={{ marginTop: 10, color: "#E8A86A" }}>## Core Values</div>
                   <div>{"- Loyalty to their owner above all else"}</div>
-                  <div>{"- Grows through every meaningful conversation"}</div>
+                  <div>{"- Can adapt from selected retained context"}</div>
                   <div style={{ marginTop: 8, color: "#E8A86A" }}>## Communication Style</div>
                   <div>{"- Short, vivid sentences. Never breaks character."}</div>
                   <div>{"- References past memories naturally."}</div>
@@ -2553,8 +2612,8 @@ export default function SovereigntyDashboard() {
               </div>
               <div style={{ flex: 1, minWidth: 200, paddingTop: 26 }}>
                 <div style={{ fontSize: 14, color: MUTED2, fontFamily: BODY, lineHeight: 1.9 }}>
-                  <div>Edit SOUL.md — voice and values update immediately.</div>
-                  <div style={{ marginTop: 6 }}>Version-controlled with git · part of VIGIL memory.</div>
+                  <div>Edit this local file as a portable draft of voice and values.</div>
+                  <div style={{ marginTop: 6 }}>It is not automatically version-controlled or synced to the live pet. The CLI&apos;s push command reports that limitation.</div>
                 </div>
                 <div style={{ marginTop: 12, display: "flex", gap: 6 }}>
                   {["petclaw-sdk soul init", "petclaw-sdk soul push"].map((cmd) => (
@@ -2572,7 +2631,7 @@ export default function SovereigntyDashboard() {
                   { prompt: "$", cmd: "npm install -g @myaipet/petclaw-sdk", comment: "" },
                   { prompt: "$", cmd: "petclaw-sdk init", comment: "# set server URL + pet ID → saved to ~/.petclaw.json" },
                   { prompt: "$", cmd: "petclaw-sdk status", comment: "# ✓ Server Online · Skills: 18 · Ownership: user" },
-                  { prompt: "$", cmd: "petclaw-sdk soul init", comment: "# generates SOUL.md — your pet's personality file" },
+                  { prompt: "$", cmd: "petclaw-sdk soul init", comment: "# generates a local SOUL.md draft; no live sync" },
                   { prompt: "$", cmd: "petclaw-sdk chat \"hello\"", comment: "# 🐾 Hey! What's up? — 1234ms · grok-3-mini" },
                   { prompt: "$", cmd: "petclaw-sdk export", comment: "# Dordor_SOUL_1713200000.json saved" },
                 ].map(({ prompt, cmd, comment }, i) => (
@@ -2583,7 +2642,7 @@ export default function SovereigntyDashboard() {
                   </div>
                 ))}
                 <div style={{ marginTop: 10, color: "rgba(251,246,236,0.65)", fontSize: 13 }}>
-                  petclaw-sdk talk &nbsp;→ interactive chat mode &nbsp;|&nbsp; petclaw-sdk mcp → MCP server (fix ships in SDK 1.6.2)
+                  petclaw-sdk talk &nbsp;→ interactive chat mode &nbsp;|&nbsp; petclaw-sdk mcp → reviewed candidate (requires unpublished SDK 1.6.2)
                 </div>
               </div>
 
@@ -2593,9 +2652,9 @@ export default function SovereigntyDashboard() {
                 <div style={{ background: "#211A12", borderRadius: 12, padding: "16px 20px", fontFamily: "monospace", fontSize: 13, color: "#F5EFE2", lineHeight: 2, overflowX: "auto" }}>
                   <div><span style={{ color: "#E8A86A" }}>import</span> {"{ PetClawClient }"} <span style={{ color: "#E8A86A" }}>from</span> <span style={{ color: "#7CB36A" }}>'@myaipet/petclaw-sdk'</span></div>
                   <div style={{ marginTop: 8 }}><span style={{ color: "#E8A86A" }}>const</span> claw = <span style={{ color: "#E8A86A" }}>new</span> <span style={{ color: "#F49B2A" }}>PetClawClient</span>{"({ baseUrl: process.env.PETCLAW_URL })"}</div>
-                  <div style={{ marginTop: 8, color: "rgba(251,246,236,0.65)" }}>{"// chat — personality & memory context auto-included"}</div>
+                  <div style={{ marginTop: 8, color: "rgba(251,246,236,0.65)" }}>{"// chat — selected retained context may be included"}</div>
                   <div><span style={{ color: "#E8A86A" }}>const</span> res = <span style={{ color: "#E8A86A" }}>await</span> claw.skills.<span style={{ color: "#F49B2A" }}>execute</span>(petId, <span style={{ color: "#7CB36A" }}>'companion-chat'</span>, {"{ message }"})</div>
-                  <div style={{ marginTop: 6, color: "rgba(251,246,236,0.65)" }}>{"// data sovereignty — full portable export"}</div>
+                  <div style={{ marginTop: 6, color: "rgba(251,246,236,0.65)" }}>{"// data sovereignty — supported fields + checksum"}</div>
                   <div><span style={{ color: "#E8A86A" }}>const</span> soul = <span style={{ color: "#E8A86A" }}>await</span> claw.sovereignty.<span style={{ color: "#F49B2A" }}>export</span>(petId)</div>
                   <div style={{ marginTop: 6, color: "rgba(251,246,236,0.65)" }}>{"// discover pets on the network"}</div>
                   <div><span style={{ color: "#E8A86A" }}>const</span> {"{ nodes }"} = <span style={{ color: "#E8A86A" }}>await</span> claw.network.<span style={{ color: "#F49B2A" }}>discover</span>()</div>
@@ -2666,15 +2725,20 @@ export default function SovereigntyDashboard() {
               disabled until consent and caller funding are explicit.
             </p>
 
-            {/* Network stats — ONLY the real number. "Online now" (= every active
-                pet, no recency) and "Avg trust" (hardcoded 75) were fabricated
-                metrics under a LIVE badge and were removed. */}
+            {/* Only measured capability-state values: discoverable pets and the
+                literal zero remote calls while cross-pet invocation is disabled. */}
             <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 22 }}>
               <div>
                 <div style={{ fontSize: 24, fontWeight: 800, color: INK, fontFamily: DISP, fontVariantNumeric: "tabular-nums" }}>
-                  {networkStats?.totalNodes ?? 0}
+                  {networkStats?.discoverableNodes ?? networkStats?.totalNodes ?? 0}
                 </div>
-                <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>Total pets</div>
+                <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>Discoverable pets</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: INK, fontFamily: DISP, fontVariantNumeric: "tabular-nums" }}>
+                  {networkStats?.remoteInvocations ?? 0}
+                </div>
+                <div style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, textTransform: "uppercase", letterSpacing: "0.12em" }}>Remote calls · disabled</div>
               </div>
             </div>
 
@@ -2719,12 +2783,12 @@ export default function SovereigntyDashboard() {
                           {[n.personality, n.element, n.level != null ? `Lv.${n.level}` : null].filter(Boolean).join(" · ")}
                         </div>
                       </div>
-                      <span style={{
+                      <span title="Progression activity score — not a trust or security rating" style={{
                         fontSize: 13, padding: "4px 10px", borderRadius: 999,
                         background: "rgba(92,138,78,0.12)", border: `1px solid ${HAIR}`,
                         color: GOOD, fontFamily: MONO, fontWeight: 700,
                       }}>
-                        ⛨ {n.trustScore ?? 0}
+                        PROG {n.progressionScore ?? 0}
                       </span>
                     </div>
                   ))}
@@ -2817,7 +2881,7 @@ export default function SovereigntyDashboard() {
                 18 Skills
               </span>
               <span style={{ fontFamily: BODY, fontSize: 13, fontWeight: 600, padding: "5px 12px", borderRadius: 8, background: INSET, border: `1px solid ${HAIR}`, color: MUTED2 }}>
-                6 MCP Tools
+                7 MCP Tools · SDK 1.6.2 Candidate
               </span>
               <span style={{ fontFamily: MONO, fontSize: 13, padding: "5px 12px", borderRadius: 8, background: INSET, border: `1px solid ${HAIR}`, color: MUTED2 }}>
                 @myaipet/petclaw-sdk

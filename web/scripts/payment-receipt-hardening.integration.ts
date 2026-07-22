@@ -25,7 +25,7 @@ async function verifyContract(): Promise<void> {
     read("../src/lib/premium.ts"),
     read("../src/app/api/battle/create/route.ts"),
     read("../prisma/migrations/20260717165000_payment_receipt_hardening/migration.sql"),
-    read("../.env.production.example"),
+    read("../config/production.env.example"),
     read("../../deploy/ENV-CHECKLIST.md"),
     read("../../deploy/release-smoke.sh"),
     read("../src/lib/petclaw/data-sovereignty.ts"),

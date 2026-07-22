@@ -81,6 +81,23 @@ export class LLMOwnerConfigError extends Error {
 
 const CONNECTABLE_TASKS = new Set<ConnectableLLMTask>(["chat", "reason", "judge"]);
 
+/**
+ * Empty is the legacy persisted spelling of "all UI-connectable tasks", not
+ * every internal task. Explicit legacy scopes still match so validation can
+ * fail closed instead of silently re-routing that prompt to a platform key.
+ */
+export function ownerTaskScopeMatches(
+  task: PlatformLLMTask,
+  storedScopes: unknown,
+): boolean {
+  const scopes = Array.isArray(storedScopes)
+    ? storedScopes.filter((scope): scope is string => typeof scope === "string")
+    : [];
+  return scopes.length === 0
+    ? CONNECTABLE_TASKS.has(task as ConnectableLLMTask)
+    : scopes.includes(task);
+}
+
 /** Capabilities implemented by this router's adapters, not vendor-wide claims. */
 const OWNER_PROVIDER_CAPABILITIES: Readonly<Record<LLMProviderId, ReadonlySet<"text" | "json" | "tools">>> = {
   xai: new Set(["text", "json", "tools"]),
@@ -163,6 +180,15 @@ export class LLMUpstreamError extends Error {
   }
 }
 
+/** Throw the caller's cancellation reason without converting it to fallback. */
+export function throwIfLLMAborted(signal?: AbortSignal): void {
+  if (!signal?.aborted) return;
+  if (signal.reason instanceof Error) throw signal.reason;
+  const error = new Error("LLM request cancelled");
+  error.name = "AbortError";
+  throw error;
+}
+
 function parseProvider(value: string | undefined, envName: string, fallback: PlatformProviderId): PlatformProviderId {
   const normalized = (value || fallback).trim().toLowerCase();
   if (PLATFORM_PROVIDER_IDS.has(normalized as PlatformProviderId)) return normalized as PlatformProviderId;
@@ -236,17 +262,26 @@ export async function runWithProviderFallback<TTarget, TResult>(
   execute: (target: TTarget) => Promise<TResult>,
   onFallback?: (from: TTarget, to: TTarget, error: LLMUpstreamError) => void,
   beforeAttempt?: (target: TTarget) => Promise<void> | void,
+  signal?: AbortSignal,
 ): Promise<TResult> {
   if (targets.length === 0) throw new LLMPlatformConfigError("No platform LLM provider has an API key");
   for (let i = 0; i < targets.length; i++) {
     try {
+      throwIfLLMAborted(signal);
       // This hook runs once per actual provider attempt. The router uses it to
       // atomically reserve persistent platform budget before touching a vendor.
       await beforeAttempt?.(targets[i]);
+      // Budget reservation is local DB work and cannot be abandoned safely.
+      // Await it, then fence the vendor request if the run expired meanwhile.
+      throwIfLLMAborted(signal);
       return await execute(targets[i]);
     } catch (error) {
+      // Caller cancellation is terminal. It must never be reclassified as a
+      // retryable provider timeout or launch a paid fallback attempt.
+      throwIfLLMAborted(signal);
       const next = targets[i + 1];
       if (!(error instanceof LLMUpstreamError) || !error.retryable || !next) throw error;
+      throwIfLLMAborted(signal);
       onFallback?.(targets[i], next, error);
     }
   }

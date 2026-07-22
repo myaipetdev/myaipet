@@ -22,10 +22,10 @@ import Reveal from "@/components/Reveal";
 import { PETCLAW_EXTENSION_STEPS, PETCLAW_EXTENSION_VERSION } from "@/lib/petclaw-extension";
 
 const PILLARS = [
-  { icon: "scroll", eyebrow: "01 · EXPORT", title: "Export your pet's soul", body: "Memories, personality, skills — as portable JSON. Take it anywhere, anytime." },
+  { icon: "scroll", eyebrow: "01 · EXPORT", title: "Export supported pet data", body: "Download supported memory, personality, skill, and history fields as checksummed JSON. Compatible imports report what was restored or skipped." },
   { icon: "fire", eyebrow: "02 · DELETE", title: "Delete with a receipt", body: "Remove your pet's data from active systems with a SHA-256 receipt of the request. Backups expire within 90 days; public on-chain records can't be erased." },
   { icon: "crystal-ball", eyebrow: "03 · INSPECT", title: "See what we hold", body: "Review the retained memory, facts, and supported connections associated with your pet." },
-  { icon: "footprints", eyebrow: "04 · INHERIT", title: "Pass it on", body: "Name a successor wallet. Your pet's soul outlives any single device." },
+  { icon: "footprints", eyebrow: "04 · INHERIT", title: "Plan a successor", body: "Record an off-chain successor-wallet preference. Automatic transfer and on-chain inheritance are planned, not live." },
 ];
 
 export default function PetClawPreview({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: string }) {
@@ -197,11 +197,8 @@ export default function PetClawPreview({ cta, ctaNote }: { cta?: ReactNode; ctaN
                       {[n.personality, n.element, n.level != null ? `Lv.${n.level}` : null].filter(Boolean).join(" · ")}
                     </div>
                   </div>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, padding: "4px 10px", borderRadius: 999, background: "rgba(26,126,104,0.1)", border: "1px solid rgba(26,126,104,0.25)", color: "#1A7E68", fontFamily: "var(--ed-m)", fontWeight: 700 }}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z" />
-                    </svg>
-                    {n.trustScore ?? 0}
+                  <span title="Progression activity score — not a trust or security rating" style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, padding: "4px 10px", borderRadius: 999, background: "rgba(26,126,104,0.1)", border: "1px solid rgba(26,126,104,0.25)", color: "#1A7E68", fontFamily: "var(--ed-m)", fontWeight: 700 }}>
+                    PROG {n.progressionScore ?? 0}
                   </span>
                 </div>
               ))}

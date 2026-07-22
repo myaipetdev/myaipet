@@ -16,6 +16,7 @@
     "test:generated-language": "tsx scripts/generated-language-contract.test.ts",
     "test:persona-extension-boundaries": "tsx scripts/persona-extension-boundaries-contract.test.ts",
     "test:llm-fallback": "node --no-warnings scripts/llm-fallback-test.mjs",
+    "test:agent-deadline": "node --no-warnings --experimental-transform-types scripts/agent-deadline.test.mjs",
     "test:llm-router-live": "tsx scripts/llm-router-smoke.ts",
     "test:llm-input-budget": "tsx scripts/llm-input-budget-contract.ts",
     "test:siwe": "tsx scripts/siwe-login-test.ts",
@@ -26,6 +27,8 @@
     "test:media-security": "node --no-warnings --experimental-transform-types scripts/media-security.test.mjs",
     "test:remote-media": "tsx scripts/remote-media-download-test.ts",
     "test:privacy-boundary": "node scripts/privacy-boundary.test.mjs",
+    "test:media-provider-safety": "node scripts/media-provider-prompt-safety-contract.test.mjs",
+    "test:pet-date-contract": "tsx scripts/pet-date-contract.test.ts",
     "test:pet-slot-race": "tsx scripts/pet-slot-race.integration.ts",
     "test:avatar-storage-contract": "node scripts/avatar-storage-p0-contract.test.mjs",
     "test:avatar-storage-p0": "tsx scripts/avatar-storage-p0.integration.ts",
@@ -43,7 +46,15 @@
     "test:ui-contract": "node scripts/ui-contract-audit.mjs",
     "test:release-readiness": "node scripts/release-readiness-contract.test.mjs",
     "test:paywall-effects": "tsx scripts/paywall-effect-atomicity.integration.ts",
-    "test:memory-mint": "tsx scripts/memory-mint-idempotency.integration.ts"
+    "test:memory-mint": "tsx scripts/memory-mint-idempotency.integration.ts",
+    "test:petclaw-memory-races": "tsx scripts/petclaw-memory-races.integration.ts",
+    "test:persona-analysis-fence": "node scripts/persona-analysis-deletion-fence-contract.test.mjs",
+    "test:daydream-deletion-fence": "node scripts/daydream-deletion-fence-contract.test.mjs",
+    "test:daydream-video-claims": "tsx scripts/daydream-video-claim.integration.ts",
+    "test:daydream-video-claim-contract": "node scripts/daydream-video-claim-contract.test.mjs",
+    "test:generation-provenance-backfill": "tsx scripts/generation-provenance-backfill.integration.ts",
+    "test:petclaw-action-body-bounds": "node scripts/petclaw-action-body-bounds-contract.test.mjs",
+    "test:provider-context": "tsx scripts/provider-context-privacy-contract.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1031.0",
@@ -62,7 +73,7 @@
     "ethers": "^6.16.0",
     "jose": "^6.2.1",
     "leaflet": "^1.9.4",
-    "next": "16.2.10",
+    "next": "16.2.11",
     "pg": "^8.20.0",
     "prisma": "^7.5.0",
     "react": "19.2.3",
@@ -75,8 +86,11 @@
     "ws": "^8.21.0"
   },
   "overrides": {
-    "@hono/node-server": "1.19.14",
+    "@hono/node-server": "2.0.11",
+    "axios": "1.18.1",
+    "fast-uri": "3.1.4",
     "postcss": "8.5.19",
+    "sharp": "0.35.3",
     "uuid": "11.1.1",
     "ws@8.18.0": "8.21.0"
   },
@@ -87,7 +101,7 @@
     "@types/ws": "^8.5.0",
     "dotenv": "^16.4.0",
     "eslint": "^9",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.2.11",
     "tsx": "^4.23.1",
     "typescript": "^5"
   }

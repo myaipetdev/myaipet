@@ -221,7 +221,7 @@ async function runActivityConcurrencyContract() {
   const moodStart = backgroundSource.indexOf("async function recordEmotionSeen");
   const moodEnd = backgroundSource.indexOf("function getDominantEmotion");
   const streakStart = backgroundSource.indexOf("let streakTickInFlight = null");
-  const streakEnd = backgroundSource.indexOf("// SCRUM-20: import a SOUL JSON");
+  const streakEnd = backgroundSource.indexOf("async function fetchPetInfo");
   assert.ok(moodStart > 0 && moodEnd > moodStart, "mood metadata mutation boundary was not found");
   assert.ok(streakStart > 0 && streakEnd > streakStart, "streak mutation boundary was not found");
   activityContext.Date = Date;
@@ -247,6 +247,15 @@ async function runActivityConcurrencyContract() {
 
 function runStaticContract() {
   const manifest = JSON.parse(fs.readFileSync(path.join(extensionDir, "manifest.json"), "utf8"));
+  const pairingHtml = fs.readFileSync(path.join(extensionDir, "popup.html"), "utf8");
+  const pairingJs = fs.readFileSync(path.join(extensionDir, "popup.js"), "utf8");
+  assert.match(
+    pairingHtml,
+    /https:\/\/app\.myaipet\.ai\/\?section=sovereignty#extension-token/,
+    "extension pairing CTA must deep-link to the real token card",
+  );
+  assert.doesNotMatch(pairingHtml, /#connect-cli/, "removed token anchor must not return");
+  assert.match(pairingJs, /!paired && !pairingTabAutoOpened/, "unpaired installs must open Settings once");
   assert.equal(manifest.manifest_version, 3);
   assert.ok(Number(manifest.minimum_chrome_version) >= 102, "trusted-only storage access requires Chrome 102+");
   assert.equal(manifest.content_scripts, undefined, "no static all-site injection");
@@ -270,6 +279,10 @@ function runStaticContract() {
   assert.match(backgroundSource, /sender\.tab[\s\S]*Promise\.all\(\[siteAccessInfo\(senderUrl\), getConfig\(\)\]\)/, "page messages require active-site and runtime-policy authorization");
   assert.match(backgroundSource, /const PAGE_MESSAGE_TYPES = new Set[\s\S]*sender\.tab && !PAGE_MESSAGE_TYPES\.has/, "page contexts need a narrow message allowlist");
   assert.match(backgroundSource, /const API_URL = "https:\/\/app\.myaipet\.ai"[\s\S]*const url = `\$\{API_URL\}\$\{endpoint\}`/, "API requests must use the pinned first-party origin");
+  assert.doesNotMatch(backgroundSource, /\/api\/petclaw\/(?:export|import)|\bexportSoul\b|\bimportSoul\b/, "reduced extension tokens must not attempt broad SOUL operations");
+  assert.match(backgroundSource, /openSovereigntyDashboard[\s\S]*\?section=sovereignty[\s\S]*openSovereignty:/, "SOUL controls must hand off to the first-party dashboard");
+  assert.match(contentSource, /Manage SOUL in dashboard[\s\S]*case "export"[\s\S]*type: "openSovereignty"/, "the in-page SOUL action must describe and use the secure handoff");
+  assert.match(popupSource, /exportBtn[\s\S]*type: "openSovereignty"[\s\S]*importBtn[\s\S]*type: "openSovereignty"/, "popup SOUL controls must use the secure dashboard handoff");
   assert.match(contentSource, /globalThis\[INSTANCE_KEY\][\s\S]*before any await/, "content script must claim its document synchronously");
   assert.match(contentSource, /function shutdown\(\)[\s\S]*cancelAnimationFrame[\s\S]*removeListener[\s\S]*extensionHost\.remove/, "permission removal must tear down page observers and timers");
   assert.match(contentSource, /PAGE_SUMMARY_MAX_CHARS = 1_500[\s\S]*Preview up to 1,500 characters/, "summary preview and transport limits must agree");
@@ -294,6 +307,23 @@ function runStaticContract() {
   assert.match(popupHtml, /id="siteAccessBtn"[^>]*aria-describedby="siteAccessStatus"/, "site access control needs its status description");
   assert.match(popupHtml, /id="disconnectBtn"/, "pairing needs an explicit local disconnect action");
   assert.match(popupSource, /disconnectBtn[\s\S]*authToken: ""[\s\S]*petId: null/, "disconnect must clear the local credential and pet binding");
+  assert.match(popupHtml, /<select id="petId"[\s\S]*choose the identity this browser should use/i, "multi-pet pairing needs an explicit owned-pet selector");
+  assert.match(backgroundSource, /tokenChanged[\s\S]*merged\.petId = null/, "a changed token must revoke the previous pet binding");
+  const multiPetBranch = backgroundSource.slice(
+    backgroundSource.indexOf("if (!pet && pets.length > 1)"),
+    backgroundSource.indexOf("if (!pet) pet = pets[0]"),
+  );
+  assert.match(multiPetBranch, /needsPetSelection: true[\s\S]*return \{ \.\.\.updated, ownedPets: pets \}/, "multi-pet accounts must pause for an explicit selection before the single-pet fallback");
+  const companionInvocation = backgroundSource.slice(
+    backgroundSource.indexOf('skillId: "companion-chat"'),
+    backgroundSource.indexOf("if (result?.success && result.output?.reply)"),
+  );
+  assert.doesNotMatch(companionInvocation, /\bmood:|\bemotions:/, "extension companion input must match the canonical strict schema");
+  const summaryInvocation = backgroundSource.slice(
+    backgroundSource.indexOf('skillId: "summarize-page"'),
+    backgroundSource.indexOf("if (result?.success && result.output?.reply)", backgroundSource.indexOf('skillId: "summarize-page"')),
+  );
+  assert.doesNotMatch(summaryInvocation, /\bplatform:/, "extension summary input must match the canonical strict schema");
   assert.match(backgroundSource, /let activityMutationTail = Promise\.resolve\(\)[\s\S]*function withActivityMutation[\s\S]*async function addPoints[\s\S]*withActivityMutation/, "points/evolution mutations must be serialized across tabs and alarms");
   assert.match(backgroundSource, /carePoints: 0/, "care awards need a durable points bucket");
   assert.match(popupHtml, /id="carePoints"/, "the popup must account for care points shown in the total");

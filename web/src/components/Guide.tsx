@@ -71,13 +71,14 @@ function OverviewSection() {
     <>
       <SectionCard title="🌍 What is MY AI PET?">
         <P>
-          MY AI PET is a Web3 companion raising game where you adopt, raise, and battle AI-powered pets.
-          Every interaction shapes your pet&apos;s personality, stats, and evolution path.
+          MY AI PET is an AI companion-raising game with wallet-based sign-in; production on-chain
+          integration is disabled. Eligible care, chat, creation, and battle actions update documented
+          progression, while selected retained context can shape later companion replies.
         </P>
         <div className="guide-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginTop: 8 }}>
           {[
             { icon: "chicken", title: "Adopt", desc: "Create your unique AI pet with custom personality and appearance" },
-            { icon: "heart", title: "Raise", desc: "Feed, play, train — every interaction matters" },
+            { icon: "heart", title: "Raise", desc: "Feed, play, and train through actions with documented stat or reward effects" },
             { icon: "sword", title: "Battle", desc: "Compete in the Arena for Season Points, EXP and first-clear rewards" },
           ].map(item => (
             <div key={item.title} style={{

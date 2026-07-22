@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import { MODELS } from "@/lib/studio/providers";
+import { forgetPendingAgentRun } from "@/lib/petclaw/agent-run-client";
 
 // ── Types mirror the /api/account/overview payload ──
 interface PurchaseRow {
@@ -29,6 +30,22 @@ interface GenerationRow {
   duration: number;
   created_at: string;
 }
+interface AgentRunRow {
+  run_id: string;
+  pet_id: number;
+  pet_deleted: boolean;
+  pet_name: string | null;
+  goal: string | null;
+  state: "reserved" | "running" | "terminal";
+  completed: boolean | null;
+  stopped_reason: string | null;
+  billing: { outcome?: string; creditsCharged?: number; usageKnown?: boolean; modelCalls?: number | null } | null;
+  credits_remaining: number | null;
+  created_at: string;
+  started_at: string | null;
+  terminal_at: string | null;
+  updated_at: string;
+}
 interface Overview {
   plan: string;
   member_since: string | null;
@@ -36,6 +53,7 @@ interface Overview {
   payments_enabled: boolean;
   purchases: PurchaseRow[];
   usage: { total: number; recent: GenerationRow[] };
+  agent_runs: AgentRunRow[];
   season: {
     points: number;
     tier: { key: string; name: string; min: number; color: string; emoji: string };
@@ -172,6 +190,11 @@ export default function AccountOverview({
       })
       .then((d: Overview) => {
         if (cancelled) return;
+        for (const run of d.agent_runs || []) {
+          if (run.state === "terminal") {
+            try { forgetPendingAgentRun(run.run_id); } catch { /* storage unavailable */ }
+          }
+        }
         setData(d);
         onCreditsChange?.(d.credits);
       })
@@ -228,7 +251,7 @@ export default function AccountOverview({
     );
   }
 
-  const { credits, purchases, usage, season } = data;
+  const { credits, purchases, usage, season, agent_runs: agentRuns } = data;
   const videosAffordable = exVideo ? Math.floor(credits / exVideo.creditsPerRun) : 0;
   const imagesAffordable = exImage ? Math.floor(credits / exImage.creditsPerRun) : 0;
 
@@ -536,6 +559,77 @@ export default function AccountOverview({
               Season Rewards hub →
             </a>
           </div>
+        </section>
+
+        {/* ── BILLING ── */}
+        <section style={{ ...card, gridColumn: undefined }} className="acct-span2" aria-labelledby="acct-agent-runs">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div id="acct-agent-runs" style={{ ...eyebrow, marginBottom: 0 }}>
+              Agent run receipts
+            </div>
+            <button
+              type="button"
+              onClick={() => setReloadKey((key) => key + 1)}
+              style={{ border: "1px solid rgba(154,78,30,.35)", borderRadius: 9, background: "#FBF6EC", color: "#9A4E1E", padding: "7px 11px", fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+            >
+              Refresh receipts
+            </button>
+          </div>
+          <p style={{ fontFamily: "var(--ed-body)", fontSize: 13.5, color: "#7A6E5A", lineHeight: 1.55, margin: "10px 0 14px" }}>
+            Every paid PetClaw run has a client run ID. If a connection closes early, match that ID here before starting another run. Pet deletion waits for an active run to settle; after deletion, this owner-only table keeps only the minimal billing receipt and removes the pet name, goal, answer, and steps.
+          </p>
+          {agentRuns.length === 0 ? (
+            <p style={{ fontFamily: "var(--ed-body)", fontSize: 14, color: "#7A6E5A", margin: 0 }}>
+              No paid agent runs yet.
+            </p>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table className="acct-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Run ID</th>
+                    <th scope="col">Run context</th>
+                    <th scope="col">State</th>
+                    <th scope="col">Receipt</th>
+                    <th scope="col">Updated</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {agentRuns.map((run) => {
+                    const charged = run.billing?.outcome === "charged";
+                    const terminal = run.state === "terminal";
+                    return (
+                      <tr key={run.run_id}>
+                        <td title={run.run_id} style={{ fontFamily: "var(--ed-m)" }}>{run.run_id.slice(0, 8)}…</td>
+                        <td
+                          style={{ maxWidth: 330, overflow: "hidden", textOverflow: "ellipsis" }}
+                          title={run.pet_deleted ? "Private run content removed with pet deletion" : run.goal || undefined}
+                        >
+                          {run.pet_deleted
+                            ? <><b>Deleted pet</b> · private run content removed</>
+                            : <><b>{run.pet_name || "Pet"}</b> · {run.goal || "—"}</>}
+                        </td>
+                        <td>
+                          <span style={{ color: terminal ? statusColor(run.completed ? "completed" : "failed") : statusColor("pending"), fontFamily: "var(--ed-m)", fontWeight: 700, textTransform: "uppercase" }}>
+                            {terminal ? (run.completed ? "completed" : run.stopped_reason || "stopped") : run.state}
+                          </span>
+                        </td>
+                        <td>
+                          {terminal && run.billing
+                            ? charged
+                              ? `${run.billing.creditsCharged ?? 0} cr charged`
+                              : "refunded"
+                            : "Pending reconciliation"}
+                          {terminal && typeof run.credits_remaining === "number" ? ` · ${run.credits_remaining} left` : ""}
+                        </td>
+                        <td>{fmtDate(run.terminal_at || run.updated_at)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         {/* ── BILLING ── */}

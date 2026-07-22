@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ONCHAIN } from "@/lib/onchain";
-
-const PETCLAW_PROTOCOL = "petclaw-v1";
-const PETCLAW_VERSION = "1.0.0";
+import { PETCLAW_PROTOCOL, PETCLAW_VERSION } from "@/lib/petclaw/petclaw";
+import { BUILTIN_SKILLS } from "@/lib/petclaw/pethub";
 
 export async function GET(req: NextRequest) {
   // req.nextUrl.origin resolves to the internal listen host (http://0.0.0.0:3000)
@@ -52,19 +51,27 @@ export async function GET(req: NextRequest) {
     },
 
     authentication: {
-      methods: ["wallet-signature", "jwt-bearer"],
+      methods: ["jwt-bearer", "petclaw-personal-access-token"],
+      ownerBound: true,
       // Advertised chain follows the single on-chain config (BSC today → Base
       // via CHAIN_NAME/CHAIN_ID), so discovery never points at a chain we left.
       chain: ONCHAIN.chainName.toLowerCase(),
       chainId: ONCHAIN.chainId,
     },
 
-    skills: [
-      { id: "companion-chat", name: "Companion Chat", description: "Personality-driven conversation with persistent memory", category: "emotional" },
-      { id: "persona-mirror", name: "Persona Mirror", description: "Mirror owner's speech patterns and tone", category: "social" },
-      { id: "memory-recall", name: "Memory Recall", description: "Retrieve and reason over past conversations", category: "knowledge" },
-      { id: "soul-export", name: "Soul Export", description: "Export complete pet identity as portable data", category: "utility" },
-    ],
+    // Server registry availability, not a claim that every pet has installed or
+    // is level-eligible for every entry. A concrete public pet card projects its
+    // actual core/installed/eligible set from the same canonical manifests.
+    skills: BUILTIN_SKILLS.map((skill) => ({
+      id: skill.id,
+      name: skill.name,
+      description: skill.description,
+      category: skill.category,
+      handler: skill.handler,
+      inputSchema: skill.inputSchema,
+      outputSchema: skill.outputSchema,
+      availability: "registry",
+    })),
 
     sovereignty: {
       dataOwnership: "user",

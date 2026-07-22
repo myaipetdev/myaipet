@@ -39,6 +39,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { callEmbedding } from "@/lib/llm/router";
+import { isProviderSafeRetainedText } from "./persistent-memory";
 
 // ── Tunables ──
 const CANDIDATE_LIMIT = 400; // max rows pulled into memory for in-process ranking
@@ -64,7 +65,7 @@ export interface RetrievedMemory {
   score: number;
 }
 
-interface CandidateRow {
+export interface CandidateRow {
   id: number;
   content: string;
   memory_type: string;
@@ -72,6 +73,17 @@ interface CandidateRow {
   importance: number;
   created_at: Date;
   embedding?: unknown; // JSON float array when an embedding has been stored, else null
+}
+
+/**
+ * Final outbound boundary for full-corpus recall. Raw rows stay untouched for
+ * owner inspection/export; unsafe rows simply cannot participate in ranking,
+ * embedding-trigger decisions, or prompt formatting.
+ */
+export function providerSafeRetrievalCandidates(candidates: CandidateRow[]): CandidateRow[] {
+  return candidates.filter((candidate) =>
+    isProviderSafeRetainedText(`${candidate.memory_type} ${candidate.content}`),
+  );
 }
 
 /** Coerce a stored embedding (JSONB → array, or a JSON string) to number[] | null. */
@@ -304,6 +316,20 @@ function scoreCandidates(
   return fused.sort((a, b) => b.score - a.score).slice(0, k);
 }
 
+export function rankProviderSafeRetrievalCandidates(
+  candidates: CandidateRow[],
+  query: string,
+  k = DEFAULT_K,
+  queryEmbedding?: number[] | null,
+): RetrievedMemory[] {
+  return scoreCandidates(
+    providerSafeRetrievalCandidates(candidates),
+    query,
+    Math.max(0, Math.min(20, Math.trunc(k) || 0)),
+    queryEmbedding,
+  );
+}
+
 /**
  * getRelevantMemories — GBrain-style top-K recall over the full pet_memories
  * corpus. This is the public entry point used by the chat route.
@@ -320,7 +346,9 @@ export async function getRelevantMemories(
   opts: { includeSessionLog?: boolean } = {}
 ): Promise<RetrievedMemory[]> {
   const excludeSessionLog = !opts.includeSessionLog;
-  const candidates = await fetchCandidates(petId, query, excludeSessionLog);
+  const candidates = providerSafeRetrievalCandidates(
+    await fetchCandidates(petId, query, excludeSessionLog),
+  );
   // Semantic ranking only if some candidates already carry stored embeddings
   // (i.e. the backfill has run for this pet) — this keeps the common, non-
   // embedding case free of any embedding-API call. callEmbedding itself returns
@@ -330,15 +358,18 @@ export async function getRelevantMemories(
     const out = await callEmbedding([query.trim()], petId).catch(() => null);
     queryEmbedding = out && out[0] ? out[0] : null;
   }
-  return scoreCandidates(candidates, query, k, queryEmbedding);
+  return rankProviderSafeRetrievalCandidates(candidates, query, k, queryEmbedding);
 }
 
 /**
  * Convenience formatter for prompt injection.
  */
 export function formatRetrievedMemories(mems: RetrievedMemory[]): string {
-  if (mems.length === 0) return "";
-  return mems.map((m) => `- ${m.content}`).join("\n");
+  const safe = mems.filter((memory) =>
+    isProviderSafeRetainedText(`${memory.memoryType} ${memory.content}`),
+  );
+  if (safe.length === 0) return "";
+  return safe.map((m) => `- ${m.content}`).join("\n");
 }
 
 /* ────────────────────────────────────────────────────────────────────────────

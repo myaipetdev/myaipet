@@ -23,10 +23,12 @@ import { rateLimit } from "@/lib/rateLimit";
 import { ownsPet } from "@/lib/authz";
 import { callLLM } from "@/lib/llm/router";
 import {
-  containsHangul,
   generatedEnglishOrFallback,
   generatedEnglishOrNull,
 } from "@/lib/generatedLanguage";
+import { withLockedPetModifiers } from "@/lib/petclaw/modifier-store";
+import { isProviderSafeRetainedText } from "@/lib/petclaw/memory/persistent-memory";
+import { buildThoughtProviderMemory } from "@/lib/petclaw/memory/provider-context";
 
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 
@@ -55,20 +57,33 @@ interface CachedThought {
   text: string;
   emotion: string;
   generatedAt: string;
+  memoryEpoch: number;
 }
 
-async function generateWithLLM(pet: any): Promise<string | null> {
-  // Pull a few last memories for context (cheap — already loaded by memory infra)
-  const recent = await prisma.petMemory.findMany({
-    where: { pet_id: pet.id, memory_type: { in: ["interaction", "conversation", "combo", "milestone"] } },
-    orderBy: { created_at: "desc" }, take: 5,
-    select: { content: true, emotion: true },
+type ThoughtMoment = {
+  id: number;
+  content: string;
+  emotion: string;
+  created_at: Date;
+};
+
+function thoughtSourceSnapshot(pet: any, recent: ThoughtMoment[]): string {
+  return JSON.stringify({
+    name: pet.name,
+    personality: pet.personality_type,
+    level: pet.level,
+    happiness: pet.happiness,
+    hunger: pet.hunger,
+    energy: pet.energy,
+    recent: recent.map((row) => [row.id, row.content, row.emotion, row.created_at.toISOString()]),
   });
-  const recentLines = recent
-    .filter((row) => !containsHangul(row.content))
-    .map(r => `- ${r.content}`)
-    .join("\n")
-    .slice(0, 600);
+}
+
+async function generateWithLLM(pet: any, recent: ThoughtMoment[]): Promise<string | null> {
+  const recentLines = buildThoughtProviderMemory(recent);
+  const providerPetName = isProviderSafeRetainedText(`pet_name ${pet.name}`)
+    ? pet.name
+    : "your pet";
 
   const mood = pet.happiness >= 70 ? "happy" : pet.hunger > 60 ? "hungry"
     : pet.energy < 30 ? "sleepy" : pet.happiness < 30 ? "wistful" : "calm";
@@ -82,7 +97,7 @@ async function generateWithLLM(pet: any): Promise<string | null> {
       messages: [
         {
           role: "system",
-          content: `You are ${pet.name}, a ${pet.personality_type} ${mood} pet at Lv.${pet.level}. Output ONE sentence (max 18 words) of an inner thought you're having right now. First person. Casual, not formal. No quotes, no preamble. No emoji unless 1 fits. Always write in English.`,
+          content: `You are ${providerPetName}, a ${pet.personality_type} ${mood} pet at Lv.${pet.level}. Output ONE sentence (max 18 words) of an inner thought you're having right now. First person. Casual, not formal. No quotes, no preamble. No emoji unless 1 fits. Always write in English.`,
         },
         {
           role: "user",
@@ -123,7 +138,9 @@ export async function GET(
   const cached: CachedThought | undefined = mods.thought_of_day;
   const now = Date.now();
   const cachedAt = cached ? new Date(cached.generatedAt).getTime() : 0;
-  const isFresh = cached && (now - cachedAt) < CACHE_TTL_MS;
+  const isFresh = cached
+    && cached.memoryEpoch === pet.memory_epoch
+    && (now - cachedAt) < CACHE_TTL_MS;
 
   if (isFresh && cached) {
     return NextResponse.json({
@@ -134,19 +151,83 @@ export async function GET(
     });
   }
 
+  // Capture every source that can affect the generated text before the long
+  // model call. A clear/edit advances memory_epoch; a new interaction changes
+  // the source ledger snapshot. Either condition makes the result stale.
+  const recent = await prisma.petMemory.findMany({
+    where: { pet_id: pet.id, memory_type: { in: ["interaction", "conversation", "combo", "milestone"] } },
+    orderBy: { created_at: "desc" },
+    take: 5,
+    select: { id: true, content: true, emotion: true, created_at: true },
+  });
+  const startEpoch = pet.memory_epoch;
+  const sourceLedgerSnapshot = thoughtSourceSnapshot(pet, recent);
+  const cacheSnapshot = JSON.stringify(mods.thought_of_day ?? null);
+
   // Generate fresh — LLM or fallback
-  const llmText = await generateWithLLM(pet);
+  const llmText = await generateWithLLM(pet, recent);
   const text = llmText || pickFallback(pet.personality_type);
   const emotion = pet.happiness >= 70 ? "happy"
     : pet.hunger > 60 ? "hungry"
     : pet.energy < 30 ? "sleepy"
     : "calm";
 
-  const fresh: CachedThought = { text, emotion, generatedAt: new Date().toISOString() };
-  await prisma.pet.update({
-    where: { id: pet.id },
-    data: { personality_modifiers: { ...mods, thought_of_day: fresh } as any },
+  const fresh: CachedThought = {
+    text,
+    emotion,
+    generatedAt: new Date().toISOString(),
+    memoryEpoch: startEpoch,
+  };
+  const commit = await withLockedPetModifiers(pet.id, async ({ tx, pet: lockedPet, modifiers }) => {
+    const [currentPet, currentRecent] = await Promise.all([
+      tx.pet.findUnique({ where: { id: pet.id } }),
+      tx.petMemory.findMany({
+        where: { pet_id: pet.id, memory_type: { in: ["interaction", "conversation", "combo", "milestone"] } },
+        orderBy: { created_at: "desc" },
+        take: 5,
+        select: { id: true, content: true, emotion: true, created_at: true },
+      }),
+    ]);
+    const currentCache = modifiers.thought_of_day as CachedThought | undefined;
+    if (
+      !currentPet
+      || lockedPet.memory_epoch !== startEpoch
+      || thoughtSourceSnapshot(currentPet, currentRecent) !== sourceLedgerSnapshot
+      || JSON.stringify(modifiers.thought_of_day ?? null) !== cacheSnapshot
+    ) {
+      return { committed: false as const, currentCache, currentEpoch: lockedPet.memory_epoch };
+    }
+    await tx.pet.update({
+      where: { id: pet.id },
+      data: { personality_modifiers: { ...modifiers, thought_of_day: fresh } as any },
+    });
+    return { committed: true as const, currentCache: fresh, currentEpoch: startEpoch };
   });
+
+  if (!commit.committed) {
+    const current = commit.currentCache;
+    const currentAt = current ? new Date(current.generatedAt).getTime() : 0;
+    if (
+      current?.text
+      && current.memoryEpoch === commit.currentEpoch
+      && Date.now() - currentAt < CACHE_TTL_MS
+    ) {
+      return NextResponse.json({
+        thought: generatedEnglishOrFallback(current.text, pickFallback(pet.personality_type)),
+        emotion: current.emotion,
+        generatedAt: current.generatedAt,
+        cached: true,
+      });
+    }
+    const safeFallback = pickFallback(pet.personality_type);
+    return NextResponse.json({
+      thought: safeFallback,
+      emotion,
+      generatedAt: new Date().toISOString(),
+      cached: false,
+      staleDiscarded: true,
+    });
+  }
 
   return NextResponse.json({ thought: text, emotion, generatedAt: fresh.generatedAt, cached: false });
 }

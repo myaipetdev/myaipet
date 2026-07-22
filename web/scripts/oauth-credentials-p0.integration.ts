@@ -22,7 +22,7 @@ async function contractChecks() {
     source("prisma/migrations/20260717168000_oauth_credentials_lockdown/migration.sql"),
     readFile(new URL("../../deploy/release-smoke.sh", import.meta.url), "utf8"),
     readFile(new URL("../../deploy/ENV-CHECKLIST.md", import.meta.url), "utf8"),
-    source(".env.production.example"),
+    source("config/production.env.example"),
   ]);
 
   for (const [name, text, sensitiveOperation] of [

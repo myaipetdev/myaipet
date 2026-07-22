@@ -75,7 +75,7 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
         </span>
       </div>
       <div style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#7A6E5A", marginBottom: 14 }}>
-        {petName} carries this across every session — that&apos;s the whole point.
+        Selected retained details can help {petName} continue later conversations. You can review or clear them in PetClaw.
       </div>
 
       {empty && (
@@ -140,7 +140,7 @@ export default function MemoryJournal({ petId, petName }: { petId: number; petNa
             HOW {petName.toUpperCase()} IS LEARNING TO TREAT YOU
           </div>
           <div style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#7A6E5A", lineHeight: 1.55, marginBottom: 10 }}>
-            Every few chats, {petName} quietly reflects on the relationship — what helps, what to avoid — and folds it into how it talks to you next time. Here&apos;s what it has noted so far.
+            Periodic, best-effort reflection can record relationship guidance for later replies. It may no-op, and you can inspect or remove the retained result. Here&apos;s what is currently recorded.
           </div>
           {bondNotes.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: learned.length > 0 ? 12 : 0 }}>

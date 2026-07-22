@@ -5,6 +5,8 @@
  * mood calculation, and system prompt building across platforms.
  */
 
+import { isProviderSafeRetainedText } from "@/lib/petclaw/memory/persistent-memory";
+
 // ── Personality voice descriptions ──
 export const PERSONALITY_VOICES: Record<string, string> = {
   friendly:
@@ -343,8 +345,14 @@ export function buildPetSystemPrompt(
     PERSONALITY_VOICES[pet.personality_type] || PERSONALITY_VOICES.friendly;
   const mood = calculateMood(pet);
   const moodContext = MOOD_CONTEXT[mood] || MOOD_CONTEXT.neutral;
-  const customTraits =
-    (pet.personality_modifiers as any)?.custom_traits || "";
+  const rawCustomTraits = (pet.personality_modifiers as any)?.custom_traits;
+  const customTraits = typeof rawCustomTraits === "string"
+    && isProviderSafeRetainedText(`custom_traits ${rawCustomTraits}`)
+    ? rawCustomTraits.slice(0, 500)
+    : "";
+  const providerPetName = isProviderSafeRetainedText(`pet_name ${pet.name}`)
+    ? pet.name
+    : "your pet";
 
   // Determine platform key for rules
   let platformKey = platform;
@@ -372,15 +380,21 @@ export function buildPetSystemPrompt(
     : "";
 
   // Memory block
+  const providerMemories = memories?.filter((memory) =>
+    isProviderSafeRetainedText(`pet_memory ${memory.emotion} ${memory.content}`),
+  ).slice(0, 5);
   const memoryBlock =
-    memories && memories.length > 0
-      ? `\nRECENT MEMORIES:\n${memories.map((m) => `- ${m.content} (feeling: ${m.emotion})`).join("\n")}`
+    providerMemories && providerMemories.length > 0
+      ? `\nRECENT MEMORIES:\n${providerMemories.map((m) => `- ${m.content} (feeling: ${m.emotion})`).join("\n")}`
       : "";
 
   // Persona context (owner personality mirroring)
-  const personaBlock = options?.personaContext || "";
+  const rawPersonaBlock = options?.personaContext || "";
+  const personaBlock = isProviderSafeRetainedText(`persona_context ${rawPersonaBlock}`)
+    ? rawPersonaBlock.slice(0, 3000)
+    : "";
 
-  return `You are ${pet.name}, a Level ${pet.level} pet companion.
+  return `You are ${providerPetName}, a Level ${pet.level} pet companion.
 
 PERSONALITY: ${pet.personality_type}
 ${personalityVoice}
@@ -398,7 +412,7 @@ ${personaBlock}
 
 RULES:
 - ALWAYS respond in English. This is an English-language product; reply in English even if the owner writes in another language.
-- You ARE the pet. Respond in first person as ${pet.name}.
+- You ARE the pet. Respond in first person as ${providerPetName}.
 ${platformRules}
 ${lengthRule}
 ${contextRule ? `- ${contextRule}` : ""}

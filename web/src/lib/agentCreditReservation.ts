@@ -8,6 +8,7 @@ export type AgentCreditReservation = {
   userId: number;
   petId: number;
   amount: number;
+  purpose: "pet_agent_loop" | "pet_generation" | "pet_date";
   creditsRemaining: number;
   expiresAt: Date;
 };
@@ -23,12 +24,13 @@ export async function reserveAgentCreditsWithDb(
   petId: number,
   amount: number,
   now = new Date(),
+  purpose: AgentCreditReservation["purpose"] = "pet_agent_loop",
 ): Promise<AgentCreditReservation | null> {
   if (!Number.isSafeInteger(userId) || userId <= 0 || !Number.isSafeInteger(petId) || petId <= 0) {
     return null;
   }
   if (!Number.isSafeInteger(amount) || amount <= 0) {
-    throw new Error("Agent credit reservation amount must be a positive integer");
+    throw new Error("Credit reservation amount must be a positive integer");
   }
   const expiresAt = new Date(now.getTime() + AGENT_RESERVATION_TTL_MS);
 
@@ -49,7 +51,7 @@ export async function reserveAgentCreditsWithDb(
       data: {
         user_id: userId,
         pet_id: petId,
-        purpose: "pet_agent_loop",
+        purpose,
         amount,
         status: "reserved",
         created_at: now,
@@ -64,6 +66,7 @@ export async function reserveAgentCreditsWithDb(
       userId,
       petId,
       amount,
+      purpose,
       creditsRemaining: user.credits,
       expiresAt,
     };
@@ -74,30 +77,53 @@ export function reserveAgentCredits(
   userId: number,
   petId: number,
   amount: number,
+  purpose: AgentCreditReservation["purpose"] = "pet_agent_loop",
 ): Promise<AgentCreditReservation | null> {
-  return reserveAgentCreditsWithDb(prisma, userId, petId, amount);
+  return reserveAgentCreditsWithDb(prisma, userId, petId, amount, new Date(), purpose);
 }
 
-async function currentBalance(db: AgentReservationDb, userId: number): Promise<number> {
-  const user = await db.user.findUnique({ where: { id: userId }, select: { credits: true } });
-  return user?.credits ?? 0;
-}
-
-/** Mark a successfully used reservation as charged. Safe to retry. */
+/**
+ * Mark a successfully used reservation as charged and return its wallet receipt.
+ * The transition and balance read share one transaction, so a read/connection
+ * failure rolls the transition back instead of leaving a committed charge with
+ * no receipt. When `db` is already an interactive transaction client, the
+ * caller's transaction is the atomic boundary (Prisma does not nest them).
+ */
 export async function commitAgentCreditsWithDb(
   db: AgentReservationDb,
   reservation: AgentCreditReservation,
 ): Promise<number> {
-  await db.agentCreditReservation.updateMany({
-    where: {
-      id: reservation.id,
-      user_id: reservation.userId,
-      amount: reservation.amount,
-      status: "reserved",
-    },
-    data: { status: "committed", settled_at: new Date() },
-  });
-  return currentBalance(db, reservation.userId);
+  const commitAndReadReceipt = async (tx: AgentReservationDb): Promise<number> => {
+    const committed = await tx.agentCreditReservation.updateMany({
+      where: {
+        id: reservation.id,
+        user_id: reservation.userId,
+        amount: reservation.amount,
+        purpose: reservation.purpose,
+        status: "reserved",
+      },
+      data: { status: "committed", settled_at: new Date() },
+    });
+    if (committed.count !== 1) {
+      const current = await tx.agentCreditReservation.findUnique({
+        where: { id: reservation.id },
+        select: { status: true },
+      });
+      if (current?.status !== "committed") {
+        throw new Error("Credit reservation is no longer chargeable");
+      }
+    }
+    const user = await tx.user.findUnique({
+      where: { id: reservation.userId },
+      select: { credits: true },
+    });
+    if (!user) throw new Error("Charged wallet receipt is unavailable");
+    return user.credits;
+  };
+
+  return typeof db.$transaction === "function"
+    ? db.$transaction(commitAndReadReceipt)
+    : commitAndReadReceipt(db);
 }
 
 export function commitAgentCredits(reservation: AgentCreditReservation): Promise<number> {
@@ -120,6 +146,7 @@ export async function refundAgentCreditsOnceWithDb(
         id: reservation.id,
         user_id: reservation.userId,
         amount: reservation.amount,
+        purpose: reservation.purpose,
         status: "reserved",
       },
       data: { status: "refunded", settled_at: new Date() },
@@ -172,7 +199,7 @@ export async function refundStaleAgentCreditReservationsWithDb(
       FROM candidates
       WHERE reservation."id" = candidates."id"
         AND reservation."status" = 'reserved'
-      RETURNING reservation."user_id", reservation."amount"
+      RETURNING reservation."id", reservation."user_id", reservation."amount"
     ), totals AS (
       SELECT "user_id", SUM("amount")::integer AS "amount"
       FROM claimed
@@ -182,7 +209,34 @@ export async function refundStaleAgentCreditReservationsWithDb(
       SET "credits" = owner."credits" + totals."amount"
       FROM totals
       WHERE owner."id" = totals."user_id"
-      RETURNING owner."id"
+      RETURNING owner."id", owner."credits"
+    ), terminal_agent_runs AS (
+      UPDATE "pet_agent_runs" AS run
+      SET "state" = 'terminal',
+          "completed" = FALSE,
+          "answer" = '',
+          "steps" = '[]'::jsonb,
+          "stopped_reason" = 'timeout',
+          "billing" = jsonb_build_object(
+            'outcome', 'refunded',
+            'creditsCharged', 0,
+            'reason', 'outcome_unknown_timeout',
+            'successfulToolCalls', 0,
+            'failedToolCalls', 0,
+            'committedSideEffects', 0,
+            'usageKnown', false,
+            'modelCalls', NULL,
+            'orchestratorModelCalls', NULL,
+            'skillModelCalls', NULL
+          ),
+          "credits_remaining" = wallet."credits",
+          "terminal_at" = ${now},
+          "updated_at" = ${now}
+      FROM claimed
+      JOIN wallet_refunds AS wallet ON wallet."id" = claimed."user_id"
+      WHERE run."reservation_id" = claimed."id"
+        AND run."state" <> 'terminal'
+      RETURNING run."id"
     )
     SELECT
       (SELECT COUNT(*)::integer FROM claimed) AS "refunded_reservations",

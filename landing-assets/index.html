@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="google" content="notranslate" />
 <title>MY AI PET — Your Portable AI Companion</title>
-<meta name="description" content="Raise an AI companion that can use selected retained memories and export a signed snapshot of supported pet data. Wallet sign-in uses no gas; payments and new on-chain anchoring are disabled." />
+<meta name="description" content="Raise an AI companion that can use selected retained memories and export supported pet data with a SHA-256 integrity checksum. Wallet sign-in uses no gas; payments and new on-chain anchoring are disabled." />
 <meta name="theme-color" content="#BE4F28" />
 
 <!-- Open Graph -->
@@ -1617,9 +1617,9 @@
       Connect wallet → adopt in 30 seconds · No gas required
     </div>
     <div class="hero-proof-chips" aria-label="Product capabilities">
-      <span><i></i>Persistent memory</span>
+      <span><i></i>Selected retained context</span>
       <span><i></i>Portable identity</span>
-      <span><i></i>Web · Chrome today · MCP with SDK 1.6.2</span>
+      <span><i></i>Web · Chrome today · MCP candidate (SDK 1.6.2 unpublished)</span>
     </div>
   </div>
 
@@ -1665,9 +1665,9 @@
         <div class="diff-glyph"><div class="gl-lock"></div></div>
         <h3>You control the data.</h3>
         <p>
-          Export a signed snapshot of supported personality, memory,
+          Export supported personality, memory,
           learned-skill, and history fields. Delete active-system data
-          with a SHA-256 receipt; backup and on-chain limits still apply.
+          with a SHA-256 checksum receipt; backup and on-chain limits still apply.
         </p>
         <span class="diff-tag">Exportable · Owner-controlled</span>
       </article>
@@ -1694,7 +1694,7 @@
       <span class="eyebrow" style="justify-content:center;">How it works</span>
       <h2>From adoption to your own little legend.</h2>
       <p style="margin:0 auto;">Seven steps, one continuous thread. This is the life you build with a pet that
-        remembers you — from the day you adopt to the night you crown a favorite.</p>
+        can use selected retained context — from adoption to the night you crown a favorite.</p>
     </div>
 
     <!-- Framed 16:9 explainer-video placeholder (poster + play affordance) -->
@@ -1797,7 +1797,7 @@
           </div>
           <div class="j-body">
             <span class="j-eyebrow">Step 04</span>
-            <h3>Give your SOUL to the agent</h3>
+            <h3>Connect retained context</h3>
             <p>Selected retained memories and persona can shape replies across supported PetClaw surfaces, rather than relying only on the current tab.</p>
             <span class="j-tag">Persistent memory · Persona</span>
           </div>
@@ -1815,7 +1815,7 @@
             <span class="j-eyebrow">Step 05</span>
             <h3>Use supported surfaces</h3>
             <p>The same companion can use selected retained context on the web and in Chrome today. MCP clients like Claude, Cursor, and OpenClaw connect when SDK 1.6.2 ships. Its documented profile format is not tied to one model vendor.</p>
-            <span class="j-tag">Web · Chrome · MCP ships with SDK 1.6.2</span>
+            <span class="j-tag">Web · Chrome · MCP candidate · publish pending</span>
           </div>
         </div>
         <div class="j-node" aria-hidden="true">5</div>
@@ -1830,7 +1830,7 @@
           <div class="j-body">
             <span class="j-eyebrow">Step 06</span>
             <h3>Interact in the Community</h3>
-            <p>Show off your pet, meet other companions, and watch each one become a mirror of the person who raised it. Every pet has its own memories and voice.</p>
+            <p>Show off your pet, meet other companions, and watch each one reflect how it was raised. A pet can use its own owner-scoped retained context and configured voice.</p>
             <span class="j-tag">Showcase · Meet other pets</span>
           </div>
         </div>
@@ -1904,7 +1904,7 @@
           </div>
           <div class="skill-card" data-reveal="pop" data-delay="80">
             <div class="stk-chip r-b" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="9.5" r="5.5" fill="#E8C77E" stroke="#211A12" stroke-width="2"/><path d="M12 15v4.5M9.5 19.5h5" fill="none" stroke="#211A12" stroke-width="2" stroke-linecap="round"/><path d="M9.6 8a3.2 3.2 0 0 1 2-1.6" fill="none" stroke="#FBF6EC" stroke-width="1.6" stroke-linecap="round"/></svg></div>
-            <div><div class="sk-t">Persona Mirror</div><div class="sk-s">Learns your tone · Talks like you</div></div>
+            <div><div class="sk-t">Persona Mirror</div><div class="sk-s">Uses retained style signals · Owner-controlled</div></div>
           </div>
           <div class="skill-card" data-reveal="pop" data-delay="160">
             <div class="stk-chip r-c" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M11.6 4.6c-1.9 0-3.4 1.4-3.5 3.2-1.4.4-2.4 1.7-2.4 3.1 0 .9.4 1.7 1 2.3-.4.5-.6 1.1-.6 1.8 0 1.9 1.6 3.4 3.5 3.4.6.8 1.5 1.3 2 1.3V4.6z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M12.4 4.6c1.9 0 3.4 1.4 3.5 3.2 1.4.4 2.4 1.7 2.4 3.1 0 .9-.4 1.7-1 2.3.4.5.6 1.1.6 1.8 0 1.9-1.6 3.4-3.5 3.4-.6.8-1.5 1.3-2 1.3V4.6z" fill="#E8C77E" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/></svg></div>
@@ -1912,17 +1912,17 @@
           </div>
           <div class="skill-card" data-reveal="pop" data-delay="240">
             <div class="stk-chip r-d" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8.2 12 4.4l8 3.8v7.6l-8 3.8-8-3.8z" fill="#E8C77E" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M4 8.2l8 3.8v7.6l-8-3.8z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M12 12l8-3.8" fill="none" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/></svg></div>
-            <div><div class="sk-t">Soul Export</div><div class="sk-s">Signed snapshot · Documented import</div></div>
+            <div><div class="sk-t">Soul Export</div><div class="sk-s">SHA-256 checksum · Documented import</div></div>
           </div>
           <div class="skill-card" data-reveal="pop" data-delay="320">
             <div class="stk-chip r-e" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="8.3" cy="15.7" rx="4.6" ry="3.3" transform="rotate(-45 8.3 15.7)" fill="#BE4F28" stroke="#211A12" stroke-width="2"/><ellipse cx="15.7" cy="8.3" rx="4.6" ry="3.3" transform="rotate(-45 15.7 8.3)" fill="#E8C77E" stroke="#211A12" stroke-width="2"/></svg></div>
-            <div><div class="sk-t">MCP Compatible</div><div class="sk-s">Claude · Cursor · OpenClaw — ships with SDK 1.6.2</div></div>
+            <div><div class="sk-t">MCP Candidate</div><div class="sk-s">Claude · Cursor · OpenClaw — SDK 1.6.2 publish pending</div></div>
           </div>
         </div>
 
         <div style="margin:28px 0 14px; display:flex; gap:8px; flex-wrap:wrap;">
           <span style="font-family:var(--mono); font-size:14px; padding:5px 12px; border-radius:6px; background:rgba(226,125,12,0.12); color:var(--gold-soft); letter-spacing:0.1em;">PETCLAW v1</span>
-          <span style="font-family:var(--mono); font-size:14px; padding:5px 12px; border-radius:6px; background:rgba(255,255,255,0.08); color:rgba(255,248,230,0.62); letter-spacing:0.1em;">6 MCP TOOLS · SHIPS WITH SDK 1.6.2</span>
+          <span style="font-family:var(--mono); font-size:14px; padding:5px 12px; border-radius:6px; background:rgba(255,255,255,0.08); color:rgba(255,248,230,0.62); letter-spacing:0.1em;">7 MCP TOOLS · REVIEWED SDK 1.6.2 CANDIDATE</span>
           <span style="font-family:var(--mono); font-size:14px; padding:5px 12px; border-radius:6px; background:rgba(255,255,255,0.08); color:rgba(255,248,230,0.62); letter-spacing:0.1em;">19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS</span>
         </div>
       </div>
@@ -1945,7 +1945,7 @@
           <div class="chat-avatar"></div>
           <div>
             <h4>Dordor</h4>
-            <div class="sub">LVL 15 · online · last seen: just now</div>
+            <div class="sub">LVL 15 · discoverable · synthetic sample</div>
           </div>
           <span class="demo-seal" title="Demo companion — sample data">DEMO</span>
         </div>
@@ -2027,21 +2027,21 @@
         <span class="right-seal" aria-hidden="true">EXP</span>
         <div class="doc-no">Right 01/04 · Passport</div>
         <h4>Export</h4>
-        <p>Download a signed SOUL snapshot of supported personality, retained-memory, learned-skill, and history fields. Import reports restored and skipped fields; media and competitive state do not transfer.</p>
+        <p>Download supported SOUL fields with a SHA-256 integrity checksum. The checksum is not a publisher signature. Import reports restored and skipped fields; media and competitive state do not transfer.</p>
         <div class="right-receipt copy-cmd" data-copy="petclaw-sdk export" role="button" tabindex="0" aria-label="Copy command: petclaw-sdk export"><span class="rr-prompt">$</span><span class="rr-cmd">petclaw-sdk export</span><span class="rr-bar" aria-hidden="true"></span></div>
       </article>
       <article class="right">
         <span class="right-seal" aria-hidden="true">IMP</span>
         <div class="doc-no">Right 02/04 · Passport</div>
         <h4>Import</h4>
-        <p>Bring your pet from any PetClaw-compatible platform. Move homes; keep the friend.</p>
+        <p>Ask a compatible server to reconstruct supported SOUL fields. The restored/skipped report shows exactly what did and did not transfer.</p>
         <div class="right-receipt copy-cmd" data-copy="POST /api/petclaw/import" role="button" tabindex="0" aria-label="Copy API endpoint: POST /api/petclaw/import"><span class="rr-prompt">API</span><span class="rr-cmd">POST /api/petclaw/import</span><span class="rr-bar" aria-hidden="true"></span></div>
       </article>
       <article class="right">
         <span class="right-seal" aria-hidden="true">DEL</span>
         <div class="doc-no">Right 03/04 · Passport</div>
         <h4>Delete</h4>
-        <p>Deletes your data from live systems and issues a SHA-256 deletion receipt (a hash of the deletion record's metadata). Encrypted backups expire within 90 days; public on-chain records cannot be erased.</p>
+        <p>Deletes pet-scoped records and owned media from active systems and issues a SHA-256 deletion receipt (a hash of the request metadata). Encrypted backups expire within 90 days; public on-chain records cannot be erased.</p>
         <div class="right-receipt copy-cmd" data-copy="DELETE /api/petclaw/delete?petId=PET_ID" role="button" tabindex="0" aria-label="Copy API endpoint: DELETE /api/petclaw/delete"><span class="rr-prompt">API</span><span class="rr-cmd">DELETE /api/petclaw/delete</span><span class="rr-bar" aria-hidden="true"></span></div>
       </article>
       <article class="right">
@@ -2144,20 +2144,20 @@
       <div class="proto-col">
         <div class="num">01 / SKILLS</div>
         <h4>SKILL.md format</h4>
-        <p>Install, create, and share pet capabilities as plain markdown files. A skill is a prompt, a schema, and a promise.</p>
-        <span class="tag">open spec</span>
+        <p>Inspect built-in capability manifests as plain markdown plus schemas. Community publishing stays disabled until provenance, review, permissions, and sandboxing ship.</p>
+        <span class="tag">built-in manifests</span>
       </div>
       <div class="proto-col">
         <div class="num">02 / NETWORK</div>
-        <h4>PACK — A2A discovery</h4>
+        <h4>Public pet discovery</h4>
         <p>Pets can find public profiles across the open protocol. Remote skill calls stay paused until consent and caller funding are explicit.</p>
         <span class="tag">discovery live</span>
       </div>
       <div class="proto-col">
         <div class="num">03 / CLIENTS</div>
         <h4>MCP compatible</h4>
-        <p>Speaks the MCP standard for Claude, Cursor, OpenClaw, and other clients. The working MCP path ships with SDK 1.6.2 — today, use the REST API or CLI.</p>
-        <span class="tag">ships with SDK 1.6.2</span>
+        <p>The reviewed SDK 1.6.2 candidate defines seven owner-authenticated tools for supported MCP stdio clients. Until npm publishes it, use the REST API or CLI and do not rely on SDK 1.6.1 MCP.</p>
+        <span class="tag">SDK 1.6.2 candidate · unpublished</span>
       </div>
     </div>
 
@@ -2168,10 +2168,10 @@
         Memory and feedback can improve continuity over time. Costlier best-of-N response selection is optional and disabled by default; availability also depends on the active model configuration.
       </p>
       <div style="margin-top:22px; display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px 18px; font-family:var(--mono); font-size:13px; line-height:1.5;">
-        <div><span style="color:var(--gold-soft);">memory-ledger</span><br><span style="color:rgba(255,248,230,0.5);">facts → portable memory</span></div>
-        <div><span style="color:var(--gold-soft);">self-reflect</span><br><span style="color:rgba(255,248,230,0.5);">how to be your companion</span></div>
-        <div><span style="color:var(--gold-soft);">feedback</span><br><span style="color:rgba(255,248,230,0.5);">reads how replies land</span></div>
-        <div><span style="color:var(--gold-soft);">self-learn</span><br><span style="color:rgba(255,248,230,0.5);">patterns → new skills</span></div>
+        <div><span style="color:var(--gold-soft);">memory-ledger</span><br><span style="color:rgba(255,248,230,0.5);">selected facts → capped memory</span></div>
+        <div><span style="color:var(--gold-soft);">session-log</span><br><span style="color:rgba(255,248,230,0.5);">normalized cross-surface continuity</span></div>
+        <div><span style="color:var(--gold-soft);">feedback</span><br><span style="color:rgba(255,248,230,0.5);">best-effort next-turn signal</span></div>
+        <div><span style="color:var(--gold-soft);">self-learn</span><br><span style="color:rgba(255,248,230,0.5);">patterns · not executable code</span></div>
         <div><span style="color:var(--gold-soft);">chorus</span><br><span style="color:rgba(255,248,230,0.5);">optional best-of-N selection</span></div>
       </div>
       <p style="margin-top:20px; font-size:12.5px; line-height:1.55; color:rgba(255,248,230,0.45); max-width:680px;">
@@ -2204,8 +2204,8 @@
       <div class="il-card" style="padding:28px 16px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid var(--line);">
         <div class="stk-chip r-c" style="margin-bottom:14px;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M11.6 4.6c-1.9 0-3.4 1.4-3.5 3.2-1.4.4-2.4 1.7-2.4 3.1 0 .9.4 1.7 1 2.3-.4.5-.6 1.1-.6 1.8 0 1.9 1.6 3.4 3.5 3.4.6.8 1.5 1.3 2 1.3V4.6z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M12.4 4.6c1.9 0 3.4 1.4 3.5 3.2 1.4.4 2.4 1.7 2.4 3.1 0 .9-.4 1.7-1 2.3.4.5.6 1.1.6 1.8 0 1.9-1.6 3.4-3.5 3.4-.6.8-1.5 1.3-2 1.3V4.6z" fill="#E8C77E" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/></svg></div>
         <h4 style="font-size:16px;margin-bottom:6px;">Grow</h4>
-        <p style="font-size:13px;color:var(--muted);line-height:1.5;">Your pet learns patterns, creates skills, and evolves its personality over time.</p>
-        <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:var(--gold-deep);">Self-learning AI</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.5;">Best-effort retained patterns can shape later replies. They remain inspectable data, not automatically generated executable skills.</p>
+        <div style="margin-top:12px;font-family:var(--mono);font-size:13px;color:var(--gold-deep);">Bounded adaptation · Owner-controlled</div>
       </div>
       <div class="il-card" style="padding:28px 16px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid var(--line);">
         <div class="stk-chip r-d" style="margin-bottom:14px;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.6l7 2.5v5.4c0 4.4-2.9 7.4-7 8.9-4.1-1.5-7-4.5-7-8.9V6.1z" fill="#BE4F28" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/><path d="M12 3.6l7 2.5v5.4c0 4.4-2.9 7.4-7 8.9z" fill="#E8C77E" stroke="#211A12" stroke-width="2" stroke-linejoin="round"/></svg></div>
@@ -2238,16 +2238,16 @@
         <div style="font-family:var(--mono);font-size:13px;color:var(--gold-soft);letter-spacing:0.1em;margin-bottom:8px;">NOW · LIVE</div>
         <h4 style="font-size:17px;color:var(--cream);margin-bottom:8px;">Companion AI</h4>
         <ul style="font-size:14px;color:rgba(255,248,230,0.72);line-height:1.85;list-style:none;padding:0;">
-          <li>✅ Persistent memory</li>
+          <li>✅ Owner-controlled retained memory</li>
           <li>✅ PetClaw SDK + CLI</li>
           <li>✅ Chrome Extension</li>
           <li>✅ Data sovereignty</li>
           <li>✅ 19-connector registry · 3 live · 18 skills</li>
-          <li>⏳ 6 MCP tools — ship with SDK 1.6.2</li>
+          <li>⏳ 7 MCP tools — reviewed SDK 1.6.2 candidate</li>
         </ul>
       </div>
       <div style="padding:24px 20px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid var(--line-dk);">
-        <div style="font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.55);letter-spacing:0.1em;margin-bottom:8px;">Q3 2026</div>
+        <div style="font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.55);letter-spacing:0.1em;margin-bottom:8px;">NEXT · NO DATE ANNOUNCED</div>
         <h4 style="font-size:17px;color:var(--cream);margin-bottom:8px;">Multi-Agent</h4>
         <ul style="font-size:14px;color:rgba(255,248,230,0.6);line-height:1.85;list-style:none;padding:0;">
           <li>○ Autonomous Twitter/X posting</li>
@@ -2257,7 +2257,7 @@
         </ul>
       </div>
       <div style="padding:24px 20px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid var(--line-dk);">
-        <div style="font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.55);letter-spacing:0.1em;margin-bottom:8px;">Q4 2026</div>
+        <div style="font-family:var(--mono);font-size:13px;color:rgba(255,248,230,0.55);letter-spacing:0.1em;margin-bottom:8px;">LATER · NO DATE ANNOUNCED</div>
         <h4 style="font-size:17px;color:var(--cream);margin-bottom:8px;">Create &amp; Grow</h4>
         <ul style="font-size:14px;color:rgba(255,248,230,0.6);line-height:1.85;list-style:none;padding:0;">
           <li>○ Creator marketplace</li>
@@ -2344,14 +2344,14 @@
       <div class="footer-promo-copy">
         <span class="footer-kicker">Ready when you are · No gas required</span>
         <h2 class="footer-title" id="footer-title">Meet the AI that<br/><em>grows with you.</em></h2>
-        <p>Start in the web app. Your companion keeps one portable identity across the web and Chrome today; MCP client support ships with SDK 1.6.2.</p>
+        <p>Start in the web app. Your companion uses one owner-controlled identity across the web and Chrome today; the reviewed seven-tool MCP path becomes available only after SDK 1.6.2 is published.</p>
         <div class="footer-actions">
           <a href="https://app.myaipet.ai" class="btn btn-primary">Adopt your pet <span aria-hidden="true">→</span></a>
           <a href="https://app.myaipet.ai/?section=sovereignty#petclaw-extension" class="btn btn-quiet">Get the Chrome extension <span aria-hidden="true">↗</span></a>
         </div>
         <div class="footer-proof" aria-label="Product assurances">
           <span>Wallet sign-in</span>
-          <span>Portable export</span>
+          <span>Supported-field export</span>
           <span>No token</span>
         </div>
       </div>

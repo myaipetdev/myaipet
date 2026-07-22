@@ -20,6 +20,13 @@
 import { useState, useEffect, useCallback, useId } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import GrandPawOffice from "./GrandPawOffice";
+import {
+  createAgentRunId,
+  forgetPendingAgentRun,
+  latestPendingAgentRun,
+  recheckAgentRunReceiptOnNotFound,
+  rememberPendingAgentRun,
+} from "@/lib/petclaw/agent-run-client";
 
 // ── tokens (Collectible Editorial) ──
 const INK = "#211A12";
@@ -51,7 +58,25 @@ export interface Kanban { pending: KItem[]; working: KItem[]; blocked: KItem[]; 
 export interface Staff { id: string; name: string; kind: "skill" | "vigil"; role: string; installed: boolean; status: "active" | "idle"; runs: number; successRate?: number; lastAt?: string | null; }
 export interface Schedule { id: string; name: string; cadence: string; lastRun: string | null; nextRun: string | null; desc: string; }
 export interface MC { pet: { id: number; name: string; level: number }; pillars: Pillars; kanban: Kanban; roster: Staff[]; schedules: Schedule[]; generatedAt: string; }
-export interface LiveRun { title: string; steps: { skill: string; ok: boolean }[]; done: boolean; answer?: string; }
+export interface AgentBilling {
+  outcome: "charged" | "refunded";
+  creditsCharged: number;
+  usageKnown: boolean;
+  modelCalls: number | null;
+  orchestratorModelCalls?: number | null;
+  skillModelCalls?: number | null;
+}
+export interface LiveRun {
+  runId: string;
+  title: string;
+  steps: { skill: string; ok: boolean }[];
+  done: boolean;
+  answer?: string;
+  completed?: boolean;
+  stoppedReason?: string;
+  billing?: AgentBilling;
+  creditsRemaining?: number;
+}
 
 function relTime(ts?: string | null): string {
   if (!ts) return "never";
@@ -72,6 +97,7 @@ export default function AgentOffice() {
 
   const [goal, setGoal] = useState("");
   const [running, setRunning] = useState(false);
+  const [receiptMissing, setReceiptMissing] = useState(false);
   const [liveRun, setLiveRun] = useState<LiveRun | null>(null);
   const [view, setView] = useState<"hotel" | "classic">("hotel");
 
@@ -92,6 +118,17 @@ export default function AgentOffice() {
       }
     })();
     return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    try {
+      const pending = latestPendingAgentRun();
+      if (!pending || typeof pending.goal !== "string") return;
+      setReceiptMissing(true);
+      setGoal(pending.goal);
+      setLiveRun({ runId: pending.runId, title: pending.goal, steps: [], done: true, stoppedReason: "receipt_missing" });
+      setErr("The previous paid run ended without a settlement receipt. Check Account credits and usage before dispatching again.");
+    } catch { /* ignore corrupt local state */ }
   }, []);
 
   // ── poll mission-control (pause when hidden) ──
@@ -123,22 +160,32 @@ export default function AgentOffice() {
 
   // ── dispatch a goal to the real tool-agent SSE ──
   const dispatch = useCallback(async () => {
-    if (petId == null || goal.trim().length < 3 || running) return;
+    if (petId == null || goal.trim().length < 3 || running || receiptMissing) return;
+    const runId = createAgentRunId();
     setRunning(true);
     setErr(null);
     const steps: { skill: string; ok: boolean }[] = [];
     const byId: Record<string, number> = {};
-    setLiveRun({ title: goal.trim(), steps: [], done: false });
+    setLiveRun({ runId, title: goal.trim(), steps: [], done: false });
+    try {
+      rememberPendingAgentRun({ runId, petId, petName, goal: goal.trim(), surface: "office", at: Date.now() });
+    } catch { /* storage unavailable; server-side confirmation still applies */ }
+    let receivedSettlementReceipt = false;
     try {
       const res = await fetch(`/api/pets/${petId}/agent?stream=1`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...getAuthHeaders() },
-        body: JSON.stringify({ goal: goal.trim(), maxSteps: 4 }),
+        body: JSON.stringify({ runId, goal: goal.trim(), maxSteps: 4, confirmCostCredits: COST }),
       });
       if (!res.ok || !res.body) {
         const d = await res.json().catch(() => ({} as any));
         setErr(d?.error === "Not enough credits" ? `Not enough credits — a run costs ${COST}.` : d?.error || "The run failed.");
         setLiveRun(null);
+        if (res.status < 500) {
+          try { forgetPendingAgentRun(runId); } catch { /* ignore */ }
+        } else {
+          setReceiptMissing(true);
+        }
         return;
       }
       const reader = res.body.getReader();
@@ -164,23 +211,93 @@ export default function AgentOffice() {
             const idx = byId[evt.id];
             if (idx != null) { steps[idx] = { ...steps[idx], ok: !!evt.ok }; flush(); }
           } else if (evt.type === "done") {
-            setLiveRun((r) => (r ? { ...r, done: true, answer: evt.answer || "" } : r));
+            const billing = evt.billing as AgentBilling | undefined;
+            if (
+              !billing
+              || (billing.outcome !== "charged" && billing.outcome !== "refunded")
+              || typeof billing.creditsCharged !== "number"
+              || !(billing.usageKnown === false ? billing.modelCalls == null : typeof billing.modelCalls === "number")
+              || evt.runId !== runId
+            ) {
+              continue;
+            }
+            receivedSettlementReceipt = true;
+            setLiveRun((r) => (r ? {
+              ...r,
+              done: true,
+              answer: evt.answer || "",
+              completed: evt.completed === true,
+              stoppedReason: evt.stoppedReason || "completed",
+              billing,
+              creditsRemaining: evt.creditsRemaining,
+            } : r));
+            try { forgetPendingAgentRun(runId); } catch { /* ignore */ }
           } else if (evt.type === "error") {
             setErr(evt.error || "The run failed.");
           }
         }
       }
-      setGoal("");
-      // refresh the board so the finished run lands in Working/Done from the DB
-      if (petId != null) fetchMc(petId);
+      if (!receivedSettlementReceipt) {
+        setReceiptMissing(true);
+        setErr("The stream ended before the settlement receipt arrived. Do not retry yet; check Account credits and usage first.");
+        setLiveRun((r) => (r ? { ...r, done: true, stoppedReason: "receipt_missing" } : r));
+      } else {
+        setGoal("");
+        // refresh the board so the finished run lands in Working/Done from the DB
+        if (petId != null) fetchMc(petId);
+      }
     } catch {
-      setErr("Network error — the run didn't start.");
+      if (!receivedSettlementReceipt) {
+        setReceiptMissing(true);
+        setErr("The connection ended without a settlement receipt. The run may have reached the server; check Account before retrying.");
+        setLiveRun((r) => (r ? { ...r, done: true, stoppedReason: "receipt_missing" } : r));
+      }
     } finally {
       setRunning(false);
-      // clear the ephemeral live card shortly after; the DB board takes over
-      setTimeout(() => setLiveRun(null), 4000);
     }
-  }, [petId, goal, running, fetchMc]);
+  }, [petId, petName, goal, running, receiptMissing, fetchMc]);
+
+  const reconcilePendingRun = async () => {
+    const pending = latestPendingAgentRun();
+    if (!pending) {
+      setReceiptMissing(false);
+      setLiveRun(null);
+      setErr(null);
+      return;
+    }
+    try {
+      const receipt = await recheckAgentRunReceiptOnNotFound(
+        () => api.pets.agentRunStatus(pending.petId, pending.runId),
+      );
+      if (receipt.state !== "terminal" || !receipt.billing) {
+        setErr(`Run ${pending.runId.slice(0, 8)}… is still ${receipt.state}. Dispatch remains locked.`);
+        return;
+      }
+      forgetPendingAgentRun(pending.runId);
+      setReceiptMissing(false);
+      setLiveRun({
+        runId: pending.runId,
+        title: receipt.goal || pending.goal,
+        steps: receipt.steps || [],
+        done: true,
+        answer: receipt.answer || "",
+        completed: receipt.completed === true,
+        stoppedReason: receipt.stoppedReason,
+        billing: receipt.billing,
+        creditsRemaining: receipt.creditsRemaining,
+      });
+      setErr(null);
+    } catch (e: any) {
+      if (e?.status === 404) {
+        forgetPendingAgentRun(pending.runId);
+        setReceiptMissing(false);
+        setLiveRun(null);
+        setErr("No durable run receipt was found after two checks. The local marker was cleared; the server's per-pet guard prevents an overlapping paid run. Check Account credits before dispatching again.");
+        return;
+      }
+      setErr(`Receipt lookup failed: ${e?.message || "try again shortly"}. Do not dispatch another paid run yet.`);
+    }
+  };
 
   const isWorking = (mc?.kanban.working.length ?? 0) > 0 || running;
 
@@ -208,10 +325,23 @@ export default function AgentOffice() {
         </div>
       )}
 
+      {receiptMissing && (
+        <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 10, background: "rgba(190,79,40,0.09)", border: "1px solid rgba(190,79,40,0.28)", color: TERRA, fontFamily: SANS, fontSize: 13.5, lineHeight: 1.5 }}>
+          <b>Paid-run safety lock:</b> <a href="/account" style={{ color: TERRA, fontWeight: 800 }}>Open Account</a> and verify credits/usage before unlocking another dispatch.
+          <div><button type="button" onClick={reconcilePendingRun} style={{ marginTop: 8, border: `1px solid ${HAIR}`, borderRadius: 8, padding: "7px 10px", background: PAPER, color: INK, fontFamily: SANS, fontWeight: 700 }}>Check saved run receipt</button></div>
+        </div>
+      )}
+
+      {liveRun?.billing && (
+        <div role="status" style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: liveRun.billing.outcome === "charged" ? "rgba(190,79,40,0.07)" : "rgba(92,138,78,0.08)", border: `1px solid ${HAIR}`, color: INK, fontFamily: MONO, fontSize: 13 }}>
+          {liveRun.completed ? "COMPLETED" : (liveRun.stoppedReason || "STOPPED").toUpperCase()} · {liveRun.billing.outcome === "charged" ? `${liveRun.billing.creditsCharged} CREDITS CHARGED` : "CREDITS REFUNDED"} · {liveRun.billing.usageKnown === false ? "USAGE UNKNOWN (RECOVERED)" : `${liveRun.billing.modelCalls} MODEL ATTEMPT${liveRun.billing.modelCalls === 1 ? "" : "S"}`}{typeof liveRun.creditsRemaining === "number" ? ` · ${liveRun.creditsRemaining} LEFT` : ""}
+        </div>
+      )}
+
       {/* ══ HOTEL VIEW — "The Grand Paw" lobby diorama over the same real data ══ */}
       {view === "hotel" && (
         mc ? (
-          <GrandPawOffice mc={mc} liveRun={liveRun} running={running} isWorking={isWorking} petName={petName}
+          <GrandPawOffice mc={mc} liveRun={liveRun} running={running} receiptMissing={receiptMissing} isWorking={isWorking} petName={petName}
             pets={pets} goal={goal} setGoal={setGoal} onDispatch={dispatch} cost={COST} />
         ) : (
           <div role="status" aria-live="polite" style={{ ...card, textAlign: "center", color: MUTED, fontFamily: SANS }}>Opening the hotel…</div>
@@ -299,17 +429,17 @@ export default function AgentOffice() {
           <button
             type="button"
             onClick={dispatch}
-            disabled={goal.trim().length < 3 || running || petId == null}
+            disabled={goal.trim().length < 3 || running || receiptMissing || petId == null}
             aria-busy={running}
             style={{
               padding: "12px 22px", borderRadius: 12, border: "none",
               fontFamily: SANS, fontSize: 15, fontWeight: 800,
-              cursor: goal.trim().length >= 3 && !running ? "pointer" : "not-allowed",
+              cursor: goal.trim().length >= 3 && !running && !receiptMissing ? "pointer" : "not-allowed",
               color: "#FFF8EE",
-              background: goal.trim().length >= 3 && !running ? "linear-gradient(180deg,#7C5FB8,#5B4090)" : "rgba(33,26,18,0.18)",
+              background: goal.trim().length >= 3 && !running && !receiptMissing ? "linear-gradient(180deg,#7C5FB8,#5B4090)" : "rgba(33,26,18,0.18)",
             }}
           >
-            {running ? "● Working…" : "▶ Dispatch"}
+            {running ? "● Working…" : receiptMissing ? "Check Account first" : `Authorize ${COST} credits & dispatch`}
           </button>
         </div>
         <div style={{ fontFamily: MONO, fontSize: 13, color: MUTED, marginTop: 8 }}>
@@ -458,7 +588,7 @@ function Roster({ roster }: { roster: Staff[] }) {
       <div style={staffGrid}>
         {skills.map((s) => <StaffCard key={s.id} s={s} accent={SAGE} />)}
       </div>
-      <div style={{ margin: "18px 0 8px", fontFamily: MONO, fontSize: 13, letterSpacing: "0.1em", color: PURPLE, fontWeight: 700 }}>VIGIL CREW · always-on memory pipeline</div>
+      <div style={{ margin: "18px 0 8px", fontFamily: MONO, fontSize: 13, letterSpacing: "0.1em", color: PURPLE, fontWeight: 700 }}>VIGIL CREW · bounded memory capabilities</div>
       <div style={staffGrid}>
         {vigil.map((s) => <StaffCard key={s.id} s={s} accent={PURPLE} />)}
       </div>

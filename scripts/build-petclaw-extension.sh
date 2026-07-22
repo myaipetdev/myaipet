@@ -6,9 +6,20 @@ PROJECT_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 SOURCE_DIR="$PROJECT_ROOT/desktop-pet"
 ROOT_ARCHIVE="$PROJECT_ROOT/petclaw-extension.zip"
 PUBLIC_ARCHIVE="$PROJECT_ROOT/web/public/petclaw-extension.zip"
+PUBLIC_CHECKSUM="$PROJECT_ROOT/web/public/petclaw-extension.zip.sha256"
 BUILD_TEMP="$(mktemp -d "${TMPDIR:-/tmp}/petclaw-extension.XXXXXX")"
 BUILD_ARCHIVE="$BUILD_TEMP/petclaw-extension.zip"
 REPRO_ARCHIVE="$BUILD_TEMP/petclaw-extension-repro.zip"
+CHECK_ONLY=false
+
+case "${1:-}" in
+  "") ;;
+  --check) CHECK_ONLY=true ;;
+  *)
+    echo "Usage: $0 [--check]" >&2
+    exit 2
+    ;;
+esac
 
 cleanup() {
   rm -rf -- "$BUILD_TEMP"
@@ -16,6 +27,14 @@ cleanup() {
 trap cleanup EXIT
 
 node "$SOURCE_DIR/site-access-contract.test.cjs"
+
+# The popup pairing CTA and the signed-in dashboard anchor are one contract.
+# Catch soft-404/dead-anchor regressions before packaging the extension.
+if ! grep -Fq 'section=sovereignty#extension-token' "$SOURCE_DIR/popup.html" \
+  || ! grep -Fq 'id="extension-token"' "$PROJECT_ROOT/web/src/components/SovereigntyDashboard.tsx"; then
+  echo "Extension pairing deep-link does not match the dashboard token anchor." >&2
+  exit 1
+fi
 
 VERSION="$(node -p "require('$SOURCE_DIR/manifest.json').version")"
 if ! grep -Fq "export const PETCLAW_EXTENSION_VERSION = \"$VERSION\";" "$PROJECT_ROOT/web/src/lib/petclaw-extension.ts"; then
@@ -80,9 +99,25 @@ for (const file of expected.filter((name) => /\.(?:js|json|html|css)$/.test(name
 }
 NODE
 
-cp "$BUILD_ARCHIVE" "$ROOT_ARCHIVE"
-cp "$BUILD_ARCHIVE" "$PUBLIC_ARCHIVE"
-
 SHA="$(shasum -a 256 "$BUILD_ARCHIVE" | awk '{print $1}')"
-echo "Built PetClaw extension v$VERSION"
+EXPECTED_CHECKSUM="$SHA  petclaw-extension.zip"
+
+if [[ "$CHECK_ONLY" == true ]]; then
+  if ! cmp -s "$BUILD_ARCHIVE" "$ROOT_ARCHIVE" \
+    || ! cmp -s "$BUILD_ARCHIVE" "$PUBLIC_ARCHIVE"; then
+    echo "Committed extension ZIPs do not match the deterministic source build." >&2
+    exit 1
+  fi
+  if [[ ! -f "$PUBLIC_CHECKSUM" \
+    || "$(cat "$PUBLIC_CHECKSUM")" != "$EXPECTED_CHECKSUM" ]]; then
+    echo "Committed extension checksum does not match the deterministic source build." >&2
+    exit 1
+  fi
+  echo "Verified PetClaw extension v$VERSION"
+else
+  cp "$BUILD_ARCHIVE" "$ROOT_ARCHIVE"
+  cp "$BUILD_ARCHIVE" "$PUBLIC_ARCHIVE"
+  printf '%s\n' "$EXPECTED_CHECKSUM" > "$PUBLIC_CHECKSUM"
+  echo "Built PetClaw extension v$VERSION"
+fi
 echo "SHA-256 $SHA"

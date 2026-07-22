@@ -129,6 +129,7 @@ CREATE TABLE "pet_memories" (
     "importance" INTEGER NOT NULL DEFAULT 1,
     "is_minted" BOOLEAN NOT NULL DEFAULT false,
     "memory_nft_id" INTEGER,
+    "content_tsv" tsvector GENERATED ALWAYS AS (to_tsvector('simple'::regconfig, COALESCE("content", ''::text))) STORED,
     "embedding" JSONB,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -907,6 +908,13 @@ CREATE INDEX "pets_user_id_idx" ON "pets"("user_id");
 
 -- CreateIndex
 CREATE INDEX "pet_memories_pet_id_idx" ON "pet_memories"("pet_id");
+
+-- Historical migration 20260615000000_memory_fts is resolved as applied by
+-- the baseline manifest, so its generated column and both indexes must be
+-- represented in this snapshot itself.
+CREATE INDEX "pet_memories_content_tsv_idx" ON "pet_memories" USING GIN ("content_tsv");
+
+CREATE INDEX "pet_memories_pet_id_created_at_idx" ON "pet_memories"("pet_id", "created_at" DESC);
 
 -- CreateIndex
 CREATE INDEX "pet_interactions_pet_id_idx" ON "pet_interactions"("pet_id");

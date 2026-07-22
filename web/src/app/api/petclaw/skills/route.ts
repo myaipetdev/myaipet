@@ -2,17 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getAllSkills, getSkill, searchSkills, generateSkillMd,
   installSkill, uninstallSkill, getInstalledSkills, executeSkill,
-  configContainsSecret, SECRET_CONFIG_ERROR,
+  assertSkillExecutableForPet, isSkillPolicyError, validateSkillConfig,
+  validateSkillInput, CORE_RUNTIME_SKILL_IDS,
 } from "@/lib/petclaw/pethub";
-import { getUser, isExtensionToken } from "@/lib/auth";
+import { getAuthContext, getUser } from "@/lib/auth";
 import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 import { consumeDailyQuota, llmSkillDailyCap } from "@/lib/economyGuards";
 import { prisma } from "@/lib/prisma";
+import { readBoundedJsonBody } from "@/lib/petclaw/bounded-json-body";
 
-async function ownsPet(req: NextRequest, petId: number): Promise<boolean> {
-  const user = await getUser(req).catch(() => null);
-  if (!user) return false;
-  const pet = await prisma.pet.findFirst({ where: { id: petId, user_id: user.id } });
+async function ownsPet(userId: number, petId: number): Promise<boolean> {
+  const pet = await prisma.pet.findFirst({ where: { id: petId, user_id: userId } });
   return !!pet;
 }
 
@@ -42,7 +42,8 @@ export async function GET(req: NextRequest) {
   // Installed-skill state belongs to a real pet and is always owner-only.
   if (petId) {
     const pid = Number(petId);
-    if (!(await ownsPet(req, pid))) {
+    const user = await getUser(req).catch(() => null);
+    if (!user || !Number.isInteger(pid) || pid <= 0 || !(await ownsPet(user.id, pid))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const installed = await getInstalledSkills(pid);
@@ -50,7 +51,18 @@ export async function GET(req: NextRequest) {
       ...i,
       manifest: getSkill(i.skillId),
     }));
-    return NextResponse.json({ installed: skills });
+    const installedIds = new Set(installed.map((entry) => entry.skillId));
+    const runtime = getAllSkills().map((manifest) => ({
+      skillId: manifest.id,
+      runtimeStatus: CORE_RUNTIME_SKILL_IDS.has(manifest.id)
+        ? "core"
+        : installedIds.has(manifest.id)
+          ? "installed"
+          : "available",
+      core: CORE_RUNTIME_SKILL_IDS.has(manifest.id),
+      hasInstallRecord: installedIds.has(manifest.id),
+    }));
+    return NextResponse.json({ installed: skills, runtime });
   }
 
   // Search/list all skills
@@ -60,17 +72,26 @@ export async function GET(req: NextRequest) {
 
 // POST /api/petclaw/skills — Install, uninstall, or execute
 export async function POST(req: NextRequest) {
-  const declaredLength = Number(req.headers.get("content-length") || 0);
-  if (Number.isFinite(declaredLength) && declaredLength > 16 * 1024) {
-    return NextResponse.json({ error: "Request body too large" }, { status: 413 });
+  // Authenticate before reading/parsing caller-controlled bytes. The bounded
+  // reader enforces the same limit when Content-Length is missing or false.
+  const auth = await getAuthContext(req).catch(() => null);
+  if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const parsedBody = await readBoundedJsonBody(req, 16 * 1024);
+  if (parsedBody.ok === false) {
+    return NextResponse.json(
+      { error: parsedBody.reason === "too_large" ? "Request body too large" : "Invalid JSON body" },
+      { status: parsedBody.reason === "too_large" ? 413 : 400 },
+    );
   }
-  const body = await req.json().catch(() => null);
-  if (!body || typeof body !== "object") {
+  const body = parsedBody.value;
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-  const { action, petId, skillId, input, config } = body;
-  const bearer = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-  if (isExtensionToken(bearer)) {
+  const fields = body as Record<string, unknown>;
+  const action = typeof fields.action === "string" ? fields.action : "";
+  const skillId = typeof fields.skillId === "string" ? fields.skillId : "";
+  const { petId, input, config } = fields;
+  if (auth.credential === "extension") {
     const extensionSkills = new Set(["companion-chat", "summarize-page", "image-gen"]);
     if (action !== "execute" || !extensionSkills.has(String(skillId || ""))) {
       return NextResponse.json({ error: "Extension token scope does not allow this action" }, { status: 403 });
@@ -88,7 +109,7 @@ export async function POST(req: NextRequest) {
 
   // Every action targets stored pet state or can spend model budget. Anonymous
   // previews use /api/petclaw/demo-chat, which has no pet, DB, LLM or memory.
-  if (!(await ownsPet(req, pid))) {
+  if (!(await ownsPet(auth.user.id, pid))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -96,25 +117,34 @@ export async function POST(req: NextRequest) {
     switch (action) {
       case "install": {
         if (!skillId) return NextResponse.json({ error: "skillId required" }, { status: 400 });
-        if (config !== undefined) {
-          if (!config || typeof config !== "object" || Array.isArray(config)) {
-            return NextResponse.json({ error: "config must be a flat object of strings" }, { status: 400 });
-          }
-          // Config is stored as plaintext JSON in the pet row and returned to the
-          // owner — never accept credentials here. (Checked again inside
-          // installSkill as defense in depth; values are never logged.)
-          if (configContainsSecret(config as Record<string, unknown>)) {
-            return NextResponse.json({ error: SECRET_CONFIG_ERROR }, { status: 400 });
-          }
+        const configValidation = validateSkillConfig(String(skillId), config);
+        if ("error" in configValidation) {
+          return NextResponse.json(
+            { error: configValidation.error, code: "skill_config_rejected" },
+            { status: 400 },
+          );
         }
-        const result = await installSkill(pid, skillId, config);
-        return NextResponse.json({ success: true, installed: result });
+        const result = await installSkill(pid, String(skillId), configValidation.config);
+        const core = CORE_RUNTIME_SKILL_IDS.has(String(skillId));
+        return NextResponse.json({
+          success: true,
+          installed: result,
+          runtimeStatus: core ? "core" : "installed",
+          ...(core ? { note: "This core skill was already executable; the install record stores its version and optional preferences." } : {}),
+        });
       }
 
       case "uninstall": {
         if (!skillId) return NextResponse.json({ error: "skillId required" }, { status: 400 });
         await uninstallSkill(pid, skillId);
-        return NextResponse.json({ success: true, message: `Skill ${skillId} uninstalled` });
+        const core = CORE_RUNTIME_SKILL_IDS.has(skillId);
+        return NextResponse.json({
+          success: true,
+          runtimeStatus: core ? "core" : "available",
+          message: core
+            ? `Saved ${skillId} install preferences removed; the core runtime capability remains available`
+            : `Skill ${skillId} uninstalled`,
+        });
       }
 
       case "execute": {
@@ -134,14 +164,34 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: "Skill input is too large" }, { status: 413 });
         }
 
+        const skillDef = getSkill(String(skillId));
+        if (!skillDef) {
+          return NextResponse.json(
+            { error: `Skill not found: ${String(skillId)}`, code: "skill_not_found" },
+            { status: 404 },
+          );
+        }
+        // Validate the exact manifest contract before policy preflight, quota
+        // reservation, or any LLM/provider work. executeSkill repeats this at
+        // its direct-call boundary for agent/channel callers.
+        const inputValidation = validateSkillInput(skillDef, safeInput);
+        if (inputValidation.ok === false) {
+          return NextResponse.json(
+            { error: inputValidation.error, code: "skill_input_invalid" },
+            { status: 400 },
+          );
+        }
+
         // POINTS-ECONOMY §2.3 knob #5: the authed skill-execute path was the one
         // LLM-backed surface with NO rate limit — an owner could run llm-prompt
         // skills as unbounded free Grok. Cap LLM-backed skill runs at
         // LLM_SKILL_DAILY_CAP (default 50) per day per pet. The call itself
         // already routes through callLLM (executeLLMSkill), so it also counts
         // against the LLM_DAILY_CALL_CAP / LLM_USER_DAILY_CAP budget.
-        const owner = await getUser(req).catch(() => null);
-        const skillDef = getSkill(String(skillId));
+        const owner = auth.user;
+        // Check install + level + personality before burning the owner's daily
+        // LLM quota. executeSkill repeats this at the actual execution boundary.
+        await assertSkillExecutableForPet(pid, String(skillId));
         if (owner && skillDef?.handler === "llm-prompt") {
           const q = await consumeDailyQuota(owner.id, `llm:skill:${pid}`, llmSkillDailyCap());
           if (!q.ok) {
@@ -152,9 +202,12 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        const result = await executeSkill(pid, skillId, safeInput);
-        // Running a PetClaw skill as the owner feeds the season (capped).
-        if (owner) await awardPointsCapped(owner.id, "petclaw", 5, DAILY_POINT_CAPS.petclaw).catch(() => {});
+        const result = await executeSkill(pid, skillId, inputValidation.input);
+        // A resolver-only api-call result did not run its endpoint. Award only
+        // after this invocation confirms a durable committed side effect.
+        if (owner && result.success && result.sideEffectCommitted) {
+          await awardPointsCapped(owner.id, "petclaw", 5, DAILY_POINT_CAPS.petclaw).catch(() => {});
+        }
         return NextResponse.json(result);
       }
 
@@ -167,7 +220,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
   } catch (e: any) {
-    // Don't leak internal errors
+    if (isSkillPolicyError(e)) {
+      return NextResponse.json({ error: e.message, code: e.code }, { status: e.status });
+    }
+    // Don't leak internal errors.
     console.error("skills POST error:", e?.message);
     return NextResponse.json({ error: "Action failed" }, { status: 400 });
   }

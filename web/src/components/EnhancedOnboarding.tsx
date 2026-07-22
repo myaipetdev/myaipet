@@ -324,8 +324,8 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             {pet.element && pet.element !== "normal" && (<><span>·</span><span style={{ textTransform: "capitalize" }}>{pet.element}</span></>)}
           </div>
           <p style={{ color: "#5C5140", fontSize: 15, lineHeight: 1.55, margin: 0, padding: "0 8px" }}>
-            {pet.name} is a companion that <strong>remembers you</strong> — a private memory that
-            builds a bond through interaction, in a voice you tune. Let&apos;s spend a minute setting it up.
+            {pet.name} is a companion that can <strong>retain selected context</strong> for later chats —
+            owner-scoped memory you can review or clear, in a voice you tune. Let&apos;s spend a minute setting it up.
           </p>
         </div>
 
@@ -467,7 +467,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             Where should {pet.name} live?
           </h3>
           <p style={{ color: "#5C5140", fontSize: 14, margin: 0 }}>
-            Same memory, same personality, anywhere you are.
+            One owner-controlled identity on supported surfaces; optional channels remain availability-dependent.
           </p>
         </div>
 
@@ -568,7 +568,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             {pet.name} just learned about you
           </h3>
           <p style={{ color: "#5C5140", fontSize: 13, margin: 0 }}>
-            Say something. They&apos;ll remember it.
+            Say something. Useful details may be retained for later chats under your memory controls.
           </p>
         </div>
 
@@ -688,7 +688,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
             Setup complete
           </div>
           <p style={{ color: "#5C5140", fontSize: 14, margin: "16px 0 18px", lineHeight: 1.55 }}>
-            {pet.name} keeps learning every time you talk. Here's what's ahead:
+            {pet.name} can retain selected context and run bounded skills. Here&apos;s what&apos;s available:
           </p>
           {/* Capability welcome (VIGIL "what your companion can do") */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, maxWidth: 430, margin: "0 auto 22px", textAlign: "left" }}>

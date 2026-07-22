@@ -22,11 +22,14 @@ export const RELEASE_STATUS = {
   /** BUILTIN_SKILLS in lib/petclaw/pethub.ts. */
   skills: 18,
 
-  /** MCP tool definitions shipped in the SDK. */
+  /** Definitions in published 1.6.1 (the runtime path is broken). */
   mcpTools: 6,
 
+  /** Owner-authenticated tools in the reviewed, unpublished 1.6.2 candidate. */
+  mcpCandidateTools: 7,
+
   /** The authenticated MCP fix is not published in SDK 1.6.1. */
-  mcp: "ships with SDK 1.6.2",
+  mcp: "7-tool SDK 1.6.2 candidate · not published",
 
   /** Messaging delivery remains fail-closed behind launch kill-switches. */
   channels: "launch-paused",

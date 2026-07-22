@@ -10,7 +10,10 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { daydream } from "@/lib/petclaw/memory/daydream";
+import {
+  daydream,
+  persistDaydreamInsights,
+} from "@/lib/petclaw/memory/daydream";
 
 const BATCH = 25;
 const ACTIVE_WINDOW_DAYS = 14;
@@ -29,29 +32,23 @@ export async function POST(req: NextRequest) {
     where: { is_active: true, last_interaction_at: { gte: activeSince } },
     orderBy: { last_interaction_at: "desc" },
     take: BATCH,
-    select: { id: true },
+    select: { id: true, memory_epoch: true },
   });
 
-  let created = 0, processed = 0;
+  let created = 0, processed = 0, discarded = 0;
   for (const p of pets) {
     try {
-      const insights = await daydream(p.id);
-      if (insights.length) {
-        await prisma.petInsight.createMany({
-          data: insights.map(ins => ({
-            pet_id: p.id,
-            insight: ins.insight,
-            rationale: ins.rationale,
-            mood: ins.mood,
-            score: Math.round(ins.score),
-            source_keys: ins.sourceKeys as any,
-          })),
-        });
-        created += insights.length;
-      }
+      const insights = await daydream(p.id, p.memory_epoch);
+      const persisted = await persistDaydreamInsights(
+        p.id,
+        p.memory_epoch,
+        insights,
+      );
+      created += persisted.created;
+      if (persisted.discarded) discarded++;
       processed++;
     } catch { /* one bad pet shouldn't kill the batch */ }
   }
 
-  return NextResponse.json({ ok: true, processed, created });
+  return NextResponse.json({ ok: true, processed, created, discarded });
 }

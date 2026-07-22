@@ -15,9 +15,14 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import type { MemoryEntry, UserProfile } from "./persistent-memory";
+import {
+  isProviderSafeRetainedText,
+  type MemoryEntry,
+  type UserProfile,
+} from "./persistent-memory";
 import { callLLM } from "@/lib/llm/router";
 import { containsHangul } from "@/lib/generatedLanguage";
+import { withLockedPetModifiers } from "@/lib/petclaw/modifier-store";
 
 interface ConsolidationResult {
   petId: number;
@@ -30,13 +35,83 @@ interface ConsolidationResult {
 const MIN_TURNS_BETWEEN_RUNS = 20;       // skip if log hasn't grown enough
 const MAX_HOURS_BETWEEN_RUNS = 7 * 24;   // …unless it's been a week
 
-export async function consolidateMemory(petId: number, force = false): Promise<ConsolidationResult | null> {
+export interface ConsolidationTurn {
+  content: string;
+  memory_type: string;
+  created_at: Date;
+}
+
+export function buildConsolidationProviderContext(
+  memories: MemoryEntry[],
+  userProfile: UserProfile[],
+  recentTurns: ConsolidationTurn[],
+): {
+  eligibleMemories: MemoryEntry[];
+  protectedMemories: MemoryEntry[];
+  eligibleUserProfile: UserProfile[];
+  protectedUserProfile: UserProfile[];
+  memoryText: string;
+  profileText: string;
+  turnsText: string;
+} {
+  const eligibleMemories = memories.filter((memory) =>
+    isProviderSafeRetainedText(`${memory.key} ${memory.category} ${memory.content}`),
+  );
+  const protectedMemories = memories.filter((memory) => !eligibleMemories.includes(memory));
+  // Identity rows and unsafe rows stay owner-visible but are never necessary
+  // for provider-side dedupe/compression.
+  const eligibleUserProfile = userProfile.filter((entry) =>
+    entry.category !== "identity"
+    && isProviderSafeRetainedText(`${entry.key} ${entry.category} ${entry.content}`),
+  );
+  const protectedUserProfile = userProfile.filter((entry) => !eligibleUserProfile.includes(entry));
+  const providerTurns = [...recentTurns]
+    .reverse()
+    .filter((turn) =>
+      isProviderSafeRetainedText(`${turn.memory_type} ${turn.content}`),
+    )
+    .slice(-30);
+
+  return {
+    eligibleMemories,
+    protectedMemories,
+    eligibleUserProfile,
+    protectedUserProfile,
+    memoryText: eligibleMemories
+      .map((memory) => `[${memory.key}] (${memory.category}, imp:${memory.importance}) ${memory.content}`)
+      .join("\n")
+      .slice(0, 3000),
+    profileText: eligibleUserProfile
+      .map((entry) => `[${entry.key}] (${entry.category}) ${entry.content}`)
+      .join("\n")
+      .slice(0, 2000),
+    turnsText: providerTurns.map((turn) => turn.content).join("\n").slice(0, 4000),
+  };
+}
+
+export async function consolidateMemory(
+  petId: number,
+  force = false,
+  expectedEpoch?: number,
+  onProviderAttempt?: () => void,
+  signal?: AbortSignal,
+): Promise<ConsolidationResult | null> {
+  signal?.throwIfAborted();
   const pet = await prisma.pet.findUnique({ where: { id: petId } });
+  signal?.throwIfAborted();
   if (!pet) return null;
 
   const mods = (pet.personality_modifiers as any) || {};
-  const memories: MemoryEntry[] = mods.persistent_memories || [];
-  const userProfile: UserProfile[] = mods.user_profile || [];
+  const startEpoch = expectedEpoch ?? pet.memory_epoch;
+  // Automatic consolidation belongs to the originating chat request. If an
+  // owner mutation completed before this async worker even started, do not
+  // reinterpret the post-mutation ledger under a stale request.
+  if (pet.memory_epoch !== startEpoch) return null;
+  const memories: MemoryEntry[] = Array.isArray(mods.persistent_memories) ? mods.persistent_memories : [];
+  const userProfile: UserProfile[] = Array.isArray(mods.user_profile) ? mods.user_profile : [];
+  // If retention changes either source array while the model is working, this
+  // output is stale and must be discarded instead of erasing the newer facts.
+  const sourceLedgerSnapshot = JSON.stringify([memories, userProfile]);
   const lastRunIso = mods.last_consolidation_at as string | undefined;
   const lastRunCount = mods.last_consolidation_turn_count as number | undefined;
 
@@ -44,6 +119,7 @@ export async function consolidateMemory(petId: number, force = false): Promise<C
   const currentTurnCount = await prisma.petMemory.count({
     where: { pet_id: petId, memory_type: { startsWith: "session_" } },
   });
+  signal?.throwIfAborted();
   const turnsSinceLast = currentTurnCount - (lastRunCount || 0);
 
   // Gate: don't run if nothing changed and not forced
@@ -63,15 +139,11 @@ export async function consolidateMemory(petId: number, force = false): Promise<C
     take: 80,
     select: { content: true, memory_type: true, created_at: true },
   });
-  const turnsText = recentTurns
-    .reverse()
-    .map(t => t.content)
-    .join("\n")
-    .slice(0, 6000);   // safety cap
-
+  signal?.throwIfAborted();
   const before = { memories: memories.length, userProfile: userProfile.length };
-  const memoryText = memories.map(m => `[${m.key}] (${m.category}, imp:${m.importance}) ${m.content}`).join("\n").slice(0, 3000);
-  const profileText = userProfile.map(u => `[${u.key}] (${u.category}) ${u.content}`).join("\n").slice(0, 2000);
+  const providerContext = buildConsolidationProviderContext(memories, userProfile, recentTurns);
+  const { memoryText, profileText, turnsText } = providerContext;
+  if (!memoryText && !profileText && !turnsText) return null;
 
   let consolidated: { memories: MemoryEntry[]; userProfile: UserProfile[] } | null = null;
 
@@ -82,6 +154,8 @@ export async function consolidateMemory(petId: number, force = false): Promise<C
       temperature: 0.1,
       max_tokens: 1500,
       response_format: { type: "json_object" },
+      onProviderAttempt,
+      signal,
       messages: [
         {
           role: "system",
@@ -128,8 +202,7 @@ Rewrite the ledger.`,
       return null;
     }
     const now = new Date().toISOString();
-    consolidated = {
-      memories: parsed.memories.map((m: any) => ({
+    const providerMemories = parsed.memories.map((m: any) => ({
         key: String(m.key || `consolidated_${Math.random().toString(36).slice(2, 8)}`),
         content: String(m.content || "").slice(0, 400),
         category: m.category || "fact",
@@ -137,38 +210,80 @@ Rewrite the ledger.`,
         source: "consolidated",
         createdAt: m.createdAt || now,
         updatedAt: now,
-      })),
-      userProfile: parsed.userProfile.map((u: any) => ({
+      }))
+      .filter((memory: MemoryEntry) =>
+        isProviderSafeRetainedText(`${memory.key} ${memory.category} ${memory.content}`),
+      );
+    const providerProfile = parsed.userProfile.map((u: any) => ({
         key: String(u.key || `consolidated_${Math.random().toString(36).slice(2, 8)}`),
         content: String(u.content || "").slice(0, 400),
         category: u.category || "context",
         source: "consolidated",
         updatedAt: now,
-      })),
+      }))
+      .filter((entry: UserProfile) =>
+        entry.category !== "identity"
+        && isProviderSafeRetainedText(`${entry.key} ${entry.category} ${entry.content}`),
+      );
+    consolidated = {
+      // Provider-quarantined entries were never sent out and must never be
+      // silently erased by the consolidation replacement write.
+      memories: [...providerMemories, ...providerContext.protectedMemories],
+      userProfile: [...providerProfile, ...providerContext.protectedUserProfile],
     };
   } catch (e: any) {
+    if (signal?.aborted) throw e;
     console.error("[consolidate] error:", e?.message);
     return null;
   }
 
   if (!consolidated) return null;
+  signal?.throwIfAborted();
 
-  await prisma.pet.update({
-    where: { id: petId },
-    data: {
-      personality_modifiers: {
-        ...mods,
-        persistent_memories: consolidated.memories,
-        user_profile: consolidated.userProfile,
-        last_consolidation_at: new Date().toISOString(),
-        last_consolidation_turn_count: currentTurnCount,
-      } as any,
-    },
+  const committed = await withLockedPetModifiers(petId, async ({ tx, pet: lockedPet, modifiers }) => {
+    if (lockedPet.memory_epoch !== startEpoch) return false;
+    if (signal?.aborted) return false;
+
+    const currentMemories = Array.isArray(modifiers.persistent_memories)
+      ? modifiers.persistent_memories
+      : [];
+    const currentUserProfile = Array.isArray(modifiers.user_profile)
+      ? modifiers.user_profile
+      : [];
+    if (JSON.stringify([currentMemories, currentUserProfile]) !== sourceLedgerSnapshot) {
+      return false;
+    }
+
+    await tx.pet.update({
+      where: { id: petId },
+      data: {
+        // Merge only the fields consolidation owns into the latest modifier
+        // document. Other writers may have changed unrelated fields meanwhile.
+        personality_modifiers: {
+          ...modifiers,
+          persistent_memories: consolidated.memories,
+          user_profile: consolidated.userProfile,
+          last_consolidation_at: new Date().toISOString(),
+          last_consolidation_turn_count: currentTurnCount,
+        } as any,
+      },
+    });
+    return true;
   });
+  if (!committed) return null;
 
   // Anchor the new state as a checkpoint. Off-chain always; on-chain if the
   // relayer is enabled + funded. Failures are non-fatal.
   try {
+    if (signal?.aborted) {
+      return {
+        petId,
+        before,
+        after: { memories: consolidated.memories.length, userProfile: consolidated.userProfile.length },
+        ranAt: new Date().toISOString(),
+        reason: force ? "forced" : `${turnsSinceLast}_new_turns`,
+      };
+    }
     const { anchorMemory } = await import("./anchor");
     // Pass real before/after counts so the Persona Evolution timeline shows a
     // meaningful per-row summary instead of a repeated generic sentence.

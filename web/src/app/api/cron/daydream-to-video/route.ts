@@ -13,8 +13,9 @@
  *      link the insight to the new Generation row.
  *
  * Cost posture: auto-videos are platform-funded (credits_charged = 0) and the
- * per-tick MAX_NEW + per-pet cooldown are the spending ceiling. ?dry=1 runs
- * selection + prompt building but submits nothing (for safe testing).
+ * per-tick MAX_NEW + per-pet cooldown are the spending ceiling. ?dry=1 returns
+ * a sanitized local eligibility preview: no retained text, provider request,
+ * durable claim, or database mutation.
  *
  * Suggested cadence: every 4h (see deploy/crontab.example).
  */
@@ -25,6 +26,17 @@ import { callLLM } from "@/lib/llm/router";
 import { generatedEnglishOrFallback } from "@/lib/generatedLanguage";
 import { persistGenerationMediaExactlyOnce } from "@/lib/services/generation-media";
 import { prepareVisionImageInput } from "@/lib/services/vision-image";
+import { providerSafeStoredText } from "@/lib/petclaw/provider-safe-text";
+import {
+  claimNextDaydreamVideoCandidate,
+  commitDaydreamVideoSubmission,
+  DAYDREAM_VIDEO_SOURCE_KIND,
+  expireStaleDaydreamVideoClaims,
+  isDaydreamVideoClaimCurrent,
+  listDaydreamVideoCandidateRefs,
+  releaseDaydreamVideoClaim,
+  type DaydreamVideoClaim,
+} from "@/lib/petclaw/memory/daydream-video-claim";
 import {
   buildPetPrompt,
   submitGrokVideo,
@@ -37,27 +49,20 @@ const INSIGHT_WINDOW_H = 48;   // convert only fresh insights
 const PET_COOLDOWN_DAYS = 3;   // at most one auto-video per pet per N days
 const DURATION_SEC = 5;
 const SETTLE_LIMIT = 10;       // in-flight jobs polled per tick
-
-interface Candidate {
-  insight_id: number;
-  insight: string;
-  mood: string;
-  pet_id: number;
-  user_id: number;
-  name: string;
-  species: number;
-  personality_type: string;
-  avatar_url: string | null;
-  appearance_desc: string | null;
-}
+const CLAIM_TTL_MS = 30 * 60 * 1000;
 
 /** Insight (1st-person inner thought) → concrete third-person visual scene. */
-async function insightToScene(c: Candidate): Promise<string> {
+async function insightToScene(c: DaydreamVideoClaim): Promise<string> {
   const fallback = `A beloved pet quietly reminiscing about their owner in a cozy familiar setting with warm, gentle lighting.`;
+  const petName = providerSafeStoredText(c.petName, "pet_name", 50) || "the pet";
+  const appearance = providerSafeStoredText(c.appearanceDesc, "appearance", 2_000) || "";
+  const mood = providerSafeStoredText(c.mood, "mood", 40) || "reflective";
+  const insight = providerSafeStoredText(c.insight, "retained_insight", 1_200);
+  if (!insight) return fallback;
   try {
     const result = await callLLM({
       task: "chat",
-      petId: c.pet_id,
+      petId: c.petId,
       messages: [
         {
           role: "system",
@@ -70,8 +75,8 @@ async function insightToScene(c: Candidate): Promise<string> {
         {
           role: "user",
           content:
-            `Pet: ${c.name}${c.appearance_desc ? ` (${c.appearance_desc})` : ""}. ` +
-            `Mood: ${c.mood}. Inner thought: "${c.insight}"`,
+            `Pet: ${petName}${appearance ? ` (${appearance})` : ""}. ` +
+            `Mood: ${mood}. Inner thought: "${insight}"`,
         },
       ],
       max_tokens: 120,
@@ -91,12 +96,19 @@ export async function POST(req: NextRequest) {
 
   // ── Phase 1: settle in-flight auto-generations from previous ticks ──
   let settledCompleted = 0, settledFailed = 0, stillProcessing = 0;
+  let staleClaimsRecovered = 0;
   if (!dry) {
-    const inflight = await prisma.$queryRaw<Array<{ id: number; fal_request_id: string; status: string; completed_at: Date | null }>>`
-      SELECT g.id, g.fal_request_id, g.status, g.completed_at
+    staleClaimsRecovered = await expireStaleDaydreamVideoClaims(
+      CLAIM_TTL_MS,
+      SETTLE_LIMIT,
+    );
+    const inflight = await prisma.$queryRaw<Array<{ id: number; insight_id: number; fal_request_id: string; status: string; completed_at: Date | null }>>`
+      SELECT g.id, pi.id AS insight_id, g.fal_request_id, g.status, g.completed_at
       FROM generations g
       JOIN pet_insights pi ON pi.video_generation_id = g.id
       WHERE g.status IN ('pending', 'processing', 'persisting')
+        AND g.source_kind = ${DAYDREAM_VIDEO_SOURCE_KIND}
+        AND pi.conversion_status = 'submitted'
         AND g.fal_request_id IS NOT NULL
       ORDER BY g.created_at ASC
       LIMIT ${SETTLE_LIMIT}`;
@@ -121,12 +133,37 @@ export async function POST(req: NextRequest) {
             retryStatus: "processing",
             prefix: "videos",
           });
-          if (persisted.status === "completed") settledCompleted++;
-          else stillProcessing++;
+          if (persisted.status === "completed") {
+            await prisma.petInsight.updateMany({
+              where: {
+                id: job.insight_id,
+                video_generation_id: job.id,
+                conversion_status: "submitted",
+              },
+              data: {
+                conversion_status: "converted",
+                conversion_claimed_at: null,
+                conversion_error: null,
+              },
+            });
+            settledCompleted++;
+          } else stillProcessing++;
         } else if (st.status === "failed") {
           await prisma.generation.updateMany({
             where: { id: job.id, status: { in: ["pending", "processing", "persisting"] } },
             data: { status: "failed", error_message: (st.error || "video failed").slice(0, 500) },
+          });
+          await prisma.petInsight.updateMany({
+            where: {
+              id: job.insight_id,
+              video_generation_id: job.id,
+              conversion_status: "submitted",
+            },
+            data: {
+              conversion_status: "failed",
+              conversion_claimed_at: null,
+              conversion_error: (st.error || "video failed").slice(0, 500),
+            },
           });
           settledFailed++;
         } else {
@@ -140,52 +177,66 @@ export async function POST(req: NextRequest) {
   const windowStart = new Date(Date.now() - INSIGHT_WINDOW_H * 3_600_000);
   const cooldownStart = new Date(Date.now() - PET_COOLDOWN_DAYS * 86_400_000);
 
-  const rows = await prisma.$queryRaw<Candidate[]>`
-    SELECT pi.id AS insight_id, pi.insight, pi.mood, pi.pet_id,
-           p.user_id, p.name, p.species, p.personality_type,
-           p.avatar_url, p.appearance_desc
-    FROM pet_insights pi
-    JOIN pets p ON p.id = pi.pet_id
-    WHERE pi.video_generation_id IS NULL
-      AND pi.score >= ${MIN_SCORE}
-      AND pi.created_at >= ${windowStart}
-      AND p.is_active = true
-      AND NOT EXISTS (
-        SELECT 1
-        FROM pet_insights pi2
-        JOIN generations g2 ON g2.id = pi2.video_generation_id
-        WHERE pi2.pet_id = pi.pet_id
-          AND g2.created_at >= ${cooldownStart}
-      )
-    ORDER BY pi.score DESC, pi.created_at DESC
-    LIMIT ${MAX_NEW * 3}`;
-
-  // One insight per pet per tick, capped at MAX_NEW.
-  const seenPets = new Set<number>();
-  const picked: Candidate[] = [];
-  for (const r of rows) {
-    if (seenPets.has(r.pet_id)) continue;
-    seenPets.add(r.pet_id);
-    picked.push(r);
-    if (picked.length >= MAX_NEW) break;
+  const claimOptions = { minScore: MIN_SCORE, windowStart, cooldownStart };
+  if (dry) {
+    const preview = await listDaydreamVideoCandidateRefs(claimOptions, MAX_NEW);
+    return NextResponse.json({
+      ok: true,
+      dry: true,
+      providerRequests: 0,
+      mutations: 0,
+      settled: { completed: 0, failed: 0, processing: 0 },
+      staleClaimsRecovered: 0,
+      candidates: preview.length,
+      preview,
+      submitted: [],
+      errors: [],
+    });
   }
 
-  const submitted: Array<{ insightId: number; petId: number; generationId?: number; prompt: string }> = [];
+  const submitted: Array<{
+    insightId: number;
+    petId: number;
+    generationId: number;
+    requestId: string;
+  }> = [];
   const errors: string[] = [];
+  let claimed = 0, discarded = 0;
 
-  for (const c of picked) {
+  for (let slot = 0; slot < MAX_NEW; slot++) {
+    const c = await claimNextDaydreamVideoCandidate(claimOptions);
+    if (!c) break;
+    claimed++;
+    let videoSubmissionStarted = false;
     try {
+      // A deletion/correction after the durable claim revokes it before any
+      // retained insight reaches the scene LLM.
+      if (!(await isDaydreamVideoClaimCurrent(c))) {
+        await releaseDaydreamVideoClaim(c, "Memory changed before scene synthesis.", {
+          beforeVideoSubmission: true,
+        });
+        discarded++;
+        continue;
+      }
       const scene = await insightToScene(c);
+      const petName = providerSafeStoredText(c.petName, "pet_name", 50) || "the pet";
+      const appearance = providerSafeStoredText(c.appearanceDesc, "appearance", 2_000) || undefined;
+      const personality = providerSafeStoredText(c.personalityType, "personality", 20) || "friendly";
       const prompt = buildPetPrompt(
-        c.name, c.species, c.personality_type,
+        petName, c.species, personality,
         /* style: cinematic */ 1,
         scene,
-        c.avatar_url || undefined,
-        c.appearance_desc || undefined,
+        c.avatarUrl || undefined,
+        appearance,
       );
 
-      if (dry) {
-        submitted.push({ insightId: c.insight_id, petId: c.pet_id, prompt });
+      // Re-check after the scene LLM. Clear/correction during inference must
+      // stop the more expensive video provider submission.
+      if (!(await isDaydreamVideoClaimCurrent(c))) {
+        await releaseDaydreamVideoClaim(c, "Memory changed during scene synthesis.", {
+          beforeVideoSubmission: true,
+        });
+        discarded++;
         continue;
       }
 
@@ -193,41 +244,45 @@ export async function POST(req: NextRequest) {
       // redirect-checked external media) into an inline data URI. The provider
       // never receives a private application path.
       let anchor: string | undefined;
-      if (c.avatar_url) {
+      if (c.avatarUrl) {
         try {
-          anchor = await prepareVisionImageInput(c.avatar_url, { materializeExternal: true });
+          anchor = await prepareVisionImageInput(c.avatarUrl, { materializeExternal: true });
         } catch {
           // A missing identity anchor should not discard an otherwise valid
           // daydream; submit a prompt-only video instead.
         }
       }
 
+      // Materialising an identity anchor can take time and perform bounded
+      // network I/O, so take the epoch/claim fence once more immediately before
+      // the paid video call.
+      if (!(await isDaydreamVideoClaimCurrent(c))) {
+        await releaseDaydreamVideoClaim(c, "Memory changed before video submission.", {
+          beforeVideoSubmission: true,
+        });
+        discarded++;
+        continue;
+      }
+
+      videoSubmissionStarted = true;
       const { requestId } = await submitGrokVideo(prompt, DURATION_SEC, anchor);
-
-      const gen = await prisma.generation.create({
-        data: {
-          user_id: c.user_id,
-          pet_id: c.pet_id,
-          pet_type: c.species,
-          style: 1,
-          prompt,
-          duration: DURATION_SEC,
-          photo_path: c.avatar_url || "",
-          status: "processing",
-          visibility: "private",
-          fal_request_id: requestId,
-          credits_charged: 0, // platform-funded daydream content
-        },
+      const committed = await commitDaydreamVideoSubmission(c, requestId, prompt);
+      if (committed.discarded) {
+        discarded++;
+        continue;
+      }
+      submitted.push({
+        insightId: c.insightId,
+        petId: c.petId,
+        generationId: c.generationId,
+        requestId,
       });
-
-      await prisma.petInsight.update({
-        where: { id: c.insight_id },
-        data: { video_generation_id: gen.id },
-      });
-
-      submitted.push({ insightId: c.insight_id, petId: c.pet_id, generationId: gen.id, prompt });
     } catch (e: any) {
-      errors.push(`insight ${c.insight_id}: ${(e?.message || "failed").slice(0, 120)}`);
+      const message = (e?.message || "failed").slice(0, 120);
+      const released = await releaseDaydreamVideoClaim(c, message, {
+        beforeVideoSubmission: !videoSubmissionStarted,
+      }).catch(() => ({ retry: videoSubmissionStarted ? "manual" as const : "scheduled" as const }));
+      errors.push(`insight ${c.insightId}: ${message} (retry: ${released.retry})`);
     }
   }
 
@@ -235,7 +290,10 @@ export async function POST(req: NextRequest) {
     ok: true,
     dry,
     settled: { completed: settledCompleted, failed: settledFailed, processing: stillProcessing },
-    candidates: rows.length,
+    staleClaimsRecovered,
+    candidates: claimed,
+    claimed,
+    discarded,
     submitted,
     errors,
   });

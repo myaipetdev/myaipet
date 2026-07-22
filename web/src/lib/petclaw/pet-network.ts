@@ -6,7 +6,6 @@
 import { prisma } from "@/lib/prisma";
 import { interactablePetWhere } from "@/lib/publicPet";
 import { buildPetDID } from "./petclaw";
-import { getInstalledSkills } from "./pethub";
 
 // ── Network Types ──
 
@@ -14,16 +13,17 @@ export interface PetNode {
   petId: number;
   name: string;
   petDID: string;
-  ownerWallet: string;
   avatarUrl?: string;
   personality: string;
   element: string;
   level: number;
   capabilities: string[];   // installed skill IDs
-  status: "online" | "offline" | "busy";
-  trustScore: number;       // 0-100
-  totalInteractions: number;
-  lastSeen: string;
+  // Discovery consent is known; live presence is not. Do not turn a database
+  // row into a fabricated online indicator.
+  status: "discoverable";
+  // A display-only progression signal derived from level and bond. It is not a
+  // security, identity, reputation, or transaction-risk assessment.
+  progressionScore: number;
 }
 
 // ── Node Discovery ──
@@ -39,13 +39,18 @@ export async function discoverPets(filters?: {
 
   if (filters?.personality) filtersWhere.personality_type = filters.personality;
   if (filters?.element) filtersWhere.element = filters.element;
-  if (filters?.minLevel) filtersWhere.level = { gte: filters.minLevel };
+  if (Number.isFinite(filters?.minLevel) && Number(filters?.minLevel) > 0) {
+    filtersWhere.level = { gte: Math.floor(Number(filters?.minLevel)) };
+  }
+  const limit = Number.isFinite(filters?.limit)
+    ? Math.max(1, Math.min(50, Math.floor(Number(filters?.limit))))
+    : 50;
 
   const pets = await prisma.pet.findMany({
     where: interactablePetWhere(filtersWhere),
     include: { user: true },
     orderBy: { level: "desc" },
-    take: filters?.limit || 50,
+    take: limit,
   });
 
   const nodes: PetNode[] = [];
@@ -53,11 +58,10 @@ export async function discoverPets(filters?: {
   for (const pet of pets) {
     if (!pet.user) continue;
 
-    const installed = await getInstalledSkills(pet.id);
-    const capabilities = [
-      "companion-chat", "memory-recall", "soul-export",  // built-in free skills
-      ...installed.map(i => i.skillId),
-    ];
+    // Public discovery does not reveal owner-private/learned skill IDs. Expand
+    // this list only after skill manifests carry an explicit public-capability
+    // permission and the owner opts in to each disclosure.
+    const capabilities = ["companion-chat"];
 
     // Filter by skill if requested
     if (filters?.skill && !capabilities.includes(filters.skill)) continue;
@@ -66,16 +70,13 @@ export async function discoverPets(filters?: {
       petId: pet.id,
       name: pet.name,
       petDID: buildPetDID(pet.user.wallet_address, pet.id),
-      ownerWallet: pet.user.wallet_address,
       avatarUrl: pet.avatar_url || undefined,
       personality: pet.personality_type,
       element: (pet.element as string) || "normal",
       level: pet.level,
       capabilities,
-      status: "online",
-      trustScore: Math.min(100, 50 + pet.bond_level * 5 + pet.level),
-      totalInteractions: pet.total_interactions,
-      lastSeen: (pet.last_interaction_at || pet.updated_at).toISOString(),
+      status: "discoverable",
+      progressionScore: Math.min(100, pet.bond_level * 5 + pet.level),
     });
   }
 
@@ -83,30 +84,22 @@ export async function discoverPets(filters?: {
 }
 
 export async function getPetNode(petId: number): Promise<PetNode | null> {
-  const pet = await prisma.pet.findUnique({
-    where: { id: petId },
+  const pet = await prisma.pet.findFirst({
+    where: interactablePetWhere({ id: petId }),
     include: { user: true },
   });
   if (!pet || !pet.user) return null;
-
-  const installed = await getInstalledSkills(pet.id);
 
   return {
     petId: pet.id,
     name: pet.name,
     petDID: buildPetDID(pet.user.wallet_address, pet.id),
-    ownerWallet: pet.user.wallet_address,
     personality: pet.personality_type,
     element: (pet.element as string) || "normal",
     level: pet.level,
-    capabilities: [
-      "companion-chat", "memory-recall", "soul-export",
-      ...installed.map(i => i.skillId),
-    ],
-    status: "online",
-    trustScore: Math.min(100, 50 + pet.bond_level * 5 + pet.level),
-    totalInteractions: pet.total_interactions,
-    lastSeen: (pet.last_interaction_at || pet.updated_at).toISOString(),
+    capabilities: ["companion-chat"],
+    status: "discoverable",
+    progressionScore: Math.min(100, pet.bond_level * 5 + pet.level),
   };
 }
 
@@ -114,16 +107,16 @@ export async function getPetNode(petId: number): Promise<PetNode | null> {
 
 export async function getNetworkStats(): Promise<{
   totalNodes: number;
-  onlineNodes: number;
-  totalInvocations: number;
-  avgTrustScore: number;
+  discoverableNodes: number;
+  remoteInvocations: number;
 }> {
-  const activePets = await prisma.pet.count({ where: interactablePetWhere() });
+  const discoverablePets = await prisma.pet.count({ where: interactablePetWhere() });
 
   return {
-    totalNodes: activePets,
-    onlineNodes: activePets,
-    totalInvocations: 0,
-    avgTrustScore: 75,
+    totalNodes: discoverablePets,
+    discoverableNodes: discoverablePets,
+    // PACK invocation is intentionally disabled; this is a capability-state
+    // counter, not an inferred usage metric.
+    remoteInvocations: 0,
   };
 }

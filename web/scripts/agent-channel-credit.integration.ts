@@ -14,7 +14,7 @@ async function verifyContract() {
     read("../src/lib/agentCredits.ts"),
     read("../src/lib/agentCreditReservation.ts"),
     read("../prisma/migrations/20260717169000_agent_channel_credit_hardening/migration.sql"),
-    read("../.env.production.example"),
+    read("../config/production.env.example"),
     read("../../deploy/release-smoke.sh"),
     read("../src/app/api/cron/agent-credit-reservations/route.ts"),
   ]);
@@ -33,6 +33,12 @@ async function verifyContract() {
   assert.match(credits, /credits: \{ gte: amount \}/);
   assert.match(reservations, /FOR UPDATE SKIP LOCKED/);
   assert.match(reservations, /"status" = 'reserved' AND "expires_at" <=/);
+  assert.match(reservations, /commitAndReadReceipt/);
+  assert.match(reservations, /typeof db\.\$transaction === "function"/);
+  assert.ok(
+    reservations.indexOf("agentCreditReservation.updateMany") < reservations.indexOf("Charged wallet receipt is unavailable"),
+    "charge transition and required receipt must execute in one atomic callback",
+  );
   assert.match(migration, /pet_agent_messages_inbound_delivery_key/);
   assert.match(migration, /pet_agent_schedules_daily_credit_bounds/);
   assert.match(migration, /agent_credit_reservation_owner_guard/);
@@ -118,6 +124,28 @@ async function main() {
         ON "agent_credit_reservations"("user_id", "status");
       CREATE INDEX "agent_credit_reservations_created_at_idx"
         ON "agent_credit_reservations"("created_at");
+      CREATE TABLE "pet_agent_runs" (
+        "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        "run_id" uuid NOT NULL,
+        "user_id" integer NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+        "pet_id" integer NOT NULL,
+        "pet_name" varchar(50) NOT NULL,
+        "goal" text NOT NULL,
+        "max_steps" integer NOT NULL,
+        "state" varchar(20) NOT NULL DEFAULT 'reserved',
+        "reservation_id" uuid UNIQUE REFERENCES "agent_credit_reservations"("id") ON DELETE SET NULL,
+        "completed" boolean,
+        "answer" text,
+        "steps" jsonb,
+        "stopped_reason" varchar(40),
+        "billing" jsonb,
+        "credits_remaining" integer,
+        "created_at" timestamptz NOT NULL DEFAULT now(),
+        "started_at" timestamptz,
+        "terminal_at" timestamptz,
+        "updated_at" timestamptz NOT NULL DEFAULT now(),
+        UNIQUE ("user_id", "pet_id", "run_id")
+      );
     `);
     await scoped.query(`
       INSERT INTO "users" ("id", "credits") VALUES (1, 100), (2, 100);
@@ -150,8 +178,9 @@ async function main() {
     await scoped.query('DELETE FROM "agent_credit_reservations"; DELETE FROM "pet_agent_messages"; DELETE FROM "pet_agent_schedules";');
     process.env.DATABASE_URL = connectionString;
     process.env.AGENT_ENCRYPTION_KEY = "33".repeat(32);
-    const [reservationModule, creditModule, claimModule, credentialsModule, oauthCredentialsModule] = await Promise.all([
+    const [reservationModule, runLedgerModule, creditModule, claimModule, credentialsModule, oauthCredentialsModule] = await Promise.all([
       import("../src/lib/agentCreditReservation"),
+      import("../src/lib/petclaw/agent/run-ledger"),
       import("../src/lib/agentCredits"),
       import("../src/lib/agentWebhookDelivery"),
       import("../src/lib/agentCredentials"),
@@ -195,6 +224,53 @@ async function main() {
     wallet = await scoped.query('SELECT "credits" FROM "users" WHERE "id"=1');
     assert.equal(wallet.rows[0]?.credits, 100, "duplicate refund calls must credit exactly once");
 
+    // A charge transition and its balance receipt are one transaction. If the
+    // receipt read fails, the transition must roll back to `reserved` so the
+    // caller can safely retry instead of charging without a response receipt.
+    await scoped.query('DELETE FROM "agent_credit_reservations"');
+    const receiptReservation = await reservationModule.reserveAgentCreditsWithDb(appPrisma, 1, 1, 5);
+    assert.ok(receiptReservation);
+    const receiptFailureDb = {
+      $transaction: (fn: (tx: any) => Promise<unknown>) => appPrisma.$transaction(async (tx: any) => fn({
+        agentCreditReservation: {
+          updateMany: (args: unknown) => tx.agentCreditReservation.updateMany(args),
+          findUnique: (args: unknown) => tx.agentCreditReservation.findUnique(args),
+        },
+        user: {
+          findUnique: async () => { throw new Error("synthetic receipt read failure"); },
+        },
+      })),
+    };
+    await assert.rejects(
+      reservationModule.commitAgentCreditsWithDb(receiptFailureDb, receiptReservation!),
+      /synthetic receipt read failure/,
+    );
+    let receiptStatus = await scoped.query<{ status: string }>(
+      'SELECT "status" FROM "agent_credit_reservations" WHERE "id"=$1',
+      [receiptReservation!.id],
+    );
+    assert.equal(receiptStatus.rows[0]?.status, "reserved", "missing receipt must roll back charge transition");
+    assert.equal(
+      await reservationModule.commitAgentCreditsWithDb(appPrisma, receiptReservation!),
+      95,
+      "a retry returns the atomic charged balance receipt",
+    );
+    receiptStatus = await scoped.query('SELECT "status" FROM "agent_credit_reservations" WHERE "id"=$1', [receiptReservation!.id]);
+    assert.equal(receiptStatus.rows[0]?.status, "committed");
+    await scoped.query('UPDATE "users" SET "credits"=100 WHERE "id"=1');
+
+    await scoped.query('DELETE FROM "agent_credit_reservations"');
+    const outerTransactionReservation = await reservationModule.reserveAgentCreditsWithDb(appPrisma, 1, 1, 5);
+    assert.ok(outerTransactionReservation);
+    assert.equal(
+      await appPrisma.$transaction((tx: any) =>
+        reservationModule.commitAgentCreditsWithDb(tx, outerTransactionReservation!),
+      ),
+      95,
+      "an existing caller transaction remains the atomic receipt boundary",
+    );
+    await scoped.query('UPDATE "users" SET "credits"=100 WHERE "id"=1');
+
     await scoped.query('DELETE FROM "agent_credit_reservations"');
     const oldNow = new Date("2026-07-17T00:00:00.000Z");
     const stale = await reservationModule.reserveAgentCreditsWithDb(appPrisma, 1, 1, 10, oldNow);
@@ -213,7 +289,7 @@ async function main() {
     await scoped.query('DELETE FROM "agent_credit_reservations"');
     const raced = await reservationModule.reserveAgentCreditsWithDb(appPrisma, 1, 1, 10, oldNow);
     assert.ok(raced);
-    await Promise.all([
+    const commitRefundRace = await Promise.allSettled([
       ...Array.from({ length: 24 }, () => reservationModule.commitAgentCreditsWithDb(appPrisma, raced!)),
       ...Array.from({ length: 24 }, () => reservationModule.refundStaleAgentCreditReservationsWithDb(
         appPrisma,
@@ -221,12 +297,126 @@ async function main() {
         100,
       )),
     ]);
+    for (const result of commitRefundRace) {
+      if (result.status === "rejected") {
+        assert.match(
+          String(result.reason instanceof Error ? result.reason.message : result.reason),
+          /no longer chargeable/,
+          "only a stale-refund win may reject a competing commit",
+        );
+      }
+    }
     const terminal = await scoped.query<{ status: string }>('SELECT "status" FROM "agent_credit_reservations" WHERE "id"=$1', [raced!.id]);
     wallet = await scoped.query('SELECT "credits" FROM "users" WHERE "id"=1');
     assert.ok(terminal.rows[0]?.status === "committed" || terminal.rows[0]?.status === "refunded");
     assert.equal(wallet.rows[0]?.credits, terminal.rows[0]?.status === "committed" ? 90 : 100);
 
+    // One client-generated runId may be submitted concurrently, but exactly
+    // one request owns the wallet reservation/provider slot. Every duplicate
+    // observes the same durable run and concurrent terminal settlement replays
+    // one owner receipt without another charge.
+    await scoped.query('DELETE FROM "pet_agent_runs"; DELETE FROM "agent_credit_reservations"; UPDATE "users" SET "credits"=100 WHERE "id"=1');
+    const runId = randomUUID();
+    const runAttempts = await Promise.all(Array.from({ length: 48 }, () =>
+      runLedgerModule.reservePetAgentRunWithDb(appPrisma, {
+        runId, userId: 1, petId: 1, petName: "Audit Pet", goal: "reconcile this run", maxSteps: 4, amount: 5,
+      }),
+    ));
+    assert.equal(runAttempts.filter((result) => result.kind === "created").length, 1);
+    assert.equal(runAttempts.filter((result) => result.kind === "existing").length, 47);
+    wallet = await scoped.query('SELECT "credits" FROM "users" WHERE "id"=1');
+    assert.equal(wallet.rows[0]?.credits, 95, "idempotent run concurrency reserves five credits once");
+    await runLedgerModule.markPetAgentRunRunningWithDb(appPrisma, 1, 1, runId);
+    const billing = {
+      outcome: "charged" as const, creditsCharged: 5, reason: "completed_with_direct_answer",
+      successfulToolCalls: 0, failedToolCalls: 0, committedSideEffects: 0,
+      usageKnown: true,
+      modelCalls: 1, orchestratorModelCalls: 1, skillModelCalls: 0,
+    };
+    const receipts = await Promise.all(Array.from({ length: 24 }, () =>
+      runLedgerModule.settlePetAgentRunWithDb(appPrisma, {
+        userId: 1, petId: 1, runId, outcome: "charged", completed: true,
+        answer: "done", steps: [], stoppedReason: "completed", billing,
+      }),
+    ));
+    assert.ok(receipts.every((receipt) => receipt.runId === runId && receipt.state === "terminal"));
+    wallet = await scoped.query('SELECT "credits" FROM "users" WHERE "id"=1');
+    assert.equal(wallet.rows[0]?.credits, 95, "concurrent receipt settlement charges exactly once");
+    assert.equal(await runLedgerModule.getPetAgentRunWithDb(appPrisma, 2, 1, runId), null, "another owner cannot read the receipt");
+
+    // A pet deleted or deactivated between route authorization and reservation
+    // is not a wallet failure. It must be surfaced as unavailable, never 402.
+    const missingRun = await runLedgerModule.reservePetAgentRunWithDb(appPrisma, {
+      runId: randomUUID(), userId: 1, petId: 999_999, petName: "Gone", goal: "must not debit", maxSteps: 1, amount: 5,
+    });
+    const inactiveRun = await runLedgerModule.reservePetAgentRunWithDb(appPrisma, {
+      runId: randomUUID(), userId: 1, petId: 3, petName: "Inactive", goal: "must not debit", maxSteps: 1, amount: 5,
+    });
+    assert.equal(missingRun.kind, "unavailable");
+    assert.equal(inactiveRun.kind, "unavailable");
+    wallet = await scoped.query('SELECT "credits" FROM "users" WHERE "id"=1');
+    assert.equal(wallet.rows[0]?.credits, 95, "unavailable pets cannot consume wallet credits");
+
+    // Different idempotency keys racing for one pet serialize on the Pet row:
+    // exactly one reserves funds and the other receives the active run receipt.
+    await scoped.query('DELETE FROM "pet_agent_runs"; DELETE FROM "agent_credit_reservations"; UPDATE "users" SET "credits"=100 WHERE "id"=1');
+    const competingIds = [randomUUID(), randomUUID()];
+    const competingRuns = await Promise.all(competingIds.map((competingRunId) =>
+      runLedgerModule.reservePetAgentRunWithDb(appPrisma, {
+        runId: competingRunId, userId: 1, petId: 1, petName: "Audit Pet", goal: "one active run", maxSteps: 4, amount: 5,
+      }),
+    ));
+    const createdCompeting = competingRuns.find((result) => result.kind === "created");
+    const blockedCompeting = competingRuns.find((result) => result.kind === "blocked");
+    assert.ok(createdCompeting && createdCompeting.kind === "created");
+    assert.ok(blockedCompeting && blockedCompeting.kind === "blocked");
+    assert.equal(blockedCompeting.run.runId, createdCompeting.run.runId);
+    const activeRows = await scoped.query<{ runs: number; reservations: number }>(`
+      SELECT
+        (SELECT COUNT(*) FROM "pet_agent_runs" WHERE "state" IN ('reserved','running'))::int AS "runs",
+        (SELECT COUNT(*) FROM "agent_credit_reservations" WHERE "status"='reserved')::int AS "reservations"
+    `);
+    assert.deepEqual(activeRows.rows[0], { runs: 1, reservations: 1 });
+    wallet = await scoped.query('SELECT "credits" FROM "users" WHERE "id"=1');
+    assert.equal(wallet.rows[0]?.credits, 95, "different run IDs reserve one paid slot only");
+
+    // Stale recovery's terminal receipt must read the post-refund balance from
+    // wallet_refunds RETURNING, and must explicitly preserve unknown usage.
+    await scoped.query('DELETE FROM "pet_agent_runs"; DELETE FROM "agent_credit_reservations"; UPDATE "users" SET "credits"=73 WHERE "id"=1');
+    const staleRunId = randomUUID();
+    const staleLedger = await runLedgerModule.reservePetAgentRunWithDb(appPrisma, {
+      runId: staleRunId,
+      userId: 1,
+      petId: 1,
+      petName: "Audit Pet",
+      goal: "recover an unknown process outcome",
+      maxSteps: 4,
+      amount: 10,
+      now: oldNow,
+    });
+    assert.equal(staleLedger.kind, "created");
+    await runLedgerModule.markPetAgentRunRunningWithDb(appPrisma, 1, 1, staleRunId, oldNow);
+    const staleLedgerRefund = await reservationModule.refundStaleAgentCreditReservationsWithDb(
+      appPrisma,
+      new Date("2026-07-17T00:06:00.000Z"),
+      100,
+    );
+    assert.deepEqual(staleLedgerRefund, { refundedReservations: 1, refundedCredits: 10 });
+    const recovered = await runLedgerModule.getPetAgentRunWithDb(appPrisma, 1, 1, staleRunId);
+    assert.equal(recovered?.state, "terminal");
+    assert.equal(recovered?.creditsRemaining, 73, "stale receipt must expose the post-refund wallet balance");
+    assert.equal(recovered?.billing?.outcome, "refunded");
+    assert.equal(recovered?.billing?.reason, "outcome_unknown_timeout");
+    assert.equal(recovered?.billing?.usageKnown, false);
+    assert.equal(recovered?.billing?.modelCalls, null);
+    assert.equal(recovered?.billing?.orchestratorModelCalls, null);
+    assert.equal(recovered?.billing?.skillModelCalls, null);
+    wallet = await scoped.query('SELECT "credits" FROM "users" WHERE "id"=1');
+    assert.equal(wallet.rows[0]?.credits, 73);
+
     await scoped.query(`
+      DELETE FROM "pet_agent_runs";
+      DELETE FROM "agent_credit_reservations";
       DELETE FROM "pet_agent_schedules";
       UPDATE "users" SET "credits"=100 WHERE "id"=1;
       INSERT INTO "pet_agent_schedules" ("pet_id", "daily_credit_limit", "credits_used_today", "last_reset_at")

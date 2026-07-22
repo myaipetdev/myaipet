@@ -6,6 +6,8 @@
 
 import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { lockPetModifiersInTransaction } from "@/lib/petclaw/modifier-store";
+import type { Prisma } from "@/generated/prisma/client";
 
 export interface PetWallet {
   petId: number;
@@ -55,19 +57,24 @@ export async function getPetWallet(petId: number): Promise<PetWallet | null> {
   };
 }
 
-// Adjust a pet's wallet balance under a row lock. The balance lives inside the
+// Adjust a pet's wallet balance under the shared advisory lock, then a row lock.
+// The balance lives inside the
 // `personality_modifiers` JSON, so a naive read→modify→write-whole-blob lets two
 // concurrent invokes both read the old balance and lose one debit/credit
 // (double-spend / lost earnings), and clobbers any other concurrent writer of
 // that JSON. We SELECT … FOR UPDATE the row and write the recomputed blob in the
-// SAME transaction, which serializes concurrent settlements on a pet. Pass a
-// transaction `client` to settle a matching debit + credit atomically.
+// SAME transaction, which serializes concurrent settlements on a pet. A caller
+// settling more than one pet in one transaction must first call
+// lockPetModifiersInTransaction(tx, petIds); it sorts/deduplicates all IDs, and
+// this function's per-pet re-acquisition is safe in that same transaction.
 async function adjustPetWallet(
-  client: any,
+  client: Prisma.TransactionClient,
   petId: number,
   delta: number, // +credit, −debit
   requireFunds = false,
 ): Promise<{ success: boolean; balance: number }> {
+  // Global order: advisory modifier lock before the authoritative pet row.
+  await lockPetModifiersInTransaction(client, petId);
   const rows: Array<{ personality_modifiers: unknown }> = await client.$queryRaw`
     SELECT personality_modifiers FROM pets WHERE id = ${petId} FOR UPDATE
   `;
@@ -107,11 +114,12 @@ export async function creditPetWallet(
   petId: number,
   amount: number,
   reason: string,
-  tx?: any,
+  tx?: Prisma.TransactionClient,
 ): Promise<{ balance: number }> {
+  void reason;
   const r = tx
     ? await adjustPetWallet(tx, petId, amount)
-    : await prisma.$transaction((c: any) => adjustPetWallet(c, petId, amount));
+    : await prisma.$transaction((client) => adjustPetWallet(client, petId, amount));
   return { balance: r.balance };
 }
 
@@ -121,9 +129,10 @@ export async function deductPetWallet(
   petId: number,
   amount: number,
   reason: string,
-  tx?: any,
+  tx?: Prisma.TransactionClient,
 ): Promise<{ success: boolean; balance: number }> {
+  void reason;
   return tx
     ? await adjustPetWallet(tx, petId, -amount, true)
-    : await prisma.$transaction((c: any) => adjustPetWallet(c, petId, -amount, true));
+    : await prisma.$transaction((client) => adjustPetWallet(client, petId, -amount, true));
 }

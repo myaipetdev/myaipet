@@ -2,7 +2,8 @@
  * /api/petclaw/cli/token — CLI personal access tokens (PAT).
  *
  *   POST   { label? }   → mint a token. The plaintext is returned ONCE; we store
- *                         only its sha256 hash. Run `petclaw-sdk auth <token>`.
+ *                         only its sha256 hash. Enter it at the hidden
+ *                         `petclaw-sdk auth` prompt; never pass it in argv.
  *   GET                 → list the caller's tokens (prefix/label/last-used — NO token)
  *   DELETE ?id=N        → revoke one you own (sets revoked_at; auth fails after)
  *

@@ -13,6 +13,9 @@ import {
 import { rateLimit } from "@/lib/rateLimit";
 import { executePetActionWithPaywall, getDailyUsage } from "@/lib/paywall";
 import { NextRequest, NextResponse } from "next/server";
+import { withLockedPetModifiers } from "@/lib/petclaw/modifier-store";
+import { readBoundedJsonBody } from "@/lib/petclaw/bounded-json-body";
+import type { Prisma } from "@/generated/prisma/client";
 
 // Feed/play use a daily free allowance and paid overflow. Emotional actions stay free.
 const PAID_INTERACTION_MAP: Record<string, string> = {
@@ -22,6 +25,7 @@ const PAID_INTERACTION_MAP: Record<string, string> = {
 
 // Minimum authoritative gap between interactions to prevent point/exp farming.
 const INTERACT_COOLDOWN_MS = 1500;
+const INTERACT_BODY_MAX_BYTES = 1024;
 const VALID_TYPES = Object.keys(BASE_EFFECTS) as InteractionType[];
 
 const SPECIES_MAP: Record<number, string> = {
@@ -108,8 +112,15 @@ export async function POST(
     return NextResponse.json({ error: "Pet not found" }, { status: 404 });
   }
 
-  const body = await req.json().catch(() => null);
-  const interactionType = body && typeof body === "object"
+  const parsedBody = await readBoundedJsonBody(req, INTERACT_BODY_MAX_BYTES);
+  if (parsedBody.ok === false) {
+    return NextResponse.json(
+      { error: parsedBody.reason === "too_large" ? "Request body too large" : "Invalid JSON" },
+      { status: parsedBody.reason === "too_large" ? 413 : 400 },
+    );
+  }
+  const body = parsedBody.value;
+  const interactionType = body && typeof body === "object" && !Array.isArray(body)
     ? (body as { interaction_type?: unknown }).interaction_type as InteractionType | undefined
     : undefined;
   if (!interactionType || !VALID_TYPES.includes(interactionType)) {
@@ -121,7 +132,23 @@ export async function POST(
 
   const actionKey = PAID_INTERACTION_MAP[interactionType];
   const txHash = actionKey ? req.nextUrl.searchParams.get("tx_hash") || undefined : undefined;
-  const action = await executePetActionWithPaywall<
+  // Acquire the shared modifier lock before the paywall's authoritative pet-row
+  // lock. Reuse this same transaction so quota/receipt, stats, modifier keys,
+  // interaction row, and memory row remain one failure-atomic commit.
+  const ownedPet = await prisma.pet.findFirst({
+    where: { id: parsedPetId, user_id: user.id, is_active: true },
+    select: { id: true },
+  });
+  if (!ownedPet) {
+    return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  }
+  const action = await withLockedPetModifiers(parsedPetId, async ({ tx }) => {
+    const lockedDb = {
+      $transaction: async <T>(
+        operation: (innerTx: Prisma.TransactionClient) => Promise<T>,
+      ): Promise<T> => operation(tx),
+    };
+    return executePetActionWithPaywall<
     {
       updatedPet: any;
       paidAction: boolean;
@@ -134,7 +161,7 @@ export async function POST(
     },
     InteractionDomainFailure
   >(
-    prisma,
+    lockedDb,
     {
       userId: user.id,
       petId: parsedPetId,
@@ -305,7 +332,8 @@ export async function POST(
         };
       },
     },
-  );
+    );
+  });
 
   if (action.ok !== true) {
     if (action.kind === "pet_not_found") {
@@ -427,34 +455,55 @@ export async function GET(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { petId } = await params;
-  const pet = await prisma.pet.findFirst({
+  const ownedPet = await prisma.pet.findFirst({
     where: { id: Number(petId), user_id: user.id, is_active: true },
+    select: { id: true },
   });
-  if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  if (!ownedPet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
 
-  const mods: any = pet.personality_modifiers || {};
-  let request = mods.pending_request;
-  if (request?.expiresAt && new Date(request.expiresAt).getTime() < Date.now()) {
-    request = null;
-  }
-  if (!request) {
-    request = generateRequest(
-      {
-        energy: pet.energy,
-        hunger: pet.hunger,
-        happiness: pet.happiness,
-        bond_level: pet.bond_level,
-        last_interaction_at: pet.last_interaction_at,
-      },
-      pet.personality_type,
-    );
-    if (request) {
-      await prisma.pet.update({
+  // This GET has a deliberate write side effect (request generation/expiry),
+  // so it participates in the same modifier serialization as care and memory.
+  const state = await withLockedPetModifiers(ownedPet.id, async ({ tx, modifiers }) => {
+    const pet = await tx.pet.findFirst({
+      where: { id: ownedPet.id, user_id: user.id, is_active: true },
+    });
+    if (!pet) return null;
+
+    let request: any = modifiers.pending_request;
+    let shouldWrite = false;
+    if (request?.expiresAt && new Date(request.expiresAt).getTime() < Date.now()) {
+      request = null;
+      shouldWrite = true;
+    }
+    if (!request) {
+      request = generateRequest(
+        {
+          energy: pet.energy,
+          hunger: pet.hunger,
+          happiness: pet.happiness,
+          bond_level: pet.bond_level,
+          last_interaction_at: pet.last_interaction_at,
+        },
+        pet.personality_type,
+      );
+      if (request) shouldWrite = true;
+    }
+    if (shouldWrite) {
+      await tx.pet.update({
         where: { id: pet.id },
-        data: { personality_modifiers: { ...mods, pending_request: request } },
+        data: {
+          personality_modifiers: { ...modifiers, pending_request: request } as any,
+        },
       });
     }
-  }
+    return {
+      petId: pet.id,
+      request,
+      combosUnlocked: Array.isArray(modifiers.combos_unlocked) ? modifiers.combos_unlocked : [],
+      history: Array.isArray(modifiers.interaction_history) ? modifiers.interaction_history : [],
+    };
+  });
+  if (!state) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
 
   let today: Awaited<ReturnType<typeof todaySnapshot>> | null = null;
   try {
@@ -464,10 +513,10 @@ export async function GET(
   }
 
   return NextResponse.json({
-    pet_id: pet.id,
-    request,
-    combos_unlocked: mods.combos_unlocked || [],
-    history: mods.interaction_history || [],
+    pet_id: state.petId,
+    request: state.request,
+    combos_unlocked: state.combosUnlocked,
+    history: state.history,
     today,
   });
 }

@@ -21,6 +21,7 @@ const rateLimiter = read("src/lib/rateLimit.ts");
 const editedVideoUpload = read("src/app/api/upload/video/route.ts");
 const connectorRoute = read("src/app/api/petclaw/connectors/route.ts");
 const webSearchConnector = read("src/lib/petclaw/connectors/web-search.ts");
+const daydreamRoute = read("src/app/api/pets/[petId]/daydream/route.ts");
 const migration = read("prisma/migrations/20260717161000_safe_media_deletion/migration.sql");
 
 assert.match(projection, /pets:\s*\{\s*some:\s*publicPetWhere\(\)/);
@@ -30,7 +31,7 @@ assert.match(snapshot, /where:\s*publicPetWhere\(\)/);
 
 assert.match(migration, /pet_dates_pet_a_id_fkey[\s\S]*ON DELETE SET NULL/);
 assert.match(migration, /pet_dates_pet_b_id_fkey[\s\S]*ON DELETE SET NULL/);
-assert.match(petDate, /e\?\.code === "P2003"/);
+assert.match(petDate, /original\.code === "P2003"/);
 
 const referencedBranch = deletion.match(
   /if \(await mediaObjectIsStillReferenced\(task\.object_ref\)\) \{([\s\S]*?)\n\s*\}/,
@@ -70,5 +71,19 @@ assert.match(connectorRoute, /Server-side page summarization is not available/);
 assert.doesNotMatch(connectorRoute, /ws\.summarize\(params\.url\)/);
 const summarizeMethod = webSearchConnector.slice(webSearchConnector.indexOf("async summarize"));
 assert.doesNotMatch(summarizeMethod, /fetch\(/);
+
+const daydreamGet = daydreamRoute.slice(
+  daydreamRoute.indexOf("export async function GET"),
+  daydreamRoute.indexOf("export async function POST"),
+);
+assert.match(daydreamGet, /requirePetOwner\(req, id\)/);
+assert.ok(
+  daydreamGet.indexOf("requirePetOwner(req, id)") < daydreamGet.indexOf("prisma.petInsight.findMany"),
+  "daydream ownership must be proven before private insight reads",
+);
+assert.ok(
+  daydreamGet.indexOf("requirePetOwner(req, id)") < daydreamGet.indexOf("prisma.petInsight.updateMany"),
+  "daydream ownership must be proven before mutating the seen state",
+);
 
 console.log("privacy_boundary_contract=PASS");

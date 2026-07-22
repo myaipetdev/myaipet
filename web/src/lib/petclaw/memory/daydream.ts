@@ -20,9 +20,14 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import type { MemoryEntry, UserProfile } from "./persistent-memory";
+import {
+  isProviderSafeRetainedText,
+  type MemoryEntry,
+  type UserProfile,
+} from "./persistent-memory";
 import { callLLM, type LLMTask } from "@/lib/llm/router";
-import { containsHangul, generatedEnglishOrNull } from "@/lib/generatedLanguage";
+import { generatedEnglishOrNull } from "@/lib/generatedLanguage";
+import { withLockedPetModifiers } from "@/lib/petclaw/modifier-store";
 
 const MIN_NOTES = 4;          // need at least this many memories to daydream
 const MAX_PAIRS = 6;          // synthesize at most this many connections per run
@@ -36,38 +41,50 @@ export interface DaydreamInsight {
   mood: string;               // "tender" | "playful" | "concerned" | "hopeful"
 }
 
-interface Note { key: string; text: string; importance: number; ageDays: number; }
+export interface DaydreamPersistResult {
+  created: number;
+  discarded: boolean;
+}
 
-function toNotes(memories: MemoryEntry[], profile: UserProfile[]): Note[] {
+export interface DaydreamProviderNote { key: string; text: string; importance: number; ageDays: number; }
+
+export function buildDaydreamProviderNotes(
+  memories: MemoryEntry[],
+  profile: UserProfile[],
+): DaydreamProviderNote[] {
   const now = Date.now();
-  const fromMem: Note[] = (memories || []).map(m => ({
+  const fromMem: DaydreamProviderNote[] = (memories || []).map(m => ({
     key: m.key,
     text: m.content,
     importance: m.importance || 1,
     ageDays: Math.max(0, (now - new Date(m.updatedAt || m.createdAt).getTime()) / 86_400_000),
   }));
-  const fromProfile: Note[] = (profile || []).map(p => ({
+  const fromProfile: DaydreamProviderNote[] = (profile || [])
+    .filter((entry) => entry.category !== "identity")
+    .map(p => ({
     key: `user:${p.key}`,
     text: p.content,
     importance: 3,             // owner-profile facts are inherently relevant
     ageDays: Math.max(0, (now - new Date(p.updatedAt).getTime()) / 86_400_000),
   }));
   return [...fromMem, ...fromProfile].filter(
-    (n) => n.text && n.text.length > 4 && !containsHangul(n.text),
+    (note) => note.text
+      && note.text.length > 4
+      && isProviderSafeRetainedText(`${note.key} ${note.text}`),
   );
 }
 
 /** Recency + importance weighted random pairing (the "idle brain"). */
-function makePairs(notes: Note[], count: number): [Note, Note][] {
+function makePairs(notes: DaydreamProviderNote[], count: number): [DaydreamProviderNote, DaydreamProviderNote][] {
   if (notes.length < 2) return [];
-  const weight = (n: Note) => (n.importance) * Math.exp(-n.ageDays / 45) + 0.15;
-  const pick = (): Note => {
+  const weight = (n: DaydreamProviderNote) => (n.importance) * Math.exp(-n.ageDays / 45) + 0.15;
+  const pick = (): DaydreamProviderNote => {
     const total = notes.reduce((s, n) => s + weight(n), 0);
     let r = Math.random() * total;
     for (const n of notes) { r -= weight(n); if (r <= 0) return n; }
     return notes[notes.length - 1];
   };
-  const pairs: [Note, Note][] = [];
+  const pairs: [DaydreamProviderNote, DaydreamProviderNote][] = [];
   const seen = new Set<string>();
   let guard = 0;
   while (pairs.length < count && guard++ < count * 8) {
@@ -98,21 +115,32 @@ async function callPetText(petId: number, task: LLMTask, system: string, user: s
  * Run one daydream cycle for a pet. Returns the surfaced insights (already
  * filtered by the critic). Caller persists them.
  */
-export async function daydream(petId: number): Promise<DaydreamInsight[]> {
+export async function daydream(
+  petId: number,
+  expectedMemoryEpoch: number,
+): Promise<DaydreamInsight[]> {
   const pet = await prisma.pet.findUnique({ where: { id: petId } });
   if (!pet) return [];
+
+  // Deletion/correction is a request fence, not merely a database cleanup.
+  // Refuse to send retained context to a provider when the request already
+  // belongs to an older memory generation. A second epoch check under the
+  // shared modifier lock protects the eventual write after inference.
+  if (pet.memory_epoch !== expectedMemoryEpoch) return [];
 
   const mods = (pet.personality_modifiers as Record<string, unknown>) || {};
   const memories = (mods.persistent_memories as MemoryEntry[]) || [];
   const profile = (mods.user_profile as UserProfile[]) || [];
 
-  const notes = toNotes(memories, profile);
+  const notes = buildDaydreamProviderNotes(memories, profile);
   if (notes.length < MIN_NOTES) return [];
 
   const pairs = makePairs(notes, MAX_PAIRS);
   if (pairs.length === 0) return [];
 
-  const petName = pet.name;
+  const petName = isProviderSafeRetainedText(`pet_name ${pet.name}`)
+    ? pet.name
+    : "your pet";
   const personality = pet.personality_type;
 
   // ── Synthesizer: one caring connection per pair ──
@@ -188,4 +216,36 @@ export async function daydream(petId: number): Promise<DaydreamInsight[]> {
       sourceKeys: c.sourceKeys,
       mood: c.mood,
     }));
+}
+
+/**
+ * Persist one completed daydream only if no owner deletion/correction happened
+ * since the caller captured `expectedMemoryEpoch`. The shared modifier lock
+ * serializes this decision with clearMemory() and correction writers.
+ */
+export async function persistDaydreamInsights(
+  petId: number,
+  expectedMemoryEpoch: number,
+  insights: DaydreamInsight[],
+): Promise<DaydreamPersistResult> {
+  return withLockedPetModifiers(petId, async ({ tx, pet }) => {
+    if (pet.memory_epoch !== expectedMemoryEpoch) {
+      return { created: 0, discarded: true };
+    }
+    if (insights.length === 0) {
+      return { created: 0, discarded: false };
+    }
+
+    const result = await tx.petInsight.createMany({
+      data: insights.map((ins) => ({
+        pet_id: petId,
+        insight: ins.insight,
+        rationale: ins.rationale,
+        mood: ins.mood,
+        score: Math.round(ins.score),
+        source_keys: ins.sourceKeys as any,
+      })),
+    });
+    return { created: result.count, discarded: false };
+  });
 }

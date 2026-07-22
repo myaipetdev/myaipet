@@ -1,7 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
-import { analyzeChatHistory, saveChatAnalysis } from "@/lib/services/persona";
+import {
+  analyzeChatHistory,
+  isPersonaAnalysisProviderSafe,
+  saveChatAnalysis,
+} from "@/lib/services/persona";
+import { readBoundedJsonBody } from "@/lib/petclaw/bounded-json-body";
+
+const PERSONA_ANALYSIS_BODY_MAX_BYTES = 200 * 1024;
 
 /**
  * POST /api/pets/[petId]/persona/analyze
@@ -24,9 +31,19 @@ export async function POST(
     where: { id: pid, user_id: user.id, is_active: true },
   });
   if (!pet) return NextResponse.json({ error: "Pet not found" }, { status: 404 });
+  const analysisEpoch = pet.memory_epoch;
 
-  const body = await req.json();
-  const chatText = body.chat_text;
+  const parsedBody = await readBoundedJsonBody(req, PERSONA_ANALYSIS_BODY_MAX_BYTES);
+  if (parsedBody.ok === false) {
+    return NextResponse.json(
+      { error: parsedBody.reason === "too_large" ? "Request body is too large" : "Invalid JSON" },
+      { status: parsedBody.reason === "too_large" ? 413 : 400 },
+    );
+  }
+  if (!parsedBody.value || typeof parsedBody.value !== "object" || Array.isArray(parsedBody.value)) {
+    return NextResponse.json({ error: "JSON body must be an object" }, { status: 400 });
+  }
+  const chatText = (parsedBody.value as Record<string, unknown>).chat_text;
 
   if (!chatText || typeof chatText !== "string") {
     return NextResponse.json({ error: "chat_text is required" }, { status: 400 });
@@ -45,13 +62,27 @@ export async function POST(
       { status: 400 },
     );
   }
+  if (!isPersonaAnalysisProviderSafe(chatText)) {
+    return NextResponse.json(
+      { error: "Chat text contains credentials or non-English content that cannot be sent for persona analysis." },
+      { status: 400 },
+    );
+  }
 
   try {
     // Analyze chat history with LLM
-    const analysis = await analyzeChatHistory(chatText);
+    const analysis = await analyzeChatHistory(pid, chatText);
 
     // Save analysis results to persona
-    const persona = await saveChatAnalysis(pid, analysis);
+    const persona = await saveChatAnalysis(pid, analysis, analysisEpoch);
+    if (!persona) {
+      return NextResponse.json({
+        ok: false,
+        code: "persona_analysis_stale",
+        discarded: true,
+        error: "Persona analysis was discarded because memory changed while it was running. Run it again to save a fresh analysis.",
+      }, { status: 409 });
+    }
 
     // Record Web4 checkpoint
     try {

@@ -1,16 +1,15 @@
 "use client";
 
 /**
- * AgentWorkbench — a Trinity-style orchestration surface over the REAL
- * native function-calling loop (POST /api/pets/[petId]/agent → runToolAgent),
- * streamed live over SSE so each tool call + result appears as it happens.
+ * AgentWorkbench — UI for the native function-calling loop at
+ * POST /api/pets/[petId]/agent. SSE events show each sequential tool call and
+ * observation as they happen.
  *
- * It exposes the four orchestration affordances Trinity popularized, each mapped
- * to something the loop already produces (no fabrication):
- *   - Work packages  = the `steps[]` the planner produces (plan → act → observe)
- *   - Preflight gate  = client-side validation before we burn credits
- *   - Review + retry/recover = surface failed packages, re-run or recover (+budget)
- *   - Persistent session = last run is saved to localStorage and restored on load
+ * The workbench exposes only behavior the endpoint implements:
+ *   - Tool calls = the returned `steps[]`
+ *   - Preflight = client-side validation before credits are reserved
+ *   - Retry = a separate new run, with a separate credit reservation
+ *   - Saved result = the last terminal response cached in localStorage
  *
  * Self-contained: fetches the owner's pets via api.pets.list() and calls the
  * agent endpoint directly with getAuthHeaders(). Does NOT touch AgentDashboard.
@@ -19,15 +18,47 @@
 import { useState, useEffect, useCallback, useId } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import Icon from "@/components/Icon";
+import {
+  createAgentRunId,
+  forgetPendingAgentRun,
+  latestPendingAgentRun,
+  recheckAgentRunReceiptOnNotFound,
+  rememberPendingAgentRun,
+} from "@/lib/petclaw/agent-run-client";
 
-interface AgentStep { thought: string; skill: string; input?: any; output?: any; ok: boolean; }
+interface AgentStep {
+  thought: string;
+  skill: string;
+  input?: any;
+  output?: any;
+  ok: boolean;
+  sideEffectCommitted?: boolean;
+  modelCalls?: number;
+}
+
+interface AgentBilling {
+  outcome: "charged" | "refunded";
+  creditsCharged: number;
+  reason: string;
+  successfulToolCalls: number;
+  failedToolCalls: number;
+  committedSideEffects: number;
+  usageKnown: boolean;
+  modelCalls: number | null;
+  orchestratorModelCalls: number | null;
+  skillModelCalls: number | null;
+}
+
 interface RunResult {
+  runId: string;
   goal: string;
   answer: string;
   steps: AgentStep[];
   stoppedReason: string;
+  completed?: boolean;
+  billing?: AgentBilling;
   creditsRemaining?: number;
-  at: number; // client timestamp for the persistent session
+  at: number; // client timestamp for the cached result
   petId: number;
   petName: string;
 }
@@ -38,9 +69,14 @@ const MAX_STEPS = 6;
 
 const STOP: Record<string, { label: string; tone: "ok" | "warn" | "err" }> = {
   running: { label: "Running…", tone: "warn" },
+  completed: { label: "Completed", tone: "ok" },
+  max_steps: { label: "Reached round limit", tone: "warn" },
+  timeout: { label: "Timed out", tone: "warn" },
+  planner_error: { label: "Reasoning failed", tone: "err" },
+  receipt_missing: { label: "Settlement receipt missing", tone: "err" },
+  // Older cached/API results remain readable after the stoppedReason upgrade.
   finished: { label: "Completed", tone: "ok" },
-  budget_exhausted: { label: "Reached step budget", tone: "warn" },
-  planner_error: { label: "Planner failed", tone: "err" },
+  budget_exhausted: { label: "Reached round limit", tone: "warn" },
 };
 
 const INK = "#211A12";
@@ -92,10 +128,11 @@ export default function AgentWorkbench() {
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<RunResult | null>(null);
   const [restored, setRestored] = useState(false);
+  const [receiptMissing, setReceiptMissing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<Record<number, boolean>>({});
 
-  // ── Load pets + restore the persisted session ──
+  // ── Load pets + show the last cached result ──
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -104,7 +141,16 @@ export default function AgentWorkbench() {
         const list = data.pets || data || [];
         if (!alive) return;
         setPets(list);
-        if (list.length) setPetId(list[0].id);
+        if (list.length) {
+          let savedPetId: number | null = null;
+          try {
+            const pending = latestPendingAgentRun();
+            const raw = localStorage.getItem(LS_KEY);
+            const saved = pending || (raw ? JSON.parse(raw) as Partial<RunResult> : null);
+            savedPetId = typeof saved?.petId === "number" ? saved.petId : null;
+          } catch { /* ignore corrupt saved selection */ }
+          setPetId(list.some((pet: any) => pet.id === savedPetId) ? savedPetId : list[0].id);
+        }
       } catch {
         /* unauthenticated / no pets — the gate above handles the empty state */
       } finally {
@@ -112,22 +158,46 @@ export default function AgentWorkbench() {
       }
     })();
     try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw) as RunResult;
-        if (saved?.steps) {
-          setResult(saved);
-          setGoal(saved.goal || "");
-          setRestored(true);
+      const pending = latestPendingAgentRun();
+      if (
+        pending
+        && typeof pending.goal === "string"
+        && typeof pending.petId === "number"
+        && typeof pending.at === "number"
+      ) {
+        setGoal(pending.goal);
+        setReceiptMissing(true);
+        setError(
+          "The previous connection ended before PetClaw returned its settlement receipt. Check Account credits and usage before starting another paid run.",
+        );
+        setResult({
+          runId: pending.runId,
+          goal: pending.goal,
+          answer: "",
+          steps: [],
+          stoppedReason: "receipt_missing",
+          at: pending.at,
+          petId: pending.petId,
+          petName: pending.petName || "your pet",
+        });
+      } else {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw) as RunResult;
+          if (saved?.steps) {
+            setResult(saved);
+            setGoal(saved.goal || "");
+            setRestored(true);
+          }
         }
       }
-    } catch { /* ignore corrupt session */ }
+    } catch { /* ignore corrupt saved result */ }
     return () => { alive = false; };
   }, []);
 
   const petName = pets.find((p) => p.id === petId)?.name || "your pet";
   const goalOk = goal.trim().length >= 3;
-  const ready = goalOk && petId != null && !running;
+  const ready = goalOk && petId != null && !running && !receiptMissing;
 
   const run = useCallback(
     async (goalText: string, steps: number) => {
@@ -135,7 +205,9 @@ export default function AgentWorkbench() {
       setRunning(true);
       setError(null);
       setRestored(false);
+      setReceiptMissing(false);
       setOpen({});
+      const runId = createAgentRunId();
 
       // Live streaming (SSE): tool calls + results appear as the loop works,
       // instead of a blocking wait. Falls back to a clear error if the stream
@@ -144,15 +216,32 @@ export default function AgentWorkbench() {
       const byId: Record<string, number> = {}; // tool_call id → step index
       let liveThought = "";
       setResult({
+        runId,
         goal: goalText.trim(), answer: "", steps: [], stoppedReason: "running",
         creditsRemaining: undefined, at: Date.now(), petId, petName,
       });
+
+      const pendingReceipt: RunResult = {
+        runId,
+        goal: goalText.trim(),
+        answer: "",
+        steps: [],
+        stoppedReason: "receipt_missing",
+        at: Date.now(),
+        petId,
+        petName,
+      };
+      try {
+        rememberPendingAgentRun({ runId, petId, petName, goal: goalText.trim(), surface: "workbench", at: pendingReceipt.at });
+      } catch { /* quota */ }
+
+      let receivedSettlementReceipt = false;
 
       try {
         const res = await fetch(`/api/pets/${petId}/agent?stream=1`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...getAuthHeaders() },
-          body: JSON.stringify({ goal: goalText.trim(), maxSteps: steps }),
+          body: JSON.stringify({ runId, goal: goalText.trim(), maxSteps: steps, confirmCostCredits: COST }),
         });
         if (!res.ok || !res.body) {
           const data = await res.json().catch(() => ({} as any));
@@ -162,6 +251,9 @@ export default function AgentWorkbench() {
               : data?.error || "The run failed. Try again.",
           );
           setResult(null);
+          if (res.status < 500) {
+            try { forgetPendingAgentRun(runId); } catch { /* ignore */ }
+          }
           return;
         }
 
@@ -196,21 +288,53 @@ export default function AgentWorkbench() {
             } else if (evt.type === "error" && evt.ok === false) {
               setError(evt.error || "The run failed. Try again.");
             } else if (evt.type === "done") {
+              const billing = evt.billing as AgentBilling | undefined;
+              if (
+                !billing
+                || (billing.outcome !== "charged" && billing.outcome !== "refunded")
+                || typeof billing.creditsCharged !== "number"
+                || !(billing.usageKnown === false ? billing.modelCalls == null : typeof billing.modelCalls === "number")
+                || evt.runId !== runId
+              ) {
+                continue;
+              }
               const rr: RunResult = {
+                runId,
                 goal: evt.goal || goalText.trim(),
                 answer: evt.answer || "",
                 steps: evt.steps || liveSteps,
-                stoppedReason: evt.stoppedReason || "finished",
+                stoppedReason: evt.stoppedReason || "completed",
+                completed: evt.completed === true,
+                billing,
                 creditsRemaining: evt.creditsRemaining,
                 at: Date.now(), petId, petName,
               };
+              receivedSettlementReceipt = true;
               setResult(rr);
               try { localStorage.setItem(LS_KEY, JSON.stringify(rr)); } catch { /* quota */ }
+              try { forgetPendingAgentRun(runId); } catch { /* ignore */ }
             }
           }
         }
+        if (!receivedSettlementReceipt) {
+          setReceiptMissing(true);
+          setError(
+            "The stream ended before the settled billing receipt arrived. Do not retry yet: first check Account credits and usage, because the server may have completed this run.",
+          );
+          setResult((current) => current
+            ? { ...current, stoppedReason: "receipt_missing" }
+            : pendingReceipt);
+        }
       } catch {
-        setError("Network error — the loop didn't run. Try again.");
+        if (!receivedSettlementReceipt) {
+          setReceiptMissing(true);
+          setError(
+            "The connection failed without a settlement receipt. The run may still have reached the server; check Account credits and usage before retrying.",
+          );
+          setResult((current) => current
+            ? { ...current, stoppedReason: "receipt_missing" }
+            : pendingReceipt);
+        }
       } finally {
         setRunning(false);
       }
@@ -218,16 +342,67 @@ export default function AgentWorkbench() {
     [petId, petName],
   );
 
-  const clearSession = () => {
+  const clearSavedResult = () => {
     try { localStorage.removeItem(LS_KEY); } catch { /* ignore */ }
     setResult(null);
     setRestored(false);
     setError(null);
   };
 
+  const reconcilePendingRun = async () => {
+    const pending = latestPendingAgentRun();
+    if (!pending) {
+      setReceiptMissing(false);
+      setError(null);
+      return;
+    }
+    setError("Checking the durable owner receipt…");
+    try {
+      const receipt = await recheckAgentRunReceiptOnNotFound(
+        () => api.pets.agentRunStatus(pending.petId, pending.runId),
+      );
+      if (receipt.state !== "terminal" || !receipt.billing) {
+        setError(`Run ${pending.runId.slice(0, 8)}… is still ${receipt.state}. It remains locked; refresh Account shortly.`);
+        return;
+      }
+      forgetPendingAgentRun(pending.runId);
+      const rr: RunResult = {
+        runId: pending.runId,
+        goal: receipt.goal || pending.goal,
+        answer: receipt.answer || "",
+        steps: receipt.steps || [],
+        stoppedReason: receipt.stoppedReason || "planner_error",
+        completed: receipt.completed === true,
+        billing: receipt.billing,
+        creditsRemaining: receipt.creditsRemaining,
+        at: Date.now(),
+        petId: pending.petId,
+        petName: receipt.petName || pending.petName || "your pet",
+      };
+      setResult(rr);
+      try { localStorage.setItem(LS_KEY, JSON.stringify(rr)); } catch { /* ignore */ }
+      setReceiptMissing(false);
+      setError(null);
+      setRestored(true);
+    } catch (e: any) {
+      if (e?.status === 404) {
+        forgetPendingAgentRun(pending.runId);
+        setReceiptMissing(false);
+        setResult(null);
+        setError("No durable run receipt was found after two checks. The local marker was cleared; the server's per-pet guard prevents an overlapping paid run. Check Account credits before retrying.");
+        return;
+      }
+      setError(`Receipt lookup failed: ${e?.message || "try again shortly"}. Do not retry this paid run yet.`);
+    }
+  };
+
   const stop = result ? (STOP[result.stoppedReason] || { label: result.stoppedReason, tone: "warn" as const }) : null;
-  const workPackages = result ? result.steps.filter((s) => s.skill !== "finish") : [];
-  const hasFailure = !!result && (result.stoppedReason === "planner_error" || result.steps.some((s) => !s.ok && s.skill !== "finish"));
+  const toolCalls = result ? result.steps.filter((s) => s.skill !== "finish") : [];
+  const hasFailure = !!result && (
+    result.stoppedReason === "planner_error" ||
+    result.stoppedReason === "timeout" ||
+    result.steps.some((s) => !s.ok && s.skill !== "finish")
+  );
 
   return (
     <div style={{ maxWidth: 920, margin: "0 auto", padding: "96px 20px 80px" }}>
@@ -240,29 +415,32 @@ export default function AgentWorkbench() {
           Give your pet a goal. Watch it work.
         </h1>
         <p style={{ fontFamily: SANS, fontSize: 16, color: "rgba(33,26,18,0.6)", maxWidth: 620, margin: 0, lineHeight: 1.6 }}>
-          Not a single prompt — a real loop. Your pet <b>plans</b> each step, runs a real
-          <b> skill</b>, <b>recalls</b> what it knows, <b>observes</b> the result, and reports back.
+          Not a single prompt — a bounded loop. Your pet chooses a tool, runs it,
+          observes the result, and decides whether another reasoning round is needed.
         </p>
 
         {/* Honest scope note: what the loop runs vs. what it can only point to. */}
         <div style={{ marginTop: 14, padding: "10px 13px", borderRadius: 10, background: "rgba(33,26,18,0.035)", border: "1px solid rgba(0,0,0,0.07)", fontFamily: SANS, fontSize: 13, color: "rgba(33,26,18,0.6)", lineHeight: 1.55, maxWidth: 620 }}>
           <span style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.1em", color: "rgba(33,26,18,0.45)", fontWeight: 700 }}>HOW IT CHAINS</span>
           <div style={{ marginTop: 4 }}>
-            Your pet calls its <b>in-loop skills</b> plus real keyless <b>look-up tools</b>
-            (web search, Wikipedia, crypto prices, its own memory) as native function tools and
-            reasons over each result — live, one call at a time, retrying on failure. Skills that
-            run on their own REST endpoints aren&apos;t offered here; invoke those via the SDK or MCP.
+            Your pet calls its eligible <b>in-loop skills</b> plus private,
+            read-only <b>memory recall</b> as native function tools and reasons over each
+            result — live and sequentially. Each tool is attempted once. Outbound web,
+            Wikipedia and market-data connectors are intentionally excluded from a run that
+            can read private memory until an explicit approval and data-taint policy ships.
+            Skills that run on their own REST endpoints aren&apos;t offered here; use their
+            documented endpoint (SDK and MCP coverage varies by skill).
           </div>
         </div>
       </div>
 
-      {/* ── Persistent-session strip ── */}
+      {/* ── Cached-result strip ── */}
       {restored && result && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", borderRadius: 12, background: "rgba(107,79,160,0.05)", border: "1px solid rgba(107,79,160,0.18)", marginBottom: 18, flexWrap: "wrap" }}>
           <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(33,26,18,0.65)" }}>
-            ⏎ Resumed your last run · {relTime(result.at)}
+            Loaded your last saved result · {relTime(result.at)}
           </span>
-          <button type="button" onClick={clearSession} style={ghostBtn}>Clear session</button>
+          <button type="button" onClick={clearSavedResult} style={ghostBtn}>Clear saved result</button>
         </div>
       )}
 
@@ -303,15 +481,15 @@ export default function AgentWorkbench() {
           ))}
         </div>
 
-        {/* Step budget */}
+        {/* Reasoning-round budget */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
-          <label htmlFor={budgetId} style={{ ...fieldLabel, margin: 0 }}>Step budget</label>
+          <label htmlFor={budgetId} style={{ ...fieldLabel, margin: 0 }}>Reasoning-round limit</label>
           <input id={budgetId} type="range" min={1} max={MAX_STEPS} value={maxSteps}
-            aria-valuetext={`${maxSteps} maximum work packages`}
+            aria-valuetext={`${maxSteps} maximum reasoning rounds`}
             onChange={(e) => setMaxSteps(Number(e.target.value))}
             style={{ accentColor: PURPLE, flex: 1, minWidth: 120, maxWidth: 240 }} />
           <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: INK }}>{maxSteps}</span>
-          <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(33,26,18,0.45)" }}>max packages</span>
+          <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(33,26,18,0.45)" }}>max rounds</span>
         </div>
 
         {/* Preflight gate */}
@@ -325,6 +503,19 @@ export default function AgentWorkbench() {
         {error && (
           <div role="alert" style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: TONE.err.bg, border: `1px solid ${TONE.err.bd}`, color: TONE.err.fg, fontFamily: SANS, fontSize: 13.5 }}>
             {error}
+          </div>
+        )}
+
+        {receiptMissing && (
+          <div style={{ marginTop: 12, padding: "12px 14px", borderRadius: 10, background: TONE.warn.bg, border: `1px solid ${TONE.warn.bd}`, fontFamily: SANS, fontSize: 13.5, color: TONE.warn.fg, lineHeight: 1.5 }}>
+            <b>Paid-run safety lock:</b> another run stays disabled until you verify the
+            previous receipt. <a href="/account" style={{ color: TONE.warn.fg, fontWeight: 800 }}>Open Account</a>,
+            or reconcile the saved run ID below.
+            <div>
+              <button type="button" onClick={reconcilePendingRun} style={{ ...ghostBtn, marginTop: 9 }}>
+                Check saved run receipt
+              </button>
+            </div>
           </div>
         )}
 
@@ -342,15 +533,21 @@ export default function AgentWorkbench() {
             transition: "background 180ms ease, transform 120ms ease",
           }}
         >
-          {running ? "● Planning & running…" : result ? "▶ Run again" : "▶ Run the agent loop"}
+          {running
+            ? "● Reasoning & running…"
+            : receiptMissing
+              ? "Check Account before another run"
+              : result
+                ? `▶ Authorize ${COST} credits & run again`
+                : `▶ Authorize ${COST} credits & run`}
         </button>
       </div>
 
-      {/* ── Result: work packages ── */}
+      {/* ── Result: tool calls ── */}
       {running && !result && (
         <div role="status" aria-live="polite" style={{ ...card, marginTop: 18, textAlign: "center", color: "rgba(33,26,18,0.55)", fontFamily: SANS }}>
           <div style={{ marginBottom: 8 }}><Icon name="compass" size={30} /></div>
-          {petName} is planning the first step…
+          {petName} is starting the first reasoning round…
         </div>
       )}
 
@@ -360,7 +557,7 @@ export default function AgentWorkbench() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <span style={{ fontFamily: SANS, fontSize: 18, fontWeight: 800, color: INK }}>
-                {workPackages.length} work package{workPackages.length === 1 ? "" : "s"}
+                {toolCalls.length} tool call{toolCalls.length === 1 ? "" : "s"}
               </span>
               {stop && (
                 <span role="status" aria-live="polite" style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "3px 9px", borderRadius: 7, color: TONE[stop.tone].fg, background: TONE[stop.tone].bg, border: `1px solid ${TONE[stop.tone].bd}` }}>
@@ -372,10 +569,20 @@ export default function AgentWorkbench() {
                   {result.creditsRemaining} credits left
                 </span>
               )}
+              {result.billing && (
+                <span style={{ fontFamily: MONO, fontSize: 13, color: result.billing.outcome === "charged" ? "#9A4E1E" : "#5C8A4E" }}>
+                  {result.billing.outcome === "charged"
+                    ? `${result.billing.creditsCharged} credits charged`
+                    : "Credits refunded"}
+                  {result.billing.usageKnown === false
+                    ? " · usage unknown (recovered)"
+                    : ` · ${result.billing.modelCalls} model attempt${result.billing.modelCalls === 1 ? "" : "s"}`}
+                </span>
+              )}
             </div>
             {hasFailure && (
-              <button type="button" onClick={() => run(result.goal, Math.min(MAX_STEPS, maxSteps + 2))} disabled={running} style={recoverBtn}>
-                ↻ Recover (+2 steps)
+              <button type="button" onClick={() => run(result.goal, Math.min(MAX_STEPS, maxSteps + 2))} disabled={running} style={retryBtn}>
+                ↻ Retry as a new run
               </button>
             )}
           </div>
@@ -387,17 +594,14 @@ export default function AgentWorkbench() {
           </div>
 
           {/* Packages */}
-          {workPackages.length === 0 && (
+          {toolCalls.length === 0 && (
             <div style={{ ...card, color: "rgba(33,26,18,0.55)", fontFamily: SANS, fontSize: 14 }}>
-              The planner finished without running a skill — try a more action-oriented goal.
+              The run ended without calling a tool — try a more action-oriented goal.
             </div>
           )}
-          {workPackages.map((s, i) => {
+          {toolCalls.map((s, i) => {
             const isOpen = !!open[i];
             const tone = s.ok ? TONE.ok : TONE.err;
-            // Endpoint-only steps don't execute in-loop: executeSkill returns an
-            // invoke_via_endpoint descriptor (a pointer), not a real result.
-            const endpointOnly = (s.output as any)?.status === "invoke_via_endpoint";
             return (
               <div key={i} style={{ ...card, padding: 0, marginBottom: 10, overflow: "hidden" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px" }}>
@@ -410,16 +614,11 @@ export default function AgentWorkbench() {
                         {s.skill}
                       </span>
                       <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "2px 8px", borderRadius: 6, color: tone.fg, background: tone.bg, border: `1px solid ${tone.bd}` }}>
-                        {s.ok ? (endpointOnly ? "→ located" : "✓ ran in-loop") : "✕ failed"}
+                        {s.ok ? "✓ ran in-loop" : "✕ failed"}
                       </span>
-                      {endpointOnly && (
-                        <span title="This skill runs on its own REST endpoint. The loop located it and returned a pointer — it did not execute it or chain its result." style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "2px 8px", borderRadius: 6, color: "rgba(33,26,18,0.55)", background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.1)" }}>
-                        endpoint-only · pointer
-                        </span>
-                      )}
                     </div>
                     <div style={{ fontFamily: SANS, fontSize: 14, color: "rgba(33,26,18,0.78)", lineHeight: 1.5 }}>
-                      {s.thought || "(no plan recorded)"}
+                      {s.thought || "(no reasoning note)"}
                     </div>
                     <button
                       type="button"
@@ -483,4 +682,4 @@ const ghostBtn: React.CSSProperties = { background: "transparent", border: "none
 const chip: React.CSSProperties = { fontFamily: SANS, fontSize: 13, fontWeight: 600, padding: "6px 12px", borderRadius: 9, border: "1px solid rgba(33,26,18,0.13)", background: "#FBF6EC", color: "rgba(33,26,18,0.6)", cursor: "pointer" };
 const chipActive: React.CSSProperties = { background: "rgba(107,79,160,0.1)", border: "1px solid rgba(107,79,160,0.3)", color: PURPLE, fontWeight: 800 };
 const seedChip: React.CSSProperties = { fontFamily: SANS, fontSize: 13, padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", color: "rgba(33,26,18,0.55)", cursor: "pointer" };
-const recoverBtn: React.CSSProperties = { fontFamily: SANS, fontSize: 13, fontWeight: 700, padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(190,79,40,0.35)", background: "rgba(190,79,40,0.10)", color: "#9A4E1E", cursor: "pointer" };
+const retryBtn: React.CSSProperties = { fontFamily: SANS, fontSize: 13, fontWeight: 700, padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(190,79,40,0.35)", background: "rgba(190,79,40,0.10)", color: "#9A4E1E", cursor: "pointer" };

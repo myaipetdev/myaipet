@@ -511,7 +511,7 @@ function VillagersSection({ roster }: { roster: Staff[] }) {
       <div style={villagerGrid}>
         {skills.map((s, i) => <VillagerCard key={s.id} s={s} accent={SAGE} idx={i} />)}
       </div>
-      <div style={{ margin: "18px 0 8px", fontFamily: MONO, fontSize: 13, letterSpacing: "0.1em", color: PURPLE, fontWeight: 700 }}>LIBRARY KEEPERS · always-on VIGIL crew</div>
+      <div style={{ margin: "18px 0 8px", fontFamily: MONO, fontSize: 13, letterSpacing: "0.1em", color: PURPLE, fontWeight: 700 }}>LIBRARY KEEPERS · bounded VIGIL capabilities</div>
       <div style={villagerGrid}>
         {vigil.map((s, i) => <VillagerCard key={s.id} s={s} accent={PURPLE} idx={i} />)}
       </div>

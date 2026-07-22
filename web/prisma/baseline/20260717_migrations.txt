@@ -19,3 +19,4 @@
 20260705000000_reward_redemption_unique
 20260707000000_pet_codex_url
 20260717123000_generation_privacy
+20260718001000_subscription_owner_fk
