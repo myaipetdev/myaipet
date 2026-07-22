@@ -304,10 +304,51 @@ if [[ ! -f "${PETCLAW_ENV_FILE}" || -L "${PETCLAW_ENV_FILE}" \
   echo "ERROR: production env ownership/mode does not match ${PETCLAW_EXPECTED_ENV_STAT}." >&2
   exit 2
 fi
-set -a
-source "${PETCLAW_ENV_FILE}"
-set +a
-if [[ "${STORAGE_PROVIDER:-local}" != "local" ]]; then
+# Parse only the two values this backup needs. A production dotenv URL can
+# legally contain shell metacharacters such as `&`; sourcing it would execute
+# shell syntax and can silently lose DATABASE_URL. The root-owned file remains
+# trusted, but it is data rather than a shell program.
+petclaw_read_dotenv_value() {
+  node - "${PETCLAW_ENV_FILE}" "$1" <<'NODE'
+const fs = require("node:fs");
+const [file, wanted] = process.argv.slice(2);
+const source = fs.readFileSync(file, "utf8").replace(/^\uFEFF/, "");
+let found;
+for (const rawLine of source.split(/\r?\n/)) {
+  const match = rawLine.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+  if (!match || match[1] !== wanted) continue;
+  if (found !== undefined) {
+    console.error(`ERROR: duplicate ${wanted} assignment in production dotenv.`);
+    process.exit(2);
+  }
+  let value = match[2];
+  if (value.startsWith('"') || value.startsWith("'")) {
+    const quote = value[0];
+    const end = value.lastIndexOf(quote);
+    if (end === 0 || value.slice(end + 1).trim().replace(/^#.*$/, "") !== "") {
+      console.error(`ERROR: malformed quoted ${wanted} value.`);
+      process.exit(2);
+    }
+    value = value.slice(1, end);
+    if (quote === '"') {
+      value = value.replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+    }
+  } else {
+    value = value.replace(/\s+#.*$/, "").trim();
+  }
+  found = value;
+}
+if (found === undefined) process.exit(3);
+process.stdout.write(found);
+NODE
+}
+DATABASE_URL="$(petclaw_read_dotenv_value DATABASE_URL)"
+STORAGE_PROVIDER="$(petclaw_read_dotenv_value STORAGE_PROVIDER 2>/dev/null || printf 'local')"
+if [[ -z "${DATABASE_URL}" ]]; then
+  echo "ERROR: DATABASE_URL is empty in production dotenv." >&2
+  exit 2
+fi
+if [[ "${STORAGE_PROVIDER}" != "local" ]]; then
   echo "ERROR: workstation pull backup currently requires STORAGE_PROVIDER=local; use the mounted server backup for S3." >&2
   exit 2
 fi
