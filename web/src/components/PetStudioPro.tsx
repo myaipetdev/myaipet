@@ -307,11 +307,14 @@ const generateBtn: React.CSSProperties = {
   transition: "transform 140ms ease, box-shadow 140ms ease",
 };
 
-export default function PetStudioPro({ onCreditsChange, directorSeed, onDirectorSeedConsumed }: {
+export default function PetStudioPro({ onCreditsChange, directorSeed, onDirectorSeedConsumed, embedded }: {
   onCreditsChange?: (c: number | null) => void;
   /** A scene direction handed over from the Shorts planner — seeds the Director idea box. */
   directorSeed?: string | null;
   onDirectorSeedConsumed?: () => void;
+  /** True when rendered inside StudioSuite, which already clears the fixed nav —
+   *  drops the root's own top nav-clearance so there's no double gap. */
+  embedded?: boolean;
 } = {}) {
   // In-place sign-in: open the app's wallet/SIWE connect modal without leaving
   // Studio (the header pill / demo prompts used to navigate to "/" and dump the
@@ -1275,7 +1278,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
   };
 
   return (
-    <div className="studio-root" style={{
+    <div className={`studio-root${embedded ? " studio-embedded" : ""}`} style={{
       position: "relative",
       minHeight: "calc(100vh - 60px)",
       background: T.field, color: T.ink,
@@ -3111,6 +3114,9 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
            every offset tracks the MEASURED height (--studio-nav-h) instead of
            a hardcoded 60px that let content slide under the bar. ── */
         .studio-root { padding: calc(var(--studio-nav-h, 60px) + 34px) 24px 60px; }
+        /* Inside StudioSuite the tab-bar header already cleared the nav, so the
+           root only needs a small top gap (sticky rails still offset by nav). */
+        .studio-embedded.studio-root { padding-top: 14px; }
         @media (max-width: 640px) { .studio-root { padding-left: 14px; padding-right: 14px; } }
 
         /* ── PRO workspace: template rail · canvas stage · inspector ── */

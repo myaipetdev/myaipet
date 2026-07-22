@@ -17,7 +17,6 @@
  */
 
 import { lazy, Suspense, useState } from "react";
-import Icon from "@/components/Icon";
 
 const PetStudioPro = lazy(() => import("@/components/PetStudioPro"));
 const ThumbnailStudio = lazy(() => import("@/components/studio/ThumbnailStudio"));
@@ -33,10 +32,26 @@ const T = {
   shadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
 };
 
-const TABS: { key: Tab; label: string; sub: string; icon: string; free: boolean }[] = [
-  { key: "video", label: "Video Prompt", sub: "Direct + generate", icon: "film", free: false },
-  { key: "thumbnail", label: "Thumbnail", sub: "On-device · free", icon: "image", free: true },
-  { key: "shorts", label: "Shorts", sub: "Plan a sequence · free", icon: "sparkles", free: true },
+// Inline editorial glyphs — the shared Icon component loads /icons/<name>.png
+// and there is no film/image/shorts PNG, so it rendered broken images. These
+// stroke SVGs are crisp, dependency-free, and inherit currentColor.
+function TabGlyph({ name }: { name: Tab }) {
+  const common = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  if (name === "video") return (
+    <svg {...common}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 9h18M7 5v4M12 5v4M17 5v4" /><path d="M10.5 12.2v3.6l3-1.8z" fill="currentColor" stroke="none" /></svg>
+  );
+  if (name === "thumbnail") return (
+    <svg {...common}><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8.5" cy="9" r="1.6" /><path d="M4 17l4.5-4.5 3 3L16 10l4 4" /></svg>
+  );
+  return ( // shorts — vertical 9:16 with a play mark
+    <svg {...common}><rect x="7" y="3" width="10" height="18" rx="2" /><path d="M10.5 9.5v5l4-2.5z" fill="currentColor" stroke="none" /></svg>
+  );
+}
+
+const TABS: { key: Tab; label: string; sub: string; free: boolean }[] = [
+  { key: "video", label: "Video Prompt", sub: "Direct + generate", free: false },
+  { key: "thumbnail", label: "Thumbnail", sub: "On-device · free", free: true },
+  { key: "shorts", label: "Shorts", sub: "Plan a sequence · free", free: true },
 ];
 
 function SuiteFallback() {
@@ -76,8 +91,9 @@ export default function StudioSuite({ onCreditsChange }: { onCreditsChange?: (c:
         @media (prefers-reduced-motion: reduce){ .studiosuite-tab{ transition:none } .studiosuite-tab:hover{ transform:none } }
       `}</style>
 
-      {/* Suite header + tab bar */}
-      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "24px 24px 0" }}>
+      {/* Suite header + tab bar. paddingTop clears the fixed global Nav (~72px)
+          so the tab bar is never hidden under it. */}
+      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "104px 24px 0" }}>
         <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: ".2em", color: T.terraSub, textTransform: "uppercase", marginBottom: 12 }}>
           Studio · Creator Suite
         </div>
@@ -97,7 +113,7 @@ export default function StudioSuite({ onCreditsChange }: { onCreditsChange?: (c:
                   background: active ? T.terra : T.field, color: active ? "#FCE9CF" : T.terraSub,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  <Icon name={t.icon} size={17} />
+                  <TabGlyph name={t.key} />
                 </span>
                 <span style={{ minWidth: 0 }}>
                   <span style={{ display: "block", fontFamily: T.disp, fontWeight: 800, fontSize: 15, color: T.ink, letterSpacing: "-.01em" }}>
@@ -118,7 +134,7 @@ export default function StudioSuite({ onCreditsChange }: { onCreditsChange?: (c:
       <div style={{ marginTop: 6 }}>
         <Suspense fallback={<SuiteFallback />}>
           {tab === "video" && (
-            <PetStudioPro onCreditsChange={onCreditsChange} directorSeed={directorSeed} onDirectorSeedConsumed={() => setDirectorSeed(null)} />
+            <PetStudioPro embedded onCreditsChange={onCreditsChange} directorSeed={directorSeed} onDirectorSeedConsumed={() => setDirectorSeed(null)} />
           )}
           {tab === "thumbnail" && (
             <div style={{ maxWidth: 1180, margin: "0 auto", padding: "8px 24px 40px" }}>
