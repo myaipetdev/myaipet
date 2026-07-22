@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 import Nav from "@/components/Nav";
-import PetStudioPro from "@/components/PetStudioPro";
+import StudioSuite from "@/components/studio/StudioSuite";
 
 export default function StudioWithNav() {
   // Single source of truth: PetStudioPro owns the balance (it already fetches
@@ -29,7 +29,7 @@ export default function StudioWithNav() {
   return (
     <>
       <Nav section="studio" setSection={handleSection} credits={credits} />
-      <PetStudioPro onCreditsChange={setCredits} />
+      <StudioSuite onCreditsChange={setCredits} />
     </>
   );
 }

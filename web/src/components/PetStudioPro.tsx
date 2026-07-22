@@ -65,6 +65,17 @@ interface DirectorQuestion {
   id: string; topic: string; question: string;
   options: string[]; default: string; whyItMatters: string;
 }
+// One length tier on the PROMPT BOARD (phase:"board"): the SAME idea tuned to a
+// real model length. `comingSoon` tiers are locked teasers — the prompt is
+// written and ready, but the mapped model can't render yet (shows its ETA).
+interface BoardItem {
+  tier: string; label: string; targetSec: number;
+  model: string; modelId: string; prompt: string;
+  note: string; comingSoon?: boolean; eta?: string;
+}
+// The Director's honest best-fit call (NOT a fabricated score) — which of the
+// three lengths best serves this idea, and one sentence why.
+interface BoardPick { tier: string; reason: string }
 
 // Item #12: a paid 1–2 min job must survive reload / SPA navigation. We persist
 // ONLY the pointer to an already-submitted job (its generationId) so a remount
@@ -296,7 +307,12 @@ const generateBtn: React.CSSProperties = {
   transition: "transform 140ms ease, box-shadow 140ms ease",
 };
 
-export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c: number | null) => void } = {}) {
+export default function PetStudioPro({ onCreditsChange, directorSeed, onDirectorSeedConsumed }: {
+  onCreditsChange?: (c: number | null) => void;
+  /** A scene direction handed over from the Shorts planner — seeds the Director idea box. */
+  directorSeed?: string | null;
+  onDirectorSeedConsumed?: () => void;
+} = {}) {
   // In-place sign-in: open the app's wallet/SIWE connect modal without leaving
   // Studio (the header pill / demo prompts used to navigate to "/" and dump the
   // user off the page, losing all Studio state). The /studio route has no
@@ -338,11 +354,20 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
 
   const [styleId, setStyleId] = useState<string>("cinematic");
   const [prompt, setPrompt] = useState("");
-  // Director — expands a rough one-line idea into a full cinematic video prompt.
-  // Interactive: "Direct it" first asks a sheet of creative questions
-  // (phase:"questions"), then compiles the answers into the final prompt
-  // (phase:"final").
+  // Director — expands a rough one-line idea into a PROMPT BOARD: the same idea
+  // written three ways, one per real model length. Interactive: "Direct it"
+  // first asks a sheet of creative questions (phase:"questions"), then compiles
+  // the answers into the board (phase:"board").
   const [directorIdea, setDirectorIdea] = useState("");
+
+  // Seed the Director idea box from a Shorts-planner scene handoff, once per seed.
+  useEffect(() => {
+    if (directorSeed && directorSeed.trim()) {
+      setDirectorIdea(directorSeed.trim().slice(0, 600));
+      onDirectorSeedConsumed?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [directorSeed]);
   const [directorBusy, setDirectorBusy] = useState(false);       // questions phase in flight
   const [directorError, setDirectorError] = useState<string | null>(null);
   // The Director endpoint is auth-only (401 for guests) and has no demo
@@ -353,8 +378,13 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
   // Per-question state: the picked option + a free-text override. Effective
   // answer = override.trim() || option (see effectiveAnswer below).
   const [directorAnswers, setDirectorAnswers] = useState<Record<string, { option: string; override: string }>>({});
-  const [directorFinalBusy, setDirectorFinalBusy] = useState(false); // final phase in flight
+  const [directorBoardBusy, setDirectorBoardBusy] = useState(false); // board phase in flight
   const [directorSheetError, setDirectorSheetError] = useState<string | null>(null);
+  // The PROMPT BOARD itself — up to three length tiers, plus the Director's
+  // honest best-fit pick. This is the hero output; it renders in its own modal.
+  const [directorBoard, setDirectorBoard] = useState<BoardItem[] | null>(null);
+  const [directorPick, setDirectorPick] = useState<BoardPick | null>(null);
+  const [directorCopiedTier, setDirectorCopiedTier] = useState<string | null>(null);
   // Output type drives the default model + which models we surface.
   // Image-first by default: best margin (~10×) and instant feedback.
   const [outputKind, setOutputKind] = useState<"image" | "video">("image");
@@ -723,15 +753,23 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
     };
   }, [modelOpen]);
 
-  // Esc closes the Director question sheet (unless a final compile is running).
+  // Esc closes the Director question sheet (unless a board compile is running).
   useEffect(() => {
     if (!directorQuestions) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !directorFinalBusy) { setDirectorQuestions(null); setDirectorSheetError(null); }
+      if (e.key === "Escape" && !directorBoardBusy) { setDirectorQuestions(null); setDirectorSheetError(null); }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [directorQuestions, directorFinalBusy]);
+  }, [directorQuestions, directorBoardBusy]);
+
+  // Esc closes the PROMPT BOARD.
+  useEffect(() => {
+    if (!directorBoard) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { setDirectorBoard(null); setDirectorPick(null); } };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [directorBoard]);
 
   useEffect(() => {
     if (!galleryOpen) return;
@@ -812,13 +850,15 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
     return a.override.trim() || a.option;
   };
 
-  // Director phase 2 — compile the answers into the ultra-detailed prompt.
-  // `decideEverything` skips the user's picks entirely and lets the LLM decide
-  // every craft decision (the "Ask me nothing" path).
-  const runDirectorFinal = async (decideEverything = false) => {
+  // Director phase 2 — compile the answers into the PROMPT BOARD: the same idea
+  // written three ways, one per real model length. `decideEverything` skips the
+  // user's picks entirely and lets the LLM decide every craft decision (the
+  // "Ask me nothing" path). On success the question sheet closes and the board
+  // takes over as the hero output.
+  const runDirectorBoard = async (decideEverything = false) => {
     const idea = directorIdea.trim();
-    if (!idea || directorFinalBusy) return;
-    setDirectorFinalBusy(true);
+    if (!idea || directorBoardBusy) return;
+    setDirectorBoardBusy(true);
     setDirectorSheetError(null);
     try {
       const answers = decideEverything || !directorQuestions
@@ -830,31 +870,63 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({
-          phase: "final",
+          phase: "board",
           idea,
           petId: pet && pet.id > 0 ? pet.id : undefined,
           aspect,
-          durationSec: 12,
           answers,
         }),
       });
       const data = await r.json().catch(() => ({}));
-      if (!r.ok || !data?.prompt) {
-        setDirectorSheetError(data?.error || "Couldn't compile the prompt. Try again.");
+      if (!r.ok || !Array.isArray(data?.board) || data.board.length === 0) {
+        setDirectorSheetError(data?.error || "Couldn't build the board. Try again.");
         return;
       }
-      setPrompt(String(data.prompt));
-      // The Director writes VIDEO prompts — nudge the output to video so the
-      // detailed shot list actually gets used (the outputKind effect snaps the
-      // engine to a valid video model).
-      setOutputKind("video");
-      closeDirectorSheet();
-      // Bring the now-filled prompt into view for editing.
-      promptRef.current?.focus();
+      setDirectorBoard(data.board as BoardItem[]);
+      setDirectorPick(
+        data?.pick && typeof data.pick === "object"
+          ? { tier: String(data.pick.tier || ""), reason: String(data.pick.reason || "") }
+          : null
+      );
+      // Hand off from the sheet to the board — the board is the hero output.
+      setDirectorQuestions(null);
+      setDirectorSheetError(null);
     } catch {
       setDirectorSheetError("Network error. Try again.");
     } finally {
-      setDirectorFinalBusy(false);
+      setDirectorBoardBusy(false);
+    }
+  };
+
+  const closeDirectorBoard = () => {
+    setDirectorBoard(null);
+    setDirectorPick(null);
+  };
+
+  // "Use this" — load a live tier's tuned prompt into the WHAT-TO-MAKE box and
+  // snap to the closest real, unlocked model for that length. Coming-soon tiers
+  // are locked and can't be loaded (no model renders them yet).
+  const useBoardItem = (item: BoardItem) => {
+    if (item.comingSoon) return;
+    setPrompt(String(item.prompt || ""));
+    // The Director writes VIDEO prompts — flip to video so the shot detail is
+    // actually used (the outputKind effect keeps a valid same-kind model).
+    setOutputKind("video");
+    const sm = models.find((m) => m.id === item.modelId);
+    if (sm && !sm.comingSoon && !tierLocked(sm)) setChosenModelId(sm.id);
+    closeDirectorBoard();
+    // Bring the now-filled prompt into view for editing.
+    promptRef.current?.focus();
+  };
+
+  // Copy a tier's prompt to the clipboard, with a brief per-tier "copied" flash.
+  const copyBoardPrompt = async (item: BoardItem) => {
+    try {
+      await navigator.clipboard.writeText(String(item.prompt || ""));
+      setDirectorCopiedTier(item.tier);
+      setTimeout(() => setDirectorCopiedTier((t) => (t === item.tier ? null : t)), 2000);
+    } catch {
+      /* clipboard blocked (insecure context / permissions) — no-op */
     }
   };
 
@@ -1878,7 +1950,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               <span style={{
                 fontFamily: T.body, fontWeight: 500, letterSpacing: 0,
                 color: T.muted, textTransform: "none", fontSize: 13,
-              }}>— one line in → it asks what to decide → a full cinematic prompt out</span>
+              }}>— one line in → it asks what to decide → a prompt board: the same idea at three lengths</span>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <input
@@ -2428,7 +2500,7 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
           override. "Ask me nothing" hands every decision to the LLM. ── */}
       {directorQuestions && (
         <div
-          onClick={() => { if (!directorFinalBusy) closeDirectorSheet(); }}
+          onClick={() => { if (!directorBoardBusy) closeDirectorSheet(); }}
           role="dialog"
           aria-modal="true"
           aria-label="Director — decide the shots"
@@ -2464,17 +2536,17 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
                   lineHeight: 1.1, color: T.ink, letterSpacing: "-0.02em",
                 }}>Here is everything to decide</h2>
                 <p style={{ fontSize: 13, color: T.muted, margin: "6px 0 0", fontFamily: T.body, lineHeight: 1.5 }}>
-                  Pick a suggestion or type your own. Anything you skip, the Director decides.
+                  Pick a suggestion or type your own. Anything you skip, the Director decides — then it writes your prompt board.
                 </p>
               </div>
               <button
                 onClick={closeDirectorSheet}
-                disabled={directorFinalBusy}
+                disabled={directorBoardBusy}
                 aria-label="Close"
                 style={{
                   flexShrink: 0, width: 34, height: 34, borderRadius: 10,
                   border: `1px solid ${T.hair}`, background: T.paper, color: T.ink70,
-                  cursor: directorFinalBusy ? "default" : "pointer", fontSize: 18, lineHeight: 1,
+                  cursor: directorBoardBusy ? "default" : "pointer", fontSize: 18, lineHeight: 1,
                   fontFamily: T.body,
                 }}
               >×</button>
@@ -2482,14 +2554,14 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
 
             {/* Top action: skip everything */}
             <button
-              onClick={() => runDirectorFinal(true)}
-              disabled={directorFinalBusy}
+              onClick={() => runDirectorBoard(true)}
+              disabled={directorBoardBusy}
               style={{
                 width: "100%", marginTop: 14, marginBottom: 16,
                 padding: "12px 14px", borderRadius: 12,
                 border: `1px dashed ${T.studio}`, background: "rgba(190,79,40,0.06)",
                 color: T.studio, fontWeight: 700, fontSize: 14, fontFamily: T.body,
-                cursor: directorFinalBusy ? "default" : "pointer",
+                cursor: directorBoardBusy ? "default" : "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               }}
             >
@@ -2578,26 +2650,240 @@ export default function PetStudioPro({ onCreditsChange }: { onCreditsChange?: (c
               paddingTop: 12, borderTop: `1px solid ${T.hair}`,
             }}>
               <button
-                onClick={() => runDirectorFinal(false)}
-                disabled={directorFinalBusy}
+                onClick={() => runDirectorBoard(false)}
+                disabled={directorBoardBusy}
                 style={{
                   flex: "1 1 220px",
                   padding: "13px 18px", borderRadius: 12, border: "none",
-                  background: directorFinalBusy ? T.hair : T.studio,
-                  color: directorFinalBusy ? T.muted : "#fff",
+                  background: directorBoardBusy ? T.hair : T.studio,
+                  color: directorBoardBusy ? T.muted : "#fff",
                   fontWeight: 800, fontSize: 15, fontFamily: T.body,
-                  cursor: directorFinalBusy ? "default" : "pointer",
+                  cursor: directorBoardBusy ? "default" : "pointer",
                   display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}
               >
-                {directorFinalBusy ? "Writing the prompt…" : "Build the cinematic prompt →"}
+                {directorBoardBusy ? "Building the board…" : "Build the prompt board →"}
               </button>
               <button
                 onClick={closeDirectorSheet}
-                disabled={directorFinalBusy}
-                style={{ ...btnGhost, padding: "13px 18px", cursor: directorFinalBusy ? "default" : "pointer" }}
+                disabled={directorBoardBusy}
+                style={{ ...btnGhost, padding: "13px 18px", cursor: directorBoardBusy ? "default" : "pointer" }}
               >Cancel</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Director PROMPT BOARD (phase:"board"): the SAME idea written three
+          ways, one per REAL model length. Live tiers (5s / 6s) load straight
+          into the WHAT-TO-MAKE box + snap the engine; the extended tier (8s) is
+          a locked teaser carrying its ETA — the prompt is written and ready,
+          but no model renders that length yet. This is the hero output. ── */}
+      {directorBoard && directorBoard.length > 0 && (
+        <div
+          onClick={closeDirectorBoard}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Director — prompt board"
+          style={{
+            position: "fixed", inset: 0, zIndex: 112,
+            background: "rgba(0,0,0,.5)",
+            backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+            display: "flex", alignItems: "flex-start", justifyContent: "center",
+            padding: 18, overflowY: "auto",
+            animation: "edScrimIn 160ms ease both",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: T.paper, borderRadius: 18, padding: 22,
+              border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-float)",
+              width: "min(920px, 100%)", margin: "24px 0",
+              animation: "edPanelIn 260ms cubic-bezier(.2,.8,.2,1) both",
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{
+                  fontSize: 13, fontFamily: T.m, fontWeight: 700,
+                  letterSpacing: "0.14em", color: T.studio, textTransform: "uppercase", marginBottom: 6,
+                  display: "flex", alignItems: "center", gap: 6,
+                }}><Icon name="film-reel" size={12} /> DIRECTOR · PROMPT BOARD</div>
+                <h2 style={{
+                  fontSize: 24, fontFamily: T.disp, fontWeight: 800, margin: 0,
+                  lineHeight: 1.1, color: T.ink, letterSpacing: "-0.02em",
+                }}>One idea, three lengths</h2>
+                <p style={{ fontSize: 13, color: T.muted, margin: "6px 0 0", fontFamily: T.body, lineHeight: 1.5 }}>
+                  The same idea tuned to each real clip length. The live lengths render today — the coming-soon one is written and waiting for its model.
+                </p>
+              </div>
+              <button
+                onClick={closeDirectorBoard}
+                aria-label="Close"
+                style={{
+                  flexShrink: 0, width: 34, height: 34, borderRadius: 10,
+                  border: `1px solid ${T.hair}`, background: T.paper, color: T.ink70,
+                  cursor: "pointer", fontSize: 18, lineHeight: 1, fontFamily: T.body,
+                }}
+              >×</button>
+            </div>
+
+            {/* Director's honest best-fit pick — a "best fit for this idea" call,
+                never a fabricated score. Highlights the matching card below. */}
+            {directorPick && directorPick.reason && (() => {
+              const picked = directorBoard.find(b => b.tier === directorPick.tier);
+              return (
+                <div style={{
+                  marginTop: 14, marginBottom: 4, padding: "12px 14px", borderRadius: 12,
+                  background: "rgba(190,79,40,0.06)", border: `1px solid ${T.terra}`,
+                  display: "flex", alignItems: "flex-start", gap: 10,
+                }}>
+                  <span style={{
+                    flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 5,
+                    padding: "4px 9px", borderRadius: 999, background: T.terra, color: T.creamOn,
+                    fontFamily: T.m, fontWeight: 700, fontSize: 11, letterSpacing: "0.08em",
+                    textTransform: "uppercase", marginTop: 1,
+                  }}>★ Best fit</span>
+                  <span style={{ fontSize: 13, color: T.ink70, fontFamily: T.body, lineHeight: 1.5 }}>
+                    {picked && <strong style={{ color: T.ink }}>{picked.label.split("·")[0].trim()} — </strong>}
+                    {directorPick.reason}
+                  </span>
+                </div>
+              );
+            })()}
+
+            {/* Length cards */}
+            <div style={{
+              marginTop: 14,
+              display: "grid", gap: 12,
+              gridTemplateColumns: "repeat(auto-fit, minmax(258px, 1fr))",
+            }}>
+              {directorBoard.map((item) => {
+                const isPick = !!directorPick && directorPick.tier === item.tier;
+                const locked = !!item.comingSoon;
+                const copied = directorCopiedTier === item.tier;
+                return (
+                  <div key={item.tier} style={{
+                    display: "flex", flexDirection: "column",
+                    padding: 14, borderRadius: 14,
+                    background: T.inset,
+                    border: `1px solid ${isPick ? T.terra : T.hair}`,
+                    boxShadow: isPick ? "0 0 0 2px rgba(190,79,40,0.18), var(--ed-shadow-card)" : "var(--ed-shadow-card)",
+                    opacity: locked ? 0.92 : 1,
+                    position: "relative",
+                  }}>
+                    {/* Top: length badge + labels */}
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                      <span style={{
+                        flexShrink: 0, width: 46, height: 46, borderRadius: 12,
+                        display: "inline-flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                        background: locked ? "#E3C79A" : T.terra,
+                        color: locked ? T.ink70 : T.creamOn,
+                        fontFamily: T.disp, fontWeight: 800, lineHeight: 1,
+                      }}>
+                        <span style={{ fontSize: 18 }}>{item.targetSec}</span>
+                        <span style={{ fontSize: 10, opacity: 0.85 }}>sec</span>
+                      </span>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 14, fontFamily: T.body, fontWeight: 800, color: T.ink, lineHeight: 1.25 }}>
+                          {item.label.includes("·") ? item.label.split("·").slice(1).join("·").trim() : item.label}
+                        </div>
+                        <div style={{ fontSize: 12, fontFamily: T.m, fontWeight: 700, color: T.mono, letterSpacing: "0.04em", marginTop: 3 }}>
+                          {item.model}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Availability line */}
+                    <div style={{
+                      marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
+                      padding: "4px 9px", borderRadius: 999,
+                      background: locked ? "rgba(33,26,18,.05)" : "rgba(92,138,78,0.12)",
+                      border: `1px solid ${locked ? T.hair : "rgba(92,138,78,0.35)"}`,
+                    }}>
+                      {locked
+                        ? <Icon name="lock" size={11} />
+                        : <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: 999, background: T.thrive, display: "inline-block" }} />}
+                      <span style={{
+                        fontSize: 11, fontFamily: T.m, fontWeight: 700, letterSpacing: "0.05em",
+                        textTransform: "uppercase", color: locked ? T.muted2 : "#3E6B33",
+                      }}>{locked ? (item.eta ? `Coming ${item.eta}` : "Coming soon") : "Live now"}</span>
+                    </div>
+
+                    {/* Tuned prompt */}
+                    <div style={{
+                      marginTop: 10, padding: "10px 12px", borderRadius: 10,
+                      background: T.paper, border: `1px solid ${T.hair}`,
+                      maxHeight: 176, overflowY: "auto",
+                      fontSize: 13, fontFamily: T.body, color: T.ink70, lineHeight: 1.5,
+                      whiteSpace: "pre-wrap", wordBreak: "break-word",
+                    }}>
+                      {item.prompt}
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                      <button
+                        onClick={() => copyBoardPrompt(item)}
+                        aria-label={`Copy the ${item.targetSec}-second prompt`}
+                        style={{
+                          flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6,
+                          padding: "10px 12px", borderRadius: 10,
+                          border: `1px solid ${T.hair}`, background: T.paper,
+                          color: copied ? T.thrive : T.ink70,
+                          fontFamily: T.body, fontWeight: 700, fontSize: 13, cursor: "pointer",
+                        }}
+                      >
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          {copied
+                            ? <path d="M20 6 9 17l-5-5" />
+                            : <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></>}
+                        </svg>
+                        {copied ? "Copied" : "Copy"}
+                      </button>
+                      {locked ? (
+                        <button
+                          disabled
+                          aria-label={`${item.model} is not available yet`}
+                          style={{
+                            flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+                            padding: "10px 12px", borderRadius: 10, border: `1px dashed ${T.hair}`,
+                            background: "rgba(33,26,18,.04)", color: T.muted,
+                            fontFamily: T.body, fontWeight: 700, fontSize: 13, cursor: "default",
+                          }}
+                        >
+                          <Icon name="lock" size={12} /> {item.eta ? `Coming ${item.eta}` : "Coming soon"}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => useBoardItem(item)}
+                          style={{
+                            flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+                            padding: "10px 12px", borderRadius: 10, border: "none",
+                            background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: T.ink,
+                            fontFamily: T.body, fontWeight: 800, fontSize: 13, cursor: "pointer",
+                            boxShadow: "var(--ed-shadow-card)",
+                          }}
+                        >
+                          Use this →
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer note — honesty line, reinforcing what can render today. */}
+            <p style={{
+              marginTop: 16, marginBottom: 0, fontSize: 12, color: T.muted,
+              fontFamily: T.body, lineHeight: 1.5,
+            }}>
+              Every prompt is written the same production-grade way — only the story density changes with the seconds. Locked lengths ship the moment their model goes live.
+            </p>
           </div>
         </div>
       )}

@@ -34,7 +34,7 @@ const AgentDashboard = lazy(() => import("@/components/AgentDashboard"));
 const AgentWorkbench = lazy(() => import("@/components/AgentWorkbench"));
 const AgentOffice = lazy(() => import("@/components/AgentOffice"));
 const SovereigntyDashboard = lazy(() => import("@/components/SovereigntyDashboard"));
-const PetStudioPro = lazy(() => import("@/components/PetStudioPro"));
+const StudioSuite = lazy(() => import("@/components/studio/StudioSuite"));
 const WorldCupPet = lazy(() => import("@/components/WorldCupPet")); // evergreen Favorites Bracket (+ seasonal World Cup module)
 const CardDeck = lazy(() => import("@/components/CardDeck")); // TCG trading cards (owns the Catch tab)
 
@@ -767,9 +767,10 @@ export default function App() {
 
       {section === "create" && (
         <Suspense fallback={<Loader />}>
-          {/* Same Studio as /studio — PetStudioPro handles its own demo (no-wallet)
-              + signed-in modes, so "Create" no longer dead-ends at a bare wallet gate. */}
-          <PetStudioPro />
+          {/* Same Studio as /studio — the creator suite (Video Prompt · Thumbnail ·
+              Shorts). PetStudioPro handles its own demo (no-wallet) + signed-in
+              modes, so "Create" no longer dead-ends at a bare wallet gate. */}
+          <StudioSuite />
         </Suspense>
       )}
 

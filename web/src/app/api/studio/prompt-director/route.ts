@@ -26,23 +26,33 @@
  * PERFORMANCE RULES, exact camera treatments (one named move max per shot), and
  * a "no AI gloss, no glow" quality bar.
  *
- * INTERACTIVE prompt engineering — two phases on the SAME route (body.phase):
+ * INTERACTIVE prompt engineering — phases on the SAME route (body.phase):
  *   - phase:"questions" → the Director interrogates the concept and returns a
  *     STRICT-JSON sheet of 8–12 creative decisions (mood, location+time,
  *     lighting, palette, camera/POV, lens, wardrobe, actions, pacing, audio+VO,
  *     ending, forbid-list), each with concrete option suggestions + a sensible
  *     default. Questions and final prompts always stay English for fal models.
+ *   - phase:"board" → the PROMPT BOARD: the SAME idea written THREE ways, one
+ *     per REAL model length tier — "short" 5s (Kling 1.6 / Seedance / Wan, live),
+ *     "flagship" 6s (Grok Imagine video, live), "extended" 8s (Veo 3, coming-
+ *     soon: prompt written ready, tier stays locked). Each prompt is tuned to
+ *     its runtime (5s = one beat, 8s = a real turn). Optionally answer-aware.
+ *     The model only writes the three prompt bodies + an honest best-fit "pick";
+ *     every tier's targetSec / model / live-vs-coming-soon / ETA is decided
+ *     server-side from the provider catalog, so the board can never present a
+ *     length we can't render as live.
  *   - phase:"final" → produces the ultra-detailed prompt honoring every answer;
  *     any unanswered decision is decided by the LLM (told so explicitly).
  *   - phase omitted → the original single-shot behaviour (backwards compatible).
  *
  * Body: { idea: string, petId?: number, aspect?: "16:9"|"9:16"|"1:1",
  *         durationSec?: number, subject?: string,
- *         phase?: "questions"|"final",
+ *         phase?: "questions"|"board"|"final",
  *         answers?: { id: string, answer: string }[] }
  *
  * Returns:
  *   - questions phase → { questions: [{ id, topic, question, options[], default, whyItMatters }] }
+ *   - board phase     → { board: [{ tier, label, targetSec, model, modelId, prompt, note, comingSoon, eta? }], pick: { tier, reason } }
  *   - final / legacy  → { prompt }
  * Real LLM call via the task router; no fabrication. LLM failure → 502.
  */
@@ -54,6 +64,7 @@ import { rateLimit } from "@/lib/rateLimit";
 import { callLLM } from "@/lib/llm/router";
 import { moderateText } from "@/lib/moderation";
 import { containsHangul } from "@/lib/generatedLanguage";
+import { listModels } from "@/lib/studio/providers";
 
 // Species int → readable noun (mirrors the studio generate route's mapping;
 // falls back to a generic "companion" when the id isn't in the table so a new
@@ -137,6 +148,60 @@ function parseQuestions(raw: string): DirectorQuestion[] | null {
   return out.length ? out : null;
 }
 
+// ── PROMPT BOARD (phase:"board") ───────────────────────────────────────────
+// The three length tiers, each pinned to a REAL model in our catalog. The LLM
+// only supplies the three tuned prompt bodies + an honest best-fit pick; every
+// other field (targetSec, which model, live-vs-coming-soon, ETA) is decided
+// server-side from the provider catalog, so the board can never dress up a
+// length we can't render as though it were live.
+type BoardTierId = "short" | "flagship" | "extended";
+const BOARD_TIER_IDS: BoardTierId[] = ["short", "flagship", "extended"];
+
+interface ParsedBoard {
+  prompts: Record<BoardTierId, string>;
+  pickTier: BoardTierId;
+  pickReason: string;
+}
+
+// Defensive parse → the three tuned prompts + a validated pick (or null so the
+// caller can retry / 502 honestly). Rejects Hangul so a public prompt artifact
+// never ships non-English text.
+function parseBoard(raw: string): ParsedBoard | null {
+  let obj: any;
+  try {
+    obj = JSON.parse(extractJsonObject(raw));
+  } catch {
+    return null;
+  }
+  const arr = Array.isArray(obj?.board) ? obj.board : Array.isArray(obj) ? obj : null;
+  if (!arr) return null;
+
+  const prompts: Partial<Record<BoardTierId, string>> = {};
+  for (const item of arr) {
+    if (!item || typeof item !== "object") continue;
+    const tier = String(item.tier ?? "").trim().toLowerCase() as BoardTierId;
+    if (!BOARD_TIER_IDS.includes(tier)) continue;
+    const prompt = String(item.prompt ?? "")
+      .replace(/^```[a-z]*\n?/i, "").replace(/\n?```$/i, "").trim();
+    if (!prompt) continue;
+    if (containsHangul(prompt)) return null;
+    if (!prompts[tier]) prompts[tier] = prompt.slice(0, 6000);
+  }
+  if (!prompts.short || !prompts.flagship || !prompts.extended) return null;
+
+  const pickObj = obj?.pick && typeof obj.pick === "object" ? obj.pick : {};
+  let pickTier = String(pickObj.tier ?? "").trim().toLowerCase() as BoardTierId;
+  if (!BOARD_TIER_IDS.includes(pickTier)) pickTier = "flagship";
+  const pickReason = String(pickObj.reason ?? pickObj.why ?? "").trim().slice(0, 240);
+  if (containsHangul(pickReason)) return null;
+
+  return {
+    prompts: prompts as Record<BoardTierId, string>,
+    pickTier,
+    pickReason,
+  };
+}
+
 export async function POST(req: NextRequest) {
   const rl = rateLimit(req, { key: "studio-prompt-director", limit: 20, windowMs: 60_000 });
   if (!rl.ok) return rl.response;
@@ -153,8 +218,11 @@ export async function POST(req: NextRequest) {
   const mod = moderateText(idea, "idea");
   if (!mod.ok) return NextResponse.json({ error: mod.reason }, { status: 400 });
 
-  const phase: "questions" | "final" | null =
-    body?.phase === "questions" ? "questions" : body?.phase === "final" ? "final" : null;
+  const phase: "questions" | "board" | "final" | null =
+    body?.phase === "questions" ? "questions"
+      : body?.phase === "board" ? "board"
+      : body?.phase === "final" ? "final"
+      : null;
 
   const aspect = ["16:9", "9:16", "1:1"].includes(body?.aspect) ? body.aspect : "16:9";
   const durationSec = Math.min(30, Math.max(4, Number(body?.durationSec) || 12));
@@ -267,14 +335,12 @@ Interrogate this concept. Return the JSON question sheet only. Target: ${aspect}
     return NextResponse.json({ questions });
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // PHASE "final" (and legacy phase-omitted) — the ultra-detailed prompt.
-  // ═══════════════════════════════════════════════════════════════════════
-
-  // Gather the user's decisions (final phase only). Bounded + moderated so a
-  // free-text override can't smuggle disallowed content into the model.
+  // Gather the user's decisions (board + final phases). Bounded + moderated so a
+  // free-text override can't smuggle disallowed content into the model. The
+  // board phase is optionally answer-aware: pass the sheet's picks and every
+  // length-tuned prompt honors them, exactly like the final phase does.
   let decisionsBlock = "";
-  if (phase === "final" && Array.isArray(body?.answers)) {
+  if ((phase === "board" || phase === "final") && Array.isArray(body?.answers)) {
     const answers = body.answers
       .filter((a: any) => a && typeof a === "object")
       .slice(0, 20)
@@ -295,6 +361,134 @@ USER DECISIONS — the user has explicitly chosen the following (each "id" names
 ${lines}`;
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // PHASE "board" — the PROMPT BOARD: ONE idea, THREE length-tuned prompts,
+  // each mapped to a REAL model tier. The live tiers (5s / 6s) render today;
+  // the extended tier (8s) is written ready but stays locked behind its
+  // coming-soon model. The board teaches "same idea, three lengths" without
+  // ever implying we can render a length we can't.
+  // ═══════════════════════════════════════════════════════════════════════
+  if (phase === "board") {
+    // Real-model truth comes from the provider catalog (single source of truth),
+    // NEVER from the LLM — so a model can't be fabricated and a coming-soon
+    // length can't be dressed up as live. listModels() respects the GROK_ONLY
+    // kill-switch + per-model comingSoon flags, matching /api/studio/providers.
+    const catalog = listModels({ kind: "video" });
+    const findModel = (id: string) => catalog.find((m) => m.id === id);
+
+    // tier → { the real model it maps to, the length it targets, and the
+    // story-density guidance the LLM must tune the prompt to }.
+    const TIERS: {
+      tier: BoardTierId;
+      label: string;
+      targetSec: number;
+      modelId: string;
+      modelLabel: string;
+      beat: string;
+    }[] = [
+      {
+        tier: "short", label: "5s · one tight beat", targetSec: 5,
+        modelId: "kling-1.6-standard", modelLabel: "Kling 1.6 · Seedance · Wan",
+        beat: "ONE tight beat in a single unbroken shot. Five seconds is a held breath, not a montage — there is NO room for a story turn. Choose the single most cinematic MOMENT of the idea and stage it completely: one intention, one continuous motion, one resonant final frame. The star is already moving in frame 1; end on a hold that could loop.",
+      },
+      {
+        tier: "flagship", label: "6s · a beat with a breath", targetSec: 6,
+        modelId: "grok-imagine-video", modelLabel: "Grok Imagine Video",
+        beat: "A beat WITH a breath: one primary action, then a small punctuation at the end (a look-back, a settle, a landed pose) — two micro-phases at most, action then button. One shot or a single motivated cut. Pin the button near ≈5.4s.",
+      },
+      {
+        tier: "extended", label: "8s · setup · turn · resolve", targetSec: 8,
+        modelId: "veo-3", modelLabel: "Veo 3",
+        beat: "Room for a real micro-arc across ~2 shots: setup → THE TURN → resonant ending. Eight seconds can hold ONE genuine story turn — use it. Land the turn near ≈5.0s and the final held frame near ≈7.6s.",
+      },
+    ];
+
+    const boardSystem = `You are "The Director" — an award-winning AUTEUR writer-director AND an elite prompt engineer for state-of-the-art AI VIDEO models. For a single rough idea you produce a PROMPT BOARD: the SAME idea written THREE ways, one per clip length, each tuned to exactly how much story that runtime can hold. Same star, same auteur craft and the same "no AI gloss, no glow" quality bar every time — only the STORY DENSITY changes with the seconds.
+
+${starLine}${decisionsBlock}
+
+Write ONE ultra-detailed, production-grade VIDEO prompt for EACH of these three lengths. Match each prompt's story density to its runtime EXACTLY — a 5s prompt that crams in a 3-beat story fails, and an 8s prompt that only shows one static beat wastes the runtime:
+
+${TIERS.map((t, i) => `${i + 1}. tier "${t.tier}" — ${t.targetSec}s. ${t.beat}`).join("\n")}
+
+Every prompt, at every length, must still spell out the craft that lifts AI video to a festival finish: a forensic IDENTITY LOCK of the star (itemized markings/eyes/accessories), ONE governing visual idea, motivated lighting with an explicit direction, an explicit 60:30:10 colour palette, a real lens (focal length + 180° shutter), real fur/skin micro-texture (individual strands, damp nose, catch-light eyes — never plastic), one motivated camera treatment per shot (never handheld shake, and NO camera/rig/drone/crew ever visible or reflected), physically-plausible weight and motion, and a decimal-second TIMING breakdown appropriate to the length. Forbid the failure modes explicitly: no 3D-render / game-engine look, no CG-ad gloss, no plastic smoothness, no glow, no captions / watermark / subtitles, no morphing.
+
+Keep each prompt a DENSE single paragraph of ~90–160 words — cinematic and specific, but tight. Do not pad; do not repeat the same clause across the three.
+
+Then decide, honestly, which ONE of the three lengths best serves THIS specific idea — the SHORTEST length that still fully delivers its story, not automatically the longest. This is a "best fit" judgement, NOT a score, NOT a rating out of 100.
+
+Return STRICT JSON ONLY — no markdown, no code fences, no commentary — in EXACTLY this shape:
+{"board":[{"tier":"short","prompt":"<the full 5s prompt>"},{"tier":"flagship","prompt":"<the full 6s prompt>"},{"tier":"extended","prompt":"<the full 8s prompt>"}],"pick":{"tier":"short|flagship|extended","reason":"<one sentence on why that length best fits this idea>"}}
+
+Rules:
+- Aspect ratio ${aspect} for every prompt.
+- Write every prompt and the pick reason in ENGLISH, even if the idea or the decisions are written in another language.
+- Each "prompt" is the finished prompt text only — no preamble, no "Here is", no section labels required.
+- "pick.tier" MUST be exactly one of: short, flagship, extended.
+- Output ONLY the JSON object.`;
+
+    const boardUser = `Rough idea: "${idea}"
+
+Write the three length-tuned prompts (5s / 6s / 8s) and your honest best-fit pick. Return the JSON object only. Aspect ${aspect}.`;
+
+    // One real call, one strict retry on unusable JSON, then honest 502.
+    let parsed: ParsedBoard | null = null;
+    for (let attempt = 0; attempt < 2 && !parsed; attempt++) {
+      try {
+        const out = await callLLM({
+          task: "reason",
+          petId: pet ? petIdNum ?? undefined : undefined,
+          budgetUserId: user.id,
+          messages: [
+            { role: "system", content: boardSystem },
+            { role: "user", content: attempt === 0 ? boardUser : `${boardUser}\n\nYour previous reply was not valid English-only JSON in the exact shape. Reply with ONLY the JSON object — the three prompts (short / flagship / extended) and the pick — nothing else.` },
+          ],
+          max_tokens: 2000,
+          temperature: attempt === 0 ? 0.7 : 0.4,
+        });
+        parsed = parseBoard((out.text || "").trim());
+      } catch (e) {
+        console.error("prompt-director[board]: LLM call failed:", e);
+        return NextResponse.json({ error: "The Director is unavailable right now. Try again in a moment." }, { status: 502 });
+      }
+    }
+
+    if (!parsed) {
+      return NextResponse.json({ error: "The Director couldn't assemble the board. Try rephrasing your idea." }, { status: 502 });
+    }
+
+    // Merge the LLM's tuned prompt bodies with server-authoritative model truth.
+    // A tier is renderable-now only if its mapped model exists AND is not
+    // comingSoon in the live catalog; otherwise it's a locked teaser carrying
+    // its real ETA. This is the honesty guarantee — the UI never has to trust
+    // the LLM about what we can render.
+    const board = TIERS.map((t) => {
+      const m = findModel(t.modelId);
+      const comingSoon = !m || !!m.comingSoon;
+      const eta = m?.comingSoonEta;
+      const note = comingSoon
+        ? `${m?.displayName ?? t.modelLabel} — coming ${eta ?? "soon"}`
+        : `Live now — renders a ${t.targetSec}s clip`;
+      return {
+        tier: t.tier,
+        label: t.label,
+        targetSec: t.targetSec,
+        model: t.modelLabel,
+        modelId: t.modelId,
+        prompt: parsed!.prompts[t.tier],
+        note,
+        comingSoon,
+        eta: comingSoon ? eta : undefined,
+      };
+    });
+
+    return NextResponse.json({ board, pick: { tier: parsed.pickTier, reason: parsed.pickReason } });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // PHASE "final" (and legacy phase-omitted) — the ultra-detailed prompt.
+  // ═══════════════════════════════════════════════════════════════════════
 
   // ── System prompt: teach the gold-standard cinematic-prompt anatomy ───────
   const system = `You are "The Director" — an award-winning AUTEUR writer-director AND an elite prompt engineer for state-of-the-art AI VIDEO models (Google Veo 3, Kling 1.6 Pro, Seedance, Wan, Hailuo). You take a rough one-line idea and expand it into ONE cohesive, ultra-detailed, production-grade VIDEO prompt that tells a real (tiny) STORY with real craft. Three things separate your prompts from the pack: (1) you write a genuine narrative — intention, subtext, a turn, a resonant ending — so it plays like a festival short, not a screensaver; (2) you spell out every craft decision explicitly, because video models only reach their ceiling that way, and vague prompts yield the cheap "AI ad / game-engine" look; (3) you are PRECISE like a music-video director on a tempo grid — identity locked as an itemized inventory, one governing thesis, accents pinned to decimal timestamps, hard performance rules. You prevent all three failure modes: no story, vague craft, sloppy timing.
