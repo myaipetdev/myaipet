@@ -687,10 +687,16 @@ function archedWall(name, width, height, thickness, arches, material) {
 }
 
 const dfltStaff = [
-  { name: 'Boss', task: 'welcoming guests\u2026' },
-  { name: 'Mimi \u00b7 STAFF', task: 'Skills delivery!' },
-  { name: 'Toto \u00b7 STAFF', task: 'Tidy, tidy.' },
+  // Defensive/malformed-data fallback still obeys the public Office status
+  // vocabulary. Character speech belongs only in the quoted italic rail.
+  { name: 'Boss', task: 'IDLE' },
+  { name: 'Mimi \u00b7 STAFF', task: 'IDLE' },
+  { name: 'Toto \u00b7 STAFF', task: 'IDLE' },
 ];
+const OFFICE_STATUSES = new Set(['IDLE', 'WORKING', 'QUEUED', 'DONE', 'LIVE']);
+function normalizeOfficeStatus(value) {
+  return OFFICE_STATUSES.has(value) ? value : 'IDLE';
+}
 
 class AgentCafe3D extends HTMLElement {
   static get observedAttributes() { return ['auto-rotate', 'show-labels']; }
@@ -706,7 +712,11 @@ class AgentCafe3D extends HTMLElement {
       const j = JSON.parse(raw);
       return {
         ...dflt, ...j,
-        pets: (j.pets && j.pets.length ? j.pets : dflt.pets).slice(0, 3),
+        pets: (j.pets && j.pets.length ? j.pets : dflt.pets).slice(0, 3).map((pet, index) => ({
+          ...dfltStaff[index],
+          ...(pet && typeof pet === 'object' ? pet : {}),
+          task: normalizeOfficeStatus(pet && pet.task),
+        })),
         memory: { ...dflt.memory, ...(j.memory || {}) },
       };
     } catch { return dflt; }
@@ -1836,7 +1846,7 @@ class AgentCafe3D extends HTMLElement {
       ['CLOCK · NEXT ' + LIVE.next, -3.6, 3.35, -6.6],
       ['SOUL · LV ' + LIVE.soulLv, 0.2, 2.95, 0.6],
       ['QUARTERS · SUITES', -7.0, 5.2, -5.6],
-      [LIVE.goals > 0 ? 'STUDY · ' + LIVE.goals + ' GOAL' + (LIVE.goals === 1 ? '' : 'S') + ' DRAFTING' : 'STUDY', 8.7, 2.5, 3.4]
+      [LIVE.goals > 0 ? 'STUDY · ' + LIVE.goals + ' GOAL' + (LIVE.goals === 1 ? '' : 'S') + ' · QUEUED' : 'STUDY', 8.7, 2.5, 3.4]
     ].forEach(([t, x, y, z]) => {
       const s = textSprite(t, { fontSize: 36, scale: 0.78 });
       s.position.set(x, y, z);
@@ -2318,7 +2328,7 @@ class AgentCafe3D extends HTMLElement {
     this._pets = [
       {
         ...catP, speed: 1.1,
-        bubble: mkBubble((LIVE.pets[0].task || 'welcoming guests…').slice(0, 44)),
+        bubble: mkBubble((LIVE.pets[0].task || 'IDLE').slice(0, 44)),
         plan: [
           { x: 1.0, z: 2.6, pause: 2.5 },
           { x: -2.6, z: 3.4, pause: 0 },
@@ -2329,7 +2339,7 @@ class AgentCafe3D extends HTMLElement {
       },
       {
         ...mimiP, speed: 1.28,
-        bubble: mkBubble((LIVE.pets[1].task || 'skills delivery!').slice(0, 44)),
+        bubble: mkBubble((LIVE.pets[1].task || 'IDLE').slice(0, 44)),
         plan: [
           { x: 3.9, z: 5.0, pause: 2.2 },
           { x: -0.4, z: 3.8, pause: 1 },
@@ -2341,7 +2351,7 @@ class AgentCafe3D extends HTMLElement {
       },
       {
         ...totoP, speed: 0.92,
-        bubble: mkBubble((LIVE.pets[2].task || 'tidy tidy~').slice(0, 44)),
+        bubble: mkBubble((LIVE.pets[2].task || 'IDLE').slice(0, 44)),
         plan: [
           { x: 0.2, z: 6.2, pause: 1.5 },
           { x: 1.8, z: 2.4, pause: 3, work: true },

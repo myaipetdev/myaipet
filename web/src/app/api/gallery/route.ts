@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
     const pet_type = searchParams.get("pet_type");
     const style = searchParams.get("style");
     const sort = searchParams.get("sort") || "recent";
+    const user = await getUser(req).catch(() => null);
 
     const where: any = await publicGenerationWhere();
 
@@ -31,6 +32,17 @@ export async function GET(req: NextRequest) {
           user: {
             select: { wallet_address: true },
           },
+          _count: {
+            select: { likes: true, comments: true },
+          },
+          ...(user
+            ? {
+                likes: {
+                  where: { user_id: user.id },
+                  select: { id: true },
+                },
+              }
+            : {}),
         },
       }),
       prisma.generation.count({ where }),
@@ -46,6 +58,7 @@ export async function GET(req: NextRequest) {
       // fal_request_id, error_message, tx_hash, and the raw prompt.
       return {
         id: item.id,
+        gen_type: item.gen_type,
         pet_type: item.pet_type,
         style: item.style,
         duration: item.duration,
@@ -54,8 +67,9 @@ export async function GET(req: NextRequest) {
         status: item.status,
         created_at: item.created_at,
         completed_at: item.completed_at,
-        likes: item.likes,
-        comments: item.comments,
+        likes_count: item._count.likes,
+        comments_count: item._count.comments,
+        is_liked: user ? item.likes?.length > 0 : false,
         _count: item._count,
         wallet_address: truncated_wallet,
       };

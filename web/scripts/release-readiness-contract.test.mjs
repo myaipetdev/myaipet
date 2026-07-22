@@ -42,6 +42,11 @@ const [
   walletGate,
   cardDeck,
   catCatch,
+  missionControlRoute,
+  apiClient,
+  agentOffice,
+  grandPawOffice,
+  grandPawScene,
 ] = await Promise.all([
   readWeb("src/lib/releaseStatus.ts"),
   readWeb("src/lib/petclaw/connectors/index.ts"),
@@ -73,6 +78,11 @@ const [
   readWeb("src/components/WalletGate.tsx"),
   readWeb("src/components/CardDeck.tsx"),
   readWeb("src/components/CatCatch.tsx"),
+  readWeb("src/app/api/petclaw/mission-control/route.ts"),
+  readWeb("src/lib/api.ts"),
+  readWeb("src/components/AgentOffice.tsx"),
+  readWeb("src/components/GrandPawOffice.tsx"),
+  readWeb("src/lib/grandpaw/agent-cafe-3d.js"),
 ]);
 
 assert.match(status, /registry:\s*19/);
@@ -201,6 +211,82 @@ assert.match(cardDeck, /tab === "catch" \? catchTab : <GuestGate/);
 assert.match(catCatch, /return <Shell><PurposeHero \/><GuestGate \/><\/Shell>/);
 assert.match(catCatch, /The catch loop/);
 assert.match(catCatch, /Your field kit is packed/);
+
+// PetAutonomousAction rows are completion-only history. Until a persisted,
+// executable queue exists, only the client-held SSE run may be LIVE/WORKING;
+// suggestions and no-op/refunded rows must never masquerade as queued work.
+assert.match(missionControlRoute, /const pending: never\[\] = \[\];/);
+assert.match(missionControlRoute, /const working: never\[\] = \[\];/);
+assert.match(missionControlRoute, /const blocked: never\[\] = \[\];/);
+assert.match(missionControlRoute, /const doneActions = todaysActions\.map/);
+assert.match(missionControlRoute, /detail: noop \? "No skill executed — credits refunded\." : undefined/);
+assert.match(missionControlRoute, /credits: noop \? 0 : a\.credits_used \|\| 0/);
+assert.doesNotMatch(missionControlRoute, /WORKING_WINDOW_MS|workingRows|blockedRows|consolidate-memory|make-selfie|give-goal/);
+
+const devMockOffice = apiClient.match(/const DEV_MOCK_MC = \{[\s\S]*?\n\};/)?.[0] ?? "";
+assert.match(devMockOffice, /pending: \[\]/);
+assert.match(devMockOffice, /working: \[\]/);
+assert.match(devMockOffice, /blocked: \[\]/);
+assert.doesNotMatch(devMockOffice, /status: "active"/);
+
+// Agent Office launch vocabulary is deliberately tiny. Every visible status
+// maps to one of these exact uppercase values and character speech stays in the rail.
+assert.match(grandPawOffice, /type Status = "IDLE" \| "WORKING" \| "QUEUED" \| "DONE" \| "LIVE"/);
+assert.match(agentOffice, /type OfficeStatus = "IDLE" \| "WORKING" \| "QUEUED" \| "DONE" \| "LIVE"/);
+assert.match(agentOffice, /\{isWorking \? "WORKING" : "IDLE"\}/);
+assert.match(agentOffice, /<Column mono="QUEUED"/);
+assert.match(agentOffice, /<Column mono="WORKING"/);
+assert.match(agentOffice, /<Column mono="DONE"/);
+assert.match(grandPawOffice, /title: "QUEUED"/);
+assert.match(grandPawOffice, /title: "WORKING"/);
+assert.match(grandPawOffice, /title: "DONE"/);
+const functionSlice = (body, start, end) => body.slice(body.indexOf(start), body.indexOf(end));
+for (const [queuedAdapter, doneAdapter] of [
+  [
+    functionSlice(agentOffice, "function queuedForDisplay", "function doneForDisplay"),
+    functionSlice(agentOffice, "function doneForDisplay", "function workingForDisplay"),
+  ],
+  [
+    functionSlice(grandPawOffice, "function queuedForDisplay", "function relTime"),
+    functionSlice(grandPawOffice, "function doneForDisplay", "function workingSansDone"),
+  ],
+]) {
+  assert.match(queuedAdapter, /kanban\.pending/);
+  assert.doesNotMatch(queuedAdapter, /kanban\.blocked/);
+  assert.match(doneAdapter, /kanban\.blocked\.map/);
+  assert.match(doneAdapter, /credits: 0/);
+}
+for (const visibleStatusEscape of [
+  /mono="[^"]*(?:PENDING|BLOCKED|DONE TODAY)[^"]*"/,
+  /title: "(?:Pending|Blocked|Done today|Queued|Working)"/,
+  /right=\{`DONE /,
+  /\{isWorking \? "working" : "idle"\}/,
+  /["'](?:● )?Working(?:…|\.\.\.)["']/,
+  />available</i,
+]) {
+  assert.doesNotMatch(agentOffice, visibleStatusEscape);
+  assert.doesNotMatch(grandPawOffice, visibleStatusEscape);
+}
+assert.match(agentOffice, /\{running \? "WORKING" : "▶ Dispatch"\}/);
+assert.match(grandPawOffice, /\{running \? "WORKING" : "Dispatch"\}/);
+assert.match(agentOffice, /\{active \? "WORKING" : "IDLE"\}/);
+assert.match(agentOffice, /steps\.push\(\{ skill: evt\.skill, ok: true, complete: false \}\)/);
+assert.match(agentOffice, /ok: !!evt\.ok, complete: true/);
+assert.match(agentOffice, /find\(\(step\) => !step\.complete\)\?\.skill/);
+assert.match(agentOffice, /live=\{s\.id === liveSkill\}/);
+assert.match(grandPawOffice, /s\.kind === "skill" && s\.id === liveSkill/);
+assert.match(grandPawOffice, /\{active \? "WORKING" : "IDLE"\}/);
+assert.match(grandPawOffice, /task: c\.status/);
+assert.match(grandPawOffice, /line: "courier — “Skills delivery!”"/);
+assert.match(grandPawOffice, /line: "housekeeper — “Tidy, tidy!”"/);
+assert.match(grandPawOffice, /fontStyle: c\.kind === "staff" \? "italic" : undefined/);
+assert.doesNotMatch(grandPawScene, /welcoming guests|skills delivery!|tidy tidy~|DRAFTING/i);
+assert.match(grandPawScene, /GOAL' \+ \(LIVE\.goals === 1 \? '' : 'S'\) \+ ' · QUEUED'/);
+assert.match(grandPawScene, /const OFFICE_STATUSES = new Set\(\['IDLE', 'WORKING', 'QUEUED', 'DONE', 'LIVE'\]\)/);
+assert.match(grandPawScene, /task: normalizeOfficeStatus\(pet && pet\.task\)/);
+assert.equal((grandPawScene.match(/task: 'IDLE'/g) ?? []).length, 3);
+assert.equal((grandPawScene.match(/\.task \|\| 'IDLE'/g) ?? []).length, 3);
+
 assert.equal(
   extensionChecksum,
   `${createHash("sha256").update(extensionZip).digest("hex")}  petclaw-extension.zip\n`,

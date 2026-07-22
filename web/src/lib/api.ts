@@ -38,7 +38,8 @@ const DEV_MOCK_SKILLS = {
 };
 
 // Dev fixture for the Agent Office (local DB is offline in dev) — mirrors the
-// mission-control route's response shape so the hotel renders locally.
+// completion-only mission-control truth. No executable queue or in-flight run
+// exists in this fixture, so current-state buckets and staff activity stay idle.
 const DEV_MOCK_MC = {
   pet: { id: 1, name: "Dordor", level: 5 },
   pillars: {
@@ -49,8 +50,8 @@ const DEV_MOCK_MC = {
     crons: { routines: 2, nextLabel: "daily digest · 10:00" },
   },
   kanban: {
-    pending: [{ id: "p1", title: "Watch BNB price ±3%", kind: "watch" }],
-    working: [{ id: "w1", title: "Summarize today's inbox", skill: "recall_memory", detail: "3 steps in" }],
+    pending: [],
+    working: [],
     blocked: [],
     done: [
       { id: "d1", title: "Morning digest", skill: "web_search", at: new Date(Date.now() - 7200e3).toISOString(), credits: 5 },
@@ -58,10 +59,10 @@ const DEV_MOCK_MC = {
     ],
   },
   roster: [
-    { id: "s1", name: "web_search", kind: "skill", role: "Finds anything on the open web", installed: true, status: "active", runs: 12, successRate: 92, lastAt: new Date().toISOString() },
-    { id: "s2", name: "recall_memory", kind: "skill", role: "Recalls the owner's facts", installed: true, status: "active", runs: 31, successRate: 97, lastAt: new Date().toISOString() },
+    { id: "s1", name: "web_search", kind: "skill", role: "Finds anything on the open web", installed: true, status: "idle", runs: 12, successRate: 92, lastAt: new Date().toISOString() },
+    { id: "s2", name: "recall_memory", kind: "skill", role: "Recalls the owner's facts", installed: true, status: "idle", runs: 31, successRate: 97, lastAt: new Date().toISOString() },
     { id: "s3", name: "crypto_price", kind: "skill", role: "Live token prices", installed: true, status: "idle", runs: 4, successRate: 100, lastAt: null },
-    { id: "v1", name: "VIGIL scribe", kind: "vigil", role: "May retain selected details after a chat", installed: true, status: "active", runs: 58, lastAt: new Date().toISOString() },
+    { id: "v1", name: "VIGIL scribe", kind: "vigil", role: "May retain selected details after a chat", installed: true, status: "idle", runs: 58, lastAt: new Date().toISOString() },
   ],
   schedules: [
     { id: "c1", name: "Daily digest", cadence: "daily 10:00", lastRun: new Date(Date.now() - 86400e3).toISOString(), nextRun: new Date(Date.now() + 3600e3).toISOString(), desc: "Morning summary of your day ahead" },

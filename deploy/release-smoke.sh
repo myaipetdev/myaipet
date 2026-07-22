@@ -220,6 +220,80 @@ const season = read("web/src/components/SeasonRewardsHub.tsx");
 if (!requireAll(season, ["function TodayStrip", "/api/checkin", 'method: "POST"',
   "onClaimed", "Claim +"])) process.exit(1);
 
+const missionControlRoute = read("web/src/app/api/petclaw/mission-control/route.ts");
+const apiClient = read("web/src/lib/api.ts");
+const devMockOffice = apiClient.match(/const DEV_MOCK_MC = \{[\s\S]*?\n\};/)?.[0] || "";
+if (!requireAll(missionControlRoute, [
+    "const pending: never[] = [];",
+    "const working: never[] = [];",
+    "const blocked: never[] = [];",
+    "const doneActions = todaysActions.map",
+    'detail: noop ? "No skill executed — credits refunded." : undefined',
+    "credits: noop ? 0 : a.credits_used || 0",
+  ])
+  || rejectAny(missionControlRoute, ["WORKING_WINDOW_MS", "workingRows", "blockedRows",
+    "consolidate-memory", "make-selfie", "give-goal"])
+  || !requireAll(devMockOffice, ["pending: []", "working: []", "blocked: []"])
+  || devMockOffice.includes('status: "active"')) process.exit(1);
+
+const agentOffice = read("web/src/components/AgentOffice.tsx");
+const grandPawOffice = read("web/src/components/GrandPawOffice.tsx");
+const grandPawScene = read("web/src/lib/grandpaw/agent-cafe-3d.js");
+const functionSlice = (body, start, end) => body.slice(body.indexOf(start), body.indexOf(end));
+const queueAndDoneAdapters = [
+  [
+    functionSlice(agentOffice, "function queuedForDisplay", "function doneForDisplay"),
+    functionSlice(agentOffice, "function doneForDisplay", "function workingForDisplay"),
+  ],
+  [
+    functionSlice(grandPawOffice, "function queuedForDisplay", "function relTime"),
+    functionSlice(grandPawOffice, "function doneForDisplay", "function workingSansDone"),
+  ],
+];
+const officeStatusEscapes = [
+  /mono="[^"]*(?:PENDING|BLOCKED|DONE TODAY)[^"]*"/,
+  /title: "(?:Pending|Blocked|Done today|Queued|Working)"/,
+  /right=\{`DONE /,
+  /\{isWorking \? "working" : "idle"\}/,
+  /["'](?:● )?Working(?:…|\.\.\.)["']/,
+  />available</i,
+];
+if (!requireAll(agentOffice, [
+    'type OfficeStatus = "IDLE" | "WORKING" | "QUEUED" | "DONE" | "LIVE"',
+    '{isWorking ? "WORKING" : "IDLE"}',
+    '<Column mono="QUEUED"', '<Column mono="WORKING"', '<Column mono="DONE"',
+    '{running ? "WORKING" : "▶ Dispatch"}',
+    '{active ? "WORKING" : "IDLE"}',
+  ])
+  || !requireAll(grandPawOffice, [
+    'type Status = "IDLE" | "WORKING" | "QUEUED" | "DONE" | "LIVE"',
+    'title: "QUEUED"', 'title: "WORKING"', 'title: "DONE"',
+    '{running ? "WORKING" : "Dispatch"}',
+    's.kind === "skill" && s.id === liveSkill',
+    '{active ? "WORKING" : "IDLE"}',
+    "task: c.status",
+    'line: "courier — “Skills delivery!”"',
+    'line: "housekeeper — “Tidy, tidy!”"',
+    'fontStyle: c.kind === "staff" ? "italic" : undefined',
+  ])
+  || queueAndDoneAdapters.some(([queued, done]) => !queued.includes("kanban.pending")
+    || queued.includes("kanban.blocked")
+    || !done.includes("kanban.blocked.map")
+    || !done.includes("credits: 0"))
+  || officeStatusEscapes.some((pattern) => pattern.test(agentOffice) || pattern.test(grandPawOffice))
+  || !requireAll(agentOffice, [
+    "steps.push({ skill: evt.skill, ok: true, complete: false })",
+    "ok: !!evt.ok, complete: true",
+    "find((step) => !step.complete)?.skill",
+    "live={s.id === liveSkill}",
+  ])
+  || /welcoming guests|skills delivery!|tidy tidy~|DRAFTING/i.test(grandPawScene)
+  || !/GOAL' \+ \(LIVE\.goals === 1 \? '' : 'S'\) \+ ' · QUEUED'/.test(grandPawScene)
+  || !grandPawScene.includes("const OFFICE_STATUSES = new Set(['IDLE', 'WORKING', 'QUEUED', 'DONE', 'LIVE'])")
+  || !grandPawScene.includes("task: normalizeOfficeStatus(pet && pet.task)")
+  || (grandPawScene.match(/task: 'IDLE'/g) || []).length !== 3
+  || (grandPawScene.match(/\.task \|\| 'IDLE'/g) || []).length !== 3) process.exit(1);
+
 const studio = read("web/src/components/PetStudioPro.tsx");
 if (!requireAll(studio, ["ZONE 1 — TEMPLATE LIBRARY", "ZONE 2 — THE STAGE",
   "ZONE 3 — INSPECTOR", "TEMPLATE LIBRARY", "▸ PREVIEW", '<Panel label="RUN"'])) process.exit(1);

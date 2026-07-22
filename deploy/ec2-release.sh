@@ -863,6 +863,8 @@ cd "${PETCLAW_WEB}"
 npm_config_engine_strict=true npm ci --ignore-scripts --no-audit --no-fund
 npx prisma generate
 npm run test:ui-contract
+npm run test:release-readiness
+npm run test:community-fallback
 npm run build
 
 # Standalone runtime needs these static trees but never dotenv/key files.

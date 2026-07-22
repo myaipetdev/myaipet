@@ -5,9 +5,9 @@
  * ONLY real PetClaw state (no fabrication; honest zeros/empties) and shapes it into
  * the five surfaces the Office UI renders:
  *   - pillars   : the 5 Hermes pillars (Soul / Memory / User / Skills / Crons)
- *   - kanban    : Pending / Working / Blocked / Done-today, sourced from
- *                 PetAutonomousAction rows (the real agent-activity log) + today's
- *                 completed generations.
+ *   - kanban    : honest current-state buckets. PetAutonomousAction rows are
+ *                 completion-only history, so they belong in Done; only the
+ *                 client-held live SSE run may render LIVE/WORKING today.
  *   - roster    : BUILTIN_SKILLS + learned patterns as "staff", with run counts
  *                 derived from PetAutonomousAction.result.skills frequency, plus the
  *                 5 VIGIL memory stages as always-on staff.
@@ -24,9 +24,6 @@ import { rateLimit } from "@/lib/rateLimit";
 import { BUILTIN_SKILLS } from "@/lib/petclaw/pethub";
 import { containsHangul } from "@/lib/generatedLanguage";
 
-// A DB row is "recently working" if it landed inside this window. Autonomous
-// actions are logged on completion, so this reads as "the pet was just active".
-const WORKING_WINDOW_MS = 5 * 60 * 1000;
 const MEMORY_CAP = 40;
 const USER_CAP = 25;
 
@@ -41,15 +38,6 @@ function isNoop(action: { action_taken: string; result: any }): boolean {
   if (typeof action.action_taken === "string" && action.action_taken.endsWith(":noop")) return true;
   const r = action.result || {};
   return r && typeof r === "object" && r.stepCount === 0;
-}
-
-function relLabel(from: Date | null | undefined): string {
-  if (!from) return "never";
-  const s = Math.max(0, Math.floor((Date.now() - new Date(from).getTime()) / 1000));
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
 }
 
 function titleFromGoal(goal: string | null | undefined, fallback: string): string {
@@ -77,7 +65,6 @@ export async function GET(req: NextRequest) {
     const bondReflections: any[] = Array.isArray(mods.bond_reflections) ? mods.bond_reflections : [];
 
     const dayStart = startOfToday();
-    const now = Date.now();
 
     // ── Real activity + persona reads (cheap, indexed) ──
     const [persona, todaysActions, todaysGenerations, agentSchedule] = await Promise.all([
@@ -97,34 +84,26 @@ export async function GET(req: NextRequest) {
     ]);
 
     // ── Kanban ──
-    const workingRows = todaysActions.filter(
-      (a) => !isNoop(a) && now - new Date(a.created_at).getTime() < WORKING_WINDOW_MS,
-    );
-    const workingIds = new Set(workingRows.map((a) => a.id));
-    const blockedRows = todaysActions.filter((a) => isNoop(a));
-    const doneRows = todaysActions.filter((a) => !isNoop(a) && !workingIds.has(a.id));
+    // PetAutonomousAction is written only after settle/completion. Recency can
+    // never turn a completed row back into WORKING. No persisted executable
+    // queue exists yet, and product suggestions are not queued work, so all
+    // current-state buckets stay empty; the client adds its real in-flight SSE
+    // run locally as LIVE/WORKING.
+    const pending: never[] = [];
+    const working: never[] = [];
+    const blocked: never[] = [];
 
-    const working = workingRows.map((a) => {
+    const doneActions = todaysActions.map((a) => {
       const r = (a.result as any) || {};
       const skills: string[] = Array.isArray(r.skills) ? r.skills : [];
-      return {
-        id: a.id,
-        title: titleFromGoal(a.prompt_used, "Working…"),
-        skill: skills.find((s) => s && s !== "finish") || a.urge_type,
-        startedAt: a.created_at,
-        detail: `${r.stepCount ?? skills.length} step${(r.stepCount ?? skills.length) === 1 ? "" : "s"} · ${relLabel(a.created_at)}`,
-      };
-    });
-
-    const doneActions = doneRows.map((a) => {
-      const r = (a.result as any) || {};
-      const skills: string[] = Array.isArray(r.skills) ? r.skills : [];
+      const noop = isNoop(a);
       return {
         id: a.id,
         title: titleFromGoal(a.prompt_used, a.action_taken),
-        skill: skills.find((s) => s && s !== "finish") || a.urge_type,
+        skill: noop ? "no skill" : skills.find((s) => s && s !== "finish") || a.urge_type,
+        detail: noop ? "No skill executed — credits refunded." : undefined,
         at: a.created_at,
-        credits: a.credits_used || 0,
+        credits: noop ? 0 : a.credits_used || 0,
       };
     });
     const doneGenerations = (todaysGenerations as any[]).map((g) => ({
@@ -138,49 +117,6 @@ export async function GET(req: NextRequest) {
       .sort((x, y) => new Date(y.at as any).getTime() - new Date(x.at as any).getTime())
       .slice(0, 24);
 
-    const blocked = blockedRows.map((a) => ({
-      id: a.id,
-      title: titleFromGoal(a.prompt_used, "Run finished with no action"),
-      reason: "No skill executed — the loop reasoned but called no tool (refunded).",
-      at: a.created_at,
-    }));
-
-    // Pending = routines due + a couple of honest high-value suggestions.
-    const pending: { id: string; title: string; kind: string; detail: string }[] = [];
-    if (memories.length >= Math.floor(MEMORY_CAP * 0.8)) {
-      pending.push({
-        id: "consolidate-memory",
-        title: "Consolidate memory ledger",
-        kind: "routine",
-        detail: `${memories.length}/${MEMORY_CAP} entries — near cap, ready to compress.`,
-      });
-    }
-    const dreamToday = pet.last_dream_at && new Date(pet.last_dream_at).getTime() >= dayStart.getTime();
-    if (!dreamToday) {
-      pending.push({
-        id: "daydream",
-        title: "Daydream",
-        kind: "routine",
-        detail: "No daydream logged today — idle-time reflection is available.",
-      });
-    }
-    if (todaysActions.length === 0) {
-      pending.push({
-        id: "give-goal",
-        title: "Awaiting a goal",
-        kind: "dispatch",
-        detail: "No agent runs yet today. Dispatch one from the bar below.",
-      });
-    }
-    if (todaysGenerations.length === 0) {
-      pending.push({
-        id: "make-selfie",
-        title: "Create today's selfie",
-        kind: "creative",
-        detail: "No creation today — a Pet Selfie run is available.",
-      });
-    }
-
     // ── Roster: skills-as-staff run counts from result.skills frequency ──
     const skillFreq: Record<string, number> = {};
     const skillLastAt: Record<string, string> = {};
@@ -193,11 +129,8 @@ export async function GET(req: NextRequest) {
         if (!skillLastAt[s]) skillLastAt[s] = new Date(a.created_at).toISOString();
       }
     }
+    // There is no server-side in-flight row to justify an active staff dot.
     const activeSkillSet = new Set<string>();
-    for (const a of workingRows) {
-      const r = (a.result as any) || {};
-      for (const s of (Array.isArray(r.skills) ? r.skills : [])) if (s && s !== "finish") activeSkillSet.add(s);
-    }
     const installedSet = new Set(installedSkills.map((s: any) => s.skillId));
 
     const skillStaff = BUILTIN_SKILLS.map((sk) => ({
@@ -242,7 +175,7 @@ export async function GET(req: NextRequest) {
           )
         : undefined;
     const totalPatternFreq = learnedPatterns.reduce((s: number, p: any) => s + (p.frequency || 0), 0);
-    const vigilActive = workingRows.length > 0;
+    const vigilActive = false;
     const vigilStaff = [
       {
         id: "vigil:memory-ledger",

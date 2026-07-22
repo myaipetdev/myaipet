@@ -222,7 +222,7 @@ petclaw_expect_success "all release scripts parse" /bin/bash -n \
 petclaw_expect_success "database URL parser boundaries pass" \
   node "${PETCLAW_TEST_ROOT}/deploy/tests/database-url-parser.test.mjs"
 
-petclaw_expect_success "UI contract audit runs before build, migration, and traffic switch" \
+petclaw_expect_success "UI, release-readiness, and community fallback contracts run before build, migration, and traffic switch" \
   node - "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" <<'NODE'
 const fs = require("node:fs");
 const source = fs.readFileSync(process.argv[2], "utf8");
@@ -230,6 +230,8 @@ const ordered = [
   "npm_config_engine_strict=true npm ci --ignore-scripts --no-audit --no-fund",
   "npx prisma generate",
   "npm run test:ui-contract",
+  "npm run test:release-readiness",
+  "npm run test:community-fallback",
   "npm run build",
   "npx prisma migrate deploy",
   'sudo install -o root -g root -m 644 "${PETCLAW_NGINX_RENDERED}" "${PETCLAW_NGINX_SITE}"',
@@ -355,6 +357,8 @@ for PETCLAW_CONTRACT in \
   'ec2-release.sh:NEXT_PUBLIC_SEASON1_START_MS' \
   'ec2-release.sh:NEXT_PUBLIC_SEASON1_END_MS' \
   'ec2-release.sh:npm run test:ui-contract' \
+  'ec2-release.sh:npm run test:release-readiness' \
+  'ec2-release.sh:npm run test:community-fallback' \
   'ec2-release.sh:node "${PETCLAW_RELEASE_SOURCE}/deploy/scan-release-language.mjs"' \
   'ec2-release.sh:/bin/bash "${PETCLAW_RELEASE_SOURCE}/deploy/release-smoke.sh"' \
   'ec2-release.sh:"${PETCLAW_RELEASE_SOURCE}/deploy/release-boot-guard.sh"' \
@@ -828,20 +832,28 @@ if [[ ! "${PETCLAW_SOURCE_LANGUAGE_SCAN_LINE}" =~ ^[0-9]+$ \
 fi
 PETCLAW_BUILD_LINE="$(grep -nF 'npm run build' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | head -n 1 | cut -d: -f1)"
+PETCLAW_RELEASE_READINESS_LINE="$(grep -nF 'npm run test:release-readiness' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | head -n 1 | cut -d: -f1)"
+PETCLAW_COMMUNITY_FALLBACK_LINE="$(grep -nF 'npm run test:community-fallback' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | head -n 1 | cut -d: -f1)"
 PETCLAW_BUILT_LANGUAGE_SCAN_LINE="$(grep -nF \
   'node "${PETCLAW_RELEASE_SOURCE}/deploy/scan-release-language.mjs"' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | cut -d: -f1)"
 PETCLAW_TRAFFIC_SWITCH_LINE="$(grep -nF 'PETCLAW_SWITCH_STARTED=1' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | tail -n 1 | cut -d: -f1)"
-if [[ ! "${PETCLAW_BUILD_LINE}" =~ ^[0-9]+$ \
+if [[ ! "${PETCLAW_RELEASE_READINESS_LINE}" =~ ^[0-9]+$ \
+  || ! "${PETCLAW_COMMUNITY_FALLBACK_LINE}" =~ ^[0-9]+$ \
+  || ! "${PETCLAW_BUILD_LINE}" =~ ^[0-9]+$ \
   || ! "${PETCLAW_BUILT_LANGUAGE_SCAN_LINE}" =~ ^[0-9]+$ \
   || ! "${PETCLAW_TRAFFIC_SWITCH_LINE}" =~ ^[0-9]+$ \
+  || "${PETCLAW_RELEASE_READINESS_LINE}" -ge "${PETCLAW_COMMUNITY_FALLBACK_LINE}" \
+  || "${PETCLAW_COMMUNITY_FALLBACK_LINE}" -ge "${PETCLAW_BUILD_LINE}" \
   || "${PETCLAW_BUILD_LINE}" -ge "${PETCLAW_BUILT_LANGUAGE_SCAN_LINE}" \
   || "${PETCLAW_BUILT_LANGUAGE_SCAN_LINE}" -ge "${PETCLAW_TRAFFIC_SWITCH_LINE}" ]]; then
-  echo "FAIL: built language scan is not between production build and traffic switch" >&2
+  echo "FAIL: release-readiness/community/build/language gates are not ordered before traffic switch" >&2
   exit 1
 fi
-PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 2))"
+PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 4))"
 
 PETCLAW_BOOT_LOCK_LINE="$(grep -nF 'petclaw_ensure_lock' \
   "${PETCLAW_TEST_ROOT}/deploy/release-boot-guard.sh" | tail -n 1 | cut -d: -f1)"

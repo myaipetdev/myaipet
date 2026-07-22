@@ -67,16 +67,35 @@ const IS_DEMO = process.env.NODE_ENV === "development";
 
 type CastMember = { name: string; kind: "yours" | "staff"; role: string; room: string; status: Status; line: string };
 
+/** Legacy no-op/refunded rows are terminal history, never resumable QUEUED work. */
+function doneForDisplay(kanban: MC["kanban"]): KItem[] {
+  return [
+    ...kanban.done,
+    ...kanban.blocked.map((item) => ({
+      ...item,
+      skill: item.skill || "no skill",
+      detail: item.reason || item.detail,
+      credits: 0,
+    })),
+  ];
+}
+
 // DONE always beats WORKING (audit P1): after a live run finishes, the ~7s
 // mission-control poll can still list the same item under `working` (sometimes
 // while it already sits in `done`), which flickered finished work back to
 // WORKING. Drop anything the payload marks done — or that matches the finished
 // live run — from the working set before ANY surface renders it.
 function workingSansDone(kanban: MC["kanban"], liveRun: LiveRun | null): KItem[] {
-  const doneIds = new Set(kanban.done.map((it) => String(it.id)));
-  const doneTitles = new Set(kanban.done.map((it) => it.title));
+  const terminal = doneForDisplay(kanban);
+  const doneIds = new Set(terminal.map((it) => String(it.id)));
+  const doneTitles = new Set(terminal.map((it) => it.title));
   if (liveRun?.done) doneTitles.add(liveRun.title);
   return kanban.working.filter((it) => !doneIds.has(String(it.id)) && !doneTitles.has(it.title));
+}
+
+/** Only persisted executable waiting work may enter QUEUED. */
+function queuedForDisplay(kanban: MC["kanban"]): KItem[] {
+  return [...kanban.pending];
 }
 
 function relTime(ts?: string | null): string {
@@ -93,12 +112,16 @@ function clockOf(ts?: string | null): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-export default function GrandPawOffice({ mc, liveRun, running, isWorking, petName, pets, goal, setGoal, onDispatch, cost }: {
-  mc: MC; liveRun: LiveRun | null; running: boolean; isWorking: boolean; petName: string;
+export default function GrandPawOffice({ mc, liveRun, running, petName, pets, goal, setGoal, onDispatch, cost }: {
+  mc: MC; liveRun: LiveRun | null; running: boolean; petName: string;
   pets: any[]; goal: string; setGoal: (s: string) => void; onDispatch: () => void; cost: number;
 }) {
   const [tab, setTab] = useState<Tab>("overview");
   const [pane, setPane] = useState<"lobby" | "board">("lobby");
+  const liveSkill = useMemo(() => {
+    if (!liveRun || liveRun.done) return null;
+    return [...liveRun.steps].reverse().find((step) => !step.complete)?.skill || null;
+  }, [liveRun]);
   const [now, setNow] = useState(() => new Date());
 
   // Mobile: the fixed "1fr + 330px rail" grid and the 620px diorama shot past
@@ -140,9 +163,15 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
 
   // Working items with anything already DONE filtered out (see workingSansDone).
   const workingItems = useMemo(() => workingSansDone(mc.kanban, liveRun), [mc.kanban, liveRun]);
+  const queuedItems = useMemo(() => queuedForDisplay(mc.kanban), [mc.kanban]);
+  const doneItems = useMemo(() => doneForDisplay(mc.kanban), [mc.kanban]);
   const workingTitle = liveRun && !liveRun.done ? liveRun.title : workingItems[0]?.title;
   const runningCount = workingItems.length + (liveRun && !liveRun.done ? 1 : 0);
-  const doneToday = mc.kanban.done.length;
+  const doneToday = doneItems.length;
+  const liveDoneNotPersisted = !!(
+    liveRun?.done
+    && !doneItems.some((item) => item.title === liveRun.title)
+  );
   // Recomputed locally (not the isWorking prop) so the header chip can never
   // say WORKING off a stale payload row that is actually DONE.
   const busyNow = runningCount > 0 || running;
@@ -161,14 +190,14 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
       room: i === 0 ? "FRONT DESK" : i === 1 ? "WORKSHOP" : "LOBBY",
       status: (i === 0 && workingTitle ? "WORKING" : "IDLE") as Status,
       line: i === 0
-        ? (workingTitle ? `Working on “${workingTitle}”.` : "Idle until you dispatch a goal.")
+        ? (workingTitle ? `Current goal — “${workingTitle}”.` : "Ready for your next goal.")
         : "Off duty until the next shift.",
     }));
     if (real.length === 0) {
       real.push({
         name: (petName || "Your pet").slice(0, 12), kind: "yours", role: IS_DEMO ? "DEMO PET" : "YOUR PET",
         room: "FRONT DESK", status: workingTitle ? "WORKING" : "IDLE",
-        line: workingTitle ? `Working on “${workingTitle}”.` : "Idle until you dispatch a goal.",
+        line: workingTitle ? `Current goal — “${workingTitle}”.` : "Ready for your next goal.",
       });
     }
     const staff: CastMember[] = [
@@ -188,14 +217,14 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
     // vocabulary as every chip — NPC speech never leaves the Who's-where rail.
     pets: cast.map((c) => ({
       name: c.kind === "staff" ? `${c.name} · STAFF` : IS_DEMO ? `${c.name} · DEMO` : c.name,
-      task: c.status === "WORKING" && workingTitle ? `WORKING — ${workingTitle}` : c.status,
+      task: c.status,
     })),
     memory: { count: mc.pillars.memory.count, cap: mc.pillars.memory.cap },
     skills: mc.pillars.skills.total,
     soulLv: mc.pet.level || 1,
     goals: mc.kanban.pending.length,
     next: nextSchedule?.nextRun ? clockOf(nextSchedule.nextRun) : "—",
-  }), [cast, mc, nextSchedule, workingTitle]);
+  }), [cast, mc, nextSchedule]);
 
   const hour = now.getHours();
   const greet = hour < 5 ? "Evening" : hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
@@ -243,7 +272,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
           {greet}. Welcome to The Grand Paw.
         </h1>
         <div style={{ ...labelStyle(13), marginTop: 9 }}>
-          {runningCount} WORKING · {doneToday} DONE TODAY · NEXT ROUTINE {nextSchedule?.nextRun ? clockOf(nextSchedule.nextRun) : "NOT SCHEDULED"}
+          {runningCount} WORKING · {doneToday + (liveDoneNotPersisted ? 1 : 0)} DONE · NEXT ROUTINE {nextSchedule?.nextRun ? clockOf(nextSchedule.nextRun) : "—"}
         </div>
       </div>
 
@@ -255,11 +284,11 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
           maxLength={600}
           style={{ flex: 1, minWidth: 160, border: "none", outline: "none", background: "transparent", fontFamily: SANS, fontSize: 14, color: INK, padding: "8px 12px" }} />
         {!narrow && <span style={{ ...labelStyle(12), border: `1px solid ${CHIP_BR}`, borderRadius: 7, padding: "3px 7px", marginRight: 8 }}>⌘K</span>}
-        <button onClick={onDispatch} disabled={goal.trim().length < 3 || running}
+        <button onClick={onDispatch} disabled={goal.trim().length < 3 || running} aria-busy={running}
           style={{ fontFamily: SANS, fontSize: 14.5, fontWeight: 700, color: "#FFF9EC", padding: "11px 22px", borderRadius: 12, border: "none",
             cursor: goal.trim().length >= 3 && !running ? "pointer" : "not-allowed",
             background: goal.trim().length >= 3 && !running ? INK : "rgba(33,26,18,0.25)" }}>
-          {running ? "Working…" : "Dispatch"}
+          {running ? "WORKING" : "Dispatch"}
         </button>
       </div>
 
@@ -313,13 +342,14 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
             </RailCard>
 
             <RailCard title="Queue">
-              {runningCount === 0 && mc.kanban.pending.length === 0 && doneToday === 0 && (
+              {runningCount === 0 && queuedItems.length === 0 && doneToday === 0 && !liveDoneNotPersisted && (
                 <div style={{ fontFamily: SANS, fontSize: 13, color: BODY_C, padding: "10px 0" }}>Quiet at the desk — dispatch a goal above.</div>
               )}
-              {liveRun && !liveRun.done && <QueueRow state="run" title={liveRun.title} right="LIVE" />}
-              {workingItems.map((it) => <QueueRow key={String(it.id)} state="run" title={it.title} right="WORKING" />)}
-              {mc.kanban.pending.slice(0, 3).map((it) => <QueueRow key={String(it.id)} state="queued" title={it.title} right="QUEUED" />)}
-              {mc.kanban.done.slice(0, 4).map((it) => <QueueRow key={String(it.id)} state="done" title={it.title} right={`DONE ${clockOf(it.at)}`} />)}
+              {liveRun && !liveRun.done && <QueueRow status="LIVE" title={liveRun.title} />}
+              {workingItems.map((it) => <QueueRow key={String(it.id)} status="WORKING" title={it.title} />)}
+              {queuedItems.slice(0, 3).map((it, index) => <QueueRow key={`queued-${index}-${String(it.id)}`} status="QUEUED" title={it.title} />)}
+              {liveDoneNotPersisted && liveRun && <QueueRow status="DONE" title={liveRun.title} />}
+              {doneItems.slice(0, 4).map((it) => <QueueRow key={String(it.id)} status="DONE" title={it.title} meta={clockOf(it.at)} />)}
             </RailCard>
 
             <RailCard title="Next routine" right={nextSchedule?.nextRun ? clockOf(nextSchedule.nextRun) : "—"}>
@@ -369,24 +399,27 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
 
       {tab === "staff" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 12 }}>
-          {mc.roster.map((s) => (
-            <div key={s.id} style={{ background: CHIP_BG, border: `1px solid ${CHIP_BR}`, borderRadius: 14, padding: "12px 14px", opacity: s.installed ? 1 : 0.6 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ width: 7, height: 7, borderRadius: 99, background: s.status === "active" ? GREEN : DIM }} />
-                <span style={{ fontFamily: SANS, fontSize: 14, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</span>
-                <span style={{ ...labelStyle(12), marginLeft: "auto" }}>{s.kind}</span>
+          {mc.roster.map((s) => {
+            const active = s.status === "active" || (s.kind === "skill" && s.id === liveSkill);
+            return (
+              <div key={s.id} style={{ background: CHIP_BG, border: `1px solid ${CHIP_BR}`, borderRadius: 14, padding: "12px 14px", opacity: s.installed ? 1 : 0.6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: 99, background: active ? GREEN : DIM }} />
+                  <span style={{ fontFamily: SANS, fontSize: 14, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</span>
+                  <span style={{ ...labelStyle(12), marginLeft: "auto" }}>{active ? "WORKING" : "IDLE"}</span>
+                </div>
+                <div style={{ fontFamily: SANS, fontSize: 13, color: BODY_C, marginTop: 5, minHeight: 32, lineHeight: 1.4 }}>{s.role}</div>
+                <div style={{ ...labelStyle(12), marginTop: 6 }}>
+                  {s.runs} RUNS{typeof s.successRate === "number" ? ` · ${s.successRate}%` : ""}{s.lastAt ? ` · ${relTime(s.lastAt)}` : ""}
+                </div>
               </div>
-              <div style={{ fontFamily: SANS, fontSize: 13, color: BODY_C, marginTop: 5, minHeight: 32, lineHeight: 1.4 }}>{s.role}</div>
-              <div style={{ ...labelStyle(12), marginTop: 6 }}>
-                {s.runs} RUNS{typeof s.successRate === "number" ? ` · ${s.successRate}%` : ""}{s.lastAt ? ` · ${relTime(s.lastAt)}` : ""}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       <div style={{ fontFamily: SANS, fontSize: 13, color: BODY_C, marginTop: 18, textAlign: "center" }}>
-        Each dispatch costs {cost} credits and is refunded if no real skill runs. Live from PetClaw, refreshed every 7 seconds.
+        Each dispatch costs {cost} credits and is refunded if no real skill runs. Synced from PetClaw every 7 seconds.
       </div>
     </div>
   );
@@ -412,16 +445,18 @@ function RailCard({ title, tag, right, children }: { title: string; tag?: string
   );
 }
 
-function QueueRow({ state, title, right }: { state: "run" | "queued" | "done"; title: string; right?: string }) {
-  const mark = state === "run" ? <span style={{ color: GREEN, animation: "gpPulse 1.6s infinite" }}>●</span>
-    : state === "queued" ? <span style={{ color: LABEL }}>○</span>
+function QueueRow({ status, title, meta }: { status: Status; title: string; meta?: string }) {
+  const mark = status === "LIVE" || status === "WORKING"
+    ? <span style={{ color: GREEN, animation: "gpPulse 1.6s infinite" }}>●</span>
+    : status === "QUEUED" ? <span style={{ color: LABEL }}>○</span>
     : <span style={{ color: LABEL }}>✓</span>;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 0", borderTop: `1px solid ${HAIR}` }}>
       <span style={{ flexShrink: 0, fontSize: 13 }}>{mark}</span>
-      <span style={{ flex: 1, minWidth: 0, fontFamily: SANS, fontSize: 13.5, color: state === "done" ? BODY_C : INK, fontWeight: state === "run" ? 700 : 500,
+      <span style={{ flex: 1, minWidth: 0, fontFamily: SANS, fontSize: 13.5, color: status === "DONE" ? BODY_C : INK, fontWeight: status === "LIVE" || status === "WORKING" ? 700 : 500,
         textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</span>
-      {right && <span style={{ ...labelStyle(12), flexShrink: 0 }}>{right}</span>}
+      {meta && <span style={{ ...labelStyle(12), flexShrink: 0 }}>{meta}</span>}
+      <span style={{ ...labelStyle(12), flexShrink: 0 }}>{status}</span>
     </div>
   );
 }
@@ -451,17 +486,23 @@ function MemCard({ label, value, sub, fill }: { label: string; value: string; su
 
 // hotel-styled kanban board (Board pane / Runs tab)
 function Board({ mc, liveRun, full }: { mc: MC; liveRun: LiveRun | null; full?: boolean }) {
-  const cols: { title: string; items: KItem[]; accent: string; live?: boolean; empty: string }[] = [
-    { title: "Queued", items: mc.kanban.pending, accent: LABEL, empty: "Nothing is queued." },
+  const doneItems = doneForDisplay(mc.kanban);
+  const liveDoneNotPersisted = !!(
+    liveRun?.done
+    && !doneItems.some((item) => item.title === liveRun.title)
+  );
+  const cols: { title: Status; items: KItem[]; accent: string; live?: boolean; empty: string }[] = [
+    { title: "QUEUED", items: queuedForDisplay(mc.kanban), accent: LABEL, empty: "The queue is clear." },
     // workingSansDone: a finished item must never sit in Working and Done at once.
-    { title: "Working", items: workingSansDone(mc.kanban, liveRun), accent: GREEN, live: true, empty: "Nothing is running — dispatch a goal." },
-    { title: "Blocked", items: mc.kanban.blocked, accent: TERRA, empty: "Nothing is blocked." },
-    { title: "Done today", items: mc.kanban.done, accent: GOLD, empty: "Nothing has finished yet today." },
+    { title: "WORKING", items: workingSansDone(mc.kanban, liveRun), accent: GREEN, live: true, empty: "Dispatch a goal to start a run." },
+    { title: "DONE", items: doneItems, accent: GOLD, empty: "Nothing has finished yet." },
   ];
   return (
-    <div style={{ display: "grid", gridTemplateColumns: full ? "repeat(auto-fit,minmax(220px,1fr))" : "repeat(2,minmax(0,1fr))", gap: 12 }}>
+    <div style={{ display: "grid", gridTemplateColumns: full ? "repeat(auto-fit,minmax(220px,1fr))" : "repeat(auto-fit,minmax(180px,1fr))", gap: 12 }}>
       {cols.map((c) => {
-        const extra = c.live && liveRun && !liveRun.done ? 1 : 0;
+        const extra = c.live && liveRun && !liveRun.done
+          ? 1
+          : c.title === "DONE" && liveDoneNotPersisted ? 1 : 0;
         return (
           <div key={c.title} style={{ background: "#F3EBD6", borderRadius: 14, border: `1px solid ${HAIR}`, padding: 11, minHeight: 120 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 9, padding: "0 3px" }}>
@@ -470,14 +511,17 @@ function Board({ mc, liveRun, full }: { mc: MC; liveRun: LiveRun | null; full?: 
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {c.live && liveRun && !liveRun.done && (
-                <BoardCard accent={GREEN} title={liveRun.title} detail={liveRun.steps.map((s) => s.skill).join(" → ") || "Planning the run…"} tag="LIVE" pulse />
+                <BoardCard accent={GREEN} title={liveRun.title} detail={liveRun.steps.map((s) => s.skill).join(" → ") || "Planning the run…"} status="LIVE" pulse />
+              )}
+              {c.title === "DONE" && liveDoneNotPersisted && liveRun && (
+                <BoardCard accent={GOLD} title={liveRun.title} detail={liveRun.answer} status="DONE" />
               )}
               {c.items.length + extra === 0 ? (
                 <div style={{ fontFamily: SANS, fontSize: 13, color: BODY_C, textAlign: "center", padding: "14px 8px", border: `1px dashed ${CHIP_BR}`, borderRadius: 10 }}>{c.empty}</div>
-              ) : c.items.slice(0, full ? 40 : 5).map((it) => (
-                <BoardCard key={String(it.id)} accent={c.accent} title={it.title}
+              ) : c.items.slice(0, full ? 40 : 5).map((it, index) => (
+                <BoardCard key={`${c.title}-${index}-${String(it.id)}`} accent={c.accent} title={it.title}
                   detail={it.detail || it.reason || it.skill}
-                  tag={it.kind || it.skill} sub={it.at ? relTime(it.at) : undefined} />
+                  status={c.title} meta={it.kind || it.skill} sub={it.at ? relTime(it.at) : undefined} />
               ))}
             </div>
           </div>
@@ -487,14 +531,15 @@ function Board({ mc, liveRun, full }: { mc: MC; liveRun: LiveRun | null; full?: 
   );
 }
 
-function BoardCard({ title, detail, tag, sub, accent, pulse }: { title: string; detail?: string; tag?: string; sub?: string; accent: string; pulse?: boolean }) {
+function BoardCard({ title, detail, status, meta, sub, accent, pulse }: { title: string; detail?: string; status: Status; meta?: string; sub?: string; accent: string; pulse?: boolean }) {
   return (
     <div style={{ background: CHIP_BG, borderRadius: 11, border: `1px solid ${CHIP_BR}`, borderLeft: `3px solid ${accent}`, padding: "10px 11px", animation: pulse ? "gpPulse 2s infinite" : undefined }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
         <span style={{ fontFamily: SANS, fontSize: 13.5, fontWeight: 700, color: INK, lineHeight: 1.35, minWidth: 0 }}>{title}</span>
-        {tag && <span style={{ ...labelStyle(12), flexShrink: 0, background: "#F5EDD8", borderRadius: 6, padding: "1px 7px", height: "fit-content" }}>{tag}</span>}
+        <span style={{ ...labelStyle(12), flexShrink: 0, background: "#F5EDD8", borderRadius: 6, padding: "1px 7px", height: "fit-content" }}>{status}</span>
       </div>
       {detail && <div style={{ fontFamily: SANS, fontSize: 13, color: BODY_C, marginTop: 4, lineHeight: 1.4, wordBreak: "break-word" }}>{detail}</div>}
+      {meta && <div style={{ ...labelStyle(12), marginTop: 4 }}>{meta}</div>}
       {sub && <div style={{ ...labelStyle(12), marginTop: 4 }}>{sub}</div>}
     </div>
   );

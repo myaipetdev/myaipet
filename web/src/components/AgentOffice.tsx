@@ -7,7 +7,7 @@
  * Reads GET /api/petclaw/mission-control?petId=N every ~7s (paused when the tab is
  * hidden) and lays out:
  *   - a 5-Pillar strip (Soul / Memory / User / Skills / Crons) with capped fill bars,
- *   - a 4-column Kanban (Pending / Working / Blocked / Done Today),
+ *   - a 3-state Kanban (QUEUED / WORKING / DONE),
  *   - the Office roster (skills + VIGIL crew as "staff"),
  *   - the cron Schedules,
  *   - a Dispatch bar that POSTs a goal to /api/pets/[petId]/agent?stream=1 (the real
@@ -51,7 +51,10 @@ export interface Kanban { pending: KItem[]; working: KItem[]; blocked: KItem[]; 
 export interface Staff { id: string; name: string; kind: "skill" | "vigil"; role: string; installed: boolean; status: "active" | "idle"; runs: number; successRate?: number; lastAt?: string | null; }
 export interface Schedule { id: string; name: string; cadence: string; lastRun: string | null; nextRun: string | null; desc: string; }
 export interface MC { pet: { id: number; name: string; level: number }; pillars: Pillars; kanban: Kanban; roster: Staff[]; schedules: Schedule[]; generatedAt: string; }
-export interface LiveRun { title: string; steps: { skill: string; ok: boolean }[]; done: boolean; answer?: string; }
+export interface LiveRunStep { skill: string; ok: boolean; complete: boolean; }
+export interface LiveRun { title: string; steps: LiveRunStep[]; done: boolean; answer?: string; }
+type OfficeStatus = "IDLE" | "WORKING" | "QUEUED" | "DONE" | "LIVE";
+type ClassicColumnStatus = Extract<OfficeStatus, "QUEUED" | "WORKING" | "DONE">;
 
 function relTime(ts?: string | null): string {
   if (!ts) return "never";
@@ -60,6 +63,39 @@ function relTime(ts?: string | null): string {
   if (s < 3600) return `${Math.floor(s / 60)}m ago`;
   if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
   return `${Math.floor(s / 86400)}d ago`;
+}
+
+/**
+ * Only persisted executable waiting work may enter QUEUED. The current route
+ * has no such queue and returns pending empty; keep this adapter narrow so
+ * suggestions can never masquerade as work that will actually run.
+ */
+function queuedForDisplay(kanban: Kanban): KItem[] {
+  return [...kanban.pending];
+}
+
+/** Legacy no-op/refunded rows are terminal history, never resumable QUEUED work. */
+function doneForDisplay(kanban: Kanban): KItem[] {
+  return [
+    ...kanban.done,
+    ...kanban.blocked.map((item) => ({
+      ...item,
+      skill: item.skill || "no skill",
+      detail: item.reason || item.detail,
+      credits: 0,
+    })),
+  ];
+}
+
+/** A completed item must never remain visible under WORKING. */
+function workingForDisplay(kanban: Kanban, liveRun: LiveRun | null): KItem[] {
+  const terminal = doneForDisplay(kanban);
+  const doneIds = new Set(terminal.map((item) => String(item.id)));
+  const doneTitles = new Set(terminal.map((item) => item.title));
+  if (liveRun?.done) doneTitles.add(liveRun.title);
+  return kanban.working.filter(
+    (item) => !doneIds.has(String(item.id)) && !doneTitles.has(item.title),
+  );
 }
 
 export default function AgentOffice() {
@@ -126,7 +162,7 @@ export default function AgentOffice() {
     if (petId == null || goal.trim().length < 3 || running) return;
     setRunning(true);
     setErr(null);
-    const steps: { skill: string; ok: boolean }[] = [];
+    const steps: LiveRunStep[] = [];
     const byId: Record<string, number> = {};
     setLiveRun({ title: goal.trim(), steps: [], done: false });
     try {
@@ -158,11 +194,11 @@ export default function AgentOffice() {
           try { evt = JSON.parse(line.slice(5).trim()); } catch { continue; }
           if (evt.type === "tool_call") {
             byId[evt.id] = steps.length;
-            steps.push({ skill: evt.skill, ok: true });
+            steps.push({ skill: evt.skill, ok: true, complete: false });
             flush();
           } else if (evt.type === "tool_result") {
             const idx = byId[evt.id];
-            if (idx != null) { steps[idx] = { ...steps[idx], ok: !!evt.ok }; flush(); }
+            if (idx != null) { steps[idx] = { ...steps[idx], ok: !!evt.ok, complete: true }; flush(); }
           } else if (evt.type === "done") {
             setLiveRun((r) => (r ? { ...r, done: true, answer: evt.answer || "" } : r));
           } else if (evt.type === "error") {
@@ -171,7 +207,7 @@ export default function AgentOffice() {
         }
       }
       setGoal("");
-      // refresh the board so the finished run lands in Working/Done from the DB
+      // Refresh so the completion-only history lands in DONE from the DB.
       if (petId != null) fetchMc(petId);
     } catch {
       setErr("Network error — the run didn't start.");
@@ -182,7 +218,15 @@ export default function AgentOffice() {
     }
   }, [petId, goal, running, fetchMc]);
 
-  const isWorking = (mc?.kanban.working.length ?? 0) > 0 || running;
+  const classicQueued = mc ? queuedForDisplay(mc.kanban) : [];
+  const classicWorking = mc ? workingForDisplay(mc.kanban, liveRun) : [];
+  const classicDone = mc ? doneForDisplay(mc.kanban) : [];
+  const isWorking = classicWorking.length > 0 || running || !!(liveRun && !liveRun.done);
+  const liveDoneNotPersisted = !!(
+    mc
+    && liveRun?.done
+    && !classicDone.some((item) => item.title === liveRun.title)
+  );
 
   // ── empty / no-pet gate ──
   if (!loadingPets && pets.length === 0) {
@@ -211,7 +255,7 @@ export default function AgentOffice() {
       {/* ══ HOTEL VIEW — "The Grand Paw" lobby diorama over the same real data ══ */}
       {view === "hotel" && (
         mc ? (
-          <GrandPawOffice mc={mc} liveRun={liveRun} running={running} isWorking={isWorking} petName={petName}
+          <GrandPawOffice mc={mc} liveRun={liveRun} running={running} petName={petName}
             pets={pets} goal={goal} setGoal={setGoal} onDispatch={dispatch} cost={COST} />
         ) : (
           <div role="status" aria-live="polite" style={{ ...card, textAlign: "center", color: MUTED, fontFamily: SANS }}>Opening the hotel…</div>
@@ -247,30 +291,29 @@ export default function AgentOffice() {
       {/* ── Kanban ── */}
       {mc ? (
         <div style={kanbanGrid}>
-          <Column mono="📋 PENDING" count={mc.kanban.pending.length} empty="Nothing queued — the board is clear.">
-            {mc.kanban.pending.map((it) => (
-              <KanbanCard key={String(it.id)} accent={MUTED} title={it.title} detail={it.detail} tag={it.kind} />
+          <Column mono="QUEUED" count={classicQueued.length} empty="The queue is clear.">
+            {classicQueued.map((it, index) => (
+              <KanbanCard key={`queued-${index}-${String(it.id)}`} accent={MUTED} title={it.title} detail={it.detail} tag="QUEUED" />
             ))}
           </Column>
-          <Column mono="⚙️ WORKING" count={mc.kanban.working.length + (liveRun && !liveRun.done ? 1 : 0)} empty="Idle — dispatch a goal below to put the office to work.">
-            {liveRun && (
+          <Column mono="WORKING" count={classicWorking.length + (liveRun && !liveRun.done ? 1 : 0)} empty="Dispatch a goal below to put the office to work.">
+            {liveRun && !liveRun.done && (
               <KanbanCard pulse accent={PURPLE} title={liveRun.title}
-                detail={liveRun.done ? "finishing…" : `${liveRun.steps.length} step${liveRun.steps.length === 1 ? "" : "s"} · ${liveRun.steps.map((s) => s.skill).join(" → ") || "planning…"}`}
-                tag={liveRun.done ? "done" : "live"} />
+                detail={`${liveRun.steps.length} step${liveRun.steps.length === 1 ? "" : "s"} · ${liveRun.steps.map((s) => s.skill).join(" → ") || "planning…"}`}
+                tag="LIVE" />
             )}
-            {mc.kanban.working.map((it) => (
-              <KanbanCard key={String(it.id)} pulse accent={PURPLE} title={it.title} detail={it.detail} tag={it.skill} />
+            {classicWorking.map((it) => (
+              <KanbanCard key={String(it.id)} pulse accent={PURPLE} title={it.title}
+                detail={[it.skill, it.detail].filter(Boolean).join(" · ")} tag="WORKING" />
             ))}
           </Column>
-          <Column mono="⚠️ BLOCKED" count={mc.kanban.blocked.length} empty="No blocks today.">
-            {mc.kanban.blocked.map((it) => (
-              <KanbanCard key={String(it.id)} accent="#b45309" title={it.title} detail={it.reason} sub={relTime(it.at)} tag="no-op" />
-            ))}
-          </Column>
-          <Column mono="✅ DONE TODAY" count={mc.kanban.done.length} empty="Nothing finished yet today.">
-            {mc.kanban.done.map((it) => (
-              <KanbanCard key={String(it.id)} accent={SAGE} title={it.title}
-                detail={`${it.skill}${it.credits ? ` · ${it.credits} cr` : ""}`} sub={relTime(it.at)} tag="done" />
+          <Column mono="DONE" count={classicDone.length + (liveDoneNotPersisted ? 1 : 0)} empty="Nothing has finished yet.">
+            {liveDoneNotPersisted && liveRun && (
+              <KanbanCard accent={SAGE} title={liveRun.title} detail={liveRun.answer} tag="DONE" />
+            )}
+            {classicDone.map((it, index) => (
+              <KanbanCard key={`done-${index}-${String(it.id)}`} accent={SAGE} title={it.title}
+                detail={it.detail || `${it.skill}${it.credits ? ` · ${it.credits} cr` : ""}`} sub={relTime(it.at)} tag="DONE" />
             ))}
           </Column>
         </div>
@@ -309,17 +352,17 @@ export default function AgentOffice() {
               background: goal.trim().length >= 3 && !running ? "linear-gradient(180deg,#7C5FB8,#5B4090)" : "rgba(33,26,18,0.18)",
             }}
           >
-            {running ? "● Working…" : "▶ Dispatch"}
+            {running ? "WORKING" : "▶ Dispatch"}
           </button>
         </div>
         <div style={{ fontFamily: MONO, fontSize: 13, color: MUTED, marginTop: 8 }}>
-          Costs {COST} credits · refunded if the loop runs no real skill · appears live in Working ↑
+          Costs {COST} credits · refunded if the loop runs no real skill · appears as LIVE in WORKING ↑
         </div>
       </div>
       )}
 
       {/* ── Office roster + schedules (classic only; the village shows its own) ── */}
-      {view === "classic" && mc && <Roster roster={mc.roster} />}
+      {view === "classic" && mc && <Roster roster={mc.roster} liveRun={liveRun} />}
 
       {view === "classic" && mc && (
         <div style={{ marginTop: 26 }}>
@@ -340,7 +383,7 @@ export default function AgentOffice() {
 
       {mc && (
         <div style={{ fontFamily: MONO, fontSize: 13, color: "rgba(33,26,18,0.35)", marginTop: 16, textAlign: "center" }}>
-          Live from PetClaw · refreshed {relTime(mc.generatedAt)} · every 7s
+          Synced from PetClaw · refreshed {relTime(mc.generatedAt)} · every 7s
         </div>
       )}
     </div>
@@ -375,7 +418,7 @@ function Header({ petName, pets, petId, setPetId, isWorking, view, setView }: { 
         </h1>
         <span role="status" aria-live="polite" style={{ display: "inline-flex", alignItems: "center", gap: 7, fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "4px 11px", borderRadius: 99, color: isWorking ? PURPLE : MUTED, background: isWorking ? "rgba(107,79,160,0.1)" : "rgba(33,26,18,0.05)", border: `1px solid ${isWorking ? "rgba(107,79,160,0.28)" : HAIR}` }}>
           <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 99, background: isWorking ? PURPLE : "rgba(33,26,18,0.3)" }} />
-          {isWorking ? "working" : "idle"}
+          {isWorking ? "WORKING" : "IDLE"}
         </span>
       </div>
       <p style={{ fontFamily: SANS, fontSize: 15.5, color: "rgba(33,26,18,0.6)", maxWidth: 640, margin: "10px 0 0", lineHeight: 1.6 }}>
@@ -415,7 +458,7 @@ function Pillar({ label, mono, accent, value, sub, fill }: { label: string; mono
 }
 
 // ── Kanban column ──
-function Column({ mono, count, empty, children }: { mono: string; count: number; empty: string; children: React.ReactNode }) {
+function Column({ mono, count, empty, children }: { mono: ClassicColumnStatus; count: number; empty: string; children: React.ReactNode }) {
   return (
     <section aria-label={mono} style={{ background: FIELD, borderRadius: 16, border: `1px solid ${HAIR}`, padding: 12, minWidth: 0 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, padding: "2px 4px" }}>
@@ -434,7 +477,7 @@ function Column({ mono, count, empty, children }: { mono: string; count: number;
 }
 
 // ── Kanban card ──
-function KanbanCard({ title, detail, sub, tag, accent, pulse }: { title: string; detail?: string; sub?: string; tag?: string; accent: string; pulse?: boolean }) {
+function KanbanCard({ title, detail, sub, tag, accent, pulse }: { title: string; detail?: string; sub?: string; tag: OfficeStatus; accent: string; pulse?: boolean }) {
   return (
     <div style={{ background: PAPER, borderRadius: 12, border: `1px solid ${HAIR}`, borderLeft: `3px solid ${accent}`, padding: "11px 12px", boxShadow: SHADOW_CARD, animation: pulse ? "officePulse 1.8s ease-in-out infinite" : undefined }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
@@ -448,38 +491,44 @@ function KanbanCard({ title, detail, sub, tag, accent, pulse }: { title: string;
 }
 
 // ── Office roster ──
-function Roster({ roster }: { roster: Staff[] }) {
+function currentLiveSkill(liveRun: LiveRun | null): string | null {
+  if (!liveRun || liveRun.done) return null;
+  return [...liveRun.steps].reverse().find((step) => !step.complete)?.skill || null;
+}
+
+function Roster({ roster, liveRun }: { roster: Staff[]; liveRun: LiveRun | null }) {
   const skills = roster.filter((r) => r.kind === "skill");
   const vigil = roster.filter((r) => r.kind === "vigil");
+  const liveSkill = currentLiveSkill(liveRun);
   return (
     <div style={{ marginTop: 26 }}>
       <SectionTitle mono="OFFICE ROSTER" title="The staff your pet runs" />
       <div style={{ marginBottom: 8, fontFamily: MONO, fontSize: 13, letterSpacing: "0.1em", color: SAGE, fontWeight: 700 }}>SKILLS</div>
       <div style={staffGrid}>
-        {skills.map((s) => <StaffCard key={s.id} s={s} accent={SAGE} />)}
+        {skills.map((s) => <StaffCard key={s.id} s={s} accent={SAGE} live={s.id === liveSkill} />)}
       </div>
       <div style={{ margin: "18px 0 8px", fontFamily: MONO, fontSize: 13, letterSpacing: "0.1em", color: PURPLE, fontWeight: 700 }}>VIGIL CREW · always-on memory pipeline</div>
       <div style={staffGrid}>
-        {vigil.map((s) => <StaffCard key={s.id} s={s} accent={PURPLE} />)}
+        {vigil.map((s) => <StaffCard key={s.id} s={s} accent={PURPLE} live={false} />)}
       </div>
     </div>
   );
 }
 
-function StaffCard({ s, accent }: { s: Staff; accent: string }) {
-  const active = s.status === "active";
+function StaffCard({ s, accent, live }: { s: Staff; accent: string; live: boolean }) {
+  const active = live || s.status === "active";
   return (
     <div style={{ ...card, padding: "12px 13px", opacity: s.installed ? 1 : 0.62 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-        <span style={{ width: 8, height: 8, borderRadius: 99, background: active ? accent : "rgba(33,26,18,0.22)", flexShrink: 0 }} />
+        <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 99, background: active ? accent : "rgba(33,26,18,0.22)", flexShrink: 0 }} />
         <span style={{ fontFamily: SANS, fontSize: 14, fontWeight: 800, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</span>
+        <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 13, color: active ? accent : MUTED, fontWeight: 700 }}>{active ? "WORKING" : "IDLE"}</span>
       </div>
       <div style={{ fontFamily: SANS, fontSize: 13, color: MUTED, lineHeight: 1.4, minHeight: 34 }}>{s.role}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 7, flexWrap: "wrap" }}>
         <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: INK }}>{s.runs} run{s.runs === 1 ? "" : "s"}</span>
         {typeof s.successRate === "number" && <span style={{ fontFamily: MONO, fontSize: 13, color: SAGE, fontWeight: 700 }}>{s.successRate}%</span>}
         {s.lastAt && <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(33,26,18,0.4)" }}>{relTime(s.lastAt)}</span>}
-        {!s.installed && <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(33,26,18,0.35)" }}>available</span>}
       </div>
     </div>
   );

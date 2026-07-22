@@ -8,6 +8,10 @@ import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import PetSquare from "@/components/PetSquare";
 import { isTourActive } from "@/lib/tour";
 import { SEASON_SCHEDULED } from "@/lib/season";
+import {
+  isKnownEngagementCount,
+  normalizeGalleryFallbackItem,
+} from "@/lib/communityFallback";
 
 // ── Collectible Editorial tokens ──
 const T = {
@@ -44,6 +48,7 @@ function getCardHeight(index: number, aspectRatio: string) {
 function CommentSection({ generationId, onAdded }: { generationId: number; onAdded?: () => void }) {
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [commentsUnavailable, setCommentsUnavailable] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   // A failed POST (401/429/500) used to be swallowed — the field just sat there
@@ -56,19 +61,22 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
   const mountedRef = useRef(true);
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
 
-  useEffect(() => {
-    loadComments();
-  }, [generationId]);
-
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     try {
       const data = await api.social.comments(generationId);
-      if (mountedRef.current) setComments(data.comments || data.items || []);
+      if (mountedRef.current) {
+        setComments(data.comments || data.items || []);
+        setCommentsUnavailable(false);
+      }
     } catch {
-      if (mountedRef.current) setComments([]);
+      if (mountedRef.current) setCommentsUnavailable(true);
     }
     if (mountedRef.current) setLoading(false);
-  };
+  }, [generationId]);
+
+  useEffect(() => {
+    void loadComments();
+  }, [loadComments]);
 
   const handleSubmit = async () => {
     if (!newComment.trim() || submitting) return;
@@ -96,13 +104,29 @@ function CommentSection({ generationId, onAdded }: { generationId: number; onAdd
         fontFamily: T.m, fontSize: 13, color: T.mono,
         textTransform: "uppercase", letterSpacing: "0.13em", marginBottom: 8, fontWeight: 700,
       }}>
-        Comments · {comments.length}
+        Comments{!loading && !commentsUnavailable ? ` · ${comments.length}` : ""}
       </div>
 
       {/* Comment list */}
       <div style={{ flex: 1, overflowY: "auto", marginBottom: 10, maxHeight: 200 }}>
         {loading ? (
           <div role="status" aria-live="polite" style={{ fontFamily: T.m, fontSize: 13, color: T.muted2, padding: 8, letterSpacing: "0.04em" }}>Loading comments…</div>
+        ) : commentsUnavailable ? (
+          <div role="alert" style={{
+            fontFamily: T.m, fontSize: 13, color: T.muted2,
+            textAlign: "center", padding: "16px 0", letterSpacing: "0.04em",
+          }}>
+            Comments unavailable.
+            <button type="button" onClick={() => {
+              setLoading(true);
+              setCommentsUnavailable(false);
+              void loadComments();
+            }} style={{
+              marginLeft: 8, border: 0, background: "transparent", color: T.terra,
+              fontFamily: T.m, fontSize: 13, fontWeight: 700, cursor: "pointer",
+              textDecoration: "underline", textUnderlineOffset: 2,
+            }}>Retry</button>
+          </div>
         ) : comments.length === 0 ? (
           <div style={{
             fontFamily: T.m, fontSize: 13, color: T.muted2,
@@ -392,32 +416,38 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
             borderTop: `1px solid ${T.hair}`,
             borderBottom: `1px solid ${T.hair}`,
           }}>
-            <button type="button" aria-label={item.is_liked ? "Unlike this creation" : "Like this creation"} aria-pressed={!!item.is_liked} onClick={() => onLike(item.generation_id || item.id, index)} style={{
-              display: "flex", alignItems: "center", gap: 5, background: "none",
-              border: "none", cursor: "pointer", padding: "0 4px", minHeight: 44, minWidth: 44,
-            }}>
-              <span style={{
-                fontSize: 15, color: item.is_liked ? T.happy : T.muted,
-                display: "inline-block",
-                transform: item.is_liked ? "scale(1.3)" : "scale(1)",
-                transition: "transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s",
-              }}>
-                {item.is_liked ? "♥" : "♡"}
-              </span>
-              <span style={{
-                fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.ink,
-              }}>
-                {item.likes_count || 0}
-              </span>
-            </button>
-            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <Icon name="chat" size={14} />
-              <span style={{
-                fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.ink,
-              }}>
-                {item.comments_count || 0}
-              </span>
-            </div>
+            {isKnownEngagementCount(item.likes_count) && (
+              typeof item.is_liked === "boolean" ? (
+                <button type="button" aria-label={item.is_liked ? "Unlike this creation" : "Like this creation"} aria-pressed={item.is_liked} onClick={() => onLike(item.generation_id || item.id, index)} style={{
+                  display: "flex", alignItems: "center", gap: 5, background: "none",
+                  border: "none", cursor: "pointer", padding: "0 4px", minHeight: 44, minWidth: 44,
+                }}>
+                  <span style={{
+                    fontSize: 15, color: item.is_liked ? T.happy : T.muted,
+                    display: "inline-block",
+                    transform: item.is_liked ? "scale(1.3)" : "scale(1)",
+                    transition: "transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s",
+                  }}>
+                    {item.is_liked ? "♥" : "♡"}
+                  </span>
+                  <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.ink }}>
+                    {item.likes_count}
+                  </span>
+                </button>
+              ) : (
+                <span aria-label={`${item.likes_count} likes`} style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.ink }}>
+                  ♥ {item.likes_count}
+                </span>
+              )
+            )}
+            {isKnownEngagementCount(item.comments_count) && (
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <Icon name="chat" size={14} />
+                <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.ink }}>
+                  {item.comments_count}
+                </span>
+              </div>
+            )}
             <div style={{ flex: 1 }} />
             <button
               type="button"
@@ -498,7 +528,7 @@ function DetailModal({ item, onClose, onLike, index, onCommentAdded }: any) {
           {/* Comments */}
           {item.__mock
             ? <div style={{ fontFamily: T.m, fontSize: 13, color: T.muted2, padding: "12px 2px", letterSpacing: "0.04em" }}>Sample post — comments open up on real creations.</div>
-            : <CommentSection generationId={item.generation_id || item.id} onAdded={onCommentAdded} />}
+            : <CommentSection key={item.generation_id || item.id} generationId={item.generation_id || item.id} onAdded={onCommentAdded} />}
         </div>
       </div>
     </div>
@@ -746,43 +776,50 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <button
-              type="button"
-              onClick={e => { e.stopPropagation(); onLike(item.generation_id || item.id, index); }}
-              aria-label={item.is_liked ? "Unlike this creation" : "Like this creation"}
-              aria-pressed={!!item.is_liked}
-              style={{
-                background: "none", border: "none", cursor: "pointer", padding: 0,
-                display: "flex", alignItems: "center", gap: 3, pointerEvents: "auto",
-              }}
-            >
-              <span style={{
-                color: item.is_liked ? T.happy : "rgba(255,255,255,0.7)",
-                fontSize: 13,
-                // Overshoot easing → a tactile "pop" on like instead of a flat ease.
-                transition: "transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s, filter 0.15s",
-                transform: item.is_liked ? "scale(1.3)" : "scale(1)",
-                display: "inline-block",
-                filter: item.is_liked ? "drop-shadow(0 1px 3px rgba(240,88,158,0.55))" : "none",
-              }}>
-                {item.is_liked ? "♥" : "♡"}
-              </span>
-              <span style={{
-                fontFamily: T.m, fontSize: 13, fontWeight: 700,
-                color: "rgba(255,255,255,0.7)",
-                textShadow: "0 1px 2px rgba(0,0,0,0.5)",
-              }}>
-                {item.likes_count > 999 ? `${(item.likes_count/1000).toFixed(1)}k` : item.likes_count || 0}
-              </span>
-            </button>
+            {isKnownEngagementCount(item.likes_count) && (
+              typeof item.is_liked === "boolean" ? (
+                <button
+                  type="button"
+                  onClick={e => { e.stopPropagation(); onLike(item.generation_id || item.id, index); }}
+                  aria-label={item.is_liked ? "Unlike this creation" : "Like this creation"}
+                  aria-pressed={item.is_liked}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer", padding: 0,
+                    display: "flex", alignItems: "center", gap: 3, pointerEvents: "auto",
+                  }}
+                >
+                  <span style={{
+                    color: item.is_liked ? T.happy : "rgba(255,255,255,0.7)",
+                    fontSize: 13,
+                    transition: "transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s, filter 0.15s",
+                    transform: item.is_liked ? "scale(1.3)" : "scale(1)",
+                    display: "inline-block",
+                    filter: item.is_liked ? "drop-shadow(0 1px 3px rgba(240,88,158,0.55))" : "none",
+                  }}>
+                    {item.is_liked ? "♥" : "♡"}
+                  </span>
+                  <span style={{
+                    fontFamily: T.m, fontSize: 13, fontWeight: 700,
+                    color: "rgba(255,255,255,0.7)",
+                    textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+                  }}>
+                    {item.likes_count > 999 ? `${(item.likes_count / 1000).toFixed(1)}k` : item.likes_count}
+                  </span>
+                </button>
+              ) : (
+                <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.7)", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>
+                  ♥ {item.likes_count > 999 ? `${(item.likes_count / 1000).toFixed(1)}k` : item.likes_count}
+                </span>
+              )
+            )}
 
-            {(hovered || (item.comments_count || 0) > 0) && (
+            {isKnownEngagementCount(item.comments_count) && (hovered || item.comments_count > 0) && (
               <span style={{
                 fontFamily: T.m, fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.55)",
                 textShadow: "0 1px 2px rgba(0,0,0,0.5)",
                 display: "inline-flex", alignItems: "center", gap: 3,
               }}>
-                <Icon name="chat" size={10} /> {item.comments_count || 0}
+                <Icon name="chat" size={10} /> {item.comments_count}
               </span>
             )}
 
@@ -987,7 +1024,7 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 7, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: T.muted, textTransform: "uppercase" }}>
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "70%" }}>{it.display_name || "Anonymous"}</span>
-                  <span>♥ {it.likes_count || 0}</span>
+                  {isKnownEngagementCount(it.likes_count) && <span>♥ {it.likes_count}</span>}
                 </div>
               </div>
               <button
@@ -1022,16 +1059,20 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
               {cur.prompt || "untitled"}
             </div>
           </div>
-          {onLike && (
-            <button
-              type="button"
-              onClick={() => curId != null && onLike(curId, idx)}
-              aria-label={cur.is_liked ? "Unlike this creation" : "Like this creation"}
-              aria-pressed={!!cur.is_liked}
-              style={{ background: "transparent", border: `1px solid ${T.hair}`, borderRadius: 999, padding: "6px 12px", cursor: "pointer", fontFamily: T.m, fontSize: 13, fontWeight: 700, color: cur.is_liked ? T.terra : T.muted2 }}
-            >
-              {cur.is_liked ? "♥" : "♡"} {cur.likes_count || 0}
-            </button>
+          {isKnownEngagementCount(cur.likes_count) && (
+            onLike && typeof cur.is_liked === "boolean" ? (
+              <button
+                type="button"
+                onClick={() => curId != null && onLike(curId, idx)}
+                aria-label={cur.is_liked ? "Unlike this creation" : "Like this creation"}
+                aria-pressed={cur.is_liked}
+                style={{ background: "transparent", border: `1px solid ${T.hair}`, borderRadius: 999, padding: "6px 12px", cursor: "pointer", fontFamily: T.m, fontSize: 13, fontWeight: 700, color: cur.is_liked ? T.terra : T.muted2 }}
+              >
+                {cur.is_liked ? "♥" : "♡"} {cur.likes_count}
+              </button>
+            ) : (
+              <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted2 }}>♥ {cur.likes_count}</span>
+            )
           )}
           <button type="button" onClick={() => onOpen(cur, idx)} style={{ background: T.ink, border: "none", borderRadius: 999, padding: "7px 14px", cursor: "pointer", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: T.creamOn }}>
             OPEN ▸
@@ -1240,7 +1281,9 @@ export default function SocialGallery() {
     if (realItems.length === 0) {
       try {
         const data = await api.gallery.list({ sort: sort === "most_liked" ? "recent" : sort, page: 1, page_size: PAGE_SIZE });
-        realItems = (data.items || []).map((i: any) => ({ ...i, generation_id: i.id, likes_count: 0, comments_count: 0, is_liked: false }));
+        realItems = (data.items || [])
+          .filter(hasMedia)
+          .map(normalizeGalleryFallbackItem);
         ok = true;
         more = false; // the gallery fallback path isn't wired for load-more
       } catch {}
@@ -1303,8 +1346,9 @@ export default function SocialGallery() {
     // returns { liked, likes_count } — there is no `action` field, so the old
     // `result.action === "liked"` was always false and silently reverted likes.)
     const flip = (item: any) => {
+      if (!isKnownEngagementCount(item.likes_count) || typeof item.is_liked !== "boolean") return item;
       const liked = !item.is_liked;
-      return { ...item, is_liked: liked, likes_count: liked ? (item.likes_count||0)+1 : Math.max(0,(item.likes_count||0)-1) };
+      return { ...item, is_liked: liked, likes_count: liked ? item.likes_count + 1 : Math.max(0, item.likes_count - 1) };
     };
     // Match by id, not list index — the grid renders the FILTERED list, so an
     // index would update the wrong row while searching/filtering.
@@ -1698,8 +1742,11 @@ export default function SocialGallery() {
           onLike={handleLike}
           onCommentAdded={() => {
             const gid = selectedItem.generation_id || selectedItem.id;
-            setSelectedItem((prev: any) => prev ? { ...prev, comments_count: (prev.comments_count || 0) + 1 } : prev);
-            setItems(prev => prev.map(it => ((it.generation_id || it.id) === gid ? { ...it, comments_count: (it.comments_count || 0) + 1 } : it)));
+            const incrementKnownCount = (item: any) => isKnownEngagementCount(item?.comments_count)
+              ? { ...item, comments_count: item.comments_count + 1 }
+              : item;
+            setSelectedItem((prev: any) => prev ? incrementKnownCount(prev) : prev);
+            setItems(prev => prev.map(it => ((it.generation_id || it.id) === gid ? incrementKnownCount(it) : it)));
           }}
         />
       )}
