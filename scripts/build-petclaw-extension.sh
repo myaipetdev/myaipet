@@ -58,8 +58,15 @@ for file in icon16.png icon48.png icon128.png; do
   cp "$SOURCE_DIR/icons/$file" "$BUILD_TEMP/package/icons/$file"
 done
 
-# Fixed timestamps + sorted paths + stripped extra fields make identical source
-# produce an identical archive across local machines and CI.
+# Normalize modes as well as timestamps. `cp` otherwise inherits the caller's
+# umask, and ZIP stores those Unix permission bits even with `-X`; the signed
+# artifact builder deliberately uses umask 077 while developer shells usually
+# use 022.
+find "$BUILD_TEMP/package" -type d -exec chmod 755 {} +
+find "$BUILD_TEMP/package" -type f -exec chmod 644 {} +
+
+# Fixed permissions + timestamps + sorted paths + stripped extra fields make
+# identical source produce an identical archive across local machines and CI.
 find "$BUILD_TEMP/package" -exec touch -t 198001010000 {} +
 build_archive() {
   local target="$1"
