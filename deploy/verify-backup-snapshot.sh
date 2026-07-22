@@ -16,6 +16,7 @@ PETCLAW_VERIFY_OUTPUT="$3"
 PETCLAW_LOCK_DIR="/run/petclaw-release"
 PETCLAW_VERIFY_LOCK="${PETCLAW_LOCK_DIR}/backup-verify.lock"
 PETCLAW_BOOT_GUARD="/usr/local/sbin/petclaw-release-boot-guard.sh"
+PETCLAW_PG_RESTORE_BIN="/usr/lib/postgresql/16/bin/pg_restore"
 
 for PETCLAW_VERIFY_INPUT in "${PETCLAW_VERIFY_DUMP}" "${PETCLAW_VERIFY_MEDIA}"; do
   if [[ ! -f "${PETCLAW_VERIFY_INPUT}" || -L "${PETCLAW_VERIFY_INPUT}" ]]; then
@@ -23,7 +24,13 @@ for PETCLAW_VERIFY_INPUT in "${PETCLAW_VERIFY_DUMP}" "${PETCLAW_VERIFY_MEDIA}"; 
     exit 2
   fi
 done
-command -v pg_restore >/dev/null 2>&1 || { echo "ERROR: pg_restore is required." >&2; exit 2; }
+if [[ ! -f "${PETCLAW_PG_RESTORE_BIN}" || -L "${PETCLAW_PG_RESTORE_BIN}" \
+  || ! -x "${PETCLAW_PG_RESTORE_BIN}" \
+  || "$(realpath -e "${PETCLAW_PG_RESTORE_BIN}" 2>/dev/null || true)" != "${PETCLAW_PG_RESTORE_BIN}" \
+  || "$(stat -c '%U:%G:%a' "${PETCLAW_PG_RESTORE_BIN}" 2>/dev/null || true)" != root:root:755 ]]; then
+  echo "ERROR: pinned PostgreSQL restore client is unsafe." >&2
+  exit 2
+fi
 command -v psql >/dev/null 2>&1 || { echo "ERROR: psql is required." >&2; exit 2; }
 command -v node >/dev/null 2>&1 || { echo "ERROR: node is required." >&2; exit 2; }
 command -v flock >/dev/null 2>&1 || { echo "ERROR: flock is required." >&2; exit 2; }
@@ -107,7 +114,7 @@ PETCLAW_VERIFY_WATCHDOG_ARMED=1
 sudo -n -u postgres createdb "${PETCLAW_VERIFY_DB}"
 # ubuntu intentionally opens the private dump for psql.
 # shellcheck disable=SC2024
-sudo -n -u postgres pg_restore \
+sudo -n -u postgres "${PETCLAW_PG_RESTORE_BIN}" \
   --exit-on-error --single-transaction --no-owner --no-acl \
   --dbname="${PETCLAW_VERIFY_DB}" < "${PETCLAW_VERIFY_DUMP}"
 

@@ -170,6 +170,9 @@ PETCLAW_BACKUP_RECIPIENT="$4"
 PETCLAW_RELEASE_LOCK=/run/petclaw-release/release.lock
 PETCLAW_BOOT_GUARD=/usr/local/sbin/petclaw-release-boot-guard.sh
 PETCLAW_REMOTE_STAGE_ROOT=/opt/petclaw/backup-staging
+PETCLAW_PG_BIN_DIR=/usr/lib/postgresql/16/bin
+PETCLAW_PG_DUMP_BIN="${PETCLAW_PG_BIN_DIR}/pg_dump"
+PETCLAW_PG_RESTORE_BIN="${PETCLAW_PG_BIN_DIR}/pg_restore"
 if [[ ! -x "${PETCLAW_BOOT_GUARD}" || -L "${PETCLAW_BOOT_GUARD}" \
   || "$(stat -c '%U:%G' "${PETCLAW_BOOT_GUARD}" 2>/dev/null || true)" != root:root ]]; then
   echo "ERROR: trusted release lock helper is unavailable." >&2
@@ -249,6 +252,20 @@ fi
 chmod 700 "${PETCLAW_REMOTE_HELPER}"
 chmod 600 "${PETCLAW_REMOTE_PUBLIC_KEY}"
 chmod 700 "${PETCLAW_REMOTE_DB_URL_PARSER}"
+if [[ ! -d "${PETCLAW_PG_BIN_DIR}" || -L "${PETCLAW_PG_BIN_DIR}" \
+  || "$(realpath -e "${PETCLAW_PG_BIN_DIR}" 2>/dev/null || true)" != "${PETCLAW_PG_BIN_DIR}" \
+  || "$(stat -c '%U:%G:%a' "${PETCLAW_PG_BIN_DIR}" 2>/dev/null || true)" != root:root:755 ]]; then
+  echo "ERROR: pinned PostgreSQL client directory is unsafe." >&2
+  exit 2
+fi
+for PETCLAW_PG_BIN in "${PETCLAW_PG_DUMP_BIN}" "${PETCLAW_PG_RESTORE_BIN}"; do
+  if [[ ! -f "${PETCLAW_PG_BIN}" || -L "${PETCLAW_PG_BIN}" || ! -x "${PETCLAW_PG_BIN}" \
+    || "$(realpath -e "${PETCLAW_PG_BIN}" 2>/dev/null || true)" != "${PETCLAW_PG_BIN}" \
+    || "$(stat -c '%U:%G:%a' "${PETCLAW_PG_BIN}" 2>/dev/null || true)" != root:root:755 ]]; then
+    echo "ERROR: pinned PostgreSQL client binary is unsafe." >&2
+    exit 2
+  fi
+done
 
 mapfile -t PETCLAW_ONLINE_APPS < <(pm2 jlist | node -e '
   let raw = "";
@@ -384,7 +401,7 @@ if [[ -z "${PGHOST:-}" || -z "${PGPORT:-}" || -z "${PGUSER:-}" \
 fi
 PGHOST="${PGHOST}" PGPORT="${PGPORT}" PGUSER="${PGUSER}" \
 PGPASSWORD="${PGPASSWORD}" PGDATABASE="${PGDATABASE}" PGSSLMODE="${PGSSLMODE}" \
-  pg_dump -Fc --no-owner --no-acl \
+  "${PETCLAW_PG_DUMP_BIN}" -Fc --no-owner --no-acl \
   > "${PETCLAW_REMOTE_STAGE}/petclaw-postgres.dump"
 unset DATABASE_URL PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE PGSSLMODE \
   PETCLAW_DB_FIELD PETCLAW_DB_VALUE PETCLAW_DB_VALUE_B64
@@ -408,7 +425,7 @@ PETCLAW_AVAILABILITY_ARMED=0
   "${PETCLAW_REMOTE_STAGE}/snapshot-verification.env"
 printf 'snapshot_quiesced=true\n' >> "${PETCLAW_REMOTE_STAGE}/snapshot-verification.env"
 
-pg_restore --list "${PETCLAW_REMOTE_STAGE}/petclaw-postgres.dump" \
+"${PETCLAW_PG_RESTORE_BIN}" --list "${PETCLAW_REMOTE_STAGE}/petclaw-postgres.dump" \
   > "${PETCLAW_REMOTE_STAGE}/petclaw-postgres.restore-list.txt"
 PETCLAW_REMOTE_DB_SHA="$(sha256sum "${PETCLAW_REMOTE_STAGE}/petclaw-postgres.dump" | awk '{print $1}')"
 PETCLAW_REMOTE_MEDIA_SHA="$(sha256sum "${PETCLAW_REMOTE_STAGE}/petclaw-uploads.tar.gz" | awk '{print $1}')"

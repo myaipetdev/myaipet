@@ -395,7 +395,11 @@ for PETCLAW_CONTRACT in \
   'pull-production-backup.sh:PETCLAW_EXPECTED_ENV_STAT=root:ubuntu:640' \
   'pull-production-backup.sh:PGPASSWORD="${PGPASSWORD}" PGDATABASE="${PGDATABASE}" PGSSLMODE="${PGSSLMODE}"' \
   'pull-production-backup.sh:unset DATABASE_URL PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE PGSSLMODE' \
+  'pull-production-backup.sh:PETCLAW_PG_DUMP_BIN="${PETCLAW_PG_BIN_DIR}/pg_dump"' \
+  'pull-production-backup.sh:"${PETCLAW_PG_RESTORE_BIN}" --list' \
   'verify-backup-snapshot.sh:exec 8<>"${PETCLAW_VERIFY_LOCK}"' \
+  'verify-backup-snapshot.sh:PETCLAW_PG_RESTORE_BIN="/usr/lib/postgresql/16/bin/pg_restore"' \
+  'verify-backup-snapshot.sh:sudo -n -u postgres "${PETCLAW_PG_RESTORE_BIN}"' \
   'release-smoke.sh:x-petclaw-release:'; do
   PETCLAW_CONTRACT_FILE="${PETCLAW_CONTRACT%%:*}"
   PETCLAW_CONTRACT_TEXT="${PETCLAW_CONTRACT#*:}"
