@@ -147,7 +147,7 @@ petclaw_verify_landing_body() {
         `product-demo.html?v=${revision}`,
         `launch reel — starts as you scroll`,
         `animation: heroGlowBreathe`,
-        `Sparky priority: footer/journey beats CTA overlap.`,
+        `Dordor priority: footer/journey beats CTA overlap.`,
         `href="https://app.myaipet.ai/contracts"`,
       ];
       const forbidden = [
