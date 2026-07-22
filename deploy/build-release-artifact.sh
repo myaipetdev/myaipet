@@ -113,8 +113,8 @@ petclaw_cleanup_stage() {
 trap petclaw_cleanup_stage EXIT HUP INT TERM
 
 # Keep workstation metadata, dormant RDS tooling, and synthetic test fixtures
-# out of the production artifact. Runtime verification scripts do not use the
-# `*.test.*` files; verify-standalone-artifact remains included.
+# out of the production artifact. Runtime release gates use non-`.test.` names
+# so they remain included alongside verify-standalone-artifact.
 git archive --format=tar "${PETCLAW_COMMIT}" -- \
   . \
   ':(exclude).claude' \

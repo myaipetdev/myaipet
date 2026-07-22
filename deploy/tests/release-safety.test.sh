@@ -242,6 +242,22 @@ if (ordered.some((index) => index < 0)
 }
 NODE
 
+petclaw_expect_success "runtime release gates survive the production artifact test exclusion" \
+  node - "${PETCLAW_TEST_ROOT}" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+const root = process.argv[2];
+const pkg = JSON.parse(fs.readFileSync(path.join(root, "web/package.json"), "utf8"));
+for (const name of ["test:release-readiness", "test:community-fallback"]) {
+  const script = pkg.scripts[name];
+  const match = script?.match(/scripts\/([^\s]+)/);
+  if (!match || match[1].includes(".test.")
+    || !fs.existsSync(path.join(root, "web/scripts", match[1]))) {
+    process.exit(1);
+  }
+}
+NODE
+
 petclaw_expect_success "nginx frame, cache, language, and release-header trust boundaries pass" \
   node - "${PETCLAW_TEST_ROOT}/deploy/nginx-petclaw.conf.template" <<'NODE'
 const fs = require("node:fs");
