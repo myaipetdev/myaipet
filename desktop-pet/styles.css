@@ -531,3 +531,40 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MASCOT — the cute pomeranian companion (Dordor). Pure SVG + CSS, no
+   external assets, renders offline. Expressions drive off [data-mood] on
+   the .m-svg root; idle blink/bob/ear/tail motion is automatic.
+   ═══════════════════════════════════════════════════════════════════════ */
+#aipet-emoji.aipet-has-mascot { font-size: 0; line-height: 0; padding: 0; }
+.m-svg { width: 86px; height: 86px; display: block; transform-origin: 50% 90%; animation: m-bob 2.6s ease-in-out infinite; }
+@keyframes m-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.m-lid { transform-origin: center; transform: scaleY(0); animation: m-blink 4.2s infinite; }
+@keyframes m-blink { 0%,92%,100% { transform: scaleY(0); } 95%,97% { transform: scaleY(1); } }
+.m-ear { transform-origin: 60% 80%; animation: m-eartwitch 5s ease-in-out infinite; }
+.m-ear.r { transform-origin: 40% 80%; animation-delay: .4s; }
+@keyframes m-eartwitch { 0%,90%,100% { transform: rotate(0); } 94% { transform: rotate(-6deg); } }
+.m-tail { transform-origin: 22% 60%; animation: m-tailwag 1.1s ease-in-out infinite; }
+@keyframes m-tailwag { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(10deg); } }
+.m-tongue, .m-spark, .m-z, .m-mouth-o { opacity: 0; }
+.m-svg[data-mood="happy"] .m-tongue { opacity: 1; }
+.m-svg[data-mood="excited"] .m-tongue { opacity: 1; }
+.m-svg[data-mood="excited"] .m-spark { opacity: 1; animation: m-sparkle 1.2s ease-in-out infinite; }
+.m-svg[data-mood="excited"] { animation: m-bob 1.4s ease-in-out infinite; }
+.m-svg[data-mood="excited"] .m-ear { transform: rotate(-10deg); }
+.m-svg[data-mood="excited"] .m-ear.r { transform: rotate(10deg); }
+.m-svg[data-mood="excited"] .m-tail { animation: m-tailwag .6s ease-in-out infinite; }
+@keyframes m-sparkle { 0%,100% { opacity: .3; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.15); } }
+.m-svg[data-mood="sleepy"] { animation: m-bob 4.6s ease-in-out infinite; }
+.m-svg[data-mood="sleepy"] .m-eye-open { transform: scaleY(.32); transform-origin: center; }
+.m-svg[data-mood="sleepy"] .m-lid { animation: none; transform: scaleY(.5); }
+.m-svg[data-mood="sleepy"] .m-z { opacity: 1; animation: m-zfloat 2.4s ease-in-out infinite; }
+@keyframes m-zfloat { 0% { opacity: 0; transform: translate(0,0); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(4px,-10px); } }
+.m-svg[data-mood="listening"] .m-ear { transform: rotate(-8deg); }
+.m-svg[data-mood="listening"] .m-ear.r { transform: rotate(8deg); }
+.m-svg[data-mood="listening"] .m-mouth-o { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .m-svg, .m-svg[data-mood] { animation: none !important; }
+  .m-lid, .m-ear, .m-tail, .m-spark, .m-z { animation: none !important; }
+}

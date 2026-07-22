@@ -1,4 +1,4 @@
-export const PETCLAW_EXTENSION_VERSION = "2.3.2";
+export const PETCLAW_EXTENSION_VERSION = "2.4.0";
 
 export const PETCLAW_EXTENSION_STEPS = [
   { n: 1, title: "Download", desc: 'Click "Download Extension" below to get the ZIP file.' },
