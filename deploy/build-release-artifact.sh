@@ -77,7 +77,21 @@ for PETCLAW_REQUIRED_PATH in \
   deploy/check-release-migrations.sh \
   deploy/destructive-migrations.allowlist \
   deploy/backup-verification-public-key.asc \
+  deploy/crontab.example \
+  deploy/install-crontab.sh \
+  deploy/tests/crontab-installer.test.sh \
+  deploy/nginx-conf.d-ratelimit.conf \
   deploy/nginx-petclaw.conf.template \
+  deploy/ratelimit-guard.sh \
+  deploy/TEAM-HANDOFF-20260722.md \
+  deploy/server-ops/.monitor-config.example \
+  deploy/server-ops/README.md \
+  deploy/server-ops/archive-logs.sh \
+  deploy/server-ops/db-backup.sh \
+  deploy/server-ops/health-monitor.sh \
+  deploy/server-ops/hourly-digest.sh \
+  deploy/server-ops/llm-cost-watch.sh \
+  deploy/server-ops/sybil-review-petclaw.sql \
   deploy/release-smoke.sh; do
   if ! git cat-file -e "${PETCLAW_COMMIT}:${PETCLAW_REQUIRED_PATH}" 2>/dev/null; then
     echo "ERROR: committed release is missing ${PETCLAW_REQUIRED_PATH}." >&2

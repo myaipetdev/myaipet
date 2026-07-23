@@ -17,4 +17,6 @@ if you change one here, copy it over and note it in TEAM-HANDOFF.
 
 Secrets are NOT here: scripts source `/home/ubuntu/.monitor-config`
 (see `.monitor-config.example`). Cron lines: `deploy/crontab.example`
-SERVER OPS section + `deploy/install-crontab.sh` preserves them.
+SERVER OPS section. Run
+`/bin/bash /opt/petclaw/current/deploy/install-crontab.sh` to merge the signed
+app block while preserving all six canonical server-ops jobs.

@@ -255,7 +255,28 @@ petclaw_expect_success "all release scripts parse" /bin/bash -n \
   "${PETCLAW_TEST_ROOT}/deploy/verify-release-artifact.sh" \
   "${PETCLAW_TEST_ROOT}/deploy/check-release-migrations.sh" \
   "${PETCLAW_TEST_ROOT}/deploy/scan-release-secrets.sh" \
+  "${PETCLAW_TEST_ROOT}/deploy/install-crontab.sh" \
+  "${PETCLAW_TEST_ROOT}/deploy/ratelimit-guard.sh" \
+  "${PETCLAW_TEST_ROOT}/deploy/server-ops/archive-logs.sh" \
+  "${PETCLAW_TEST_ROOT}/deploy/server-ops/db-backup.sh" \
+  "${PETCLAW_TEST_ROOT}/deploy/server-ops/health-monitor.sh" \
+  "${PETCLAW_TEST_ROOT}/deploy/server-ops/hourly-digest.sh" \
+  "${PETCLAW_TEST_ROOT}/deploy/server-ops/llm-cost-watch.sh" \
   "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh"
+
+petclaw_expect_success "crontab merge installer rejects loss and converges" \
+  /bin/bash "${PETCLAW_TEST_ROOT}/deploy/tests/crontab-installer.test.sh"
+
+petclaw_expect_success "production crontab metadata accepts root crontab-group setgid binary" \
+  node - "${PETCLAW_TEST_ROOT}/deploy/install-crontab.sh" <<'NODE'
+const fs = require("node:fs");
+const source = fs.readFileSync(process.argv[2], "utf8");
+if (!source.includes(`stat -c '%U' "\${CRONTAB_CMD}"`)
+  || !source.includes(`(8#\${CRONTAB_MODE} & 8#022) != 0`)
+  || source.includes(`stat -c '%U:%G' "\${CRONTAB_CMD}"`)) {
+  process.exit(1);
+}
+NODE
 
 petclaw_expect_success "database URL parser boundaries pass" \
   node "${PETCLAW_TEST_ROOT}/deploy/tests/database-url-parser.test.mjs"
@@ -276,6 +297,23 @@ const ordered = [
 ].map((needle) => source.indexOf(needle));
 if (ordered.some((index) => index < 0)
   || ordered.some((index, position) => position > 0 && index <= ordered[position - 1])) {
+  process.exit(1);
+}
+NODE
+
+petclaw_expect_success "cron preservation is dry-run gated and committed before release completion" \
+  node - "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" <<'NODE'
+const fs = require("node:fs");
+const source = fs.readFileSync(process.argv[2], "utf8");
+const installerCall = '/bin/bash "${PETCLAW_RELEASE_SOURCE}/deploy/install-crontab.sh"';
+const dry = source.indexOf(installerCall);
+const preflightExit = source.indexOf('if [[ "${PETCLAW_RELEASE_PREFLIGHT_ONLY}" == "1" ]]');
+const smoke = source.indexOf('/bin/bash "${PETCLAW_RELEASE_SOURCE}/deploy/release-smoke.sh"');
+const live = source.indexOf(installerCall, dry + installerCall.length);
+const committed = source.indexOf('"${PETCLAW_RELEASE_DIR}/RELEASE_COMMITTED"');
+if (dry < 0 || !source.slice(dry, preflightExit).includes("--dry-run >/dev/null")
+  || preflightExit < dry
+  || smoke < preflightExit || live < smoke || committed < live) {
   process.exit(1);
 }
 NODE
@@ -306,10 +344,11 @@ petclaw_expect_success "nginx frame, cache, language, and release-header trust b
   node - "${PETCLAW_TEST_ROOT}/deploy/nginx-petclaw.conf.template" <<'NODE'
 const fs = require("node:fs");
 const source = fs.readFileSync(process.argv[2], "utf8");
-const locationBlocks = [...source.matchAll(/location\s+(?:=\s+\/product-demo\.html|\/_next\/static\/|\/uploads\/|\/)\s*\{([^{}]*)\}/g)]
+const locationBlocks = [...source.matchAll(/location\s+(?:=\s+\/product-demo\.html|\/_next\/static\/|\/uploads\/|\/api\/|\/)\s*\{([^{}]*)\}/g)]
   .map((match) => ({ declaration: match[0].slice(0, match[0].indexOf("{")).trim(), body: match[1] }));
 const demo = locationBlocks.filter(({ declaration }) => declaration === "location = /product-demo.html");
 const staticAssets = locationBlocks.filter(({ declaration }) => declaration === "location /_next/static/");
+const api = locationBlocks.filter(({ declaration }) => declaration === "location /api/");
 const proxied = locationBlocks.filter(({ body }) => body.includes("proxy_pass "));
 const exactBlock = (uri) => [...source.matchAll(new RegExp(`location\\s+=\\s+${uri}\\s*\\{([^{}]*)\\}`, "g"))]
   .map((match) => match[1]);
@@ -341,8 +380,12 @@ if (count('add_header X-Frame-Options "DENY" always;') !== 1
   || count('add_header X-Frame-Options "SAMEORIGIN" always;') !== 1
   || count("frame-ancestors 'none'") !== 1
   || count("frame-ancestors 'self'") !== 1) process.exit(1);
-if (proxied.length !== 2
+if (proxied.length !== 3
   || proxied.some(({ body }) => countIn(body, 'proxy_hide_header X-Petclaw-Release;') !== 1)) process.exit(1);
+if (api.length !== 1
+  || countIn(api[0].body, "limit_req zone=abuse burst=15 nodelay;") !== 1
+  || countIn(api[0].body, "proxy_pass http://127.0.0.1:__APP_PORT__;") !== 1
+  || count("limit_req_zone ") !== 0) process.exit(1);
 if (staticAssets.length !== 1
   || countIn(staticAssets[0].body, 'add_header X-Petclaw-Release "__RELEASE_ID__" always;') !== 1
   || marketingStart < 0 || appStart <= marketingStart
@@ -393,6 +436,11 @@ for PETCLAW_CONTRACT in \
   'ec2-release.sh:diff --no-dereference -qr' \
   'ec2-release.sh:PETCLAW_NGINX_SITE}.next-${PETCLAW_RELEASE_ID}' \
   'ec2-release.sh:| sudo tee "${PETCLAW_NGINX_RENDERED}"' \
+  'ec2-release.sh:PETCLAW_NGINX_RATE_LIMIT_CONF="/etc/nginx/conf.d/ratelimit.conf"' \
+  'ec2-release.sh:PETCLAW_EXPECTED_RATE_LIMIT_ACTIVE=' \
+  'ec2-release.sh:${PETCLAW_RELEASE_SOURCE}/deploy/nginx-conf.d-ratelimit.conf' \
+  'ec2-release.sh:${PETCLAW_RELEASE_SOURCE}/deploy/install-crontab.sh' \
+  'ec2-release.sh:--dry-run >/dev/null' \
   'ec2-release.sh:export PGHOST="${PETCLAW_PSQL_HOST}"' \
   'ec2-release.sh:export PGPORT="${PETCLAW_PSQL_PORT}"' \
   'ec2-release.sh:export PGUSER="${PETCLAW_PSQL_USER}"' \
@@ -450,8 +498,16 @@ for PETCLAW_CONTRACT in \
   'build-release-artifact.sh:npm ci --dry-run --ignore-scripts --no-audit --no-fund' \
   'build-release-artifact.sh:source "${PETCLAW_STAGE}/tree"' \
   'build-release-artifact.sh::(exclude)deploy/setup-rds.sh' \
+  'build-release-artifact.sh:deploy/install-crontab.sh' \
+  'build-release-artifact.sh:deploy/tests/crontab-installer.test.sh' \
+  'build-release-artifact.sh:deploy/nginx-conf.d-ratelimit.conf' \
+  'build-release-artifact.sh:deploy/ratelimit-guard.sh' \
+  'build-release-artifact.sh:deploy/server-ops/db-backup.sh' \
   'verify-release-artifact.sh:PETCLAW_TRUSTED_VERIFIER' \
   'verify-release-artifact.sh:PETCLAW_VERIFIED_DIR="/opt/petclaw/verified"' \
+  'verify-release-artifact.sh:deploy/install-crontab.sh' \
+  'verify-release-artifact.sh:deploy/tests/crontab-installer.test.sh' \
+  'verify-release-artifact.sh:deploy/nginx-conf.d-ratelimit.conf' \
   'backup-production.sh:exec 8<>"${PETCLAW_RELEASE_LOCK}"' \
   'backup-production.sh:PETCLAW_EXPECTED_ENV_STAT=root:ubuntu:640' \
   'pull-production-backup.sh:exec 9<>"${PETCLAW_RELEASE_LOCK}"' \

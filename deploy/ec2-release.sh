@@ -215,6 +215,8 @@ PETCLAW_CANDIDATE_PORT_EXPLICIT=0
 [[ -n "${PETCLAW_CANDIDATE_PORT}" ]] && PETCLAW_CANDIDATE_PORT_EXPLICIT=1
 PETCLAW_REQUESTED_CANDIDATE_APP="${PETCLAW_CANDIDATE_APP:-}"
 PETCLAW_NGINX_SITE="${PETCLAW_NGINX_SITE:-/etc/nginx/sites-available/petclaw}"
+PETCLAW_NGINX_RATE_LIMIT_CONF="/etc/nginx/conf.d/ratelimit.conf"
+PETCLAW_EXPECTED_RATE_LIMIT_ACTIVE=$'limit_req_zone $binary_remote_addr zone=abuse:10m rate=2r/s;\nlimit_req_status 429;'
 PETCLAW_BACKUP_EVIDENCE="${PETCLAW_BACKUP_EVIDENCE:-}"
 PETCLAW_RELEASE_PREFLIGHT_ONLY="${PETCLAW_RELEASE_PREFLIGHT_ONLY:-0}"
 PETCLAW_BACKUP_SIGNING_FINGERPRINT="0B286A30DC9C53D08CE5ABC72E2A4FDD17382A1F"
@@ -445,6 +447,53 @@ if [[ ! -f "${PETCLAW_RELEASE_SOURCE}/web/package-lock.json" \
   echo "ERROR: release source, backup public key, or production env is missing." >&2
   exit 2
 fi
+for PETCLAW_OPS_RELEASE_PATH in \
+  deploy/crontab.example \
+  deploy/install-crontab.sh \
+  deploy/tests/crontab-installer.test.sh \
+  deploy/nginx-conf.d-ratelimit.conf \
+  deploy/nginx-petclaw.conf.template \
+  deploy/ratelimit-guard.sh \
+  deploy/TEAM-HANDOFF-20260722.md \
+  deploy/server-ops/.monitor-config.example \
+  deploy/server-ops/README.md \
+  deploy/server-ops/archive-logs.sh \
+  deploy/server-ops/db-backup.sh \
+  deploy/server-ops/health-monitor.sh \
+  deploy/server-ops/hourly-digest.sh \
+  deploy/server-ops/llm-cost-watch.sh \
+  deploy/server-ops/sybil-review-petclaw.sql; do
+  if [[ ! -f "${PETCLAW_RELEASE_SOURCE}/${PETCLAW_OPS_RELEASE_PATH}" \
+    || -L "${PETCLAW_RELEASE_SOURCE}/${PETCLAW_OPS_RELEASE_PATH}" ]]; then
+    echo "ERROR: signed release is missing ops contract ${PETCLAW_OPS_RELEASE_PATH}." >&2
+    exit 2
+  fi
+done
+if [[ ! -f "${PETCLAW_NGINX_RATE_LIMIT_CONF}" \
+  || -L "${PETCLAW_NGINX_RATE_LIMIT_CONF}" \
+  || "$(sudo stat -c '%U:%G:%a' "${PETCLAW_NGINX_RATE_LIMIT_CONF}")" != "root:root:644" ]]; then
+  echo "ERROR: nginx rate-limit zone must be a root-owned mode-644 real file." >&2
+  exit 2
+fi
+PETCLAW_SIGNED_RATE_LIMIT_ACTIVE="$(LC_ALL=C awk '
+  /^[[:space:]]*limit_req_(zone|status)[[:space:]]/ {
+    sub(/^[[:space:]]*/, "")
+    sub(/[[:space:]]*$/, "")
+    print
+  }
+' "${PETCLAW_RELEASE_SOURCE}/deploy/nginx-conf.d-ratelimit.conf")"
+PETCLAW_SERVER_RATE_LIMIT_ACTIVE="$(sudo env LC_ALL=C awk '
+  /^[[:space:]]*limit_req_(zone|status)[[:space:]]/ {
+    sub(/^[[:space:]]*/, "")
+    sub(/[[:space:]]*$/, "")
+    print
+  }
+' "${PETCLAW_NGINX_RATE_LIMIT_CONF}")"
+if [[ "${PETCLAW_SIGNED_RATE_LIMIT_ACTIVE}" != "${PETCLAW_EXPECTED_RATE_LIMIT_ACTIVE}" \
+  || "${PETCLAW_SERVER_RATE_LIMIT_ACTIVE}" != "${PETCLAW_EXPECTED_RATE_LIMIT_ACTIVE}" ]]; then
+  echo "ERROR: signed and server nginx rate-limit policies must each be exactly zone=abuse 2r/s with status 429." >&2
+  exit 2
+fi
 if [[ -z "${PETCLAW_BACKUP_EVIDENCE}" \
   || ! -f "${PETCLAW_BACKUP_EVIDENCE}" \
   || -L "${PETCLAW_BACKUP_EVIDENCE}" \
@@ -591,6 +640,9 @@ if [[ ! "${PETCLAW_AVAILABLE_BYTES}" =~ ^[0-9]+$ ]] \
   echo "ERROR: release build requires at least 6 GiB free on /opt/petclaw." >&2
   exit 2
 fi
+env -u PETCLAW_CRONTAB_CMD -u PETCLAW_CRONTAB_TEST_MODE \
+  /bin/bash "${PETCLAW_RELEASE_SOURCE}/deploy/install-crontab.sh" \
+  --dry-run >/dev/null
 if [[ "${PETCLAW_RELEASE_PREFLIGHT_ONLY}" == "1" ]]; then
   echo "Release preflight passed: source policy and signed backup evidence are valid."
   exit 0
@@ -1359,6 +1411,8 @@ if ! PETCLAW_SMOKE_BASE="https://app.myaipet.ai" \
   /bin/bash "${PETCLAW_RELEASE_SOURCE}/deploy/release-smoke.sh"; then
   exit 1
 fi
+env -u PETCLAW_CRONTAB_CMD -u PETCLAW_CRONTAB_TEST_MODE \
+  /bin/bash "${PETCLAW_RELEASE_SOURCE}/deploy/install-crontab.sh"
 
 pm2 save
 chmod 600 "${PETCLAW_PM2_HOME}/dump.pm2"

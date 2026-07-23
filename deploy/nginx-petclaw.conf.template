@@ -4,7 +4,7 @@
 # 2026-07-23 incident: the limit existed only in the server's rendered conf, so
 # a release re-render silently dropped it; a cron guard (deploy/
 # ratelimit-guard.sh, installed at ~/ratelimit-guard.sh) now re-applies it.
-# The guard greps this file's render for "limit_req zone=abuse" and exits 0
+# The guard requires the active canonical abuse-zone directive and exits 0
 # when present — so keeping the block here makes the guard a permanent no-op.
 #
 # The zone itself is deliberately NOT declared here: it lives in the

@@ -372,6 +372,23 @@ if (!requireAll(releaseStatus, ['sdkVersion: "1.6.2"', "registry: 19", "live: 3"
   "mcpTools: 7", 'mcp: "7-tool SDK 1.6.2 · published"',
   'channels: "launch-paused"']) || releaseStatus.includes("mcpCandidateTools")) process.exit(1);
 
+const nginxTemplate = read("deploy/nginx-petclaw.conf.template");
+const nginxRateZone = read("deploy/nginx-conf.d-ratelimit.conf");
+const cronInstaller = read("deploy/install-crontab.sh");
+const envChecklist = read("deploy/ENV-CHECKLIST.md");
+if ((nginxTemplate.match(/^[ \t]*limit_req[ \t]+zone=abuse[ \t]+burst=15[ \t]+nodelay;[ \t]*$/gm) || []).length !== 1
+  || /^[ \t]*limit_req_zone[ \t]/m.test(nginxTemplate)
+  || (nginxRateZone.match(/^[ \t]*limit_req_zone \$binary_remote_addr zone=abuse:10m rate=2r\/s;[ \t]*$/gm) || []).length !== 1
+  || (nginxRateZone.match(/^[ \t]*limit_req_status 429;[ \t]*$/gm) || []).length !== 1
+  || !requireAll(cronInstaller, [
+    "current crontab has duplicate or unterminated APP CRON markers",
+    "current crontab changed during merge",
+    "installed crontab does not match the verified merge result",
+    "OPS_REQUIRED_BASENAMES",
+  ])
+  || !envChecklist.includes("/bin/bash /opt/petclaw/current/deploy/install-crontab.sh")
+  || envChecklist.includes("\ncrontab -e\n")) process.exit(1);
+
 const schema = read("web/prisma/schema.prisma");
 const migration = "web/prisma/migrations/20260722000000_catch_map_consent_photo_hash/migration.sql";
 const catchRoute = read("web/src/app/api/catch/route.ts");

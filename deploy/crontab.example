@@ -5,8 +5,9 @@
 #   touch /home/ubuntu/.local/state/petclaw-cron/{consolidate,daydream,daydream-video,season-close,embed-memories,media-deletions,agent-credit-refunds,backup}.log
 #   chmod 600 /home/ubuntu/.local/state/petclaw-cron/*.log
 #
-# Then install with `deploy/install-crontab.sh` — NEVER paste this file as a
-# full crontab replacement (`crontab -e` / `crontab this-file`). The installer
+# Then install with `/bin/bash /opt/petclaw/current/deploy/install-crontab.sh`
+# — NEVER paste this file as a full crontab replacement (`crontab -e` /
+# `crontab this-file`). The installer
 # replaces only the marked APP CRON block below and preserves every other line
 # of the live crontab (server-managed ops jobs: backup, ratelimit-guard,
 # monitoring), refusing to proceed if it would drop them. Each job sources the
@@ -73,7 +74,7 @@ PETCLAW_CRON_LOG_DIR=/home/ubuntu/.local/state/petclaw-cron
 #
 # 2026-07-23 incident: this file was installed as a full crontab replacement,
 # which silently wiped the server-managed ops jobs (nightly DB backup, nginx
-# rate-limit guard, monitoring). deploy/install-crontab.sh now enforces
+# rate-limit guard, monitoring). The sealed install-crontab script now enforces
 # preservation mechanically: it swaps only the marked APP CRON block above and
 # refuses to install if the resulting crontab would lose an ops job.
 #

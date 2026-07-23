@@ -19,7 +19,7 @@ separate, future migration and requires its own tested backup/restore plan.
 5. Build a clean committed release archive with `deploy/build-release-artifact.sh <exact-commit> <off-worktree-output-dir>`. It uses `git archive`, rejects the unapproved Referral migration, scans extracted content for credentials, checks the destructive-migration checksum allowlist, and signs a canonical archive manifest with the pinned operator signing subkey.
 6. Upload the archive, manifest, detached manifest signature, SHA-256, and signed backup evidence set via the production PEM. Run the root-installed `/usr/local/sbin/petclaw-verify-release-artifact.sh` against the three artifact files. It verifies the pinned signature and SHA before extraction, rejects unsafe tar members, runs the trusted scanner and migration gate, then atomically seals one release below root-owned `/opt/petclaw/verified`. `/opt/petclaw/incoming` is only an untrusted upload spool.
 7. Run `/usr/local/sbin/petclaw-ec2-release.sh` as `ubuntu` with `PETCLAW_RELEASE_SOURCE` set to that verifier output, `PETCLAW_BACKUP_EVIDENCE` set, and live LLM smoke enabled. Uploaded copies of the controller are deliberately rejected.
-8. Install `deploy/crontab.example`, verify the cron and PM2 log directories are mode 700 and leaf logs are mode 600, run external/API/browser/extension smoke, then reboot once and verify PM2/nginx recovery.
+8. Run `/bin/bash /opt/petclaw/current/deploy/install-crontab.sh`; never install `crontab.example` as a full replacement. Verify exactly seven app jobs and all six preserved ops jobs, verify the cron and PM2 log directories are mode 700 and leaf logs are mode 600, run external/API/browser/extension/rate-limit smoke, then reboot once and verify PM2/nginx recovery.
 
 One-time EC2 trust bootstrap must happen over the pinned production SSH host key.
 Before installing anything as root, compare remote SHA-256 values for the public
@@ -265,10 +265,14 @@ install -d -m 700 /home/ubuntu/.local/state/petclaw-cron
 touch /home/ubuntu/.local/state/petclaw-cron/{consolidate,daydream,daydream-video,season-close,embed-memories,media-deletions,agent-credit-refunds,backup}.log
 chmod 600 /home/ubuntu/.local/state/petclaw-cron/*.log
 
-# Then install the jobs from deploy/crontab.example. They source the immutable
-# root:ubuntu mode-640 .env.production at runtime, so CRON_SECRET is not stored
-# in the crontab.
-crontab -e
+# Merge-install only the marked app block. The installer preserves and verifies
+# the six server ops jobs, rejects malformed markers and concurrent edits, and
+# performs an exact post-install readback. The sealed script is intentionally
+# invoked through bash because non-runtime release files are mode 640.
+/bin/bash /opt/petclaw/current/deploy/install-crontab.sh
+
+# Expect exactly 13 active schedules: seven app jobs plus six ops jobs.
+crontab -l | grep -Ec '^[0-9*@]'
 ```
 
 After installation, an unauthenticated POST should still be rejected; do not
