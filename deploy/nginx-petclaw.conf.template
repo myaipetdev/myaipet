@@ -1,17 +1,18 @@
 # Render __APP_PORT__ and __CURRENT_ROOT__ during an atomic release.
 
-# API rate limit — MUST live in this template. 2026-07-23 incident: the limit
-# existed only server-side, so every release re-render silently dropped it and
-# a cron guard (ratelimit-guard.sh) had to re-apply it. With the zone declared
-# here the rendered conf always carries it and the guard becomes a no-op.
-# (This file is included inside nginx's http{} context via sites-enabled, so a
-# limit_req_zone declaration at top level is valid.)
+# API rate limit — the location /api/ block below MUST stay in this template.
+# 2026-07-23 incident: the limit existed only in the server's rendered conf, so
+# a release re-render silently dropped it; a cron guard (deploy/
+# ratelimit-guard.sh, installed at ~/ratelimit-guard.sh) now re-applies it.
+# The guard greps this file's render for "limit_req zone=abuse" and exits 0
+# when present — so keeping the block here makes the guard a permanent no-op.
 #
-# Values MUST stay in lockstep with the live guard: the guard checks for
-# zone=abuse, and live runs 2r/s + burst=15 (verified 2026-07-23: a 40-shot
-# burst passed ~16 then 429'd). Do not rename the zone or loosen the values
-# without updating ratelimit-guard.sh in the same release.
-limit_req_zone $binary_remote_addr zone=abuse:10m rate=2r/s;
+# The zone itself is deliberately NOT declared here: it lives in the
+# server-persistent /etc/nginx/conf.d/ratelimit.conf (repo copy:
+# deploy/nginx-conf.d-ratelimit.conf), which releases never touch. Declaring
+# it here too would be a duplicate-zone nginx -t failure. Live values:
+# zone=abuse, 2r/s, burst=15, 429 (verified 2026-07-23; 40-shot burst → ~16
+# pass then 429). Keep template, conf.d, and guard in lockstep.
 
 server {
     server_name myaipet.ai www.myaipet.ai;
@@ -76,23 +77,21 @@ server {
         expires 7d;
     }
 
-    # Per-IP API rate limit (zone declared at the top of this file). burst=15
-    # absorbs SPA page-load fan-out; sustained abuse gets 429. These values
-    # mirror the live guard-applied config exactly (zone=abuse, 2r/s, burst=15)
-    # so a release render changes nothing and the guard stays a no-op.
+    # Per-IP API rate limit. Directives byte-match the block the live guard
+    # injects (deploy/ratelimit-guard.sh + TEAM-HANDOFF-20260722.md) so a
+    # release render is a no-change for rate limiting: zone=abuse (declared in
+    # the server-persistent conf.d/ratelimit.conf, NOT here), 2r/s, burst=15,
+    # 429 via the http-level limit_req_status there. Pages, static assets, and
+    # /uploads/ are unaffected.
     location /api/ {
         limit_req zone=abuse burst=15 nodelay;
-        limit_req_status 429;
         proxy_pass http://127.0.0.1:__APP_PORT__;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_hide_header X-Petclaw-Release;
-        proxy_cache_bypass $http_upgrade;
         proxy_read_timeout 120s;
     }
 

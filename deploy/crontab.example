@@ -77,10 +77,18 @@ PETCLAW_CRON_LOG_DIR=/home/ubuntu/.local/state/petclaw-cron
 # preservation mechanically: it swaps only the marked APP CRON block above and
 # refuses to install if the resulting crontab would lose an ops job.
 #
-# The live ops jobs (exact lines: server crontab + ~/TEAM-HANDOFF-20260722.md):
-#   - Nightly DB backup, 04:00 KST (19:00 UTC) → petclaw-YYYYMMDD.dump
-#   - Off-host backup retention/prune
-#   - ratelimit-guard.sh every 10 min (no-op while the nginx template ships the
-#     /api/ zone=abuse limit; keep as a belt-and-suspenders check)
-#   - Health/monitoring checks (3 files under the ops home)
+# Verbatim snapshot of the live ops block (2026-07-23, from `crontab -l` on the
+# server; scripts live in /home/ubuntu/ — see ~/TEAM-HANDOFF-20260722.md and
+# deploy/ratelimit-guard.sh). Kept COMMENTED here on purpose: the installer
+# preserves the live lines mechanically, and this copy exists only for
+# disaster recovery (instance loss). Do not uncomment into this file.
+#
+#   # --- ops-playbook: backup/archive/cost-watch/monitoring/guard (2026-07-23 재설치) ---
+#   # ⚠️ crontab 교체/재설치 시 이 블록 6줄은 유지할 것 (TEAM-HANDOFF-20260722.md 참조)
+#   0 19 * * * bash /home/ubuntu/db-backup.sh >> /home/ubuntu/ops-cron.log 2>&1
+#   30 1 * * * bash /home/ubuntu/archive-logs.sh >> /home/ubuntu/ops-cron.log 2>&1
+#   40 1 * * * bash /home/ubuntu/llm-cost-watch.sh >> /home/ubuntu/ops-cron.log 2>&1
+#   */5 * * * * /home/ubuntu/health-monitor.sh >/dev/null 2>&1
+#   5 * * * * /home/ubuntu/hourly-digest.sh >/dev/null 2>&1
+#   */10 * * * * /home/ubuntu/ratelimit-guard.sh >/dev/null 2>&1
 # ─────────────────────────────────────────────────────────────────────────────

@@ -1,0 +1,7 @@
+# /home/ubuntu/.monitor-config — chmod 600. Values live ONLY on the server.
+# Shared by health-monitor.sh, hourly-digest.sh, ratelimit-guard.sh (alerts).
+TG_TOKEN=        # Telegram bot token (from @BotFather)
+TG_CHAT=         # target group/chat id (e.g. -100...)
+TG_TOPIC=        # forum topic/thread id; omit for plain groups
+PROJECT=         # display name in alerts (e.g. $PET)
+DOMAIN=          # site checked by health-monitor (app.myaipet.ai)

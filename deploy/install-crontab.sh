@@ -22,7 +22,7 @@ set -euo pipefail
 
 APP_BEGIN="# >>> PETCLAW APP CRON >>>"
 APP_END="# <<< PETCLAW APP CRON <<<"
-OPS_SIGNATURES='ratelimit-guard|backup|prune|monitor|pg_dump'
+OPS_SIGNATURES='ratelimit-guard|backup|prune|monitor|pg_dump|archive-logs|cost-watch|digest'
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 EXAMPLE="${SCRIPT_DIR}/crontab.example"
@@ -52,6 +52,17 @@ CURRENT="$("$CRONTAB_CMD" -l 2>/dev/null || true)"
 # Everything outside the old app block survives verbatim, in original order.
 PRESERVED="$(printf '%s\n' "$CURRENT" \
   | awk -v b="$APP_BEGIN" -v e="$APP_END" '$0==b{f=1;next} $0==e{f=0;next} !f{print}')"
+
+# Legacy migration: crontabs installed by pasting an old, marker-less
+# crontab.example carry the app jobs unmarked, so they'd survive as duplicates.
+# Drop from the preserved set (a) any non-empty line that appears verbatim in
+# the current crontab.example, and (b) any app-cron line — identified by the
+# app.myaipet.ai/api/ endpoint it curls. Ops jobs are local scripts and never
+# match either filter. Stale comment lines that were later edited in the
+# example may linger once; they are inert and disappear on the next run.
+PRESERVED="$(printf '%s\n' "$PRESERVED" \
+  | grep -Fvx -f <(grep -v '^[[:space:]]*$' "$EXAMPLE") \
+  | grep -Fv 'app.myaipet.ai/api/' || true)"
 
 # Active (non-comment) ops lines that must survive the merge.
 PRESERVED_OPS="$(printf '%s\n' "$PRESERVED" | grep -E "$OPS_SIGNATURES" | grep -Ev '^[[:space:]]*#' || true)"
