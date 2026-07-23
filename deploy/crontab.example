@@ -61,3 +61,20 @@ PETCLAW_CRON_LOG_DIR=/home/ubuntu/.local/state/petclaw-cron
 # Optional: nightly memory anchor checkpoint for pets with souls. Only meaningful
 # after BLOCKCHAIN_ENABLED=true + relayer is funded.
 # 30 3 * * * cd "$PETCLAW_WEB" && set -a && . ./.env.production && set +a && /usr/bin/curl -fsS -X POST "https://app.myaipet.ai/api/petclaw/memory/anchor-batch?cron=1" -H "x-cron-secret: $CRON_SECRET" >> "$PETCLAW_CRON_LOG_DIR/anchor.log" 2>&1
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ██ SERVER OPS BLOCK — NEVER REMOVE OR REPLACE WITHOUT MERGING ██
+#
+# 2026-07-23 incident: this crontab was installed from this file as a full
+# replacement, which silently wiped the server-managed ops jobs (nightly DB
+# backup, nginx rate-limit guard, monitoring). Before installing this file,
+# ALWAYS run `crontab -l` and carry the live ops block over verbatim.
+#
+# The live ops jobs (exact lines live in the server crontab and in
+# ~/TEAM-HANDOFF-20260722.md on the server — copy them from there):
+#   - Nightly DB backup, 04:00 KST (19:00 UTC) → petclaw-YYYYMMDD.dump
+#   - Off-host backup retention/prune
+#   - ratelimit-guard.sh every 10 min (no-ops once the nginx template ships
+#     the /api/ rate limit; keep it as a belt-and-suspenders check)
+#   - Health/monitoring checks (3 files under the ops home)
+# ─────────────────────────────────────────────────────────────────────────────
