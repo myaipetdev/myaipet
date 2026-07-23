@@ -1085,6 +1085,78 @@ if (PETCLAW_ENV_SOURCE="${PETCLAW_ABSENT_ENV_FIXTURE}"; \
 fi
 PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 2))"
 
+PETCLAW_SEASON_LABEL_CONTRACT="${PETCLAW_TEST_ROOT}/web/scripts/season-starting-soon-contract.mjs"
+petclaw_expect_success "current home has exactly two controlled season labels" \
+  node "${PETCLAW_SEASON_LABEL_CONTRACT}" "${PETCLAW_TEST_ROOT}"
+
+PETCLAW_SEASON_LABEL_FIXTURE="${PETCLAW_TEST_TMP}/season-label-root"
+for PETCLAW_SEASON_LABEL_PATH in \
+  web/src/components/SeasonStartingSoon.tsx \
+  web/src/components/App.tsx \
+  web/src/components/Hero.tsx \
+  web/src/components/Stats.tsx \
+  web/src/components/RaisePitch.tsx \
+  web/src/components/events/SeasonEventsRail.tsx \
+  web/src/components/OrchestrationExplainer.tsx \
+  web/src/components/Pricing.tsx; do
+  mkdir -p "${PETCLAW_SEASON_LABEL_FIXTURE}/$(dirname "${PETCLAW_SEASON_LABEL_PATH}")"
+  cp "${PETCLAW_TEST_ROOT}/${PETCLAW_SEASON_LABEL_PATH}" \
+    "${PETCLAW_SEASON_LABEL_FIXTURE}/${PETCLAW_SEASON_LABEL_PATH}"
+done
+petclaw_expect_success "season label fixture starts canonical" \
+  node "${PETCLAW_SEASON_LABEL_CONTRACT}" "${PETCLAW_SEASON_LABEL_FIXTURE}"
+
+printf '%s\n' \
+  'export const DuplicateSeason = () => <div>Season 1 · STARTING SOON</div>;' \
+  >> "${PETCLAW_SEASON_LABEL_FIXTURE}/web/src/components/Hero.tsx"
+petclaw_expect_failure "uppercase duplicate season label is rejected" \
+  node "${PETCLAW_SEASON_LABEL_CONTRACT}" "${PETCLAW_SEASON_LABEL_FIXTURE}"
+cp "${PETCLAW_TEST_ROOT}/web/src/components/Hero.tsx" \
+  "${PETCLAW_SEASON_LABEL_FIXTURE}/web/src/components/Hero.tsx"
+
+printf '%s\n' \
+  'export const SplitSeason = () => <div>STARTING <strong>SOON</strong></div>;' \
+  >> "${PETCLAW_SEASON_LABEL_FIXTURE}/web/src/components/Hero.tsx"
+petclaw_expect_failure "split JSX duplicate season label is rejected" \
+  node "${PETCLAW_SEASON_LABEL_CONTRACT}" "${PETCLAW_SEASON_LABEL_FIXTURE}"
+cp "${PETCLAW_TEST_ROOT}/web/src/components/Hero.tsx" \
+  "${PETCLAW_SEASON_LABEL_FIXTURE}/web/src/components/Hero.tsx"
+
+printf '%s\n' \
+  'export const HelperSeason = () => { const label = "STARTING" + " SOON"; return <div>{label}</div>; };' \
+  >> "${PETCLAW_SEASON_LABEL_FIXTURE}/web/src/components/Hero.tsx"
+petclaw_expect_failure "helper-built duplicate season label is rejected" \
+  node "${PETCLAW_SEASON_LABEL_CONTRACT}" "${PETCLAW_SEASON_LABEL_FIXTURE}"
+cp "${PETCLAW_TEST_ROOT}/web/src/components/Hero.tsx" \
+  "${PETCLAW_SEASON_LABEL_FIXTURE}/web/src/components/Hero.tsx"
+
+printf '%s\n' \
+  'export const ThirdControlledSeason = () => <SeasonStartingSoon />;' \
+  >> "${PETCLAW_SEASON_LABEL_FIXTURE}/web/src/components/Stats.tsx"
+petclaw_expect_failure "third controlled season label is rejected" \
+  node "${PETCLAW_SEASON_LABEL_CONTRACT}" "${PETCLAW_SEASON_LABEL_FIXTURE}"
+cp "${PETCLAW_TEST_ROOT}/web/src/components/Stats.tsx" \
+  "${PETCLAW_SEASON_LABEL_FIXTURE}/web/src/components/Stats.tsx"
+
+printf '%s\n' \
+  '// STARTING SOON is intentionally mentioned in this non-rendered test comment.' \
+  >> "${PETCLAW_SEASON_LABEL_FIXTURE}/web/src/components/Hero.tsx"
+petclaw_expect_success "non-rendered season comment does not create a false positive" \
+  node "${PETCLAW_SEASON_LABEL_CONTRACT}" "${PETCLAW_SEASON_LABEL_FIXTURE}"
+
+for PETCLAW_SEASON_REQUIRED_SCRIPT in \
+  deploy/build-release-artifact.sh \
+  deploy/verify-release-artifact.sh \
+  deploy/ec2-release.sh \
+  deploy/release-smoke.sh; do
+  if ! grep -Fq 'web/scripts/season-starting-soon-contract.mjs' \
+      "${PETCLAW_TEST_ROOT}/${PETCLAW_SEASON_REQUIRED_SCRIPT}"; then
+    echo "FAIL: ${PETCLAW_SEASON_REQUIRED_SCRIPT} does not require the season label contract" >&2
+    exit 1
+  fi
+  PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 1))"
+done
+
 if ! awk '
   /^const fs = require\("node:fs"\);$/ { copy=1 }
   copy && $0 == "NODE" { exit }

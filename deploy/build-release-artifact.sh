@@ -63,6 +63,7 @@ for PETCLAW_REQUIRED_PATH in \
   web/scripts/community-fallback-contract.ts \
   web/scripts/llm-router-smoke.ts \
   web/scripts/release-readiness-contract.mjs \
+  web/scripts/season-starting-soon-contract.mjs \
   web/scripts/ui-contract-audit.mjs \
   web/scripts/verify-standalone-artifact.mjs \
   web/src/lib/petclaw-extension.ts \

@@ -23,6 +23,7 @@ import { seasonTier, seasonPhase, SEASON_SCHEDULED, SEASON_START_MS, SEASON_END_
 import { pluralize } from "@/lib/pluralize";
 import Icon from "@/components/Icon";
 import Reveal, { MaskedTitle, useInvert } from "@/components/Reveal";
+import SeasonStartingSoon from "@/components/SeasonStartingSoon";
 
 // Two stacked arrows in a 1em mask — parent button/link hover slides the
 // second one up (.ed-arrow-swap in globals.css). Presentation only.
@@ -129,7 +130,7 @@ export default function RaisePitch({ onNavigate }: { onNavigate?: (section: stri
       <div style={{
         fontFamily: "var(--ed-m)", fontSize: 18, fontWeight: 700,
         letterSpacing: "0.12em", color: "#E8C77E", lineHeight: 1.2,
-      }}>STARTING<br />SOON</div>
+      }}><SeasonStartingSoon multiline /></div>
       <div style={mini}>Opens with launch · points carry over</div>
     </>
   ) : (

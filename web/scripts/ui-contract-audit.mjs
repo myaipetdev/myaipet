@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import ts from "typescript";
+import { seasonStartingSoonContractFailures } from "./season-starting-soon-contract.mjs";
 
 const webRoot = path.resolve(import.meta.dirname, "..");
 const repoRoot = path.resolve(webRoot, "..");
@@ -582,6 +583,8 @@ for (const contract of requiredUiContracts) {
     failures.push(`${contract.file}: ${contract.description}`);
   }
 }
+
+failures.push(...seasonStartingSoonContractFailures(repoRoot));
 
 if (failures.length) {
   process.stderr.write(`${failures.join("\n")}\n`);

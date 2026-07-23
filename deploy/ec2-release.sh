@@ -432,6 +432,8 @@ if [[ "${PETCLAW_RELEASE_PREFLIGHT_ONLY}" != "0" \
 fi
 
 if [[ ! -f "${PETCLAW_RELEASE_SOURCE}/web/package-lock.json" \
+  || ! -f "${PETCLAW_RELEASE_SOURCE}/web/scripts/season-starting-soon-contract.mjs" \
+  || -L "${PETCLAW_RELEASE_SOURCE}/web/scripts/season-starting-soon-contract.mjs" \
   || ! -f "${PETCLAW_RELEASE_SOURCE}/deploy/backup-verification-public-key.asc" \
   || ! -f "${PETCLAW_RELEASE_SOURCE}/deploy/release-boot-guard.sh" \
   || -L "${PETCLAW_RELEASE_SOURCE}/deploy/release-boot-guard.sh" \

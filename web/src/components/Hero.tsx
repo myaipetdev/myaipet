@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { LOGO_SRC } from "./Nav";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import Icon from "@/components/Icon";
-import { seasonPhase, SEASON_SCHEDULED, SEASON_START_MS } from "@/lib/season";
 import Reveal, { MaskedTitle, useMagnet } from "@/components/Reveal";
 import PawField from "@/components/PawField";
 
@@ -508,36 +507,6 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
         marginTop: 80, padding: "0 20px",
         maxWidth: 960, marginLeft: "auto", marginRight: "auto",
       }}>
-        {/* Season badge */}
-        <Reveal dir="fade">
-        <div style={{
-          display: "inline-flex", alignItems: "center", gap: 8,
-          padding: "6px 18px", borderRadius: 20,
-          background: "#F5EFE2",
-          border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
-          marginBottom: 20,
-        }}>
-          <div style={{
-            width: 7, height: 7, borderRadius: "50%", background: "#BE4F28",
-            animation: "pulse 2s ease-in-out infinite",
-          }} />
-          <span style={{
-            fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
-            color: "#9A4E1E", letterSpacing: "0.08em", textTransform: "uppercase",
-          }}>
-            {/* Dates come from lib/season.ts ONLY — while unscheduled the
-                window is a sentinel, so the badge says "Starting Soon". */}
-            {seasonPhase() === "live"
-              ? "Season 1 · Live"
-              : seasonPhase() === "upcoming"
-                ? SEASON_SCHEDULED
-                  ? `Season 1 · Starts ${new Date(SEASON_START_MS).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`
-                  : "Season 1 · Starting Soon"
-                : "Season 1 · Ended"}
-          </span>
-        </div>
-        </Reveal>
-
         {/* Section heading — printed-line rise */}
         <MaskedTitle
           as="h2"

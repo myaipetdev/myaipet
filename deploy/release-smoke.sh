@@ -202,6 +202,10 @@ petclaw_verify_product_demo_body() {
 
 petclaw_verify_release_source_contracts() {
   local release_root="$1"
+  if ! node "${release_root}/web/scripts/season-starting-soon-contract.mjs" \
+      "${release_root}"; then
+    return 1
+  fi
   node - "${release_root}" <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
@@ -212,7 +216,7 @@ const requireAll = (body, values) => values.every((value) => body.includes(value
 const rejectAny = (body, values) => values.some((value) => body.includes(value));
 
 const app = read("web/src/components/App.tsx");
-if (!app.includes("STARTING SOON") || rejectAny(app, ["Jul 1", "Aug 1"])) process.exit(1);
+if (rejectAny(app, ["Jul 1", "Aug 1"])) process.exit(1);
 
 const walletGate = read("web/src/components/WalletGate.tsx");
 const cardDeck = read("web/src/components/CardDeck.tsx");

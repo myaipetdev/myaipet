@@ -233,6 +233,7 @@ for PETCLAW_REQUIRED_PATH in \
   deploy/server-ops/sybil-review-petclaw.sql \
   deploy/release-boot-guard.sh \
   deploy/release-rollback-watchdog.sh \
+  web/scripts/season-starting-soon-contract.mjs \
   web/package-lock.json; do
   if [[ ! -f "${PETCLAW_STAGE}/${PETCLAW_REQUIRED_PATH}" \
     || -L "${PETCLAW_STAGE}/${PETCLAW_REQUIRED_PATH}" ]]; then

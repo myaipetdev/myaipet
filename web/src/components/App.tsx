@@ -16,6 +16,7 @@ import Stats from "@/components/Stats";
 import Pricing from "@/components/Pricing";
 import OrchestrationExplainer from "@/components/OrchestrationExplainer";
 import RaisePitch from "@/components/RaisePitch";
+import SeasonStartingSoon from "@/components/SeasonStartingSoon";
 import SeasonEventsRail from "@/components/events/SeasonEventsRail";
 import WalletGate, { TourBanner } from "@/components/WalletGate";
 import ToastHost from "@/components/Toast";
@@ -324,7 +325,7 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
                   letterSpacing: "0.08em", whiteSpace: "nowrap",
                   boxShadow: "0 1px 0 rgba(33,26,18,0.25)",
                 }}>
-                  {scheduled ? "LIVE" : "STARTING SOON"}
+                  {scheduled ? "LIVE" : <SeasonStartingSoon />}
                 </span>
               )}
             </div>
