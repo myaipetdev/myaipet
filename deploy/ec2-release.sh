@@ -816,8 +816,17 @@ petclaw_rollback() {
     echo "ERROR: nginx did not reload the restored configuration." >&2
     return 1
   fi
-  if ! curl -fsS --max-time 20 --resolve app.myaipet.ai:443:127.0.0.1 \
-    https://app.myaipet.ai/api/health >/dev/null; then
+  local PETCLAW_ROLLBACK_HEALTH_OK=0
+  local PETCLAW_ROLLBACK_HEALTH_ATTEMPT
+  for PETCLAW_ROLLBACK_HEALTH_ATTEMPT in {1..20}; do
+    if curl -fsS --max-time 20 --resolve app.myaipet.ai:443:127.0.0.1 \
+      https://app.myaipet.ai/api/health >/dev/null; then
+      PETCLAW_ROLLBACK_HEALTH_OK=1
+      break
+    fi
+    sleep 1
+  done
+  if [[ "${PETCLAW_ROLLBACK_HEALTH_OK}" != "1" ]]; then
     echo "ERROR: restored route did not pass local TLS health; recovery remains armed." >&2
     return 1
   fi

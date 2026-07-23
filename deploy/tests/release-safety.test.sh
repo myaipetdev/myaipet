@@ -278,6 +278,29 @@ if (!source.includes(`stat -c '%U' "\${CRONTAB_CMD}"`)
 }
 NODE
 
+petclaw_expect_success "rate-limited commit smoke is paced and every rollback path retries health" \
+  node - "${PETCLAW_TEST_ROOT}" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+const root = process.argv[2];
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+const smoke = read("deploy/release-smoke.sh");
+const controller = read("deploy/ec2-release.sh");
+const bootGuard = read("deploy/release-boot-guard.sh");
+const watchdog = read("deploy/release-rollback-watchdog.sh");
+const curlFunction = smoke.slice(
+  smoke.indexOf("petclaw_curl()"),
+  smoke.indexOf("\n}\n", smoke.indexOf("petclaw_curl()")) + 3,
+);
+if (!smoke.includes('PETCLAW_SMOKE_RATE_INTERVAL_SECONDS="0.60"')
+  || !curlFunction.includes('sleep "${PETCLAW_SMOKE_RATE_INTERVAL_SECONDS}"')
+  || !controller.includes("for PETCLAW_ROLLBACK_HEALTH_ATTEMPT in {1..20}")
+  || !bootGuard.includes("for PETCLAW_BOOT_HEALTH_ATTEMPT in {1..20}")
+  || !watchdog.includes("for PETCLAW_WATCHDOG_HEALTH_ATTEMPT in {1..20}")) {
+  process.exit(1);
+}
+NODE
+
 petclaw_expect_success "database URL parser boundaries pass" \
   node "${PETCLAW_TEST_ROOT}/deploy/tests/database-url-parser.test.mjs"
 

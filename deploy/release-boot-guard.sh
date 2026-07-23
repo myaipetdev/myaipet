@@ -238,8 +238,19 @@ case "${1:-}" in
     /usr/sbin/nginx -t
     if systemctl is-active --quiet nginx.service; then
       systemctl reload nginx.service
-      curl -fsS --max-time 20 --resolve app.myaipet.ai:443:127.0.0.1 \
-        https://app.myaipet.ai/api/health >/dev/null
+      PETCLAW_BOOT_HEALTH_OK=0
+      for PETCLAW_BOOT_HEALTH_ATTEMPT in {1..20}; do
+        if curl -fsS --max-time 20 --resolve app.myaipet.ai:443:127.0.0.1 \
+          https://app.myaipet.ai/api/health >/dev/null; then
+          PETCLAW_BOOT_HEALTH_OK=1
+          break
+        fi
+        sleep 1
+      done
+      if [[ "${PETCLAW_BOOT_HEALTH_OK}" != "1" ]]; then
+        echo "ERROR: restored route did not pass local TLS health; rollback intent remains." >&2
+        exit 1
+      fi
     fi
     petclaw_remove_intent
     logger -t petclaw-release \

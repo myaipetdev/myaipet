@@ -117,8 +117,19 @@ fi
 
 nginx -t
 systemctl reload nginx
-curl -fsS --max-time 20 --resolve app.myaipet.ai:443:127.0.0.1 \
-  https://app.myaipet.ai/api/health >/dev/null
+PETCLAW_WATCHDOG_HEALTH_OK=0
+for PETCLAW_WATCHDOG_HEALTH_ATTEMPT in {1..20}; do
+  if curl -fsS --max-time 20 --resolve app.myaipet.ai:443:127.0.0.1 \
+    https://app.myaipet.ai/api/health >/dev/null; then
+    PETCLAW_WATCHDOG_HEALTH_OK=1
+    break
+  fi
+  sleep 1
+done
+if [[ "${PETCLAW_WATCHDOG_HEALTH_OK}" != "1" ]]; then
+  echo "ERROR: watchdog-restored route did not pass local TLS health." >&2
+  exit 1
+fi
 if runuser -u ubuntu -- env PM2_HOME=/home/ubuntu/.pm2 \
   "${PETCLAW_PM2_BIN}" describe "${PETCLAW_CANDIDATE_APP}" >/dev/null 2>&1; then
   runuser -u ubuntu -- env PM2_HOME=/home/ubuntu/.pm2 \

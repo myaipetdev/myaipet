@@ -9,11 +9,18 @@ PETCLAW_EXPECTED_RELEASE_ID="${PETCLAW_EXPECTED_RELEASE_ID:-}"
 PETCLAW_RELEASE_ROOT="${PETCLAW_RELEASE_ROOT:-}"
 PETCLAW_EXPECTED_EXTENSION_VERSION="2.4.1"
 PETCLAW_EXPECTED_LANDING_REVISION="20260720-en-only"
+PETCLAW_SMOKE_RATE_INTERVAL_SECONDS="0.60"
 PETCLAW_SMOKE_BODY="$(mktemp)"
 PETCLAW_SMOKE_HEADERS="$(mktemp)"
 trap 'rm -f "${PETCLAW_SMOKE_BODY}" "${PETCLAW_SMOKE_HEADERS}"' EXIT
 
 petclaw_curl() {
+  # The production /api/ zone is 2r/s with burst=15. Commit smoke originates
+  # from one loopback IP, so pace its mixed API sequence instead of consuming
+  # the whole burst and mistaking the intended 429 defense for an app failure.
+  if [[ -n "${PETCLAW_EXPECTED_RELEASE_ID}" ]]; then
+    sleep "${PETCLAW_SMOKE_RATE_INTERVAL_SECONDS}"
+  fi
   if [[ -n "${PETCLAW_SMOKE_HOST}" ]]; then
     curl --disable --silent --show-error --max-time 20 --noproxy '*' \
       --resolve "app.myaipet.ai:${PETCLAW_SMOKE_PORT}:${PETCLAW_SMOKE_HOST}" "$@"
