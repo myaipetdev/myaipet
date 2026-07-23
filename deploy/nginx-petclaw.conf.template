@@ -6,7 +6,12 @@
 # here the rendered conf always carries it and the guard becomes a no-op.
 # (This file is included inside nginx's http{} context via sites-enabled, so a
 # limit_req_zone declaration at top level is valid.)
-limit_req_zone $binary_remote_addr zone=petclaw_api:10m rate=10r/s;
+#
+# Values MUST stay in lockstep with the live guard: the guard checks for
+# zone=abuse, and live runs 2r/s + burst=15 (verified 2026-07-23: a 40-shot
+# burst passed ~16 then 429'd). Do not rename the zone or loosen the values
+# without updating ratelimit-guard.sh in the same release.
+limit_req_zone $binary_remote_addr zone=abuse:10m rate=2r/s;
 
 server {
     server_name myaipet.ai www.myaipet.ai;
@@ -71,12 +76,12 @@ server {
         expires 7d;
     }
 
-    # Per-IP API rate limit (zone declared at the top of this file). burst=30
-    # absorbs SPA page-load fan-out; sustained abuse gets 429. If the live
-    # server carries different guard-applied values, the template wins on the
-    # next release — reconcile intentionally, never by deletion.
+    # Per-IP API rate limit (zone declared at the top of this file). burst=15
+    # absorbs SPA page-load fan-out; sustained abuse gets 429. These values
+    # mirror the live guard-applied config exactly (zone=abuse, 2r/s, burst=15)
+    # so a release render changes nothing and the guard stays a no-op.
     location /api/ {
-        limit_req zone=petclaw_api burst=30 nodelay;
+        limit_req zone=abuse burst=15 nodelay;
         limit_req_status 429;
         proxy_pass http://127.0.0.1:__APP_PORT__;
         proxy_http_version 1.1;
