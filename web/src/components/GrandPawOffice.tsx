@@ -54,8 +54,10 @@ const MONO = "var(--ed-m, 'Space Mono', ui-monospace, monospace)";
 const SANS = "var(--ed-body, 'Hanken Grotesk', -apple-system, sans-serif)";
 
 // register-1 label style — the ONE way mono text renders in this file
-function labelStyle(size: 12 | 12.5 | 13 = 12.5, spacing: ".12em" | ".14em" = ".12em"): React.CSSProperties {
-  return { fontFamily: MONO, fontSize: size, letterSpacing: spacing, textTransform: "uppercase", color: LABEL };
+function labelStyle(size: 12 | 12.5 | 13 = 13, spacing: ".12em" | ".14em" = ".12em"): React.CSSProperties {
+  // Clamp to the app-wide 13px readability floor (commit 9067b8d6) regardless of
+  // the size callers pass, so no mono label renders below 13px.
+  return { fontFamily: MONO, fontSize: Math.max(13, size), letterSpacing: spacing, textTransform: "uppercase", color: LABEL };
 }
 
 type Tab = "overview" | "runs" | "routines" | "memory" | "staff";

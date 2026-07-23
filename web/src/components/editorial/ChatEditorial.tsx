@@ -121,10 +121,10 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
                 <Reveal dir="left">
                   <div style={{ marginTop: 18 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: "rgba(252,233,207,.8)", textTransform: "uppercase" }}>
-                      <span>Bond</span><span>{bond} → {bond + 1}</span>
+                      <span>Bond</span><span>{bond}/100</span>
                     </div>
                     <div style={{ marginTop: 6, height: 7, borderRadius: 999, background: "rgba(252,233,207,.25)", overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: `${Math.min(100, (bond % 10) * 10 + 8)}%`, background: "#FCE9CF", transition: "width .5s" }} />
+                      <div style={{ height: "100%", width: `${Math.min(100, bond)}%`, background: "#FCE9CF", transition: "width .5s" }} />
                     </div>
                   </div>
                   <p style={{ fontFamily: T.body, fontSize: 13, color: "rgba(252,233,207,.85)", marginTop: 12, lineHeight: 1.5 }}>

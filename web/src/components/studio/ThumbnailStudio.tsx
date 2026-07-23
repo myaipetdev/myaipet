@@ -380,7 +380,9 @@ export default function ThumbnailStudio({ className }: { className?: string } = 
     if (!dirtyRef.current) setText(p.seed.title, p.seed.subtitle, false);
   }, [setText]);
 
-  const useMyPet = useCallback(() => {
+  // A generic example seed (the tool is on-device and has no pet context),
+  // so the control is labeled "use example", not "use my pet".
+  const useExample = useCallback(() => {
     setText("DORDOR LEVELED UP TO 5", "the free 3-step care guide", false);
   }, [setText]);
 
@@ -489,7 +491,7 @@ export default function ThumbnailStudio({ className }: { className?: string } = 
           <Panel label="Headline">
             <div className="ts-row-between">
               <span className="ts-hint">Line breaks are respected. Big + few words win.</span>
-              <button type="button" className="ts-chip" onClick={useMyPet}>＋ use my pet</button>
+              <button type="button" className="ts-chip" onClick={useExample}>＋ use example</button>
             </div>
             <textarea
               className="ts-textarea ts-titlearea"

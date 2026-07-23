@@ -270,7 +270,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
               <nav style={{ display: "flex", flexDirection: "column", gap: 1, borderLeft: "1px solid rgba(33,26,18,0.13)", paddingLeft: 12 }}>
                 {toc.map((h, idx) => (
                   <a key={idx} href={`#${h.slug}`} style={{
-                    fontSize: h.level === 2 ? 13 : 12.5,
+                    fontSize: 13,
                     fontWeight: h.level === 2 ? 600 : 400,
                     padding: "3px 0", paddingLeft: h.level === 3 ? 12 : 0,
                     textDecoration: "none",
@@ -316,7 +316,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
                   <nav style={{ display: "flex", flexDirection: "column", gap: 1, borderLeft: "1px solid rgba(33,26,18,0.13)", paddingLeft: 12 }}>
                     {toc.map((h, idx) => (
                       <a key={idx} href={`#${h.slug}`} style={{
-                        fontSize: h.level === 2 ? 13 : 12.5,
+                        fontSize: 13,
                         fontWeight: h.level === 2 ? 600 : 400,
                         padding: "3px 0", paddingLeft: h.level === 3 ? 12 : 0,
                         textDecoration: "none",

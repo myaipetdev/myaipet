@@ -486,7 +486,7 @@ export default function AgentOffice() {
           </button>
         </div>
         <div style={{ fontFamily: MONO, fontSize: 13, color: MUTED, marginTop: 8 }}>
-          Costs {COST} credits · refunded if the loop runs no real skill · appears as LIVE in WORKING ↑
+          Costs {COST} credits for a completed direct answer or useful read-only skill run; failed or incomplete runs are refunded · appears as LIVE in WORKING ↑
         </div>
       </div>
       )}

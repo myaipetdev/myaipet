@@ -2523,6 +2523,9 @@ export default function SovereigntyDashboard() {
                       aria-label={label}
                       disabled={consentSaving}
                       onClick={() => {
+                        // Demo (petless) users: show the notice and never optimistically
+                        // flip — otherwise the switch looks saved but nothing persists.
+                        if (guardDemo()) return;
                         const previous = consent;
                         const next = { ...previous, [key]: !previous[key as keyof typeof previous] };
                         setConsent(next);
