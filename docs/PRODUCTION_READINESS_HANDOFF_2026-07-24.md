@@ -300,3 +300,27 @@ These are not permission to overstate the current product:
 8. Do not claim npm publication or AWS deployment without external evidence.
 9. Do not ask for a TOTP until the package is otherwise publish-ready.
 10. Continue from the first incomplete item in sections 4–7.
+
+## 10. External release blockers observed at 2026-07-24 22:38 KST
+
+- The candidate is committed locally on
+  `codex/e503-p0-release-20260724`, but the branch is not on `origin`.
+  Every GitHub identity already configured on this workstation reports pull
+  access and no push access to `myaipetdev/myaipet`; the push was rejected with
+  HTTP 403. Do not recreate or squash the candidate. Authenticate an identity
+  with repository write permission, then push the existing local branch.
+- The npm package itself is ready and its prepublish suite passed 70/70, but the
+  authenticated npm session is not a maintainer of
+  `@myaipet/petclaw-sdk`. The publish request was rejected for package
+  permission before any OTP challenge, and anonymous registry reads still
+  return `1.6.2`. Authenticate the public maintainer `myaipet`, or grant the
+  publishing principal read-write access, then publish the already committed
+  `2.0.0` package and verify it anonymously.
+- No AWS release, production backup, migration, traffic switch, reboot, or
+  host-side hotfix was attempted after these permission failures. Production
+  remains on the immutable release recorded in section 1.
+- Once both identities are corrected, resume in this exact order: push the
+  existing branch; publish and anonymously verify npm `2.0.0`; take a fresh
+  signed off-host backup; build/sign the exact committed artifact; verify and
+  preflight it on EC2; release; run authenticated Office UAT, the full live
+  smoke matrix, and one reboot recovery check.
