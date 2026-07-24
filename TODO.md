@@ -6,7 +6,7 @@ Updated: 2026-07-13
 
 - [ ] Referral program wiring — scaffold only. `web/src/app/api/referral/` routes, `web/src/components/ReferralPanel.tsx`, and the `referral_program` migration exist, but ReferralPanel is not rendered anywhere in the app. Wire the panel into the UI + ship the migration before treating this as a feature. NOT live — do not document as shipped.
 - [ ] fal.ai balance top-up (founder action) — Studio video generation routes through fal.ai (`web/src/lib/studio/providers.ts`); keep the account balance funded or runs fail.
-- [ ] Decision: consolidate Agent Office into a PetClaw tab — `AgentOffice.tsx` is now fronted by Pet Village (`PetVillage.tsx`); decide whether the office dashboard folds into PetClaw.
+- [ ] Decision: full Agent Office → PetClaw tab merge. 2026-07-24 interim shipped: office left the top nav (deep link + App render kept), mission-control now returns a `registered` signal and AgentOffice gates to an onboarding empty-state until the pet has any real agent signal, and PetClaw hosts the entry card. Remaining decision is only whether to physically merge the office UI into SovereigntyDashboard as a tab (needs a tab bar there). Note: hotel view is `GrandPawOffice.tsx` — `PetVillage.tsx` is dead code (imported nowhere), delete or justify.
 - [ ] Decision: credit-pack reprice — packs grant 100/500/2000 credits for 5/20/50 USDT ($0.05/credit). Any change must keep UI credits equal to server grants (`/api/credits/purchase`) and stay margin-positive over model costs.
 
 ---

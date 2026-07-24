@@ -22,7 +22,7 @@ const PRIMARY_ITEMS: NavItem[] = [
 ];
 
 // ── "More" group — play + power surfaces. Rendered inline on wide desktop
-// (≥1360px, where all nine fit without scrolling) and as an accessible
+// (≥1360px, where all eight fit without scrolling) and as an accessible
 // dropdown menu everywhere else.
 const MORE_ITEMS: NavItem[] = [
   // Game features. (Catch lives inside Cards as a tab — /?section=catch still
@@ -33,8 +33,9 @@ const MORE_ITEMS: NavItem[] = [
   // national-flag World Cup is a small hideable module inside it.
   { key: "worldcup", label: "Bracket" },
   { key: "sovereignty", label: "PetClaw" },
-  // Agent Office — the Mission-Control dashboard (5 pillars / kanban / staff / crons).
-  { key: "office", label: "Agent Office" },
+  // (Agent Office — the Mission-Control dashboard — intentionally NOT a nav
+  // item: its entry point is the PetClaw page, where registration lives.
+  // /?section=office deep links still render via App.tsx, same as "agent".)
   // (Agent — multi-platform autonomous presence — intentionally NOT a top-level
   // tab per owner. The AgentDashboard still renders via /?section=agent.)
   // Season hub: my-card + season + missions + leaderboards. Labelled
@@ -131,7 +132,7 @@ export default function Nav({ section, setSection, credits }: any) {
   // Mirrors the ≥1360px CSS breakpoint where the non-Bracket More items render
   // inline. There the More MENU lists only Bracket — no destination appears
   // both inline and in the menu (DD round-2 P1: duplicated items read as two
-  // different places). Below 1360px the menu lists all five, as before.
+  // different places). Below 1360px the menu lists all four, as before.
   // State (not CSS-hide) so arrow-key traversal only visits visible items.
   const [wideInline, setWideInline] = useState(false);
   useEffect(() => {
