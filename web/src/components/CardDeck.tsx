@@ -45,7 +45,8 @@ import { CODEX_VARIANTS, codexPrompt } from "@/lib/codex";
 import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
 import useCountUp from "@/hooks/useCountUp";
-import { computeRarity, rarityColor, RARITY_ORDER, RARITY_THRESHOLD, rarityTier, type Rarity } from "@/lib/tcg/theme";
+import { computeRarity, rarityColor, RARITY_ORDER, RARITY_THRESHOLD, rarityTier, SPECIES_NAMES, SPECIES_ICONS, type Rarity } from "@/lib/tcg/theme";
+import { rarityMeta } from "@/lib/catch/game";
 
 // Catch (photograph real street animals) now lives INSIDE Cards as its own tab —
 // the camera/leaflet bundle only loads when the Catch tab is actually opened.
@@ -89,6 +90,12 @@ type Pet = {
 };
 type Opp = { petId: number; name: string; element: string; level: number };
 type SortKey = "rarity" | "name";
+// Caught animal from GET /api/catch — the field-guide shelf's real data.
+type Caught = {
+  id: number; kind?: string; name: string; breed?: string | null; rarity: string;
+  hp: number; atk: number; def: number; spd: number; level?: number;
+  photo_path: string; caught_at?: string; source?: string;
+};
 
 const cardUrl = (id: number) => `/card/${id}`;
 const APP = "https://app.myaipet.ai";
@@ -190,9 +197,22 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
       .catch(() => setOppsErr(true));
   };
 
+  // Field-guide shelf data — the caught-animal collection already served by
+  // GET /api/catch but previously visible only inside the Catch tab.
+  const [cats, setCats] = useState<Caught[]>([]);
+  const loadCatches = () => {
+    const hasToken = typeof window !== "undefined" && !!localStorage.getItem("petagen_jwt");
+    if (!hasToken) return;
+    fetch("/api/catch", { headers: getAuthHeaders() })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.cats)) setCats(d.cats); })
+      .catch(() => {});
+  };
+
   useEffect(() => {
     loadPets();
     loadOpps();
+    loadCatches();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -507,6 +527,35 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
             </Reveal>
           )}
 
+          {/* Species dex — pokédex-style silhouette strip over the fixed 8-species
+              adopt universe (honest denominator, same pattern as Catch's field
+              guide). Unowned species print as ink silhouettes labelled "???". */}
+          {filter === "All" && (
+            <Reveal dir="up">
+              <div style={{ background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 14, padding: "12px 16px", marginBottom: 18, boxShadow: "var(--ed-shadow-card)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                  <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: T.mono }}>Species dex</span>
+                  <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.terraSub, fontVariantNumeric: "tabular-nums" }}>
+                    {new Set(pets.map((p) => p.species).filter((s) => s !== undefined)).size}/8
+                  </span>
+                  <span style={{ fontFamily: T.body, fontSize: 13, color: T.muted2 }}>— every species you raise fills a slot</span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(56px, 1fr))", gap: 8 }}>
+                  {Object.entries(SPECIES_NAMES).map(([k, label]) => {
+                    const owned = pets.some((p) => p.species === Number(k));
+                    return (
+                      <div key={k} title={owned ? label : "???"} style={{ textAlign: "center", padding: "6px 2px", borderRadius: 10, background: owned ? T.inset : "transparent", border: `1px dashed ${owned ? "transparent" : T.hair}` }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={`/icons/${SPECIES_ICONS[Number(k)]}.png`} alt="" style={{ width: 34, height: 34, filter: owned ? "none" : "brightness(0)", opacity: owned ? 1 : 0.28 }} />
+                        <div style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", color: owned ? T.ink70 : T.muted, marginTop: 2 }}>{owned ? label : "???"}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Reveal>
+          )}
+
           {/* Album grid — cards FLY IN from below as they scroll into view
               (viewport-triggered <Reveal>, stagger capped at 8 steps); the
               shared lift-on-hover verb stays on the inner tile. */}
@@ -524,6 +573,25 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                   aria-label={`Open ${p.name}'s card`}
                 >
                   <PetCard petId={p.id} maxWidth={260} placeholder={{ name: p.name, rarity: p.rarity }} insideButton />
+                  {/* Per-tile grade progress — REAL score vs the REAL next-tier
+                      threshold (same math as the Next-grade strip). Legendary
+                      cards show a full bar with no target. */}
+                  {(() => {
+                    const nextIdx = rarityTier(p.rarity) + 1;
+                    const next = RARITY_ORDER[nextIdx] as Exclude<Rarity, "Common"> | undefined;
+                    if (!next) return (
+                      <div style={{ marginTop: 6, fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", color: rarityColor("Legendary"), textAlign: "center" }}>MAX GRADE</div>
+                    );
+                    const threshold = RARITY_THRESHOLD[next];
+                    return (
+                      <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, padding: "0 4px" }}>
+                        <div aria-hidden style={{ flex: 1, height: 4, borderRadius: 999, background: T.inset, border: `1px solid ${T.hair}`, overflow: "hidden" }}>
+                          <div style={{ width: `${Math.min(100, Math.round((p.score / threshold) * 100))}%`, height: "100%", borderRadius: 999, background: rarityColor(next) }} />
+                        </div>
+                        <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, color: T.muted2, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{p.score}/{threshold}</span>
+                      </div>
+                    );
+                  })()}
                 </button>
               </Reveal>
             ))}
@@ -576,6 +644,36 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
               </Reveal>
             )}
           </div>
+
+          {/* Field-guide shelf — the caught-animal collection (GET /api/catch),
+              surfaced in the album where the collection actually lives. Full
+              catching flow (camera, missions) stays on the Catch tab. */}
+          {filter === "All" && cats.length > 0 && (
+            <div style={{ marginTop: 28 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+                <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: T.mono }}>Field guide</span>
+                <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.terraSub, fontVariantNumeric: "tabular-nums" }}>{cats.length} caught</span>
+                <div style={{ flex: 1 }} />
+                <button
+                  type="button"
+                  onClick={() => { switchTab("catch"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: T.terraSub, background: "transparent", border: "none", cursor: "pointer", padding: "4px 2px" }}
+                >Catch more ▸</button>
+              </div>
+              <div className="cd-album-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 14 }}>
+                {cats.slice(0, 24).map((c, i) => (
+                  <Reveal key={c.id} dir="up" delay={Math.min(i, 8) * 50}>
+                    <CaughtTile cat={c} />
+                  </Reveal>
+                ))}
+              </div>
+              {cats.length > 24 && (
+                <div style={{ fontFamily: T.body, fontSize: 13, color: T.muted2, marginTop: 10 }}>
+                  Showing 24 of {cats.length} — the full guide lives in Catch.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -1196,6 +1294,46 @@ function SampleCard({ grade }: { grade: "Common" | "Rare" }) {
 // Empty adoption slot — a REAL remaining pet slot (never a fabricated card
 // number). Drawn as an empty card sleeve: dashed frame, blank portrait well,
 // footer holds the door to the adopt flow.
+// Field-guide entry — one caught animal as a mini collection card. Same 5/7
+// rhythm as SlotTile; the rarity seal color speaks lib/catch/game's real tiers.
+function CaughtTile({ cat }: { cat: Caught }) {
+  const meta = rarityMeta(cat.rarity);
+  const wild = cat.source === "wild";
+  return (
+    <div style={{
+      width: "100%", aspectRatio: "5 / 7", borderRadius: 16, background: T.paper,
+      border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
+      display: "flex", flexDirection: "column", padding: "9px 11px 8px", textAlign: "left",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+        <span style={{ fontFamily: T.disp, fontSize: 14, fontWeight: 800, color: T.ink, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat.name}</span>
+        <span title={meta.label} aria-label={`Rarity: ${meta.label}`} style={{ width: 10, height: 10, borderRadius: "50%", background: meta.color, flexShrink: 0, boxShadow: `0 0 0 2px ${T.inset}` }} />
+      </div>
+      <div style={{ flex: 1, minHeight: 30, margin: "7px 0 6px", borderRadius: 8, overflow: "hidden", background: T.inset, border: `1px solid ${T.hair}` }}>
+        {cat.photo_path ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cat.photo_path} alt={cat.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: wild ? "contain" : "cover", display: "block", padding: wild ? "12%" : 0 }} />
+        ) : (
+          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="paw" size={24} style={{ opacity: 0.35 }} /></div>
+        )}
+      </div>
+      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+        {([["HP", cat.hp], ["ATK", cat.atk], ["DEF", cat.def], ["SPD", cat.spd]] as const).map(([l, v]) => (
+          <span key={l} style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, color: T.muted2, background: T.inset, border: `1px solid ${T.hair}`, borderRadius: 6, padding: "1px 5px", fontVariantNumeric: "tabular-nums" }}>{l} {v}</span>
+        ))}
+      </div>
+      <div style={{ borderTop: `1px dashed ${T.hair}`, marginTop: 6, paddingTop: 5, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+        <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: meta.color }}>{meta.label}</span>
+        {cat.caught_at && (
+          <span style={{ fontFamily: T.m, fontSize: 12, fontWeight: 700, color: T.muted, fontVariantNumeric: "tabular-nums" }}>
+            {new Date(cat.caught_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SlotTile() {
   return (
     <div style={{

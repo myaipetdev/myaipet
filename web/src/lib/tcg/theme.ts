@@ -81,3 +81,15 @@ export function computeRarity(p: {
 /* Rarity is now carried by the wax-seal "Printed Stock" material model in
  * @/components/Sticker (rarityStock) — the old glow/holo/sparkle rarityFx was
  * retired with the visual system v2. */
+
+/** Fixed adopt-species universe — the honest denominator for the album's
+ *  species dex. Single source shared with the server card lib (card.ts). */
+export const SPECIES_NAMES: Record<number, string> = {
+  0: "Cat", 1: "Dog", 2: "Parrot", 3: "Turtle",
+  4: "Hamster", 5: "Rabbit", 6: "Fox", 7: "Pomeranian",
+};
+/** /public/icons filenames per species (Pomeranian reuses the dog glyph). */
+export const SPECIES_ICONS: Record<number, string> = {
+  0: "cat", 1: "dog", 2: "parrot", 3: "turtle",
+  4: "hamster", 5: "rabbit", 6: "fox", 7: "dog",
+};
