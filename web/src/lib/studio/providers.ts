@@ -48,8 +48,8 @@ export const MODELS: StudioModel[] = [
   // ── IMAGE (lightweight, free tier OK) ──
   {
     id: "grok-imagine",
-    displayName: "Grok Imagine",
-    provider: "Grok",
+    displayName: "AI Image",
+    provider: "Pet Studio",
     backend: "grok",
     backendModel: "grok-imagine-image",
     kind: "image",
@@ -225,8 +225,8 @@ export const MODELS: StudioModel[] = [
   },
   {
     id: "grok-imagine-video",
-    displayName: "Grok Imagine Video",
-    provider: "Grok",
+    displayName: "AI Video",
+    provider: "Pet Studio",
     backend: "grok",
     backendModel: "grok-imagine-video",
     kind: "video",

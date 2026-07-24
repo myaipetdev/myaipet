@@ -274,7 +274,7 @@ export default function MissionsCard() {
               {today.streak.pending_apology_days > 1 ? `(${today.streak.pending_apology_days} days)` : ""} —
               maybe say hi?
             </span>
-            <a href="/?section=my pet" className="ed-wipe" style={{
+            <a href="/?section=chat" className="ed-wipe" style={{
               padding: "5px 12px", borderRadius: 8,
               background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
               color: "#211A12", fontWeight: 700, fontSize: 13,

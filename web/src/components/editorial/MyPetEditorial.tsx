@@ -152,6 +152,7 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
   const [codexBusy, setCodexBusy] = useState(false);
   const [showPhoto, setShowPhoto] = useState(false); // hero toggle: prefer codex, flip to raw photo
   const [codexVariant, setCodexVariant] = useState(CODEX_VARIANTS[0].key); // which collectible sticker look to generate
+  const [pondSound, setPondSound] = useState(false); // pond ambient pad — only ever flips true from the LO-FI toggle click (autoplay gesture)
 
   const activeIdRef = useRef<number | null>(null);
   useEffect(() => { activeIdRef.current = active?.id ?? null; }, [active?.id]);
@@ -500,16 +501,17 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
             .mp-caretile:active:not(:disabled) { transform: scale(.97); }
           `}</style>
 
-          {/* ── poster (left) — a sticky, content-height sidebar. It is exactly as
-                 tall as card + MEET + name (no viewport stretch), so the collectible
-                 never floats in a sea of empty terracotta; it pins at top:88 and
-                 stays visible while the taller right column scrolls past — the
-                 canonical short-sticky-sidebar pattern. Keyed on the pet so both the
+          {/* ── poster (left) — a sticky sidebar sized to the nav-clear viewport
+                 band (100vh − 116px = top:88 + bottom breath; 860px cap so very
+                 tall monitors don't overstretch), so no empty terracotta band
+                 trails under the pinned poster while the taller right column
+                 scrolls past; the flex:1 content child keeps card + MEET + name
+                 vertically centered at any height. Keyed on the pet so both the
                  mat (.ed-rise) and the collectible (.mp-flyin) replay on switch.
                  maxHeight + overflow:hidden are a pure clamp for the rare very-tall
                  case (long name / short viewport). Mobile (<=880px) drops sticky. ── */}
           <div className="mp-poster-wrap" style={{ position: "sticky", top: 88, alignSelf: "start" }}>
-            <div key={active.id} className="ed-rise" style={{ position: "relative", background: T.terra, borderRadius: 18, minHeight: "min(calc(100vh - 200px), 620px)", maxHeight: "calc(100vh - 116px)", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div key={active.id} className="ed-rise" style={{ position: "relative", background: T.terra, borderRadius: 18, minHeight: "min(calc(100vh - 116px), 860px)", maxHeight: "calc(100vh - 116px)", overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div aria-hidden style={{ position: "absolute", inset: 14, border: "1px solid rgba(252,233,207,.35)", borderRadius: 8, pointerEvents: "none" }} />
               {[["14px", "14px", "", ""], ["14px", "", "", "14px"], ["", "14px", "14px", ""], ["", "", "14px", "14px"]].map((c, i) => (
                 <span key={i} aria-hidden style={{ position: "absolute", top: c[0] || undefined, left: c[1] || undefined, bottom: c[2] || undefined, right: c[3] || undefined, width: 11, height: 11,
@@ -892,11 +894,15 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
             <div style={{ background: T.paper, borderRadius: 22, padding: "18px 18px 20px", boxShadow: "var(--ed-shadow-card)" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
                 <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>{SPECIES_DEFAULT_NAMES.includes(active.name) ? "Pet Pond" : `${active.name}\u2019s Pond`}</div>
-                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.muted }}>LO-FI · LIVE</div>
+                {/* honest sound toggle: the pad only exists after this click
+                    (browser autoplay gesture) — never claims audio it isn't playing */}
+                <button type="button" onClick={() => setPondSound((v) => !v)} aria-pressed={pondSound} style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: pondSound ? T.mono : T.muted, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                  {pondSound ? "LO-FI · ON" : "LO-FI · PLAY ♪"}
+                </button>
               </div>
               <div style={{ marginTop: 14 }}>
                 <Suspense fallback={<div style={{ width: "100%", maxWidth: 340, aspectRatio: "1 / 1", margin: "0 auto", borderRadius: "50%", background: "rgba(26,126,104,.14)" }} />}>
-                  <PetPond mood={happy} level={active.level} element={active.element} name={active.name} />
+                  <PetPond mood={happy} level={active.level} element={active.element} name={active.name} soundEnabled={pondSound} />
                 </Suspense>
               </div>
               <div style={{ marginTop: 13, textAlign: "center", fontFamily: T.m, fontSize: 13, color: T.muted, letterSpacing: ".04em" }}>

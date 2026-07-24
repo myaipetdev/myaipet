@@ -787,7 +787,7 @@ export default function SeasonRewardsHub({ banner }: { banner?: React.ReactNode 
   }, [refresh]);
 
   return (
-    <div style={{ paddingTop: 100, display: "flex", flexDirection: "column", gap: 4 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       {/* TODAY strip — one-tap check-in, next spotlight, streak. First thing
           a returning visitor sees; a reward is bankable in one tap. */}
       <TodayStrip authed={authed} me={me} onClaimed={() => setRefresh(k => k + 1)} />
