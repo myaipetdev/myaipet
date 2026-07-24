@@ -91,7 +91,7 @@ const ecosystem = read("web/public/api-docs/ECOSYSTEM.md");
 assert.match(ecosystem, /owner-controlled companion identity, memory, and consent layer/i);
 assert.match(ecosystem, /provenance foundations/i);
 assert.match(ecosystem, /7 owner-authenticated MCP tools/i);
-assert.match(ecosystem, /npm latest is SDK \*\*1\.6\.2\*\*/i);
+assert.match(ecosystem, /npm latest is SDK \*\*1\.6\.3\*\*/i);
 assert.match(ecosystem, /published package exposes seven stdio tools/i);
 assert.doesNotMatch(ecosystem, /release candidate|unpublished|publish pending/i);
 
@@ -111,6 +111,9 @@ for (const source of [apiDocs, packageApiDocs]) {
   assert.match(source, /agentReceipts\.scrubbedReceipts/);
   assert.match(source, /pet name, goal, answer (?:or|and) step/);
   assert.match(source, /second 404 means no durable run receipt was found/i);
+  assert.doesNotMatch(source, /clear its local pending marker/i);
+  assert.match(source, /Keep the local pending\s+marker\s+locked/i);
+  assert.match(source, /server origin to which that authorization was\s+bound/i);
 }
 const retryBlock = (source) => source.match(/Failure\/retry guide:[\s\S]*?\n\neffect\./)?.[0]
   ?? source.match(/Failure\/retry guide:[\s\S]*?\neffect\./)?.[0];

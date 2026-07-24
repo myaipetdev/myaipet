@@ -156,7 +156,7 @@ function extractToc(md: string): { level: number; text: string; slug: string }[]
 // Honest inventory — kept in lockstep with PetClawConsole (no inflation).
 const STAT_STRIP = [
   { n: String(RELEASE_STATUS.skills), l: "built-in skills" },
-  { n: String(RELEASE_STATUS.mcpTools), l: "MCP tools · SDK 1.6.2" },
+  { n: String(RELEASE_STATUS.mcpTools), l: "MCP tools · SDK 1.6.3" },
   { n: String(RELEASE_STATUS.connectors.registry), l: "registered connectors" },
   { n: String(RELEASE_STATUS.connectors.live), l: "live connectors" },
 ];

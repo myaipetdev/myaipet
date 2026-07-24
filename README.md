@@ -30,7 +30,7 @@ the memory, identity, and portability layer for AI companions.
 | ✕ Forgets you when the tab closes | ✓ Retains selected context across owner surfaces — inspect/edit/delete it |
 | ✕ Answers in text, can't take action | ✓ Plans + runs real skills, then observes |
 | ✕ Works alone, no review | ✓ Bounded learning patterns and owner-controlled memory (VIGIL) |
-| ✕ Locked inside one app | ✓ Checksummed supported-field JSON · REST/CLI · seven-tool MCP in SDK 1.6.2 |
+| ✕ Locked inside one app | ✓ Checksummed supported-field JSON · REST/CLI · seven-tool MCP in SDK 1.6.3 |
 
 ---
 
@@ -46,7 +46,7 @@ Under the pet is a bounded goal loop and a separate persistent-chat path:
 | 🔁 | **Reflect** | Best-effort consolidation, feedback and learned patterns; owners control retained data. |
 | 🌐 | **Cross-surface** | Web, CLI, SDK and MCP share owner-scoped pet identity and normalized session metadata. |
 
-`18 skill manifests · 7 MCP tools in published SDK 1.6.2 · 19 registered connectors · open SDK`
+`18 skill manifests · 7 MCP tools in published SDK 1.6.3 · 19 registered connectors · open SDK`
 
 ---
 
@@ -65,7 +65,7 @@ Under the pet is a bounded goal loop and a separate persistent-chat path:
 # 0. Verify the supported release before installing.
 npm view @myaipet/petclaw-sdk version
 
-# 1. Install (the agent and seven-tool MCP flow below require >=1.6.2)
+# 1. Install (the agent and seven-tool MCP flow below require >=1.6.3)
 npm i -g @myaipet/petclaw-sdk    # or: npx @myaipet/petclaw-sdk <cmd>
 
 # 2. Connect the CLI through a hidden prompt (never place tokens in argv)
@@ -98,6 +98,12 @@ The paid loop exposes only eligible read-only skills and connectors, with no
 retention or self-learning. It charges only for a completed direct model answer
 or a completed run with a successful read-only result; other terminal runs
 refund the reservation.
+
+If a receipt is absent after an unknown outcome, keep the local pending marker
+locked. Replay only the exact saved `runId`, `goal`, `maxSteps`, and
+`confirmCostCredits` against the server origin to which that authorization was
+bound. Never mint a new run ID or clear the marker merely because a receipt is
+absent.
 
 Or use it as a library:
 

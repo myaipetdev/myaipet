@@ -94,9 +94,11 @@ or a request replay after an unknown transport outcome:
 
 A first 404 from the status lookup is inconclusive; recheck the same URL once
 after a short delay. A second 404 means no durable run receipt was found, not
-that deletion refunded a charge or erased the ledger. A client may then clear
-its local pending marker. The server's per-pet guard still prevents an
-overlapping paid run.
+that deletion refunded a charge or erased the ledger. Keep the local pending
+marker locked. Replay only the exact saved `runId`, `goal`, `maxSteps`, and
+`confirmCostCredits` against the server origin to which that authorization was
+bound. Never mint a new run ID or clear the marker merely because a receipt is
+absent.
 
 ```typescript
 import { createPetClawAgentRunId } from "@myaipet/petclaw-sdk";

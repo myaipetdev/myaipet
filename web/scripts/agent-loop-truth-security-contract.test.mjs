@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFile(resolve(root, path), "utf8");
 
-const [agent, route, statusRoute, workbench, office, consoleView, apiClient, pethub, router, persistentMemory, selfLearning, consolidate, platformResilience, deadline, browserRunClient, deleteRoute, accountRoute, accountView, cli, mcp] = await Promise.all([
+const [agent, route, statusRoute, workbench, office, consoleView, apiClient, pethub, router, persistentMemory, selfLearning, consolidate, platformResilience, deadline, browserRunClient, paidRunGuard, deleteRoute, accountRoute, accountView, cli, mcp] = await Promise.all([
   read("src/lib/petclaw/agent/tool-agent.ts"),
   read("src/app/api/pets/[petId]/agent/route.ts"),
   read("src/app/api/pets/[petId]/agent/runs/[runId]/route.ts"),
@@ -22,6 +22,7 @@ const [agent, route, statusRoute, workbench, office, consoleView, apiClient, pet
   read("src/lib/llm/platform-resilience.ts"),
   read("src/lib/petclaw/agent/deadline.ts"),
   read("src/lib/petclaw/agent-run-client.ts"),
+  read("src/hooks/usePaidAgentRunGuard.ts"),
   read("src/app/api/petclaw/delete/route.ts"),
   read("src/app/api/account/overview/route.ts"),
   read("src/app/account/AccountOverview.tsx"),
@@ -163,24 +164,59 @@ assert.match(workbench, /Loaded your last saved result/);
 assert.match(workbench, /Retry as a new run/);
 assert.doesNotMatch(workbench, /keyless <b>look-up tools<\/b>|In-loop skill calls use bounded retries/);
 assert.match(workbench, /Outbound web,[\s\S]*connectors are intentionally excluded/);
-assert.match(workbench, /rememberPendingAgentRun/);
-assert.match(workbench, /createAgentRunId/);
 assert.match(workbench, /receivedSettlementReceipt = true/);
 assert.match(workbench, /if \(!receivedSettlementReceipt\)/);
 assert.match(workbench, /!running && !receiptMissing/);
+assert.match(workbench, /start:\s*startPaidRun/);
+assert.match(workbench, /const start = await startPaidRun\(/);
+assert.match(workbench, /if \(start\.kind !== "started"\)/);
+assert.match(workbench, /if \(!canReconcilePaidRun\(\) \|\| reconcileAttemptRef\.current\) return/);
+assert.match(workbench, /if \(reconcileAttemptRef\.current !== attempt\) return/);
+assert.match(workbench, /disabled=\{reconciling\}/);
+assert.match(workbench, /outcomeUnknown = !isDefinitivePaidAgentRejectionStatus\(res\.status\)/);
+assert.match(workbench, /markPaidRunAmbiguous\(\)/);
+assert.match(workbench, /pending\.runId,[\s\S]*pending\.goal,[\s\S]*pending\.confirmCostCredits,[\s\S]*pending\.maxSteps/);
+assert.match(workbench, /hasFailure && !receiptMissing/);
+assert.match(workbench, /disabled=\{running \|\| receiptMissing\}/);
+assert.doesNotMatch(
+  workbench.slice(workbench.indexOf("const run = useCallback"), workbench.indexOf("const clearSavedResult")),
+  /rememberPendingAgentRun|forgetPendingAgentRun|createAgentRunId|setReceiptMissing/,
+);
+assert.match(browserRunClient, /export function transitionPaidAgentRunPhase/);
+assert.match(browserRunClient, /phase === ["']idle["'][\s\S]*startAccepted:\s*true/);
+assert.match(browserRunClient, /phase:\s*["']receipt_missing["']/);
+assert.match(browserRunClient, /navigator\.locks/);
+assert.match(browserRunClient, /AGENT_RUN_PENDING_LOCK_NAME/);
+assert.match(browserRunClient, /const confirmed = readCurrentOwnerPendingAgentRuns\(\)/);
+assert.match(browserRunClient, /confirmed\.length !== 1 \|\| confirmed\[0\]\?\.runId !== run\.runId/);
+assert.match(browserRunClient, /window\.addEventListener\("storage"/);
+assert.match(browserRunClient, /AGENT_RUN_PENDING_CHANGE_EVENT/);
+assert.match(paidRunGuard, /useSyncExternalStore/);
+assert.match(paidRunGuard, /beginPendingAgentRun/);
+assert.match(paidRunGuard, /removePendingAgentRun/);
+assert.doesNotMatch(paidRunGuard, /journalSnapshot === ["']\[\]["'][\s\S]{0,120}apply\(["']reconciled["']\)/);
 assert.match(workbench, /billing\?: AgentBilling/);
 assert.match(workbench, /Check saved run receipt/);
 assert.match(workbench, /confirmCostCredits:\s*COST/);
 assert.match(workbench, /Authorize \$\{COST\} credits & run/);
 assert.match(office, /confirmCostCredits:\s*COST/);
-assert.match(office, /rememberPendingAgentRun/);
-assert.match(office, /createAgentRunId/);
+assert.match(office, /start:\s*startPaidRun/);
+assert.match(office, /const start = await startPaidRun\(/);
+assert.match(office, /outcomeUnknown = !isDefinitivePaidAgentRejectionStatus\(res\.status\)/);
 assert.match(office, /if \(!receivedSettlementReceipt\)/);
 assert.match(office, /Check saved run receipt/);
 assert.match(consoleView, /\/goal --confirm-5 <task>/);
-assert.match(consoleView, /api\.pets\.runAgent\(petId as number, runId, g, AGENT_COST\)/);
+assert.match(consoleView, /const start = await startPaidRun\(/);
+assert.match(consoleView, /isTerminalPaidAgentRunReceipt\(r, runId\)/);
 assert.match(consoleView, /settlement receipt missing/);
-assert.match(apiClient, /runAgent:\s*\(petId: number, runId: string, goal: string, confirmCostCredits: 5/);
+for (const surface of [workbench, office, consoleView]) {
+  assert.match(surface, /usePaidAgentRunGuard/);
+  assert.doesNotMatch(surface, /rememberPendingAgentRun|forgetPendingAgentRun|createAgentRunId/);
+  assert.match(surface, /isTerminalPaidAgentRunReceipt/);
+  assert.match(surface, /pending\.runId/);
+  assert.doesNotMatch(surface, /local marker (?:was )?cleared|after two checks/);
+}
+assert.match(apiClient, /runAgent:\s*\(\s*petId: number,\s*runId: string,\s*goal: string,\s*confirmCostCredits: 5/);
 assert.match(apiClient, /body:\s*\{ runId, goal, confirmCostCredits/);
 
 // Deletion cannot manufacture a refund or erase billing evidence. It blocks
@@ -199,20 +235,31 @@ assert.match(accountRoute, /goal:\s*petDeleted \? null/);
 assert.match(accountView, /minimal billing receipt/);
 assert.match(accountView, /private run content removed/);
 
-// One 404 can be a read race. Browser, CLI and MCP perform exactly one delayed
-// recheck before clearing a local marker; none claim deletion refunded it.
+// Browser reconciliation may recheck a 404, but never clears on absence. It
+// replays only the saved exact run ID/goal/step budget/cost.
 assert.match(browserRunClient, /recheckAgentRunReceiptOnNotFound/);
 assert.equal((browserRunClient.match(/return await lookup\(\)|return lookup\(\)/g) ?? []).length, 2);
 for (const surface of [workbench, office, consoleView]) {
   assert.match(surface, /recheckAgentRunReceiptOnNotFound/);
-  assert.match(surface, /after two checks/);
+  assert.match(surface, /pending\.confirmCostCredits/);
+  assert.match(surface, /pending\.maxSteps/);
+  assert.doesNotMatch(surface, /forgetPendingAgentRun/);
 }
+for (const nativeClient of [cli, mcp]) {
+  assert.match(nativeClient, /function isTerminalAgentReceipt/);
+  assert.match(nativeClient, /maxSteps/);
+  assert.match(nativeClient, /confirmCostCredits/);
+  assert.doesNotMatch(nativeClient, /local marker (?:was )?cleared|after two checks; its local marker was cleared/);
+}
+assert.match(cli, /resuming the same authorized run/);
+assert.match(mcp, /Resumed and reconciled the previously authorized run/);
 assert.match(cli, /agentRunStatusWithNotFoundRecheck/);
 assert.match(cli, /AGENT_RECEIPT_404_RECHECK_MS/);
 assert.match(cli, /No durable receipt was found/);
 assert.match(mcp, /fetchAgentRunStatusWithNotFoundRecheck/);
-assert.match(mcp, /reconciliationNotices/);
-assert.match(mcp, /server's per-pet guard prevents an overlapping paid charge/);
+assert.match(mcp, /newRunStarted:\s*false/);
+assert.match(mcp, /createPaidRunJournal/);
+assert.match(mcp, /marker remains locked/);
 for (const source of [workbench, office, consoleView, cli, mcp]) {
   assert.doesNotMatch(source, /deletion refund(?:ed|s) active reservations?|erases? (?:the |its )?private run ledger/i);
 }

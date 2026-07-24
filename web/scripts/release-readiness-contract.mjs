@@ -101,10 +101,10 @@ assert.match(status, /registry:\s*19/);
 assert.match(status, /live:\s*3/);
 assert.match(status, /liveIds:\s*\["web-search", "wikipedia", "memory"\]/);
 assert.match(status, /skills:\s*18/);
-assert.match(status, /sdkVersion:\s*"1\.6\.2"/);
+assert.match(status, /sdkVersion:\s*"1\.6\.3"/);
 assert.match(status, /mcpTools:\s*7/);
 assert.doesNotMatch(status, /mcpCandidateTools/);
-assert.match(status, /mcp:\s*"7-tool SDK 1\.6\.2 · published"/);
+assert.match(status, /mcp:\s*"7-tool SDK 1\.6\.3 · published"/);
 assert.match(status, /channels:\s*"launch-paused"/);
 
 const connectorRegistry = connectors.match(/export const AVAILABLE_CONNECTORS\s*=\s*\[([\s\S]*?)\n\]\s+as const;/)?.[1] ?? "";
@@ -118,16 +118,16 @@ for (const text of [landing, pitch]) {
   assert.doesNotMatch(text, /registry, 6 live/i);
 }
 assert.match(landing, /19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS/);
-assert.match(landing, /7 MCP TOOLS · SDK 1\.6\.2 PUBLISHED/);
+assert.match(landing, /7 MCP TOOLS · SDK 1\.6\.3 PUBLISHED/);
 assert.match(landing, /\+47 Play Points today[\s\S]*SAMPLE/);
 assert.doesNotMatch(landing, /href=["']\/stats/);
 assert.doesNotMatch(landing, />Metrics</);
 assert.match(pitch, /19-connector registry with 3 live today/);
-assert.match(pitch, /seven MCP tools published in SDK 1\.6\.2/i);
+assert.match(pitch, /seven MCP tools published in SDK 1\.6\.3/i);
 
 for (const text of [demo, demoSource]) {
   assert.match(text, /<a class="cta" href="https:\/\/app\.myaipet\.ai" target="_top">/);
-  assert.match(text, /7-tool MCP path is published in SDK 1\.6\.2 · messaging launch-paused\./);
+  assert.match(text, /7-tool MCP path is published in SDK 1\.6\.3 · messaging launch-paused\./);
   assert.doesNotMatch(text, /document\.querySelector\('\.s8 \.cta'\)/);
 }
 
@@ -160,13 +160,13 @@ const publicationTruthCopy = [
   await readWeb("src/components/OrchestrationExplainer.tsx"),
 ].join("\n");
 for (const stalePublicationClaim of [
-  /SDK 1\.6\.2[^\n]*(?:candidate|unpublished|publish pending)/i,
-  /(?:candidate|unpublished|publish pending)[^\n]*(?:MCP|SDK 1\.6\.2)/i,
+  /SDK 1\.6\.3[^\n]*(?:candidate|unpublished|publish pending)/i,
+  /(?:candidate|unpublished|publish pending)[^\n]*(?:MCP|SDK 1\.6\.3)/i,
   /@myaipet\/petclaw-sdk[^\n]*v?1\.6\.1/i,
   /npm SDK 1\.6\.1/i,
   /mcpCandidateTools/,
-  /MCP-ready when SDK 1\.6\.2 lands/i,
-  /when SDK 1\.6\.2 ships/i,
+  /MCP-ready when SDK 1\.6\.3 lands/i,
+  /when SDK 1\.6\.3 ships/i,
 ]) {
   assert.doesNotMatch(publicationTruthCopy, stalePublicationClaim);
 }
@@ -198,7 +198,7 @@ for (const claim of [
 ]) {
   assert.doesNotMatch(publicCopy, claim);
 }
-assert.match(apiDocs, /MCP tools · SDK 1\.6\.2/);
+assert.match(apiDocs, /MCP tools · SDK 1\.6\.3/);
 assert.match(apiDocs, /MCP runtime ·/);
 assert.match(apiDocs, /Messaging ·/);
 assert.match(landing, /Import is a reported reconstruction/);
@@ -368,6 +368,11 @@ assert.match(extensionBuilder, /--check\) CHECK_ONLY=true/);
 assert.match(extensionBuilder, /Committed extension ZIPs do not match the deterministic source build/);
 assert.match(extensionBuilder, /printf '%s\\n' "\$EXPECTED_CHECKSUM" > "\$PUBLIC_CHECKSUM"/);
 assert.match(releaseBuilder, /scripts\/build-petclaw-extension\.sh" --check/);
+assert.match(releaseBuilder, /web\/scripts\/agent-run-safety-contract\.mjs/);
+assert.match(releaseBuilder, /packages\/petclaw\/lib\/paid-run-journal\.cjs/);
+assert.match(releaseBuilder, /packages\/petclaw\/test\/cli-mcp\.test\.cjs/);
+assert.match(releaseBuilder, /PETCLAW_SDK_TEST_TREE[\s\S]*npm test/);
+assert.match(releaseBuilder, /--experimental-transform-types/);
 for (const onboarding of [petClawPreview, sovereignty]) {
   assert.match(onboarding, /href="\/petclaw-extension\.zip\.sha256"/);
   assert.match(onboarding, /Verify SHA-256/);

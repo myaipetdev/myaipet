@@ -7,8 +7,9 @@ Built on one principle: **your pet, your data, your rules.**
 
 `18 skill manifests · 7 MCP tools · 19 registered connectors · MIT`
 
-> **Published release:** SDK `1.6.2` includes the repaired seven-tool MCP,
-> bounded agent, normalized session-lineage, and fail-closed secret handling.
+> **Published release:** SDK `1.6.3` includes the repaired seven-tool MCP,
+> bounded agent, normalized session-lineage, fail-closed secret handling, and
+> cross-process/cross-origin paid-run replay protection.
 > Verify the installed version with `petclaw-sdk version`.
 
 ## How a PetClaw pet thinks
@@ -82,6 +83,12 @@ them with no retention or self-learning and cannot commit a durable side
 effect. Five credits are charged only for a completed direct model answer or a
 completed run with a successful read-only result; other terminal runs refund
 the reservation.
+
+If a receipt is absent after an unknown outcome, keep the local pending marker
+locked. Replay only the exact saved `runId`, `goal`, `maxSteps`, and
+`confirmCostCredits` against the server origin to which that authorization was
+bound. Never mint a new run ID or clear the marker merely because a receipt is
+absent.
 
 For automation, use `--confirm-cost 5 --json` or call the same endpoint
 directly with `confirmCostCredits: 5`:

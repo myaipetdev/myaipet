@@ -9,7 +9,7 @@
  */
 export const RELEASE_STATUS = {
   /** npm latest of @myaipet/petclaw-sdk — the version actually published. */
-  sdkVersion: "1.6.2",
+  sdkVersion: "1.6.3",
 
   connectors: {
     /** Entries in AVAILABLE_CONNECTORS. */
@@ -22,11 +22,11 @@ export const RELEASE_STATUS = {
   /** BUILTIN_SKILLS in lib/petclaw/pethub.ts. */
   skills: 18,
 
-  /** Owner-authenticated stdio tools published in SDK 1.6.2. */
+  /** Owner-authenticated stdio tools published in SDK 1.6.3. */
   mcpTools: 7,
 
   /** Canonical publication state for the supported MCP runtime. */
-  mcp: "7-tool SDK 1.6.2 · published",
+  mcp: "7-tool SDK 1.6.3 · published",
 
   /** Messaging delivery remains fail-closed behind launch kill-switches. */
   channels: "launch-paused",

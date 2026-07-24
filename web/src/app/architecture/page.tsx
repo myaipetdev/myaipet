@@ -55,7 +55,7 @@ export default function ArchitecturePage() {
           tag="canonical chat rows · session + platform metadata"
           desc="Successful canonical chat stores normalized owner and pet rows with session,
                 platform, role, and speaker metadata. Web and approved Chrome sites are supported
-                today; CLI, SDK, and the published 1.6.2 MCP runtime can name their own sessions. Messaging
+                today; CLI, SDK, and the published 1.6.3 MCP runtime can name their own sessions. Messaging
                 channels are launch-paused. Raw recent context is limited to six safe turns from
                 the exact requested surface and session; no session means no raw-turn injection."
         />

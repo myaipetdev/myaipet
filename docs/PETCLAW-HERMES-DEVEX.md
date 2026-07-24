@@ -1,7 +1,7 @@
 # PetClaw × Hermes developer boundary
 
 Status: published integration baseline, 2026-07-23
-Comparison baseline: Hermes Agent `v0.18.2` (`v2026.7.7.2`); PetClaw SDK `1.6.2`
+Comparison baseline: Hermes Agent `v0.18.2` (`v2026.7.7.2`); PetClaw SDK `1.6.3`
 
 ## Product decision
 
@@ -35,7 +35,7 @@ Hermes references used for this decision:
 
 | Journey | Hermes | PetClaw responsibility | Release gate |
 |---|---|---|---|
-| Install | Full agent runtime | One npm SDK/CLI/MCP package | npm must report `1.6.2+` |
+| Install | Full agent runtime | One npm SDK/CLI/MCP package | npm must report `1.6.3+` |
 | Authenticate | Provider/API credentials | Hidden owner-token prompt; origin-bound `0600` config | no secret in argv, YAML or SOUL |
 | Select identity | Agent config | Explicit owned pet selection | never default to an unverified pet |
 | Chat | Runtime conversation | Pet voice + selected retained context | expose provider degradation and lineage |
@@ -105,7 +105,7 @@ data; add it only when the caller is allowed to receive that data.
   on-chain state, full portability, or always-on memory claim;
 - expand-only database migration in the release path; measured data backfills
   and concurrent index work run separately;
-- public documentation names SDK `1.6.2` only after npm serves that exact
+- public documentation names SDK `1.6.3` only after npm serves that exact
   version as the latest release.
 
 ### P1 — developer-grade operations

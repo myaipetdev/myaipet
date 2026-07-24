@@ -57,15 +57,20 @@ fi
 for PETCLAW_REQUIRED_PATH in \
   desktop-pet/manifest.json \
   petclaw-extension.zip \
+  packages/petclaw/lib/paid-run-journal.cjs \
+  packages/petclaw/package-lock.json \
+  packages/petclaw/test/cli-mcp.test.cjs \
   web/package-lock.json \
   web/package.json \
   web/public/petclaw-extension.zip \
   web/scripts/community-fallback-contract.ts \
+  web/scripts/agent-run-safety-contract.mjs \
   web/scripts/llm-router-smoke.ts \
   web/scripts/release-readiness-contract.mjs \
   web/scripts/season-starting-soon-contract.mjs \
   web/scripts/ui-contract-audit.mjs \
   web/scripts/verify-standalone-artifact.mjs \
+  web/src/hooks/usePaidAgentRunGuard.ts \
   web/src/lib/petclaw-extension.ts \
   deploy/ec2-release.sh \
   deploy/parse-database-url.mjs \
@@ -149,6 +154,30 @@ tar -xf "${PETCLAW_STAGE}/release.tar" -C "${PETCLAW_STAGE}/tree"
   "${PETCLAW_STAGE}/tree/deploy/destructive-migrations.allowlist"
 node "${PETCLAW_STAGE}/tree/deploy/scan-release-language.mjs" \
   source "${PETCLAW_STAGE}/tree"
+node --no-warnings --experimental-transform-types \
+  "${PETCLAW_STAGE}/tree/web/scripts/agent-run-safety-contract.mjs"
+(
+  PETCLAW_SDK_TEST_TREE="$(mktemp -d)"
+  petclaw_sdk_test_cleanup() {
+    if [[ -n "${PETCLAW_SDK_TEST_TREE:-}" && -d "${PETCLAW_SDK_TEST_TREE}" \
+      && ! -L "${PETCLAW_SDK_TEST_TREE}" ]]; then
+      find "${PETCLAW_SDK_TEST_TREE}" -depth -delete
+    fi
+  }
+  trap petclaw_sdk_test_cleanup EXIT HUP INT TERM
+  (
+    cd "${PETCLAW_STAGE}/tree"
+    tar -cf - \
+      README.md \
+      packages/petclaw \
+      web/public/api-docs/API.md \
+      web/public/api-docs/QUICKSTART.md
+  ) | tar -C "${PETCLAW_SDK_TEST_TREE}" -xf -
+  cd "${PETCLAW_SDK_TEST_TREE}/packages/petclaw"
+  npm_config_engine_strict=true \
+    npm ci --ignore-scripts --no-audit --no-fund
+  npm test
+)
 
 PETCLAW_EXTENSION_VERSION="$(node -e '
   const fs = require("node:fs");

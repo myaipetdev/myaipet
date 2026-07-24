@@ -42,6 +42,7 @@
     "test:oauth-credentials": "tsx scripts/oauth-credentials-p0.integration.ts",
     "audit:oauth-credentials": "tsx scripts/audit-oauth-credentials.ts",
     "test:agent-credits": "tsx scripts/agent-channel-credit.integration.ts",
+    "test:agent-run-safety": "node --no-warnings --experimental-transform-types scripts/agent-run-safety-contract.mjs",
     "test:generation-settlement": "tsx scripts/generation-settlement.integration.ts",
     "test:ui-contract": "node scripts/ui-contract-audit.mjs",
     "test:release-readiness": "node scripts/release-readiness-contract.mjs",

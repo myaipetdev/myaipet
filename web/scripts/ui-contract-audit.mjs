@@ -76,7 +76,7 @@ const requiredUiContracts = [
   {
     file: "web/public/api-docs/API.md",
     description: "public API examples must distinguish protocol from SDK, gate the candidate version, and label synthetic metrics",
-    pattern: /version` here is the \*\*protocol\*\* version[\s\S]*?npm view @myaipet\/petclaw-sdk version[\s\S]*?requires `1\.6\.2` or later[\s\S]*?numeric values below are illustrative, not launch metrics[\s\S]*?"totalSoulNfts": 0/,
+    pattern: /version` here is the \*\*protocol\*\* version[\s\S]*?npm view @myaipet\/petclaw-sdk version[\s\S]*?requires `1\.6\.3` or later[\s\S]*?numeric values below are illustrative, not launch metrics[\s\S]*?"totalSoulNfts": 0/,
   },
   {
     file: "web/src/app/contracts/page.tsx",

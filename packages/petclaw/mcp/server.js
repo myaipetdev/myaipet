@@ -19,6 +19,10 @@ const https = require("https");
 const { randomUUID } = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const {
+  assertPaidRunServerOrigin,
+  createPaidRunJournal,
+} = require("../lib/paid-run-journal.cjs");
 
 // SCRUM-108: version comes from the package's own package.json (single source
 // of truth) so the MCP banner can't drift from the published npm version.
@@ -38,6 +42,7 @@ const SDK_VERSION = (() => {
 // client config Just Works after `petclaw-sdk init`. Precedence:
 // ~/.petclaw.json < PETCLAW_* env vars < --url/--pet-id CLI args.
 const CONFIG_FILE = path.join(process.env.HOME || process.env.USERPROFILE || ".", ".petclaw.json");
+const paidRunJournal = createPaidRunJournal(CONFIG_FILE);
 let fileConfig = {};
 try {
   if (fs.existsSync(CONFIG_FILE)) {
@@ -164,33 +169,24 @@ const HTTP_MAX_BYTES = 2 * 1024 * 1024;
 const SOUL_MAX_BYTES = 16 * 1024 * 1024;
 const MCP_CHAT_SESSION_ID = `mcp-${randomUUID()}`;
 
-function mutatePendingAgentRuns(mutator) {
-  let latest = {};
-  try { if (fs.existsSync(CONFIG_FILE)) latest = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8")); } catch {}
-  const pending = latest.pendingAgentRuns && typeof latest.pendingAgentRuns === "object"
-    ? { ...latest.pendingAgentRuns } : {};
-  mutator(pending);
-  latest.pendingAgentRuns = pending;
-  const temp = `${CONFIG_FILE}.${process.pid}.mcp.tmp`;
-  fs.writeFileSync(temp, JSON.stringify(latest, null, 2), { mode: 0o600 });
-  if (process.platform !== "win32") fs.chmodSync(temp, 0o600);
-  fs.renameSync(temp, CONFIG_FILE);
-  if (process.platform !== "win32") fs.chmodSync(CONFIG_FILE, 0o600);
+function isTerminalAgentReceipt(value, runId) {
+  const billing = value && typeof value === "object" ? value.billing : null;
+  const charged = billing?.outcome === "charged";
+  const refunded = billing?.outcome === "refunded";
+  return value?.runId === runId
+    && value?.state === "terminal"
+    && billing
+    && (charged || refunded)
+    && Number.isSafeInteger(billing.creditsCharged)
+    && (charged ? billing.creditsCharged === 5 : billing.creditsCharged === 0)
+    && typeof billing.usageKnown === "boolean"
+    && (billing.usageKnown === false
+      ? refunded && billing.creditsCharged === 0 && billing.modelCalls === null
+      : Number.isSafeInteger(billing.modelCalls) && billing.modelCalls >= 0);
 }
 
-function rememberPendingAgentRun(run) {
-  mutatePendingAgentRuns((pending) => { pending[run.runId] = run; });
-}
-
-function forgetPendingAgentRun(runId) {
-  mutatePendingAgentRuns((pending) => { delete pending[runId]; });
-}
-
-function pendingAgentRunsForPet(pid) {
-  try {
-    const latest = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
-    return Object.values(latest.pendingAgentRuns || {}).filter((run) => run && run.petId === pid);
-  } catch { return []; }
+function isDefinitivePreDebitAgentRejection(error) {
+  return [400, 401, 402, 403, 404, 413, 429].includes(Number(error?.status));
 }
 
 class ApiError extends Error {
@@ -605,49 +601,101 @@ async function handleMessage(msg) {
 
       if (name === "petclaw_agent_run") {
         let runId;
-        const reconciliationNotices = [];
+        let marker;
         try {
           const pid = await resolvePetId();
-          for (const pending of pendingAgentRunsForPet(pid)) {
+          const existingRuns = paidRunJournal.listAll();
+          if (existingRuns.length) {
+            const pending = existingRuns[0];
+            assertPaidRunServerOrigin(pending, baseUrl);
             let status;
+            let resumed = false;
             try {
-              status = await fetchAgentRunStatusWithNotFoundRecheck(pid, pending.runId);
+              status = await fetchAgentRunStatusWithNotFoundRecheck(pending.petId, pending.runId);
             } catch (error) {
               if (error?.status === 404) {
-                forgetPendingAgentRun(pending.runId);
-                reconciliationNotices.push(
-                  `No durable receipt was found for ${pending.runId} after two checks; its local marker was cleared. The server's per-pet guard prevents an overlapping paid charge.`,
-                );
-                continue;
+                if (
+                  !Number.isInteger(pending.maxSteps)
+                  || pending.maxSteps < 1
+                  || pending.maxSteps > 6
+                  || pending.confirmCostCredits !== 5
+                  || typeof pending.goal !== "string"
+                ) {
+                  throw new Error(
+                    `No durable receipt is visible for legacy run ${pending.runId}; `
+                    + "its marker remains locked because exact replay parameters are unavailable",
+                  );
+                }
+                resumed = true;
+                status = await fetchJSON(`${baseUrl}/api/pets/${pending.petId}/agent`, {
+                  method: "POST",
+                  body: {
+                    runId: pending.runId,
+                    goal: pending.goal,
+                    maxSteps: pending.maxSteps,
+                    confirmCostCredits: pending.confirmCostCredits,
+                  },
+                });
+              } else {
+                throw error;
               }
-              throw error;
             }
-            if (status.state === "terminal") forgetPendingAgentRun(pending.runId);
-            else throw new Error(`Paid run ${pending.runId} is still ${status.state}; do not start another paid run`);
+            if (isTerminalAgentReceipt(status, pending.runId)) {
+              paidRunJournal.remove(pending);
+            } else {
+              throw new Error(
+                `Paid run ${pending.runId} has no validated terminal receipt; do not start another paid run`,
+              );
+            }
+            const reconciledPayload = {
+              ...status,
+              reconciliationNotice: resumed
+                ? `Resumed and reconciled the previously authorized run ${pending.runId}. No new run was started.`
+                : `Reconciled the previous run ${pending.runId}. No new run was started.`,
+              newRunStarted: false,
+            };
+            return sendResponse(id, {
+              content: [{ type: "text", text: JSON.stringify(reconciledPayload, null, 2) }],
+              structuredContent: reconciledPayload,
+              ...(status.completed === false || status.ok === false ? { isError: true } : {}),
+            });
           }
           runId = randomUUID();
-          rememberPendingAgentRun({ runId, petId: pid, goal: String(toolArgs.goal || ""), surface: "mcp", createdAt: new Date().toISOString() });
+          const maxSteps = Math.max(1, Math.min(6, Number(toolArgs.maxSteps) || 4));
+          const prepared = paidRunJournal.claim({
+            runId,
+            petId: pid,
+            goal: String(toolArgs.goal || ""),
+            maxSteps,
+            confirmCostCredits: toolArgs.confirmCostCredits,
+            serverOrigin: baseUrl,
+            surface: "mcp",
+            createdAt: new Date().toISOString(),
+          });
+          if (prepared.kind !== "started") {
+            throw new Error(
+              `Paid run ${prepared.pending.runId} must be reconciled before a new run can start`,
+            );
+          }
+          marker = prepared.marker;
           const result = await fetchJSON(`${baseUrl}/api/pets/${pid}/agent`, {
             method: "POST",
             body: {
               runId,
               goal: String(toolArgs.goal || ""),
-              maxSteps: Math.max(1, Math.min(6, Number(toolArgs.maxSteps) || 4)),
+              maxSteps,
               // The tool schema has already required the exact literal 5.
               // Forward the acknowledgement so the HTTP boundary independently
               // refuses any client that did not opt into this paid run.
               confirmCostCredits: toolArgs.confirmCostCredits,
             },
           });
-          if (result.state !== "terminal" || result.runId !== runId || !result.billing) {
+          if (!isTerminalAgentReceipt(result, runId)) {
             throw new Error(`Paid run ${runId} is pending reconciliation; check Account or its owner receipt endpoint before retrying`);
           }
-          forgetPendingAgentRun(runId);
-          const responsePayload = reconciliationNotices.length
-            ? { ...result, reconciliationNotices }
-            : result;
+          paidRunJournal.remove(marker);
           return sendResponse(id, {
-            content: [{ type: "text", text: JSON.stringify(responsePayload, null, 2) }],
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
             // The HTTP endpoint intentionally returns the trace for bounded
             // terminal stops. MCP clients still need a machine-visible failure
             // signal so max_steps/timeout/planner_error are not treated as a
@@ -655,8 +703,10 @@ async function handleMessage(msg) {
             ...(result.completed === false || result.ok === false ? { isError: true } : {}),
           });
         } catch (e) {
-          if (runId && e?.status > 0 && e.status < 500) forgetPendingAgentRun(runId);
-          const pending = runId && (!e?.status || e.status >= 500)
+          if (marker && isDefinitivePreDebitAgentRejection(e)) {
+            try { paidRunJournal.remove(marker); } catch {}
+          }
+          const pending = marker && !isDefinitivePreDebitAgentRejection(e)
             ? { runId, state: "pending_reconciliation", retryable: false }
             : null;
           return sendResponse(id, {

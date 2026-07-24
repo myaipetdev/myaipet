@@ -11,14 +11,14 @@ npm install -g @myaipet/petclaw-sdk
 petclaw-sdk version
 ```
 
-Verify npm and the installed CLI report `1.6.2` or later:
+Verify npm and the installed CLI report `1.6.3` or later:
 
 ```bash
 npm view @myaipet/petclaw-sdk version
 ```
 
-SDK `1.6.2` publishes the repaired MCP, agent, session-lineage and
-secret-handling flow documented in this guide.
+SDK `1.6.3` publishes the repaired MCP, agent, session-lineage,
+secret-handling and paid-run replay-protection flow documented in this guide.
 
 The source package is `@myaipet/petclaw-sdk`. Do not install the unrelated,
 older unscoped `petclaw-sdk` package.
@@ -161,6 +161,10 @@ Direct SDK callers must generate and persist a UUID with
 `createPetClawAgentRunId()` before calling `agent.run`. CLI and MCP each
 generate one ID and retain it for reconciliation. Look up unknown transport
 outcomes from Account or `client.agent.status(petId, runId)` before retrying.
+If no receipt is visible, keep the local pending marker locked. Replay only the
+exact saved `runId`, `goal`, `maxSteps`, and `confirmCostCredits` against the
+server origin to which that authorization was bound. Never mint a new run ID or
+clear the marker merely because a receipt is absent.
 Add `petclaw_soul_export` only when the caller is allowed to
 receive the pet's portable private data. `petclaw-sdk auth` remains the only
 token setup step; never copy its token into Hermes YAML, command args or env.

@@ -7,7 +7,7 @@
  *
  * Inventory is the REAL thing (kept honest):
  *   • 19-connector registry (3 live · messaging launch-paused)  • 18 SDK skills
- *   • 7 owner-authenticated MCP tools published in SDK 1.6.2
+ *   • 7 owner-authenticated MCP tools published in SDK 1.6.3
  *   • bounded VIGIL memory capabilities  • discovery-only network preview
  *
  * variant="full"    → manifest + LIVE terminal (boot effect + chat). Needs petId.
@@ -15,15 +15,15 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { api } from "@/lib/api";
+import { api, getPaidRunAuthContext } from "@/lib/api";
+import { usePaidAgentRunGuard } from "@/hooks/usePaidAgentRunGuard";
 import PetClawHeroIntro from "@/components/PetClawHeroIntro";
 import { RELEASE_STATUS } from "@/lib/releaseStatus";
 import {
-  createAgentRunId,
-  forgetPendingAgentRun,
+  isDefinitivePaidAgentRejectionStatus,
+  isTerminalPaidAgentRunReceipt,
   latestPendingAgentRun,
   recheckAgentRunReceiptOnNotFound,
-  rememberPendingAgentRun,
 } from "@/lib/petclaw/agent-run-client";
 
 // Terminal typewriter — reveals a line char-by-char once on mount; a blinking
@@ -91,7 +91,7 @@ export const SDK_VERSION = RELEASE_STATUS.sdkVersion;
 
 // Supported surfaces + the connector registry (three currently live).
 // Messaging channel delivery is launch-paused (matches the Agent screen);
-// MCP clients use the seven-tool runtime published in SDK 1.6.2.
+// MCP clients use the seven-tool runtime published in SDK 1.6.3.
 const RUNS_ON = `web · approved chrome sites · MCP (${RELEASE_STATUS.mcp})`;
 const CONNECTORS = [
   { k: "messaging (0/8 live)", v: "telegram · discord · x launch-paused; whatsapp · slack · line · instagram · gmail planned" },
@@ -177,6 +177,14 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const simIdx = useRef(0);
   const simHinted = useRef(false);
+  const reconcileAttemptRef = useRef<{ runId: string } | null>(null);
+  const {
+    start: startPaidRun,
+    markAmbiguous: markPaidRunAmbiguous,
+    settle: settlePaidRun,
+    reject: rejectPaidRun,
+    reconcile: reconcilePaidRun,
+  } = usePaidAgentRunGuard();
 
   const pushLine = useCallback((l: Line) => setLines((prev) => [...prev, l]), []);
   const appendToLast = useCallback((ch: string) => {
@@ -228,25 +236,71 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
   }, [lines]);
 
   const reconcileAgentReceipt = async () => {
-    const pending = latestPendingAgentRun();
-    if (!pending) { pushLine({ role: "sys", text: "no paid run is awaiting reconciliation" }); return; }
+    if (reconcileAttemptRef.current) return;
+    let pending: ReturnType<typeof latestPendingAgentRun>;
     try {
-      const receipt = await recheckAgentRunReceiptOnNotFound(
-        () => api.pets.agentRunStatus(pending.petId, pending.runId),
-      );
-      if (receipt.state !== "terminal" || !receipt.billing) {
-        pushLine({ role: "sys", text: `run ${pending.runId} is still ${receipt.state} — do not start another paid run` });
+      pending = latestPendingAgentRun();
+    } catch (storageError: unknown) {
+      pushLine({
+        role: "sys",
+        text: storageError instanceof Error
+          ? storageError.message
+          : "paid-run safety journal unavailable",
+      });
+      return;
+    }
+    if (!pending) { pushLine({ role: "sys", text: "no paid run is awaiting reconciliation" }); return; }
+    const attempt = { runId: pending.runId };
+    reconcileAttemptRef.current = attempt;
+    setBusy(true);
+    try {
+      let receipt;
+      const { token: authToken } = getPaidRunAuthContext();
+      try {
+        receipt = await recheckAgentRunReceiptOnNotFound(
+          () => api.pets.agentRunStatus(pending.petId, pending.runId, authToken),
+        );
+      } catch (lookupError: any) {
+        if (lookupError?.status !== 404) throw lookupError;
+        if (pending.maxSteps == null || pending.confirmCostCredits !== AGENT_COST) {
+          pushLine({
+            role: "sys",
+            text: `no receipt is visible for legacy run ${pending.runId}; its marker stays locked because exact replay parameters are unavailable`,
+          });
+          return;
+        }
+        pushLine({
+          role: "sys",
+          text: `receipt not visible — resuming the same authorized run ${pending.runId} without creating a new charge ID`,
+        });
+        receipt = await api.pets.runAgent(
+          pending.petId,
+          pending.runId,
+          pending.goal,
+          pending.confirmCostCredits,
+          pending.maxSteps,
+          authToken,
+        );
+      }
+      if (reconcileAttemptRef.current !== attempt) return;
+      if (latestPendingAgentRun()?.runId !== pending.runId) return;
+      if (!isTerminalPaidAgentRunReceipt(receipt, pending.runId)) {
+        pushLine({ role: "sys", text: `run ${pending.runId} has no validated terminal receipt (${receipt?.state || "unknown"}) — do not start another paid run` });
         return;
       }
-      forgetPendingAgentRun(pending.runId);
+      const unlocked = await reconcilePaidRun(pending.runId);
       pushLine({ role: "sys", text: `reconciled ${pending.runId} ▸ ${receipt.billing.outcome} · ${receipt.billing.creditsCharged || 0} credits · ${receipt.creditsRemaining ?? "?"} left` });
-    } catch (e: any) {
-      if (e?.status === 404) {
-        forgetPendingAgentRun(pending.runId);
-        pushLine({ role: "sys", text: `no durable receipt found for ${pending.runId} after two checks — local marker cleared; the server per-pet guard prevents an overlapping paid run; check Account credits before retrying` });
-        return;
+      if (!unlocked) {
+        pushLine({ role: "sys", text: "another saved paid run still needs a receipt check" });
       }
-      pushLine({ role: "sys", text: `receipt lookup failed — ${e?.message || "try again shortly"}; paid-run lock remains` });
+    } catch (e: any) {
+      if (reconcileAttemptRef.current !== attempt) return;
+      pushLine({ role: "sys", text: `receipt lookup/replay failed — ${e?.message || "try again shortly"}; run ${pending.runId} remains locked and no new run ID was created` });
+    } finally {
+      if (reconcileAttemptRef.current === attempt) {
+        reconcileAttemptRef.current = null;
+        setBusy(false);
+      }
     }
   };
 
@@ -255,30 +309,43 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
     const g = goalText.trim();
     if (!g) { pushLine({ role: "sys", text: "usage: /goal --confirm-5 <task> · authorizes one 5-credit run" }); return; }
     if (isSim || !petId) { pushLine({ role: "sys", text: "agent loop needs your own pet — adopt one to unlock it" }); return; }
-    try {
-      if (latestPendingAgentRun()) {
-        pushLine({ role: "sys", text: "paid-run safety lock — reconcile the previous run in /account or with /goal-status before another run" });
-        return;
-      }
-    } catch { /* continue when storage is unavailable; the server still enforces confirmation */ }
-    const runId = createAgentRunId();
-    try { rememberPendingAgentRun({ runId, petId, petName, goal: g, surface: "console", at: Date.now() }); } catch { /* storage unavailable */ }
+    const start = await startPaidRun({
+      petId,
+      petName,
+      goal: g,
+      maxSteps: 4,
+      confirmCostCredits: AGENT_COST,
+      surface: "console",
+    });
+    if (start.kind !== "started") {
+      pushLine({
+        role: "sys",
+        text: start.kind === "blocked"
+          ? `paid-run safety lock — ${start.pending.runId} still needs a receipt; use /goal-status`
+          : `paid-run blocked — ${start.message}`,
+      });
+      return;
+    }
+    const { runId } = start.run;
+    const { authToken } = start;
     pushLine({ role: "sys", text: `agent ▸ planning · "${g}"` });
     setBusy(true);
     try {
-      const r = await api.pets.runAgent(petId as number, runId, g, AGENT_COST);
-      const billing = r?.billing;
-      if (
-        !billing
-        || (billing.outcome !== "charged" && billing.outcome !== "refunded")
-        || typeof billing.creditsCharged !== "number"
-        || !(billing.usageKnown === false ? billing.modelCalls == null : typeof billing.modelCalls === "number")
-        || r?.runId !== runId
-      ) {
+      const r = await api.pets.runAgent(
+        petId as number,
+        runId,
+        g,
+        AGENT_COST,
+        undefined,
+        authToken,
+      );
+      if (!isTerminalPaidAgentRunReceipt(r, runId)) {
+        markPaidRunAmbiguous();
         pushLine({ role: "sys", text: `settlement receipt missing for ${runId} — do not retry. Check /account or use /goal-status` });
         return;
       }
-      try { forgetPendingAgentRun(runId); } catch { /* storage unavailable */ }
+      const billing = r.billing;
+      const unlocked = await settlePaidRun(runId);
       (r?.steps || []).forEach((s: any) =>
         pushLine({ role: "sys", text: `  ${s.skill === "finish" ? "✓ done" : "→ " + s.skill}${s.thought ? " · " + s.thought : ""}` })
       );
@@ -287,12 +354,19 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
         text: `settled ▸ ${r?.completed === true ? "completed" : r?.stoppedReason || "stopped"} · ${billing.outcome === "charged" ? `${billing.creditsCharged} credits charged` : "credits refunded"} · ${billing.usageKnown === false ? "usage unknown (recovered)" : `${billing.modelCalls} model attempt${billing.modelCalls === 1 ? "" : "s"}`}${typeof r?.creditsRemaining === "number" ? ` · ${r.creditsRemaining} left` : ""}`,
       });
       typeReply(r?.answer || `*${petName} blinks*`);
+      if (!unlocked) {
+        pushLine({ role: "sys", text: "another saved paid run still needs a receipt check" });
+      }
     } catch (e: any) {
       const message = e?.message || "the connection ended";
-      if (/not enough credits/i.test(message)) {
-        try { forgetPendingAgentRun(runId); } catch { /* storage unavailable */ }
+      if (isDefinitivePaidAgentRejectionStatus(Number(e?.status))) {
+        const unlocked = await rejectPaidRun(runId);
         pushLine({ role: "sys", text: `agent rejected before starting — ${message}` });
+        if (!unlocked) {
+          pushLine({ role: "sys", text: "another saved paid run still needs a receipt check" });
+        }
       } else {
+        markPaidRunAmbiguous();
         pushLine({ role: "sys", text: `agent connection error — ${message}. Run ${runId} may have reached the server; use /goal-status before any new paid run` });
       }
     } finally {

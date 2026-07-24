@@ -25,6 +25,10 @@ const readline = require("readline");
 const { Writable } = require("stream");
 const { randomUUID } = require("crypto");
 const { verifySoulExport } = require("../dist/protocol.js");
+const {
+  assertPaidRunServerOrigin,
+  createPaidRunJournal,
+} = require("../lib/paid-run-journal.cjs");
 
 // SCRUM-108: single source of truth for the version — read it from the
 // package's own package.json so the banner can never drift from the published
@@ -40,6 +44,7 @@ const SDK_VERSION = PKG.version || "0.0.0";
 
 // ── Config ──
 const CONFIG_FILE = path.join(process.env.HOME || process.env.USERPROFILE || ".", ".petclaw.json");
+const paidRunJournal = createPaidRunJournal(CONFIG_FILE);
 let config = {
   serverUrl: "https://app.myaipet.ai",
   petId: null,
@@ -107,24 +112,27 @@ function saveConfig() {
     if (persistedToken) saved.token = persistedToken;
     else delete saved.token;
   }
-  const temp = `${CONFIG_FILE}.${process.pid}.tmp`;
-  fs.writeFileSync(temp, JSON.stringify(saved, null, 2), { mode: 0o600 });
-  if (process.platform !== "win32") fs.chmodSync(temp, 0o600);
-  fs.renameSync(temp, CONFIG_FILE);
-  if (process.platform !== "win32") fs.chmodSync(CONFIG_FILE, 0o600);
+  config = paidRunJournal.replaceConfigPreservingJournal(saved);
 }
 
-function rememberPendingAgentRun(run) {
-  const pending = config.pendingAgentRuns && typeof config.pendingAgentRuns === "object"
-    ? config.pendingAgentRuns : {};
-  config.pendingAgentRuns = { ...pending, [run.runId]: run };
-  saveConfig();
+function isTerminalAgentReceipt(value, runId) {
+  const billing = value && typeof value === "object" ? value.billing : null;
+  const charged = billing?.outcome === "charged";
+  const refunded = billing?.outcome === "refunded";
+  return value?.runId === runId
+    && value?.state === "terminal"
+    && billing
+    && (charged || refunded)
+    && Number.isSafeInteger(billing.creditsCharged)
+    && (charged ? billing.creditsCharged === 5 : billing.creditsCharged === 0)
+    && typeof billing.usageKnown === "boolean"
+    && (billing.usageKnown === false
+      ? refunded && billing.creditsCharged === 0 && billing.modelCalls === null
+      : Number.isSafeInteger(billing.modelCalls) && billing.modelCalls >= 0);
 }
 
-function forgetPendingAgentRun(runId) {
-  if (!config.pendingAgentRuns || typeof config.pendingAgentRuns !== "object") return;
-  delete config.pendingAgentRuns[runId];
-  saveConfig();
+function isDefinitivePreDebitAgentRejection(error) {
+  return [400, 401, 402, 403, 404, 413, 429].includes(Number(error?.status));
 }
 
 /**
@@ -983,24 +991,29 @@ async function cmdAgent(agentArgs) {
     if (goal.length > 600) console.log(C.dim("  Goal must contain at most 600 characters."));
     return;
   }
-  const pendingRuns = config.pendingAgentRuns && typeof config.pendingAgentRuns === "object"
-    ? Object.values(config.pendingAgentRuns).filter((run) => run && run.petId === config.petId)
-    : [];
+  let pendingRuns;
+  try {
+    pendingRuns = paidRunJournal.listAll();
+  } catch (error) {
+    fail(C.red("  Paid-run safety journal is unavailable; no request was sent."));
+    console.log(C.dim(`  ${error.message}`));
+    return;
+  }
   for (const pending of pendingRuns) {
     try {
-      const status = await agentRunStatusWithNotFoundRecheck(config.petId, pending.runId);
-      if (status.state !== "terminal") {
-        fail(C.red(`  Paid run ${pending.runId} is still ${status.state}; no new run was sent.`));
+      assertPaidRunServerOrigin(pending, config.serverUrl);
+      const status = await agentRunStatusWithNotFoundRecheck(pending.petId, pending.runId);
+      if (!isTerminalAgentReceipt(status, pending.runId)) {
+        fail(C.red(`  Paid run ${pending.runId} has no validated terminal receipt; no new run was sent.`));
         console.log(C.dim(`  Reconcile: petclaw-sdk agent-status ${pending.runId}`));
         return;
       }
-      forgetPendingAgentRun(pending.runId);
+      paidRunJournal.remove(pending);
     } catch (error) {
       if (error.status === 404) {
-        forgetPendingAgentRun(pending.runId);
-        console.log(C.dim(`  No durable receipt was found for ${pending.runId} after two checks; its local marker was cleared.`));
-        console.log(C.dim("  The server's per-pet guard prevents an overlapping paid charge."));
-        continue;
+        fail(C.red(`  No durable receipt is visible for ${pending.runId}; its safety marker remains locked.`));
+        console.log(C.dim(`  Resume the same authorized ID: petclaw-sdk agent-status ${pending.runId}`));
+        return;
       }
       fail(C.red(`  Could not reconcile paid run ${pending.runId}; no new run was sent.`));
       console.log(C.dim(`  ${error.message}`));
@@ -1008,18 +1021,40 @@ async function cmdAgent(agentArgs) {
     }
   }
   const runId = randomUUID();
-  rememberPendingAgentRun({ runId, petId: config.petId, goal, createdAt: new Date().toISOString() });
+  let marker;
+  try {
+    const prepared = paidRunJournal.claim({
+      runId,
+      petId: config.petId,
+      goal,
+      maxSteps,
+      confirmCostCredits: 5,
+      serverOrigin: config.serverUrl,
+      surface: "cli",
+      createdAt: new Date().toISOString(),
+    });
+    if (prepared.kind !== "started") {
+      fail(C.red(`  Pending paid run ${prepared.pending.runId} must be reconciled first; no request was sent.`));
+      console.log(C.dim(`  Reconcile: petclaw-sdk agent-status ${prepared.pending.runId}`));
+      return;
+    }
+    marker = prepared.marker;
+  } catch (error) {
+    fail(C.red("  Could not establish the paid-run safety marker; no request was sent."));
+    console.log(C.dim(`  ${error.message}`));
+    return;
+  }
   try {
     const result = await api(`/api/pets/${config.petId}/agent`, {
       method: "POST",
       body: { runId, goal, maxSteps, confirmCostCredits: 5 },
     });
-    if (result.state !== "terminal" || result.runId !== runId || !result.billing) {
+    if (!isTerminalAgentReceipt(result, runId)) {
       fail(C.red(`  Run ${runId} is still pending. Do not retry it.`));
       console.log(C.dim(`  Reconcile: petclaw-sdk agent-status ${runId}`));
       return;
     }
-    forgetPendingAgentRun(runId);
+    paidRunJournal.remove(marker);
     const completed = result.stoppedReason === "completed";
     const output = { ...result, completed };
     if (json) {
@@ -1049,9 +1084,11 @@ async function cmdAgent(agentArgs) {
       console.log(C.red(`     ⚠ run did not complete (${result.stoppedReason || "missing_stop_reason"})`));
     }
   } catch (e) {
-    if (e.status > 0 && e.status < 500) forgetPendingAgentRun(runId);
+    if (isDefinitivePreDebitAgentRejection(e)) {
+      try { paidRunJournal.remove(marker); } catch {}
+    }
     fail(C.red(`  ✗ ${e.message}`));
-    if (!e.status || e.status >= 500) {
+    if (!isDefinitivePreDebitAgentRejection(e)) {
       console.log(C.gold(`  ⚠ Outcome unknown for run ${runId}; it is not safe to retry.`));
       console.log(C.dim(`    Reconcile: petclaw-sdk agent-status ${runId}`));
     }
@@ -1064,26 +1101,60 @@ async function cmdAgentStatus(runIdArg) {
     fail(C.red("  Authentication and an active pet are required."));
     return;
   }
-  const pending = config.pendingAgentRuns && typeof config.pendingAgentRuns === "object"
-    ? Object.values(config.pendingAgentRuns).filter((run) => run && run.petId === config.petId) : [];
+  let pending;
+  try {
+    pending = paidRunJournal.listAll();
+  } catch (error) {
+    fail(C.red(`  Paid-run safety journal is unavailable: ${error.message}`));
+    return;
+  }
   const runId = String(runIdArg || pending[pending.length - 1]?.runId || "");
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(runId)) {
     fail(C.red("  Usage: petclaw-sdk agent-status <runId>"));
     return;
   }
   try {
-    const result = await agentRunStatusWithNotFoundRecheck(config.petId, runId);
+    let result;
+    const saved = pending.find((run) => run.runId === runId);
+    const statusPetId = saved?.petId || config.petId;
+    if (saved) assertPaidRunServerOrigin(saved, config.serverUrl);
+    try {
+      result = await agentRunStatusWithNotFoundRecheck(statusPetId, runId);
+    } catch (lookupError) {
+      if (lookupError?.status !== 404) throw lookupError;
+      if (
+        !saved
+        || !Number.isInteger(saved.maxSteps)
+        || saved.maxSteps < 1
+        || saved.maxSteps > 6
+        || saved.confirmCostCredits !== 5
+        || typeof saved.goal !== "string"
+      ) {
+        fail(C.red(`  No durable receipt is visible for legacy run ${runId}; its marker remains locked.`));
+        console.log(C.dim("  Exact replay parameters are unavailable. Check Account credits or contact support; do not create a new run ID."));
+        return;
+      }
+      console.log(C.dim(`  Receipt not visible; resuming the same authorized run ${runId}.`));
+      result = await api(`/api/pets/${statusPetId}/agent`, {
+        method: "POST",
+        body: {
+          runId,
+          goal: saved.goal,
+          maxSteps: saved.maxSteps,
+          confirmCostCredits: saved.confirmCostCredits,
+        },
+      });
+    }
     console.log(JSON.stringify(result, null, 2));
-    if (result.state === "terminal") forgetPendingAgentRun(runId);
+    if (isTerminalAgentReceipt(result, runId) && saved) paidRunJournal.remove(saved);
     else {
       process.exitCode = 2;
-      console.log(C.gold("  Run is not terminal; do not submit a new paid run yet."));
+      console.log(C.gold("  Run has no validated terminal receipt; do not submit a new paid run yet."));
     }
   } catch (e) {
     if (e.status === 404) {
-      forgetPendingAgentRun(runId);
-      console.log(C.gold(`  No durable receipt was found for ${runId} after two checks.`));
-      console.log(C.dim("  The local marker was cleared. The server's per-pet guard prevents an overlapping paid charge; check Account credits before retrying."));
+      console.log(C.gold(`  No durable receipt was found for ${runId}; its local marker remains locked.`));
+      console.log(C.dim("  Do not create a new run ID. Check Account credits or retry this same agent-status command."));
       return;
     }
     fail(C.red(`  ✗ ${e.message}`));

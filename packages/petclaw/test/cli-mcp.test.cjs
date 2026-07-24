@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const { spawn } = require("node:child_process");
+const { randomUUID } = require("node:crypto");
 const fs = require("node:fs");
 const http = require("node:http");
 const os = require("node:os");
@@ -8,6 +9,7 @@ const test = require("node:test");
 
 const ROOT = path.join(__dirname, "..");
 const { computeIntegrityHash } = require(path.join(ROOT, "dist", "protocol.js"));
+const { createPaidRunJournal } = require(path.join(ROOT, "lib", "paid-run-journal.cjs"));
 
 function jsonFenceAfter(file, heading) {
   const markdown = fs.readFileSync(path.join(ROOT, file), "utf8");
@@ -85,6 +87,9 @@ test("developer docs select an owned pet, require caller run IDs, and disclose p
     assert.match(markdown, /read-only (?:skills? and connectors|skill or connector|result)/i, `${file} must disclose the paid loop's read-only boundary`);
     assert.match(markdown, /no\s+retention|retention\s+and self-learning (?:are )?disabled/i, `${file} must disclose no retention`);
     assert.doesNotMatch(markdown, /completed run with a successful tool result|explicitly confirmed durable side effect/, `${file} contains a stale charge path`);
+    assert.doesNotMatch(markdown, /clear its local pending marker/i, `${file} must not authorize clearing an unresolved paid run`);
+    assert.match(markdown, /Keep the local pending\s+marker\s+locked/i, `${file} must preserve unresolved paid-run authorization`);
+    assert.match(markdown, /server origin to which that authorization was\s+bound/i, `${file} must bind replay to the original server`);
   }
 
   const hostedApi = fs.readFileSync(
@@ -547,7 +552,7 @@ test("CLI agent JSON marks non-completed terminal runs incomplete and exits 2", 
       res.end(JSON.stringify({
         runId: body.runId, state: "terminal", ok: false, completed: false,
         goal: "check status", answer: "Partial result", steps: [], stoppedReason: "timeout",
-        billing: { outcome: "refunded", creditsCharged: 0, reason: "run_not_completed", modelCalls: 0 },
+        billing: { outcome: "refunded", creditsCharged: 0, reason: "run_not_completed", usageKnown: true, modelCalls: 0 },
         creditsRemaining: 95,
       }));
     });
@@ -1097,6 +1102,7 @@ test("CLI human agent output includes the server billing receipt", async () => {
           successfulToolCalls: 0,
           failedToolCalls: 0,
           committedSideEffects: 0,
+          usageKnown: true,
           modelCalls: 2,
         },
         creditsRemaining: 95,
@@ -1126,6 +1132,55 @@ test("CLI human agent output includes the server billing receipt", async () => {
     });
     assert.match(result.stdout, /billing: charged · 5 credits · completed_with_direct_answer/);
     assert.match(result.stdout, /95 credits remaining/);
+  } finally {
+    server.close();
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("CLI keeps the paid-run marker when an HTTP 200 settlement body is malformed", async () => {
+  let paidPostCount = 0;
+  const server = http.createServer((req, res) => {
+    if (req.method === "POST" && req.url === "/api/pets/7/agent") paidPostCount += 1;
+    req.resume();
+    req.on("end", () => {
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end('{"runId":');
+    });
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  const origin = `http://127.0.0.1:${port}`;
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-cli-malformed-receipt-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({
+      serverUrl: origin,
+      tokenOrigin: origin,
+      petId: 7,
+      token: "pck_test_owner_token",
+    }), { mode: 0o600 });
+    const first = await runNode(
+      "bin/petclaw.js",
+      ["agent", "preserve", "the", "receipt", "--confirm-cost", "5"],
+      { HOME: temp },
+    );
+    assert.equal(first.code, 1);
+    assert.match(first.stdout, /Outcome unknown/);
+    const saved = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    const pending = Object.values(saved.pendingAgentRuns || {});
+    assert.equal(pending.length, 1);
+    assert.match(pending[0].runId, /^[0-9a-f-]{36}$/);
+    assert.equal(pending[0].serverOrigin, origin);
+
+    const second = await runNode(
+      "bin/petclaw.js",
+      ["agent", "must", "not", "start", "--confirm-cost", "5"],
+      { HOME: temp },
+    );
+    assert.equal(second.code, 1);
+    assert.match(second.stdout, /Could not reconcile paid run/);
+    assert.equal(paidPostCount, 1, "the retained marker must block a new run ID");
   } finally {
     server.close();
     fs.rmSync(temp, { recursive: true, force: true });
@@ -1262,6 +1317,7 @@ test("MCP paid agent acknowledgement permits exactly one request and is forwarde
           successfulToolCalls: 0,
           failedToolCalls: 0,
           committedSideEffects: 0,
+          usageKnown: true,
           modelCalls: 2,
           orchestratorModelCalls: 2,
           skillModelCalls: 0,
@@ -1312,6 +1368,502 @@ test("MCP paid agent acknowledgement permits exactly one request and is forwarde
       runId: undefined, goal: "suggest next step", maxSteps: 4, confirmCostCredits: 5,
     });
     assert.equal(JSON.parse(response.result.content[0].text).billing.creditsCharged, 5);
+  } finally {
+    server.close();
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("CLI and MCP share one atomic paid-run claim across processes", async () => {
+  let paidPostCount = 0;
+  let releasePaidPost;
+  const paidPostGate = new Promise((resolve) => { releasePaidPost = resolve; });
+  const server = http.createServer((req, res) => {
+    let raw = "";
+    req.on("data", (chunk) => { raw += chunk; });
+    req.on("end", async () => {
+      if (req.method === "GET" && /\/agent\/runs\/[0-9a-f-]+$/.test(req.url)) {
+        const runId = req.url.split("/").pop();
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(JSON.stringify({ runId, state: "running" }));
+        return;
+      }
+      if (req.method !== "POST" || req.url !== "/api/pets/7/agent") {
+        res.writeHead(404, { "content-type": "application/json" });
+        res.end(JSON.stringify({ error: "unexpected request" }));
+        return;
+      }
+      paidPostCount += 1;
+      const body = JSON.parse(raw);
+      await paidPostGate;
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({
+        runId: body.runId,
+        state: "terminal",
+        ok: true,
+        completed: true,
+        answer: "One run only.",
+        steps: [],
+        stoppedReason: "completed",
+        billing: {
+          outcome: "charged",
+          creditsCharged: 5,
+          reason: "completed_with_direct_answer",
+          usageKnown: true,
+          modelCalls: 1,
+        },
+        creditsRemaining: 95,
+      }));
+    });
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  const origin = `http://127.0.0.1:${port}`;
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-cross-process-paid-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({
+      serverUrl: origin,
+      tokenOrigin: origin,
+      petId: 7,
+      token: "pck_test_owner_token",
+      preservedSentinel: "keep-me",
+    }), { mode: 0o600 });
+
+    const cli = spawn(process.execPath, [
+      "bin/petclaw.js",
+      "agent",
+      "cli",
+      "concurrent",
+      "goal",
+      "--confirm-cost",
+      "5",
+    ], {
+      cwd: ROOT,
+      env: { ...process.env, HOME: temp, NO_COLOR: "1" },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let cliStdout = "";
+    cli.stdout.on("data", (chunk) => { cliStdout += chunk; });
+    const cliClosed = new Promise((resolve) => cli.on("close", (code) => resolve(code)));
+
+    const mcp = spawn(process.execPath, ["mcp/server.js"], {
+      cwd: ROOT,
+      env: { ...process.env, HOME: temp, NO_COLOR: "1" },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let mcpStdout = "";
+    mcp.stdout.on("data", (chunk) => { mcpStdout += chunk; });
+    const mcpClosed = new Promise((resolve) => mcp.on("close", (code) => resolve(code)));
+    mcp.stdin.write(JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: {
+        name: "petclaw_agent_run",
+        arguments: { goal: "mcp concurrent goal", maxSteps: 4, confirmCostCredits: 5 },
+      },
+    }) + "\n");
+
+    const postDeadline = Date.now() + 3000;
+    while (paidPostCount === 0 && Date.now() < postDeadline) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    assert.equal(paidPostCount, 1, "one claimant must reach the paid endpoint");
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    assert.equal(paidPostCount, 1, "the losing process must not create another run ID");
+    releasePaidPost();
+
+    const responseDeadline = Date.now() + 3000;
+    while (!mcpStdout.includes('"id":1') && Date.now() < responseDeadline) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    mcp.stdin.end();
+    const [cliCode] = await Promise.all([cliClosed, mcpClosed]);
+    const mcpResponse = mcpStdout.split("\n").filter(Boolean).map(JSON.parse)
+      .find((line) => line.id === 1);
+    assert.ok(mcpResponse);
+    const cliSucceeded = cliCode === 0;
+    const mcpSucceeded = mcpResponse.result.isError !== true;
+    assert.notEqual(cliSucceeded, mcpSucceeded, "exactly one caller may own the paid run");
+
+    const saved = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    assert.equal(saved.preservedSentinel, "keep-me");
+    assert.deepEqual(saved.pendingAgentRuns, {});
+    assert.equal(paidPostCount, 1);
+    assert.match(
+      cliStdout + JSON.stringify(mcpResponse),
+      /Pending paid run|no validated terminal receipt|One run only/,
+    );
+  } finally {
+    releasePaidPost();
+    server.close();
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("CLI never looks up or replays a paid marker on another server origin", async () => {
+  let requestCount = 0;
+  const server = http.createServer((_req, res) => {
+    requestCount += 1;
+    res.writeHead(500, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "cross-origin marker must fail before HTTP" }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  const currentOrigin = `http://127.0.0.1:${port}`;
+  const originalOrigin = "http://127.0.0.1:1";
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-cli-origin-bound-run-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  try {
+    for (const legacy of [false, true]) {
+      const runId = randomUUID();
+      const marker = {
+        runId,
+        petId: 7,
+        goal: legacy ? "legacy originless goal" : "goal authorized on another origin",
+        maxSteps: 4,
+        confirmCostCredits: 5,
+        surface: "cli",
+        createdAt: new Date().toISOString(),
+        ...(legacy ? {} : {
+          serverOrigin: originalOrigin,
+          journalVersion: 2,
+          journalNonce: randomUUID(),
+        }),
+      };
+      fs.writeFileSync(configPath, JSON.stringify({
+        serverUrl: currentOrigin,
+        tokenOrigin: currentOrigin,
+        petId: 7,
+        token: "pck_test_owner_token",
+        pendingAgentRuns: { [runId]: marker },
+      }), { mode: 0o600 });
+
+      const result = await runNode(
+        "bin/petclaw.js",
+        ["agent-status", runId],
+        { HOME: temp },
+      );
+      assert.equal(result.code, 1);
+      assert.match(
+        result.stdout + result.stderr,
+        legacy ? /no trusted server-origin binding/ : /bound to .*not the current server/,
+      );
+      assert.equal(requestCount, 0);
+      const saved = JSON.parse(fs.readFileSync(configPath, "utf8"));
+      assert.deepEqual(saved.pendingAgentRuns[runId], marker);
+    }
+  } finally {
+    server.close();
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("MCP never looks up or replays a paid marker on another server origin", async () => {
+  let requestCount = 0;
+  const server = http.createServer((_req, res) => {
+    requestCount += 1;
+    res.writeHead(500, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "cross-origin marker must fail before HTTP" }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  const currentOrigin = `http://127.0.0.1:${port}`;
+  const runId = randomUUID();
+  const marker = {
+    runId,
+    petId: 7,
+    goal: "goal authorized on another origin",
+    maxSteps: 4,
+    confirmCostCredits: 5,
+    serverOrigin: "http://127.0.0.1:1",
+    surface: "mcp",
+    createdAt: new Date().toISOString(),
+    journalVersion: 2,
+    journalNonce: randomUUID(),
+  };
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-mcp-origin-bound-run-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({
+      serverUrl: currentOrigin,
+      tokenOrigin: currentOrigin,
+      petId: 7,
+      token: "pck_test_owner_token",
+      pendingAgentRuns: { [runId]: marker },
+    }), { mode: 0o600 });
+    const child = spawn(process.execPath, ["mcp/server.js"], {
+      cwd: ROOT,
+      env: { ...process.env, HOME: temp, NO_COLOR: "1" },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stdin.write(JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: {
+        name: "petclaw_agent_run",
+        arguments: { goal: "must not replace the old goal", maxSteps: 4, confirmCostCredits: 5 },
+      },
+    }) + "\n");
+    const deadline = Date.now() + 3000;
+    while (!stdout.split("\n").some((line) => line.includes('"id":1')) && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    child.stdin.end();
+    await new Promise((resolve) => child.on("close", resolve));
+
+    const response = stdout.split("\n").filter(Boolean).map(JSON.parse).find((line) => line.id === 1);
+    assert.equal(response.result.isError, true);
+    assert.match(response.result.content[0].text, /bound to .*not the current server/);
+    assert.equal(requestCount, 0);
+    const saved = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    assert.deepEqual(saved.pendingAgentRuns[runId], marker);
+  } finally {
+    server.close();
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("shared config writers cannot switch server origin while a paid marker is pending", () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-config-origin-bound-run-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  const originalOrigin = "https://app.myaipet.ai";
+  const otherOrigin = "https://other.petclaw.example";
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({
+      serverUrl: originalOrigin,
+      tokenOrigin: originalOrigin,
+      petId: 7,
+      token: "pck_test_owner_token",
+    }), { mode: 0o600 });
+    const journal = createPaidRunJournal(configPath);
+    const claimed = journal.claim({
+      runId: randomUUID(),
+      petId: 7,
+      goal: "keep this authorization on its original server",
+      maxSteps: 4,
+      confirmCostCredits: 5,
+      serverOrigin: originalOrigin,
+      surface: "cli",
+      createdAt: new Date().toISOString(),
+    });
+    assert.equal(claimed.kind, "started");
+
+    assert.throws(
+      () => journal.replaceConfigPreservingJournal({
+        serverUrl: otherOrigin,
+        tokenOrigin: otherOrigin,
+        petId: 7,
+        token: "pck_other_owner_token",
+      }),
+      /Cannot change PetClaw server while paid run/,
+    );
+    const unchanged = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    assert.equal(unchanged.serverUrl, originalOrigin);
+    assert.equal(unchanged.pendingAgentRuns[claimed.marker.runId].serverOrigin, originalOrigin);
+
+    const sameOrigin = journal.replaceConfigPreservingJournal({
+      ...unchanged,
+      preferredProvider: "nous",
+    });
+    assert.equal(sameOrigin.preferredProvider, "nous");
+    assert.equal(sameOrigin.pendingAgentRuns[claimed.marker.runId].serverOrigin, originalOrigin);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("shared journal removes only the exact unchanged paid marker", () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-exact-marker-removal-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  const origin = "https://app.myaipet.ai";
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({
+      serverUrl: origin,
+      tokenOrigin: origin,
+      petId: 7,
+      token: "pck_test_owner_token",
+    }), { mode: 0o600 });
+    const journal = createPaidRunJournal(configPath);
+    const claimed = journal.claim({
+      runId: randomUUID(),
+      petId: 7,
+      goal: "the exact authorized goal",
+      maxSteps: 4,
+      confirmCostCredits: 5,
+      serverOrigin: origin,
+      surface: "cli",
+      createdAt: new Date().toISOString(),
+    });
+    assert.equal(claimed.kind, "started");
+
+    const altered = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    altered.pendingAgentRuns[claimed.marker.runId].goal = "a different goal";
+    fs.writeFileSync(configPath, JSON.stringify(altered), { mode: 0o600 });
+    assert.throws(
+      () => journal.remove(claimed.marker),
+      /changed; refusing stale removal/,
+    );
+    const retained = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    assert.equal(
+      retained.pendingAgentRuns[claimed.marker.runId].goal,
+      "a different goal",
+    );
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("shared journal safely recovers an abandoned stale process lock", () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-stale-journal-lock-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  const original = {
+    serverUrl: "https://app.myaipet.ai",
+    tokenOrigin: "https://app.myaipet.ai",
+    petId: 7,
+    token: "pck_test_owner_token",
+    preservedSentinel: "unchanged",
+  };
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(original), { mode: 0o600 });
+    const journal = createPaidRunJournal(configPath);
+    assert.deepEqual(journal.listAll(), []);
+    const abandonedLock = `${configPath}.guard.lock`;
+    fs.mkdirSync(abandonedLock);
+    const staleAt = new Date(Date.now() - 20_000);
+    fs.utimesSync(abandonedLock, staleAt, staleAt);
+
+    assert.deepEqual(journal.listAll(), []);
+    assert.equal(fs.existsSync(abandonedLock), false);
+    assert.deepEqual(JSON.parse(fs.readFileSync(configPath, "utf8")), original);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("MCP fails closed when the shared paid-run journal becomes unreadable", async () => {
+  let requestCount = 0;
+  const server = http.createServer((_req, res) => {
+    requestCount += 1;
+    res.writeHead(500, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "corrupt journal must block before HTTP" }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  const origin = `http://127.0.0.1:${port}`;
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-mcp-corrupt-journal-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({
+      serverUrl: origin,
+      tokenOrigin: origin,
+      petId: 7,
+      token: "pck_test_owner_token",
+    }), { mode: 0o600 });
+    const child = spawn(process.execPath, ["mcp/server.js"], {
+      cwd: ROOT,
+      env: { ...process.env, HOME: temp, NO_COLOR: "1" },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stdin.write(JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {},
+    }) + "\n");
+    const initDeadline = Date.now() + 3000;
+    while (!stdout.includes('"id":1') && Date.now() < initDeadline) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    fs.writeFileSync(configPath, '{"pendingAgentRuns":', { mode: 0o600 });
+    child.stdin.write(JSON.stringify({
+      jsonrpc: "2.0",
+      id: 2,
+      method: "tools/call",
+      params: {
+        name: "petclaw_agent_run",
+        arguments: { goal: "must not post", maxSteps: 4, confirmCostCredits: 5 },
+      },
+    }) + "\n");
+    const responseDeadline = Date.now() + 3000;
+    while (!stdout.includes('"id":2') && Date.now() < responseDeadline) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    child.stdin.end();
+    await new Promise((resolve) => child.on("close", resolve));
+    const response = stdout.split("\n").filter(Boolean).map(JSON.parse)
+      .find((line) => line.id === 2);
+    assert.equal(response.result.isError, true);
+    assert.match(response.result.content[0].text, /Cannot safely read/);
+    assert.equal(requestCount, 0);
+    assert.equal(fs.readFileSync(configPath, "utf8"), '{"pendingAgentRuns":');
+  } finally {
+    server.close();
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("MCP keeps the paid-run marker when an HTTP 200 settlement body is malformed", async () => {
+  let requestCount = 0;
+  const server = http.createServer((req, res) => {
+    requestCount += 1;
+    req.resume();
+    req.on("end", () => {
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end('{"runId":');
+    });
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  const origin = `http://127.0.0.1:${port}`;
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-mcp-malformed-receipt-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({
+      serverUrl: origin,
+      tokenOrigin: origin,
+      petId: 7,
+      token: "pck_test_owner_token",
+    }), { mode: 0o600 });
+    const child = spawn(process.execPath, ["mcp/server.js"], {
+      cwd: ROOT,
+      env: { ...process.env, HOME: temp, NO_COLOR: "1" },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stdin.write(JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: {
+        name: "petclaw_agent_run",
+        arguments: { goal: "preserve the receipt", maxSteps: 4, confirmCostCredits: 5 },
+      },
+    }) + "\n");
+    const deadline = Date.now() + 3000;
+    while (!stdout.split("\n").some((line) => line.includes('"id":1')) && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    child.stdin.end();
+    await new Promise((resolve) => child.on("close", resolve));
+
+    const response = stdout.split("\n").filter(Boolean).map(JSON.parse).find((line) => line.id === 1);
+    assert.equal(response.result.isError, true);
+    assert.equal(response.result.structuredContent.state, "pending_reconciliation");
+    assert.equal(response.result.structuredContent.retryable, false);
+    const saved = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    const pending = Object.values(saved.pendingAgentRuns || {});
+    assert.equal(pending.length, 1);
+    assert.equal(pending[0].runId, response.result.structuredContent.runId);
+    assert.equal(pending[0].serverOrigin, origin);
+    assert.equal(requestCount, 1);
   } finally {
     server.close();
     fs.rmSync(temp, { recursive: true, force: true });

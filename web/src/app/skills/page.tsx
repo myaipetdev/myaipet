@@ -57,7 +57,7 @@ export default function SkillsPage() {
             maxWidth: 640, margin: 0,
           }}>
             Built-in skill manifests, one-command install. Every skill uses a documented
-            markdown + JSON schema definition. The published SDK 1.6.2 includes
+            markdown + JSON schema definition. The published SDK 1.6.3 includes
             seven owner-authenticated MCP tools for supported stdio clients.
           </p>
         </div>
@@ -298,7 +298,7 @@ export default function SkillsPage() {
         <div style={{
           marginTop: 36, fontSize: 13, color: "rgba(33,26,18,0.55)", lineHeight: 1.6,
         }}>
-          SDK 1.6.2 publishes seven owner-authenticated MCP tools. You can also
+          SDK 1.6.3 publishes seven owner-authenticated MCP tools. You can also
           invoke skills via the REST API or CLI. See{" "}
           <a href="/api-docs" style={{ color: "#9A4E1E" }}>/api-docs</a> →
           Ecosystem → MCP Compatibility.

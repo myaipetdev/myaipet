@@ -3,10 +3,15 @@
  * Centralized fetch wrapper with JWT auth header.
  */
 
+import {
+  getApiAuthToken,
+  getPaidRunAuthContext,
+  setApiAuthToken,
+} from "./paid-run-auth";
+export { getPaidRunAuthContext } from "./paid-run-auth";
+
 const API_BASE = "";
 const IS_DEV = typeof window !== "undefined" && process.env.NODE_ENV === "development";
-
-let _token: string | null = null;
 
 function newWebChatSessionId(petId: number): string {
   const random = typeof globalThis.crypto?.randomUUID === "function"
@@ -212,10 +217,10 @@ async function request(path: string, options: any = {}) {
   };
 
   // Add auth token if available (fallback to localStorage)
-  const token = _token || (typeof window !== "undefined" ? localStorage.getItem("petagen_jwt") : null);
+  const token = options.authToken || getApiAuthToken();
+  delete options.authToken;
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
-    if (!_token) _token = token;
   }
 
   // If not FormData, set JSON content type
@@ -240,14 +245,14 @@ async function request(path: string, options: any = {}) {
 }
 
 export function getAuthHeaders(): Record<string, string> {
-  const token = _token || (typeof window !== "undefined" ? localStorage.getItem("petagen_jwt") : null);
+  const token = getApiAuthToken();
   if (token) return { Authorization: `Bearer ${token}` };
   return {};
 }
 
 export const api = {
   setToken(token: string | null) {
-    _token = token;
+    setApiAuthToken(token);
   },
 
   // ── Auth ──
@@ -370,13 +375,21 @@ export const api = {
     greeting: (petId: number) => request(`/api/pets/${petId}/greeting`),
     // Recent surfaced daydream insights (grounded in real memories, never fabricated).
     daydream: (petId: number) => request(`/api/pets/${petId}/daydream`),
-    runAgent: (petId: number, runId: string, goal: string, confirmCostCredits: 5, maxSteps?: number) =>
+    runAgent: (
+      petId: number,
+      runId: string,
+      goal: string,
+      confirmCostCredits: 5,
+      maxSteps?: number,
+      authToken?: string,
+    ) =>
       request(`/api/pets/${petId}/agent`, {
         method: "POST",
         body: { runId, goal, confirmCostCredits, ...(maxSteps ? { maxSteps } : {}) },
+        authToken,
       }),
-    agentRunStatus: (petId: number, runId: string) =>
-      request(`/api/pets/${petId}/agent/runs/${encodeURIComponent(runId)}`),
+    agentRunStatus: (petId: number, runId: string, authToken?: string) =>
+      request(`/api/pets/${petId}/agent/runs/${encodeURIComponent(runId)}`, { authToken }),
     memories: (petId: number, params: any = {}) => {
       const qs = new URLSearchParams();
       if (params.memory_type) qs.set("memory_type", params.memory_type);

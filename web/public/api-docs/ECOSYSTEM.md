@@ -3,13 +3,13 @@
 PetClaw is an owner-controlled companion identity, memory, and consent layer
 with provenance foundations — not a general-purpose OS or coding-agent
 replacement. Web, approved Chrome sites, REST and the published CLI share the
-pet identity today. SDK 1.6.2 publishes the reviewed seven-tool MCP path for
+pet identity today. SDK 1.6.3 publishes the reviewed seven-tool MCP path for
 supported stdio clients.
 
 ## Current publication status
 
-- npm latest is SDK **1.6.2**.
-- SDK 1.6.2 includes typed errors/timeouts, hidden CLI secret prompts,
+- npm latest is SDK **1.6.3**.
+- SDK 1.6.3 includes typed errors/timeouts, hidden CLI secret prompts,
   `agent`, normalized sessions and **7 owner-authenticated MCP tools**.
 - Messaging delivery remains launch-paused; publication of the SDK does not
   enable any deployment kill switch.
@@ -47,7 +47,7 @@ simultaneous web/extension/MCP turns from overwriting each other.
 
 ## Authentication and secrets
 
-Persistent actions require an owner `pck_` token. SDK 1.6.2 stores CLI config
+Persistent actions require an owner `pck_` token. SDK 1.6.3 stores CLI config
 with mode `0600`, repairs old broad permissions, enforces network timeouts/body
 limits, and reads token/provider secrets from hidden prompts. Smaller `pex_`
 extension tokens cannot export or import SOUL data.
@@ -60,7 +60,7 @@ petclaw-sdk doctor
 petclaw-sdk models connect openai --scopes=chat,reason
 ```
 
-## MCP in SDK 1.6.2
+## MCP in SDK 1.6.3
 
 The published package exposes seven stdio tools:
 

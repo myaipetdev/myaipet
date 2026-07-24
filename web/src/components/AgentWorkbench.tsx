@@ -15,15 +15,15 @@
  * agent endpoint directly with getAuthHeaders(). Does NOT touch AgentDashboard.
  */
 
-import { useState, useEffect, useCallback, useId } from "react";
-import { api, getAuthHeaders } from "@/lib/api";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
+import { api, getPaidRunAuthContext } from "@/lib/api";
 import Icon from "@/components/Icon";
+import { usePaidAgentRunGuard } from "@/hooks/usePaidAgentRunGuard";
 import {
-  createAgentRunId,
-  forgetPendingAgentRun,
+  isDefinitivePaidAgentRejectionStatus,
+  isTerminalPaidAgentRunReceipt,
   latestPendingAgentRun,
   recheckAgentRunReceiptOnNotFound,
-  rememberPendingAgentRun,
 } from "@/lib/petclaw/agent-run-client";
 
 interface AgentStep {
@@ -125,12 +125,23 @@ export default function AgentWorkbench() {
   const [goal, setGoal] = useState("");
   const [maxSteps, setMaxSteps] = useState(4);
 
-  const [running, setRunning] = useState(false);
   const [result, setResult] = useState<RunResult | null>(null);
   const [restored, setRestored] = useState(false);
-  const [receiptMissing, setReceiptMissing] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<Record<number, boolean>>({});
+  const reconcileAttemptRef = useRef<{ runId: string } | null>(null);
+  const paidRunGuard = usePaidAgentRunGuard();
+  const {
+    running,
+    receiptMissing,
+    start: startPaidRun,
+    markAmbiguous: markPaidRunAmbiguous,
+    settle: settlePaidRun,
+    reject: rejectPaidRun,
+    reconcile: reconcilePaidRun,
+    canReconcile: canReconcilePaidRun,
+  } = paidRunGuard;
 
   // ── Load pets + show the last cached result ──
   useEffect(() => {
@@ -166,7 +177,6 @@ export default function AgentWorkbench() {
         && typeof pending.at === "number"
       ) {
         setGoal(pending.goal);
-        setReceiptMissing(true);
         setError(
           "The previous connection ended before PetClaw returned its settlement receipt. Check Account credits and usage before starting another paid run.",
         );
@@ -202,12 +212,28 @@ export default function AgentWorkbench() {
   const run = useCallback(
     async (goalText: string, steps: number) => {
       if (petId == null || goalText.trim().length < 3) return;
-      setRunning(true);
+      const start = await startPaidRun({
+        petId,
+        petName,
+        goal: goalText.trim(),
+        maxSteps: steps,
+        confirmCostCredits: COST,
+        surface: "workbench",
+      });
+      if (start.kind !== "started") {
+        setError(
+          start.kind === "blocked"
+            ? `Paid-run safety lock: ${start.pending.runId.slice(0, 8)}… still needs a settlement receipt.`
+            : start.message,
+        );
+        return;
+      }
+      const { runId, at } = start.run;
+      const { authToken } = start;
+
       setError(null);
       setRestored(false);
-      setReceiptMissing(false);
       setOpen({});
-      const runId = createAgentRunId();
 
       // Live streaming (SSE): tool calls + results appear as the loop works,
       // instead of a blocking wait. Falls back to a clear error if the stream
@@ -227,32 +253,42 @@ export default function AgentWorkbench() {
         answer: "",
         steps: [],
         stoppedReason: "receipt_missing",
-        at: Date.now(),
+        at,
         petId,
         petName,
       };
-      try {
-        rememberPendingAgentRun({ runId, petId, petName, goal: goalText.trim(), surface: "workbench", at: pendingReceipt.at });
-      } catch { /* quota */ }
 
       let receivedSettlementReceipt = false;
 
       try {
         const res = await fetch(`/api/pets/${petId}/agent?stream=1`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...getAuthHeaders() },
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "text/event-stream",
+            Authorization: `Bearer ${authToken}`,
+          },
           body: JSON.stringify({ runId, goal: goalText.trim(), maxSteps: steps, confirmCostCredits: COST }),
         });
         if (!res.ok || !res.body) {
           const data = await res.json().catch(() => ({} as any));
-          setError(
-            data?.error === "Not enough credits"
-              ? `Not enough credits — a run costs ${COST}.`
-              : data?.error || "The run failed. Try again.",
-          );
-          setResult(null);
-          if (res.status < 500) {
-            try { forgetPendingAgentRun(runId); } catch { /* ignore */ }
+          const outcomeUnknown = !isDefinitivePaidAgentRejectionStatus(res.status);
+          if (outcomeUnknown) {
+            markPaidRunAmbiguous();
+            setResult(pendingReceipt);
+            setError(
+              "The server did not return a definitive settlement receipt. Do not retry yet: reconcile the saved run ID or check Account credits and usage.",
+            );
+          } else {
+            const unlocked = await rejectPaidRun(runId);
+            setError(
+              data?.error === "Not enough credits"
+                ? `Not enough credits — a run costs ${COST}.`
+                : !unlocked
+                  ? "This run was rejected, but another saved paid run still needs a receipt check."
+                  : data?.error || "The run was rejected before it started.",
+            );
+            setResult(null);
           }
           return;
         }
@@ -288,16 +324,8 @@ export default function AgentWorkbench() {
             } else if (evt.type === "error" && evt.ok === false) {
               setError(evt.error || "The run failed. Try again.");
             } else if (evt.type === "done") {
-              const billing = evt.billing as AgentBilling | undefined;
-              if (
-                !billing
-                || (billing.outcome !== "charged" && billing.outcome !== "refunded")
-                || typeof billing.creditsCharged !== "number"
-                || !(billing.usageKnown === false ? billing.modelCalls == null : typeof billing.modelCalls === "number")
-                || evt.runId !== runId
-              ) {
-                continue;
-              }
+              if (!isTerminalPaidAgentRunReceipt(evt, runId)) continue;
+              const billing = evt.billing as AgentBilling;
               const rr: RunResult = {
                 runId,
                 goal: evt.goal || goalText.trim(),
@@ -312,12 +340,11 @@ export default function AgentWorkbench() {
               receivedSettlementReceipt = true;
               setResult(rr);
               try { localStorage.setItem(LS_KEY, JSON.stringify(rr)); } catch { /* quota */ }
-              try { forgetPendingAgentRun(runId); } catch { /* ignore */ }
             }
           }
         }
         if (!receivedSettlementReceipt) {
-          setReceiptMissing(true);
+          markPaidRunAmbiguous();
           setError(
             "The stream ended before the settled billing receipt arrived. Do not retry yet: first check Account credits and usage, because the server may have completed this run.",
           );
@@ -327,7 +354,7 @@ export default function AgentWorkbench() {
         }
       } catch {
         if (!receivedSettlementReceipt) {
-          setReceiptMissing(true);
+          markPaidRunAmbiguous();
           setError(
             "The connection failed without a settlement receipt. The run may still have reached the server; check Account credits and usage before retrying.",
           );
@@ -336,10 +363,24 @@ export default function AgentWorkbench() {
             : pendingReceipt);
         }
       } finally {
-        setRunning(false);
+        if (receivedSettlementReceipt) {
+          const unlocked = await settlePaidRun(runId);
+          if (!unlocked) {
+            setError(
+              "This run settled, but another saved paid run still needs a receipt check before a new run.",
+            );
+          }
+        }
       }
     },
-    [petId, petName],
+    [
+      markPaidRunAmbiguous,
+      petId,
+      petName,
+      rejectPaidRun,
+      settlePaidRun,
+      startPaidRun,
+    ],
   );
 
   const clearSavedResult = () => {
@@ -350,22 +391,68 @@ export default function AgentWorkbench() {
   };
 
   const reconcilePendingRun = async () => {
-    const pending = latestPendingAgentRun();
-    if (!pending) {
-      setReceiptMissing(false);
-      setError(null);
+    if (!canReconcilePaidRun() || reconcileAttemptRef.current) return;
+    let pending: ReturnType<typeof latestPendingAgentRun>;
+    try {
+      pending = latestPendingAgentRun();
+    } catch (storageError: unknown) {
+      setError(
+        storageError instanceof Error
+          ? storageError.message
+          : "The paid-run safety journal is unavailable.",
+      );
       return;
     }
+    if (!pending) {
+      markPaidRunAmbiguous();
+      setError(
+        "The saved paid-run marker is unavailable, so this tab stays locked. "
+        + "Check Account credits and usage or contact support; do not create a new run ID.",
+      );
+      return;
+    }
+    const attempt = { runId: pending.runId };
+    reconcileAttemptRef.current = attempt;
+    setReconciling(true);
     setError("Checking the durable owner receipt…");
     try {
-      const receipt = await recheckAgentRunReceiptOnNotFound(
-        () => api.pets.agentRunStatus(pending.petId, pending.runId),
-      );
-      if (receipt.state !== "terminal" || !receipt.billing) {
-        setError(`Run ${pending.runId.slice(0, 8)}… is still ${receipt.state}. It remains locked; refresh Account shortly.`);
+      let receipt;
+      const { token: authToken } = getPaidRunAuthContext();
+      try {
+        receipt = await recheckAgentRunReceiptOnNotFound(
+          () => api.pets.agentRunStatus(pending.petId, pending.runId, authToken),
+        );
+      } catch (lookupError: any) {
+        if (lookupError?.status !== 404) throw lookupError;
+        if (pending.maxSteps == null || pending.confirmCostCredits !== COST) {
+          setError(
+            `No receipt is visible for legacy run ${pending.runId.slice(0, 8)}…. `
+            + "Its marker stays locked because it lacks the exact parameters required for an idempotent replay.",
+          );
+          return;
+        }
+        setError(
+          `No receipt is visible yet. Resuming the same authorized run `
+          + `${pending.runId.slice(0, 8)}… without creating a new charge ID…`,
+        );
+        receipt = await api.pets.runAgent(
+          pending.petId,
+          pending.runId,
+          pending.goal,
+          pending.confirmCostCredits,
+          pending.maxSteps,
+          authToken,
+        );
+      }
+      if (reconcileAttemptRef.current !== attempt) return;
+      if (latestPendingAgentRun()?.runId !== pending.runId) return;
+      if (!isTerminalPaidAgentRunReceipt(receipt, pending.runId)) {
+        setError(
+          `Run ${pending.runId.slice(0, 8)}… has no validated terminal receipt `
+          + `(${receipt?.state || "unknown"}). It remains locked.`,
+        );
         return;
       }
-      forgetPendingAgentRun(pending.runId);
       const rr: RunResult = {
         runId: pending.runId,
         goal: receipt.goal || pending.goal,
@@ -373,7 +460,7 @@ export default function AgentWorkbench() {
         steps: receipt.steps || [],
         stoppedReason: receipt.stoppedReason || "planner_error",
         completed: receipt.completed === true,
-        billing: receipt.billing,
+        billing: receipt.billing as AgentBilling,
         creditsRemaining: receipt.creditsRemaining,
         at: Date.now(),
         petId: pending.petId,
@@ -381,18 +468,30 @@ export default function AgentWorkbench() {
       };
       setResult(rr);
       try { localStorage.setItem(LS_KEY, JSON.stringify(rr)); } catch { /* ignore */ }
-      setReceiptMissing(false);
+      const unlocked = await reconcilePaidRun(pending.runId);
+      if (!unlocked) {
+        const remainingPending = latestPendingAgentRun();
+        if (remainingPending) setGoal(remainingPending.goal);
+        setError(
+          `Run ${pending.runId.slice(0, 8)}… was reconciled, but another saved paid run `
+          + "still needs a receipt check.",
+        );
+        setRestored(false);
+        return;
+      }
       setError(null);
       setRestored(true);
     } catch (e: any) {
-      if (e?.status === 404) {
-        forgetPendingAgentRun(pending.runId);
-        setReceiptMissing(false);
-        setResult(null);
-        setError("No durable run receipt was found after two checks. The local marker was cleared; the server's per-pet guard prevents an overlapping paid run. Check Account credits before retrying.");
-        return;
+      if (reconcileAttemptRef.current !== attempt) return;
+      setError(
+        `Receipt lookup/replay failed: ${e?.message || "try again shortly"}. `
+        + `Run ${pending.runId.slice(0, 8)}… remains locked; no new run ID was created.`,
+      );
+    } finally {
+      if (reconcileAttemptRef.current === attempt) {
+        reconcileAttemptRef.current = null;
+        setReconciling(false);
       }
-      setError(`Receipt lookup failed: ${e?.message || "try again shortly"}. Do not retry this paid run yet.`);
     }
   };
 
@@ -497,7 +596,7 @@ export default function AgentWorkbench() {
           <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.12em", color: "rgba(33,26,18,0.4)", fontWeight: 700, marginBottom: 8 }}>PREFLIGHT</div>
           <Check ok={goalOk} label="Goal is at least 3 characters" />
           <Check ok={petId != null} label="A pet is selected to run it" />
-          <Check ok neutral label={`Costs ${COST} credits · refunded if no real work runs`} />
+          <Check ok neutral label={`Costs ${COST} credits for a completed direct answer or successful read-only skill run; otherwise refunded`} />
         </div>
 
         {error && (
@@ -512,8 +611,14 @@ export default function AgentWorkbench() {
             previous receipt. <a href="/account" style={{ color: TONE.warn.fg, fontWeight: 800 }}>Open Account</a>,
             or reconcile the saved run ID below.
             <div>
-              <button type="button" onClick={reconcilePendingRun} style={{ ...ghostBtn, marginTop: 9 }}>
-                Check saved run receipt
+              <button
+                type="button"
+                onClick={reconcilePendingRun}
+                disabled={reconciling}
+                aria-busy={reconciling}
+                style={{ ...ghostBtn, marginTop: 9 }}
+              >
+                {reconciling ? "Checking saved run…" : "Check saved run receipt"}
               </button>
             </div>
           </div>
@@ -580,8 +685,13 @@ export default function AgentWorkbench() {
                 </span>
               )}
             </div>
-            {hasFailure && (
-              <button type="button" onClick={() => run(result.goal, Math.min(MAX_STEPS, maxSteps + 2))} disabled={running} style={retryBtn}>
+            {hasFailure && !receiptMissing && (
+              <button
+                type="button"
+                onClick={() => run(result.goal, Math.min(MAX_STEPS, maxSteps + 2))}
+                disabled={running || receiptMissing}
+                style={retryBtn}
+              >
                 ↻ Retry as a new run
               </button>
             )}

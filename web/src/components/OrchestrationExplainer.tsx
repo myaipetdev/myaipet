@@ -109,7 +109,7 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
 
       <Reveal dir="fade">
       <div style={{ textAlign: "center", marginTop: 18, fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A" }}>
-        18 built-in skill manifests · 7 MCP tools published in SDK 1.6.2 · 19 registered connectors (3 live) —{" "}
+        18 built-in skill manifests · 7 MCP tools published in SDK 1.6.3 · 19 registered connectors (3 live) —{" "}
         <a href="/api-docs" className="ed-underline-slide" style={{ color: "#9A4E1E", fontWeight: 700, textDecoration: "none" }}>build on it <ArrowSwap /></a>
       </div>
       </Reveal>

@@ -17,15 +17,15 @@
  * sanctioned agent-surface accent. Editorial idioms mirror AgentWorkbench.tsx.
  */
 
-import { useState, useEffect, useCallback, useId } from "react";
-import { api, getAuthHeaders } from "@/lib/api";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
+import { api, getPaidRunAuthContext } from "@/lib/api";
+import { usePaidAgentRunGuard } from "@/hooks/usePaidAgentRunGuard";
 import GrandPawOffice from "./GrandPawOffice";
 import {
-  createAgentRunId,
-  forgetPendingAgentRun,
+  isDefinitivePaidAgentRejectionStatus,
+  isTerminalPaidAgentRunReceipt,
   latestPendingAgentRun,
   recheckAgentRunReceiptOnNotFound,
-  rememberPendingAgentRun,
 } from "@/lib/petclaw/agent-run-client";
 
 // ── tokens (Collectible Editorial) ──
@@ -132,10 +132,20 @@ export default function AgentOffice() {
   const [err, setErr] = useState<string | null>(null);
 
   const [goal, setGoal] = useState("");
-  const [running, setRunning] = useState(false);
-  const [receiptMissing, setReceiptMissing] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
   const [liveRun, setLiveRun] = useState<LiveRun | null>(null);
   const [view, setView] = useState<"hotel" | "classic">("hotel");
+  const reconcileAttemptRef = useRef<{ runId: string } | null>(null);
+  const {
+    running,
+    receiptMissing,
+    start: startPaidRun,
+    markAmbiguous: markPaidRunAmbiguous,
+    settle: settlePaidRun,
+    reject: rejectPaidRun,
+    reconcile: reconcilePaidRun,
+    canReconcile: canReconcilePaidRun,
+  } = usePaidAgentRunGuard();
 
   // ── load pets ──
   useEffect(() => {
@@ -160,7 +170,6 @@ export default function AgentOffice() {
     try {
       const pending = latestPendingAgentRun();
       if (!pending || typeof pending.goal !== "string") return;
-      setReceiptMissing(true);
       setGoal(pending.goal);
       setLiveRun({ runId: pending.runId, title: pending.goal, steps: [], done: true, stoppedReason: "receipt_missing" });
       setErr("The previous paid run ended without a settlement receipt. Check Account credits and usage before dispatching again.");
@@ -196,31 +205,59 @@ export default function AgentOffice() {
 
   // ── dispatch a goal to the real tool-agent SSE ──
   const dispatch = useCallback(async () => {
-    if (petId == null || goal.trim().length < 3 || running || receiptMissing) return;
-    const runId = createAgentRunId();
-    setRunning(true);
+    if (petId == null || goal.trim().length < 3) return;
+    const start = await startPaidRun({
+      petId,
+      petName,
+      goal: goal.trim(),
+      maxSteps: 4,
+      confirmCostCredits: COST,
+      surface: "office",
+    });
+    if (start.kind !== "started") {
+      setErr(
+        start.kind === "blocked"
+          ? `Paid-run safety lock: ${start.pending.runId.slice(0, 8)}… still needs a settlement receipt.`
+          : start.message,
+      );
+      return;
+    }
+    const { runId } = start.run;
+    const { authToken } = start;
     setErr(null);
     const steps: LiveRunStep[] = [];
     const byId: Record<string, number> = {};
     setLiveRun({ runId, title: goal.trim(), steps: [], done: false });
-    try {
-      rememberPendingAgentRun({ runId, petId, petName, goal: goal.trim(), surface: "office", at: Date.now() });
-    } catch { /* storage unavailable; server-side confirmation still applies */ }
     let receivedSettlementReceipt = false;
     try {
       const res = await fetch(`/api/pets/${petId}/agent?stream=1`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...getAuthHeaders() },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+          Authorization: `Bearer ${authToken}`,
+        },
         body: JSON.stringify({ runId, goal: goal.trim(), maxSteps: 4, confirmCostCredits: COST }),
       });
       if (!res.ok || !res.body) {
         const d = await res.json().catch(() => ({} as any));
-        setErr(d?.error === "Not enough credits" ? `Not enough credits — a run costs ${COST}.` : d?.error || "The run failed.");
-        setLiveRun(null);
-        if (res.status < 500) {
-          try { forgetPendingAgentRun(runId); } catch { /* ignore */ }
+        const outcomeUnknown = !isDefinitivePaidAgentRejectionStatus(res.status);
+        if (outcomeUnknown) {
+          markPaidRunAmbiguous();
+          setErr("The server returned no validated settlement receipt. Dispatch remains locked; reconcile this saved run before trying again.");
+          setLiveRun((current) => current
+            ? { ...current, done: true, stoppedReason: "receipt_missing" }
+            : current);
         } else {
-          setReceiptMissing(true);
+          const unlocked = await rejectPaidRun(runId);
+          setErr(
+            d?.error === "Not enough credits"
+              ? `Not enough credits — a run costs ${COST}.`
+              : !unlocked
+                ? "This run was rejected, but another saved paid run still needs a receipt check."
+                : d?.error || "The run was rejected before it started.",
+          );
+          setLiveRun(null);
         }
         return;
       }
@@ -247,16 +284,8 @@ export default function AgentOffice() {
             const idx = byId[evt.id];
             if (idx != null) { steps[idx] = { ...steps[idx], ok: !!evt.ok, complete: true }; flush(); }
           } else if (evt.type === "done") {
-            const billing = evt.billing as AgentBilling | undefined;
-            if (
-              !billing
-              || (billing.outcome !== "charged" && billing.outcome !== "refunded")
-              || typeof billing.creditsCharged !== "number"
-              || !(billing.usageKnown === false ? billing.modelCalls == null : typeof billing.modelCalls === "number")
-              || evt.runId !== runId
-            ) {
-              continue;
-            }
+            if (!isTerminalPaidAgentRunReceipt(evt, runId)) continue;
+            const billing = evt.billing as AgentBilling;
             receivedSettlementReceipt = true;
             setLiveRun((r) => (r ? {
               ...r,
@@ -267,14 +296,13 @@ export default function AgentOffice() {
               billing,
               creditsRemaining: evt.creditsRemaining,
             } : r));
-            try { forgetPendingAgentRun(runId); } catch { /* ignore */ }
           } else if (evt.type === "error") {
             setErr(evt.error || "The run failed.");
           }
         }
       }
       if (!receivedSettlementReceipt) {
-        setReceiptMissing(true);
+        markPaidRunAmbiguous();
         setErr("The stream ended before the settlement receipt arrived. Do not retry yet; check Account credits and usage first.");
         setLiveRun((r) => (r ? { ...r, done: true, stoppedReason: "receipt_missing" } : r));
       } else {
@@ -284,33 +312,88 @@ export default function AgentOffice() {
       }
     } catch {
       if (!receivedSettlementReceipt) {
-        setReceiptMissing(true);
+        markPaidRunAmbiguous();
         setErr("The connection ended without a settlement receipt. The run may have reached the server; check Account before retrying.");
         setLiveRun((r) => (r ? { ...r, done: true, stoppedReason: "receipt_missing" } : r));
       }
     } finally {
-      setRunning(false);
+      if (receivedSettlementReceipt) {
+        const unlocked = await settlePaidRun(runId);
+        if (!unlocked) {
+          setErr("This dispatch settled, but another saved paid run still needs a receipt check.");
+        }
+      }
     }
-  }, [petId, petName, goal, running, receiptMissing, fetchMc]);
+  }, [
+    fetchMc,
+    goal,
+    markPaidRunAmbiguous,
+    petId,
+    petName,
+    rejectPaidRun,
+    settlePaidRun,
+    startPaidRun,
+  ]);
 
   const reconcilePendingRun = async () => {
-    const pending = latestPendingAgentRun();
-    if (!pending) {
-      setReceiptMissing(false);
-      setLiveRun(null);
-      setErr(null);
+    if (!canReconcilePaidRun() || reconcileAttemptRef.current) return;
+    let pending: ReturnType<typeof latestPendingAgentRun>;
+    try {
+      pending = latestPendingAgentRun();
+    } catch (storageError: unknown) {
+      setErr(
+        storageError instanceof Error
+          ? storageError.message
+          : "The paid-run safety journal is unavailable.",
+      );
       return;
     }
-    try {
-      const receipt = await recheckAgentRunReceiptOnNotFound(
-        () => api.pets.agentRunStatus(pending.petId, pending.runId),
+    if (!pending) {
+      markPaidRunAmbiguous();
+      setErr(
+        "The saved paid-run marker is unavailable, so dispatch stays locked. "
+        + "Check Account credits and usage or contact support; do not create a new run ID.",
       );
-      if (receipt.state !== "terminal" || !receipt.billing) {
-        setErr(`Run ${pending.runId.slice(0, 8)}… is still ${receipt.state}. Dispatch remains locked.`);
+      return;
+    }
+    const attempt = { runId: pending.runId };
+    reconcileAttemptRef.current = attempt;
+    setReconciling(true);
+    try {
+      let receipt;
+      const { token: authToken } = getPaidRunAuthContext();
+      try {
+        receipt = await recheckAgentRunReceiptOnNotFound(
+          () => api.pets.agentRunStatus(pending.petId, pending.runId, authToken),
+        );
+      } catch (lookupError: any) {
+        if (lookupError?.status !== 404) throw lookupError;
+        if (pending.maxSteps == null || pending.confirmCostCredits !== COST) {
+          setErr(
+            `No receipt is visible for legacy run ${pending.runId.slice(0, 8)}…. `
+            + "Its marker stays locked because exact replay parameters are unavailable.",
+          );
+          return;
+        }
+        setErr(`Resuming saved run ${pending.runId.slice(0, 8)}… with the same charge ID…`);
+        receipt = await api.pets.runAgent(
+          pending.petId,
+          pending.runId,
+          pending.goal,
+          pending.confirmCostCredits,
+          pending.maxSteps,
+          authToken,
+        );
+      }
+      if (reconcileAttemptRef.current !== attempt) return;
+      if (latestPendingAgentRun()?.runId !== pending.runId) return;
+      if (!isTerminalPaidAgentRunReceipt(receipt, pending.runId)) {
+        setErr(
+          `Run ${pending.runId.slice(0, 8)}… has no validated terminal receipt `
+          + `(${receipt?.state || "unknown"}). Dispatch remains locked.`,
+        );
         return;
       }
-      forgetPendingAgentRun(pending.runId);
-      setReceiptMissing(false);
       setLiveRun({
         runId: pending.runId,
         title: receipt.goal || pending.goal,
@@ -319,19 +402,26 @@ export default function AgentOffice() {
         answer: receipt.answer || "",
         completed: receipt.completed === true,
         stoppedReason: receipt.stoppedReason,
-        billing: receipt.billing,
+        billing: receipt.billing as AgentBilling,
         creditsRemaining: receipt.creditsRemaining,
       });
-      setErr(null);
+      const unlocked = await reconcilePaidRun(pending.runId);
+      setErr(
+        unlocked
+          ? null
+          : "This run reconciled, but another saved paid run still needs a receipt check.",
+      );
     } catch (e: any) {
-      if (e?.status === 404) {
-        forgetPendingAgentRun(pending.runId);
-        setReceiptMissing(false);
-        setLiveRun(null);
-        setErr("No durable run receipt was found after two checks. The local marker was cleared; the server's per-pet guard prevents an overlapping paid run. Check Account credits before dispatching again.");
-        return;
+      if (reconcileAttemptRef.current !== attempt) return;
+      setErr(
+        `Receipt lookup/replay failed: ${e?.message || "try again shortly"}. `
+        + `Run ${pending.runId.slice(0, 8)}… remains locked; no new run ID was created.`,
+      );
+    } finally {
+      if (reconcileAttemptRef.current === attempt) {
+        reconcileAttemptRef.current = null;
+        setReconciling(false);
       }
-      setErr(`Receipt lookup failed: ${e?.message || "try again shortly"}. Do not dispatch another paid run yet.`);
     }
   };
 
@@ -372,7 +462,17 @@ export default function AgentOffice() {
       {receiptMissing && (
         <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 10, background: "rgba(190,79,40,0.09)", border: "1px solid rgba(190,79,40,0.28)", color: TERRA, fontFamily: SANS, fontSize: 13.5, lineHeight: 1.5 }}>
           <b>Paid-run safety lock:</b> <a href="/account" style={{ color: TERRA, fontWeight: 800 }}>Open Account</a> and verify credits/usage before unlocking another dispatch.
-          <div><button type="button" onClick={reconcilePendingRun} style={{ marginTop: 8, border: `1px solid ${HAIR}`, borderRadius: 8, padding: "7px 10px", background: PAPER, color: INK, fontFamily: SANS, fontWeight: 700 }}>Check saved run receipt</button></div>
+          <div>
+            <button
+              type="button"
+              onClick={reconcilePendingRun}
+              disabled={reconciling}
+              aria-busy={reconciling}
+              style={{ marginTop: 8, border: `1px solid ${HAIR}`, borderRadius: 8, padding: "7px 10px", background: PAPER, color: INK, fontFamily: SANS, fontWeight: 700 }}
+            >
+              {reconciling ? "Checking saved run…" : "Check saved run receipt"}
+            </button>
+          </div>
         </div>
       )}
 

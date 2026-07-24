@@ -8,7 +8,7 @@ PetClaw is an owner-controlled companion layer for web, SDK, CLI and MCP.
 npm view @myaipet/petclaw-sdk version
 ```
 
-SDK `1.6.2` publishes the repaired MCP, agent, session-lineage and
+SDK `1.6.3` publishes the repaired MCP, agent, session-lineage and
 secret-handling flow documented here. Never install the unrelated unscoped
 `petclaw-sdk` package.
 
@@ -101,7 +101,7 @@ launch-disabled.
 petclaw-sdk mcp
 ```
 
-SDK 1.6.2 defines seven owner-authenticated stdio tools: persistent chat,
+SDK 1.6.3 defines seven owner-authenticated stdio tools: persistent chat,
 bounded agent run, persona mirror, memory recall, approved page-text summary,
 SOUL export and read-only discovery. Restart the MCP client after changing auth.
 
@@ -156,6 +156,10 @@ Direct SDK callers must generate and persist a UUID with
 `createPetClawAgentRunId()` before calling `agent.run`. CLI and MCP each
 generate one ID and retain it for reconciliation. Look up unknown transport
 outcomes from Account or `client.agent.status(petId, runId)` before retrying.
+If no receipt is visible, keep the local pending marker locked. Replay only the
+exact saved `runId`, `goal`, `maxSteps`, and `confirmCostCredits` against the
+server origin to which that authorization was bound. Never mint a new run ID or
+clear the marker merely because a receipt is absent.
 Use `petclaw-sdk auth`; never copy its token into Hermes YAML, args or env.
 To expose `petclaw_persona_mirror`, first install `persona-mirror` for the
 selected pet, then add that MCP tool to the allowlist.
@@ -207,7 +211,7 @@ try {
 }
 ```
 
-SDK 1.6.2 sends owner credentials only to an HTTPS origin (HTTP is limited to
+SDK 1.6.3 sends owner credentials only to an HTTPS origin (HTTP is limited to
 loopback development), enforces its deadline even with an injected fetch, and
 caps response bodies: 2 MiB normally and 16 MiB for SOUL export, matching import.
 

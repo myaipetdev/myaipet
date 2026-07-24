@@ -12,7 +12,10 @@
 import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import { MODELS } from "@/lib/studio/providers";
-import { forgetPendingAgentRun } from "@/lib/petclaw/agent-run-client";
+import {
+  isValidTerminalPaidAgentRunBilling,
+  removePendingAgentRun,
+} from "@/lib/petclaw/agent-run-client";
 
 // ── Types mirror the /api/account/overview payload ──
 interface PurchaseRow {
@@ -188,13 +191,17 @@ export default function AccountOverview({
         }
         return r.json();
       })
-      .then((d: Overview) => {
+      .then(async (d: Overview) => {
         if (cancelled) return;
-        for (const run of d.agent_runs || []) {
-          if (run.state === "terminal") {
-            try { forgetPendingAgentRun(run.run_id); } catch { /* storage unavailable */ }
-          }
-        }
+        await Promise.all((d.agent_runs || []).map(async (run) => {
+          const billing = run.billing;
+          if (
+            run.state !== "terminal"
+            || !isValidTerminalPaidAgentRunBilling(billing)
+          ) return;
+          try { await removePendingAgentRun(run.run_id); } catch { /* keep fail-closed */ }
+        }));
+        if (cancelled) return;
         setData(d);
         onCreditsChange?.(d.credits);
       })
