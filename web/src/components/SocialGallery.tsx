@@ -856,7 +856,8 @@ function GalleryCard({ item, index, onLike, onClick }: any) {
  *  real creator/likes and opens the detail modal. */
 export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
   items: any[];
-  onOpen: (item: any, index: number) => void;
+  /** Optional — when absent the OPEN ▸ button is hidden and sleeves only navigate (read-only surfaces). */
+  onOpen?: (item: any, index: number) => void;
   /** Optional — when absent the ♥ button in the player bar is hidden (read-only surfaces). */
   onLike?: (genId: number, index: number) => void;
   /** Optional gentle auto-rotation interval (ms). Pauses on hover, skips under
@@ -909,6 +910,8 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
 
   const media = (it: any) => it.photo_url || it.photo_path || null;
   const isVideo = (it: any) => !!(it.video_url || it.video_path);
+  // Sample items (negative id / __mock) have no real engagement — never show a ♥ count for them.
+  const isMock = (it: any) => !!(it?.__mock || (typeof it?.id === "number" && it.id < 0));
 
   return (
     <div
@@ -987,7 +990,7 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 7, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: T.muted, textTransform: "uppercase" }}>
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "70%" }}>{it.display_name || "Anonymous"}</span>
-                  <span>♥ {it.likes_count || 0}</span>
+                  {!isMock(it) && <span>♥ {it.likes_count || 0}</span>}
                 </div>
               </div>
               <button
@@ -997,7 +1000,7 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
                 aria-posinset={i + 1}
                 aria-setsize={n}
                 aria-label={`${center ? "Open" : "Show"} creation by ${it.display_name || "Anonymous"}${it.prompt ? `: ${String(it.prompt).slice(0, 60)}` : ""}`}
-                onClick={() => { resetAuto(); if (center) onOpen(it, i); else setIdx(i); }}
+                onClick={() => { resetAuto(); if (center) onOpen?.(it, i); else setIdx(i); }}
                 title={center ? "Open" : undefined}
                 style={{ position: "absolute", inset: 0, zIndex: 2, cursor: "pointer", padding: 0, border: 0, borderRadius: 6, background: "transparent" }}
               />
@@ -1022,7 +1025,7 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
               {cur.prompt || "untitled"}
             </div>
           </div>
-          {onLike && (
+          {onLike && !isMock(cur) && (
             <button
               type="button"
               onClick={() => curId != null && onLike(curId, idx)}
@@ -1033,9 +1036,11 @@ export function AlbumCarousel({ items, onOpen, onLike, autoAdvance }: {
               {cur.is_liked ? "♥" : "♡"} {cur.likes_count || 0}
             </button>
           )}
-          <button type="button" onClick={() => onOpen(cur, idx)} style={{ background: T.ink, border: "none", borderRadius: 999, padding: "7px 14px", cursor: "pointer", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: T.creamOn }}>
-            OPEN ▸
-          </button>
+          {onOpen && (
+            <button type="button" onClick={() => onOpen(cur, idx)} style={{ background: T.ink, border: "none", borderRadius: 999, padding: "7px 14px", cursor: "pointer", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: T.creamOn }}>
+              OPEN ▸
+            </button>
+          )}
           <button type="button" onClick={() => go(1)} disabled={idx >= n - 1} aria-label="Next" style={{ background: "transparent", border: "none", cursor: idx >= n - 1 ? "default" : "pointer", fontSize: 18, color: idx >= n - 1 ? T.hair : T.ink, padding: "0 2px" }}>›</button>
         </div>
       )}
@@ -1117,8 +1122,8 @@ function MasonryGrid({ items, onLike, onCardClick, columnCount }: any) {
 
 // ── Sample showcase (genuine-zero empty state only) ──
 // REAL static product assets from /public/gallery — art that ships with the
-// product. We deliberately removed fabricated community posts, so this strip
-// is the honest stand-in: every print is permanently stamped SAMPLE, carries
+// product. We deliberately removed fabricated community posts, so this
+// carousel is the honest stand-in: every sleeve is labelled SAMPLE, carries
 // no author / likes / comments, and is NOT clickable into a post detail. It
 // exists purely to show what the wall becomes once real creations land.
 const SAMPLE_SHOWCASE = [
@@ -1141,38 +1146,20 @@ function SampleShowcase() {
       <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted2, letterSpacing: "0.04em" }}>
         What creations look like — these are samples, not community posts.
       </div>
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", gap: 16, flexWrap: "wrap", marginTop: 20 }}>
-        {SAMPLE_SHOWCASE.map((s, i) => (
-          <figure key={s.src} style={{
-            margin: 0, width: 148, background: T.paper, borderRadius: 10, padding: 7,
-            boxShadow: "var(--ed-shadow-card)",
-            transform: `rotate(${[-2.2, 1.6, -1.2, 2, -1.8][i % 5]}deg)`,
-          }}>
-            {/* print well — gold inset keyline, same language as the real cards */}
-            <div style={{
-              position: "relative", width: "100%", aspectRatio: "1 / 1",
-              borderRadius: 6, overflow: "hidden", background: T.inset,
-              boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)",
-            }}>
-              <img src={s.src} alt={`Sample creation: ${s.label}`} loading="lazy"
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-              {/* SAMPLE stamp — same treatment as CardDeck's guest samples,
-                  rotated so it reads as a stamp, permanent on the art */}
-              <span style={{
-                position: "absolute", left: 6, bottom: 8, fontFamily: T.m, fontSize: 13, fontWeight: 700,
-                letterSpacing: "0.12em", color: T.ink70, background: "rgba(251,246,236,.9)",
-                border: `1px solid ${T.hair}`, borderRadius: 5, padding: "1px 6px",
-                transform: "rotate(-6deg)", transformOrigin: "left bottom",
-              }}>SAMPLE</span>
-            </div>
-            <figcaption style={{
-              fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
-              textTransform: "uppercase", color: T.muted2, marginTop: 7,
-            }}>
-              {s.label}
-            </figcaption>
-          </figure>
-        ))}
+      {/* Read-only AlbumCarousel — no onOpen/onLike, so no OPEN ▸ button, no ♥,
+          no detail modal. Sleeves are stamped SAMPLE via display_name; negative
+          ids keep the mocks clear of real generation ids and the like API. */}
+      <div style={{ marginTop: 20 }}>
+        <AlbumCarousel
+          items={SAMPLE_SHOWCASE.map((s, i) => ({
+            id: -(i + 1),
+            photo_url: s.src,
+            prompt: s.label,
+            display_name: "SAMPLE",
+            __mock: true,
+          }))}
+          autoAdvance={3800}
+        />
       </div>
     </div>
   );

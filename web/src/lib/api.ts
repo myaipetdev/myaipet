@@ -39,7 +39,10 @@ const DEV_MOCK_SKILLS = {
 
 // Dev fixture for the Agent Office (local DB is offline in dev) — mirrors the
 // mission-control route's response shape so the hotel renders locally.
+// __sample rides the payload so every Office view pins a SAMPLE DATA ribbon
+// (the flag, not NODE_ENV, is what marks fixture data).
 const DEV_MOCK_MC = {
+  __sample: true,
   pet: { id: 1, name: "Sparky", level: 5 },
   pillars: {
     soul: { set: true, persona: "warm, a little cheeky", checkpoints: 2 },
@@ -67,6 +70,7 @@ const DEV_MOCK_MC = {
     { id: "c1", name: "Daily digest", cadence: "daily 10:00", lastRun: new Date(Date.now() - 86400e3).toISOString(), nextRun: new Date(Date.now() + 3600e3).toISOString(), desc: "Morning summary of your day ahead" },
     { id: "c2", name: "BNB price watch", cadence: "hourly", lastRun: null, nextRun: new Date(Date.now() + 1800e3).toISOString(), desc: "Alert on ±3% moves" },
   ],
+  registered: { any: true, signals: { hasRuns: true, autonomyOn: true, installedSkills: true, cliToken: false, byokModel: false } },
   generatedAt: new Date().toISOString(),
 };
 

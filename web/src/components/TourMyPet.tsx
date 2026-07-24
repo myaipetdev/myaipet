@@ -87,25 +87,28 @@ export default function TourMyPet() {
       <div className="ed-grain" /><div className="ed-glow" /><div className="ed-vignette" />
       <div style={{ position: "relative", zIndex: 2, maxWidth: 1080, margin: "0 auto", padding: "8px 24px 48px" }}>
         <div className="tmp-grid" style={{ display: "grid", gridTemplateColumns: "1.02fr 1fr", gap: 24, alignItems: "start" }}>
-          <style>{`@media (max-width: 880px) { .tmp-grid { grid-template-columns: 1fr !important; } }`}</style>
+          <style>{`@media (max-width: 880px) { .tmp-grid { grid-template-columns: 1fr !important; } .tmp-poster-wrap { position: static !important; } }`}</style>
 
-          {/* poster (left) — the demo collectible */}
-          <div style={{ position: "relative", background: T.terra, borderRadius: 18, minHeight: 520, overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div aria-hidden style={{ position: "absolute", inset: 14, border: "1px solid rgba(252,233,207,.35)", borderRadius: 8, pointerEvents: "none" }} />
-            <div style={{ position: "absolute", top: 26, left: 28, right: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start", zIndex: 3 }}>
-              <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".06em", color: T.creamOn, whiteSpace: "nowrap" }}>COMPANION PROTOCOL</div>
-              <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: "#FFF8EE", background: "rgba(33,26,18,.34)", border: "1px solid rgba(252,233,207,.5)", borderRadius: 8, padding: "4px 10px" }}>DEMO</div>
-            </div>
-            <div style={{ position: "absolute", left: -2, top: "50%", transform: "rotate(-90deg) translateX(50%)", transformOrigin: "left center", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".18em", color: "rgba(252,233,207,.55)", whiteSpace: "nowrap" }}>
-              ★ {element} · LV.{String(DEMO.level).padStart(2, "0")}
-            </div>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", zIndex: 2, paddingTop: 56, paddingBottom: 34 }}>
-              <div style={{ position: "relative", zIndex: 2 }}>
-                <Motes />
-                <CollectibleFrame photoUrl={DEMO.avatar} level={DEMO.level} speciesLabel="COMPANION" elementLabel={element} width={264} />
+          {/* poster (left) — the demo collectible. Sticky like MyPetEditorial's
+              poster so it follows the taller right column; mobile drops sticky. */}
+          <div className="tmp-poster-wrap" style={{ position: "sticky", top: 88, alignSelf: "start" }}>
+            <div style={{ position: "relative", background: T.terra, borderRadius: 18, minHeight: 520, overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div aria-hidden style={{ position: "absolute", inset: 14, border: "1px solid rgba(252,233,207,.35)", borderRadius: 8, pointerEvents: "none" }} />
+              <div style={{ position: "absolute", top: 26, left: 28, right: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start", zIndex: 3 }}>
+                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".06em", color: T.creamOn, whiteSpace: "nowrap" }}>COMPANION PROTOCOL</div>
+                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".14em", color: "#FFF8EE", background: "rgba(33,26,18,.34)", border: "1px solid rgba(252,233,207,.5)", borderRadius: 8, padding: "4px 10px" }}>DEMO</div>
               </div>
-              <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".34em", color: T.creamOn, marginTop: 22, zIndex: 2 }}>MEET</div>
-              <div className="ed-foil-text ed-foil-deboss" style={{ fontFamily: T.disp, fontWeight: 800, fontSize: "clamp(38px,4.6vw,64px)", lineHeight: 0.82, letterSpacing: "-.04em", zIndex: 2, textAlign: "center" }}>{DEMO.name}</div>
+              <div style={{ position: "absolute", left: -2, top: "50%", transform: "rotate(-90deg) translateX(50%)", transformOrigin: "left center", fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".18em", color: "rgba(252,233,207,.55)", whiteSpace: "nowrap" }}>
+                ★ {element} · LV.{String(DEMO.level).padStart(2, "0")}
+              </div>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", zIndex: 2, paddingTop: 56, paddingBottom: 34 }}>
+                <div style={{ position: "relative", zIndex: 2 }}>
+                  <Motes />
+                  <CollectibleFrame photoUrl={DEMO.avatar} level={DEMO.level} speciesLabel="COMPANION" elementLabel={element} width={264} />
+                </div>
+                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".34em", color: T.creamOn, marginTop: 22, zIndex: 2 }}>MEET</div>
+                <div className="ed-foil-text ed-foil-deboss" style={{ fontFamily: T.disp, fontWeight: 800, fontSize: "clamp(38px,4.6vw,64px)", lineHeight: 0.82, letterSpacing: "-.04em", zIndex: 2, textAlign: "center" }}>{DEMO.name}</div>
+              </div>
             </div>
           </div>
 
@@ -181,7 +184,7 @@ export default function TourMyPet() {
             <div style={{ background: T.paper, borderRadius: 22, padding: "18px 18px 20px", boxShadow: "var(--ed-shadow-card)" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
                 <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: ".14em", color: T.mono, textTransform: "uppercase" }}>{DEMO.name}&apos;s Pond</div>
-                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.muted }}>LO-FI · DEMO</div>
+                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".12em", color: T.muted }}>AMBIENT · DEMO</div>
               </div>
               <div style={{ marginTop: 14 }}>
                 <Suspense fallback={<div style={{ width: "100%", maxWidth: 340, aspectRatio: "1 / 1", margin: "0 auto", borderRadius: "50%", background: "rgba(26,126,104,.14)" }} />}>

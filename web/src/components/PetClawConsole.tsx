@@ -85,12 +85,16 @@ export const SDK_VERSION = RELEASE_STATUS.sdkVersion;
 // Messaging channel delivery is launch-paused (matches the Agent screen);
 // MCP clients connect once the fixed MCP path ships in SDK 1.6.2.
 const RUNS_ON = `web · chrome-extension · mcp clients (${RELEASE_STATUS.mcp})`;
-const CONNECTORS = [
-  { k: "messaging (0/8 live)", v: "telegram · discord · x launch-paused; whatsapp · slack · line · instagram · gmail planned" },
-  { k: "productivity (0/3 live)", v: "notion · google-calendar · github planned" },
-  { k: "media (0/2 live)", v: "spotify · youtube planned" },
-  { k: "knowledge (3/4 live)", v: "web-search · wikipedia · memory live; brave planned" },
-  { k: "crypto (0/2 live)", v: "coingecko · bscscan planned" },
+// Status tokens — colored glyphs so live/paused/planned scans without reading each row.
+const tLive = <span style={{ color: GREEN }}>● live</span>;
+const tPlanned = <span style={{ color: MUTED }}>○ planned</span>;
+const tPaused = <span style={{ color: MUTED }}>◌ launch-paused</span>;
+const CONNECTORS: { k: string; v: React.ReactNode }[] = [
+  { k: "messaging (0/8 live)", v: <>telegram · discord · x {tPaused} · <span title="whatsapp · slack · line · instagram · gmail — planned" style={{ color: MUTED, cursor: "help" }}>+5 ○ planned</span></> },
+  { k: "productivity (0/3 live)", v: <>notion · google-calendar · github {tPlanned}</> },
+  { k: "media (0/2 live)", v: <>spotify · youtube {tPlanned}</> },
+  { k: "knowledge (3/4 live)", v: <>web-search · wikipedia · memory {tLive} · brave {tPlanned}</> },
+  { k: "crypto (0/2 live)", v: <>coingecko · bscscan {tPlanned}</> },
 ];
 const MCP_TOOLS = [
   { k: "petclaw_chat", v: "memory-aware chat" }, { k: "persona_mirror", v: "mirror your tone" },
@@ -115,9 +119,9 @@ const HARNESS = [
   { k: "chorus", v: "best-of-N: most in-character of N drafts · Fusion-family (opt-in)" },
 ];
 // PACK public discovery is live; remote invocation remains fail-closed.
-const PACK = [
-  { k: "discover", v: "find pets by element / skill" },
-  { k: "invoke", v: "disabled · dedicated consent + caller funding required" },
+const PACK: { k: string; v: React.ReactNode }[] = [
+  { k: "discover", v: <>find pets by element / skill {tLive}</> },
+  { k: "invoke", v: <><span style={{ color: MUTED }}>○ disabled</span> — needs dedicated consent + caller funding</> },
 ];
 const SOVEREIGNTY: { k: string; v: React.ReactNode }[] = [
   { k: "export", v: "full memory ledger, JSON + SHA-256 integrity hash" },
@@ -137,7 +141,6 @@ function Row({ k, v, kw = 132 }: { k: string; v: React.ReactNode; kw?: number })
 function SectionHead({ children }: { children: React.ReactNode }) {
   return <div style={{ color: GOLD2, fontWeight: 700, fontSize: 15, margin: "16px 0 7px" }}>{children}</div>;
 }
-const liveTag = <span style={{ color: GREEN }}>● live</span>;
 
 interface Line { role: "sys" | "you" | "pet"; text: string }
 
@@ -300,7 +303,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff5f57" }} />
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#febc2e" }} />
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#28c840" }} />
-          <span style={{ marginLeft: 10, color: "#C2B49A", fontSize: 13.5 }}>
+          <span style={{ marginLeft: 10, color: "#C2B49A", fontSize: 14.5 }}>
             petclaw connect{pet?.name ? ` · ${pet.name.toLowerCase()}` : ""}
           </span>
         </div>
@@ -327,13 +330,13 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                 <div className="ed-gloss" aria-hidden style={{ left: 0, opacity: 0.5 }} />
               </div>
               {typeof pet?.level === "number" && (
-                <span aria-hidden style={{ position: "absolute", top: -10, right: -10, width: 30, height: 30, borderRadius: "50%", background: "radial-gradient(circle at 35% 30%, #FFF0C0, #EBB84E 48%, #B8822C)", border: "2px solid #FBF6EC", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: MONO, fontSize: 13, fontWeight: 700, color: "#5C3504" }}>
+                <span aria-hidden style={{ position: "absolute", top: -10, right: -10, width: 32, height: 32, borderRadius: "50%", background: "radial-gradient(circle at 35% 30%, #FFF0C0, #EBB84E 48%, #B8822C)", border: "2px solid #FBF6EC", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: MONO, fontSize: 14, fontWeight: 700, color: "#5C3504" }}>
                   {String(pet.level).padStart(2, "0")}
                 </span>
               )}
               {/* Honesty: never present the sample pet as the user's own. */}
               {demo && (
-                <span style={{ position: "absolute", bottom: 4, left: 4, right: 4, textAlign: "center", fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", color: "#FCE9CF", background: "rgba(30,23,16,.78)", borderRadius: 4, padding: "1px 0" }}>DEMO</span>
+                <span style={{ position: "absolute", bottom: 4, left: 4, right: 4, textAlign: "center", fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", color: "#FCE9CF", background: "rgba(30,23,16,.78)", borderRadius: 4, padding: "1px 0" }}>DEMO</span>
               )}
             </div>
           </div>
@@ -379,7 +382,8 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   <SectionHead>PACK — pet-to-pet (A2A)</SectionHead>
                   {PACK.map((p) => <Row key={p.k} k={p.k} v={p.v} kw={120} />)}
                   <SectionHead>MODELS — bring your own (BYOK)</SectionHead>
-                  <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter · Nous (Hermes) — powers chat + agent reasoning + judging" kw={120} />
+                  <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter · Nous (Hermes)" kw={120} />
+                  <Row k="powers" v="chat · agent reasoning · best-of-N judging" kw={120} />
                   <Row k="agent-loop" v="give a goal → plans, calls skills, iterates → answers" kw={120} />
                   <div style={{ fontSize: 15, marginTop: 4 }}>
                     <span style={{ color: GREEN }}>connect your model ↓ below (or via the CLI)</span>
@@ -394,10 +398,10 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
           {/* LIVE terminal */}
           {interactive && (
             <div style={{ marginTop: 16, border: `1px solid ${LINE}`, borderRadius: 12, overflow: "hidden", background: "#16110B" }}>
-              <div style={{ padding: "8px 14px", borderBottom: "1px solid rgba(236,224,206,0.06)", color: MUTED, fontSize: 13, letterSpacing: "0.08em" }}>
+              <div style={{ padding: "8px 14px", borderBottom: "1px solid rgba(236,224,206,0.06)", color: MUTED, fontSize: 14, letterSpacing: "0.08em" }}>
                 LIVE · petclaw_chat — {isSim ? `demo of ${petName} (adopt a pet to chat live)` : `talk to ${petName} right here`}
               </div>
-              <div ref={scrollRef} style={{ maxHeight: 264, overflowY: "auto", padding: "12px 14px", fontSize: 13, lineHeight: 1.7 }}>
+              <div ref={scrollRef} style={{ maxHeight: 264, overflowY: "auto", padding: "12px 14px", fontSize: 14, lineHeight: 1.7 }}>
                 {lines.map((l, i) => (
                   <div key={i} style={{ color: lineColor(l.role), whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                     <span style={{ color: l.role === "you" ? GOLD2 : l.role === "pet" ? AMBER_DIM : MUTED }}>{linePrefix(l.role)}</span>
@@ -406,7 +410,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                 ))}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderTop: "1px solid rgba(236,224,206,0.06)" }}>
-                <span style={{ color: GOLD, fontSize: 13 }}>petclaw ❯</span>
+                <span style={{ color: GOLD, fontSize: 14 }}>petclaw ❯</span>
                 <input
                   aria-label={`Message ${petName}`}
                   value={input}
@@ -416,12 +420,12 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   disabled={busy}
                   style={{
                     flex: 1, background: "transparent", border: "none", outline: "none",
-                    color: TXT, fontFamily: MONO, fontSize: 13.5,
+                    color: TXT, fontFamily: MONO, fontSize: 14.5,
                   }}
                 />
                 <button onClick={send} disabled={busy || !input.trim()} style={{
                   background: "transparent", border: `1px solid ${LINE}`, color: GOLD,
-                  borderRadius: 8, padding: "4px 12px", fontFamily: MONO, fontSize: 13, cursor: busy ? "default" : "pointer",
+                  borderRadius: 8, padding: "4px 12px", fontFamily: MONO, fontSize: 14, cursor: busy ? "default" : "pointer",
                   opacity: busy || !input.trim() ? 0.5 : 1,
                 }}>send</button>
               </div>
@@ -433,7 +437,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
         <div style={{
           display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
           padding: "11px 22px", background: "#1E1710", borderTop: "1px solid rgba(231,197,124,0.18)",
-          fontSize: 13, color: "#C2B49A",
+          fontSize: 14, color: "#C2B49A",
         }}>
           <span>⌁ <b style={{ color: GOLD }}>{petName}</b>
             {pet?.level ? ` · Lv.${pet.level}` : ""}

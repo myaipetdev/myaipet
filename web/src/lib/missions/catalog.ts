@@ -133,7 +133,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Say hi to your pet",
     description: "One message in chat is enough.",
     points: 5, verifier: "auto",
-    cta: { label: "Open chat", href: "/?section=my pet" },
+    cta: { label: "Open chat", href: "/?section=chat" },
     check: async (u, d) => (await countToday(u, d, "chat")) > 0,
   },
   {
@@ -142,7 +142,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Five-message conversation",
     description: "Have a real back-and-forth (5+ chat turns).",
     points: 10, verifier: "auto",
-    cta: { label: "Open chat", href: "/?section=my pet" },
+    cta: { label: "Open chat", href: "/?section=chat" },
     check: async (u, d) => (await countToday(u, d, "chat")) >= 5,
   },
   {
@@ -151,7 +151,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Ten-message conversation",
     description: "Deeper hang. 10+ turns today.",
     points: 15, verifier: "auto",
-    cta: { label: "Open chat", href: "/?section=my pet" },
+    cta: { label: "Open chat", href: "/?section=chat" },
     check: async (u, d) => (await countToday(u, d, "chat")) >= 10,
   },
   {
@@ -160,7 +160,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Ask your pet about their dream",
     description: "Open today's chat by asking about last night's dream.",
     points: 10, verifier: "manual",
-    cta: { label: "Ask about dream", href: "/?section=my pet" },
+    cta: { label: "Ask about dream", href: "/?section=chat" },
   },
   {
     id: "share_day",
@@ -168,7 +168,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Tell your pet about your day",
     description: "Vent. They'll remember.",
     points: 10, verifier: "manual",
-    cta: { label: "Open chat", href: "/?section=my pet" },
+    cta: { label: "Open chat", href: "/?section=chat" },
   },
   {
     id: "ask_advice",
@@ -176,7 +176,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Ask your pet for advice",
     description: "On anything — work, life, weather. They'll have an opinion.",
     points: 10, verifier: "manual",
-    cta: { label: "Ask for advice", href: "/?section=my pet" },
+    cta: { label: "Ask for advice", href: "/?section=chat" },
   },
   {
     id: "ask_fear",
@@ -184,7 +184,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Ask what your pet is afraid of",
     description: "Their answer will tell you about their persona.",
     points: 10, verifier: "manual",
-    cta: { label: "Ask", href: "/?section=my pet" },
+    cta: { label: "Ask", href: "/?section=chat" },
   },
   {
     id: "share_secret",
@@ -192,7 +192,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Tell your pet a secret",
     description: "Goes into their memory ledger. Only they see it.",
     points: 15, verifier: "manual",
-    cta: { label: "Share secret", href: "/?section=my pet" },
+    cta: { label: "Share secret", href: "/?section=chat" },
   },
   {
     id: "teach_fact",
@@ -200,7 +200,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Teach your pet one new fact about you",
     description: "Anything — favorite food, where you grew up.",
     points: 10, verifier: "manual",
-    cta: { label: "Teach pet", href: "/?section=my pet" },
+    cta: { label: "Teach pet", href: "/?section=chat" },
   },
   {
     id: "joke_today",
@@ -208,7 +208,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Tell your pet a joke",
     description: "See if they laugh.",
     points: 10, verifier: "manual",
-    cta: { label: "Joke time", href: "/?section=my pet" },
+    cta: { label: "Joke time", href: "/?section=chat" },
   },
 
   // ── MEMORY (5) ─────────────────────────────────────────────────────
@@ -218,7 +218,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Create a memory",
     description: "Any meaningful chat triggers memory extraction.",
     points: 10, verifier: "auto",
-    cta: { label: "Open chat", href: "/?section=my pet" },
+    cta: { label: "Open chat", href: "/?section=chat" },
     check: async (u, d) => (await countMemoriesToday(u, d)) >= 1,
   },
   {
@@ -227,7 +227,7 @@ export const MISSION_CATALOG: MissionTemplate[] = [
     title: "Three new memories",
     description: "Have a longer conversation today (3+ memories formed).",
     points: 20, verifier: "auto",
-    cta: { label: "Open chat", href: "/?section=my pet" },
+    cta: { label: "Open chat", href: "/?section=chat" },
     check: async (u, d) => (await countMemoriesToday(u, d)) >= 3,
   },
   {

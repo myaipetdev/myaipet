@@ -98,7 +98,7 @@ export default function PetLoraPanel({ petId, petName }: { petId: number; petNam
     border: "1px solid rgba(33,26,18,.13)",
   };
   const eyebrow: React.CSSProperties = {
-    fontSize: 13, fontFamily: "var(--ed-m), 'Space Mono', ui-monospace, monospace",
+    fontSize: 14, fontFamily: "var(--ed-m), 'Space Mono', ui-monospace, monospace",
     color: "#5C8A4E", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 6,
     textTransform: "uppercase",
   };
@@ -107,7 +107,7 @@ export default function PetLoraPanel({ petId, petName }: { petId: number; petNam
     return (
       <div style={wrap}>
         <div style={eyebrow}><Icon name="test-tube" size={12} style={{ marginRight: 5 }} /> IDENTITY MODEL · TRAINED</div>
-        <div style={{ fontSize: 13, color: "#211A12", lineHeight: 1.5 }}>
+        <div style={{ fontSize: 14, color: "#211A12", lineHeight: 1.5 }}>
           {petName}&rsquo;s face profile is trained and saved to their file.
         </div>
         <button onClick={() => train(true)} disabled={busy} style={ghostBtn}>
@@ -121,7 +121,7 @@ export default function PetLoraPanel({ petId, petName }: { petId: number; petNam
     return (
       <div style={wrap}>
         <div style={eyebrow}><Icon name="test-tube" size={12} style={{ marginRight: 5 }} /> TRAINING {petName.toUpperCase()}&rsquo;S IDENTITY</div>
-        <div style={{ fontSize: 13, color: "#211A12", lineHeight: 1.5, display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ fontSize: 14, color: "#211A12", lineHeight: 1.5, display: "flex", alignItems: "center", gap: 8 }}>
           <Spinner /> Learning their face from {lora?.imagesUsed || "your"} photos — a few minutes.
           You can keep creating in the meantime.
         </div>
@@ -133,14 +133,14 @@ export default function PetLoraPanel({ petId, petName }: { petId: number; petNam
   return (
     <div style={wrap}>
       <div style={eyebrow}><Icon name="sparkling" size={12} style={{ marginRight: 5 }} /> TRAIN {petName.toUpperCase()}&rsquo;S FACE PROFILE</div>
-      <div style={{ fontSize: 13, color: "#211A12", lineHeight: 1.5 }}>
+      <div style={{ fontSize: 14, color: "#211A12", lineHeight: 1.5 }}>
         Train a one-time identity model from {petName}&rsquo;s photos. Their
         face profile is saved to their pet file.
       </div>
       {status === "failed" && lora?.error && (
-        <div style={{ fontSize: 13, color: "#BE4F28", marginTop: 6 }}>Last run failed: {lora.error}</div>
+        <div style={{ fontSize: 14, color: "#BE4F28", marginTop: 6 }}>Last run failed: {lora.error}</div>
       )}
-      {msg && <div style={{ fontSize: 13, color: "#BE4F28", marginTop: 6 }}>{msg}</div>}
+      {msg && <div style={{ fontSize: 14, color: "#BE4F28", marginTop: 6 }}>{msg}</div>}
       <button onClick={() => train(false)} disabled={busy} style={primaryBtn}>
         {busy ? "Starting…" : status === "failed" ? `Retry training ${petName}` : `Train ${petName}'s identity`}
       </button>
@@ -163,7 +163,7 @@ function Spinner() {
 const primaryBtn: React.CSSProperties = {
   marginTop: 10, padding: "9px 16px", borderRadius: 10, border: "none",
   background: "linear-gradient(180deg, #F49B2A, #E27D0C)", color: "#211A12",
-  fontSize: 13, fontWeight: 700, cursor: "pointer",
+  fontSize: 14, fontWeight: 700, cursor: "pointer",
   fontFamily: "var(--ed-body), 'Hanken Grotesk', system-ui, sans-serif",
   boxShadow: "0 10px 20px -12px rgba(226,125,12,.7)",
 };
@@ -171,6 +171,6 @@ const primaryBtn: React.CSSProperties = {
 const ghostBtn: React.CSSProperties = {
   marginTop: 8, padding: "6px 12px", borderRadius: 9,
   background: "transparent", border: "1px solid rgba(33,26,18,.13)",
-  color: "#3A3024", fontSize: 13, fontWeight: 700, cursor: "pointer",
+  color: "#3A3024", fontSize: 14, fontWeight: 700, cursor: "pointer",
   fontFamily: "var(--ed-body), 'Hanken Grotesk', system-ui, sans-serif",
 };

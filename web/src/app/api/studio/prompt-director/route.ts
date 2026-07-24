@@ -394,7 +394,7 @@ ${lines}`;
       },
       {
         tier: "flagship", label: "6s · a beat with a breath", targetSec: 6,
-        modelId: "grok-imagine-video", modelLabel: "Grok Imagine Video",
+        modelId: "grok-imagine-video", modelLabel: "AI Video · 6s",
         beat: "A beat WITH a breath: one primary action, then a small punctuation at the end (a look-back, a settle, a landed pose) — two micro-phases at most, action then button. One shot or a single motivated cut. Pin the button near ≈5.4s.",
       },
       {

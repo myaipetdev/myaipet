@@ -12,6 +12,10 @@
  *                 derived from PetAutonomousAction.result.skills frequency, plus the
  *                 5 VIGIL memory stages as always-on staff.
  *   - schedules : the 4 cron routines with a human cadence + best-effort last run.
+ *   - registered: whether ANY real PetClaw signal exists for this account (run
+ *                 history / autonomy on / installed skills / live CLI token /
+ *                 active BYOK model) — the Office UI gates its onboarding
+ *                 empty state on `registered.any`.
  *
  * Owner-auth via requirePetOwner(?petId). Rate-limited, try/catch, cheap indexed reads
  * (persona findUnique + ≤60 today's actions + ≤10 today's generations).
@@ -80,7 +84,7 @@ export async function GET(req: NextRequest) {
     const now = Date.now();
 
     // ── Real activity + persona reads (cheap, indexed) ──
-    const [persona, todaysActions, todaysGenerations, agentSchedule] = await Promise.all([
+    const [persona, todaysActions, todaysGenerations, agentSchedule, totalRuns, liveCliTokens, activeByokModels] = await Promise.all([
       prisma.petPersona.findUnique({ where: { pet_id: pet.id } }).catch(() => null),
       prisma.petAutonomousAction.findMany({
         where: { pet_id: pet.id, created_at: { gte: dayStart } },
@@ -94,6 +98,11 @@ export async function GET(req: NextRequest) {
         select: { id: true, prompt: true, completed_at: true, credits_charged: true },
       }).catch(() => [] as any[]),
       prisma.petAgentSchedule.findUnique({ where: { pet_id: pet.id } }).catch(() => null),
+      // Registration signals: all-time run history (not today-only), unrevoked
+      // CLI tokens, active BYOK models — indexed counts.
+      prisma.petAutonomousAction.count({ where: { pet_id: pet.id } }),
+      prisma.cliToken.count({ where: { owner_user_id: user.id, revoked_at: null } }).catch(() => 0),
+      prisma.modelConnection.count({ where: { owner_user_id: user.id, is_active: true } }).catch(() => 0),
     ]);
 
     // ── Kanban ──
@@ -368,12 +377,25 @@ export async function GET(req: NextRequest) {
       },
     };
 
+    // ── Registered: the single source of truth for "this account set up PetClaw" ──
+    const registrationSignals = {
+      hasRuns: totalRuns > 0,
+      autonomyOn: !!agentSchedule?.is_enabled,
+      installedSkills: installedSkills.length > 0,
+      cliToken: liveCliTokens > 0,
+      byokModel: activeByokModels > 0,
+    };
+
     return NextResponse.json({
       pet: { id: pet.id, name: pet.name, level: pet.level },
       pillars,
       kanban: { pending, working, blocked, done },
       roster,
       schedules,
+      registered: {
+        any: Object.values(registrationSignals).some(Boolean),
+        signals: registrationSignals,
+      },
       generatedAt: new Date().toISOString(),
     });
   } catch (e: any) {

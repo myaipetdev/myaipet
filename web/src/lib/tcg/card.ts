@@ -14,11 +14,7 @@ import { publicPetWhere } from "@/lib/publicPet";
 
 export { ELEMENT_THEME, elementTheme, rarityColor, computeRarity } from "@/lib/tcg/theme";
 export type { Rarity, ElementTheme } from "@/lib/tcg/theme";
-
-const SPECIES_NAMES: Record<number, string> = {
-  0: "Cat", 1: "Dog", 2: "Parrot", 3: "Turtle",
-  4: "Hamster", 5: "Rabbit", 6: "Fox", 7: "Pomeranian",
-};
+import { SPECIES_NAMES } from "@/lib/tcg/theme";
 
 /** Humanize a skill_key like "water_gun" → "Water Gun". */
 export function humanizeSkill(key: string): string {

@@ -54,8 +54,8 @@ Pets form memories of significant interactions, milestones, and generated conten
     content: `**Current model catalog**
 Studio reads availability and per-run credit cost from the live /api/studio/providers catalog. The picker is the source of truth: unavailable membership models and roadmap models are visibly locked and cannot be submitted.
 
-- Default image: Grok Imagine — 5 credits
-- Default video: Grok Imagine Video — 25 credits
+- Default image: AI Image — 5 credits
+- Default video: AI Video — 25 credits
 - Additional xAI- and FAL-backed engines appear only with their current price and availability state
 - Provider availability can change; a listed but locked model is not a shipped generation option
 

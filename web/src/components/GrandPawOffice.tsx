@@ -8,8 +8,8 @@
  * dispatch bar, Who's-where rail, Queue, routines — ALL fed from the same real
  * mission-control payload AgentOffice already polls. No fabricated data:
  * counts, tasks, times and names are live; the two staff pets beyond the
- * owner's roster are hotel fiction (named staff characters, no fake work claims
- * about the owner's data).
+ * owner's roster are hotel fiction (named staff characters, cast only once the
+ * office is registered, no fake work claims about the owner's data).
  *
  * ─────────────────────────────────────────────────────────────────────────
  * VOICE SPEC (single source of truth — every string/style in this file
@@ -61,10 +61,6 @@ function labelStyle(size: 12 | 12.5 | 13 = 12.5, spacing: ".12em" | ".14em" = ".
 type Tab = "overview" | "runs" | "routines" | "memory" | "staff";
 type Status = "IDLE" | "WORKING" | "QUEUED" | "DONE" | "LIVE"; // register 5
 
-// In local dev the api layer serves the office from its dev-mock fixture
-// (Sparky/Aqua) — label that cast DEMO instead of claiming it's the user's pet.
-const IS_DEMO = process.env.NODE_ENV === "development";
-
 type CastMember = { name: string; kind: "yours" | "staff"; role: string; room: string; status: Status; line: string };
 
 // DONE always beats WORKING (audit P1): after a live run finishes, the ~7s
@@ -93,9 +89,13 @@ function clockOf(ts?: string | null): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-export default function GrandPawOffice({ mc, liveRun, running, isWorking, petName, pets, goal, setGoal, onDispatch, cost }: {
+export default function GrandPawOffice({ mc, liveRun, running, isWorking, petName, pets, goal, setGoal, onDispatch, cost, demo, registered }: {
   mc: MC; liveRun: LiveRun | null; running: boolean; isWorking: boolean; petName: string;
   pets: any[]; goal: string; setGoal: (s: string) => void; onDispatch: () => void; cost: number;
+  // demo: the payload is the dev-mock fixture (mc.__sample) — label the cast
+  // DEMO instead of claiming it's the user's pet. registered: mc.registered.any
+  // — NPC staff characters only join a registered office.
+  demo: boolean; registered: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("overview");
   const [pane, setPane] = useState<"lobby" | "board">("lobby");
@@ -149,15 +149,15 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
 
   // hotel cast: the owner's real pets first (real names, real status), remaining
   // slots are the hotel's own staff characters — labeled NPC everywhere so
-  // provenance is never ambiguous. In local dev the office runs on the
-  // dev-mock fixture, so the star is honestly labeled DEMO instead of YOUR PET.
+  // provenance is never ambiguous. On the dev-mock fixture (demo) the star is
+  // honestly labeled DEMO instead of YOUR PET.
   // Register 4: staff `line`s are the only NPC speech in the app, always
   // role — “Line!”; register 3: every `line` for real pets is a full sentence.
   const cast = useMemo(() => {
     const real: CastMember[] = pets.slice(0, 3).map((p: any, i: number) => ({
       name: ((p.name || `Pet #${p.id}`) as string).slice(0, 12),
       kind: "yours" as const,
-      role: IS_DEMO ? "DEMO PET" : "YOUR PET",
+      role: demo ? "DEMO PET" : "YOUR PET",
       room: i === 0 ? "FRONT DESK" : i === 1 ? "WORKSHOP" : "LOBBY",
       status: (i === 0 && workingTitle ? "WORKING" : "IDLE") as Status,
       line: i === 0
@@ -166,17 +166,19 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
     }));
     if (real.length === 0) {
       real.push({
-        name: (petName || "Your pet").slice(0, 12), kind: "yours", role: IS_DEMO ? "DEMO PET" : "YOUR PET",
+        name: (petName || "Your pet").slice(0, 12), kind: "yours", role: demo ? "DEMO PET" : "YOUR PET",
         room: "FRONT DESK", status: workingTitle ? "WORKING" : "IDLE",
         line: workingTitle ? `Working on “${workingTitle}”.` : "Idle until you dispatch a goal.",
       });
     }
-    const staff: CastMember[] = [
+    // NPC staff join the cast only once the office is registered — an
+    // unregistered office must never look staffed by fictional workers.
+    const staff: CastMember[] = registered ? [
       { name: "Mimi", kind: "staff", role: "COURIER · NPC", room: "WORKSHOP", status: "IDLE", line: "courier — “Skills delivery!”" },
       { name: "Toto", kind: "staff", role: "HOUSEKEEPER · NPC", room: "LOBBY", status: "IDLE", line: "housekeeper — “Tidy, tidy!”" },
-    ];
+    ] : [];
     return [...real, ...staff].slice(0, 3);
-  }, [pets, petName, workingTitle]);
+  }, [pets, petName, workingTitle, demo, registered]);
 
   const yoursCount = cast.filter((c) => c.kind === "yours").length;
   const staffCount = cast.filter((c) => c.kind === "staff").length;
@@ -187,7 +189,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
     // suffixed STAFF. Register 5: the diorama bubbles speak the same status
     // vocabulary as every chip — NPC speech never leaves the Who's-where rail.
     pets: cast.map((c) => ({
-      name: c.kind === "staff" ? `${c.name} · STAFF` : IS_DEMO ? `${c.name} · DEMO` : c.name,
+      name: c.kind === "staff" ? `${c.name} · STAFF` : demo ? `${c.name} · DEMO` : c.name,
       task: c.status === "WORKING" && workingTitle ? `WORKING — ${workingTitle}` : c.status,
     })),
     memory: { count: mc.pillars.memory.count, cap: mc.pillars.memory.cap },
@@ -195,7 +197,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
     soulLv: mc.pet.level || 1,
     goals: mc.kanban.pending.length,
     next: nextSchedule?.nextRun ? clockOf(nextSchedule.nextRun) : "—",
-  }), [cast, mc, nextSchedule, workingTitle]);
+  }), [cast, mc, nextSchedule, workingTitle, demo]);
 
   const hour = now.getHours();
   const greet = hour < 5 ? "Evening" : hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
@@ -219,7 +221,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
           <span style={{ ...labelStyle(12.5), display: "inline-flex", alignItems: "center", gap: 7, padding: "5px 12px", borderRadius: 999, background: CHIP_BG, border: `1px solid ${CHIP_BR}` }}>
             <span style={{ width: 7, height: 7, borderRadius: 99, background: busyNow ? GREEN : DIM, animation: busyNow ? "gpPulse 1.6s infinite" : undefined }} />
-            {IS_DEMO ? "DEMO PET" : "YOUR PET"}
+            {demo ? "DEMO PET" : "YOUR PET"}
             {petName && petName !== "your pet" ? ` · ${petName.toUpperCase().slice(0, 14)}` : ""} · {busyNow ? "WORKING" : "IDLE"}
           </span>
           {tab === "overview" && (
@@ -271,7 +273,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
               <div style={{ position: "relative" }}>
                 <GrandPaw3D live={live3d} height={narrow ? 400 : 620} />
                 <div style={chipFloat({ left: 14, bottom: 14 })}>
-                  ● {IS_DEMO ? "DEMO PET" : yoursCount > 1 ? `YOUR ${yoursCount} PETS` : "YOUR PET"}
+                  ● {demo ? "DEMO PET" : yoursCount > 1 ? `YOUR ${yoursCount} PETS` : "YOUR PET"}
                   {staffCount > 0 ? ` + ${staffCount} HOTEL STAFF` : ""} · {runningCount} WORKING
                 </div>
                 {!narrow && <div style={chipFloat({ right: 14, bottom: 14 })}>DRAG TO ORBIT · SCROLL TO ZOOM</div>}
@@ -290,7 +292,7 @@ export default function GrandPawOffice({ mc, liveRun, running, isWorking, petNam
                 return (
                   <div key={kind}>
                     <div style={{ ...labelStyle(12), margin: "10px 0 4px" }}>
-                      {kind === "yours" ? (IS_DEMO ? "DEMO PET" : rows.length > 1 ? "YOUR PETS" : "YOUR PET") : "HOTEL STAFF · NPC"}
+                      {kind === "yours" ? (demo ? "DEMO PET" : rows.length > 1 ? "YOUR PETS" : "YOUR PET") : "HOTEL STAFF · NPC"}
                     </div>
                     {rows.map((c) => (
                       <div key={c.name} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 0", borderTop: `1px solid ${HAIR}` }}>

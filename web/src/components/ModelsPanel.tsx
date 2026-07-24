@@ -26,6 +26,7 @@ const PAPER = "#FBF6EC";         // card paper
 const INSET = "#F5EFE2";         // input inset
 const CTA = "linear-gradient(180deg,#F49B2A,#E27D0C)"; // primary button
 const DANGER = "#9A3412";        // warm danger text
+const GOOD = "#5C8A4E";          // editorial green — matches SovereigntyDashboard status pills
 const TERM_BG = "#1E1710";       // warm-dark terminal
 const TERM_CREAM = "#ECE0CE";
 const TERM_MUTED = "rgba(251,246,236,0.65)"; // dim-on-dark kept ≥.65 alpha for legibility
@@ -61,11 +62,14 @@ const QUICK_PICKS: QuickPick[] = [
   { label: "Gemini", provider: "google", model: "gemini-2.5-flash", note: "Google key" },
 ];
 
-function Card({ children, title, sub, id }: { children: React.ReactNode; title: string; sub?: string; id?: string }) {
+// Small pill/chip base — shared look for the task chips + status pills below.
+const chipBase: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, fontSize: 14, lineHeight: 1.4 };
+
+function Card({ children, title, sub, id }: { children: React.ReactNode; title: string; sub?: React.ReactNode; id?: string }) {
   return (
     <div id={id} style={{ scrollMarginTop: 88, background: PAPER, border: `1px solid ${LINE}`, borderRadius: 18, padding: "22px 24px", marginBottom: 20, boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
       <h2 style={{ fontFamily: DISP, fontSize: 20, fontWeight: 800, color: INK, margin: 0, letterSpacing: "-0.01em" }}>{title}</h2>
-      {sub && <p style={{ fontFamily: BODY, fontSize: 13.5, color: MUTED, margin: "6px 0 16px", lineHeight: 1.5 }}>{sub}</p>}
+      {sub && <p style={{ fontFamily: BODY, fontSize: 14.5, color: MUTED, margin: "6px 0 16px", lineHeight: 1.5 }}>{sub}</p>}
       {children}
     </div>
   );
@@ -186,13 +190,33 @@ export default function ModelsPanel() {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "8px 0 20px", fontFamily: BODY }}>
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase" }}>PetClaw protocol · bring your own model</div>
+        <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase" }}>PetClaw protocol · bring your own model</div>
         <h1 style={{ fontFamily: DISP, fontSize: 28, fontWeight: 800, color: INK, margin: "6px 0 0", letterSpacing: "-0.02em" }}>Your model, your pet</h1>
         <p style={{ fontFamily: BODY, fontSize: 14.5, color: MUTED, margin: "8px 0 0", lineHeight: 1.55 }}>
-          A PetClaw-protocol (developer) feature — the intended path is the <strong style={{ color: INK, fontWeight: 600 }}>CLI / at install</strong>. Your pet then routes its chat replies, agent-loop reasoning, and best-of-N judging to your model; other background tasks use the platform default (Grok). Keys are encrypted at rest, never shown again.
+          Bring your own key — your pet <strong style={{ color: INK, fontWeight: 600 }}>routes these tasks to your model</strong>:
         </p>
+        {/* Task-routing chips + status pills — extracted from the old intro prose. */}
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 10 }}>
+          {["chat replies", "agent reasoning", "best-of-N judging"].map((t) => (
+            <span key={t} style={{ ...chipBase, border: `1px solid ${LINE}`, background: INSET, color: MUTED2, fontFamily: BODY, fontWeight: 600 }}>{t}</span>
+          ))}
+          <span
+            title="Background tasks outside these three keep using the platform default model (Grok)."
+            style={{ ...chipBase, border: `1px dashed ${LINE}`, background: "transparent", color: MUTED, fontFamily: BODY, fontWeight: 500, cursor: "help" }}
+          >
+            other tasks → Grok default
+          </span>
+          <span style={{ ...chipBase, background: "rgba(92,138,78,0.14)", border: "1px solid rgba(92,138,78,0.25)", color: GOOD, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.08em" }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="4" y="10.5" width="16" height="10" rx="2.5" />
+              <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+              <circle cx="12" cy="15.5" r="1.4" fill="currentColor" stroke="none" />
+            </svg>
+            ENCRYPTED AT REST · NEVER SHOWN AGAIN
+          </span>
+        </div>
         {/* Primary path: connect via the CLI / on install. */}
-        <div style={{ marginTop: 14, background: TERM_BG, borderRadius: 14, padding: "16px 18px", fontFamily: MONO, fontSize: 13, lineHeight: 1.7, color: TERM_CREAM, overflowX: "auto", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
+        <div style={{ marginTop: 14, background: TERM_BG, borderRadius: 14, padding: "16px 18px", fontFamily: MONO, fontSize: 14, lineHeight: 1.7, color: TERM_CREAM, overflowX: "auto", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
           <div style={{ color: TERM_MUTED, marginBottom: 6 }}># install, authenticate, then connect a model</div>
           <div><span style={{ color: TERM_GREEN }}>npx @myaipet/petclaw-sdk init</span><span style={{ color: TERM_MUTED }}>            # guided: server · token · pick your pet · model</span></div>
           <div><span style={{ color: TERM_GREEN }}>npx @myaipet/petclaw-sdk auth</span> <span style={{ color: TERM_GOLD }}>pck_…</span><span style={{ color: TERM_MUTED }}>        # the CLI token from "Connect your CLI" below</span></div>
@@ -200,11 +224,11 @@ export default function ModelsPanel() {
         </div>
       </div>
 
-      {err && <div style={{ fontFamily: BODY, background: "#F6E3DA", color: DANGER, borderRadius: 10, padding: "10px 14px", fontSize: 13.5, margin: "16px 0", border: "1px solid rgba(154,52,18,.18)" }}>{err}</div>}
+      {err && <div style={{ fontFamily: BODY, background: "#F6E3DA", color: DANGER, borderRadius: 10, padding: "10px 14px", fontSize: 14.5, margin: "16px 0", border: "1px solid rgba(154,52,18,.18)" }}>{err}</div>}
 
       <div style={{ height: 20 }} />
 
-      <Card id="connect-cli" title="Connect PetClaw clients" sub="Use a one-year CLI token for your terminal, or a 30-day, limited-scope extension token for Chrome. Both are revocable and shown only once.">
+      <Card id="connect-cli" title="Connect PetClaw clients" sub={<><strong style={{ color: INK, fontWeight: 600 }}>Two tokens:</strong> a one-year CLI token for your terminal, or a 30-day limited-scope extension token for Chrome. Both revocable, shown only once.</>}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button onClick={() => genToken("extension")} disabled={genLoading} style={{ ...btn, opacity: genLoading ? 0.6 : 1 }}>
             {genLoading ? "Generating…" : "Generate extension token"}
@@ -216,11 +240,11 @@ export default function ModelsPanel() {
 
         {newToken && (
           <div style={{ marginTop: 16, background: TERM_BG, borderRadius: 14, padding: "14px 16px" }}>
-            <div style={{ fontFamily: BODY, color: TERM_GREEN, fontSize: 13, marginBottom: 8 }}>Copy this now — it won&apos;t be shown again.</div>
-            <div style={{ fontFamily: MONO, fontSize: 13, color: TERM_CREAM, wordBreak: "break-all", lineHeight: 1.6 }}>
+            <div style={{ fontFamily: BODY, color: TERM_GREEN, fontSize: 14, marginBottom: 8 }}>Copy this now — it won&apos;t be shown again.</div>
+            <div style={{ fontFamily: MONO, fontSize: 14, color: TERM_CREAM, wordBreak: "break-all", lineHeight: 1.6 }}>
               {newTokenPurpose === "extension" ? newToken : `petclaw-sdk auth ${newToken}`}
             </div>
-            <button onClick={copyToken} style={{ marginTop: 10, padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(236,224,206,0.18)", background: "transparent", color: copied ? TERM_GREEN : TERM_GOLD, fontSize: 13, cursor: "pointer", fontFamily: MONO }}>
+            <button onClick={copyToken} style={{ marginTop: 10, padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(236,224,206,0.18)", background: "transparent", color: copied ? TERM_GREEN : TERM_GOLD, fontSize: 14, cursor: "pointer", fontFamily: MONO }}>
               {copied ? "Copied ✓" : newTokenPurpose === "extension" ? "Copy extension token" : "Copy command"}
             </button>
           </div>
@@ -234,7 +258,7 @@ export default function ModelsPanel() {
                   <div style={{ fontWeight: 600, color: INK, fontSize: 14, opacity: t.revoked_at ? 0.5 : 1 }}>
                     {t.label} <span style={{ color: MUTED, fontWeight: 400 }}>· {t.prefix}…</span>
                   </div>
-                  <div style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>
+                  <div style={{ fontSize: 14, color: MUTED, marginTop: 2 }}>
                     {t.revoked_at ? "revoked" : t.last_used_at ? `last used ${new Date(t.last_used_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : "never used"}
                     {!t.revoked_at && t.expires_at ? ` · expires ${new Date(t.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}
                   </div>
@@ -245,7 +269,7 @@ export default function ModelsPanel() {
                       if (confirmRevokeId === t.id) { setConfirmRevokeId(null); revokeToken(t.id); }
                       else armConfirm(t.id, setConfirmRevokeId);
                     }}
-                    style={{ background: "none", border: `1px solid ${confirmRevokeId === t.id ? DANGER : LINE}`, borderRadius: 8, padding: "6px 12px", color: DANGER, fontSize: 13, cursor: "pointer", fontWeight: confirmRevokeId === t.id ? 700 : 400 }}
+                    style={{ background: "none", border: `1px solid ${confirmRevokeId === t.id ? DANGER : LINE}`, borderRadius: 8, padding: "6px 12px", color: DANGER, fontSize: 14, cursor: "pointer", fontWeight: confirmRevokeId === t.id ? 700 : 400 }}
                   >{confirmRevokeId === t.id ? "Confirm revoke?" : "Revoke"}</button>
                 )}
               </div>
@@ -254,9 +278,9 @@ export default function ModelsPanel() {
         )}
       </Card>
 
-      <Card title="Or connect here (manual)" sub="This web form does the same thing as the CLI — API-key providers (BYOK); OpenRouter reaches almost any model, including Gemini and Hermes. Full CLI setup lives in the PetClaw SDK card below.">
+      <Card title="Or connect here (manual)" sub={<><strong style={{ color: INK, fontWeight: 600 }}>Same thing as the CLI, in a form.</strong> API-key providers (BYOK) — OpenRouter reaches almost any model, including Gemini and Hermes. Full CLI setup lives in the &apos;For Developers&apos; section below (tap to expand).</>}>
         <div style={{ marginBottom: 18 }}>
-          <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", color: GOLD, textTransform: "uppercase", marginBottom: 8 }}>Popular models</div>
+          <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: "0.14em", color: GOLD, textTransform: "uppercase", marginBottom: 8 }}>Popular models</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {QUICK_PICKS.map((p) => {
               const on = provider === p.provider && model === p.model;
@@ -268,7 +292,7 @@ export default function ModelsPanel() {
                   title={`Sets provider to ${p.provider} · model ${p.model} — then add your ${p.note}`}
                   style={{
                     display: "inline-flex", alignItems: "baseline", gap: 7,
-                    fontFamily: BODY, fontSize: 13, fontWeight: on ? 700 : 500,
+                    fontFamily: BODY, fontSize: 14, fontWeight: on ? 700 : 500,
                     padding: "7px 13px", borderRadius: 999,
                     border: `1px solid ${on ? "#BE4F28" : LINE}`,
                     background: on ? GOLD_SOFT : PAPER,
@@ -276,39 +300,39 @@ export default function ModelsPanel() {
                   }}
                 >
                   {p.label}
-                  <span style={{ fontFamily: MONO, fontSize: 13, color: on ? GOLD : MUTED, fontWeight: 400 }}>{p.note}</span>
+                  <span style={{ fontFamily: MONO, fontSize: 14, color: on ? GOLD : MUTED, fontWeight: 400 }}>{p.note}</span>
                 </button>
               );
             })}
           </div>
-          <p style={{ fontFamily: BODY, fontSize: 13, color: MUTED, margin: "9px 0 0", lineHeight: 1.5 }}>
+          <p style={{ fontFamily: BODY, fontSize: 14, color: MUTED, margin: "9px 0 0", lineHeight: 1.5 }}>
             One click fills the form below — you still add your own key. Hermes runs natively on the Nous Portal or via OpenRouter.
           </p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600, color: MUTED2 }}>Provider</label>
+            <label style={{ fontSize: 14, fontWeight: 600, color: MUTED2 }}>Provider</label>
             <select aria-label="Provider" value={provider} onChange={(e) => { setProvider(e.target.value); setModel(""); }} style={inputStyle}>
               {supported.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
           </div>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600, color: MUTED2 }}>Model <span style={{ color: MUTED, fontWeight: 400 }}>(optional)</span></label>
+            <label style={{ fontSize: 14, fontWeight: 600, color: MUTED2 }}>Model <span style={{ color: MUTED, fontWeight: 400 }}>(optional)</span></label>
             <input aria-label="Model" value={model} onChange={(e) => setModel(e.target.value)} placeholder="default for provider" style={inputStyle} />
           </div>
         </div>
         <div style={{ marginTop: 12 }}>
-          <label style={{ fontSize: 13, fontWeight: 600, color: MUTED2 }}>API key <span style={{ color: MUTED, fontWeight: 400 }}>(stored encrypted, never shown again)</span></label>
+          <label style={{ fontSize: 14, fontWeight: 600, color: MUTED2 }}>API key <span style={{ color: MUTED, fontWeight: 400 }}>(stored encrypted, never shown again)</span></label>
           <input type="password" aria-label="API key" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={supported.find((s) => s.id === provider)?.keyFormat || "sk-..."} style={inputStyle} autoComplete="off" />
         </div>
         <div style={{ marginTop: 14 }}>
-          <label style={{ fontSize: 13, fontWeight: 600, color: MUTED2 }}>Use for <span style={{ color: MUTED, fontWeight: 400 }}>(none = all supported tasks below)</span></label>
+          <label style={{ fontSize: 14, fontWeight: 600, color: MUTED2 }}>Use for <span style={{ color: MUTED, fontWeight: 400 }}>(none = all supported tasks below)</span></label>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
             {tasks.map((t) => {
               const on = scopes.includes(t);
               return (
                 <button key={t} onClick={() => setScopes(on ? scopes.filter((x) => x !== t) : [...scopes, t])}
-                  style={{ fontFamily: BODY, padding: "5px 12px", borderRadius: 999, border: `1px solid ${on ? "#BE4F28" : LINE}`, background: on ? GOLD_SOFT : PAPER, color: on ? GOLD : MUTED, fontSize: 13, cursor: "pointer", fontWeight: on ? 600 : 400 }}>
+                  style={{ fontFamily: BODY, padding: "5px 12px", borderRadius: 999, border: `1px solid ${on ? "#BE4F28" : LINE}`, background: on ? GOLD_SOFT : PAPER, color: on ? GOLD : MUTED, fontSize: 14, cursor: "pointer", fontWeight: on ? 600 : 400 }}>
                   {t}
                 </button>
               );
@@ -325,7 +349,7 @@ export default function ModelsPanel() {
           <div key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderTop: `1px solid ${LINE}` }}>
             <div>
               <div style={{ fontWeight: 600, color: INK, fontSize: 14.5 }}>{c.label} <span style={{ color: MUTED, fontWeight: 400 }}>· {c.model}</span></div>
-              <div style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>
+              <div style={{ fontSize: 14, color: MUTED, marginTop: 2 }}>
                 {c.provider} · {c.task_scopes?.length ? c.task_scopes.join(", ") : "all tasks"} · key {c.keyMask || "••••••"}
               </div>
             </div>
@@ -334,11 +358,11 @@ export default function ModelsPanel() {
                 if (confirmRemoveId === c.id) { setConfirmRemoveId(null); remove(c.id); }
                 else armConfirm(c.id, setConfirmRemoveId);
               }}
-              style={{ background: "none", border: `1px solid ${confirmRemoveId === c.id ? DANGER : LINE}`, borderRadius: 8, padding: "6px 12px", color: DANGER, fontSize: 13, cursor: "pointer", fontWeight: confirmRemoveId === c.id ? 700 : 400 }}
+              style={{ background: "none", border: `1px solid ${confirmRemoveId === c.id ? DANGER : LINE}`, borderRadius: 8, padding: "6px 12px", color: DANGER, fontSize: 14, cursor: "pointer", fontWeight: confirmRemoveId === c.id ? 700 : 400 }}
             >{confirmRemoveId === c.id ? "Confirm remove?" : "Remove"}</button>
           </div>
         ))}
-        {loading && <div style={{ color: MUTED, fontSize: 13.5 }}>Loading…</div>}
+        {loading && <div style={{ color: MUTED, fontSize: 14.5 }}>Loading…</div>}
       </Card>
 
     </div>

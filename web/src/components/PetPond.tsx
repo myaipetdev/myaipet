@@ -31,6 +31,9 @@ type Props = {
   element?: string | null;
   /** pet name; first letter marks the lily pad. */
   name?: string;
+  /** ambient WebAudio pad on/off. Must flip to true from a user gesture
+      (browser autoplay policy) — the owning toggle button provides it. */
+  soundEnabled?: boolean;
 };
 
 // Editorial palette (warm paper family) — shared with the rest of My Pet.
@@ -73,8 +76,9 @@ type Koi = {
 type Drop = { x: number; y: number; life: number };
 type Ripple = { x: number; y: number; r: number; life: number };
 
-export default function PetPond({ mood, level, element, name }: Props) {
+export default function PetPond({ mood, level, element, name, soundEnabled }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const acRef = useRef<AudioContext | null>(null);
 
   // Real-data mapping, recomputed on prop change (koi count / tempo depend on it).
   const lvl = Number.isFinite(level as number) ? Math.max(1, Math.floor(level as number)) : 1;
@@ -127,11 +131,29 @@ export default function PetPond({ mood, level, element, name }: Props) {
       ripples.push({ x, y, r: strong ? 8 : 3, life: 1 });
     const feed = (x: number, y: number) => { food.push({ x, y, life: 1 }); addRipple(x, y, true); };
 
+    // Water-drop blip on a feed tap — only while the ambient pad is on
+    // (acRef set). The tap is itself a gesture, so resume if throttled.
+    const blip = () => {
+      const ac = acRef.current;
+      if (!ac) return;
+      if (ac.state === "suspended") ac.resume().catch(() => {});
+      const t = ac.currentTime;
+      const o = ac.createOscillator();
+      o.type = "sine";
+      o.frequency.setValueAtTime(600, t);
+      o.frequency.exponentialRampToValueAtTime(300, t + 0.08);
+      const g = ac.createGain();
+      g.gain.setValueAtTime(0.05, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t + 0.09);
+    };
+
     const onPointerDown = (e: PointerEvent) => {
       const b = canvas.getBoundingClientRect();
       const x = ((e.clientX - b.left) / b.width) * S;
       const y = ((e.clientY - b.top) / b.height) * S;
-      if (Math.hypot(x - CX, y - CY) < R) feed(x, y);
+      if (Math.hypot(x - CX, y - CY) < R) { feed(x, y); blip(); }
     };
     canvas.addEventListener("pointerdown", onPointerDown);
 
@@ -268,6 +290,42 @@ export default function PetPond({ mood, level, element, name }: Props) {
     };
     // Re-init the scene when the real inputs change.
   }, [koiCount, happiness, elementKey, initial]);
+
+  // Ambient pad — procedural WebAudio, no assets: a lowpassed triangle triad
+  // (root · fifth · sub-octave) breathing on a slow gain LFO. soundEnabled only
+  // flips true from the owner's toggle click; React flushes this effect
+  // synchronously for discrete events, so the AudioContext starts inside the
+  // activation window (resume() covers stricter browsers).
+  useEffect(() => {
+    if (!soundEnabled || typeof AudioContext === "undefined") return;
+    const ac = new AudioContext();
+    acRef.current = ac;
+    if (ac.state === "suspended") ac.resume().catch(() => {});
+    const master = ac.createGain();
+    master.gain.value = 0.08;
+    master.connect(ac.destination);
+    const lp = ac.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 800;
+    lp.connect(master);
+    [220, 220 * Math.pow(2, 7 / 12), 110].forEach((f) => {
+      const o = ac.createOscillator();
+      o.type = "triangle";
+      o.frequency.value = f;
+      o.connect(lp);
+      o.start();
+    });
+    // breath: master gain swings ~0.055–0.105 at 0.1Hz.
+    const lfo = ac.createOscillator();
+    lfo.type = "sine";
+    lfo.frequency.value = 0.1;
+    const lfoDepth = ac.createGain();
+    lfoDepth.gain.value = 0.025;
+    lfo.connect(lfoDepth);
+    lfoDepth.connect(master.gain);
+    lfo.start();
+    return () => { acRef.current = null; ac.close().catch(() => {}); };
+  }, [soundEnabled]);
 
   return (
     <canvas

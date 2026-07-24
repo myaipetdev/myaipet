@@ -50,7 +50,10 @@ export interface KItem { id: number | string; title: string; kind?: string; skil
 export interface Kanban { pending: KItem[]; working: KItem[]; blocked: KItem[]; done: KItem[]; }
 export interface Staff { id: string; name: string; kind: "skill" | "vigil"; role: string; installed: boolean; status: "active" | "idle"; runs: number; successRate?: number; lastAt?: string | null; }
 export interface Schedule { id: string; name: string; cadence: string; lastRun: string | null; nextRun: string | null; desc: string; }
-export interface MC { pet: { id: number; name: string; level: number }; pillars: Pillars; kanban: Kanban; roster: Staff[]; schedules: Schedule[]; generatedAt: string; }
+export interface Registered { any: boolean; signals: { hasRuns: boolean; autonomyOn: boolean; installedSkills: boolean; cliToken: boolean; byokModel: boolean } }
+// registered/__sample are optional so a stale payload fails open (full office,
+// no ribbon) instead of crashing; __sample marks the dev fixture from api.ts.
+export interface MC { pet: { id: number; name: string; level: number }; pillars: Pillars; kanban: Kanban; roster: Staff[]; schedules: Schedule[]; registered?: Registered; __sample?: boolean; generatedAt: string; }
 export interface LiveRun { title: string; steps: { skill: string; ok: boolean }[]; done: boolean; answer?: string; }
 
 function relTime(ts?: string | null): string {
@@ -184,6 +187,51 @@ export default function AgentOffice() {
 
   const isWorking = (mc?.kanban.working.length ?? 0) > 0 || running;
 
+  // Shared between the classic view and the onboarding empty state (where the
+  // first dispatch IS the registration act).
+  const dispatchBar = (
+    <div style={{ ...card, marginTop: 20, padding: "16px 18px" }}>
+      <label htmlFor={dispatchGoalId} style={{ display: "block", fontFamily: MONO, fontSize: 13, letterSpacing: "0.14em", color: PURPLE, fontWeight: 700, marginBottom: 10 }}>
+        DISPATCH — GIVE {petName.toUpperCase()} A GOAL
+      </label>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <input
+          id={dispatchGoalId}
+          value={goal}
+          onChange={(e) => setGoal(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) dispatch(); }}
+          placeholder="e.g. Recall what I told you about my week and suggest one thing to do"
+          maxLength={600}
+          style={{ flex: 1, minWidth: 220, boxSizing: "border-box", fontFamily: SANS, fontSize: 15, color: INK, padding: "12px 14px", borderRadius: 12, border: `1px solid ${HAIR}`, outline: "none", background: PAPER }}
+        />
+        <button
+          type="button"
+          onClick={dispatch}
+          disabled={goal.trim().length < 3 || running || petId == null}
+          aria-busy={running}
+          style={{
+            padding: "12px 22px", borderRadius: 12, border: "none",
+            fontFamily: SANS, fontSize: 15, fontWeight: 800,
+            cursor: goal.trim().length >= 3 && !running ? "pointer" : "not-allowed",
+            color: "#FFF8EE",
+            background: goal.trim().length >= 3 && !running ? "linear-gradient(180deg,#7C5FB8,#5B4090)" : "rgba(33,26,18,0.18)",
+          }}
+        >
+          {running ? "● Working…" : "▶ Dispatch"}
+        </button>
+      </div>
+      <div style={{ fontFamily: MONO, fontSize: 13, color: MUTED, marginTop: 8 }}>
+        Costs {COST} credits · refunded if the loop runs no real skill · appears live in Working ↑
+      </div>
+    </div>
+  );
+
+  const errBox = err && (
+    <div role="alert" style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.22)", color: "#b91c1c", fontFamily: SANS, fontSize: 13.5 }}>
+      {err}
+    </div>
+  );
+
   // ── empty / no-pet gate ──
   if (!loadingPets && pets.length === 0) {
     return (
@@ -196,23 +244,63 @@ export default function AgentOffice() {
     );
   }
 
+  // ── onboarding gate: the server saw NO PetClaw registration signal (no run
+  // history, autonomy off, no installed skills, no CLI token, no BYOK model) —
+  // render the register path instead of an office that only LOOKS staffed. ──
+  if (mc && mc.registered?.any === false) {
+    return (
+      <div style={wrap}>
+        <style>{`@keyframes officePulse{0%,100%{box-shadow:0 0 0 0 rgba(107,79,160,0.0),${SHADOW_CARD}}50%{box-shadow:0 0 0 3px rgba(107,79,160,0.18),${SHADOW_CARD}}}`}</style>
+        <Header petName={petName} pets={pets} petId={petId} setPetId={setPetId} isWorking={isWorking} />
+        {mc.__sample && <SampleRibbon />}
+        {errBox}
+        <div style={{ ...card, padding: "24px 22px" }}>
+          <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.16em", color: PURPLE, fontWeight: 700 }}>REGISTER PETCLAW</div>
+          <h2 style={{ fontFamily: DISP, fontSize: "clamp(22px,3vw,28px)", fontWeight: 800, color: INK, letterSpacing: "-0.02em", margin: "6px 0 8px" }}>
+            No agents assigned yet
+          </h2>
+          <p style={{ fontFamily: SANS, fontSize: 15, color: MUTED, lineHeight: 1.6, maxWidth: 620, margin: 0 }}>
+            The office opens once {petName} has real work to run. Take any step below and the staff, kanban and routines fill with live activity — never samples.
+          </p>
+          <div style={{ display: "grid", gap: 10, marginTop: 18 }}>
+            <OnboardStep n="①" title="Install the Chrome extension"
+              desc={`Give ${petName} eyes on your browser — the extension feeds real context into every run.`}
+              href="/?section=sovereignty#petclaw-extension" cta="Open PetClaw" />
+            <OnboardStep n="②" title="Connect the CLI or bring your own model"
+              desc="Mint a CLI token or plug in a BYOK model on the PetClaw page — either counts as moving in."
+              href="/?section=sovereignty" cta="Open PetClaw" />
+            <OnboardStep n="③" title="Dispatch a first goal"
+              desc="Use the bar below — the first run itself registers the office and lands in Done." />
+          </div>
+        </div>
+        {dispatchBar}
+        {liveRun && (
+          <div style={{ marginTop: 14 }}>
+            <KanbanCard pulse={!liveRun.done} accent={PURPLE} title={liveRun.title}
+              detail={liveRun.done ? (liveRun.answer || "Done — the office is opening.") : `${liveRun.steps.length} step${liveRun.steps.length === 1 ? "" : "s"} · ${liveRun.steps.map((s) => s.skill).join(" → ") || "planning…"}`}
+              tag={liveRun.done ? "done" : "live"} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div style={wrap}>
       <style>{`@keyframes officePulse{0%,100%{box-shadow:0 0 0 0 rgba(107,79,160,0.0),${SHADOW_CARD}}50%{box-shadow:0 0 0 3px rgba(107,79,160,0.18),${SHADOW_CARD}}}`}</style>
 
       <Header petName={petName} pets={pets} petId={petId} setPetId={setPetId} isWorking={isWorking} view={view} setView={setView} />
 
-      {err && (
-        <div role="alert" style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.22)", color: "#b91c1c", fontFamily: SANS, fontSize: 13.5 }}>
-          {err}
-        </div>
-      )}
+      {mc?.__sample && <SampleRibbon />}
+
+      {errBox}
 
       {/* ══ HOTEL VIEW — "The Grand Paw" lobby diorama over the same real data ══ */}
       {view === "hotel" && (
         mc ? (
           <GrandPawOffice mc={mc} liveRun={liveRun} running={running} isWorking={isWorking} petName={petName}
-            pets={pets} goal={goal} setGoal={setGoal} onDispatch={dispatch} cost={COST} />
+            pets={pets} goal={goal} setGoal={setGoal} onDispatch={dispatch} cost={COST}
+            demo={!!mc.__sample} registered={!!mc.registered?.any} />
         ) : (
           <div role="status" aria-live="polite" style={{ ...card, textAlign: "center", color: MUTED, fontFamily: SANS }}>Opening the hotel…</div>
         )
@@ -281,42 +369,7 @@ export default function AgentOffice() {
       )}
 
       {/* ── Dispatch bar (classic only — the hotel has its own front desk) ── */}
-      {view === "classic" && (
-      <div style={{ ...card, marginTop: 20, padding: "16px 18px" }}>
-        <label htmlFor={dispatchGoalId} style={{ display: "block", fontFamily: MONO, fontSize: 13, letterSpacing: "0.14em", color: PURPLE, fontWeight: 700, marginBottom: 10 }}>
-          DISPATCH — GIVE {petName.toUpperCase()} A GOAL
-        </label>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <input
-            id={dispatchGoalId}
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) dispatch(); }}
-            placeholder="e.g. Recall what I told you about my week and suggest one thing to do"
-            maxLength={600}
-            style={{ flex: 1, minWidth: 220, boxSizing: "border-box", fontFamily: SANS, fontSize: 15, color: INK, padding: "12px 14px", borderRadius: 12, border: `1px solid ${HAIR}`, outline: "none", background: PAPER }}
-          />
-          <button
-            type="button"
-            onClick={dispatch}
-            disabled={goal.trim().length < 3 || running || petId == null}
-            aria-busy={running}
-            style={{
-              padding: "12px 22px", borderRadius: 12, border: "none",
-              fontFamily: SANS, fontSize: 15, fontWeight: 800,
-              cursor: goal.trim().length >= 3 && !running ? "pointer" : "not-allowed",
-              color: "#FFF8EE",
-              background: goal.trim().length >= 3 && !running ? "linear-gradient(180deg,#7C5FB8,#5B4090)" : "rgba(33,26,18,0.18)",
-            }}
-          >
-            {running ? "● Working…" : "▶ Dispatch"}
-          </button>
-        </div>
-        <div style={{ fontFamily: MONO, fontSize: 13, color: MUTED, marginTop: 8 }}>
-          Costs {COST} credits · refunded if the loop runs no real skill · appears live in Working ↑
-        </div>
-      </div>
-      )}
+      {view === "classic" && dispatchBar}
 
       {/* ── Office roster + schedules (classic only; the village shows its own) ── */}
       {view === "classic" && mc && <Roster roster={mc.roster} />}
@@ -393,6 +446,34 @@ function Header({ petName, pets, petId, setPetId, isWorking, view, setView }: { 
             </button>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+// ── Sample-data ribbon — pinned over every view whenever the payload carries
+// the dev-fixture flag (mc.__sample), so mock boards can never read as real ──
+function SampleRibbon() {
+  return (
+    <div role="note" style={{ marginBottom: 16, padding: "8px 14px", borderRadius: 10, background: "rgba(154,78,30,0.08)", border: "1px dashed rgba(154,78,30,0.45)", color: TERRA, fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textAlign: "center" }}>
+      SAMPLE DATA — dev fixture, not your pet
+    </div>
+  );
+}
+
+// ── Onboarding step row (unregistered empty state) ──
+function OnboardStep({ n, title, desc, href, cta }: { n: string; title: string; desc: string; href?: string; cta?: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "13px 14px", borderRadius: 12, border: `1px solid ${HAIR}`, background: FIELD, flexWrap: "wrap" }}>
+      <span aria-hidden="true" style={{ fontFamily: DISP, fontSize: 18, fontWeight: 800, color: PURPLE, lineHeight: "21px", flexShrink: 0 }}>{n}</span>
+      <div style={{ flex: 1, minWidth: 180 }}>
+        <div style={{ fontFamily: SANS, fontSize: 14.5, fontWeight: 800, color: INK }}>{title}</div>
+        <div style={{ fontFamily: SANS, fontSize: 13, color: MUTED, marginTop: 3, lineHeight: 1.5 }}>{desc}</div>
+      </div>
+      {href && cta && (
+        <a href={href} style={{ flexShrink: 0, alignSelf: "center", fontFamily: SANS, fontSize: 13, fontWeight: 800, color: PURPLE, textDecoration: "none", padding: "7px 12px", borderRadius: 9, border: "1px solid rgba(107,79,160,0.3)", background: "rgba(107,79,160,0.08)" }}>
+          {cta} →
+        </a>
       )}
     </div>
   );
