@@ -217,13 +217,20 @@
     padding-top: 18vh; padding-left: 8vw; padding-right: 8vw;
     max-width: 720px;
   }
+  /* Always-legible scrim behind the headline column — the background video has
+     bright frames where the eyebrow + first line washed out. A soft left-to-
+     right darkening keeps text ≥ WCAG AA regardless of the frame underneath. */
+  .hero::before {
+    content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: linear-gradient(105deg, rgba(20,12,4,0.62) 0%, rgba(20,12,4,0.42) 34%, rgba(20,12,4,0.12) 62%, transparent 82%);
+  }
   .hero-eyebrow {
     display: inline-flex; align-items: center; gap: 10px;
     padding: 6px 14px; border-radius: 999px;
-    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(20,12,4,0.42); border: 1px solid rgba(255,255,255,0.22);
     backdrop-filter: blur(10px);
     font-family: var(--mono); font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase;
-    color: #fbe3b8;
+    color: #ffe9c2; text-shadow: 0 1px 8px rgba(0,0,0,0.5);
   }
   .hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: #e8c77e; box-shadow: 0 0 10px #e8c77e; }
   .hero h1 {
@@ -235,6 +242,18 @@
     text-shadow: 0 2px 30px rgba(0,0,0,0.25);
   }
   .hero h1 .line { display: block; }
+  /* Headline relayout: "Your" set once, oversized; the three payoff nouns stack
+     beside it in a smaller register (founder direction 2026-07-24). */
+  .hero h1.hero-title { display: flex; align-items: baseline; gap: 0.16em; flex-wrap: wrap; margin-top: 22px; }
+  .hero h1.hero-title .your-lead {
+    font-size: clamp(62px, 10.5vw, 132px); line-height: 0.86; font-weight: 600;
+    letter-spacing: -0.04em;
+  }
+  .hero h1.hero-title .your-stack {
+    display: inline-flex; flex-direction: column; line-height: 0.94;
+    font-size: clamp(30px, 4.6vw, 60px); font-weight: 600; letter-spacing: -0.02em;
+    padding-bottom: 0.06em;
+  }
   /* Masthead stamp (design 3): the payoff line is a real FOIL-GRADIENT word pressed
      INTO the paper — letterpress deboss (hard-edged valley/lip, no blur-glow). */
   .hero h1 .gold {
@@ -1564,7 +1583,7 @@
   <button type="button" class="nav-burger" id="navBurger" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
     <span></span><span></span><span></span>
   </button>
-  <a href="https://app.myaipet.ai" class="nav-cta">Launch App</a>
+  <a href="https://app.myaipet.ai" class="nav-cta" target="_blank" rel="noopener noreferrer">Launch App</a>
 </nav>
 
 <!-- SECTION 1: HERO -->
@@ -1600,17 +1619,20 @@
 
   <div class="hero-content">
     <span class="hero-eyebrow"><span class="dot"></span>AI companionship · PetClaw Protocol live</span>
-    <h1>
-      <span class="line">Your AI.</span>
-      <span class="line">Your data.</span>
-      <span class="line gold">Your companion.</span>
+    <h1 class="hero-title">
+      <span class="your-lead">Your</span>
+      <span class="your-stack">
+        <span class="line">AI.</span>
+        <span class="line">data.</span>
+        <span class="line gold">companion.</span>
+      </span>
     </h1>
     <p class="hero-sub">
       An AI pet that remembers what matters, grows with you,
       and keeps a portable profile you can export.
     </p>
     <div class="hero-ctas">
-      <a href="https://app.myaipet.ai" class="btn btn-primary">Get started</a>
+      <a href="https://app.myaipet.ai" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Get started</a>
       <a href="#journey" class="btn btn-ghost">▶ See how it works</a>
     </div>
     <div style="margin-top:14px;font-family:var(--mono);font-size:15px;letter-spacing:0.02em;color:rgba(255,248,230,0.68);">
@@ -2346,7 +2368,7 @@
         <h2 class="footer-title" id="footer-title">Meet the AI that<br/><em>grows with you.</em></h2>
         <p>Start in the web app. Your companion uses one owner-controlled identity across the web and Chrome today; supported MCP clients connect through the seven-tool runtime published in SDK 2.0.0.</p>
         <div class="footer-actions">
-          <a href="https://app.myaipet.ai" class="btn btn-primary">Adopt your pet <span aria-hidden="true">→</span></a>
+          <a href="https://app.myaipet.ai" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Adopt your pet <span aria-hidden="true">→</span></a>
           <a href="https://app.myaipet.ai/?section=sovereignty#petclaw-extension" class="btn btn-quiet">Get the Chrome extension <span aria-hidden="true">↗</span></a>
         </div>
         <div class="footer-proof" aria-label="Product assurances">
@@ -2368,7 +2390,7 @@
 
       <nav class="footer-nav-group" aria-label="Product links">
         <h3>Product</h3>
-        <a href="https://app.myaipet.ai">Launch app</a>
+        <a href="https://app.myaipet.ai" target="_blank" rel="noopener noreferrer">Launch app</a>
         <a href="https://app.myaipet.ai/?section=sovereignty#petclaw-extension">Chrome setup</a>
       </nav>
 
@@ -2377,7 +2399,6 @@
         <a href="https://www.npmjs.com/package/@myaipet/petclaw-sdk" target="_blank" rel="noopener noreferrer">npm SDK ↗</a>
         <a href="https://app.myaipet.ai/api-docs">API docs</a>
         <a href="https://app.myaipet.ai/architecture">Architecture</a>
-        <a href="https://app.myaipet.ai/.well-known/pet-card.json">Protocol spec</a>
       </nav>
 
       <nav class="footer-nav-group" aria-label="Company and legal links">
