@@ -31,6 +31,7 @@ import {
   planToText,
   sceneToDirectorText,
   formatTimecode,
+  SHORTS_LAYOUT,
   type ShortsPlan,
   type ShortsScene,
   type Vibe,
@@ -66,6 +67,75 @@ function roleLabel(scene: ShortsScene): string {
   if (scene.role === "hook") return "HOOK";
   if (scene.role === "payoff") return "PAYOFF";
   return `BODY ${scene.roleIndex}`;
+}
+
+type GuideBeat = "hook" | "body" | "payoff";
+
+const GUIDE_BEATS: {
+  role: GuideBeat;
+  title: string;
+  cue: string;
+  caption: string;
+}[] = [
+  { role: "hook", title: "Stop the scroll", cue: "Open on motion or a question.", caption: "WAIT" },
+  { role: "body", title: "Build the moment", cue: "Give each shot one clear action.", caption: "ACTION" },
+  { role: "payoff", title: "Land the reward", cue: "Hold the reveal, reaction or CTA.", caption: "REVEAL" },
+];
+
+function guideTime(role: GuideBeat, target: LengthTarget): string {
+  const layout = SHORTS_LAYOUT[target];
+  if (role === "hook") return `0–${layout.hook}s`;
+  const payoffStart = target - layout.payoff;
+  if (role === "body") return `${layout.hook}–${payoffStart}s`;
+  return `${payoffStart}–${target}s`;
+}
+
+/**
+ * Diagrammatic framing guide — deliberately not a fabricated generated clip.
+ * It teaches composition and caption placement before a user has a plan.
+ */
+function GuideFrame({ role, caption }: { role: GuideBeat; caption: string }) {
+  return (
+    <div className={`shorts-guide-frame shorts-guide-frame--${role}`} aria-hidden="true">
+      <svg viewBox="0 0 90 150" focusable="false">
+        {role === "hook" && (
+          <>
+            <path d="M18 42v-9h9M72 42v-9h-9M18 94v9h9M72 94v9h-9" className="guide-focus" />
+            <path d="M28 57 33 39l12 11 12-11 5 18" className="guide-pet-fill" />
+            <circle cx="45" cy="70" r="24" className="guide-pet-fill" />
+            <circle cx="37" cy="68" r="2.4" className="guide-eye" />
+            <circle cx="53" cy="68" r="2.4" className="guide-eye" />
+            <path d="M41 77q4 4 8 0" className="guide-face" />
+            <path d="M10 57h9M8 68h8M11 79h7" className="guide-motion" />
+          </>
+        )}
+        {role === "body" && (
+          <>
+            <rect x="10" y="27" width="20" height="70" rx="6" className="guide-panel" />
+            <rect x="35" y="27" width="20" height="70" rx="6" className="guide-panel guide-panel--mid" />
+            <rect x="60" y="27" width="20" height="70" rx="6" className="guide-panel" />
+            <circle cx="20" cy="54" r="7" className="guide-subject" />
+            <circle cx="45" cy="67" r="7" className="guide-subject" />
+            <circle cx="70" cy="47" r="7" className="guide-subject" />
+            <path d="M24 63q12 17 17 7M49 59q10-16 17-10" className="guide-motion" />
+          </>
+        )}
+        {role === "payoff" && (
+          <>
+            <path d="M45 19v13M20 29l9 10M70 29l-9 10M11 54h14M79 54H65" className="guide-rays" />
+            <circle cx="45" cy="62" r="28" className="guide-payoff-ring" />
+            <path d="M29 58 34 41l11 10 11-10 5 17" className="guide-pet-fill" />
+            <circle cx="45" cy="70" r="22" className="guide-pet-fill" />
+            <circle cx="38" cy="68" r="2.3" className="guide-eye" />
+            <circle cx="52" cy="68" r="2.3" className="guide-eye" />
+            <path d="M39 76q6 6 12 0" className="guide-face" />
+            <path d="m67 31 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" className="guide-spark" />
+          </>
+        )}
+      </svg>
+      <span className="shorts-guide-caption">{caption}</span>
+    </div>
+  );
 }
 
 export interface ShortsStudioProps {
@@ -148,6 +218,14 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
     setCurrentIdx(0);
   };
 
+  const useExample = () => {
+    setScript(`${exampleName} hears the treat jar, races into frame, tries three dramatic tricks, then earns the snack and gives the camera a proud high-five.`);
+    setTarget(30);
+    setVibe("energetic");
+    setHasPlanned(true);
+    setCurrentIdx(0);
+  };
+
   // AI polish: rewrite each scene's on-screen caption. Timing/shots/structure
   // stay exactly as the free planner produced them.
   const doPolish = async () => {
@@ -218,6 +296,151 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
 
   return (
     <div style={{ fontFamily: T.body, color: T.ink, maxWidth: 960, margin: "0 auto", padding: "4px 0" }}>
+      <style>{`
+        .shorts-story-map {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
+        }
+        .shorts-beat-card {
+          position: relative;
+          min-width: 0;
+          display: grid;
+          grid-template-columns: 72px minmax(0, 1fr);
+          gap: 12px;
+          align-items: center;
+          padding: 12px;
+          border: 1px solid ${T.hair};
+          border-radius: 14px;
+          background: rgba(251, 246, 236, .82);
+        }
+        .shorts-beat-card:not(:last-child)::after {
+          content: "→";
+          position: absolute;
+          z-index: 2;
+          right: -10px;
+          top: 50%;
+          width: 18px;
+          height: 18px;
+          transform: translateY(-50%);
+          display: grid;
+          place-items: center;
+          border: 1px solid ${T.hair};
+          border-radius: 999px;
+          background: ${T.paper};
+          color: ${T.terraSub};
+          font: 800 13px ${T.m};
+        }
+        .shorts-guide-frame {
+          position: relative;
+          width: 72px;
+          aspect-ratio: 9 / 16;
+          overflow: hidden;
+          border: 1px solid rgba(33, 26, 18, .18);
+          border-radius: 10px;
+          background: ${T.stage2};
+          box-shadow: 2px 3px 0 rgba(33, 26, 18, .14);
+        }
+        .shorts-guide-frame svg { display: block; width: 100%; height: 100%; }
+        .shorts-guide-frame--hook { background: linear-gradient(155deg, #7B2E20 0%, #21120D 74%); }
+        .shorts-guide-frame--body { background: linear-gradient(155deg, #C8932F 0%, #4B2B15 78%); }
+        .shorts-guide-frame--payoff { background: linear-gradient(155deg, #5C8A4E 0%, #142316 78%); }
+        .guide-focus, .guide-face, .guide-motion, .guide-rays {
+          fill: none;
+          stroke: rgba(251, 243, 227, .86);
+          stroke-width: 2;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+        }
+        .guide-motion { stroke: rgba(251, 243, 227, .48); }
+        .guide-pet-fill { fill: rgba(251, 243, 227, .88); }
+        .guide-eye { fill: #211A12; }
+        .guide-panel { fill: rgba(251, 243, 227, .16); stroke: rgba(251, 243, 227, .36); }
+        .guide-panel--mid { fill: rgba(251, 243, 227, .26); }
+        .guide-subject { fill: rgba(251, 243, 227, .9); }
+        .guide-rays { stroke: rgba(252, 233, 207, .65); }
+        .guide-payoff-ring { fill: rgba(251, 243, 227, .12); stroke: rgba(251, 243, 227, .38); }
+        .guide-spark { fill: #F5C75E; }
+        .shorts-guide-caption {
+          position: absolute;
+          left: 5px;
+          right: 5px;
+          bottom: 7px;
+          padding: 4px 2px;
+          border-radius: 4px;
+          background: rgba(16, 12, 7, .76);
+          color: ${T.stageInk};
+          text-align: center;
+          font: 800 13px/1 ${T.disp};
+          letter-spacing: .01em;
+        }
+        .shorts-workflow-rail {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 9px;
+          flex-wrap: wrap;
+          margin-top: 11px;
+          color: ${T.muted};
+          font: 700 13px/1.3 ${T.m};
+          letter-spacing: .035em;
+        }
+        .shorts-workflow-node {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          min-height: 28px;
+          padding: 4px 9px;
+          border: 1px solid ${T.hair};
+          border-radius: 999px;
+          background: ${T.paper};
+        }
+        .shorts-workflow-node b { color: ${T.ink70}; }
+        .shorts-empty-guide {
+          display: grid;
+          grid-template-columns: minmax(0, 1.15fr) minmax(250px, .85fr);
+          gap: 18px;
+          align-items: center;
+          text-align: left;
+        }
+        .shorts-example-beats {
+          display: grid;
+          gap: 7px;
+        }
+        .shorts-example-beat {
+          display: grid;
+          grid-template-columns: 56px 58px minmax(0, 1fr);
+          gap: 8px;
+          align-items: center;
+          min-height: 38px;
+          padding: 7px 9px;
+          border: 1px solid ${T.hair};
+          border-left: 3px solid var(--beat-color);
+          border-radius: 9px;
+          background: rgba(251, 246, 236, .72);
+          color: ${T.muted2};
+          font: 700 13px/1.25 ${T.m};
+        }
+        .shorts-example-beat span:first-child { color: ${T.ink70}; }
+        .shorts-example-beat time { color: ${T.muted}; font-weight: 500; }
+        @media (max-width: 760px) {
+          .shorts-story-map { grid-template-columns: 1fr; }
+          .shorts-beat-card:not(:last-child)::after {
+            content: "↓";
+            right: 18px;
+            top: auto;
+            bottom: -10px;
+            transform: none;
+          }
+          .shorts-guide-frame { width: 64px; }
+          .shorts-beat-card { grid-template-columns: 64px minmax(0, 1fr); }
+          .shorts-empty-guide { grid-template-columns: 1fr; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .shorts-example-button { transition: none !important; }
+          .shorts-example-button:hover { transform: none !important; }
+        }
+      `}</style>
       {/* ── Header ── */}
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -235,32 +458,53 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
           It <strong style={{ color: T.muted2 }}>plans the sequence</strong>; it doesn&rsquo;t assemble the final video.
         </p>
 
-        {/* Intended two-step workflow — the planner is the fast skeleton; the
-            Director turns any one scene into a full cinematic prompt. */}
-        <div style={{
-          marginTop: 14, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "stretch",
-        }}>
-          {[
-            { n: "1", t: "Plan the skeleton here", d: "Free & instant — hook, body, payoff with timecodes, captions and shot types.", tag: "This tab" },
-            { n: "2", t: "Send a scene → Video Prompt", d: "The Director expands that one scene into a full cinematic, model-ready prompt.", tag: "→ Director" },
-            { n: "3", t: "Generate & assemble", d: "Render each scene in the Video Prompt tab, then cut them together in your editor.", tag: "You / editor" },
-          ].map((step) => (
-            <div key={step.n} style={{
-              flex: "1 1 180px", minWidth: 0, background: T.inset, border: `1px solid ${T.hair}`,
-              borderRadius: 12, padding: "12px 14px",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                <span style={{
-                  width: 22, height: 22, borderRadius: 7, background: T.terra, color: T.creamOn,
-                  fontFamily: T.m, fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center",
-                }}>{step.n}</span>
-                <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".06em", color: T.terraSub, textTransform: "uppercase" }}>{step.tag}</span>
-              </div>
-              <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 14, color: T.ink, marginBottom: 3 }}>{step.t}</div>
-              <div style={{ fontFamily: T.body, fontSize: 13, color: T.muted, lineHeight: 1.45 }}>{step.d}</div>
-            </div>
-          ))}
-        </div>
+        {/* A visual story map teaches both pacing and the product boundary:
+            this tab structures the edit; generated footage comes later. */}
+        <section
+          aria-labelledby="shorts-story-map-title"
+          style={{
+            marginTop: 16, padding: 12, borderRadius: 16,
+            border: `1px solid ${T.hair}`, background: T.inset,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+            <h3 id="shorts-story-map-title" style={{ ...eyebrow, margin: 0 }}>A {target}-second story map</h3>
+            <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted, letterSpacing: ".04em" }}>
+              Every plan follows this rhythm
+            </span>
+          </div>
+          <div className="shorts-story-map">
+            {GUIDE_BEATS.map((beat) => (
+              <article className="shorts-beat-card" key={beat.role}>
+                <GuideFrame role={beat.role} caption={beat.caption} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", marginBottom: 5 }}>
+                    <span style={{
+                      fontFamily: T.m, fontSize: 13, fontWeight: 800, letterSpacing: ".08em",
+                      color: T.ink70, textTransform: "uppercase",
+                    }}>
+                      {beat.role}
+                    </span>
+                    <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted }}>{guideTime(beat.role, target)}</span>
+                  </div>
+                  <div style={{ fontFamily: T.disp, fontSize: 15, fontWeight: 800, color: T.ink, lineHeight: 1.15 }}>
+                    {beat.title}
+                  </div>
+                  <div style={{ fontFamily: T.body, fontSize: 13, color: T.muted, lineHeight: 1.4, marginTop: 4 }}>
+                    {beat.cue}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="shorts-workflow-rail" role="group" aria-label="Shorts production workflow">
+            <span className="shorts-workflow-node"><span aria-hidden>①</span><b>Plan</b> here · free</span>
+            <span aria-hidden>→</span>
+            <span className="shorts-workflow-node"><span aria-hidden>②</span><b>Generate scenes</b> · Video Prompt</span>
+            <span aria-hidden>→</span>
+            <span className="shorts-workflow-node"><span aria-hidden>③</span><b>Assemble</b> · your editor</span>
+          </div>
+        </section>
       </div>
 
       {/* ── Controls ── */}
@@ -335,17 +579,47 @@ export default function ShortsStudio({ onSendToDirector, petName }: ShortsStudio
       {/* ── Empty hint ── */}
       {!plan && (
         <div style={{
-          ...cardStyle, background: T.inset, textAlign: "center",
-          padding: "28px 20px", color: T.muted,
+          ...cardStyle, background: T.inset,
+          padding: "20px", color: T.muted,
         }}>
-          <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 17, color: T.ink70, marginBottom: 6 }}>
-            No plan yet
+          <div className="shorts-empty-guide">
+            <div>
+              <div style={{ ...eyebrow, marginBottom: 7 }}>One-tap walkthrough</div>
+              <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 20, color: T.ink, lineHeight: 1.15 }}>
+                See a real plan before writing yours.
+              </div>
+              <p style={{ fontFamily: T.body, fontSize: 14, margin: "7px 0 14px", maxWidth: 500, lineHeight: 1.5 }}>
+                Load a generic 30-second treat story starring sample pet {exampleName}. The same
+                free planner will build actual timecodes, shots and captions — no pre-generated footage.
+              </p>
+              <button
+                type="button"
+                className="shorts-example-button"
+                onClick={useExample}
+                style={{
+                  minHeight: 46, padding: "11px 16px", borderRadius: 10,
+                  border: `1px solid ${T.terra}`, background: T.paper, color: T.terraSub,
+                  fontFamily: T.disp, fontWeight: 800, fontSize: 14, cursor: "pointer",
+                  boxShadow: "2px 2px 0 rgba(154,78,30,.22)",
+                  transition: "transform .15s ease, box-shadow .15s ease",
+                }}
+                aria-label={`Load and plan a generic 30-second example starring sample pet ${exampleName}`}
+              >
+                Load sample story →
+              </button>
+            </div>
+            <div className="shorts-example-beats" role="list" aria-label="Example sequence outline">
+              <div className="shorts-example-beat" role="listitem" style={{ "--beat-color": T.terra } as React.CSSProperties}>
+                <span>HOOK</span><time>0–2s</time><span>Treat jar opens</span>
+              </div>
+              <div className="shorts-example-beat" role="listitem" style={{ "--beat-color": T.gold } as React.CSSProperties}>
+                <span>BODY</span><time>2–25s</time><span>Three quick tricks</span>
+              </div>
+              <div className="shorts-example-beat" role="listitem" style={{ "--beat-color": T.thrive } as React.CSSProperties}>
+                <span>PAYOFF</span><time>25–30s</time><span>Snack + high-five</span>
+              </div>
+            </div>
           </div>
-          <p style={{ fontFamily: T.body, fontSize: 14, margin: 0, maxWidth: 460, marginInline: "auto" }}>
-            Write a line or two above, pick a length and a vibe, then hit
-            <strong style={{ color: T.terraSub }}> Plan the sequence</strong>. A thin idea still works —
-            the planner fills in sensible beats for your vibe.
-          </p>
         </div>
       )}
 

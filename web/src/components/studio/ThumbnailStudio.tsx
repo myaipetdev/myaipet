@@ -46,8 +46,19 @@ interface StyleDef {
   numberHighlight?: boolean;   // draw yellow marker behind number words (for light bg)
   frame?: string | null;       // colored keyline drawn on the canvas edge
   captionMode?: boolean;       // giant bottom subtitle band (shorts)
+  starterArt?: "pet-editorial"; // useful, clearly illustrative art before a photo is added
 }
 const STYLES: StyleDef[] = [
+  {
+    id: "pet-editorial",
+    label: "Pet Editorial",
+    hint: "Warm cutout · photo-ready split",
+    bg: "#F7E4BD",
+    base: "#25170E",
+    subColor: "#6E4632",
+    numberHighlight: true,
+    starterArt: "pet-editorial",
+  },
   { id: "black-impact", label: "Black Impact", hint: "Black bg · white type · key word pops", bg: "#0B0B0C", base: "#FFFFFF", subColor: "#CFCBC2" },
   { id: "white-info", label: "White Info", hint: "White bg · numbers highlit · risk pops", bg: "#FAFAF6", base: "#15130F", subColor: "#4A463E", numberHighlight: true },
   { id: "red-warning", label: "Red Warning", hint: "Charcoal + alert-red keyline", bg: "#141210", base: "#FFFFFF", subColor: "#F2C7C2", frame: THUMB_COLORS.risk },
@@ -62,7 +73,7 @@ interface PresetDef {
   seed: { title: string; subtitle: string };
 }
 const PRESETS: PresetDef[] = [
-  { id: "views", label: "Views formula", style: "black-impact", aspect: "16:9", position: "center", solution: THUMB_COLORS.solutionGreen, seed: { title: "HOW TO FILM YOUR PET IN 3 STEPS", subtitle: "the free setup that just works" } },
+  { id: "tutorial", label: "Pet tutorial", style: "pet-editorial", aspect: "16:9", position: "left", solution: THUMB_COLORS.solutionGreen, seed: { title: "3 SHOTS TO\nFILM YOUR PET", subtitle: "a phone-first creator playbook" } },
   { id: "warning", label: "Warning", style: "red-warning", aspect: "16:9", position: "center", solution: THUMB_COLORS.solutionSky, seed: { title: "NEVER DO THIS TO YOUR PET", subtitle: "the mistake new owners make" } },
   { id: "payoff", label: "Payoff", style: "white-info", aspect: "16:9", position: "left", solution: THUMB_COLORS.solutionSky, seed: { title: "MY PET GAINED 5 NEW SKILLS", subtitle: "here's the easy 3-step guide" } },
   { id: "shorts", label: "Shorts caption", style: "shorts-caption", aspect: "9:16", position: "bottom", solution: THUMB_COLORS.solutionSky, seed: { title: "WAIT FOR IT", subtitle: "the secret pet trick nobody shows" } },
@@ -147,15 +158,37 @@ function drawThumbnail(canvas: HTMLCanvasElement, p: DrawParams) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  // 1. Background: photo (cover-fit) + darkness overlay, else solid style bg.
-  ctx.fillStyle = style.bg;
-  ctx.fillRect(0, 0, W, H);
-  if (img && img.complete && img.naturalWidth > 0) {
+  const hasPhoto = !!(img && img.complete && img.naturalWidth > 0);
+
+  // 1. Background: photo (cover-fit) + darkness overlay. The editorial preset has
+  //    real vector starter art so the first-use state teaches composition instead
+  //    of exporting a dead black title card. It is intentionally illustrative,
+  //    never presented as the user's pet.
+  if (!hasPhoto && style.starterArt === "pet-editorial") {
+    drawEditorialStarter(ctx, W, H, position === "right" ? "left" : "right");
+  } else {
+    ctx.fillStyle = style.bg;
+    ctx.fillRect(0, 0, W, H);
+  }
+  if (hasPhoto && img) {
     const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight);
     const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
     ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
     if (darknessPct > 0) {
       ctx.fillStyle = `rgba(0,0,0,${Math.min(0.7, darknessPct / 100)})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+    if (style.starterArt === "pet-editorial") {
+      const wash = ctx.createLinearGradient(
+        position === "right" ? W : 0,
+        0,
+        position === "right" ? W * 0.36 : W * 0.64,
+        0,
+      );
+      wash.addColorStop(0, "rgba(247,228,189,.94)");
+      wash.addColorStop(0.72, "rgba(247,228,189,.63)");
+      wash.addColorStop(1, "rgba(247,228,189,0)");
+      ctx.fillStyle = wash;
       ctx.fillRect(0, 0, W, H);
     }
   }
@@ -168,10 +201,16 @@ function drawThumbnail(canvas: HTMLCanvasElement, p: DrawParams) {
     ctx.strokeRect(b / 2, b / 2, W - b, H - b);
   }
 
-  const hasPhoto = !!(img && img.complete && img.naturalWidth > 0);
   const padX = W * 0.075, padY = H * 0.075;
-  const boxW = W - padX * 2;
+  let textPadX = padX;
+  let boxW = W - padX * 2;
   const boxH = H - padY * 2;
+  const splitEditorial = style.starterArt === "pet-editorial" && W / H > 1.25
+    && (position === "left" || position === "right");
+  if (splitEditorial) {
+    boxW = W * 0.49;
+    textPadX = position === "right" ? W - padX - boxW : padX;
+  }
 
   // 3. Split into title / subtitle budgets. Caption mode flips the emphasis so the
   //    subtitle becomes the giant bottom line.
@@ -220,6 +259,29 @@ function drawThumbnail(canvas: HTMLCanvasElement, p: DrawParams) {
   const align: "left" | "center" | "right" =
     position === "left" ? "left" : position === "right" ? "right" : "center";
 
+  // Portrait and centered editorial layouts get a paper caption plate. It keeps
+  // every position readable over either the starter illustration or an uploaded
+  // photo while preserving the chosen alignment.
+  if (style.starterArt === "pet-editorial" && !splitEditorial && totalH > 0) {
+    const platePadX = W * 0.035;
+    const platePadY = H * 0.025;
+    ctx.save();
+    ctx.fillStyle = "rgba(255,244,220,.88)";
+    ctx.shadowColor = "rgba(43,27,18,.2)";
+    ctx.shadowBlur = Math.min(W, H) * 0.025;
+    ctx.shadowOffsetY = Math.min(W, H) * 0.012;
+    roundRect(
+      ctx,
+      Math.max(W * 0.025, textPadX - platePadX),
+      Math.max(H * 0.025, blockTop - platePadY),
+      Math.min(W * 0.95, boxW + platePadX * 2),
+      Math.min(H * 0.95, totalH + platePadY * 2),
+      Math.min(W, H) * 0.025,
+    );
+    ctx.fill();
+    ctx.restore();
+  }
+
   // Caption mode gets a translucent band behind the subtitle for guaranteed legibility.
   if (captionMode && subFit) {
     const bandTop = blockTop + (hasTitle ? titleH + gap : 0) - H * 0.02;
@@ -232,12 +294,162 @@ function drawThumbnail(canvas: HTMLCanvasElement, p: DrawParams) {
 
   // 4. Draw the title (per-word colors) then the subtitle (single color).
   if (titleFit) {
-    drawLines(ctx, titleFit, blockTop, padX, boxW, align, style, solutionColor, hasPhoto, false);
+    drawLines(ctx, titleFit, blockTop, textPadX, boxW, align, style, solutionColor, hasPhoto, false);
   }
   if (subFit) {
     const subTop = blockTop + (hasTitle ? titleH + gap : 0);
-    drawLines(ctx, subFit, subTop, padX, boxW, align, style, solutionColor, hasPhoto, true);
+    drawLines(ctx, subFit, subTop, textPadX, boxW, align, style, solutionColor, hasPhoto, true);
   }
+}
+
+/**
+ * Built-in editorial pet art for the no-photo state. This is made from canvas
+ * geometry, so it remains instant, private and exportable with no hidden network
+ * request or stock-image licensing question.
+ */
+function drawEditorialStarter(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  H: number,
+  side: "left" | "right",
+) {
+  const landscape = W / H > 1.25;
+  const gradient = ctx.createLinearGradient(0, 0, W, H);
+  gradient.addColorStop(0, "#FFF4DB");
+  gradient.addColorStop(0.56, "#F6DDAF");
+  gradient.addColorStop(1, "#ECA36A");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  if (side === "left") {
+    ctx.translate(W, 0);
+    ctx.scale(-1, 1);
+  }
+
+  const cx = landscape ? W * 0.76 : W * 0.5;
+  const cy = landscape ? H * 0.50 : H * 0.31;
+  const r = Math.min(landscape ? H * 0.34 : W * 0.43, H * 0.34);
+
+  // Quiet dot grid gives depth without competing with the headline.
+  ctx.fillStyle = "rgba(92,55,31,.16)";
+  const dot = Math.max(3, Math.round(Math.min(W, H) * 0.006));
+  const gap = dot * 4.2;
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 5; col++) {
+      ctx.beginPath();
+      ctx.arc(cx + r * 0.52 + col * gap, cy - r * 0.88 + row * gap, dot, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Offset paper shadow + terracotta halo form the "cutout" stage.
+  ctx.save();
+  ctx.shadowColor = "rgba(92,55,31,.28)";
+  ctx.shadowBlur = r * 0.15;
+  ctx.shadowOffsetY = r * 0.08;
+  ctx.fillStyle = "#C95931";
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.strokeStyle = "rgba(255,247,228,.78)";
+  ctx.lineWidth = Math.max(7, r * 0.045);
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.86, -0.4, Math.PI * 1.55);
+  ctx.stroke();
+
+  // A deliberately illustrated pet portrait (not a fake generated/user photo).
+  const headY = cy + r * 0.04;
+  const headW = r * 1.08;
+  const headH = r * 1.02;
+  ctx.fillStyle = "#FFF4DC";
+
+  // Ears sit behind the head.
+  ctx.beginPath();
+  ctx.moveTo(cx - headW * 0.42, headY - headH * 0.28);
+  ctx.quadraticCurveTo(cx - headW * 0.67, headY - headH * 0.78, cx - headW * 0.16, headY - headH * 0.49);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx + headW * 0.42, headY - headH * 0.28);
+  ctx.quadraticCurveTo(cx + headW * 0.67, headY - headH * 0.78, cx + headW * 0.16, headY - headH * 0.49);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#E68D61";
+  ctx.beginPath();
+  ctx.moveTo(cx - headW * 0.40, headY - headH * 0.34);
+  ctx.quadraticCurveTo(cx - headW * 0.55, headY - headH * 0.64, cx - headW * 0.20, headY - headH * 0.45);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx + headW * 0.40, headY - headH * 0.34);
+  ctx.quadraticCurveTo(cx + headW * 0.55, headY - headH * 0.64, cx + headW * 0.20, headY - headH * 0.45);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#FFF4DC";
+  ctx.beginPath();
+  ctx.ellipse(cx, headY, headW * 0.48, headH * 0.47, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Warm patch, eyes, muzzle and collar make the silhouette readable at feed size.
+  ctx.fillStyle = "#D97648";
+  ctx.beginPath();
+  ctx.ellipse(cx + headW * 0.18, headY - headH * 0.12, headW * 0.18, headH * 0.21, -0.22, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#2B1B12";
+  const eyeR = Math.max(6, r * 0.036);
+  for (const dx of [-headW * 0.18, headW * 0.18]) {
+    ctx.beginPath();
+    ctx.arc(cx + dx, headY - headH * 0.06, eyeR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.ellipse(cx, headY + headH * 0.12, eyeR * 1.18, eyeR * 0.82, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#2B1B12";
+  ctx.lineWidth = Math.max(4, r * 0.02);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(cx, headY + headH * 0.16);
+  ctx.quadraticCurveTo(cx - headW * 0.04, headY + headH * 0.23, cx - headW * 0.11, headY + headH * 0.20);
+  ctx.moveTo(cx, headY + headH * 0.16);
+  ctx.quadraticCurveTo(cx + headW * 0.04, headY + headH * 0.23, cx + headW * 0.11, headY + headH * 0.20);
+  ctx.stroke();
+
+  ctx.fillStyle = "#2F7E72";
+  roundRect(ctx, cx - headW * 0.31, headY + headH * 0.37, headW * 0.62, headH * 0.09, headH * 0.04);
+  ctx.fill();
+  ctx.fillStyle = "#FFD84D";
+  ctx.beginPath();
+  ctx.arc(cx, headY + headH * 0.48, r * 0.075, 0, Math.PI * 2);
+  ctx.fill();
+
+  // A small paw-sticker cue completes the editorial composition. It stays purely
+  // graphic so mirroring the layout for right-aligned copy never mirrors text.
+  ctx.fillStyle = "#2F7E72";
+  ctx.save();
+  ctx.translate(cx + r * 0.69, cy + r * 0.67);
+  ctx.rotate(-0.16);
+  roundRect(ctx, -r * 0.24, -r * 0.095, r * 0.48, r * 0.19, r * 0.05);
+  ctx.fill();
+  ctx.fillStyle = "#FFF4DC";
+  ctx.beginPath();
+  ctx.ellipse(0, r * 0.018, r * 0.075, r * 0.055, 0, 0, Math.PI * 2);
+  ctx.fill();
+  for (const [dx, dy] of [[-0.075, -0.035], [-0.025, -0.065], [0.035, -0.062], [0.083, -0.028]]) {
+    ctx.beginPath();
+    ctx.arc(r * dx, r * dy, r * 0.023, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.restore();
 }
 
 /** Draw a fitted text block line by line, word by word, applying pops + legibility. */
@@ -319,11 +531,11 @@ function isLight(hex: string): boolean {
 export default function ThumbnailStudio({ className }: { className?: string } = {}) {
   const [title, setTitle] = useState(PRESETS[0].seed.title);
   const [subtitle, setSubtitle] = useState(PRESETS[0].seed.subtitle);
-  const [styleId, setStyleId] = useState<string>("black-impact");
+  const [styleId, setStyleId] = useState<string>("pet-editorial");
   const [aspectId, setAspectId] = useState<AspectId>("16:9");
-  const [position, setPosition] = useState<PositionId>("center");
+  const [position, setPosition] = useState<PositionId>("left");
   const [solutionColor, setSolutionColor] = useState<string>(THUMB_COLORS.solutionGreen);
-  const [presetId, setPresetId] = useState<string | null>("views");
+  const [presetId, setPresetId] = useState<string | null>("tutorial");
   const [darknessPct, setDarknessPct] = useState(28);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [copied, setCopied] = useState(false);
@@ -332,6 +544,7 @@ export default function ThumbnailStudio({ className }: { className?: string } = 
   const dirtyRef = useRef(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const feedCanvasRef = useRef<HTMLCanvasElement>(null);
   const reduceMotion = useMemo(
     () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
     [],
@@ -361,9 +574,18 @@ export default function ThumbnailStudio({ className }: { className?: string } = 
 
   // Redraw on any change (and when a freshly-loaded photo becomes drawable).
   useEffect(() => {
-    const c = canvasRef.current;
-    if (!c) return;
-    drawThumbnail(c, { title, subtitle, style, aspect: { w: aspect.w, h: aspect.h }, position, solutionColor, img, darknessPct });
+    const params = {
+      title,
+      subtitle,
+      style,
+      aspect: { w: aspect.w, h: aspect.h },
+      position,
+      solutionColor,
+      img,
+      darknessPct,
+    };
+    if (canvasRef.current) drawThumbnail(canvasRef.current, params);
+    if (feedCanvasRef.current) drawThumbnail(feedCanvasRef.current, params);
   }, [title, subtitle, style, aspect, position, solutionColor, img, darknessPct]);
 
   const setText = useCallback((t: string, s: string, markDirty: boolean) => {
@@ -443,16 +665,50 @@ export default function ThumbnailStudio({ className }: { className?: string } = 
         <div className="ts-eyebrow">MY AI PET · CREATOR SUITE</div>
         <h1 className="ts-title">Thumbnail Studio</h1>
         <p className="ts-sub">
-          A color-formula thumbnail maker for pet creators.{" "}
+          Build a pet-first composition, test it at feed size, then export the real PNG.{" "}
           <span className="ts-freebadge">Made on your device · free · no credits</span>
         </p>
       </header>
 
+      <ol className="ts-flow" aria-label="Thumbnail workflow">
+        <li className="done">
+          <span className="ts-flow-no">1</span>
+          <span><b>Pick a frame</b><small>{style.label}</small></span>
+        </li>
+        <li className={title.trim() ? "done" : ""}>
+          <span className="ts-flow-no">2</span>
+          <span><b>Shape the hook</b><small>{title.trim() ? `${title.trim().split(/\s+/).length} headline words` : "Add a short promise"}</small></span>
+        </li>
+        <li className={saved ? "done" : ""}>
+          <span className="ts-flow-no">3</span>
+          <span><b>Check + export</b><small>{saved ? "PNG saved" : "Preview at real feed size"}</small></span>
+        </li>
+      </ol>
+
       <div className="ts-grid">
         {/* ── LIVE PREVIEW (right on desktop, first on mobile) ── */}
         <section className="ts-preview" aria-label="Live thumbnail preview">
+          <div className="ts-previewbar">
+            <span className="ts-live"><i aria-hidden /> Live composition</span>
+            <span>{aspect.px} PNG</span>
+          </div>
           <div className="ts-canvaswrap" style={{ aspectRatio: aspectId.replace(":", " / ") }}>
             <canvas ref={canvasRef} className="ts-canvas" aria-label="Thumbnail preview" role="img" />
+          </div>
+
+          <div className="ts-feedcheck">
+            <div className={`ts-feedframe${aspectId === "9:16" ? " portrait" : ""}`} style={{ aspectRatio: aspectId.replace(":", " / ") }} aria-hidden>
+              <canvas ref={feedCanvasRef} className="ts-canvas" />
+            </div>
+            <div className="ts-feedcopy">
+              <span>Feed-size check</span>
+              <b>{analysis.activeCount > 0 ? "The hook has a clear color anchor." : "Add one number, risk or benefit word."}</b>
+              <small>
+                {img
+                  ? "Your photo stays on this device and is included only in the downloaded PNG."
+                  : "The pet is built-in starter art, not your pet. Upload a photo when you are ready."}
+              </small>
+            </div>
           </div>
 
           {/* Formula meters — enforce the "≤3 colors / 2–5 words" rules in the UI */}
@@ -563,7 +819,11 @@ export default function ThumbnailStudio({ className }: { className?: string } = 
                   aria-pressed={presetId === p.id}
                   onClick={() => applyPreset(p)}
                 >
-                  {p.label}
+                  <span className={`ts-preset-art ${p.id}`} aria-hidden>
+                    <i />
+                    <em />
+                  </span>
+                  <span>{p.label}</span>
                 </button>
               ))}
             </div>
@@ -597,7 +857,17 @@ export default function ThumbnailStudio({ className }: { className?: string } = 
           <Panel label="Photo (optional)">
             <div className="ts-row-between">
               <label className="ts-upload">
-                <input type="file" accept="image/*" onChange={(e) => onUpload(e.target.files?.[0] ?? null)} aria-label="Upload background photo" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.currentTarget.files?.[0] ?? null;
+                    onUpload(file);
+                    // Let the same file be selected again after Remove/Replace.
+                    e.currentTarget.value = "";
+                  }}
+                  aria-label="Upload background photo"
+                />
                 {img ? "Replace photo" : "Upload photo"}
               </label>
               {img && (
@@ -675,6 +945,15 @@ const CSS = `
 .thumbstudio-root .ts-sub{font-size:15px;color:${T.muted2};margin:0;line-height:1.5}
 .thumbstudio-root .ts-freebadge{display:inline-block;font-family:var(--ed-m);font-size:13px;font-weight:700;letter-spacing:.04em;color:${T.terra};background:rgba(190,79,40,.10);border:1px solid rgba(190,79,40,.2);border-radius:999px;padding:2px 9px;margin-left:4px;white-space:nowrap}
 
+.thumbstudio-root .ts-flow{list-style:none;margin:0 0 20px;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid ${T.hair};border-radius:16px;overflow:hidden;background:rgba(251,246,236,.62)}
+.thumbstudio-root .ts-flow li{display:flex;align-items:center;gap:10px;min-width:0;padding:12px 14px;border-right:1px solid ${T.hair}}
+.thumbstudio-root .ts-flow li:last-child{border-right:0}
+.thumbstudio-root .ts-flow-no{width:27px;height:27px;flex:0 0 27px;display:grid;place-items:center;border:1px solid ${T.hair};border-radius:50%;background:${T.inset};color:${T.mono};font-family:var(--ed-m);font-size:13px;font-weight:800}
+.thumbstudio-root .ts-flow .done .ts-flow-no{border-color:rgba(47,126,114,.35);background:#2F7E72;color:#fff}
+.thumbstudio-root .ts-flow li>span:last-child{display:flex;min-width:0;flex-direction:column;gap:1px}
+.thumbstudio-root .ts-flow b{font-size:13px;color:${T.ink};line-height:1.25}
+.thumbstudio-root .ts-flow small{overflow:hidden;color:${T.muted};font-size:13px;line-height:1.25;text-overflow:ellipsis;white-space:nowrap}
+
 .thumbstudio-root .ts-grid{display:grid;grid-template-columns:1fr;gap:18px}
 @media(min-width:920px){.thumbstudio-root .ts-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);align-items:start}}
 
@@ -682,8 +961,20 @@ const CSS = `
 .thumbstudio-root .ts-preview{order:-1;display:flex;flex-direction:column;gap:12px}
 @media(min-width:920px){.thumbstudio-root .ts-preview{order:0;position:sticky;top:16px}}
 
+.thumbstudio-root .ts-previewbar{display:flex;align-items:center;justify-content:space-between;gap:12px;color:${T.muted};font-family:var(--ed-m);font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+.thumbstudio-root .ts-live{display:inline-flex;align-items:center;gap:7px;color:#276D63}
+.thumbstudio-root .ts-live i{width:8px;height:8px;border-radius:50%;background:#2F7E72;box-shadow:0 0 0 4px rgba(47,126,114,.12)}
 .thumbstudio-root .ts-canvaswrap{width:100%;background:${T.field};border-radius:14px;overflow:hidden;box-shadow:var(--ed-shadow-card,0 20px 40px -26px rgba(80,55,20,.5)),0 0 0 1px ${T.hair};display:flex}
 .thumbstudio-root .ts-canvas{width:100%;height:100%;display:block}
+
+.thumbstudio-root .ts-feedcheck{display:grid;grid-template-columns:minmax(118px,32%) minmax(0,1fr);align-items:center;gap:13px;padding:10px;border:1px solid ${T.hair};border-radius:14px;background:${T.paper}}
+.thumbstudio-root .ts-feedframe{width:100%;max-height:104px;overflow:hidden;border-radius:8px;background:${T.field};box-shadow:0 0 0 1px rgba(33,26,18,.13)}
+.thumbstudio-root .ts-feedframe.portrait{width:58px;justify-self:center}
+.thumbstudio-root .ts-feedframe .ts-canvas{object-fit:contain}
+.thumbstudio-root .ts-feedcopy{display:flex;min-width:0;flex-direction:column;gap:2px}
+.thumbstudio-root .ts-feedcopy>span{color:${T.terraSub};font-family:var(--ed-m);font-size:13px;font-weight:800;letter-spacing:.11em;text-transform:uppercase}
+.thumbstudio-root .ts-feedcopy b{color:${T.ink};font-size:13px;line-height:1.3}
+.thumbstudio-root .ts-feedcopy small{color:${T.muted};font-size:13px;line-height:1.4}
 
 .thumbstudio-root .ts-meters{display:flex;flex-wrap:wrap;gap:8px}
 .thumbstudio-root .ts-meter{font-family:var(--ed-m);font-size:13px;font-weight:700;letter-spacing:.03em;color:${T.muted2};background:${T.inset};border:1px solid ${T.hair};border-radius:999px;padding:5px 11px}
@@ -725,8 +1016,22 @@ const CSS = `
 .thumbstudio-root .ts-segbtn.on{border-color:${T.terra};background:rgba(190,79,40,.09);color:${T.terra}}
 
 .thumbstudio-root .ts-presets{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-.thumbstudio-root .ts-preset{min-height:46px;padding:11px 12px;border:1px solid ${T.hair};border-radius:12px;background:${T.inset};color:${T.ink};font-family:var(--ed-body);font-weight:800;font-size:14px;cursor:pointer;text-align:center}
+.thumbstudio-root .ts-preset{display:flex;align-items:center;gap:9px;min-height:58px;padding:8px;border:1px solid ${T.hair};border-radius:12px;background:${T.inset};color:${T.ink};font-family:var(--ed-body);font-weight:800;font-size:13px;cursor:pointer;text-align:left}
 .thumbstudio-root .ts-preset.on{border-color:${T.terra};background:rgba(190,79,40,.1);color:${T.terra};box-shadow:0 4px 0 -1px rgba(190,79,40,.25)}
+.thumbstudio-root .ts-preset-art{position:relative;width:54px;aspect-ratio:16/9;flex:0 0 54px;overflow:hidden;border-radius:6px;background:#0B0B0C;box-shadow:inset 0 0 0 1px rgba(0,0,0,.14)}
+.thumbstudio-root .ts-preset-art i,.thumbstudio-root .ts-preset-art em{position:absolute;display:block}
+.thumbstudio-root .ts-preset-art i{left:7px;top:8px;width:24px;height:4px;border-radius:2px;background:#fff;box-shadow:0 7px 0 #FFD84D}
+.thumbstudio-root .ts-preset-art em{right:5px;bottom:4px;width:13px;height:13px;border-radius:50%;background:#E27D0C}
+.thumbstudio-root .ts-preset-art.tutorial{background:linear-gradient(135deg,#FFF4DB 0 55%,#D66A3A 56%)}
+.thumbstudio-root .ts-preset-art.tutorial i{background:#25170E;box-shadow:0 7px 0 #2F7E72}
+.thumbstudio-root .ts-preset-art.tutorial em{background:#FFF4DC}
+.thumbstudio-root .ts-preset-art.warning{box-shadow:inset 0 0 0 2px ${THUMB_COLORS.risk}}
+.thumbstudio-root .ts-preset-art.warning i{box-shadow:0 7px 0 ${THUMB_COLORS.risk}}
+.thumbstudio-root .ts-preset-art.payoff{background:#FAFAF6}
+.thumbstudio-root .ts-preset-art.payoff i{background:#15130F;box-shadow:0 7px 0 ${THUMB_COLORS.number}}
+.thumbstudio-root .ts-preset-art.shorts{width:31px;flex-basis:31px;aspect-ratio:9/16;margin-inline:11px}
+.thumbstudio-root .ts-preset-art.shorts i{left:5px;top:auto;bottom:11px;width:21px;height:3px;box-shadow:0 5px 0 #5AB8FF}
+.thumbstudio-root .ts-preset-art.shorts em{display:none}
 
 .thumbstudio-root .ts-styles{display:grid;grid-template-columns:1fr;gap:8px}
 @media(min-width:520px){.thumbstudio-root .ts-styles{grid-template-columns:1fr 1fr}}
@@ -749,5 +1054,13 @@ const CSS = `
 @media(prefers-reduced-motion:no-preference){
   .thumbstudio-root .ts-cta,.thumbstudio-root .ts-ghost,.thumbstudio-root .ts-preset,.thumbstudio-root .ts-style,.thumbstudio-root .ts-segbtn,.thumbstudio-root .ts-chip{transition:transform .14s ease,box-shadow .14s ease,background .14s ease,border-color .14s ease,color .14s ease}
   .thumbstudio-root .ts-cta:active{transform:translateY(1px)}
+}
+@media(max-width:620px){
+  .thumbstudio-root .ts-freebadge{display:table;max-width:100%;margin:7px 0 0;white-space:normal}
+  .thumbstudio-root .ts-flow{grid-template-columns:1fr}
+  .thumbstudio-root .ts-flow li{border-right:0;border-bottom:1px solid ${T.hair};padding:10px 12px}
+  .thumbstudio-root .ts-flow li:last-child{border-bottom:0}
+  .thumbstudio-root .ts-feedcheck{grid-template-columns:minmax(96px,38%) minmax(0,1fr)}
+  .thumbstudio-root .ts-presets{grid-template-columns:1fr}
 }
 `;

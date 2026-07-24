@@ -61,7 +61,7 @@ export interface BuildShortsPlanInput {
 // hook is fixed to the 0–2s window; body scene count + payoff scale with length.
 // bodyTotal = target − hook − payoff, then distributed across the body scenes so
 // the durations sum EXACTLY to the target.
-const LAYOUT: Record<LengthTarget, { hook: number; bodyCount: number; payoff: number }> = {
+export const SHORTS_LAYOUT: Record<LengthTarget, { hook: number; bodyCount: number; payoff: number }> = {
   15: { hook: 2, bodyCount: 2, payoff: 3 },
   30: { hook: 2, bodyCount: 3, payoff: 5 },
   60: { hook: 2, bodyCount: 4, payoff: 8 },
@@ -325,7 +325,7 @@ export function buildShortsPlan(input: BuildShortsPlanInput): ShortsPlan {
   const target = input.target;
   const vibe = input.vibe;
   const pack = VIBES[vibe];
-  const layout = LAYOUT[target];
+  const layout = SHORTS_LAYOUT[target];
 
   const subject = deriveSubject(input.script, input.subject);
   const beats = splitBeats(input.script);

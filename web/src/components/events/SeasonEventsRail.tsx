@@ -64,7 +64,7 @@ function PosterCard({ ev }: { ev: SeasonEvent }) {
     <a
       href={ended ? undefined : ev.href}
       aria-disabled={ended || undefined}
-      className={ended ? undefined : "ser-card"}
+      className={`ser-card${ended ? " ser-card--ended" : ""}`}
       style={{
         position: "relative", display: "flex", flexDirection: "column",
         flex: "0 0 250px", minHeight: 208, padding: "16px 16px 14px",
@@ -168,11 +168,46 @@ export default function SeasonEventsRail() {
   const events = getSeasonEvents({ bestInShowOpen });
 
   return (
-    <section aria-label="Season events" style={{ fontFamily: T.body, color: T.ink }}>
+    <section className="ser-section" aria-label="Season events" style={{ fontFamily: T.body, color: T.ink }}>
       <style>{`
-        .ser-card:hover{transform:translateY(-3px);box-shadow:0 26px 46px -24px rgba(80,55,20,.55)}
-        .ser-rail{display:flex;gap:14px;overflow-x:auto;padding:12px 2px 6px;scrollbar-width:thin}
-        @media (prefers-reduced-motion: reduce){.ser-card:hover{transform:none}}
+        .ser-section{
+          width:min(1060px,calc(100% - 80px));
+          min-width:0;
+          margin-inline:auto;
+        }
+        .ser-card{
+          width:100%;
+          min-width:0;
+          height:100%;
+        }
+        .ser-card:not(.ser-card--ended):hover{
+          transform:translateY(-3px);
+          box-shadow:0 26px 46px -24px rgba(80,55,20,.55);
+        }
+        .ser-rail{
+          display:grid;
+          grid-template-columns:repeat(4,minmax(0,1fr));
+          align-items:stretch;
+          gap:14px;
+          min-width:0;
+          padding:12px 2px 6px;
+        }
+        @media (max-width:960px){
+          .ser-rail{grid-template-columns:repeat(2,minmax(0,1fr))}
+        }
+        @media (max-width:640px){
+          .ser-section{
+            width:100%;
+            padding-inline:16px;
+          }
+          .ser-rail{
+            grid-template-columns:minmax(0,1fr);
+            padding-inline:0;
+          }
+        }
+        @media (prefers-reduced-motion:reduce){
+          .ser-card:not(.ser-card--ended):hover{transform:none}
+        }
       `}</style>
 
       {/* Header — deliberately quiet: the SeasonBanner above already announces
