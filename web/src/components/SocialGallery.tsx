@@ -5,8 +5,6 @@ import { api } from "@/lib/api";
 import Icon from "@/components/Icon";
 import Reveal from "@/components/Reveal";
 import CollectibleFrame from "@/components/editorial/CollectibleFrame";
-import PetSquare from "@/components/PetSquare";
-import { isTourActive } from "@/lib/tour";
 import { SEASON_SCHEDULED } from "@/lib/season";
 
 // ── Collectible Editorial tokens ──
@@ -1191,12 +1189,8 @@ export default function SocialGallery() {
   // ALBUM = 3D sleeve carousel (browse one at a time), LIBRARY = dense
   // archive wall (survey everything, click to zoom). Owner-picked pair.
   const [view, setView] = useState<"album" | "library">("album");
-  // Top-level Community surface: FEED = the creations gallery (below), SQUARE =
-  // the walkable Pet Square neighborhood (real community pets as characters).
-  // Guest tour (no wallet) opens straight into SQUARE — it works on public pets
-  // + a generic walker even when the signed-in feed would 401/empty, so the
-  // tour always lands on something walkable. Still switchable to Feed.
-  const [mode, setMode] = useState<"feed" | "square">(() => (isTourActive() ? "square" : "feed"));
+  // Pet Square (walkable community, f627ce06b) retired 2026-07-24 by founder
+  // call — Community is the creations Feed again. PetSquare.tsx removed.
 
   useEffect(() => {
     const update = () => {
@@ -1359,8 +1353,8 @@ export default function SocialGallery() {
   // A genuinely empty feed (zero real works, not a search miss or outage) should
   // lead with the "Create the first one" CTA — not a full filter toolbar over
   // nothing. Hide the layout/type/search/sort chrome in that state.
-  const zeroWorks = mode === "feed" && !loading && !feedFailed && items.length === 0;
-  const showChrome = mode === "feed" && !zeroWorks;
+  const zeroWorks = !loading && !feedFailed && items.length === 0;
+  const showChrome = !zeroWorks;
 
   return (
     <div style={{ position: "relative", fontFamily: T.body, color: T.ink, paddingTop: 88 }}>
@@ -1415,7 +1409,7 @@ export default function SocialGallery() {
               fontFamily: T.disp, fontSize: 46, fontWeight: 800,
               color: T.ink, margin: 0, letterSpacing: "-0.035em", lineHeight: 0.95,
             }}>
-              {mode === "square" ? "The pet square" : "The remix wall"}
+              The remix wall
             </h2>
             {showChrome && (
               <span style={{
@@ -1427,26 +1421,6 @@ export default function SocialGallery() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            {/* Surface toggle — the creations Feed vs the walkable Pet Square */}
-            <div role="group" aria-label="Community surface" style={{ display: "flex", gap: 4, marginRight: 4, padding: 3, borderRadius: 999, background: T.inset, border: `1px solid ${T.hair}` }}>
-              {([["feed", "Feed"], ["square", "Square"]] as const).map(([key, label]) => {
-                const on = mode === key;
-                return (
-                  <button type="button" key={key} aria-pressed={on} onClick={() => setMode(key)} style={{
-                    background: on ? T.terra : "transparent",
-                    border: "none", borderRadius: 999, padding: "6px 16px",
-                    fontFamily: T.m, fontSize: 13, cursor: "pointer",
-                    letterSpacing: "0.1em", textTransform: "uppercase",
-                    color: on ? T.creamOn : T.muted,
-                    transition: "all 0.2s", fontWeight: 700,
-                    boxShadow: on ? "var(--ed-shadow-card)" : "none",
-                  }}>
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-
             {/* View toggle — Album carousel vs Library wall */}
             {showChrome && <div role="group" aria-label="Feed layout" style={{ display: "flex", gap: 4, marginRight: 4 }}>
               {([["album", "Album"], ["library", "Library"]] as const).map(([key, label]) => {
@@ -1557,11 +1531,8 @@ export default function SocialGallery() {
         </div>}
       </div>
 
-      {/* ── SQUARE: the walkable Pet Square neighborhood ── */}
-      {mode === "square" ? (
-        <PetSquare />
-      ) : /* Grid */
-      loading ? (
+      {/* Grid */}
+      {loading ? (
         <div style={{ display: "flex", gap: 4 }}>
           {Array.from({ length: columnCount }, (_, ci) => (
             <div key={ci} style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
@@ -1672,7 +1643,7 @@ export default function SocialGallery() {
         </Reveal>
       )}
 
-      {mode === "feed" && !loading && hasMore && (filteredItems.length > 0 || search) && (
+      {!loading && hasMore && (filteredItems.length > 0 || search) && (
         <div style={{ display: "flex", justifyContent: "center", padding: "32px 0 48px" }}>
           <button
             onClick={loadMore}
