@@ -90,6 +90,16 @@ const conversations = Array.from({ length: 400 }, (_, index) => ({
   created_at: "2026-01-01T00:00:00.000Z",
 }));
 
+// Forward-compatibility fixture: current SOUL generation deliberately excludes
+// paid runs, but imports must safely report and skip an older/custom bundle
+// that contains the historical extension category.
+const legacyAgentRuns = [{
+  runId: "10000000-0000-4000-8000-000000000001",
+  goal: "Legacy task",
+  answer: "Legacy answer",
+  billing: { outcome: "charged", creditsCharged: 5 },
+}];
+
 const source = {
   protocol: "petclaw-v1",
   version: "1.0.0",
@@ -164,6 +174,7 @@ const source = {
     loras: [{ fal_request_id: "foreign-job", lora_url: "https://provider.invalid/model" }],
     linkedGenerations: [{ id: 1, photo_path: "/uploads/foreign-private.png", user_id: 444 }],
     paidActions: [{ user_id: 444, tx_hash: "0xforeign-payment" }],
+    agentRuns: legacyAgentRuns,
     inheritanceEvents: [{ from_wallet: "0x111", to_wallet: "0x222" }],
   },
 };
@@ -267,6 +278,14 @@ const transactionClient = {
   petAgentMessage: createManyDelegate("agentMessages"),
   petAgentSchedule: { async create({ data }) { captured.agentSchedule = data; return data; } },
   petConversation: createManyDelegate("conversations"),
+  petAgentRun: {
+    async create() { throw new Error("SOUL import must never create a paid agent run"); },
+    async createMany() { throw new Error("SOUL import must never create paid agent runs"); },
+  },
+  agentCreditReservation: {
+    async create() { throw new Error("SOUL import must never create a credit reservation"); },
+    async createMany() { throw new Error("SOUL import must never create credit reservations"); },
+  },
   soulExport: { async create({ data }) { captured.sourceHash = data; return data; } },
 };
 const fakeDatabase = {
@@ -318,6 +337,12 @@ assert.equal(imported.report.skipped["linkedData.equippedItems"].count, 1);
 assert.equal(imported.report.skipped["linkedData.platformConnections"].count, 1);
 assert.equal(imported.report.skipped["linkedData.linkedGenerations"].count, 1);
 assert.equal(imported.report.skipped["linkedData.paidActions"].count, 1);
+assert.equal(imported.report.skipped["linkedData.agentRuns"].count, 1);
+assert.match(
+  imported.report.skipped["linkedData.agentRuns"].reasons.join(" "),
+  /export-only[\s\S]*never creates runs or reservations[\s\S]*replays charges/,
+);
+assert.equal(captured.agentRuns, undefined, "paid agent-run history must not be rehydrated");
 assert.equal(imported.report.skipped["linkedData.loras"].count, 1);
 assert.ok(imported.report.skipped["security.sensitiveFields"].count > 0);
 

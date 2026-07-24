@@ -76,7 +76,7 @@ const requiredUiContracts = [
   {
     file: "web/public/api-docs/API.md",
     description: "public API examples must distinguish protocol from SDK, gate the candidate version, and label synthetic metrics",
-    pattern: /version` here is the \*\*protocol\*\* version[\s\S]*?npm view @myaipet\/petclaw-sdk version[\s\S]*?requires `1\.6\.3` or later[\s\S]*?numeric values below are illustrative, not launch metrics[\s\S]*?"totalSoulNfts": 0/,
+    pattern: /version` here is the \*\*protocol\*\* version[\s\S]*?npm view @myaipet\/petclaw-sdk version[\s\S]*?requires `2\.0\.0` or later[\s\S]*?numeric values below are illustrative, not launch metrics[\s\S]*?"totalSoulNfts": 0/,
   },
   {
     file: "web/src/app/contracts/page.tsx",
@@ -96,7 +96,7 @@ const requiredUiContracts = [
   {
     file: "web/src/components/App.tsx",
     description: "Season Rewards section must expose its visible title as a semantic heading",
-    pattern: /<h1\s+className="season-banner-title"[\s\S]*?>[\s\S]*?Season 1 Rewards[\s\S]*?<\/h1>/,
+    pattern: /<h2\s+className="season-banner-title"[\s\S]*?>[\s\S]*?Season 1 Rewards[\s\S]*?<\/h2>/,
   },
   {
     file: "web/src/components/Hero.tsx",

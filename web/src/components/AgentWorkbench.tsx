@@ -1,15 +1,13 @@
 "use client";
 
 /**
- * AgentWorkbench — UI for the native function-calling loop at
- * POST /api/pets/[petId]/agent. SSE events show each sequential tool call and
- * observation as they happen.
+ * AgentWorkbench — UI for typed paid work at POST /api/pets/[petId]/agent.
+ * SSE events show the single required tool call and its observation.
  *
  * The workbench exposes only behavior the endpoint implements:
  *   - Tool calls = the returned `steps[]`
  *   - Preflight = client-side validation before credits are reserved
- *   - Retry = a separate new run, with a separate credit reservation
- *   - Saved result = the last terminal response cached in localStorage
+ *   - Terminal results = in-memory only; durable receipts live owner-scoped on the server
  *
  * Self-contained: fetches the owner's pets via api.pets.list() and calls the
  * agent endpoint directly with getAuthHeaders(). Does NOT touch AgentDashboard.
@@ -25,6 +23,11 @@ import {
   latestPendingAgentRun,
   recheckAgentRunReceiptOnNotFound,
 } from "@/lib/petclaw/agent-run-client";
+import {
+  AGENT_OFFICE_TASK_MAX_INPUT,
+  getAgentOfficeTaskInputError,
+  type AgentOfficeTaskKind,
+} from "@/lib/petclaw/agent/office-task-contract";
 
 interface AgentStep {
   thought: string;
@@ -52,29 +55,32 @@ interface AgentBilling {
 interface RunResult {
   runId: string;
   goal: string;
+  taskKind?: AgentOfficeTaskKind;
   answer: string;
   steps: AgentStep[];
   stoppedReason: string;
   completed?: boolean;
   billing?: AgentBilling;
   creditsRemaining?: number;
-  at: number; // client timestamp for the cached result
+  at: number; // client timestamp for the live result
   petId: number;
   petName: string;
 }
 
-const LS_KEY = "petclaw_workbench_session_v1";
+const LEGACY_RESULT_STORAGE_KEY = "petclaw_workbench_session_v1";
 const COST = 5;
-const MAX_STEPS = 6;
+const TYPED_MAX_STEPS = 1;
 
 const STOP: Record<string, { label: string; tone: "ok" | "warn" | "err" }> = {
   running: { label: "Running…", tone: "warn" },
   completed: { label: "Completed", tone: "ok" },
-  max_steps: { label: "Reached round limit", tone: "warn" },
+  max_steps: { label: "Legacy round limit reached", tone: "warn" },
   timeout: { label: "Timed out", tone: "warn" },
-  planner_error: { label: "Reasoning failed", tone: "err" },
+  task_error: { label: "Required tool failed", tone: "err" },
+  planner_error: { label: "Required tool failed", tone: "err" },
+  unsupported_scope: { label: "Outside read-only scope · refunded", tone: "warn" },
   receipt_missing: { label: "Settlement receipt missing", tone: "err" },
-  // Older cached/API results remain readable after the stoppedReason upgrade.
+  // Older server receipts remain readable after the stoppedReason upgrade.
   finished: { label: "Completed", tone: "ok" },
   budget_exhausted: { label: "Reached round limit", tone: "warn" },
 };
@@ -90,19 +96,12 @@ const TONE = {
   err: { fg: "#dc2626", bg: "rgba(220,38,38,0.1)", bd: "rgba(220,38,38,0.25)" },
 } as const;
 
-const EXAMPLES = [
-  "Check my mood from our recent chats and suggest one thing for today",
-  "Recall what I told you about my work, then write me a short pep talk",
-  "Look back at this week and write a diary entry in your own voice",
+const TASK_KINDS: ReadonlyArray<{ kind: AgentOfficeTaskKind; label: string }> = [
+  { kind: "recall", label: "Recall" },
+  { kind: "summarize", label: "Summarize" },
+  { kind: "review", label: "Review" },
+  { kind: "draft", label: "Draft" },
 ];
-
-function relTime(ts: number): string {
-  const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
-}
 
 function pretty(v: any): string {
   if (v == null) return "—";
@@ -117,16 +116,14 @@ function pretty(v: any): string {
 
 export default function AgentWorkbench() {
   const goalId = useId();
-  const budgetId = useId();
   const [pets, setPets] = useState<any[]>([]);
   const [petId, setPetId] = useState<number | null>(null);
   const [loadingPets, setLoadingPets] = useState(true);
 
   const [goal, setGoal] = useState("");
-  const [maxSteps, setMaxSteps] = useState(4);
+  const [taskKind, setTaskKind] = useState<AgentOfficeTaskKind>("recall");
 
   const [result, setResult] = useState<RunResult | null>(null);
-  const [restored, setRestored] = useState(false);
   const [reconciling, setReconciling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<Record<number, boolean>>({});
@@ -143,9 +140,13 @@ export default function AgentWorkbench() {
     canReconcile: canReconcilePaidRun,
   } = paidRunGuard;
 
-  // ── Load pets + show the last cached result ──
+  // ── Load pets + restore only the owner-bound pending-run safety receipt ──
   useEffect(() => {
     let alive = true;
+    // Pre-owner-bound Workbench releases cached the full private terminal
+    // payload under one origin-wide key. Never read or render it: account
+    // switches share localStorage, so the only safe migration is deletion.
+    try { localStorage.removeItem(LEGACY_RESULT_STORAGE_KEY); } catch { /* ignore */ }
     (async () => {
       try {
         const data = await api.pets.list();
@@ -156,9 +157,7 @@ export default function AgentWorkbench() {
           let savedPetId: number | null = null;
           try {
             const pending = latestPendingAgentRun();
-            const raw = localStorage.getItem(LS_KEY);
-            const saved = pending || (raw ? JSON.parse(raw) as Partial<RunResult> : null);
-            savedPetId = typeof saved?.petId === "number" ? saved.petId : null;
+            savedPetId = typeof pending?.petId === "number" ? pending.petId : null;
           } catch { /* ignore corrupt saved selection */ }
           setPetId(list.some((pet: any) => pet.id === savedPetId) ? savedPetId : list[0].id);
         }
@@ -177,6 +176,7 @@ export default function AgentWorkbench() {
         && typeof pending.at === "number"
       ) {
         setGoal(pending.goal);
+        if (pending.taskKind) setTaskKind(pending.taskKind);
         setError(
           "The previous connection ended before PetClaw returned its settlement receipt. Check Account credits and usage before starting another paid run.",
         );
@@ -186,37 +186,42 @@ export default function AgentWorkbench() {
           answer: "",
           steps: [],
           stoppedReason: "receipt_missing",
+          taskKind: pending.taskKind,
           at: pending.at,
           petId: pending.petId,
           petName: pending.petName || "your pet",
         });
-      } else {
-        const raw = localStorage.getItem(LS_KEY);
-        if (raw) {
-          const saved = JSON.parse(raw) as RunResult;
-          if (saved?.steps) {
-            setResult(saved);
-            setGoal(saved.goal || "");
-            setRestored(true);
-          }
-        }
       }
-    } catch { /* ignore corrupt saved result */ }
+    } catch { /* the paid-run guard reports an unavailable safety journal */ }
     return () => { alive = false; };
   }, []);
 
   const petName = pets.find((p) => p.id === petId)?.name || "your pet";
-  const goalOk = goal.trim().length >= 3;
-  const ready = goalOk && petId != null && !running && !receiptMissing;
+  const taskInputError = getAgentOfficeTaskInputError(taskKind, goal);
+  const goalOk = taskInputError === null;
+  const composerLocked = running || receiptMissing || reconciling;
+  const ready = goalOk && petId != null && !composerLocked;
 
   const run = useCallback(
-    async (goalText: string, steps: number) => {
-      if (petId == null || goalText.trim().length < 3) return;
+    async (goalText: string) => {
+      if (
+        running
+        || receiptMissing
+        || reconciling
+        || petId == null
+        || goalText.trim().length < 3
+      ) return;
+      const inputError = getAgentOfficeTaskInputError(taskKind, goalText);
+      if (inputError) {
+        setError(inputError);
+        return;
+      }
       const start = await startPaidRun({
         petId,
         petName,
         goal: goalText.trim(),
-        maxSteps: steps,
+        taskKind,
+        maxSteps: TYPED_MAX_STEPS,
         confirmCostCredits: COST,
         surface: "workbench",
       });
@@ -232,10 +237,9 @@ export default function AgentWorkbench() {
       const { authToken } = start;
 
       setError(null);
-      setRestored(false);
       setOpen({});
 
-      // Live streaming (SSE): tool calls + results appear as the loop works,
+      // Live streaming (SSE): the required tool call + result appears as it runs,
       // instead of a blocking wait. Falls back to a clear error if the stream
       // can't be opened. The final `done` event carries the settled totals.
       const liveSteps: AgentStep[] = [];
@@ -244,12 +248,14 @@ export default function AgentWorkbench() {
       setResult({
         runId,
         goal: goalText.trim(), answer: "", steps: [], stoppedReason: "running",
+        taskKind,
         creditsRemaining: undefined, at: Date.now(), petId, petName,
       });
 
       const pendingReceipt: RunResult = {
         runId,
         goal: goalText.trim(),
+        taskKind,
         answer: "",
         steps: [],
         stoppedReason: "receipt_missing",
@@ -268,7 +274,13 @@ export default function AgentWorkbench() {
             Accept: "text/event-stream",
             Authorization: `Bearer ${authToken}`,
           },
-          body: JSON.stringify({ runId, goal: goalText.trim(), maxSteps: steps, confirmCostCredits: COST }),
+          body: JSON.stringify({
+            runId,
+            goal: goalText.trim(),
+            taskKind,
+            maxSteps: TYPED_MAX_STEPS,
+            confirmCostCredits: COST,
+          }),
         });
         if (!res.ok || !res.body) {
           const data = await res.json().catch(() => ({} as any));
@@ -321,14 +333,15 @@ export default function AgentWorkbench() {
               if (idx != null) { liveSteps[idx] = { ...liveSteps[idx], output: evt.output, ok: !!evt.ok }; flush(); }
             } else if (evt.type === "final") {
               setResult((r) => (r ? { ...r, answer: evt.answer || "" } : r));
-            } else if (evt.type === "error" && evt.ok === false) {
-              setError(evt.error || "The run failed. Try again.");
+            } else if (evt.type === "error") {
+              setError(evt.message || evt.error || "The required tool failed.");
             } else if (evt.type === "done") {
-              if (!isTerminalPaidAgentRunReceipt(evt, runId)) continue;
+              if (!isTerminalPaidAgentRunReceipt(evt, runId, { taskKind })) continue;
               const billing = evt.billing as AgentBilling;
               const rr: RunResult = {
                 runId,
                 goal: evt.goal || goalText.trim(),
+                taskKind,
                 answer: evt.answer || "",
                 steps: evt.steps || liveSteps,
                 stoppedReason: evt.stoppedReason || "completed",
@@ -339,7 +352,6 @@ export default function AgentWorkbench() {
               };
               receivedSettlementReceipt = true;
               setResult(rr);
-              try { localStorage.setItem(LS_KEY, JSON.stringify(rr)); } catch { /* quota */ }
             }
           }
         }
@@ -378,20 +390,22 @@ export default function AgentWorkbench() {
       petId,
       petName,
       rejectPaidRun,
+      receiptMissing,
+      reconciling,
+      running,
       settlePaidRun,
       startPaidRun,
+      taskKind,
     ],
   );
 
-  const clearSavedResult = () => {
-    try { localStorage.removeItem(LS_KEY); } catch { /* ignore */ }
-    setResult(null);
-    setRestored(false);
-    setError(null);
-  };
-
   const reconcilePendingRun = async () => {
-    if (!canReconcilePaidRun() || reconcileAttemptRef.current) return;
+    if (
+      running
+      || reconciling
+      || !canReconcilePaidRun()
+      || reconcileAttemptRef.current
+    ) return;
     let pending: ReturnType<typeof latestPendingAgentRun>;
     try {
       pending = latestPendingAgentRun();
@@ -435,18 +449,36 @@ export default function AgentWorkbench() {
           `No receipt is visible yet. Resuming the same authorized run `
           + `${pending.runId.slice(0, 8)}… without creating a new charge ID…`,
         );
-        receipt = await api.pets.runAgent(
-          pending.petId,
-          pending.runId,
-          pending.goal,
-          pending.confirmCostCredits,
-          pending.maxSteps,
-          authToken,
-        );
+        try {
+          receipt = await api.pets.runAgent(
+            pending.petId,
+            pending.runId,
+            pending.goal,
+            pending.confirmCostCredits,
+            pending.maxSteps,
+            authToken,
+            pending.taskKind,
+          );
+        } catch (replayError: any) {
+          if (
+            pending.taskKind == null
+            && pending.legacyUnbound !== true
+            && replayError?.status === 400
+          ) {
+            const unlocked = await rejectPaidRun(pending.runId);
+            setError(
+              unlocked
+                ? "The legacy marker had no typed task contract and no server run exists. It was safely cleared; choose a task type before starting again."
+                : "The legacy marker was rejected, but another saved paid run still needs a receipt check.",
+            );
+            return;
+          }
+          throw replayError;
+        }
       }
       if (reconcileAttemptRef.current !== attempt) return;
       if (latestPendingAgentRun()?.runId !== pending.runId) return;
-      if (!isTerminalPaidAgentRunReceipt(receipt, pending.runId)) {
+      if (!isTerminalPaidAgentRunReceipt(receipt, pending.runId, pending)) {
         setError(
           `Run ${pending.runId.slice(0, 8)}… has no validated terminal receipt `
           + `(${receipt?.state || "unknown"}). It remains locked.`,
@@ -456,6 +488,7 @@ export default function AgentWorkbench() {
       const rr: RunResult = {
         runId: pending.runId,
         goal: receipt.goal || pending.goal,
+        taskKind: pending.taskKind,
         answer: receipt.answer || "",
         steps: receipt.steps || [],
         stoppedReason: receipt.stoppedReason || "planner_error",
@@ -467,7 +500,6 @@ export default function AgentWorkbench() {
         petName: receipt.petName || pending.petName || "your pet",
       };
       setResult(rr);
-      try { localStorage.setItem(LS_KEY, JSON.stringify(rr)); } catch { /* ignore */ }
       const unlocked = await reconcilePaidRun(pending.runId);
       if (!unlocked) {
         const remainingPending = latestPendingAgentRun();
@@ -476,11 +508,9 @@ export default function AgentWorkbench() {
           `Run ${pending.runId.slice(0, 8)}… was reconciled, but another saved paid run `
           + "still needs a receipt check.",
         );
-        setRestored(false);
         return;
       }
       setError(null);
-      setRestored(true);
     } catch (e: any) {
       if (reconcileAttemptRef.current !== attempt) return;
       setError(
@@ -497,12 +527,6 @@ export default function AgentWorkbench() {
 
   const stop = result ? (STOP[result.stoppedReason] || { label: result.stoppedReason, tone: "warn" as const }) : null;
   const toolCalls = result ? result.steps.filter((s) => s.skill !== "finish") : [];
-  const hasFailure = !!result && (
-    result.stoppedReason === "planner_error" ||
-    result.stoppedReason === "timeout" ||
-    result.steps.some((s) => !s.ok && s.skill !== "finish")
-  );
-
   return (
     <div style={{ maxWidth: 920, margin: "0 auto", padding: "96px 20px 80px" }}>
       {/* ── Header ── */}
@@ -511,37 +535,25 @@ export default function AgentWorkbench() {
           Agent Workbench · powered by PetClaw
         </div>
         <h1 style={{ fontFamily: "var(--ed-disp, sans-serif)", fontSize: "clamp(26px,4vw,38px)", fontWeight: 800, color: INK, letterSpacing: "-0.025em", margin: "0 0 10px", lineHeight: 1.12 }}>
-          Give your pet a goal. Watch it work.
+          Choose a task. Watch its required tool run.
         </h1>
         <p style={{ fontFamily: SANS, fontSize: 16, color: "rgba(33,26,18,0.6)", maxWidth: 620, margin: 0, lineHeight: 1.6 }}>
-          Not a single prompt — a bounded loop. Your pet chooses a tool, runs it,
-          observes the result, and decides whether another reasoning round is needed.
+          Recall, Summarize, Review, and Draft each map to one explicit read-only
+          tool. The server—not model prose—chooses what may run and whether it can be charged.
         </p>
 
-        {/* Honest scope note: what the loop runs vs. what it can only point to. */}
+        {/* Honest scope note: one typed task maps to one required tool. */}
         <div style={{ marginTop: 14, padding: "10px 13px", borderRadius: 10, background: "rgba(33,26,18,0.035)", border: "1px solid rgba(0,0,0,0.07)", fontFamily: SANS, fontSize: 13, color: "rgba(33,26,18,0.6)", lineHeight: 1.55, maxWidth: 620 }}>
-          <span style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.1em", color: "rgba(33,26,18,0.45)", fontWeight: 700 }}>HOW IT CHAINS</span>
+          <span style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.1em", color: "rgba(33,26,18,0.45)", fontWeight: 700 }}>WHAT ACTUALLY RUNS</span>
           <div style={{ marginTop: 4 }}>
-            Your pet calls its eligible <b>in-loop skills</b> plus private,
-            read-only <b>memory recall</b> as native function tools and reasons over each
-            result — live and sequentially. Each tool is attempted once. Outbound web,
-            Wikipedia and market-data connectors are intentionally excluded from a run that
-            can read private memory until an explicit approval and data-taint policy ships.
-            Skills that run on their own REST endpoints aren&apos;t offered here; use their
-            documented endpoint (SDK and MCP coverage varies by skill).
+            Recall uses owner-private memory search. Summarize, Review, and Draft
+            use memory-isolated text tools. The selected required tool is attempted
+            exactly once without writing to pet memory or self-learning. An owner-private
+            run record remains available for history and billing. Live web, files, inboxes, messages,
+            purchases, publishing, schedules, and endpoint-only skills are not available here.
           </div>
         </div>
       </div>
-
-      {/* ── Cached-result strip ── */}
-      {restored && result && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", borderRadius: 12, background: "rgba(107,79,160,0.05)", border: "1px solid rgba(107,79,160,0.18)", marginBottom: 18, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(33,26,18,0.65)" }}>
-            Loaded your last saved result · {relTime(result.at)}
-          </span>
-          <button type="button" onClick={clearSavedResult} style={ghostBtn}>Clear saved result</button>
-        </div>
-      )}
 
       {/* ── Composer ── */}
       <div style={card}>
@@ -552,7 +564,8 @@ export default function AgentWorkbench() {
             <div role="group" aria-label="Choose a pet" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {pets.map((p) => (
                 <button type="button" key={p.id} onClick={() => setPetId(p.id)} aria-pressed={petId === p.id}
-                  style={{ ...chip, ...(petId === p.id ? chipActive : {}) }}>
+                  disabled={composerLocked}
+                  style={{ ...chip, ...(petId === p.id ? chipActive : {}), cursor: composerLocked ? "not-allowed" : "pointer", opacity: composerLocked && petId !== p.id ? 0.6 : 1 }}>
                   {p.name || `Pet #${p.id}`}
                 </button>
               ))}
@@ -560,43 +573,55 @@ export default function AgentWorkbench() {
           </div>
         )}
 
-        <label htmlFor={goalId} style={fieldLabel}>Goal for {petName}</label>
+        <div style={{ marginBottom: 12 }}>
+          <div style={fieldLabel}>Task type</div>
+          <div role="radiogroup" aria-label="Task type" style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 8 }}>
+            {TASK_KINDS.map((item) => (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={taskKind === item.kind}
+                key={item.kind}
+                onClick={() => setTaskKind(item.kind)}
+                disabled={composerLocked}
+                style={{ ...chip, ...(taskKind === item.kind ? chipActive : {}), minWidth: 0 }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <label htmlFor={goalId} style={fieldLabel}>{TASK_KINDS.find((item) => item.kind === taskKind)?.label} input for {petName}</label>
         <textarea
           id={goalId}
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
-          placeholder="e.g. Check my mood from our recent chats and suggest one thing for today"
+          disabled={composerLocked}
+          placeholder={
+            taskKind === "recall"
+              ? "What should your pet recall from owner-private memory?"
+              : taskKind === "summarize"
+                ? "Paste at least 40 characters of text to summarize."
+                : taskKind === "review"
+                  ? "Paste the text to review."
+                  : "Describe the audience, facts, and tone for a short draft."
+          }
           rows={3}
-          maxLength={600}
+          maxLength={AGENT_OFFICE_TASK_MAX_INPUT}
           style={{ width: "100%", boxSizing: "border-box", fontFamily: SANS, fontSize: 15, lineHeight: 1.5, color: INK, padding: "12px 14px", borderRadius: 12, border: "1px solid rgba(33,26,18,0.13)", outline: "none", resize: "vertical", background: "#FBF6EC" }}
         />
-
-        {/* Example seeds */}
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-          {EXAMPLES.map((ex) => (
-            <button type="button" key={ex} onClick={() => setGoal(ex)} style={seedChip} title={ex}>
-              {ex.length > 42 ? ex.slice(0, 42) + "…" : ex}
-            </button>
-          ))}
-        </div>
-
-        {/* Reasoning-round budget */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
-          <label htmlFor={budgetId} style={{ ...fieldLabel, margin: 0 }}>Reasoning-round limit</label>
-          <input id={budgetId} type="range" min={1} max={MAX_STEPS} value={maxSteps}
-            aria-valuetext={`${maxSteps} maximum reasoning rounds`}
-            onChange={(e) => setMaxSteps(Number(e.target.value))}
-            style={{ accentColor: PURPLE, flex: 1, minWidth: 120, maxWidth: 240 }} />
-          <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: INK }}>{maxSteps}</span>
-          <span style={{ fontFamily: MONO, fontSize: 13, color: "rgba(33,26,18,0.45)" }}>max rounds</span>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginTop: 7, fontFamily: SANS, fontSize: 13, lineHeight: 1.45, color: "rgba(33,26,18,0.58)" }}>
+          <span>Do not paste secrets: input and output are sent to the configured AI provider when needed and stored in your private run history under the Privacy policy.</span>
+          <span style={{ flexShrink: 0, fontFamily: MONO }}>{goal.length}/{AGENT_OFFICE_TASK_MAX_INPUT}</span>
         </div>
 
         {/* Preflight gate */}
         <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 12, background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.06)" }}>
           <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.12em", color: "rgba(33,26,18,0.4)", fontWeight: 700, marginBottom: 8 }}>PREFLIGHT</div>
-          <Check ok={goalOk} label="Goal is at least 3 characters" />
+          <Check ok={goalOk} label={taskInputError || "Task input passes the server validation contract"} />
           <Check ok={petId != null} label="A pet is selected to run it" />
-          <Check ok neutral label={`Costs ${COST} credits for a completed direct answer or successful read-only skill run; otherwise refunded`} />
+          <Check ok neutral label={`Typed ${taskKind} reserves ${COST} credits; only its exact required read-only tool can make it chargeable`} />
         </div>
 
         {error && (
@@ -614,8 +639,8 @@ export default function AgentWorkbench() {
               <button
                 type="button"
                 onClick={reconcilePendingRun}
-                disabled={reconciling}
-                aria-busy={reconciling}
+                disabled={running || reconciling}
+                aria-busy={running || reconciling}
                 style={{ ...ghostBtn, marginTop: 9 }}
               >
                 {reconciling ? "Checking saved run…" : "Check saved run receipt"}
@@ -626,9 +651,9 @@ export default function AgentWorkbench() {
 
         <button
           type="button"
-          onClick={() => run(goal, maxSteps)}
+          onClick={() => run(goal)}
           disabled={!ready}
-          aria-busy={running}
+          aria-busy={running || reconciling}
           style={{
             marginTop: 16, width: "100%", padding: "13px 16px", borderRadius: 12, border: "none",
             fontFamily: SANS, fontSize: 15, fontWeight: 800, letterSpacing: "-0.01em",
@@ -639,12 +664,12 @@ export default function AgentWorkbench() {
           }}
         >
           {running
-            ? "● Reasoning & running…"
+            ? "● Running the required tool…"
+            : reconciling
+              ? "Checking saved run receipt…"
             : receiptMissing
-              ? "Check Account before another run"
-              : result
-                ? `▶ Authorize ${COST} credits & run again`
-                : `▶ Authorize ${COST} credits & run`}
+                ? "Check Account before another run"
+                : `▶ Run ${TASK_KINDS.find((item) => item.kind === taskKind)?.label} · reserve ${COST} credits`}
         </button>
       </div>
 
@@ -652,7 +677,7 @@ export default function AgentWorkbench() {
       {running && !result && (
         <div role="status" aria-live="polite" style={{ ...card, marginTop: 18, textAlign: "center", color: "rgba(33,26,18,0.55)", fontFamily: SANS }}>
           <div style={{ marginBottom: 8 }}><Icon name="compass" size={30} /></div>
-          {petName} is starting the first reasoning round…
+          {petName} is starting the selected read-only tool…
         </div>
       )}
 
@@ -662,7 +687,7 @@ export default function AgentWorkbench() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <span style={{ fontFamily: SANS, fontSize: 18, fontWeight: 800, color: INK }}>
-                {toolCalls.length} tool call{toolCalls.length === 1 ? "" : "s"}
+                {toolCalls.length} required tool call{toolCalls.length === 1 ? "" : "s"}
               </span>
               {stop && (
                 <span role="status" aria-live="polite" style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "3px 9px", borderRadius: 7, color: TONE[stop.tone].fg, background: TONE[stop.tone].bg, border: `1px solid ${TONE[stop.tone].bd}` }}>
@@ -685,16 +710,6 @@ export default function AgentWorkbench() {
                 </span>
               )}
             </div>
-            {hasFailure && !receiptMissing && (
-              <button
-                type="button"
-                onClick={() => run(result.goal, Math.min(MAX_STEPS, maxSteps + 2))}
-                disabled={running || receiptMissing}
-                style={retryBtn}
-              >
-                ↻ Retry as a new run
-              </button>
-            )}
           </div>
 
           {/* Goal echo */}
@@ -706,7 +721,7 @@ export default function AgentWorkbench() {
           {/* Packages */}
           {toolCalls.length === 0 && (
             <div style={{ ...card, color: "rgba(33,26,18,0.55)", fontFamily: SANS, fontSize: 14 }}>
-              The run ended without calling a tool — try a more action-oriented goal.
+              No required tool result was recorded. The reservation is not chargeable; review the error before starting a new run.
             </div>
           )}
           {toolCalls.map((s, i) => {
@@ -724,11 +739,8 @@ export default function AgentWorkbench() {
                         {s.skill}
                       </span>
                       <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, padding: "2px 8px", borderRadius: 6, color: tone.fg, background: tone.bg, border: `1px solid ${tone.bd}` }}>
-                        {s.ok ? "✓ ran in-loop" : "✕ failed"}
+                      {s.ok ? "✓ required tool completed" : "✕ required tool failed"}
                       </span>
-                    </div>
-                    <div style={{ fontFamily: SANS, fontSize: 14, color: "rgba(33,26,18,0.78)", lineHeight: 1.5 }}>
-                      {s.thought || "(no reasoning note)"}
                     </div>
                     <button
                       type="button"
@@ -754,7 +766,7 @@ export default function AgentWorkbench() {
           {result.answer && (
             <div style={{ ...card, marginTop: 14, background: "linear-gradient(135deg,rgba(190,79,40,0.06),rgba(107,79,160,0.05))", border: "1px solid rgba(190,79,40,0.22)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: MONO, fontSize: 13, letterSpacing: "0.12em", color: "#9A4E1E", fontWeight: 700, marginBottom: 8 }}>
-                <Icon name="scroll" size={14} /> {petName.toUpperCase()} REPORTS BACK
+                <Icon name="scroll" size={14} /> {result.petName.toUpperCase()} REPORTS BACK
               </div>
               <div style={{ fontFamily: SANS, fontSize: 15.5, color: INK, lineHeight: 1.62, whiteSpace: "pre-wrap" }}>
                 {result.answer}
@@ -791,5 +803,3 @@ const fieldLabel: React.CSSProperties = { display: "block", fontFamily: MONO, fo
 const ghostBtn: React.CSSProperties = { background: "transparent", border: "none", color: PURPLE, fontFamily: MONO, fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0 };
 const chip: React.CSSProperties = { fontFamily: SANS, fontSize: 13, fontWeight: 600, padding: "6px 12px", borderRadius: 9, border: "1px solid rgba(33,26,18,0.13)", background: "#FBF6EC", color: "rgba(33,26,18,0.6)", cursor: "pointer" };
 const chipActive: React.CSSProperties = { background: "rgba(107,79,160,0.1)", border: "1px solid rgba(107,79,160,0.3)", color: PURPLE, fontWeight: 800 };
-const seedChip: React.CSSProperties = { fontFamily: SANS, fontSize: 13, padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)", background: "rgba(0,0,0,0.02)", color: "rgba(33,26,18,0.55)", cursor: "pointer" };
-const retryBtn: React.CSSProperties = { fontFamily: SANS, fontSize: 13, fontWeight: 700, padding: "8px 14px", borderRadius: 10, border: "1px solid rgba(190,79,40,0.35)", background: "rgba(190,79,40,0.10)", color: "#9A4E1E", cursor: "pointer" };

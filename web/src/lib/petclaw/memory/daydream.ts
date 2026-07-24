@@ -70,7 +70,7 @@ export function buildDaydreamProviderNotes(
   return [...fromMem, ...fromProfile].filter(
     (note) => note.text
       && note.text.length > 4
-      && isProviderSafeRetainedText(`${note.key} ${note.text}`),
+      && isProviderSafeRetainedText(`${note.key}: ${note.text}`),
   );
 }
 

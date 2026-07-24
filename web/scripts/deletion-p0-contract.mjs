@@ -62,6 +62,8 @@ assert.match(runLedger, /ORDER BY "id"[\s\S]*FOR UPDATE/);
 assert.match(runLedger, /throw new PetAgentRunActiveError\(petId, active\.run_id, active\.state\)/);
 assert.doesNotMatch(runLedger, /refundAndDeletePetAgentRunsWithDb/);
 assert.match(runLedger, /pet_name:\s*"Deleted Pet"[\s\S]*goal:\s*"\[deleted\]"[\s\S]*answer:\s*""[\s\S]*steps:\s*\[\]/);
+assert.match(runLedger, /private_content_scrubbed:\s*true/);
+assert.match(schema, /private_content_scrubbed\s+Boolean\s+@default\(false\)/);
 assert.match(fullDeleteRoute, /e instanceof PetAgentRunActiveError[\s\S]*code:\s*e\.code[\s\S]*statusUrl[\s\S]*status:\s*409/);
 
 console.log("deletion_p0_contract=PASS");

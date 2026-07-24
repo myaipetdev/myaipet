@@ -925,6 +925,17 @@ PETCLAW_WEB="${PETCLAW_RELEASE_DIR}/web"
 cd "${PETCLAW_WEB}"
 npm_config_engine_strict=true npm ci --ignore-scripts --no-audit --no-fund
 npx prisma generate
+npm run test:agent-credits
+npm run test:agent-run-safety
+npm run test:agent-run-export
+npm run test:agent-workbench-privacy
+npm run test:office-deliverable
+npm run test:agent-loop-truth
+npm run test:mission-control-ledger
+npm run test:agent-office-ui
+npm run test:privacy-boundary
+npm run test:provider-context
+npm run test:deletion-p0-contract
 npm run test:ui-contract
 npm run test:release-readiness
 npm run test:community-fallback

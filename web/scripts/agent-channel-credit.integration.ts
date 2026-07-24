@@ -6,13 +6,14 @@ import { Pool } from "pg";
 async function verifyContract() {
   const read = (path: string) => readFile(new URL(path, import.meta.url), "utf8");
   const [availability, connect, webhook, centralTelegram, credits, reservations,
-    migration, env, smoke, cron] = await Promise.all([
+    runLedger, migration, env, smoke, cron] = await Promise.all([
     read("../src/lib/oauth/availability.ts"),
     read("../src/app/api/pets/[petId]/agent/connect/route.ts"),
     read("../src/app/api/agent/webhook/telegram/[petId]/route.ts"),
     read("../src/app/api/bots/telegram/webhook/route.ts"),
     read("../src/lib/agentCredits.ts"),
     read("../src/lib/agentCreditReservation.ts"),
+    read("../src/lib/petclaw/agent/run-ledger.ts"),
     read("../prisma/migrations/20260717169000_agent_channel_credit_hardening/migration.sql"),
     read("../config/production.env.example"),
     read("../../deploy/release-smoke.sh"),
@@ -38,6 +39,21 @@ async function verifyContract() {
   assert.ok(
     reservations.indexOf("agentCreditReservation.updateMany") < reservations.indexOf("Charged wallet receipt is unavailable"),
     "charge transition and required receipt must execute in one atomic callback",
+  );
+  const settlement = runLedger.slice(
+    runLedger.indexOf("export async function settlePetAgentRunWithDb"),
+    runLedger.indexOf("export function settlePetAgentRun"),
+  );
+  const reservationLock = settlement.indexOf('SELECT "id" FROM "agent_credit_reservations"');
+  const ownerLock = settlement.indexOf('SELECT "id" FROM "users"');
+  const runLock = settlement.indexOf('SELECT "id" FROM "pet_agent_runs"', ownerLock);
+  assert.ok(
+    reservationLock >= 0 && reservationLock < ownerLock && ownerLock < runLock,
+    "terminal settlement must lock reservation → owner wallet → run, matching stale-refund order",
+  );
+  assert.ok(
+    runLock < settlement.indexOf("const row = await tx.petAgentRun.findUnique"),
+    "terminal settlement must re-read the run after acquiring the ordered locks",
   );
   assert.match(migration, /pet_agent_messages_inbound_delivery_key/);
   assert.match(migration, /pet_agent_schedules_daily_credit_bounds/);
@@ -132,6 +148,8 @@ async function main() {
         "pet_name" varchar(50) NOT NULL,
         "goal" text NOT NULL,
         "max_steps" integer NOT NULL,
+        "execution_contract" varchar(120) NOT NULL DEFAULT 'freeform:v1',
+        "private_content_scrubbed" boolean NOT NULL DEFAULT false,
         "state" varchar(20) NOT NULL DEFAULT 'reserved',
         "reservation_id" uuid UNIQUE REFERENCES "agent_credit_reservations"("id") ON DELETE SET NULL,
         "completed" boolean,
@@ -344,6 +362,113 @@ async function main() {
     assert.equal(wallet.rows[0]?.credits, 95, "concurrent receipt settlement charges exactly once");
     assert.equal(await runLedgerModule.getPetAgentRunWithDb(appPrisma, 2, 1, runId), null, "another owner cannot read the receipt");
 
+    // One idempotency key can never be rebound to a different task. Gate the
+    // first reservation insert after it owns the Pet lock, then prove the
+    // conflicting request is waiting on that exact transaction before release.
+    await scoped.query('DELETE FROM "pet_agent_runs"; DELETE FROM "agent_credit_reservations"; UPDATE "users" SET "credits"=100 WHERE "id"=1');
+    const conflictingInputGate = 72_420_725;
+    await scoped.query(`
+      CREATE OR REPLACE FUNCTION "gate_conflicting_agent_run_input"()
+      RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+        IF NEW."purpose" = 'pet_agent_loop' THEN
+          PERFORM pg_advisory_xact_lock(${conflictingInputGate});
+        END IF;
+        RETURN NEW;
+      END;
+      $$;
+      CREATE TRIGGER "gate_conflicting_agent_run_input"
+      BEFORE INSERT ON "agent_credit_reservations"
+      FOR EACH ROW EXECUTE FUNCTION "gate_conflicting_agent_run_input"();
+    `);
+    const conflictingGateClient = await scoped.connect();
+    let conflictingGateHeld = false;
+    try {
+      await conflictingGateClient.query("SELECT pg_advisory_lock($1)", [conflictingInputGate]);
+      conflictingGateHeld = true;
+      const conflictingRunId = randomUUID();
+      const firstInput = runLedgerModule.reservePetAgentRunWithDb(appPrisma, {
+        runId: conflictingRunId,
+        userId: 1,
+        petId: 1,
+        petName: "Audit Pet",
+        goal: "review this exact owner text",
+        maxSteps: 1,
+        executionContract: "office:review:v1:office-review",
+        amount: 5,
+      });
+      let firstPid: number | undefined;
+      for (let attempt = 0; attempt < 250 && firstPid === undefined; attempt += 1) {
+        const observed = await scoped.query<{ pid: number }>(`
+          SELECT "pid"::int AS "pid"
+          FROM pg_locks
+          WHERE "locktype" = 'advisory'
+            AND "granted" = FALSE
+            AND "objid" = $1::oid
+          LIMIT 1
+        `, [conflictingInputGate]);
+        firstPid = observed.rows[0]?.pid;
+        if (firstPid === undefined) await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      assert.ok(firstPid !== undefined, "first conflicting input must reach the reservation gate");
+
+      const secondInput = runLedgerModule.reservePetAgentRunWithDb(appPrisma, {
+        runId: conflictingRunId,
+        userId: 1,
+        petId: 1,
+        petName: "Audit Pet",
+        goal: "draft a different owner brief",
+        maxSteps: 1,
+        executionContract: "office:draft:v1:office-draft",
+        amount: 5,
+      });
+      let secondBlocked = false;
+      for (let attempt = 0; attempt < 250 && !secondBlocked; attempt += 1) {
+        const observed = await scoped.query(`
+          SELECT waiting."pid"::int AS "pid"
+          FROM pg_locks AS waiting
+          JOIN pg_locks AS holding
+            ON holding."locktype" = 'transactionid'
+           AND holding."transactionid" = waiting."transactionid"
+           AND holding."granted" = TRUE
+          WHERE waiting."locktype" = 'transactionid'
+            AND waiting."granted" = FALSE
+            AND holding."pid" = $1
+          LIMIT 1
+        `, [firstPid]);
+        secondBlocked = Boolean(observed.rows[0]);
+        if (!secondBlocked) await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      assert.equal(secondBlocked, true, "second conflicting input must wait on the first Pet lock");
+
+      await conflictingGateClient.query("SELECT pg_advisory_unlock($1)", [conflictingInputGate]);
+      conflictingGateHeld = false;
+      const [firstResult, secondResult] = await Promise.all([firstInput, secondInput]);
+      assert.equal(firstResult.kind, "created");
+      assert.equal(secondResult.kind, "existing");
+      assert.equal(secondResult.kind === "existing" && secondResult.inputMatches, false);
+      assert.equal(secondResult.kind === "existing" && secondResult.run.goal, "review this exact owner text");
+      assert.equal(
+        secondResult.kind === "existing" && secondResult.run.executionContract,
+        "office:review:v1:office-review",
+      );
+      assert.equal(secondResult.kind === "existing" && secondResult.run.taskKind, "review");
+      const conflictingRows = await scoped.query<{ runs: number; reservations: number; credits: number }>(`
+        SELECT
+          (SELECT COUNT(*) FROM "pet_agent_runs" WHERE "run_id" = $1)::int AS "runs",
+          (SELECT COUNT(*) FROM "agent_credit_reservations" WHERE "status" = 'reserved')::int AS "reservations",
+          (SELECT "credits" FROM "users" WHERE "id" = 1)::int AS "credits"
+      `, [conflictingRunId]);
+      assert.deepEqual(conflictingRows.rows[0], { runs: 1, reservations: 1, credits: 95 });
+    } finally {
+      if (conflictingGateHeld) {
+        await conflictingGateClient.query("SELECT pg_advisory_unlock($1)", [conflictingInputGate]).catch(() => {});
+      }
+      conflictingGateClient.release();
+      await scoped.query('DROP TRIGGER IF EXISTS "gate_conflicting_agent_run_input" ON "agent_credit_reservations"');
+      await scoped.query('DROP FUNCTION IF EXISTS "gate_conflicting_agent_run_input"()');
+    }
+
     // A pet deleted or deactivated between route authorization and reservation
     // is not a wallet failure. It must be surfaced as unavailable, never 402.
     const missingRun = await runLedgerModule.reservePetAgentRunWithDb(appPrisma, {
@@ -413,6 +538,155 @@ async function main() {
     assert.equal(recovered?.billing?.skillModelCalls, null);
     wallet = await scoped.query('SELECT "credits" FROM "users" WHERE "id"=1');
     assert.equal(wallet.rows[0]?.credits, 73);
+
+    // Regression: stale recovery owns reservation → wallet → run. Settlement
+    // must use the same lock order. An advisory gate holds the stale worker in
+    // its wallet trigger after it owns the reservation; pg_locks then proves
+    // settlement is waiting on that exact transaction before the gate opens.
+    // The former run-first order formed a deterministic deadlock at that point.
+    const staleRefundGate = 72_420_724;
+    await scoped.query(`
+      CREATE OR REPLACE FUNCTION "delay_stale_wallet_refund"()
+      RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+        IF NEW."credits" > OLD."credits" THEN
+          PERFORM pg_advisory_xact_lock(${staleRefundGate});
+        END IF;
+        RETURN NEW;
+      END;
+      $$;
+      CREATE TRIGGER "delay_stale_wallet_refund"
+      BEFORE UPDATE OF "credits" ON "users"
+      FOR EACH ROW EXECUTE FUNCTION "delay_stale_wallet_refund"();
+    `);
+    const gateClient = await scoped.connect();
+    const waitForLock = async <T extends Record<string, unknown>>(
+      sql: string,
+      params: unknown[],
+      label: string,
+    ): Promise<T> => {
+      for (let attempt = 0; attempt < 250; attempt += 1) {
+        const observed = await scoped.query<T>(sql, params);
+        if (observed.rows[0]) return observed.rows[0];
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      throw new Error(`Timed out waiting for ${label}`);
+    };
+    try {
+      for (let round = 0; round < 4; round += 1) {
+        await scoped.query(`
+          DELETE FROM "pet_agent_runs";
+          DELETE FROM "agent_credit_reservations";
+          UPDATE "users" SET "credits"=100 WHERE "id"=1;
+        `);
+        const raceRunId = randomUUID();
+        const racedRun = await runLedgerModule.reservePetAgentRunWithDb(appPrisma, {
+          runId: raceRunId,
+          userId: 1,
+          petId: 1,
+          petName: "Audit Pet",
+          goal: "settle without a lock inversion",
+          maxSteps: 4,
+          amount: 5,
+          now: oldNow,
+        });
+        assert.equal(racedRun.kind, "created");
+        await runLedgerModule.markPetAgentRunRunningWithDb(appPrisma, 1, 1, raceRunId, oldNow);
+
+        await gateClient.query("SELECT pg_advisory_lock($1)", [staleRefundGate]);
+        let gateHeld = true;
+        let staleRefund: Promise<{ refundedReservations: number; refundedCredits: number }> | undefined;
+        let chargedSettlement: Promise<any> | undefined;
+        let results:
+          | [{ refundedReservations: number; refundedCredits: number }, any]
+          | undefined;
+        try {
+          staleRefund = reservationModule.refundStaleAgentCreditReservationsWithDb(
+            appPrisma,
+            new Date("2026-07-17T00:06:00.000Z"),
+            100,
+          );
+          const staleWait = await waitForLock<{ pid: number }>(`
+            SELECT "pid"::int AS "pid"
+            FROM pg_locks
+            WHERE "locktype" = 'advisory'
+              AND "granted" = FALSE
+              AND "objid" = $1::oid
+            LIMIT 1
+          `, [staleRefundGate], "stale refund advisory gate");
+
+          chargedSettlement = runLedgerModule.settlePetAgentRunWithDb(appPrisma, {
+            userId: 1,
+            petId: 1,
+            runId: raceRunId,
+            outcome: "charged",
+            completed: true,
+            answer: "settled",
+            steps: [],
+            stoppedReason: "completed",
+            billing,
+          });
+          await waitForLock(`
+            SELECT waiting."pid"::int AS "pid"
+            FROM pg_locks AS waiting
+            JOIN pg_locks AS holding
+              ON holding."locktype" = 'transactionid'
+             AND holding."transactionid" = waiting."transactionid"
+             AND holding."granted" = TRUE
+            WHERE waiting."locktype" = 'transactionid'
+              AND waiting."granted" = FALSE
+              AND holding."pid" = $1
+            LIMIT 1
+          `, [staleWait.pid], "settlement waiting on stale reservation");
+
+          await gateClient.query("SELECT pg_advisory_unlock($1)", [staleRefundGate]);
+          gateHeld = false;
+          results = await Promise.all([staleRefund, chargedSettlement]);
+        } finally {
+          if (gateHeld) {
+            await gateClient.query("SELECT pg_advisory_unlock($1)", [staleRefundGate]).catch(() => {});
+          }
+        }
+        assert.ok(results, "race must return both stale-refund and settlement receipts");
+        const [refundResult, settlementReceipt] = results;
+        assert.equal(refundResult.refundedReservations, 1);
+        assert.equal(settlementReceipt.runId, raceRunId);
+        assert.equal(settlementReceipt.state, "terminal");
+        assert.equal(settlementReceipt.billing?.outcome, "refunded");
+        assert.equal(settlementReceipt.billing?.reason, "outcome_unknown_timeout");
+        assert.equal(settlementReceipt.creditsRemaining, 100);
+
+        const exactOnce = await scoped.query<{
+          credits: number;
+          run_state: string;
+          reservation_status: string;
+          run_outcome: string;
+          receipt_credits: number;
+        }>(`
+          SELECT owner."credits"::int AS "credits",
+                 run."state" AS "run_state",
+                 reservation."status" AS "reservation_status",
+                 run."billing"->>'outcome' AS "run_outcome",
+                 run."credits_remaining"::int AS "receipt_credits"
+          FROM "pet_agent_runs" AS run
+          JOIN "agent_credit_reservations" AS reservation
+            ON reservation."id" = run."reservation_id"
+          JOIN "users" AS owner ON owner."id" = run."user_id"
+          WHERE run."run_id" = $1
+        `, [raceRunId]);
+        assert.deepEqual(exactOnce.rows, [{
+          credits: 100,
+          run_state: "terminal",
+          reservation_status: "refunded",
+          run_outcome: "refunded",
+          receipt_credits: 100,
+        }], `round ${round + 1}: stale refund must win once and persist one matching terminal receipt`);
+      }
+    } finally {
+      gateClient.release();
+      await scoped.query('DROP TRIGGER IF EXISTS "delay_stale_wallet_refund" ON "users"');
+      await scoped.query('DROP FUNCTION IF EXISTS "delay_stale_wallet_refund"()');
+    }
 
     await scoped.query(`
       DELETE FROM "pet_agent_runs";

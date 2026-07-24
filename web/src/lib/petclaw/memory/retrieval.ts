@@ -39,7 +39,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { callEmbedding } from "@/lib/llm/router";
-import { isProviderSafeRetainedText } from "./persistent-memory";
+import {
+  canonicalRetainedRetrievalToken,
+  isProviderSafeRetainedText,
+} from "./persistent-memory";
 
 // ── Tunables ──
 const CANDIDATE_LIMIT = 400; // max rows pulled into memory for in-process ranking
@@ -82,7 +85,7 @@ export interface CandidateRow {
  */
 export function providerSafeRetrievalCandidates(candidates: CandidateRow[]): CandidateRow[] {
   return candidates.filter((candidate) =>
-    isProviderSafeRetainedText(`${candidate.memory_type} ${candidate.content}`),
+    isProviderSafeRetainedText(`${candidate.memory_type}: ${candidate.content}`),
   );
 }
 
@@ -114,6 +117,7 @@ function normalize(s: string): string {
 function tokenize(s: string): string[] {
   return normalize(s)
     .split(" ")
+    .map(canonicalRetainedRetrievalToken)
     .filter((w) => w.length >= MIN_TOKEN_LEN && !STOPWORDS.has(w));
 }
 
@@ -366,7 +370,7 @@ export async function getRelevantMemories(
  */
 export function formatRetrievedMemories(mems: RetrievedMemory[]): string {
   const safe = mems.filter((memory) =>
-    isProviderSafeRetainedText(`${memory.memoryType} ${memory.content}`),
+    isProviderSafeRetainedText(`${memory.memoryType}: ${memory.content}`),
   );
   if (safe.length === 0) return "";
   return safe.map((m) => `- ${m.content}`).join("\n");

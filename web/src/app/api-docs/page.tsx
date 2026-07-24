@@ -156,7 +156,7 @@ function extractToc(md: string): { level: number; text: string; slug: string }[]
 // Honest inventory — kept in lockstep with PetClawConsole (no inflation).
 const STAT_STRIP = [
   { n: String(RELEASE_STATUS.skills), l: "built-in skills" },
-  { n: String(RELEASE_STATUS.mcpTools), l: "MCP tools · SDK 1.6.3" },
+  { n: String(RELEASE_STATUS.mcpTools), l: `MCP tools · SDK ${RELEASE_STATUS.sdkVersion}` },
   { n: String(RELEASE_STATUS.connectors.registry), l: "registered connectors" },
   { n: String(RELEASE_STATUS.connectors.live), l: "live connectors" },
 ];
@@ -194,7 +194,8 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
           </h1>
           <p style={{ fontSize: 16, color: "rgba(236,224,206,0.72)", margin: "12px 0 0", maxWidth: 640, lineHeight: 1.55 }}>
             Build with the HTTP API and SDK {RELEASE_STATUS.sdkVersion}: memory-aware chat,
-            {" "}{RELEASE_STATUS.skills} built-in skill manifests, and checksum-validated SOUL export with documented import limits.
+            typed single-tool paid tasks, {RELEASE_STATUS.skills} built-in skill manifests, and
+            checksum-validated SOUL export with documented import limits.
           </p>
 
           {/* Stat strip — honest inventory */}
@@ -219,7 +220,7 @@ export default async function ApiDocsPage(props: { searchParams?: Promise<{ tab?
               SDK v{RELEASE_STATUS.sdkVersion}
             </span>
             <span style={{ background: "rgba(236,224,206,0.06)", border: "1px solid rgba(236,224,206,0.16)", borderRadius: 999, padding: "5px 12px", color: "rgba(236,224,206,0.75)" }}>
-              MCP runtime · {RELEASE_STATUS.mcp}
+              MCP runtime · {RELEASE_STATUS.mcpTools}-tool SDK {RELEASE_STATUS.sdkVersion} contract
             </span>
             <span style={{ background: "rgba(236,224,206,0.06)", border: "1px solid rgba(236,224,206,0.16)", borderRadius: 999, padding: "5px 12px", color: "rgba(236,224,206,0.75)" }}>
               Messaging · {RELEASE_STATUS.channels}

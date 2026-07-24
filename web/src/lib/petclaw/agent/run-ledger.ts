@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { AGENT_RESERVATION_TTL_MS, type AgentCreditReservation } from "@/lib/agentCreditReservation";
+import {
+  agentOfficeTaskKindFromExecutionContract,
+  type AgentOfficeTaskKind,
+} from "./office-task-contract";
 
 type Db = any;
 
@@ -26,6 +30,8 @@ export type PublicPetAgentRun = {
   petName: string;
   goal: string;
   maxSteps: number;
+  executionContract: string;
+  taskKind: AgentOfficeTaskKind | null;
   ok?: boolean;
   completed?: boolean;
   answer?: string;
@@ -68,6 +74,8 @@ function publicRun(row: any): PublicPetAgentRun {
     petName: row.pet_name,
     goal: row.goal,
     maxSteps: row.max_steps,
+    executionContract: row.execution_contract,
+    taskKind: agentOfficeTaskKindFromExecutionContract(row.execution_contract),
     ...(terminal ? {
       ok: row.completed === true,
       completed: row.completed === true,
@@ -107,11 +115,13 @@ export async function reservePetAgentRunWithDb(
     petName: string;
     goal: string;
     maxSteps: number;
+    executionContract?: string;
     amount: number;
     now?: Date;
   },
 ): Promise<ReservePetAgentRunResult> {
   const now = input.now ?? new Date();
+  const executionContract = input.executionContract ?? "freeform:v1";
   const expiresAt = new Date(now.getTime() + AGENT_RESERVATION_TTL_MS);
   try {
     const created = await db.$transaction(async (tx: Db) => {
@@ -145,6 +155,7 @@ export async function reservePetAgentRunWithDb(
           pet_name: input.petName,
           goal: input.goal,
           max_steps: input.maxSteps,
+          execution_contract: executionContract,
           state: "reserved",
           created_at: now,
           updated_at: now,
@@ -185,7 +196,10 @@ export async function reservePetAgentRunWithDb(
         : {
             kind: "existing",
             run: publicRun(created.existing),
-            inputMatches: created.existing.goal === input.goal && created.existing.max_steps === input.maxSteps,
+            inputMatches:
+              created.existing.goal === input.goal
+              && created.existing.max_steps === input.maxSteps
+              && created.existing.execution_contract === executionContract,
           };
     }
 
@@ -222,7 +236,10 @@ export async function reservePetAgentRunWithDb(
     return {
       kind: "existing",
       run: publicRun(existing),
-      inputMatches: existing.goal === input.goal && existing.max_steps === input.maxSteps,
+      inputMatches:
+        existing.goal === input.goal
+        && existing.max_steps === input.maxSteps
+        && existing.execution_contract === executionContract,
     };
   }
 }
@@ -278,8 +295,54 @@ export async function settlePetAgentRunWithDb(
 ): Promise<PublicPetAgentRun> {
   const now = input.now ?? new Date();
   return db.$transaction(async (tx: Db) => {
-    // Serialize terminal settlement for this run. A concurrent retry waits,
-    // then reads the winner's terminal receipt instead of racing the wallet.
+    const identity = await tx.petAgentRun.findUnique({
+      where: {
+        user_id_pet_id_run_id: {
+          user_id: input.userId,
+          pet_id: input.petId,
+          run_id: input.runId,
+        },
+      },
+    });
+    if (!identity) throw new Error("Agent run ledger is unavailable");
+    if (identity.state === "terminal") {
+      // Terminal receipts can still be privacy-scrubbed by owner deletion.
+      // Serialize the replay with that scrub and read the locked version so a
+      // response never resurrects content from a stale pre-deletion snapshot.
+      await tx.$queryRaw`
+        SELECT "id" FROM "pet_agent_runs"
+        WHERE "user_id" = ${input.userId}
+          AND "pet_id" = ${input.petId}
+          AND "run_id" = ${input.runId}::uuid
+        FOR UPDATE
+      `;
+      const terminalRow = await tx.petAgentRun.findUnique({
+        where: {
+          user_id_pet_id_run_id: {
+            user_id: input.userId,
+            pet_id: input.petId,
+            run_id: input.runId,
+          },
+        },
+      });
+      if (!terminalRow) throw new Error("Agent run ledger is unavailable");
+      return publicRun(terminalRow);
+    }
+    if (!identity.reservation_id) throw new Error("Agent run reservation is unavailable");
+
+    // The stale-refund worker locks reservation → owner wallet → run. Acquire
+    // those same rows in the same order so a timeout refund can never deadlock
+    // with a provider completion that is settling this receipt.
+    await tx.$queryRaw`
+      SELECT "id" FROM "agent_credit_reservations"
+      WHERE "id" = ${identity.reservation_id}::uuid
+      FOR UPDATE
+    `;
+    await tx.$queryRaw`
+      SELECT "id" FROM "users"
+      WHERE "id" = ${input.userId}
+      FOR UPDATE
+    `;
     await tx.$queryRaw`
       SELECT "id" FROM "pet_agent_runs"
       WHERE "user_id" = ${input.userId}
@@ -287,6 +350,10 @@ export async function settlePetAgentRunWithDb(
         AND "run_id" = ${input.runId}::uuid
       FOR UPDATE
     `;
+
+    // A stale-refund transaction may have won while this transaction waited
+    // for the reservation lock. Re-read after all locks and replay its durable
+    // terminal receipt instead of attempting a second wallet transition.
     const row = await tx.petAgentRun.findUnique({
       where: {
         user_id_pet_id_run_id: {
@@ -298,10 +365,12 @@ export async function settlePetAgentRunWithDb(
     });
     if (!row) throw new Error("Agent run ledger is unavailable");
     if (row.state === "terminal") return publicRun(row);
-    if (!row.reservation_id) throw new Error("Agent run reservation is unavailable");
+    if (row.reservation_id !== identity.reservation_id) {
+      throw new Error("Agent run reservation changed during settlement");
+    }
 
     const reservation = await tx.agentCreditReservation.findUnique({
-      where: { id: row.reservation_id },
+      where: { id: identity.reservation_id },
       select: { status: true, amount: true, user_id: true, purpose: true },
     });
     if (!reservation || reservation.user_id !== input.userId || reservation.purpose !== "pet_agent_loop") {
@@ -310,7 +379,7 @@ export async function settlePetAgentRunWithDb(
 
     if (input.outcome === "charged") {
       const claimed = await tx.agentCreditReservation.updateMany({
-        where: { id: row.reservation_id, status: "reserved" },
+        where: { id: identity.reservation_id, status: "reserved" },
         data: { status: "committed", settled_at: now },
       });
       if (claimed.count !== 1 && reservation.status !== "committed") {
@@ -318,7 +387,7 @@ export async function settlePetAgentRunWithDb(
       }
     } else {
       const claimed = await tx.agentCreditReservation.updateMany({
-        where: { id: row.reservation_id, status: "reserved" },
+        where: { id: identity.reservation_id, status: "reserved" },
         data: { status: "refunded", settled_at: now },
       });
       if (claimed.count === 1) {
@@ -414,6 +483,7 @@ export async function assertNoActiveAndScrubPetAgentRunsWithDb(
       goal: "[deleted]",
       answer: "",
       steps: [] as any,
+      private_content_scrubbed: true,
       updated_at: now,
     },
   });

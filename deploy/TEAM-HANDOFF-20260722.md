@@ -1,5 +1,9 @@
 # petclaw 인프라 변경 핸드오프 (2026-07-22)
 
+> 제품 감사, 후보 코드, npm, 인증 UAT, 서명 릴리스의 최신 연속 기록은
+> [`../docs/PRODUCTION_READINESS_HANDOFF_2026-07-24.md`](../docs/PRODUCTION_READINESS_HANDOFF_2026-07-24.md)입니다.
+> 이 문서는 서버 운영 이력으로 유지하며 최신 출시 승인으로 해석하지 않습니다.
+
 서버 운영 정비 중 적용된 사항과, **빌드 소스(myaipetdev/myaipet)에 반영이 필요한 항목** 정리.
 
 ## 오늘 서버에 적용된 것 (참고)

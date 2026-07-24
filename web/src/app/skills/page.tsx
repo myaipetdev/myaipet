@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { BUILTIN_SKILLS } from "@/lib/petclaw/pethub";
 import Icon from "@/components/Icon";
+import { RELEASE_STATUS } from "@/lib/releaseStatus";
 
 export const metadata: Metadata = {
   title: "Skills — PetClaw Marketplace",
@@ -57,7 +58,7 @@ export default function SkillsPage() {
             maxWidth: 640, margin: 0,
           }}>
             Built-in skill manifests, one-command install. Every skill uses a documented
-            markdown + JSON schema definition. The published SDK 1.6.3 includes
+            markdown + JSON schema definition. SDK {RELEASE_STATUS.sdkVersion} defines
             seven owner-authenticated MCP tools for supported stdio clients.
           </p>
         </div>
@@ -97,8 +98,8 @@ export default function SkillsPage() {
               },
               {
                 icon: "compass",
-                verb: "Run a bounded goal",
-                body: "The owner-authenticated runner invokes eligible reviewed in-process skills for up to six steps and reports its trace, credit use, and stop reason.",
+                verb: "Run one typed paid task",
+                body: "Choose Recall for retrieved facts plus a grounded answer, Summarize for a decision brief, Review for an issue plus revision, or Draft for reviewable text. Each task binds to one read-only tool.",
               },
               {
                 icon: "scroll",
@@ -128,6 +129,28 @@ export default function SkillsPage() {
             ))}
           </div>
         </section>
+
+        {/* Paid typed-task contract — separate from persistent pet memory. */}
+        <div style={{
+          padding: 22, borderRadius: 16, marginBottom: 36,
+          background: "rgba(190,79,40,0.06)",
+          border: "1px solid rgba(190,79,40,0.2)",
+        }}>
+          <h2 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 8px", letterSpacing: "-0.01em" }}>
+            Paid task contract
+          </h2>
+          <p style={{ fontSize: 14, color: "rgba(33,26,18,0.7)", lineHeight: 1.65, margin: "0 0 8px" }}>
+            Task input is capped at 2,000 characters. The deprecated <code>maxSteps</code>
+            compatibility field is normalized to 1 because the selected task executes its
+            required tool exactly once.
+          </p>
+          <p style={{ fontSize: 14, color: "rgba(33,26,18,0.7)", lineHeight: 1.65, margin: 0 }}>
+            The tool does not write pet memory or self-learning data. Owner-private input,
+            result, trace, and billing history are stored for reconciliation. The response
+            includes the exact charge-or-refund receipt; failures, refusals, tool mismatches,
+            and non-contract outputs are refunded.
+          </p>
+        </div>
 
         {/* Quick-install banner */}
         <div style={{
@@ -298,7 +321,7 @@ export default function SkillsPage() {
         <div style={{
           marginTop: 36, fontSize: 13, color: "rgba(33,26,18,0.55)", lineHeight: 1.6,
         }}>
-          SDK 1.6.3 publishes seven owner-authenticated MCP tools. You can also
+          SDK {RELEASE_STATUS.sdkVersion} defines seven owner-authenticated MCP tools. You can also
           invoke skills via the REST API or CLI. See{" "}
           <a href="/api-docs" style={{ color: "#9A4E1E" }}>/api-docs</a> →
           Ecosystem → MCP Compatibility.

@@ -23,6 +23,11 @@ const connectorRoute = read("src/app/api/petclaw/connectors/route.ts");
 const webSearchConnector = read("src/lib/petclaw/connectors/web-search.ts");
 const daydreamRoute = read("src/app/api/pets/[petId]/daydream/route.ts");
 const migration = read("prisma/migrations/20260717161000_safe_media_deletion/migration.sql");
+const privacyPolicy = read("src/app/privacy/page.tsx");
+const paidAgentRoute = read("src/app/api/pets/[petId]/agent/route.ts");
+const paidAgentReceiptRoute = read("src/app/api/pets/[petId]/agent/runs/[runId]/route.ts");
+const soulExportRoute = read("src/app/api/petclaw/export/route.ts");
+const soulImportRoute = read("src/app/api/petclaw/import/route.ts");
 
 assert.match(projection, /pets:\s*\{\s*some:\s*publicPetWhere\(\)/);
 assert.match(projection, /pets:\s*\{\s*where:\s*publicPetWhere\(\)/);
@@ -84,6 +89,39 @@ assert.ok(
 assert.ok(
   daydreamGet.indexOf("requirePetOwner(req, id)") < daydreamGet.indexOf("prisma.petInsight.updateMany"),
   "daydream ownership must be proven before mutating the seen state",
+);
+
+for (const disclosure of [
+  /Paid Agent Office Runs/,
+  /selected task kind and server execution contract/,
+  /execution-step trace \(including tool or skill inputs and\s+outputs\)/,
+  /owner-authenticated, owner-scoped product surfaces/,
+  /no external action\s+connector/,
+  /fail-closed recovery\s+journal in local storage/,
+  /goal, selected task kind, step limit/,
+  /journal itself does not store the session token or any AI\s+provider key/,
+  /does not apply a shorter automatic expiry to\s+terminal run records/,
+]) {
+  assert.match(privacyPolicy, disclosure, `privacy policy is missing paid Agent Office disclosure: ${disclosure}`);
+}
+
+assert.equal(
+  (paidAgentRoute.match(/"Cache-Control": "private, no-store, no-cache, no-transform"/g) ?? []).length,
+  2,
+  "paid Agent Office replay and live streams must not be cached or transformed",
+);
+assert.match(paidAgentReceiptRoute, /"Cache-Control": "private, no-store"/);
+for (const [label, route] of [
+  ["SOUL export", soulExportRoute],
+  ["SOUL import", soulImportRoute],
+]) {
+  assert.match(route, /headers\.set\("Cache-Control", "private, no-store"\)/, `${label} responses must be private and non-cacheable`);
+  assert.match(route, /return privateJson\(/, `${label} must use its private response boundary`);
+}
+assert.doesNotMatch(
+  paidAgentRoute,
+  /(?:error|detail):\s*(?:e|error|settlementError)\?*\.message/,
+  "client payloads must use bounded public errors instead of raw exception messages",
 );
 
 console.log("privacy_boundary_contract=PASS");

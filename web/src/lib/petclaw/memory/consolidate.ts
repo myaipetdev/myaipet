@@ -55,20 +55,20 @@ export function buildConsolidationProviderContext(
   turnsText: string;
 } {
   const eligibleMemories = memories.filter((memory) =>
-    isProviderSafeRetainedText(`${memory.key} ${memory.category} ${memory.content}`),
+    isProviderSafeRetainedText(`${memory.key}: ${memory.content}`),
   );
   const protectedMemories = memories.filter((memory) => !eligibleMemories.includes(memory));
   // Identity rows and unsafe rows stay owner-visible but are never necessary
   // for provider-side dedupe/compression.
   const eligibleUserProfile = userProfile.filter((entry) =>
     entry.category !== "identity"
-    && isProviderSafeRetainedText(`${entry.key} ${entry.category} ${entry.content}`),
+    && isProviderSafeRetainedText(`${entry.key}: ${entry.content}`),
   );
   const protectedUserProfile = userProfile.filter((entry) => !eligibleUserProfile.includes(entry));
   const providerTurns = [...recentTurns]
     .reverse()
     .filter((turn) =>
-      isProviderSafeRetainedText(`${turn.memory_type} ${turn.content}`),
+      isProviderSafeRetainedText(`${turn.memory_type}: ${turn.content}`),
     )
     .slice(-30);
 
@@ -212,7 +212,7 @@ Rewrite the ledger.`,
         updatedAt: now,
       }))
       .filter((memory: MemoryEntry) =>
-        isProviderSafeRetainedText(`${memory.key} ${memory.category} ${memory.content}`),
+        isProviderSafeRetainedText(`${memory.key}: ${memory.content}`),
       );
     const providerProfile = parsed.userProfile.map((u: any) => ({
         key: String(u.key || `consolidated_${Math.random().toString(36).slice(2, 8)}`),
@@ -223,7 +223,7 @@ Rewrite the ledger.`,
       }))
       .filter((entry: UserProfile) =>
         entry.category !== "identity"
-        && isProviderSafeRetainedText(`${entry.key} ${entry.category} ${entry.content}`),
+        && isProviderSafeRetainedText(`${entry.key}: ${entry.content}`),
       );
     consolidated = {
       // Provider-quarantined entries were never sent out and must never be

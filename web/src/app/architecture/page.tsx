@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { RELEASE_STATUS } from "@/lib/releaseStatus";
 
 export const metadata: Metadata = {
   title: "Memory Architecture — MY AI PET",
@@ -53,11 +54,11 @@ export default function ArchitecturePage() {
           n={3}
           title="Session Log — Lineaged Turn Store"
           tag="canonical chat rows · session + platform metadata"
-          desc="Successful canonical chat stores normalized owner and pet rows with session,
+          desc={`Successful canonical chat stores normalized owner and pet rows with session,
                 platform, role, and speaker metadata. Web and approved Chrome sites are supported
-                today; CLI, SDK, and the published 1.6.3 MCP runtime can name their own sessions. Messaging
+                today; CLI, SDK, and the SDK ${RELEASE_STATUS.sdkVersion} MCP contract can name their own sessions. Messaging
                 channels are launch-paused. Raw recent context is limited to six safe turns from
-                the exact requested surface and session; no session means no raw-turn injection."
+                the exact requested surface and session; no session means no raw-turn injection.`}
         />
         <Layer
           n={4}
@@ -75,6 +76,15 @@ export default function ArchitecturePage() {
           desc="After a successful canonical response, a small model call can extract durable facts
                 and user-profile updates as structured JSON. Retention is best-effort, importance-rated,
                 owner-editable, and discarded if a concurrent owner clear changed the memory epoch."
+        />
+        <Layer
+          n={6}
+          title="Paid Typed Tasks — Separate Run History"
+          tag="one required tool · max 2,000 chars · maxSteps normalized to 1"
+          desc="Recall, Summarize, Review, and Draft each execute one server-bound read-only tool.
+                That tool does not write pet memory or self-learning data. The service separately
+                stores owner-private task input, result, trace, and billing history so the owner can
+                reconcile the exact charge-or-refund receipt."
         />
 
         <h2 style={{ fontSize: 22, fontWeight: 800, marginTop: 40, marginBottom: 14 }}>
@@ -96,7 +106,7 @@ export default function ArchitecturePage() {
           Sovereignty Operations
         </h2>
         <Op title="Export"
-            desc="Sovereignty → Export SOUL Data downloads documented supported identity, persona, memory, skill, consent, and history fields as checksummed JSON. Media, competitive state, external connections, and other server-authoritative state are not a byte-for-byte transfer." />
+            desc="Sovereignty → Export SOUL Data downloads documented supported identity, persona, memory, skill, consent, and portable history fields as checksummed JSON. Paid-run history is separate so an unbounded receipt ledger cannot break SOUL portability: an owner can download at most 100 newest-first run records per checksummed page and follow the opaque cursor until complete. Those access pages never expose database, user, pet, or reservation IDs, and import never recreates a run, reservation, credit, or charge. Media, competitive state, external connections, and other server-authoritative state are not a byte-for-byte transfer." />
         <Op title="Delete"
             desc="Sovereignty → Delete Pet Data is blocked while a paid run is reserved or running. After the run settles, deletion removes pet-scoped records and owned media, scrubs the paid run's private name/goal/answer/steps, and retains only its owner-scoped financial receipt. Backup copies follow the published retention schedule; public on-chain records cannot be erased." />
         <Op title="Consent toggles"

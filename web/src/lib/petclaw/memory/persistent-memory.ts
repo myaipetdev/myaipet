@@ -23,6 +23,7 @@ import { callLLM } from "@/lib/llm/router";
 import { containsHangul } from "@/lib/generatedLanguage";
 import type { Prisma } from "@/generated/prisma/client";
 import { readPetMemoryEpoch, withLockedPetModifiers } from "@/lib/petclaw/modifier-store";
+import { containsStrongAgentOfficeSecret } from "../agent/office-task-contract";
 import {
   invalidateDerivedMemoryModifiers,
   redactUnprovenancedRecallStores,
@@ -103,9 +104,14 @@ const RETRIEVAL_STOP_WORDS = new Set([
 // Retained ledgers may contain owner-authored credentials despite extraction
 // instructions. They remain available to owner inspect/export controls, but are
 // never copied into a model-provider prompt or recall-tool result.
-const SECRET_CONTEXT_LABEL_PATTERN = /\b(?:api[\s_-]*key|access[\s_-]*token|auth(?:entication)?[\s_-]*token|bearer[\s_-]*token|client[\s_-]*secret|password|passcode|private[\s_-]*key|recovery[\s_-]*phrase|refresh[\s_-]*token|seed[\s_-]*phrase|session[\s_-]*token|credential|mnemonic|secret|token|jwt)\b\s*(?:(?:is|=|:)\s*)?\S+/i;
-const SECRET_CONTEXT_VALUE_PATTERN = /(?:\b(?:sk|xai|ghp|gho|github_pat|glpat|hf|pk_live|rk_live|pck|xox[baprs]|AKIA|ASIA|AIza|ya29)[-_A-Za-z0-9.]{6,}\b|\b(?:Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{6,}|-----BEGIN\s+(?:RSA\s+|EC\s+|OPENSSH\s+)?PRIVATE\s+KEY-----)/i;
-const JWT_CONTEXT_PATTERN = /\b[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\b/;
+//
+// Generic words such as "token", "secret", and "credential" are legitimate
+// product/security vocabulary. Reject them only when they label a concrete,
+// token-shaped value. Specific credential formats and sensitive field labels
+// share the stricter Office-task detector so the two provider boundaries do
+// not drift apart.
+const EXPLICIT_RETAINED_SECRET_PATTERN =
+  /(?:^|[^A-Za-z0-9])(?:api[\s_-]*key|access[\s_-]*token|auth(?:entication)?[\s_-]*token|bearer[\s_-]*token|client[\s_-]*secret|password|passcode|private[\s_-]*key|recovery[\s_-]*(?:code|phrase)|refresh[\s_-]*token|seed[\s_-]*phrase|session[\s_-]*(?:cookie|token)|credential|mnemonic|secret|token|jwt)\s*(?:=|:|\bis\b)\s*["']?[A-Za-z0-9._~+/=%:@-]{8,}/i;
 
 function normalizeForRetrieval(value: string): string {
   return value
@@ -116,9 +122,31 @@ function normalizeForRetrieval(value: string): string {
     .trim();
 }
 
+/**
+ * Small, deterministic English morphology layer for private-memory recall.
+ * It is intentionally narrower than fuzzy search: enough for common plural
+ * questions ("priorities") to match retained keys ("launch_priority"),
+ * without manufacturing relevance between unrelated memories.
+ */
+export function canonicalRetainedRetrievalToken(word: string): string {
+  const value = word.toLowerCase();
+  if (value.length > 4 && value.endsWith("ies")) return `${value.slice(0, -3)}y`;
+  if (
+    value.length > 4
+    && value.endsWith("s")
+    && !value.endsWith("ss")
+    && !value.endsWith("us")
+    && !value.endsWith("is")
+  ) {
+    return value.slice(0, -1);
+  }
+  return value;
+}
+
 function retrievalTokens(value: string): string[] {
   return normalizeForRetrieval(value)
     .split(" ")
+    .map(canonicalRetainedRetrievalToken)
     .filter((word) => word.length > 1 && !RETRIEVAL_STOP_WORDS.has(word));
 }
 
@@ -151,13 +179,13 @@ function lexicalRelevanceScore(candidate: string, query: string): number | null 
 }
 
 export function isProviderSafeRetainedText(value: string): boolean {
-  const separatedLabels = value.replace(/[_-]+/g, " ");
   return (
     !containsHangul(value)
-    && !SECRET_CONTEXT_LABEL_PATTERN.test(value)
-    && !SECRET_CONTEXT_LABEL_PATTERN.test(separatedLabels)
-    && !SECRET_CONTEXT_VALUE_PATTERN.test(value)
-    && !JWT_CONTEXT_PATTERN.test(value)
+    && !containsStrongAgentOfficeSecret(value)
+    // Stored ledger keys commonly use snake_case. Match their separator
+    // directly instead of replacing every underscore/hyphen in the complete
+    // value, which can destroy the very credential signature being checked.
+    && !EXPLICIT_RETAINED_SECRET_PATTERN.test(value)
   );
 }
 
@@ -180,7 +208,10 @@ export function selectRelevantMemories(
   if (boundedLimit === 0) return [];
 
   return memories
-    .filter((memory) => isProviderSafeRetainedText(`${memory.key} ${memory.content}`))
+    // The separator makes a sensitive ledger key (for example
+    // `deployment_password`) an explicit label without treating normal prose
+    // such as "API token rotation policy" as a credential.
+    .filter((memory) => isProviderSafeRetainedText(`${memory.key}: ${memory.content}`))
     .map((memory) => ({
       memory,
       score: lexicalRelevanceScore(`${memory.key} ${memory.category} ${memory.content}`, query),
@@ -208,7 +239,7 @@ export function selectRelevantUserProfile(
   return userProfile
     .filter((entry) => (
       entry.category !== "identity"
-      && isProviderSafeRetainedText(`${entry.key} ${entry.content}`)
+      && isProviderSafeRetainedText(`${entry.key}: ${entry.content}`)
     ))
     .map((entry) => ({
       entry,
@@ -578,14 +609,14 @@ Rules:
           source: f.source || "chat",
         }))
         .filter((fact: MemoryEntry) =>
-          isProviderSafeRetainedText(`${fact.key} ${fact.category} ${fact.content}`),
+          isProviderSafeRetainedText(`${fact.key}: ${fact.content}`),
         );
       const userInfo = (parsed.userInfo || []).map((u: any) => ({
           ...u,
           source: u.source || "chat",
         }))
         .filter((entry: UserProfile) =>
-          isProviderSafeRetainedText(`${entry.key} ${entry.category} ${entry.content}`),
+          isProviderSafeRetainedText(`${entry.key}: ${entry.content}`),
         );
       return { facts, userInfo };
     } catch (error) {

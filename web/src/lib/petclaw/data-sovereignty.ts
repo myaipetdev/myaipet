@@ -46,7 +46,7 @@ const LINKED_DATA_CATEGORIES = new Set([
   "equippedItems", "platformConnections", "agentMessages", "agentSchedule",
   "conversations", "inheritanceEvents", "agentReactions", "likes", "comments",
   "paidActions", "linkedGenerations", "petDates", "installedSkills",
-  "catchRecords",
+  "catchRecords", "agentRuns",
 ]);
 
 function asRecord(value: unknown): JsonRecord | null {
@@ -81,6 +81,7 @@ function isSensitiveExtensionKey(key: string): boolean {
     || normalized.includes("tokenhash")
     || normalized.includes("webhooksecret")
     || normalized.includes("connectcode")
+    || normalized.includes("reservationid")
     || normalized.includes("authorization")
     || normalized.includes("cookie")
     || normalized === "wallet"
@@ -156,12 +157,6 @@ function portablePetModifiers(value: unknown): JsonRecord {
 function safeString(value: unknown, maxLength: number): string | undefined {
   if (typeof value !== "string" || value.length === 0 || value.length > maxLength) return undefined;
   return value;
-}
-
-function safeInteger(value: unknown, fallback: number, min: number, max: number): number {
-  return typeof value === "number" && Number.isInteger(value) && value >= min && value <= max
-    ? value
-    : fallback;
 }
 
 function safeDate(value: unknown): Date | undefined {
@@ -712,6 +707,12 @@ export async function importSoulData(
   addSkipped(report, "linkedData.comments", sourceCount(linkedData.comments), "Generation and author ownership cannot be inferred from a portable JSON file");
   addSkipped(report, "linkedData.agentReactions", sourceCount(linkedData.agentReactions), "Generation ownership cannot be inferred from a portable JSON file");
   addSkipped(report, "linkedData.paidActions", sourceCount(linkedData.paidActions), "Payment and transaction claims are never recreated by import");
+  addSkipped(
+    report,
+    "linkedData.agentRuns",
+    sourceCount(linkedData.agentRuns),
+    "Paid agent-run history and its financial ledger are export-only; import never creates runs or reservations, restores credits, or replays charges",
+  );
   addSkipped(report, "linkedData.linkedGenerations", sourceCount(linkedData.linkedGenerations), "Media ownership cannot be proven; re-upload or regenerate assets under the new owner");
   addSkipped(report, "linkedData.petDates", sourceCount(linkedData.petDates), "Other pets and initiating-user ownership cannot be transferred by import");
   addSkipped(report, "linkedData.catchRecords", sourceCount(linkedData.catchRecords), "Catches are vision-verified, owner-scoped records; photo ownership and anti-farming ledgers cannot be transferred by import");

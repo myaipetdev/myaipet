@@ -5,7 +5,7 @@
 > **Launch truth:** Studio is live at `/studio`; `/studio_test` was removed.
 > External payments, OAuth connections, legacy agent channels, Pet-LoRA,
 > blockchain production integration, and referrals are disabled. PetClaw
-> Extension v2.3.2 is distributed only as a developer/unpacked ZIP and is not
+> Extension v2.4.1 is distributed only as a developer/unpacked ZIP and is not
 > published in the Chrome Web Store. Deployed contracts report
 > `paused()=false`, but no production write path is enabled and the observed
 > tracker totals/supply are 0.
@@ -139,7 +139,7 @@
 
 **정체성**: 펫이 항상 곁에 있게 (always-present companion).
 
-**현재 구현**: 로밍 데스크탑 펫, 페이지 인식, 스킬 레지스트리, v2.3.2. 개발자용 unpacked ZIP으로만 배포하며 Chrome Web Store에는 게시되지 않음
+**현재 구현**: 로밍 데스크탑 펫, 페이지 인식, 스킬 레지스트리, v2.4.1. 개발자용 unpacked ZIP으로만 배포하며 Chrome Web Store에는 게시되지 않음
 - 확장 케어(pet/treat/welcome) → 계정 season_points 연동 — 서버 권위·일일 캡 적용 `/api/petclaw/engagement` (ext_care는 pet/treat 공유 카운터, ext_welcome은 일일 인사)
 
 **업그레이드 방향** — agentic화

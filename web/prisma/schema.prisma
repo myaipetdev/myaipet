@@ -1148,6 +1148,8 @@ model PetAgentRun {
   pet_name               String                  @db.VarChar(50)
   goal                   String                  @db.Text
   max_steps              Int
+  execution_contract     String                  @default("freeform:v1") @db.VarChar(120)
+  private_content_scrubbed Boolean                @default(false)
   state                  String                  @default("reserved") @db.VarChar(20)
   reservation_id         String?                 @unique @db.Uuid
   completed              Boolean?

@@ -67,27 +67,43 @@ Content-Type: application/json
 fallback text as a successful model inference. Memory retention and learned
 patterns are bounded, best-effort capabilities.
 
-## Bounded goal runner
+## Typed paid-task runner
 
 ```http
 POST /api/pets/{petId}/agent
 Authorization: Bearer pck_…
 Content-Type: application/json
 
-{ "runId": "11111111-1111-4111-8111-111111111111", "goal": "Recall my work context and suggest one next step", "maxSteps": 4, "confirmCostCredits": 5 }
+{ "runId": "11111111-1111-4111-8111-111111111111", "goal": "What did I say about my launch priorities?", "taskKind": "recall", "maxSteps": 1, "confirmCostCredits": 5 }
 ```
 
 `runId` must be a client-generated UUID. Reconcile an unknown outcome at
 `GET /api/pets/:petId/agent/runs/:runId` before another paid run.
+`taskKind` is required and must be `recall`, `summarize`, `review`, or `draft`.
+Use `recall` for an owner-memory question; the other three treat `goal` as
+caller-supplied text or a brief, not as permission to take external action.
+`goal` has a 2,000-character maximum and these minimums: `recall` 8,
+`summarize` 40, `review` 12, and `draft` 20. Bracket placeholders are rejected.
+SDK, CLI, and MCP also reject concrete API keys/tokens, JWTs, authorization
+values, private-key blocks, password/secret assignments, database URLs/session
+cookies, recovery codes, and OTP/MFA codes before journal or network access.
+Ordinary discussion about credential safety is allowed. A rejected
+secret-bearing task is never persisted to `~/.petclaw.json`.
 `confirmCostCredits` must be the exact number `5`; missing or different values
-are rejected before a reservation or provider call. `maxSteps` is clamped to
-1–6. The loop exposes only eligible read-only skills and connectors, with
-retention and self-learning disabled, and cannot commit a durable side effect.
-A run reserves 5 credits. It charges only for a completed direct model answer
-or a completed run with a successful read-only result; other terminal runs are
-refunded. The server permits only one `reserved` or `running` paid run per pet.
+are rejected before a reservation or provider call. `maxSteps` is deprecated:
+SDK, CLI, and MCP compatibility inputs are ignored and normalized to `1`.
+Typed v2 executes its single required read-only tool exactly once. The tool
+does not write pet memory or self-learning data and cannot commit a side effect,
+while the service stores owner-private run input, result, trace, and billing
+history.
+A run reserves 5 credits. It charges only when the selected typed task's
+server-bound required tool succeeds without a side effect and returns a
+deliverable; empty recall, mismatched, degraded, failed, and incomplete runs
+are refunded. The server permits only one `reserved` or `running` paid run per
+pet.
 A different `runId` receives `409 agent_run_in_progress` with the active
-`runId` and `statusUrl`; reconcile that receipt instead of creating more work.
+`runId` and `statusUrl`. This is a definitive pre-debit rejection of the
+attempted new run; reconcile the active receipt instead of creating more work.
 
 Generate and persist one ID before the request. Reuse that ID for status lookup
 or a request replay after an unknown transport outcome:
@@ -95,10 +111,10 @@ or a request replay after an unknown transport outcome:
 A first 404 from the status lookup is inconclusive; recheck the same URL once
 after a short delay. A second 404 means no durable run receipt was found, not
 that deletion refunded a charge or erased the ledger. Keep the local pending
-marker locked. Replay only the exact saved `runId`, `goal`, `maxSteps`, and
-`confirmCostCredits` against the server origin to which that authorization was
-bound. Never mint a new run ID or clear the marker merely because a receipt is
-absent.
+marker locked. Replay only the exact saved `runId`, `goal`, `taskKind`,
+normalized `maxSteps: 1`, and `confirmCostCredits` against the
+server origin to which that authorization was bound. Never mint a new run ID or
+clear the marker merely because a receipt is absent.
 
 ```typescript
 import { createPetClawAgentRunId } from "@myaipet/petclaw-sdk";
@@ -107,8 +123,8 @@ const runId = createPetClawAgentRunId();
 // Persist runId in your job record here before sending the paid request.
 const run = await client.agent.run(petId, {
   runId,
-  goal: "Recall my work context and suggest one next step",
-  maxSteps: 4,
+  goal: "Review this launch note for unclear claims: …",
+  taskKind: "review",
   confirmCostCredits: 5,
 });
 ```
@@ -119,6 +135,7 @@ JSON returns:
 {
   "ok": true,
   "completed": true,
+  "taskKind": "recall",
   "goal": "…",
   "answer": "…",
   "steps": [{ "skill": "recall_memory", "input": {}, "output": {}, "ok": true, "sideEffectCommitted": false, "modelCalls": 0 }],
@@ -130,8 +147,8 @@ JSON returns:
     "successfulToolCalls": 1,
     "failedToolCalls": 0,
     "committedSideEffects": 0,
-    "modelCalls": 3,
-    "orchestratorModelCalls": 3,
+    "modelCalls": 1,
+    "orchestratorModelCalls": 1,
     "skillModelCalls": 0
   },
   "creditsRemaining": 95
@@ -139,11 +156,12 @@ JSON returns:
 ```
 
 `completed` is true only when `stoppedReason` is `completed`; automation should
-not treat another terminal stop as success. `stoppedReason` is `completed`,
-`max_steps`, `timeout`, or `planner_error`.
-Request `Accept: text/event-stream` or `?stream=1` for SSE tool/thought/result
-events followed by `done`. This release does not provide checkpoint resume;
-repeating a goal is a new run.
+not treat another terminal stop as success. The public union retains
+`max_steps`, `planner_error`, and `unsupported_scope` for historical receipt
+compatibility; typed v2 normally returns `completed`, `timeout`, or
+`task_error`. Request `Accept: text/event-stream` or `?stream=1` for SSE
+tool/result/final events followed by `done`. This release does not provide
+checkpoint resume; repeating a goal is a new run.
 
 `billing.modelCalls` is the exact number of vendor network attempts made before
 the receipt was finalized, including fallback attempts and calls made inside an
@@ -220,6 +238,7 @@ compatibility alias.
 | Method | Route | Contract |
 |---|---|---|
 | GET | `/api/petclaw/export?petId={petId}` | Portable supported pet state/history with SHA-256 `integrityHash`; fails explicitly if the serialized bundle exceeds 16 MiB |
+| GET | `/api/account/agent-runs/export?limit=100&cursor={opaqueCursor}` | Bounded owner-private Agent Office run-history page; HTTP access copy, not an SDK 2.0.0 method |
 | POST | `/api/petclaw/import` | Validate ≤16 MiB JSON and reconstruct supported categories with a restored/skipped report |
 | DELETE | `/api/petclaw/delete?petId={petId}` | 409 while a paid run is active; otherwise delete pet data, scrub private terminal-run content, retain minimal billing receipts, and return a checksum receipt |
 
@@ -231,6 +250,38 @@ media are never recreated. The shared 16 MiB export/import limit prevents the
 server from presenting a backup that supported clients cannot receive or
 re-import; larger histories require a future paged archive format. Backups expire according to the published retention
 policy rather than disappearing synchronously with the active-system delete.
+
+### Paginated Agent Office run-history access copy
+
+`GET /api/account/agent-runs/export` accepts optional `limit` (1–100),
+`cursor`, and owned active `petId` query parameters. Omit `petId` for all
+account runs, including scrubbed receipts for deleted pets. A first-party web
+session or owner `pck_…` token may call it; the Chrome extension's narrower
+`pex_…` token cannot. The npm SDK 2.0.0 does not wrap this endpoint, so direct
+callers must use authenticated HTTPS and enforce their own response limit.
+
+Each page is capped at 100 records, 65,536 serialized bytes per record and
+1,048,576 serialized bytes total. When bytes fill first, `nextCursor` is bound
+to the last record actually returned. Treat it as opaque, URL-encode it, and
+continue until `hasMore:false`; restart at page one after
+`code:"invalid_cursor"`.
+
+The `myaipet-owner-agent-run-history/v3` response is ordered by creation time,
+caller run ID, and an encrypted-cursor-only private tie-breaker so even reused
+run IDs cannot disappear between pages. It includes the caller-generated
+run ID as `reconciliationId`, a derived `receiptReference`, task/outcome/billing
+data, timestamps, and per-record `exportTreatment`. It omits database primary
+keys, user IDs, pet IDs and reservation IDs. Credential-like values, signed-URL
+query values and private structured keys are redacted. String, breadth,
+record-byte and page-byte limits are explicit through truncation/redaction
+metadata rather than silent completeness claims.
+
+For `integrity.sha256` (`canonicalization:lexicographic-json-v2`), remove the
+top-level `integrity` object, recursively sort object keys lexicographically
+while preserving array order, serialize as JSON UTF-8, and SHA-256 those exact
+bytes. This detects later changes; it is not a server signature. These pages
+are access copies only. SOUL import never
+creates their runs or reservations, restores credits, or replays charges.
 
 Full pet deletion never cancels or guesses the outcome of provider work. While
 a paid run is `reserved` or `running`, it returns HTTP 409:

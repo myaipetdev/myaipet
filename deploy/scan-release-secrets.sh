@@ -12,7 +12,7 @@ if [[ -z "${PETCLAW_SCAN_ROOT}" || ! -d "${PETCLAW_SCAN_ROOT}" || -L "${PETCLAW_
 fi
 PETCLAW_SCAN_ROOT="$(cd -- "${PETCLAW_SCAN_ROOT}" && pwd -P)"
 PETCLAW_SCAN_FAILED=0
-PETCLAW_SECRET_PATTERN='(xai-[A-Za-z0-9._-]{16,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{30,}|gh[pousr]_[0-9A-Za-z]{20,}|github_pat_[0-9A-Za-z_]{20,}|xox[baprs]-[0-9A-Za-z-]{20,}|eyJ[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{8,}|(postgres(ql)?|mysql|mongodb(\+srv)?):\/\/[^\/:[:space:]]+:[^\/@[:space:]]{8,}@|"?(AWS_SECRET_ACCESS_KEY|JWT_SECRET|CRON_SECRET|SESSION_SECRET)"?[[:space:]]*[:=][[:space:]]*"[A-Za-z0-9+\/_=-]{24,}"|-----BEGIN ((RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY)-----)'
+PETCLAW_SECRET_PATTERN='(npm_[A-Za-z0-9-]{20,}|pck_[A-Za-z0-9_-]{24,}|pex_[A-Za-z0-9_-]{24,}|xai-[A-Za-z0-9._-]{16,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{30,}|gh[pousr]_[0-9A-Za-z]{20,}|github_pat_[0-9A-Za-z_]{20,}|xox[baprs]-[0-9A-Za-z-]{20,}|eyJ[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{8,}|(postgres(ql)?|mysql|mongodb(\+srv)?):\/\/[^\/:[:space:]]+:[^\/@[:space:]]+@|[?&]([Xx]-[Aa]mz-([Ss]ignature|[Cc]redential|[Ss]ecurity-[Tt]oken)|[Xx]-[Gg]oog-([Ss]ignature|[Cc]redential)|signature|sig|access_token|refresh_token|api[_-]?key|token)=[A-Za-z0-9._~+\/%:@=-]{8,}|"?(AWS_SECRET_ACCESS_KEY|JWT_SECRET|CRON_SECRET|SESSION_SECRET)"?[[:space:]]*[:=][[:space:]]*"[A-Za-z0-9+\/_=-]{24,}"|-----BEGIN ((RSA |EC |DSA |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY( BLOCK)?)-----)'
 
 petclaw_stream_contains_secret() {
   LC_ALL=C grep -Ea "${PETCLAW_SECRET_PATTERN}" >/dev/null

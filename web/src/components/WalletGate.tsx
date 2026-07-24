@@ -238,12 +238,12 @@ export default function WalletGate({ children, section }: any) {
           Agent Office · Mission Control
         </div>
         <h2 style={{ fontFamily: "var(--ed-disp)", fontSize: 30, fontWeight: 800, color: "#211A12", marginBottom: 14, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
-          Run your pet&apos;s whole operation from one board
+          Run four accountable text tasks from one desk
         </h2>
         <p style={{ fontFamily: "var(--ed-body)", fontSize: 16, color: "#5C5140", lineHeight: 1.7, maxWidth: 470, margin: "0 auto 30px" }}>
-          The Agent Office is your mission-control desk: track the five pillars,
-          move tasks across the Kanban, manage the staff roster and cron
-          schedules, and dispatch new work from a live board.
+          Track real PetClaw status, then run Recall, Summarize, Review, or
+          Draft with a private, auditable receipt. The Kanban, staff roster,
+          and routine catalog are read-only status views.
         </p>
         <div style={{ fontSize: 52, marginBottom: 18, opacity: 0.7, animation: "petFloat 6s ease-in-out infinite" }}>
           <Icon name="lock" size={52} />

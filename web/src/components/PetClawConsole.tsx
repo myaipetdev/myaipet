@@ -7,7 +7,7 @@
  *
  * Inventory is the REAL thing (kept honest):
  *   • 19-connector registry (3 live · messaging launch-paused)  • 18 SDK skills
- *   • 7 owner-authenticated MCP tools published in SDK 1.6.3
+ *   • 7 owner-authenticated MCP tools published in SDK 2.0.0
  *   • bounded VIGIL memory capabilities  • discovery-only network preview
  *
  * variant="full"    → manifest + LIVE terminal (boot effect + chat). Needs petId.
@@ -25,6 +25,12 @@ import {
   latestPendingAgentRun,
   recheckAgentRunReceiptOnNotFound,
 } from "@/lib/petclaw/agent-run-client";
+import {
+  AGENT_OFFICE_TASK_MAX_INPUT,
+  AGENT_OFFICE_TYPED_MAX_STEPS,
+  getAgentOfficeTaskInputError,
+  type AgentOfficeTaskKind,
+} from "@/lib/petclaw/agent/office-task-contract";
 
 // Terminal typewriter — reveals a line char-by-char once on mount; a blinking
 // caret trails until done. prefers-reduced-motion shows it instantly (no shift).
@@ -91,7 +97,7 @@ export const SDK_VERSION = RELEASE_STATUS.sdkVersion;
 
 // Supported surfaces + the connector registry (three currently live).
 // Messaging channel delivery is launch-paused (matches the Agent screen);
-// MCP clients use the seven-tool runtime published in SDK 1.6.3.
+// MCP clients use the seven-tool runtime published in SDK 2.0.0.
 const RUNS_ON = `web · approved chrome sites · MCP (${RELEASE_STATUS.mcp})`;
 const CONNECTORS = [
   { k: "messaging (0/8 live)", v: "telegram · discord · x launch-paused; whatsapp · slack · line · instagram · gmail planned" },
@@ -102,7 +108,7 @@ const CONNECTORS = [
 ];
 const MCP_TOOLS = [
   { k: "petclaw_chat", v: "owner chat + normalized session metadata" },
-  { k: "petclaw_agent_run", v: "PAID 5 credits · requires confirmCostCredits=5" },
+  { k: "petclaw_agent_run", v: "typed read-only task · exact 5-credit reservation" },
   { k: "petclaw_persona_mirror", v: "owner-context style draft" },
   { k: "petclaw_memory_recall", v: "inspect + select retained context" },
   { k: "petclaw_summarize_page", v: "summarize explicitly approved page text" },
@@ -273,18 +279,37 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
           role: "sys",
           text: `receipt not visible — resuming the same authorized run ${pending.runId} without creating a new charge ID`,
         });
-        receipt = await api.pets.runAgent(
-          pending.petId,
-          pending.runId,
-          pending.goal,
-          pending.confirmCostCredits,
-          pending.maxSteps,
-          authToken,
-        );
+        try {
+          receipt = await api.pets.runAgent(
+            pending.petId,
+            pending.runId,
+            pending.goal,
+            pending.confirmCostCredits,
+            pending.maxSteps,
+            authToken,
+            pending.taskKind,
+          );
+        } catch (replayError: any) {
+          if (
+            pending.taskKind == null
+            && pending.legacyUnbound !== true
+            && replayError?.status === 400
+          ) {
+            const unlocked = await rejectPaidRun(pending.runId);
+            pushLine({
+              role: "sys",
+              text: unlocked
+                ? "legacy marker had no typed task contract and no server run exists — safely cleared"
+                : "legacy marker was rejected, but another saved paid run still needs a receipt check",
+            });
+            return;
+          }
+          throw replayError;
+        }
       }
       if (reconcileAttemptRef.current !== attempt) return;
       if (latestPendingAgentRun()?.runId !== pending.runId) return;
-      if (!isTerminalPaidAgentRunReceipt(receipt, pending.runId)) {
+      if (!isTerminalPaidAgentRunReceipt(receipt, pending.runId, pending)) {
         pushLine({ role: "sys", text: `run ${pending.runId} has no validated terminal receipt (${receipt?.state || "unknown"}) — do not start another paid run` });
         return;
       }
@@ -304,16 +329,18 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
     }
   };
 
-  // /goal --confirm-5 — explicit authorization for one paid, bounded run.
-  const runGoal = async (goalText: string) => {
+  // /goal --confirm-5 --task <kind> — one explicit typed, bounded run.
+  const runGoal = async (taskKind: AgentOfficeTaskKind, goalText: string) => {
     const g = goalText.trim();
-    if (!g) { pushLine({ role: "sys", text: "usage: /goal --confirm-5 <task> · authorizes one 5-credit run" }); return; }
+    const inputError = getAgentOfficeTaskInputError(taskKind, g);
+    if (inputError) { pushLine({ role: "sys", text: `${taskKind} input rejected — ${inputError}` }); return; }
     if (isSim || !petId) { pushLine({ role: "sys", text: "agent loop needs your own pet — adopt one to unlock it" }); return; }
     const start = await startPaidRun({
       petId,
       petName,
       goal: g,
-      maxSteps: 4,
+      taskKind,
+      maxSteps: AGENT_OFFICE_TYPED_MAX_STEPS,
       confirmCostCredits: AGENT_COST,
       surface: "console",
     });
@@ -328,7 +355,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
     }
     const { runId } = start.run;
     const { authToken } = start;
-    pushLine({ role: "sys", text: `agent ▸ planning · "${g}"` });
+    pushLine({ role: "sys", text: `agent ▸ ${taskKind} · one server-selected read-only tool · no planner` });
     setBusy(true);
     try {
       const r = await api.pets.runAgent(
@@ -338,8 +365,9 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
         AGENT_COST,
         undefined,
         authToken,
+        taskKind,
       );
-      if (!isTerminalPaidAgentRunReceipt(r, runId)) {
+      if (!isTerminalPaidAgentRunReceipt(r, runId, { taskKind })) {
         markPaidRunAmbiguous();
         pushLine({ role: "sys", text: `settlement receipt missing for ${runId} — do not retry. Check /account or use /goal-status` });
         return;
@@ -378,16 +406,17 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
     const c = cmd.trim().toLowerCase();
     if (c === "/goal-status" || c === "/goal-unlock") { reconcileAgentReceipt(); return true; }
     if (c.startsWith("/goal")) {
-      const confirmed = cmd.trim().match(/^\/goal\s+--confirm-5\s+([\s\S]+)$/i);
+      const confirmed = cmd.trim().match(/^\/goal\s+--confirm-5\s+--task\s+(recall|summarize|review|draft)\s+([\s\S]+)$/i);
       if (!confirmed) {
-        pushLine({ role: "sys", text: "paid command — use /goal --confirm-5 <task> to authorize exactly one 5-credit run" });
+        pushLine({ role: "sys", text: "usage: /goal --confirm-5 --task recall|summarize|review|draft <input>" });
+        pushLine({ role: "sys", text: "privacy: do not paste secrets; provider-assisted input/output is stored in owner-private run history, not pet memory or self-learning" });
         return true;
       }
-      runGoal(confirmed[1]);
+      runGoal(confirmed[1].toLowerCase() as AgentOfficeTaskKind, confirmed[2]);
       return true;
     }
     if (c === "/help") {
-      pushLine({ role: "sys", text: "commands: /goal --confirm-5 <task> (paid)  /goal-status (reconcile receipt)  /channels  /tools  /skills  /vigil  /pack  /clear  — or type to chat" });
+      pushLine({ role: "sys", text: "commands: /goal --confirm-5 --task <kind> <input>  /goal-status  /channels  /tools  /skills  /vigil  /pack  /clear  — or type to chat" });
       return true;
     }
     if (c === "/channels" || c === "/connectors") { pushLine({ role: "sys", text: "connectors: " + CONNECTORS.map((x) => x.k).join(" · ") }); return true; }
@@ -526,8 +555,8 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   <SectionHead>Network — launch scope</SectionHead>
                   {PACK.map((p) => <Row key={p.k} k={p.k} v={p.v} kw={120} />)}
                   <SectionHead>MODELS — bring your own (BYOK)</SectionHead>
-                  <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter · Nous (Hermes) — powers chat + agent reasoning + judging" kw={120} />
-                  <Row k="agent-loop" v="give a goal → plans, calls skills, iterates → answers" kw={120} />
+                  <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter · Nous (Hermes) — powers chat + typed text deliverables + judging" kw={120} />
+                  <Row k="agent task" v="choose recall, summarize, review, or draft → one exact required tool → auditable receipt" kw={120} />
                   <div style={{ fontSize: 15, marginTop: 4 }}>
                     <span style={{ color: GREEN }}>connect your model ↓ below (or via the CLI)</span>
                   </div>
@@ -561,6 +590,7 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   onKeyDown={(e) => { if (e.key === "Enter") send(); }}
                   placeholder={busy ? `${petName} is thinking…` : "type a message or /help"}
                   disabled={busy}
+                  maxLength={AGENT_OFFICE_TASK_MAX_INPUT}
                   style={{
                     flex: 1, background: "transparent", border: "none", outline: "none",
                     color: TXT, fontFamily: MONO, fontSize: 13.5,

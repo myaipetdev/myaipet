@@ -47,6 +47,61 @@ async function main() {
   } = await import("../src/lib/petclaw/agent/run-ledger");
   const { deleteStoredFile, storedFileExists, uploadFile } = await import("../src/lib/storage");
 
+  const waitForLock = async <T extends Record<string, unknown>>(
+    sql: string,
+    params: unknown[],
+    label: string,
+  ): Promise<T> => {
+    for (let attempt = 0; attempt < 250; attempt += 1) {
+      const observed = await prisma.$queryRawUnsafe(sql, ...params) as T[];
+      if (observed[0]) return observed[0];
+      await delay(10);
+    }
+    throw new Error(`Timed out waiting for ${label}`);
+  };
+  const waitForAdvisoryWait = (key: number, label: string) => waitForLock<{ pid: number }>(`
+    SELECT "pid"::int AS "pid"
+    FROM pg_locks
+    WHERE "locktype" = 'advisory'
+      AND "granted" = FALSE
+      AND "objid" = $1::oid
+    LIMIT 1
+  `, [key], label);
+  const waitForTransactionWait = (holderPid: number, label: string) => waitForLock<{ pid: number }>(`
+    SELECT waiting."pid"::int AS "pid"
+    FROM pg_locks AS waiting
+    JOIN pg_locks AS holding
+      ON holding."locktype" = 'transactionid'
+     AND holding."transactionid" = waiting."transactionid"
+     AND holding."granted" = TRUE
+    WHERE waiting."locktype" = 'transactionid'
+      AND waiting."granted" = FALSE
+      AND holding."pid" = $1
+    LIMIT 1
+  `, [holderPid], label);
+  const holdAdvisoryGate = async (key: number, label: string) => {
+    const acquired = deferred();
+    const release = deferred();
+    const done = prisma.$transaction(async (tx) => {
+      await tx.$queryRawUnsafe(
+        "SELECT 1::int AS acquired FROM pg_advisory_xact_lock($1)",
+        key,
+      );
+      acquired.resolve();
+      await release.promise;
+    }, { timeout: 20_000 });
+    await withTimeout(acquired.promise, label);
+    let open = true;
+    return {
+      async release() {
+        if (!open) return;
+        open = false;
+        release.resolve();
+        await done;
+      },
+    };
+  };
+
   let sharedArchiveRef = "";
   try {
     const randomWallet = () => `0x${(randomUUID().replaceAll("-", "") + randomUUID().replaceAll("-", "")).slice(0, 40)}`;
@@ -143,6 +198,7 @@ async function main() {
     assert.equal(refundedReceipt.goal, "[deleted]");
     assert.equal(refundedReceipt.answer, "");
     assert.deepEqual(refundedReceipt.steps, []);
+    assert.equal(refundedReceipt.private_content_scrubbed, true);
     assert.equal(refundedReceipt.reservation_id, null);
 
     // Settlement-first deletion preserves one charged financial receipt and
@@ -194,6 +250,7 @@ async function main() {
     assert.equal(chargedReceipt.goal, "[deleted]");
     assert.equal(chargedReceipt.answer, "");
     assert.deepEqual(chargedReceipt.steps, []);
+    assert.equal(chargedReceipt.private_content_scrubbed, true);
     assert.equal(chargedReceipt.reservation_id, null);
 
     // PostgreSQL deletion-vs-settlement has two safe linearizations: terminal
@@ -257,9 +314,269 @@ async function main() {
       assert.equal(raceReceipt.goal, "[deleted]");
       assert.equal(raceReceipt.answer, "");
       assert.deepEqual(raceReceipt.steps, []);
+      assert.equal(raceReceipt.private_content_scrubbed, true);
       assert.equal(raceReceipt.reservation_id, null);
       assert.equal(await prisma.agentCreditReservation.count({ where: { pet_id: raceVictim.id } }), 0);
     }
+
+    const exactChargedBilling = {
+      outcome: "charged" as const,
+      creditsCharged: 5,
+      reason: "completed_with_direct_answer",
+      successfulToolCalls: 0,
+      failedToolCalls: 0,
+      committedSideEffects: 0,
+      usageKnown: true,
+      modelCalls: 1,
+      orchestratorModelCalls: 1,
+      skillModelCalls: 0,
+    };
+
+    // New reservation wins: pause its reservation insert after it owns the Pet
+    // lock, prove deletion is waiting on that transaction, then release. The
+    // committed active receipt must make deletion fail atomically.
+    await prisma.user.update({ where: { id: owner.id }, data: { credits: 100 } });
+    const reserveFirstVictim = await prisma.pet.create({
+      data: { user_id: owner.id, name: "Reserve First", species: 0 },
+    });
+    const reserveFirstRunId = randomUUID();
+    const reserveFirstGateKey = 72_420_726;
+    await prisma.$executeRawUnsafe(`
+      CREATE OR REPLACE FUNCTION "gate_reserve_before_pet_delete"()
+      RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+        IF NEW."purpose" = 'pet_agent_loop' THEN
+          PERFORM pg_advisory_xact_lock(${reserveFirstGateKey});
+        END IF;
+        RETURN NEW;
+      END;
+      $$
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TRIGGER "gate_reserve_before_pet_delete"
+      BEFORE INSERT ON "agent_credit_reservations"
+      FOR EACH ROW EXECUTE FUNCTION "gate_reserve_before_pet_delete"()
+    `);
+    const reserveFirstGate = await holdAdvisoryGate(reserveFirstGateKey, "reserve-first advisory gate");
+    let reserveFirstAttempt: Promise<any> | undefined;
+    let reserveFirstDeletion: Promise<any> | undefined;
+    try {
+      reserveFirstAttempt = reservePetAgentRunWithDb(prisma, {
+        runId: reserveFirstRunId,
+        userId: owner.id,
+        petId: reserveFirstVictim.id,
+        petName: reserveFirstVictim.name,
+        goal: "reserve and block deletion",
+        maxSteps: 1,
+        amount: 5,
+      });
+      const reservePid = await waitForAdvisoryWait(
+        reserveFirstGateKey,
+        "new reservation holding the Pet lock",
+      );
+      reserveFirstDeletion = deletePetData(reserveFirstVictim.id, owner.id);
+      await waitForTransactionWait(reservePid.pid, "pet deletion waiting on new reservation");
+      await reserveFirstGate.release();
+      const [reserved, deleted] = await Promise.allSettled([reserveFirstAttempt, reserveFirstDeletion]);
+      assert.equal(reserved.status, "fulfilled");
+      assert.equal(reserved.status === "fulfilled" && reserved.value.kind, "created");
+      assert.equal(deleted.status, "rejected");
+      assert.ok(deleted.status === "rejected" && deleted.reason instanceof PetAgentRunActiveError);
+    } finally {
+      await reserveFirstGate.release().catch(() => {});
+      await Promise.allSettled([
+        ...(reserveFirstAttempt ? [reserveFirstAttempt] : []),
+        ...(reserveFirstDeletion ? [reserveFirstDeletion] : []),
+      ]);
+      await prisma.$executeRawUnsafe(
+        'DROP TRIGGER IF EXISTS "gate_reserve_before_pet_delete" ON "agent_credit_reservations"',
+      );
+      await prisma.$executeRawUnsafe('DROP FUNCTION IF EXISTS "gate_reserve_before_pet_delete"()');
+    }
+    assert.ok(await prisma.pet.findUnique({ where: { id: reserveFirstVictim.id } }));
+    assert.equal((await prisma.user.findUniqueOrThrow({ where: { id: owner.id } })).credits, 95);
+    assert.equal(await prisma.petAgentRun.count({
+      where: { run_id: reserveFirstRunId, state: "reserved" },
+    }), 1);
+    assert.equal(await prisma.agentCreditReservation.count({
+      where: { pet_id: reserveFirstVictim.id, status: "reserved" },
+    }), 1);
+    await settlePetAgentRunWithDb(prisma, {
+      userId: owner.id,
+      petId: reserveFirstVictim.id,
+      runId: reserveFirstRunId,
+      outcome: "refunded",
+      completed: false,
+      answer: "",
+      steps: [],
+      stoppedReason: "cancelled",
+      billing: {
+        ...exactChargedBilling,
+        outcome: "refunded",
+        creditsCharged: 0,
+        reason: "test_cleanup",
+        modelCalls: 0,
+        orchestratorModelCalls: 0,
+      },
+    });
+    await deletePetData(reserveFirstVictim.id, owner.id);
+    assert.equal((await prisma.user.findUniqueOrThrow({ where: { id: owner.id } })).credits, 100);
+
+    // Deletion wins: hold its BEFORE DELETE trigger after it owns the Pet lock,
+    // then prove a new reservation is waiting on that exact transaction.
+    const deleteFirstVictim = await prisma.pet.create({
+      data: { user_id: owner.id, name: "Delete First", species: 0 },
+    });
+    const deleteFirstGateKey = 72_420_727;
+    await prisma.$executeRawUnsafe(`
+      CREATE OR REPLACE FUNCTION "gate_pet_delete_before_reserve"()
+      RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+        IF OLD."id" = ${deleteFirstVictim.id} THEN
+          PERFORM pg_advisory_xact_lock(${deleteFirstGateKey});
+        END IF;
+        RETURN OLD;
+      END;
+      $$
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TRIGGER "gate_pet_delete_before_reserve"
+      BEFORE DELETE ON "pets"
+      FOR EACH ROW EXECUTE FUNCTION "gate_pet_delete_before_reserve"()
+    `);
+    const deleteFirstGate = await holdAdvisoryGate(deleteFirstGateKey, "delete-first advisory gate");
+    let deleteFirstAttempt: Promise<any> | undefined;
+    let blockedReserveAttempt: Promise<any> | undefined;
+    try {
+      deleteFirstAttempt = deletePetData(deleteFirstVictim.id, owner.id);
+      const deletePid = await waitForAdvisoryWait(
+        deleteFirstGateKey,
+        "pet deletion holding the Pet lock",
+      );
+      blockedReserveAttempt = reservePetAgentRunWithDb(prisma, {
+        runId: randomUUID(),
+        userId: owner.id,
+        petId: deleteFirstVictim.id,
+        petName: deleteFirstVictim.name,
+        goal: "must lose to deletion",
+        maxSteps: 1,
+        amount: 5,
+      });
+      await waitForTransactionWait(deletePid.pid, "new reservation waiting on pet deletion");
+      await deleteFirstGate.release();
+      const [deleted, reserved] = await Promise.all([deleteFirstAttempt, blockedReserveAttempt]);
+      assert.deepEqual(deleted.agentReceipts, { scrubbedReceipts: 0 });
+      assert.equal(reserved.kind, "unavailable");
+    } finally {
+      await deleteFirstGate.release().catch(() => {});
+      await Promise.allSettled([
+        ...(deleteFirstAttempt ? [deleteFirstAttempt] : []),
+        ...(blockedReserveAttempt ? [blockedReserveAttempt] : []),
+      ]);
+      await prisma.$executeRawUnsafe('DROP TRIGGER IF EXISTS "gate_pet_delete_before_reserve" ON "pets"');
+      await prisma.$executeRawUnsafe('DROP FUNCTION IF EXISTS "gate_pet_delete_before_reserve"()');
+    }
+    assert.equal(await prisma.pet.findUnique({ where: { id: deleteFirstVictim.id } }), null);
+    assert.equal((await prisma.user.findUniqueOrThrow({ where: { id: owner.id } })).credits, 100);
+    assert.equal(await prisma.petAgentRun.count({ where: { pet_id: deleteFirstVictim.id } }), 0);
+    assert.equal(await prisma.agentCreditReservation.count({ where: { pet_id: deleteFirstVictim.id } }), 0);
+
+    // Terminal replay loses to deletion scrub: the replay may observe the old
+    // MVCC row before blocking, but must lock and re-read after scrub commits.
+    const replayVictim = await prisma.pet.create({
+      data: { user_id: owner.id, name: "Replay Scrub", species: 0 },
+    });
+    const replayRunId = randomUUID();
+    assert.equal((await reservePetAgentRunWithDb(prisma, {
+      runId: replayRunId,
+      userId: owner.id,
+      petId: replayVictim.id,
+      petName: replayVictim.name,
+      goal: "private replay goal",
+      maxSteps: 1,
+      executionContract: "office:review:v1:office-review",
+      amount: 5,
+    })).kind, "created");
+    await settlePetAgentRunWithDb(prisma, {
+      userId: owner.id,
+      petId: replayVictim.id,
+      runId: replayRunId,
+      outcome: "charged",
+      completed: true,
+      answer: "private replay answer",
+      steps: [{ output: "private replay trace" }],
+      stoppedReason: "completed",
+      billing: exactChargedBilling,
+    });
+    const replayScrubGateKey = 72_420_728;
+    await prisma.$executeRawUnsafe(`
+      CREATE OR REPLACE FUNCTION "gate_terminal_receipt_scrub"()
+      RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+        IF NEW."pet_id" = ${replayVictim.id}
+           AND NEW."private_content_scrubbed" = TRUE
+           AND OLD."private_content_scrubbed" = FALSE THEN
+          PERFORM pg_advisory_xact_lock(${replayScrubGateKey});
+        END IF;
+        RETURN NEW;
+      END;
+      $$
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TRIGGER "gate_terminal_receipt_scrub"
+      BEFORE UPDATE OF "private_content_scrubbed" ON "pet_agent_runs"
+      FOR EACH ROW EXECUTE FUNCTION "gate_terminal_receipt_scrub"()
+    `);
+    const replayScrubGate = await holdAdvisoryGate(replayScrubGateKey, "terminal scrub advisory gate");
+    let replayDeletion: Promise<any> | undefined;
+    let terminalReplay: Promise<any> | undefined;
+    try {
+      replayDeletion = deletePetData(replayVictim.id, owner.id);
+      const deletePid = await waitForAdvisoryWait(
+        replayScrubGateKey,
+        "deletion holding terminal receipt for scrub",
+      );
+      terminalReplay = settlePetAgentRunWithDb(prisma, {
+        userId: owner.id,
+        petId: replayVictim.id,
+        runId: replayRunId,
+        outcome: "charged",
+        completed: true,
+        answer: "must never replace the stored receipt",
+        steps: [{ output: "must never replace the stored trace" }],
+        stoppedReason: "completed",
+        billing: exactChargedBilling,
+      });
+      await waitForTransactionWait(deletePid.pid, "terminal replay waiting on deletion scrub");
+      await replayScrubGate.release();
+      const [deleted, replayed] = await Promise.all([replayDeletion, terminalReplay]);
+      assert.deepEqual(deleted.agentReceipts, { scrubbedReceipts: 1 });
+      assert.equal(replayed.state, "terminal");
+      assert.equal(replayed.petName, "Deleted Pet");
+      assert.equal(replayed.goal, "[deleted]");
+      assert.equal(replayed.answer, "");
+      assert.deepEqual(replayed.steps, []);
+      assert.equal(replayed.billing?.outcome, "charged");
+      assert.equal(replayed.creditsRemaining, 95);
+    } finally {
+      await replayScrubGate.release().catch(() => {});
+      await Promise.allSettled([
+        ...(replayDeletion ? [replayDeletion] : []),
+        ...(terminalReplay ? [terminalReplay] : []),
+      ]);
+      await prisma.$executeRawUnsafe(
+        'DROP TRIGGER IF EXISTS "gate_terminal_receipt_scrub" ON "pet_agent_runs"',
+      );
+      await prisma.$executeRawUnsafe('DROP FUNCTION IF EXISTS "gate_terminal_receipt_scrub"()');
+    }
+    const scrubbedReplay = await prisma.petAgentRun.findFirstOrThrow({ where: { run_id: replayRunId } });
+    assert.equal(scrubbedReplay.private_content_scrubbed, true);
+    assert.equal(scrubbedReplay.pet_name, "Deleted Pet");
+    assert.equal(scrubbedReplay.goal, "[deleted]");
+    assert.equal(scrubbedReplay.answer, "");
+    assert.deepEqual(scrubbedReplay.steps, []);
+    assert.equal(scrubbedReplay.reservation_id, null);
+    assert.equal(await prisma.pet.findUnique({ where: { id: replayVictim.id } }), null);
 
     const sharedArchive = await uploadFile(
       `lora-train/pet-${deletedPet.id}-1000.zip`,

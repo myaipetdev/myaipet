@@ -4,6 +4,7 @@ Updated: 2026-07-13
 
 ## 🔴 Open — Now
 
+- [ ] Continue the current launch audit, npm 2.0.0 publication, signed AWS release, authenticated UAT, and reboot smoke from [`docs/PRODUCTION_READINESS_HANDOFF_2026-07-24.md`](docs/PRODUCTION_READINESS_HANDOFF_2026-07-24.md). Do not infer live status from a Git branch.
 - [ ] Referral program wiring — scaffold only. `web/src/app/api/referral/` routes, `web/src/components/ReferralPanel.tsx`, and the `referral_program` migration exist, but ReferralPanel is not rendered anywhere in the app. Wire the panel into the UI + ship the migration before treating this as a feature. NOT live — do not document as shipped.
 - [ ] fal.ai balance top-up (founder action) — Studio video generation routes through fal.ai (`web/src/lib/studio/providers.ts`); keep the account balance funded or runs fail.
 - [ ] Decision: consolidate Agent Office into a PetClaw tab — `AgentOffice.tsx` is now fronted by Pet Village (`PetVillage.tsx`); decide whether the office dashboard folds into PetClaw.

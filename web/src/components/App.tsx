@@ -310,12 +310,12 @@ function SeasonBanner({ seasonPoints }: { seasonPoints: number }) {
           <Icon name="trophy" size={26} />
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <h1 className="season-banner-title" style={{
+              <h2 className="season-banner-title" style={{
                 fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 18,
                 color: "#FFF8EE", letterSpacing: "-0.02em", whiteSpace: "nowrap", margin: 0,
               }}>
                 Season 1 Rewards
-              </h1>
+              </h2>
               {/* Gold-foil phase seal — launch energy pre-schedule, LIVE once running */}
               {(!scheduled || phase === "live") && (
                 <span style={{
@@ -805,7 +805,7 @@ export default function App() {
       {section === "office" && (
         <WalletGate section="office">
           <Suspense fallback={<Loader />}>
-            <AgentOffice />
+            <AgentOffice onCreditsChange={handleCreditsChange} />
           </Suspense>
         </WalletGate>
       )}

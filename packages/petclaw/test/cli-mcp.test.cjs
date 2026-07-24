@@ -39,8 +39,11 @@ function runNode(file, args = [], env = {}, cwd = ROOT, stdin = null) {
 
 test("CLI exposes the real agent/demo flow and no longer advertises live PACK", async () => {
   const result = await runNode("bin/petclaw.js", ["help"]);
+  const agentHelp = await runNode("bin/petclaw.js", ["agent", "--help"]);
   assert.equal(result.code, 0);
-  assert.match(result.stdout, /agent "goal" --confirm-cost 5/);
+  assert.equal(agentHelp.code, 0);
+  assert.match(result.stdout, /agent "input" --task <kind> --confirm-cost 5/);
+  assert.match(agentHelp.stdout, /--max-steps is deprecated.*normalized to 1/i);
   assert.match(result.stdout, /demo "message"/);
   assert.match(result.stdout, /Cross-pet invocation is disabled|Unavailable in this launch/);
   assert.doesNotMatch(result.stdout, /Soul NFTs:/);
@@ -48,6 +51,12 @@ test("CLI exposes the real agent/demo flow and no longer advertises live PACK", 
 
 test("developer docs select an owned pet, require caller run IDs, and disclose paid read-only runs", () => {
   const repoRoot = path.join(ROOT, "..", "..");
+  const packageJson = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
+  const cliSource = fs.readFileSync(path.join(ROOT, "bin", "petclaw.js"), "utf8");
+  assert.equal(packageJson.version, "2.0.0");
+  assert.match(cliSource, /paid 5-credit typed task → one server-selected read-only tool with a receipt/);
+  assert.doesNotMatch(cliSource, /bounded plan\/call\/observe loop/);
+  assert.match(fs.readFileSync(path.join(ROOT, "README.md"), "utf8"), /1\.6\.2 allowed calls without it/);
   const files = [
     path.join(repoRoot, "README.md"),
     path.join(ROOT, "README.md"),
@@ -64,6 +73,17 @@ test("developer docs select an owned pet, require caller run IDs, and disclose p
   }
 
   for (const file of [
+    path.join(ROOT, "README.md"),
+    path.join(ROOT, "docs", "QUICKSTART.md"),
+    path.join(ROOT, "docs", "ECOSYSTEM.md"),
+  ]) {
+    const markdown = fs.readFileSync(file, "utf8");
+    for (const line of markdown.split("\n").filter((value) => /^petclaw-sdk agent /.test(value))) {
+      assert.match(line, /--task (?:recall|summarize|review|draft)/, `${file}: ${line}`);
+    }
+  }
+
+  for (const file of [
     path.join(ROOT, "docs", "QUICKSTART.md"),
     path.join(repoRoot, "web", "public", "api-docs", "QUICKSTART.md"),
   ]) {
@@ -75,22 +95,61 @@ test("developer docs select an owned pet, require caller run IDs, and disclose p
   }
 
   for (const file of [
-    path.join(repoRoot, "README.md"),
     path.join(ROOT, "README.md"),
     path.join(ROOT, "docs", "API.md"),
     path.join(ROOT, "docs", "QUICKSTART.md"),
-    path.join(repoRoot, "web", "public", "api-docs", "API.md"),
-    path.join(repoRoot, "web", "public", "api-docs", "QUICKSTART.md"),
   ]) {
     const markdown = fs.readFileSync(file, "utf8");
     assert.match(markdown, /createPetClawAgentRunId\(\)/, `${file} must show caller-owned runId generation`);
-    assert.match(markdown, /read-only (?:skills? and connectors|skill or connector|result)/i, `${file} must disclose the paid loop's read-only boundary`);
-    assert.match(markdown, /no\s+retention|retention\s+and self-learning (?:are )?disabled/i, `${file} must disclose no retention`);
+    assert.match(markdown, /read-only (?:tools?|skills? and connectors|skill or connector|result)/i, `${file} must disclose the paid loop's read-only boundary`);
     assert.doesNotMatch(markdown, /completed run with a successful tool result|explicitly confirmed durable side effect/, `${file} contains a stale charge path`);
     assert.doesNotMatch(markdown, /clear its local pending marker/i, `${file} must not authorize clearing an unresolved paid run`);
     assert.match(markdown, /Keep the local pending\s+marker\s+locked/i, `${file} must preserve unresolved paid-run authorization`);
-    assert.match(markdown, /server origin to which that authorization was\s+bound/i, `${file} must bind replay to the original server`);
+    assert.match(markdown, /server origin to which that\s+authorization was\s+bound/i, `${file} must bind replay to the original server`);
+    assert.match(markdown, /2,000-character maximum/i, `${file} must publish the task-input maximum`);
+    for (const [taskKind, minimum] of Object.entries({
+      recall: 8,
+      summarize: 40,
+      review: 12,
+      draft: 20,
+    })) {
+      assert.match(
+        markdown,
+        new RegExp(`(?:${taskKind}[^\\n]{0,100}${minimum}|${minimum}[^\\n]{0,100}${taskKind})`, "i"),
+        `${file} must publish the ${taskKind} minimum`,
+      );
+    }
+    assert.match(
+      markdown,
+      /(?:reject\s+bracket placeholders|bracket placeholders are\s+rejected)/i,
+      `${file} must disclose placeholder rejection`,
+    );
+    assert.match(
+      markdown,
+      /concrete (?:secret signatures|API keys\/tokens)[\s\S]{0,400}before\s+journal\s+or\s+network\s+access/i,
+      `${file} must disclose local strong-secret rejection`,
+    );
+    assert.match(
+      markdown,
+      /never (?:written|persisted)\s+to\s+`~\/\.petclaw\.json`/i,
+      `${file} must promise rejected task secrets are not persisted`,
+    );
   }
+
+  for (const file of [
+    path.join(ROOT, "README.md"),
+    path.join(ROOT, "docs", "API.md"),
+    path.join(ROOT, "docs", "QUICKSTART.md"),
+    path.join(ROOT, "docs", "ECOSYSTEM.md"),
+  ]) {
+    const markdown = fs.readFileSync(file, "utf8");
+    assert.match(markdown, /does not write\s+(?:pet\s+)?memory[\s\S]{0,80}self-learning/i, `${file} must disclose the pet-memory write fence`);
+    assert.match(markdown, /owner-private run[\s\S]{0,100}(?:stored|history)/i, `${file} must disclose owner-private run retention`);
+    assert.doesNotMatch(markdown, /no\s+retention|retention\s+and self-learning (?:are )?disabled/i, `${file} must not claim the run has no retention`);
+  }
+  const packageApi = fs.readFileSync(path.join(ROOT, "docs", "API.md"), "utf8");
+  assert.match(packageApi, /typed v2[\s\S]{0,100}`task_error`/i);
+  assert.match(packageApi, /`planner_error`[\s\S]{0,100}historical receipt/i);
 
   const hostedApi = fs.readFileSync(
     path.join(repoRoot, "web", "public", "api-docs", "API.md"),
@@ -417,15 +476,25 @@ test("MCP initialize and tools/list expose seven canonical bounded schemas", asy
     assert.equal(chat.inputSchema.properties.message.minLength, 1);
     assert.equal(chat.inputSchema.properties.message.maxLength, 500);
     const agent = toolResponse.result.tools.find((tool) => tool.name === "petclaw_agent_run");
-    assert.deepEqual(agent.inputSchema.required, ["goal", "confirmCostCredits"]);
-    assert.equal(agent.inputSchema.properties.goal.minLength, 3);
-    assert.equal(agent.inputSchema.properties.goal.maxLength, 600);
+    assert.deepEqual(agent.inputSchema.required, ["goal", "taskKind", "confirmCostCredits"]);
+    assert.equal(agent.inputSchema.properties.goal.minLength, 8);
+    assert.equal(agent.inputSchema.properties.goal.maxLength, 2000);
+    assert.equal(
+      agent.inputSchema.properties.goal.description,
+      "Task input: recall 8+, summarize 40+, review 12+, or draft 20+ characters; 2,000 maximum",
+    );
+    assert.deepEqual(agent.inputSchema.properties.taskKind, {
+      type: "string",
+      enum: ["recall", "summarize", "review", "draft"],
+      description: "Required read-only deliverable: recall memory, summarize supplied text, review supplied text, or draft from a brief",
+    });
     assert.deepEqual(agent.inputSchema.properties.maxSteps, {
       type: "integer",
       minimum: 1,
       maximum: 6,
-      description: "Maximum tool steps (1-6)",
-      default: 4,
+      description: "Deprecated compatibility field; accepted values 1-6 are ignored and normalized to 1",
+      default: 1,
+      deprecated: true,
     });
     assert.deepEqual(agent.inputSchema.properties.confirmCostCredits, {
       type: "integer",
@@ -433,6 +502,7 @@ test("MCP initialize and tools/list expose seven canonical bounded schemas", asy
       description: "Required explicit acknowledgement that this new run may charge exactly 5 credits",
     });
     assert.match(agent.description, /PAID: reserves 5 credits/);
+    assert.match(agent.description, /owner-private run history is stored/);
     const persona = toolResponse.result.tools.find((tool) => tool.name === "petclaw_persona_mirror");
     assert.deepEqual(persona.inputSchema.required, ["context"]);
     assert.equal(persona.inputSchema.additionalProperties, false);
@@ -550,7 +620,7 @@ test("CLI agent JSON marks non-completed terminal runs incomplete and exits 2", 
       const body = JSON.parse(raw);
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({
-        runId: body.runId, state: "terminal", ok: false, completed: false,
+        runId: body.runId, state: "terminal", taskKind: body.taskKind, ok: false, completed: false,
         goal: "check status", answer: "Partial result", steps: [], stoppedReason: "timeout",
         billing: { outcome: "refunded", creditsCharged: 0, reason: "run_not_completed", usageKnown: true, modelCalls: 0 },
         creditsRemaining: 95,
@@ -570,7 +640,7 @@ test("CLI agent JSON marks non-completed terminal runs incomplete and exits 2", 
     }), { mode: 0o600 });
     const result = await runNode(
       "bin/petclaw.js",
-      ["agent", "check", "status", "--confirm-cost", "5", "--json"],
+      ["agent", "check", "status", "--task", "review", "--confirm-cost", "5", "--json"],
       { HOME: temp },
     );
     assert.equal(result.code, 2);
@@ -1069,10 +1139,13 @@ test("CLI rejects lossy chat and agent arguments before any paid request", async
       { args: ["agent", "valid", "goal"], expected: /exact acknowledgement: --confirm-cost 5/ },
       { args: ["agent", "valid", "goal", "--confirm-cost", "4"], expected: /exact acknowledgement: --confirm-cost 5/ },
       { args: ["agent", "valid", "goal", "--confirm-cost", "5", "--confirm-cost", "5"], expected: /exact acknowledgement: --confirm-cost 5/ },
-      { args: ["agent", "valid", "goal", "--confirm-cost", "5", "--max-steps"], expected: /integer from 1 to 6/ },
-      { args: ["agent", "valid", "goal", "--confirm-cost", "5", "--max-steps", "2.5"], expected: /integer from 1 to 6/ },
-      { args: ["agent", "valid", "goal", "--confirm-cost", "5", "--max-steps", "7"], expected: /integer from 1 to 6/ },
-      { args: ["agent", "x".repeat(601), "--confirm-cost", "5"], expected: /at most 600 characters/ },
+      { args: ["agent", "valid", "goal", "--confirm-cost", "5"], expected: /require exactly one --task/ },
+      { args: ["agent", "valid", "goal", "--task", "browse", "--confirm-cost", "5"], expected: /require exactly one --task/ },
+      { args: ["agent", "valid", "goal", "--task", "review", "--task", "review", "--confirm-cost", "5"], expected: /require exactly one --task/ },
+      { args: ["agent", "valid", "goal", "--task", "review", "--confirm-cost", "5", "--max-steps"], expected: /integer from 1 to 6/ },
+      { args: ["agent", "valid", "goal", "--task", "review", "--confirm-cost", "5", "--max-steps", "2.5"], expected: /integer from 1 to 6/ },
+      { args: ["agent", "valid", "goal", "--task", "review", "--confirm-cost", "5", "--max-steps", "7"], expected: /integer from 1 to 6/ },
+      { args: ["agent", "x".repeat(2001), "--task", "review", "--confirm-cost", "5"], expected: /2000 characters or fewer/ },
     ];
     for (const item of cases) {
       const result = await runNode("bin/petclaw.js", item.args, { HOME: temp });
@@ -1086,8 +1159,83 @@ test("CLI rejects lossy chat and agent arguments before any paid request", async
   }
 });
 
+test("CLI rejects secret and task-invalid agent input before network or journal access", async () => {
+  let requestCount = 0;
+  const server = http.createServer((_req, res) => {
+    requestCount += 1;
+    res.writeHead(500, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "local validation must run first" }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  const origin = `http://127.0.0.1:${port}`;
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-cli-agent-input-safety-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  const configText = JSON.stringify({
+    serverUrl: origin,
+    tokenOrigin: origin,
+    petId: 7,
+    token: "pck_test_owner_token",
+    preservedSentinel: "unchanged",
+  });
+  try {
+    fs.writeFileSync(configPath, configText, { mode: 0o600 });
+    const cases = [
+      {
+        goal: ["Review api_key: sk", "abcdefghijklmnopqrstuvwxyz123456"].join("-"),
+        taskKind: "review",
+        expected: /Remove API keys, tokens, passwords/,
+      },
+      {
+        goal: ["Review -----BEGIN", "ENCRYPTED PRIVATE KEY----- key-material"].join(" "),
+        taskKind: "review",
+        expected: /Remove API keys, tokens, passwords/,
+      },
+      {
+        goal: [
+          "Review https://objects.example/file?X-Amz-Signature=",
+          "a".repeat(32),
+        ].join(""),
+        taskKind: "review",
+        expected: /Remove API keys, tokens, passwords/,
+      },
+      { goal: "1234567", taskKind: "recall", expected: /recall needs at least 8/ },
+      { goal: "s".repeat(39), taskKind: "summarize", expected: /summarize needs at least 40/ },
+      { goal: "r".repeat(11), taskKind: "review", expected: /review needs at least 12/ },
+      { goal: "d".repeat(19), taskKind: "draft", expected: /draft needs at least 20/ },
+      { goal: "x".repeat(2_001), taskKind: "review", expected: /2000 characters or fewer/ },
+      {
+        goal: "[paste source text here]",
+        taskKind: "review",
+        expected: /Replace the example placeholder/,
+      },
+    ];
+    for (const item of cases) {
+      const result = await runNode("bin/petclaw.js", [
+        "agent",
+        item.goal,
+        "--task",
+        item.taskKind,
+        "--confirm-cost",
+        "5",
+      ], { HOME: temp });
+      assert.equal(result.code, 1);
+      assert.match(result.stdout, item.expected);
+      assert.match(result.stdout, /no paid-run safety marker was created/i);
+    }
+    assert.equal(requestCount, 0);
+    assert.equal(fs.readFileSync(configPath, "utf8"), configText);
+    assert.equal(fs.existsSync(`${configPath}.guard`), false);
+    assert.equal(fs.existsSync(`${configPath}.guard.lock`), false);
+  } finally {
+    server.close();
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
 test("CLI human agent output includes the server billing receipt", async () => {
   let requestBody;
+  const longGoal = "x".repeat(2000);
   const server = http.createServer((req, res) => {
     let body = "";
     req.on("data", (chunk) => { body += chunk; });
@@ -1097,16 +1245,17 @@ test("CLI human agent output includes the server billing receipt", async () => {
       res.end(JSON.stringify({
         runId: requestBody.runId,
         state: "terminal",
+        taskKind: requestBody.taskKind,
         ok: true,
         completed: true,
         answer: "Ship the reviewed change.",
-        steps: [],
+        steps: [{ skill: "summarize-page", ok: true }],
         stoppedReason: "completed",
         billing: {
           outcome: "charged",
           creditsCharged: 5,
-          reason: "completed_with_direct_answer",
-          successfulToolCalls: 0,
+          reason: "completed_with_successful_tool",
+          successfulToolCalls: 1,
           failedToolCalls: 0,
           committedSideEffects: 0,
           usageKnown: true,
@@ -1129,15 +1278,15 @@ test("CLI human agent output includes the server billing receipt", async () => {
     }), { mode: 0o600 });
     const result = await runNode(
       "bin/petclaw.js",
-      ["agent", "suggest", "next", "step", "--confirm-cost", "5"],
+      ["agent", longGoal, "--task", "draft", "--confirm-cost", "5", "--max-steps", "6"],
       { HOME: temp },
     );
     assert.equal(result.code, 0);
     assert.match(requestBody.runId, /^[0-9a-f-]{36}$/);
     assert.deepEqual({ ...requestBody, runId: undefined }, {
-      runId: undefined, goal: "suggest next step", maxSteps: 4, confirmCostCredits: 5,
+      runId: undefined, goal: longGoal, taskKind: "draft", maxSteps: 1, confirmCostCredits: 5,
     });
-    assert.match(result.stdout, /billing: charged · 5 credits · completed_with_direct_answer/);
+    assert.match(result.stdout, /billing: charged · 5 credits · completed_with_successful_tool/);
     assert.match(result.stdout, /95 credits remaining/);
   } finally {
     server.close();
@@ -1169,7 +1318,7 @@ test("CLI keeps the paid-run marker when an HTTP 200 settlement body is malforme
     }), { mode: 0o600 });
     const first = await runNode(
       "bin/petclaw.js",
-      ["agent", "preserve", "the", "receipt", "--confirm-cost", "5"],
+      ["agent", "preserve", "the", "receipt", "--task", "review", "--confirm-cost", "5"],
       { HOME: temp },
     );
     assert.equal(first.code, 1);
@@ -1179,15 +1328,155 @@ test("CLI keeps the paid-run marker when an HTTP 200 settlement body is malforme
     assert.equal(pending.length, 1);
     assert.match(pending[0].runId, /^[0-9a-f-]{36}$/);
     assert.equal(pending[0].serverOrigin, origin);
+    assert.equal(pending[0].taskKind, "review");
+    assert.equal(pending[0].journalVersion, 3);
 
     const second = await runNode(
       "bin/petclaw.js",
-      ["agent", "must", "not", "start", "--confirm-cost", "5"],
+      ["agent", "must", "not", "start", "another", "paid", "run", "--task", "draft", "--confirm-cost", "5"],
       { HOME: temp },
     );
     assert.equal(second.code, 1);
     assert.match(second.stdout, /Could not reconcile paid run/);
     assert.equal(paidPostCount, 1, "the retained marker must block a new run ID");
+  } finally {
+    server.close();
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("CLI receipt reconciliation replays the exact saved typed task", async () => {
+  const runId = randomUUID();
+  let statusLookups = 0;
+  let replayBody;
+  const server = http.createServer((req, res) => {
+    let raw = "";
+    req.on("data", (chunk) => { raw += chunk; });
+    req.on("end", () => {
+      if (req.method === "GET" && req.url === `/api/pets/7/agent/runs/${runId}`) {
+        statusLookups += 1;
+        res.writeHead(404, { "content-type": "application/json" });
+        res.end(JSON.stringify({ error: "not found" }));
+        return;
+      }
+      replayBody = JSON.parse(raw);
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({
+        runId,
+        state: "terminal",
+        taskKind: "review",
+        ok: true,
+        completed: true,
+        answer: "Reviewed.",
+        steps: [{ skill: "summarize-page", ok: true }],
+        stoppedReason: "completed",
+        billing: {
+          outcome: "charged",
+          creditsCharged: 5,
+          reason: "completed_with_successful_tool",
+          usageKnown: true,
+          modelCalls: 1,
+        },
+      }));
+    });
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  const origin = `http://127.0.0.1:${port}`;
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-cli-typed-replay-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({
+      serverUrl: origin,
+      tokenOrigin: origin,
+      petId: 7,
+      token: "pck_test_owner_token",
+    }), { mode: 0o600 });
+    const journal = createPaidRunJournal(configPath);
+    journal.claim({
+      runId,
+      petId: 7,
+      goal: "Review the exact saved copy",
+      taskKind: "review",
+      maxSteps: 3,
+      confirmCostCredits: 5,
+      serverOrigin: origin,
+      surface: "cli",
+      createdAt: new Date().toISOString(),
+    });
+
+    const result = await runNode("bin/petclaw.js", ["agent-status", runId], { HOME: temp });
+    assert.equal(result.code, 0);
+    assert.equal(statusLookups, 2);
+    assert.deepEqual(replayBody, {
+      runId,
+      goal: "Review the exact saved copy",
+      taskKind: "review",
+      maxSteps: 1,
+      confirmCostCredits: 5,
+    });
+    assert.deepEqual(JSON.parse(fs.readFileSync(configPath, "utf8")).pendingAgentRuns, {});
+  } finally {
+    server.close();
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("CLI keeps a v3 journal marker when a terminal receipt has another taskKind", async () => {
+  const runId = randomUUID();
+  const server = http.createServer((_req, res) => {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({
+      runId,
+      state: "terminal",
+      taskKind: "draft",
+      ok: true,
+      completed: true,
+      answer: "Wrong task receipt.",
+      steps: [{ skill: "draft", ok: true }],
+      stoppedReason: "completed",
+      billing: {
+        outcome: "charged",
+        creditsCharged: 5,
+        reason: "completed_with_successful_tool",
+        usageKnown: true,
+        modelCalls: 1,
+      },
+    }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  const origin = `http://127.0.0.1:${port}`;
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-cli-taskkind-mismatch-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({
+      serverUrl: origin,
+      tokenOrigin: origin,
+      petId: 7,
+      token: "pck_test_owner_token",
+    }), { mode: 0o600 });
+    const journal = createPaidRunJournal(configPath);
+    const claimed = journal.claim({
+      runId,
+      petId: 7,
+      goal: "Review the saved input",
+      taskKind: "review",
+      maxSteps: 4,
+      confirmCostCredits: 5,
+      serverOrigin: origin,
+      surface: "cli",
+      createdAt: new Date().toISOString(),
+    });
+
+    const result = await runNode("bin/petclaw.js", ["agent-status", runId], { HOME: temp });
+    assert.equal(result.code, 2);
+    assert.match(result.stdout, /no validated terminal receipt/i);
+    const pending = JSON.parse(fs.readFileSync(configPath, "utf8")).pendingAgentRuns;
+    assert.deepEqual(pending[runId], claimed.marker);
+    assert.equal(pending[runId].taskKind, "review");
+    assert.equal(pending[runId].maxSteps, 1);
+    assert.equal(pending[runId].journalVersion, 3);
   } finally {
     server.close();
     fs.rmSync(temp, { recursive: true, force: true });
@@ -1265,10 +1554,11 @@ test("MCP rejects values outside its published tool schemas before HTTP", async 
     const requests = [
       { id: 1, name: "petclaw_chat", arguments: { message: "hello", unexpected: true } },
       { id: 2, name: "petclaw_agent_run", arguments: { goal: "valid goal", maxSteps: 4 } },
-      { id: 3, name: "petclaw_agent_run", arguments: { goal: "valid goal", maxSteps: 2.5, confirmCostCredits: 5 } },
+      { id: 3, name: "petclaw_agent_run", arguments: { goal: "valid goal", taskKind: "review", maxSteps: 2.5, confirmCostCredits: 5 } },
       { id: 4, name: "petclaw_memory_recall", arguments: { query: "release", limit: 0 } },
       { id: 5, name: "petclaw_soul_export", arguments: { petId: 99 } },
-      { id: 6, name: "petclaw_agent_run", arguments: { goal: "valid goal", maxSteps: 4, confirmCostCredits: 4 } },
+      { id: 6, name: "petclaw_agent_run", arguments: { goal: "valid goal", taskKind: "review", maxSteps: 4, confirmCostCredits: 4 } },
+      { id: 7, name: "petclaw_agent_run", arguments: { goal: "valid goal", taskKind: "browse", maxSteps: 4, confirmCostCredits: 5 } },
     ];
     for (const request of requests) {
       child.stdin.write(JSON.stringify({
@@ -1297,6 +1587,104 @@ test("MCP rejects values outside its published tool schemas before HTTP", async 
   }
 });
 
+test("MCP rejects secret and task-invalid agent input before network or journal access", async () => {
+  let requestCount = 0;
+  const server = http.createServer((_req, res) => {
+    requestCount += 1;
+    res.writeHead(500, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "local validation must run first" }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  const origin = `http://127.0.0.1:${port}`;
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-mcp-agent-input-safety-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  const configText = JSON.stringify({
+    serverUrl: origin,
+    tokenOrigin: origin,
+    petId: 7,
+    token: "pck_test_owner_token",
+    preservedSentinel: "unchanged",
+  });
+  try {
+    fs.writeFileSync(configPath, configText, { mode: 0o600 });
+    const child = spawn(process.execPath, ["mcp/server.js"], {
+      cwd: ROOT,
+      env: { ...process.env, HOME: temp, NO_COLOR: "1" },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    const requests = [
+      {
+        id: 1,
+        goal: ["Review api_key: sk", "abcdefghijklmnopqrstuvwxyz123456"].join("-"),
+        taskKind: "review",
+        expected: /Remove API keys, tokens, passwords/,
+      },
+      {
+        id: 8,
+        goal: ["Review -----BEGIN", "PGP PRIVATE KEY BLOCK----- key-material"].join(" "),
+        taskKind: "review",
+        expected: /Remove API keys, tokens, passwords/,
+      },
+      {
+        id: 9,
+        goal: ["Review mongodb+srv", "://owner:credential-pass", "@database/private"].join(""),
+        taskKind: "review",
+        expected: /Remove API keys, tokens, passwords/,
+      },
+      { id: 2, goal: "1234567", taskKind: "recall", expected: /at least 8 characters/ },
+      { id: 3, goal: "s".repeat(39), taskKind: "summarize", expected: /summarize needs at least 40/ },
+      { id: 4, goal: "r".repeat(11), taskKind: "review", expected: /review needs at least 12/ },
+      { id: 5, goal: "d".repeat(19), taskKind: "draft", expected: /draft needs at least 20/ },
+      { id: 6, goal: "x".repeat(2_001), taskKind: "review", expected: /at most 2000 characters/ },
+      {
+        id: 7,
+        goal: "[paste source text here]",
+        taskKind: "review",
+        expected: /Replace the example placeholder/,
+      },
+    ];
+    for (const request of requests) {
+      child.stdin.write(JSON.stringify({
+        jsonrpc: "2.0",
+        id: request.id,
+        method: "tools/call",
+        params: {
+          name: "petclaw_agent_run",
+          arguments: {
+            goal: request.goal,
+            taskKind: request.taskKind,
+            confirmCostCredits: 5,
+          },
+        },
+      }) + "\n");
+    }
+    const deadline = Date.now() + 3000;
+    while (stdout.split("\n").filter(Boolean).length < requests.length && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    child.stdin.end();
+    await new Promise((resolve) => child.on("close", resolve));
+
+    const responses = stdout.split("\n").filter(Boolean).map(JSON.parse);
+    for (const request of requests) {
+      const response = responses.find((line) => line.id === request.id);
+      assert.ok(response, `missing MCP response ${request.id}`);
+      assert.equal(response.result.isError, true);
+      assert.match(response.result.content[0].text, request.expected);
+    }
+    assert.equal(requestCount, 0);
+    assert.equal(fs.readFileSync(configPath, "utf8"), configText);
+    assert.equal(fs.existsSync(`${configPath}.guard`), false);
+    assert.equal(fs.existsSync(`${configPath}.guard.lock`), false);
+  } finally {
+    server.close();
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
 test("MCP paid agent acknowledgement permits exactly one request and is forwarded", async () => {
   let requestCount = 0;
   let requestPath = "";
@@ -1312,16 +1700,17 @@ test("MCP paid agent acknowledgement permits exactly one request and is forwarde
       res.end(JSON.stringify({
         runId: requestBody.runId,
         state: "terminal",
+        taskKind: requestBody.taskKind,
         ok: true,
         completed: true,
         answer: "Done.",
-        steps: [],
+        steps: [{ skill: "summarize-page", ok: true }],
         stoppedReason: "completed",
         billing: {
           outcome: "charged",
           creditsCharged: 5,
-          reason: "completed_with_direct_answer",
-          successfulToolCalls: 0,
+          reason: "completed_with_successful_tool",
+          successfulToolCalls: 1,
           failedToolCalls: 0,
           committedSideEffects: 0,
           usageKnown: true,
@@ -1357,7 +1746,7 @@ test("MCP paid agent acknowledgement permits exactly one request and is forwarde
       method: "tools/call",
       params: {
         name: "petclaw_agent_run",
-        arguments: { goal: "suggest next step", maxSteps: 4, confirmCostCredits: 5 },
+        arguments: { goal: "suggest one next step", taskKind: "draft", maxSteps: 4, confirmCostCredits: 5 },
       },
     }) + "\n");
     const deadline = Date.now() + 3000;
@@ -1372,9 +1761,192 @@ test("MCP paid agent acknowledgement permits exactly one request and is forwarde
     assert.equal(requestPath, "/api/pets/7/agent");
     assert.match(requestBody.runId, /^[0-9a-f-]{36}$/);
     assert.deepEqual({ ...requestBody, runId: undefined }, {
-      runId: undefined, goal: "suggest next step", maxSteps: 4, confirmCostCredits: 5,
+      runId: undefined, goal: "suggest one next step", taskKind: "draft", maxSteps: 1, confirmCostCredits: 5,
     });
     assert.equal(JSON.parse(response.result.content[0].text).billing.creditsCharged, 5);
+  } finally {
+    server.close();
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("CLI and MCP treat HTTP 409 as definitive pre-debit rejection", async () => {
+  let requestCount = 0;
+  const server = http.createServer((req, res) => {
+    requestCount += 1;
+    req.resume();
+    req.on("end", () => {
+      res.writeHead(409, { "content-type": "application/json" });
+      res.end(JSON.stringify({
+        error: "Another paid run is active",
+        code: "agent_run_in_progress",
+      }));
+    });
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  const origin = `http://127.0.0.1:${port}`;
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-paid-409-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({
+      serverUrl: origin,
+      tokenOrigin: origin,
+      petId: 7,
+      token: "pck_test_owner_token",
+    }), { mode: 0o600 });
+
+    const cli = await runNode(
+      "bin/petclaw.js",
+      ["agent", "review", "this", "note", "--task", "review", "--confirm-cost", "5"],
+      { HOME: temp },
+    );
+    assert.equal(cli.code, 1);
+    assert.match(cli.stdout, /Another paid run is active/);
+    assert.doesNotMatch(cli.stdout, /Outcome unknown/);
+    assert.deepEqual(JSON.parse(fs.readFileSync(configPath, "utf8")).pendingAgentRuns, {});
+
+    const child = spawn(process.execPath, ["mcp/server.js"], {
+      cwd: ROOT,
+      env: { ...process.env, HOME: temp, NO_COLOR: "1" },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stdin.write(JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: {
+        name: "petclaw_agent_run",
+        arguments: {
+          goal: "review this note",
+          taskKind: "review",
+          maxSteps: 4,
+          confirmCostCredits: 5,
+        },
+      },
+    }) + "\n");
+    const deadline = Date.now() + 3000;
+    while (!stdout.includes('"id":1') && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    child.stdin.end();
+    await new Promise((resolve) => child.on("close", resolve));
+    const response = stdout.split("\n").filter(Boolean).map(JSON.parse)
+      .find((line) => line.id === 1);
+    assert.equal(response.result.isError, true);
+    assert.match(response.result.content[0].text, /Another paid run is active/);
+    assert.equal(response.result.structuredContent, undefined);
+    assert.deepEqual(JSON.parse(fs.readFileSync(configPath, "utf8")).pendingAgentRuns, {});
+    assert.equal(requestCount, 2);
+  } finally {
+    server.close();
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("MCP reconciliation replays the saved typed task instead of incoming arguments", async () => {
+  const runId = randomUUID();
+  let statusLookups = 0;
+  let replayBody;
+  const server = http.createServer((req, res) => {
+    let raw = "";
+    req.on("data", (chunk) => { raw += chunk; });
+    req.on("end", () => {
+      if (req.method === "GET" && req.url === `/api/pets/7/agent/runs/${runId}`) {
+        statusLookups += 1;
+        res.writeHead(404, { "content-type": "application/json" });
+        res.end(JSON.stringify({ error: "not found" }));
+        return;
+      }
+      replayBody = JSON.parse(raw);
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({
+        runId,
+        state: "terminal",
+        taskKind: "recall",
+        ok: true,
+        completed: true,
+        answer: "Recalled.",
+        steps: [{ skill: "recall_memory", ok: true }],
+        stoppedReason: "completed",
+        billing: {
+          outcome: "charged",
+          creditsCharged: 5,
+          reason: "completed_with_successful_tool",
+          usageKnown: true,
+          modelCalls: 1,
+        },
+      }));
+    });
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  const origin = `http://127.0.0.1:${port}`;
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-mcp-typed-replay-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({
+      serverUrl: origin,
+      tokenOrigin: origin,
+      petId: 7,
+      token: "pck_test_owner_token",
+    }), { mode: 0o600 });
+    const journal = createPaidRunJournal(configPath);
+    journal.claim({
+      runId,
+      petId: 7,
+      goal: "What did I say about launch?",
+      taskKind: "recall",
+      maxSteps: 2,
+      confirmCostCredits: 5,
+      serverOrigin: origin,
+      surface: "mcp",
+      createdAt: new Date().toISOString(),
+    });
+    const child = spawn(process.execPath, ["mcp/server.js"], {
+      cwd: ROOT,
+      env: { ...process.env, HOME: temp, NO_COLOR: "1" },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stdin.write(JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: {
+        name: "petclaw_agent_run",
+        arguments: {
+          goal: "Do not use this new input",
+          taskKind: "draft",
+          maxSteps: 6,
+          confirmCostCredits: 5,
+        },
+      },
+    }) + "\n");
+    const deadline = Date.now() + 3000;
+    while (!stdout.includes('"id":1') && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    child.stdin.end();
+    await new Promise((resolve) => child.on("close", resolve));
+
+    const response = stdout.split("\n").filter(Boolean).map(JSON.parse)
+      .find((line) => line.id === 1);
+    assert.equal(response.result.isError, undefined);
+    assert.equal(response.result.structuredContent.newRunStarted, false);
+    assert.match(response.result.structuredContent.reconciliationNotice, /Resumed and reconciled/);
+    assert.equal(statusLookups, 2);
+    assert.deepEqual(replayBody, {
+      runId,
+      goal: "What did I say about launch?",
+      taskKind: "recall",
+      maxSteps: 1,
+      confirmCostCredits: 5,
+    });
+    assert.deepEqual(JSON.parse(fs.readFileSync(configPath, "utf8")).pendingAgentRuns, {});
   } finally {
     server.close();
     fs.rmSync(temp, { recursive: true, force: true });
@@ -1407,15 +1979,16 @@ test("CLI and MCP share one atomic paid-run claim across processes", async () =>
       res.end(JSON.stringify({
         runId: body.runId,
         state: "terminal",
+        taskKind: body.taskKind,
         ok: true,
         completed: true,
         answer: "One run only.",
-        steps: [],
+        steps: [{ skill: "summarize-page", ok: true }],
         stoppedReason: "completed",
         billing: {
           outcome: "charged",
           creditsCharged: 5,
-          reason: "completed_with_direct_answer",
+          reason: "completed_with_successful_tool",
           usageKnown: true,
           modelCalls: 1,
         },
@@ -1445,6 +2018,8 @@ test("CLI and MCP share one atomic paid-run claim across processes", async () =>
       "goal",
       "--confirm-cost",
       "5",
+      "--task",
+      "review",
     ], {
       cwd: ROOT,
       env: { ...process.env, HOME: temp, NO_COLOR: "1" },
@@ -1468,7 +2043,7 @@ test("CLI and MCP share one atomic paid-run claim across processes", async () =>
       method: "tools/call",
       params: {
         name: "petclaw_agent_run",
-        arguments: { goal: "mcp concurrent goal", maxSteps: 4, confirmCostCredits: 5 },
+        arguments: { goal: "mcp concurrent goal", taskKind: "review", maxSteps: 4, confirmCostCredits: 5 },
       },
     }) + "\n");
 
@@ -1613,7 +2188,7 @@ test("MCP never looks up or replays a paid marker on another server origin", asy
       method: "tools/call",
       params: {
         name: "petclaw_agent_run",
-        arguments: { goal: "must not replace the old goal", maxSteps: 4, confirmCostCredits: 5 },
+        arguments: { goal: "must not replace the old goal", taskKind: "review", maxSteps: 4, confirmCostCredits: 5 },
       },
     }) + "\n");
     const deadline = Date.now() + 3000;
@@ -1652,6 +2227,7 @@ test("shared config writers cannot switch server origin while a paid marker is p
       runId: randomUUID(),
       petId: 7,
       goal: "keep this authorization on its original server",
+      taskKind: "review",
       maxSteps: 4,
       confirmCostCredits: 5,
       serverOrigin: originalOrigin,
@@ -1684,6 +2260,88 @@ test("shared config writers cannot switch server origin while a paid marker is p
   }
 });
 
+test("shared journal refuses every new paid marker without one valid typed task", () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-typed-journal-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  const original = {
+    serverUrl: "https://app.myaipet.ai",
+    tokenOrigin: "https://app.myaipet.ai",
+    petId: 7,
+    token: "pck_test_owner_token",
+  };
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(original), { mode: 0o600 });
+    const journal = createPaidRunJournal(configPath);
+    for (const taskKind of [undefined, "", "browse", "RECALL"]) {
+      assert.throws(() => journal.claim({
+        runId: randomUUID(),
+        petId: 7,
+        goal: "review this input",
+        taskKind,
+        maxSteps: 4,
+        confirmCostCredits: 5,
+        serverOrigin: original.serverUrl,
+        surface: "cli",
+        createdAt: new Date().toISOString(),
+      }), /invalid paid-run safety marker/);
+    }
+    for (const { goal, taskKind } of [
+      { goal: "1234567", taskKind: "recall" },
+      { goal: "s".repeat(39), taskKind: "summarize" },
+      { goal: "r".repeat(11), taskKind: "review" },
+      { goal: "d".repeat(19), taskKind: "draft" },
+      { goal: "x".repeat(2_001), taskKind: "review" },
+      { goal: "[paste source text here]", taskKind: "review" },
+    ]) {
+      assert.throws(() => journal.claim({
+        runId: randomUUID(),
+        petId: 7,
+        goal,
+        taskKind,
+        maxSteps: 1,
+        confirmCostCredits: 5,
+        serverOrigin: original.serverUrl,
+        surface: "cli",
+        createdAt: new Date().toISOString(),
+      }), /invalid paid-run safety marker/);
+    }
+    assert.deepEqual(JSON.parse(fs.readFileSync(configPath, "utf8")), original);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("shared journal never persists a secret-bearing typed task", () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-secret-journal-"));
+  const configPath = path.join(temp, ".petclaw.json");
+  const configText = JSON.stringify({
+    serverUrl: "https://app.myaipet.ai",
+    tokenOrigin: "https://app.myaipet.ai",
+    petId: 7,
+    token: "pck_test_owner_token",
+    preservedSentinel: "unchanged",
+  });
+  try {
+    fs.writeFileSync(configPath, configText, { mode: 0o600 });
+    const journal = createPaidRunJournal(configPath);
+    assert.throws(() => journal.claim({
+      runId: randomUUID(),
+      petId: 7,
+      goal: "Review password: this-is-a-real-password-value",
+      taskKind: "review",
+      maxSteps: 1,
+      confirmCostCredits: 5,
+      serverOrigin: "https://app.myaipet.ai",
+      surface: "cli",
+      createdAt: new Date().toISOString(),
+    }), /invalid paid-run safety marker/);
+    assert.equal(fs.readFileSync(configPath, "utf8"), configText);
+    assert.equal(Object.hasOwn(JSON.parse(fs.readFileSync(configPath, "utf8")), "pendingAgentRuns"), false);
+  } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
 test("shared journal removes only the exact unchanged paid marker", () => {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-exact-marker-removal-"));
   const configPath = path.join(temp, ".petclaw.json");
@@ -1700,6 +2358,7 @@ test("shared journal removes only the exact unchanged paid marker", () => {
       runId: randomUUID(),
       petId: 7,
       goal: "the exact authorized goal",
+      taskKind: "review",
       maxSteps: 4,
       confirmCostCredits: 5,
       serverOrigin: origin,
@@ -1795,7 +2454,7 @@ test("MCP fails closed when the shared paid-run journal becomes unreadable", asy
       method: "tools/call",
       params: {
         name: "petclaw_agent_run",
-        arguments: { goal: "must not post", maxSteps: 4, confirmCostCredits: 5 },
+        arguments: { goal: "must not post", taskKind: "review", maxSteps: 4, confirmCostCredits: 5 },
       },
     }) + "\n");
     const responseDeadline = Date.now() + 3000;
@@ -1851,7 +2510,7 @@ test("MCP keeps the paid-run marker when an HTTP 200 settlement body is malforme
       method: "tools/call",
       params: {
         name: "petclaw_agent_run",
-        arguments: { goal: "preserve the receipt", maxSteps: 4, confirmCostCredits: 5 },
+        arguments: { goal: "preserve the receipt", taskKind: "review", maxSteps: 4, confirmCostCredits: 5 },
       },
     }) + "\n");
     const deadline = Date.now() + 3000;
@@ -1963,6 +2622,102 @@ test("MCP rejects blank and secret-shaped recall queries before any HTTP request
     assert.equal(secret.result.isError, true);
     assert.match(secret.result.content[0].text, /non-secret memory query/);
   } finally {
+    fs.rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("MCP recall keeps safe developer security vocabulary and filters concrete credentials", async () => {
+  const requests = [];
+  const unsafeRecallValues = [
+    ["extension", ["pex_", "P".repeat(32)].join("")],
+    ["github", ["ghu_", "G".repeat(32)].join("")],
+    ["private-key", ["-----BEGIN", "PGP PRIVATE KEY BLOCK----- material"].join(" ")],
+    ["database", ["postgresql", "://owner:credential-pass", "@database/private"].join("")],
+    ["signed-url", ["https://objects.example/file?X-Amz-Signature=", "S".repeat(32)].join("")],
+    ["cookie", "Cookie: session=private; csrf=private-too"],
+    ["mnemonic", "mnemonic: zephyr amber cobalt delta ember fjord galaxy harbor ivory juniper kestrel lantern"],
+    ["session-token", ["AWS_SESSION_TOKEN", "=", "N".repeat(40)].join("")],
+    ["stripe", ["STRIPE_SECRET_KEY", "=", "sk_live_", "O".repeat(32)].join("")],
+    ["password", "password=P@ssw0rd!still-secret$tail"],
+    ["localized-code", "\uC778\uC99D\uCF54\uB4DC 87654321"],
+  ];
+  const server = http.createServer((req, res) => {
+    requests.push(req.url);
+    req.resume();
+    req.on("end", () => {
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({
+        memories: [
+          { key: "pricing", content: "Compare API token pricing before the next release.", importance: 3 },
+          { key: "rotation", content: "Document the API token rotation policy for developers.", importance: 2 },
+          { key: "guide", content: "Review the secret management guide with the platform team.", importance: 2 },
+          { key: "dotnet", content: "Review Microsoft.Extensions.Configuration naming with the SDK team.", importance: 2 },
+          { key: "launch_priority", content: "Ship the billing ledger first.", importance: 3 },
+          {
+            key: "credential",
+            content: ["api_key: sk", "supersecret123456789"].join("-"),
+            importance: 5,
+          },
+          ...unsafeRecallValues.map(([key, content]) => ({ key, content, importance: 5 })),
+        ],
+        userProfile: [],
+        sessions: [],
+      }));
+    });
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address();
+  const origin = `http://127.0.0.1:${port}`;
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "petclaw-mcp-recall-vocabulary-"));
+  try {
+    fs.writeFileSync(path.join(temp, ".petclaw.json"), JSON.stringify({
+      serverUrl: origin,
+      tokenOrigin: origin,
+      petId: 7,
+      token: "pck_test_owner_token",
+    }), { mode: 0o600 });
+    const child = spawn(process.execPath, ["mcp/server.js"], {
+      cwd: ROOT,
+      env: { ...process.env, HOME: temp, NO_COLOR: "1" },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stdin.write(JSON.stringify({
+      jsonrpc: "2.0", id: 1, method: "tools/call",
+      params: {
+        name: "petclaw_memory_recall",
+        arguments: {
+          query: "token pricing rotation policy secret management guide Microsoft.Extensions.Configuration priorities",
+          limit: 10,
+        },
+      },
+    }) + "\n");
+    const deadline = Date.now() + 3000;
+    while (!stdout.split("\n").some((line) => line.includes('"id":1')) && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    child.stdin.end();
+    await new Promise((resolve) => child.on("close", resolve));
+    const responses = stdout.split("\n").filter(Boolean).map(JSON.parse);
+    const pricing = responses.find((line) => line.id === 1);
+    assert.equal(pricing.result.isError, undefined);
+    assert.match(pricing.result.content[0].text, /token pricing/);
+    assert.match(pricing.result.content[0].text, /token rotation policy/);
+    assert.match(pricing.result.content[0].text, /secret management guide/);
+    assert.match(pricing.result.content[0].text, /Microsoft\.Extensions\.Configuration/);
+    assert.match(pricing.result.content[0].text, /Ship the billing ledger first/);
+    assert.doesNotMatch(pricing.result.content[0].text, /supersecret/);
+    for (const [_key, unsafe] of unsafeRecallValues) {
+      assert.equal(
+        pricing.result.content[0].text.includes(unsafe),
+        false,
+        `MCP recall leaked unsafe retained text: ${unsafe}`,
+      );
+    }
+    assert.equal(requests.length, 1);
+  } finally {
+    server.close();
     fs.rmSync(temp, { recursive: true, force: true });
   }
 });

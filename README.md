@@ -28,25 +28,25 @@ the memory, identity, and portability layer for AI companions.
 | A single prompt | PetClaw |
 |---|---|
 | ✕ Forgets you when the tab closes | ✓ Retains selected context across owner surfaces — inspect/edit/delete it |
-| ✕ Answers in text, can't take action | ✓ Plans + runs real skills, then observes |
+| ✕ Answers without grounded context | ✓ Runs one explicit approved read-only tool, then returns its grounded deliverable |
 | ✕ Works alone, no review | ✓ Bounded learning patterns and owner-controlled memory (VIGIL) |
-| ✕ Locked inside one app | ✓ Checksummed supported-field JSON · REST/CLI · seven-tool MCP in SDK 1.6.3 |
+| ✕ Locked inside one app | ✓ Checksummed supported-field JSON · REST/CLI · seven-tool MCP · SDK 2.0.0 contract |
 
 ---
 
-## 🧠 Agent orchestration — *one pet, a bounded goal loop, owner-controlled memory*
+## 🧠 Agent orchestration — *one pet, typed work, owner-controlled memory*
 
-Under the pet is a bounded goal loop and a separate persistent-chat path:
+Under the pet is a paid typed-task runner and a separate persistent-chat path:
 
 | | Role | What it is |
 |---|---|---|
-| 🧭 | **Plan → Act** | A reasoning model plans each step; a real **skill** is invoked, the result observed, and it iterates until done — then a chat model synthesizes the answer. *(plan-execute)* |
-| 🔧 | **Use tools** | Native tool-calling over eligible in-process skills plus private memory recall. Outbound connectors stay outside memory-bearing runs until approval and data-taint controls ship. |
+| 🧭 | **Select → Execute** | The owner chooses Recall, Summarize, Review, or Draft; the server maps it to one approved read-only tool and canonical input. |
+| 🔧 | **Use tools** | Typed runs execute exactly one matching in-process skill or private-memory connector. The tool writes no pet memory or self-learning data; owner-private run history is stored for reconciliation. |
 | 🧠 | **Recall** | TF-IDF/recency/importance ranking plus conditional semantic vectors and RRF where embeddings exist. |
 | 🔁 | **Reflect** | Best-effort consolidation, feedback and learned patterns; owners control retained data. |
 | 🌐 | **Cross-surface** | Web, CLI, SDK and MCP share owner-scoped pet identity and normalized session metadata. |
 
-`18 skill manifests · 7 MCP tools in published SDK 1.6.3 · 19 registered connectors · open SDK`
+`18 skill manifests · 7 MCP tools · SDK 2.0.0 release contract · 19 registered connectors · open SDK`
 
 ---
 
@@ -61,11 +61,16 @@ Under the pet is a bounded goal loop and a separate persistent-chat path:
 
 ## ⚡ Quickstart (CLI)
 
+SDK 2.0.0 is a major migration target: paid SDK, CLI, and MCP tasks must include
+`taskKind`. The deprecated `maxSteps` compatibility field is ignored and
+normalized to `1`. During rollout, verify the npm version before relying on the
+2.0.0 contract. See [Migrating from 1.x](packages/petclaw/README.md#migrating-from-1x).
+
 ```bash
 # 0. Verify the supported release before installing.
 npm view @myaipet/petclaw-sdk version
 
-# 1. Install (the agent and seven-tool MCP flow below require >=1.6.3)
+# 1. Install after npm reports 2.0.0 or later.
 npm i -g @myaipet/petclaw-sdk    # or: npx @myaipet/petclaw-sdk <cmd>
 
 # 2. Connect the CLI through a hidden prompt (never place tokens in argv)
@@ -84,26 +89,40 @@ petclaw-sdk doctor
 petclaw-sdk execute companion-chat --json-input '{"message":"Suggest one next step"}'
 petclaw-sdk models connect openai --scopes=chat,reason
 
-# 5. Run a bounded goal, or start the MCP server
-petclaw-sdk agent "Suggest one next step" --confirm-cost 5 --json
+# 5. Run an explicit typed task, or start the MCP server
+petclaw-sdk agent "What are my launch priorities?" --task recall --confirm-cost 5 --json
 petclaw-sdk mcp
 ```
 
-Agent runs are paid. The CLI requires the exact `--confirm-cost 5` flag and the
-MCP tool requires `confirmCostCredits: 5` on every call. Missing or different
-acknowledgement is rejected before paid work starts; successful calls return the
-server billing receipt.
+Agent runs are paid. Every new run must select `recall`, `summarize`, `review`,
+or `draft`. The CLI requires both `--task <kind>` and the exact
+`--confirm-cost 5` flag; the MCP tool requires `taskKind` and
+`confirmCostCredits: 5`. Missing or invalid values are rejected before paid
+work starts. Task input is capped at 2,000 characters.
 
-The paid loop exposes only eligible read-only skills and connectors, with no
-retention or self-learning. It charges only for a completed direct model answer
-or a completed run with a successful read-only result; other terminal runs
-refund the reservation.
+Each task is bound server-side to one approved read-only tool:
+
+| Task | Paid deliverable |
+|---|---|
+| `recall` | Retrieved owner-private facts plus an answer grounded in those facts |
+| `summarize` | A structured decision brief: summary, key facts, risk/unknown, and next step |
+| `review` | The primary issue, why it matters, and a revised version |
+| `draft` | Reviewable text only; it is not sent, published, or executed |
+
+The tool does not write pet memory or self-learning data. The service stores
+owner-private run input, result, trace, and billing history for reconciliation
+and audit. A completed response includes the exact server receipt: bound task,
+tool outcome, model-call counts, credit outcome, and remaining balance. Five
+credits are charged only when the required tool succeeds without a side effect
+and produces the contract-valid deliverable. Empty recall, wrong-tool,
+degraded, failed, incomplete, refusal, direct-answer-only, and non-contract
+outputs refund the reservation.
 
 If a receipt is absent after an unknown outcome, keep the local pending marker
-locked. Replay only the exact saved `runId`, `goal`, `maxSteps`, and
-`confirmCostCredits` against the server origin to which that authorization was
-bound. Never mint a new run ID or clear the marker merely because a receipt is
-absent.
+locked. Replay only the exact saved `runId`, `goal`, `taskKind`, normalized
+`maxSteps: 1`, and `confirmCostCredits` against the server origin to which that
+authorization was bound. Never mint a new run ID or clear the marker merely
+because a receipt is absent.
 
 Or use it as a library:
 
@@ -130,8 +149,9 @@ const res = await client.chat.send(petId, "hi!");
 const runId = createPetClawAgentRunId();
 const run = await client.agent.run(petId, {
   runId,
-  goal: "Suggest one next step",
-  maxSteps: 4,
+  goal: "What are my current launch priorities?",
+  taskKind: "recall",
+  maxSteps: 1, // deprecated compatibility field; SDK 2.0.0 normalizes it to 1
   confirmCostCredits: 5,
 });
 console.log(res.reply, run.stoppedReason);
@@ -149,7 +169,7 @@ console.log(res.reply, run.stoppedReason);
  │                         · PetClaw · Season Rewards           │
  ├─────────────────────────────────────────────────────────────┤
  │  PetClaw Protocol v1    SDK · 7-tool MCP · connector registry  │
- │  ─ Agent loop           plan → act → observe → reflect       │
+ │  ─ Typed paid tasks     one selected read-only tool + receipt │
  │  ─ Memory               conditional vector + TF-IDF + RRF    │
  │  ─ Sovereignty          inspect · edit · export · delete      │
  │  ─ Network              read-only public discovery preview   │

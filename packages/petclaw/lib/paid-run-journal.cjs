@@ -5,8 +5,14 @@ const path = require("node:path");
 const { randomUUID } = require("node:crypto");
 const { isDeepStrictEqual } = require("node:util");
 const lockfile = require("proper-lockfile");
+const {
+  PETCLAW_AGENT_GOAL_MAX_LENGTH: AGENT_GOAL_MAX_LENGTH,
+  PETCLAW_AGENT_TASK_KINDS,
+  getPetClawAgentTaskInputIssue,
+} = require("../dist/agent-task-safety.js");
 
 const RUN_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const AGENT_TASK_KINDS = new Set(PETCLAW_AGENT_TASK_KINDS);
 const lockSleeper = new Int32Array(new SharedArrayBuffer(4));
 
 function plainObject(value) {
@@ -116,12 +122,25 @@ function pendingMapStrict(config, configFile) {
       || !Number.isSafeInteger(run.petId)
       || run.petId <= 0
       || typeof run.goal !== "string"
+      || run.goal.trim().length < 3
+      || run.goal.length > AGENT_GOAL_MAX_LENGTH
+      || (run.taskKind != null && !AGENT_TASK_KINDS.has(run.taskKind))
       || (
         run.journalVersion != null
         && (!Number.isSafeInteger(run.journalVersion) || run.journalVersion < 1)
       )
       || (run.serverOrigin != null && !canonicalServerOrigin(run.serverOrigin))
       || (run.journalVersion >= 2 && !canonicalServerOrigin(run.serverOrigin))
+      || (
+        run.journalVersion >= 3
+        && (
+          !AGENT_TASK_KINDS.has(run.taskKind)
+          || run.maxSteps !== 1
+          || run.confirmCostCredits !== 5
+          || typeof run.journalNonce !== "string"
+          || getPetClawAgentTaskInputIssue(run.taskKind, run.goal) !== null
+        )
+      )
     ) {
       throw new Error(`Cannot safely read paid-run marker ${runId || "(empty)"} in ${configFile}`);
     }
@@ -229,13 +248,21 @@ function createPaidRunJournal(configFile) {
           || !Number.isSafeInteger(run.petId)
           || run.petId <= 0
           || typeof run.goal !== "string"
+          || run.goal.trim().length < 3
+          || run.goal.length > AGENT_GOAL_MAX_LENGTH
+          || !AGENT_TASK_KINDS.has(run.taskKind)
+          || getPetClawAgentTaskInputIssue(run.taskKind, run.goal) !== null
+          || run.confirmCostCredits !== 5
           || !canonicalServerOrigin(run.serverOrigin)
         ) {
           throw new Error("Refusing to write an invalid paid-run safety marker");
         }
         const marker = {
           ...run,
-          journalVersion: 2,
+          // Typed v2 has one required tool. Persist the exact normalized
+          // request so v3 reconciliation cannot revive a legacy step count.
+          maxSteps: 1,
+          journalVersion: 3,
           journalNonce: randomUUID(),
         };
         pending[marker.runId] = marker;

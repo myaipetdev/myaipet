@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { RELEASE_STATUS } from "@/lib/releaseStatus";
 
 export const metadata: Metadata = {
   title: "MY AI PET - Documentation",
@@ -141,20 +142,23 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
   {
     id: "agent-infra",
     title: "Agent Infrastructure",
-    content: `PetClaw is the owner-controlled companion identity, memory, and consent layer. It includes a bounded goal runner, but it is not a general-purpose coding-agent runtime or an autonomous operating system.
+    content: `PetClaw is the owner-controlled companion identity, memory, and consent layer. It includes a paid typed-task runner, but it is not a general-purpose coding-agent runtime or an autonomous operating system.
 
 **VIGIL — bounded memory and adaptation**
 - Canonical chat can retain selected durable facts and normalized session messages; retention is best-effort and owner-editable
 - Feedback needs a later reaction, periodic bond reflection can no-op, and learned patterns are not executable skills
 - CHORUS (best-of-N candidate selection) is optional and disabled by default
 
-**Plan to Act — the agent loop**
-- An owner-authenticated, credit-metered runner plans up to six steps, invokes reviewed in-process skills, observes results, and returns an explicit stop reason
-- A run can complete, hit its step/deadline bound, or report a planner error; arbitrary shell, filesystem, git, and browser control are not PetClaw capabilities
+**Typed paid tasks — one tool, one deliverable**
+- Every new task requires Recall, Summarize, Review, or Draft and at most 2,000 characters of owner input
+- The server binds the selection to one approved read-only tool; deprecated maxSteps compatibility is normalized to 1
+- Recall returns retrieved owner-private facts plus a grounded answer; Summarize returns a structured decision brief; Review returns a primary issue plus revision; Draft returns reviewable text without sending or publishing it
+- The required tool does not write pet memory or self-learning data. Owner-private task input, result, trace, and billing history are stored for reconciliation
+- The response includes the exact server receipt. Failures, refusals, tool mismatches, empty recall, and non-contract outputs are refunded
 
 **Agent Workbench**
-- Give your pet a goal and inspect its plan/act/observe trace and final stop reason
-- Reloading can show a saved result in the UI; this release does not checkpoint or resume an interrupted run
+- Choose Recall, Summarize, Review, or Draft and inspect the one required read-only tool result
+- Owner-private run history and server receipts remain available in Account; an unsettled paid run can be reconciled by its saved run ID
 - Reachable from the home page or at ?section=workbench
 
 **Recall — memory retrieval**
@@ -165,9 +169,9 @@ Operational metrics (DAU, generations, revenue) are available to verified team m
 - Public pet discovery is live; remote skill invocation is disabled until it has dedicated consent, public-only context, and caller-funded execution
 
 **Build on it — the open SDK**
-- Published on npm: npm i @myaipet/petclaw-sdk
+- SDK ${RELEASE_STATUS.sdkVersion} release contract: taskKind is mandatory; verify npm's reported version before relying on it
 - CLI flow: petclaw-sdk init, then install a skill, then models connect for your own model (BYOK)
-- MCP: SDK 1.6.3 publishes 7 owner-authenticated stdio tools; supported clients can run petclaw-sdk mcp after owner authentication
+- MCP: SDK ${RELEASE_STATUS.sdkVersion} defines 7 owner-authenticated stdio tools; supported clients can run petclaw-sdk mcp after owner authentication
 - 18 built-in skill manifests, a 19-connector registry (3 live today; messaging delivery launch-paused), and bounded data-sovereignty export/import — see /api-docs for the exact contract`,
   },
   {

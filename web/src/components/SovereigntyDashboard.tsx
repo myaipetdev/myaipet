@@ -58,6 +58,14 @@ interface ExportReceipt {
   checkpointsCount: number;
 }
 
+interface RunHistoryExportReceipt {
+  pageNumber: number;
+  count: number;
+  hasMore: boolean;
+  exportedAt?: string;
+  checksum?: string;
+}
+
 interface DeleteReceipt {
   deletedAt?: string;
   deletionHash?: string;
@@ -1101,6 +1109,10 @@ export default function SovereigntyDashboard() {
 
   // Data Sovereignty state
   const [exporting, setExporting] = useState(false);
+  const [runHistoryExporting, setRunHistoryExporting] = useState(false);
+  const [runHistoryCursor, setRunHistoryCursor] = useState<string | null>(null);
+  const [runHistoryPageNumber, setRunHistoryPageNumber] = useState(0);
+  const [runHistoryComplete, setRunHistoryComplete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [sovMsg, setSovMsg] = useState<string | null>(null);
@@ -1130,6 +1142,7 @@ export default function SovereigntyDashboard() {
 
   // ── Export integrity / deletion receipts (surfaced from responses) ──
   const [exportReceipt, setExportReceipt] = useState<ExportReceipt | null>(null);
+  const [runHistoryExportReceipt, setRunHistoryExportReceipt] = useState<RunHistoryExportReceipt | null>(null);
   const [deleteReceipt, setDeleteReceipt] = useState<DeleteReceipt | null>(null);
 
   // ── Pet Network (public discovery; not pet-specific) ──
@@ -1210,6 +1223,60 @@ export default function SovereigntyDashboard() {
     } catch {}
     setLoading(false);
   }, [selectedPet]);
+
+  const exportNextAgentRunHistoryPage = async () => {
+    setRunHistoryExporting(true);
+    setSovMsg(null);
+    try {
+      // Completion turns the same control into an explicit restart. Otherwise
+      // the opaque account-bound cursor advances exactly one bounded page.
+      const cursor = runHistoryComplete ? undefined : (runHistoryCursor || undefined);
+      const pageNumber = runHistoryComplete ? 1 : runHistoryPageNumber + 1;
+      const data = await api.petclaw.exportAgentRuns(undefined, cursor, 100) as any;
+      // Keep the downloaded file within the exact server-declared page byte
+      // budget; pretty-print whitespace would make that bound misleading.
+      const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `MYAIPET_ACCOUNT_AGENT_RUNS_page_${pageNumber}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+
+      const hasMore = data?.page?.hasMore === true;
+      const nextCursor = hasMore && typeof data?.page?.nextCursor === "string"
+        ? data.page.nextCursor
+        : null;
+      setRunHistoryPageNumber(pageNumber);
+      setRunHistoryCursor(nextCursor);
+      setRunHistoryComplete(!hasMore);
+      setRunHistoryExportReceipt({
+        pageNumber,
+        count: Number(data?.page?.count) || 0,
+        hasMore,
+        exportedAt: typeof data?.exportedAt === "string" ? data.exportedAt : undefined,
+        checksum: typeof data?.integrity?.sha256 === "string" ? data.integrity.sha256 : undefined,
+      });
+      setSovMsg(
+        hasMore
+          ? `Account run-history page ${pageNumber} downloaded; export the next page to continue`
+          : `Account run-history page ${pageNumber} downloaded; the run-history export is complete`,
+      );
+    } catch (error: any) {
+      if (error?.code === "invalid_cursor") {
+        setRunHistoryCursor(null);
+        setRunHistoryPageNumber(0);
+        setRunHistoryComplete(false);
+        setRunHistoryExportReceipt(null);
+        setSovMsg("That private export cursor expired or belongs to another account. Start the account run-history export again.");
+      } else {
+        setSovMsg(error?.message || "Run-history export failed");
+      }
+    } finally {
+      setRunHistoryExporting(false);
+      setTimeout(() => setSovMsg(null), 4_500);
+    }
+  };
 
   // Persist consent toggle and roll the optimistic UI back on any server error.
   const saveConsent = async (next: typeof consent, previous: typeof consent) => {
@@ -2282,7 +2349,12 @@ export default function SovereigntyDashboard() {
               fontFamily: BODY, lineHeight: 1.65,
             }}>
               Your pet, your data, your rules. <strong>Export SOUL Data</strong> — checksummed JSON containing documented supported
-              identity, persona, memory, skill, consent, and history fields. Import reports restored and skipped fields. <strong>Delete Pet Data</strong> — removes pet-scoped
+              identity, persona, memory, skill, consent, and portable history fields. Private paid-run goals, results, sanitized steps,
+              and billing outcomes are deliberately separate: <strong>Start Account Run History Export</strong> downloads at most 100 newest-first
+              account records at a time, including scrubbed receipts for deleted pets, with a SHA-256 page checksum and an opaque
+              next-page cursor. Continue until the receipt says complete.
+              Run-history pages are access copies only; SOUL import never recreates runs, reservations, credits, or charges. Import
+              reports restored and skipped fields. <strong>Delete Pet Data</strong> — removes pet-scoped
               records and owned media from active systems. An active paid run must settle first. Its terminal
               owner-only billing receipt remains for reconciliation, while the pet name, goal, answer, and step trace are removed. Backups expire under the published retention schedule; public on-chain records cannot be erased.
             </p>
@@ -2330,6 +2402,27 @@ export default function SovereigntyDashboard() {
                 }}
               >
                 {exporting ? "Exporting..." : <><Icon name="open-box" size={16} /> Export SOUL Data</>}
+              </button>
+
+              <button
+                onClick={exportNextAgentRunHistoryPage}
+                disabled={runHistoryExporting}
+                style={{
+                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  padding: "12px 24px", borderRadius: 12,
+                  background: PAPER, border: `1px solid ${HAIR}`,
+                  color: TERRA_SUB, fontFamily: DISP, fontSize: 13, fontWeight: 700,
+                  cursor: runHistoryExporting ? "not-allowed" : "pointer",
+                  opacity: runHistoryExporting ? 0.5 : 1,
+                }}
+              >
+                {runHistoryExporting
+                  ? "Exporting Run Page..."
+                  : runHistoryComplete
+                    ? <><Icon name="scroll" size={16} /> Restart Account Run History Export</>
+                    : runHistoryPageNumber > 0
+                      ? <><Icon name="scroll" size={16} /> Export Next Account Run Page</>
+                      : <><Icon name="scroll" size={16} /> Start Account Run History Export</>}
               </button>
 
               {!deleteConfirm ? (
@@ -2452,6 +2545,41 @@ export default function SovereigntyDashboard() {
                     {exportReceipt.integrityHash ? `${exportReceipt.integrityHash.slice(0, 16)}…` : "—"}
                   </span>
                   {" "}— compare it with the value recorded at export time to detect later file changes. It is an integrity checksum, not a server signature.
+                </div>
+              </Reveal>
+            )}
+
+            {runHistoryExportReceipt && (
+              <Reveal dir="pop" style={{
+                marginBottom: 16, padding: "16px 18px", borderRadius: 14,
+                background: INSET, border: `1px solid ${HAIR}`,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 16, display: "inline-flex", color: GOOD }}><Icon name="scroll" size={16} /></span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: INK, fontFamily: DISP }}>
+                    Private run-history page {runHistoryExportReceipt.pageNumber}
+                  </span>
+                  <span style={{
+                    fontSize: 13, padding: "2px 8px", borderRadius: 10,
+                    background: "rgba(92,138,78,0.14)", color: GOOD,
+                    fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
+                  }}>SHA-256</span>
+                  <span style={{ marginLeft: "auto", fontSize: 13, fontFamily: MONO, color: MONO_CLR }}>
+                    {runHistoryExportReceipt.exportedAt
+                      ? new Date(runHistoryExportReceipt.exportedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })
+                      : "—"}
+                  </span>
+                </div>
+                <div style={{ fontSize: 13.5, color: MUTED2, fontFamily: BODY, lineHeight: 1.65 }}>
+                  Downloaded {runHistoryExportReceipt.count} owner-private record{runHistoryExportReceipt.count === 1 ? "" : "s"}.
+                  {" "}{runHistoryExportReceipt.hasMore
+                    ? "More records remain; use Export Next Account Run Page."
+                    : "No more records remain in this account run-history export."}
+                  {" "}Page checksum{" "}
+                  <span style={{ fontFamily: MONO, color: INK, fontWeight: 700 }}>
+                    {runHistoryExportReceipt.checksum ? `${runHistoryExportReceipt.checksum.slice(0, 16)}…` : "—"}
+                  </span>
+                  . The file contains an access copy, not replayable credits or authorization.
                 </div>
               </Reveal>
             )}
@@ -2581,7 +2709,7 @@ export default function SovereigntyDashboard() {
                   { icon: "crystal-ball", title: "Selected Retention", desc: "Useful context can support later chats; owners can inspect or clear it" },
                   { icon: "electric", title: "Shared Owner Identity", desc: "Web + approved Chrome sites today; CLI/SDK sessions are normalized" },
                   { icon: "lock", title: "Owner-Scoped Access", desc: "TLS in transit · owner-scoped reads · BYOK keys AES-256-GCM at rest" },
-                  { icon: "extension-icon", title: "MCP · SDK 1.6.3", desc: "7 owner-authenticated stdio tools published in SDK 1.6.3" },
+                  { icon: "extension-icon", title: `MCP · SDK ${SDK_VERSION}`, desc: "7 owner-authenticated tools; paid tasks bind one read-only tool and store an owner-private receipt" },
                   { icon: "scroll", title: "Local SOUL.md Draft", desc: "CLI-authored local personality file; live sync is not implemented" },
                   { icon: "sparkling", title: "Bounded Adaptation", desc: "Best-effort retained patterns can shape replies; they are not executable skills" },
                 ].map(({ icon, title, desc }) => (
@@ -2645,7 +2773,7 @@ export default function SovereigntyDashboard() {
                   </div>
                 ))}
                 <div style={{ marginTop: 10, color: "rgba(251,246,236,0.65)", fontSize: 13 }}>
-                  petclaw-sdk talk &nbsp;→ interactive chat mode &nbsp;|&nbsp; petclaw-sdk mcp → 7-tool runtime (SDK 1.6.3)
+                  petclaw-sdk talk &nbsp;→ interactive chat mode &nbsp;|&nbsp; petclaw-sdk mcp → 7-tool runtime (SDK {SDK_VERSION})
                 </div>
               </div>
 
@@ -2884,7 +3012,7 @@ export default function SovereigntyDashboard() {
                 18 Skills
               </span>
               <span style={{ fontFamily: BODY, fontSize: 13, fontWeight: 600, padding: "5px 12px", borderRadius: 8, background: INSET, border: `1px solid ${HAIR}`, color: MUTED2 }}>
-                7 MCP Tools · SDK 1.6.3 Published
+                7 MCP Tools · SDK {SDK_VERSION} Contract
               </span>
               <span style={{ fontFamily: MONO, fontSize: 13, padding: "5px 12px", borderRadius: 8, background: INSET, border: `1px solid ${HAIR}`, color: MUTED2 }}>
                 @myaipet/petclaw-sdk

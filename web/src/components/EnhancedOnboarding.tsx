@@ -694,7 +694,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, maxWidth: 430, margin: "0 auto 22px", textAlign: "left" }}>
             {([
               ["crystal-ball", "Retains context", "selected details can shape later chats"],
-              ["compass", "Give it a goal", "it plans & acts"],
+              ["compass", "Choose a task", "one exact tool, one receipt"],
               ["lock", "Yours to own", "your data & model"],
             ] as const).map(([icon, t, s]) => (
               <div key={t} style={{ padding: "12px 12px", borderRadius: 12, background: "#F5EFE2", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))" }}>

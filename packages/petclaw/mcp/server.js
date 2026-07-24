@@ -20,6 +20,11 @@ const { randomUUID } = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const {
+  PETCLAW_AGENT_GOAL_MAX_LENGTH: AGENT_GOAL_MAX_LENGTH,
+  PETCLAW_AGENT_TASK_KINDS: AGENT_TASK_KINDS,
+  getPetClawAgentTaskInputIssue,
+} = require("../dist/agent-task-safety.js");
+const {
   assertPaidRunServerOrigin,
   createPaidRunJournal,
 } = require("../lib/paid-run-journal.cjs");
@@ -169,11 +174,15 @@ const HTTP_MAX_BYTES = 2 * 1024 * 1024;
 const SOUL_MAX_BYTES = 16 * 1024 * 1024;
 const MCP_CHAT_SESSION_ID = `mcp-${randomUUID()}`;
 
-function isTerminalAgentReceipt(value, runId) {
+function isTerminalAgentReceipt(value, runId, expectedMarker) {
   const billing = value && typeof value === "object" ? value.billing : null;
   const charged = billing?.outcome === "charged";
   const refunded = billing?.outcome === "refunded";
+  const exactTaskKind = expectedMarker?.journalVersion >= 3
+    ? value?.taskKind === expectedMarker.taskKind
+    : true;
   return value?.runId === runId
+    && exactTaskKind
     && value?.state === "terminal"
     && billing
     && (charged || refunded)
@@ -186,7 +195,7 @@ function isTerminalAgentReceipt(value, runId) {
 }
 
 function isDefinitivePreDebitAgentRejection(error) {
-  return [400, 401, 402, 403, 404, 413, 429].includes(Number(error?.status));
+  return [400, 401, 402, 403, 404, 409, 413, 429].includes(Number(error?.status));
 }
 
 class ApiError extends Error {
@@ -338,19 +347,36 @@ const TOOLS = [
   },
   {
     name: "petclaw_agent_run",
-    description: "PAID: reserves 5 credits. Run a bounded PetClaw goal loop only after the owner explicitly acknowledges the cost with confirmCostCredits=5; returns answer, trace, stop reason, billing, and remaining credits.",
+    description: "PAID: reserves 5 credits. Run one explicit read-only PetClaw task (recall, summarize, review, or draft) only after the owner acknowledges confirmCostCredits=5. Concrete secrets and invalid task-specific input are rejected locally before journal or network access. The tool does not write pet memory or self-learning data; owner-private run history is stored.",
     inputSchema: {
       type: "object",
       properties: {
-        goal: { type: "string", minLength: 3, maxLength: 600, description: "Goal for the pet agent (3-600 characters)" },
-        maxSteps: { type: "integer", minimum: 1, maximum: 6, description: "Maximum tool steps (1-6)", default: 4 },
+        goal: {
+          type: "string",
+          minLength: 8,
+          maxLength: AGENT_GOAL_MAX_LENGTH,
+          description: "Task input: recall 8+, summarize 40+, review 12+, or draft 20+ characters; 2,000 maximum",
+        },
+        taskKind: {
+          type: "string",
+          enum: AGENT_TASK_KINDS,
+          description: "Required read-only deliverable: recall memory, summarize supplied text, review supplied text, or draft from a brief",
+        },
+        maxSteps: {
+          type: "integer",
+          minimum: 1,
+          maximum: 6,
+          description: "Deprecated compatibility field; accepted values 1-6 are ignored and normalized to 1",
+          default: 1,
+          deprecated: true,
+        },
         confirmCostCredits: {
           type: "integer",
           const: 5,
           description: "Required explicit acknowledgement that this new run may charge exactly 5 credits",
         },
       },
-      required: ["goal", "confirmCostCredits"],
+      required: ["goal", "taskKind", "confirmCostCredits"],
       additionalProperties: false,
     },
   },
@@ -491,20 +517,60 @@ const TOOL_SKILL_MAP = {
   petclaw_summarize_page: "summarize-page",
 };
 
-const RETAINED_SECRET_PATTERN = /(?:\b(?:api[\s_-]*key|access[\s_-]*token|auth(?:entication)?[\s_-]*token|bearer[\s_-]*token|client[\s_-]*secret|password|passcode|private[\s_-]*key|recovery[\s_-]*phrase|refresh[\s_-]*token|seed[\s_-]*phrase|session[\s_-]*token|credential|mnemonic|secret|token|jwt)\b\s*(?:is|=|:)?\s*\S+|\b(?:sk|xai|ghp|gho|github_pat|glpat|hf|pk_live|rk_live|pck|xox[baprs]|AKIA|ASIA|AIza|ya29)[-_A-Za-z0-9.]{6,}\b|\b(?:Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{6,}|-----BEGIN\s+(?:RSA\s+|EC\s+|OPENSSH\s+)?PRIVATE\s+KEY-----|\b[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\b)/i;
+// Keep this concrete-secret boundary aligned with the web Office and SDK task
+// validators. Generic developer vocabulary ("token pricing", "secret
+// management") is safe; a credential-shaped value or an explicit label/value
+// assignment is not.
+const STRONG_RETAINED_SECRET_PATTERNS = [
+  /-----BEGIN\s+(?:(?:RSA|EC|DSA|OPENSSH|ENCRYPTED|PGP)\s+)?PRIVATE\s+KEY(?:\s+BLOCK)?-----/i,
+  /\beyJ[A-Za-z0-9_-]{5,}\.eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{12,}\b/,
+  /\b(?:Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{4,}\b/i,
+  /\b(?:npm_|sk-|sk_live_|sk_test_|xai-|gh[pousr]_|github_pat_|glpat-|hf_|pk_live_|rk_live_|pck_|pex_|xox[baprs]-|AKIA|ASIA|AIza|ya29\.)[A-Za-z0-9._~+/=-]{12,}\b/,
+  /\b(?:api[\s_-]*key|access[\s_-]*token|auth(?:entication)?[\s_-]*token|client[\s_-]*secret|password|private[\s_-]*key|refresh[\s_-]*token|seed[\s_-]*phrase|session[\s_-]*(?:token|secret)|secret[\s_-]*key|stripe[\s_-]*secret[\s_-]*key|mnemonic)\b\s*(?:=|:|\bis\b)\s*["']?[^\s"'<>;,]{8,}/i,
+  /\b(?:aws[\s_-]*(?:secret[\s_-]*access[\s_-]*key|session[\s_-]*token)|database[\s_-]*url|recovery[\s_-]*code|session[\s_-]*cookie)\b\s*(?:=|:|\bis\b)\s*["']?[^\s"'<>;,]{8,}/i,
+  /\b(?:otp|totp|mfa[\s_-]*code|one[\s_-]*time[\s_-]*(?:password|code))\b(?:\s*(?:=|:|\bis\b))?\s*["']?\d{6,8}\b/i,
+  /\b(?:(?:recovery|backup|security|2fa)[\s_-]*code|passcode)\b(?:\s*(?:=|:|\bis\b))?\s*["']?\d{6,8}\b/i,
+  /(?:\uC778\uC99D\uCF54\uB4DC|\uC77C\uD68C\uC6A9\s*\uCF54\uB4DC)\s*["']?\d{6,8}\b/u,
+  /(?:\uBCF5\uAD6C\s*\uCF54\uB4DC|\uBC31\uC5C5\s*\uCF54\uB4DC|\uBCF4\uC548\s*\uCF54\uB4DC)\s*["']?\d{6,8}\b/u,
+  /\b(?:Set-Cookie|Cookie)\s*:\s*[^\r\n]{4,}/i,
+  /\b(?:seed[\s_-]*phrase|mnemonic)\b\s*(?:=|:|\bis\b)\s*(?:[A-Za-z]+\s+){11,23}[A-Za-z]+\b/i,
+  /\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?):\/\/[^\/:\s"'<>]+:[^\/@\s"'<>]+@/i,
+  /[?&](?:x-amz-signature|x-amz-credential|x-amz-security-token|x-goog-signature|x-goog-credential|signature|sig|access_token|refresh_token|api[_-]?key|token)=[^&#\s"'<>]{8,}/i,
+];
+const EXPLICIT_RETAINED_SECRET_PATTERN =
+  /(?:^|[^A-Za-z0-9])(?:api[\s_-]*key|access[\s_-]*token|auth(?:entication)?[\s_-]*token|bearer[\s_-]*token|client[\s_-]*secret|password|passcode|private[\s_-]*key|recovery[\s_-]*(?:code|phrase)|refresh[\s_-]*token|seed[\s_-]*phrase|session[\s_-]*(?:cookie|token)|credential|mnemonic|secret|token|jwt)\s*(?:=|:|\bis\b)\s*["']?[A-Za-z0-9._~+/=%:@-]{8,}/i;
 const RETAINED_HANGUL_PATTERN = /[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\uac00-\ud7af\ud7b0-\ud7ff]/u;
 
 function isProviderSafeRecallText(value) {
   const text = String(value || "");
-  const separatedLabels = text.replace(/[_-]+/g, " ");
   return !RETAINED_HANGUL_PATTERN.test(text)
-    && !RETAINED_SECRET_PATTERN.test(text)
-    && !RETAINED_SECRET_PATTERN.test(separatedLabels);
+    && !STRONG_RETAINED_SECRET_PATTERNS.some((pattern) => pattern.test(text))
+    && !EXPLICIT_RETAINED_SECRET_PATTERN.test(text);
+}
+
+function canonicalRecallTerm(word) {
+  const value = String(word || "").toLowerCase();
+  if (value.length > 4 && value.endsWith("ies")) return `${value.slice(0, -3)}y`;
+  if (
+    value.length > 4
+    && value.endsWith("s")
+    && !value.endsWith("ss")
+    && !value.endsWith("us")
+    && !value.endsWith("is")
+  ) {
+    return value.slice(0, -1);
+  }
+  return value;
+}
+
+function recallTerms(value) {
+  return (String(value || "").toLowerCase().match(/[a-z0-9']+/g) || [])
+    .map(canonicalRecallTerm);
 }
 
 function recallMatches(memoryPayload, query, limit) {
   const normalizedQuery = String(query || "").trim().slice(0, 300);
-  const terms = normalizedQuery.toLowerCase().match(/[a-z0-9_'-]+/g) || [];
+  const terms = recallTerms(normalizedQuery);
   if (normalizedQuery.length < 2 || terms.length === 0 || !isProviderSafeRecallText(normalizedQuery)) {
     return { query: normalizedQuery, matches: [], totalInspected: 0, error: "A specific memory query is required." };
   }
@@ -514,8 +580,8 @@ function recallMatches(memoryPayload, query, limit) {
     ...(memoryPayload.sessions || []).map((entry) => ({ type: "session", key: String(entry.id), content: entry.content, importance: 1, platform: entry.platform, createdAt: entry.createdAt })),
   ].filter((row) => isProviderSafeRecallText(`${row.key || ""} ${row.content || ""}`));
   const scored = rows.map((row) => {
-    const content = String(row.content || "").toLowerCase();
-    const lexical = terms.reduce((score, term) => score + (content.includes(term) ? 2 : 0), 0);
+    const contentTerms = new Set(recallTerms(`${row.key || ""} ${row.content || ""}`));
+    const lexical = terms.reduce((score, term) => score + (contentTerms.has(term) ? 2 : 0), 0);
     return { row, score: lexical + Number(row.importance || 0) * 0.2 };
   });
   const selected = scored
@@ -557,6 +623,21 @@ async function handleMessage(msg) {
           content: [{ type: "text", text: `Invalid arguments for ${name}: ${inputIssue}` }],
           isError: true,
         });
+      }
+      if (name === "petclaw_agent_run") {
+        const taskInputIssue = getPetClawAgentTaskInputIssue(
+          toolArgs.taskKind,
+          toolArgs.goal,
+        );
+        if (taskInputIssue) {
+          return sendResponse(id, {
+            content: [{
+              type: "text",
+              text: `Invalid arguments for ${name}: ${taskInputIssue.message}`,
+            }],
+            isError: true,
+          });
+        }
       }
 
       // Persistent owner chat uses the dedicated chat route. The generic skill
@@ -620,6 +701,7 @@ async function handleMessage(msg) {
                   || pending.maxSteps > 6
                   || pending.confirmCostCredits !== 5
                   || typeof pending.goal !== "string"
+                  || !AGENT_TASK_KINDS.includes(pending.taskKind)
                 ) {
                   throw new Error(
                     `No durable receipt is visible for legacy run ${pending.runId}; `
@@ -632,6 +714,7 @@ async function handleMessage(msg) {
                   body: {
                     runId: pending.runId,
                     goal: pending.goal,
+                    taskKind: pending.taskKind,
                     maxSteps: pending.maxSteps,
                     confirmCostCredits: pending.confirmCostCredits,
                   },
@@ -640,7 +723,7 @@ async function handleMessage(msg) {
                 throw error;
               }
             }
-            if (isTerminalAgentReceipt(status, pending.runId)) {
+            if (isTerminalAgentReceipt(status, pending.runId, pending)) {
               paidRunJournal.remove(pending);
             } else {
               throw new Error(
@@ -661,11 +744,12 @@ async function handleMessage(msg) {
             });
           }
           runId = randomUUID();
-          const maxSteps = Math.max(1, Math.min(6, Number(toolArgs.maxSteps) || 4));
+          const maxSteps = 1;
           const prepared = paidRunJournal.claim({
             runId,
             petId: pid,
             goal: String(toolArgs.goal || ""),
+            taskKind: toolArgs.taskKind,
             maxSteps,
             confirmCostCredits: toolArgs.confirmCostCredits,
             serverOrigin: baseUrl,
@@ -683,6 +767,7 @@ async function handleMessage(msg) {
             body: {
               runId,
               goal: String(toolArgs.goal || ""),
+              taskKind: toolArgs.taskKind,
               maxSteps,
               // The tool schema has already required the exact literal 5.
               // Forward the acknowledgement so the HTTP boundary independently
@@ -690,7 +775,7 @@ async function handleMessage(msg) {
               confirmCostCredits: toolArgs.confirmCostCredits,
             },
           });
-          if (!isTerminalAgentReceipt(result, runId)) {
+          if (!isTerminalAgentReceipt(result, runId, marker)) {
             throw new Error(`Paid run ${runId} is pending reconciliation; check Account or its owner receipt endpoint before retrying`);
           }
           paidRunJournal.remove(marker);
@@ -698,8 +783,8 @@ async function handleMessage(msg) {
             content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
             // The HTTP endpoint intentionally returns the trace for bounded
             // terminal stops. MCP clients still need a machine-visible failure
-            // signal so max_steps/timeout/planner_error are not treated as a
-            // successfully completed automation.
+            // signal so timeout/task_error (and legacy non-completed stop
+            // reasons) are not treated as a successfully completed automation.
             ...(result.completed === false || result.ok === false ? { isError: true } : {}),
           });
         } catch (e) {

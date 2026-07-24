@@ -41,7 +41,7 @@ const requiredBoundaries: Array<[string, string[]]> = [
   ["src/lib/petclaw/memory/consolidate.ts", ["containsHangul(parsed)"]],
   ["src/lib/petclaw/pethub.ts", ["generatedEnglishOrFallback"]],
   ["src/lib/petclaw/agent/plan-execute.ts", ["generatedEnglishOrFallback", "generatedEnglishOrNull"]],
-  ["src/lib/petclaw/agent/tool-agent.ts", ["generatedEnglishOrFallback", "generatedEnglishOrNull"]],
+  ["src/lib/petclaw/agent/tool-agent.ts", ["AGENT_REPLY_FALLBACK", "generatedEnglishOrNull", "answerDelivered: false"]],
   ["src/lib/services/pet-agent.ts", ["generatedEnglishOrFallback", "generatedEnglishOrNull"]],
   ["src/lib/services/persona.ts", ["normalizeChatAnalysis", "normalizePersonaObservation", "safeAnalysis"]],
   ["src/lib/personaGeneratedLanguage.ts", ["generatedEnglishOrFallback", "rawSampleMessages", "sanitizeStoredPersonaGeneratedFields"]],

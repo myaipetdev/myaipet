@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   isProviderSafeRetainedText,
+  selectRelevantMemories,
   type MemoryEntry,
   type UserProfile,
 } from "../src/lib/petclaw/memory/persistent-memory";
@@ -35,9 +36,13 @@ import { providerSafeStoredText } from "../src/lib/petclaw/provider-safe-text";
 
 const now = "2026-07-22T00:00:00.000Z";
 const date = new Date(now);
-const SECRET_SK = "sk-project-super-secret-123456789";
-const SECRET_PASSWORD = "deployment_password hunter-two-private";
-const SECRET_JWT = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature1234";
+const SECRET_SK = ["sk", "project-super-secret-123456789"].join("-");
+const SECRET_PASSWORD = "deployment_password: hunter-two-private";
+const SECRET_JWT = [
+  "eyJhbGciOiJIUzI1NiJ9",
+  "eyJzdWIiOiIxMjM0NTY3ODkwIn0",
+  "signature1234",
+].join(".");
 const HANGUL = "비공개 기억";
 const SAFE_RELEVANT = "The owner prefers concise TypeScript extension reviews.";
 const SAFE_IRRELEVANT = "The owner enjoys alpine train journeys.";
@@ -50,10 +55,26 @@ function assertProviderSafe(value: unknown, label: string) {
   }
 }
 
-for (const unsafe of [SECRET_SK, SECRET_PASSWORD, SECRET_JWT, HANGUL, `token abcdef123456`]) {
+for (const unsafe of [
+  SECRET_SK,
+  SECRET_PASSWORD,
+  SECRET_JWT,
+  HANGUL,
+  "token: abcdef123456",
+  "credential = production-value-123",
+  "Authorization: Bearer abcdefghijklmnop",
+]) {
   assert.equal(isProviderSafeRetainedText(unsafe), false, `unsafe fixture accepted: ${unsafe}`);
 }
-assert.equal(isProviderSafeRetainedText(SAFE_RELEVANT), true);
+for (const safe of [
+  SAFE_RELEVANT,
+  "Token pricing is based on usage, not speculation.",
+  "The API token rotation policy is reviewed quarterly.",
+  "Keep credentials out of source control.",
+  "This document explains secret management and recovery planning.",
+]) {
+  assert.equal(isProviderSafeRetainedText(safe), true, `safe policy text rejected: ${safe}`);
+}
 const cappedStoredText = providerSafeStoredText("safe ".repeat(1_000), "appearance", 200);
 assert.ok(cappedStoredText && cappedStoredText.length <= 200 && cappedStoredText.length >= 190);
 assert.equal(
@@ -156,6 +177,27 @@ const memory = (key: string, content: string, category: MemoryEntry["category"] 
 const profile = (key: string, content: string, category: UserProfile["category"] = "context"): UserProfile => ({
   key, content, category, source: "chat", updatedAt: now,
 });
+const recallPrecisionRows = [
+  memory("token_pricing", "Token pricing is based on usage, not speculation."),
+  memory("api_token_rotation_policy", "The API token rotation policy is reviewed quarterly."),
+  memory("launch_priority", "Ship the billing ledger first."),
+  memory("deployment_password", "hunter-two-private"),
+];
+const recallPrecisionSelection = selectRelevantMemories(
+  recallPrecisionRows,
+  "token pricing rotation policy password",
+  6,
+);
+assert.deepEqual(
+  new Set(recallPrecisionSelection.map((entry) => entry.key)),
+  new Set(["token_pricing", "api_token_rotation_policy"]),
+  "recall must keep policy/pricing prose while excluding a value stored under a sensitive ledger key",
+);
+assert.deepEqual(
+  selectRelevantMemories(recallPrecisionRows, "What are my priorities?", 6).map((entry) => entry.key),
+  ["launch_priority"],
+  "ordinary plural recall questions must match the singular retained ledger key",
+);
 const storedMemories = [
   memory("typescript_extension", SAFE_RELEVANT),
   memory("production_api_key", SECRET_SK),

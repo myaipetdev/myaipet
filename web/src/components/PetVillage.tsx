@@ -185,8 +185,8 @@ export default function PetVillage({
           <div style={chipBar}>
             <Chip k="Memory" v={`${pillars.memory.count}`} small={`/${pillars.memory.cap}`} />
             <Chip k="Skills" v={`${pillars.skills.installed}`} />
-            <Chip k="Routines" v={`${pillars.crons.routines}`} />
-            <Chip k="Soul" v={soulSet ? `v${pillars.soul.checkpoints} ★` : "not set"} gold={soulSet} />
+            <Chip k="Routine catalog" v={`${pillars.crons.catalogCount}`} />
+            <Chip k="Soul" v={soulSet ? `v${pillars.soul.personaVersion ?? "?"} ★` : "not set"} gold={soulSet} />
           </div>
         </div>
 
@@ -378,11 +378,11 @@ export default function PetVillage({
 
       {/* readable legend — the same real metrics as plain text under the scene */}
       <div style={legendRow}>
-        <Legend accent={PURPLE} name="Soul Shrine" value={soulSet ? pillars.soul.persona : "not set"} sub={`v${pillars.soul.checkpoints}`} />
+        <Legend accent={PURPLE} name="Soul Shrine" value={soulSet ? pillars.soul.persona : "not set"} sub={soulSet ? `persona v${pillars.soul.personaVersion ?? "unknown"}` : "not configured"} />
         <Legend accent={TERRA} name="Memory Library" value={`${pillars.memory.count}/${pillars.memory.cap}`} sub={pillars.memory.updatedAt ? relTime(pillars.memory.updatedAt) : "empty"} />
         <Legend accent={TERRA2} name="Owner Facts" value={`${pillars.user.count}/${pillars.user.cap}`} sub="what it knows about you" />
         <Legend accent={SAGE} name="Skills Forge" value={`${pillars.skills.total}`} sub={`${pillars.skills.installed} installed`} />
-        <Legend accent={PURPLE} name="Clock Spire" value={`${pillars.crons.routines} routines`} sub={pillars.crons.nextLabel} />
+        <Legend accent={PURPLE} name="Clock Spire catalog" value={`${pillars.crons.catalogCount} listed`} sub={pillars.crons.nextLabel} />
       </div>
 
       {/* ── the town square (kanban) ── */}

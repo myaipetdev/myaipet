@@ -14,6 +14,24 @@ import type {
   SoulImportResult,
 } from "./protocol";
 import { randomUUID } from "crypto";
+import {
+  PETCLAW_AGENT_TASK_KINDS,
+  getPetClawAgentTaskInputIssue,
+} from "./agent-task-safety";
+import type { PetClawAgentTaskKind } from "./agent-task-safety";
+
+export {
+  PETCLAW_AGENT_GOAL_MAX_LENGTH,
+  PETCLAW_AGENT_TASK_KINDS,
+  PETCLAW_AGENT_TASK_MIN_LENGTHS,
+  containsStrongPetClawAgentSecret,
+  getPetClawAgentTaskInputIssue,
+  normalizePetClawAgentTaskInput,
+} from "./agent-task-safety";
+export type {
+  PetClawAgentTaskInputIssue,
+  PetClawAgentTaskKind,
+} from "./agent-task-safety";
 
 // The server's bounded agent loop can use up to 60 seconds. A shorter default
 // can orphan a completed, credit-bearing run at the client boundary.
@@ -151,7 +169,17 @@ export interface PetClawAgentRunInput {
    * unknown transport outcome. The SDK never generates this value implicitly.
    */
   runId: string;
+  /** Task input subject to its kind-specific minimum and the 2,000-character maximum. */
   goal: string;
+  /**
+   * Selects the explicit read-only deliverable. Every new SDK run must choose
+   * one; the server charges only when that typed task's required tool succeeds.
+   */
+  taskKind: PetClawAgentTaskKind;
+  /**
+   * @deprecated Typed tasks execute one server-bound tool. This compatibility
+   * field is ignored and the SDK always sends `maxSteps: 1`.
+   */
   maxSteps?: number;
   /**
    * Explicit acknowledgement of the exact reservation for a new run.
@@ -161,20 +189,25 @@ export interface PetClawAgentRunInput {
   confirmCostCredits: 5;
 }
 
+/** Typed v2 uses `task_error`; `planner_error` remains for legacy receipts. */
 export type PetClawAgentStoppedReason =
   | "completed"
   | "max_steps"
   | "timeout"
-  | "planner_error";
+  | "planner_error"
+  | "task_error"
+  | "unsupported_scope";
 
 export interface PetClawAgentRunResponse {
   runId: string;
   state: "terminal";
+  taskKind: PetClawAgentTaskKind | null;
   /** Mirrors completion; incomplete terminal runs still return their trace. */
   ok: boolean;
   /** True only when stoppedReason is `completed`. */
   completed: boolean;
   goal: string;
+  executionContract: string;
   answer: string;
   steps: PetClawAgentStep[];
   stoppedReason: PetClawAgentStoppedReason;
@@ -183,9 +216,13 @@ export interface PetClawAgentRunResponse {
     creditsCharged: number;
     reason:
       | "completed_with_successful_tool"
-      | "completed_with_direct_answer"
+      | "completed_direct_answer_beta_refund"
+      | "freeform_beta_refund"
+      | "typed_task_no_matching_tool"
+      | "typed_task_no_result"
       | "run_not_completed"
       | "no_successful_tool"
+      | "no_deliverable_answer"
       | "outcome_unknown_timeout";
     successfulToolCalls: number;
     failedToolCalls: number;
@@ -204,10 +241,12 @@ export interface PetClawAgentRunResponse {
 export interface PetClawAgentRunStatus {
   runId: string;
   state: "reserved" | "running" | "terminal";
+  taskKind: PetClawAgentTaskKind | null;
   petId: number;
   petName: string;
   goal: string;
   maxSteps: number;
+  executionContract: string;
   ok?: boolean;
   completed?: boolean;
   answer?: string;
@@ -745,6 +784,25 @@ export class PetClawClient {
           },
         ));
       }
+      if (!PETCLAW_AGENT_TASK_KINDS.includes(input.taskKind)) {
+        return Promise.reject(new PetClawError(
+          "Paid agent runs require taskKind: recall, summarize, review, or draft",
+          {
+            code: "agent_task_kind_required",
+            details: { supportedTaskKinds: [...PETCLAW_AGENT_TASK_KINDS] },
+          },
+        ));
+      }
+      const taskInputIssue = getPetClawAgentTaskInputIssue(input.taskKind, input.goal);
+      if (taskInputIssue) {
+        return Promise.reject(new PetClawError(
+          taskInputIssue.message,
+          {
+            code: taskInputIssue.code,
+            details: taskInputIssue,
+          },
+        ));
+      }
       const runId = input.runId;
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(runId)) {
         return Promise.reject(new PetClawError("runId must be a UUID", {
@@ -758,7 +816,8 @@ export class PetClawClient {
         body: JSON.stringify({
           runId,
           goal: input.goal,
-          ...(input.maxSteps === undefined ? {} : { maxSteps: input.maxSteps }),
+          taskKind: input.taskKind,
+          maxSteps: 1,
           confirmCostCredits: 5,
         }),
       }, { request: options }).catch((error: unknown) => {

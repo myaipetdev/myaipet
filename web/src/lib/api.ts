@@ -71,30 +71,36 @@ const DEV_MOCK_SKILLS = {
 const DEV_MOCK_MC = {
   pet: { id: 1, name: "Dordor", level: 5 },
   pillars: {
-    soul: { set: true, persona: "warm, a little cheeky", checkpoints: 2 },
+    soul: {
+      set: true,
+      persona: "warm, a little cheeky",
+      personaVersion: 2,
+      configuredAt: new Date(Date.now() - 7 * 86400e3).toISOString(),
+      updatedAt: new Date(Date.now() - 3600e3).toISOString(),
+    },
     memory: { count: 18, cap: 40, lastFact: "owner codes late at night", updatedAt: new Date(Date.now() - 3600e3).toISOString() },
     user: { count: 6, cap: 20 },
-    skills: { installed: 7, learned: 11, total: 18 },
-    crons: { routines: 2, nextLabel: "daily digest · 10:00" },
+    skills: { installed: 0, learned: 0, total: 18 },
+    crons: { catalogCount: 4, observedCount: 0, nextLabel: "catalog only · no recorded timing" },
   },
   kanban: {
     pending: [],
     working: [],
     blocked: [],
-    done: [
-      { id: "d1", title: "Morning digest", skill: "web_search", at: new Date(Date.now() - 7200e3).toISOString(), credits: 5 },
-      { id: "d2", title: "Tidy notes", skill: "recall_memory", at: new Date(Date.now() - 10800e3).toISOString() },
-    ],
+    done: [],
   },
   roster: [
-    { id: "s1", name: "web_search", kind: "skill", role: "Finds anything on the open web", installed: true, status: "idle", runs: 12, successRate: 92, lastAt: new Date().toISOString() },
-    { id: "s2", name: "recall_memory", kind: "skill", role: "Recalls the owner's facts", installed: true, status: "idle", runs: 31, successRate: 97, lastAt: new Date().toISOString() },
-    { id: "s3", name: "crypto_price", kind: "skill", role: "Live token prices", installed: true, status: "idle", runs: 4, successRate: 100, lastAt: null },
-    { id: "v1", name: "VIGIL scribe", kind: "vigil", role: "May retain selected details after a chat", installed: true, status: "idle", runs: 58, lastAt: new Date().toISOString() },
+    { id: "recall_memory", name: "Owner Memory Recall", kind: "skill", role: "Recall · owner-private retained context", installed: true, core: true, eligible: true, availableInOffice: true, mode: "core-in-process", blockedReason: null, status: "idle", runs: 0, metricLabel: "RUNS", lastAt: null },
+    { id: "office-summarize", name: "Decision Brief", kind: "skill", role: "Summarize · memory-isolated supplied text", installed: true, core: true, eligible: true, availableInOffice: true, mode: "core-in-process", blockedReason: null, status: "idle", runs: 0, metricLabel: "RUNS", lastAt: null },
+    { id: "office-review", name: "Copy Review", kind: "skill", role: "Review · memory-isolated supplied text", installed: true, core: true, eligible: true, availableInOffice: true, mode: "core-in-process", blockedReason: null, status: "idle", runs: 0, metricLabel: "RUNS", lastAt: null },
+    { id: "office-draft", name: "Text Draft", kind: "skill", role: "Draft · memory-isolated supplied brief", installed: true, core: true, eligible: true, availableInOffice: true, mode: "core-in-process", blockedReason: null, status: "idle", runs: 0, metricLabel: "RUNS", lastAt: null },
+    { id: "vigil:memory-ledger", name: "Memory Ledger", kind: "vigil", role: "curates retained owner-private context", installed: true, core: false, eligible: true, availableInOffice: false, mode: "read-only", blockedReason: "Inspectable retained state, not an Agent Office dispatch skill.", status: "idle", runs: 24, metricLabel: "RETAINED RECORDS", lastAt: new Date(Date.now() - 3600e3).toISOString() },
   ],
   schedules: [
-    { id: "c1", name: "Daily digest", cadence: "daily 10:00", lastRun: new Date(Date.now() - 86400e3).toISOString(), nextRun: new Date(Date.now() + 3600e3).toISOString(), desc: "Morning summary of your day ahead" },
-    { id: "c2", name: "BNB price watch", cadence: "hourly", lastRun: null, nextRun: new Date(Date.now() + 1800e3).toISOString(), desc: "Alert on ±3% moves" },
+    { id: "daydream", name: "Daydream", cadence: "Idle heartbeat", lastRun: null, nextRun: null, desc: "Reflects during idle time and writes a dream-journal entry.", source: "catalog", mode: "catalog-read-only", readOnly: true, blockedReason: "Catalog description only; no persisted next or last execution exists." },
+    { id: "daydream-to-video", name: "Dream → Video", cadence: "After a daydream", lastRun: null, nextRun: null, desc: "Turns a fresh daydream into a short generated clip.", source: "catalog", mode: "catalog-read-only", readOnly: true, blockedReason: "Catalog description only; no persisted next or last execution exists." },
+    { id: "embed-memories", name: "Embed Memories", cadence: "Hourly", lastRun: null, nextRun: null, desc: "Backfills embeddings for semantic memory recall (owner key needed).", source: "catalog", mode: "catalog-read-only", readOnly: true, blockedReason: "Catalog description only; no persisted next or last execution exists." },
+    { id: "season-close", name: "Season Close", cadence: "End of season", lastRun: null, nextRun: null, desc: "Settles season points and rolls the leaderboard at season end.", source: "catalog", mode: "catalog-read-only", readOnly: true, blockedReason: "Catalog description only; no persisted next or last execution exists." },
   ],
   generatedAt: new Date().toISOString(),
 };
@@ -134,7 +140,9 @@ function devMock(path: string, options: any = {}): any | null {
   if (path === "/api/petclaw/cli/token" && method === "GET") return { tokens: [] };
   if (path === "/api/petclaw/cli/token" && method === "POST") {
     const extension = options.body?.purpose === "extension";
-    const token = extension ? "pex_devPreviewExtensionToken000000000000000" : "pck_devPreviewExampleToken0000000000000000000";
+    const token = extension
+      ? ["pex", "devPreviewExtensionToken000000000000000"].join("_")
+      : ["pck", "devPreviewExampleToken0000000000000000000"].join("_");
     return {
       ok: true,
       token,
@@ -382,10 +390,17 @@ export const api = {
       confirmCostCredits: 5,
       maxSteps?: number,
       authToken?: string,
+      taskKind?: "recall" | "summarize" | "review" | "draft",
     ) =>
       request(`/api/pets/${petId}/agent`, {
         method: "POST",
-        body: { runId, goal, confirmCostCredits, ...(maxSteps ? { maxSteps } : {}) },
+        body: {
+          runId,
+          goal,
+          confirmCostCredits,
+          ...(maxSteps ? { maxSteps } : {}),
+          ...(taskKind ? { taskKind } : {}),
+        },
         authToken,
       }),
     agentRunStatus: (petId: number, runId: string, authToken?: string) =>
@@ -559,6 +574,12 @@ export const api = {
     verify: (petId: number, walletAddress: string) =>
       request("/api/petclaw/verify", { method: "POST", body: { petId, walletAddress } }),
     export: (petId: number) => request(`/api/petclaw/export?petId=${petId}`),
+    exportAgentRuns: (petId?: number, cursor?: string, limit = 100) => {
+      const params = new URLSearchParams({ limit: String(limit) });
+      if (petId !== undefined) params.set("petId", String(petId));
+      if (cursor) params.set("cursor", cursor);
+      return request(`/api/account/agent-runs/export?${params}`);
+    },
     import: (soulData: any) =>
       request("/api/petclaw/import", { method: "POST", body: soulData }),
     delete: (petId: number) =>

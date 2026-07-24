@@ -138,10 +138,30 @@ printf '%s\n' 'JWT_SECRET=synthetic' > "${PETCLAW_SCAN_FIXTURE}/.env.production"
 petclaw_expect_failure "dotenv is forbidden" /bin/bash \
   "${PETCLAW_TEST_ROOT}/deploy/scan-release-secrets.sh" "${PETCLAW_SCAN_FIXTURE}"
 rm -f "${PETCLAW_SCAN_FIXTURE}/.env.production"
-printf '%s%s\n' '-----BEGIN ENCRYPTED ' 'PRIVATE KEY-----' > "${PETCLAW_SCAN_FIXTURE}/hidden.txt"
-petclaw_expect_failure "encrypted private key is detected" /bin/bash \
+for PETCLAW_KEY_MARKER in \
+  "ENCRYPTED PRIVATE KEY" \
+  "DSA PRIVATE KEY" \
+  "PGP PRIVATE KEY BLOCK"; do
+  printf '%s%s%s\n' '-----BEGIN ' "${PETCLAW_KEY_MARKER}" '-----' \
+    > "${PETCLAW_SCAN_FIXTURE}/hidden.txt"
+  petclaw_expect_failure "${PETCLAW_KEY_MARKER} is detected" /bin/bash \
+    "${PETCLAW_TEST_ROOT}/deploy/scan-release-secrets.sh" "${PETCLAW_SCAN_FIXTURE}"
+  rm -f "${PETCLAW_SCAN_FIXTURE}/hidden.txt"
+done
+for PETCLAW_TOKEN_PREFIX in npm pck pex; do
+  printf '%s_%s%s\n' "${PETCLAW_TOKEN_PREFIX}" \
+    'abcdefghijklmnop' 'qrstuvwxyz1234567890' \
+    > "${PETCLAW_SCAN_FIXTURE}/token.txt"
+  petclaw_expect_failure "${PETCLAW_TOKEN_PREFIX} credential is detected" /bin/bash \
+    "${PETCLAW_TEST_ROOT}/deploy/scan-release-secrets.sh" "${PETCLAW_SCAN_FIXTURE}"
+  rm -f "${PETCLAW_SCAN_FIXTURE}/token.txt"
+done
+printf '%s%s\n' 'https://objects.example/file?X-Amz-Signature=' \
+  'abcdefghijklmnopqrstuvwx12345678' \
+  > "${PETCLAW_SCAN_FIXTURE}/signed-url.txt"
+petclaw_expect_failure "signed URL credential is detected" /bin/bash \
   "${PETCLAW_TEST_ROOT}/deploy/scan-release-secrets.sh" "${PETCLAW_SCAN_FIXTURE}"
-rm -f "${PETCLAW_SCAN_FIXTURE}/hidden.txt"
+rm -f "${PETCLAW_SCAN_FIXTURE}/signed-url.txt"
 mkdir -p "${PETCLAW_TEST_TMP}/zip"
 printf 'xai-%s%s\n' 'abcdefghijklmnop' 'qrstuvwxyz123456' \
   > "${PETCLAW_TEST_TMP}/zip/token.txt"
@@ -304,13 +324,24 @@ NODE
 petclaw_expect_success "database URL parser boundaries pass" \
   node "${PETCLAW_TEST_ROOT}/deploy/tests/database-url-parser.test.mjs"
 
-petclaw_expect_success "UI, release-readiness, and community fallback contracts run before build, migration, and traffic switch" \
+petclaw_expect_success "P0 Agent Office, privacy, UI, release-readiness, and community contracts run before build, migration, and traffic switch" \
   node - "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" <<'NODE'
 const fs = require("node:fs");
 const source = fs.readFileSync(process.argv[2], "utf8");
 const ordered = [
   "npm_config_engine_strict=true npm ci --ignore-scripts --no-audit --no-fund",
   "npx prisma generate",
+  "npm run test:agent-credits",
+  "npm run test:agent-run-safety",
+  "npm run test:agent-run-export",
+  "npm run test:agent-workbench-privacy",
+  "npm run test:office-deliverable",
+  "npm run test:agent-loop-truth",
+  "npm run test:mission-control-ledger",
+  "npm run test:agent-office-ui",
+  "npm run test:privacy-boundary",
+  "npm run test:provider-context",
+  "npm run test:deletion-p0-contract",
   "npm run test:ui-contract",
   "npm run test:release-readiness",
   "npm run test:community-fallback",
@@ -348,6 +379,17 @@ const path = require("node:path");
 const root = process.argv[2];
 const pkg = JSON.parse(fs.readFileSync(path.join(root, "web/package.json"), "utf8"));
 for (const name of [
+  "test:agent-credits",
+  "test:agent-run-safety",
+  "test:agent-run-export",
+  "test:agent-workbench-privacy",
+  "test:office-deliverable",
+  "test:agent-loop-truth",
+  "test:mission-control-ledger",
+  "test:agent-office-ui",
+  "test:privacy-boundary",
+  "test:provider-context",
+  "test:deletion-p0-contract",
   "test:ui-contract",
   "test:release-readiness",
   "test:community-fallback",
@@ -487,6 +529,17 @@ for PETCLAW_CONTRACT in \
   'ec2-release.sh:petclaw_require_launch_assignment_absent' \
   'ec2-release.sh:NEXT_PUBLIC_SEASON1_START_MS' \
   'ec2-release.sh:NEXT_PUBLIC_SEASON1_END_MS' \
+  'ec2-release.sh:npm run test:agent-credits' \
+  'ec2-release.sh:npm run test:agent-run-safety' \
+  'ec2-release.sh:npm run test:agent-run-export' \
+  'ec2-release.sh:npm run test:agent-workbench-privacy' \
+  'ec2-release.sh:npm run test:office-deliverable' \
+  'ec2-release.sh:npm run test:agent-loop-truth' \
+  'ec2-release.sh:npm run test:mission-control-ledger' \
+  'ec2-release.sh:npm run test:agent-office-ui' \
+  'ec2-release.sh:npm run test:privacy-boundary' \
+  'ec2-release.sh:npm run test:provider-context' \
+  'ec2-release.sh:npm run test:deletion-p0-contract' \
   'ec2-release.sh:npm run test:ui-contract' \
   'ec2-release.sh:npm run test:release-readiness' \
   'ec2-release.sh:npm run test:community-fallback' \
@@ -519,6 +572,10 @@ for PETCLAW_CONTRACT in \
   'build-release-artifact.sh:PETCLAW_REQUIRED_NODE_MIN_MINOR=18' \
   'build-release-artifact.sh:npm_config_engine_strict=true' \
   'build-release-artifact.sh:npm ci --dry-run --ignore-scripts --no-audit --no-fund' \
+  'build-release-artifact.sh:web/scripts/agent-channel-credit.integration.ts' \
+  'build-release-artifact.sh:web/scripts/agent-run-export-contract.mjs' \
+  'build-release-artifact.sh:web/src/app/api/account/agent-runs/export/route.ts' \
+  'build-release-artifact.sh:web/src/lib/petclaw/agent-run-export.ts' \
   'build-release-artifact.sh:source "${PETCLAW_STAGE}/tree"' \
   'build-release-artifact.sh::(exclude)deploy/setup-rds.sh' \
   'build-release-artifact.sh:deploy/install-crontab.sh' \
@@ -642,7 +699,7 @@ awk '/^petclaw_verify_landing_body\(\) \{/{copy=1} copy{print} copy && /^\}$/{ex
 # shellcheck source=/dev/null
 source "${PETCLAW_LANDING_FUNCTION}"
 petclaw_valid_landing_fixture() {
-  printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" /api/petclaw/demo-chat 19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS Supported MCP clients like Claude, Cursor, and OpenClaw connect through published SDK 1.6.3. +47 Play Points today SAMPLE Two legacy BNB Smart Chain contracts are deployed. Live app integration is off. Both contracts returned <code>paused() = false</code> class="footer-disclosure" product-demo.html?v=20260720-en-only launch reel — starts as you scroll animation: heroGlowBreathe Dordor priority: footer/journey beats CTA overlap. href="https://app.myaipet.ai/contracts"'
+  printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" /api/petclaw/demo-chat 19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS Supported MCP clients like Claude, Cursor, and OpenClaw connect through published SDK 2.0.0. +47 Play Points today SAMPLE Two legacy BNB Smart Chain contracts are deployed. Live app integration is off. Both contracts returned <code>paused() = false</code> class="footer-disclosure" product-demo.html?v=20260720-en-only launch reel — starts as you scroll animation: heroGlowBreathe Dordor priority: footer/journey beats CTA overlap. href="https://app.myaipet.ai/contracts"'
 }
 if ! {
   petclaw_valid_landing_fixture
@@ -655,7 +712,7 @@ if { petclaw_valid_landing_fixture; printf '%b' ' Hangul: \355\225\234'; } | pet
   echo "FAIL: streaming landing verifier accepts Hangul" >&2
   exit 1
 fi
-if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" 19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS Supported MCP clients like Claude, Cursor, and OpenClaw connect through published SDK 1.6.3. +47 Play Points today SAMPLE Two legacy BNB Smart Chain contracts are deployed. Live app integration is off. Both contracts returned <code>paused() = false</code> class="footer-disclosure" product-demo.html?v=20260720-en-only launch reel — starts as you scroll animation: heroGlowBreathe Dordor priority: footer/journey beats CTA overlap. href="https://app.myaipet.ai/contracts"' | petclaw_verify_landing_body; then
+if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" 19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS Supported MCP clients like Claude, Cursor, and OpenClaw connect through published SDK 2.0.0. +47 Play Points today SAMPLE Two legacy BNB Smart Chain contracts are deployed. Live app integration is off. Both contracts returned <code>paused() = false</code> class="footer-disclosure" product-demo.html?v=20260720-en-only launch reel — starts as you scroll animation: heroGlowBreathe Dordor priority: footer/journey beats CTA overlap. href="https://app.myaipet.ai/contracts"' | petclaw_verify_landing_body; then
   echo "FAIL: streaming landing verifier accepts a missing demo endpoint" >&2
   exit 1
 fi
@@ -702,12 +759,12 @@ awk '/^petclaw_verify_product_demo_body\(\) \{/{copy=1} copy{print} copy && /^\}
   "${PETCLAW_TEST_ROOT}/deploy/release-smoke.sh" > "${PETCLAW_PRODUCT_DEMO_FUNCTION}"
 # shellcheck source=/dev/null
 source "${PETCLAW_PRODUCT_DEMO_FUNCTION}"
-PETCLAW_GOOD_PRODUCT_DEMO='<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" id="playBtn" id="replayBtn" position:absolute; left:50%; top:50%; width:1280px; height:720px transform:translate(-50%,-50%) scale(var(--s,1)) <a class="cta" href="https://app.myaipet.ai" target="_top"> 7-tool MCP path is published in SDK 1.6.3 · messaging launch-paused.'
+PETCLAW_GOOD_PRODUCT_DEMO='<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" id="playBtn" id="replayBtn" position:absolute; left:50%; top:50%; width:1280px; height:720px transform:translate(-50%,-50%) scale(var(--s,1)) <a class="cta" href="https://app.myaipet.ai" target="_top"> 7-tool MCP path is published in SDK 2.0.0 · messaging launch-paused.'
 if ! printf '%s' "${PETCLAW_GOOD_PRODUCT_DEMO}" | petclaw_verify_product_demo_body; then
   echo "FAIL: centered mobile product demo fixture is rejected" >&2
   exit 1
 fi
-if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" id="playBtn" id="replayBtn" transform:scale(var(--s,1)) <a class="cta" href="https://app.myaipet.ai" target="_top"> 7-tool MCP path is published in SDK 1.6.3 · messaging launch-paused.' \
+if printf '%s' '<html lang="en" translate="no" class="notranslate"><meta name="google" content="notranslate" id="playBtn" id="replayBtn" transform:scale(var(--s,1)) <a class="cta" href="https://app.myaipet.ai" target="_top"> 7-tool MCP path is published in SDK 2.0.0 · messaging launch-paused.' \
   | petclaw_verify_product_demo_body; then
   echo "FAIL: off-canvas mobile product demo fixture is accepted" >&2
   exit 1
@@ -971,6 +1028,14 @@ if [[ ! "${PETCLAW_SOURCE_LANGUAGE_SCAN_LINE}" =~ ^[0-9]+$ \
 fi
 PETCLAW_BUILD_LINE="$(grep -nF 'npm run build' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | head -n 1 | cut -d: -f1)"
+PETCLAW_AGENT_CREDITS_LINE="$(grep -nF 'npm run test:agent-credits' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | head -n 1 | cut -d: -f1)"
+PETCLAW_AGENT_RUN_SAFETY_LINE="$(grep -nF 'npm run test:agent-run-safety' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | head -n 1 | cut -d: -f1)"
+PETCLAW_AGENT_RUN_EXPORT_LINE="$(grep -nF 'npm run test:agent-run-export' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | head -n 1 | cut -d: -f1)"
+PETCLAW_DELETION_P0_LINE="$(grep -nF 'npm run test:deletion-p0-contract' \
+  "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | head -n 1 | cut -d: -f1)"
 PETCLAW_RELEASE_READINESS_LINE="$(grep -nF 'npm run test:release-readiness' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | head -n 1 | cut -d: -f1)"
 PETCLAW_COMMUNITY_FALLBACK_LINE="$(grep -nF 'npm run test:community-fallback' \
@@ -980,16 +1045,24 @@ PETCLAW_BUILT_LANGUAGE_SCAN_LINE="$(grep -nF \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | cut -d: -f1)"
 PETCLAW_TRAFFIC_SWITCH_LINE="$(grep -nF 'PETCLAW_SWITCH_STARTED=1' \
   "${PETCLAW_TEST_ROOT}/deploy/ec2-release.sh" | tail -n 1 | cut -d: -f1)"
-if [[ ! "${PETCLAW_RELEASE_READINESS_LINE}" =~ ^[0-9]+$ \
+if [[ ! "${PETCLAW_AGENT_CREDITS_LINE}" =~ ^[0-9]+$ \
+  || ! "${PETCLAW_AGENT_RUN_SAFETY_LINE}" =~ ^[0-9]+$ \
+  || ! "${PETCLAW_AGENT_RUN_EXPORT_LINE}" =~ ^[0-9]+$ \
+  || ! "${PETCLAW_DELETION_P0_LINE}" =~ ^[0-9]+$ \
+  || ! "${PETCLAW_RELEASE_READINESS_LINE}" =~ ^[0-9]+$ \
   || ! "${PETCLAW_COMMUNITY_FALLBACK_LINE}" =~ ^[0-9]+$ \
   || ! "${PETCLAW_BUILD_LINE}" =~ ^[0-9]+$ \
   || ! "${PETCLAW_BUILT_LANGUAGE_SCAN_LINE}" =~ ^[0-9]+$ \
   || ! "${PETCLAW_TRAFFIC_SWITCH_LINE}" =~ ^[0-9]+$ \
+  || "${PETCLAW_AGENT_CREDITS_LINE}" -ge "${PETCLAW_AGENT_RUN_SAFETY_LINE}" \
+  || "${PETCLAW_AGENT_RUN_SAFETY_LINE}" -ge "${PETCLAW_AGENT_RUN_EXPORT_LINE}" \
+  || "${PETCLAW_AGENT_RUN_EXPORT_LINE}" -ge "${PETCLAW_DELETION_P0_LINE}" \
+  || "${PETCLAW_DELETION_P0_LINE}" -ge "${PETCLAW_RELEASE_READINESS_LINE}" \
   || "${PETCLAW_RELEASE_READINESS_LINE}" -ge "${PETCLAW_COMMUNITY_FALLBACK_LINE}" \
   || "${PETCLAW_COMMUNITY_FALLBACK_LINE}" -ge "${PETCLAW_BUILD_LINE}" \
   || "${PETCLAW_BUILD_LINE}" -ge "${PETCLAW_BUILT_LANGUAGE_SCAN_LINE}" \
   || "${PETCLAW_BUILT_LANGUAGE_SCAN_LINE}" -ge "${PETCLAW_TRAFFIC_SWITCH_LINE}" ]]; then
-  echo "FAIL: release-readiness/community/build/language gates are not ordered before traffic switch" >&2
+  echo "FAIL: P0 Agent Office/privacy/release/build/language gates are not ordered before traffic switch" >&2
   exit 1
 fi
 PETCLAW_TEST_PASSED="$((PETCLAW_TEST_PASSED + 4))"

@@ -63,7 +63,9 @@ automated transfer is not scheduled in this release.
 
 > Note: `version` here is the **protocol** version (`petclaw-v1`, semver `1.0.0`),
 > not the npm SDK version. Run `npm view @myaipet/petclaw-sdk version`; the
-> repaired MCP/agent/session-lineage flow requires `1.6.3` or later.
+> typed paid-task and MCP contract requires `2.0.0` or later. It makes
+> `taskKind` mandatory and normalizes deprecated `maxSteps` compatibility input
+> to `1`. Verify that npm reports `2.0.0` or later before relying on it.
 
 ### GET `/api/petclaw`
 Full manifest with skills and stats.
@@ -179,6 +181,93 @@ retained memories, skill metadata, source provenance/checkpoints, consent, and a
 SHA-256 integrity checksum. The checksum is not a server signature. Export and
 import share a 16 MiB serialized UTF-8 limit; an oversized export fails with
 `soul_export_too_large` before any export reward is awarded.
+
+### GET `/api/account/agent-runs/export?limit=100&cursor={opaqueCursor}`
+Download a bounded owner-private access copy of paid Agent Office run history.
+Omit `petId` for all account runs, including scrubbed receipts for deleted pets,
+or pass an owned active `petId` to narrow the scope. A first-party web session
+or owner `pck_…` token may call this route; the Chrome extension's `pex_…` token
+cannot. This HTTP endpoint is not wrapped by the npm SDK 2.0.0.
+
+The maximum is 100 records, 65,536 serialized bytes per record and 1,048,576
+serialized bytes per page. If the byte budget fills before the row limit, the
+opaque `nextCursor` is bound to the last record actually returned, so following
+it does not skip an unseen record. Treat the cursor as opaque, URL-encode it,
+and continue until `hasMore` is false. If the API returns
+`code:"invalid_cursor"` after an account or server-secret change, discard that
+cursor and restart from page one. Version 3 adds an encrypted-cursor-only
+private tie-breaker so identical timestamps and caller-reused run IDs still
+paginate without a missing record.
+
+```json
+{
+  "schema": "myaipet-owner-agent-run-history/v3",
+  "exportedAt": "2026-07-24T12:00:00.000Z",
+  "scope": { "kind": "account" },
+  "page": {
+    "limit": 100,
+    "count": 2,
+    "hasMore": true,
+    "nextCursor": "arc2.…",
+    "order": "createdAt:desc,reconciliationId:desc,privateTieBreaker:desc",
+    "byteBudget": 1048576,
+    "truncatedRecords": 0,
+    "redactedPrivateFields": 2,
+    "redactedCredentialValues": 1
+  },
+  "records": [{
+    "reconciliationId": "11111111-1111-4111-8111-111111111111",
+    "receiptReference": "sha256-derived-reference",
+    "contentRemoved": false,
+    "task": {
+      "kind": "summarize",
+      "executionContract": "office:summarize:v1:office-summarize",
+      "goal": "Summarize this decision.",
+      "maxSteps": 1
+    },
+    "outcome": {
+      "state": "terminal",
+      "completed": true,
+      "answer": "Decision summary",
+      "steps": [],
+      "stoppedReason": "completed"
+    },
+    "billing": { "outcome": "charged", "creditsCharged": 5 },
+    "creditsRemainingAfterRun": 95,
+    "timestamps": {
+      "createdAt": "2026-07-24T11:59:00.000Z",
+      "startedAt": "2026-07-24T11:59:01.000Z",
+      "terminalAt": "2026-07-24T11:59:02.000Z",
+      "updatedAt": "2026-07-24T11:59:02.000Z"
+    },
+    "exportTreatment": {
+      "redactedPrivateFields": 0,
+      "redactedCredentialValues": 0,
+      "truncated": false,
+      "truncationReasons": []
+    }
+  }],
+  "integrity": {
+    "algorithm": "SHA-256",
+    "canonicalization": "lexicographic-json-v2",
+    "covers": "schema,exportedAt,scope,page,records",
+    "sha256": "…"
+  }
+}
+```
+
+`reconciliationId` is the caller-generated run ID shown in `/account`; it is
+not a database primary key or authorization token. Database, user, pet and
+credit-reservation IDs are omitted. Known private keys, credential-like values
+and signed-URL query values are redacted; breadth, string, record and page
+limits are disclosed by `exportTreatment` and page counters.
+
+To verify `integrity.sha256`, remove the top-level `integrity` object,
+recursively sort every object's keys lexicographically while preserving array
+order, serialize with JSON UTF-8, and hash those exact bytes with SHA-256. This
+detects later file changes but is not a server signature. Run-history pages are
+access copies only and SOUL import never recreates their runs, reservations,
+credits or charges.
 
 ### POST `/api/petclaw/import`
 Import a pet from SOUL export data.
@@ -337,23 +426,42 @@ PetMemory-only compatibility alias.
 
 ---
 
-## Agent Loop
+## Typed Paid-Task Runner
 
 ### POST `/api/pets/{petId}/agent`
-Run the plan-and-execute agent loop: a reasoning model plans each step, an eligible read-only skill or connector is invoked, the result is observed, and it iterates until done — then a chat model synthesizes the answer. Owner-authenticated and credit-metered. Retention and self-learning are disabled, so this loop cannot commit a durable side effect. Five credits are reserved, then charged only for a completed direct model answer or a completed run with a successful read-only result; other terminal runs are refunded. `maxSteps` is clamped server-side (1–6).
+Run one explicit owner-authenticated, credit-metered text task: `recall`,
+`summarize`, `review`, or `draft`. The selected kind is bound server-side to one
+approved read-only tool and canonical input. The tool does not write pet memory
+or self-learning data, while the service stores owner-private run input,
+result, trace, and billing history for reconciliation and audit. Five credits
+are reserved, then charged only when that exact tool succeeds once, commits no
+side effect, and produces the contract-valid deliverable. Empty recall,
+wrong-tool, degraded, failed, incomplete, refusal, direct-answer-only, and
+non-contract outputs are refunded. `maxSteps` is deprecated; SDK/CLI/MCP
+compatibility input is ignored and normalized to `1` because the selected tool
+executes exactly once.
+
+| `taskKind` | Paid deliverable |
+|---|---|
+| `recall` | Retrieved owner-private facts plus an answer grounded in those facts |
+| `summarize` | Structured decision brief: summary, key facts, risk/unknown, and next step |
+| `review` | Primary issue, why it matters, and a revised version |
+| `draft` | Reviewable text only; it is not sent, published, or executed |
 
 **Body:**
 ```json
-{ "runId": "11111111-1111-4111-8111-111111111111", "goal": "Check my mood from recent chats and suggest one thing for today", "maxSteps": 4, "confirmCostCredits": 5 }
+{ "runId": "11111111-1111-4111-8111-111111111111", "goal": "Recall my current priorities and suggest one thing for today", "taskKind": "recall", "maxSteps": 1, "confirmCostCredits": 5 }
 ```
 
 `runId` must be a client-generated UUID. Reconcile an unknown outcome at
 `GET /api/pets/:petId/agent/runs/:runId` before another paid run.
-`confirmCostCredits` must be the exact number `5`; a missing or different value
-is rejected before a credit reservation or provider call. The server permits
-only one `reserved` or `running` paid run per pet. A different `runId` receives
-`409 agent_run_in_progress` with the active `runId` and `statusUrl`; reconcile
-that receipt instead of creating more work.
+`taskKind` must be `recall`, `summarize`, `review`, or `draft`, and
+`goal` is the task input and may contain at most 2,000 characters.
+`confirmCostCredits` must be the exact number `5`; a missing or invalid value is
+rejected before a credit reservation or provider call. The server permits only
+one `reserved` or `running` paid run per pet. A different `runId` receives
+`409 agent_run_in_progress` with the active `runId` and `statusUrl`; reconcile that
+receipt instead of creating more work.
 
 Generate and persist one ID before the request. Reuse that ID for status lookup
 or a request replay after an unknown transport outcome:
@@ -361,10 +469,10 @@ or a request replay after an unknown transport outcome:
 A first 404 from the status lookup is inconclusive; recheck the same URL once
 after a short delay. A second 404 means no durable run receipt was found, not
 that deletion refunded a charge or erased the ledger. Keep the local pending
-marker locked. Replay only the exact saved `runId`, `goal`, `maxSteps`, and
-`confirmCostCredits` against the server origin to which that authorization was
-bound. Never mint a new run ID or clear the marker merely because a receipt is
-absent.
+marker locked. Replay only the exact saved `runId`, `goal`, `taskKind`,
+normalized `maxSteps: 1`, and `confirmCostCredits` against the server origin to
+which that authorization was bound. Never mint a new run ID or clear the marker
+merely because a receipt is absent.
 
 ```typescript
 import { createPetClawAgentRunId } from "@myaipet/petclaw-sdk";
@@ -373,8 +481,9 @@ const runId = createPetClawAgentRunId();
 // Persist runId in your job record here before sending the paid request.
 const run = await client.agent.run(petId, {
   runId,
-  goal: "Check my mood and suggest one thing for today",
-  maxSteps: 4,
+  goal: "Recall my current priorities and suggest one thing for today",
+  taskKind: "recall",
+  maxSteps: 1,
   confirmCostCredits: 5,
 });
 ```
@@ -384,10 +493,12 @@ const run = await client.agent.run(petId, {
 {
   "ok": true,
   "completed": true,
+  "taskKind": "recall",
+  "executionContract": "office:recall:v1:recall_memory",
   "goal": "...",
-  "answer": "...synthesized report...",
+  "answer": "...answer grounded in the retrieved facts...",
   "steps": [
-    { "thought": "...", "skill": "daily-mood", "input": {}, "output": {}, "ok": true, "sideEffectCommitted": false, "modelCalls": 1 }
+    { "skill": "recall_memory", "input": { "query": "..." }, "output": {}, "ok": true, "sideEffectCommitted": false, "modelCalls": 0 }
   ],
   "stoppedReason": "completed",
   "billing": {
@@ -397,18 +508,29 @@ const run = await client.agent.run(petId, {
     "successfulToolCalls": 1,
     "failedToolCalls": 0,
     "committedSideEffects": 0,
-    "modelCalls": 4,
-    "orchestratorModelCalls": 3,
-    "skillModelCalls": 1
+    "modelCalls": 1,
+    "orchestratorModelCalls": 1,
+    "skillModelCalls": 0
   },
   "creditsRemaining": 95
 }
 ```
 
+The response is the exact server receipt for this attempt: `taskKind` and
+`executionContract` identify the binding, `steps` records the required tool
+result, and `billing` records charge/refund outcome, tool counts, model-call
+counts, and credits. Owner-private receipt history remains available for
+reconciliation; it is not pet-memory or self-learning state.
+The `v1` segment inside `executionContract` is the server-side task-contract
+revision; it is independent of the npm SDK's `2.0.0` package version.
+
 The in-app **Agent Workbench** (`/?section=workbench`) drives this endpoint.
 `completed` is true only when `stoppedReason` is `completed`; automation must
-not treat `max_steps`, `timeout`, or `planner_error` as success. A retry is a new
-run; this release does not provide checkpoint resume.
+not treat `timeout` or `task_error` as success. The public union retains
+`max_steps`, `planner_error`, and `unsupported_scope` for historical receipt
+compatibility; typed SDK 2.0.0 tasks normally return `completed`, `timeout`, or
+`task_error`. A retry is a new run; this release does not provide checkpoint
+resume.
 
 `billing.modelCalls` is the exact number of vendor network attempts made before
 the receipt was finalized, including fallback attempts and calls made inside an

@@ -6,6 +6,7 @@ import CollectibleFrame from "@/components/editorial/CollectibleFrame";
 import Icon from "@/components/Icon";
 import Reveal, { MaskedTitle, useMagnet } from "@/components/Reveal";
 import PawField from "@/components/PawField";
+import { RELEASE_STATUS } from "@/lib/releaseStatus";
 
 // Two stacked arrows in a 1em mask — hover (on the parent <a>/<button>) slides
 // the second one up. Pure presentation, styled by .ed-arrow-swap in globals.css.
@@ -530,7 +531,7 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
         {/* Infrastructure evidence chips */}
         <Reveal dir="up" delay={180}>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, marginBottom: 18 }}>
-          {["Open SDK", "MCP · SDK 1.6.3 published", "19-connector registry · 3 live", "Documented data export"].map((c) => (
+          {["Open SDK", `MCP · SDK ${RELEASE_STATUS.sdkVersion} contract`, "19-connector registry · 3 live", "Documented data export"].map((c) => (
             <span key={c} style={{
               fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700,
               padding: "6px 14px", borderRadius: 999, color: "#7A6E5A",
@@ -560,7 +561,7 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
             fontFamily: "var(--ed-m)", fontSize: 13, color: "#5C5140",
             textAlign: "left",
           }}>
-            Open protocol · MCP in SDK 1.6.3 · 18 skills · build on the pet layer ·{" "}
+            Open protocol · MCP in SDK {RELEASE_STATUS.sdkVersion} · 18 skills · build on the pet layer ·{" "}
             <a href="/api-docs" className="ed-underline-slide" style={{ color: "#9A4E1E", fontWeight: 700, textDecoration: "none" }}>docs <ArrowSwap /></a>
           </div>
         </div>

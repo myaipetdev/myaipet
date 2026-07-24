@@ -144,7 +144,7 @@ petclaw_verify_landing_body() {
         `<meta name="google" content="notranslate"`,
         "/api/petclaw/demo-chat",
         "19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS",
-        "Supported MCP clients like Claude, Cursor, and OpenClaw connect through published SDK 1.6.3.",
+        "Supported MCP clients like Claude, Cursor, and OpenClaw connect through published SDK 2.0.0.",
         "+47 Play Points today",
         "SAMPLE",
         "Two legacy BNB Smart Chain contracts are deployed.",
@@ -187,7 +187,7 @@ petclaw_verify_product_demo_body() {
         `position:absolute; left:50%; top:50%; width:1280px; height:720px`,
         `transform:translate(-50%,-50%) scale(var(--s,1))`,
         `<a class="cta" href="https://app.myaipet.ai" target="_top">`,
-        `7-tool MCP path is published in SDK 1.6.3 · messaging launch-paused.`,
+        `7-tool MCP path is published in SDK 2.0.0 · messaging launch-paused.`,
       ];
       const forbidden = [
         "document.querySelector(\u0027.s8 .cta\u0027)",
@@ -216,7 +216,8 @@ const requireAll = (body, values) => values.every((value) => body.includes(value
 const rejectAny = (body, values) => values.some((value) => body.includes(value));
 
 const app = read("web/src/components/App.tsx");
-if (rejectAny(app, ["Jul 1", "Aug 1"])) process.exit(1);
+if (rejectAny(app, ["Jul 1", "Aug 1", '<h1 className="season-banner-title"'])
+  || !app.includes('<h2 className="season-banner-title"')) process.exit(1);
 
 const walletGate = read("web/src/components/WalletGate.tsx");
 const cardDeck = read("web/src/components/CardDeck.tsx");
@@ -232,20 +233,37 @@ if (!requireAll(season, ["function TodayStrip", "/api/checkin", 'method: "POST"'
   "onClaimed", "Claim +"])) process.exit(1);
 
 const missionControlRoute = read("web/src/app/api/petclaw/mission-control/route.ts");
+const agentRoute = read("web/src/app/api/pets/[petId]/agent/route.ts");
 const apiClient = read("web/src/lib/api.ts");
 const devMockOffice = apiClient.match(/const DEV_MOCK_MC = \{[\s\S]*?\n\};/)?.[0] || "";
 if (!requireAll(missionControlRoute, [
-    "const pending: never[] = [];",
-    "const working: never[] = [];",
+    "const pending = activeAgentRuns",
+    'run.state === "reserved"',
+    "const working = activeAgentRuns",
+    'run.state === "running"',
     "const blocked: never[] = [];",
-    "const doneActions = todaysActions.map",
+    "terminalAgentRuns.map((run) => publicTerminalRun(run))",
+    "const doneActions = todaysActions",
+    '!action.action_taken.startsWith("tool_agent:")',
     'detail: noop ? "No skill executed — credits refunded." : undefined',
     "credits: noop ? 0 : a.credits_used || 0",
+    'id: "recall_memory"',
+    'id: "office-summarize"',
+    'id: "office-review"',
+    'id: "office-draft"',
+    'metricLabel: "RETAINED RECORDS"',
+    "personaVersion: persona?.persona_version ?? null",
+    '"Cache-Control": "private, no-store"',
   ])
   || rejectAny(missionControlRoute, ["WORKING_WINDOW_MS", "workingRows", "blockedRows",
     "consolidate-memory", "make-selfie", "give-goal"])
   || !requireAll(devMockOffice, ["pending: []", "working: []", "blocked: []"])
   || devMockOffice.includes('status: "active"')) process.exit(1);
+if (!requireAll(agentRoute, [
+  'type: "reserved"',
+  "creditsReserved: COST_CREDITS",
+  "creditsRemaining: reservationResult.reservation.creditsRemaining",
+])) process.exit(1);
 
 const agentOffice = read("web/src/components/AgentOffice.tsx");
 const grandPawOffice = read("web/src/components/GrandPawOffice.tsx");
@@ -271,22 +289,35 @@ const officeStatusEscapes = [
 ];
 if (!requireAll(agentOffice, [
     'type OfficeStatus = "IDLE" | "WORKING" | "QUEUED" | "DONE" | "LIVE"',
-    '{isWorking ? "WORKING" : "IDLE"}',
+    '{isWorking ? "WORKING" : isQueued ? "QUEUED" : "IDLE"}',
     '<Column mono="QUEUED"', '<Column mono="WORKING"', '<Column mono="DONE"',
-    'disabled={goal.trim().length < 3 || running || receiptMissing || petId == null}',
-    '{running ? "WORKING" : receiptMissing ? "Check Account first" : `Authorize ${COST} credits & dispatch`}',
-    '{active ? "WORKING" : "IDLE"}',
+    'disabled={!taskReady || composerLocked || petId == null}',
+    '`Run ${TASK_OPTIONS.find((option) => option.kind === taskKind)?.label || "task"} · reserve ${COST} credits`',
+    'role="radiogroup"',
+    'aria-checked={taskKind === option.kind}',
+    "Open saved result",
+    "api.pets.agentRunStatus(petId, item.runId)",
+    'const active = s.availableInOffice !== false && (live || s.status === "active");',
+    "{state.label}",
   ])
   || !requireAll(grandPawOffice, [
     'type Status = "IDLE" | "WORKING" | "QUEUED" | "DONE" | "LIVE"',
     'title: "QUEUED"', 'title: "WORKING"', 'title: "DONE"',
-    'disabled={goal.trim().length < 3 || running || receiptMissing}',
-    '{running ? "WORKING" : receiptMissing ? "Check Account first" : `Authorize ${cost} credits & dispatch`}',
+    'disabled={!taskReady || composerLocked}',
+    '`Run ${selectedTaskMode.label} · reserve ${cost} credits`',
+    'role="radiogroup"',
+    'aria-checked={selected}',
+    'aria-pressed={tab === t}',
+    'aria-pressed={pane === p}',
     's.kind === "skill" && s.id === liveSkill',
-    '{active ? "WORKING" : "IDLE"}',
+    'const officeStatus: Status = busyNow ? "WORKING" : queuedCount > 0 ? "QUEUED" : "IDLE";',
+    "{officeStatus}",
     "task: c.status",
-    'line: "courier — “Skills delivery!”"',
-    'line: "housekeeper — “Tidy, tidy!”"',
+    'room: "VISUAL SET"',
+    'tag="LIVE STATUS · VISUAL LOCATION"',
+    'line: "visual host — “No task execution.”"',
+    "Open saved result",
+    "api.pets.agentRunStatus(petId, item.runId)",
     'fontStyle: c.kind === "staff" ? "italic" : undefined',
   ])
   || queueAndDoneAdapters.some(([queued, done]) => !queued.includes("kanban.pending")
@@ -296,11 +327,22 @@ if (!requireAll(agentOffice, [
   || officeStatusEscapes.some((pattern) => pattern.test(agentOffice) || pattern.test(grandPawOffice))
   || !requireAll(agentOffice, [
     "steps.push({ skill: evt.skill, ok: true, complete: false })",
-    "ok: !!evt.ok, complete: true",
+    "ok: !!evt.ok,",
+    "complete: true,",
+    "recallEvidenceFromOutput(evt.output)",
+    'evt.type === "reserved"',
+    "evt.creditsReserved === COST",
+    "onCreditsChange?.(evt.creditsRemaining)",
+    'if (clearInputAfterSettlement) setGoal("")',
     "find((step) => !step.complete)?.skill",
     "live={s.id === liveSkill}",
   ])
+  || agentOffice.includes("maxLength={AGENT_OFFICE_TASK_MAX_INPUT}")
+  || grandPawOffice.includes("maxLength={AGENT_OFFICE_TASK_MAX_INPUT}")
   || /welcoming guests|skills delivery!|tidy tidy~|DRAFTING/i.test(grandPawScene)
+  || !grandPawScene.includes("'WORKSHOP · ' + LIVE.skills + ' OFFICE TASK TOOLS'")
+  || !grandPawScene.includes("'PET · LV ' + LIVE.soulLv")
+  || /WORKSHOP · ['"]? \+ LIVE\.skills \+ ['"]? SKILLS|SOUL · LV/.test(grandPawScene)
   || !/GOAL' \+ \(LIVE\.goals === 1 \? '' : 'S'\) \+ ' · QUEUED'/.test(grandPawScene)
   || !grandPawScene.includes("const OFFICE_STATUSES = new Set(['IDLE', 'WORKING', 'QUEUED', 'DONE', 'LIVE'])")
   || !grandPawScene.includes("task: normalizeOfficeStatus(pet && pet.task)")
@@ -314,7 +356,7 @@ if (!requireAll(studio, ["ZONE 1 — TEMPLATE LIBRARY", "ZONE 2 — THE STAGE",
 const landing = read("landing-assets/index.html");
 const pitch = read("landing-assets/pitch-deck.html");
 if (!requireAll(landing, ["19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS",
-  "7 MCP TOOLS · SDK 1.6.3 PUBLISHED", "+47 Play Points today", "SAMPLE"])
+  "7 MCP TOOLS · SDK 2.0.0 PUBLISHED", "+47 Play Points today", "SAMPLE"])
   || rejectAny(landing, ['href="/stats"', ">Metrics<", "6 LIVE"])
   || rejectAny(pitch, ["6 live today", "registry, 6 live", "any MCP client"])) process.exit(1);
 
@@ -322,7 +364,7 @@ const demo = read("landing-assets/product-demo.html");
 const demoSource = read("tools/demo-video/product-demo.html");
 for (const body of [demo, demoSource]) {
   if (!requireAll(body, ['<a class="cta" href="https://app.myaipet.ai" target="_top">',
-    "7-tool MCP path is published in SDK 1.6.3 · messaging launch-paused."])
+    "7-tool MCP path is published in SDK 2.0.0 · messaging launch-paused."])
     || body.includes("document.querySelector('.s8 .cta')")) process.exit(1);
 }
 
@@ -372,15 +414,19 @@ const forbiddenClaims = [
 if (forbiddenClaims.some((pattern) => pattern.test(publicCopy))) process.exit(1);
 
 const apiDocs = read("web/src/app/api-docs/page.tsx");
-if (!requireAll(apiDocs, ["MCP tools · SDK 1.6.3", "MCP runtime ·", "Messaging ·"])) process.exit(1);
+if (!requireAll(apiDocs, [
+  "MCP tools · SDK ${RELEASE_STATUS.sdkVersion}",
+  "MCP runtime · {RELEASE_STATUS.mcpTools}-tool SDK {RELEASE_STATUS.sdkVersion} contract",
+  "Messaging · {RELEASE_STATUS.channels}",
+])) process.exit(1);
 if (!landing.includes("Import is a reported reconstruction")) process.exit(1);
 if (!read("web/src/components/PremiumTeaser.tsx").includes("Chat subject to published rate limits")) process.exit(1);
 if (!read("web/src/components/PetClawHeroIntro.tsx").includes("channels · paused")) process.exit(1);
 if (!read("web/public/api-docs/QUICKSTART.md").includes("Competitive state, media, external connections, credentials, and consent are excluded")) process.exit(1);
 
 const releaseStatus = read("web/src/lib/releaseStatus.ts");
-if (!requireAll(releaseStatus, ['sdkVersion: "1.6.3"', "registry: 19", "live: 3", "skills: 18",
-  "mcpTools: 7", 'mcp: "7-tool SDK 1.6.3 · published"',
+if (!requireAll(releaseStatus, ['sdkVersion: "2.0.0"', "registry: 19", "live: 3", "skills: 18",
+  "mcpTools: 7", 'mcp: "7-tool SDK 2.0.0 · published"',
   'channels: "launch-paused"']) || releaseStatus.includes("mcpCandidateTools")) process.exit(1);
 
 const nginxTemplate = read("deploy/nginx-petclaw.conf.template");

@@ -1,5 +1,13 @@
 /** Shared browser-side paid-run journal used by every PetClaw agent surface. */
 import { getPaidRunAuthContext } from "../paid-run-auth.ts";
+import { isValidTerminalPaidAgentRunBilling } from "./agent-run-billing.ts";
+import {
+  agentOfficeExecutionContract,
+  agentOfficeTaskKindFromExecutionContract,
+  isAgentOfficeTaskKind,
+  type AgentOfficeTaskKind,
+} from "./agent/office-task-contract.ts";
+export { isValidTerminalPaidAgentRunBilling } from "./agent-run-billing.ts";
 
 export const AGENT_RUN_PENDING_STORAGE_KEY = "petclaw_paid_agent_runs_pending_v1";
 export const AGENT_RUN_PENDING_CHANGE_EVENT = "petclaw:paid-agent-runs-changed";
@@ -12,13 +20,25 @@ export type PendingAgentRun = {
   petId: number;
   petName?: string;
   goal: string;
+  taskKind?: AgentOfficeTaskKind;
+  executionContract?: string;
   maxSteps?: number;
   confirmCostCredits?: 5;
   surface: "workbench" | "office" | "console";
   at: number;
 };
 
-export type PendingAgentRunStart = Omit<PendingAgentRun, "ownerKey" | "runId" | "at">;
+export type PendingAgentRunStart = Omit<
+  PendingAgentRun,
+  "ownerKey" | "runId" | "taskKind" | "executionContract" | "at"
+> & {
+  taskKind: AgentOfficeTaskKind;
+};
+
+export type PaidAgentRunReceiptBinding = {
+  taskKind?: AgentOfficeTaskKind | null;
+  executionContract?: string | null;
+};
 
 export type BeginPendingAgentRunResult =
   | { kind: "started"; run: PendingAgentRun; authToken: string }
@@ -39,7 +59,7 @@ export type PaidAgentRunPhaseTransition = {
 };
 
 export function isDefinitivePaidAgentRejectionStatus(status: number): boolean {
-  return [400, 401, 402, 403, 404, 413, 429].includes(status);
+  return [400, 401, 402, 403, 404, 409, 413, 429].includes(status);
 }
 
 /**
@@ -108,6 +128,18 @@ export function readPendingAgentRuns(): PendingAgentRun[] {
     && (run as PendingAgentRun).petId > 0
     && typeof (run as PendingAgentRun).goal === "string"
     && (
+      (run as PendingAgentRun).taskKind == null
+      || isAgentOfficeTaskKind((run as PendingAgentRun).taskKind)
+    )
+    && (
+      (run as PendingAgentRun).executionContract == null
+      || (
+        isAgentOfficeTaskKind((run as PendingAgentRun).taskKind)
+        && (run as PendingAgentRun).executionContract
+          === agentOfficeExecutionContract((run as PendingAgentRun).taskKind!)
+      )
+    )
+    && (
       (run as PendingAgentRun).maxSteps == null
       || (
         Number.isSafeInteger((run as PendingAgentRun).maxSteps)
@@ -162,6 +194,8 @@ export function readCurrentOwnerPendingAgentRuns(
           legacyUnbound: true as const,
           petName: undefined,
           goal: "Legacy paid run awaiting owner verification",
+          taskKind: undefined,
+          executionContract: undefined,
           maxSteps: undefined,
           confirmCostCredits: undefined,
         })
@@ -204,6 +238,9 @@ export async function beginPendingAgentRun(
   input: PendingAgentRunStart,
 ): Promise<BeginPendingAgentRunResult> {
   try {
+    if (!isAgentOfficeTaskKind(input.taskKind)) {
+      throw new Error("A supported paid task type is required before opening the safety journal.");
+    }
     const auth = getPaidRunAuthContext();
     return await browserLockManager().request(
       AGENT_RUN_PENDING_LOCK_NAME,
@@ -217,6 +254,7 @@ export async function beginPendingAgentRun(
         if (pending) return { kind: "blocked" as const, pending };
         const run: PendingAgentRun = {
           ...input,
+          executionContract: agentOfficeExecutionContract(input.taskKind),
           ownerKey: auth.ownerKey,
           runId: createAgentRunId(),
           at: Date.now(),
@@ -288,9 +326,12 @@ export function getPendingAgentRunSnapshot(): string {
 export function isTerminalPaidAgentRunReceipt(
   receipt: unknown,
   runId: string,
+  expectedBinding: PaidAgentRunReceiptBinding | null | undefined,
 ): receipt is {
   runId: string;
   state: "terminal";
+  taskKind: AgentOfficeTaskKind;
+  executionContract: string;
   billing: {
     outcome: "charged" | "refunded";
     creditsCharged: number;
@@ -301,28 +342,34 @@ export function isTerminalPaidAgentRunReceipt(
   [key: string]: any;
 } {
   if (!receipt || typeof receipt !== "object") return false;
+  if (!expectedBinding || typeof expectedBinding !== "object") return false;
+  const recordedExecutionContract =
+    typeof expectedBinding.executionContract === "string"
+      ? expectedBinding.executionContract
+      : null;
+  const contractTaskKind = recordedExecutionContract
+    ? agentOfficeTaskKindFromExecutionContract(recordedExecutionContract)
+    : null;
+  const expectedTaskKind = isAgentOfficeTaskKind(expectedBinding.taskKind)
+    ? expectedBinding.taskKind
+    : contractTaskKind;
+  if (!expectedTaskKind) return false;
+  const canonicalExecutionContract = agentOfficeExecutionContract(expectedTaskKind);
+  if (
+    (contractTaskKind && contractTaskKind !== expectedTaskKind)
+    || (
+      recordedExecutionContract !== null
+      && recordedExecutionContract !== canonicalExecutionContract
+    )
+  ) {
+    return false;
+  }
   const value = receipt as Record<string, unknown>;
   return value.runId === runId
     && value.state === "terminal"
+    && value.taskKind === expectedTaskKind
+    && value.executionContract === canonicalExecutionContract
     && isValidTerminalPaidAgentRunBilling(value.billing);
-}
-
-export function isValidTerminalPaidAgentRunBilling(billing: unknown): boolean {
-  if (!billing || typeof billing !== "object") return false;
-  const value = billing as Record<string, unknown>;
-  const charged = value.outcome === "charged";
-  const refunded = value.outcome === "refunded";
-  if (!charged && !refunded) return false;
-  if (
-    !Number.isSafeInteger(value.creditsCharged)
-    || (charged ? value.creditsCharged !== 5 : value.creditsCharged !== 0)
-    || typeof value.usageKnown !== "boolean"
-  ) return false;
-  if (value.usageKnown === false) {
-    return refunded && value.creditsCharged === 0 && value.modelCalls === null;
-  }
-  return Number.isSafeInteger(value.modelCalls)
-    && (value.modelCalls as number) >= 0;
 }
 
 /**

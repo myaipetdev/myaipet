@@ -10,7 +10,7 @@
  *   npx @myaipet/petclaw-sdk skills            → List available skills
  *   npx @myaipet/petclaw-sdk install <skillId> → Install skill
  *   npx @myaipet/petclaw-sdk execute <skillId> → Run a skill (typed input: --json-stdin)
- *   npx @myaipet/petclaw-sdk agent "goal" --confirm-cost 5 → Run a paid bounded goal
+ *   npx @myaipet/petclaw-sdk agent "input" --task recall --confirm-cost 5 → Run a typed paid task
  *   npx @myaipet/petclaw-sdk export            → Export SOUL data
  *   npx @myaipet/petclaw-sdk discover          → Find pets on network
  *   npx @myaipet/petclaw-sdk mcp               → Start MCP server
@@ -25,6 +25,10 @@ const readline = require("readline");
 const { Writable } = require("stream");
 const { randomUUID } = require("crypto");
 const { verifySoulExport } = require("../dist/protocol.js");
+const {
+  PETCLAW_AGENT_TASK_KINDS: AGENT_TASK_KINDS,
+  getPetClawAgentTaskInputIssue,
+} = require("../dist/agent-task-safety.js");
 const {
   assertPaidRunServerOrigin,
   createPaidRunJournal,
@@ -115,11 +119,15 @@ function saveConfig() {
   config = paidRunJournal.replaceConfigPreservingJournal(saved);
 }
 
-function isTerminalAgentReceipt(value, runId) {
+function isTerminalAgentReceipt(value, runId, expectedMarker) {
   const billing = value && typeof value === "object" ? value.billing : null;
   const charged = billing?.outcome === "charged";
   const refunded = billing?.outcome === "refunded";
+  const exactTaskKind = expectedMarker?.journalVersion >= 3
+    ? value?.taskKind === expectedMarker.taskKind
+    : true;
   return value?.runId === runId
+    && exactTaskKind
     && value?.state === "terminal"
     && billing
     && (charged || refunded)
@@ -132,7 +140,7 @@ function isTerminalAgentReceipt(value, runId) {
 }
 
 function isDefinitivePreDebitAgentRejection(error) {
-  return [400, 401, 402, 403, 404, 413, 429].includes(Number(error?.status));
+  return [400, 401, 402, 403, 404, 409, 413, 429].includes(Number(error?.status));
 }
 
 /**
@@ -333,7 +341,7 @@ const ART = [
 
 const MCP_TOOLS = [
   ["petclaw_chat", "memory-aware chat"],
-  ["petclaw_agent_run", "PAID 5 credits · requires confirmCostCredits=5"],
+  ["petclaw_agent_run", "PAID 5 credits · requires taskKind + confirmCostCredits=5"],
   ["petclaw_persona_mirror", "mirror your tone across platforms"],
   ["petclaw_memory_recall", "retrieve past context"],
   ["petclaw_summarize_page", "summarize a page in your pet's voice"],
@@ -526,7 +534,7 @@ async function cmdInit() {
   }
 
   // ── Step 4 — model: platform default now, or bring your own key ──
-  console.log("\n  " + C.amber("Step 4/4") + C.muted("   which model powers it  ") + C.dim("(your chat · agent reasoning · best-of-N judging)"));
+  console.log("\n  " + C.amber("Step 4/4") + C.muted("   which model powers it  ") + C.dim("(your chat · typed text tasks · best-of-N judging)"));
   console.log("    " + C.cyan("1)") + " " + "Platform route".padEnd(18) + C.dim("start now · no key · provider selected server-side"));
   console.log("    " + C.cyan("2)") + " " + "Your own model".padEnd(18) + C.dim("bring an API key — your model, your key, encrypted"));
   const mpick = await ask("    " + C.dim("Choose ") + C.gold("[1]") + " ❯ ");
@@ -572,12 +580,12 @@ async function cmdWelcome() {
   console.log("");
   console.log("  " + C.bamber("Two ways to work with your pet:"));
   console.log("    " + C.cyan("chat ".padEnd(8)) + C.muted("memory-aware conversation with owner-reviewable retained context"));
-  console.log("    " + C.cyan("agent".padEnd(8)) + C.muted("paid 5-credit goal → bounded plan/call/observe loop with a receipt"));
+  console.log("    " + C.cyan("agent".padEnd(8)) + C.muted("paid 5-credit typed task → one server-selected read-only tool with a receipt"));
 
   console.log("");
   console.log("  " + C.amber("Try this first"));
   console.log("    " + C.cyan("petclaw-sdk chat \"hey, remember I love rainy mornings\""));
-  console.log("    " + C.cyan("petclaw-sdk agent \"recall my work context and suggest one next step\" --confirm-cost 5"));
+  console.log("    " + C.cyan("petclaw-sdk agent \"what are my launch priorities?\" --task recall --confirm-cost 5"));
   console.log("    " + C.cyan("petclaw-sdk talk") + C.dim("      → live chat   ") +
     C.cyan("petclaw-sdk skills") + C.dim(" → 18 skills   ") + C.cyan("petclaw-sdk export") + C.dim(" → your SOUL"));
   console.log("");
@@ -961,6 +969,16 @@ async function cmdAgent(agentArgs) {
     return;
   }
   const confirmIndex = confirmIndexes[0];
+  const taskIndexes = agentArgs
+    .map((arg, index) => arg === "--task" ? index : -1)
+    .filter((index) => index >= 0);
+  const taskKind = taskIndexes.length === 1 ? agentArgs[taskIndexes[0] + 1] : "";
+  if (taskIndexes.length !== 1 || !AGENT_TASK_KINDS.includes(taskKind)) {
+    fail(C.red("  Paid agent runs require exactly one --task: recall, summarize, review, or draft."));
+    console.log(C.dim("  Example: petclaw-sdk agent \"what are my launch priorities?\" --task recall --confirm-cost 5"));
+    return;
+  }
+  const taskIndex = taskIndexes[0];
   const maxIndexes = agentArgs
     .map((arg, index) => arg === "--max-steps" ? index : -1)
     .filter((index) => index >= 0);
@@ -969,26 +987,28 @@ async function cmdAgent(agentArgs) {
     return;
   }
   const maxIndex = maxIndexes[0] ?? -1;
-  let maxSteps = 4;
+  const maxSteps = 1;
   if (maxIndex >= 0) {
     const requested = Number(agentArgs[maxIndex + 1]);
     if (!Number.isInteger(requested) || requested < 1 || requested > 6) {
       fail(C.red("  --max-steps must be an integer from 1 to 6."));
       return;
     }
-    maxSteps = requested;
   }
   const goal = agentArgs
     .filter((arg, i) => arg !== "--json"
       && arg !== "--max-steps"
       && !(maxIndex >= 0 && i === maxIndex + 1)
+      && arg !== "--task"
+      && i !== taskIndex + 1
       && arg !== "--confirm-cost"
       && i !== confirmIndex + 1)
     .join(" ")
     .trim();
-  if (goal.length < 3 || goal.length > 600) {
-    fail(C.red("  Usage: petclaw-sdk agent \"goal\" --confirm-cost 5 [--max-steps 1..6] [--json]"));
-    if (goal.length > 600) console.log(C.dim("  Goal must contain at most 600 characters."));
+  const taskInputIssue = getPetClawAgentTaskInputIssue(taskKind, goal);
+  if (taskInputIssue) {
+    fail(C.red(`  ${taskInputIssue.message}`));
+    console.log(C.dim("  No request was sent and no paid-run safety marker was created."));
     return;
   }
   let pendingRuns;
@@ -1003,7 +1023,7 @@ async function cmdAgent(agentArgs) {
     try {
       assertPaidRunServerOrigin(pending, config.serverUrl);
       const status = await agentRunStatusWithNotFoundRecheck(pending.petId, pending.runId);
-      if (!isTerminalAgentReceipt(status, pending.runId)) {
+      if (!isTerminalAgentReceipt(status, pending.runId, pending)) {
         fail(C.red(`  Paid run ${pending.runId} has no validated terminal receipt; no new run was sent.`));
         console.log(C.dim(`  Reconcile: petclaw-sdk agent-status ${pending.runId}`));
         return;
@@ -1027,6 +1047,7 @@ async function cmdAgent(agentArgs) {
       runId,
       petId: config.petId,
       goal,
+      taskKind,
       maxSteps,
       confirmCostCredits: 5,
       serverOrigin: config.serverUrl,
@@ -1047,9 +1068,9 @@ async function cmdAgent(agentArgs) {
   try {
     const result = await api(`/api/pets/${config.petId}/agent`, {
       method: "POST",
-      body: { runId, goal, maxSteps, confirmCostCredits: 5 },
+      body: { runId, goal, taskKind, maxSteps, confirmCostCredits: 5 },
     });
-    if (!isTerminalAgentReceipt(result, runId)) {
+    if (!isTerminalAgentReceipt(result, runId, marker)) {
       fail(C.red(`  Run ${runId} is still pending. Do not retry it.`));
       console.log(C.dim(`  Reconcile: petclaw-sdk agent-status ${runId}`));
       return;
@@ -1129,6 +1150,7 @@ async function cmdAgentStatus(runIdArg) {
         || saved.maxSteps > 6
         || saved.confirmCostCredits !== 5
         || typeof saved.goal !== "string"
+        || !AGENT_TASK_KINDS.includes(saved.taskKind)
       ) {
         fail(C.red(`  No durable receipt is visible for legacy run ${runId}; its marker remains locked.`));
         console.log(C.dim("  Exact replay parameters are unavailable. Check Account credits or contact support; do not create a new run ID."));
@@ -1140,13 +1162,14 @@ async function cmdAgentStatus(runIdArg) {
         body: {
           runId,
           goal: saved.goal,
+          taskKind: saved.taskKind,
           maxSteps: saved.maxSteps,
           confirmCostCredits: saved.confirmCostCredits,
         },
       });
     }
     console.log(JSON.stringify(result, null, 2));
-    if (isTerminalAgentReceipt(result, runId) && saved) paidRunJournal.remove(saved);
+    if (isTerminalAgentReceipt(result, runId, saved) && saved) paidRunJournal.remove(saved);
     else {
       process.exitCode = 2;
       console.log(C.gold("  Run has no validated terminal receipt; do not submit a new paid run yet."));
@@ -1655,7 +1678,7 @@ function cmdHelp() {
   console.log(`  ${C.cyan("chat")} ${C.dim('"message"')}          Chat with your pet`);
   console.log(`  ${C.cyan("demo")} ${C.dim('"message"')}          Stateless public preview; saves nothing`);
   console.log(`  ${C.cyan("talk")}                    Interactive chat mode`);
-  console.log(`  ${C.cyan("agent")} ${C.dim('"goal" --confirm-cost 5')} Run a paid bounded goal loop; exact cost acknowledgement required`);
+  console.log(`  ${C.cyan("agent")} ${C.dim('"input" --task <kind> --confirm-cost 5')} Run a typed paid task; kind + exact cost acknowledgement required`);
   console.log(`  ${C.cyan("agent-status")} ${C.dim("<runId>")}       Reconcile a paid run's durable owner receipt`);
   console.log(`  ${C.cyan("skills")}                  List available skills`);
   console.log(`  ${C.cyan("install")} ${C.dim("<skillId>")}       Install a skill`);
@@ -1704,7 +1727,7 @@ function cmdCommandHelp(rawCommand) {
     chat: ["petclaw-sdk chat \"message\"", "Send one retained owner-chat turn."],
     demo: ["petclaw-sdk demo \"message\"", "Run the stateless synthetic preview."],
     talk: ["petclaw-sdk talk", "Start an interactive retained-chat session."],
-    agent: ["petclaw-sdk agent \"goal\" --confirm-cost 5 [--max-steps 1..6] [--json]", "Run a paid bounded goal loop; the exact 5-credit acknowledgement is required before HTTP."],
+    agent: ["petclaw-sdk agent \"input\" --task <recall|summarize|review|draft> --confirm-cost 5 [--max-steps 1..6] [--json]", "Run a typed paid task; --max-steps is deprecated, accepted for compatibility, and always normalized to 1."],
     "agent-status": ["petclaw-sdk agent-status <runId>", "Look up a paid run by its client idempotency UUID; only a validated terminal receipt removes the exact local marker."],
     skills: ["petclaw-sdk skills", "List manifests and selected-pet runtime status."],
     install: ["petclaw-sdk install <skillId>", "Save an install record/preferences for the selected pet."],

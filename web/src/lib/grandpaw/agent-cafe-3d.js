@@ -769,6 +769,11 @@ class AgentCafe3D extends HTMLElement {
     controls.maxPolarAngle = 1.32;
     controls.autoRotate = (this.getAttribute('auto-rotate') || 'on') !== 'off';
     controls.autoRotateSpeed = 0.35;
+    // Preserve vertical page scrolling on touch devices. Mobile users opt into
+    // this scene from React; once open, horizontal drag can orbit without the
+    // canvas becoming a full-screen scroll trap.
+    renderer.domElement.style.touchAction =
+      window.matchMedia('(pointer: coarse)').matches ? 'pan-y' : 'none';
     renderer.domElement.addEventListener('pointerdown', () => { controls.autoRotate = false; }, { once: true });
     this._controls = controls;
 
@@ -1352,7 +1357,7 @@ class AgentCafe3D extends HTMLElement {
     pcx.fillStyle = '#54381F'; pcx.fillRect(0, 0, 512, 128);
     pcx.strokeStyle = '#C9A227'; pcx.lineWidth = 6; pcx.strokeRect(12, 12, 488, 104);
     pcx.fillStyle = '#E7C878';
-    pcx.font = '600 56px Marcellus, Georgia, serif';
+    pcx.font = '600 56px Georgia, "Times New Roman", serif';
     pcx.textAlign = 'center'; pcx.textBaseline = 'middle';
     pcx.fillText('R E C E P T I O N', 256, 68);
     const plaqueTex = new THREE.CanvasTexture(plaqueCanvas);
@@ -1842,9 +1847,9 @@ class AgentCafe3D extends HTMLElement {
     const labels = new THREE.Group(); labels.name = 'labels';
     [
       ['ARCHIVE · FRONT DESK · ' + LIVE.memory.count + '/' + LIVE.memory.cap, -7.0, 2.75, -5.4],
-      ['WORKSHOP · ' + LIVE.skills + ' SKILLS', 7.0, 3.6, -6.6],
+      ['WORKSHOP · ' + LIVE.skills + ' OFFICE TASK TOOLS', 7.0, 3.6, -6.6],
       ['CLOCK · NEXT ' + LIVE.next, -3.6, 3.35, -6.6],
-      ['SOUL · LV ' + LIVE.soulLv, 0.2, 2.95, 0.6],
+      ['PET · LV ' + LIVE.soulLv, 0.2, 2.95, 0.6],
       ['QUARTERS · SUITES', -7.0, 5.2, -5.6],
       [LIVE.goals > 0 ? 'STUDY · ' + LIVE.goals + ' GOAL' + (LIVE.goals === 1 ? '' : 'S') + ' · QUEUED' : 'STUDY', 8.7, 2.5, 3.4]
     ].forEach(([t, x, y, z]) => {

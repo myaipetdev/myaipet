@@ -3,8 +3,10 @@
 > **HISTORICAL / SUPERSEDED:** 운영 인수인계로 사용하지 마세요. 현재 Studio는
 > `/studio`에서 라이브이며 `/studio_test`는 제거됐습니다. 외부 결제, OAuth,
 > legacy agent channels, Pet-LoRA, blockchain production integration, referrals는
-> launch-disabled입니다. PetClaw Extension은 v2.3.2 developer/unpacked ZIP이며
+> launch-disabled입니다. PetClaw Extension은 v2.4.1 developer/unpacked ZIP이며
 > Chrome Web Store에 게시되지 않았습니다. 현재 운영 기준은 `docs/DEPLOYMENT.md`입니다.
+> 최신 제품/출시 인수인계는
+> [`PRODUCTION_READINESS_HANDOFF_2026-07-24.md`](./PRODUCTION_READINESS_HANDOFF_2026-07-24.md)입니다.
 
 ---
 

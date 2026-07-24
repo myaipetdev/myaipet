@@ -13,7 +13,8 @@ import { useEffect, useState } from "react";
 import { getAuthHeaders } from "@/lib/api";
 import { MODELS } from "@/lib/studio/providers";
 import {
-  isValidTerminalPaidAgentRunBilling,
+  isTerminalPaidAgentRunReceipt,
+  readCurrentOwnerPendingAgentRuns,
   removePendingAgentRun,
 } from "@/lib/petclaw/agent-run-client";
 
@@ -179,6 +180,16 @@ export default function AccountOverview({
   const [data, setData] = useState<Overview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [runIdCopy, setRunIdCopy] = useState<{ runId: string; state: "copied" | "failed" } | null>(null);
+
+  const copyRunId = async (runId: string) => {
+    try {
+      await navigator.clipboard.writeText(runId);
+      setRunIdCopy({ runId, state: "copied" });
+    } catch {
+      setRunIdCopy({ runId, state: "failed" });
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -193,14 +204,28 @@ export default function AccountOverview({
       })
       .then(async (d: Overview) => {
         if (cancelled) return;
-        await Promise.all((d.agent_runs || []).map(async (run) => {
-          const billing = run.billing;
-          if (
-            run.state !== "terminal"
-            || !isValidTerminalPaidAgentRunBilling(billing)
-          ) return;
-          try { await removePendingAgentRun(run.run_id); } catch { /* keep fail-closed */ }
-        }));
+        // Account is a recovery surface, but its summary rows are not the
+        // durable receipt authority. Clear a browser safety marker only after
+        // the owner-scoped receipt endpoint binds the exact run, task kind,
+        // execution contract, terminal state, and billing outcome.
+        let pendingRuns: ReturnType<typeof readCurrentOwnerPendingAgentRuns> = [];
+        try { pendingRuns = readCurrentOwnerPendingAgentRuns(); } catch { /* keep every marker locked */ }
+        for (const pending of pendingRuns) {
+          if (cancelled) return;
+          try {
+            const response = await fetch(
+              `/api/pets/${pending.petId}/agent/runs/${encodeURIComponent(pending.runId)}`,
+              { headers: getAuthHeaders(), cache: "no-store" },
+            );
+            if (!response.ok) continue;
+            const receipt = await response.json();
+            if (!isTerminalPaidAgentRunReceipt(receipt, pending.runId, pending)) continue;
+            await removePendingAgentRun(pending.runId);
+          } catch {
+            // A missing, malformed, mismatched, or unreachable receipt is an
+            // unknown outcome. Never unlock it from the account summary.
+          }
+        }
         if (cancelled) return;
         setData(d);
         onCreditsChange?.(d.credits);
@@ -577,7 +602,7 @@ export default function AccountOverview({
             <button
               type="button"
               onClick={() => setReloadKey((key) => key + 1)}
-              style={{ border: "1px solid rgba(154,78,30,.35)", borderRadius: 9, background: "#FBF6EC", color: "#9A4E1E", padding: "7px 11px", fontFamily: "var(--ed-m)", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+              style={{ border: "1px solid rgba(154,78,30,.35)", borderRadius: 9, background: "#FBF6EC", color: "#9A4E1E", padding: "7px 11px", fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
             >
               Refresh receipts
             </button>
@@ -607,7 +632,23 @@ export default function AccountOverview({
                     const terminal = run.state === "terminal";
                     return (
                       <tr key={run.run_id}>
-                        <td title={run.run_id} style={{ fontFamily: "var(--ed-m)" }}>{run.run_id.slice(0, 8)}…</td>
+                        <td style={{ fontFamily: "var(--ed-m)", minWidth: 190 }}>
+                          <details>
+                            <summary style={{ cursor: "pointer", fontSize: 13 }}>{run.run_id.slice(0, 8)}… · view</summary>
+                            <code style={{ display: "block", marginTop: 6, fontFamily: "var(--ed-m)", fontSize: 13, overflowWrap: "anywhere", whiteSpace: "normal" }}>{run.run_id}</code>
+                            <button
+                              type="button"
+                              onClick={() => copyRunId(run.run_id)}
+                              style={{ marginTop: 6, border: "1px solid rgba(154,78,30,.35)", borderRadius: 7, background: "#FBF6EC", color: "#9A4E1E", padding: "5px 8px", fontFamily: "var(--ed-body)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                            >
+                              {runIdCopy?.runId === run.run_id
+                                ? runIdCopy.state === "copied"
+                                  ? "Run ID copied"
+                                  : "Copy failed"
+                                : "Copy run ID"}
+                            </button>
+                          </details>
+                        </td>
                         <td
                           style={{ maxWidth: 330, overflow: "hidden", textOverflow: "ellipsis" }}
                           title={run.pet_deleted ? "Private run content removed with pet deletion" : run.goal || undefined}

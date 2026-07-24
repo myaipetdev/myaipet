@@ -76,6 +76,15 @@ export default function ChatEditorial({ onNavigate }: { onNavigate?: (s: string)
     try {
       const res: any = await api.pets.chat(active.id, text);
       setMsgs((m) => [...m, { role: "pet", text: res?.reply || `*${active.name} tilts head*` }]);
+      const bondDelta = Number(res?.effects?.bond);
+      if (Number.isFinite(bondDelta) && bondDelta !== 0) {
+        const applyBond = (pet: Pet): Pet => ({
+          ...pet,
+          bond_level: Math.max(0, Math.min(100, (pet.bond_level ?? 0) + bondDelta)),
+        });
+        setActive((current) => current && current.id === active.id ? applyBond(current) : current);
+        setPets((current) => current?.map((pet) => pet.id === active.id ? applyBond(pet) : pet) ?? current);
+      }
     } catch {
       setMsgs((m) => [...m, { role: "pet", text: `*${active.name} blinks* — I couldn't reach my memory just now. Try again in a moment.` }]);
     } finally { setBusy(false); }

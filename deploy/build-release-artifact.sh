@@ -63,14 +63,26 @@ for PETCLAW_REQUIRED_PATH in \
   web/package-lock.json \
   web/package.json \
   web/public/petclaw-extension.zip \
+  web/scripts/agent-office-ui-truth-contract.mjs \
+  web/scripts/agent-channel-credit.integration.ts \
+  web/scripts/agent-loop-truth-security-contract.mjs \
   web/scripts/community-fallback-contract.ts \
+  web/scripts/agent-workbench-privacy-contract.mjs \
+  web/scripts/agent-run-export-contract.mjs \
   web/scripts/agent-run-safety-contract.mjs \
+  web/scripts/deletion-p0-contract.mjs \
   web/scripts/llm-router-smoke.ts \
+  web/scripts/mission-control-ledger-contract.mjs \
+  web/scripts/office-deliverable-contract.ts \
+  web/scripts/privacy-boundary.mjs \
+  web/scripts/provider-context-privacy-contract.ts \
   web/scripts/release-readiness-contract.mjs \
   web/scripts/season-starting-soon-contract.mjs \
   web/scripts/ui-contract-audit.mjs \
   web/scripts/verify-standalone-artifact.mjs \
   web/src/hooks/usePaidAgentRunGuard.ts \
+  web/src/app/api/account/agent-runs/export/route.ts \
+  web/src/lib/petclaw/agent-run-export.ts \
   web/src/lib/petclaw-extension.ts \
   deploy/ec2-release.sh \
   deploy/parse-database-url.mjs \
@@ -156,6 +168,8 @@ node "${PETCLAW_STAGE}/tree/deploy/scan-release-language.mjs" \
   source "${PETCLAW_STAGE}/tree"
 node --no-warnings --experimental-transform-types \
   "${PETCLAW_STAGE}/tree/web/scripts/agent-run-safety-contract.mjs"
+node --no-warnings --experimental-transform-types \
+  "${PETCLAW_STAGE}/tree/web/scripts/agent-run-export-contract.mjs"
 (
   PETCLAW_SDK_TEST_TREE="$(mktemp -d)"
   petclaw_sdk_test_cleanup() {

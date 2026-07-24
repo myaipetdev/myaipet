@@ -8,8 +8,11 @@
  * consumed by client components.
  */
 export const RELEASE_STATUS = {
-  /** npm latest of @myaipet/petclaw-sdk — the version actually published. */
-  sdkVersion: "1.6.3",
+  /**
+   * npm latest of @myaipet/petclaw-sdk — the version actually published.
+   * Deploy this bump only after `npm view @myaipet/petclaw-sdk version` agrees.
+   */
+  sdkVersion: "2.0.0",
 
   connectors: {
     /** Entries in AVAILABLE_CONNECTORS. */
@@ -22,11 +25,11 @@ export const RELEASE_STATUS = {
   /** BUILTIN_SKILLS in lib/petclaw/pethub.ts. */
   skills: 18,
 
-  /** Owner-authenticated stdio tools published in SDK 1.6.3. */
+  /** Owner-authenticated stdio tools published in SDK 2.0.0. */
   mcpTools: 7,
 
   /** Canonical publication state for the supported MCP runtime. */
-  mcp: "7-tool SDK 1.6.3 · published",
+  mcp: "7-tool SDK 2.0.0 · published",
 
   /** Messaging delivery remains fail-closed behind launch kill-switches. */
   channels: "launch-paused",

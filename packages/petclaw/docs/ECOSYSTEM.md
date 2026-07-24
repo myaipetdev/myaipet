@@ -8,9 +8,9 @@ provenance foundations across web, SDK, CLI, extension and MCP surfaces.
 
 | Surface | Current contract |
 |---|---|
-| TypeScript SDK | Typed errors, timeout/cancel support, chat, bounded agent, memory, consent, models, skills and SOUL |
-| CLI | Hidden secret prompts, owner-only config, `doctor`, chat/talk, bounded `agent`, memory-aware MCP server |
-| MCP | 7 stdio tools: chat, paid agent (5-credit acknowledgement required before HTTP), persona, memory recall, approved text summary, SOUL export, discovery |
+| TypeScript SDK | Typed errors, timeout/cancel support, chat, typed paid tasks, memory, consent, models, skills and SOUL |
+| CLI | Hidden secret prompts, owner-only config, `doctor`, chat/talk, typed paid `agent`, memory-aware MCP server |
+| MCP | 7 stdio tools: chat, typed paid task (task kind and 5-credit acknowledgement required before HTTP), persona, memory recall, approved text summary, SOUL export, discovery |
 | Skill registry | 18 manifests; LLM handlers run generically, REST handlers resolve to their typed endpoints |
 | Connector registry | 19 registered entries; live availability is deployment-controlled and must not be inferred from registry count |
 | Network | Read-only public discovery; cross-pet invocation launch-disabled |
@@ -40,12 +40,18 @@ petclaw-sdk auth
 petclaw-sdk pets
 petclaw-sdk use <petId>
 petclaw-sdk doctor
-petclaw-sdk agent "Suggest one next step" --confirm-cost 5 --json
+petclaw-sdk agent "Draft a concise launch update from this brief: …" --task draft --confirm-cost 5 --json
 petclaw-sdk mcp
 ```
 
-Every MCP `petclaw_agent_run` call must include `confirmCostCredits: 5`.
-Missing or different acknowledgement fails locally without a network request.
+Every MCP `petclaw_agent_run` call must include `taskKind` as one of `recall`,
+`summarize`, `review`, or `draft`, plus `confirmCostCredits: 5`. Missing or
+invalid values fail locally without a network request. The deprecated
+`maxSteps` field is ignored and normalized to `1`. The required read-only tool
+does not write pet memory or self-learning data, but owner-private run input,
+result, trace, and billing history are stored. Kind-specific minimums, bracket
+placeholders, and concrete secret signatures are checked before journal or
+network access; secret-bearing task input is never stored locally.
 
 ## Data sovereignty
 
@@ -96,8 +102,8 @@ const runId = createPetClawAgentRunId();
 // Persist runId in your job record here before sending the paid request.
 await pet.agent.run(selectedPetId, {
   runId,
-  goal: "Suggest one next step",
-  maxSteps: 4,
+  goal: "What did I say about the launch checklist?",
+  taskKind: "recall",
   confirmCostCredits: 5,
 });
 await pet.memory.inspect(selectedPetId);

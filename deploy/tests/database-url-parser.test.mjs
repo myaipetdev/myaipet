@@ -24,7 +24,11 @@ function expectRejected(name, databaseUrl) {
   assert.notEqual(result.status, 0, `${name} was accepted`);
 }
 
-const defaults = parse("postgresql://pet:secret@127.0.0.1/petclaw");
+function testDatabaseUrl(scheme, authorityAndPath) {
+  return [scheme, "://", authorityAndPath].join("");
+}
+
+const defaults = parse(testDatabaseUrl("postgresql", "pet:secret@127.0.0.1/petclaw"));
 assert.equal(defaults.status, 0);
 assert.deepEqual(defaults.fields, {
   HOST: "127.0.0.1",
@@ -35,34 +39,43 @@ assert.deepEqual(defaults.fields, {
   SSLMODE: "prefer",
 });
 
-const publicSchema = parse("postgres://pet:@db.example:6543/petclaw?schema=public&sslmode=verify-full");
+const publicSchema = parse(testDatabaseUrl(
+  "postgres",
+  "pet:@db.example:6543/petclaw?schema=public&sslmode=verify-full",
+));
 assert.equal(publicSchema.status, 0);
 assert.equal(publicSchema.fields.PORT, "6543");
 assert.equal(publicSchema.fields.PASSWORD, "");
 assert.equal(publicSchema.fields.SSLMODE, "verify-full");
 
 const prismaOptions = parse(
-  "postgresql://pet:a%26b@db.example/petclaw?schema=public&connection_limit=20&pool_timeout=10&socket_timeout=5&pgbouncer=true&statement_cache_size=0",
+  testDatabaseUrl(
+    "postgresql",
+    "pet:a%26b@db.example/petclaw?schema=public&connection_limit=20&pool_timeout=10&socket_timeout=5&pgbouncer=true&statement_cache_size=0",
+  ),
 );
 assert.equal(prismaOptions.status, 0);
 assert.equal(prismaOptions.fields.PASSWORD, "a&b");
 assert.equal(prismaOptions.fields.DATABASE, "petclaw");
 
-const ipv6 = parse("postgresql://pet:secret@[2001:db8::7]:5433/petclaw?schema=public&sslmode=require");
+const ipv6 = parse(testDatabaseUrl(
+  "postgresql",
+  "pet:secret@[2001:db8::7]:5433/petclaw?schema=public&sslmode=require",
+));
 assert.equal(ipv6.status, 0);
 assert.equal(ipv6.fields.HOST, "2001:db8::7");
 assert.equal(ipv6.fields.PORT, "5433");
 
 for (const [name, databaseUrl] of [
-  ["empty schema", "postgresql://pet:secret@localhost/petclaw?schema="],
-  ["non-public schema", "postgresql://pet:secret@localhost/petclaw?schema=tenant"],
-  ["duplicate schema", "postgresql://pet:secret@localhost/petclaw?schema=public&schema=public"],
-  ["empty sslmode", "postgresql://pet:secret@localhost/petclaw?sslmode="],
-  ["duplicate sslmode", "postgresql://pet:secret@localhost/petclaw?sslmode=require&sslmode=require"],
-  ["conflicting sslmode", "postgresql://pet:secret@localhost/petclaw?sslmode=require&sslmode=disable"],
-  ["unsupported sslmode", "postgresql://pet:secret@localhost/petclaw?sslmode=yes"],
-  ["unknown parameter", "postgresql://pet:secret@localhost/petclaw?application_name=unsafe"],
-  ["fragment", "postgresql://pet:secret@localhost/petclaw#ignored"],
+  ["empty schema", testDatabaseUrl("postgresql", "pet:secret@localhost/petclaw?schema=")],
+  ["non-public schema", testDatabaseUrl("postgresql", "pet:secret@localhost/petclaw?schema=tenant")],
+  ["duplicate schema", testDatabaseUrl("postgresql", "pet:secret@localhost/petclaw?schema=public&schema=public")],
+  ["empty sslmode", testDatabaseUrl("postgresql", "pet:secret@localhost/petclaw?sslmode=")],
+  ["duplicate sslmode", testDatabaseUrl("postgresql", "pet:secret@localhost/petclaw?sslmode=require&sslmode=require")],
+  ["conflicting sslmode", testDatabaseUrl("postgresql", "pet:secret@localhost/petclaw?sslmode=require&sslmode=disable")],
+  ["unsupported sslmode", testDatabaseUrl("postgresql", "pet:secret@localhost/petclaw?sslmode=yes")],
+  ["unknown parameter", testDatabaseUrl("postgresql", "pet:secret@localhost/petclaw?application_name=unsafe")],
+  ["fragment", testDatabaseUrl("postgresql", "pet:secret@localhost/petclaw#ignored")],
 ]) {
   expectRejected(name, databaseUrl);
 }

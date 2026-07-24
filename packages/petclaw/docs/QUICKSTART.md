@@ -11,14 +11,17 @@ npm install -g @myaipet/petclaw-sdk
 petclaw-sdk version
 ```
 
-Verify npm and the installed CLI report `1.6.3` or later:
+Verify npm and the installed CLI report `2.0.0` or later:
 
 ```bash
 npm view @myaipet/petclaw-sdk version
 ```
 
-SDK `1.6.3` publishes the repaired MCP, agent, session-lineage,
-secret-handling and paid-run replay-protection flow documented in this guide.
+SDK `2.0.0` makes `taskKind` mandatory for paid tasks, raises task input to
+a 2,000-character maximum with kind-specific minimums, and normalizes the
+deprecated `maxSteps` compatibility field to `1`. SDK 1.6.2 allowed
+`agent.run` calls without `taskKind`, so upgrading callers must add one of the
+four supported kinds.
 
 The source package is `@myaipet/petclaw-sdk`. Do not install the unrelated,
 older unscoped `petclaw-sdk` package.
@@ -46,27 +49,40 @@ preview are available:
 petclaw-sdk demo "hello"
 ```
 
-## 3. Chat and run a goal
+## 3. Chat and run a typed task
 
 ```bash
 petclaw-sdk chat "Remember that I prefer short release notes"
 petclaw-sdk talk
-petclaw-sdk agent "Recall my work context and suggest one next step" --confirm-cost 5 --max-steps 4
-petclaw-sdk agent "Summarize what you know" --confirm-cost 5 --json
+petclaw-sdk agent "What did I say about my launch priorities?" --task recall --confirm-cost 5
+petclaw-sdk agent "Release notes: typed tasks now have safer retries and clearer billing receipts." --task summarize --confirm-cost 5 --json
 ```
 
 One-shot CLI chat stores a non-secret random `clientId` in `~/.petclaw.json`.
 That keeps its session stable across invocations while isolating raw session
 history from another CLI installation controlling the same pet.
 
-Agent runs require the exact `--confirm-cost 5` acknowledgement, are bounded to
-1–6 steps, and return `completed`, `max_steps`, `timeout`, or `planner_error`.
-The loop exposes only eligible read-only skills and connectors, with retention
-and self-learning disabled, so it cannot commit a durable side effect. Five
-credits are reserved, then charged for a completed direct model answer or a
-completed run with a successful read-only result; other terminal runs refund
-the reservation. The response includes the billing decision. A CLI retry is a
-new run, not checkpoint resume.
+Agent runs require exactly one
+`--task <recall|summarize|review|draft>` and the exact `--confirm-cost 5`
+acknowledgement. Input has a 2,000-character maximum; minimums are 8 for recall,
+40 for summarize, 12 for review, and 20 for draft. Bracket placeholders are
+rejected. Concrete API keys/tokens, JWTs, authorization values, private-key
+blocks, password/secret assignments, database URLs/session cookies, recovery
+codes, and OTP/MFA codes are rejected before journal or network access and are
+never written to `~/.petclaw.json`; ordinary credential-safety discussion is
+allowed. `maxSteps` is deprecated; CLI/MCP still accept legacy values 1–6,
+ignore them, and send `1`.
+Typed v2 executes its single server-bound required read-only tool exactly once
+and normally returns `completed`, `timeout`, or `task_error`. `planner_error`
+remains in the SDK union for legacy receipts. Use `recall`
+for an owner-memory question, `summarize` or `review` for text supplied in the
+input, and `draft` for a supplied brief. The required tool does not write pet
+memory or self-learning data. Owner-private run input, result, trace, and
+billing history are stored for reconciliation and audit. Five credits are
+reserved, then charged only when the tool succeeds without a side effect and
+returns a deliverable; empty recall, mismatched, degraded, failed, and
+incomplete runs refund the reservation. A CLI retry is a new run, not
+checkpoint resume.
 
 ## 4. Skills and models
 
@@ -105,7 +121,7 @@ petclaw-sdk mcp
 ```
 
 The stdio server reads the same owner config and exposes seven tools: persistent
-chat, bounded agent run, persona mirror, real memory inspection/recall, approved
+chat, typed paid task, persona mirror, real memory inspection/recall, approved
 page-text summarization, SOUL export and read-only pet discovery. Restart the MCP
 client after changing authentication.
 
@@ -154,17 +170,20 @@ mcp_servers:
 ```
 
 Restart Hermes, then ask it to call `petclaw_chat` and confirm that the reply
-comes from the selected pet. Add `petclaw_agent_run` only when a paid bounded
-run is intended. Each call must include `confirmCostCredits: 5`; a missing or
-different acknowledgement is rejected before any HTTP request.
+comes from the selected pet. Add `petclaw_agent_run` only when a paid typed task
+is intended. Each call must include a valid `taskKind` (`recall`,
+`summarize`, `review`, or `draft`) and `confirmCostCredits: 5`; a missing or
+invalid task kind or a missing/different acknowledgement is rejected before any
+HTTP request.
 Direct SDK callers must generate and persist a UUID with
 `createPetClawAgentRunId()` before calling `agent.run`. CLI and MCP each
 generate one ID and retain it for reconciliation. Look up unknown transport
 outcomes from Account or `client.agent.status(petId, runId)` before retrying.
 If no receipt is visible, keep the local pending marker locked. Replay only the
-exact saved `runId`, `goal`, `maxSteps`, and `confirmCostCredits` against the
-server origin to which that authorization was bound. Never mint a new run ID or
-clear the marker merely because a receipt is absent.
+exact saved `runId`, `goal`, `taskKind`, normalized `maxSteps: 1`, and
+`confirmCostCredits` against the server origin to which that authorization was
+bound. Never mint a new run ID or clear the marker merely because a receipt is
+absent.
 Add `petclaw_soul_export` only when the caller is allowed to
 receive the pet's portable private data. `petclaw-sdk auth` remains the only
 token setup step; never copy its token into Hermes YAML, command args or env.
@@ -203,8 +222,8 @@ try {
   const runId = createPetClawAgentRunId();
   const run = await client.agent.run(selectedPetId, {
     runId,
-    goal: "Suggest one next step",
-    maxSteps: 4,
+    goal: "Review this release note for unclear claims: …",
+    taskKind: "review",
     confirmCostCredits: 5,
   });
   const memory = await client.memory.inspect(selectedPetId);
@@ -238,6 +257,27 @@ while retaining the minimal owner billing receipt. Active-system deletion and
 backup-retention limits are documented in the privacy policy.
 
 Competitive state, media, external connections, credentials, and consent are excluded.
+
+Paid Agent Office history is deliberately separate from the portable SOUL
+bundle. The web app exposes **Start Account Run History Export**, or an owner can
+call the bounded HTTP route directly:
+
+```bash
+curl -fsS \
+  -H "Authorization: Bearer $PETCLAW_TOKEN" \
+  "https://app.myaipet.ai/api/account/agent-runs/export?limit=100" \
+  -o MYAIPET_ACCOUNT_AGENT_RUNS_page_1.json
+```
+
+The npm SDK 2.0.0 does not wrap this endpoint. Each response is at most 100
+newest-first records, 65,536 serialized bytes per record and 1,048,576 bytes
+per page. It includes the caller-generated `reconciliationId`, an opaque
+`nextCursor`, redaction/truncation metadata and a SHA-256 page checksum.
+URL-encode and follow each cursor until `hasMore:false`; if it becomes invalid
+after an account or server-secret change, restart from page one. To independently
+verify the checksum, remove `integrity`, recursively sort object keys
+lexicographically (preserving array order), JSON-serialize as UTF-8, and hash
+those bytes. The checksum detects file changes; it is not a signature.
 
 ## Next steps
 

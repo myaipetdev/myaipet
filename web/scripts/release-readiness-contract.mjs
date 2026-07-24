@@ -49,6 +49,7 @@ const [
   agentOffice,
   grandPawOffice,
   grandPawScene,
+  chatEditorial,
   baselineManifest,
   baselineSql,
   memoryFtsMigration,
@@ -90,6 +91,7 @@ const [
   readWeb("src/components/AgentOffice.tsx"),
   readWeb("src/components/GrandPawOffice.tsx"),
   readWeb("src/lib/grandpaw/agent-cafe-3d.js"),
+  readWeb("src/components/editorial/ChatEditorial.tsx"),
   readWeb("prisma/baseline/20260717_migrations.txt"),
   readWeb("prisma/baseline/20260717_production.sql"),
   readWeb("prisma/migrations/20260615000000_memory_fts/migration.sql"),
@@ -101,10 +103,10 @@ assert.match(status, /registry:\s*19/);
 assert.match(status, /live:\s*3/);
 assert.match(status, /liveIds:\s*\["web-search", "wikipedia", "memory"\]/);
 assert.match(status, /skills:\s*18/);
-assert.match(status, /sdkVersion:\s*"1\.6\.3"/);
+assert.match(status, /sdkVersion:\s*"2\.0\.0"/);
 assert.match(status, /mcpTools:\s*7/);
 assert.doesNotMatch(status, /mcpCandidateTools/);
-assert.match(status, /mcp:\s*"7-tool SDK 1\.6\.3 · published"/);
+assert.match(status, /mcp:\s*"7-tool SDK 2\.0\.0 · published"/);
 assert.match(status, /channels:\s*"launch-paused"/);
 
 const connectorRegistry = connectors.match(/export const AVAILABLE_CONNECTORS\s*=\s*\[([\s\S]*?)\n\]\s+as const;/)?.[1] ?? "";
@@ -118,16 +120,16 @@ for (const text of [landing, pitch]) {
   assert.doesNotMatch(text, /registry, 6 live/i);
 }
 assert.match(landing, /19-CONNECTOR REGISTRY · 3 LIVE · 18 SKILLS/);
-assert.match(landing, /7 MCP TOOLS · SDK 1\.6\.3 PUBLISHED/);
+assert.match(landing, /7 MCP TOOLS · SDK 2\.0\.0 PUBLISHED/);
 assert.match(landing, /\+47 Play Points today[\s\S]*SAMPLE/);
 assert.doesNotMatch(landing, /href=["']\/stats/);
 assert.doesNotMatch(landing, />Metrics</);
 assert.match(pitch, /19-connector registry with 3 live today/);
-assert.match(pitch, /seven MCP tools published in SDK 1\.6\.3/i);
+assert.match(pitch, /seven MCP tools published in SDK 2\.0\.0/i);
 
 for (const text of [demo, demoSource]) {
   assert.match(text, /<a class="cta" href="https:\/\/app\.myaipet\.ai" target="_top">/);
-  assert.match(text, /7-tool MCP path is published in SDK 1\.6\.3 · messaging launch-paused\./);
+  assert.match(text, /7-tool MCP path is published in SDK 2\.0\.0 · messaging launch-paused\./);
   assert.doesNotMatch(text, /document\.querySelector\('\.s8 \.cta'\)/);
 }
 
@@ -161,11 +163,11 @@ const publicationTruthCopy = [
 ].join("\n");
 for (const stalePublicationClaim of [
   /SDK 1\.6\.3[^\n]*(?:candidate|unpublished|publish pending)/i,
-  /(?:candidate|unpublished|publish pending)[^\n]*(?:MCP|SDK 1\.6\.3)/i,
+  /(?:candidate|unpublished|publish pending)[^\n]*(?:MCP|SDK 2\.0\.0)/i,
   /@myaipet\/petclaw-sdk[^\n]*v?1\.6\.1/i,
   /npm SDK 1\.6\.1/i,
   /mcpCandidateTools/,
-  /MCP-ready when SDK 1\.6\.3 lands/i,
+  /MCP-ready when SDK 2\.0\.0 lands/i,
   /when SDK 1\.6\.3 ships/i,
 ]) {
   assert.doesNotMatch(publicationTruthCopy, stalePublicationClaim);
@@ -198,12 +200,14 @@ for (const claim of [
 ]) {
   assert.doesNotMatch(publicCopy, claim);
 }
-assert.match(apiDocs, /MCP tools · SDK 1\.6\.3/);
+assert.match(apiDocs, /MCP tools · SDK \$\{RELEASE_STATUS\.sdkVersion\}/);
 assert.match(apiDocs, /MCP runtime ·/);
 assert.match(apiDocs, /Messaging ·/);
 assert.match(landing, /Import is a reported reconstruction/);
 assert.match(premium, /Chat subject to published rate limits/);
 assert.match(petClawHero, /channels · paused/);
+assert.match(appShell, /<h2 className="season-banner-title"/);
+assert.doesNotMatch(appShell, /<h1 className="season-banner-title"/);
 assert.match(quickstart, /Persistent[\s\S]*require owner authentication/i);
 assert.match(quickstart, /SHA-256 integrity checksum, not a publisher signature/i);
 
@@ -283,16 +287,80 @@ assert.match(catCatch, /return <Shell><PurposeHero \/><GuestGate \/><\/Shell>/);
 assert.match(catCatch, /The catch loop/);
 assert.match(catCatch, /Your field kit is packed/);
 
-// PetAutonomousAction rows are completion-only history. Until a persisted,
-// executable queue exists, only the client-held SSE run may be LIVE/WORKING;
-// suggestions and no-op/refunded rows must never masquerade as queued work.
-assert.match(missionControlRoute, /const pending: never\[\] = \[\];/);
-assert.match(missionControlRoute, /const working: never\[\] = \[\];/);
+// PetAutonomousAction rows remain completion-only history. Current Office
+// state and paid-run receipts come from the owner/pet-scoped PetAgentRun ledger
+// so refreshes and second tabs see the same reserved/running/terminal truth.
+assert.equal(
+  (missionControlRoute.match(/prisma\.petAgentRun\.findMany\(\{/g) ?? []).length,
+  2,
+  "mission-control must read bounded active and terminal run-ledger projections",
+);
+assert.match(missionControlRoute, /user_id: user\.id,\s*pet_id: pet\.id,\s*state: \{ in: \["reserved", "running"\] \}/);
+assert.match(missionControlRoute, /where: \{ user_id: user\.id, pet_id: pet\.id, state: "terminal" \}/);
+assert.match(missionControlRoute, /take: ACTIVE_RUN_CAP/);
+assert.match(missionControlRoute, /take: TERMINAL_RUN_CAP/);
+assert.match(missionControlRoute, /const pending = activeAgentRuns[\s\S]*run\.state === "reserved"[\s\S]*map\(publicActiveRun\)/);
+assert.match(missionControlRoute, /const working = activeAgentRuns[\s\S]*run\.state === "running"[\s\S]*map\(publicActiveRun\)/);
 assert.match(missionControlRoute, /const blocked: never\[\] = \[\];/);
-assert.match(missionControlRoute, /const doneActions = todaysActions\.map/);
+assert.match(
+  missionControlRoute,
+  /const terminalDone = terminalAgentRuns\.map\(\(run\) => publicTerminalRun\(run\)\)/,
+  "the seven-second mission-control poll must keep DONE rows summary-only",
+);
+assert.match(missionControlRoute, /latestAgentRun = terminalAgentRuns\[0\][\s\S]*publicTerminalRun\(terminalAgentRuns\[0\], true\)/);
+for (const receiptField of [
+  "answer",
+  "steps",
+  "stoppedReason",
+  "billing",
+  "creditsRemaining",
+]) {
+  assert.match(
+    missionControlRoute,
+    new RegExp(`${receiptField}:`),
+    `terminal Agent Office receipts must retain ${receiptField}`,
+  );
+}
+assert.match(missionControlRoute, /!action\.action_taken\.startsWith\("tool_agent:"\)/);
 assert.match(missionControlRoute, /detail: noop \? "No skill executed — credits refunded\." : undefined/);
 assert.match(missionControlRoute, /credits: noop \? 0 : a\.credits_used \|\| 0/);
+assert.match(missionControlRoute, /function publicStepSummaries/);
+assert.match(missionControlRoute, /skill,[\s\S]*ok: record\.ok === true/);
+assert.match(missionControlRoute, /function publicRecallEvidence/);
+assert.match(missionControlRoute, /containsStrongAgentOfficeSecret\(rawContent\)/);
+assert.match(missionControlRoute, /isValidTerminalPaidAgentRunBilling\(value\)/);
+assert.match(missionControlRoute, /goal: boundedText\(run\.goal, fullReceipt \? 2_000 : 500\)/);
+assert.match(missionControlRoute, /"Cache-Control": "private, no-store"/);
+assert.match(missionControlRoute, /user_id: user\.id,\s*pet_id: pet\.id,\s*status: "completed"/);
+assert.match(missionControlRoute, /\.slice\(0, RUN_STEP_CAP\)/);
 assert.doesNotMatch(missionControlRoute, /WORKING_WINDOW_MS|workingRows|blockedRows|consolidate-memory|make-selfie|give-goal/);
+
+// The Office advertises only its four exact typed capabilities. Public skill
+// manifests and endpoint descriptors never masquerade as dispatch controls.
+for (const capability of [
+  "recall_memory",
+  "office-summarize",
+  "office-review",
+  "office-draft",
+]) {
+  assert.match(missionControlRoute, new RegExp(`id: "${capability}"`));
+}
+assert.doesNotMatch(missionControlRoute, /BUILTIN_SKILLS\.map/);
+assert.match(missionControlRoute, /"core-in-process"/);
+assert.match(missionControlRoute, /"locked"/);
+assert.match(missionControlRoute, /availableInOffice: false/);
+assert.match(missionControlRoute, /mode: "read-only"/);
+assert.match(missionControlRoute, /blockedReason:/);
+
+// Hard-coded routine copy is read-only catalog metadata until a real persisted
+// last/next timestamp proves that an execution exists.
+assert.match(missionControlRoute, /const observed = !!routine\.lastRun \|\| !!routine\.nextRun/);
+assert.match(missionControlRoute, /source: observed \? "observed" as const : "catalog" as const/);
+assert.match(missionControlRoute, /mode: observed \? "observed-read-only" as const : "catalog-read-only" as const/);
+assert.match(missionControlRoute, /readOnly: true/);
+assert.match(missionControlRoute, /catalogCount: schedules\.length/);
+assert.match(missionControlRoute, /observedCount: observedRoutineCount/);
+assert.doesNotMatch(missionControlRoute, /"Autonomy on"/);
 
 const devMockOffice = apiClient.match(/const DEV_MOCK_MC = \{[\s\S]*?\n\};/)?.[0] ?? "";
 assert.match(devMockOffice, /pending: \[\]/);
@@ -303,8 +371,14 @@ assert.doesNotMatch(devMockOffice, /status: "active"/);
 // Agent Office launch vocabulary is deliberately tiny. Every visible status
 // maps to one of these exact uppercase values and character speech stays in the rail.
 assert.match(grandPawOffice, /type Status = "IDLE" \| "WORKING" \| "QUEUED" \| "DONE" \| "LIVE"/);
+assert.match(grandPawOffice, /pets\.find\(\(candidate: any\) => Number\(candidate\.id\) === selectedPetId\)/);
+assert.match(grandPawOffice, /tag="LIVE STATUS · VISUAL LOCATION"/);
+assert.match(grandPawOffice, /room: "VISUAL SET"/);
+assert.doesNotMatch(grandPawOffice, /room: "FRONT DESK"|SELECTED PET LIVE/);
+assert.doesNotMatch(grandPawOffice, /Off duty until the next shift/);
+assert.doesNotMatch(grandPawOffice, /selected \? "FRONT DESK" :/);
 assert.match(agentOffice, /type OfficeStatus = "IDLE" \| "WORKING" \| "QUEUED" \| "DONE" \| "LIVE"/);
-assert.match(agentOffice, /\{isWorking \? "WORKING" : "IDLE"\}/);
+assert.match(agentOffice, /\{isWorking \? "WORKING" : isQueued \? "QUEUED" : "IDLE"\}/);
 assert.match(agentOffice, /<Column mono="QUEUED"/);
 assert.match(agentOffice, /<Column mono="WORKING"/);
 assert.match(agentOffice, /<Column mono="DONE"/);
@@ -333,25 +407,49 @@ for (const visibleStatusEscape of [
   /right=\{`DONE /,
   /\{isWorking \? "working" : "idle"\}/,
   /["'](?:● )?Working(?:…|\.\.\.)["']/,
-  />available</i,
 ]) {
   assert.doesNotMatch(agentOffice, visibleStatusEscape);
-  assert.doesNotMatch(grandPawOffice, visibleStatusEscape);
+assert.doesNotMatch(grandPawOffice, visibleStatusEscape);
 }
-assert.match(agentOffice, /disabled=\{goal\.trim\(\)\.length < 3 \|\| running \|\| receiptMissing \|\| petId == null\}/);
-assert.match(agentOffice, /\{running \? "WORKING" : receiptMissing \? "Check Account first" : `Authorize \$\{COST\} credits & dispatch`\}/);
-assert.match(grandPawOffice, /disabled=\{goal\.trim\(\)\.length < 3 \|\| running \|\| receiptMissing\}/);
-assert.match(grandPawOffice, /\{running \? "WORKING" : receiptMissing \? "Check Account first" : `Authorize \$\{cost\} credits & dispatch`\}/);
-assert.match(agentOffice, /\{active \? "WORKING" : "IDLE"\}/);
+assert.match(agentOffice, /disabled=\{!taskReady \|\| composerLocked \|\| petId == null\}/);
+assert.match(agentOffice, /Run \$\{TASK_OPTIONS\.find\(\(option\) => option\.kind === taskKind\)\?\.label/);
+assert.match(grandPawOffice, /disabled=\{!taskReady \|\| composerLocked\}/);
+assert.match(grandPawOffice, /`Run \$\{selectedTaskMode\.label\} · reserve \$\{cost\} credits`/);
+assert.match(agentOffice, /if \(skill\.availableInOffice === false\)[\s\S]*label: "NOT AVAILABLE"/);
+assert.match(agentOffice, /skill\.mode === "endpoint-only"[\s\S]*label: studio \? "USE IN STUDIO" : "NOT AVAILABLE"/);
 assert.match(agentOffice, /steps\.push\(\{ skill: evt\.skill, ok: true, complete: false \}\)/);
-assert.match(agentOffice, /ok: !!evt\.ok, complete: true/);
+assert.match(agentOffice, /ok: !!evt\.ok,[\s\S]*complete: true/);
+assert.match(agentOffice, /function liveRunSteps\(value: unknown, terminal: boolean\)/);
+assert.match(agentOffice, /const displayedRun = localSelectedRun && !localSelectedRun\.done/);
+assert.match(agentOffice, /selectedPetIdRef\.current !== pid/);
+assert.doesNotMatch(agentOffice, /Run again · \{cost\} credits/);
 assert.match(agentOffice, /find\(\(step\) => !step\.complete\)\?\.skill/);
 assert.match(agentOffice, /live=\{s\.id === liveSkill\}/);
 assert.match(grandPawOffice, /s\.kind === "skill" && s\.id === liveSkill/);
-assert.match(grandPawOffice, /\{active \? "WORKING" : "IDLE"\}/);
+assert.match(grandPawOffice, /skill\.availableInOffice === false/);
+assert.doesNotMatch(grandPawOffice, /Run again · \{cost\} credits/);
+assert.match(agentOffice, /displayedRun\.state !== "reserved"/);
+assert.match(agentOffice, /displayedRun\.state === "reserved"/);
+assert.match(agentOffice, /const isWorking = classicWorking\.length > 0 \|\| running \|\| displayedRunIsWorking/);
+assert.match(agentOffice, /const isQueued = classicQueued\.length > 0 \|\| displayedRunIsQueued/);
+assert.match(agentOffice, /isWorking=\{isWorking\}[\s\S]*isQueued=\{isQueued\}/);
+assert.match(grandPawOffice, /run\.state !== "reserved"/);
+assert.match(grandPawOffice, /liveRun\.state === "reserved"/);
+assert.match(grandPawOffice, /const runningCount = workingItems\.length \+ \(liveRunWorking \? 1 : 0\)/);
+assert.match(grandPawOffice, /const queuedCount = queuedItems\.length \+ \(liveRunQueuedNotPersisted \? 1 : 0\)/);
+assert.match(grandPawOffice, /const officeStatus: Status = busyNow \? "WORKING" : queuedCount > 0 \? "QUEUED" : "IDLE"/);
+assert.match(
+  grandPawOffice,
+  /workingTitle \? "WORKING" : liveRunQueued \? "QUEUED" : "IDLE"/,
+  "a reserved paid run must be shown as QUEUED and must never inflate WORKING",
+);
 assert.match(grandPawOffice, /task: c\.status/);
-assert.match(grandPawOffice, /line: "courier — “Skills delivery!”"/);
-assert.match(grandPawOffice, /line: "housekeeper — “Tidy, tidy!”"/);
+assert.match(grandPawOffice, /role: "VISUAL-ONLY NPC"[\s\S]*line: "visual host — “No task execution\.”"/);
+assert.equal(
+  (grandPawOffice.match(/role: "VISUAL-ONLY NPC"/g) ?? []).length,
+  2,
+  "both hotel-only characters must be explicitly labeled as non-executing NPCs",
+);
 assert.match(grandPawOffice, /fontStyle: c\.kind === "staff" \? "italic" : undefined/);
 assert.doesNotMatch(grandPawScene, /welcoming guests|skills delivery!|tidy tidy~|DRAFTING/i);
 assert.match(grandPawScene, /GOAL' \+ \(LIVE\.goals === 1 \? '' : 'S'\) \+ ' · QUEUED'/);
@@ -359,6 +457,9 @@ assert.match(grandPawScene, /const OFFICE_STATUSES = new Set\(\['IDLE', 'WORKING
 assert.match(grandPawScene, /task: normalizeOfficeStatus\(pet && pet\.task\)/);
 assert.equal((grandPawScene.match(/task: 'IDLE'/g) ?? []).length, 3);
 assert.equal((grandPawScene.match(/\.task \|\| 'IDLE'/g) ?? []).length, 3);
+assert.match(chatEditorial, /const bondDelta = Number\(res\?\.effects\?\.bond\)/);
+assert.match(chatEditorial, /setActive\(\(current\) => current && current\.id === active\.id \? applyBond\(current\) : current\)/);
+assert.match(chatEditorial, /setPets\(\(current\) => current\?\.map/);
 
 assert.equal(
   extensionChecksum,

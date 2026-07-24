@@ -1,18 +1,16 @@
 "use client";
 
 /**
- * "How PetClaw orchestrates" — a truthful explainer for the bounded agent and
- * memory capabilities under the companion experience:
- *   - Plan→Act  = lib/petclaw/agent/plan-execute.ts (bounded reviewed-skill loop)
- *   - Recall    = lib/petclaw/memory/retrieval.ts (conditional vector + TF-IDF,
- *                 recency and importance ranking with reciprocal-rank fusion)
- *   - Reflect   = best-effort retention/consolidation; learned patterns are not code
- *   - PACK      = lib/petclaw/pet-network.ts (public discovery; remote calls paused)
+ * "How PetClaw orchestrates" — a truthful explainer for the paid typed-task
+ * contract and the separate retained-memory capabilities under the companion
+ * experience. A paid task runs one server-bound read-only tool; it is not the
+ * historical multi-step free-form loop.
  */
 
 import type { ReactNode } from "react";
 import Icon from "@/components/Icon";
 import Reveal, { MaskedTitle } from "@/components/Reveal";
+import { RELEASE_STATUS } from "@/lib/releaseStatus";
 
 // Two stacked arrows in a 1em mask — parent link hover slides the second one up
 // (.ed-arrow-swap in globals.css). Presentation only.
@@ -28,10 +26,10 @@ function ArrowSwap() {
 }
 
 const ROLES: { icon: string; title: string; body: string; tag: string }[] = [
-  { icon: "compass", title: "Plan → Act", tag: "plan-execute", body: "An owner-authenticated runner plans up to six steps, invokes reviewed in-process skills, observes results, and reports whether it completed or hit a bound." },
-  { icon: "crystal-ball", title: "Recall", tag: "retained context", body: "TF-IDF, recency, and importance rank owner-controlled memories. Semantic vectors join the ranking only when a compatible embedding provider is connected." },
-  { icon: "sparkling", title: "Adapt", tag: "VIGIL", body: "Best-effort retention and periodic consolidation can shape later replies. Owners can inspect or clear retained data; learned patterns are not executable skills." },
-  { icon: "world-map", title: "Public Discovery", tag: "PACK", body: "Pets can discover public profiles across the open network. Remote skill calls stay disabled until consent and funding are explicit." },
+  { icon: "compass", title: "Select → Execute", tag: "typed task", body: "Choose Recall, Summarize, Review, or Draft with up to 2,000 characters. The server binds that choice to one approved read-only tool; deprecated maxSteps compatibility is normalized to 1." },
+  { icon: "crystal-ball", title: "Recall", tag: "grounded answer", body: "Recall retrieves relevant owner-private facts, then returns an answer grounded in those facts. Empty recall is not charged." },
+  { icon: "sparkling", title: "Text Work", tag: "reviewable output", body: "Summarize returns a structured decision brief, Review returns a primary issue plus revision, and Draft returns reviewable text without sending or publishing it." },
+  { icon: "scroll", title: "Exact Receipt", tag: "charge or refund", body: "The response records the bound task, tool result, outcome, model-call counts, and credits. Failures, refusals, tool mismatches, and non-contract outputs are refunded." },
 ];
 
 export default function OrchestrationExplainer({ onTry }: { onTry?: () => void } = {}) {
@@ -45,14 +43,15 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
         </Reveal>
         <MaskedTitle
           as="h2"
-          lines={["One pet. Bounded goals. Owner-controlled memory."]}
+          lines={["One pet. Typed work. Owner-controlled memory."]}
           style={{ fontFamily: "var(--ed-disp)", fontSize: "clamp(26px,4vw,40px)", fontWeight: 800, color: "#211A12", letterSpacing: "-0.025em", margin: "0 0 12px", lineHeight: 1.12 }}
         />
         <Reveal dir="fade" delay={120}>
         <p style={{ fontFamily: "var(--ed-body)", fontSize: 16.5, color: "#5C5140", maxWidth: 640, margin: "0 auto", lineHeight: 1.6 }}>
           PetClaw gives supported clients one companion identity, selected retained
-          context, and consent controls. Its bounded goal runner complements full
-          execution agents; it does not expose general shell or browser control.
+          context, and consent controls. Paid tasks run exactly one server-bound tool:
+          they do not write pet memory or self-learning data, while owner-private run
+          input, result, trace, and billing history are stored for reconciliation.
         </p>
         </Reveal>
       </div>
@@ -62,7 +61,7 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
         <Reveal dir="left">
         <div style={{ padding: "16px 18px", borderRadius: 14, background: "#ECE4D4", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))", height: "100%" }}>
           <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, letterSpacing: "0.12em", color: "#9A7B4E", fontWeight: 700, marginBottom: 8 }}>A SINGLE PROMPT</div>
-          {["Forgets you the moment the tab closes", "Answers in text — can't take action", "Works alone, no review", "Locked inside one app"].map((t) => (
+          {["Forgets useful context", "Answers without grounding", "Hides whether paid work succeeded", "Locks history inside one surface"].map((t) => (
             <div key={t} style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#7A6E5A", lineHeight: 1.5, display: "flex", gap: 7 }}><span style={{ color: "#9A4E1E" }}>✕</span>{t}</div>
           ))}
         </div>
@@ -70,7 +69,7 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
         <Reveal dir="right" delay={90}>
         <div style={{ padding: "16px 18px", borderRadius: 14, background: "#FBF6EC", border: "1px solid rgba(190,79,40,0.28)", height: "100%" }}>
           <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, letterSpacing: "0.12em", color: "#9A4E1E", fontWeight: 700, marginBottom: 8 }}>PETCLAW</div>
-          {["Retains selected owner-controlled context", "Runs reviewed skills within explicit bounds", "Reports trace, stop reason, and credit use", "Discovers consented public pets; remote calls stay paused"].map((t) => (
+          {["Retains selected owner-controlled context", "Runs one task-matched read-only tool", "Returns a reviewable deliverable", "Records an exact charge-or-refund receipt"].map((t) => (
             <div key={t} style={{ fontFamily: "var(--ed-body)", fontSize: 13, color: "#5C5140", lineHeight: 1.5, display: "flex", gap: 7 }}><span style={{ color: "#1A7E68" }}>✓</span>{t}</div>
           ))}
         </div>
@@ -93,7 +92,7 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
         ))}
       </div>
 
-      {/* Run it for real — the workbench drives the same loop on your own pet. */}
+      {/* Run it for real — the workbench drives the same typed contract. */}
       {onTry && (
         <Reveal dir="pop">
         <div style={{ textAlign: "center", marginTop: 24 }}>
@@ -101,7 +100,7 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
             onClick={onTry}
             style={{ fontFamily: "var(--ed-disp)", fontSize: 15, fontWeight: 800, letterSpacing: "-0.01em", color: "#FFF8EE", padding: "12px 24px", borderRadius: 12, border: "none", cursor: "pointer", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}
           >
-            ▶ Run the agent loop on your pet
+            ▶ Run a typed task on your pet
           </button>
         </div>
         </Reveal>
@@ -109,7 +108,7 @@ export default function OrchestrationExplainer({ onTry }: { onTry?: () => void }
 
       <Reveal dir="fade">
       <div style={{ textAlign: "center", marginTop: 18, fontFamily: "var(--ed-m)", fontSize: 13, color: "#7A6E5A" }}>
-        18 built-in skill manifests · 7 MCP tools published in SDK 1.6.3 · 19 registered connectors (3 live) —{" "}
+        18 built-in skill manifests · 7 MCP tools in SDK {RELEASE_STATUS.sdkVersion} · 19 registered connectors (3 live) —{" "}
         <a href="/api-docs" className="ed-underline-slide" style={{ color: "#9A4E1E", fontWeight: 700, textDecoration: "none" }}>build on it <ArrowSwap /></a>
       </div>
       </Reveal>
