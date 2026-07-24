@@ -1,10 +1,11 @@
 # MY AI PET — Production Deployment
 
-> Updated: 2026-07-18
+> Updated: 2026-07-25
 >
 > Current product/release continuation:
 > [`PRODUCTION_READINESS_HANDOFF_2026-07-24.md`](./PRODUCTION_READINESS_HANDOFF_2026-07-24.md).
-> It is an active handoff, not a launch approval.
+> It records the signed live release and the still-incomplete authenticated UAT;
+> verify live provenance before every production action.
 
 ## Live topology
 

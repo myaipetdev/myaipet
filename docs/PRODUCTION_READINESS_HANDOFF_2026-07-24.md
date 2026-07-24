@@ -1,32 +1,38 @@
-# MY AI PET production readiness handoff — 2026-07-24
+# MY AI PET production readiness handoff — updated 2026-07-25
 
-> **ACTIVE HANDOFF — CANDIDATE IN PROGRESS, NOT A LAUNCH APPROVAL**
+> **ACTIVE HANDOFF — SIGNED RELEASE LIVE; AUTHENTICATED UAT REMAINS**
 >
 > Read this document before changing code, publishing npm, building a release
-> artifact, or touching production. The immutable live release remains the
-> source of truth until the complete signed release and post-reboot smoke finish.
+> artifact, or touching production. The immutable release and provenance below
+> are the source of truth. Do not redeploy the earlier `7c7081f3` candidate: it
+> had one lint blocker that is fixed only in the live `f78dc4f8` descendant.
 
 ## 1. Exact current state
 
 | Item | Verified value |
 |---|---|
-| Live commit | `f119462f8e7bbb116f83a076ce4ea116dc4b5394` |
-| Live release header | `20260723T233927-f119462f8e7b` |
+| Live commit | `f78dc4f8706bc3bbd5dd89d59ae45672bd14b490` |
+| Live release header | `20260725T004533-f78dc4f8706b` |
+| Live source branch | `codex/reconcile-feedback-release-20260725` at the exact live SHA |
+| Live/rollback ports | current `3002`; retained rollback `0970c34c` on `3003` |
+| Fresh backup evidence | `20260724T154903Z`; encrypted, signed, restore-tested, media references verified |
 | Public EIP | `15.165.207.119` |
-| Live services | app, nginx, PostgreSQL, PM2, boot guard healthy at last read-only audit |
+| Live services | app, nginx, PostgreSQL, PM2, boot guard healthy after one real reboot |
 | API limit | nginx zone `abuse`, `2r/s`, burst `15`, status `429` |
 | Cron | 13 jobs |
 | Launch switches | payments, OAuth connections, agent channels, Pet LoRA, blockchain, referrals: all `false` |
 | `origin/main` | `e690d336062f9c94c0df6a76ae143d7f72ab5195` |
-| Audited seven-fix branch | `fix/live-existence-audit-20260724` at `e503c0928fd6cdc30330126c2de572da8338b819` |
-| Current clean candidate | `codex/e503-p0-release-20260724`; resolve its exact remote HEAD immediately before signing |
+| Public SDK | `@myaipet/petclaw-sdk@2.0.0`; anonymous registry verification completed |
+| Test owner balance | wallet ending `…b07F`: `500` credits and `272` Season points after release/reboot |
 
-The candidate contains both the current `origin/main` history and the live-line
-changes. Do not start over from `origin/main`, deploy `e503c092` alone, or use
-the original dirty workspace. Resolve the candidate commit from Git immediately
-before signing; never infer it from this document.
+The live commit contains the prior DD/Office/Studio/creator fixes plus the
+founder-feedback round from `7c7081f3`, followed by the named
+`OnboardingShell` lint fix. `origin/main` is not the live release line. Future
+work must branch from the exact live commit (or deliberately reconcile it);
+never infer production state from `origin/main` or the original dirty
+workspace.
 
-## 2. What this candidate changes
+## 2. What the live release changes
 
 ### Existing seven-fix audit
 
@@ -186,7 +192,7 @@ in their names, because the production artifact excludes synthetic test files.
 Disposable-PostgreSQL integration tests are valuable evidence but must never be
 silently aimed at production. A real signed-in four-task UAT is still required.
 
-### Latest pre-commit evidence — 2026-07-24 22:33 KST
+### Latest pre-release evidence — 2026-07-25 KST
 
 - Every listed non-PostgreSQL Web/Office contract gate passed, including the
   adversarial credit, owner-bound recovery, credential masking, export-v3,
@@ -196,8 +202,7 @@ silently aimed at production. A real signed-in four-task UAT is still required.
   errors and 1,185 existing warnings. These warnings remain debt, not a claim
   that the repository is warning-free.
 - The latest production build generated 123 routes. Standalone verification
-  passed for 3,586 files, 43,200,990 bytes, and 193 traces with no secret input
-  or Hangul/Jamo bundle text.
+  passed with 193 traces and no secret input or Hangul/Jamo bundle text.
 - Release safety passed 258 assertions; destructive-migration review passed 14
   approvals; the release-shaped secret scan and `git diff --check` passed.
 - SDK tests passed 70/70 and the npm pack dry run passed. Extension v2.4.1
@@ -206,14 +211,22 @@ silently aimed at production. A real signed-in four-task UAT is still required.
   disposable test database was configured. It was not pointed at production.
 - `@myaipet/petclaw-sdk@2.0.0` was published and anonymously verified at
   2026-07-24 23:08 KST. The public `latest` tag is `2.0.0`; registry shasum is
-  `e674d17f14c01e94087b5a2491597d9d928b6053`. Signed AWS release,
-  authenticated four-task UAT, and post-reboot live smoke remain incomplete.
+  `e674d17f14c01e94087b5a2491597d9d928b6053`.
+- The signed AWS release and post-reboot public smoke are complete. The
+  authenticated four-task Office matrix and signed-in card/check-in/onboarding
+  checks remain incomplete; do not relabel anonymous or static evidence as
+  authenticated UAT.
 
 ## 5. Authenticated UAT matrix
 
 Use an explicitly disposable owner account with enough test credits. Capture
 redacted request ID, HTTP status, displayed receipt, balance delta, and result;
 never capture wallet signatures or secrets.
+
+Status at this update: **not completed**. The available browser session was not
+wallet-authenticated. Anonymous browser checks and server-side authorization
+boundaries passed, and the designated test owner still has 500 credits, but no
+paid run or reward claim was triggered during this release verification.
 
 | Test | Required evidence |
 |---|---|
@@ -242,7 +255,7 @@ never capture wallet signatures or secrets.
 5. Rotate any npm token that was previously pasted into a conversation.
 6. Only then build and deploy web copy that says 2.0.0 is published.
 
-## 7. AWS release order
+## 7. AWS release order and latest completion evidence
 
 Follow `deploy/ENV-CHECKLIST.md` “P0 release order” exactly:
 
@@ -270,6 +283,32 @@ Required post-release checks include:
 - 2r/s burst-15 429 behavior, 13 cron jobs, nginx/PM2/PostgreSQL/boot guard after
   reboot.
 
+Latest completed release evidence:
+
+- Fresh off-host backup `20260724T154903Z` passed encryption, detached
+  signature, restore, and media-reference verification.
+- Artifact `20260725T004533-f78dc4f8706b` was built from the exact committed
+  tree, signed, uploaded as four proof files, independently verified on-host,
+  and passed controller preflight.
+- Live controller passed all source, secret, migration, build, UI, privacy,
+  Office, community, language, and Season contracts. There were no pending
+  migrations.
+- OpenAI returned 429 during live LLM smoke; the required one-time fallback
+  succeeded through `xai/grok-4.3`.
+- Both app and marketing return the new release header. Marketing serves from
+  `/opt/petclaw/current/landing-assets/`; no hand copy was used.
+- External 40-request smoke returned 16 HTTP 200 and 24 HTTP 429, with zero
+  5xx. Ports 3000–3003 and 5432 remain externally blocked.
+- One real reboot completed. nginx, PostgreSQL, PM2, boot guard, the current
+  release, retained rollback, 13 cron jobs, DNS/EIP, health, and immutable
+  marketing root recovered on the first post-boot check.
+- Anonymous live-browser checks passed for landing/app hero hierarchy, zero
+  Hangul, no page overflow at the available 1280px viewport, two controlled
+  STARTING SOON labels, More/Bracket placement, Season event alignment, Studio
+  TRY, thumbnail starter art, Shorts story map and sample plan, PetClaw
+  extension steps, and honest locked Office state. Browser console errors were
+  zero.
+
 ## 8. Remaining launch decisions and risks
 
 These are not permission to overstate the current product:
@@ -288,21 +327,37 @@ These are not permission to overstate the current product:
 - Backup residual copies follow the published maximum 90-day schedule.
 - Production credential rotation remains an operator responsibility. Record
   only “rotation verified,” never the credential value.
+- Complete signed-in UAT for TODAY claim balance updates, private/public card
+  battle share controls, onboarding continuous-input focus/scroll behavior,
+  `/account` plan/credits/usage/billing, and the four paid Office task/refund
+  paths.
+- Recheck true 375px mobile behavior with a device or browser surface that can
+  set a real viewport. The available production browser was 1280×720; static
+  responsive contracts passed, but that is not a substitute for a real 375px
+  signed-in run.
+- P1 operations hardening remains: make `/home/ubuntu/db-backups` and its dumps
+  owner-only, add `umask 077` to the legacy backup script, and separately
+  review/remove the old mode-600 PM2 dump in backup staging.
+- P2 product debt: private-card guidance names Data Sovereignty but does not
+  link directly to it.
 
 ## 9. New-session first ten minutes
 
 1. Read this file and `deploy/ENV-CHECKLIST.md`.
 2. Read `docs/DEPLOYMENT.md` and `deploy/TEAM-HANDOFF-20260722.md`.
 3. Fetch remote refs; verify live release/header read-only.
-4. Locate or recreate the clean candidate from the live lineage.
+4. Branch from live `f78dc4f8706bc3bbd5dd89d59ae45672bd14b490`
+   unless an explicit reconciliation plan says otherwise.
 5. Confirm the original shared worktree remains untouched.
 6. Inspect `git status`, pending agent messages, and uncommitted review fixes.
 7. Run the focused P0 contracts before changing code.
-8. Do not claim npm publication or AWS deployment without external evidence.
+8. Treat npm 2.0.0 publication and AWS `f78dc4f8` deployment as complete only
+   while registry reads and live provenance continue to match this document.
 9. Do not ask for a TOTP until the package is otherwise publish-ready.
-10. Continue from the first incomplete item in sections 4–7.
+10. Continue with the authenticated UAT and P1 items in section 8; do not
+    rebuild or redeploy the already-live release merely to perform them.
 
-## 10. External release blockers resolved at 2026-07-24 23:08 KST
+## 10. External release and deployment record
 
 - GitHub was reauthenticated as the repository organization account with
   admin/push permission. `codex/e503-p0-release-20260724` is now on `origin`,
@@ -314,9 +369,13 @@ These are not permission to overstate the current product:
 - The short-lived publishing token and every token pasted into a conversation
   must be revoked after the release. Never record their values in this file,
   Git, release evidence, or logs.
-- No AWS release, production backup, migration, traffic switch, reboot, or
-  host-side hotfix has yet been attempted for this candidate. Resume with a
-  fresh signed off-host backup; commit and push this evidence update; build/sign
-  the exact resulting commit; verify and preflight it on EC2; release; run
-  authenticated Office UAT, the full live smoke matrix, and one reboot recovery
-  check.
+- AWS release, production backup, traffic switch, public smoke, and one reboot
+  recovery check completed on 2026-07-25 KST for immutable release
+  `20260725T004533-f78dc4f8706b`. No host-side hotfix was used.
+- Claude/another tool reporting that it cannot use production SSH or GPG is a
+  session-policy boundary, not evidence that this release failed. Do not try to
+  override such a boundary with a prompt or copy production keys into that
+  session. Use the approved signed controller workflow or build an
+  approval-gated CI/SSM/KMS release path.
+- Remaining work is the explicitly listed authenticated UAT and P1/P2 backlog,
+  not another blind redeploy.
