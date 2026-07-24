@@ -85,12 +85,16 @@ export const SDK_VERSION = RELEASE_STATUS.sdkVersion;
 // Messaging channel delivery is launch-paused (matches the Agent screen);
 // MCP clients connect once the fixed MCP path ships in SDK 1.6.2.
 const RUNS_ON = `web · chrome-extension · mcp clients (${RELEASE_STATUS.mcp})`;
-const CONNECTORS = [
-  { k: "messaging (0/8 live)", v: "telegram · discord · x launch-paused; whatsapp · slack · line · instagram · gmail planned" },
-  { k: "productivity (0/3 live)", v: "notion · google-calendar · github planned" },
-  { k: "media (0/2 live)", v: "spotify · youtube planned" },
-  { k: "knowledge (3/4 live)", v: "web-search · wikipedia · memory live; brave planned" },
-  { k: "crypto (0/2 live)", v: "coingecko · bscscan planned" },
+// Status tokens — colored glyphs so live/paused/planned scans without reading each row.
+const tLive = <span style={{ color: GREEN }}>● live</span>;
+const tPlanned = <span style={{ color: MUTED }}>○ planned</span>;
+const tPaused = <span style={{ color: MUTED }}>◌ launch-paused</span>;
+const CONNECTORS: { k: string; v: React.ReactNode }[] = [
+  { k: "messaging (0/8 live)", v: <>telegram · discord · x {tPaused} · <span title="whatsapp · slack · line · instagram · gmail — planned" style={{ color: MUTED, cursor: "help" }}>+5 ○ planned</span></> },
+  { k: "productivity (0/3 live)", v: <>notion · google-calendar · github {tPlanned}</> },
+  { k: "media (0/2 live)", v: <>spotify · youtube {tPlanned}</> },
+  { k: "knowledge (3/4 live)", v: <>web-search · wikipedia · memory {tLive} · brave {tPlanned}</> },
+  { k: "crypto (0/2 live)", v: <>coingecko · bscscan {tPlanned}</> },
 ];
 const MCP_TOOLS = [
   { k: "petclaw_chat", v: "memory-aware chat" }, { k: "persona_mirror", v: "mirror your tone" },
@@ -115,9 +119,9 @@ const HARNESS = [
   { k: "chorus", v: "best-of-N: most in-character of N drafts · Fusion-family (opt-in)" },
 ];
 // PACK public discovery is live; remote invocation remains fail-closed.
-const PACK = [
-  { k: "discover", v: "find pets by element / skill" },
-  { k: "invoke", v: "disabled · dedicated consent + caller funding required" },
+const PACK: { k: string; v: React.ReactNode }[] = [
+  { k: "discover", v: <>find pets by element / skill {tLive}</> },
+  { k: "invoke", v: <><span style={{ color: MUTED }}>○ disabled</span> — needs dedicated consent + caller funding</> },
 ];
 const SOVEREIGNTY: { k: string; v: React.ReactNode }[] = [
   { k: "export", v: "full memory ledger, JSON + SHA-256 integrity hash" },
@@ -137,7 +141,6 @@ function Row({ k, v, kw = 132 }: { k: string; v: React.ReactNode; kw?: number })
 function SectionHead({ children }: { children: React.ReactNode }) {
   return <div style={{ color: GOLD2, fontWeight: 700, fontSize: 15, margin: "16px 0 7px" }}>{children}</div>;
 }
-const liveTag = <span style={{ color: GREEN }}>● live</span>;
 
 interface Line { role: "sys" | "you" | "pet"; text: string }
 
@@ -379,7 +382,8 @@ export default function PetClawConsole({ pet, petId, demo = false, variant = "fu
                   <SectionHead>PACK — pet-to-pet (A2A)</SectionHead>
                   {PACK.map((p) => <Row key={p.k} k={p.k} v={p.v} kw={120} />)}
                   <SectionHead>MODELS — bring your own (BYOK)</SectionHead>
-                  <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter · Nous (Hermes) — powers chat + agent reasoning + judging" kw={120} />
+                  <Row k="providers" v="xAI · OpenAI · Anthropic · Gemini · OpenRouter · Nous (Hermes)" kw={120} />
+                  <Row k="powers" v="chat · agent reasoning · best-of-N judging" kw={120} />
                   <Row k="agent-loop" v="give a goal → plans, calls skills, iterates → answers" kw={120} />
                   <div style={{ fontSize: 15, marginTop: 4 }}>
                     <span style={{ color: GREEN }}>connect your model ↓ below (or via the CLI)</span>

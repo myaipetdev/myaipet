@@ -26,6 +26,7 @@ const PAPER = "#FBF6EC";         // card paper
 const INSET = "#F5EFE2";         // input inset
 const CTA = "linear-gradient(180deg,#F49B2A,#E27D0C)"; // primary button
 const DANGER = "#9A3412";        // warm danger text
+const GOOD = "#5C8A4E";          // editorial green — matches SovereigntyDashboard status pills
 const TERM_BG = "#1E1710";       // warm-dark terminal
 const TERM_CREAM = "#ECE0CE";
 const TERM_MUTED = "rgba(251,246,236,0.65)"; // dim-on-dark kept ≥.65 alpha for legibility
@@ -61,7 +62,10 @@ const QUICK_PICKS: QuickPick[] = [
   { label: "Gemini", provider: "google", model: "gemini-2.5-flash", note: "Google key" },
 ];
 
-function Card({ children, title, sub, id }: { children: React.ReactNode; title: string; sub?: string; id?: string }) {
+// Small pill/chip base — shared look for the task chips + status pills below.
+const chipBase: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, fontSize: 14, lineHeight: 1.4 };
+
+function Card({ children, title, sub, id }: { children: React.ReactNode; title: string; sub?: React.ReactNode; id?: string }) {
   return (
     <div id={id} style={{ scrollMarginTop: 88, background: PAPER, border: `1px solid ${LINE}`, borderRadius: 18, padding: "22px 24px", marginBottom: 20, boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
       <h2 style={{ fontFamily: DISP, fontSize: 20, fontWeight: 800, color: INK, margin: 0, letterSpacing: "-0.01em" }}>{title}</h2>
@@ -189,8 +193,28 @@ export default function ModelsPanel() {
         <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: "0.18em", color: GOLD, textTransform: "uppercase" }}>PetClaw protocol · bring your own model</div>
         <h1 style={{ fontFamily: DISP, fontSize: 28, fontWeight: 800, color: INK, margin: "6px 0 0", letterSpacing: "-0.02em" }}>Your model, your pet</h1>
         <p style={{ fontFamily: BODY, fontSize: 14.5, color: MUTED, margin: "8px 0 0", lineHeight: 1.55 }}>
-          A PetClaw-protocol (developer) feature — the intended path is the <strong style={{ color: INK, fontWeight: 600 }}>CLI / at install</strong>. Your pet then routes its chat replies, agent-loop reasoning, and best-of-N judging to your model; other background tasks use the platform default (Grok). Keys are encrypted at rest, never shown again.
+          Bring your own key — your pet <strong style={{ color: INK, fontWeight: 600 }}>routes these tasks to your model</strong>:
         </p>
+        {/* Task-routing chips + status pills — extracted from the old intro prose. */}
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 10 }}>
+          {["chat replies", "agent reasoning", "best-of-N judging"].map((t) => (
+            <span key={t} style={{ ...chipBase, border: `1px solid ${LINE}`, background: INSET, color: MUTED2, fontFamily: BODY, fontWeight: 600 }}>{t}</span>
+          ))}
+          <span
+            title="Background tasks outside these three keep using the platform default model (Grok)."
+            style={{ ...chipBase, border: `1px dashed ${LINE}`, background: "transparent", color: MUTED, fontFamily: BODY, fontWeight: 500, cursor: "help" }}
+          >
+            other tasks → Grok default
+          </span>
+          <span style={{ ...chipBase, background: "rgba(92,138,78,0.14)", border: "1px solid rgba(92,138,78,0.25)", color: GOOD, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.08em" }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="4" y="10.5" width="16" height="10" rx="2.5" />
+              <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+              <circle cx="12" cy="15.5" r="1.4" fill="currentColor" stroke="none" />
+            </svg>
+            ENCRYPTED AT REST · NEVER SHOWN AGAIN
+          </span>
+        </div>
         {/* Primary path: connect via the CLI / on install. */}
         <div style={{ marginTop: 14, background: TERM_BG, borderRadius: 14, padding: "16px 18px", fontFamily: MONO, fontSize: 14, lineHeight: 1.7, color: TERM_CREAM, overflowX: "auto", boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))" }}>
           <div style={{ color: TERM_MUTED, marginBottom: 6 }}># install, authenticate, then connect a model</div>
@@ -204,7 +228,7 @@ export default function ModelsPanel() {
 
       <div style={{ height: 20 }} />
 
-      <Card id="connect-cli" title="Connect PetClaw clients" sub="Use a one-year CLI token for your terminal, or a 30-day, limited-scope extension token for Chrome. Both are revocable and shown only once.">
+      <Card id="connect-cli" title="Connect PetClaw clients" sub={<><strong style={{ color: INK, fontWeight: 600 }}>Two tokens:</strong> a one-year CLI token for your terminal, or a 30-day limited-scope extension token for Chrome. Both revocable, shown only once.</>}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button onClick={() => genToken("extension")} disabled={genLoading} style={{ ...btn, opacity: genLoading ? 0.6 : 1 }}>
             {genLoading ? "Generating…" : "Generate extension token"}
@@ -254,7 +278,7 @@ export default function ModelsPanel() {
         )}
       </Card>
 
-      <Card title="Or connect here (manual)" sub="This web form does the same thing as the CLI — API-key providers (BYOK); OpenRouter reaches almost any model, including Gemini and Hermes. Full CLI setup lives in the 'For Developers' section below (tap to expand).">
+      <Card title="Or connect here (manual)" sub={<><strong style={{ color: INK, fontWeight: 600 }}>Same thing as the CLI, in a form.</strong> API-key providers (BYOK) — OpenRouter reaches almost any model, including Gemini and Hermes. Full CLI setup lives in the &apos;For Developers&apos; section below (tap to expand).</>}>
         <div style={{ marginBottom: 18 }}>
           <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: "0.14em", color: GOLD, textTransform: "uppercase", marginBottom: 8 }}>Popular models</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>

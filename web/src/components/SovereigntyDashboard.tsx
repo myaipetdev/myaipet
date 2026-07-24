@@ -554,15 +554,25 @@ function MemoryInspectorCard({ petId, petName }: { petId: number; petName?: stri
           background: PAPER, color: TERRA_SUB, fontFamily: BODY, fontSize: 14, fontWeight: 700, cursor: "pointer",
         }}>{consolidating ? "Consolidating…" : "Consolidate Now"}</button>
       </div>
-      <p style={{ fontFamily: BODY, fontSize: 14, color: MUTED2, lineHeight: 1.6, margin: "0 0 18px" }}>
+      <p style={{ fontFamily: BODY, fontSize: 14, color: MUTED2, lineHeight: 1.6, margin: "0 0 10px" }}>
         Everything your pet has learned about you — this is what makes it feel like it truly knows you.
-        Every line is inspectable, editable, deletable.
         {data.stats?.lastConsolidatedAt && (
           <span style={{ marginLeft: 8, color: MUTED, fontSize: 14 }}>
             · last consolidated {new Date(data.stats.lastConsolidatedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
           </span>
         )}
       </p>
+      {/* "inspectable, editable, deletable" extracted from prose into tiny mono chips */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
+        <span style={{ fontFamily: BODY, fontSize: 14, color: MUTED }}>Every line is</span>
+        {["inspectable", "editable", "deletable"].map((t) => (
+          <span key={t} style={{
+            fontSize: 14, padding: "3px 10px", borderRadius: 999,
+            background: INSET, border: `1px solid ${HAIR}`,
+            fontFamily: MONO, fontWeight: 700, letterSpacing: "0.1em", color: TERRA_SUB,
+          }}>{t}</span>
+        ))}
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 10, marginBottom: 22 }}>
         <Stat label="Memories" value={memories.length} />
@@ -572,7 +582,7 @@ function MemoryInspectorCard({ petId, petName }: { petId: number; petName?: stri
       </div>
 
       <Section title="Facts it remembers" fileTag="MEMORY.md" onClear={memories.length ? () => clearAll("memory") : undefined} disabled={!!busy}>
-        {memories.length === 0 ? <Empty msg="Nothing remembered yet. Chat a few times to seed this." /> :
+        {memories.length === 0 ? <Empty msg={<>Nothing remembered yet. <strong style={{ color: INK70 }}>Chat a few times</strong> to seed this.</>} /> :
           memories.map((m) => (
             <EntryRow key={m.key} primary={m.content} secondary={`[${m.category}] importance ${m.importance}`}
               onEdit={() => editContent("memory", m.key, m.content)}
@@ -596,7 +606,7 @@ function MemoryInspectorCard({ petId, petName }: { petId: number; petName?: stri
       </Section>
 
       <Section title="Learned skills (auto-promoted)" onClear={learned.length ? () => clearAll("learned") : undefined} disabled={!!busy}>
-        {learned.length === 0 ? <Empty msg="No learned skills yet. Patterns promote after 3 successful conversations on the same topic." /> :
+        {learned.length === 0 ? <Empty msg={<>No learned skills yet. <strong style={{ color: INK70 }}>Patterns promote after 3 successful conversations</strong> on the same topic.</>} /> :
           learned.map((p) => (
             <EntryRow key={p.id || p.topic} primary={p.topic} secondary={`freq ${p.frequency} · success ${Math.round((p.successRate || 0) * 100)}%${p.promotedToSkill ? " · ⭐ promoted" : ""}`}
               onDelete={() => del("learned", p.id || p.topic)}
@@ -699,8 +709,37 @@ function EntryRow({ primary, secondary, onEdit, onDelete, busy }: { primary: str
   );
 }
 
-function Empty({ msg }: { msg: string }) {
+function Empty({ msg }: { msg: React.ReactNode }) {
   return <div style={{ fontFamily: BODY, fontSize: 14, color: MUTED2, padding: "8px 0", fontStyle: "italic" }}>{msg}</div>;
+}
+
+/**
+ * File-local status pill — one idiom for live/planned/disabled states across
+ * every section (consent rows, persona header, legacy, milestones, network).
+ * Palette mirrors the page's existing inline pills: GOOD for live/enforced,
+ * TERRA_SUB for planned/preference, DANGER for disabled/not-active.
+ * Long honesty qualifiers demote into the `title` tooltip, not prose.
+ */
+function StatusPill({ state, children, title, style }: {
+  state: "live" | "planned" | "off";
+  children: React.ReactNode;
+  title?: string;
+  style?: React.CSSProperties;
+}) {
+  const palette = state === "live"
+    ? { background: "rgba(92,138,78,0.14)", color: GOOD }
+    : state === "planned"
+      ? { background: "rgba(190,79,40,0.1)", color: TERRA_SUB }
+      : { background: "rgba(181,70,43,0.12)", color: DANGER };
+  return (
+    <span title={title} style={{
+      display: "inline-flex", alignItems: "center",
+      fontSize: 14, padding: "3px 10px", borderRadius: 999,
+      fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
+      whiteSpace: "nowrap", cursor: title ? "help" : undefined,
+      ...palette, ...style,
+    }}>{children}</span>
+  );
 }
 
 /** Shared trash glyph — extracted from the two inline copies in the export/delete rows. */
@@ -867,20 +906,38 @@ function ChromeExtensionSection() {
           <h2 style={{ fontFamily: DISP, fontSize: 24, fontWeight: 800, color: INK, letterSpacing: "-0.02em" }}>Desktop Companion Extension</h2>
           <span style={{ fontSize: 14, padding: "3px 9px", borderRadius: 999, background: "rgba(190,79,40,0.1)", color: TERRA_SUB, fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em" }}>v{PETCLAW_EXTENSION_VERSION} · CHROME</span>
         </div>
-        <p style={{ fontFamily: BODY, fontSize: 14, color: MUTED2, lineHeight: 1.65, marginBottom: 6 }}>
+        <p style={{ fontFamily: BODY, fontSize: 14, color: MUTED2, lineHeight: 1.65, marginBottom: 10 }}>
           Your pet follows you across supported sites — pause per site, click to chat, feed, or play.
         </p>
-        <p style={{ fontFamily: BODY, fontSize: 14, color: MUTED, lineHeight: 1.6, margin: "0 0 14px" }}>
-          Page reactions are off by default. A summary reads only after you approve a preview; only the approved excerpt goes to a non-memory summarizer.
-        </p>
+        {/* Privacy guarantees as chips — full detail demoted to title tooltips */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+          {[
+            { t: "Reactions off by default", tip: "Page reactions are off by default — enable them per site." },
+            { t: "Preview before summarize", tip: "A summary reads the page only after you approve a preview." },
+            { t: "Excerpt-only", tip: "Only the approved excerpt goes to a non-memory summarizer." },
+          ].map(({ t, tip }) => (
+            <span key={t} title={tip} style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              fontSize: 14, padding: "4px 12px", borderRadius: 999,
+              background: INSET, border: `1px solid ${HAIR}`,
+              fontFamily: MONO, fontWeight: 700, letterSpacing: "0.06em",
+              color: MUTED2, cursor: "help",
+            }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: GOOD, flexShrink: 0 }} />
+              {t}
+            </span>
+          ))}
+        </div>
         <div style={{
           display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 14px", borderRadius: 12,
           background: INSET, border: `1px solid ${HAIR}`, marginBottom: 20,
         }}>
           <span style={{ fontSize: 16, lineHeight: 1.4, display: "inline-flex", color: TERRA }}><Icon name="lock" size={16} /></span>
           <p style={{ fontFamily: BODY, fontSize: 14, color: INK70, lineHeight: 1.6, margin: 0 }}>
-            <strong>To see YOUR pet:</strong> generate a <strong>30-day extension token</strong> in{" "}
-            <a href="#connect-cli" style={{ color: TERRA, fontWeight: 700, textDecoration: "underline" }}>&ldquo;Connect PetClaw clients&rdquo;</a>, paste it in extension <strong>Settings</strong>. Extension-scoped · revocable anytime.
+            <strong>To see YOUR pet:</strong> <strong>1.</strong> Generate a <strong>30-day token</strong> in{" "}
+            <a href="#connect-cli" style={{ color: TERRA, fontWeight: 700, textDecoration: "underline" }}>&ldquo;Connect PetClaw clients&rdquo;</a>{" "}
+            <strong>2.</strong> Paste in extension <strong>Settings</strong>.{" "}
+            <span style={{ fontFamily: MONO, fontSize: 14, color: MONO_CLR, letterSpacing: "0.06em" }}>EXTENSION-SCOPED · REVOCABLE</span>
           </p>
         </div>
       </Reveal>
@@ -946,11 +1003,8 @@ function ChromeExtensionSection() {
             Download Extension
           </a>
           <div style={{ marginTop: 8, fontFamily: MONO, fontSize: 14, color: MONO_CLR, letterSpacing: "0.1em" }}>
-            Developer-mode install
+            Developer-mode install · not yet on Chrome Web Store
           </div>
-          <p style={{ marginTop: 10, fontFamily: BODY, fontSize: 14, color: MUTED2, lineHeight: 1.55, maxWidth: 460 }}>
-            Not yet on the Chrome Web Store — unpacked install from the ZIP via the 7 steps above (~2 min).
-          </p>
         </Reveal>
 
         {/* Right: popup mockup */}
@@ -1513,8 +1567,9 @@ export default function SovereigntyDashboard() {
               lines={["Your Pet.", <span key="truly-yours" style={{ color: TERRA }}>Truly Yours.</span>]}
               style={{ fontFamily: DISP, fontSize: 52, fontWeight: 800, letterSpacing: "-0.04em", color: INK, lineHeight: 1.0, margin: "0 0 16px" }}
             />
+            {/* One sentence — the ON-CHAIN · PLANNED sov-tag above and the stat trio below carry the rest. */}
             <p style={{ fontFamily: BODY, fontSize: 16, color: MUTED2, lineHeight: 1.7, margin: "0 0 28px", maxWidth: 380 }}>
-              Every memory, every bond — owned by you, not us. Export the full soul anytime; carry it across web, extension, and CLI. On-chain anchoring and inheritance are planned, not live.
+              Every memory, every bond — <strong style={{ color: INK }}>owned by you, not us</strong>. Export the full soul anytime.
             </p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               {[
@@ -1701,7 +1756,7 @@ export default function SovereigntyDashboard() {
               marginBottom: 32,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
               <div
                 style={{
                   width: 4,
@@ -1713,6 +1768,8 @@ export default function SovereigntyDashboard() {
               <h2 style={{ fontFamily: DISP, fontSize: 24, fontWeight: 800, color: INK, letterSpacing: "-0.02em" }}>
                 Persona Evolution
               </h2>
+              <StatusPill state="live" title="Each checkpoint is fingerprinted with SHA-256.">SHA-256</StatusPill>
+              <StatusPill state="planned" title="On-chain anchoring is planned, not live.">ON-CHAIN · PLANNED</StatusPill>
               <span
                 style={{
                   fontFamily: MONO,
@@ -1727,10 +1784,18 @@ export default function SovereigntyDashboard() {
               </span>
             </div>
 
-            {/* What this actually is — it's NOT the level/XP bar. */}
-            <p style={{ fontFamily: BODY, fontSize: 14.5, lineHeight: 1.6, color: MUTED2, margin: "0 0 22px" }}>
-              <strong style={{ color: INK }}>Not your level.</strong> A versioned history of <em>who your pet is becoming</em> — each checkpoint snapshots personality, voice, and memory at a turning point, fingerprinted with SHA-256. On-chain anchoring is planned, not live; portability = the downloadable SOUL bundle today.
+            {/* What this actually is — it's NOT the level/XP bar. Status lives in the header pills. */}
+            <p style={{ fontFamily: BODY, fontSize: 14.5, lineHeight: 1.6, color: MUTED2, margin: "0 0 10px" }}>
+              <strong style={{ color: INK }}>Not your level.</strong> A versioned history of <em>who your pet is becoming</em> — personality, voice, and memory, snapshotted at every turning point.
             </p>
+            <details className="sovHow" style={{ marginBottom: 22 }}>
+              <summary style={{ listStyle: "none", cursor: "pointer", fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: MONO_CLR, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                The fine print — portability <span className="sovHowChev" aria-hidden style={{ transition: "transform .18s ease" }}>+</span>
+              </summary>
+              <p style={{ fontFamily: BODY, fontSize: 14.5, color: MUTED2, lineHeight: 1.65, margin: "8px 0 0" }}>
+                Portability today = the downloadable SOUL bundle — every checkpoint ships inside your export. On-chain anchoring is planned, not live.
+              </p>
+            </details>
 
             {checkpoints.length === 0 ? (
               <div
@@ -1890,17 +1955,14 @@ export default function SovereigntyDashboard() {
                 Legacy &amp; Inheritance
               </h2>
             </div>
-            <p
-              style={{
-                fontSize: 15,
-                color: MUTED2,
-                marginBottom: 20,
-                fontFamily: BODY,
-                lineHeight: 1.65,
-              }}
-            >
-              Record a successor-wallet preference — stored off-chain today; automatic transfer and on-chain inheritance are not active.
-            </p>
+            {/* One-line lead + status pills — the two statuses were buried in prose */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+              <span style={{ fontSize: 15, color: MUTED2, fontFamily: BODY, lineHeight: 1.65 }}>
+                Name a successor wallet for your pet&apos;s soul.
+              </span>
+              <StatusPill state="planned" title="Your successor preference is stored off-chain today.">OFF-CHAIN TODAY</StatusPill>
+              <StatusPill state="off" title="Automatic transfer and on-chain inheritance are not active.">AUTO-TRANSFER · NOT ACTIVE</StatusPill>
+            </div>
 
             <div style={{ marginBottom: 14 }}>
               <div
@@ -2001,8 +2063,11 @@ export default function SovereigntyDashboard() {
               }}
             >
               <div>
-                <div style={{ fontSize: 14, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 6, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                  Planned Trigger · Not Active
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 14, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                    Planned Trigger
+                  </span>
+                  <StatusPill state="off">NOT ACTIVE</StatusPill>
                 </div>
                 <div style={{ fontSize: 15, fontFamily: DISP, fontWeight: 700, color: INK }}>
                   Proposed: {soul?.inactivity_days ?? 180} days of inactivity
@@ -2055,15 +2120,19 @@ export default function SovereigntyDashboard() {
               >
                 {memoryMilestones.length} preserved
               </span>
-              <span style={{
-                marginLeft: "auto",
-                fontFamily: BODY,
-                fontSize: 14,
-                color: MUTED,
-              }}>
-                Production on-chain mint integration is disabled. Records without a transaction hash remain off-chain history — see <a href="/contracts" style={{ color: TERRA_SUB, fontWeight: 700, textDecoration: "none" }}>/contracts</a>.
-              </span>
+              <StatusPill state="off" style={{ marginLeft: "auto" }} title="Production on-chain mint integration is disabled.">
+                ON-CHAIN MINT · DISABLED
+              </StatusPill>
             </div>
+            {/* Off-chain explanation demoted to fine print — per-card badges below carry state. */}
+            <details className="sovHow" style={{ margin: "-12px 0 20px" }}>
+              <summary style={{ listStyle: "none", cursor: "pointer", fontFamily: MONO, fontSize: 14, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: MONO_CLR, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                The fine print — off-chain records <span className="sovHowChev" aria-hidden style={{ transition: "transform .18s ease" }}>+</span>
+              </summary>
+              <p style={{ fontFamily: BODY, fontSize: 14.5, color: MUTED2, lineHeight: 1.65, margin: "8px 0 0" }}>
+                Records without a transaction hash remain off-chain history — see <a href="/contracts" style={{ color: TERRA_SUB, fontWeight: 700, textDecoration: "none" }}>/contracts</a>.
+              </p>
+            </details>
 
             {memoryMilestones.length === 0 ? (
               <div
@@ -2490,27 +2559,49 @@ export default function SovereigntyDashboard() {
 
             {/* Consent Management */}
             <div style={{ borderTop: `1px solid ${HAIR}`, paddingTop: 16 }}>
-              <div style={{ fontSize: 14, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, marginBottom: 6, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                Data Consent
-              </div>
-              <div style={{ fontSize: 14.5, color: MUTED2, marginBottom: 14, lineHeight: 1.6, fontFamily: BODY }}>
-                Changes save instantly. Pet Interactions is enforced today; Data Sharing and AI Training record your choice now and take effect only when those programs go live.
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 14, fontFamily: MONO, fontWeight: 700, color: MONO_CLR, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                  Data Consent
+                </span>
+                <span style={{ fontSize: 14, fontFamily: BODY, color: MUTED }}>· changes save instantly</span>
               </div>
               <div style={{ display: "grid", gap: 10 }}>
+                {/* Status pills carry enforced/planned; the long honesty qualifiers live in the pill tooltips. */}
                 {[
-                  { key: "allowPublicProfile", label: "Public Profile", desc: "On: profile, creations & stats show in the public gallery. Off: only you." },
-                  { key: "allowDataSharing", label: "Data Sharing", desc: "Preference for the upcoming partner program. No external app can read your pet's data today — launch access gates on this opt-in." },
-                  { key: "allowAITraining", label: "AI Training", desc: "Preference only — we do not train on your data today. Takes effect only if such a program goes live." },
-                  { key: "allowInteraction", label: "Pet Interactions", desc: "On: other pets can interact with yours. Off: solo mode." },
-                ].map(({ key, label, desc }) => (
+                  {
+                    key: "allowPublicProfile", label: "Public Profile", state: "live" as const, pill: "LIVE",
+                    tip: undefined,
+                    on: "profile, creations & stats show in the public gallery", off: "only you",
+                  },
+                  {
+                    key: "allowDataSharing", label: "Data Sharing", state: "planned" as const, pill: "PLANNED",
+                    tip: "No external app can read your pet's data today — launch access gates on this opt-in.",
+                    on: "pre-registers you for the upcoming partner program", off: "you stay out",
+                  },
+                  {
+                    key: "allowAITraining", label: "AI Training", state: "planned" as const, pill: "PLANNED",
+                    tip: "We do not train on your data today — takes effect only if such a program goes live.",
+                    on: "records your preference for a future program", off: "never used",
+                  },
+                  {
+                    key: "allowInteraction", label: "Pet Interactions", state: "live" as const, pill: "ENFORCED",
+                    tip: undefined,
+                    on: "other pets can interact with yours", off: "solo mode",
+                  },
+                ].map(({ key, label, state, pill, tip, on, off }) => (
                   <div key={key} style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
                     padding: "12px 16px", borderRadius: 12,
                     background: INSET, border: `1px solid ${HAIR}`,
                   }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontFamily: DISP, fontWeight: 700, color: INK }}>{label}</div>
-                      <div style={{ fontSize: 14.5, color: MUTED2, fontFamily: BODY, marginTop: 2 }}>{desc}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 14, fontFamily: DISP, fontWeight: 700, color: INK }}>{label}</span>
+                        <StatusPill state={state} title={tip}>{pill}</StatusPill>
+                      </div>
+                      <div style={{ fontSize: 14.5, color: MUTED2, fontFamily: BODY, marginTop: 3, lineHeight: 1.5 }}>
+                        <strong style={{ color: INK70 }}>On:</strong> {on} <span style={{ color: MUTED }}>·</span> <strong style={{ color: INK70 }}>Off:</strong> {off}
+                      </div>
                     </div>
                     <button
                       role="switch"
@@ -2703,13 +2794,15 @@ export default function SovereigntyDashboard() {
                 background: "rgba(190,79,40,0.1)", color: TERRA_SUB,
                 fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
               }}>PUBLIC DISCOVERY</span>
+              <StatusPill state="off" title="Remote skill invocation stays disabled until consent and caller funding are explicit.">
+                REMOTE INVOKE · DISABLED
+              </StatusPill>
             </div>
             <p style={{
               fontSize: 14, color: MUTED2, lineHeight: 1.6, margin: "0 0 22px",
               fontFamily: BODY,
             }}>
-              Discover public pets on the open network. Remote skill invocation stays
-              disabled until consent and caller funding are explicit.
+              Discover public pets on the open network.
             </p>
 
             {/* Network stats — ONLY the real number. "Online now" (= every active
@@ -2805,13 +2898,21 @@ export default function SovereigntyDashboard() {
                 fontFamily: MONO, fontWeight: 700, letterSpacing: "0.12em",
               }}>19 CONNECTORS · 3 LIVE</span>
             </div>
-            <p style={{
-              fontSize: 15, color: MUTED2, marginBottom: 20,
-              fontFamily: BODY, lineHeight: 1.65,
-            }}>
-              3 of 19 connectors live today. Telegram, X and Discord delivery is
-              launch-paused. Status marked per connector below.
-            </p>
+            {/* One-line glyph legend — the count badge above + per-tile badges below carry the rest. */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+              {[
+                { g: "●", t: "live", c: GOOD },
+                { g: "◌", t: "launch-paused", c: DANGER },
+                { g: "○", t: "soon", c: MONO_CLR },
+              ].map(({ g, t, c }) => (
+                <span key={t} style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  fontSize: 14, padding: "4px 10px", borderRadius: 999,
+                  background: INSET, border: `1px solid ${HAIR}`,
+                  fontFamily: MONO, fontWeight: 700, letterSpacing: "0.08em", color: c,
+                }}>{g} {t}</span>
+              ))}
+            </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 8 }}>
               {[
