@@ -83,7 +83,7 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
           filter:drop-shadow(0 2px 0 rgba(0,0,0,.55)) drop-shadow(0 8px 22px rgba(232,199,126,.14))}
         @keyframes pchiShine{to{background-position:220% 0}}
         .pchi-wm p{margin:8px auto 0;max-width:620px;font-family:var(--ed-m);font-size:14.5px;line-height:1.55;color:rgba(251,246,236,.8);letter-spacing:.04em}
-        .pchi-wm .pchi-wm-sub{margin-top:4px;font-size:12.5px;color:rgba(251,246,236,.62)}
+        .pchi-wm .pchi-wm-sub{margin-top:4px;font-size:14px;color:rgba(251,246,236,.62)}
 
         /* Height tracks width (560:440), so the 16/10.2 laptop + chip orbit
            always fit inside the rig instead of riding up into the headline. */
@@ -93,11 +93,11 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
           background:#FBF6EC;padding:10px 10px 34px;box-shadow:0 30px 60px -24px rgba(0,0,0,.8),0 0 0 1px rgba(0,0,0,.3);
           backface-visibility:hidden;animation:pchiFlip 1.1s 1.2s cubic-bezier(.6,.05,.3,1) both}
         .pchi-sticker img{width:100%;aspect-ratio:1/1;border-radius:9px;object-fit:cover;display:block;box-shadow:inset 0 0 0 1.5px rgba(184,130,44,.55)}
-        .pchi-sticker .pchi-cap{position:absolute;left:0;right:0;bottom:9px;text-align:center;color:#211A12;font-family:var(--ed-m);font-weight:700;font-size:12.5px;letter-spacing:.14em}
+        .pchi-sticker .pchi-cap{position:absolute;left:0;right:0;bottom:9px;text-align:center;color:#211A12;font-family:var(--ed-m);font-weight:700;font-size:13px;letter-spacing:.14em}
         .pchi-seal{position:absolute;top:-11px;right:-11px;width:38px;height:38px;border-radius:50%;
           background:radial-gradient(circle at 36% 32%,#F6DFA8,#C8932F 65%,#8A5A1E);display:grid;place-items:center;
           color:#3d2708;font-family:var(--ed-m);font-weight:800;font-size:12px;box-shadow:0 6px 14px -6px rgba(0,0,0,.7)}
-        .pchi-demo{position:absolute;left:10px;right:10px;bottom:32px;text-align:center;font-family:var(--ed-m);font-size:13px;font-weight:700;
+        .pchi-demo{position:absolute;left:10px;right:10px;bottom:32px;text-align:center;font-family:var(--ed-m);font-size:14px;font-weight:700;
           letter-spacing:.12em;color:#FCE9CF;background:rgba(30,23,16,.78);border-radius:4px;padding:1px 0}
         @keyframes pchiFlip{0%{transform:translate(-50%,-50%) rotateY(0) scale(1)}45%{transform:translate(-50%,-50%) rotateY(90deg) scale(.92)}100%{transform:translate(-50%,-50%) rotateY(90deg) scale(.92);opacity:0}}
 
@@ -112,8 +112,8 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
         .pchi-bar{height:24px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#191008;border-bottom:1px solid rgba(231,197,124,.22)}
         .pchi-bar i{width:8px;height:8px;border-radius:50%;display:block}
         .pchi-bar i:nth-child(1){background:#D66}.pchi-bar i:nth-child(2){background:#DBA94E}.pchi-bar i:nth-child(3){background:#8FBF7F}
-        .pchi-bar b{margin-left:8px;font-family:var(--ed-m);font-size:12px;color:rgba(251,246,236,.6);letter-spacing:.1em;font-weight:600}
-        .pchi-term{padding:12px 14px;font-family:var(--ed-m);font-size:clamp(12px,1.7vw,13px);line-height:1.9;color:#E8C77E}
+        .pchi-bar b{margin-left:8px;font-family:var(--ed-m);font-size:13px;color:rgba(251,246,236,.6);letter-spacing:.1em;font-weight:600}
+        .pchi-term{padding:12px 14px;font-family:var(--ed-m);font-size:clamp(14px,1.8vw,15px);line-height:1.9;color:#E8C77E}
         .pchi-term .pchi-ln{display:block;white-space:nowrap;overflow:hidden;width:0;opacity:0}
         .pchi-term .c{color:#ECE0CE}.pchi-term .g{color:#9FC59A}.pchi-term .m{color:rgba(251,246,236,.6)}
         .pchi-term .l1{animation:pchiType .5s 3.1s steps(18,end) forwards}
@@ -133,7 +133,7 @@ export default function PetClawHeroIntro({ petName, avatarUrl, level, demo }: Pr
 
         .pchi-chip{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) scale(.2);opacity:0;z-index:4;
           --x:var(--xs);--y:var(--ys);
-          font-family:var(--ed-m);font-size:12px;font-weight:700;letter-spacing:.08em;padding:7px 13px;border-radius:999px;
+          font-family:var(--ed-m);font-size:14px;font-weight:700;letter-spacing:.08em;padding:7px 14px;border-radius:999px;
           background:linear-gradient(180deg,rgba(252,233,207,.16),rgba(252,233,207,.06));border:1px solid rgba(232,199,126,.5);
           color:#FCE9CF;backdrop-filter:blur(4px);box-shadow:0 10px 26px -12px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,244,220,.25);
           animation:pchiFly 1s cubic-bezier(.18,.9,.3,1.2) forwards,pchiHover 3.4s calc(var(--d) + 1s) ease-in-out infinite alternate}
