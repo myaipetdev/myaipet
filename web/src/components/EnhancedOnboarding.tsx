@@ -226,7 +226,10 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   // Memoized so a keystroke re-render keeps the SAME component identity — otherwise
   // React remounts the whole card every keystroke (obSlideIn replays + input loses
   // focus = the flicker). Recreated only when the step (progressIdx) changes.
-  const Shell = useMemo(() => ({ children, hideProgress }: { children: React.ReactNode; hideProgress?: boolean }) => (
+  const Shell = useMemo(() => function OnboardingShell(
+    { children, hideProgress }: { children: React.ReactNode; hideProgress?: boolean },
+  ) {
+    return (
     <div style={{
       width: "100%", maxWidth: 460,
       background: "#FBF6EC",
@@ -258,7 +261,8 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
 
       <div style={{ position: "relative" }}>{children}</div>
     </div>
-  ), [progressIdx, totalSteps]);
+    );
+  }, [progressIdx, totalSteps]);
 
   // Style helpers
   const primaryBtn: React.CSSProperties = {
