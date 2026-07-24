@@ -1,17 +1,18 @@
 # MY AI PET production readiness handoff — 2026-07-24
 
-> **ACTIVE HANDOFF — CANDIDATE IN PROGRESS, NOT A LAUNCH APPROVAL**
+> **ACTIVE HANDOFF — LIVE RELEASE COMPLETE; AUTH UAT + P1 HARDENING OPEN**
 >
 > Read this document before changing code, publishing npm, building a release
-> artifact, or touching production. The immutable live release remains the
-> source of truth until the complete signed release and post-reboot smoke finish.
+> artifact, or touching production. The immutable live release below is the
+> source of truth. Do not confuse a successful deployment with final launch
+> approval while the explicit open items in sections 5 and 10 remain.
 
 ## 1. Exact current state
 
 | Item | Verified value |
 |---|---|
-| Live commit | `f119462f8e7bbb116f83a076ce4ea116dc4b5394` |
-| Live release header | `20260723T233927-f119462f8e7b` |
+| Live commit | `0970c34cf9ff2568a4e0440745ad19df7b12884a` |
+| Live release header | `20260724T231337-0970c34cf9ff` |
 | Public EIP | `15.165.207.119` |
 | Live services | app, nginx, PostgreSQL, PM2, boot guard healthy at last read-only audit |
 | API limit | nginx zone `abuse`, `2r/s`, burst `15`, status `429` |
@@ -19,12 +20,13 @@
 | Launch switches | payments, OAuth connections, agent channels, Pet LoRA, blockchain, referrals: all `false` |
 | `origin/main` | `e690d336062f9c94c0df6a76ae143d7f72ab5195` |
 | Audited seven-fix branch | `fix/live-existence-audit-20260724` at `e503c0928fd6cdc30330126c2de572da8338b819` |
-| Current clean candidate | `codex/e503-p0-release-20260724`; resolve its exact remote HEAD immediately before signing |
+| Released application point | `codex/e503-p0-release-20260724` tree at `0970c34cf9ff2568a4e0440745ad19df7b12884a`; later documentation-only commits are not live |
 
-The candidate contains both the current `origin/main` history and the live-line
-changes. Do not start over from `origin/main`, deploy `e503c092` alone, or use
-the original dirty workspace. Resolve the candidate commit from Git immediately
-before signing; never infer it from this document.
+The released branch contains both the current `origin/main` history and the
+live-line changes. It was built from a clean off-worktree export; the original
+dirty workspace was not used or modified. Do not start over from `origin/main`,
+deploy `e503c092` alone, or hand-copy files onto the host. Any follow-up fix
+requires a new exact commit and signed artifact.
 
 ## 2. What this candidate changes
 
@@ -113,8 +115,8 @@ rollback, and per-action spend limits.
   and “secret management guide” is recallable. Concrete credentials remain
   filtered.
 
-Do not deploy public “SDK 2.0.0 published” copy until npm publication succeeds
-and a registry read verifies the exact public version.
+Public “SDK 2.0.0 published” copy is now valid: npm publication and an
+unauthenticated registry read both verified the exact public version.
 
 ## 3. Non-negotiable release safety
 
@@ -206,8 +208,12 @@ silently aimed at production. A real signed-in four-task UAT is still required.
   disposable test database was configured. It was not pointed at production.
 - `@myaipet/petclaw-sdk@2.0.0` was published and anonymously verified at
   2026-07-24 23:08 KST. The public `latest` tag is `2.0.0`; registry shasum is
-  `e674d17f14c01e94087b5a2491597d9d928b6053`. Signed AWS release,
-  authenticated four-task UAT, and post-reboot live smoke remain incomplete.
+  `e674d17f14c01e94087b5a2491597d9d928b6053`.
+- A fresh signed off-host backup (`20260724T141009Z`) passed restore and media
+  verification. Signed release `20260724T231337-0970c34cf9ff` was verified,
+  preflighted, switched live, and independently checked after one real reboot.
+- The authenticated four-task/credit UAT and disposable-PostgreSQL integration
+  remain incomplete. They were not pointed at a real user or production data.
 
 ## 5. Authenticated UAT matrix
 
@@ -302,21 +308,49 @@ These are not permission to overstate the current product:
 9. Do not ask for a TOTP until the package is otherwise publish-ready.
 10. Continue from the first incomplete item in sections 4–7.
 
-## 10. External release blockers resolved at 2026-07-24 23:08 KST
+## 10. Live result, residual risk, and exact next actions
 
 - GitHub was reauthenticated as the repository organization account with
   admin/push permission. `codex/e503-p0-release-20260724` is now on `origin`,
-  and its remote head matched the clean local candidate before npm publication.
+  and its remote head matched the clean released commit.
 - npm was reauthenticated as the package maintainer. The SDK prepublish suite
   passed 70/70, `2.0.0` was published with a short-lived package-scoped bypass
   token, and an authentication-free registry read verified both `latest` and
   the published shasum.
-- The short-lived publishing token and every token pasted into a conversation
-  must be revoked after the release. Never record their values in this file,
-  Git, release evidence, or logs.
-- No AWS release, production backup, migration, traffic switch, reboot, or
-  host-side hotfix has yet been attempted for this candidate. Resume with a
-  fresh signed off-host backup; commit and push this evidence update; build/sign
-  the exact resulting commit; verify and preflight it on EC2; release; run
-  authenticated Office UAT, the full live smoke matrix, and one reboot recovery
-  check.
+- The current publishing token was invalidated with `npm logout`, local npm
+  authentication was cleared, and the public package was re-read anonymously.
+  Any older token ever pasted into a conversation must also be deleted by exact
+  token name in npm settings. Never record a credential value here or in Git.
+- The signed AWS release completed without a host hotfix. The controller passed
+  its release smoke, installed 7 app jobs plus 6 canonical ops jobs, and kept
+  the previous `f119462f` process as rollback. OpenAI `gpt-4o-mini` returned a
+  429 during live LLM smoke; the configured xAI `grok-4.3` fallback answered.
+- Independent post-reboot checks passed: exact release header and provenance,
+  app and landing 200, health OK, fail-closed config, nginx/PostgreSQL/PM2/cron/
+  boot guard active and enabled, zero failed units, 13 cron jobs, all six kill
+  switches false, loopback-only app/database ports, and no rollback intent.
+- The external 40-request limiter test returned 16 HTTP 200 and 24 HTTP 429,
+  with zero other statuses or 5xx responses, then recovered to health 200.
+- Browser-rendered checks passed for zero Hangul, no Metrics link, no Jul 1 or
+  Aug 1 launch date, `STARTING SOON` twice, four equal-height desktop Season
+  cards with aligned action rows, More/Bracket navigation, Studio three tools,
+  TRY-chip fill and focus, one sign-in generation action, engine/cost display,
+  the revised Thumbnail preview, the visual Shorts story map, honest Community
+  empty state, Favorites gate, Account gate, and the four-task Office copy.
+- The browser's advertised 375px viewport override remained at 1280px, so an
+  independent real 375px runtime pass is still required on a phone or working
+  device-emulation session. Do not call source/CSS inspection a substitute.
+- Authenticated UAT remains blocked on a disposable SIWE owner with a pet,
+  harmless recall memory, at least 30 approved test credits, an unclaimed TODAY
+  state, and preferably a second owner for isolation. Run every item in section
+  5; do not spend a real user's credits to close this evidence gap.
+- P1 host hardening remains: `/home/ubuntu/db-backups` is mode 775, three dump
+  files are mode 664, and the backup script lacks `umask 077`. Fix this through
+  reviewed versioned ops code, not an ad-hoc host edit.
+- P1 drift remains: the live `ratelimit-guard.sh` differs byte-for-byte from the
+  hardened repository mirror. The effective live limiter is nevertheless
+  correct (`abuse`, 2r/s, burst 15, 429). Reconcile the guard through a new
+  signed/versioned ops release.
+- During disk preparation, 13 stale incoming/verified deployment copies were
+  removed. They were reconstructible artifacts; the live release, retained
+  rollback, database, uploads, backups, and signed evidence were preserved.
