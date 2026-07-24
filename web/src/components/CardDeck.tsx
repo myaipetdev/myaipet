@@ -683,13 +683,23 @@ export default function CardDeck({ onNavigate, initialTab }: { onNavigate?: (sec
                 })}
               </div>
               <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginTop: 14 }}>
-                <button onClick={() => {
-                  const url = `${APP}/card/battle/${battle.matchup}`;
-                  const wName = battle.winner === "you" ? battle.you.name : battle.opponent.name;
-                  const text = `${wName} won the duel! ${battle.you.name} ⚔️ ${battle.opponent.name} 🃏`;
-                  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=MyAIPet`, "_blank", "width=600,height=420");
-                }} style={btn}>𝕏 Share result</button>
-                <a href={`/card/battle/${battle.matchup}`} target="_blank" rel="noopener noreferrer" className="ed-wipe" style={{ ...ghost, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>View result page ▸</a>
+                {battle.shareable ? (
+                  <>
+                    <button onClick={() => {
+                      const url = `${APP}/card/battle/${battle.matchup}`;
+                      const wName = battle.winner === "you" ? battle.you.name : battle.opponent.name;
+                      const text = `${wName} won the duel! ${battle.you.name} ⚔️ ${battle.opponent.name} 🃏`;
+                      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=MyAIPet`, "_blank", "width=600,height=420");
+                    }} style={btn}>𝕏 Share result</button>
+                    <a href={`/card/battle/${battle.matchup}`} target="_blank" rel="noopener noreferrer" className="ed-wipe" style={{ ...ghost, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>View result page ▸</a>
+                  </>
+                ) : (
+                  /* Private pet: the public result page can't render it, so don't
+                     offer a dead link — point to the honest way to enable sharing. */
+                  <span style={{ fontFamily: T.body, fontSize: 13.5, color: T.muted, maxWidth: 360, textAlign: "center", lineHeight: 1.5 }}>
+                    Make your pet&apos;s profile public in <strong style={{ color: T.terraSub }}>PetClaw → Data Sovereignty</strong> to get a shareable result page.
+                  </span>
+                )}
               </div>
             </div>
           )}

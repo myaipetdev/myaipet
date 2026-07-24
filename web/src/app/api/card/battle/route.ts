@@ -8,6 +8,7 @@ import { getUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import { resolveCardBattle, advantage } from "@/lib/tcg/battle";
+import { getCardData } from "@/lib/tcg/card";
 import { awardPointsCapped, DAILY_POINT_CAPS } from "@/lib/seasonRewards";
 import type { CardData } from "@/lib/tcg/card";
 
@@ -49,11 +50,20 @@ export async function POST(req: NextRequest) {
   // Small, daily-capped airdrop points for dueling (anti-spam).
   const pts = await awardPointsCapped(user.id, "card_battle", 5, DAILY_POINT_CAPS.card_battle);
 
+  // The public /card/battle/[matchup] page resolves both cards WITHOUT a session,
+  // so it can only render pets that opt into a public profile. The opponent already
+  // resolved via the public path (resolveCardBattle), so shareability hinges on
+  // whether the caller's OWN pet is public. If not, the share/view controls below
+  // must not promise a page that will 404 ("This duel isn't available").
+  const yourPublicCard = await getCardData(petId);
+  const shareable = !!yourPublicCard;
+
   return NextResponse.json({
     you: summary(b.you),
     opponent: summary(b.opp),
     winner: b.winner === "you" ? "you" : "opponent",
     matchup: `${petId}-vs-${opponentId}`,
+    shareable,
     pointsAwarded: pts.points || 0,
     result: {
       won: b.result.won,
