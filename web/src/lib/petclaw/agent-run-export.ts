@@ -4,7 +4,6 @@ import {
   createHash,
   randomBytes,
 } from "crypto";
-import { prisma } from "@/lib/prisma";
 import { agentOfficeTaskKindFromExecutionContract } from "@/lib/petclaw/agent/office-task-contract";
 
 export const AGENT_RUN_EXPORT_SCHEMA = "myaipet-owner-agent-run-history/v3" as const;
@@ -848,7 +847,7 @@ export async function exportOwnerAgentRunPageWithDb(
   return pageWithIntegrity(pageWithoutIntegrity);
 }
 
-export function exportOwnerAgentRunPage(
+export async function exportOwnerAgentRunPage(
   ownerId: number,
   options: {
     petId?: number;
@@ -858,7 +857,9 @@ export function exportOwnerAgentRunPage(
 ): Promise<OwnerAgentRunExportPage> {
   // The generated client is refreshed from schema before every production
   // release. Keep the small injectable interface above so focused contract
-  // tests never need a live database or a generated-client rewrite.
+  // tests and the clean source-artifact gate can import this module before
+  // Prisma generation without reaching the generated client.
+  const { prisma } = await import("@/lib/prisma");
   return exportOwnerAgentRunPageWithDb(
     prisma as unknown as AgentRunExportDatabase,
     ownerId,
