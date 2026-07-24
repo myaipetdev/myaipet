@@ -48,6 +48,7 @@ interface StyleDef {
   captionMode?: boolean;       // giant bottom subtitle band (shorts)
 }
 const STYLES: StyleDef[] = [
+  { id: "editorial-warm", label: "Editorial", hint: "Cream bg · ink type · terracotta key word — on-brand", bg: "#F2E3C4", base: "#2A1C10", subColor: "#7A6E5A" },
   { id: "black-impact", label: "Black Impact", hint: "Black bg · white type · key word pops", bg: "#0B0B0C", base: "#FFFFFF", subColor: "#CFCBC2" },
   { id: "white-info", label: "White Info", hint: "White bg · numbers highlit · risk pops", bg: "#FAFAF6", base: "#15130F", subColor: "#4A463E", numberHighlight: true },
   { id: "red-warning", label: "Red Warning", hint: "Charcoal + alert-red keyline", bg: "#141210", base: "#FFFFFF", subColor: "#F2C7C2", frame: THUMB_COLORS.risk },
@@ -319,10 +320,10 @@ function isLight(hex: string): boolean {
 export default function ThumbnailStudio({ className }: { className?: string } = {}) {
   const [title, setTitle] = useState(PRESETS[0].seed.title);
   const [subtitle, setSubtitle] = useState(PRESETS[0].seed.subtitle);
-  const [styleId, setStyleId] = useState<string>("black-impact");
+  const [styleId, setStyleId] = useState<string>("editorial-warm");
   const [aspectId, setAspectId] = useState<AspectId>("16:9");
   const [position, setPosition] = useState<PositionId>("center");
-  const [solutionColor, setSolutionColor] = useState<string>(THUMB_COLORS.solutionGreen);
+  const [solutionColor, setSolutionColor] = useState<string>("#BE4F28");
   const [presetId, setPresetId] = useState<string | null>("views");
   const [darknessPct, setDarknessPct] = useState(28);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
@@ -535,6 +536,7 @@ export default function ThumbnailStudio({ className }: { className?: string } = 
               <span className="ts-hint">Benefit accent</span>
               <div className="ts-seg" role="group" aria-label="Benefit accent color">
                 {[
+                  { c: "#BE4F28", name: "Terracotta" },
                   { c: THUMB_COLORS.solutionGreen, name: "Green" },
                   { c: THUMB_COLORS.solutionSky, name: "Sky" },
                 ].map((o) => (

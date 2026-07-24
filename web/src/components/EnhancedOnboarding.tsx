@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { api, getAuthHeaders } from "@/lib/api";
 import PetClawConsole from "@/components/PetClawConsole";
 import Icon from "@/components/Icon";
@@ -124,6 +124,10 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
+  // Founder feedback: every step/question advance starts fresh from the top —
+  // without this a tall step lands the user mid-card with the header above the fold.
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [step, quizIndex]);
+
   // Fetch existing OAuth connections on mount — if user returns from a provider
   // mid-onboarding, the just-connected platform shows ✓ immediately.
   useEffect(() => {
@@ -219,7 +223,10 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
   const totalSteps = 4; // intro + 2 substeps + testdrive
   const progressIdx = step === "done" ? 4 : stepIndex[step];
 
-  const Shell = ({ children, hideProgress }: { children: React.ReactNode; hideProgress?: boolean }) => (
+  // Memoized so a keystroke re-render keeps the SAME component identity — otherwise
+  // React remounts the whole card every keystroke (obSlideIn replays + input loses
+  // focus = the flicker). Recreated only when the step (progressIdx) changes.
+  const Shell = useMemo(() => ({ children, hideProgress }: { children: React.ReactNode; hideProgress?: boolean }) => (
     <div style={{
       width: "100%", maxWidth: 460,
       background: "#FBF6EC",
@@ -251,7 +258,7 @@ export default function EnhancedOnboarding({ pet, onComplete, onSkip }: Props) {
 
       <div style={{ position: "relative" }}>{children}</div>
     </div>
-  );
+  ), [progressIdx, totalSteps]);
 
   // Style helpers
   const primaryBtn: React.CSSProperties = {

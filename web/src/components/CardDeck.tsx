@@ -1411,7 +1411,7 @@ function Shell({ children, owned, rarityCounts, verbs }: { children: React.React
             `}</style>
             {([
               { k: "collect", n: "01", title: "Collect", body: "Every pet you raise becomes a card automatically — no packs, no purchases. Caught animals fill the Field Guide in Catch.", chip: null, act: "Adopt a pet ▸" },
-              { k: "battle", n: "02", title: "Battle", body: "Duel any collector's card free — caught fighters brawl in Alley Clash too.", chip: "+5 season pts a duel · cap 40/day", act: "Open Battle ▸" },
+              { k: "battle", n: "02", title: "Battle", body: "Duel any collector's card free — caught fighters brawl in Alley Clash too.", chip: "+5 pts · cap 40/day", act: "Open Battle ▸" },
               { k: "share", n: "03", title: "Share", body: "Each card is its own page — send the link anywhere. Public only if you opt your pet in.", chip: null, act: "Share your top card ▸" },
               { k: "grade", n: "04", title: "Grade", body: "Rarity and stats read from real care — level, bond, streak, ATK·DEF·SPD. No chance.", chip: null, act: "See next grade ▸" },
             ] as Array<{ k: "collect" | "battle" | "share" | "grade"; n: string; title: string; body: string; chip: string | null; act: string }>).map((s) => {
@@ -1429,7 +1429,7 @@ function Shell({ children, owned, rarityCounts, verbs }: { children: React.React
                     /* Standard editorial chip — ink on a soft terracotta tint with a
                        border (never a saturated orange slab). Figure stays the
                        server's REAL grant. */
-                    <span style={{ alignSelf: "flex-start", marginLeft: 23, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".05em", color: T.ink, background: "rgba(190,79,40,.12)", border: "1px solid rgba(190,79,40,.38)", borderRadius: 999, padding: "3px 10px", fontVariantNumeric: "tabular-nums" }}>{s.chip}</span>
+                    <span style={{ alignSelf: "flex-start", marginLeft: 23, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".05em", color: T.ink, background: "rgba(190,79,40,.12)", border: "1px solid rgba(190,79,40,.38)", borderRadius: 999, whiteSpace: "nowrap", padding: "3px 10px", fontVariantNumeric: "tabular-nums" }}>{s.chip}</span>
                   )}
                   {onAct && (
                     <span style={{ marginTop: "auto", marginLeft: 23, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: T.terraSub }}>{s.act}</span>
