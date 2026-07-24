@@ -132,7 +132,7 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
   });
 
   return (
-    <div ref={rootRef} style={{ maxWidth: 460, margin: "0 auto", padding: "120px 24px 56px", textAlign: "center" }}>
+    <div ref={rootRef} style={{ maxWidth: 1020, margin: "0 auto", padding: "120px 24px 56px", textAlign: "center" }}>
       <style>{`
         @keyframes dpBreathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.045); } }
         @keyframes dpFloat { 0%,100% { transform: translateY(0) rotate(-1.2deg); } 50% { transform: translateY(-7px) rotate(-1.2deg); } }
@@ -146,6 +146,14 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
         .dp-care { transition: transform .18s cubic-bezier(.22,.9,.3,1), box-shadow .18s ease; }
         .dp-care:hover { transform: translateY(-3px); box-shadow: 0 10px 22px -12px rgba(80,55,20,.45); }
         .dp-care:active { transform: translateY(0) scale(.96); }
+        /* Wide screens: poster+care left, memory/missions/CTA right — mirrors
+           TourMyPet's two-column rhythm so guests don't get a lone 460px strip. */
+        .dp-cols { display: grid; grid-template-columns: 1fr; gap: 0 48px; }
+        @media (min-width: 900px) {
+          .dp-cols { grid-template-columns: 460px 1fr; align-items: start; text-align: left; }
+          .dp-side { position: sticky; top: 110px; }
+          .dp-side > div { max-width: 440px !important; }
+        }
       `}</style>
 
       <div style={{ ...rv(0), fontFamily: "var(--ed-m)", fontSize: 13, letterSpacing: "0.18em", color: "#9A4E1E", fontWeight: 700, marginBottom: 10, textTransform: "uppercase" }}>
@@ -158,6 +166,8 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
         Care for them and watch them respond. This one&apos;s a demo — adopt to start your own.
       </p>
 
+      <div className="dp-cols">
+      <div style={{ textAlign: "center" }}>
       {/* ── Specimen poster (die-cut collectible frame) ── */}
       <div style={{ ...rv(2), position: "relative", display: "inline-block", marginBottom: 36 }}>
         {pops.map((p, i) => (
@@ -270,7 +280,9 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
           ? <>+{cares * PTS_PER_CARE} PTS would be banked by now — demo care isn&apos;t saved. Sign in: every free care pays +{PTS_PER_CARE} pts.</>
           : <>Each care here would pay +{PTS_PER_CARE} pts — sign in to bank points.</>}
       </div>
+      </div>
 
+      <div className="dp-side">
       {/* ── Memory ticker — the "it remembers" moat ── */}
       <div style={{
         ...rv(7),
@@ -331,6 +343,8 @@ export default function DemoPet({ cta, ctaNote }: { cta?: ReactNode; ctaNote?: s
           {ctaNote || "Sign in with your wallet — no gas, identity only. Your pet remembers you across every session."}
         </div>
         <div style={{ display: "inline-block" }}>{cta}</div>
+      </div>
+      </div>
       </div>
     </div>
   );

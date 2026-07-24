@@ -394,22 +394,27 @@ export default function MyPetEditorial({ onNavigate }: { onNavigate?: (section: 
   }, [showClassic, load]);
 
   if (pets === null) {
+    // Error/loading fill a fixed viewport band, vertically centered — the old
+    // top-anchored padding left a dead strip under the nav and pulled the
+    // footer right up against a tiny unboxed card.
     if (loadError) {
       return (
-        <div style={{ paddingTop: 140, textAlign: "center", fontFamily: T.body, color: T.ink }}>
-          <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 22 }}>Couldn&apos;t reach your pet</div>
-          <p style={{ fontSize: 14, color: T.muted2, margin: "8px auto 20px", maxWidth: 340, lineHeight: 1.5 }}>
-            The connection failed — your pet is safe. Try again.
-          </p>
-          <button onClick={load} style={{
-            border: "none", cursor: "pointer", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
-            fontFamily: T.disp, fontWeight: 700, fontSize: 14, borderRadius: 12, padding: "11px 28px",
-            boxShadow: "var(--ed-shadow-card)",
-          }}>Retry</button>
+        <div style={{ minHeight: "min(62vh, 640px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 24px", fontFamily: T.body, color: T.ink }}>
+          <div style={{ background: T.paper, borderRadius: 22, padding: "36px 44px", boxShadow: "var(--ed-shadow-card)", textAlign: "center", maxWidth: 440 }}>
+            <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 22 }}>Couldn&apos;t reach your pet</div>
+            <p style={{ fontSize: 14, color: T.muted2, margin: "8px auto 20px", maxWidth: 340, lineHeight: 1.5 }}>
+              The connection failed — your pet is safe. Try again.
+            </p>
+            <button onClick={load} style={{
+              border: "none", cursor: "pointer", background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: "#211A12",
+              fontFamily: T.disp, fontWeight: 700, fontSize: 14, borderRadius: 12, padding: "11px 28px",
+              boxShadow: "var(--ed-shadow-card)",
+            }}>Retry</button>
+          </div>
         </div>
       );
     }
-    return <div style={{ paddingTop: 120, textAlign: "center", fontFamily: T.m, color: T.muted }}>Loading your pet…</div>;
+    return <div style={{ minHeight: "min(62vh, 640px)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.m, color: T.muted }}>Loading your pet…</div>;
   }
   if (!active) {
     // Genuinely empty pets array — real onboarding, not an error disguise.

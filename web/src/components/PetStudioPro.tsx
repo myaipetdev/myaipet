@@ -215,12 +215,12 @@ type View = "idle" | "generating" | "done" | "error";
 const tag: React.CSSProperties = {
   padding: "3px 9px", borderRadius: 999,
   background: "rgba(190,79,40,0.10)", color: T.terra,
-  fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
+  fontSize: 14, fontWeight: 700, letterSpacing: "0.1em",
   fontFamily: T.m,
 };
 
 const panelLabel: React.CSSProperties = {
-  fontSize: 13, fontWeight: 700, letterSpacing: "0.14em",
+  fontSize: 14, fontWeight: 700, letterSpacing: "0.14em",
   textTransform: "uppercase", color: T.mono,
   fontFamily: T.m,
 };
@@ -228,7 +228,7 @@ const panelLabel: React.CSSProperties = {
 // Reward chips on the mission strip — printed mono tags, values mirror the
 // server grant (see runReward).
 const missionChip: React.CSSProperties = {
-  fontFamily: "var(--ed-m)", fontSize: 13, fontWeight: 700, letterSpacing: "0.06em",
+  fontFamily: "var(--ed-m)", fontSize: 14, fontWeight: 700, letterSpacing: "0.06em",
   padding: "4px 10px", borderRadius: 999,
   background: "#F5EFE2", color: "#3A3024",
   border: "1px solid rgba(33,26,18,.13)",
@@ -238,7 +238,7 @@ const missionChip: React.CSSProperties = {
 // Corner tag over template imagery (▸ MOTION / category / ▸ PREVIEW). A solid
 // ink scrim chip — a bare drop-shadow washed out over light photography.
 const cardTag: React.CSSProperties = {
-  fontSize: 13, fontFamily: T.m, letterSpacing: "0.1em", fontWeight: 700,
+  fontSize: 14, fontFamily: T.m, letterSpacing: "0.1em", fontWeight: 700,
   textTransform: "uppercase", color: "#FCE9CF",
   background: "rgba(33,26,18,.72)", padding: "3px 7px", borderRadius: 7,
   lineHeight: 1.1,
@@ -263,7 +263,7 @@ const engineBtn: React.CSSProperties = {
 const suggestionChip: React.CSSProperties = {
   padding: "5px 10px", borderRadius: 999,
   border: `1px solid ${T.hair}`,
-  background: T.paper, fontSize: 13, fontWeight: 600,
+  background: T.paper, fontSize: 14, fontWeight: 600,
   color: T.ink70, cursor: "pointer",
   fontFamily: T.body,
 };
@@ -272,7 +272,7 @@ const btnGhost: React.CSSProperties = {
   display: "inline-block",
   padding: "9px 14px", borderRadius: 10,
   border: `1px solid ${T.hair}`, background: T.paper,
-  color: T.ink70, fontWeight: 700, fontSize: 13, cursor: "pointer",
+  color: T.ink70, fontWeight: 700, fontSize: 14, cursor: "pointer",
   fontFamily: T.body, textDecoration: "none",
 };
 
@@ -282,7 +282,7 @@ const btnGhostOnDark: React.CSSProperties = {
   display: "inline-flex", alignItems: "center", gap: 6,
   padding: "9px 18px", borderRadius: 10,
   border: "1px solid rgba(252,233,207,0.4)", background: "transparent",
-  color: "#FCE9CF", fontWeight: 700, fontSize: 13, cursor: "pointer",
+  color: "#FCE9CF", fontWeight: 700, fontSize: 14, cursor: "pointer",
   fontFamily: T.m, letterSpacing: "0.04em",
 };
 
@@ -290,7 +290,7 @@ const btnGhostOnDark: React.CSSProperties = {
 const galleryActionBtn: React.CSSProperties = {
   padding: "5px 9px", borderRadius: 8,
   border: `1px solid ${T.hair}`, background: T.paper,
-  color: T.ink70, fontWeight: 700, fontSize: 13, cursor: "pointer",
+  color: T.ink70, fontWeight: 700, fontSize: 14, cursor: "pointer",
   fontFamily: T.body, textDecoration: "none", lineHeight: 1.2,
 };
 
@@ -1299,7 +1299,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
           <span style={{ display: "inline-flex" }}><Icon name="film-reel" size={40} /></span>
           <div style={{ flex: "1 1 240px", minWidth: 0 }}>
             <div style={{
-              fontSize: 13, fontFamily: T.m, fontWeight: 700,
+              fontSize: 14, fontFamily: T.m, fontWeight: 700,
               letterSpacing: "0.14em", color: T.studio, marginBottom: 6, textTransform: "uppercase",
             }}>PRO PET STUDIO</div>
             <h1 style={{
@@ -1313,7 +1313,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
             // authed-but-petless gets an Adopt CTA, not a sign-in wall they've passed.
             const authed = typeof window !== "undefined" && !!localStorage.getItem("petagen_jwt");
             const pillStyle: React.CSSProperties = {
-              padding: "10px 16px", borderRadius: 12, fontSize: 13,
+              padding: "10px 16px", borderRadius: 12, fontSize: 14,
               background: T.paper, color: T.studio,
               border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
               fontWeight: 700, textDecoration: "none",
@@ -1349,7 +1349,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
               title="Assemble your clips into a reel — trim, sequence, caption, music, export (all in your browser)"
               className="mp-enter"
               style={{
-                padding: "10px 16px", borderRadius: 12, fontSize: 13, cursor: "pointer",
+                padding: "10px 16px", borderRadius: 12, fontSize: 14, cursor: "pointer",
                 background: T.paper, color: T.studio, border: `1px solid ${T.studio}`,
                 boxShadow: "var(--ed-shadow-card)", fontWeight: 700,
                 fontFamily: T.m, letterSpacing: "0.08em", textTransform: "uppercase",
@@ -1379,10 +1379,10 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
           boxShadow: "var(--ed-shadow-card)", padding: "10px 14px",
         }}>
           <span style={{
-            fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.14em",
+            fontFamily: T.m, fontWeight: 700, fontSize: 14, letterSpacing: "0.14em",
             color: T.studio, textTransform: "uppercase", flexShrink: 0,
           }}>Studio mission</span>
-          <span style={{ fontFamily: T.body, fontSize: 13, color: T.ink70, flex: "1 1 240px", minWidth: 0, lineHeight: 1.45 }}>
+          <span style={{ fontFamily: T.body, fontSize: 14, color: T.ink70, flex: "1 1 240px", minWidth: 0, lineHeight: 1.45 }}>
             Put {petDisplayName} in scenes worth sharing — every completed generation pays Season Rewards points.
           </span>
           <span title={`Per completed image · daily cap ${STUDIO_PTS_DAILY_CAP} studio pts · non-financial loyalty points`} style={missionChip}>+10 pts / image</span>
@@ -1406,9 +1406,9 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                 <span style={{ ...panelLabel, display: "inline-flex", alignItems: "center", gap: 5 }}>
                   <Icon name="sparkling" size={12} /> TEMPLATE LIBRARY
                 </span>
-                <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted2 }}>{TEMPLATES.length}</span>
+                <span style={{ fontFamily: T.m, fontSize: 14, color: T.muted2 }}>{TEMPLATES.length}</span>
               </div>
-              <div style={{ fontSize: 13, color: T.muted2, fontFamily: T.body, lineHeight: 1.45 }}>
+              <div style={{ fontSize: 14, color: T.muted2, fontFamily: T.body, lineHeight: 1.45 }}>
                 One tap loads a full scene for {petDisplayName} — then hit Generate.
               </div>
               <div className="studio-template-list">
@@ -1480,20 +1480,20 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                       <div style={{ padding: "8px 10px 10px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                           <span style={{
-                            fontSize: 13, fontFamily: T.disp, fontWeight: 700,
+                            fontSize: 14, fontFamily: T.disp, fontWeight: 700,
                             color: isActive ? T.terra : T.ink,
                             flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                           }}>{t.emoji} {t.title}</span>
                           {isActive && (
                             <span style={{
-                              fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em",
+                              fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.08em",
                               color: "#8A6420", background: "rgba(200,147,47,0.16)",
                               padding: "2px 6px", borderRadius: 999, flexShrink: 0,
                             }}>IN USE</span>
                           )}
                         </div>
                         <div style={{
-                          fontSize: 13, color: T.muted2, marginTop: 3, lineHeight: 1.4,
+                          fontSize: 14, color: T.muted2, marginTop: 3, lineHeight: 1.4,
                           display: "-webkit-box", WebkitLineClamp: 2,
                           WebkitBoxOrient: "vertical", overflow: "hidden",
                         }}>{t.description}</div>
@@ -1524,7 +1524,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
               gap: 10, marginBottom: 12, paddingInline: 2, flexWrap: "wrap",
             }}>
               <span style={{
-                fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.16em",
+                fontFamily: T.m, fontWeight: 700, fontSize: 14, letterSpacing: "0.16em",
                 color: T.foil, textTransform: "uppercase",
                 display: "inline-flex", alignItems: "center", gap: 7,
               }}>
@@ -1535,7 +1535,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                 STAGE · {aspect}
               </span>
               <span style={{
-                fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.08em",
+                fontFamily: T.m, fontWeight: 700, fontSize: 14, letterSpacing: "0.08em",
                 color: "rgba(252,233,207,.72)", textTransform: "uppercase",
               }}>{chosenModel?.displayName || "—"} · {outputKind}</span>
             </div>
@@ -1570,7 +1570,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                     </svg>
                   </div>
                   <div style={{ fontSize: 16, fontFamily: T.disp, fontWeight: 700, marginBottom: 6 }}>Generation failed</div>
-                  <div style={{ fontSize: 13, color: "rgba(252,233,207,.95)", maxWidth: 380, margin: "0 auto 16px" }}>{error}</div>
+                  <div style={{ fontSize: 14, color: "rgba(252,233,207,.95)", maxWidth: 380, margin: "0 auto 16px" }}>{error}</div>
                   <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
                     {/* Item #8-2: a 402 needs a purchase path — "Try again" alone
                         just re-fails forever. */}
@@ -1578,14 +1578,14 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                       <a href="/?section=home&scroll=pricing" style={{
                         padding: "9px 18px", borderRadius: 10, border: "none", cursor: "pointer",
                         background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: T.ink,
-                        fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.04em",
+                        fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.04em",
                         textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6,
                       }}>Credit purchases are paused →</a>
                     )}
                     <button onClick={() => generate()} style={errorIs402 ? btnGhostOnDark : {
                       padding: "9px 18px", borderRadius: 10, border: "none", cursor: "pointer",
                       background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: T.ink,
-                      fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.04em",
+                      fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.04em",
                       display: "inline-flex", alignItems: "center", gap: 6,
                     }}><RetryGlyph size={13} /> Try again</button>
                     <button onClick={() => setView("idle")} style={{ ...btnGhost, display: "inline-flex", alignItems: "center", gap: 6 }}><PencilGlyph size={13} /> Edit prompt</button>
@@ -1607,7 +1607,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                       : `Daily studio cap (${STUDIO_PTS_DAILY_CAP} pts) reached — this run earned 0 today`}
                     style={{
                       padding: "7px 12px", borderRadius: 999,
-                      fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.06em",
+                      fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.06em",
                       background: lastPointsAwarded > 0 ? "rgba(92,138,78,0.22)" : "rgba(252,233,207,0.12)",
                       color: lastPointsAwarded > 0 ? "#BFE3AF" : "rgba(252,233,207,.85)",
                       border: `1px solid ${lastPointsAwarded > 0 ? "rgba(146,196,125,.45)" : "rgba(252,233,207,.30)"}`,
@@ -1626,7 +1626,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                   style={{
                     padding: "9px 16px", borderRadius: 10, border: "none", cursor: "pointer",
                     background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: T.ink,
-                    fontFamily: T.body, fontSize: 13, fontWeight: 700,
+                    fontFamily: T.body, fontSize: 14, fontWeight: 700,
                     boxShadow: "var(--ed-shadow-card)",
                     display: "inline-flex", alignItems: "center", gap: 7,
                   }}
@@ -1647,7 +1647,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                     style={{
                       padding: "9px 16px", borderRadius: 10, border: `1px solid ${T.studio}`, cursor: "pointer",
                       background: T.paper, color: T.studio, boxShadow: "var(--ed-shadow-card)",
-                      fontFamily: T.body, fontSize: 13, fontWeight: 700,
+                      fontFamily: T.body, fontSize: 14, fontWeight: 700,
                       display: "inline-flex", alignItems: "center", gap: 7,
                       animationDelay: "50ms",
                     }}
@@ -1666,7 +1666,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                     style={{
                       padding: "9px 16px", borderRadius: 10, border: `1px solid ${T.studio}`, cursor: "pointer",
                       background: "rgba(190,79,40,0.08)", color: T.studio, boxShadow: "var(--ed-shadow-card)",
-                      fontFamily: T.body, fontSize: 13, fontWeight: 700,
+                      fontFamily: T.body, fontSize: 14, fontWeight: 700,
                       display: "inline-flex", alignItems: "center", gap: 7, animationDelay: "60ms",
                     }}
                   ><svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1736,7 +1736,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                   )}</button>
                 )}
                 {shareError && (
-                  <span role="alert" style={{ width: "100%", color: T.terra, fontSize: 13 }}>
+                  <span role="alert" style={{ width: "100%", color: T.terra, fontSize: 14 }}>
                     {shareError}{shareError.includes("Public profile") ? <> · <a href="/?section=sovereignty" style={{ color: "inherit", fontWeight: 700 }}>Open Data Sovereignty</a></> : null}
                   </span>
                 )}
@@ -1776,7 +1776,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
             {/* Variations grid — each tile swaps into the main result on click */}
             {view === "done" && (varRunning || variations.length > 0 || error) && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 13, fontFamily: T.m, letterSpacing: "0.14em", color: T.foil, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ fontSize: 14, fontFamily: T.m, letterSpacing: "0.14em", color: T.foil, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
                   <SparkGlyph size={11} /> VARIATIONS{varRunning ? ` · ${variations.length}/4…` : ""}
                 </div>
                 {/* Item #11-1: a mid-run failure used to be swallowed (view stays
@@ -1785,7 +1785,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                   <div style={{
                     marginBottom: 8, padding: "8px 11px", borderRadius: 9,
                     background: T.inset, border: `1px solid ${T.hair}`,
-                    fontSize: 13, color: T.terra, fontWeight: 600, fontFamily: T.body,
+                    fontSize: 14, color: T.terra, fontWeight: 600, fontFamily: T.body,
                     display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
                   }}>
                     <span>{error}</span>
@@ -1823,13 +1823,13 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
             <div style={{ marginTop: 14 }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 8, paddingInline: 2 }}>
                 <span style={{
-                  fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.16em",
+                  fontFamily: T.m, fontWeight: 700, fontSize: 14, letterSpacing: "0.16em",
                   color: T.foil, textTransform: "uppercase",
                 }}>FILM STRIP · RECENT TAKES</span>
                 {!isDemo && history.length > 0 && (
                   <button onClick={openGallery} className="ed-underline-slide" style={{
                     background: "none", border: "none", cursor: "pointer", padding: 0,
-                    fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
+                    fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.1em",
                     color: T.foil, textTransform: "uppercase",
                   }}>VIEW ALL →</button>
                 )}
@@ -1854,7 +1854,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                       : <span style={{
                           width: "100%", height: "100%",
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
+                          fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.1em",
                           color: (g.status === "pending" || g.status === "running") ? "rgba(252,233,207,.8)" : "#F0A282",
                         }} className={(g.status === "pending" || g.status === "running") ? "studio-pulse" : undefined}>
                           {(g.status === "pending" || g.status === "running") ? "RENDERING" : g.status === "failed" ? "FAILED" : "?"}
@@ -1862,7 +1862,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                   </button>
                 )) : (
                   <span style={{
-                    color: "rgba(252,233,207,.78)", fontFamily: T.m, fontSize: 13,
+                    color: "rgba(252,233,207,.78)", fontFamily: T.m, fontSize: 14,
                     padding: "10px 6px", whiteSpace: "nowrap",
                   }}>No takes yet — every completed generation lands on this strip.</span>
                 )}
@@ -1947,14 +1947,14 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
             boxShadow: "var(--ed-shadow-card)",
           }}>
             <div style={{
-              fontSize: 13, fontFamily: T.m, fontWeight: 700,
+              fontSize: 14, fontFamily: T.m, fontWeight: 700,
               letterSpacing: "0.1em", color: T.studio, marginBottom: 8,
               display: "flex", alignItems: "center", gap: 6,
             }}>
               <Icon name="film-reel" size={12} /> DIRECTOR
               <span style={{
                 fontFamily: T.body, fontWeight: 500, letterSpacing: 0,
-                color: T.muted, textTransform: "none", fontSize: 13,
+                color: T.muted, textTransform: "none", fontSize: 14,
               }}>— one line in → it asks what to decide → a prompt board: the same idea at three lengths</span>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1988,21 +1988,21 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
               </button>
             </div>
             {directorError && (
-              <div style={{ marginTop: 8, fontSize: 13, fontFamily: T.body, color: T.terra }}>
+              <div style={{ marginTop: 8, fontSize: 14, fontFamily: T.body, color: T.terra }}>
                 {directorError}
               </div>
             )}
             {directorNeedsAuth && (
               <div style={{
                 marginTop: 8, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8,
-                fontSize: 13, fontFamily: T.body, color: T.terra,
+                fontSize: 14, fontFamily: T.body, color: T.terra,
               }}>
                 <span>Sign in to use the Director.</span>
                 <button type="button" onClick={openSignIn} style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
                   padding: "6px 12px", borderRadius: 9, border: "none", cursor: "pointer",
                   background: T.studio, color: "#fff",
-                  fontFamily: T.m, fontWeight: 700, fontSize: 13,
+                  fontFamily: T.m, fontWeight: 700, fontSize: 14,
                   letterSpacing: "0.08em", textTransform: "uppercase",
                   boxShadow: "var(--ed-shadow-card)",
                 }}>
@@ -2023,7 +2023,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
               prompt is the first thing they see — not buried under templates. */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
             <span style={{
-              fontSize: 13, fontFamily: T.m, fontWeight: 700,
+              fontSize: 14, fontFamily: T.m, fontWeight: 700,
               color: T.mono, letterSpacing: "0.1em",
               alignSelf: "center", marginRight: 4,
             }}>TRY:</span>
@@ -2042,7 +2042,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
               border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
             }}>
               <div style={{
-                fontSize: 13, fontFamily: T.m,
+                fontSize: 14, fontFamily: T.m,
                 color: T.studio, letterSpacing: "0.1em", fontWeight: 700, marginBottom: 8,
                 display: "flex", alignItems: "center", gap: 6,
               }}><svg width={14} height={14} viewBox="0 0 24 24" fill="none"
@@ -2056,7 +2056,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                   <button key={i} type="button" onClick={() => applyPromptIdea(seed)} style={{
                     textAlign: "left", padding: "9px 12px", borderRadius: 10,
                     background: T.paper, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)",
-                    fontSize: 13, color: T.ink, cursor: "pointer", lineHeight: 1.45,
+                    fontSize: 14, color: T.ink, cursor: "pointer", lineHeight: 1.45,
                     fontFamily: T.body,
                   }}>{seed}</button>
                 ))}
@@ -2096,7 +2096,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                       padding: "9px 0", borderRadius: 9, border: "none",
                       background: sel ? T.terra : "transparent",
                       color: sel ? T.creamOn : T.muted2,
-                      fontWeight: 700, fontSize: 13, cursor: "pointer",
+                      fontWeight: 700, fontSize: 14, cursor: "pointer",
                       fontFamily: T.body,
                       boxShadow: sel ? "var(--ed-shadow-card)" : "none",
                       letterSpacing: "0.02em",
@@ -2113,12 +2113,12 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
               <div style={{ position: "relative", marginTop: 8 }} ref={modelMenuRef}>
                 <button onClick={() => setModelOpen(o => !o)} style={engineBtn} aria-label="Change engine">
                   <div style={{ textAlign: "left", flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", color: T.mono }}>ENGINE</div>
+                    <div style={{ fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", color: T.mono }}>ENGINE</div>
                     <div style={{ fontSize: 15, fontFamily: T.disp, fontWeight: 700, color: T.ink, marginTop: 2 }}>
                       {chosenModel?.displayName || "—"}
                     </div>
                   </div>
-                  <span style={{ fontSize: 13, fontFamily: T.m, fontWeight: 700, color: T.muted2, marginLeft: 8, flexShrink: 0 }}>{modelOpen ? "▴ close" : "▾ change"}</span>
+                  <span style={{ fontSize: 14, fontFamily: T.m, fontWeight: 700, color: T.muted2, marginLeft: 8, flexShrink: 0 }}>{modelOpen ? "▴ close" : "▾ change"}</span>
                 </button>
 
                 {modelOpen && (
@@ -2137,10 +2137,10 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                           <div style={{
                             padding: "7px 8px 4px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8,
                           }}>
-                            <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", color: T.mono, textTransform: "uppercase" }}>
+                            <span style={{ fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", color: T.mono, textTransform: "uppercase" }}>
                               {tierKey === "free" ? "Free" : tierKey === "pro" ? "Pro tier" : "Studio tier"}
                             </span>
-                            <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted2 }}>{TIER_QUALITY[tierKey]}</span>
+                            <span style={{ fontFamily: T.m, fontSize: 14, color: T.muted2 }}>{TIER_QUALITY[tierKey]}</span>
                           </div>
                           {group.map(m => {
                       const sel = m.id === chosenModelId;
@@ -2171,10 +2171,10 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                             : locked ? `Coming ${m.comingSoonEta || "soon"}` : ""}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                            <strong style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700, color: sel ? T.terra : T.ink }}>{m.displayName}</strong>
+                            <strong style={{ fontSize: 14, fontFamily: T.disp, fontWeight: 700, color: sel ? T.terra : T.ink }}>{m.displayName}</strong>
                             {locked && <span style={{
                               padding: "2px 7px", borderRadius: 999,
-                              fontSize: 13, fontWeight: 700, letterSpacing: "0.08em",
+                              fontSize: 14, fontWeight: 700, letterSpacing: "0.08em",
                               fontFamily: T.m,
                               background: T.inset, color: T.muted2,
                               display: "inline-flex", alignItems: "center", gap: 4,
@@ -2187,7 +2187,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                             {!locked && <ModelBadges model={m} compact />}
                           </div>
                           <div style={{
-                            fontSize: 13, color: T.muted2, marginTop: 4,
+                            fontSize: 14, color: T.muted2, marginTop: 4,
                             fontFamily: T.m,
                           }}>
                             {m.kind === "video" ? `${m.maxDurationSec}s · ` : ""}{m.maxResolution} · {m.creditsPerRun} cr
@@ -2209,7 +2209,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                 <div style={{
                   marginTop: 8, padding: "9px 12px", borderRadius: 9,
                   background: T.inset, border: `1px solid ${T.hair}`,
-                  fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.ink70,
+                  fontFamily: T.m, fontSize: 14, fontWeight: 700, color: T.ink70,
                   letterSpacing: "0.02em", lineHeight: 1.5,
                 }}>
                   {chosenModel.maxResolution} · {chosenModel.kind === "video" ? `${chosenModel.maxDurationSec}s clip (fixed)` : "still image"} · {chosenModel.creditsPerRun} cr per run
@@ -2220,7 +2220,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                   marginTop: 8, padding: "7px 10px", borderRadius: 8,
                   background: "rgba(92,138,78,0.08)",
                   border: "1px solid rgba(92,138,78,0.22)",
-                  fontSize: 13, color: T.thrive,
+                  fontSize: 14, color: T.thrive,
                   fontFamily: T.m, fontWeight: 700, letterSpacing: "0.04em",
                 }}>
                   ✓ uses {pet.name}'s photo to guide the look
@@ -2228,7 +2228,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
               )}
 
               {isDemo ? (
-                <div style={{ marginTop: 10, fontSize: 13, color: T.muted2, fontFamily: T.body, lineHeight: 1.5 }}>
+                <div style={{ marginTop: 10, fontSize: 14, color: T.muted2, fontFamily: T.body, lineHeight: 1.5 }}>
                   Demo mode — previews are free and earn no points. Sign in to
                   generate for real and earn Season Rewards (+10 image · +20 video).
                 </div>
@@ -2243,7 +2243,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                         ? `covers ${Math.floor(credits / runCost)} run${Math.floor(credits / runCost) === 1 ? "" : "s"}`
                         : undefined} />
                   </div>
-                  <div style={{ fontSize: 13, color: T.muted, fontFamily: T.body, lineHeight: 1.45, marginTop: 8 }}>
+                  <div style={{ fontSize: 14, color: T.muted, fontFamily: T.body, lineHeight: 1.45, marginTop: 8 }}>
                     Points are non-financial Season Rewards standing.
                     {!SEASON_SCHEDULED && " Season 1 is starting soon — points earned now carry in."}
                   </div>
@@ -2264,7 +2264,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                       >
                         Not enough credits — purchases are paused →
                         <span style={{
-                          display: "block", fontSize: 13, fontFamily: T.m, fontWeight: 700,
+                          display: "block", fontSize: 14, fontFamily: T.m, fontWeight: 700,
                           letterSpacing: "0.06em", marginTop: 4,
                         }}>this run costs {runCost} cr, you have {credits}</span>
                       </a>
@@ -2291,11 +2291,11 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                         }}><PencilGlyph size={15} /></span>
                         <span style={{ minWidth: 0 }}>
                           <span style={{
-                            display: "block", fontFamily: T.m, fontSize: 13, fontWeight: 700,
+                            display: "block", fontFamily: T.m, fontSize: 14, fontWeight: 700,
                             letterSpacing: "0.14em", color: T.studio, textTransform: "uppercase",
                             marginBottom: 2,
                           }}>START HERE</span>
-                          <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: T.ink, lineHeight: 1.4 }}>
+                          <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: T.ink, lineHeight: 1.4 }}>
                             Write what {petDisplayName} should be doing — tap to jump to the prompt box
                           </span>
                         </span>
@@ -2358,15 +2358,15 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                       {p.avatar_url
                         ? <img src={p.avatar_url} alt={p.name} style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover", boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)" }} />
                         : <img src="/mascot.jpg" alt="" style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover", opacity: 0.9, boxShadow: "inset 0 0 0 1.5px rgba(184,130,44,.5)" }} />}
-                      <span style={{ fontSize: 13, fontFamily: T.disp, fontWeight: 700 }}>{p.name}</span>
+                      <span style={{ fontSize: 14, fontFamily: T.disp, fontWeight: 700 }}>{p.name}</span>
                       {selected ? (
                         <span style={{
-                          fontSize: 13, color: T.terra, fontWeight: 700, letterSpacing: "0.08em",
+                          fontSize: 14, color: T.terra, fontWeight: 700, letterSpacing: "0.08em",
                           fontFamily: T.m,
                         }}>✓ SELECTED</span>
                       ) : (
                         <span style={{
-                          fontSize: 13, color: T.muted2,
+                          fontSize: 14, color: T.muted2,
                           fontFamily: T.m,
                         }}>Lv{p.level}</span>
                       )}
@@ -2410,7 +2410,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                       </div>
                       <div style={{
                         padding: "6px 4px 2px", textAlign: "center",
-                        fontSize: 13, fontFamily: T.disp, fontWeight: 700, lineHeight: 1.2,
+                        fontSize: 14, fontFamily: T.disp, fontWeight: 700, lineHeight: 1.2,
                         color: sel ? T.terra : T.ink,
                       }}>{s.label}</div>
                     </button>
@@ -2431,7 +2431,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                       padding: "9px 0", borderRadius: 9, border: "none",
                       background: sel ? T.terra : "transparent",
                       color: sel ? T.creamOn : T.muted2,
-                      fontWeight: 700, fontSize: 13, cursor: "pointer",
+                      fontWeight: 700, fontSize: 14, cursor: "pointer",
                       fontFamily: T.m, letterSpacing: "0.04em",
                       boxShadow: sel ? "var(--ed-shadow-card)" : "none",
                     }}>{a === "16:9" ? "▭ 16:9" : a === "9:16" ? "▯ 9:16" : "◻ 1:1"}</button>
@@ -2456,7 +2456,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
           boxShadow: "var(--ed-shadow-card)",
         }}>
           <div style={{
-            fontSize: 13, fontFamily: T.m,
+            fontSize: 14, fontFamily: T.m,
             letterSpacing: "0.14em", color: T.studio, marginBottom: 10, fontWeight: 700, textTransform: "uppercase",
           }}>EXPLORING</div>
           <div style={{ fontSize: 22, fontFamily: T.disp, fontWeight: 800, letterSpacing: "-0.015em", marginBottom: 6 }}>
@@ -2533,14 +2533,14 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{
-                  fontSize: 13, fontFamily: T.m, fontWeight: 700,
+                  fontSize: 14, fontFamily: T.m, fontWeight: 700,
                   letterSpacing: "0.14em", color: T.studio, textTransform: "uppercase", marginBottom: 6,
                 }}>DIRECTOR · DECIDE THE SHOTS</div>
                 <h2 style={{
                   fontSize: 24, fontFamily: T.disp, fontWeight: 800, margin: 0,
                   lineHeight: 1.1, color: T.ink, letterSpacing: "-0.02em",
                 }}>Here is everything to decide</h2>
-                <p style={{ fontSize: 13, color: T.muted, margin: "6px 0 0", fontFamily: T.body, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 14, color: T.muted, margin: "6px 0 0", fontFamily: T.body, lineHeight: 1.5 }}>
                   Pick a suggestion or type your own. Anything you skip, the Director decides — then it writes your prompt board.
                 </p>
               </div>
@@ -2586,7 +2586,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                     <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
                       {q.topic && (
                         <span style={{
-                          fontSize: 13, fontFamily: T.m, fontWeight: 700, letterSpacing: "0.08em",
+                          fontSize: 14, fontFamily: T.m, fontWeight: 700, letterSpacing: "0.08em",
                           color: T.mono, textTransform: "uppercase",
                         }}>{qi + 1}. {q.topic}</span>
                       )}
@@ -2595,7 +2595,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                       {q.question}
                     </div>
                     {q.whyItMatters && (
-                      <div style={{ fontSize: 13, color: T.muted, fontFamily: T.body, lineHeight: 1.45, marginBottom: 10 }}>
+                      <div style={{ fontSize: 14, color: T.muted, fontFamily: T.body, lineHeight: 1.45, marginBottom: 10 }}>
                         {q.whyItMatters}
                       </div>
                     )}
@@ -2614,7 +2614,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                                 border: `1px solid ${active ? T.terra : T.hair}`,
                                 background: active ? T.terra : T.paper,
                                 color: active ? T.creamOn : T.ink70,
-                                fontSize: 13, fontWeight: 700, fontFamily: T.body,
+                                fontSize: 14, fontWeight: 700, fontFamily: T.body,
                                 cursor: "pointer", lineHeight: 1.3,
                               }}
                             >{opt}</button>
@@ -2634,7 +2634,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                       style={{
                         width: "100%", padding: "9px 12px", borderRadius: 10,
                         border: `1px solid ${overriding ? T.terra : T.hair}`,
-                        background: T.paper, color: T.ink, fontSize: 13, fontFamily: T.body,
+                        background: T.paper, color: T.ink, fontSize: 14, fontFamily: T.body,
                       }}
                     />
                   </div>
@@ -2643,7 +2643,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
             </div>
 
             {directorSheetError && (
-              <div style={{ marginTop: 14, fontSize: 13, fontFamily: T.body, color: T.terra }}>
+              <div style={{ marginTop: 14, fontSize: 14, fontFamily: T.body, color: T.terra }}>
                 {directorSheetError}
               </div>
             )}
@@ -2712,7 +2712,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{
-                  fontSize: 13, fontFamily: T.m, fontWeight: 700,
+                  fontSize: 14, fontFamily: T.m, fontWeight: 700,
                   letterSpacing: "0.14em", color: T.studio, textTransform: "uppercase", marginBottom: 6,
                   display: "flex", alignItems: "center", gap: 6,
                 }}><Icon name="film-reel" size={12} /> DIRECTOR · PROMPT BOARD</div>
@@ -2720,7 +2720,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                   fontSize: 24, fontFamily: T.disp, fontWeight: 800, margin: 0,
                   lineHeight: 1.1, color: T.ink, letterSpacing: "-0.02em",
                 }}>One idea, three lengths</h2>
-                <p style={{ fontSize: 13, color: T.muted, margin: "6px 0 0", fontFamily: T.body, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 14, color: T.muted, margin: "6px 0 0", fontFamily: T.body, lineHeight: 1.5 }}>
                   The same idea tuned to each real clip length. The live lengths render today — the coming-soon one is written and waiting for its model.
                 </p>
               </div>
@@ -2748,10 +2748,10 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                   <span style={{
                     flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 5,
                     padding: "4px 9px", borderRadius: 999, background: T.terra, color: T.creamOn,
-                    fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.08em",
+                    fontFamily: T.m, fontWeight: 700, fontSize: 14, letterSpacing: "0.08em",
                     textTransform: "uppercase", marginTop: 1,
                   }}>★ Best fit</span>
-                  <span style={{ fontSize: 13, color: T.ink70, fontFamily: T.body, lineHeight: 1.5 }}>
+                  <span style={{ fontSize: 14, color: T.ink70, fontFamily: T.body, lineHeight: 1.5 }}>
                     {picked && <strong style={{ color: T.ink }}>{picked.label.split("·")[0].trim()} — </strong>}
                     {directorPick.reason}
                   </span>
@@ -2789,13 +2789,13 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                         fontFamily: T.disp, fontWeight: 800, lineHeight: 1,
                       }}>
                         <span style={{ fontSize: 18 }}>{item.targetSec}</span>
-                        <span style={{ fontSize: 13, opacity: 0.85 }}>sec</span>
+                        <span style={{ fontSize: 14, opacity: 0.85 }}>sec</span>
                       </span>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ fontSize: 14, fontFamily: T.body, fontWeight: 800, color: T.ink, lineHeight: 1.25 }}>
                           {item.label.includes("·") ? item.label.split("·").slice(1).join("·").trim() : item.label}
                         </div>
-                        <div style={{ fontSize: 13, fontFamily: T.m, fontWeight: 700, color: T.mono, letterSpacing: "0.04em", marginTop: 3 }}>
+                        <div style={{ fontSize: 14, fontFamily: T.m, fontWeight: 700, color: T.mono, letterSpacing: "0.04em", marginTop: 3 }}>
                           {item.model}
                         </div>
                       </div>
@@ -2812,7 +2812,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                         ? <Icon name="lock" size={11} />
                         : <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: 999, background: T.thrive, display: "inline-block" }} />}
                       <span style={{
-                        fontSize: 13, fontFamily: T.m, fontWeight: 700, letterSpacing: "0.05em",
+                        fontSize: 14, fontFamily: T.m, fontWeight: 700, letterSpacing: "0.05em",
                         textTransform: "uppercase", color: locked ? T.muted2 : "#3E6B33",
                       }}>{locked ? (item.eta ? `Coming ${item.eta}` : "Coming soon") : "Live now"}</span>
                     </div>
@@ -2822,7 +2822,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                       marginTop: 10, padding: "10px 12px", borderRadius: 10,
                       background: T.paper, border: `1px solid ${T.hair}`,
                       maxHeight: 176, overflowY: "auto",
-                      fontSize: 13, fontFamily: T.body, color: T.ink70, lineHeight: 1.5,
+                      fontSize: 14, fontFamily: T.body, color: T.ink70, lineHeight: 1.5,
                       whiteSpace: "pre-wrap", wordBreak: "break-word",
                     }}>
                       {item.prompt}
@@ -2838,7 +2838,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                           padding: "10px 12px", borderRadius: 10,
                           border: `1px solid ${T.hair}`, background: T.paper,
                           color: copied ? T.thrive : T.ink70,
-                          fontFamily: T.body, fontWeight: 700, fontSize: 13, cursor: "pointer",
+                          fontFamily: T.body, fontWeight: 700, fontSize: 14, cursor: "pointer",
                         }}
                       >
                         <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -2857,7 +2857,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                             flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
                             padding: "10px 12px", borderRadius: 10, border: `1px dashed ${T.hair}`,
                             background: "rgba(33,26,18,.04)", color: T.muted,
-                            fontFamily: T.body, fontWeight: 700, fontSize: 13, cursor: "default",
+                            fontFamily: T.body, fontWeight: 700, fontSize: 14, cursor: "default",
                           }}
                         >
                           <Icon name="lock" size={12} /> {item.eta ? `Coming ${item.eta}` : "Coming soon"}
@@ -2869,7 +2869,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                             flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
                             padding: "10px 12px", borderRadius: 10, border: "none",
                             background: "linear-gradient(180deg,#F49B2A,#E27D0C)", color: T.ink,
-                            fontFamily: T.body, fontWeight: 800, fontSize: 13, cursor: "pointer",
+                            fontFamily: T.body, fontWeight: 800, fontSize: 14, cursor: "pointer",
                             boxShadow: "var(--ed-shadow-card)",
                           }}
                         >
@@ -2884,7 +2884,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
 
             {/* Footer note — honesty line, reinforcing what can render today. */}
             <p style={{
-              marginTop: 16, marginBottom: 0, fontSize: 13, color: T.muted,
+              marginTop: 16, marginBottom: 0, fontSize: 14, color: T.muted,
               fontFamily: T.body, lineHeight: 1.5,
             }}>
               Every prompt is written the same production-grade way — only the story density changes with the seconds. Locked lengths ship the moment their model goes live.
@@ -2974,10 +2974,10 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                       {failed ? (
                         // Honest failure: real error_message + a retry path.
                         <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 7, minHeight: 120 }}>
-                          <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", color: T.terra, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                          <span style={{ fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.1em", color: T.terra, display: "inline-flex", alignItems: "center", gap: 5 }}>
                             <span aria-hidden style={{ width: 7, height: 7, borderRadius: 2, background: T.terra, display: "inline-block" }} />FAILED
                           </span>
-                          <span style={{ fontSize: 13, color: T.ink70, lineHeight: 1.45 }}>
+                          <span style={{ fontSize: 14, color: T.ink70, lineHeight: 1.45 }}>
                             {g.error_message || "This run failed before producing a result."}
                           </span>
                           {g.prompt && (
@@ -2985,13 +2985,13 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                               alignSelf: "flex-start", marginTop: "auto",
                               padding: "6px 11px", borderRadius: 8, cursor: "pointer",
                               border: `1px solid ${T.hair}`, background: T.paper,
-                              color: T.ink70, fontSize: 13, fontWeight: 700, fontFamily: T.body,
+                              color: T.ink70, fontSize: 14, fontWeight: 700, fontFamily: T.body,
                             }}>Retry prompt</button>
                           )}
                         </div>
                       ) : inFlight ? (
                         <div className="ed-skeleton" style={{ height: 130, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", color: T.muted2 }}>RENDERING…</span>
+                          <span style={{ fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.12em", color: T.muted2 }}>RENDERING…</span>
                         </div>
                       ) : media ? (
                         isVid
@@ -3004,16 +3004,16 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
                       <div style={{ padding: "9px 11px 11px", display: "flex", flexDirection: "column", gap: 7, flex: 1 }}>
                         {g.prompt && (
                           <div style={{
-                            fontSize: 13, color: T.ink70, lineHeight: 1.4,
+                            fontSize: 14, color: T.ink70, lineHeight: 1.4,
                             display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const,
                             overflow: "hidden",
                           }}>{g.prompt}</div>
                         )}
                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                          <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: T.muted2, textTransform: "uppercase" }}>{dateStr}</span>
+                          <span style={{ fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.08em", color: T.muted2, textTransform: "uppercase" }}>{dateStr}</span>
                           {typeof g.credits_charged === "number" && g.credits_charged > 0 && (
                             <span style={{
-                              fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.06em",
+                              fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.06em",
                               padding: "1px 6px", borderRadius: 999,
                               background: T.paper, border: `1px solid ${T.hair}`, color: T.muted2,
                             }}>{g.credits_charged} cr</span>
@@ -3060,7 +3060,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
           display: "flex", alignItems: "center", gap: 12, maxWidth: "min(92vw, 500px)",
           background: T.paper, border: `1px solid ${T.hair}`, borderRadius: 12,
           boxShadow: "var(--ed-shadow-card)", padding: "12px 14px 12px 16px",
-          fontFamily: T.body, fontSize: 13.5, color: T.ink,
+          fontFamily: T.body, fontSize: 14.5, color: T.ink,
         }}>
           {isAuthenticating ? (
             <span style={{ minWidth: 0 }}>Check your wallet — approve the signature to sign in.</span>
@@ -3070,7 +3070,7 @@ export default function PetStudioPro({ onCreditsChange, directorSeed, onDirector
               <button type="button" onClick={openSignIn} style={{
                 flexShrink: 0, padding: "8px 14px", borderRadius: 9, border: "none", cursor: "pointer",
                 background: T.studio, color: "#fff", fontFamily: T.m, fontWeight: 700,
-                fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase",
+                fontSize: 14, letterSpacing: "0.08em", textTransform: "uppercase",
               }}>Retry</button>
             </>
           )}
@@ -3224,7 +3224,7 @@ function PreviewIdle({ pet, isDemo }: { pet: Pet | null; isDemo?: boolean }) {
           {pet ? (named ? `${who} is ready` : "Ready to create") : "Pick a pet"}
         </div>
         <div style={{
-          fontSize: compact ? 13 : 14, color: "rgba(252,233,207,0.92)",
+          fontSize: 14, color: "rgba(252,233,207,0.92)",
           maxWidth: 320, margin: compact ? 0 : "0 auto", lineHeight: compact ? 1.45 : 1.55,
         }}>
           Pick a style, write a prompt, hit <strong>{isDemo ? "Preview" : "Generate"}</strong>{" "}
@@ -3266,26 +3266,26 @@ function PreviewGenerating({ kind, progress, isDemo }: { kind: "image" | "video"
         background: "radial-gradient(120% 95% at 50% 18%, rgba(190,64,30,.34), rgba(120,34,18,.10) 55%, transparent 78%)",
       }} />
       <div style={{ position: "relative", color: "#FCE9CF", textAlign: "center", padding: 28, width: "100%", maxWidth: 330 }}>
-        <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 13, letterSpacing: "0.18em", color: "rgba(252,233,207,.85)", textTransform: "uppercase" }}>Darkroom · Developing</div>
+        <div style={{ fontFamily: "var(--ed-m)", fontWeight: 700, fontSize: 14, letterSpacing: "0.18em", color: "rgba(252,233,207,.85)", textTransform: "uppercase" }}>Darkroom · Developing</div>
         <div style={{ fontFamily: "var(--ed-disp)", fontWeight: 800, fontSize: 22, marginTop: 6, letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums" }}>Generating · {secs}s</div>
-        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,.95)", marginTop: 6 }}>{line}</div>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 14, color: "rgba(252,233,207,.95)", marginTop: 6 }}>{line}</div>
         {/* Determinate strip on the developing plate. The ONLY motion: this bar
             advancing, the status line swapping, and the safelight breathing. */}
         <div style={{ marginTop: 16, height: 12, borderRadius: 999, background: "rgba(252,233,207,0.14)", border: "1px solid rgba(252,233,207,0.4)", overflow: "hidden", maxWidth: 260, marginInline: "auto" }}>
           <div style={{ height: "100%", width: `${pct}%`, background: "linear-gradient(90deg,#F49B2A,#E27D0C)", transition: "width 1s linear" }} />
         </div>
-        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,.85)", marginTop: 8, fontVariantNumeric: "tabular-nums" }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 14, color: "rgba(252,233,207,.85)", marginTop: 8, fontVariantNumeric: "tabular-nums" }}>
           {real != null ? `${pct}%` : `≈${pct}% · est.`} · {kind === "video" ? "keep this page open" : "rendering"}
         </div>
         {real == null && (
-          <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(252,233,207,.85)", marginTop: 3 }}>
+          <div style={{ fontFamily: "var(--ed-m)", fontSize: 14, color: "rgba(252,233,207,.85)", marginTop: 3 }}>
             time estimate, not job progress
           </div>
         )}
         {/* Reward context on the develop plate: what this run pays when it
             lands — same numbers the server grants (see runReward). A DEMO
             preview is free and pays nothing, so it says exactly that. */}
-        <div style={{ fontFamily: "var(--ed-m)", fontSize: 13, color: "rgba(232,199,126,.9)", marginTop: 10, fontWeight: 700, letterSpacing: "0.06em" }}>
+        <div style={{ fontFamily: "var(--ed-m)", fontSize: 14, color: "rgba(232,199,126,.9)", marginTop: 10, fontWeight: 700, letterSpacing: "0.06em" }}>
           {isDemo
             ? "Demo preview — free · earns no points"
             : `Pays +${kind === "video" ? 20 : 10} Season pts on completion · daily cap applies`}
@@ -3321,7 +3321,7 @@ function RenderQueue({ generating, kind, progress, pending }: {
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
         <div style={panelLabel}>RENDER QUEUE</div>
-        <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.studio, letterSpacing: "0.08em" }}>{rows.length} ACTIVE</span>
+        <span style={{ fontFamily: T.m, fontSize: 14, fontWeight: 700, color: T.studio, letterSpacing: "0.08em" }}>{rows.length} ACTIVE</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {rows.map((r, i) => (
@@ -3331,7 +3331,7 @@ function RenderQueue({ generating, kind, progress, pending }: {
               background: r.active ? T.cta2 : T.mono,
             }} className={r.active ? "studio-pulse" : undefined} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: T.body, fontSize: 13, fontWeight: 600, color: T.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</div>
+              <div style={{ fontFamily: T.body, fontSize: 14, fontWeight: 600, color: T.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</div>
               <div style={{ height: 6, borderRadius: 999, background: T.inset, border: `1px solid ${T.hair}`, overflow: "hidden", marginTop: 4 }}>
                 <div className={r.pct == null ? "studio-queue-indet" : undefined} style={{
                   height: "100%",
@@ -3341,7 +3341,7 @@ function RenderQueue({ generating, kind, progress, pending }: {
                 }} />
               </div>
             </div>
-            <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted2, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{r.sub}</span>
+            <span style={{ fontFamily: T.m, fontSize: 14, color: T.muted2, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{r.sub}</span>
           </div>
         ))}
       </div>
@@ -3356,7 +3356,7 @@ function PreviewDemo({ pet, prompt, onSignIn }: { pet: Pet | null; prompt: strin
       display: "flex", flexDirection: "column", justifyContent: "center", height: "100%",
     }}>
       <div style={{
-        fontSize: 13, fontFamily: "var(--ed-m)", fontWeight: 700,
+        fontSize: 14, fontFamily: "var(--ed-m)", fontWeight: 700,
         letterSpacing: "0.14em", color: "rgba(252,233,207,.85)", marginBottom: 12, textTransform: "uppercase",
       }}>DEMO · WOULD GENERATE</div>
       <div style={{ fontSize: 22, fontFamily: "var(--ed-disp)", fontWeight: 800, color: "#FCE9CF", marginBottom: 8, lineHeight: 1.3 }}>
@@ -3370,7 +3370,7 @@ function PreviewDemo({ pet, prompt, onSignIn }: { pet: Pet | null; prompt: strin
         alignSelf: "flex-start", border: "none", cursor: "pointer",
         padding: "10px 18px", borderRadius: 10,
         background: "linear-gradient(180deg,#F49B2A,#E27D0C)",
-        color: "#211A12", fontWeight: 800, fontSize: 13,
+        color: "#211A12", fontWeight: 800, fontSize: 14,
         fontFamily: "var(--ed-disp)",
         boxShadow: "0 14px 26px -14px rgba(226,125,12,.8)",
         display: "inline-flex", alignItems: "center", gap: 7,
@@ -3393,13 +3393,13 @@ function RoadmapItem({ icon, title, body }: { icon: string; title: string; body:
         <span style={{ display: "inline-flex" }}><Icon name={icon} size={20} /></span>
         <span style={{
           padding: "2px 7px", borderRadius: 999,
-          fontSize: 13, fontWeight: 700, letterSpacing: "0.1em",
+          fontSize: 14, fontWeight: 700, letterSpacing: "0.1em",
           fontFamily: T.m,
           background: "rgba(200,147,47,0.16)", color: "#8A6420",
         }}>RESEARCH</span>
       </div>
       <div style={{ fontSize: 14, fontFamily: T.disp, fontWeight: 700, marginBottom: 4, color: T.ink }}>{title}</div>
-      <div style={{ fontSize: 13, color: T.muted2, lineHeight: 1.5 }}>{body}</div>
+      <div style={{ fontSize: 14, color: T.muted2, lineHeight: 1.5 }}>{body}</div>
     </div>
   );
 }
@@ -3513,7 +3513,7 @@ function ModelBadges({ model, compact }: { model: StudioModel; compact?: boolean
       {badges.slice(0, compact ? 3 : 5).map((b, i) => (
         <span key={i} style={{
           padding: "2px 7px", borderRadius: 999,
-          fontSize: 13, fontWeight: 700, letterSpacing: "0.06em",
+          fontSize: 14, fontWeight: 700, letterSpacing: "0.06em",
           fontFamily: T.m,
           background: b.bg, color: b.fg,
           display: "inline-flex", alignItems: "center", gap: 3,
@@ -3531,10 +3531,10 @@ function RunCardRow({ k, v, note, accent }: { k: string; v: string; note?: strin
       display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10,
       padding: "7px 10px", borderRadius: 9, background: T.inset, border: `1px solid ${T.hair}`,
     }}>
-      <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", color: T.mono, textTransform: "uppercase", flexShrink: 0 }}>{k}</span>
+      <span style={{ fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.08em", color: T.mono, textTransform: "uppercase", flexShrink: 0 }}>{k}</span>
       <span style={{ display: "inline-flex", alignItems: "baseline", gap: 6, minWidth: 0 }}>
         <span style={{ fontFamily: T.disp, fontSize: 14, fontWeight: 700, color: valueColor, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v}</span>
-        {note && <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted2, flexShrink: 0 }}>{note}</span>}
+        {note && <span style={{ fontFamily: T.m, fontSize: 14, color: T.muted2, flexShrink: 0 }}>{note}</span>}
       </span>
     </div>
   );
@@ -3560,7 +3560,7 @@ function Pill({ label, value, valueColor }: { label: string; value: string; valu
       display: "flex", alignItems: "baseline", gap: 8,
     }}>
       <span style={{
-        fontSize: 13, fontFamily: T.m,
+        fontSize: 14, fontFamily: T.m,
         color: T.mono, letterSpacing: "0.1em", fontWeight: 700,
       }}>{label}</span>
       <span style={{

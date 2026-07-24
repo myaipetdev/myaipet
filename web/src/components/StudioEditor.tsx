@@ -620,7 +620,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
         {/* header */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
           <div style={{ flex: "1 1 240px", minWidth: 0 }}>
-            <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 13, letterSpacing: "0.16em", color: T.studio, textTransform: "uppercase" }}>
+            <div style={{ fontFamily: T.m, fontWeight: 700, fontSize: 14, letterSpacing: "0.16em", color: T.studio, textTransform: "uppercase" }}>
               STUDIO · ASSEMBLE
             </div>
             <h2 id="studio-editor-title" style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 30, letterSpacing: "-0.02em", margin: "2px 0 0", color: T.ink, lineHeight: 1.05 }}>
@@ -667,18 +667,18 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                 {!hasClips && (
                   <div style={{ color: T.creamOn, textAlign: "center", padding: 28, maxWidth: 320 }}>
                     <div style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 20, marginBottom: 6 }}>Add a clip to start</div>
-                    <div style={{ fontSize: 13, color: "rgba(252,233,207,.85)", lineHeight: 1.5 }}>
+                    <div style={{ fontSize: 14, color: "rgba(252,233,207,.85)", lineHeight: 1.5 }}>
                       Import 1&ndash;{MAX_CLIPS} of your generated clips from the right, trim them, then export.
                     </div>
                   </div>
                 )}
                 {exporting && (
                   <div style={{ position: "absolute", inset: 0, background: "rgba(25,19,52,.72)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, color: T.creamOn, padding: 24 }}>
-                    <div style={{ fontFamily: T.m, fontWeight: 700, letterSpacing: "0.14em", fontSize: 13 }}>ENCODING ON YOUR DEVICE</div>
+                    <div style={{ fontFamily: T.m, fontWeight: 700, letterSpacing: "0.14em", fontSize: 14 }}>ENCODING ON YOUR DEVICE</div>
                     <div style={{ width: "min(280px,80%)", height: 12, borderRadius: 999, background: "rgba(252,233,207,0.16)", border: "1px solid rgba(252,233,207,0.4)", overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${exportPct}%`, background: "linear-gradient(90deg,#F49B2A,#E27D0C)", transition: "width .25s linear" }} />
                     </div>
-                    <div style={{ fontSize: 13, fontFamily: T.m, fontVariantNumeric: "tabular-nums" }}>{exportPct}% · real-time render — keep this tab open</div>
+                    <div style={{ fontSize: 14, fontFamily: T.m, fontVariantNumeric: "tabular-nums" }}>{exportPct}% · real-time render — keep this tab open</div>
                   </div>
                 )}
               </div>
@@ -700,7 +700,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                     <div style={{ height: "100%", width: `${totalDur > 0 ? (playhead / totalDur) * 100 : 0}%`, background: T.studio, transition: playing ? "none" : "width .15s linear" }} />
                   </div>
                 </div>
-                <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted2, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
+                <div style={{ fontFamily: T.m, fontSize: 14, fontWeight: 700, color: T.muted2, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
                   {fmtTime(playhead)} / {fmtTime(totalDur)}
                 </div>
               </div>
@@ -710,12 +710,12 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
             <div style={{ background: T.paper, borderRadius: 16, padding: 14, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
                 <span style={panelLabel}>TIMELINE</span>
-                <span style={{ fontFamily: T.m, fontSize: 13, color: totalDur > MAX_REEL_SEC ? T.terra : T.muted2 }}>
+                <span style={{ fontFamily: T.m, fontSize: 14, color: totalDur > MAX_REEL_SEC ? T.terra : T.muted2 }}>
                   {timeline.length}/{MAX_CLIPS} clips · {fmtTime(totalDur)}{totalDur > MAX_REEL_SEC ? " · over 60s" : ""}
                 </span>
               </div>
               {!hasClips ? (
-                <div style={{ padding: "18px 12px", textAlign: "center", color: T.muted2, fontSize: 13, border: `1px dashed ${T.hair}`, borderRadius: 12, fontFamily: T.body }}>
+                <div style={{ padding: "18px 12px", textAlign: "center", color: T.muted2, fontSize: 14, border: `1px dashed ${T.hair}`, borderRadius: 12, fontFamily: T.body }}>
                   Your sequence is empty. Add clips from the Import panel &rarr;
                 </div>
               ) : (
@@ -741,11 +741,11 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                         boxShadow: sel ? "0 0 0 3px rgba(107,79,160,0.12)" : "none",
                       }}>
                         <div style={{ height: 66, background: `url(${c.src.url}) center/cover no-repeat`, position: "relative" }}>
-                          {c.src.kind === "video" && <span style={{ position: "absolute", top: 5, left: 6, fontSize: 13 }}>▸</span>}
-                          <span style={{ position: "absolute", top: 5, right: 6, fontFamily: T.m, fontSize: 13, fontWeight: 700, color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,.7))" }}>#{i + 1}</span>
+                          {c.src.kind === "video" && <span style={{ position: "absolute", top: 5, left: 6, fontSize: 14 }}>▸</span>}
+                          <span style={{ position: "absolute", top: 5, right: 6, fontFamily: T.m, fontSize: 14, fontWeight: 700, color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,.7))" }}>#{i + 1}</span>
                         </div>
                         <div style={{ padding: "6px 7px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 4 }}>
-                          <span style={{ fontFamily: T.m, fontSize: 13, color: T.muted2, fontWeight: 700 }}>{fmtTime(clipLength(c))}</span>
+                          <span style={{ fontFamily: T.m, fontSize: 14, color: T.muted2, fontWeight: 700 }}>{fmtTime(clipLength(c))}</span>
                           <div style={{ display: "flex", gap: 3 }}>
                             <button onClick={(e) => { e.stopPropagation(); moveClip(c.key, -1); }} disabled={i === 0} aria-label="Move left" style={miniBtn(i === 0)}>‹</button>
                             <button onClick={(e) => { e.stopPropagation(); moveClip(c.key, 1); }} disabled={i === timeline.length - 1} aria-label="Move right" style={miniBtn(i === timeline.length - 1)}>›</button>
@@ -763,7 +763,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
             <div style={{ background: T.paper, borderRadius: 16, padding: 14, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)" }}>
               <div style={panelLabel}>EXPORT</div>
               {exportError && (
-                <div style={{ marginTop: 10, padding: "9px 12px", borderRadius: 10, background: "rgba(190,79,40,0.08)", border: "1px solid rgba(190,79,40,0.22)", color: T.terra, fontSize: 13, fontFamily: T.body }}>{exportError}</div>
+                <div style={{ marginTop: 10, padding: "9px 12px", borderRadius: 10, background: "rgba(190,79,40,0.08)", border: "1px solid rgba(190,79,40,0.22)", color: T.terra, fontSize: 14, fontFamily: T.body }}>{exportError}</div>
               )}
               {exportResult ? (
                 <div style={{ marginTop: 12, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
@@ -772,7 +772,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                     <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 15, color: T.ink }}>
                       {exportResult.hd ? "HD reel ready · no watermark" : "Reel ready · watermarked"}
                     </div>
-                    <div style={{ fontSize: 13, color: T.muted2, fontFamily: T.m, marginTop: 2 }}>
+                    <div style={{ fontSize: 14, color: T.muted2, fontFamily: T.m, marginTop: 2 }}>
                       {exportResult.ext.toUpperCase()} · {fmtBytes(exportResult.size)} · {orientation}
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
@@ -791,7 +791,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                       style={{ ...exportCard, opacity: hasClips && caps.canRecord ? 1 : 0.55, cursor: hasClips && !exporting && caps.canRecord ? "pointer" : "not-allowed" }}
                     >
                       <span style={{ fontFamily: T.disp, fontWeight: 800, fontSize: 15, color: T.ink }}>Export free</span>
-                      <span style={{ fontSize: 13, color: T.muted2, fontFamily: T.m, marginTop: 3 }}>720p · MY AI PET watermark · 0 cr</span>
+                      <span style={{ fontSize: 14, color: T.muted2, fontFamily: T.m, marginTop: 3 }}>720p · MY AI PET watermark · 0 cr</span>
                     </button>
                     {/* HD / paid */}
                     <button
@@ -812,22 +812,22 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                         )}
                         Export HD
                       </span>
-                      <span style={{ fontSize: 13, color: T.muted2, fontFamily: T.m, marginTop: 3 }}>
+                      <span style={{ fontSize: 14, color: T.muted2, fontFamily: T.m, marginTop: 3 }}>
                         1080p · no watermark · {HD_EXPORT_FREE_BETA ? "free · beta" : tierIncludesHd ? "included" : `${HD_EXPORT_COST} cr`}
                       </span>
                     </button>
                   </div>
                   {!hdUnlocked && (
-                    <a href="/?section=home&scroll=pricing" style={{ display: "inline-block", marginTop: 10, fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.terra, textDecoration: "underline" }}>
+                    <a href="/?section=home&scroll=pricing" style={{ display: "inline-block", marginTop: 10, fontFamily: T.m, fontSize: 14, fontWeight: 700, color: T.terra, textDecoration: "underline" }}>
                       Credit purchases are paused — view status &rarr;
                     </a>
                   )}
                   {HD_EXPORT_FREE_BETA && (
-                    <div style={{ marginTop: 10, fontSize: 13, color: T.muted2, fontFamily: T.m }}>
+                    <div style={{ marginTop: 10, fontSize: 14, color: T.muted2, fontFamily: T.m }}>
                       HD export is free while Studio is in beta.
                     </div>
                   )}
-                  <div style={{ marginTop: 10, fontSize: 13, color: T.muted, fontFamily: T.body, lineHeight: 1.5 }}>
+                  <div style={{ marginTop: 10, fontSize: 14, color: T.muted, fontFamily: T.body, lineHeight: 1.5 }}>
                     Rendering runs entirely in your browser (the server never transcodes). HD export is a real-time render — a {fmtTime(totalDur)} reel takes about {fmtTime(totalDur)}.
                   </div>
                 </>
@@ -841,13 +841,13 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
             <div style={{ background: T.paper, borderRadius: 16, padding: 14, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)" }}>
               <div style={panelLabel}>IMPORT CLIPS</div>
               {clips.length === 0 ? (
-                <div style={{ marginTop: 10, fontSize: 13, color: T.muted2, fontFamily: T.body, lineHeight: 1.5 }}>
+                <div style={{ marginTop: 10, fontSize: 14, color: T.muted2, fontFamily: T.body, lineHeight: 1.5 }}>
                   No generations yet. Create a clip or image in Studio first, then assemble it here.
                 </div>
               ) : (
                 <>
                   {sourceVideos.length === 0 && (
-                    <div style={{ marginTop: 8, marginBottom: 8, fontSize: 13, color: T.muted, fontFamily: T.body, lineHeight: 1.45 }}>
+                    <div style={{ marginTop: 8, marginBottom: 8, fontSize: 14, color: T.muted, fontFamily: T.body, lineHeight: 1.45 }}>
                       Tip: images work as still shots — animate a prompt in Studio for motion clips.
                     </div>
                   )}
@@ -870,7 +870,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                           }}
                         >
                           <span style={{ display: "block", width: "100%", height: "100%", background: `url(${c.url}) center/cover no-repeat` }} />
-                          <span style={{ position: "absolute", top: 5, left: 5, fontFamily: T.m, fontSize: 13, fontWeight: 700, color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,.7))" }}>
+                          <span style={{ position: "absolute", top: 5, left: 5, fontFamily: T.m, fontSize: 14, fontWeight: 700, color: "white", filter: "drop-shadow(0 1px 0 rgba(0,0,0,.7))" }}>
                             {c.kind === "video" ? "▸ CLIP" : "IMG"}
                           </span>
                           <span style={{ position: "absolute", bottom: 5, right: 5, width: 22, height: 22, borderRadius: 7, background: placed ? T.thrive : T.studio, color: "white", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700 }}>
@@ -882,14 +882,14 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                   </div>
                 </>
               )}
-              {loadError && <div style={{ marginTop: 8, fontSize: 13, color: T.terra, fontFamily: T.body }}>{loadError}</div>}
+              {loadError && <div style={{ marginTop: 8, fontSize: 14, color: T.terra, fontFamily: T.body }}>{loadError}</div>}
             </div>
 
             {/* CLIP INSPECTOR (trim / caption) */}
             <div style={{ background: T.paper, borderRadius: 16, padding: 14, border: `1px solid ${T.hair}`, boxShadow: "var(--ed-shadow-card)" }}>
               <div style={panelLabel}>SELECTED CLIP</div>
               {!selected ? (
-                <div style={{ marginTop: 10, fontSize: 13, color: T.muted2, fontFamily: T.body }}>Select a clip on the timeline to trim it and add a caption.</div>
+                <div style={{ marginTop: 10, fontSize: 14, color: T.muted2, fontFamily: T.body }}>Select a clip on the timeline to trim it and add a caption.</div>
               ) : (
                 <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 12 }}>
                   {selected.src.kind === "video" ? (
@@ -904,7 +904,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                         min={selected.trimIn + 0.2} max={selected.natDur || selected.trimOut} step={0.1} value={selected.trimOut}
                         onChange={(v) => { patchClip(selected.key, { trimOut: Math.max(v, selected.trimIn + 0.2) }); drawStill({ ...selected, trimOut: v }, Math.max(0, v - selected.trimIn - 0.05)); }}
                       />
-                      <div style={{ fontFamily: T.m, fontSize: 13, color: T.muted2 }}>Kept: {fmtTime(clipLength(selected))} of {fmtTime(selected.natDur)}</div>
+                      <div style={{ fontFamily: T.m, fontSize: 14, color: T.muted2 }}>Kept: {fmtTime(clipLength(selected))} of {fmtTime(selected.natDur)}</div>
                     </>
                   ) : (
                     <Range
@@ -914,7 +914,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                     />
                   )}
                   <div>
-                    <div style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.mono, letterSpacing: "0.06em", marginBottom: 5 }}>CAPTION</div>
+                    <div style={{ fontFamily: T.m, fontSize: 14, fontWeight: 700, color: T.mono, letterSpacing: "0.06em", marginBottom: 5 }}>CAPTION</div>
                     <input
                       aria-label="Clip caption"
                       value={selected.caption}
@@ -956,8 +956,8 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
                       border: sel ? `1.5px solid ${T.studio}` : `1px solid ${T.hair}`,
                       background: sel ? "rgba(107,79,160,0.08)" : T.inset, cursor: "pointer",
                     }}>
-                      <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 13, color: sel ? T.studio : T.ink }}>{m.name}</div>
-                      <div style={{ fontFamily: T.m, fontSize: 13, color: T.muted2 }}>{m.hint}</div>
+                      <div style={{ fontFamily: T.disp, fontWeight: 700, fontSize: 14, color: sel ? T.studio : T.ink }}>{m.name}</div>
+                      <div style={{ fontFamily: T.m, fontSize: 14, color: T.muted2 }}>{m.hint}</div>
                     </button>
                   );
                 })}
@@ -965,7 +965,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
               {musicId !== "none" && (
                 <div style={{ marginTop: 10 }}>
                   <Range label={`Volume · ${Math.round(musicVol * 100)}%`} min={0} max={1} step={0.05} value={musicVol} onChange={setMusicVol} />
-                  <div style={{ fontFamily: T.body, fontSize: 13, color: T.muted, marginTop: 4 }}>Synthesised loop — mixed in at export (no file downloaded).</div>
+                  <div style={{ fontFamily: T.body, fontSize: 14, color: T.muted, marginTop: 4 }}>Synthesised loop — mixed in at export (no file downloaded).</div>
                 </div>
               )}
             </div>
@@ -987,7 +987,7 @@ export default function StudioEditor({ open, onClose, clips, credits, userTier }
 function Range({ label, min, max, step, value, onChange }: { label: string; min: number; max: number; step: number; value: number; onChange: (v: number) => void }) {
   return (
     <label style={{ display: "block" }}>
-      <span style={{ fontFamily: T.m, fontSize: 13, fontWeight: 700, color: T.muted2, letterSpacing: "0.04em" }}>{label}</span>
+      <span style={{ fontFamily: T.m, fontSize: 14, fontWeight: 700, color: T.muted2, letterSpacing: "0.04em" }}>{label}</span>
       <input
         aria-label={label}
         type="range" min={min} max={max} step={step} value={value}
@@ -1007,7 +1007,7 @@ function Segmented({ options, value, onChange }: { options: [string, string][]; 
           <button key={v} onClick={() => onChange(v)} style={{
             padding: "7px 0", borderRadius: 8, border: "none", cursor: "pointer",
             background: sel ? T.studio : "transparent", color: sel ? T.creamOn : T.muted2,
-            fontFamily: T.body, fontWeight: 700, fontSize: 13,
+            fontFamily: T.body, fontWeight: 700, fontSize: 14,
           }}>{lbl}</button>
         );
       })}
@@ -1018,14 +1018,14 @@ function Segmented({ options, value, onChange }: { options: [string, string][]; 
 // ── style helpers ──────────────────────────────────────────────────────────
 
 const panelLabel: React.CSSProperties = {
-  fontSize: 13, fontWeight: 700, letterSpacing: "0.14em",
+  fontSize: 14, fontWeight: 700, letterSpacing: "0.14em",
   textTransform: "uppercase", color: T.mono, fontFamily: T.m,
 };
 function badge(fg: string, bg: string): React.CSSProperties {
-  return { padding: "4px 9px", borderRadius: 999, fontFamily: T.m, fontSize: 13, fontWeight: 700, letterSpacing: "0.08em", background: bg, color: fg };
+  return { padding: "4px 9px", borderRadius: 999, fontFamily: T.m, fontSize: 14, fontWeight: 700, letterSpacing: "0.08em", background: bg, color: fg };
 }
 function miniBtn(disabled: boolean): React.CSSProperties {
-  return { width: 20, height: 20, borderRadius: 6, border: `1px solid ${T.hair}`, background: T.paper, color: disabled ? T.hair : T.muted2, cursor: disabled ? "default" : "pointer", fontSize: 13, lineHeight: 1, padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" };
+  return { width: 20, height: 20, borderRadius: 6, border: `1px solid ${T.hair}`, background: T.paper, color: disabled ? T.hair : T.muted2, cursor: disabled ? "default" : "pointer", fontSize: 14, lineHeight: 1, padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" };
 }
 const exportCard: React.CSSProperties = {
   display: "flex", flexDirection: "column", alignItems: "flex-start",
@@ -1035,10 +1035,10 @@ const exportCard: React.CSSProperties = {
 const ctaBtn: React.CSSProperties = {
   padding: "9px 16px", borderRadius: 10, border: "none",
   background: `linear-gradient(180deg,${T.cta1},${T.cta2})`, color: "#FFF8EE",
-  fontFamily: T.body, fontWeight: 700, fontSize: 13, cursor: "pointer",
+  fontFamily: T.body, fontWeight: 700, fontSize: 14, cursor: "pointer",
   display: "inline-flex", alignItems: "center", gap: 6,
 };
 const ghostBtn: React.CSSProperties = {
   padding: "9px 14px", borderRadius: 10, border: `1px solid ${T.hair}`,
-  background: T.paper, color: T.ink70, fontFamily: T.body, fontWeight: 700, fontSize: 13, cursor: "pointer",
+  background: T.paper, color: T.ink70, fontFamily: T.body, fontWeight: 700, fontSize: 14, cursor: "pointer",
 };
