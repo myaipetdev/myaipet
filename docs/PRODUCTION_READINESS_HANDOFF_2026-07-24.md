@@ -204,9 +204,10 @@ silently aimed at production. A real signed-in four-task UAT is still required.
   verification passed.
 - The PostgreSQL credit integration was explicitly skipped because no safe
   disposable test database was configured. It was not pointed at production.
-- Anonymous npm still reported `@myaipet/petclaw-sdk@1.6.2`; publication of
-  `2.0.0`, anonymous registry verification, signed AWS release, authenticated
-  four-task UAT, and post-reboot live smoke remain incomplete.
+- `@myaipet/petclaw-sdk@2.0.0` was published and anonymously verified at
+  2026-07-24 23:08 KST. The public `latest` tag is `2.0.0`; registry shasum is
+  `e674d17f14c01e94087b5a2491597d9d928b6053`. Signed AWS release,
+  authenticated four-task UAT, and post-reboot live smoke remain incomplete.
 
 ## 5. Authenticated UAT matrix
 
@@ -235,8 +236,8 @@ never capture wallet signatures or secrets.
 1. Complete all code, tests, review, and candidate commit first.
 2. Verify the package contents and public current version.
 3. Publish `@myaipet/petclaw-sdk@2.0.0` using the authenticated local npm
-   configuration and a fresh authenticator TOTP supplied only at the final
-   publish step.
+   configuration and either a fresh authenticator TOTP at the final publish
+   step or a narrowly scoped, short-lived package token with 2FA bypass.
 4. Verify `npm view @myaipet/petclaw-sdk version` returns `2.0.0`.
 5. Rotate any npm token that was previously pasted into a conversation.
 6. Only then build and deploy web copy that says 2.0.0 is published.
@@ -301,26 +302,21 @@ These are not permission to overstate the current product:
 9. Do not ask for a TOTP until the package is otherwise publish-ready.
 10. Continue from the first incomplete item in sections 4–7.
 
-## 10. External release blockers observed at 2026-07-24 22:38 KST
+## 10. External release blockers resolved at 2026-07-24 23:08 KST
 
-- The candidate is committed locally on
-  `codex/e503-p0-release-20260724`, but the branch is not on `origin`.
-  Every GitHub identity already configured on this workstation reports pull
-  access and no push access to `myaipetdev/myaipet`; the push was rejected with
-  HTTP 403. Do not recreate or squash the candidate. Authenticate an identity
-  with repository write permission, then push the existing local branch.
-- The npm package itself is ready and its prepublish suite passed 70/70, but the
-  authenticated npm session is not a maintainer of
-  `@myaipet/petclaw-sdk`. The publish request was rejected for package
-  permission before any OTP challenge, and anonymous registry reads still
-  return `1.6.2`. Authenticate the public maintainer `myaipet`, or grant the
-  publishing principal read-write access, then publish the already committed
-  `2.0.0` package and verify it anonymously.
+- GitHub was reauthenticated as the repository organization account with
+  admin/push permission. `codex/e503-p0-release-20260724` is now on `origin`,
+  and its remote head matched the clean local candidate before npm publication.
+- npm was reauthenticated as the package maintainer. The SDK prepublish suite
+  passed 70/70, `2.0.0` was published with a short-lived package-scoped bypass
+  token, and an authentication-free registry read verified both `latest` and
+  the published shasum.
+- The short-lived publishing token and every token pasted into a conversation
+  must be revoked after the release. Never record their values in this file,
+  Git, release evidence, or logs.
 - No AWS release, production backup, migration, traffic switch, reboot, or
-  host-side hotfix was attempted after these permission failures. Production
-  remains on the immutable release recorded in section 1.
-- Once both identities are corrected, resume in this exact order: push the
-  existing branch; publish and anonymously verify npm `2.0.0`; take a fresh
-  signed off-host backup; build/sign the exact committed artifact; verify and
-  preflight it on EC2; release; run authenticated Office UAT, the full live
-  smoke matrix, and one reboot recovery check.
+  host-side hotfix has yet been attempted for this candidate. Resume with a
+  fresh signed off-host backup; commit and push this evidence update; build/sign
+  the exact resulting commit; verify and preflight it on EC2; release; run
+  authenticated Office UAT, the full live smoke matrix, and one reboot recovery
+  check.
