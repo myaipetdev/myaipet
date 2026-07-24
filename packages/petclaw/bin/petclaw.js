@@ -1705,7 +1705,7 @@ function cmdCommandHelp(rawCommand) {
     demo: ["petclaw-sdk demo \"message\"", "Run the stateless synthetic preview."],
     talk: ["petclaw-sdk talk", "Start an interactive retained-chat session."],
     agent: ["petclaw-sdk agent \"goal\" --confirm-cost 5 [--max-steps 1..6] [--json]", "Run a paid bounded goal loop; the exact 5-credit acknowledgement is required before HTTP."],
-    "agent-status": ["petclaw-sdk agent-status <runId>", "Look up a paid run by its client idempotency UUID; terminal lookup clears the local pending marker."],
+    "agent-status": ["petclaw-sdk agent-status <runId>", "Look up a paid run by its client idempotency UUID; only a validated terminal receipt removes the exact local marker."],
     skills: ["petclaw-sdk skills", "List manifests and selected-pet runtime status."],
     install: ["petclaw-sdk install <skillId>", "Save an install record/preferences for the selected pet."],
     uninstall: ["petclaw-sdk uninstall <skillId>", "Remove saved install data; core runtime skills remain active."],

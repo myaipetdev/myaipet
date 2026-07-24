@@ -1009,6 +1009,9 @@ test("all command help flags are local and cannot trigger network, spend, mutati
       petId: 7,
       token: "pck_test_owner_token",
     }), { mode: 0o644 });
+    const originalMode = process.platform !== "win32"
+      ? fs.statSync(path.join(temp, ".petclaw.json")).mode & 0o777
+      : null;
     const cases = [
       ["init", "--help"],
       ["auth", "--help"],
@@ -1031,7 +1034,11 @@ test("all command help flags are local and cannot trigger network, spend, mutati
     assert.equal(requestCount, 0);
     assert.equal(fs.existsSync(path.join(temp, "SOUL.md")), false);
     if (process.platform !== "win32") {
-      assert.equal(fs.statSync(path.join(temp, ".petclaw.json")).mode & 0o777, 0o644);
+      assert.equal(
+        fs.statSync(path.join(temp, ".petclaw.json")).mode & 0o777,
+        originalMode,
+        "local help must preserve the config mode it inherited",
+      );
     }
   } finally {
     server.close();
