@@ -371,13 +371,19 @@ export default function Hero({ onAdopt, onExplore, onNavigate, txToday }: any) {
           </div>
 
           {/* Headline — stacked, three colors */}
+          {/* Headline relayout (founder direction): "Your" set once oversized, the
+              three payoff nouns stacked beside it — matches the landing hero. */}
           <h1 className="mp-enter" data-carve style={{
-            fontFamily: "var(--ed-disp)", fontSize: "clamp(34px,4.4vw,56px)",
-            fontWeight: 800, color: "#211A12", lineHeight: 1.0, margin: "0 0 16px", letterSpacing: "-0.035em",
+            fontFamily: "var(--ed-disp)", fontWeight: 800, color: "#211A12",
+            margin: "0 0 16px", letterSpacing: "-0.035em",
+            display: "flex", alignItems: "baseline", gap: "0.16em", flexWrap: "wrap",
           }}>
-            <span style={{ display: "block" }}>Your AI.</span>
-            <span style={{ display: "block", color: "rgba(33,26,18,0.55)" }}>Your data.</span>
-            <span style={{ display: "block", color: "#BE4F28" }}>Your companion.</span>
+            <span style={{ fontSize: "clamp(46px,6.4vw,88px)", lineHeight: 0.84 }}>Your</span>
+            <span style={{ display: "inline-flex", flexDirection: "column", lineHeight: 0.95, fontSize: "clamp(24px,3.1vw,44px)" }}>
+              <span>AI.</span>
+              <span style={{ color: "rgba(33,26,18,0.55)" }}>data.</span>
+              <span style={{ color: "#BE4F28" }}>companion.</span>
+            </span>
           </h1>
 
           {/* Adopt · Remember · Own */}
