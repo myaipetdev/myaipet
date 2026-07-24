@@ -136,7 +136,7 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
         borderRadius: 16, padding: "14px 20px", marginBottom: 8,
         background: "#FBF6EC", border: "1px solid var(--ed-hair, rgba(33,26,18,.13))",
         boxShadow: "var(--ed-shadow-card, 0 20px 40px -26px rgba(80,55,20,.5))",
-        display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap",
+        display: "flex", flexDirection: "column", alignItems: "stretch", gap: 12,
         scrollMarginTop: 88,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
@@ -160,6 +160,8 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
           </div>
         </div>
 
+        {/* Founder feedback: pill ladder + CTA on their own row UNDER the title/description */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
         {/* Day pills — on <480px this becomes ONE horizontal scroll row (.checkin-pills) */}
         <div className="checkin-pills" style={{ display: "flex", gap: 5, flex: 1, flexWrap: "wrap" }}>
           {rewards.map((r, i) => {
@@ -222,6 +224,7 @@ function CheckinCard({ isAuthenticated, onPointsChanged }: { isAuthenticated: bo
             <ConnectButton chainStatus="none" showBalance={false} label="Connect wallet to start" />
           </div>
         )}
+        </div>
       </div>
     </Reveal>
   );
